@@ -81,7 +81,9 @@ desktop/
 Ссылка на установщик задаётся `DESKTOP_DOWNLOAD_URL` в `deploy/synology/config.env`;
 `deploy.py` записывает её в runtime `window.__DESKTOP_DOWNLOAD_URL__`. По умолчанию
 используется same-origin
-`/downloads/kppdf-desktop-setup.zip` (внутри — setup.exe); явно пустое значение отключает кнопку до
+`/downloads/kppdf-desktop-setup.zip` (внутри — setup.exe). Локально кнопка идёт на
+`:4200/downloads/…` → proxy на Nest (см. `frontend/proxy.conf.json`); без ZIP в
+`frontend/downloads/` будет 404. Явно пустое `DESKTOP_DOWNLOAD_URL` отключает кнопку до
 публикации файла. Сборочные `.exe`/`.msi`/`.zip` **не** коммитятся.
 
 Установка / обновление / NSIS (остановка MCP перед копированием файлов):  

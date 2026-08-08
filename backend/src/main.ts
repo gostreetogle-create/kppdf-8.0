@@ -237,18 +237,32 @@ async function bootstrap() {
   app.useGlobalFilters(new VersionConflictFilter(), new MulterExceptionFilter(), new HttpExceptionFilter());
   app.setGlobalPrefix('api');
 
-  // Desktop installer (TZD-16/24) under /downloads/*. Prefer built SPA tree,
-  // then staging folder used by `pnpm --dir desktop publish-installer`.
+  // Desktop installer (TZD-16/24) under /downloads/*. Prefer a folder that
+  // actually contains the ZIP/exe (staging or published SPA tree).
+  // Local FE (:4200) proxies /downloads → here (proxy.conf.json).
   // Never SPA-fallback these paths (see production middleware below).
   const downloadDirs = [
     process.env.FRONTEND_PATH ? join(process.env.FRONTEND_PATH, 'downloads') : '',
     join(process.cwd(), '..', 'frontend', 'browser', 'downloads'),
     join(process.cwd(), '..', 'frontend', 'downloads'),
+    join(process.cwd(), 'frontend', 'browser', 'downloads'),
+    join(process.cwd(), 'frontend', 'downloads'),
   ].filter((d) => d && existsSync(d));
-  if (downloadDirs.length > 0) {
-    const dir = downloadDirs[0];
+  const downloadDirWithInstaller = downloadDirs.find(
+    (d) =>
+      existsSync(join(d, 'kppdf-desktop-setup.zip')) ||
+      existsSync(join(d, 'kppdf-desktop-setup.exe')),
+  );
+  if (downloadDirWithInstaller || downloadDirs.length > 0) {
+    const dir = downloadDirWithInstaller ?? downloadDirs[0]!;
     app.useStaticAssets(dir, { prefix: '/downloads/' });
     Logger.log(`📥 Desktop downloads: ${dir}`, 'Bootstrap');
+    if (!downloadDirWithInstaller) {
+      Logger.warn(
+        '📥 /downloads mounted but no kppdf-desktop-setup.zip|.exe — run: pnpm --dir desktop publish-installer',
+        'Bootstrap',
+      );
+    }
   }
 
   // Production: serve built Angular SPA from FRONTEND_PATH (Synology/docker deploy).
