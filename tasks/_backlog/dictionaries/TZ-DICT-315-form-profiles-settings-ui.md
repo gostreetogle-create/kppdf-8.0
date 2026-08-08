@@ -16,13 +16,19 @@ LAYER: 2
 PAGES: `/dictionaries/form-profiles`
 PAGE_DOCS: docs/pages/dictionaries.page.md (or form-profiles.page.md)
 
-CONFLICT KEYS:
-frontend/src/app/pages/dictionaries/form-profiles.page.ts;
-frontend/src/app/pages/dictionaries/** (nav/routes only as needed);
-frontend/src/app/shared/services/form-profiles.service.ts;
-docs/pages/dictionaries.page.md;
+CONFLICT KEYS (STRICT carve — не трогать чужой WIP):
+frontend/src/app/pages/dictionaries/form-profiles.page.ts (NEW);
+frontend/src/app/pages/dictionaries/form-profiles.page.spec.ts (NEW);
+frontend/src/app/shared/services/form-profiles.service.ts (NEW);
+frontend/src/app/shared/services/form-profiles.service.spec.ts (NEW);
+frontend/src/app/app.routes.ts (только route form-profiles);
+frontend/src/app/layout/app-layout.component.ts (только пункт меню Справочники);
+docs/pages/form-profiles.page.md (NEW);
 docs/agent-checklists/TZ-DICT-315.md;
-progress.md;
+docs/agent-checklists/_active-map.md;
+
+ЗАПРЕТ: categories/color-references/measurements/document-template/text-block*.page.ts
+и любой другой уже dirty peer WIP — не stage, не «чистить», не revert.
 
 ---
 
