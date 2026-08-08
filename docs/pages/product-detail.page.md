@@ -48,6 +48,13 @@
 4. Паспорт (DETAIL-301): фото, имя (`font-display text-lg sm:text-xl`, TYPE-302), badges, **В составе** (count); габариты/вес/RAL через FactCard. Цены — в блоке Себестоимость (DETAIL-302).
 5. Фото / себестоимость — слева: цены (Прайс/Себест/База + captions) + вертикальный журнал снимков; auto-recalc после mutate состава (DETAIL-302).
 
+## Фото add-and-continue (TZ-UX-DIALOG-304)
+
+Detail intentionally exposes a read-only gallery. To add photos, open the product
+edit dialog: its `multiple` file input accepts a batch, keeps all uploaded thumbnails
+in the same dialog, and sends the accumulated photo IDs on Save. There is no
+one-photo modal to reopen between files; selecting three or more files is one sitting.
+
 ## Цена в составе vs себестоимость (канон TZ-COST-305)
 
 | | Поле | Роль |
@@ -62,7 +69,7 @@
 ## Бизнес-правила состава (канон)
 
 | Родитель | Можно | Нельзя |
-|----------|-------|--------|
+|--------|------|--------|
 | Product | module, material≠raw, **product** (комплекс) | raw; self-ref; cycles |
 | Module | module, material (в т.ч. raw) | product-линия |
 
@@ -81,11 +88,11 @@
 
 ## Известные ограничения
 
-- Загрузка фото с detail — Phase E.
+- Загрузка фото с detail — Phase E; add-and-continue реализован в multi-file edit dialog.
 - Where-used на изделии — не в UI.
 - Глубокое дерево подгружается по expand (depth +2, max 8).
 - Список модулей: колонка «Себест.» = hint «см. карточку» (нет batch preview; TZ-COST-303 P0).
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-305 product-line · TZ-COST-303 · TZ-333/334)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-305 product-line · TZ-COST-303 · TZ-333/334 · TZ-UX-DIALOG-304)._
