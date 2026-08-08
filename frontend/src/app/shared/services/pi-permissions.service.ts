@@ -35,6 +35,8 @@ export interface PermissionSection {
 
 export interface PermissionCatalogResponse {
   sections: PermissionSection[];
+  /** TZ-ADMIN-301: canonical PAGE_KEYS for nav ACL picker. */
+  pages?: string[];
 }
 
 @Injectable({ providedIn: 'root' })

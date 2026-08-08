@@ -92,7 +92,7 @@ describe('RolesAdminController (TZ-256.B)', () => {
   });
 
   describe('TZ-257.B admin DTO whitelist', () => {
-    it('AdminCreateRoleDto exposes only name/label/description/permissions', () => {
+    it('AdminCreateRoleDto excludes internal/system fields (pages ACL allowed)', () => {
       // Class-validator @ApiProperty-annotated fields only materialize
       // when assigned — inspect the declared property descriptors instead.
       const declared = Object.getOwnPropertyNames(AdminCreateRoleDto.prototype);

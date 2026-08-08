@@ -79,11 +79,13 @@ describe('toClientRole (TZ-257 DTO mapper)', () => {
       name: 'admin',
       description: 'System administrator role',
       permissions: ['*'],
+      pages: ['products', 'admin-roles'],
       isSystem: true,
     };
     const out = toClientRole(doc);
     expect(out.isSystem).toBe(true);
     expect(out.permissions).toEqual(['*']);
+    expect(out.pages).toEqual(['products', 'admin-roles']);
   });
 
   it('defaults isSystem to false when missing', () => {
@@ -94,5 +96,6 @@ describe('toClientRole (TZ-257 DTO mapper)', () => {
     };
     const out = toClientRole(doc);
     expect(out.isSystem).toBe(false);
+    expect(out.pages).toEqual([]);
   });
 });

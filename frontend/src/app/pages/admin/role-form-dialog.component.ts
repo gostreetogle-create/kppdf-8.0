@@ -11,14 +11,18 @@ import {
   type PermissionSection,
 } from '../../shared/services/pi-permissions.service';
 import {
+  PAGE_GROUP_ORDER,
+  PAGE_GROUP_TITLE_RU,
+  PAGE_KEY_GROUP,
   PERMISSION_ACTION_RU,
   PERMISSION_GROUP_TITLE_RU,
   ROLE_FORM_COPY,
+  pageLabelRu,
   permissionLabelRu,
 } from './permission-labels.ru';
 
 export interface RoleFormData {
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'view';
   submit?: (result: RoleFormResult) => Observable<SilentResult<unknown>>;
   role?: {
     id: string;
@@ -26,6 +30,8 @@ export interface RoleFormData {
     label: string;
     description?: string;
     permissions: string[];
+    pages?: string[];
+    isSystem?: boolean;
   };
 }
 
@@ -34,6 +40,7 @@ export interface RoleFormResult {
   label: string;
   description?: string;
   permissions: string[];
+  pages: string[];
 }
 
 /** Display group for the checkbox matrix (merged API sections). */
@@ -41,6 +48,13 @@ export interface PermissionDisplayGroup {
   id: string;
   title: string;
   permissions: PermissionCatalogEntry[];
+}
+
+/** Display group for nav pageKey ACL. */
+export interface PageDisplayGroup {
+  id: string;
+  title: string;
+  keys: string[];
 }
 
 const ACTION_RU = PERMISSION_ACTION_RU;
@@ -74,10 +88,11 @@ const SECTION_TO_GROUP: Record<string, string> = {
 };
 
 /**
- * Role create/edit dialog — RU permission matrix, wide layout.
+ * Role create/edit/view dialog — RU permission + pageKey matrix.
  *
- * Permissions = capability keys (смотреть / менять / полный доступ по разделам),
- * not the nav page-ACL list (pages[]). Grouped for managers.
+ * - `permissions` = capability keys (смотреть / менять / полный доступ)
+ * - `pages` = nav pageKey ACL (Клиенты, Снабжение, …)
+ * - `mode: 'view'` = system role read-only (TZ-ADMIN-301)
  */
 @Component({
   selector: 'pi-role-form-dialog',
@@ -86,7 +101,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
   imports: [ButtonComponent, PiDialogComponent],
   template: `
     <app-pi-dialog
-      [title]="data.mode === 'create' ? 'Новая роль' : 'Редактирование роли'"
+      [title]="dialogTitle()"
       [width]="'xl'"
       [maxWidth]="'1120px'"
       variant="form"
@@ -95,13 +110,19 @@ const SECTION_TO_GROUP: Record<string, string> = {
     >
       <div body>
         <div class="role-form">
+          @if (readOnly()) {
+            <p class="role-form__banner" role="status" data-test="role-form-system-banner">
+              {{ copy.systemReadonlyBanner }}
+            </p>
+          }
+
           <div class="role-form__grid">
             <label class="field">
               <span class="field__label">Системное имя</span>
               <input
                 class="field__input"
                 [value]="name()"
-                [disabled]="data.mode === 'edit'"
+                [disabled]="data.mode !== 'create'"
                 (input)="onNameInput($event)"
                 autocomplete="off"
                 spellcheck="false"
@@ -117,6 +138,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
               <input
                 class="field__input"
                 [value]="label()"
+                [disabled]="readOnly()"
                 (input)="onLabelInput($event)"
                 autocomplete="off"
                 data-test="role-form-label"
@@ -128,6 +150,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
               <input
                 class="field__input"
                 [value]="description()"
+                [disabled]="readOnly()"
                 (input)="onDescriptionInput($event)"
                 autocomplete="off"
                 data-test="role-form-description"
@@ -138,36 +161,133 @@ const SECTION_TO_GROUP: Record<string, string> = {
           <div class="role-form__permissions">
             <div class="role-form__permissions-head">
               <div class="role-form__permissions-intro">
+                <span class="field__label">{{ copy.pagesHeading }}</span>
+                <p class="role-form__logic-hint">{{ copy.pagesHint }}</p>
+              </div>
+              @if (!readOnly()) {
+                <div class="role-form__permissions-actions">
+                  <span class="field__hint" data-test="role-form-pages-count"
+                    >{{ selectedPagesCount() }} выбрано</span
+                  >
+                  <div class="role-form__permissions-btns">
+                    <app-pi-button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      [disabled]="catalogLoading() || !!catalogError() || pageGroups().length === 0"
+                      (click)="selectAllPages()"
+                      data-test="role-form-pages-select-all"
+                    >
+                      {{ copy.selectAll }}
+                    </app-pi-button>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      [disabled]="
+                        catalogLoading() || !!catalogError() || selectedPagesCount() === 0
+                      "
+                      (click)="clearAllPages()"
+                      data-test="role-form-pages-clear-all"
+                    >
+                      {{ copy.clearAll }}
+                    </app-pi-button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            @if (catalogLoading()) {
+              <p class="text-sm text-muted-foreground">Загрузка каталога…</p>
+            } @else if (catalogError(); as err) {
+              <p class="field__error" data-test="role-form-catalog-error">{{ err }}</p>
+            } @else if (pageGroups().length === 0) {
+              <p
+                class="text-sm text-muted-foreground"
+                role="status"
+                data-test="role-form-pages-empty"
+              >
+                Каталог разделов меню пуст.
+              </p>
+            } @else {
+              <div class="role-form__sections" data-test="role-form-pages">
+                @for (g of pageGroups(); track g.id) {
+                  <fieldset class="role-form__section">
+                    <legend class="role-form__section-title">
+                      {{ g.title }}
+                      @if (!readOnly()) {
+                        <button
+                          type="button"
+                          class="role-form__select-all"
+                          (click)="togglePageGroup(g, !pageGroupAllSelected(g))"
+                          data-test="role-form-page-group-toggle"
+                        >
+                          {{ pageGroupAllSelected(g) ? copy.clearAll : copy.selectAll }}
+                        </button>
+                      }
+                    </legend>
+                    <div class="role-form__section-grid">
+                      @for (key of g.keys; track key) {
+                        <label
+                          class="role-form__perm"
+                          [class.role-form__perm--readonly]="readOnly()"
+                        >
+                          <input
+                            type="checkbox"
+                            class="role-form__checkbox"
+                            [checked]="isPageSelected(key)"
+                            [disabled]="readOnly()"
+                            (change)="togglePage(key)"
+                            data-test="role-form-page"
+                          />
+                          <span class="role-form__perm-body">
+                            <span class="role-form__perm-title">{{ pageLabel(key) }}</span>
+                            <span class="role-form__perm-meta">{{ key }}</span>
+                          </span>
+                        </label>
+                      }
+                    </div>
+                  </fieldset>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="role-form__permissions">
+            <div class="role-form__permissions-head">
+              <div class="role-form__permissions-intro">
                 <span class="field__label">{{ copy.permissionsHeading }}</span>
                 <p class="role-form__logic-hint">{{ copy.logicHint }}</p>
               </div>
-              <div class="role-form__permissions-actions">
-                <span class="field__hint" data-test="role-form-selected-count"
-                  >{{ selectedCount() }} выбрано</span
-                >
-                <div class="role-form__permissions-btns">
-                  <app-pi-button
-                    variant="outline"
-                    size="sm"
-                    type="button"
-                    [disabled]="catalogLoading() || !!catalogError() || groups().length === 0"
-                    (click)="selectAllPermissions()"
-                    data-test="role-form-select-all"
+              @if (!readOnly()) {
+                <div class="role-form__permissions-actions">
+                  <span class="field__hint" data-test="role-form-selected-count"
+                    >{{ selectedCount() }} выбрано</span
                   >
-                    {{ copy.selectAll }}
-                  </app-pi-button>
-                  <app-pi-button
-                    variant="ghost"
-                    size="sm"
-                    type="button"
-                    [disabled]="catalogLoading() || !!catalogError() || selectedCount() === 0"
-                    (click)="clearAllPermissions()"
-                    data-test="role-form-clear-all"
-                  >
-                    {{ copy.clearAll }}
-                  </app-pi-button>
+                  <div class="role-form__permissions-btns">
+                    <app-pi-button
+                      variant="outline"
+                      size="sm"
+                      type="button"
+                      [disabled]="catalogLoading() || !!catalogError() || groups().length === 0"
+                      (click)="selectAllPermissions()"
+                      data-test="role-form-select-all"
+                    >
+                      {{ copy.selectAll }}
+                    </app-pi-button>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      [disabled]="catalogLoading() || !!catalogError() || selectedCount() === 0"
+                      (click)="clearAllPermissions()"
+                      data-test="role-form-clear-all"
+                    >
+                      {{ copy.clearAll }}
+                    </app-pi-button>
+                  </div>
                 </div>
-              </div>
+              }
             </div>
 
             @if (catalogLoading()) {
@@ -189,22 +309,28 @@ const SECTION_TO_GROUP: Record<string, string> = {
                   <fieldset class="role-form__section">
                     <legend class="role-form__section-title">
                       {{ g.title }}
-                      <button
-                        type="button"
-                        class="role-form__select-all"
-                        (click)="toggleGroup(g, !groupAllSelected(g))"
-                        data-test="role-form-section-toggle"
-                      >
-                        {{ groupAllSelected(g) ? copy.clearAll : copy.selectAll }}
-                      </button>
+                      @if (!readOnly()) {
+                        <button
+                          type="button"
+                          class="role-form__select-all"
+                          (click)="toggleGroup(g, !groupAllSelected(g))"
+                          data-test="role-form-section-toggle"
+                        >
+                          {{ groupAllSelected(g) ? copy.clearAll : copy.selectAll }}
+                        </button>
+                      }
                     </legend>
                     <div class="role-form__section-grid">
                       @for (p of g.permissions; track p.key) {
-                        <label class="role-form__perm">
+                        <label
+                          class="role-form__perm"
+                          [class.role-form__perm--readonly]="readOnly()"
+                        >
                           <input
                             type="checkbox"
                             class="role-form__checkbox"
                             [checked]="isSelected(p.key)"
+                            [disabled]="readOnly()"
                             (change)="toggleKey(p.key)"
                             data-test="role-form-perm"
                           />
@@ -227,16 +353,20 @@ const SECTION_TO_GROUP: Record<string, string> = {
         </div>
       </div>
       <div footer>
-        <app-pi-button variant="ghost" size="sm" (click)="onCancel()">Отмена</app-pi-button>
-        <app-pi-button
-          variant="default"
-          size="sm"
-          [disabled]="!canSubmit() || submitting()"
-          (click)="onSubmit()"
-          data-test="role-form-submit"
-        >
-          {{ submitting() ? 'Сохранение…' : data.mode === 'create' ? 'Создать' : 'Сохранить' }}
+        <app-pi-button variant="ghost" size="sm" (click)="onCancel()">
+          {{ readOnly() ? 'Закрыть' : 'Отмена' }}
         </app-pi-button>
+        @if (!readOnly()) {
+          <app-pi-button
+            variant="default"
+            size="sm"
+            [disabled]="!canSubmit() || submitting()"
+            (click)="onSubmit()"
+            data-test="role-form-submit"
+          >
+            {{ submitting() ? 'Сохранение…' : data.mode === 'create' ? 'Создать' : 'Сохранить' }}
+          </app-pi-button>
+        }
       </div>
     </app-pi-dialog>
   `,
@@ -247,6 +377,17 @@ const SECTION_TO_GROUP: Record<string, string> = {
         flex-direction: column;
         gap: 18px;
         padding: 4px 0;
+      }
+
+      .role-form__banner {
+        margin: 0;
+        padding: 10px 12px;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--color-ink);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
+        border-radius: 3px;
       }
 
       .role-form__grid {
@@ -352,7 +493,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
         display: flex;
         flex-direction: column;
         gap: 0;
-        max-height: min(58vh, 560px);
+        max-height: min(42vh, 420px);
         overflow-y: auto;
         padding-right: 4px;
         border-top: 1px solid var(--color-rule);
@@ -427,8 +568,13 @@ const SECTION_TO_GROUP: Record<string, string> = {
         min-height: 3.25rem;
       }
 
-      .role-form__perm:hover {
+      .role-form__perm:hover:not(.role-form__perm--readonly) {
         background: var(--color-paper-2);
+      }
+
+      .role-form__perm--readonly {
+        cursor: default;
+        opacity: 0.85;
       }
 
       .role-form__checkbox {
@@ -472,9 +618,20 @@ export class RoleFormDialogComponent {
   protected readonly error = signal<string | null>(null);
   protected readonly submitting = signal(false);
   protected readonly copy = ROLE_FORM_COPY;
+  protected readonly readOnly = (): boolean => this.data.mode === 'view';
+
+  protected dialogTitle(): string {
+    if (this.data.mode === 'create') return 'Новая роль';
+    if (this.data.mode === 'view') return 'Системная роль';
+    return 'Редактирование роли';
+  }
 
   protected permissionLabel(key: string): string {
     return permissionLabelRu(key);
+  }
+
+  protected pageLabel(key: string): string {
+    return pageLabelRu(key);
   }
 
   protected onNameInput(event: Event): void {
@@ -493,9 +650,11 @@ export class RoleFormDialogComponent {
   protected readonly sections = signal<PermissionSection[]>([]);
   /** Grouped RU categories for the checkbox matrix. */
   protected readonly groups = signal<PermissionDisplayGroup[]>([]);
+  protected readonly pageGroups = signal<PageDisplayGroup[]>([]);
   protected readonly catalogLoading = signal(true);
   protected readonly catalogError = signal<string | null>(null);
   protected readonly selected = signal<Set<string>>(new Set(this.data.role?.permissions ?? []));
+  protected readonly selectedPages = signal<Set<string>>(new Set(this.data.role?.pages ?? []));
 
   constructor() {
     void this.loadCatalog();
@@ -507,6 +666,7 @@ export class RoleFormDialogComponent {
       if (res.ok) {
         this.sections.set(res.data.sections);
         this.groups.set(regroupPermissions(res.data.sections));
+        this.pageGroups.set(regroupPages(res.data.pages ?? []));
         this.catalogError.set(null);
       } else {
         this.catalogError.set(this.describe(res.error));
@@ -519,12 +679,18 @@ export class RoleFormDialogComponent {
   }
 
   protected readonly selectedCount = (): number => this.selected().size;
+  protected readonly selectedPagesCount = (): number => this.selectedPages().size;
 
   protected isSelected(key: string): boolean {
     return this.selected().has(key);
   }
 
+  protected isPageSelected(key: string): boolean {
+    return this.selectedPages().has(key);
+  }
+
   protected toggleKey(key: string): void {
+    if (this.readOnly()) return;
     const next = new Set(this.selected());
     if (next.has(key)) {
       next.delete(key);
@@ -534,8 +700,20 @@ export class RoleFormDialogComponent {
     this.selected.set(next);
   }
 
+  protected togglePage(key: string): void {
+    if (this.readOnly()) return;
+    const next = new Set(this.selectedPages());
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.selectedPages.set(next);
+  }
+
   /** Select every permission across all groups. */
   protected selectAllPermissions(): void {
+    if (this.readOnly()) return;
     const next = new Set<string>();
     for (const g of this.groups()) {
       for (const p of g.permissions) {
@@ -547,14 +725,34 @@ export class RoleFormDialogComponent {
 
   /** Clear the entire selection. */
   protected clearAllPermissions(): void {
+    if (this.readOnly()) return;
     this.selected.set(new Set());
+  }
+
+  protected selectAllPages(): void {
+    if (this.readOnly()) return;
+    const next = new Set<string>();
+    for (const g of this.pageGroups()) {
+      for (const key of g.keys) next.add(key);
+    }
+    this.selectedPages.set(next);
+  }
+
+  protected clearAllPages(): void {
+    if (this.readOnly()) return;
+    this.selectedPages.set(new Set());
   }
 
   protected groupAllSelected(g: PermissionDisplayGroup): boolean {
     return g.permissions.length > 0 && g.permissions.every((p) => this.selected().has(p.key));
   }
 
+  protected pageGroupAllSelected(g: PageDisplayGroup): boolean {
+    return g.keys.length > 0 && g.keys.every((k) => this.selectedPages().has(k));
+  }
+
   protected toggleGroup(g: PermissionDisplayGroup, select: boolean): void {
+    if (this.readOnly()) return;
     const next = new Set(this.selected());
     for (const p of g.permissions) {
       if (select) {
@@ -564,6 +762,16 @@ export class RoleFormDialogComponent {
       }
     }
     this.selected.set(next);
+  }
+
+  protected togglePageGroup(g: PageDisplayGroup, select: boolean): void {
+    if (this.readOnly()) return;
+    const next = new Set(this.selectedPages());
+    for (const key of g.keys) {
+      if (select) next.add(key);
+      else next.delete(key);
+    }
+    this.selectedPages.set(next);
   }
 
   /** @deprecated use groupAllSelected — kept for existing unit tests */
@@ -589,23 +797,26 @@ export class RoleFormDialogComponent {
   }
 
   protected readonly canSubmit = (): boolean => {
+    if (this.readOnly()) return false;
     const name = this.name().trim();
     if (this.data.mode === 'create' && !/^[a-z][a-z0-9_-]{1,63}$/.test(name)) return false;
     if (this.label().trim().length < 2) return false;
-    // Block create/edit while catalog is loading or failed; allow empty
-    // selection only when catalog actually loaded with sections (or empty
-    // catalog with explicit empty-state — still allow name/label-only role).
+    // Catalog must be ready. Empty permissions[] remains allowed (AC 2026-08-08
+    // admin audit): PO may later forbid 0-permission roles; until then FE matches
+    // BE create with permissions: []. Empty catalog shows RU empty-state but does
+    // not block submit on name/label alone.
     if (this.catalogLoading() || this.catalogError()) return false;
     return true;
   };
 
   protected onSubmit(): void {
-    if (this.submitting()) return;
+    if (this.submitting() || this.readOnly()) return;
     const result: RoleFormResult = {
       name: this.data.mode === 'create' ? this.name().trim() : (this.data.role?.name ?? ''),
       label: this.label().trim(),
       description: this.description().trim() || undefined,
       permissions: Array.from(this.selected()),
+      pages: Array.from(this.selectedPages()),
     };
     if (!this.data.submit) {
       this.ref.close(result);
@@ -659,6 +870,31 @@ export function regroupPermissions(sections: PermissionSection[]): PermissionDis
   }
   for (const g of buckets.values()) {
     if (g.permissions.length) ordered.push(g);
+  }
+  return ordered;
+}
+
+/** Group PAGE_KEYS into nav-facing RU categories. */
+export function regroupPages(pages: readonly string[]): PageDisplayGroup[] {
+  const buckets = new Map<string, PageDisplayGroup>();
+  for (const key of pages) {
+    const groupId = PAGE_KEY_GROUP[key] ?? 'other';
+    const bucket = buckets.get(groupId) ?? {
+      id: groupId,
+      title: PAGE_GROUP_TITLE_RU[groupId] ?? groupId,
+      keys: [],
+    };
+    bucket.keys.push(key);
+    buckets.set(groupId, bucket);
+  }
+  const ordered: PageDisplayGroup[] = [];
+  for (const id of PAGE_GROUP_ORDER) {
+    const g = buckets.get(id);
+    if (g?.keys.length) ordered.push(g);
+    buckets.delete(id);
+  }
+  for (const g of buckets.values()) {
+    if (g.keys.length) ordered.push(g);
   }
   return ordered;
 }

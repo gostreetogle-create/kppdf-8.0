@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T08:22Z · **TZ-UX-301 DONE**
+**Updated:** 2026-08-08T08:26Z · **TZ-ADMIN-301 DONE**
 
 ## DONE this session
 
@@ -14,14 +14,13 @@
 | **TZ-DICT-315** | form-profiles settings UI (STRICT carve) |
 | **TZ-DICT-316** | QuickCreate wire products/modules |
 | **TZ-UX-301** | compact icon top nav |
+| **TZ-ADMIN-301** | roles permissions UX + pageKey ACL |
 
 ## READY / NEXT
 
 | ID | Status |
 |----|--------|
-| **TZ-ADMIN-301** | roles — claim / in flight (не layout) |
-| **TZ-UX-304** | nav caption + Справочники в конец — **∥ ADMIN** |
-| **TZ-UX-302** | chrome unify (after 304) |
+| **TZ-UX-302** | chrome unify (after ADMIN-301) — **NEXT** |
 | TZ-UX-303 | design-system chrome audit (docs) |
 | TZ-SALES-304 | KP family UI after PO probes |
 
@@ -34,11 +33,11 @@
 | SUPPLY-302 | BOM auto-explode |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:22Z
-- DONE: … + DICT-316 + **TZ-UX-301**
+## Checkpoint 2026-08-08T08:26Z
+- DONE: … + UX-301 + **TZ-ADMIN-301**
 - IN PROGRESS: none
-- NEXT: TZ-ADMIN-301 (или UX-302)
+- NEXT: TZ-UX-302 (chrome unify) — only if PO queue says so
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: 742600d (TZ-UX-301)
+- HEAD: (pending commit)

@@ -44,7 +44,7 @@ export const PAGE_KEYS = [
   'organizations', 'proposals', 'contracts', 'orders',
   // TZ-NAV-301 — lifecycle stubs + clients hub
   'counterparties', 'design', 'supply', 'shipping',
-  'dictionaries', 'categories', 'doc-template-categories', 'color-references',
+  'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
   'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
   'inventory', 'storage-items', 'stock-movements',
   'people',

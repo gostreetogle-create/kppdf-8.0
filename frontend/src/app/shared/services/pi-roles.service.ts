@@ -10,6 +10,8 @@ export interface AdminRole {
   label: string;
   description?: string;
   permissions: string[];
+  /** Nav pageKey ACL (TZ-ADMIN-301 / ACCESS-301). */
+  pages?: string[];
   isSystem: boolean;
   createdAt?: string;
   updatedAt?: string;

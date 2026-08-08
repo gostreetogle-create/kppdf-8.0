@@ -37,7 +37,7 @@ import { toClientRole } from './dto/mapper';
  * forces `isSystem: false` regardless of payload.
  *
  * TZ-257.B DTO-whitelist: mutations accept ONLY `AdminCreateRoleDto` /
- * `AdminUpdateRoleDto` (name/label/description/permissions). Internal
+ * `AdminUpdateRoleDto` (name/label/description/permissions/pages). Internal
  * fields (`isSystem`, `sortOrder`, `sectionIds`, `isActive`) are not
  * declared, so the global `ValidationPipe({ whitelist: true,
  * forbidNonWhitelisted: true })` rejects them with 400 before any

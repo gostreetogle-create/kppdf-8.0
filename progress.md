@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-ADMIN-301 DONE: roles permissions UX + pageKey ACL
+
+**Исполнитель:** agent-3e757640b7 (self PASS → archive)
+**Статус:** DONE on main; deploy НЕ
+**Что:** системные роли — RU badge + Смотреть (read-only); кастом — матрица разделов меню (pages) + capabilities; API pages; PAGE_KEYS + text-block-categories; RU labels.
+**Gates:** FE+BE tsc PASS; fe admin jest 56; be admin jest 23
+**Archive:** `tasks/_archive/2026-08/TZ-ADMIN-301.done.md`
+**Lock:** `.mimocode/locks/TZ-ADMIN-301-roles-permissions-ux.lock`
+**Known:** peer chrome WIP / users-admin dirty не staged. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-301 DONE: compact icon top nav
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)

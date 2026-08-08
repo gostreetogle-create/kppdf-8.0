@@ -1,4 +1,10 @@
-import { roleLabelRu, permissionsSummary, ROLE_LABEL_RU } from './permission-labels.ru';
+import {
+  roleLabelRu,
+  permissionsSummary,
+  ROLE_LABEL_RU,
+  pageLabelRu,
+  PAGE_LABEL_RU,
+} from './permission-labels.ru';
 import { ADMIN_TOC_CHIPS } from './admin-group-chips';
 
 describe('permission-labels.ru helpers', () => {
@@ -19,6 +25,12 @@ describe('permission-labels.ru helpers', () => {
     expect(permissionsSummary([])).toBe('—');
     expect(permissionsSummary(['a', 'b'])).toBe('a, b');
     expect(permissionsSummary(['a', 'b', 'c', 'd'])).toBe('4 прав · a, b…');
+  });
+
+  it('pageLabelRu covers NAV lifecycle keys (TZ-ADMIN-301)', () => {
+    expect(pageLabelRu('counterparties')).toBe(PAGE_LABEL_RU.counterparties);
+    expect(pageLabelRu('supply')).toBe(PAGE_LABEL_RU.supply);
+    expect(pageLabelRu('text-block-categories')).toBe(PAGE_LABEL_RU['text-block-categories']);
   });
 });
 

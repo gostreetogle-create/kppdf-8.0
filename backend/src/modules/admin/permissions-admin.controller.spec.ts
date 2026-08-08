@@ -1,5 +1,5 @@
 import { PermissionsAdminController } from './permissions-admin.controller';
-import { PERMISSIONS } from '../../common/seed/permissions.constants';
+import { PAGE_KEYS, PERMISSIONS } from '../../common/seed/permissions.constants';
 import { AUDIT_ACTION_KEY } from '../../common/interceptors/audit.interceptor';
 import { PERMISSIONS_KEY } from '../../common/decorators/permissions.decorator';
 
@@ -21,6 +21,14 @@ describe('PermissionsAdminController (TZ-257.B)', () => {
     expect(sections.length).toBeGreaterThan(0);
     // No key lost, none duplicated.
     expect(allKeys.sort()).toEqual(PERMISSIONS.map((p) => p.key).sort());
+  });
+
+  it('returns PAGE_KEYS for the role page ACL picker (TZ-ADMIN-301)', () => {
+    const { pages } = controller.catalog();
+    expect(pages).toEqual([...PAGE_KEYS]);
+    expect(pages).toContain('counterparties');
+    expect(pages).toContain('supply');
+    expect(pages).toContain('text-block-categories');
   });
 
   it('grouping is by section with stable source order', () => {

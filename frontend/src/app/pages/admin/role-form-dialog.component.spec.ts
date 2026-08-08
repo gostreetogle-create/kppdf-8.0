@@ -9,6 +9,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import {
   RoleFormDialogComponent,
+  regroupPages,
   regroupPermissions,
   type RoleFormData,
 } from './role-form-dialog.component';
@@ -16,16 +17,11 @@ import type {
   PermissionCatalogResponse,
   PermissionSection,
 } from '../../shared/services/pi-permissions.service';
+import { ROLE_FORM_COPY } from './permission-labels.ru';
 
 /**
  * TZ-264 — RoleFormDialogComponent unit spec.
- *
- * The smoke test instantiates the dialog through TestBed (template
- * compilation — NG5xxx regression guard). loadCatalog success/error is
- * covered via HttpTestingController against the real
- * PermissionsCatalogService + silentGet; the permissions checkbox logic
- * (toggleKey / toggleSection / sectionAllSelected / selectedCount) is
- * exercised directly.
+ * TZ-ADMIN-301 — pages ACL picker + system read-only view.
  */
 
 const CATALOG: PermissionCatalogResponse = {
@@ -46,6 +42,7 @@ const CATALOG: PermissionCatalogResponse = {
       permissions: [{ key: 'material:read', action: 'read', description: 'Смотреть материалы' }],
     },
   ],
+  pages: ['products', 'counterparties', 'supply', 'shipping', 'admin-roles'],
 };
 
 interface RoleHarness {
@@ -53,8 +50,11 @@ interface RoleHarness {
   catalogLoading: () => boolean;
   catalogError: () => string | null;
   selectedCount: () => number;
+  selectedPagesCount: () => number;
   isSelected: (key: string) => boolean;
+  isPageSelected: (key: string) => boolean;
   toggleKey: (key: string) => void;
+  togglePage: (key: string) => void;
   sectionAllSelected: (s: PermissionSection) => boolean;
   toggleSection: (s: PermissionSection, select: boolean) => void;
   name: { set: (v: string) => void };
@@ -62,6 +62,8 @@ interface RoleHarness {
   onSubmit: () => void;
   submitting: () => boolean;
   error: () => string | null;
+  readOnly: () => boolean;
+  canSubmit: () => boolean;
 }
 
 async function setup(data: RoleFormData): Promise<{
@@ -230,6 +232,50 @@ describe('RoleFormDialogComponent', () => {
     comp.toggleSection(userSection, false);
     expect(comp.selectedCount()).toBe(0);
     expect(comp.sectionAllSelected(userSection)).toBe(false);
+    httpMock.verify();
+  });
+
+  it('togglePage adds/removes nav pageKeys (Клиенты / Снабжение)', async () => {
+    const { comp, fixture, httpMock } = await setup({ mode: 'create' });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    expect(comp.selectedPagesCount()).toBe(0);
+    comp.togglePage('counterparties');
+    comp.togglePage('supply');
+    expect(comp.isPageSelected('counterparties')).toBe(true);
+    expect(comp.isPageSelected('supply')).toBe(true);
+    expect(comp.selectedPagesCount()).toBe(2);
+    httpMock.verify();
+  });
+
+  it('regroupPages puts counterparties under Клиенты and supply under Снабжение', () => {
+    const groups = regroupPages(CATALOG.pages ?? []);
+    expect(groups.find((g) => g.id === 'clients')?.keys).toContain('counterparties');
+    expect(groups.find((g) => g.id === 'supply')?.keys).toContain('supply');
+  });
+
+  it('view mode shows system banner and blocks submit (frozen system role)', async () => {
+    const { comp, fixture, httpMock } = await setup({
+      mode: 'view',
+      role: {
+        id: 'sys1',
+        name: 'admin',
+        label: 'Администратор',
+        permissions: ['*'],
+        pages: ['products', 'admin-roles'],
+        isSystem: true,
+      },
+    });
+    httpMock.expectOne('/api/admin/permissions').flush(CATALOG);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(comp.readOnly()).toBe(true);
+    expect(comp.canSubmit()).toBe(false);
+    expect(fixture.nativeElement.textContent).toContain(ROLE_FORM_COPY.systemReadonlyBanner);
+    expect(fixture.nativeElement.querySelector('[data-test="role-form-submit"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="role-form-system-banner"]'),
+    ).not.toBeNull();
     httpMock.verify();
   });
 });

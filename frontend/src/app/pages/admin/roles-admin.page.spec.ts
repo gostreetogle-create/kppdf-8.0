@@ -181,6 +181,35 @@ describe('RolesAdminPage capability gating', () => {
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).not.toBeNull();
   });
 
+  it('shows system badge + view for frozen system roles (TZ-ADMIN-301)', async () => {
+    hasAny.mockImplementation(() => true);
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+      items: [
+        {
+          id: 'sys-admin',
+          name: 'admin',
+          label: 'Administrator',
+          permissions: ['*'],
+          pages: ['products'],
+          isSystem: true,
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 50,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="roles-admin-system-badge"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Системная');
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-view"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-edit"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).toBeNull();
+  });
+
   it('tracks row loading and clears it after an error', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;

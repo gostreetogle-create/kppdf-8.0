@@ -21,10 +21,11 @@ import {
  * of SystemRoleGuard's `SYSTEM_ROLE_ESCALATION`).
  *
  * Admin UI contract (role-form-dialog): create sends
- * `{ name, label, description?, permissions }`; edit sends
- * `{ label, description?, permissions }` — the dialog locks `name` on
+ * `{ name, label, description?, permissions, pages? }`; edit sends
+ * `{ label, description?, permissions, pages? }` — the dialog locks `name` on
  * edit, so renames are intentionally not offered on the admin surface
  * (the legacy `/api/roles` PATCH retains rename support for API users).
+ * TZ-ADMIN-301: `pages` is the nav pageKey ACL (Клиенты / Снабжение / …).
  */
 export class AdminCreateRoleDto {
   @ApiProperty({ example: 'manager', description: 'Системное имя роли (строчные, a-z, 0-9, _, -)' })
@@ -51,6 +52,16 @@ export class AdminCreateRoleDto {
   @ArrayUnique()
   @IsString({ each: true })
   permissions!: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Page ACL — visible nav pageKeys (counterparties, supply, …)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  pages?: string[];
 }
 
 export class AdminUpdateRoleDto {
@@ -72,4 +83,14 @@ export class AdminUpdateRoleDto {
   @ArrayUnique()
   @IsString({ each: true })
   permissions?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Page ACL — visible nav pageKeys (counterparties, supply, …)',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  pages?: string[];
 }

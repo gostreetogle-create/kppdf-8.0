@@ -65,6 +65,8 @@ export interface ClientRole {
   label: string;
   description?: string;
   permissions: string[];
+  /** TZ-ADMIN-301 / ACCESS-301: nav pageKey ACL. */
+  pages: string[];
   isSystem: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -79,6 +81,7 @@ export function toClientRole(doc: Record<string, unknown>): ClientRole {
     permissions: Array.isArray(doc.permissions)
       ? (doc.permissions as unknown[]).map(String)
       : [],
+    pages: Array.isArray(doc.pages) ? (doc.pages as unknown[]).map(String) : [],
     isSystem: Boolean(doc.isSystem ?? false),
     createdAt: doc.createdAt ? new Date(doc.createdAt as string).toISOString() : undefined,
     updatedAt: doc.updatedAt ? new Date(doc.updatedAt as string).toISOString() : undefined,

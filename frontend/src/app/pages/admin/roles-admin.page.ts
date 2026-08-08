@@ -35,21 +35,15 @@ import {
   type RoleFormData,
   type RoleFormResult,
 } from './role-form-dialog.component';
-import { permissionsSummary, roleLabelRu } from './permission-labels.ru';
+import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-labels.ru';
 
 /**
  * TZ-256.B — `roles-admin.page` (full CRUD surface).
+ * TZ-ADMIN-301 — system roles show RU badge + read-only view; custom
+ * roles edit pages[] (nav pageKey ACL) + permissions.
  *
- * Create / edit / delete with confirmation dialogs, toast feedback,
- * and refresh after every successful mutation. System roles
- * (`isSystem: true`) are rendered read-only — edit/delete controls
- * are hidden and the backend additionally refuses mutations via
- * `SystemRoleGuard` (403 `SYSTEM_ROLE_FROZEN` / `SYSTEM_ROLE_ESCALATION`),
- * surfaced as the user-visible message «Системные роли доступны только
- * для чтения».
- *
- * All HTTP goes through `silent-*` helpers — the observables never
- * error, so RxJS never logs noise for expected 4xx responses.
+ * System roles (`isSystem: true`) are frozen by design —
+ * `SystemRoleGuard` returns 403 `SYSTEM_ROLE_FROZEN` / `SYSTEM_ROLE_ESCALATION`.
  */
 type ClientRole = AdminRole;
 const PAGE_SIZE = 50;
@@ -60,7 +54,13 @@ const PAGE_SIZE = 50;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
-    <app-pi-group-workspace [toc]="toc" tocActiveId="roles" [chips]="chips" activeId="">
+    <app-pi-group-workspace
+      pathLabel="Администрирование"
+      [toc]="toc"
+      tocActiveId="roles"
+      [chips]="chips"
+      activeId=""
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
@@ -126,7 +126,23 @@ const PAGE_SIZE = 50;
               />
             </div>
           } @else {
-            <span class="text-xs text-muted-foreground">read-only</span>
+            <div class="flex items-center justify-end gap-2">
+              <span
+                class="text-xs text-muted-foreground whitespace-nowrap"
+                data-test="roles-admin-system-badge"
+              >
+                {{ copy.systemBadge }}
+              </span>
+              <app-pi-button
+                variant="ghost"
+                size="sm"
+                type="button"
+                (click)="onView(r)"
+                data-test="roles-admin-view"
+              >
+                {{ copy.viewLabel }}
+              </app-pi-button>
+            </div>
           }
         </ng-template>
       </app-pi-table>
@@ -136,6 +152,7 @@ const PAGE_SIZE = 50;
 export class RolesAdminPage implements OnInit {
   protected readonly toc = ADMIN_TOC_CHIPS;
   protected readonly chips = ADMIN_ENTITY_SECTION_CHIPS;
+  protected readonly copy = ROLE_FORM_COPY;
 
   private readonly http = inject(HttpClient);
   private readonly rolesService = inject(PiRolesService);
@@ -171,7 +188,7 @@ export class RolesAdminPage implements OnInit {
     {
       key: 'isSystem',
       label: 'Тип',
-      format: (r) => (r.isSystem ? 'system' : 'custom'),
+      format: (r) => (r.isSystem ? ROLE_FORM_COPY.systemBadge : ROLE_FORM_COPY.customBadge),
     },
   ];
 
@@ -234,7 +251,7 @@ export class RolesAdminPage implements OnInit {
     });
   }
 
-  // ── Edit ──
+  // ── Edit custom ──
   protected onEdit(r: ClientRole): void {
     const ref = this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
       data: {
@@ -245,6 +262,7 @@ export class RolesAdminPage implements OnInit {
           label: r.label,
           description: r.description,
           permissions: r.permissions,
+          pages: r.pages ?? [],
         },
         submit: (result) => this.updateRole(r.id, result),
       } satisfies RoleFormData,
@@ -254,8 +272,25 @@ export class RolesAdminPage implements OnInit {
       this.toast.success('Роль обновлена');
       void this.refresh();
     });
-    // TZ-257.B whitelist: `updateRole` sends only label/description/permissions;
-    // the locked role name is never sent to the strict backend DTO.
+  }
+
+  // ── View system (read-only) ──
+  protected onView(r: ClientRole): void {
+    this.dialog.open<RoleFormResult>(RoleFormDialogComponent, {
+      data: {
+        mode: 'view',
+        role: {
+          id: r.id,
+          name: r.name,
+          label: r.label,
+          description: r.description,
+          permissions: r.permissions,
+          pages: r.pages ?? [],
+          isSystem: true,
+        },
+      } satisfies RoleFormData,
+      parentDestroyRef: this.destroyRef,
+    });
   }
 
   // ── Delete ──
@@ -280,10 +315,6 @@ export class RolesAdminPage implements OnInit {
     });
   }
 
-  /**
-   * Shared mutation runner: toast on success, refresh the table, and
-   * map system-role 403 codes to the user-visible message.
-   */
   private createRole(result: RoleFormResult): Observable<SilentResult<ClientRole>> {
     return silentPost<ClientRole>(this.http, `${this.baseUrl}/admin/roles`, result);
   }
@@ -293,6 +324,7 @@ export class RolesAdminPage implements OnInit {
       label: result.label,
       description: result.description,
       permissions: result.permissions,
+      pages: result.pages,
     };
     return silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${id}`, payload);
   }

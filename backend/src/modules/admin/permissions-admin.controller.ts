@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { PERMISSIONS } from '../../common/seed/permissions.constants';
+import { PAGE_KEYS, PERMISSIONS } from '../../common/seed/permissions.constants';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
@@ -13,8 +13,11 @@ import { AuditAction } from '../../common/interceptors/audit.interceptor';
  * checkbox catalogue so editors pick from the real permission keys
  * instead of free-typing.
  *
+ * TZ-ADMIN-301: also returns `pages` (= PAGE_KEYS) for the nav pageKey
+ * ACL picker (Клиенты / Снабжение / …).
+ *
  * Response shape:
- *   { sections: [{ section: 'user', permissions: [{ key, action, description }] }, …] }
+ *   { sections: [...], pages: string[] }
  *
  * Gated by the global guard stack: JwtAuthGuard → PermissionsGuard
  * (`role:write`) → RolesGuard (`admin`). The full catalogue is a
@@ -32,6 +35,7 @@ export class PermissionsAdminController {
       section: string;
       permissions: Array<{ key: string; action: string; description: string }>;
     }>;
+    pages: string[];
   } {
     const bySection = new Map<
       string,
@@ -46,6 +50,6 @@ export class PermissionsAdminController {
       section,
       permissions,
     }));
-    return { sections };
+    return { sections, pages: [...PAGE_KEYS] };
   }
 }
