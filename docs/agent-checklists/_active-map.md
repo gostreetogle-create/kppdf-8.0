@@ -18,7 +18,7 @@ Deploy: NO
 - DONE: TZ-UX-FACT-301
 - IN PROGRESS: none
 - NEXT: DETAIL-301 (wire) or DEDUP-302
-- HEAD: (pending)
+- HEAD: `f20a2917`
 - Blockers: none
 - _active/: empty
 - Deploy: NO
