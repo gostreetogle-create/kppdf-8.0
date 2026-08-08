@@ -1,3 +1,13 @@
+## [2026-08-08] — TZ-UX-FORM-303 DONE: QuickCreate L photo dropzone
+
+**Исполнитель:** Buffy / agent-acfffc1331
+**Статус:** DONE on executor branch; deploy НЕ
+**Что:** Добавлен shared `app-pi-photo-dropzone` с drag/drop, picker, preview/remove и PhotosService upload. Product QuickCreate L показывает фото в секции «Дополнительно» и передаёт `photoIds` в create; новые upload IDs чистятся при cancel/destroy.
+**Gates:** FE tsc PASS; Angular development build PASS; targeted Jest 2 suites / 14 tests PASS; scoped ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-FORM-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-FORM-303-quickcreate-L-photo.lock`
+**Known:** FullEditor migration deferred because its Layer-3 file is outside the minimal AC path; module photos remain out of scope. Deploy: NO.
+
 ## [2026-08-08] — TZ-UX-FORM-302 DONE: Shared form sections for Material and QuickCreate
 
 **Исполнитель:** Buffy / agent-acfffc1331

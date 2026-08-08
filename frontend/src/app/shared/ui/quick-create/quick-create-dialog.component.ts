@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   FormControl,
   FormGroup,
@@ -40,6 +47,8 @@ import { CategoriesService, type Category } from '../../services/categories.serv
 import { controlKindFor, type QuickCreateControlKind } from './field-key-registry';
 import { colSpanClass, controlMaxClass } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
+import { PiPhotoDropzoneComponent } from '../photo';
+import { PhotosService, type Photo } from '../../services/photos.service';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -88,6 +97,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    PiPhotoDropzoneComponent,
   ],
   template: `
     <app-pi-dialog
@@ -384,6 +394,17 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                 </div>
               </app-pi-form-section>
             }
+            @if (isPhotoCapable()) {
+              <app-pi-form-section title="Дополнительно" headingId="qc-sec-photo" tone="neutral">
+                <p class="eyebrow">Фото</p>
+                <app-pi-photo-dropzone
+                  [initialPhotos]="photos()"
+                  (photosChange)="onPhotosChange($event)"
+                  (uploadedPhotoIdsChange)="onUploadedPhotoIdsChange($event)"
+                  (uploadStateChange)="onPhotoUploadState($event)"
+                />
+              </app-pi-form-section>
+            }
           </div>
         }
 
@@ -401,7 +422,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
         <app-pi-button
           variant="default"
           type="button"
-          [disabled]="loading() || !!loadError() || form.invalid || submitting()"
+          [disabled]="loading() || !!loadError() || form.invalid || submitting() || photosUploading()"
           (click)="onSubmit()"
           data-test="submit-button"
         >
@@ -411,7 +432,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
     </app-pi-dialog>
   `,
 })
-export class QuickCreateDialogComponent {
+export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly ref = inject<DialogRef<QuickCreateResult>>(PI_DIALOG_REF);
   private readonly data = inject<QuickCreateDialogData>(PI_DIALOG_DATA);
   private readonly fb = inject(NonNullableFormBuilder);
@@ -420,6 +441,7 @@ export class QuickCreateDialogComponent {
   private readonly modules = inject(ProductModulesService);
   private readonly categoriesSvc = inject(CategoriesService);
   private readonly toast = inject(PiToastService);
+  private readonly photosService = inject(PhotosService);
 
   protected readonly entity: FormProfileEntity = this.data.entity;
   protected readonly sizes = FORM_PROFILE_SIZES;
@@ -434,6 +456,12 @@ export class QuickCreateDialogComponent {
   protected readonly formError = signal<string | null>(null);
   protected readonly visibleKeys = signal<string[]>([]);
   protected readonly categories = signal<Category[]>([]);
+  protected readonly photos = signal<Photo[]>([]);
+  protected readonly uploadedPhotoIds = signal<string[]>([]);
+  protected readonly photosUploading = signal(false);
+  private submitted = false;
+
+  protected readonly isPhotoCapable = computed(() => this.entity === 'product' && this.size() === 'L');
 
   private readonly basicFieldKeys = new Set([
     'name',
@@ -571,8 +599,25 @@ export class QuickCreateDialogComponent {
     });
   }
 
+  protected onPhotosChange(photos: Photo[]): void {
+    this.photos.set(photos);
+  }
+
+  protected onUploadedPhotoIdsChange(ids: string[]): void {
+    this.uploadedPhotoIds.set(ids);
+  }
+
+  ngOnDestroy(): void {
+    if (this.submitted) return;
+    this.uploadedPhotoIds().forEach((id) => this.photosService.remove(id).subscribe());
+  }
+
+  protected onPhotoUploadState(uploading: boolean): void {
+    this.photosUploading.set(uploading);
+  }
+
   protected onSubmit(): void {
-    if (this.submitting() || this.loading() || this.loadError()) return;
+    if (this.submitting() || this.loading() || this.loadError() || this.photosUploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -584,6 +629,7 @@ export class QuickCreateDialogComponent {
       this.products.create(this.buildProductPayload()).subscribe((res) => {
         this.submitting.set(false);
         if (res.ok) {
+          this.submitted = true;
           this.toast.success('Продукт создан');
           this.ref.close(res.data ?? null);
         } else {
@@ -701,6 +747,9 @@ export class QuickCreateDialogComponent {
       payload.description = String(v['description']);
     }
     if (vis.has('notes') && v['notes']) payload.notes = String(v['notes']);
+    if (this.isPhotoCapable() && this.photos().length > 0) {
+      payload.photoIds = this.photos().map((photo) => photo._id);
+    }
 
     const hasDim =
       (vis.has('dimLength') && v['dimLength'] != null && v['dimLength'] !== '') ||

@@ -19,11 +19,14 @@ import { ProductsService } from '../../services/products.service';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
 import { CategoriesService } from '../../services/categories.service';
 import { PiToastService } from '../toast';
+import { PhotosService } from '../../services/photos.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
 import type { SilentResult } from '../../../core/silent-http';
 import { FIELD_KEY_LABEL_RU } from '../../services/form-profiles.service';
 import { FIELD_CAPACITY, spanForKey } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
+import { PiPhotoDropzoneComponent } from '../photo';
+import type { Photo } from '../../services/photos.service';
 
 describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   const success = jest.fn();
@@ -99,12 +102,22 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
         },
         { provide: PiToastService, useValue: { success, error } },
+        {
+          provide: PhotosService,
+          useValue: {
+            upload: jest.fn(),
+            remove: jest.fn().mockReturnValue(of(ok(undefined))),
+          },
+        },
         { provide: PI_DIALOG_DATA, useValue: data },
         { provide: PI_DIALOG_REF, useValue: { close, closed: () => undefined } },
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
 
@@ -235,12 +248,22 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
         },
         { provide: PiToastService, useValue: { success, error } },
+        {
+          provide: PhotosService,
+          useValue: {
+            upload: jest.fn(),
+            remove: jest.fn().mockReturnValue(of(ok(undefined))),
+          },
+        },
         { provide: PI_DIALOG_DATA, useValue: { entity: 'product' } },
         { provide: PI_DIALOG_REF, useValue: { close, closed: () => undefined } },
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
 
@@ -276,6 +299,31 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     }
   });
 
+  it('L product exposes photo dropzone and sends uploaded photo IDs on create', async () => {
+    const { component: c, fixture } = await setup({ entity: 'product', size: 'M' });
+    profiles.getOne.mockReturnValue(of(ok(productLAll)));
+    c.onSizeChange('L');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).not.toBeNull();
+    const photos: Photo[] = [
+      { _id: 'photo-1', storageUrl: '/uploads/photo-1.jpg', originalFilename: 'front.jpg' },
+    ];
+    c.onPhotosChange(photos);
+    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
+    c.onSubmit();
+    expect(products.create).toHaveBeenCalledWith(expect.objectContaining({ photoIds: ['photo-1'] }));
+  });
+
+  it('does not expose photo controls for product M', async () => {
+    const product = await setup({ entity: 'product', size: 'M' });
+    expect(product.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).toBeNull();
+  });
+
+  it('does not expose photo controls for module L', async () => {
+    const module = await setup({ entity: 'module', size: 'L' });
+    expect(module.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).toBeNull();
+  });
+
   it('shows load error when profile GET fails', async () => {
     profiles = {
       getOne: jest.fn().mockReturnValue(of(fail('Сеть недоступна'))),
@@ -292,12 +340,22 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },
         },
         { provide: PiToastService, useValue: { success, error } },
+        {
+          provide: PhotosService,
+          useValue: {
+            upload: jest.fn(),
+            remove: jest.fn().mockReturnValue(of(ok(undefined))),
+          },
+        },
         { provide: PI_DIALOG_DATA, useValue: { entity: 'product' } },
         { provide: PI_DIALOG_REF, useValue: { close, closed: () => undefined } },
       ],
     })
       .overrideComponent(QuickCreateDialogComponent, {
-        set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
+        set: {
+          imports: [PiFormSectionComponent, PiPhotoDropzoneComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
       })
       .compileComponents();
 

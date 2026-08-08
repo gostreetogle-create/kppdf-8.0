@@ -1,6 +1,6 @@
 # SESSION QUEUE — continuous executor
 
-**Updated:** 2026-08-08T09:06Z · wave **FORM-302→305**
+**Updated:** 2026-08-08T09:12Z · wave **FORM-302→305**
 **Wave file:** `docs/agent-checklists/SESSION-WAVE-2026-08-08-form-unify.md`
 
 ## DONE this session
@@ -18,7 +18,7 @@
 | ID | Status |
 |----|--------|
 | **TZ-UX-FORM-302** | DONE — shared PiFormSection + Material/QC sections |
-| **TZ-UX-FORM-303** | QC L фото |
+| **TZ-UX-FORM-303** | DONE — shared photo dropzone + product QC L photoIds |
 | **TZ-UX-FORM-304** | QC L состав (reuse BOM) |
 | **TZ-UX-FORM-305** | sweep form-dialogs (wave A required) |
 
@@ -40,12 +40,12 @@
 | legacy form→kind C | outliers |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T09:06Z
-- DONE: **TZ-UX-FORM-302** (shared PiFormSection + Material/QuickCreate sections)
+## Checkpoint 2026-08-08T09:12Z
+- DONE: **TZ-UX-FORM-302**, **TZ-UX-FORM-303**
 - IN PROGRESS: none
-- NOT DONE: FORM-303, FORM-304, FORM-305
-- NEXT: **TZ-UX-FORM-303**
+- NOT DONE: FORM-304, FORM-305
+- NEXT: **TZ-UX-FORM-304**
 - Deploy: NO
-- _active/: empty after FORM-302 archive
-- HEAD: pending FORM-302 commit
+- _active/: FORM-303 before archive; empty after closeout
+- HEAD: pending FORM-303 commit
 - Blockers: none
