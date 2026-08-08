@@ -39,11 +39,11 @@
 | legacy form→kind C | successors from dialog outliers table |
 | deploy | только «задеплой» |
 
-## Checkpoint 2026-08-08T08:42Z
-- DONE: … + UX-DIALOG-302 + **TZ-UX-307** (nav compact; spoken as 306)
+## Checkpoint 2026-08-08T08:45Z
+- DONE: … + UX-DIALOG-302 + **TZ-UX-307** (nav compact; ID ≠ people 306)
 - IN PROGRESS: none
 - NEXT: TZ-UX-302 if PO / idle / deploy command
 - Blockers: none
 - _active/: empty
 - Deploy: NO
-- HEAD: (pending commit TZ-UX-307)
+- HEAD: a1a45051 (TZ-UX-307)

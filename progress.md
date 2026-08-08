@@ -1,22 +1,12 @@
-## [2026-08-08] — TZ-UX-306 DONE: nav shortLabel + compact height
+## [2026-08-08] — TZ-UX-307 DONE: nav shortLabel + compact height
 
 **Исполнитель:** agent-3e757640b7 (self PASS → archive)
 **Статус:** DONE on main; deploy НЕ
 **Что:** header h-14 / кнопки h-10; shortLabel (Проект/Снабж./Цех/Докум./Справ.…); полный RU в aria/title; equal-width от коротких; порядок 304 сохранён.
 **Gates:** FE tsc PASS; jest app-layout.nav-order 2/2
-**Archive:** `tasks/_archive/2026-08/TZ-UX-306-nav-shorter-labels-compact-height.done.md`
-**Lock:** `.mimocode/locks/TZ-UX-306-nav-shorter-labels-compact-height.lock`
-**Known:** admin/dialogs/deploy не трогали. Deploy: NO.
-
-## [2026-08-08] — TZ-UX-307 DONE: nav shortLabel + compact height
-
-**Исполнитель:** agent-3e757640b7 (self PASS → archive)
-**Статус:** DONE on main; deploy НЕ
-**Что:** header h-14; кнопки h-10; shortLabel (Проект/Снабж./Цех/Докум./Справ.…); полный RU в aria/title; equal-width от коротких.
-**Gates:** FE tsc PASS; jest nav-order 2/2
 **Archive:** `tasks/_archive/2026-08/TZ-UX-307-nav-shorter-labels-compact-height.done.md`
 **Lock:** `.mimocode/locks/TZ-UX-307-nav-shorter-labels-compact-height.lock`
-**Known:** ID ≠ archived people TZ-UX-306. Deploy: NO.
+**Known:** PO CLAIM как «306» → канон **307** (306 = people-route). admin/dialogs/deploy не трогали. Deploy: NO.
 
 ## [2026-08-08] — TZ-UX-DIALOG-302 DONE: QuickCreate balanced + dialog canon
 
