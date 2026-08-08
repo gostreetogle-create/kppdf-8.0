@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T19:47:00Z · TZ-PRODUCTS-308 DONE
+- DONE: TZ-PRODUCTS-308 — Product FullEditor now uses «Изделие» in user-facing title/kind/toasts, presents passport fields in three responsive columns with narrow capacity controls, and removes the profile-L composition hint without changing Product/API or composition write-path.
+- IN PROGRESS: none
+- NOT DONE: TZ-PRODUCTS-309 — reuse `ProductBomPanel` inside edit FullEditor
+- NEXT: `tasks/_backlog/product-editor/TZ-PRODUCTS-309-composition-in-fulleditor.md`
+- HEAD: 62abc41b pushed: yes (`origin/main`)
+- Blockers: none for 308; `verify-status.sh` retains pre-existing 72 legacy kit-era drift outside this wave
+- _active/: empty
+- Ban: Product schema rename · second BOM write-path · ModuleMaterials · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T19:55:00Z · WIP cleared — PRODUCT-EDITOR unblocked
 - DONE: landed session WIP (product PATCH coerce, cost one-active, admin email/ACL chips) so CONFLICT KEYS for 308 are clean
 - IN PROGRESS: none
