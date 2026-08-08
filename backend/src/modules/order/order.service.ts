@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
 import { Order, OrderDocument, OrderItem } from './order.schema';
 import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
+import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { CounterService } from '../counter/counter.service';
@@ -10,6 +11,13 @@ import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
 import { SessionRunner } from '../../common/db/session-runner';
 import { SiteService } from '../site/site.service';
+import { OrganizationService } from '../organization/organization.service';
+
+/** TZ-ORDERS-306: JWT-актор — нужен, чтобы понять, чья фирма выставляет КП. */
+export interface OrderActor {
+  organizationId?: string | null;
+  role?: string;
+}
 
 @Injectable()
 export class OrderService {
@@ -25,6 +33,9 @@ export class OrderService {
     private readonly shipmentService: ShipmentService,
     private readonly sessionRunner: SessionRunner,
     private readonly sites: SiteService,
+    @InjectModel(Quotation.name)
+    private readonly quotationModel: Model<QuotationDocument>,
+    private readonly organizations: OrganizationService,
   ) {}
 
   private mapItems(
@@ -139,6 +150,76 @@ export class OrderService {
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Order ${id} not found`);
     return doc;
+  }
+
+  /**
+   * TZ-ORDERS-306 — КП-заглушка для прямого заказа.
+   *
+   * Прямой заказ (создан без КП) не имеет `quotationId`, поэтому документы и
+   * печать, которым нужна ссылка на КП, для него недостижимы. Метод создаёт
+   * черновик КП из позиций заказа и связывает его в обе стороны:
+   * `Order.quotationId` ↔ `Quotation.sourceOrderId`.
+   *
+   * Идемпотентен: если у заказа уже есть КП (настоящее или заглушка), метод
+   * возвращает его с `created: false` и ничего не создаёт — повторное нажатие
+   * кнопки не должно плодить КП. Статус остаётся `draft`, а не `converted`:
+   * никакой конвертации не было, менеджер ещё не считал цены.
+   */
+  async ensureStubProposal(
+    id: string,
+    user?: OrderActor,
+  ): Promise<{ quotation: QuotationDocument; created: boolean }> {
+    const order = await this.findByIdRaw(id);
+
+    if (order.quotationId) {
+      const existing = await this.quotationModel.findById(order.quotationId).exec();
+      if (existing) return { quotation: existing, created: false };
+      this.logger.warn(
+        `Order ${order.number}: quotationId ${order.quotationId.toString()} ссылается на удалённое КП — создаю заглушку заново`,
+      );
+    }
+
+    if (order.status === 'cancelled') {
+      throw new BadRequestException('Отменённому заказу КП не нужно.');
+    }
+    if (order.items.length === 0) {
+      throw new BadRequestException(
+        'В заказе нет позиций — КП будет пустым. Добавьте изделия и повторите.',
+      );
+    }
+
+    // Кому выставляем: организация из JWT → «наша фирма» → единственная (PARTY-301).
+    const organization = await this.organizations.findCurrent(user);
+    const number = await this.counter.next('Quotation', 'QTN');
+    const items = order.items.map((item, index) => ({
+      productId: item.productId,
+      productName: item.productName,
+      productSku: item.productSku,
+      quantity: item.quantity,
+      unit: item.unit,
+      unitPrice: item.unitPrice ?? 0,
+      markupPercent: 0,
+      total: (item.quantity ?? 0) * (item.unitPrice ?? 0),
+      sortOrder: index,
+    }));
+    const quotation = await this.quotationModel.create({
+      number,
+      organizationId: organization._id,
+      counterpartyId: order.counterpartyId,
+      title: `Черновик КП к заказу №${order.number}`,
+      date: new Date(),
+      status: 'draft',
+      isStub: true,
+      sourceOrderId: order._id,
+      total: items.reduce((sum, i) => sum + i.total, 0),
+      notes: `Заглушка: заказ №${order.number} оформлен без КП. Проверьте цены до отправки клиенту.`,
+      items,
+    });
+
+    order.quotationId = quotation._id;
+    await order.save();
+    this.logger.log(`Order ${order.number}: создана КП-заглушка ${quotation.number}`);
+    return { quotation, created: true };
   }
 
   async setLineReady(

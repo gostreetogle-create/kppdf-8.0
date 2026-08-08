@@ -6,6 +6,7 @@ import { OrderStatus } from './order.schema';
 const COUNTERPARTY = new Types.ObjectId().toString();
 const SITE = new Types.ObjectId().toString();
 const PRODUCT = new Types.ObjectId().toString();
+const ORGANIZATION = new Types.ObjectId().toString();
 
 /** Shape of a stored OrderItem — unitPrice may be absent (strip-commerce). */
 interface MockOrderItem {
@@ -27,6 +28,7 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     _id: new Types.ObjectId(),
     number: 'ORD-0001',
     counterpartyId: new Types.ObjectId(COUNTERPARTY),
+    quotationId: undefined as Types.ObjectId | undefined,
     date: new Date(),
     status: 'draft',
     total: 0,
@@ -79,6 +81,17 @@ function createService(overrides: Record<string, unknown> = {}) {
     assertBelongsTo: jest.fn().mockResolvedValue({ _id: SITE }),
     ensureDefaultForCounterparty: jest.fn(),
   };
+  // TZ-ORDERS-306: stub КП пишется в quotations, а «наша фирма» приходит из
+  // OrganizationService.findCurrent — те же зависимости, что у сервиса.
+  const quotationModel = {
+    findById: jest.fn(),
+    create: jest.fn().mockImplementation((payload: Record<string, unknown>) =>
+      Promise.resolve({ _id: new Types.ObjectId(), ...payload }),
+    ),
+  };
+  const organizations = {
+    findCurrent: jest.fn().mockResolvedValue({ _id: new Types.ObjectId(ORGANIZATION) }),
+  };
   const dependencies = {
     model,
     counter,
@@ -86,6 +99,8 @@ function createService(overrides: Record<string, unknown> = {}) {
     shipmentService,
     sessionRunner,
     sites,
+    quotationModel,
+    organizations,
     ...overrides,
   };
   return {
@@ -97,6 +112,8 @@ function createService(overrides: Record<string, unknown> = {}) {
       dependencies.shipmentService as never,
       dependencies.sessionRunner as never,
       dependencies.sites as never,
+      dependencies.quotationModel as never,
+      dependencies.organizations as never,
     ),
     model: dependencies.model as jest.Mock & {
       find: jest.Mock;
@@ -106,6 +123,8 @@ function createService(overrides: Record<string, unknown> = {}) {
     counter: dependencies.counter as { next: jest.Mock },
     sessionRunner: dependencies.sessionRunner as { run: jest.Mock },
     sites: dependencies.sites as { assertBelongsTo: jest.Mock },
+    quotationModel: dependencies.quotationModel as { findById: jest.Mock; create: jest.Mock },
+    organizations: dependencies.organizations as { findCurrent: jest.Mock },
   };
 }
 
@@ -323,6 +342,119 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.items[0].readyAt).toBeInstanceOf(Date);
       expect(doc.status).toBe('confirmed');
       expect(result).toBe(doc);
+    });
+  });
+
+  describe('stub proposal (TZ-ORDERS-306)', () => {
+    function orderWithLines(overrides: Record<string, unknown> = {}) {
+      return orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            productName: 'Стенд напольный',
+            productSku: 'SKU-100',
+            quantity: 2,
+            unit: 'шт',
+            unitPrice: 5000,
+            total: 10000,
+          },
+        ],
+        ...overrides,
+      });
+    }
+
+    it('creates a draft stub КП from the order lines and links both sides', async () => {
+      const { service, model, quotationModel, organizations, counter } = createService();
+      const doc = orderWithLines();
+      model.findById.mockReturnValue(mockQuery(doc));
+      counter.next.mockResolvedValue('QTN-0007');
+
+      const { quotation, created } = await service.ensureStubProposal(doc._id.toString(), {
+        organizationId: ORGANIZATION,
+      });
+
+      expect(created).toBe(true);
+      expect(organizations.findCurrent).toHaveBeenCalledWith({ organizationId: ORGANIZATION });
+      const [payload] = quotationModel.create.mock.calls[0] as [Record<string, unknown>];
+      expect(payload).toMatchObject({
+        number: 'QTN-0007',
+        status: 'draft',
+        isStub: true,
+        sourceOrderId: doc._id,
+        counterpartyId: doc.counterpartyId,
+        total: 10000,
+      });
+      expect((payload.items as unknown[])[0]).toMatchObject({
+        productSku: 'SKU-100',
+        quantity: 2,
+        unitPrice: 5000,
+        total: 10000,
+      });
+      // Обратная связь: заказ теперь знает своё КП.
+      expect(doc.quotationId).toBe(quotation._id);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('IS IDEMPOTENT: an order that already has a КП returns it without creating another', async () => {
+      const { service, model, quotationModel } = createService();
+      const existing = { _id: new Types.ObjectId(), number: 'QTN-0001' };
+      const doc = orderWithLines({ quotationId: existing._id });
+      model.findById.mockReturnValue(mockQuery(doc));
+      quotationModel.findById.mockReturnValue(mockQuery(existing));
+
+      const result = await service.ensureStubProposal(doc._id.toString());
+
+      expect(result).toEqual({ quotation: existing, created: false });
+      expect(quotationModel.create).not.toHaveBeenCalled();
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('recreates the stub when quotationId points at a deleted КП', async () => {
+      const { service, model, quotationModel } = createService();
+      const doc = orderWithLines({ quotationId: new Types.ObjectId() });
+      model.findById.mockReturnValue(mockQuery(doc));
+      quotationModel.findById.mockReturnValue(mockQuery(null));
+
+      const { created } = await service.ensureStubProposal(doc._id.toString());
+
+      expect(created).toBe(true);
+      expect(quotationModel.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses an order with no lines — an empty КП is useless for a document', async () => {
+      const { service, model, quotationModel } = createService();
+      const doc = orderDoc({ items: [] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.ensureStubProposal(doc._id.toString())).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(quotationModel.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a cancelled order', async () => {
+      const { service, model, quotationModel } = createService();
+      const doc = orderWithLines({ status: 'cancelled' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.ensureStubProposal(doc._id.toString())).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(quotationModel.create).not.toHaveBeenCalled();
+    });
+
+    it('propagates the «наша фирма не настроена» error instead of guessing an organization', async () => {
+      const { service, model, quotationModel, organizations } = createService();
+      const doc = orderWithLines();
+      model.findById.mockReturnValue(mockQuery(doc));
+      organizations.findCurrent.mockRejectedValue(
+        new NotFoundException('Наша организация не настроена'),
+      );
+
+      await expect(service.ensureStubProposal(doc._id.toString())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(quotationModel.create).not.toHaveBeenCalled();
     });
   });
 

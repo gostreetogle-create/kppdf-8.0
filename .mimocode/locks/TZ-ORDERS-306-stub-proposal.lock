@@ -1,0 +1,22 @@
+# Lock file
+Locked as of 2026-08-08 — TZ-ORDERS-306: stub КП из прямого заказа.
+
+Owner: agent-3e757640b7 (Cursor executor)
+Protected files:
+- backend/src/modules/order/order.service.ts (ensureStubProposal)
+- backend/src/modules/order/order.controller.ts (POST :id/stub-proposal)
+- backend/src/modules/order/order.module.ts
+- backend/src/modules/quotation/quotation.schema.ts (isStub, sourceOrderId)
+- frontend/src/app/pages/orders/order-detail.page.ts (факт «КП»)
+
+Invariants a successor TZ must not silently break:
+- `ensureStubProposal` stays idempotent: an order with a КП returns it, never creates a second.
+- Stub status stays `draft` + `isStub: true`; `converted` means a real conversion happened.
+- Link stays bidirectional: Order.quotationId ↔ Quotation.sourceOrderId.
+- Organization comes from OrganizationService.findCurrent — never guessed.
+- Quotation model is registered inside OrderModule (QuotationModule imports OrderModule;
+  the reverse module import would be a cycle).
+- Refusals stay explicit: cancelled order / order without lines → 400 with a Russian message.
+
+Unlock: only via orchestrator approval (binding КП to builder documents is a separate TZ).
+Deploy: NO

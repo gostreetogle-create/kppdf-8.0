@@ -104,6 +104,29 @@ type PopulatedOwner =
             [value]="formatOrderDate(o.date) || '—'"
             [mono]="true"
           />
+          <app-pi-fact-card label="КП" [value]="proposalLine()" data-test="order-proposal-fact">
+            <span actions>
+              @if (proposalId()) {
+                <a
+                  [routerLink]="['/commercial/proposals']"
+                  class="text-xs underline underline-offset-2 hover:text-ink"
+                  data-test="order-proposal-link"
+                >
+                  Открыть КП
+                </a>
+              } @else {
+                <button
+                  type="button"
+                  class="text-xs underline underline-offset-2 hover:text-ink disabled:opacity-40"
+                  [disabled]="proposalBusy()"
+                  (click)="createStubProposal()"
+                  data-test="order-create-stub-proposal"
+                >
+                  {{ proposalBusy() ? 'Создаём…' : 'Создать черновик КП' }}
+                </button>
+              }
+            </span>
+          </app-pi-fact-card>
           <app-pi-fact-card
             label="Источник материалов"
             [value]="(o.materialsSource ?? 'own') === 'customer' ? 'Заказчика' : 'Наши'"
@@ -236,6 +259,22 @@ export class OrderDetailPage {
     return this.siteLabel(o.siteId);
   });
 
+  /** TZ-ORDERS-306: прямой заказ живёт без КП, и это нормальное состояние. */
+  protected readonly proposalBusy = signal(false);
+
+  protected readonly proposalId = computed(() => this.refId(this.proposalRef()));
+
+  protected readonly proposalLine = computed(() => {
+    const proposal = this.proposalRef();
+    if (!proposal) return 'Нет — прямой заказ';
+    if (typeof proposal === 'string') return 'Есть';
+    const number = (proposal.number ?? '').trim();
+    const label = number ? `№${number}` : 'Есть';
+    return proposal.isStub ? `${label} · черновик-заглушка` : label;
+  });
+
+  private readonly proposalRef = computed(() => this.order()?.quotationId ?? null);
+
   protected readonly lineMetaRows = computed(() => {
     const items = this.order()?.items ?? [];
     return items.map((it, index) => {
@@ -355,6 +394,31 @@ export class OrderDetailPage {
         } else {
           this.toast?.error('Не удалось сохранить источник материалов');
         }
+      });
+  }
+
+  /**
+   * TZ-ORDERS-306 — черновик КП для прямого заказа. Backend идемпотентен, но
+   * кнопка всё равно блокируется на время запроса: два клика подряд — это не
+   * два КП, а один и тот же.
+   */
+  protected createStubProposal(): void {
+    const current = this.order();
+    if (!current || this.proposalBusy()) return;
+    this.proposalBusy.set(true);
+    this.orders
+      .createStubProposal(current._id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.proposalBusy.set(false);
+        if (!res.ok) {
+          this.toast?.error(extractErrorMessage(res.error));
+          return;
+        }
+        this.toast?.success(
+          res.data.created ? 'Черновик КП создан' : 'У заказа уже есть КП — открыт существующий',
+        );
+        this.order.set({ ...current, quotationId: res.data.quotation ?? res.data.quotationId });
       });
   }
 

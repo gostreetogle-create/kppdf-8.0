@@ -80,6 +80,23 @@ describe('OrdersService', () => {
     req.flush({ _id: 'o1', number: 'ORD-001', status: 'confirmed', items: [] });
   });
 
+  it('createStubProposal() POSTs /api/orders/:id/stub-proposal (TZ-ORDERS-306)', () => {
+    svc.createStubProposal('o1').subscribe((res) => {
+      if (res.ok) {
+        expect(res.data.quotationId).toBe('qtn-1');
+        expect(res.data.created).toBe(true);
+      }
+    });
+    const req = httpMock.expectOne('http://test/api/orders/o1/stub-proposal');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({
+      quotationId: 'qtn-1',
+      created: true,
+      quotation: { _id: 'qtn-1', number: 'QTN-0007', isStub: true },
+    });
+  });
+
   it('remove() DELETEs /api/orders/:id', () => {
     svc.remove('o1').subscribe((res) => {
       if (res.ok) expect(res.data).toBeUndefined();

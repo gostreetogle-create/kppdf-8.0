@@ -1,15 +1,16 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-08T16:20:00Z · WAVE-PARTY-DOCS #1–3 DONE
-- DONE: TZ-PARTY-301 (tenant-stamp, IDOR 404, soft-delete, per-tenant INN, stub badge, `GET /organizations/current`) · TZ-PARTY-302 (Org FullEditor kind C, паспорт ИП, бейдж «наша фирма», один write-path) · TZ-PARTY-303 (CP FullEditor kind C + CRUD со страницы, роли из справочника, клиент не шлёт `organizationId`)
+## Checkpoint 2026-08-08T16:35:00Z · WAVE-PARTY-DOCS #1–4 DONE
+- DONE: TZ-PARTY-301 (tenant-stamp, IDOR 404, soft-delete, per-tenant INN, stub badge, `GET /organizations/current`) · TZ-PARTY-302 (Org FullEditor kind C, паспорт ИП, бейдж «наша фирма», один write-path) · TZ-PARTY-303 (CP FullEditor kind C + CRUD со страницы, роли из справочника, клиент не шлёт `organizationId`) · TZ-ORDERS-306 (`POST /orders/:id/stub-proposal`, idempotent draft КП `isStub`, факт «КП» на карточке заказа)
 - IN PROGRESS: none
-- NOT DONE: #4 ORDERS-306 → #5 ASSETS-301 → #6 ASSETS-302 → #7 DESKTOP-SOT-301; INN-301 **PARKED**
-- NEXT: TZ-ORDERS-306 (`tasks/_backlog/party-docs/TZ-ORDERS-306-stub-commercial.md`)
-- HEAD: post TZ-PARTY-303 commit on `main`
+- NOT DONE: #5 ASSETS-301 → #6 ASSETS-302 → #7 DESKTOP-SOT-301; INN-301 **PARKED**
+- NEXT: TZ-ORG-ASSETS-301 (`tasks/_backlog/party-docs/TZ-ORG-ASSETS-301-typed-vault.md`)
+- HEAD: post TZ-ORDERS-306 commit on `main`
 - Blockers: none. Team Room claim unavailable (registry syncs only `tasks/*.md`). `verify-status.sh` FAIL — 72 legacy kit-era `.txt` TZ (TZ-71…126) не отражены в `OrchestratorKit/STATUS.md`, предсуществующий дрейф, не из этой волны
 - _active/: empty
-- Archive: `tasks/_archive/2026-08/TZ-PARTY-301.done.md` · `TZ-PARTY-302.done.md` · `TZ-PARTY-303.done.md`
-- Ban: `desktop/mcp-runtime/**` (до DESKTOP-SOT-301) · claim INN-301 · deploy
+- Foreign WIP в worktree (НЕ коммитить): `desktop/mcp-runtime/**` (до DESKTOP-SOT-301) · `.gitignore` + `.husky/pre-commit` + `scripts/pre-commit-secrets-check.mjs` (чей-то secrets-hook, появился по ходу сессии)
+- Archive: `tasks/_archive/2026-08/TZ-PARTY-301.done.md` · `TZ-PARTY-302.done.md` · `TZ-PARTY-303.done.md` · `TZ-ORDERS-306.done.md`
+- Ban: claim INN-301 · deploy
 - Deploy: NO
 
 ## Checkpoint 2026-08-08 · TZD-30 DONE

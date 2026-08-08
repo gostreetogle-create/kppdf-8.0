@@ -1,3 +1,37 @@
+## [2026-08-08] — TZ-ORDERS-306 DONE: КП-заглушка из прямого заказа
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #4)
+**Статус:** DONE; deploy НЕ
+**Что:** Прямой заказ создаётся без КП, поэтому у него не было `quotationId` — и всё, что
+просит ссылку на КП, для такого заказа было недостижимо. Добавлен
+`POST /orders/:id/stub-proposal` → `OrderService.ensureStubProposal()`: черновик КП из позиций
+заказа, `status: 'draft'`, `isStub: true`, `sourceOrderId` = заказ, связь двусторонняя
+(`Order.quotationId` ↔ `Quotation.sourceOrderId`). Статус `converted` не используем: никакой
+конвертации не было и цены никто не считал. Флаг `isStub` нужен, чтобы заглушка не выглядела в
+списке КП как настоящее посчитанное предложение. Идемпотентность: у заказа с КП метод
+возвращает существующее с `created: false` — два клика ≠ два КП; висячий `quotationId`
+(КП удалили) пересоздаётся с warn в лог. Отказы явные и по-русски: отменённый заказ и заказ
+без позиций (пустое КП бесполезно для документа). Организацию («кто выставляет») берём через
+`OrganizationService.findCurrent` — JWT → `isOurCompany` → единственная (PARTY-301), а не
+угадываем, иначе КП уехало бы от чужой фирмы. На карточке заказа — факт «КП»: «Нет — прямой
+заказ» + кнопка «Создать черновик КП», либо «№QTN-… · черновик-заглушка» + ссылка.
+**Затронуто:** `backend/src/modules/order/order.service.ts` (+ spec),
+`order.controller.ts`, `order.module.ts`, `backend/src/modules/quotation/quotation.schema.ts`
+(+`isStub`, +`sourceOrderId`), `backend/test/e2e/orders.e2e-spec.ts`,
+`frontend/src/app/pages/orders/order-detail.page.ts` (+ spec), `orders.service.ts` (+ spec),
+`docs/pages/orders.page.md`, checklist, lock.
+**Gates:** BE tsc в зоне чисто; BE unit 71/71 (order 18); BE e2e orders 7/7 (новый кейс: два
+вызова → один `quotationId`, заказ ссылается на КП); FE tsc + development build PASS;
+FE pages/orders 21/21; targeted ESLint 0 errors; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-306.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-306-stub-proposal.lock`
+**Расширение CONFLICT KEYS:** `quotation.schema.ts` (2 поля), `order.module.ts`, e2e и unit
+spec заказа. В `_active/` параллельных TZ нет — конфликта не было.
+**Известные ограничения:** `BuildDocumentDto` по-прежнему без `quotationId` — заглушка делает
+КП достижимым, но привязка КП к builder-документам это отдельное TZ; список КП пока не
+фильтрует заглушки (флаг есть, UI-фильтра нет); supply/line-ready не тронуты; у Order нет
+`organizationId`, tenant по-прежнему косвенный через контрагента. deploy NO.
+
 ## [2026-08-08] — TZ-PARTY-303 DONE: Counterparty FullEditor + CRUD со страницы
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #3)

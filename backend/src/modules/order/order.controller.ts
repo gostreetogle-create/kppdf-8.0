@@ -63,6 +63,26 @@ export class OrderController {
     return this.service.create(dto);
   }
 
+  @Post(':id/stub-proposal')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'stub_proposal', entityType: 'Order' })
+  @ApiOperation({
+    summary: 'Создать черновик КП (заглушку) для прямого заказа',
+    description:
+      'Идемпотентно: если у заказа уже есть КП, возвращает его с created=false. ' +
+      'Организацию берём из JWT → «наша фирма» → единственная (TZ-PARTY-301).',
+  })
+  @ApiResponse({ status: 201, description: 'КП-заглушка создана или уже существовала' })
+  @ApiResponse({ status: 400, description: 'Заказ отменён или без позиций' })
+  @ApiResponse({ status: 404, description: 'Заказ не найден / «наша фирма» не настроена' })
+  async createStubProposal(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
+    const { quotation, created } = await this.service.ensureStubProposal(
+      id,
+      user ? { organizationId: user.organizationId, role: user.role } : undefined,
+    );
+    return { quotationId: quotation._id.toString(), created, quotation };
+  }
+
   @Patch(':id/items/:lineIndex/ready')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'line_ready', entityType: 'Order', idParam: 'id' })

@@ -24,6 +24,7 @@
 | POST | `/api/counterparties/quick` | Quick-create: name+phone+address → counterparty+site |
 | GET | `/api/users?limit=100` | Список пользователей для «Ответственный» на линии |
 | GET | `/api/products/:id/tree?maxDepth=` | Live BOM линии (каталог) |
+| POST | `/api/orders/:id/stub-proposal` | Черновик КП для прямого заказа; идемпотентно (TZ-ORDERS-306) |
 | DELETE | `/api/orders/:id` | Удаление (soft delete) |
 
 Ответ GET list: `Order[]` (flat array, НЕ пагинированный envelope)
@@ -39,7 +40,7 @@
 
 | Сервис | Методы |
 |--------|--------|
-| `OrdersService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `OrdersService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `setLineReady(...)`, `createStubProposal(id)`, `remove(id)` |
 | `CounterpartyService` | `list(params)`, `quickCreateParty({name, phone?, address})` |
 | `SiteService` | `listByCounterparty(id)`, CRUD |
 | `ProductModulesService` | `getProductTree(id, maxDepth)` — live children на карточке |
@@ -63,6 +64,26 @@
 - Empty: «В заказе нет изделий»; 404 каталога — warn на узле, без падения.
 - **Не** показывать unitPrice / прайс КП в дереве (rails D4).
 - Компонент: `order-detail.page.ts` + reuse `app-composition-tree` (не форк).
+
+## КП-заглушка для прямого заказа (TZ-ORDERS-306)
+
+Прямой заказ создаётся без КП, поэтому у него нет `quotationId` — и всё, что просит ссылку
+на КП, для такого заказа недостижимо. На карточке заказа появился факт **«КП»**:
+
+- нет КП → «Нет — прямой заказ» + действие **«Создать черновик КП»**;
+- есть КП → «№QTN-…» (+ «черновик-заглушка», если `isStub`) и ссылка на КП, без кнопки.
+
+`POST /orders/:id/stub-proposal`:
+
+- **идемпотентен** — если КП уже есть (настоящее или заглушка), возвращает его с
+  `created: false` и ничего не создаёт; два клика ≠ два КП;
+- статус КП = `draft`, `isStub: true`, `sourceOrderId` = заказ; статус `converted` не
+  используется, потому что конвертации не было и цены никто не считал;
+- связь двусторонняя: `Order.quotationId` ↔ `Quotation.sourceOrderId`;
+- организация («кто выставляет») берётся из JWT → `isOurCompany` → единственная организация
+  (та же логика, что `GET /organizations/current`, TZ-PARTY-301); если не настроено — 404 с
+  просьбой отметить «нашу фирму», а не молчаливый выбор случайной;
+- отказ с понятным текстом: заказ отменён или в заказе нет позиций (пустое КП бесполезно).
 
 ## Форма заказа (TZ-ORDERS-303)
 
@@ -90,6 +111,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | TZ-ORDERS-301 | Strip commerce → order lines |
 | TZ-ORDERS-302 | Detail + live composition-tree |
 | TZ-ORDERS-303 | siteId + quick-create + line owner/shipDate |
+| TZ-ORDERS-306 | КП-заглушка из прямого заказа (`POST /orders/:id/stub-proposal`) |
 
 ## Особенности
 
@@ -100,4 +122,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-08 (TZ-ORDERS-303)._
+_Обновлено: 2026-08-08 (TZ-ORDERS-306)._

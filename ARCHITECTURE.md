@@ -514,6 +514,26 @@ migration; no mega-collection; legacy Proposal/Quotation merge untouched.
   `<input type="date" class="pi-input">` (как на остальных страницах).
 - Файлы (логотип/печать/фото) сюда не входят — типизированное хранилище `TZ-ORG-ASSETS-301`.
 
+### Stub КП для прямого заказа (TZ-ORDERS-306, 2026-08-08)
+
+`Order.quotationId` заполнялся только на пути КП → заказ (`convertToOrder`), поэтому прямой
+заказ жил без КП, и всё, что просит ссылку на КП, для него было недостижимо.
+
+- **Endpoint:** `POST /orders/:id/stub-proposal` → `OrderService.ensureStubProposal()`.
+- **Идемпотентность:** заказ с КП возвращает существующее (`created: false`); висячий
+  `quotationId` (КП удалили) пересоздаётся с warn. Кнопка не может наплодить КП.
+- **Статус:** `draft` + `isStub: true`, **не** `converted` — конвертации не было. `isStub`
+  отделяет заглушку от настоящего посчитанного КП в списках и печати.
+- **Связь двусторонняя:** `Order.quotationId` ↔ `Quotation.sourceOrderId`.
+- **Организация:** `OrganizationService.findCurrent` (JWT → `isOurCompany` → единственная,
+  см. Party hygiene) — не угадываем, иначе КП уедет от чужой фирмы.
+- **Отказы явные:** отменённый заказ и заказ без позиций → 400 с русским текстом.
+- **Модульная развязка:** модель `Quotation` регистрируется прямо в `OrderModule`, потому что
+  `QuotationModule` сам импортирует `OrderModule` (convert-to-order) — обратный импорт дал бы
+  цикл. `@nestjs/mongoose` переиспользует уже созданную модель по имени.
+- **Ограничение:** `BuildDocumentDto` по-прежнему принимает `orderId`/`contractId`, но не
+  `quotationId` — привязка КП к builder-документам это отдельное TZ.
+
 ---
 
 ## Frontend UI Kit (`frontend/src/app/shared/ui/` — current)

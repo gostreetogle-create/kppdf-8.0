@@ -156,6 +156,18 @@ export class Quotation {
 
   @Prop()
   convertedOrderId?: string;
+
+  /**
+   * TZ-ORDERS-306: КП-заглушка, созданная из прямого заказа (без цен менеджера).
+   * Флаг нужен, чтобы такой черновик не выглядел в списке как настоящее КП,
+   * которое кто-то посчитал и отправил клиенту.
+   */
+  @Prop({ default: false, index: true })
+  isStub!: boolean;
+
+  /** Заказ, из которого выросла заглушка (обратная связь к `Order.quotationId`). */
+  @Prop({ type: Types.ObjectId, ref: 'Order', index: true, sparse: true })
+  sourceOrderId?: Types.ObjectId;
 }
 
 export const QuotationSchema = SchemaFactory.createForClass(Quotation);

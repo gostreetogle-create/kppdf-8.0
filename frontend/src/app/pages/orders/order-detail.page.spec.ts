@@ -60,13 +60,25 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
 
   const findById = jest.fn();
   const getProductTree = jest.fn();
+  const createStubProposal = jest.fn();
 
   beforeEach(async () => {
     paramMap$.next(convertToParamMap({ id: 'ord-1' }));
     findById.mockReset();
     getProductTree.mockReset();
+    createStubProposal.mockReset();
     findById.mockReturnValue(of({ ok: true, data: order }));
     getProductTree.mockReturnValue(of({ ok: true, data: productTree }));
+    createStubProposal.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          quotationId: 'qtn-1',
+          created: true,
+          quotation: { _id: 'qtn-1', number: 'QTN-0007', isStub: true },
+        },
+      }),
+    );
 
     await TestBed.configureTestingModule({
       providers: [
@@ -74,7 +86,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: '/api' },
         { provide: ActivatedRoute, useValue: { paramMap: paramMap$.asObservable() } },
-        { provide: OrdersService, useValue: { findById } },
+        { provide: OrdersService, useValue: { findById, createStubProposal } },
         { provide: ProductModulesService, useValue: { getProductTree } },
       ],
     })
@@ -125,6 +137,55 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
 
     expect(fixture.componentInstance['hasLines']()).toBe(false);
     expect(fixture.componentInstance['lineRoots']().length).toBe(0);
+  });
+
+  describe('stub КП (TZ-ORDERS-306)', () => {
+    async function render() {
+      const fixture = TestBed.createComponent(OrderDetailPage);
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('states plainly that a direct order has no КП and offers to create a draft', async () => {
+      const fixture = await render();
+
+      expect(fixture.componentInstance['proposalLine']()).toBe('Нет — прямой заказ');
+      expect(
+        fixture.nativeElement.querySelector('[data-test="order-create-stub-proposal"]'),
+      ).toBeTruthy();
+    });
+
+    it('creates the stub and shows the КП number afterwards', async () => {
+      const fixture = await render();
+      fixture.componentInstance['createStubProposal']();
+      fixture.detectChanges();
+
+      expect(createStubProposal).toHaveBeenCalledWith('ord-1');
+      expect(fixture.componentInstance['proposalId']()).toBe('qtn-1');
+      expect(fixture.componentInstance['proposalLine']()).toContain('QTN-0007');
+      expect(fixture.componentInstance['proposalLine']()).toContain('заглушка');
+      expect(
+        fixture.nativeElement.querySelector('[data-test="order-create-stub-proposal"]'),
+      ).toBeNull();
+    });
+
+    it('offers no create action when the order already has a КП', async () => {
+      findById.mockReturnValue(
+        of({
+          ok: true,
+          data: { ...order, quotationId: { _id: 'qtn-9', number: 'QTN-0001' } },
+        }),
+      );
+      const fixture = await render();
+
+      expect(fixture.componentInstance['proposalLine']()).toBe('№QTN-0001');
+      expect(
+        fixture.nativeElement.querySelector('[data-test="order-create-stub-proposal"]'),
+      ).toBeNull();
+      expect(createStubProposal).not.toHaveBeenCalled();
+    });
   });
 
   it('warns when catalog product is missing', async () => {

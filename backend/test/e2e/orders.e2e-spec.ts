@@ -33,7 +33,14 @@ describe('Orders (e2e)', () => {
       'storageitems',
       'reservations',
       'shipments',
+      'quotations',
+      'organizations',
     ]);
+    // TZ-ORDERS-306: КП выставляет «наша фирма» — без неё stub создать нельзя.
+    await request(app.getHttpServer())
+      .post('/api/organizations')
+      .set(authHeader(token))
+      .send({ name: 'Наша фирма', inn: '7710000022', isOurCompany: true });
     const cp = await request(app.getHttpServer())
       .post('/api/counterparties')
       .set(authHeader(token))
@@ -136,6 +143,35 @@ describe('Orders (e2e)', () => {
       .set(authHeader(token));
     expect([200, 201]).toContain(cancel.status);
     expect(cancel.body.status).toBe('cancelled');
+  });
+
+  it('POST /orders/:id/stub-proposal — creates a draft КП once and stays idempotent', async () => {
+    const order = await request(app.getHttpServer())
+      .post('/api/orders')
+      .set(authHeader(token))
+      .send(orderBody({ items: [{ productId, quantity: 4, unitPrice: 50 }] }));
+    const orderId = order.body._id;
+    expect(order.body.quotationId).toBeUndefined();
+
+    const first = await request(app.getHttpServer())
+      .post(`/api/orders/${orderId}/stub-proposal`)
+      .set(authHeader(token));
+    expect([200, 201]).toContain(first.status);
+    expect(first.body.created).toBe(true);
+    expect(first.body.quotationId).toBeDefined();
+    expect(first.body.quotation).toMatchObject({ status: 'draft', isStub: true, total: 200 });
+
+    const second = await request(app.getHttpServer())
+      .post(`/api/orders/${orderId}/stub-proposal`)
+      .set(authHeader(token));
+    expect([200, 201]).toContain(second.status);
+    expect(second.body.created).toBe(false);
+    expect(second.body.quotationId).toBe(first.body.quotationId);
+
+    const reloaded = await request(app.getHttpServer())
+      .get(`/api/orders/${orderId}`)
+      .set(authHeader(token));
+    expect(reloaded.body.quotationId._id).toBe(first.body.quotationId);
   });
 
   it('POST /orders/:id/ship — creates Shipment', async () => {

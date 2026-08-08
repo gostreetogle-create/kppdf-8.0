@@ -32,6 +32,16 @@ export interface OrderItem {
   readyByUserId?: string | { _id: string; displayName?: string; username?: string };
 }
 
+/** TZ-ORDERS-306: populated КП заказа (настоящее или заглушка). */
+export interface OrderProposalRef {
+  _id: string;
+  number?: string;
+  status?: string;
+  /** Заглушка, созданная из прямого заказа — цены ещё не считали. */
+  isStub?: boolean;
+  total?: number;
+}
+
 export interface Order {
   _id: string;
   number: string;
@@ -45,7 +55,11 @@ export interface Order {
   counterpartyId?: string | { _id: string; name?: string };
   /** TZ-ORDERS-303: площадка/объект. */
   siteId?: string | { _id: string; name?: string; address?: string };
-  quotationId?: string;
+  /**
+   * КП заказа. `GET /orders/:id` отдаёт его populated, список — тоже, поэтому
+   * потребитель обязан принимать и строку, и объект (как counterpartyId).
+   */
+  quotationId?: string | OrderProposalRef;
   contractId?: string;
   date?: string;
   plannedDate?: string;
@@ -110,6 +124,22 @@ export class OrdersService {
 
   update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}`, payload);
+  }
+
+  /**
+   * TZ-ORDERS-306: черновик КП для прямого заказа. Идемпотентно — если КП уже
+   * есть, backend вернёт его с `created: false`.
+   */
+  createStubProposal(
+    id: string,
+  ): Observable<
+    SilentResult<{ quotationId: string; created: boolean; quotation: OrderProposalRef }>
+  > {
+    return silentPost<{ quotationId: string; created: boolean; quotation: OrderProposalRef }>(
+      this.http,
+      `${this.baseUrl}/orders/${id}/stub-proposal`,
+      {},
+    );
   }
 
   remove(id: string): Observable<SilentResult<void>> {
