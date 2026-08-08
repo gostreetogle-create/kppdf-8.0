@@ -15,7 +15,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       [attr.data-test]="dataTest() || 'pi-fact-stack'"
     >
       @if (title()) {
-        <p [id]="headingId() || null" class="eyebrow text-ink" data-test="pi-fact-stack-title">
+        <p [id]="headingId() || null" class="pi-label text-ink" data-test="pi-fact-stack-title">
           {{ title() }}
         </p>
       }

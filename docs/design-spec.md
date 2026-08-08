@@ -61,11 +61,17 @@ typography:
     display: Hanken Grotesk
     body: Inter
     mono: JetBrains Mono
-  # ERP type scale (5 roles; step ≈1.09–1.17 — not φ=1.618)
+  # ERP type scale (TYPE-301 + TYPE-303 label step)
   micro:
     fontFamily: JetBrains Mono
     fontSize: 11px
     utility: '.eyebrow / .pi-tech-label / --text-micro'
+    note: 'compact chrome only — nav, kind badges'
+  label:
+    fontFamily: Inter
+    fontSize: 13px
+    utility: '.pi-label / --text-label'
+    note: 'table th, fact labels, passport field names'
   meta:
     fontFamily: Inter
     fontSize: 12px
@@ -124,11 +130,12 @@ The palette is strictly limited to four functional pillars to ensure visual hier
 
 Shipped stacks (`frontend/src/styles.css`): **Hanken Grotesk** (display), **Inter** (body), **JetBrains Mono** (meta / eyebrows / tech labels).
 
-ERP type scale (TZ-UI-TYPE-301 — short ladder, not φ=1.618):
+ERP type scale (TZ-UI-TYPE-301 + **TYPE-303 label** — short ladder, not φ=1.618):
 
 | Role | Size | Utility / token |
 |------|------|-----------------|
-| micro | 11px | `--text-micro`, `.eyebrow`, `.pi-tech-label` |
+| micro | 11px | `--text-micro`, `.eyebrow`, `.pi-tech-label` — compact chrome only |
+| **label** | **13px** | `--text-label`, `.pi-label` — table th, fact, passport names |
 | meta | 12px | `text-xs` |
 | body | 14px | `text-sm`, `.pi-input` |
 | title | 16–18px | `text-base` → `text-lg`, `--text-title` |

@@ -1,4 +1,19 @@
 
+# SESSION QUEUE
+
+**Updated:** 2026-08-08 · TZ-UI-TYPE-303 DONE
+
+## Checkpoint 2026-08-08T11:25:00Z
+- DONE: TZ-UI-TYPE-303 — pi-label 13px for info labels (th/fact/passport)
+- IN PROGRESS: none (this agent)
+- NOT DONE: peer FACT-303 / PRODUCTS-307 / SELECT if queued
+- NEXT: idle for this agent unless PO queues more
+- HEAD: post TYPE-303 commit
+- Blockers: none
+- _active/: FACT-303 peer only (orders); TYPE-303 removed
+- Ban: supply/** · desktop/** · PRODUCTS-307 · orders peer — not touched (except disclosure)
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T14:20:00Z
 - DONE: TZ-SALES-302 — immutable quotation versions
 - IN PROGRESS: none
@@ -7,10 +22,6 @@
 - HEAD: uncommitted SALES-302 WIP pending explicit commit+push
 - Blockers: none for SALES-302; unrelated WIP remains outside scope
 - _active/: empty for SALES-302; other active markers are not touched
-
-# SESSION QUEUE
-
-**Updated:** 2026-08-08 · WAVE-UI-TYPE-COLOR COMPLETE
 
 ## Checkpoint 2026-08-08T11:28:00Z
 - DONE: TZ-UI-TYPE-301 · TZ-UI-TYPE-302 · TZ-UI-COLOR-301 (wave complete)

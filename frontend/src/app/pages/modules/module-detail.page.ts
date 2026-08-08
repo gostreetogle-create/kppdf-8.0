@@ -276,8 +276,8 @@ interface ModuleCostPreview {
                 <table class="w-full text-sm min-w-[280px]" data-test="module-work-types">
                   <thead class="hairline-b">
                     <tr>
-                      <th class="pi-cell eyebrow text-left">Вид работы</th>
-                      <th class="pi-cell-numeric eyebrow w-24">Норма, ч</th>
+                      <th class="pi-cell pi-label text-muted-foreground text-left">Вид работы</th>
+                      <th class="pi-cell-numeric pi-label text-muted-foreground w-24">Норма, ч</th>
                     </tr>
                   </thead>
                   <tbody>

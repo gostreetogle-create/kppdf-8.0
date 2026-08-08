@@ -24,7 +24,7 @@ const VARIANT_CLASS: Record<PiFactCardVariant, string> = {
       [attr.data-variant]="variant()"
     >
       @if (label()) {
-        <p class="eyebrow text-muted-foreground" data-test="pi-fact-card-label">
+        <p class="pi-label text-muted-foreground" data-test="pi-fact-card-label">
           {{ label() }}
         </p>
       }

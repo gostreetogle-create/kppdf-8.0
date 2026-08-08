@@ -13,6 +13,12 @@
 - Moved the project passport to `docs/project-passport.md`; `TZ-CLEANUP-R2` is archived as DONE after all cleanup acceptance criteria and verification gates.
 - `tasks/` is intended to contain only real active `TZ-*.md` files. Roadmap prose elsewhere is historical context, not an active task claim.
 
+## [2026-08-08] — TZ-UI-TYPE-303 DONE: content label 13px
+**Статус:** DONE on main; deploy НЕ
+**Что:** pi-label for informational th/fact/passport; eyebrow stays compact chrome.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-303.done.md`
+**Gates:** FE tsc PASS; jest 29/29
+
 ## [2026-08-08] — TZ-UI-COLOR-301 DONE: contrast light+dark P0/P1
 **Статус:** DONE on main; deploy НЕ
 **Что:** badge/table/gantt contrast sweep; WAVE-UI-TYPE-COLOR complete.

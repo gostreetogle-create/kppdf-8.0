@@ -83,7 +83,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
             }
             @for (col of columns(); track col.key) {
               <th
-                class="eyebrow py-3 px-3 select-none"
+                class="pi-label text-muted-foreground py-3 px-3 select-none"
                 [class.text-left]="(col.align ?? 'left') === 'left'"
                 [class.text-right]="col.align === 'right'"
                 [class.text-center]="col.align === 'center'"
@@ -98,7 +98,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
               >
                 <span>{{ col.label }}</span>
                 @if (col.sortable) {
-                  <span class="ml-1 font-mono text-[10px] text-muted-foreground" aria-hidden="true">
+                  <span class="ml-1 font-mono text-xs text-muted-foreground" aria-hidden="true">
                     {{ sortIcon(col.key) }}
                   </span>
                 }
@@ -106,7 +106,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
             }
             @if (rowActions()) {
               <th
-                class="eyebrow py-3 px-3 text-right w-24"
+                class="pi-label text-muted-foreground py-3 px-3 text-right w-24"
                 [class.sticky]="true"
                 [class.right-0]="true"
                 [class.z-10]="true"

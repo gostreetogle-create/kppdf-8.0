@@ -6,6 +6,14 @@
 **Lock:** `.mimocode/locks/TZ-SALES-302-kp-send-versions.lock`
 **Known:** email/PDF outbox remains later scope.
 
+## [2026-08-08] — TZ-UI-TYPE-303 DONE: content label 13px (pi-label)
+
+**Что:** `--text-label` + `.pi-label`; table th / fact / passport names off eyebrow; sort glyph text-xs; eyebrow = compact chrome only.
+**Gates:** FE tsc PASS; jest fact-card+pi-table+module-detail 29/29.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-TYPE-303.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-TYPE-303-content-label.lock`
+**Known:** FACT-303 shared fact-card key — label class only; Adoption section kept.
+
 ## [2026-08-08] — TZ-UI-COLOR-301 DONE: contrast light+dark P0/P1
 
 **Что:** badge ink+gold-soft / success / paper-2; table selected fill; gantt zebra paper-2; surface dark; docs sync.

@@ -249,16 +249,18 @@
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
   /*
-   * ERP type scale (TZ-UI-TYPE-301) — short 5-role ladder, step ≈1.09–1.17.
+   * ERP type scale (TZ-UI-TYPE-301 + TYPE-303) — short ladder, step ≈1.09–1.17.
    * NOT φ=1.618 (too poster-like for workshop UI). Ban new text-[9px]/[10px]
    * on ERP pages; display-erp-max = 20px (text-xl). See audit 2026-08-08.
-   *   micro  11px  --text-micro / .eyebrow / .pi-tech-label
+   *   micro  11px  --text-micro / .eyebrow / .pi-tech-label  (compact chrome only)
+   *   label  13px  --text-label / .pi-label  (table th, fact, passport names)
    *   meta   12px  text-xs
    *   body   14px  text-sm / .pi-input
    *   title  16–18px  text-base → text-lg (--text-title = 18px)
    *   display-erp-max  20px  text-xl
    */
   --text-micro: 0.6875rem; /* 11px */
+  --text-label: 0.8125rem; /* 13px — between micro and body (TYPE-303) */
   --text-title: 1.125rem; /* 18px */
 
   /* === Shape (Design Reference — TZ-96) === */
@@ -533,10 +535,19 @@
 
 @utility eyebrow {
   font-family: var(--font-mono);
-  font-size: var(--text-micro); /* ERP type scale micro = 11px */
+  font-size: var(--text-micro); /* ERP type scale micro = 11px — compact chrome only */
   text-transform: uppercase;
   letter-spacing: 0.08em; /* TZ-210.B: updated from 0.05em per Logomock */
   color: var(--color-muted-foreground);
+}
+
+/* Informational labels (TYPE-303) — not uppercase mono; between micro and body */
+@utility pi-label {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: inherit;
 }
 
 @utility hairline {
