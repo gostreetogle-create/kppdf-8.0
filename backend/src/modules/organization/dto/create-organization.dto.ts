@@ -124,4 +124,7 @@ export class CreateOrganizationDto {
 
   @ApiPropertyOptional({ description: 'TZ-PARTY-301 — «наша фирма» для документов' })
   @IsOptional() @IsBoolean() isOurCompany?: boolean;
+
+  @ApiPropertyOptional({ description: 'TZ-ORG-ASSETS-301 — юридический адрес для шапки документов' })
+  @IsOptional() @IsString() @Length(0, 512) legalAddress?: string;
 }

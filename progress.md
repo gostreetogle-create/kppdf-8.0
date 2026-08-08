@@ -1,3 +1,49 @@
+## [2026-08-08] — TZ-ORG-ASSETS-301 DONE: типизированное хранилище logo/seal/signature
+
+**Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #5)
+**Статус:** DONE; deploy НЕ
+**Что:** У организации был безымянный `photoIds[]`, который не отвечал на вопрос «что
+печатать»: документу нужен именно логотип, именно печать и именно подпись. Добавлены слоты по
+роли — `Organization.assets[]` (`role` ∈ `logo|seal|signature`, `photoId`, `storageUrl`,
+mime/размер, `uploadedAt`/`uploadedBy`), `PUT /organizations/:id/assets/:role` (multipart
+`file`) и `DELETE` того же адреса. Слот один на роль: повторная загрузка **заменяет** файл и
+удаляет прежнее `Photo` (иначе диск обрастал бы мусором на каждой замене), истории версий нет
+— она никому не нужна и путала бы «какая печать актуальна». Пустой слот на DELETE отвечает 404,
+а не молчаливым успехом. **Печать меняет только admin** — и на upload, и на remove; менеджер
+слот и превью видит, но вместо кнопок читает «Печать меняет только администратор» (отказ живёт
+в сервисе, UI лишь не обманывает). Multer-конфиг вынесен в
+`photos/image-upload.options.ts` и переиспользован — лимит 10 МБ и список mime не разъезжаются
+с `POST /photos/upload`, а регистрация `Photo` даёт готовую уборку файла. Вместе с хранилищем
+добавлен `legalAddress` (без адреса шапка документа неполная — дешевле сейчас, чем отдельной
+миграцией). На фронте — секция «Файлы для документов» в Org FullEditor: три слота с превью,
+«Загрузить/Заменить/Снять». Файлы пишутся сразу (в JSON-payload файл не положишь), поэтому
+«Отмена» после работы с файлами всё равно возвращает обновлённую организацию — иначе список
+показывал бы старое.
+**Затронуто:** `backend/src/modules/organization/organization.schema.ts`,
+`organization.service.ts` (+ spec), `organization.controller.ts`, `organization.module.ts`,
+`dto/create-organization.dto.ts`, `backend/src/modules/photos/image-upload.options.ts` (новый),
+`photos.module.ts`, `backend/test/e2e/organization-assets.e2e-spec.ts` (новый),
+`frontend/src/app/shared/services/organizations.service.ts`,
+`frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts` (+ spec),
+`docs/pages/organizations.page.md`, `ARCHITECTURE.md`, checklist, lock.
+**Gates:** BE `tsc --noEmit` чисто; BE unit organization 19/19; BE e2e
+`organization-assets` 6/6 (замена не трогает соседний слот, seal manager → 403 / admin → 200,
+повторный DELETE → 404, чужая организация → 404); FE `npm run typecheck` + `npm run build`
+PASS; FE `pages/organizations` 20/20; targeted ESLint 0 errors; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORG-ASSETS-301.done.md`
+**Lock:** `.mimocode/locks/TZ-ORG-ASSETS-301-typed-vault.lock`
+**Грабли/находки:** (1) `optimisticLockPlugin` вручную поднимает `__v`, поэтому любой
+`doc.save()` с изменённым массивом падает `VersionError` — слоты пишутся `findOneAndUpdate`
+(`$set`/`$pull`). Плагин чужой, чинить его — отдельная TZ. (2) Aggregation-pipeline update
+Mongoose кастует по схеме и `$concatArrays` тихо превращался в пустой массив — запись уходила
+«успешно» в никуда; поймано e2e-тестом, а не типами. (3) `catalog-314.archive.spec.ts` не
+компилировался после TZ-COST-302 (6-й аргумент `ProductModuleService`) — весь `tsc` был
+красный, поправлено двумя строками мока, чтобы гейт снова что-то значил.
+**Известные ограничения:** привязка слотов к печати PDF — `TZ-ORG-ASSETS-302`; SVG принимается
+как и раньше (общий mime-список), санитизации нет; `photoIds[]` у организации остался как
+legacy-галерея; unit-фейл `text-block-category.service.spec.ts` (`resolveDefault` → system
+«Общее») был до этой TZ и относится к зоне TZ-DOC-315 — не правил. deploy NO.
+
 ## [2026-08-08] — TZ-ORDERS-306 DONE: КП-заглушка из прямого заказа
 
 **Исполнитель:** agent-3e757640b7 (Cursor executor, WAVE-PARTY-DOCS #4)

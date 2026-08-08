@@ -7,6 +7,7 @@ import {
   silentGet,
   silentPatch,
   silentPost,
+  silentWrap,
   SilentResult,
 } from '../../core/silent-http';
 
@@ -20,6 +21,27 @@ export const ORG_TYPE_LABELS: Record<OrgType, string> = {
   manufacturer: 'Производитель',
   partner: 'Партнёр',
 };
+
+/** TZ-ORG-ASSETS-301: слоты файлов организации. */
+export const ORG_ASSET_ROLES = ['logo', 'seal', 'signature'] as const;
+export type OrgAssetRole = (typeof ORG_ASSET_ROLES)[number];
+
+export const ORG_ASSET_LABELS: Record<OrgAssetRole, string> = {
+  logo: 'Логотип',
+  seal: 'Печать',
+  signature: 'Подпись',
+};
+
+export interface OrganizationAsset {
+  role: OrgAssetRole;
+  photoId: string;
+  storageUrl: string;
+  originalFilename?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  uploadedAt?: string;
+  uploadedBy?: string;
+}
 
 export interface Organization {
   _id: string;
@@ -46,6 +68,10 @@ export interface Organization {
   registrationDate?: string;
   partyTypes?: string[];
   photoIds?: string[];
+  /** TZ-ORG-ASSETS-301: логотип / печать / подпись, максимум один на роль. */
+  assets?: OrganizationAsset[];
+  /** TZ-ORG-ASSETS-301: юридический адрес для шапки документов. */
+  legalAddress?: string;
   contactPersonId?: string;
   /** TZ-PARTY-301: «наша фирма» — issuer side of documents. */
   isOurCompany?: boolean;
@@ -108,5 +134,24 @@ export class OrganizationsService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/organizations/${id}`);
+  }
+
+  /**
+   * TZ-ORG-ASSETS-301: загрузить файл в слот. PUT — слот один, повторная
+   * загрузка заменяет содержимое. Печать доступна только админу (403 иначе).
+   */
+  putAsset(id: string, role: OrgAssetRole, file: File): Observable<SilentResult<Organization>> {
+    const body = new FormData();
+    body.append('file', file, file.name);
+    return silentWrap(
+      this.http.put<Organization>(`${this.baseUrl}/organizations/${id}/assets/${role}`, body),
+    );
+  }
+
+  removeAsset(id: string, role: OrgAssetRole): Observable<SilentResult<Organization>> {
+    return silentDelete<Organization>(
+      this.http,
+      `${this.baseUrl}/organizations/${id}/assets/${role}`,
+    );
   }
 }

@@ -1,5 +1,20 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-08T16:55:00Z · WAVE-PARTY-DOCS #1–5 DONE
+- DONE: + TZ-ORG-ASSETS-301 (слоты `logo|seal|signature` на организации, замена вытесняет старый файл, печать admin-only и на upload и на remove, общий multer-конфиг с `/photos/upload`, `legalAddress`, секция «Файлы для документов» в Org FullEditor)
+- IN PROGRESS: none
+- NOT DONE: #6 ASSETS-302 (print bind) → #7 DESKTOP-SOT-301; INN-301 **PARKED**
+- NEXT: TZ-ORG-ASSETS-302 (`tasks/_backlog/party-docs/TZ-ORG-ASSETS-302-print-bind.md`)
+- HEAD: post TZ-ORG-ASSETS-301 commit on `main`
+- Blockers: none. Дрейф в чужих зонах (не правил): unit-фейл `text-block-category.service.spec.ts` (`resolveDefault` → system «Общее», зона TZ-DOC-315); `verify-status.sh` FAIL по 72 legacy kit-era `.txt` TZ
+- Правил чужое минимально: `catalog-314.archive.spec.ts` (2 строки мока) — после TZ-COST-302 весь `backend tsc` был красный, гейт ничего не значил
+- _active/: empty
+- Foreign WIP в worktree (НЕ коммитить): `desktop/mcp-runtime/**` · `.gitignore` + `.husky/pre-commit` + `scripts/pre-commit-secrets-check.mjs`
+- Внимание: в репо есть `git stash` чужих агентов (stash@{0} = `wip-materials-peer-before-doc-chips`) — не трогать stash вообще
+- Archive: + `tasks/_archive/2026-08/TZ-ORG-ASSETS-301.done.md`
+- Ban: claim INN-301 · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T16:35:00Z · WAVE-PARTY-DOCS #1–4 DONE
 - DONE: TZ-PARTY-301 (tenant-stamp, IDOR 404, soft-delete, per-tenant INN, stub badge, `GET /organizations/current`) · TZ-PARTY-302 (Org FullEditor kind C, паспорт ИП, бейдж «наша фирма», один write-path) · TZ-PARTY-303 (CP FullEditor kind C + CRUD со страницы, роли из справочника, клиент не шлёт `organizationId`) · TZ-ORDERS-306 (`POST /orders/:id/stub-proposal`, idempotent draft КП `isStub`, факт «КП» на карточке заказа)
 - IN PROGRESS: none

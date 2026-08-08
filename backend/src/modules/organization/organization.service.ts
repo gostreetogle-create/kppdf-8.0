@@ -1,14 +1,33 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { Organization, OrganizationDocument } from './organization.schema';
+import {
+  ORGANIZATION_ASSET_ROLES,
+  Organization,
+  OrganizationDocument,
+  type OrganizationAssetRole,
+} from './organization.schema';
+import { PhotosService } from '../photos/photos.service';
 
 /** Tenant context taken from the JWT, never from the request body. */
 export interface OrganizationActor {
   organizationId?: string | null;
   role?: string;
+}
+
+/** TZ-ORG-ASSETS-301: уже загруженный на диск файл (multer) + кто его принёс. */
+export interface OrganizationAssetUpload {
+  filename: string;
+  originalname?: string;
+  mimetype?: string;
+  size?: number;
 }
 
 @Injectable()
@@ -17,6 +36,7 @@ export class OrganizationService {
 
   constructor(
     @InjectModel(Organization.name) private readonly model: Model<OrganizationDocument>,
+    private readonly photos: PhotosService,
   ) {}
 
   async create(dto: CreateOrganizationDto): Promise<OrganizationDocument> {
@@ -101,5 +121,110 @@ export class OrganizationService {
     await this.model
       .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
       .exec();
+  }
+
+  /**
+   * TZ-ORG-ASSETS-301 — положить файл в типизированный слот организации.
+   *
+   * Один активный файл на роль: новый вытесняет старый, а старое Photo
+   * удаляется, чтобы хранилище не обрастало мусором при каждой замене.
+   * Печать (`seal`) меняет только admin — подпись и печать это то, чем
+   * подписывают документы, а не картинка в карточке.
+   */
+  async putAsset(
+    id: string,
+    role: OrganizationAssetRole,
+    file: OrganizationAssetUpload,
+    user?: OrganizationActor,
+    uploadedBy?: string,
+  ): Promise<OrganizationDocument> {
+    this.assertAssetRole(role);
+    this.assertMayReplaceSeal(role, user);
+    const doc = await this.findById(id, user);
+
+    const photo = await this.photos.create({
+      storageUrl: `/uploads/${file.filename}`,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+      variant: 'original',
+      alt: `${role} · ${doc.name}`,
+    });
+
+    const previous = doc.assets.find((asset) => asset.role === role);
+    const asset = {
+      role,
+      photoId: photo._id,
+      storageUrl: photo.storageUrl,
+      originalFilename: photo.originalFilename,
+      mimeType: photo.mimeType,
+      sizeBytes: photo.sizeBytes,
+      uploadedAt: new Date(),
+      uploadedBy:
+        uploadedBy && Types.ObjectId.isValid(uploadedBy)
+          ? new Types.ObjectId(uploadedBy)
+          : undefined,
+    };
+
+    // Пишем через updateOne, а не doc.save(): optimisticLockPlugin вручную
+    // поднимает `__v`, и любая запись массива через save() падает
+    // VersionError-ом (плагин не мой — правит его отдельная TZ).
+    const next = [...doc.assets.filter((a) => a.role !== role), asset];
+    const saved = await this.model
+      .findOneAndUpdate({ _id: doc._id, deletedAt: null }, { $set: { assets: next } }, { new: true })
+      .exec();
+    if (!saved) throw new NotFoundException(`Organization ${id} not found`);
+    if (previous) await this.discardPhoto(previous.photoId, role);
+    return saved;
+  }
+
+  /** TZ-ORG-ASSETS-301: снять файл со слота (печать — тоже только admin). */
+  async removeAsset(
+    id: string,
+    role: OrganizationAssetRole,
+    user?: OrganizationActor,
+  ): Promise<OrganizationDocument> {
+    this.assertAssetRole(role);
+    this.assertMayReplaceSeal(role, user);
+    const doc = await this.findById(id, user);
+    const previous = doc.assets.find((asset) => asset.role === role);
+    if (!previous) {
+      throw new NotFoundException(`У организации нет файла в слоте «${role}».`);
+    }
+    const saved = await this.model
+      .findOneAndUpdate(
+        { _id: doc._id, deletedAt: null },
+        { $pull: { assets: { role } } },
+        { new: true },
+      )
+      .exec();
+    if (!saved) throw new NotFoundException(`Organization ${id} not found`);
+    await this.discardPhoto(previous.photoId, role);
+    return saved;
+  }
+
+  private assertAssetRole(role: string): void {
+    if (!ORGANIZATION_ASSET_ROLES.includes(role as OrganizationAssetRole)) {
+      throw new NotFoundException(
+        `Неизвестный слот «${role}». Доступны: ${ORGANIZATION_ASSET_ROLES.join(', ')}.`,
+      );
+    }
+  }
+
+  private assertMayReplaceSeal(role: OrganizationAssetRole, user?: OrganizationActor): void {
+    if (role === 'seal' && user?.role !== 'admin') {
+      throw new ForbiddenException('Печать меняет только администратор.');
+    }
+  }
+
+  /** Замена вытеснила файл — удаляем, но не роняем запрос из-за уборки. */
+  private async discardPhoto(photoId: Types.ObjectId, role: OrganizationAssetRole): Promise<void> {
+    try {
+      await this.photos.remove(photoId.toString());
+    } catch (err) {
+      this.logger.warn(
+        `Не удалось удалить прежний файл слота «${role}» (${photoId.toString()}): ${(err as Error).message}`,
+      );
+    }
   }
 }

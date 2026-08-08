@@ -42,7 +42,7 @@ describe('TZ-CATALOG-314 archive contracts', () => {
     const moduleDoc = { _id: id, deletedAt: null };
     const updateOne = jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }) });
     const model = { findById: jest.fn().mockReturnValue(execChain(moduleDoc)), updateOne, db: archiveDb() };
-    const service = new ProductModuleService(model as never, {} as never, {} as never, undefined, {} as never);
+    const service = new ProductModuleService(model as never, {} as never, {} as never, undefined, {} as never, {} as never);
     await service.remove(id.toString());
     expect(updateOne).toHaveBeenCalledWith({ _id: id, deletedAt: null }, { $set: { deletedAt: expect.any(Date) } });
     expect(moduleDoc.deletedAt).toBeNull();
@@ -51,7 +51,7 @@ describe('TZ-CATALOG-314 archive contracts', () => {
   it('blocks ProductModule archive when a BOM references the module', async () => {
     const id = new Types.ObjectId();
     const model = { findById: jest.fn().mockReturnValue(execChain({ _id: id, deletedAt: null })), updateOne: jest.fn(), db: archiveDb({ boms: { _id: new Types.ObjectId() } }) };
-    const service = new ProductModuleService(model as never, {} as never, {} as never, undefined, {} as never);
+    const service = new ProductModuleService(model as never, {} as never, {} as never, undefined, {} as never, {} as never);
     await expect(service.remove(id.toString())).rejects.toBeInstanceOf(ConflictException);
     expect(model.updateOne).not.toHaveBeenCalled();
   });

@@ -21,6 +21,8 @@
 | POST | `/api/organizations` | Создание |
 | PATCH | `/api/organizations/:id` | Обновление |
 | DELETE | `/api/organizations/:id` | Soft delete (`deletedAt`) |
+| PUT | `/api/organizations/:id/assets/:role` | Загрузить логотип/печать/подпись (multipart `file`, TZ-ORG-ASSETS-301) |
+| DELETE | `/api/organizations/:id/assets/:role` | Снять файл со слота (TZ-ORG-ASSETS-301) |
 
 Ответ GET: `{ items: Organization[], total: number, page: number, limit: number }`
 
@@ -35,7 +37,7 @@
 
 | Сервис | Методы |
 |--------|--------|
-| `OrganizationsService` | `list(params)`, `findById(id)`, `findCurrent()`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `OrganizationsService` | `list(params)`, `findById(id)`, `findCurrent()`, `create(payload)`, `update(id, payload)`, `remove(id)`, `putAsset(id, role, file)`, `removeAsset(id, role)` |
 
 ## State (signals)
 
@@ -61,7 +63,24 @@
 - «Наша фирма» (`isOurCompany`) и «Активна» — `app-pi-switch`.
 - API работает с `forbidNonWhitelisted`, поэтому пустые поля **не** отправляются, а не
   пишутся пустыми строками; даты уходят ISO-строкой.
-- Файлы логотипа/печати — не здесь: типизированное хранилище = `TZ-ORG-ASSETS-301`.
+- Юридический адрес (`legalAddress`) — в «Реквизитах»; печатается в шапке документов
+  (TZ-ORG-ASSETS-301).
+- Файлы логотипа/печати/подписи — секция «Файлы для документов» (TZ-ORG-ASSETS-301).
+
+## Файлы для документов (TZ-ORG-ASSETS-301)
+
+Три типизированных слота — `logo` · `seal` · `signature`. Слот один на роль:
+повторная загрузка **заменяет** файл, прежняя картинка удаляется, истории версий нет.
+
+- Слоты видны только в режиме редактирования: файл привязывается к уже
+  существующей организации, поэтому при создании выводится подсказка.
+- Загрузка/снятие пишутся **сразу** (multipart PUT / DELETE), а не по «Сохранить» —
+  файл нельзя положить в JSON-payload. Поэтому «Отмена» после работы с файлами всё
+  равно возвращает обновлённую организацию, иначе список показал бы старое.
+- **Печать меняет только admin.** Менеджер видит слот и превью, но вместо кнопок —
+  строка «Печать меняет только администратор»; backend отдаёт 403 независимо от UI.
+- Загрузка идёт через общий image-pipeline (`imageUploadMulterOptions`): те же 10 МБ и
+  тот же список mime, что у `POST /photos/upload`, плюс запись `Photo` для уборки файла.
 
 ## Особенности
 
@@ -80,7 +99,8 @@
 | TZ-104.3 | Миграция на `<app-pi-table>` |
 | TZ-PARTY-301 | Tenant-scope, soft-delete, `isOurCompany`, `GET /current` |
 | TZ-PARTY-302 | FullEditor kind C: все реквизиты, паспорт ИП, бейдж «наша фирма» |
+| TZ-ORG-ASSETS-301 | Слоты logo/seal/signature (admin-only печать), `legalAddress` |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-08 (TZ-PARTY-302)._
+_Создано: 2026-07-19. Обновлено: 2026-08-08 (TZ-ORG-ASSETS-301)._

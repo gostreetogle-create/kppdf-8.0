@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,9 +9,13 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import {
   AuthenticatedUser,
@@ -20,6 +25,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
 import { OrganizationService } from './organization.service';
+import type { OrganizationAssetRole } from './organization.schema';
 
 @ApiTags('Справочники — Организации')
 @Controller('organizations')
@@ -107,5 +113,58 @@ export class OrganizationController {
   @ApiResponse({ status: 404, description: 'Organization not found' })
   remove(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     return this.service.remove(id, user);
+  }
+
+  /**
+   * TZ-ORG-ASSETS-301 — положить файл в слот `logo` / `seal` / `signature`.
+   * PUT, а не POST: слот один, повторная загрузка заменяет содержимое.
+   */
+  @Put(':id/assets/:role')
+  @Roles('admin', 'manager')
+  @UseInterceptors(FileInterceptor('file'))
+  @AuditAction({ action: 'put_asset', entityType: 'Organization', idParam: 'id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Загрузить логотип / печать / подпись организации',
+    description:
+      'Поле формы: `file`. Слот один на роль — новый файл заменяет прежний, ' +
+      'старая картинка удаляется. Печать (`seal`) меняет только admin.',
+  })
+  @ApiResponse({ status: 200, description: 'Файл записан в слот' })
+  @ApiResponse({ status: 400, description: 'Файл не передан' })
+  @ApiResponse({ status: 403, description: 'Печать меняет только администратор' })
+  @ApiResponse({ status: 404, description: 'Организация или слот не найдены' })
+  putAsset(
+    @Param('id') id: string,
+    @Param('role') role: string,
+    @UploadedFile()
+    file?: { filename: string; originalname?: string; mimetype?: string; size?: number },
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Файл не передан: поле формы должно называться «file».');
+    }
+    return this.service.putAsset(
+      id,
+      role as OrganizationAssetRole,
+      file,
+      user,
+      user?.id,
+    );
+  }
+
+  @Delete(':id/assets/:role')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'remove_asset', entityType: 'Organization', idParam: 'id' })
+  @ApiOperation({ summary: 'Снять файл со слота организации' })
+  @ApiResponse({ status: 200, description: 'Слот очищен' })
+  @ApiResponse({ status: 403, description: 'Печать меняет только администратор' })
+  @ApiResponse({ status: 404, description: 'Организация или файл в слоте не найдены' })
+  removeAsset(
+    @Param('id') id: string,
+    @Param('role') role: string,
+    @CurrentUser() user?: AuthenticatedUser,
+  ) {
+    return this.service.removeAsset(id, role as OrganizationAssetRole, user);
   }
 }

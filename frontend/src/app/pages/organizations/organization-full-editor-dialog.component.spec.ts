@@ -7,8 +7,10 @@ import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import {
   OrganizationsService,
   type Organization,
+  type OrgAssetRole,
 } from '../../shared/services/organizations.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { AuthService, type AuthUser } from '../../core/auth.service';
 
 type Editor = OrganizationFullEditorDialogComponent & {
   form: {
@@ -20,12 +22,21 @@ type Editor = OrganizationFullEditorDialogComponent & {
   onLegalTypeChange: (value: string) => void;
   isSoleProprietor: () => boolean;
   errorMessage: () => string | null;
+  assets: () => { role: OrgAssetRole; storageUrl: string }[];
+  assetLocked: (role: OrgAssetRole) => boolean;
+  onAssetPicked: (role: OrgAssetRole, event: Event) => void;
+  onAssetRemove: (role: OrgAssetRole) => void;
+  onCancel: () => void;
 };
 
 describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
   let fixture: ComponentFixture<OrganizationFullEditorDialogComponent>;
   let create: jest.Mock;
   let update: jest.Mock;
+  let putAsset: jest.Mock;
+  let removeAsset: jest.Mock;
+  let ref: DialogRef<Organization | null | undefined>;
+  let role = 'admin';
 
   const existing: Organization = {
     _id: 'org-1',
@@ -53,15 +64,30 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
   async function build(data: Organization | null) {
     create = jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'new' } }));
     update = jest.fn().mockReturnValue(of({ ok: true, data: existing }));
+    putAsset = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          ...existing,
+          assets: [{ role: 'logo', photoId: 'ph-1', storageUrl: '/uploads/new.png' }],
+        },
+      }),
+    );
+    removeAsset = jest.fn().mockReturnValue(of({ ok: true, data: { ...existing, assets: [] } }));
+    ref = dialogRef<Organization | null | undefined>();
     await TestBed.resetTestingModule()
       .configureTestingModule({
         imports: [OrganizationFullEditorDialogComponent],
         schemas: [NO_ERRORS_SCHEMA],
         providers: [
           { provide: PI_DIALOG_DATA, useValue: data },
-          { provide: PI_DIALOG_REF, useValue: dialogRef() },
-          { provide: OrganizationsService, useValue: { create, update } },
+          { provide: PI_DIALOG_REF, useValue: ref },
+          { provide: OrganizationsService, useValue: { create, update, putAsset, removeAsset } },
           { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+          {
+            provide: AuthService,
+            useValue: { user: signal<AuthUser | null>({ role } as AuthUser) },
+          },
         ],
       })
       .compileComponents();
@@ -102,7 +128,7 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
       vatRate: 20,
       isOurCompany: true,
     });
-    expect(value.registrationDate).toBe('2019-04-05');
+    expect(value['registrationDate']).toBe('2019-04-05');
   });
 
   it('saves bank, signer and «наша фирма» through PATCH', async () => {
@@ -120,7 +146,7 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
       isOurCompany: true,
       paymentTermDays: 14,
     });
-    expect(payload.registrationDate).toBe('2019-04-05T00:00:00.000Z');
+    expect(payload['registrationDate']).toBe('2019-04-05T00:00:00.000Z');
   });
 
   it('shows passport fields only for ИП', async () => {
@@ -141,8 +167,8 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
     editor.onSubmit();
 
     const [, payload] = update.mock.calls[0] as [string, Record<string, unknown>];
-    expect(payload.passportSeries).toBeUndefined();
-    expect(payload.passportNumber).toBeUndefined();
+    expect(payload['passportSeries']).toBeUndefined();
+    expect(payload['passportNumber']).toBeUndefined();
   });
 
   it('omits empty requisites instead of writing blank strings', async () => {
@@ -166,5 +192,96 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
 
     expect(create).not.toHaveBeenCalled();
     expect(editor.errorMessage()).toContain('ИНН');
+  });
+
+  it('saves legalAddress for the document header', async () => {
+    const editor = await build(existing);
+    editor.form.patchValue({ legalAddress: '350000, Краснодар, Красная 1' });
+    editor.onSubmit();
+
+    const [, payload] = update.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload['legalAddress']).toBe('350000, Краснодар, Красная 1');
+  });
+
+  describe('asset slots (TZ-ORG-ASSETS-301)', () => {
+    afterEach(() => {
+      role = 'admin';
+    });
+
+    it('hides the slots until the organization exists', async () => {
+      await build(null);
+      expect(fixture.nativeElement.querySelector('[data-test="org-assets"]')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-test="org-assets-locked"]')).toBeTruthy();
+    });
+
+    it('renders a slot per role with the stored preview', async () => {
+      await build({
+        ...existing,
+        assets: [{ role: 'logo', photoId: 'ph-1', storageUrl: '/uploads/logo.png' }],
+      });
+
+      expect(fixture.nativeElement.querySelector('[data-test="org-asset-logo"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-test="org-asset-seal"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-test="org-asset-signature"]')).toBeTruthy();
+      const preview = fixture.nativeElement.querySelector(
+        '[data-test="org-asset-preview-logo"]',
+      ) as HTMLImageElement;
+      expect(preview.getAttribute('src')).toBe('/uploads/logo.png');
+    });
+
+    it('uploads the picked file and refreshes the slot', async () => {
+      const editor = await build(existing);
+      const file = new File(['x'], 'logo.png', { type: 'image/png' });
+      const input = document.createElement('input');
+      Object.defineProperty(input, 'files', { value: [file] });
+
+      editor.onAssetPicked('logo', { target: input } as unknown as Event);
+
+      expect(putAsset).toHaveBeenCalledWith('org-1', 'logo', file);
+      expect(editor.assets()).toEqual([
+        { role: 'logo', photoId: 'ph-1', storageUrl: '/uploads/new.png' },
+      ]);
+    });
+
+    it('clears the slot through removeAsset', async () => {
+      const editor = await build({
+        ...existing,
+        assets: [{ role: 'logo', photoId: 'ph-1', storageUrl: '/uploads/logo.png' }],
+      });
+
+      editor.onAssetRemove('logo');
+
+      expect(removeAsset).toHaveBeenCalledWith('org-1', 'logo');
+      expect(editor.assets()).toEqual([]);
+    });
+
+    it('locks the seal slot for a non-admin but keeps it visible', async () => {
+      role = 'manager';
+      const editor = await build(existing);
+
+      expect(editor.assetLocked('seal')).toBe(true);
+      expect(editor.assetLocked('logo')).toBe(false);
+      expect(
+        fixture.nativeElement.querySelector('[data-test="org-asset-locked-seal"]'),
+      ).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('[data-test="org-asset-file-seal"]')).toBeNull();
+    });
+
+    it('returns the organization on cancel when files were changed', async () => {
+      const editor = await build(existing);
+      const file = new File(['x'], 'logo.png', { type: 'image/png' });
+      const input = document.createElement('input');
+      Object.defineProperty(input, 'files', { value: [file] });
+      editor.onAssetPicked('logo', { target: input } as unknown as Event);
+
+      editor.onCancel();
+
+      expect(ref.close).toHaveBeenCalledWith(
+        expect.objectContaining({
+          _id: 'org-1',
+          assets: [{ role: 'logo', photoId: 'ph-1', storageUrl: '/uploads/new.png' }],
+        }),
+      );
+    });
   });
 });

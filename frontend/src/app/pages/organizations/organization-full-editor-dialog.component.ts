@@ -17,10 +17,15 @@ import { extractErrorMessage } from '../../core/silent-http';
 import {
   Organization,
   OrganizationsService,
+  ORG_ASSET_LABELS,
+  ORG_ASSET_ROLES,
   ORG_TYPES,
   ORG_TYPE_LABELS,
+  type OrganizationAsset,
+  type OrgAssetRole,
   type OrgType,
 } from '../../shared/services/organizations.service';
+import { AuthService } from '../../core/auth.service';
 
 type Result = Organization | null | undefined;
 
@@ -54,7 +59,9 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
  * Passport fields appear only for `legalType = ip` — for a company they are
  * noise, and an ИП has no ОГРН/КПП of its own.
  *
- * Typed photo/logo/seal vault is TZ-ORG-ASSETS-301, not this dialog.
+ * TZ-ORG-ASSETS-301: логотип / печать / подпись живут в отдельной секции и
+ * пишутся сразу (multipart PUT), а не по «Сохранить» — файл нельзя положить в
+ * JSON-payload, а слот привязан к уже существующей организации.
  */
 @Component({
   selector: 'app-organization-full-editor-dialog',
@@ -228,6 +235,19 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
                 />
               </app-pi-form-field>
 
+              <app-pi-form-field
+                class="sm:col-span-2"
+                label="Юридический адрес"
+                htmlFor="org-legalAddress"
+                hint="Печатается в шапке договоров и счетов."
+              >
+                <app-pi-input
+                  id="org-legalAddress"
+                  formControlName="legalAddress"
+                  placeholder="350000, г. Краснодар, ул. Красная, 1, офис 5"
+                />
+              </app-pi-form-field>
+
               <app-pi-form-field label="Директор" htmlFor="org-directorName">
                 <app-pi-input
                   id="org-directorName"
@@ -334,10 +354,84 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
               </app-pi-form-field>
             </div>
             <p class="text-[11px] text-muted-foreground leading-snug">
-              Подпись и печать (файлы) — в хранилище организации, отдельная задача.
+              Скан подписи и печати — в секции «Файлы для документов» ниже.
             </p>
           </app-pi-form-section>
         </div>
+
+        <app-pi-form-section title="Файлы для документов" headingId="org-sec-assets" tone="neutral">
+          @if (!isEdit()) {
+            <p class="text-xs text-muted-foreground" data-test="org-assets-locked">
+              Логотип, печать и подпись можно загрузить после сохранения организации.
+            </p>
+          } @else {
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" data-test="org-assets">
+              @for (role of assetRoles; track role) {
+                <div class="space-y-2" [attr.data-test]="'org-asset-' + role">
+                  <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-sm font-medium">{{ assetLabels[role] }}</span>
+                    @if (assetOf(role); as asset) {
+                      <span class="text-[11px] text-muted-foreground truncate max-w-[10rem]">
+                        {{ asset.originalFilename }}
+                      </span>
+                    }
+                  </div>
+
+                  <div
+                    class="relative h-28 hairline rounded-sm bg-paper-2 flex items-center justify-center overflow-hidden"
+                  >
+                    @if (assetOf(role); as asset) {
+                      <img
+                        [src]="asset.storageUrl"
+                        [alt]="assetLabels[role] + ' организации'"
+                        class="max-h-full max-w-full object-contain"
+                        [attr.data-test]="'org-asset-preview-' + role"
+                      />
+                    } @else {
+                      <span class="text-[11px] text-muted-foreground">Не загружен</span>
+                    }
+                  </div>
+
+                  @if (assetLocked(role)) {
+                    <p
+                      class="text-[11px] text-muted-foreground"
+                      [attr.data-test]="'org-asset-locked-' + role"
+                    >
+                      Печать меняет только администратор.
+                    </p>
+                  } @else {
+                    <div class="flex items-center gap-2">
+                      <label
+                        class="inline-flex items-center min-h-touch px-control-x py-control-y text-xs hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
+                      >
+                        <input
+                          type="file"
+                          accept="image/*"
+                          class="sr-only"
+                          [attr.data-test]="'org-asset-file-' + role"
+                          [disabled]="assetBusy() === role"
+                          (change)="onAssetPicked(role, $event)"
+                        />
+                        <span>{{ assetOf(role) ? 'Заменить' : 'Загрузить' }}</span>
+                      </label>
+                      @if (assetOf(role)) {
+                        <app-pi-button
+                          type="button"
+                          variant="ghost"
+                          [disabled]="assetBusy() === role"
+                          [attr.data-test]="'org-asset-remove-' + role"
+                          (click)="onAssetRemove(role)"
+                        >
+                          Снять
+                        </app-pi-button>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </app-pi-form-section>
 
         @if (isSoleProprietor()) {
           <app-pi-form-section title="Паспорт ИП" headingId="org-sec-passport" tone="dimensions">
@@ -422,14 +516,22 @@ export class OrganizationFullEditorDialogComponent {
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly data = inject<Organization | null>(PI_DIALOG_DATA);
+  private readonly auth = inject(AuthService);
 
   protected readonly allTypes = ORG_TYPES;
   protected readonly typeLabels = ORG_TYPE_LABELS;
   protected readonly legalTypeItems = LEGAL_TYPE_ITEMS;
+  protected readonly assetRoles = ORG_ASSET_ROLES;
+  protected readonly assetLabels = ORG_ASSET_LABELS;
 
   protected readonly isEdit = signal<boolean>(this.data != null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly assets = signal<OrganizationAsset[]>(this.data?.assets ?? []);
+  /** Роль, по которой сейчас идёт загрузка/снятие — блокирует свой слот. */
+  protected readonly assetBusy = signal<OrgAssetRole | null>(null);
+  /** Флаг «файлы менялись»: список организаций должен перечитаться. */
+  private assetsTouched = false;
 
   protected readonly form = this.fb.group({
     name: this.fb.control('', [Validators.required, Validators.maxLength(256)]),
@@ -446,6 +548,7 @@ export class OrganizationFullEditorDialogComponent {
     ogrn: this.fb.control('', [Validators.maxLength(16)]),
     ogrnip: this.fb.control('', [Validators.maxLength(16)]),
     registrationDate: this.fb.control(''),
+    legalAddress: this.fb.control('', [Validators.maxLength(512)]),
     directorName: this.fb.control(''),
     paymentTermDays: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(365)]),
     vatRate: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(100)]),
@@ -488,6 +591,7 @@ export class OrganizationFullEditorDialogComponent {
       ogrn: org.ogrn ?? '',
       ogrnip: org.ogrnip ?? '',
       registrationDate: toDateInput(org.registrationDate),
+      legalAddress: org.legalAddress ?? '',
       directorName: org.directorName ?? '',
       paymentTermDays: org.paymentTermDays ?? null,
       vatRate: org.vatRate ?? null,
@@ -523,6 +627,50 @@ export class OrganizationFullEditorDialogComponent {
     const current = this.form.controls.type.value;
     const next = checked ? [...new Set([...current, t])] : current.filter((x) => x !== t);
     this.form.controls.type.setValue(next);
+  }
+
+  protected assetOf(role: OrgAssetRole): OrganizationAsset | undefined {
+    return this.assets().find((asset) => asset.role === role);
+  }
+
+  /** Печать — подпись фирмы; менеджеру её видно, но менять нельзя. */
+  protected assetLocked(role: OrgAssetRole): boolean {
+    return role === 'seal' && this.auth.user()?.role !== 'admin';
+  }
+
+  protected onAssetPicked(role: OrgAssetRole, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.assetBusy()) return;
+
+    this.assetBusy.set(role);
+    this.service.putAsset(this.data!._id, role, file).subscribe((res) => {
+      this.assetBusy.set(null);
+      // Иначе повторный выбор того же файла не даст change-события.
+      input.value = '';
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      this.assets.set(res.data.assets ?? []);
+      this.assetsTouched = true;
+      this.toast.success(`${this.assetLabels[role]} загружен`);
+    });
+  }
+
+  protected onAssetRemove(role: OrgAssetRole): void {
+    if (this.assetBusy()) return;
+    this.assetBusy.set(role);
+    this.service.removeAsset(this.data!._id, role).subscribe((res) => {
+      this.assetBusy.set(null);
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      this.assets.set(res.data.assets ?? []);
+      this.assetsTouched = true;
+      this.toast.success(`${this.assetLabels[role]} снят`);
+    });
   }
 
   protected hasError(name: keyof typeof this.form.controls): boolean {
@@ -590,6 +738,7 @@ export class OrganizationFullEditorDialogComponent {
       ['kpp', v.kpp],
       ['ogrn', v.ogrn],
       ['ogrnip', v.ogrnip],
+      ['legalAddress', v.legalAddress],
       ['directorName', v.directorName],
       ['bankName', v.bankName],
       ['bankBik', v.bankBik],
@@ -625,8 +774,14 @@ export class OrganizationFullEditorDialogComponent {
     return payload;
   }
 
+  /**
+   * Файлы пишутся сразу, поэтому «Отмена» после загрузки логотипа всё равно
+   * обязана вернуть обновлённую организацию — иначе список покажет старое.
+   */
   protected onCancel(): void {
-    this.ref.close(null);
+    this.ref.close(
+      this.assetsTouched && this.data ? { ...this.data, assets: this.assets() } : null,
+    );
   }
 }
 
