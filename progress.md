@@ -1,3 +1,14 @@
+## [2026-08-09T18:43:14Z] — TZ-SALES-334 DONE: all-counterparty client picker
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; browser self-verify + FE gates + archive/lock/closeout; deploy НЕ
+**Feature:** client-only Create changes, pushed in the closeout commit for this TZ.
+**Что:** В `Сделки → Создать КП` поле «Клиент» стало `PiOverflowSelect` по всем активным Counterparty без фильтра роли; searchable auto; выбранный клиент входит в autosave и восстанавливается после F5.
+**Gates:** frontend tsc PASS; focused proposal/Create Jest 21/21 PASS; frontend Prettier PASS; diff-check PASS.
+**Browser evidence:** 5 client options; `Демо · Клиент 3 · ИНН 7700002038` → «Сохранено» → reload `/proposals/create` без `new=1` → клиент остался в «Параметры». Временный self-check draft удалён.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-334.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-334-kp-counterparty-picker.lock`
+**NEXT:** claim TZ-SALES-335 separately. Deploy НЕ
+
 ## [2026-08-09T21:35:00Z] — TZ-SALES-339 DONE: autosave, resume, delete closeout
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; browser self-verify + archive + lock + closeout commit/push; deploy НЕ

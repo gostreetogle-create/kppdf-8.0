@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T18:43:14Z · TZ-SALES-334 DONE / next 335
+- TZ-SALES-334 client-only scope is DONE: «Клиент» uses `PiOverflowSelect`, loads all active Counterparty records without role/type filter, and autosave/resume restores the selected value.
+- Browser evidence: 5 client options rendered; selected `Демо · Клиент 3 · ИНН 7700002038`; status «Сохранено»; reload without `new=1` kept the client visible. Temporary self-check quotation removed.
+- Gates: frontend tsc PASS; proposal/Create Jest 21/21 PASS; Prettier PASS; diff-check PASS. Out-of-scope 335/336 and foreign WIP excluded. Deploy NO.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-334.done.md`; lock: `.mimocode/locks/TZ-SALES-334-kp-counterparty-picker.lock`; `_active/TZ-SALES-334.md` removed after closeout.
+- NEXT: claim TZ-SALES-335 separately; then qty/price/sum/photo gates and browser self-verify. Deploy NO.
+
+## Checkpoint 2026-08-09T21:45:00Z · TZ-SALES-334 CLAIMED
+- Only active TZ: `tasks/_active/TZ-SALES-334.md`; TZ-SALES-339 is archived/locked/pushed.
+- 334 scope is client-only: all active Counterparty, no role/type filter, searchable auto, autosave/resume. Existing WIP is preserved and must be narrowed before commit.
+- 335 qty/photo, 336 lock/copy, foreign system-role/admin and DOC-343/344 WIP excluded. Deploy NO.
+- NEXT: client-only gates → browser choose client/«Сохранено»/resume → archive/lock/remove active → commit/push.
+
 ## Checkpoint 2026-08-09T21:35:00Z · TZ-SALES-339 DONE / next 334
 - TZ-SALES-339 self-verified in browser: autosave «Сохранено», no «Сохранить КП», F5 restored template/product/client, delete showed «КП удалено», reload removed row, and deleted КП did not resurrect.
 - Feature `8a3186f1` was already on `main`; closeout metadata is now archived and locked.

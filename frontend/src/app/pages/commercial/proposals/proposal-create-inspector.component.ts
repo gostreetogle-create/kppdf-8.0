@@ -15,6 +15,10 @@ import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.com
 import { InputComponent } from '../../../shared/ui/input/input.component';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
+import {
+  Counterparty,
+  CounterpartyService,
+} from '../../../shared/services/pi-counterparty.service';
 import { estimateFamilyTotal } from '../../../shared/services/pi-proposals.service';
 import { formatPrice } from '../../../shared/util/format';
 import { extractErrorMessage } from '../../../core/silent-http';
@@ -37,6 +41,7 @@ export interface ProposalCreateInspectorState {
   organizationId: string;
   orgMarkupPercent: number;
   dealVatPercent?: number;
+  counterpartyId?: string;
 }
 
 /**
@@ -189,9 +194,15 @@ export interface ProposalCreateInspectorState {
 
       @if (!tableOnly()) {
         <app-pi-form-field label="Клиент" htmlFor="kp-insp-cp">
-          <select id="kp-insp-cp" class="pi-input w-full" disabled data-test="kp-insp-cp-stub">
-            <option>Выберите клиента</option>
-          </select>
+          <app-pi-overflow-select
+            [items]="counterpartyItems()"
+            [value]="selectedCounterpartyId()"
+            (valueChange)="onCounterpartyChange($event)"
+            searchable="auto"
+            placeholder="Выберите клиента…"
+            ariaLabel="Клиент"
+            dataTest="kp-insp-cp"
+          />
         </app-pi-form-field>
       }
 
@@ -284,6 +295,7 @@ export interface ProposalCreateInspectorState {
 })
 export class ProposalCreateInspectorComponent implements OnInit {
   private readonly orgs = inject(OrganizationsService);
+  private readonly counterparties = inject(CounterpartyService);
   private readonly router = inject(Router);
 
   readonly draftLines = input<ProposalDraftLine[]>([]);
@@ -292,11 +304,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly tableTemplateId = input<string | null>(null);
   readonly tableTargets = input<ProposalTableTarget[]>([]);
   readonly selectedTableTargetId = input<string | null>(null);
+  readonly selectedCounterpartyId = input('');
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
   readonly tableTargetChange = output<string>();
 
   protected readonly organizations = signal<Organization[]>([]);
+  protected readonly counterpartiesList = signal<Counterparty[]>([]);
   protected readonly organizationId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
@@ -306,6 +320,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.organizations().map((o) => ({
       id: o._id,
       label: `${o.name}${o.inn ? ' · ИНН ' + o.inn : ''}`,
+    })),
+  );
+
+  protected readonly counterpartyItems = computed(() =>
+    this.counterpartiesList().map((counterparty) => ({
+      id: counterparty._id,
+      label: `${counterparty.name}${counterparty.inn ? ' · ИНН ' + counterparty.inn : ''}`,
     })),
   );
 
@@ -331,6 +352,11 @@ export class ProposalCreateInspectorComponent implements OnInit {
       }
       this.organizations.set(res.data.items ?? []);
     });
+    // Client means any active Counterparty: do not send a role/type filter.
+    this.counterparties.list({ limit: 200 }).subscribe((res) => {
+      if (!res.ok) return;
+      this.counterpartiesList.set((res.data.items ?? []).filter((item) => item.isActive !== false));
+    });
   }
 
   protected onOrgChange(id: string): void {
@@ -342,6 +368,10 @@ export class ProposalCreateInspectorComponent implements OnInit {
     const n = Number(raw);
     this.orgMarkupPercent.set(Number.isFinite(n) ? n : 0);
     this.emitState();
+  }
+
+  protected onCounterpartyChange(id: string): void {
+    this.emitState(id);
   }
 
   protected onVatChange(raw: string | number): void {
@@ -389,11 +419,12 @@ export class ProposalCreateInspectorComponent implements OnInit {
     });
   }
 
-  private emitState(): void {
+  private emitState(counterpartyId = this.selectedCounterpartyId()): void {
     this.stateChange.emit({
       organizationId: this.organizationId(),
       orgMarkupPercent: this.orgMarkupPercent(),
       dealVatPercent: this.dealVatPercent(),
+      counterpartyId,
     });
   }
 }
