@@ -1,16 +1,28 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T03:13:07Z · TZ-DOC-TABLES-304 DONE
-- DONE: TZ-DOC-TABLES-304 — Product registry fields now derive from `ProductSchema.paths` with deny-list, RU label fallback, deterministic types, and an explicit source allowlist.
-- IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
-- NOT DONE: none in WAVE-DOC-TABLES; TZ-SALES-320 PARKED; INN-301 PARKED
-- NEXT: idle — WAVE-DOC-TABLES #1–#4 complete; await next PO wave or explicit deploy command
-- HEAD: eba58ba6 pushed: yes
-- Blockers: none for TZ-DOC-TABLES-304; browser/PO visual review not applicable
-- _active/: TZ-SALES-317.md + foreign doc WIP (untouched; 304 removed at closeout)
+## Checkpoint 2026-08-09T03:22:00Z · TZ-DOC-343 READY (rename template in builder)
+- PO: в конструкторе после «Редактировать» не может сменить название шаблона
+- Причина: Mode B inspector — `t.name` только как `insp-hint` (read-only); API PATCH name уже есть
+- TZ: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md`
+  · промпт `tasks/prompts/TZ-DOC-343-PROMPT.md`
+  · checklist `docs/agent-checklists/TZ-DOC-343.md`
+- Keys: builder-inspector FE (не пересекается с DOC-342 backend / SALES-317)
 - Deploy: NO
 
-# SESSION QUEUE
+## Checkpoint 2026-08-09T03:18:30Z · TZ-DOC-342 READY FOR REVIEW
+- DONE code: missing multipart `file` → 400 RU (was 500); PNG still 201
+- Gates: backend tsc PASS · e2e upload-background 6/6 PASS
+- Marker: `tasks/_active/TZ-DOC-342.md` (await PASS → archive)
+- Peer: TZ-SALES-317 FE still active — untouched
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:17:11Z · TZ-DOC-342 CLAIMED
+- IN PROGRESS: TZ-DOC-342 — upload-background null file → 400
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T03:17:11Z
+- Conflict keys: document-template + template-block upload (backend)
+- Peer active: TZ-SALES-317 (FE) — no overlap; untouched
+- team_room_claim: unavailable
+- Deploy: NO
 
 ## Checkpoint 2026-08-09T03:20:00Z · TZ-DOC-342 READY (upload-background 500)
 - PO: `POST .../document-templates/6a74f2bb…/upload-background` → 500
@@ -27,9 +39,9 @@
 - IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
 - NOT DONE: none in WAVE-DOC-TABLES; TZ-SALES-320 PARKED; INN-301 PARKED
 - NEXT: idle — WAVE-DOC-TABLES #1–#4 complete; await next PO wave or explicit deploy command
-- HEAD: pending closeout push
+- HEAD: eba58ba6 pushed: yes
 - Blockers: none for TZ-DOC-TABLES-304; browser/PO visual review not applicable
-- _active/: TZ-DOC-TABLES-304.md + TZ-SALES-317.md (foreign; 304 removed at closeout)
+- _active/: TZ-SALES-317.md + foreign doc WIP (untouched; 304 removed at closeout)
 - Deploy: NO
 
 ## Checkpoint 2026-08-09T03:08:53Z · TZ-DOC-TABLES-303 DONE
