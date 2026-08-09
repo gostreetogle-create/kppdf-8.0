@@ -8,7 +8,7 @@
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 export const DEALS_TOC_CHIPS: readonly GroupChip[] = [
-  { id: 'proposals', label: 'КП', route: '/proposals', pageKey: 'proposals' },
+  { id: 'proposals', label: 'КП', route: '/proposals/create', pageKey: 'proposals' },
   { id: 'contracts', label: 'Договоры', route: '/contracts', pageKey: 'contracts' },
   { id: 'orders', label: 'Заказы', route: '/orders', pageKey: 'orders' },
 ];

@@ -1,5 +1,24 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:13:28Z · TZ-SALES-329 DONE
+- DONE: Deals entry and dark «КП» now land on `/proposals/create`; yellow «Все КП» remains `/proposals`, with `/proposals` retained as active alias.
+- Gates: frontend tsc PASS; deals-group-chips 2/2; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-329.done.md`; lock recorded locally; `_active/TZ-SALES-329.md` removed.
+- 325 remains DEFERRED/STOP because active DOC-344 owns `pi-document-templates.service.ts`; 326/328 stay behind 325.
+- DOC-344, 322, 320, and deploy remain untouched.
+- Deploy: NO
+
+
+
+## Checkpoint 2026-08-09T12:12:12Z · TZ-SALES-325 DEFERRED / conflict STOP
+- STOP/DEFERRED before claim: TZ-SALES-325 overlaps active DOC-344 on `frontend/src/app/shared/services/pi-document-templates.service.ts`; canonical also contains foreign dirty `document-template.service.ts` WIP.
+- Per queue protocol, do not claim or edit 325 until DOC-344 is archived/clears the shared FE key and the dirty shared BE key is resolved by its owner.
+- 323 + 324 remain DONE; 326/328 stay queued behind 325. TZ-SALES-329 is eligible after 324 because its layout/nav keys are separate.
+- DOC-344, 322, 320, and deploy remain untouched.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09T12:10:52Z · TZ-SALES-324 DONE
 - DONE: `TableTemplateService.preview()` empty rows now render `<table>` with thead + exactly one blank tbody row; no `Нет данных` paragraph for declared columns.
 - Gates: backend tsc PASS; table-template e2e 8/8; document-template build e2e 9/9; diff-check PASS.

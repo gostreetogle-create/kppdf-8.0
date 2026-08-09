@@ -1,9 +1,9 @@
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from './deals-group-chips';
 
-describe('Deals workspace chips (TZ-SALES-310)', () => {
+describe('Deals workspace chips (TZ-SALES-329)', () => {
   it('keeps the three lifecycle surfaces in the dark TOC', () => {
     expect(DEALS_TOC_CHIPS.map((chip) => [chip.id, chip.route])).toEqual([
-      ['proposals', '/proposals'],
+      ['proposals', '/proposals/create'],
       ['contracts', '/contracts'],
       ['orders', '/orders'],
     ]);

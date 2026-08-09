@@ -1551,3 +1551,13 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** backend tsc PASS; table-template e2e 8/8 PASS; document-template build e2e 9/9 PASS; diff-check PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-324.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-324-empty-table-skeleton-blank.lock`
+
+---
+
+## [2026-08-09] — TZ-SALES-329 DONE: Deals → Create КП default landing
+**Исполнитель:** Buffy / agent-6c3d05b80e
+**Статус:** DONE; archive + lock + checkpoint completed
+**Что сделано кратко:** вход «Сделки» и тёмный chip «КП» ведут на `/proposals/create`; жёлтый «Все КП» сохраняет `/proposals`, а `/proposals` остаётся active alias для Deals.
+**Gates:** frontend tsc PASS; deals-group-chips 2/2 PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-329.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-329-default-land-create-kp.lock`

@@ -129,10 +129,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Сделки',
     shortLabel: 'Сделки',
     icon: Briefcase,
-    entryPath: '/proposals',
+    entryPath: '/proposals/create',
+    activeAliases: ['/proposals'],
     items: [
-      // TZ-SALES-301: КП → Договоры → Заказы (entry = КП).
-      { path: '/proposals', pageKey: 'proposals', label: 'КП' },
+      // TZ-SALES-301 / TZ-SALES-329: КП → Договоры → Заказы; entry = Создать КП.
+      { path: '/proposals/create', pageKey: 'proposals', label: 'КП' },
       { path: '/contracts', pageKey: 'contracts', label: 'Договоры' },
       { path: '/orders', pageKey: 'orders', label: 'Заказы' },
     ],
