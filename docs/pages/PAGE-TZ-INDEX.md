@@ -46,8 +46,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
 | `/design`, `/supply`, `/shipping` | — | **NAV-301** stubs |
-| `/contracts` | contracts.page.md | — |
-| `/orders` | orders.page.md | — |
+| `/contracts` | contracts.page.md | deals TOC; **WAVE-KP-VITRINE** 310 |
+| `/orders` | orders.page.md | deals TOC; **WAVE-KP-VITRINE** 310 |
+| `/proposals` | proposals.page.md | SALES-301; **303** family API; **304→313**; **310** chips; **313** Все КП+семья |
+| `/proposals/create` | **proposals-create.page.md** | **310–316** Создать КП; spec `docs/ux/kp-create-studio-spec.md`; **320** print PARK |
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
 ## Reference
