@@ -31,6 +31,8 @@ import {
   type TableTemplate,
 } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { ProposalsService, type Proposal } from '../../../shared/services/pi-proposals.service';
+import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
@@ -222,7 +224,10 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [tableTemplateId]="tableTemplateId()"
                 [tableTargets]="tableTargets()"
                 [selectedTableTargetId]="selectedTableTargetId()"
+                [saveEnabled]="canSaveDraft()"
+                [saveVisible]="!!selectedTemplate()"
                 (stateChange)="onInspectorState($event)"
+                (saveRequested)="saveDraft()"
                 (tableLayoutChange)="onTableLayoutChange($event)"
                 (tableTargetChange)="onTableTargetChange($event)"
               />
@@ -362,6 +367,8 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 export class ProposalCreatePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly proposalsSvc = inject(ProposalsService);
+  private readonly toast = inject(PiToastService);
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -387,6 +394,7 @@ export class ProposalCreatePage implements OnInit {
   /** In-memory draft positions (SALES-314). Not persisted; not painted on the sheet (319). */
   protected readonly draftLines = signal<ProposalDraftLine[]>([]);
   protected readonly previewHtml = signal<SafeHtml | null>(null);
+  private readonly previewHtmlSource = signal<string | null>(null);
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
   protected readonly orgMarkupPercent = signal(0);
@@ -436,16 +444,19 @@ export class ProposalCreatePage implements OnInit {
           return this.templatesSvc.build(tpl._id, payload).pipe(
             tap((res) => {
               if (res.ok && typeof res.data === 'string') {
+                this.previewHtmlSource.set(res.data);
                 this.previewHtml.set(
                   this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(res.data)),
                 );
                 this.previewStatus.set('ready');
               } else {
+                this.previewHtmlSource.set(null);
                 this.previewHtml.set(null);
                 this.previewStatus.set('error');
               }
             }),
             catchError(() => {
+              this.previewHtmlSource.set(null);
               this.previewHtml.set(null);
               this.previewStatus.set('error');
               return of(null);
@@ -458,6 +469,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   ngOnInit(): void {
+    this.resumeLastDraft();
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       this.isWide.set(true);
       return;
@@ -513,19 +525,146 @@ export class ProposalCreatePage implements OnInit {
 
   protected onTemplateChange(tpl: DocumentTemplate | null): void {
     this.selectedTemplate.set(tpl);
+    this.previewHtmlSource.set(null);
+    this.previewHtml.set(null);
+    if (tpl) this.writeStorage('kp.create.lastTemplateId', tpl._id);
     this.tableTemplateId.set(null);
     this.tableTargets.set([]);
     this.selectedTableTargetId.set(null);
     this.tableTargetLayouts.set({});
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
     if (tpl) {
+      this.previewStatus.set('loading');
       this.leftTool.set(null);
       this.syncTableTargets(tpl._id);
       this.rebuildPreview$.next();
     } else {
+      this.previewHtmlSource.set(null);
       this.previewHtml.set(null);
       this.previewStatus.set('idle');
     }
+  }
+
+  protected canSaveDraft(): boolean {
+    return Boolean(this.selectedTemplate()?._id && this.previewStatus() === 'ready');
+  }
+
+  protected saveDraft(): void {
+    const template = this.selectedTemplate();
+    const organizationId = this.organizationId().trim();
+    const html = this.previewHtmlSource();
+    if (!template?._id || !html) {
+      this.toast.error('Сначала выберите шаблон и дождитесь превью листа.');
+      return;
+    }
+    if (!organizationId) {
+      this.toast.error('Выберите нашу фирму для сохранения черновика.');
+      return;
+    }
+
+    const payload: Partial<Proposal> = {
+      organizationId,
+      status: 'draft',
+      orgMarkupPercent: this.clampMarkup(this.orgMarkupPercent()),
+      items: this.draftLines().map((line, index) => ({
+        productId: line.productId,
+        productName: line.productName,
+        productSku: line.productSku,
+        quantity: line.quantity,
+        unit: line.unit,
+        unitPrice: line.unitPrice,
+        markupPercent: this.clampMarkup(this.orgMarkupPercent()),
+        total: this.roundMoney(line.quantity * line.unitPrice),
+        sortOrder: index,
+      })),
+      templateId: template._id,
+      templateSnapshot: {
+        templateId: template._id,
+        html,
+        tableLayout: this.kpTableLayout().map(({ key, visible }) => ({ key, visible })),
+        builtAt: new Date().toISOString(),
+      },
+    };
+    const draftId = this.readStorage('kp.create.lastDraftId');
+    const request = draftId
+      ? this.proposalsSvc.update(draftId, payload)
+      : this.proposalsSvc.create(payload);
+    request.subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось сохранить черновик КП.');
+        return;
+      }
+      this.writeStorage('kp.create.lastDraftId', res.data._id);
+      this.writeStorage('kp.create.lastTemplateId', template._id);
+      this.toast.success('Черновик сохранён');
+    });
+  }
+
+  private resumeLastDraft(): void {
+    const draftId = this.readStorage('kp.create.lastDraftId');
+    if (draftId) {
+      this.proposalsSvc.findById(draftId).subscribe((res) => {
+        if (res.ok && res.data.status === 'draft') {
+          this.hydrateDraft(res.data);
+          return;
+        }
+        this.removeStorage('kp.create.lastDraftId');
+        this.resumeLastTemplate();
+      });
+      return;
+    }
+    this.resumeLastTemplate();
+  }
+
+  private resumeLastTemplate(): void {
+    const templateId = this.readStorage('kp.create.lastTemplateId');
+    if (!templateId) return;
+    this.templatesSvc.findById(templateId).subscribe((res) => {
+      if (res.ok) this.onTemplateChange(res.data);
+    });
+  }
+
+  private hydrateDraft(draft: Proposal): void {
+    const templateId = this.refId(draft.templateId);
+    this.organizationId.set(this.refId(draft.organizationId) ?? '');
+    this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
+    this.draftLines.set(
+      (draft.items ?? []).map((item) => ({
+        productId: this.refId(item.productId) ?? '',
+        productName: item.productName ?? 'Изделие',
+        productSku: item.productSku,
+        quantity: item.quantity,
+        unit: item.unit,
+        unitPrice: item.unitPrice,
+      })),
+    );
+    if (templateId) {
+      this.templatesSvc.findById(templateId).subscribe((res) => {
+        if (res.ok) this.onTemplateChange(res.data);
+      });
+    } else {
+      this.resumeLastTemplate();
+    }
+  }
+
+  private refId(value: unknown): string | null {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && '_id' in value) {
+      return String((value as { _id: string })._id);
+    }
+    return null;
+  }
+
+  private readStorage(key: string): string | null {
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(key);
+  }
+
+  private writeStorage(key: string, value: string): void {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(key, value);
+  }
+
+  private removeStorage(key: string): void {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
   }
 
   private syncTableTargets(templateId: string): void {

@@ -15,6 +15,8 @@ import { OrganizationsService } from '../../../shared/services/organizations.ser
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { ProposalsService } from '../../../shared/services/pi-proposals.service';
+import { PiToastService } from '../../../shared/ui/toast';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 
@@ -23,9 +25,26 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
   const buildMock = jest.fn();
   const tableFindMock = jest.fn();
   const blocksListMock = jest.fn();
+  const templateFindMock = jest.fn();
+  const quotationCreateMock = jest.fn();
+  const quotationUpdateMock = jest.fn();
+  const quotationFindMock = jest.fn();
+  const toastSuccessMock = jest.fn();
+  const toastErrorMock = jest.fn();
 
   beforeEach(async () => {
+    localStorage.clear();
     buildMock.mockReset();
+    templateFindMock.mockReset();
+    templateFindMock.mockReturnValue(of({ ok: true, data: { _id: 'tpl-1', name: 'КП стандарт' } }));
+    quotationCreateMock.mockReset();
+    quotationUpdateMock.mockReset();
+    quotationFindMock.mockReset();
+    toastSuccessMock.mockReset();
+    toastErrorMock.mockReset();
+    quotationCreateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1' } }));
+    quotationUpdateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1' } }));
+    quotationFindMock.mockReturnValue(of({ ok: false, error: new Error('not found') }));
     buildMock.mockReturnValue(
       of({
         ok: true,
@@ -135,11 +154,24 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
                 },
               }),
             build: buildMock,
+            findById: templateFindMock,
           },
         },
         {
           provide: TemplateBlocksService,
           useValue: { listByTemplate: blocksListMock },
+        },
+        {
+          provide: ProposalsService,
+          useValue: {
+            create: quotationCreateMock,
+            update: quotationUpdateMock,
+            findById: quotationFindMock,
+          },
+        },
+        {
+          provide: PiToastService,
+          useValue: { success: toastSuccessMock, error: toastErrorMock },
         },
         {
           provide: TableTemplatesService,
@@ -477,6 +509,81 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         tableLayout: [{ key: 'sku', visible: true }],
       }),
     );
+  }));
+
+  it('saves a draft with template snapshot and updates the same draft on repeat Save', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (state: { organizationId: string; orgMarkupPercent: number }) => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      saveDraft: () => void;
+    };
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 10 });
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      quantity: 2,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    tick(250);
+    page.saveDraft();
+
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'org-1',
+        status: 'draft',
+        templateId: 'tpl-1',
+        templateSnapshot: expect.objectContaining({
+          templateId: 'tpl-1',
+          html: expect.any(String),
+        }),
+        items: [expect.objectContaining({ productId: 'prod-1', quantity: 2, unitPrice: 5000 })],
+      }),
+    );
+    expect(localStorage.getItem('kp.create.lastDraftId')).toBe('q-1');
+    expect(toastSuccessMock).toHaveBeenCalledWith('Черновик сохранён');
+
+    page.saveDraft();
+    expect(quotationUpdateMock).toHaveBeenCalledWith('q-1', expect.any(Object));
+  }));
+
+  it('reopens the last editable draft into the selected template and draft lines', fakeAsync(() => {
+    localStorage.setItem('kp.create.lastDraftId', 'q-2');
+    quotationFindMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: {
+          _id: 'q-2',
+          status: 'draft',
+          organizationId: 'org-1',
+          templateId: 'tpl-1',
+          orgMarkupPercent: 8,
+          items: [
+            { productId: 'prod-1', productName: 'Стенд', quantity: 3, unit: 'шт', unitPrice: 5000 },
+          ],
+        },
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      draftLines: () => ProposalDraftLine[];
+      resumeLastDraft: () => void;
+    };
+    page.resumeLastDraft();
+    tick();
+    expect(page.draftLines()).toEqual([
+      {
+        productId: 'prod-1',
+        productName: 'Стенд',
+        productSku: undefined,
+        quantity: 3,
+        unit: 'шт',
+        unitPrice: 5000,
+      },
+    ]);
+    expect(localStorage.getItem('kp.create.lastTemplateId')).toBe('tpl-1');
   }));
 
   it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {

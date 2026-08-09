@@ -28,8 +28,11 @@ export class CreateQuotationDto {
   @IsObjectId()
   organizationId!: string;
 
-  @IsObjectId()
-  counterpartyId!: string;
+  /** Drafts may be saved before the Client picker (TZ-SALES-333/334). */
+  @IsOptional() @IsObjectId()
+  counterpartyId?: string;
+
+  @IsOptional() @IsNumber() @Min(-100) orgMarkupPercent?: number;
 
   @IsOptional() @IsObjectId() tenderId?: string;
 

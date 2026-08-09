@@ -88,8 +88,9 @@ export class Quotation {
   @Prop({ default: undefined })
   orgMarkupPercent?: number;
 
-  @Prop({ type: Types.ObjectId, ref: 'Counterparty', required: true, index: true })
-  counterpartyId!: Types.ObjectId;
+  /** Drafts may exist before the Create КП client picker is completed. */
+  @Prop({ type: Types.ObjectId, ref: 'Counterparty', index: true })
+  counterpartyId?: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'Tender', index: true })
   tenderId?: Types.ObjectId;

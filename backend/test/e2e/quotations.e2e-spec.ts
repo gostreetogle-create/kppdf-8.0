@@ -59,6 +59,24 @@ describe('Quotations (e2e)', () => {
     expect(res.body.items[0].unitPrice).toBe(100);
   });
 
+  it('POST /quotations — draft may omit counterparty and persists template snapshot', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/quotations')
+      .set(authHeader(token))
+      .send({
+        organizationId: orgId,
+        status: 'draft',
+        orgMarkupPercent: 12,
+        templateId: new (require('mongoose').Types.ObjectId)().toString(),
+        templateSnapshot: { templateId: 'tpl-1', html: '<table></table>' },
+        items: [{ productId, quantity: 2, unitPrice: 100 }],
+      });
+    expect([200, 201]).toContain(res.status);
+    expect(res.body.counterpartyId).toBeUndefined();
+    expect(res.body.templateSnapshot.html).toBe('<table></table>');
+    expect(res.body.orgMarkupPercent).toBe(12);
+  });
+
   it('POST /quotations/:id/duplicate — creates new Quotation', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')

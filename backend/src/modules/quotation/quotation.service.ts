@@ -71,7 +71,9 @@ export class QuotationService {
     return this.model.create({
       number,
       organizationId: new Types.ObjectId(dto.organizationId),
-      counterpartyId: new Types.ObjectId(dto.counterpartyId),
+      counterpartyId: dto.counterpartyId
+        ? new Types.ObjectId(dto.counterpartyId)
+        : undefined,
       tenderId: dto.tenderId ? new Types.ObjectId(dto.tenderId) : undefined,
       date: dto.date ? new Date(dto.date) : new Date(),
       validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
@@ -81,6 +83,7 @@ export class QuotationService {
       discountPercent: dto.discountPercent ?? 0,
       discountAmount: dto.discountAmount ?? 0,
       notes: dto.notes,
+      orgMarkupPercent: dto.orgMarkupPercent,
       templateId: dto.templateId ? new Types.ObjectId(dto.templateId) : undefined,
       designSnapshot: dto.designSnapshot,
       templateSnapshot: dto.templateSnapshot,
@@ -133,6 +136,18 @@ export class QuotationService {
 
   async update(id: string, dto: UpdateQuotationDto): Promise<QuotationDocument> {
     const doc = await this.findById(id);
+    if (dto.organizationId !== undefined) {
+      doc.organizationId = new Types.ObjectId(dto.organizationId);
+    }
+    if (dto.counterpartyId !== undefined) {
+      doc.counterpartyId = new Types.ObjectId(dto.counterpartyId);
+    }
+    if (dto.orgMarkupPercent !== undefined) doc.orgMarkupPercent = dto.orgMarkupPercent;
+    if (dto.templateId !== undefined) {
+      doc.templateId = dto.templateId ? new Types.ObjectId(dto.templateId) : undefined;
+    }
+    if (dto.templateSnapshot !== undefined) doc.templateSnapshot = dto.templateSnapshot;
+    if (dto.designSnapshot !== undefined) doc.designSnapshot = dto.designSnapshot;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.validUntil !== undefined) doc.validUntil = new Date(dto.validUntil);
@@ -184,7 +199,7 @@ export class QuotationService {
       const payload: Record<string, unknown> = {
         number: doc.number,
         organizationId: doc.organizationId.toString(),
-        counterpartyId: doc.counterpartyId.toString(),
+        ...(doc.counterpartyId ? { counterpartyId: doc.counterpartyId.toString() } : {}),
         tenderId: doc.tenderId?.toString(),
         title: doc.title,
         date: doc.date,
@@ -505,6 +520,9 @@ export class QuotationService {
     if (q.status === 'converted') {
       throw new NotFoundException(`Quotation already converted`);
     }
+    if (!q.counterpartyId) {
+      throw new BadRequestException('Нельзя открыть договор без клиента в КП');
+    }
     const contract = await this.contractService.create({
       title: title ?? q.title ?? `Договор по КП ${q.number}`,
       proposalId: q._id.toString(),
@@ -543,6 +561,9 @@ export class QuotationService {
       throw new BadRequestException(
         `Cannot convert quotation in status "${q.status}" to an order — only "accepted" is convertible`,
       );
+    }
+    if (!q.counterpartyId) {
+      throw new BadRequestException('Нельзя создать заказ без клиента в КП');
     }
     const site = await this.sites.ensureDefaultForCounterparty(
       q.counterpartyId.toString(),
