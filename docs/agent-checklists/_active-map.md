@@ -1,5 +1,22 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:35:00Z · TZ-SALES-335 DONE / next 336
+- TZ-SALES-335 is DONE on canonical `main`: request-only «Кол-во»/«Цена»/«Сумма», quantity rebuild, and existing «Рисунок» thumbnail rendering.
+- Feature `d6bd43b9` is pushed; closeout commit follows immediately. Browser evidence: product with photo added, quantity `1 → 3`, A4 showed 3 / 7 000,00 ₽ / 21 000,00 ₽; Table rail showed live columns without shared-template PATCH.
+- Gates: frontend/backend tsc PASS; proposal/Create Jest 23/23; table-template Jest 2/2; Prettier/ESLint/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-335.done.md`; lock `.mimocode/locks/TZ-SALES-335-kp-line-items-columns-photo.lock`; `_active/TZ-SALES-335.md` removed after closeout.
+- Foreign system-role/admin and DOC-343/344 WIP preserved/excluded. Deploy NO.
+- NEXT: claim TZ-SALES-336 separately; do not start WAVE-KP-COMPLETE.
+
+### Previous checkpoints
+
+## Checkpoint 2026-08-09T19:20:00Z · TZ-SALES-335 CLAIMED
+- Only active TZ: `tasks/_active/TZ-SALES-335.md`; TZ-SALES-349 is archived/locked/pushed at `a16d2845`.
+- Scope: Create-instance merge of commercial columns, quantity editing, and photo rendering only when «Рисунок» already exists. Shared TableTemplate is not patched.
+- 336 remains queued; foreign system-role/admin and DOC-343/344 WIP preserved/excluded. Deploy NO.
+- NEXT: implement → FE/BE gates → browser A4/qty/photo self-verify → archive/lock/remove active → commit/push.
+
+
 ## Checkpoint 2026-08-09T19:18:00Z · TZ-SALES-349 DONE / next 335
 - Guarded quotation index migration is DONE: only non-canonical unique `quotations` indexes are dropped; canonical `_id_`, `number_1`, and `masterId_1_organizationId_1` remain.
 - Gates: backend tsc PASS; migration Jest 4/4; quotation e2e 7/7; frontend tsc PASS; proposal/Create Jest 21/21; Prettier/diff-check PASS.

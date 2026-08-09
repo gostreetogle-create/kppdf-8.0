@@ -1869,3 +1869,15 @@ BOM inspector — вклад строки material/module read-only.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-325.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-325-draftlines-table-bind.lock`
 **Scope:** foreign DOC-343 dirty WIP and `document-template.service.ts` orientation change preserved/excluded; deploy NO.
+
+---
+
+## [2026-08-09] — TZ-SALES-335 DONE: KP line-item columns, quantity and photo cell
+**Исполнитель:** Buffy / canonical `D:\\kppdf-8.0` `main`
+**Статус:** DONE; feature `d6bd43b9` pushed; closeout archive + lock + active removal in progress
+**Что сделано кратко:** экземпляр выбранной live line-items таблицы получает request-only «Кол-во»/«Цена»/«Сумма»; количество редактируется в rail «Товары» и перестраивает A4; `photoUrl` рендерится как thumb только в существующей колонке «Рисунок».
+**Gates:** frontend/backend tsc PASS; proposal/Create Jest 23/23; table-template Jest 2/2; Prettier/ESLint/diff-check PASS.
+**Browser:** template + product with photo selected; quantity `1 → 3`; A4 showed «Кол-во» 3, «Цена» 7 000,00 ₽, «Сумма» 21 000,00 ₽; shared TableTemplate received no PATCH.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-335.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-335-kp-line-items-columns-photo.lock`
+**Next:** TZ-SALES-336; deploy NO.

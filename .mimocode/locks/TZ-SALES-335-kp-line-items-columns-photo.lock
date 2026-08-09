@@ -1,0 +1,6 @@
+TZ-SALES-335
+status: DONE
+feature_sha: d6bd43b9
+scope: Create-instance KP line-item columns, quantity editing, existing photo-column rendering
+closed_at: 2026-08-09T19:35:00Z
+deploy: NO
