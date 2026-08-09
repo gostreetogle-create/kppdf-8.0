@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T05:50:00Z · TZ-UI-GOLD-332 READY (после 331)
+- Триггер PO: «золотая кнопка слишком тёмная, хочется ближе к светлому золоту»
+- TZ: `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md`
+  · промпт `tasks/prompts/TZ-UI-GOLD-332-PROMPT.md`
+- Суть: `--color-gold` разделяется на две роли — светлая **заливка** `oklch(0.79 0.14 88)`
+  и новое **золото линии** `--color-gold-deep` `oklch(0.55 0.13 84)` для focus-ring /
+  border-ink / ring-ink / фокуса инпута / иконки edit / золотого текста на бумаге.
+  Просто осветлить нельзя: focus-ring уже сейчас ≈2.1:1 при норме 3:1.
+- Побочно закрывает known_limitation 331: `text-sunrise-warm` (3 места) → `text-gold-deep`
+- DEPENDS ON: TZ-UI-THEME-331 (в момент постановки — WIP у peer-агента, uncommitted)
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T05:40:00Z · WAVE-UI-THEME queued (330 → 331)
 - DONE: —
 - IN PROGRESS: none
