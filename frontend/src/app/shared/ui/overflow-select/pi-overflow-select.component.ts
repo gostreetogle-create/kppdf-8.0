@@ -19,6 +19,7 @@ import { TemplatePortal } from '@angular/cdk/portal';
 export type PiOverflowSelectItem = {
   id: string;
   label: string;
+  meta?: string;
 };
 
 /** When to show in-panel typeahead. Default off — plain overflow-select unchanged. */
@@ -86,6 +87,7 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
         }
         <ul
           role="listbox"
+          [attr.aria-multiselectable]="multiple() ? 'true' : null"
           class="p-1 space-y-0.5 overflow-y-auto min-h-0 flex-1 m-0 list-none"
           data-test="pi-overflow-select-list"
         >
@@ -93,15 +95,41 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
             <li class="px-2 py-2 text-xs text-muted-foreground">{{ emptyLabel() }}</li>
           }
           @for (item of filteredItems(); track item.id) {
-            <li role="option" [attr.aria-selected]="value() === item.id">
+            <li
+              role="option"
+              [attr.aria-selected]="
+                multiple() ? selectedValues().includes(item.id) : value() === item.id
+              "
+            >
               <button
                 type="button"
                 class="w-full text-left px-2.5 py-2 text-sm rounded-sm hover:bg-paper-2 whitespace-normal break-words leading-snug"
-                [class.bg-paper-2]="value() === item.id"
-                [class.font-medium]="value() === item.id"
+                [class.bg-paper-2]="
+                  multiple() ? selectedValues().includes(item.id) : value() === item.id
+                "
+                [class.font-medium]="
+                  multiple() ? selectedValues().includes(item.id) : value() === item.id
+                "
                 (click)="pick(item.id)"
               >
-                {{ item.label }}
+                <span class="flex items-center gap-2">
+                  @if (multiple()) {
+                    <span
+                      class="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-rule text-[10px] leading-none"
+                      [class.bg-ink]="selectedValues().includes(item.id)"
+                      [class.text-paper]="selectedValues().includes(item.id)"
+                      aria-hidden="true"
+                    >
+                      @if (selectedValues().includes(item.id)) {
+                        ✓
+                      }
+                    </span>
+                  }
+                  <span class="min-w-0 flex-1">{{ item.label }}</span>
+                  @if (item.meta) {
+                    <span class="shrink-0 text-xs text-muted-foreground">{{ item.meta }}</span>
+                  }
+                </span>
               </button>
             </li>
           }
@@ -113,6 +141,8 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
 export class PiOverflowSelectComponent {
   readonly items = input.required<PiOverflowSelectItem[]>();
   readonly value = model<string>('');
+  readonly multiple = input(false);
+  readonly selectedValues = model<string[]>([]);
   readonly placeholder = input('— выбрать —');
   readonly emptyLabel = input('Ничего не найдено');
   readonly ariaLabel = input('Выбор из списка');
@@ -151,10 +181,18 @@ export class PiOverflowSelectComponent {
     const list = this.items();
     const q = this.query().trim().toLowerCase();
     if (!q || !this.showSearch()) return list;
-    return list.filter((item) => item.label.toLowerCase().includes(q));
+    return list.filter((item) => `${item.label} ${item.meta ?? ''}`.toLowerCase().includes(q));
   });
 
   protected readonly selectedLabel = computed(() => {
+    if (this.multiple()) {
+      const selected = this.selectedValues();
+      if (selected.length === 0) return this.placeholder();
+      const labels = this.items()
+        .filter((item) => selected.includes(item.id))
+        .map((item) => item.label);
+      return labels.length <= 2 ? labels.join(', ') : `${selected.length} выбрано`;
+    }
     const id = this.value();
     if (!id) return this.placeholder();
     return this.items().find((item) => item.id === id)?.label ?? this.placeholder();
@@ -231,6 +269,13 @@ export class PiOverflowSelectComponent {
   }
 
   protected pick(id: string): void {
+    if (this.multiple()) {
+      const selected = new Set(this.selectedValues());
+      if (selected.has(id)) selected.delete(id);
+      else selected.add(id);
+      this.selectedValues.set([...selected]);
+      return;
+    }
     this.value.set(id);
     this.valueChange.emit(id);
     this.close();

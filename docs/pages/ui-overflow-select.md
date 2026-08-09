@@ -59,6 +59,22 @@
 
 Компонент: `frontend/src/app/shared/ui/overflow-select/pi-overflow-select.component.ts`
 
+## Multi-select mode
+
+`app-pi-overflow-select` supports `[multiple]="true"` with `selectedValues` / `selectedValuesChange` for a checkbox-like multi-choice panel. The overlay stays open while items are toggled, displays optional item `meta`, keeps the same `max-h-[min(70vh,28rem)]` panel, and applies the existing `searchable="auto"` threshold. Use this for multiple source fields inside dialogs; do not replace it with native `<select multiple>` or a 100px scroll box.
+
+```html
+<app-pi-overflow-select
+  [items]="fieldItems()"
+  [multiple]="true"
+  [selectedValues]="selectedFieldKeys()"
+  (selectedValuesChange)="onFieldsChange($event)"
+  searchable="auto"
+  placeholder="— выбрать поля —"
+  ariaLabel="Поля источника"
+/>
+```
+
 ## Catalog selector inventory (TZ-UI-SELECT-301)
 
 | Form / field | Control | Search policy | Value contract |

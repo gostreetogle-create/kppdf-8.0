@@ -117,4 +117,33 @@ describe('PiOverflowSelectComponent', () => {
     fixture.detectChanges();
     expect(document.querySelector('[data-test="pi-overflow-select-search"]')).toBeFalsy();
   });
+
+  it('multiple mode keeps the overlay open, toggles values, and renders item metadata', () => {
+    fixture.componentRef.setInput('multiple', true);
+    fixture.componentRef.setInput('items', [
+      { id: 'sku', label: 'Артикул', meta: 'text' },
+      { id: 'qty', label: 'Количество', meta: 'number' },
+    ]);
+    fixture.detectChanges();
+
+    fixture.nativeElement
+      .querySelector('[data-test="pi-overflow-select-trigger"]')
+      ?.dispatchEvent(new MouseEvent('click'));
+    fixture.detectChanges();
+
+    const list = document.querySelector('[data-test="pi-overflow-select-list"]') as HTMLElement;
+    expect(list.getAttribute('aria-multiselectable')).toBe('true');
+    expect(list.textContent).toContain('text');
+
+    (list.querySelectorAll('button')[0] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedValues()).toEqual(['sku']);
+    expect(document.querySelector('[data-test="pi-overflow-select-list"]')).toBeTruthy();
+
+    (list.querySelectorAll('button')[1] as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedValues()).toEqual(['sku', 'qty']);
+
+    fixture.componentInstance.close();
+  });
 });

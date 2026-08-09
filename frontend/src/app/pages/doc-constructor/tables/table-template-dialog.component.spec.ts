@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -13,6 +14,7 @@ import {
   type TableTemplate,
 } from '../../../shared/services/pi-table-templates.service';
 import { SilentResult } from '../../../core/silent-http';
+import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 
 /**
  * TZ-NEW: Unit tests for TableTemplateFormDialogComponent.
@@ -318,6 +320,45 @@ describe('TableTemplateFormDialogComponent', () => {
       // category has a Validators.required — clearing makes it invalid.
       category!.setValue(null);
       expect(category!.invalid).toBe(true);
+    });
+
+    it('renders a compact settings row with the enum category overflow trigger', async () => {
+      const fixture = await createFixture(null);
+      const dialog = getDialog(fixture);
+      const row = fixture.nativeElement.querySelector('.ttd-settings-row--main');
+      expect(row).toBeTruthy();
+      expect(row.querySelector('[data-test="category-select"]')).toBeTruthy();
+      expect(row.querySelector('.ttd-pills')).toBeFalsy();
+
+      const categorySelect = fixture.debugElement.query(By.directive(PiOverflowSelectComponent))
+        .componentInstance as PiOverflowSelectComponent;
+      categorySelect.valueChange.emit('price-list');
+      expect(dialog.form.controls.category.value).toBe('price-list');
+      dialog.onCategoryChange('not-an-enum');
+      expect(dialog.form.controls.category.value).toBe('price-list');
+    });
+
+    it('syncs selected source fields from the multi-overflow value contract', async () => {
+      const fixture = await createFixture(null);
+      const dialog = getDialog(fixture);
+      dialog.allSources.set([
+        {
+          key: 'product',
+          label: 'Изделия',
+          group: 'catalog',
+          fields: [
+            { key: 'sku', label: 'Артикул', type: 'text' },
+            { key: 'qty', label: 'Количество', type: 'number' },
+          ],
+        },
+      ]);
+      dialog.onSourceChange('product');
+      dialog.onFieldSelectionChange(['sku', 'qty']);
+      expect(dialog.selectedFieldKeysArray()).toEqual(['sku', 'qty']);
+      expect(dialog.columnsArray.controls.map((column) => column.controls.key.value)).toEqual([
+        'sku',
+        'qty',
+      ]);
     });
 
     it('sampleRowsJson FormControl exists and defaults to empty string', async () => {

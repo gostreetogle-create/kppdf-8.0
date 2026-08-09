@@ -122,8 +122,8 @@ interface ClientPreviewModel {
       <div body class="ttd-body" [formGroup]="form">
         <!-- ─── Settings (top) ─── -->
         <section class="ttd-settings">
-          <!-- Row 1: Name + Description -->
-          <div class="ttd-settings-row">
+          <!-- Dense settings row: name, description, type, order, active. -->
+          <div class="ttd-settings-row ttd-settings-row--main">
             <app-pi-form-field
               class="ttd-field ttd-field--name"
               label="Название"
@@ -148,49 +148,42 @@ interface ClientPreviewModel {
                 placeholder="Краткое описание"
               />
             </app-pi-form-field>
-          </div>
-
-          <!-- Row 2: Category + Meta -->
-          <div class="ttd-settings-row">
-            <div class="ttd-field ttd-field--cat">
-              <span class="eyebrow text-muted-foreground">Категория</span>
-              <div class="ttd-pills" role="group" aria-label="Категория">
-                @for (c of categoryOptions; track c.key) {
-                  <button
-                    type="button"
-                    class="ttd-pill pi-focus-ring"
-                    [class.is-active]="form.controls.category.value === c.key"
-                    [attr.aria-pressed]="form.controls.category.value === c.key"
-                    (click)="form.controls.category.setValue(c.key)"
-                  >
-                    {{ c.label }}
-                  </button>
-                }
-              </div>
+            <div class="ttd-field ttd-field--category">
+              <span class="eyebrow text-muted-foreground">Тип</span>
+              <app-pi-overflow-select
+                [items]="categoryItems"
+                [value]="form.controls.category.value"
+                (valueChange)="onCategoryChange($event)"
+                placeholder="— выбрать тип —"
+                ariaLabel="Тип шаблона таблицы"
+                dataTest="category-select"
+              />
             </div>
-            <div class="ttd-settings-meta">
-              <app-pi-form-field label="Порядок" htmlFor="ttd-sort-order">
-                <input
-                  id="ttd-sort-order"
-                  class="pi-input w-20 font-mono"
-                  type="number"
-                  formControlName="sortOrder"
-                />
-              </app-pi-form-field>
-              <div class="ttd-active-switch">
-                <span class="eyebrow text-muted-foreground" id="ttd-active-label">Активен</span>
-                <app-pi-switch
-                  [checked]="form.controls.isActive.value"
-                  (checkedChange)="form.controls.isActive.setValue($event)"
-                  ariaLabel="Активен"
-                  id="ttd-is-active"
-                />
-              </div>
+            <app-pi-form-field
+              class="ttd-field ttd-field--order"
+              label="Порядок"
+              htmlFor="ttd-sort-order"
+            >
+              <input
+                id="ttd-sort-order"
+                class="pi-input w-20 font-mono"
+                type="number"
+                formControlName="sortOrder"
+              />
+            </app-pi-form-field>
+            <div class="ttd-active-switch">
+              <span class="eyebrow text-muted-foreground" id="ttd-active-label">Активен</span>
+              <app-pi-switch
+                [checked]="form.controls.isActive.value"
+                (checkedChange)="form.controls.isActive.setValue($event)"
+                ariaLabel="Активен"
+                id="ttd-is-active"
+              />
             </div>
           </div>
 
           @if (mode() === 'from-registry') {
-            <!-- Row 3: Data source (registry mode) -->
+            <!-- Source controls stay on a separate row; field options use overlay. -->
             <div class="ttd-settings-row ttd-settings-row--source">
               <app-pi-form-field
                 class="ttd-field ttd-field--source"
@@ -219,25 +212,22 @@ interface ClientPreviewModel {
                       >{{ selectedFields().length }}/{{ src.fields.length }} выбрано</span
                     >
                   </div>
-                  <div class="ttd-field-list">
-                    @if (src.fields.length === 0) {
-                      <p class="ttd-fields-empty text-sm text-muted-foreground">
-                        Нет полей у источника
-                      </p>
-                    } @else {
-                      @for (field of src.fields; track field.key) {
-                        <label class="ttd-field-check">
-                          <input
-                            type="checkbox"
-                            [checked]="selectedFieldKeys().has(field.key)"
-                            (change)="toggleField(field)"
-                          />
-                          <span class="ttd-field-check-label">{{ field.label }}</span>
-                          <span class="ttd-field-check-type">{{ field.type }}</span>
-                        </label>
-                      }
-                    }
-                  </div>
+                  @if (src.fields.length === 0) {
+                    <p class="ttd-fields-empty text-sm text-muted-foreground">
+                      Нет полей у источника
+                    </p>
+                  } @else {
+                    <app-pi-overflow-select
+                      [items]="sourceFieldItems()"
+                      [selectedValues]="selectedFieldKeysArray()"
+                      (selectedValuesChange)="onFieldSelectionChange($event)"
+                      [multiple]="true"
+                      searchable="auto"
+                      placeholder="— выбрать поля —"
+                      ariaLabel="Поля источника"
+                      dataTest="source-fields-select"
+                    />
+                  }
                 </div>
               }
             </div>
@@ -534,27 +524,24 @@ interface ClientPreviewModel {
 
       /* ─── Settings ─── */
       .ttd-settings {
-        padding: 12px 16px;
+        padding: 8px 16px;
         border-bottom: 2px solid var(--color-ink);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
         flex-shrink: 0;
       }
       .ttd-settings-row {
         display: flex;
-        gap: 12px;
+        gap: 8px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .ttd-settings-row--main {
         align-items: flex-end;
       }
       .ttd-settings-row--source {
         align-items: flex-start;
-      }
-      .ttd-settings-meta {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex-shrink: 0;
-        margin-left: auto;
       }
 
       /* ─── Main ─── */
@@ -711,7 +698,7 @@ interface ClientPreviewModel {
       /* ─── Header Cell (inline editing per column) ─── */
       .ttd-ih {
         position: relative;
-        padding: 5px 6px;
+        padding: 8px 6px;
         text-align: left;
         font-size: 10px;
         font-weight: 700;
@@ -854,8 +841,11 @@ interface ClientPreviewModel {
       .ttd-field--desc {
         flex: 3 1 250px;
       }
-      .ttd-field--cat {
-        flex: 1 1 300px;
+      .ttd-field--category {
+        flex: 1.2 1 180px;
+      }
+      .ttd-field--order {
+        flex: 0 0 80px;
       }
       .ttd-field--source {
         flex: 1 1 200px;
@@ -889,26 +879,6 @@ interface ClientPreviewModel {
         background-repeat: no-repeat;
         background-position: right 8px center;
         padding-right: 28px;
-      }
-      .ttd-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .ttd-pill {
-        padding: 3px 8px;
-        font-size: 11px;
-        font-weight: 500;
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        background: var(--color-paper-2);
-        color: var(--color-muted-foreground-strong);
-        cursor: pointer;
-      }
-      .ttd-pill.is-active {
-        background: var(--color-ink);
-        border-color: var(--color-ink);
-        color: var(--color-paper);
       }
       .ttd-link {
         padding: 0;
@@ -946,46 +916,6 @@ interface ClientPreviewModel {
         align-items: center;
         gap: 8px;
       }
-      .ttd-field-list {
-        max-height: 100px;
-        overflow-y: auto;
-        border: 1px solid var(--color-rule);
-        border-radius: 4px;
-        background: var(--color-paper);
-      }
-      .ttd-field-check {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 8px;
-        font-size: 13px;
-        cursor: pointer;
-        border-bottom: 1px solid var(--color-rule);
-      }
-      .ttd-field-check:last-child {
-        border-bottom: none;
-      }
-      .ttd-field-check:hover {
-        background: var(--color-paper-2);
-      }
-      .ttd-field-check input[type='checkbox'] {
-        width: 12px;
-        height: 12px;
-        accent-color: var(--color-ink);
-      }
-      .ttd-field-check-label {
-        flex: 1;
-        color: var(--color-ink);
-      }
-      .ttd-field-check-type {
-        font-size: 11px;
-        font-family: monospace;
-        color: var(--color-muted-foreground-strong);
-        background: var(--color-paper-2);
-        padding: 1px 4px;
-        border-radius: 2px;
-      }
-
       .ttd-fields-empty {
         margin: 0;
         padding: 10px 8px;
@@ -1030,15 +960,12 @@ export class TableTemplateFormDialogComponent {
   protected readonly AlignRightIcon = AlignRight;
   protected readonly ChevronLeftIcon = ChevronLeft;
   protected readonly ChevronRightIcon = ChevronRight;
-  protected readonly categoryOptions: Array<{
-    key: NonNullable<TableTemplate['category']>;
-    label: string;
-  }> = [
-    { key: 'product-spec', label: 'Спецификация' },
-    { key: 'cost-calc', label: 'Калькуляция' },
-    { key: 'order-summary', label: 'Сводка заказа' },
-    { key: 'price-list', label: 'Прайс-лист' },
-    { key: 'custom', label: 'Прочее' },
+  protected readonly categoryItems: PiOverflowSelectItem[] = [
+    { id: 'product-spec', label: 'Спецификация' },
+    { id: 'cost-calc', label: 'Калькуляция' },
+    { id: 'order-summary', label: 'Сводка заказа' },
+    { id: 'price-list', label: 'Прайс-лист' },
+    { id: 'custom', label: 'Прочее' },
   ];
 
   // ─── Mode ──────────────────────────────────────────────────
@@ -1061,6 +988,14 @@ export class TableTemplateFormDialogComponent {
   );
   protected readonly selectedFields = computed(
     () => this.selectedSource()?.fields.filter((f) => this.selectedFieldKeys().has(f.key)) ?? [],
+  );
+  protected readonly selectedFieldKeysArray = computed(() => [...this.selectedFieldKeys()]);
+  protected readonly sourceFieldItems = computed<PiOverflowSelectItem[]>(() =>
+    (this.selectedSource()?.fields ?? []).map((field) => ({
+      id: field.key,
+      label: field.label,
+      meta: field.type,
+    })),
   );
   protected readonly sourceItems = computed<PiOverflowSelectItem[]>(() =>
     this.allSources().map((src) => ({
@@ -1150,6 +1085,17 @@ export class TableTemplateFormDialogComponent {
   protected onSourceChange(key: string): void {
     this.selectedSourceKey.set(key || null);
     this.selectedFieldKeys.set(new Set());
+    this.syncColumnsFromFields();
+  }
+
+  protected onCategoryChange(category: string): void {
+    if (this.categoryItems.some((item) => item.id === category)) {
+      this.form.controls.category.setValue(category as NonNullable<TableTemplate['category']>);
+    }
+  }
+
+  protected onFieldSelectionChange(keys: string[]): void {
+    this.selectedFieldKeys.set(new Set(keys));
     this.syncColumnsFromFields();
   }
 
