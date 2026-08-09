@@ -95,6 +95,16 @@
 - Ban: touch proposals.page while 313 claimed; deploy
 - Deploy: NO
 
+## Checkpoint 2026-08-09T03:00:00Z · WAVE-DOC-TABLES READY
+- DONE: theme 330/331; KP vitrine; UX-315
+- IN PROGRESS: none
+- NOT DONE: DOC-TABLES-301→304; SALES-320 PARKED; INN PARKED
+- NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`
+- Prompt: `tasks/_backlog/doc-tables/PROMPT-CONTINUOUS.md`
+- Lock yellow under Tables: **Все таблицы** | **Из данных**; Documents TOC dark
+- Ban: EAV; deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:35:00Z · worktree cleaned · LIGHT-330 DONE
 - DONE: pathLabel leftovers on KP pages; attach-dialog strict typing; **TZ-UI-LIGHT-330** closed (ng build unblocked)
 - IN PROGRESS: none

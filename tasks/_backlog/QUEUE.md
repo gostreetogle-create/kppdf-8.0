@@ -15,11 +15,12 @@
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
+| **I — Doc tables** | `doc-tables/WAVE-DOC-TABLES.md` | **READY** — 301→304 |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** idle — UI theme wave 330 → 331 DONE; visual PO review / unpark 320 / deploy remain explicit decisions
-(Deploy не запускать.)
+**NEXT для universal prompt:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`  
+(или `doc-tables/PROMPT-CONTINUOUS.md`)
 
 ## Idle / park / done
 
