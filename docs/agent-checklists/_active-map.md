@@ -1,11 +1,33 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:35:00Z · TZ-DOC-TABLES-305 READY
+- PO: dialog «Редактировать шаблон таблицы» — compact row, category→Тип select, fields multi-overflow, taller columns
+- Вердикт: category = TableTemplateCategory enum (keep); not DocumentTemplateCategory dict
+- TZ: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`
+  · промпт `tasks/prompts/TZ-DOC-TABLES-305-PROMPT.md`
+  · checklist `docs/agent-checklists/TZ-DOC-TABLES-305.md`
+- Keys: table-template-dialog (+ optional overflow-select multi); || OK vs DOC-344/SALES-317
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:28:00Z · TZ-DOC-342 DONE
 - DONE: missing multipart `file` → 400 RU for document-template background and template-block image; valid PNG remains 201
 - Gates: backend tsc PASS · upload-background e2e 6/6 PASS · diff-check PASS
 - Archive: `tasks/_archive/2026-08/TZ-DOC-342.done.md`
 - Lock: `.mimocode/locks/TZ-DOC-342-upload-background-null-file-400.lock`
-- _active/: TZ-DOC-343 · TZ-SALES-317 (peers; untouched)
+- _active/: peers (SALES-317 / DOC-344 as applicable)
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:28:00Z · TZ-DOC-344 READY FOR REVIEW
+- Canvas: one default bg only; upload/load heal index 0; gold filled star
+- Gates: FE tsc PASS · builder specs 43/43
+- Marker: `tasks/_active/TZ-DOC-344.md` (await visual PASS → archive)
+- Peers: DOC-342 BE · SALES-317 — untouched
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:26:00Z · TZ-DOC-344 CLAIMED
+- IN PROGRESS: single default background on canvas + yellow star
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T03:26:00Z
+- Keys: builder.page + builder-inspector FE (no DOC-342 BE / SALES-317)
 - Deploy: NO
 
 ## Checkpoint 2026-08-09T03:22:33Z · TZ-DOC-343 DONE

@@ -1,8 +1,8 @@
 # WAVE-DOC-TABLES — Таблицы документов: chrome + поля + дизайн
 
-**STATUS:** DONE
+**STATUS:** DONE #1–#4; **305 READY** (dialog compact + fields multi)
 **SoT:** `D:\kppdf-8.0` на `main`  
-**Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
+**Промпт 305:** [`../prompts/TZ-DOC-TABLES-305-PROMPT.md`](../prompts/TZ-DOC-TABLES-305-PROMPT.md) · wave: [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
 
 ## Зачем (PO)
@@ -28,6 +28,7 @@
 | 2 | **TZ-DOC-TABLES-302** dialog: overflow-select + плотный UX полей | 301 желательно; keys разные → || ok | DONE |
 | 3 | **TZ-DOC-TABLES-303** registry: product (+ др.) поля по schema SoT + фото-слот | — | DONE |
 | 4 | **TZ-DOC-TABLES-304** auto-sync registry ← mongoose schema | **после 303**; большой | DONE |
+| 5 | **TZ-DOC-TABLES-305** dialog compact + category select + fields multi-overflow | после 302 | **READY** |
 
 ## Честный север по «автополям»
 

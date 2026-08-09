@@ -15,16 +15,16 @@
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
-| **I — Doc tables** | `doc-tables/WAVE-DOC-TABLES.md` | **DONE** — 301–304 |
+| **I — Doc tables** | `doc-tables/WAVE-DOC-TABLES.md` | **305 READY**; 301–304 DONE |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- **Параллель (пока PO на шаблонах/КП):** closeout только `TZ-DOC-342` → IDLE  
-  · промпт `tasks/prompts/PROMPT-PARALLEL-CLOSEOUT-342-343.md`  
-  · `TZ-DOC-343` уже DONE; **SALES-317** не трогать  
-- После idle: предложить деплой **без** запуска, либо ждать unpark / новый TZ от Cursor  
-- **Не брать:** stale READY в backlog без нужды (многие уже в `_archive/*.done`)
+- **Таблицы dialog UX:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`  
+  · промпт `tasks/prompts/TZ-DOC-TABLES-305-PROMPT.md`  
+- **Параллель closeout:** `TZ-DOC-342` → IDLE (`PROMPT-PARALLEL-CLOSEOUT-342-343.md`)  
+- **Не трогать без нужды:** SALES-317 / DOC-344 (active peers)  
+- После idle: предложить деплой **без** запуска
 
 ## Idle / park / done
 
