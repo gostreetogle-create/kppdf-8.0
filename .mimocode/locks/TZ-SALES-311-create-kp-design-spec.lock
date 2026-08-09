@@ -1,0 +1,9 @@
+TZ: TZ-SALES-311
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T02:04:00Z
+CLOSED_AT: 2026-08-09T02:08:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Affirmable /proposals/create three-column layout SoT and page-doc pointer for shell 312.
+GATES: docs-only Markdown review PASS; git diff --check PASS; product tsc/tests N/A.
+BAN: Angular product logic, print, deploy, 314/315/316 fill, ModuleMaterials.

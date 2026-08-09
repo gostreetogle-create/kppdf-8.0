@@ -5,7 +5,7 @@
 - IN PROGRESS: none
 - NOT DONE: TZ-SALES-312 → TZ-SALES-313 → TZ-SALES-314 → TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
 - NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-312-create-kp-shell.md`
-- HEAD: (pending push this commit) pushed: yes (`origin/main`)
+- HEAD: c9c1d641 pushed: yes (`origin/main`)
 - Blockers: none for SALES-311; Team Room claim unavailable for this id; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
 - _active/: empty
 - Deploy: NO
