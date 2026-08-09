@@ -23,7 +23,7 @@ import {
   GeneratedDocument,
   GeneratedDocumentsService,
 } from '../../../shared/services/pi-generated-documents.service';
-import { DOCUMENTS_SECTION_CHIPS } from './documents-group-chips';
+import { DOCUMENTS_TOC_CHIPS } from './documents-group-chips';
 
 const PAGE_SIZE = 10;
 
@@ -40,7 +40,7 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="documents">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="documents" [chips]="chips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
@@ -124,7 +124,8 @@ const PAGE_SIZE = 10;
   `,
 })
 export class DocumentsPage {
-  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
+  protected readonly toc = DOCUMENTS_TOC_CHIPS;
+  protected readonly chips = [] as const;
 
   protected readonly PAGE_SIZE = PAGE_SIZE;
 

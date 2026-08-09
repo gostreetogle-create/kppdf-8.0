@@ -35,7 +35,7 @@ import {
 } from './table-template-dialog.component';
 import { pluralRu } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
-import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
+import { DOCUMENTS_TOC_CHIPS, TABLES_SECTION_CHIPS } from '../documents/documents-group-chips';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 
@@ -61,7 +61,12 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="tables">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="tables"
+      [chips]="chips"
+      [activeId]="activeSectionId()"
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
@@ -71,12 +76,11 @@ type SortDir = 'asc' | 'desc';
           (input)="onSearchInput($event)"
           aria-label="Поиск шаблонов таблиц"
         />
-        <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-          + Новая таблица
-        </app-pi-button>
-        <app-pi-button variant="ghost" (click)="openFromRegistry()" data-test="registry-button">
-          Из существующих данных
-        </app-pi-button>
+        @if (view() === 'all') {
+          <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
+            + Новая таблица
+          </app-pi-button>
+        }
         <span class="text-xs text-muted-foreground"
           >{{ data().length }} {{ totalLabel(data().length) }}</span
         >
@@ -142,7 +146,11 @@ type SortDir = 'asc' | 'desc';
   `,
 })
 export class TablesPage {
-  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
+  protected readonly toc = DOCUMENTS_TOC_CHIPS;
+  protected readonly chips = TABLES_SECTION_CHIPS;
+  protected readonly view = signal<'all' | 'from-data'>('all');
+  protected readonly activeSectionId = computed(() => this.view());
+  private registryDialogOpen = false;
   private readonly service = inject(TableTemplatesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -153,7 +161,21 @@ export class TablesPage {
   private readonly baseUrl = inject(API_BASE_URL);
 
   constructor() {
-    // TZ-DOC-335: auto-open editor when navigated from builder with editId.
+    this.route.queryParams
+      .pipe(
+        map(
+          (params) => (params['view'] === 'from-data' ? 'from-data' : 'all') as 'all' | 'from-data',
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((view) => {
+        this.view.set(view);
+        if (view === 'from-data' && !this.registryDialogOpen) {
+          this.openFromRegistryDialog();
+        }
+      });
+
+    // TZ-DOC-335: auto-open editor when navigated from builder.
     this.route.queryParams
       .pipe(
         map((p) => p['editId'] as string | undefined),
@@ -300,11 +322,32 @@ export class TablesPage {
   }
 
   protected openFromRegistry(): void {
+    this.view.set('from-data');
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view: 'from-data' },
+      queryParamsHandling: 'merge',
+    });
+    if (!this.registryDialogOpen) this.openFromRegistryDialog();
+  }
+
+  private openFromRegistryDialog(): void {
+    this.registryDialogOpen = true;
     const ref = this.dialog.open(TableTemplateFormDialogComponent, {
       data: { mode: 'from-registry' } as TableTemplateDialogConfig,
       parentDestroyRef: this.destroyRef,
     });
-    this.refreshOnDialogClose(ref);
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.listRes.reload();
+      this.registryDialogOpen = false;
+      this.view.set('all');
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { view: 'all' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
+    });
   }
 
   protected openEdit(template: TableTemplate): void {

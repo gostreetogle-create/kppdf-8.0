@@ -1,3 +1,12 @@
+## [2026-08-09] — TZ-DOC-TABLES-301 DONE: Documents TOC + Tables subchips
+**Исполнитель:** buffy-doc-tables-301
+**Статус:** DONE; archive + lock created; deploy НЕ
+**Что:** Четыре страницы конструктора документов используют тёмный Documents TOC; Таблицы получили жёлтые «Все таблицы»/«Из данных». `view=from-data` открывает существующий registry dialog, а `+ Новая таблица` остаётся только на `view=all`; дублирующий CTA удалён.
+**Gates:** FE tsc PASS; focused Jest baseline 4 suites / 28 tests → final 4 suites / 29 tests PASS; changed-file ESLint, Prettier и diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-301.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-301-documents-toc-tables-subchips.lock`
+**NEXT:** TZ-DOC-TABLES-302.
+
 ## [2026-08-09] — TZ-UI-GOLD-332 DONE: light fill gold + gold-deep line role
 
 **Исполнитель:** agent-3e757640b7

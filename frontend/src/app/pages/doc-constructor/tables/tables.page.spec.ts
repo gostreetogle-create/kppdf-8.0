@@ -13,6 +13,7 @@ import {
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
+import { DOCUMENTS_TOC_CHIPS, TABLES_SECTION_CHIPS } from '../documents/documents-group-chips';
 
 describe('TablesPage', () => {
   let httpMock: HttpTestingController;
@@ -88,6 +89,19 @@ describe('TablesPage', () => {
 
   afterEach(() => {
     httpMock.verify();
+  });
+
+  it('keeps Documents TOC dark and table subchips yellow-only', () => {
+    expect(DOCUMENTS_TOC_CHIPS.map((chip) => chip.id)).toEqual([
+      'templates',
+      'documents',
+      'texts',
+      'tables',
+    ]);
+    expect(TABLES_SECTION_CHIPS.map((chip) => [chip.id, chip.label, chip.route])).toEqual([
+      ['all', 'Все таблицы', '/doc-constructor/tables?view=all'],
+      ['from-data', 'Из данных', '/doc-constructor/tables?view=from-data'],
+    ]);
   });
 
   it('creates successfully', async () => {

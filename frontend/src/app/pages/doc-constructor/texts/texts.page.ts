@@ -30,7 +30,7 @@ import {
 import { TextBlockEditorComponent } from './text-block-editor.component';
 import { pluralRu, RU_BLOCKS, RU_COLUMNS } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
-import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
+import { DOCUMENTS_TOC_CHIPS } from '../documents/documents-group-chips';
 
 type SortDir = 'asc' | 'desc';
 
@@ -51,7 +51,7 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="texts">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="texts" [chips]="chips" activeId="">
       @if (error()) {
         <div
           tools
@@ -171,7 +171,8 @@ type SortDir = 'asc' | 'desc';
   `,
 })
 export class TextsPage {
-  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
+  protected readonly toc = DOCUMENTS_TOC_CHIPS;
+  protected readonly chips = [] as const;
   private readonly service = inject(TextBlocksService);
   private readonly categoryService = inject(TextBlockCategoriesService);
   private readonly dialog = inject(PiDialogService);

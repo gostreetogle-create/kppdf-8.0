@@ -1,0 +1,18 @@
+# TZ-DOC-TABLES-301 — DONE lock
+TASK: TZ-DOC-TABLES-301
+OWNER: buffy-doc-tables-301
+CLOSED_AT: 2026-08-09
+COMMIT: pending closeout
+PROTECTED_FILES:
+  - frontend/src/app/pages/doc-constructor/documents/documents-group-chips.ts
+  - frontend/src/app/pages/doc-constructor/tables/tables.page.ts
+  - frontend/src/app/pages/doc-constructor/tables/tables.page.spec.ts
+  - frontend/src/app/pages/doc-constructor/templates/templates.page.ts
+  - frontend/src/app/pages/doc-constructor/documents/documents.page.ts
+  - frontend/src/app/pages/doc-constructor/texts/texts.page.ts
+  - docs/pages/tables.page.md
+SUCCESSOR: TZ-DOC-TABLES-302
+NOTES:
+  - Scoped frontend acceptance and gates pass.
+  - Existing table registry write path is reused; no backend or schema changes.
+  - Browser/PO visual review unavailable; deploy not run.

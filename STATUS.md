@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** UI theme 330–332 DONE (scoped); Doc Tables 301→304 READY; 320 PARKED; deploy НЕ запускать
+**Phase:** Doc Tables #1 DONE; 302→304 READY; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-DOC-TABLES-301 DONE: Documents TOC + Tables subchips
+**Статус:** DONE on main; deploy НЕ
+**Что:** Все четыре sibling-страницы Документов получили общий тёмный TOC; на Таблицах оставлены только жёлтые «Все таблицы» и «Из данных», второй режим открывает существующий registry dialog через `view=from-data`.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-301.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-301-documents-toc-tables-subchips.lock`
+**Gates:** FE tsc PASS; focused Jest baseline 4/28 → final 4/29 PASS; changed-file ESLint/Prettier/diff-check PASS.
+**NEXT:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-302-table-dialog-overflow-select.md`.
 
 ## [2026-08-09] — TZ-UI-GOLD-332 DONE: light fill gold + gold-deep line role
 **Статус:** DONE on main; deploy НЕ

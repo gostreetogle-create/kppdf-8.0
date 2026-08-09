@@ -1,13 +1,15 @@
 # Страница: Шаблоны таблиц (TablesPage)
 
-**Chrome:** `PiGroupWorkspace` pathLabel «Документы» + `DOCUMENTS_SECTION_CHIPS` (2026-08-08).
+**Chrome:** `PiGroupWorkspace` с тёмным TOC `DOCUMENTS_TOC_CHIPS` и жёлтыми под-табами `TABLES_SECTION_CHIPS` (TZ-DOC-TABLES-301).
 
 **Краткое описание:** Конструктор шаблонов таблиц — задают форму колонок, типы данных и форматирование. Используются в шаблонах документов.
 
 ## Route
 
 ```
-/doc-constructor/tables — «KPPDF — Шаблоны таблиц»
+/doc-constructor/tables — «KPPDF — Шаблоны таблиц» (view=all по умолчанию)
+/doc-constructor/tables?view=all — список всех шаблонов таблиц
+/doc-constructor/tables?view=from-data — открыть режим создания из существующих данных
 /doc-constructor/tables?editId=<tableTemplateId> — auto-open диалога (из builder, TZ-DOC-335)
 ```
 
@@ -16,6 +18,7 @@
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
 | `editId` | `string` | ID шаблона таблицы — открывает форму редактирования при навигации из конструктора |
+| `view` | `all \| from-data` | Активная жёлтая под-вкладка; `from-data` открывает диалог из реестра |
 
 ## API endpoints
 
@@ -54,7 +57,7 @@
 - **Pi page chrome (TZ-DOC-336)** — `PiPageHeader` + `PiToolbar` + `PiSection` + `PiEmptyState` + `PiRowActions`
 - **`app-pi-table`** — shared Flat kit with typed columns, active-state cell template, row actions and kit-consistent loading/empty behavior
 - **Inline search** — без debounce, мгновенный фильтр
-- **Two create modes** — «Новая таблица» + «Из существующих данных» (registry)
+- **Yellow subchips (TZ-DOC-TABLES-301)** — «Все таблицы» (`view=all`) и «Из данных» (`view=from-data`); CTA «+ Новая таблица» остаётся только на `view=all`, а `from-data` открывает registry dialog
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)
 - **isActive switch** — `<app-pi-switch>` inline
 - **Category labels** — readable Russian
@@ -66,6 +69,7 @@
 | TZ | Что сделано |
 |----|------------|
 | TZ-86 | Первая реализация + registry mode |
+| TZ-DOC-TABLES-301 | Documents dark TOC + table yellow subchips; `view=all\|from-data` |
 | TZ-DOC-335 | `editId` queryParam auto-open from builder |
 | TZ-DOC-336 | Pi shell; remove promo; copy slot; dialog FormField/Switch |
 

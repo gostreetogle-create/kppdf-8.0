@@ -38,7 +38,7 @@ import {
 } from '../../../shared/services/pi-document-template-categories.service';
 import { pluralRu } from '../../../shared/util/russian-plural';
 import { ColumnDef, TableComponent } from '../../../shared/ui/pi-table.component';
-import { DOCUMENTS_SECTION_CHIPS } from '../documents/documents-group-chips';
+import { DOCUMENTS_TOC_CHIPS } from '../documents/documents-group-chips';
 
 const RU_TEMPLATES = ['шаблон', 'шаблона', 'шаблонов'] as const;
 const PAGE_SIZE = 10;
@@ -59,7 +59,7 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="templates">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="templates" [chips]="chips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
@@ -168,7 +168,8 @@ const PAGE_SIZE = 10;
 })
 export class TemplatesPage {
   protected readonly PAGE_SIZE = PAGE_SIZE;
-  protected readonly chips = DOCUMENTS_SECTION_CHIPS;
+  protected readonly toc = DOCUMENTS_TOC_CHIPS;
+  protected readonly chips = [] as const;
 
   private readonly svc = inject(DocumentTemplatesService);
   private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
