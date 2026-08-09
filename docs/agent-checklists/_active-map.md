@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T18:15:00Z · TZ-SALES-332 READY (flyout pride polish)
+- PO visual FAIL on Create flyouts after 330/331: hide noop (layout≠sheet columns), ↑↓, «Пресет» jargon, clipped products, cramped chrome.
+- Audit: `docs/audits/2026-08-09-kp-create-flyout-polish-audit.md`
+- Spec: `tasks/_backlog/kp-vitrine/TZ-SALES-332-kp-flyout-table-rail-polish.md`
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-SALES-332.md`
+- Checklist RESERVED: `docs/agent-checklists/TZ-SALES-332.md`
+- Claim **after** archive 331 (shared proposal-create keys). Deploy: NO
+
 ## Checkpoint 2026-08-09T15:06:00Z · TZ-SALES-331 READY FOR REVIEW
 - IN PROGRESS → READY: Create КП markup computes request-only effective `previewLines.unitPrice`; `dealTotals.vatPercent` renders whole-deal footer on the designated live line-items table.
 - Mode fixed in docs/code: prices are VAT-inclusive; VAT extraction = `sum × vat / (100 + vat)`; default VAT = 20%; VAT 0 hides only the VAT row.
