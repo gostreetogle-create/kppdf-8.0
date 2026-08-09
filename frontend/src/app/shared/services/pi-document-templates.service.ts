@@ -78,6 +78,7 @@ export interface BuildPreviewLine {
   quantity: number;
   unitPrice: number;
   productSku?: string;
+  photoUrl?: string;
   unit?: string;
 }
 

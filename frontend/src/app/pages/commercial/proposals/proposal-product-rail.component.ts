@@ -6,6 +6,7 @@ import {
   OnDestroy,
   OnInit,
   inject,
+  input,
   output,
   signal,
 } from '@angular/core';
@@ -31,6 +32,7 @@ export interface ProposalDraftLine {
   productId: string;
   productName: string;
   productSku?: string;
+  photoUrl?: string;
   quantity: number;
   unit?: string;
   unitPrice: number;
@@ -94,6 +96,26 @@ const PAGE_SIZE = 12;
           </select>
         </label>
       </div>
+
+      @if (draftLines().length > 0) {
+        <section class="rail__draft-lines" data-test="kp-rail-draft-lines">
+          <p class="eyebrow m-0">Позиции КП</p>
+          @for (line of draftLines(); track line.productId + '-' + $index; let index = $index) {
+            <label class="rail__draft-line">
+              <span class="rail__draft-line-name">{{ line.productName }}</span>
+              <input
+                class="pi-input rail__quantity"
+                type="number"
+                min="0"
+                [value]="line.quantity"
+                [attr.data-test]="'kp-line-quantity-' + index"
+                (change)="onQuantityChange(index, $event)"
+                [attr.aria-label]="'Количество: ' + line.productName"
+              />
+            </label>
+          }
+        </section>
+      }
 
       @if (loading()) {
         <p class="rail__state" data-test="kp-rail-loading">Загрузка…</p>
@@ -214,6 +236,36 @@ const PAGE_SIZE = 12;
       gap: 0.35rem;
     }
 
+    .rail__draft-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.55rem;
+      border: 1px solid var(--color-rule);
+      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+    }
+
+    .rail__draft-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .rail__draft-line-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.75rem;
+    }
+
+    .rail__quantity {
+      width: 4.5rem;
+      flex: 0 0 4.5rem;
+    }
+
     .rail__grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -290,6 +342,8 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly productAdd = output<ProposalDraftLine>();
+  readonly quantityChange = output<{ index: number; quantity: number }>();
+  readonly draftLines = input<ProposalDraftLine[]>([]);
 
   protected readonly query = signal('');
   protected readonly categoryId = signal('');
@@ -384,10 +438,16 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
       productId: product._id,
       productName: product.name,
       productSku: product.sku,
+      photoUrl: this.mainPhotoUrl(product) || undefined,
       quantity: 1,
       unit: product.unit,
       unitPrice: product.listPrice ?? 0,
     });
+  }
+
+  protected onQuantityChange(index: number, event: Event): void {
+    const raw = Number((event.target as HTMLInputElement).value);
+    this.quantityChange.emit({ index, quantity: Number.isFinite(raw) ? raw : 0 });
   }
 
   protected openCreate(): void {

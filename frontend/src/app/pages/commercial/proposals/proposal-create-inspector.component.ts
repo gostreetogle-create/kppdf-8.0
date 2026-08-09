@@ -182,6 +182,15 @@ export interface ProposalCreateInspectorState {
           </div>
           <app-pi-button
             type="button"
+            variant="outline"
+            size="sm"
+            data-test="kp-table-add-commercial-columns"
+            (click)="commercialColumnsRequest.emit()"
+          >
+            Добавить поля КП (кол-во/цена)
+          </app-pi-button>
+          <app-pi-button
+            type="button"
             variant="ghost"
             size="sm"
             data-test="kp-table-open-template"
@@ -307,6 +316,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly selectedCounterpartyId = input('');
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
+  readonly commercialColumnsRequest = output<void>();
   readonly tableTargetChange = output<string>();
 
   protected readonly organizations = signal<Organization[]>([]);

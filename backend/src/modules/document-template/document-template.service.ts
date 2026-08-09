@@ -10,10 +10,16 @@ import { Model, Types } from 'mongoose';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { promises as fs } from 'node:fs';
-import { DocumentTemplate, DocumentTemplateDocument } from './document-template.schema';
+import {
+  DocumentTemplate,
+  DocumentTemplateDocument,
+} from './document-template.schema';
 import { CreateDocumentTemplateDto } from './dto/create-document-template.dto';
 import { UpdateDocumentTemplateDto } from './dto/update-document-template.dto';
-import { BuildDocumentDto, BuildPreviewLineDto } from './dto/build-document.dto';
+import {
+  BuildDocumentDto,
+  BuildPreviewLineDto,
+} from './dto/build-document.dto';
 import {
   TemplateBlock,
   TemplateBlockDocument,
@@ -23,13 +29,23 @@ import { CounterService } from '../counter/counter.service';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { Contract, ContractDocument } from '../contract/contract.schema';
 import { Order, OrderDocument } from '../order/order.schema';
-import { Organization, OrganizationDocument } from '../organization/organization.schema';
-import { Counterparty, CounterpartyDocument } from '../counterparty/counterparty.schema';
+import {
+  Organization,
+  OrganizationDocument,
+} from '../organization/organization.schema';
+import {
+  Counterparty,
+  CounterpartyDocument,
+} from '../counterparty/counterparty.schema';
 import { Invoice, InvoiceDocument } from '../invoice/invoice.schema';
 import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 import { TableTemplateService } from '../table-template/table-template.service';
+import {
+  KP_LINE_ITEM_COLUMNS,
+  TableTemplateDocument,
+} from '../table-template/table-template.schema';
 import { TextBlock, TextBlockDocument } from '../text-block/text-block.schema';
 import { sanitizeHtml } from '../../common/sanitize-html';
 import { blockBackgroundStyle, blockLayoutStyle } from './layout-renderer';
@@ -113,7 +129,8 @@ export class DocumentTemplateService {
     private readonly categoryService: DocumentTemplateCategoryService,
     // Optional keeps isolated legacy unit fixtures valid while the Nest module
     // supplies the model in production (ASSETS-302 invoice bindings).
-    @Optional() @InjectModel(Invoice.name)
+    @Optional()
+    @InjectModel(Invoice.name)
     private readonly invoiceModel?: Model<InvoiceDocument>,
   ) {}
 
@@ -138,7 +155,9 @@ export class DocumentTemplateService {
       );
       return cat._id;
     }
-    const fallback = await this.categoryService.resolveDefault(dto.organizationId);
+    const fallback = await this.categoryService.resolveDefault(
+      dto.organizationId,
+    );
     if (!fallback) {
       throw new BadRequestException(
         'Не удалось определить категорию шаблона: нет активной категории по умолчанию. Создайте категорию шаблонов или активируйте системную «Общее».',
@@ -193,9 +212,10 @@ export class DocumentTemplateService {
       pageNumbering: dto.pageNumbering ?? false,
       version: dto.version ?? 1,
       notes: dto.notes,
-      createdBy: userId && Types.ObjectId.isValid(userId)
-        ? new Types.ObjectId(userId)
-        : undefined,
+      createdBy:
+        userId && Types.ObjectId.isValid(userId)
+          ? new Types.ObjectId(userId)
+          : undefined,
     });
   }
 
@@ -242,7 +262,10 @@ export class DocumentTemplateService {
     return doc;
   }
 
-  async findExpanded(id: string): Promise<{ template: DocumentTemplateDocument; blocks: TemplateBlockDocument[] }> {
+  async findExpanded(id: string): Promise<{
+    template: DocumentTemplateDocument;
+    blocks: TemplateBlockDocument[];
+  }> {
     const template = await this.findById(id);
     const blocks = await this.blockModel
       .find({ templateId: template._id, isActive: true })
@@ -251,7 +274,10 @@ export class DocumentTemplateService {
     return { template, blocks };
   }
 
-  async update(id: string, dto: UpdateDocumentTemplateDto): Promise<DocumentTemplateDocument> {
+  async update(
+    id: string,
+    dto: UpdateDocumentTemplateDto,
+  ): Promise<DocumentTemplateDocument> {
     const doc = await this.findById(id);
     if (dto.isDefault === true) {
       await this.model.updateMany(
@@ -270,8 +296,10 @@ export class DocumentTemplateService {
     if (dto.isDefault !== undefined) doc.isDefault = dto.isDefault;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
     if (dto.pageSize !== undefined) doc.pageSize = dto.pageSize;
-    if (dto.backgroundImage !== undefined) doc.backgroundImage = dto.backgroundImage;
-    if (dto.backgroundOpacity !== undefined) doc.backgroundOpacity = dto.backgroundOpacity;
+    if (dto.backgroundImage !== undefined)
+      doc.backgroundImage = dto.backgroundImage;
+    if (dto.backgroundOpacity !== undefined)
+      doc.backgroundOpacity = dto.backgroundOpacity;
     if (dto.pageNumbering !== undefined) doc.pageNumbering = dto.pageNumbering;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
@@ -304,7 +332,10 @@ export class DocumentTemplateService {
    * persist a reference to an inactive category. If no default exists,
    * duplication fails with a testable 400 and nothing is written.
    */
-  async duplicate(id: string, userId?: string): Promise<DocumentTemplateDocument> {
+  async duplicate(
+    id: string,
+    userId?: string,
+  ): Promise<DocumentTemplateDocument> {
     const src = await this.findById(id);
     const srcOrgRef = this.refId(src.organizationId);
     const srcCategoryRef = this.refId(src.categoryId);
@@ -320,7 +351,9 @@ export class DocumentTemplateService {
         categoryId = cat._id;
       } catch {
         // Source category no longer assignable → server-side default.
-        const fallback = await this.categoryService.resolveDefault(srcOrgRef ?? null);
+        const fallback = await this.categoryService.resolveDefault(
+          srcOrgRef ?? null,
+        );
         if (!fallback) {
           throw new BadRequestException(
             'Не удалось определить категорию шаблона: исходная категория недоступна и нет активной категории по умолчанию.',
@@ -349,9 +382,10 @@ export class DocumentTemplateService {
       tableOfContents: src.tableOfContents,
       version: 1,
       notes: src.notes,
-      createdBy: userId && Types.ObjectId.isValid(userId)
-        ? new Types.ObjectId(userId)
-        : undefined,
+      createdBy:
+        userId && Types.ObjectId.isValid(userId)
+          ? new Types.ObjectId(userId)
+          : undefined,
     });
     // Duplicate blocks
     const blocks = await this.blockModel.find({ templateId: src._id }).exec();
@@ -429,7 +463,8 @@ export class DocumentTemplateService {
       if (!source || typeof source !== 'object') {
         throw new NotFoundException('Source not found');
       }
-      const sourceOrgId = (source as { organizationId?: unknown }).organizationId;
+      const sourceOrgId = (source as { organizationId?: unknown })
+        .organizationId;
       if (String(sourceOrgId ?? '') !== organizationId) {
         throw new NotFoundException('Source not found');
       }
@@ -454,10 +489,15 @@ export class DocumentTemplateService {
     }
     const quotationId = requireSourceId(dto.quotationId);
     if (quotationId) {
-      const quotation = await this.quotationModel.findById(quotationId).lean().exec();
+      const quotation = await this.quotationModel
+        .findById(quotationId)
+        .lean()
+        .exec();
       assertOrganizationSource(quotation);
       if (quotation?.counterpartyId) {
-        const counterpartyId = requireSourceId(String(quotation.counterpartyId));
+        const counterpartyId = requireSourceId(
+          String(quotation.counterpartyId),
+        );
         const counterparty = await this.counterpartyModel
           .findById(counterpartyId)
           .lean()
@@ -487,17 +527,26 @@ export class DocumentTemplateService {
     }
     const materialId = requireSourceId(dto.materialId);
     if (materialId) {
-      const material = await this.materialModel.findById(materialId).lean().exec();
+      const material = await this.materialModel
+        .findById(materialId)
+        .lean()
+        .exec();
       assertSource(material);
     }
     const workTypeId = requireSourceId(dto.workTypeId);
     if (workTypeId) {
-      const workType = await this.workTypeModel.findById(workTypeId).lean().exec();
+      const workType = await this.workTypeModel
+        .findById(workTypeId)
+        .lean()
+        .exec();
       if (!workType) throw new NotFoundException('Source not found');
     }
     const contractId = requireSourceId(dto.contractId);
     if (contractId) {
-      const contract = await this.contractModel.findById(contractId).lean().exec();
+      const contract = await this.contractModel
+        .findById(contractId)
+        .lean()
+        .exec();
       assertSource(contract);
       if (contract?.customerId) {
         const customerId = requireSourceId(String(contract.customerId));
@@ -512,7 +561,8 @@ export class DocumentTemplateService {
     if (orderId) {
       const order = await this.orderModel.findById(orderId).lean().exec();
       if (!order) throw new NotFoundException('Source not found');
-      if (!order.counterpartyId) throw new NotFoundException('Source not found');
+      if (!order.counterpartyId)
+        throw new NotFoundException('Source not found');
       assertSource(order);
       if (order.contractId) {
         const contractId = requireSourceId(String(order.contractId));
@@ -563,7 +613,10 @@ export class DocumentTemplateService {
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
     await this.applyIssuerOrganization(template, bag);
-    const lineItemsTargetIds = this.resolveLineItemsTargetIds(blocks, dto.tableTargetId);
+    const lineItemsTargetIds = this.resolveLineItemsTargetIds(
+      blocks,
+      dto.tableTargetId,
+    );
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
         const withBinding = await this.resolveBlockContent(b, bag);
@@ -588,7 +641,10 @@ export class DocumentTemplateService {
     block: TemplateBlockDocument,
     overrides: Partial<TemplateBlock>,
   ): TemplateBlockDocument {
-    return Object.assign(block.toObject({ virtuals: false }), overrides) as TemplateBlockDocument;
+    return Object.assign(
+      block.toObject({ virtuals: false }),
+      overrides,
+    ) as TemplateBlockDocument;
   }
 
   /**
@@ -605,17 +661,21 @@ export class DocumentTemplateService {
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
-    const settings = block.settings as {
-      tableTemplateId?: string;
-      kpLineItems?: boolean;
-      role?: string;
-    } | undefined;
-    const tableTemplateId = source?.kind === 'table-template'
-      ? source.refId
-      : settings?.tableTemplateId;
+    const settings = block.settings as
+      | {
+          tableTemplateId?: string;
+          kpLineItems?: boolean;
+          role?: string;
+        }
+      | undefined;
+    const tableTemplateId =
+      source?.kind === 'table-template'
+        ? source.refId
+        : settings?.tableTemplateId;
     if (!tableTemplateId) return block;
     try {
-      if (source?.kind === 'table-template' && source.mode === 'snapshot') return block;
+      if (source?.kind === 'table-template' && source.mode === 'snapshot')
+        return block;
       if (previewLines === undefined) {
         const html = await this.tableTemplateService.preview(tableTemplateId);
         return this.cloneResolvedBlock(block, { content: html });
@@ -625,11 +685,15 @@ export class DocumentTemplateService {
         ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
         : [];
       const total = isLineItemsTarget
-        ? previewLines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+        ? previewLines.reduce(
+            (sum, line) => sum + line.quantity * line.unitPrice,
+            0,
+          )
         : 0;
-      const totals = isLineItemsTarget && dealTotals
-        ? { total, vatPercent: dealTotals.vatPercent }
-        : undefined;
+      const totals =
+        isLineItemsTarget && dealTotals
+          ? { total, vatPercent: dealTotals.vatPercent }
+          : undefined;
       const html = await this.tableTemplateService.preview(
         tableTemplateId,
         rows,
@@ -648,28 +712,46 @@ export class DocumentTemplateService {
   ): Set<string> {
     const liveTables = blocks.filter((block) => {
       if (block.type !== 'table') return false;
-      if (block.source?.kind === 'table-template' && block.source.mode === 'snapshot') {
+      if (
+        block.source?.kind === 'table-template' &&
+        block.source.mode === 'snapshot'
+      ) {
         return false;
       }
-      const settings = block.settings as { tableTemplateId?: string } | undefined;
+      const settings = block.settings as
+        { tableTemplateId?: string } | undefined;
       return block.source?.kind === 'table-template'
         ? Boolean(block.source.refId)
         : Boolean(settings?.tableTemplateId);
     });
     if (requestedTableTargetId) {
       const requested = liveTables.filter((block) => {
-        const sourceId = block.source?.kind === 'table-template' ? block.source.refId : undefined;
-        const settings = block.settings as { tableTemplateId?: string } | undefined;
-        return sourceId === requestedTableTargetId || settings?.tableTemplateId === requestedTableTargetId;
+        const sourceId =
+          block.source?.kind === 'table-template'
+            ? block.source.refId
+            : undefined;
+        const settings = block.settings as
+          { tableTemplateId?: string } | undefined;
+        return (
+          sourceId === requestedTableTargetId ||
+          settings?.tableTemplateId === requestedTableTargetId
+        );
       });
-      if (requested.length > 0) return new Set(requested.map((block) => String(block._id)));
+      if (requested.length > 0)
+        return new Set(requested.map((block) => String(block._id)));
     }
 
     const explicit = liveTables.filter((block) => {
-      const settings = block.settings as { kpLineItems?: boolean; role?: string } | undefined;
+      const settings = block.settings as
+        { kpLineItems?: boolean; role?: string } | undefined;
       return settings?.kpLineItems === true || settings?.role === 'line-items';
     });
-    const targets = explicit.length > 0 ? explicit : liveTables.length === 1 ? liveTables : [];
+    const targets =
+      explicit.length > 0
+        ? explicit
+        : liveTables.length === 1
+          ? liveTables
+          : [];
     return new Set(targets.map((block) => String(block._id)));
   }
 
@@ -679,16 +761,52 @@ export class DocumentTemplateService {
     tableLayout?: { key: string; visible?: boolean }[],
   ): Promise<unknown[][]> {
     const table = await this.tableTemplateService.findById(tableTemplateId);
+    const persistedColumns = table.columns ?? [];
     const layoutColumns = tableLayout
       ? tableLayout
           .filter((entry) => entry.visible !== false)
-          .map((entry) => (table.columns ?? []).find((column) => column.key === entry.key))
-          .filter((column): column is NonNullable<typeof column> => Boolean(column))
+          .map(
+            (entry) =>
+              persistedColumns.find((column) => column.key === entry.key) ??
+              this.syntheticKpColumn(entry.key),
+          )
+          .filter((column): column is NonNullable<typeof column> =>
+            Boolean(column),
+          )
       : [];
-    const columns = layoutColumns.length > 0 ? layoutColumns : table.columns ?? [];
+    const columns = layoutColumns.length > 0 ? layoutColumns : persistedColumns;
     return lines.map((line, rowIndex) =>
-      columns.map((column) => this.previewLineValue(column.key, line, rowIndex)),
+      columns.map((column) =>
+        this.previewLineValue(column.key, line, rowIndex),
+      ),
     );
+  }
+
+  /** Request-only columns merged by Create КП; the shared TableTemplate is unchanged. */
+  private syntheticKpColumn(
+    key: string,
+  ): NonNullable<TableTemplateDocument['columns']>[number] | null {
+    const normalized = key.trim().toLowerCase();
+    const aliases: Record<string, string[]> = {
+      index: ['index', 'number', '№', 'номер'],
+      productName: ['productname', 'name', 'title', 'product', 'наименование'],
+      quantity: ['quantity', 'qty', 'count', 'кол-во', 'количество'],
+      unit: ['unit', 'ед', 'ед.изм'],
+      unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
+      sum: ['sum', 'total', 'amount', 'сумма'],
+    };
+    const match = Object.entries(aliases).find(([, values]) =>
+      values.includes(normalized),
+    );
+    if (!match) return null;
+    const defaults = KP_LINE_ITEM_COLUMNS.find(
+      (column) => column.key === match[0],
+    );
+    return defaults
+      ? ({ ...defaults } as NonNullable<
+          TableTemplateDocument['columns']
+        >[number])
+      : null;
   }
 
   private previewLineValue(
@@ -700,10 +818,16 @@ export class DocumentTemplateService {
     if (['index', 'number', '№', 'номер'].includes(normalized)) {
       return rowIndex + 1;
     }
-    if (['productname', 'name', 'title', 'product', 'наименование'].includes(normalized)) {
+    if (
+      ['productname', 'name', 'title', 'product', 'наименование'].includes(
+        normalized,
+      )
+    ) {
       return line.productName;
     }
-    if (['quantity', 'qty', 'count', 'кол-во', 'количество'].includes(normalized)) {
+    if (
+      ['quantity', 'qty', 'count', 'кол-во', 'количество'].includes(normalized)
+    ) {
       return line.quantity;
     }
     if (['unitprice', 'price', 'unit_price', 'цена'].includes(normalized)) {
@@ -711,6 +835,9 @@ export class DocumentTemplateService {
     }
     if (['sum', 'total', 'amount', 'сумма'].includes(normalized)) {
       return line.quantity * line.unitPrice;
+    }
+    if (['photo', 'image', 'рисунок', 'photourl'].includes(normalized)) {
+      return line.photoUrl ? { kind: 'image', url: line.photoUrl } : '';
     }
     if (['productsku', 'sku', 'article', 'артикул'].includes(normalized)) {
       return line.productSku ?? '';
@@ -827,7 +954,11 @@ export class DocumentTemplateService {
           }),
       );
     }
-    if (dto.invoiceId && Types.ObjectId.isValid(dto.invoiceId) && this.invoiceModel) {
+    if (
+      dto.invoiceId &&
+      Types.ObjectId.isValid(dto.invoiceId) &&
+      this.invoiceModel
+    ) {
       lookups.push(
         this.invoiceModel
           .findById(dto.invoiceId)
@@ -842,14 +973,19 @@ export class DocumentTemplateService {
     await Promise.all(lookups);
 
     // Cascade related entities from order/contract so {{counterparty.*}} tokens resolve
-    const order = bag.order as {
-      counterpartyId?: Types.ObjectId | string;
-      quotationId?: Types.ObjectId | string;
-    } | undefined;
+    const order = bag.order as
+      | {
+          counterpartyId?: Types.ObjectId | string;
+          quotationId?: Types.ObjectId | string;
+        }
+      | undefined;
     if (order?.quotationId && !bag.quotation) {
       const quotationId = String(order.quotationId);
       if (Types.ObjectId.isValid(quotationId)) {
-        const quotation = await this.quotationModel.findById(quotationId).lean().exec();
+        const quotation = await this.quotationModel
+          .findById(quotationId)
+          .lean()
+          .exec();
         if (quotation) bag.quotation = quotation;
       }
     }
@@ -861,10 +997,12 @@ export class DocumentTemplateService {
       }
     }
 
-    const contract = bag.contract as {
-      customerId?: Types.ObjectId | string;
-      organizationId?: Types.ObjectId | string;
-    } | undefined;
+    const contract = bag.contract as
+      | {
+          customerId?: Types.ObjectId | string;
+          organizationId?: Types.ObjectId | string;
+        }
+      | undefined;
     if (contract?.customerId && !bag.counterparty) {
       const cpId = String(contract.customerId);
       if (Types.ObjectId.isValid(cpId)) {
@@ -880,10 +1018,12 @@ export class DocumentTemplateService {
       }
     }
 
-    const quotation = bag.quotation as {
-      counterpartyId?: Types.ObjectId | string;
-      organizationId?: Types.ObjectId | string;
-    } | undefined;
+    const quotation = bag.quotation as
+      | {
+          counterpartyId?: Types.ObjectId | string;
+          organizationId?: Types.ObjectId | string;
+        }
+      | undefined;
     if (quotation?.counterpartyId && !bag.counterparty) {
       const cpId = String(quotation.counterpartyId);
       if (Types.ObjectId.isValid(cpId)) {
@@ -899,14 +1039,19 @@ export class DocumentTemplateService {
       }
     }
 
-    const invoice = bag.invoice as {
-      supplierId?: Types.ObjectId | string;
-      supplierOrgId?: Types.ObjectId | string;
-    } | undefined;
+    const invoice = bag.invoice as
+      | {
+          supplierId?: Types.ObjectId | string;
+          supplierOrgId?: Types.ObjectId | string;
+        }
+      | undefined;
     if (invoice?.supplierId && !bag.counterparty) {
       const supplierId = String(invoice.supplierId);
       if (Types.ObjectId.isValid(supplierId)) {
-        const supplier = await this.counterpartyModel.findById(supplierId).lean().exec();
+        const supplier = await this.counterpartyModel
+          .findById(supplierId)
+          .lean()
+          .exec();
         if (supplier) bag.counterparty = supplier;
       }
     }
@@ -957,11 +1102,11 @@ export class DocumentTemplateService {
    * become empty strings so image blocks render their existing empty state.
    */
   private organizationRenderData(value: unknown): Record<string, unknown> {
-    const organization = (value && typeof value === 'object'
-      ? value
-      : {}) as Record<string, unknown>;
+    const organization = (
+      value && typeof value === 'object' ? value : {}
+    ) as Record<string, unknown>;
     const assets: unknown[] = Array.isArray(organization['assets'])
-      ? organization['assets'] as unknown[]
+      ? (organization['assets'] as unknown[])
       : [];
     const urlFor = (role: string): string => {
       const asset = assets.find((entry) => {
@@ -1000,7 +1145,10 @@ export class DocumentTemplateService {
     if (source?.kind === 'text-block') {
       if (source.mode === 'snapshot') return block;
       if (!Types.ObjectId.isValid(source.refId)) return block;
-      const text = await this.textBlockModel.findById(source.refId).lean().exec();
+      const text = await this.textBlockModel
+        .findById(source.refId)
+        .lean()
+        .exec();
       if (!text) return block;
       return this.cloneResolvedBlock(block, {
         content: text.content ?? '',
@@ -1015,7 +1163,9 @@ export class DocumentTemplateService {
         { source: source.source, field: source.field, format: source.format },
         bag,
       );
-      return resolved === undefined ? block : this.cloneResolvedBlock(block, { content: resolved });
+      return resolved === undefined
+        ? block
+        : this.cloneResolvedBlock(block, { content: resolved });
     }
 
     const binding = block.dataBinding;
@@ -1026,11 +1176,15 @@ export class DocumentTemplateService {
     // legacy reference resolution; static values otherwise remain literals.
     const settings = block.settings as { textBlockId?: string } | undefined;
     const legacyTextId = settings?.textBlockId;
-    const hasExplicitLegacyMarker = binding.source === 'static'
-      && typeof legacyTextId === 'string'
-      && Types.ObjectId.isValid(legacyTextId);
+    const hasExplicitLegacyMarker =
+      binding.source === 'static' &&
+      typeof legacyTextId === 'string' &&
+      Types.ObjectId.isValid(legacyTextId);
     if (hasExplicitLegacyMarker) {
-      const legacyText = await this.textBlockModel.findById(legacyTextId).lean().exec();
+      const legacyText = await this.textBlockModel
+        .findById(legacyTextId)
+        .lean()
+        .exec();
       // A legacy source is live only when the document carries the explicit
       // marker. Never infer a reference from an ObjectId-shaped literal or a
       // matching snapshot; that would silently change user-authored content.
@@ -1135,12 +1289,13 @@ export class DocumentTemplateService {
     blocks: TemplateBlockDocument[],
     data: Record<string, unknown>,
   ): string {
-    const escapeHtml = (value: string): string => value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+    const escapeHtml = (value: string): string =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     const safeImageUrl = (value: string | undefined): string => {
       const url = value?.trim() ?? '';
       if (!url) return '';
@@ -1149,7 +1304,12 @@ export class DocumentTemplateService {
           ? escapeHtml(url)
           : '';
       }
-      if (/^https?:\/\//i.test(url) || /^\/(?!\/)/.test(url) || /^\.\.?(?:\/|$)/.test(url) || /^#/.test(url)) {
+      if (
+        /^https?:\/\//i.test(url) ||
+        /^\/(?!\/)/.test(url) ||
+        /^\.\.?(?:\/|$)/.test(url) ||
+        /^#/.test(url)
+      ) {
         return escapeHtml(url);
       }
       return '';
@@ -1191,25 +1351,31 @@ export class DocumentTemplateService {
       </style>`;
     const bgImages = template.backgroundImage ?? [];
     const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;
-    const activeBgs = defaultIdx >= 0 && defaultIdx < bgImages.length
-      ? [bgImages[defaultIdx]]
-      : bgImages;
+    const activeBgs =
+      defaultIdx >= 0 && defaultIdx < bgImages.length
+        ? [bgImages[defaultIdx]]
+        : bgImages;
     const bgLayers = activeBgs
       .map((url) => {
         const safeUrl = safeImageUrl(url);
-        return safeUrl ? `<div class="doc-bg"><img src="${safeUrl}" alt=""></div>` : '';
+        return safeUrl
+          ? `<div class="doc-bg"><img src="${safeUrl}" alt=""></div>`
+          : '';
       })
       .join('');
     const body = blocks
       .map((b) => {
         const content = substitute(b.content ?? b.title);
-        const literalContent = b.source?.kind === 'literal'
-          ? sanitizeHtml(b.source.value)
-          : content;
-        const imageSettings = b.settings as { role?: string; imageUrl?: string } | undefined;
-        const imageContent = safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
+        const literalContent =
+          b.source?.kind === 'literal' ? sanitizeHtml(b.source.value) : content;
+        const imageSettings = b.settings as
+          { role?: string; imageUrl?: string } | undefined;
+        const imageContent =
+          safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
         const layoutStyle = blockLayoutStyle(b.layout);
-        const bgStyle = blockBackgroundStyle(b.settings as Record<string, unknown> | undefined);
+        const bgStyle = blockBackgroundStyle(
+          b.settings as Record<string, unknown> | undefined,
+        );
         const combinedStyle = [layoutStyle, bgStyle].filter(Boolean).join(';');
         const blockClass = layoutStyle ? 'block block--positioned' : 'block';
         const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
@@ -1306,7 +1472,10 @@ export class DocumentTemplateService {
 
     const doc = await this.findById(id);
 
-    if ((doc.backgroundImage?.length ?? 0) >= DocumentTemplateService.MAX_BACKGROUND_IMAGES) {
+    if (
+      (doc.backgroundImage?.length ?? 0) >=
+      DocumentTemplateService.MAX_BACKGROUND_IMAGES
+    ) {
       throw new ConflictException(
         `Превышен лимит фоновых изображений (макс. ${DocumentTemplateService.MAX_BACKGROUND_IMAGES}). Удалите одно из существующих, прежде чем добавлять новое.`,
       );
@@ -1351,7 +1520,9 @@ export class DocumentTemplateService {
   async removeBackground(id: string, index: number): Promise<void> {
     const doc = await this.findById(id);
     if (index < 0 || index >= doc.backgroundImage.length) {
-      throw new BadRequestException(`Индекс ${index} вне диапазона (0..${doc.backgroundImage.length - 1})`);
+      throw new BadRequestException(
+        `Индекс ${index} вне диапазона (0..${doc.backgroundImage.length - 1})`,
+      );
     }
     const removedUrl = doc.backgroundImage[index];
     doc.backgroundImage.splice(index, 1);
@@ -1374,7 +1545,10 @@ export class DocumentTemplateService {
     await doc.save();
   }
 
-  async setOrientation(id: string, orientation: 'portrait' | 'landscape'): Promise<void> {
+  async setOrientation(
+    id: string,
+    orientation: 'portrait' | 'landscape',
+  ): Promise<void> {
     const doc = await this.findById(id);
     doc.orientation = orientation;
     await doc.save();

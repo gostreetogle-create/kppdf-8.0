@@ -718,6 +718,87 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     ]);
   }));
 
+  it('merges missing commercial columns into the Create instance only', fakeAsync(() => {
+    tableFindMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: {
+          _id: 'table-1',
+          columns: [
+            { key: 'photo', label: 'Рисунок' },
+            { key: 'name', label: 'Наименование' },
+          ],
+        },
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      addCommercialColumns: () => void;
+      kpTableLayout: () => Array<{ key: string; label: string; visible: boolean }>;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    page.addCommercialColumns();
+    tick(250);
+
+    expect(page.kpTableLayout().map((column) => column.key)).toEqual([
+      'photo',
+      'name',
+      'index',
+      'quantity',
+      'unit',
+      'unitPrice',
+      'sum',
+    ]);
+    expect(buildMock).toHaveBeenLastCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        tableLayout: expect.arrayContaining([
+          { key: 'quantity', visible: true },
+          { key: 'unitPrice', visible: true },
+          { key: 'sum', visible: true },
+        ]),
+      }),
+    );
+  }));
+
+  it('rebuilds quantity and photo data after editing a draft line', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onQuantityChange: (change: { index: number; quantity: number }) => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      photoUrl: '/uploads/stand-thumb.webp',
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    tick(250);
+    buildMock.mockClear();
+    page.onQuantityChange({ index: 0, quantity: 3 });
+    tick(250);
+
+    expect(buildMock).toHaveBeenLastCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [
+          expect.objectContaining({
+            quantity: 3,
+            photoUrl: '/uploads/stand-thumb.webp',
+          }),
+        ],
+      }),
+    );
+  }));
+
   it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;

@@ -203,7 +203,11 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               aria-label="Товары"
               #productsFlyout
             >
-              <app-proposal-product-rail (productAdd)="onProductAdd($event)" />
+              <app-proposal-product-rail
+                [draftLines]="draftLines()"
+                (productAdd)="onProductAdd($event)"
+                (quantityChange)="onQuantityChange($event)"
+              />
             </aside>
           }
 
@@ -236,6 +240,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [selectedCounterpartyId]="counterpartyId()"
                 (stateChange)="onInspectorState($event)"
                 (tableLayoutChange)="onTableLayoutChange($event)"
+                (commercialColumnsRequest)="addCommercialColumns()"
                 (tableTargetChange)="onTableTargetChange($event)"
               />
             </aside>
@@ -452,6 +457,7 @@ export class ProposalCreatePage implements OnInit {
             quantity: line.quantity,
             unitPrice: this.roundMoney(line.unitPrice * (1 + markup / 100)),
             ...(line.productSku ? { productSku: line.productSku } : {}),
+            ...(line.photoUrl ? { photoUrl: line.photoUrl } : {}),
             ...(line.unit ? { unit: line.unit } : {}),
           }));
           const tableLayout: BuildTableLayoutColumn[] = this.kpTableLayout().map(
@@ -913,10 +919,49 @@ export class ProposalCreatePage implements OnInit {
 
   protected onProductAdd(line: ProposalDraftLine): void {
     this.draftLines.update((rows) => [...rows, line]);
+    if (this.tableTemplateId()) this.addCommercialColumns();
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();
     }
+  }
+
+  protected onQuantityChange(change: { index: number; quantity: number }): void {
+    const quantity = Math.max(0, Number.isFinite(change.quantity) ? change.quantity : 0);
+    this.draftLines.update((rows) =>
+      rows.map((line, index) => (index === change.index ? { ...line, quantity } : line)),
+    );
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
+      this.scheduleAutosave();
+    }
+  }
+
+  protected addCommercialColumns(): void {
+    const canonical = [
+      { key: 'index', label: '№', aliases: ['index', 'number', '№', 'номер'] },
+      {
+        key: 'productName',
+        label: 'Наименование',
+        aliases: ['productname', 'name', 'title', 'product', 'наименование'],
+      },
+      {
+        key: 'quantity',
+        label: 'Кол-во',
+        aliases: ['quantity', 'qty', 'count', 'кол-во', 'количество'],
+      },
+      { key: 'unit', label: 'Ед.', aliases: ['unit', 'ед', 'ед.изм'] },
+      { key: 'unitPrice', label: 'Цена', aliases: ['unitprice', 'price', 'unit_price', 'цена'] },
+      { key: 'sum', label: 'Сумма', aliases: ['sum', 'total', 'amount', 'сумма'] },
+    ];
+    const existing = new Set(this.kpTableLayout().map((column) => column.key.trim().toLowerCase()));
+    const next = [
+      ...this.kpTableLayout(),
+      ...canonical
+        .filter((column) => !column.aliases.some((alias) => existing.has(alias)))
+        .map(({ key, label }) => ({ key, label, visible: true })),
+    ];
+    if (next.length !== this.kpTableLayout().length) this.onTableLayoutChange(next);
   }
 
   protected closeFlyouts(): void {

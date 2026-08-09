@@ -81,7 +81,9 @@ export class TableTemplateService implements OnModuleInit {
     });
   }
 
-  async findAll(filter?: { activeOnly?: boolean }): Promise<TableTemplateDocument[]> {
+  async findAll(filter?: {
+    activeOnly?: boolean;
+  }): Promise<TableTemplateDocument[]> {
     const q: Record<string, unknown> = {};
     if (filter?.activeOnly) q.isActive = true;
     return this.model
@@ -210,9 +212,36 @@ export class TableTemplateService implements OnModuleInit {
     const byKey = new Map(columns.map((column) => [column.key, column]));
     const selected = layout
       .filter((entry) => entry.visible !== false)
-      .map((entry) => byKey.get(entry.key))
-      .filter((column): column is TableTemplateDocument['columns'][number] => Boolean(column));
+      .map((entry) => byKey.get(entry.key) ?? this.syntheticKpColumn(entry.key))
+      .filter((column): column is TableTemplateDocument['columns'][number] =>
+        Boolean(column),
+      );
     return selected.length > 0 ? selected : columns;
+  }
+
+  /** Request-only KP columns; never persisted into the shared table template. */
+  private syntheticKpColumn(
+    key: string,
+  ): TableTemplateDocument['columns'][number] | null {
+    const normalized = key.trim().toLowerCase();
+    const aliases: Record<string, string[]> = {
+      index: ['index', 'number', '№', 'номер'],
+      productName: ['productname', 'name', 'title', 'product', 'наименование'],
+      quantity: ['quantity', 'qty', 'count', 'кол-во', 'количество'],
+      unit: ['unit', 'ед', 'ед.изм'],
+      unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
+      sum: ['sum', 'total', 'amount', 'сумма'],
+    };
+    const match = Object.entries(aliases).find(([, values]) =>
+      values.includes(normalized),
+    );
+    if (!match) return null;
+    const defaults = KP_LINE_ITEM_COLUMNS.find(
+      (column) => column.key === match[0],
+    );
+    return defaults
+      ? ({ ...defaults } as TableTemplateDocument['columns'][number])
+      : null;
   }
 
   private renderDealFooter(dealTotals?: TableDealTotals): string {
@@ -221,14 +250,17 @@ export class TableTemplateService implements OnModuleInit {
     const totalLabel = this.formatMoney(total);
     const vat = this.roundMoney(
       dealTotals.vatPercent > 0
-        ? total * dealTotals.vatPercent / (100 + dealTotals.vatPercent)
+        ? (total * dealTotals.vatPercent) / (100 + dealTotals.vatPercent)
         : 0,
     );
-    const vatRow = dealTotals.vatPercent > 0
-      ? `<div>в т.ч. НДС ${dealTotals.vatPercent}%: ${this.formatMoney(vat)} ₽</div>`
-      : '';
-    return `<div class="pi-deal-totals" style="margin-top:8px;text-align:right">` +
-      `<div><strong>Итого: ${totalLabel} ₽</strong></div>${vatRow}</div>`;
+    const vatRow =
+      dealTotals.vatPercent > 0
+        ? `<div>в т.ч. НДС ${dealTotals.vatPercent}%: ${this.formatMoney(vat)} ₽</div>`
+        : '';
+    return (
+      `<div class="pi-deal-totals" style="margin-top:8px;text-align:right">` +
+      `<div><strong>Итого: ${totalLabel} ₽</strong></div>${vatRow}</div>`
+    );
   }
 
   private roundMoney(value: number): number {
@@ -245,6 +277,13 @@ export class TableTemplateService implements OnModuleInit {
   private formatCell(value: unknown, type: string, format?: string): string {
     if (value === null || value === undefined || value === '') {
       return '';
+    }
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      (value as { kind?: string }).kind === 'image'
+    ) {
+      return this.formatImageCell((value as { url?: unknown }).url);
     }
     switch (type) {
       case 'currency': {
@@ -277,13 +316,27 @@ export class TableTemplateService implements OnModuleInit {
         return d.toLocaleDateString('ru-RU');
       }
       case 'bool':
-        return value === true || value === 'true' || value === 1 || value === '1'
+        return value === true ||
+          value === 'true' ||
+          value === 1 ||
+          value === '1'
           ? 'Да'
           : 'Нет';
       case 'text':
       default:
         return this.escapeHtml(String(value));
     }
+  }
+
+  private formatImageCell(value: unknown): string {
+    if (typeof value !== 'string' || !value) return '';
+    const url = value.trim();
+    const allowed =
+      /^https?:\/\//i.test(url) ||
+      /^\/(?!\/)/.test(url) ||
+      /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url);
+    if (!allowed) return '';
+    return `<img src="${this.escapeHtml(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
   }
 
   /** Minimal HTML escaper; output rendered as `[innerHTML]` on consumer side. */

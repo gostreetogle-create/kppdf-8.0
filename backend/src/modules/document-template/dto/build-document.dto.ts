@@ -29,6 +29,10 @@ export class BuildPreviewLineDto {
 
   @IsOptional()
   @IsString()
+  photoUrl?: string;
+
+  @IsOptional()
+  @IsString()
   unit?: string;
 }
 
