@@ -31,6 +31,8 @@ git status --short                          # посмотреть чужие н
 5. **До кода:** CLAIM по `docs/agent-checklists/_TEMPLATE.md` —
    `tasks/_active/<TASK-ID>.md` + checklist Claim slot (`agent_id`, `claimed_at` ISO).
    Доска: `docs/agent-checklists/_active-map.md`. Без CLAIM — не кодить.
+6. **После CLAIM** прочитай `docs/PROJECT-MEMORY.md` — тонкий склад «где правда / что не потерять»
+   (до ARCHITECTURE и page.md).
 
 ## Запреты
 
