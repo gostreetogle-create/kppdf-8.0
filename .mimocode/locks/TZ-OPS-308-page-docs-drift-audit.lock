@@ -1,0 +1,6 @@
+TZ-OPS-308
+closed: 2026-08-09
+commit: e628650c
+zone: page docs drift audit + thin P0 fix
+checklist: docs/agent-checklists/TZ-OPS-308.md
+archive: tasks/_archive/2026-08/TZ-OPS-308.done.md

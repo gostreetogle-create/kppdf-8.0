@@ -1,3 +1,11 @@
+## [2026-08-09T14:26:00Z] — TZ-OPS-308 DONE: page.md drift audit + thin P0 fix
+**Исполнитель:** buffy-ops-308 · docs-only
+**Статус:** DONE; deploy НЕ
+**Что:** Аудит routes.ts ↔ page.md/README/INDEX/DOMAIN-MAP: 36/36 бизнес-routes документированы, 0 MISMATCH по путям. Найден 1 ORPHAN page (foundations — нет route в app.routes.ts, FE-компонента нет): P0 ложный `/foundations` в README row 36. Тонкий P0-fix: ячейка Route + footer в README (без rewrite body). P1: 5 косметических title-расхождений отмечены, не чинились.
+**Gates:** Test-Path аудит True; 84 ≤120; diff без product code; чужой WIP не тронут.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-308.done.md`; lock создан.
+**NEXT:** idle; successor P2 — авто-drift gate routes↔page.md; deploy НЕ.
+
 ## [2026-08-09T14:10:00Z] — TZ-OPS-307 DONE: page.md stubs design/shipping + README hygiene (WAVE CLOSED)
 **Исполнитель:** buffy-ops-307 · WAVE-PAGE-DOCS-GAPS #3 (последняя)
 **Статус:** DONE; docs-only; deploy НЕ

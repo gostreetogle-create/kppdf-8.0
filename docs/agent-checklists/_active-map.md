@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:26:00Z · TZ-OPS-308 DONE (page-docs drift audit)
+- Аудит: 36/36 бизнес-routes OK, 0 MISMATCH по путям; audit 84 строки ≤120.
+- ORPHAN: foundations (нет route) — P0 ложный /foundations в README, исправлен тонко.
+- P1: 5 title-косметика (templates/product-detail/documents/storage/stock) — отмечены.
+- Gates PASS: Test-Path True; diff без product code; чужой WIP не тронут.
+- Archive + lock; checklist DONE.
+- NEXT: idle; successor P2 — авто-drift gate; Deploy: NO
+
 ## Checkpoint 2026-08-09 · TZ-OPS-308 READY (page.md drift audit)
 - NEW docs-only: manual routes↔page.md drift audit + thin P0 index fixes.
 - Spec: `tasks/_backlog/ops/TZ-OPS-308-page-docs-drift-audit.md`

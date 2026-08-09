@@ -54,10 +54,10 @@
 | 33 | **Proposal Create** | `proposals-create.page.md` | `/proposals/create` | Витрина КП (SALES-317…328) |
 | 34 | **Color References** | `color-references.page.md` | `/dictionaries/color-references` | Палитра цветов (DICT-306) |
 | 35 | **Form Profiles** | `form-profiles.page.md` | `/dictionaries/form-profiles` | Профили быстрых форм (DICT-315) |
-| 36 | **Foundations (kit)** | `foundations.page.md` | `/foundations` | Стильгайд/шрифты (design-spec) |
+| 36 | **Foundations (kit)** | `foundations.page.md` | — (kit; нет route в app.routes.ts) | Стильгайд/шрифты (design-spec; OPS-308) |
 
 > 36/36 бизнес-routes документированы (DOMAIN-MAP §1.3 gaps = 0).
-> Дополнительно в индексе: 2 дочерних компонента Builder (tool-pane / inspector) + kit `/foundations` (не бизнес-route).
+> Дополнительно в индексе: 2 дочерних компонента Builder (tool-pane / inspector) + kit `foundations` (стильгайд; route нет в app.routes.ts — OPS-308).
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
