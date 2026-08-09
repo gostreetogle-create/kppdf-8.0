@@ -29,11 +29,11 @@
 
 ## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand
 **Статус:** DONE on main; deploy НЕ
-**Что:** Family expand на `/proposals`, attach с оценкой, variant read-only, sync+confirm. Supersedes 304.
+**Что:** Family expand на `/proposals`, attach с оценкой, отдельный read-only variant dialog, sync+confirm. Supersedes 304; attach write-path не дублировался.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-313.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-313-all-kp-family-expand.lock`
-**Gates:** FE tsc PASS; Jest 31/31 PASS.
-**Wave:** WAVE-KP-VITRINE #4 DONE; NEXT TZ-SALES-314 (now DONE); deploy НЕ.
+**Gates:** FE tsc PASS; Jest 31/31 PASS; Prettier/ESLint PASS.
+**Wave:** WAVE-KP-VITRINE #4 DONE; 310–316 DONE, 320 PARKED; queue idle; deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-312 DONE: Create КП three-zone shell
 **Статус:** DONE on main; deploy НЕ

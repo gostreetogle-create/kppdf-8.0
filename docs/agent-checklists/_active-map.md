@@ -1,12 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T03:50:00Z · WAVE-KP-VITRINE fill DONE (310–316)
-- DONE: TZ-SALES-310…316 — Deals chrome, create studio (rail/inspector/template), All-KP family expand. Print **320 PARKED**.
+## Checkpoint 2026-08-09T02:18:28Z · SALES-313 closeout pushed
+- DONE: TZ-SALES-313 correction — family variants now open in a dedicated read-only dialog; existing attach API write-path remains single and unchanged. This completes the KP vitrine fill 310–316.
 - IN PROGRESS: none
 - NOT DONE: TZ-SALES-320 PARKED (await PO unpark)
-- NEXT: idle
-- HEAD: (pending this push) pushed: yes (`origin/main`)
-- Blockers: none for wave fill; peer UX-315 WIP left uncommitted outside this closeout
+- NEXT: idle — wait for PO to unpark 320 or explicitly request deploy
+- HEAD: 2f551b45 pushed: yes (`origin/main`)
+- Blockers: none; global verify-status retains pre-existing legacy drift
 - _active/: empty
 - Deploy: предложить? **да** (без запуска)
 

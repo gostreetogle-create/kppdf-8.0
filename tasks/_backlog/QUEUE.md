@@ -11,14 +11,13 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **IN WORK** — 310–312 DONE; **313 CLAIMED**; 314–316; **320 PARKED** |
-| **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **READY** — убрать pathLabel (дубль топ-меню); || после keys |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **DONE** — 310–316; **320 PARKED** |
+| **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** добить **313** (уже CLAIMED) → затем 314/315/316  
-**Параллель (свободный агент):** `tasks/_backlog/TZ-UX-315-drop-pathlabel-dense-chrome.md`  
-(CONFLICT: только `pi-group-workspace*` — не трогать proposals CLAIM 313)
+**NEXT для universal prompt:** idle — 310–316 DONE; ждать PO unpark TZ-SALES-320 или явную команду deploy
+**Параллель:** нет — UX chrome уже DONE; не воскрешать.
 
 ## Idle / park / done
 

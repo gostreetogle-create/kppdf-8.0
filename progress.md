@@ -43,12 +43,12 @@
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #4
 **Статус:** DONE; deploy НЕ
-**Что:** На `/proposals` отдельная колонка Семья: expand variants, attach «Несколько фирм» с UI-оценкой, variant read-only, sync+confirm. List скрывает variants. SALES-304 не воскрешался.
-**Затронуто:** pi-proposals.service (+spec), proposals.page (+spec), proposal-form-dialog view-mode, proposal-family-attach-dialog, page docs.
+**Что:** На `/proposals` отдельная колонка Семья: expand variants, attach «Несколько фирм» с UI-оценкой, отдельный read-only variant dialog, sync+confirm. List скрывает variants. SALES-304 не воскрешался; attach остаётся одним существующим API write-path.
+**Затронуто:** pi-proposals.service (+spec), proposals.page (+spec), proposal-family-attach-dialog, proposal-variant-dialog, page docs.
 **Gates:** FE tsc PASS; Jest 31/31 PASS; prettier/eslint PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-313.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-313-all-kp-family-expand.lock`
-**NEXT:** TZ-SALES-314 left product rail.
+**NEXT:** idle — WAVE-KP-VITRINE 310–316 DONE; TZ-SALES-320 PARKED.
 
 ## [2026-08-09] — TZ-SALES-312 DONE: оболочка «Создать КП» (3 зоны)
 
