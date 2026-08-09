@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T20:10:00Z · WARM DEPLOY OK + deploy docs refreshed
+- Git was already clean/`origin/main` at `fe98e763` before deploy; no pending product WIP.
+- Warm deploy (no wipe) PASS: Auth login OK, FE 200, `https://kppdf-crm.ru/api/health/ready` ok.
+- Fix: Windows cp1251 `UnicodeEncodeError` on `→` in `deploy.py` → `_safe_print` + ASCII arrows; prefer `$env:PYTHONUTF8=1`.
+- Docs: `deploy/synology/README.md` agent entry + lessons 15–20; RUNBOOK/DEPLOY dates.
+- NEXT: idle. Wipe/COMPLETE only on explicit PO.
+
 ## Checkpoint 2026-08-09T20:00:36Z · TZ-OPS-309 DONE
 - DONE: TZ-OPS-309 — DOC-343 closeout committed, DOC-344 parked; one-Nest health and admin browser smoke PASS; FE/BE tsc PASS.
 - READY TO PROPOSE DEPLOY · NEXT idle.

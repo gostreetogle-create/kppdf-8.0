@@ -143,20 +143,29 @@ def resolve_settings(args, cfg):
 
 # -- Helpers ------------------------------------------------------------
 
+def _safe_print(msg):
+    """Windows cp1251 consoles choke on arrows/emoji — never crash deploy on log."""
+    try:
+        print(msg)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, "encoding", None) or "utf-8"
+        print(msg.encode(enc, errors="replace").decode(enc, errors="replace"))
+
+
 def log(msg):
-    print("  " + msg)
+    _safe_print("  " + msg)
 
 
 def ok(msg):
-    print("  [OK] " + msg)
+    _safe_print("  [OK] " + msg)
 
 
 def warn(msg):
-    print("  [WARN] " + msg)
+    _safe_print("  [WARN] " + msg)
 
 
 def fail(msg):
-    print("  [FAIL] " + msg)
+    _safe_print("  [FAIL] " + msg)
     sys.exit(1)
 
 
@@ -379,12 +388,12 @@ def publish_desktop_installer(project_root, frontend_dir):
     with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(dest_exe, arcname="kppdf-desktop-setup.exe")
     ok(
-        "Desktop installer → frontend/browser/downloads/kppdf-desktop-setup.exe ("
+        "Desktop installer -> frontend/browser/downloads/kppdf-desktop-setup.exe ("
         + str(dest_exe.stat().st_size)
         + " bytes)"
     )
     ok(
-        "Desktop installer ZIP → frontend/browser/downloads/kppdf-desktop-setup.zip ("
+        "Desktop installer ZIP -> frontend/browser/downloads/kppdf-desktop-setup.zip ("
         + str(dest_zip.stat().st_size)
         + " bytes)"
     )

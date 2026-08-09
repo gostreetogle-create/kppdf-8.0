@@ -3,7 +3,7 @@
 > **Старт здесь:** [`README.md`](./README.md)  
 > **Архитектура:** [`DEPLOY.md`](./DEPLOY.md)  
 > **Секреты:** [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore)  
-> Обновлено: 2026-08-02 (TZ-DEPLOY-301)
+> Обновлено: 2026-08-09 (warm deploy после WAVE-KP-USABLE + Unicode fix)
 
 ---
 
@@ -62,10 +62,12 @@ openssl rand -hex 32   # JWT_REFRESH_SECRET
 ## Деплой одной командой
 
 ```powershell
-# VPN OFF, из корня репо:
-.\deploy\synology\deploy.ps1              # обычный update
+# VPN OFF, из корня репо D:\kppdf-8.0, main == origin/main:
+$env:PYTHONUTF8='1'
+$env:PYTHONIOENCODING='utf-8'
+.\deploy\synology\deploy.ps1              # обычный update (WIPE=false)
 .\deploy\synology\deploy.ps1 -Seed        # + bootstrap restart
-.\deploy\synology\deploy.ps1 -Wipe -Seed  # ТОЛЬКО чистая переустановка
+.\deploy\synology\deploy.ps1 -Wipe -Seed  # ТОЛЬКО по явному PO wipe
 ```
 
 ```bash

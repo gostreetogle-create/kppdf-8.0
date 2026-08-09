@@ -44,6 +44,13 @@ Merge landing for 339/334: `69752397`. `_active/` is empty; WAVE-KP-COMPLETE was
 **Scope:** quotation schema/numbering/soft-delete, frozen 317/320, foreign system-role/admin и DOC-343/344 WIP не тронуты. Deploy НЕ
 **NEXT:** claim TZ-SALES-335 separately. Deploy НЕ
 
+## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
+**Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
+**База кода:** `fe98e763` (+ commit Unicode-fix `deploy.py` / docs)
+**Урок:** Windows cp1251 ломал лог с `→` — `_safe_print` + `PYTHONUTF8=1`
+**Docs:** `deploy/synology/README.md` § «Для ИИ-агента»; RUNBOOK/DEPLOY обновлены
+**NEXT:** idle
+
 ## [2026-08-09T18:18:00Z] — TZ-ADMIN-303 DONE: админ правит системные роли / delete запрещён
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; self-verify PASS; deploy НЕ

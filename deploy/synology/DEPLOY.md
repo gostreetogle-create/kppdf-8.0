@@ -3,7 +3,7 @@
 > **Source of truth** для деплоя v8.  
 > **Старт:** [`README.md`](./README.md) · чеклист [`RUNBOOK.md`](./RUNBOOK.md)  
 > Секреты: [`CREDENTIALS.md`](./CREDENTIALS.md) (gitignore).  
-> Последнее обновление: 2026-08-02
+> Последнее обновление: 2026-08-09 (warm deploy OK; agent entry в README)
 
 ---
 

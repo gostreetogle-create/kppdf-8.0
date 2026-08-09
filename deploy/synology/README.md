@@ -1,6 +1,7 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
-> **Одна точка входа.** Секреты не в git: `CREDENTIALS.md` + `config.env`.
+> **Одна точка входа.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
+> **Последний успешный warm deploy:** 2026-08-09 · код `fe98e763` + fix Unicode в `deploy.py` · prod `https://kppdf-crm.ru` health/ready = ok.
 
 | Файл | Зачем |
 |------|--------|
@@ -13,6 +14,35 @@
 | **`INSTALL.md`** | Установка с нуля |
 | **`backup.sh`** | Бэкап Mongo на VM |
 | **`reset-admin-password.py`** | Сброс пароля admin (опционально) |
+
+---
+
+## Для ИИ-агента (прочитай и сделай так)
+
+Канон **обычного** обновления продакшена (то, что реально проходит):
+
+1. Workspace: `D:\kppdf-8.0`, ветка `main`, `git pull --ff-only`.  
+   Перед деплоем: `git status` чист и `main` = `origin/main` (иначе сначала commit+push — иначе завтра на работе будет асинхрон).
+2. Секреты уже лежат локально (gitignore): `deploy/synology/config.env` + `CREDENTIALS.md`.  
+   **Не** коммитить их. **Не** печатать пароли в чат.
+3. **VPN OFF.** SSH на `192.168.1.103` из домашней LAN.
+4. **Без wipe**, если PO отдельно не сказал wipe:
+   ```powershell
+   cd D:\kppdf-8.0
+   $env:PYTHONUTF8='1'
+   $env:PYTHONIOENCODING='utf-8'
+   .\deploy\synology\deploy.ps1
+   ```
+5. Ждать до ~10–15 мин (Angular build + docker). Успех = блок `=== Deploy complete ===` + Auth login OK + Frontend HTTP 200.
+6. Smoke:
+   ```powershell
+   curl.exe -sf https://kppdf-crm.ru/api/health/ready
+   curl.exe -sf -o NUL -w "%{http_code}" https://kppdf-crm.ru/
+   curl.exe -sf http://192.168.1.103:3000/api/health/ready
+   ```
+7. Отчёт PO: SHA git + «warm deploy OK» + health. **Не** стартовать wipe / COMPLETE / новые TZ без команды.
+
+Запреты: параллельный второй `deploy.ps1`; `--wipe` без явного PO; коммит `config.env`/`CREDENTIALS.md`; деплой из freebuff worktree «на глаз».
 
 ---
 
@@ -151,6 +181,15 @@ https://kppdf-crm.ru/api/health/ready
 12. **`TextBlockCategoriesSeed` обязан быть в `AppModule.providers`** + `TextBlockCategoryModule` в `imports`. Без этого: `Default text-block category unavailable` (slug `obshchee`). Seed сам чинит inactive/non-default system row.
 13. DevFixturesSeed в `NODE_ENV=production` **не** создаёт demo-org — на проде org появляется через UI/шаблоны или admin.
 14. Локальный LM Studio agent: `docs/agents/LM-STUDIO-AGENT.md`, trust **LIMITED_HELPER**, `pnpm lmstudio:check`.
+
+## Уроки деплоя 2026-08-09 (warm, post WAVE-KP-USABLE)
+
+15. Перед деплоем **local `main` == `origin/main`** и working tree clean — иначе на работе завтра другая версия.
+16. Windows консоль **cp1251**: лог с символом `→` ронял `deploy.py` (`UnicodeEncodeError`). Канон: `_safe_print` в `deploy.py` + перед запуском `$env:PYTHONUTF8='1'`.
+17. Desktop installer в tar (~9–10 MB `.exe`/`.zip` в `frontend/browser/downloads/`) — норма; отсутствие `.exe` = WARN, деплой продолжается, кнопка pair может 404.
+18. Compose WARN «output may contain errors» при усечённом логе build — не стоп; ждать health/replica set.
+19. Prod smoke после up: `https://kppdf-crm.ru/api/health/ready` и root `200`; LAN `http://192.168.1.103:3000/api/health/ready`.
+20. Локальный второй Nest на `:3000` (EADDRINUSE) **не мешает** prod-деплою — это только локальный стек.
 
 ### Smoke после деплоя
 
