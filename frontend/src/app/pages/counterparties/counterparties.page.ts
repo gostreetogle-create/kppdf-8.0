@@ -47,7 +47,7 @@ const PAGE_SIZE = 10;
     PiRowActionsComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Клиенты" [chips]="chips" activeId="counterparties">
+    <app-pi-group-workspace [chips]="chips" activeId="counterparties">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <app-pi-button variant="default" (click)="openCreate()" data-test="counterparty-create">
           + Создать

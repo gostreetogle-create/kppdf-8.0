@@ -43,7 +43,7 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink, PiGroupWorkspaceComponent, ButtonComponent, TableComponent],
   template: `
-    <app-pi-group-workspace pathLabel="Логистика" [chips]="chips" activeId="supply">
+    <app-pi-group-workspace [chips]="chips" activeId="supply">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <select
           class="pi-input w-44"

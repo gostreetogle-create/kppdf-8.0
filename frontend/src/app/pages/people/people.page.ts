@@ -49,7 +49,7 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="people" pathLabel="Клиенты">
+    <app-pi-group-workspace [chips]="chips" activeId="people">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="people-search"

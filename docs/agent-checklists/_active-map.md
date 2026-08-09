@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:13:01Z · TZ-UX-315 DONE
+- DONE: TZ-UX-315 — hide `pathLabel` eyebrow in PiGroupWorkspace; dense chrome under top nav; jest 5/5; safe page attrs stripped (proposals* left for peer)
+- IN PROGRESS: none (peer TZ-SALES-314 already DONE per prior checkpoint)
+- NOT DONE: TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
+- NEXT KP: `tasks/_backlog/kp-vitrine/TZ-SALES-315-create-kp-inspector.md`
+- HEAD: (pending this push) pushed: yes (`origin/main`)
+- Blockers: none for UX-315
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:25:00Z · TZ-SALES-314 DONE
 - DONE: TZ-SALES-314 — Create KP left product rail (ProductsService search/add → in-memory draftLines; center lists draft).
 - IN PROGRESS: none

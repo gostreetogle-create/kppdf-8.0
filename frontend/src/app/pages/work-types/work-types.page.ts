@@ -79,7 +79,7 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="work-types" pathLabel="Цех">
+    <app-pi-group-workspace [chips]="chips" activeId="work-types">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="work-types-search"

@@ -38,7 +38,7 @@ interface KindRow {
     PiAccentHueFieldComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Каталог" [chips]="chips" activeId="catalog-appearance">
+    <app-pi-group-workspace [chips]="chips" activeId="catalog-appearance">
       <div class="space-y-5 max-w-4xl" data-test="catalog-appearance-page">
         <header class="flex flex-wrap items-end justify-between gap-3">
           <div>

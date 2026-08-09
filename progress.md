@@ -17,7 +17,7 @@
 **Gates:** FE tsc PASS; Jest pi-group-workspace 5/5 PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-315.done.md`
 **Lock:** `.mimocode/locks/TZ-UX-315-drop-pathlabel-dense-chrome.lock`
-**NEXT:** peer TZ-SALES-314 (KP product rail) — не трогать.
+**NEXT:** TZ-SALES-315 inspector (KP-VITRINE); 314 already DONE peer.
 
 ## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand (ex-304)
 

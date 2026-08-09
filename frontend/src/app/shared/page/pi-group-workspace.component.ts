@@ -13,7 +13,8 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
  *   3) Tools slot — search / filters / CTA
  *   4) Body — table / tree
  *
- * Both chip rows are dense (compact height). TOC is slightly smaller than section chips.
+ * Section identity SoT = top nav (yellow). Do not render pathLabel eyebrow (TZ-UX-315).
+ * Both chip rows are dense; first chrome row sits flush under the app header.
  * Chips with `pageKey` / `anyPageKeys` are hidden when the role lacks that page ACL
  * (same rule as top nav) — user never clicks into /forbidden by accident.
  */
@@ -24,14 +25,9 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
   imports: [RouterLink],
   template: `
     <div class="group-chrome sticky top-0 z-20 bg-paper">
-      @if (pathLabel()) {
-        <p class="eyebrow pt-1.5 pb-0 text-muted-foreground m-0" data-test="group-path-label">
-          {{ pathLabel() }}
-        </p>
-      }
       @if (visibleToc().length > 0) {
         <nav
-          class="group-toc flex items-center gap-1 flex-wrap pt-1.5 pb-0.5 min-w-0"
+          class="group-toc flex items-center gap-1 flex-wrap pt-0 pb-0.5 min-w-0"
           aria-label="Группы справочников"
           data-test="group-toc"
         >
@@ -58,7 +54,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
       <div
         class="group-chips flex items-center gap-1 flex-wrap
                pt-0.5 pb-1.5 min-w-0"
-        [class.pt-1.5]="visibleToc().length === 0"
+        [class.pt-0]="visibleToc().length === 0"
         data-test="group-chips"
       >
         @for (chip of visibleChips(); track chip.id) {
@@ -109,8 +105,8 @@ export class PiGroupWorkspaceComponent {
   private readonly auth = inject(AuthService);
 
   /**
-   * Optional section path label above chips (e.g. «Каталог», «Справочники»).
-   * Complements chips; not a deep path-breadcrumb tree.
+   * @deprecated Unused — top nav is SoT for section identity (TZ-UX-315).
+   * Kept as no-op input so callers can drop the attribute gradually.
    */
   readonly pathLabel = input<string>('');
 

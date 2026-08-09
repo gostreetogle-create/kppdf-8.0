@@ -42,7 +42,6 @@ import {
   ],
   template: `
     <app-pi-group-workspace
-      pathLabel="Справочники"
       [toc]="toc"
       tocActiveId="form-ux"
       [chips]="chips"

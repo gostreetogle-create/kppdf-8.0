@@ -56,13 +56,7 @@ const PAGE_SIZE = 10;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent, ButtonComponent, PiRowActionsComponent, TableComponent],
   template: `
-    <app-pi-group-workspace
-      pathLabel="Администрирование"
-      [toc]="toc"
-      tocActiveId="roles"
-      [chips]="chips"
-      activeId=""
-    >
+    <app-pi-group-workspace [toc]="toc" tocActiveId="roles" [chips]="chips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"

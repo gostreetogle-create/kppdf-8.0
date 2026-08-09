@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
 import { LucideAngularModule, Check, ExternalLink, RefreshCw, Inbox } from 'lucide-angular';
@@ -56,11 +50,7 @@ const STATUS_CHIPS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideAngularModule, PiGroupWorkspaceComponent, ButtonComponent, DatePipe],
   template: `
-    <app-pi-group-workspace
-      pathLabel="Документы"
-      [chips]="[]"
-      activeId="import-todos"
-    >
+    <app-pi-group-workspace [chips]="[]" activeId="import-todos">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <div class="flex items-center gap-1">
           @for (chip of statusChips; track chip.id) {
@@ -99,9 +89,7 @@ const STATUS_CHIPS = [
       }
 
       @if (loading()) {
-        <div class="py-10 text-center text-sm text-muted-foreground" role="status">
-          Загрузка…
-        </div>
+        <div class="py-10 text-center text-sm text-muted-foreground" role="status">Загрузка…</div>
       } @else if (filtered().length === 0) {
         <div
           class="max-w-lg mx-auto mt-4 p-8 pi-dashed-panel flex flex-col items-center gap-2 text-center"
@@ -128,7 +116,9 @@ const STATUS_CHIPS = [
                   {{ todo.title }}
                 </p>
                 @if (todo.body) {
-                  <p class="m-0 mt-1 text-xs text-muted-foreground leading-relaxed whitespace-pre-line">
+                  <p
+                    class="m-0 mt-1 text-xs text-muted-foreground leading-relaxed whitespace-pre-line"
+                  >
                     {{ todo.body }}
                   </p>
                 }

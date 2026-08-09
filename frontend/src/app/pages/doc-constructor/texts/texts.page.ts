@@ -51,7 +51,7 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="texts">
+    <app-pi-group-workspace [chips]="chips" activeId="texts">
       @if (error()) {
         <div
           tools

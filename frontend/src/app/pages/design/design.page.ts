@@ -12,7 +12,7 @@ import { DESIGN_SECTION_CHIPS } from './design-group-chips';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent],
   template: `
-    <app-pi-group-workspace pathLabel="Проектирование" [chips]="chips" activeId="design">
+    <app-pi-group-workspace [chips]="chips" activeId="design">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <span class="text-xs text-muted-foreground">Очередь доукомплектования</span>
       </div>

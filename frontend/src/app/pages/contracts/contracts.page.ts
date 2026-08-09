@@ -177,7 +177,6 @@ function organizationIdOf(row: Contract): string {
   ],
   template: `
     <app-pi-group-workspace
-      pathLabel="Сделки"
       [toc]="dealsToc"
       tocActiveId="contracts"
       [chips]="emptyChips"

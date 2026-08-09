@@ -180,13 +180,7 @@ function counterpartyIdOf(row: Order): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace
-      pathLabel="Сделки"
-      [toc]="dealsToc"
-      tocActiveId="orders"
-      [chips]="emptyChips"
-      activeId=""
-    >
+    <app-pi-group-workspace [toc]="dealsToc" tocActiveId="orders" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="orders-search"

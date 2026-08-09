@@ -12,7 +12,7 @@ import { LOGISTICS_SECTION_CHIPS } from '../supply/logistics-group-chips';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent],
   template: `
-    <app-pi-group-workspace pathLabel="Логистика" [chips]="chips" activeId="shipping">
+    <app-pi-group-workspace [chips]="chips" activeId="shipping">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <span class="text-xs text-muted-foreground">Частичные отгрузки</span>
       </div>

@@ -40,7 +40,7 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="documents">
+    <app-pi-group-workspace [chips]="chips" activeId="documents">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"

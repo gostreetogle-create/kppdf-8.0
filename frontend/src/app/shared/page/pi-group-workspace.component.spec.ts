@@ -42,6 +42,18 @@ class TocHostComponent {
 @Component({
   standalone: true,
   imports: [PiGroupWorkspaceComponent],
+  template: ` <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="first" /> `,
+})
+class PathLabelHostComponent {
+  readonly chips = [
+    { id: 'first', label: 'Все КП', route: '/proposals' },
+    { id: 'second', label: 'Договоры', route: '/contracts' },
+  ] as const;
+}
+
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
   template: ` <app-pi-group-workspace [chips]="chips" activeId="products" /> `,
 })
 class AclHostComponent {
@@ -51,13 +63,13 @@ class AclHostComponent {
   ] as const;
 }
 
-describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
+describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
   const userSignal = signal<{ pages?: string[] } | null>(null);
 
   beforeEach(async () => {
     userSignal.set(null);
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, TocHostComponent, AclHostComponent],
+      imports: [TestHostComponent, TocHostComponent, PathLabelHostComponent, AclHostComponent],
       providers: [
         provideRouter([]),
         {
@@ -84,6 +96,17 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
     expect(chrome?.contains(tools)).toBe(true);
     expect(root.querySelector('[style*="6.25rem"]')).toBeFalsy();
     expect(root.querySelector('[data-test="group-toc"]')).toBeFalsy();
+    expect(chips?.classList.contains('pt-0')).toBe(true);
+  });
+
+  it('does not render pathLabel eyebrow even when pathLabel input is set (TZ-UX-315)', () => {
+    const fixture = TestBed.createComponent(PathLabelHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[data-test="group-path-label"]')).toBeFalsy();
+    expect(root.textContent).not.toContain('Сделки');
+    expect(root.querySelector('[data-test="group-chips"]')).toBeTruthy();
+    expect(root.querySelector('.group-chrome')?.classList.contains('sticky')).toBe(true);
   });
 
   it('renders dense TOC above section chips when toc is provided', () => {
@@ -98,6 +121,8 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312)', () => {
     expect(chips?.textContent).toContain('Категории');
     expect(toc?.querySelector('.group-toc-chip')?.className).toContain('text-[11px]');
     expect(chips?.querySelector('.group-chip')?.className).toContain('text-xs');
+    expect(toc?.className).toContain('pt-0');
+    expect(root.querySelector('[data-test="group-path-label"]')).toBeFalsy();
   });
 
   it('keeps projected tools and CTA inside the workspace width', () => {

@@ -61,7 +61,7 @@ type SortDir = 'asc' | 'desc';
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Документы" [chips]="chips" activeId="tables">
+    <app-pi-group-workspace [chips]="chips" activeId="tables">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"

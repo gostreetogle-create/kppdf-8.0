@@ -1,8 +1,9 @@
 # Page chrome — крошки и компактный заголовок
 
-**Канон PO (2026-08-07):** без `text-5xl` «простыней»; единые хлебные крошки
-`Раздел / страница`; на group-workspace — метка раздела над chips.
-H1 ERP: `font-display text-lg`. Catalog detail имя (passport): `text-lg sm:text-xl` max (TYPE-302).
+**Канон PO (2026-08-09):** без `text-5xl` «простыней»; раздел = жёлтый пункт
+топ-меню (не `pathLabel` eyebrow). На group-workspace — TOC/chips вплотную
+под header. H1 ERP: `font-display text-lg`. Catalog detail имя (passport):
+`text-lg sm:text-xl` max (TYPE-302).
 
 ## Компоненты
 
@@ -10,7 +11,7 @@ H1 ERP: `font-display text-lg`. Catalog detail имя (passport): `text-lg sm:te
 |-----------|--------|
 | `app-pi-page-chrome` | ERP-списки и detail: крошки + короткий H1 + `[actions]` |
 | `app-pi-page-header` | UI-kit showcase (`size="display"`); ERP — prefer chrome |
-| `app-pi-group-workspace` `pathLabel` | Каталог / Справочники / Склад / Админ |
+| `app-pi-group-workspace` | TOC + section chips + tools; `pathLabel` deprecated no-op (TZ-UX-315) |
 | `app-pi-breadcrumb` | Демо в `/navigation`; production prefer chrome |
 
 ## Паттерн крошек
@@ -39,8 +40,8 @@ H1 ERP: `font-display text-lg`. Catalog detail имя (passport): `text-lg sm:te
 
 ## Карта разделов
 
-| Раздел | pathLabel / первый crumb | Страницы |
-|--------|--------------------------|----------|
+| Раздел | SoT (топ-меню) / первый crumb | Страницы |
+|--------|-------------------------------|----------|
 | Каталог | `Каталог` | products, modules, materials, people, work-types + details |
 | Сделки | `Сделки` | proposals, orders, contracts, organizations, production |
 | Документы | `Документы` | documents, templates, texts, tables |
@@ -50,9 +51,9 @@ H1 ERP: `font-display text-lg`. Catalog detail имя (passport): `text-lg sm:te
 
 ## Не путать
 
-Group Chip Workspace **не** дублирует deep path-breadcrumb вместо chips —
-только лёгкий `pathLabel` раздела. Deep path — на detail и на «простынных»
-списках без chips (сделки/документы до cutover на group workspace).
+Group Chip Workspace **не** дублирует раздел над chips — раздел уже в топ-меню
+(`pathLabel` input deprecated, TZ-UX-315). Deep path — на detail и на
+«простынных» списках без chips.
 
 ## Возврат (TZ-UX-313)
 
