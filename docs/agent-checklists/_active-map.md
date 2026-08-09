@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T15:55:30Z · TZ-DOC-344 DONE / star-fill closeout
+- DONE: Builder now renders the active default-background star with a yellow fill through the Lucide child SVG; inactive stars remain outline.
+- Gates: frontend tsc PASS; builder-inspector + builder.page 43/43 PASS; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-344.done.md`; lock recorded; `_active/TZ-DOC-344.md` removed.
+- Foreign DOC-343 backend/docs WIP and dirty `document-template.service.ts` excluded.
+- NEXT: claim TZ-SALES-325; then TZ-SALES-328 after 325 review/closeout.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T12:52:45Z · TZ-SALES-326 DONE / Cursor visual PASS
 - DONE: products flyout 40rem cap + center/iframe backdrop dismiss; Cursor confirmed L+R closure and unchanged A4 rails|center|rails geometry.
 - Gates: frontend tsc PASS; ng build PASS (budget warnings only); proposal-create 11/11; diff-check PASS.

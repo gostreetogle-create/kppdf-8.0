@@ -1571,3 +1571,14 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** frontend tsc PASS; ng build PASS with existing budget warnings; proposal-create 11/11 PASS; diff-check PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-326.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-326-products-flyout-wide-dismiss.lock`
+
+---
+
+## [2026-08-09] — TZ-DOC-344 DONE: Builder default background star fill closeout
+**Исполнитель:** Buffy / agent-3e757640b7
+**Статус:** DONE; PO accepted one-background behavior; star-fill fix self-checked; archive + lock + checkpoint completed
+**Что сделано кратко:** active/default background star now visibly uses yellow fill through the nested Lucide SVG/path; inactive stars stay outline-only. Existing single-default canvas and upload healing remain unchanged.
+**Gates:** frontend tsc PASS; builder-inspector + builder.page 43/43 PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-344.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-344-builder-single-default-background.lock`
+**Scope:** foreign DOC-343 checklist/backend WIP and dirty `document-template.service.ts` excluded; DOC-342, SALES-*, 322/320, deploy untouched.
