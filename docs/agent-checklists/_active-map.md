@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:31:48Z · TZ-DOC-TABLES-306 CLAIMED
+- IN PROGRESS: Documents → Tables chips route via path + queryParams; fix `Из данных` fallthrough to `/materials`.
+- Base: canonical `main` / `origin/main` at `3c1ce597`; TZ-DOC-TABLES-305 archived DONE.
+- Conflict scan: `_active/` empty; 306 keys are free. Team Room claim unavailable (unknown task).
+- Marker: `tasks/_active/TZ-DOC-TABLES-306.md`; checklist `docs/agent-checklists/TZ-DOC-TABLES-306.md`.
+- Scope guard: no table dialog/preset 307, no DOC-343 WIP, no KP Create, no Catalog routes, no deploy.
+- NEXT: implement → FE gates + manual route check → archive/commit/push. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:30:45Z · TZ-DOC-TABLES-305 DONE / PO visual PASS
 - DONE: table dialog compact settings + Тип overflow + multi-fields controls accepted by PO.
 - Gates: frontend tsc PASS; focused table-template-dialog + overflow-select 2 suites / 49 tests; ESLint PASS; Prettier PASS; diff-check PASS.
