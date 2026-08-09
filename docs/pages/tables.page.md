@@ -59,6 +59,7 @@
 - **Inline search** — без debounce, мгновенный фильтр
 - **Yellow subchips (TZ-DOC-TABLES-301)** — «Все таблицы» (`view=all`) и «Из данных» (`view=from-data`); CTA «+ Новая таблица» остаётся только на `view=all`, а `from-data` открывает registry dialog
 - **Dialog selectors (TZ-DOC-TABLES-302)** — источник и тип столбца используют `app-pi-overflow-select` с overlay; native `<select>` в диалоге не используется; поля registry показываются читаемыми строками с явным empty state
+- **Product registry fields (TZ-DOC-TABLES-303)** — Product exposes schema-backed print fields (notes, status, RAL, dimensions, purpose, installation, flags) and `photoIds` as the current text photo-slot binding; automatic schema sync is deferred to 304
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)
 - **isActive switch** — `<app-pi-switch>` inline
 - **Category labels** — readable Russian
@@ -71,6 +72,8 @@
 |----|------------|
 | TZ-86 | Первая реализация + registry mode |
 | TZ-DOC-TABLES-301 | Documents dark TOC + table yellow subchips; `view=all\|from-data` |
+| TZ-DOC-TABLES-302 | Overflow-select dialog controls + readable registry field empty state |
+| TZ-DOC-TABLES-303 | Product schema-backed registry fields + `photoIds` text slot |
 | TZ-DOC-335 | `editId` queryParam auto-open from builder |
 | TZ-DOC-336 | Pi shell; remove promo; copy slot; dialog FormField/Switch |
 

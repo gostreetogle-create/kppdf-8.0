@@ -11,7 +11,7 @@ import { Injectable } from '@nestjs/common';
  *   to the registry automatically surfaces it in the picker, without
  *   redeploying frontend.
  * - Future extensibility (TZ-87): migrate to a Mongo-admin-managed
- *   registry IF the 5 sources grow to 15+; for MVP 5 entries hardcoded
+ *   registry IF the 7 sources grow to 15+; for MVP 7 entries hardcoded
  *   are cleaner than CRUD overhead.
  */
 export interface DataSourceDescriptor {
@@ -67,7 +67,11 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'kpp', label: 'КПП', type: 'text' },
       { key: 'ogrn', label: 'ОГРН', type: 'text' },
       { key: 'ogrnip', label: 'ОГРНИП', type: 'text' },
-      { key: 'legalForm', label: 'Организационно-правовая форма', type: 'text' },
+      {
+        key: 'legalForm',
+        label: 'Организационно-правовая форма',
+        type: 'text',
+      },
       { key: 'legalAddress', label: 'Юридический адрес', type: 'text' },
       { key: 'legalType', label: 'Тип (ООО/ИП/ПАО/АО)', type: 'text' },
       { key: 'bankName', label: 'Наименование банка', type: 'text' },
@@ -95,7 +99,11 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'inn', label: 'ИНН', type: 'text' },
       { key: 'kpp', label: 'КПП', type: 'text' },
       { key: 'ogrn', label: 'ОГРН', type: 'text' },
-      { key: 'legalForm', label: 'Организационно-правовая форма', type: 'text' },
+      {
+        key: 'legalForm',
+        label: 'Организационно-правовая форма',
+        type: 'text',
+      },
       { key: 'bankName', label: 'Наименование банка', type: 'text' },
       { key: 'bankBik', label: 'БИК', type: 'text' },
       { key: 'bankAccount', label: 'Расчётный счёт', type: 'text' },
@@ -140,10 +148,27 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'unit', label: 'Единица измерения', type: 'text' },
       { key: 'subcategory', label: 'Подкатегория', type: 'text' },
       { key: 'description', label: 'Описание', type: 'text' },
+      { key: 'notes', label: 'Примечания', type: 'text' },
+      { key: 'status', label: 'Статус', type: 'text' },
+      { key: 'ralCode', label: 'Код RAL', type: 'text' },
+      { key: 'dimensions.length', label: 'Длина', type: 'number' },
+      { key: 'dimensions.width', label: 'Ширина', type: 'number' },
+      { key: 'dimensions.height', label: 'Высота', type: 'number' },
+      { key: 'dimensions.unit', label: 'Единица габаритов', type: 'text' },
+      { key: 'purpose', label: 'Назначение', type: 'text' },
+      { key: 'installation', label: 'Монтаж', type: 'text' },
+      { key: 'isActive', label: 'Активен', type: 'bool' },
+      { key: 'hasPassport', label: 'Есть паспорт', type: 'bool' },
+      { key: 'hasDrawing', label: 'Есть чертёж', type: 'bool' },
+      { key: 'photoIds', label: 'Фото (ID/URL)', type: 'text' },
       { key: 'listPrice', label: 'Прайсовая цена', type: 'currency' },
       { key: 'basePrice', label: 'Базовая цена', type: 'currency' },
       { key: 'costPrice', label: 'Себестоимость', type: 'currency' },
-      { key: 'defaultMarkupPercent', label: 'Наценка по умолчанию, %', type: 'number' },
+      {
+        key: 'defaultMarkupPercent',
+        label: 'Наценка по умолчанию, %',
+        type: 'number',
+      },
       { key: 'stockQty', label: 'Остаток на складе', type: 'number' },
       { key: 'weightKg', label: 'Масса, кг', type: 'number' },
     ],
@@ -172,7 +197,11 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'department', label: 'Подразделение', type: 'text' },
       { key: 'description', label: 'Описание', type: 'text' },
       { key: 'hourlyRate', label: 'Часовая ставка, ₽', type: 'currency' },
-      { key: 'defaultDurationHours', label: 'Нормативная длительность, ч', type: 'number' },
+      {
+        key: 'defaultDurationHours',
+        label: 'Нормативная длительность, ч',
+        type: 'number',
+      },
       { key: 'isActive', label: 'Активен', type: 'bool' },
     ],
   },

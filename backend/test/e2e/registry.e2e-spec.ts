@@ -3,7 +3,7 @@
  *
  * Coverage:
  *  - GET /api/registry/data-sources — returns 200 with sources envelope
- *  - lists exactly 5 data sources (organization, counterparty, product, material, work-type)
+ *  - lists the 7 supported data sources (including quotation and invoice)
  *  - each source has key, label, group, fields[]
  *  - each field has key, label, type ∈ {text, number, currency, date, bool}
  *  - organization source has name (text) + vatRate (number)
@@ -42,15 +42,23 @@ describe('Registry (e2e)', () => {
     expect(Array.isArray(res.body.sources)).toBe(true);
   });
 
-  it('lists exactly 5 data sources (organization, counterparty, product, material, work-type)', async () => {
+  it('lists all supported data sources', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/registry/data-sources')
       .set(auth);
     expect(res.status).toBe(200);
-    const keys: string[] = res.body.sources.map((s: { key: string }) => s.key).sort();
-    expect(keys).toEqual(
-      ['counterparty', 'material', 'organization', 'product', 'work-type'],
-    );
+    const keys: string[] = res.body.sources
+      .map((s: { key: string }) => s.key)
+      .sort();
+    expect(keys).toEqual([
+      'counterparty',
+      'invoice',
+      'material',
+      'organization',
+      'product',
+      'quotation',
+      'work-type',
+    ]);
   });
 
   it('each source has key, label, group, fields[]', async () => {
@@ -94,7 +102,9 @@ describe('Registry (e2e)', () => {
     expect(org).toBeDefined();
     const nameField = org.fields.find((f: { key: string }) => f.key === 'name');
     expect(nameField?.type).toBe('text');
-    const vatField = org.fields.find((f: { key: string }) => f.key === 'vatRate');
+    const vatField = org.fields.find(
+      (f: { key: string }) => f.key === 'vatRate',
+    );
     expect(vatField?.type).toBe('number');
   });
 
@@ -110,6 +120,35 @@ describe('Registry (e2e)', () => {
       (f: { key: string }) => f.key === 'listPrice',
     );
     expect(listPrice?.type).toBe('currency');
+  });
+
+  it('product source exposes schema-backed print fields and a photo slot', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/registry/data-sources')
+      .set(auth);
+    const product = res.body.sources.find(
+      (s: { key: string }) => s.key === 'product',
+    );
+    expect(product).toBeDefined();
+    const fields = Object.fromEntries(
+      product.fields.map((f: { key: string; type: string }) => [f.key, f.type]),
+    );
+    expect(fields).toEqual(
+      expect.objectContaining({
+        notes: 'text',
+        status: 'text',
+        ralCode: 'text',
+        'dimensions.length': 'number',
+        'dimensions.width': 'number',
+        'dimensions.height': 'number',
+        purpose: 'text',
+        installation: 'text',
+        isActive: 'bool',
+        hasPassport: 'bool',
+        hasDrawing: 'bool',
+        photoIds: 'text',
+      }),
+    );
   });
 
   it('work-type source has hourlyRate (currency)', async () => {

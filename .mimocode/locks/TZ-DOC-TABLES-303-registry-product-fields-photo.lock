@@ -1,0 +1,14 @@
+# TZ-DOC-TABLES-303 — DONE lock
+TASK: TZ-DOC-TABLES-303
+OWNER: buffy-doc-tables-303
+CLOSED_AT: 2026-08-09
+COMMIT: pending closeout
+PROTECTED_FILES:
+  - backend/src/modules/registry/registry.service.ts
+  - backend/test/e2e/registry.e2e-spec.ts
+  - frontend/src/app/shared/services/pi-registry.service.ts
+SUCCESSOR: TZ-DOC-TABLES-304
+NOTES:
+  - Product registry now covers schema-backed print fields and the photo slot.
+  - `photoIds` intentionally uses the existing text binding contract; image rendering is outside this TZ.
+  - Backend tsc and registry e2e pass; deploy not run.

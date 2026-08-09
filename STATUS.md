@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Doc Tables #1–2 DONE; 303→304 READY; 320 PARKED; deploy НЕ запускать
+**Phase:** Doc Tables #1–3 DONE; 304 READY; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-DOC-TABLES-303 DONE: Product registry fields + photo slot
+**Статус:** DONE on main; deploy НЕ
+**Что:** Product registry расширен полями из текущей schema SoT (notes/status/RAL/габариты/назначение/монтаж/флаги) и `photoIds` text photo-slot; reflection/autosync оставлены следующему TZ.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-303.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-303-registry-product-fields-photo.lock`
+**Gates:** backend tsc PASS; registry e2e 1/8 PASS; registry ESLint/Prettier/diff-check PASS.
+**NEXT:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-304-registry-schema-autosync.md`.
 
 ## [2026-08-09] — TZ-DOC-TABLES-302 DONE: dialog overflow-select UX
 **Статус:** DONE on main; deploy НЕ

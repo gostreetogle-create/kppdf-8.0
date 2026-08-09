@@ -1,3 +1,12 @@
+## [2026-08-09] — TZ-DOC-TABLES-303 DONE: Product registry fields + photo slot
+**Исполнитель:** buffy-doc-tables-303
+**Статус:** DONE; archive + lock created; deploy НЕ
+**Что:** Реестр Product дополнен полями из schema SoT (notes/status/RAL/габариты/назначение/монтаж/флаги) и `photoIds` text photo-slot; schema reflection/autosync оставлены TZ-DOC-TABLES-304.
+**Gates:** backend tsc PASS; registry e2e 1 suite / 8 tests PASS (baseline had stale 5-source assertion); registry ESLint, Prettier и diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-303.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-303-registry-product-fields-photo.lock`
+**NEXT:** TZ-DOC-TABLES-304.
+
 ## [2026-08-09] — TZ-DOC-TABLES-302 DONE: dialog overflow-select UX
 **Исполнитель:** buffy-doc-tables-302
 **Статус:** DONE; archive + lock created; deploy НЕ
