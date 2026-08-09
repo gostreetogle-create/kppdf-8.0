@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
+- Agent crashed mid-339 review. Hotfix on main: `8a3186f1` (no Save button; fix 400 item.total; empty resume after delete).
+- `_active/TZ-SALES-339.md` still present — first job: self-verify + archive 339, then 334→335→336 to wave DONE.
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-CONTINUOUS.md` (NO PO visual waits; agent browser self-check).
+- Foreign system-role/roles-admin/DOC-343 WIP excluded. Deploy NO.
+
 ## Checkpoint 2026-08-09T17:00:00Z · TZ-SALES-339 READY FOR REVIEW
 - Implementation `da1d83e7de29b58276c063c71071675c69b5a44c`; FE/BE tsc PASS; proposal/Create Jest 38/38; quotation service 26/26; quotation e2e 6/6; FE Prettier/ESLint/diff-check PASS.
 - «Сохранить КП» is visible in Create studio; debounced autosave updates one draft; F5 resumes items/template; soft-deleted quotations are absent from list/GET.
