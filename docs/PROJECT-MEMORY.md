@@ -32,7 +32,7 @@
 | Очередь агентов / бронь | `docs/agent-checklists/_active-map.md` + `tasks/_active/` |
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
 | Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` — протокол триггер→файлы + Integrity slot |
-| Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` (появится в OPS-304) |
+| Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` — домен → BE module → route → page.md → SoT |
 
 ## 4. Не потерять при DONE (чеклист)
 
@@ -61,7 +61,7 @@
 - **Конструктор документов / builder** → `builder*.page.md`; не трогать чужие DOC-* ключи.
 - **Desktop import / MCP** → `desktop/docs/MCP.md` + journal; FIC §E.
 - **Не уверен в каноне имён** → `docs/TZ-AUTHORING.md` §1.1 (1 термин = 1 сущность).
-- **Домен вообще** → сначала `docs/DOMAIN-MAP.md` (после OPS-304), затем модуль в `backend/src/modules/`.
+- **Домен вообще** → сначала `docs/DOMAIN-MAP.md`, затем модуль в `backend/src/modules/`.
 
 ---
 

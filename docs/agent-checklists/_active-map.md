@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T13:40:00Z · TZ-OPS-304 DONE (Domain Canon Map) — WAVE COMPLETE
+- DONE: `docs/DOMAIN-MAP.md` (84 lines ≤180) — 12 domain rows (domain → BE modules → FE routes → page.md → SoT) + «Не путать» 4 canon pairs + gap inventory 36 routes.
+- Gaps: 6 routes NO page.md — `/design`, `/shipping`, `/doc-template-categories`, `/dictionaries/text-block-categories`, `/admin/users`, `/admin/roles`; page.md NOT created (table only + successor hint).
+- Wiring: PROJECT-MEMORY + DOCS-INTEGRITY links; ARCHITECTURE pointer (1 line); pages/README pointer (1 line).
+- Gates: DOMAIN-MAP 84 ≤180 PASS; rg DOMAIN-MAP in 3 files PASS; no frontend/backend paths in diff PASS.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-304.done.md`; `_active` removed; checklist DONE.
+- **WAVE-PROJECT-KNOWLEDGE (OPS-302→303→304) CLOSED.** NEXT: idle. Successors: missing page.md per gap table (separate TZ, not this wave). Deploy: NO.
+
 ## Checkpoint 2026-08-09T13:20:00Z · TZ-OPS-303 DONE (Docs Integrity Closeout)
 - DONE: `docs/DOCS-INTEGRITY.md` (60 lines ≤100) — rule, trigger→files matrix, Integrity slot, anti-drift.
 - `_TEMPLATE.md` Integrity slot section after Acceptance; FIC §F item; PROJECT-MEMORY live link + slot in «Не потерять»; GEMINI DoD line.

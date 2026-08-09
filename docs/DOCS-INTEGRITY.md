@@ -19,7 +19,7 @@
 | MCP / desktop tool | FIC §E + `desktop/docs/MCP.md` |
 | Доменный SoT / write-path | page.md + при необходимости audit/vision; канон не менять молча |
 | Только refactor без UX/API | progress + checklist; page.md только если изменилось UX-поведение |
-| Доменная карта | строка в `docs/DOMAIN-MAP.md` (OPS-304) при смене контура |
+| Доменная карта | строка в `docs/DOMAIN-MAP.md` при смене контура домена (module/route/page) |
 
 ## 3. Integrity slot (обязателен в checklist)
 
@@ -51,7 +51,7 @@ page.md = N/A, SECTION-READINESS = N/A — и так явно в Acceptance.
 
 - Списки интеграции: `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC §A–E)
 - Тонкий склад: `docs/PROJECT-MEMORY.md`
-- Карта доменов: `docs/DOMAIN-MAP.md` (OPS-304)
+- Карта доменов: `docs/DOMAIN-MAP.md`
 - Готовность разделов: `docs/SECTION-READINESS.md`
 - Шаблон checklist: `docs/agent-checklists/_TEMPLATE.md`
 
