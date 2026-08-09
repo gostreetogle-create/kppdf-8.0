@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T17:00:00Z · TZ-SALES-339 READY FOR REVIEW
+- Implementation `da1d83e7de29b58276c063c71071675c69b5a44c`; FE/BE tsc PASS; proposal/Create Jest 38/38; quotation service 26/26; quotation e2e 6/6; FE Prettier/ESLint/diff-check PASS.
+- «Сохранить КП» is visible in Create studio; debounced autosave updates one draft; F5 resumes items/template; soft-deleted quotations are absent from list/GET.
+- Marker/checklist remain until Cursor/PO visual autosave/delete PASS. Foreign DOC-343/admin/system-role WIP excluded; 334/335/336 not claimed; deploy NO.
+- NEXT: visual PASS → archive/lock/remove `_active` → claim TZ-SALES-334.
+
+## Checkpoint 2026-08-09T16:54:31Z · TZ-SALES-339 CLAIMED
+- IN PROGRESS: visible «Сохранить КП», debounced draft autosave/resume, and soft-delete filtering for list/GET.
+- Base: canonical `main` at `398f9ee8`; TZ-SALES-338 archive/lock/_active removal completed before claim.
+- Conflict scan: `_active/` empty; 339 Create/list/quotation keys free. Foreign DOC-343/admin/system-role WIP preserved/excluded. Team Room unavailable.
+- Marker/checklist: `tasks/_active/TZ-SALES-339.md` / `docs/agent-checklists/TZ-SALES-339.md`.
+- Scope guard: no 334 client, 335 qty/photo, 336 lock/copy, second editor, 317 shell, 320/322, or deploy.
+- NEXT: implement → fullstack gates → READY FOR REVIEW → visual autosave/delete PASS → archive. Deploy NO.
+
 ## Checkpoint 2026-08-09T16:53:54Z · TZ-SALES-338 DONE
 - DONE after explicit Cursor/PO PASS: list Edit opens same КП in Create studio; Create opens a new studio sheet without form dialog.
 - Implementation `fb04b05689a9dc557840781791c469b80e6c91e4`; archive/lock recorded; `_active/TZ-SALES-338.md` removed.

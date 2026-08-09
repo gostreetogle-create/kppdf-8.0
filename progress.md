@@ -1,3 +1,12 @@
+## [2026-08-09T17:00:00Z] — TZ-SALES-339 READY FOR REVIEW: visible Save КП, autosave, soft-delete
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual autosave/delete PASS обязателен до archive; deploy НЕ
+**Implementation:** `da1d83e7de29b58276c063c71071675c69b5a44c`.
+**Что:** «Сохранить КП» вынесена в верхнюю строку Create-студии; после шаблона + нашей фирмы запускается debounce-автосохранение того же draft; F5 восстанавливает товары/шаблон из Quotation. Soft-deleted КП исключаются из списка и обычного GET.
+**Gates:** frontend/backend tsc PASS; proposal/Create Jest 38/38; quotation service 26/26; quotation e2e 6/6; FE Prettier/ESLint PASS; diff-check PASS.
+**Scope:** 334 client, 335 qty/photo, 336 lock/copy, 317 shell, DOC-343/admin WIP, 320/322 и deploy не тронуты.
+**NEXT:** Cursor/PO visual: Save КП на виду, autosave → F5, удалить КП → строка отсутствует после reload. После PASS archive/lock/remove `_active` → TZ-SALES-334. Deploy НЕ
+
 ## [2026-08-09T16:53:54Z] — TZ-SALES-338 DONE: edit through Create studio
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; Cursor/PO visual PASS; deploy НЕ
