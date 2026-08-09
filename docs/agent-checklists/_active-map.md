@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:08:53Z · TZ-DOC-TABLES-303 DONE
+- DONE: TZ-DOC-TABLES-303 — Product registry now exposes schema-backed print fields and the `photoIds` text photo slot; registry e2e and backend typecheck pass.
+- IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
+- NOT DONE: TZ-DOC-TABLES-304; TZ-SALES-320 PARKED; INN-301 PARKED
+- NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-304-registry-schema-autosync.md`
+- HEAD: 719cb145 pushed: yes
+- Blockers: none for TZ-DOC-TABLES-303; autosync/reflection intentionally deferred to 304
+- _active/: TZ-SALES-317.md (foreign; untouched)
+- Deploy: NO
+
+# SESSION QUEUE
+
 ## Checkpoint 2026-08-09T03:06:05Z · TZ-DOC-TABLES-302 DONE
 - DONE: TZ-DOC-TABLES-302 — table dialog source and editable column type now use PiOverflowSelect overlays; registry field rows are readable and empty sources are explicit.
 - IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
