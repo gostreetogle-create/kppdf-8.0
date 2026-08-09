@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09 · TZ-DOC-TABLES-306 READY (from-data → materials bug)
+- ROOT CAUSE: yellow chips put `?view=` inside `routerLink` string → Angular miss → `**` → `/materials`.
+- Spec: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-306-from-data-stays-in-documents.md`
+- Checklist RESERVED: `docs/agent-checklists/TZ-DOC-TABLES-306.md`
+- Prefer archive DOC-TABLES-305 first (shared `tables.page.md`), then claim 306.
+- Workaround: TOC «Таблицы» + «+ Новая таблица»; avoid yellow «Из данных» until fix.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T14:26:00Z · TZ-OPS-308 DONE (page-docs drift audit)
 - Аудит: 36/36 бизнес-routes OK, 0 MISMATCH по путям; audit 84 строки ≤120.
 - ORPHAN: foundations (нет route) — P0 ложный /foundations в README, исправлен тонко.
