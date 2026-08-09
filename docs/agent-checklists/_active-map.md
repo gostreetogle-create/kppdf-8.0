@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T11:05:00Z · TZ-SALES-321 FAIL integration (FE base)
+- Agent READY: BE toObject OK; FE built on obsolete SALES-316 center (dropdown on sheet)
+- Would regress 317 FROZEN shell; parent WT already has uncommitted 317/319
+- Fixup prompt: `tasks/_backlog/kp-vitrine/PROMPT-SALES-321-FIXUP-SHELL.md`
+- Do NOT archive; do NOT merge worktree FE as-is
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T10:45:00Z · hygiene: stale DOC-342/343 markers
 - Agent STOP on SALES-321 cited DOC-343 — **false**: 343 DONE (`TZ-DOC-343.done.md`)
 - Real leftover: untracked `_active/TZ-DOC-342.md` after 342 DONE — **removed** (freed `document-template.service.ts`)
