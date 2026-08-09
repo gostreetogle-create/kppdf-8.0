@@ -43,14 +43,15 @@ PO сказал: при «оплачена» — архив без правок;
 
 ---
 
-## Слои работ (не мешать 319)
+## Слои работ (не мешать 321)
 
-1. **SALES-319** — только live preview в Create (ок, не snapshot).  
-2. **SALES-32x persist** — Save КП пишет `templateId` + `templateSnapshot` (HTML и/или blocks); view/print из snapshot.  
-3. **SALES-32y lock** — UI замок «обновить из шаблона»; gates по статусу (оплачена/converted).  
-4. **SALES-302** — версии отправки клиенту (уже в бэклоге канона).
+1. **SALES-319/321** — live preview fidelity в Create.  
+2. **SALES-32x persist** — Save КП пишет `templateId` + `templateSnapshot` (+ revision).  
+3. **SALES-322** — в Параметрах: «шаблон устарел» → кнопка **Обновить бланк** (добровольно). Промпт: [`PROMPT-SALES-322.md`](./PROMPT-SALES-322.md) (**PARK**).  
+4. Hard-lock «оплачена» / converted — CTA 322 скрыт (эта NOTE).  
+5. **SALES-302** — версии отправки клиенту (отдельно).
 
-CONFLICT KEYS для 32x/32y: `quotation.schema|service|dto`, proposals save path — **не** center preview keys 319.
+CONFLICT KEYS для persist/322: `quotation.*` + inspector/create save — **не** путать с 321 center polish.
 
 ---
 

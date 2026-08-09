@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T10:20:00Z · TZ-SALES-322 PARK (stale template refresh)
+- PO: в Параметрах КП — если шаблон в конструкторе новее → предложить «Обновить бланк»
+- TZ: `TZ-SALES-322-kp-stale-template-refresh.md` · `PROMPT-SALES-322.md`
+- PARK до: 321 DONE + Save с templateSnapshot
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T10:15:00Z · TZ-SALES-321 READY (319 visual FAIL)
 - PO screens: Create КП broken bg + scroll + no positions vs builder OK
 - Root: mongoose `{...doc}` drops `layout` in build; iframe no scale; uploads in sandbox

@@ -31,9 +31,10 @@
 | 8 | **TZ-SALES-317** focus shell (A4 + icon rails + cascade stub) | review → archive |
 | 9 | **TZ-SALES-319** center = `build()` HTML | wiring DONE; **visual FAIL** → 321 |
 | 9b | **TZ-SALES-321** preview fidelity (layout/bg/scale) | **READY** после FAIL-аудита |
+| 9c | **TZ-SALES-322** stale template → «Обновить бланк» в Параметрах | **PARK** до snapshot Save + 321 |
 | 10 | **TZ-SALES-318** left cascade fill (категории/фильтры) | после 317; || ок с 319 по смыслу, keys разные если только rail |
 | 11 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
-| — | **NOTE** snapshot/lock бланка + «оплачена» | [`NOTE-KP-template-snapshot-lock.md`](./NOTE-KP-template-snapshot-lock.md) — после 319 → TZ persist/lock |
+| — | **NOTE** snapshot/lock + «оплачена» | [`NOTE-KP-template-snapshot-lock.md`](./NOTE-KP-template-snapshot-lock.md) |
 
 Параллель после 312: **313** (журнал) и **314/315** (создание) — CONFLICT KEYS разные страницы; не трогать чужие keys.
 
