@@ -1,3 +1,4 @@
+
 ## [2026-08-09T18:18:00Z] — TZ-ADMIN-303 DONE: админ правит системные роли / delete запрещён
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; self-verify PASS; deploy НЕ
@@ -15,6 +16,29 @@
 **Gates:** frontend/backend tsc PASS; proposal/Create Jest 38/38; quotation service 26/26; quotation e2e 6/6; FE Prettier/ESLint PASS; diff-check PASS.
 **Scope:** 334 client, 335 qty/photo, 336 lock/copy, 317 shell, DOC-343/admin WIP, 320/322 и deploy не тронуты.
 **NEXT:** Cursor/PO visual: Save КП на виду, autosave → F5, удалить КП → строка отсутствует после reload. После PASS archive/lock/remove `_active` → TZ-SALES-334. Deploy НЕ
+
+## [2026-08-09T18:43:14Z] — TZ-SALES-334 DONE: all-counterparty client picker
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; browser self-verify + FE gates + archive/lock/closeout; deploy НЕ
+**Feature:** client-only Create changes, pushed in the closeout commit for this TZ.
+**Что:** В `Сделки → Создать КП` поле «Клиент» стало `PiOverflowSelect` по всем активным Counterparty без фильтра роли; searchable auto; выбранный клиент входит в autosave и восстанавливается после F5.
+**Gates:** frontend tsc PASS; focused proposal/Create Jest 21/21 PASS; frontend Prettier PASS; diff-check PASS.
+**Browser evidence:** 5 client options; `Демо · Клиент 3 · ИНН 7700002038` → «Сохранено» → reload `/proposals/create` без `new=1` → клиент остался в «Параметры». Временный self-check draft удалён.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-334.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-334-kp-counterparty-picker.lock`
+**NEXT:** claim TZ-SALES-335 separately. Deploy НЕ
+
+## [2026-08-09T21:35:00Z] — TZ-SALES-339 DONE: autosave, resume, delete closeout
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; browser self-verify + archive + lock + closeout commit/push; deploy НЕ
+**Implementation:** `8a3186f1` (already on `main`).
+**Что:** Create КП показывает только русское состояние автосохранения «Сохранено»; после выбора шаблона, нашей фирмы и товара draft сохраняется и восстанавливается вместе с клиентом. Удалённое КП даёт «КП удалено», исчезает после reload и не воскресает в новом листе.
+**Gates:** frontend tsc PASS; backend tsc PASS; focused proposal/Create Jest 21/21 PASS; quotation service 26/26 + quotation e2e 6/6 baseline PASS; Prettier/diff-check PASS.
+**Browser evidence:** `Сделки → Создать КП` autosave/no Save button; `/proposals/create` F5 inspector restored firm/client/product; `Сделки → КП` delete toast + row gone; empty new sheet after deletion.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-339.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-339-save-autosave-delete.lock`
+**NEXT:** claim TZ-SALES-334 client-only. Deploy НЕ
+
 
 ## [2026-08-09T16:53:54Z] — TZ-SALES-338 DONE: edit through Create studio
 **Исполнитель:** agent-6c3d05b80e

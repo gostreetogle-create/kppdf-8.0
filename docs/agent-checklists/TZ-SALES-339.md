@@ -53,13 +53,24 @@
 - Visible top-level «Сохранить КП», debounced request-only save/update, and soft-delete list/GET filtering are implemented.
 - Foreign DOC-343/admin/system-role WIP excluded.
 
+## Self-verify evidence (Buffy, browser + gates)
+
+- [x] `Сделки → Создать КП`: шаблон + наша фирма + товар; статус «Сохранено» появился без кнопки «Сохранить КП».
+- [x] После перехода на `/proposals/create` без `new=1` и открытия «Параметры»: шаблон/товар/клиент восстановлены; F5 inspector evidence: `Самопроверка F5 UI`, `Demo Client LLC · ИНН 7709876545`, `ВЫВЕСКА`.
+- [x] `Сделки → КП`: удаление показало «КП удалено», после reload строка отсутствует (`0 КП`).
+- [x] После удаления `/proposals/create` открыл пустой лист: удалённый КП не воскрес.
+- [x] Frontend tsc — PASS; focused proposal/Create Jest 21/21 — PASS; Prettier — PASS; diff-check — PASS.
+- [x] Backend quotation service/e2e gates from implementation — PASS (26/26 service, 6/6 e2e); backend tsc — PASS.
+- [x] Deploy не запускался.
+
 ## Review handoff
 
-- [x] READY FOR REVIEW: visible «Сохранить КП», autosave/F5 restore, delete + reload row gone.
-- [ ] Do not archive until Cursor/PO visual PASS.
+- [x] Self-verify PASS: visible autosave, F5 restore, delete + reload row gone, empty new sheet.
 
 ## Closeout
 
-- [ ] archive + lock + progress + remove `_active`
-- [ ] Status = DONE
-- closed_at: _
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-09T21:30:00Z
+- feature: `8a3186f1` (already on `main`)
+- closeout: this closeout commit (recorded in `progress.md`/checkpoint after push)

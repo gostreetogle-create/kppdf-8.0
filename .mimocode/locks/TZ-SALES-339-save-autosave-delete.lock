@@ -1,0 +1,11 @@
+# Lock file
+Locked as of 2026-08-09T21:30:00Z — TZ-SALES-339: Save КП autosave and delete filtering.
+
+Owner: Buffy / continuous executor
+Protected files:
+- frontend/src/app/pages/commercial/proposals/proposal-create.page.ts
+- frontend/src/app/pages/commercial/proposals/proposals.page.ts
+- backend/src/modules/quotation/quotation.service.ts
+- docs/agent-checklists/TZ-SALES-339.md
+
+Unlock: only via orchestrator approval or a successor TZ.

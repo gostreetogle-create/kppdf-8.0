@@ -12,6 +12,7 @@ import { AuthService } from '../../../core/auth.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
 import { ProductsService } from '../../../shared/services/products.service';
 import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { CounterpartyService } from '../../../shared/services/pi-counterparty.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
@@ -123,6 +124,23 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
                 ok: true,
                 data: { items: [{ _id: 'org-1', name: 'ООО Альфа' }], total: 1 },
               }),
+          },
+        },
+        {
+          provide: CounterpartyService,
+          useValue: {
+            list: jest.fn(() =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    { _id: 'cp-1', name: 'ООО Заказчик', inn: '7700000001', isActive: true },
+                    { _id: 'cp-2', name: 'ООО Поставщик', inn: '7700000002', isActive: true },
+                  ],
+                  total: 2,
+                },
+              }),
+            ),
           },
         },
         {
@@ -519,7 +537,12 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       saveDraft: () => void;
     };
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
-    page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 10 });
+    page.onInspectorState({
+      organizationId: 'org-1',
+      counterpartyId: 'cp-1',
+      orgMarkupPercent: 10,
+    });
+
     page.onProductAdd({
       productId: 'prod-1',
       productName: 'Стенд',
@@ -534,6 +557,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(quotationCreateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         organizationId: 'org-1',
+        counterpartyId: 'cp-1',
         status: 'draft',
         templateId: 'tpl-1',
         templateSnapshot: expect.objectContaining({
@@ -551,6 +575,27 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     page.saveDraft();
     expect(quotationUpdateMock).toHaveBeenCalledWith('q-1', expect.any(Object));
+  }));
+
+  it('uses the all-counterparty picker value in the autosave payload', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (state: {
+        organizationId: string;
+        counterpartyId?: string;
+        orgMarkupPercent: number;
+      }) => void;
+      saveDraft: () => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.onInspectorState({ organizationId: 'org-1', counterpartyId: 'cp-2', orgMarkupPercent: 0 });
+    tick(250);
+    page.saveDraft();
+
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ counterpartyId: 'cp-2' }),
+    );
   }));
 
   it('autosaves after template + firm settle without a Save КП button', fakeAsync(() => {

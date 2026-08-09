@@ -233,6 +233,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [tableTemplateId]="tableTemplateId()"
                 [tableTargets]="tableTargets()"
                 [selectedTableTargetId]="selectedTableTargetId()"
+                [selectedCounterpartyId]="counterpartyId()"
                 (stateChange)="onInspectorState($event)"
                 (tableLayoutChange)="onTableLayoutChange($event)"
                 (tableTargetChange)="onTableTargetChange($event)"
@@ -415,6 +416,7 @@ export class ProposalCreatePage implements OnInit {
   private readonly previewHtmlSource = signal<string | null>(null);
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
+  protected readonly counterpartyId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
@@ -604,6 +606,7 @@ export class ProposalCreatePage implements OnInit {
     // Do not send item.total — DTO forbids unknown fields (400).
     const payload: Partial<Proposal> = {
       organizationId,
+      ...(this.counterpartyId().trim() ? { counterpartyId: this.counterpartyId().trim() } : {}),
       status: 'draft',
       orgMarkupPercent: this.clampMarkup(this.orgMarkupPercent()),
       items: this.draftLines().map((line, index) => ({
@@ -725,6 +728,7 @@ export class ProposalCreatePage implements OnInit {
   private hydrateDraft(draft: Proposal): void {
     const templateId = this.refId(draft.templateId);
     this.organizationId.set(this.refId(draft.organizationId) ?? '');
+    this.counterpartyId.set(this.refId(draft.counterpartyId) ?? '');
     this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
     this.draftLines.set(
       (draft.items ?? []).map((item) => ({
@@ -867,14 +871,17 @@ export class ProposalCreatePage implements OnInit {
 
   protected onInspectorState(state: ProposalCreateInspectorState): void {
     const nextOrganization = (state.organizationId ?? '').trim();
+    const nextCounterparty = (state.counterpartyId ?? '').trim();
     const nextMarkup = this.clampMarkup(state.orgMarkupPercent);
     const nextVat = this.clampVat(state.dealVatPercent ?? this.dealVatPercent());
     const unchanged =
       nextOrganization === this.organizationId() &&
+      nextCounterparty === this.counterpartyId() &&
       nextMarkup === this.orgMarkupPercent() &&
       nextVat === this.dealVatPercent();
     if (unchanged) return;
     this.organizationId.set(nextOrganization);
+    this.counterpartyId.set(nextCounterparty);
     this.orgMarkupPercent.set(nextMarkup);
     this.dealVatPercent.set(nextVat);
     if (this.selectedTemplate()?._id) {

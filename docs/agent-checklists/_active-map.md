@@ -1,5 +1,6 @@
 # SESSION QUEUE
 
+
 ## Checkpoint 2026-08-09T21:55:00Z · 339 + 334 ГОТОВЫ, НО НЕ НА MAIN (обрыв агента)
 - Агент остановлен внутренним лимитом шагов, не ошибкой проекта; работал в `.freebuff` worktree вопреки промпту.
 - Ветка `freebuff/kppdf-8-0-d-kppdf-8-0-944f2711-…` (в origin), HEAD `fa14bcec`:
@@ -36,6 +37,36 @@
 - Workspace: canonical `D:\kppdf-8.0` only (NOT freebuff KP worktree).
 - BAN overlap: proposals/quotation/document-template/table-template / TZ-SALES-* markers.
 - WAVE-KP-USABLE continues on agent-1; deploy NO.
+
+## Checkpoint 2026-08-09T18:43:14Z · TZ-SALES-334 DONE / next 335
+- TZ-SALES-334 client-only scope is DONE: «Клиент» uses `PiOverflowSelect`, loads all active Counterparty records without role/type filter, and autosave/resume restores the selected value.
+- Browser evidence: 5 client options rendered; selected `Демо · Клиент 3 · ИНН 7700002038`; status «Сохранено»; reload without `new=1` kept the client visible. Temporary self-check quotation removed.
+- Gates: frontend tsc PASS; proposal/Create Jest 21/21 PASS; Prettier PASS; diff-check PASS. Out-of-scope 335/336 and foreign WIP excluded. Deploy NO.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-334.done.md`; lock: `.mimocode/locks/TZ-SALES-334-kp-counterparty-picker.lock`; `_active/TZ-SALES-334.md` removed after closeout.
+- NEXT: claim TZ-SALES-335 separately; then qty/price/sum/photo gates and browser self-verify. Deploy NO.
+
+## Checkpoint 2026-08-09T21:45:00Z · TZ-SALES-334 CLAIMED
+- Only active TZ: `tasks/_active/TZ-SALES-334.md`; TZ-SALES-339 is archived/locked/pushed.
+- 334 scope is client-only: all active Counterparty, no role/type filter, searchable auto, autosave/resume. Existing WIP is preserved and must be narrowed before commit.
+- 335 qty/photo, 336 lock/copy, foreign system-role/admin and DOC-343/344 WIP excluded. Deploy NO.
+- NEXT: client-only gates → browser choose client/«Сохранено»/resume → archive/lock/remove active → commit/push.
+
+## Checkpoint 2026-08-09T21:35:00Z · TZ-SALES-339 DONE / next 334
+- TZ-SALES-339 self-verified in browser: autosave «Сохранено», no «Сохранить КП», F5 restored template/product/client, delete showed «КП удалено», reload removed row, and deleted КП did not resurrect.
+- Feature `8a3186f1` was already on `main`; closeout metadata is now archived and locked.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-339.done.md`; lock: `.mimocode/locks/TZ-SALES-339-save-autosave-delete.lock`; `_active/TZ-SALES-339.md` is removed after closeout commit.
+- 334 WIP remains uncommitted and must be narrowed to client-only scope before its separate claim/commit. Foreign system-role/admin and DOC-343/344 WIP excluded. Deploy NO.
+- NEXT: claim TZ-SALES-334 → client-only gates + browser autosave/resume → archive/lock/push.
+
+## Checkpoint 2026-08-09T22:00:00Z · TZ-SALES-339 EXCLUSIVE CLOSEOUT
+- Only active TZ: `tasks/_active/TZ-SALES-339.md`; 334 WIP remains unclaimed until 339 is archived.
+- Base: `dd89897b` / `origin/main`; 339 feature + hotfix `8a3186f1` are already on main.
+- Scope guard: do not commit 334/335/336 changes during this closeout; foreign system-role/admin and DOC-343/344 WIP excluded.
+- NEXT: browser self-verify 339 → evidence → archive/lock/remove active → commit/push; then re-claim 334.
+
+
+## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
+
 
 ## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
 - Agent crashed mid-339 review. Hotfix on main: `8a3186f1` (no Save button; fix 400 item.total; empty resume after delete).
