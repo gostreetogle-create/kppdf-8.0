@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Doc Tables #1 DONE; 302→304 READY; 320 PARKED; deploy НЕ запускать
+**Phase:** Doc Tables #1–2 DONE; 303→304 READY; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-DOC-TABLES-302 DONE: dialog overflow-select UX
+**Статус:** DONE on main; deploy НЕ
+**Что:** Источник данных и тип столбца в диалоге таблицы переведены на shared `PiOverflowSelect`; registry fields стали читаемыми, добавлен empty state.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-302.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-302-table-dialog-overflow-select.lock`
+**Gates:** FE tsc PASS; table dialog Jest 1/41 PASS; changed-file ESLint/Prettier/diff-check PASS.
+**NEXT:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-303-registry-product-fields-photo.md`.
 
 ## [2026-08-09] — TZ-DOC-TABLES-301 DONE: Documents TOC + Tables subchips
 **Статус:** DONE on main; deploy НЕ

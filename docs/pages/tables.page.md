@@ -58,6 +58,7 @@
 - **`app-pi-table`** — shared Flat kit with typed columns, active-state cell template, row actions and kit-consistent loading/empty behavior
 - **Inline search** — без debounce, мгновенный фильтр
 - **Yellow subchips (TZ-DOC-TABLES-301)** — «Все таблицы» (`view=all`) и «Из данных» (`view=from-data`); CTA «+ Новая таблица» остаётся только на `view=all`, а `from-data` открывает registry dialog
+- **Dialog selectors (TZ-DOC-TABLES-302)** — источник и тип столбца используют `app-pi-overflow-select` с overlay; native `<select>` в диалоге не используется; поля registry показываются читаемыми строками с явным empty state
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)
 - **isActive switch** — `<app-pi-switch>` inline
 - **Category labels** — readable Russian

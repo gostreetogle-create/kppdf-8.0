@@ -1,3 +1,12 @@
+## [2026-08-09] — TZ-DOC-TABLES-302 DONE: dialog overflow-select UX
+**Исполнитель:** buffy-doc-tables-302
+**Статус:** DONE; archive + lock created; deploy НЕ
+**Что:** Источник и тип столбца в диалоге таблицы используют `PiOverflowSelect` с overlay; поля registry читаемые, с явным empty state; native selects убраны из диалога.
+**Gates:** FE tsc PASS; table dialog Jest 1 suite / 41 tests PASS; changed-file ESLint, Prettier и diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-302.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-302-table-dialog-overflow-select.lock`
+**NEXT:** TZ-DOC-TABLES-303.
+
 ## [2026-08-09] — TZ-DOC-TABLES-301 DONE: Documents TOC + Tables subchips
 **Исполнитель:** buffy-doc-tables-301
 **Статус:** DONE; archive + lock created; deploy НЕ

@@ -1,0 +1,14 @@
+# TZ-DOC-TABLES-302 — DONE lock
+TASK: TZ-DOC-TABLES-302
+OWNER: buffy-doc-tables-302
+CLOSED_AT: 2026-08-09
+COMMIT: pending closeout
+PROTECTED_FILES:
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts
+  - docs/pages/tables.page.md
+SUCCESSOR: TZ-DOC-TABLES-303
+NOTES:
+  - Scoped frontend acceptance and gates pass.
+  - Shared PiOverflowSelect is used for source and editable column type; native select is absent in this dialog.
+  - Browser/PO visual review unavailable; deploy not run.

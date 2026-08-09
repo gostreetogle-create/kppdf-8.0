@@ -32,6 +32,10 @@ import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.com
 import { InputComponent } from '../../../shared/ui/input/input.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
 import {
+  PiOverflowSelectComponent,
+  type PiOverflowSelectItem,
+} from '../../../shared/ui/overflow-select/pi-overflow-select.component';
+import {
   TableColumn,
   TableTemplate,
   TableTemplatesService,
@@ -74,6 +78,11 @@ const COLUMN_TYPES: Array<{ key: ColumnType; label: string }> = [
   { key: 'bool', label: 'Да / Нет' },
 ];
 
+const COLUMN_TYPE_ITEMS: PiOverflowSelectItem[] = COLUMN_TYPES.map((type) => ({
+  id: type.key,
+  label: type.label,
+}));
+
 const GROUP_LABELS: Record<string, string> = {
   contacts: 'Контакты',
   catalog: 'Каталог',
@@ -100,6 +109,7 @@ interface ClientPreviewModel {
     FormFieldComponent,
     InputComponent,
     SwitchComponent,
+    PiOverflowSelectComponent,
   ],
   template: `
     <app-pi-dialog
@@ -190,22 +200,15 @@ interface ClientPreviewModel {
                 @if (sourcesLoading()) {
                   <p class="text-xs text-muted-foreground">Загрузка…</p>
                 } @else {
-                  <select
-                    id="ttd-source"
-                    class="pi-input w-full"
+                  <app-pi-overflow-select
+                    [items]="sourceItems()"
                     [value]="selectedSourceKey() ?? ''"
-                    (change)="onSourceChange($event)"
-                    data-test="source-select"
-                  >
-                    <option value="">— не выбран —</option>
-                    @for (group of sourceGroups(); track group.label) {
-                      <optgroup [label]="group.label">
-                        @for (src of group.sources; track src.key) {
-                          <option [value]="src.key">{{ src.label }}</option>
-                        }
-                      </optgroup>
-                    }
-                  </select>
+                    (valueChange)="onSourceChange($event)"
+                    searchable="auto"
+                    placeholder="— не выбран —"
+                    ariaLabel="Источник данных"
+                    dataTest="source-select"
+                  />
                 }
               </app-pi-form-field>
               @if (selectedSource(); as src) {
@@ -217,16 +220,22 @@ interface ClientPreviewModel {
                     >
                   </div>
                   <div class="ttd-field-list">
-                    @for (field of src.fields; track field.key) {
-                      <label class="ttd-field-check">
-                        <input
-                          type="checkbox"
-                          [checked]="selectedFieldKeys().has(field.key)"
-                          (change)="toggleField(field)"
-                        />
-                        <span class="ttd-field-check-label">{{ field.label }}</span>
-                        <span class="ttd-field-check-type">{{ field.type }}</span>
-                      </label>
+                    @if (src.fields.length === 0) {
+                      <p class="ttd-fields-empty text-sm text-muted-foreground">
+                        Нет полей у источника
+                      </p>
+                    } @else {
+                      @for (field of src.fields; track field.key) {
+                        <label class="ttd-field-check">
+                          <input
+                            type="checkbox"
+                            [checked]="selectedFieldKeys().has(field.key)"
+                            (change)="toggleField(field)"
+                          />
+                          <span class="ttd-field-check-label">{{ field.label }}</span>
+                          <span class="ttd-field-check-type">{{ field.type }}</span>
+                        </label>
+                      }
                     }
                   </div>
                 </div>
@@ -420,15 +429,15 @@ interface ClientPreviewModel {
                             (click)="$event.stopPropagation()"
                           />
                           @if (mode() !== 'from-registry') {
-                            <select
-                              class="ttd-cell-input ttd-cell-input--sm ttd-cell-input--select"
-                              [formControl]="col.controls.type"
+                            <app-pi-overflow-select
+                              class="ttd-column-type-select"
+                              [items]="columnTypeItems"
+                              [value]="col.controls.type.value"
+                              (valueChange)="onColumnTypeChange(i, $event)"
+                              ariaLabel="Тип столбца"
+                              [dataTest]="'column-type-' + i"
                               (click)="$event.stopPropagation()"
-                            >
-                              @for (t of columnTypes; track t.key) {
-                                <option [value]="t.key">{{ t.label }}</option>
-                              }
-                            </select>
+                            />
                           }
                         </div>
                       </th>
@@ -948,8 +957,8 @@ interface ClientPreviewModel {
         display: flex;
         align-items: center;
         gap: 6px;
-        padding: 3px 8px;
-        font-size: 11px;
+        padding: 5px 8px;
+        font-size: 13px;
         cursor: pointer;
         border-bottom: 1px solid var(--color-rule);
       }
@@ -969,12 +978,21 @@ interface ClientPreviewModel {
         color: var(--color-ink);
       }
       .ttd-field-check-type {
-        font-size: 9px;
+        font-size: 11px;
         font-family: monospace;
         color: var(--color-muted-foreground-strong);
         background: var(--color-paper-2);
         padding: 1px 4px;
         border-radius: 2px;
+      }
+
+      .ttd-fields-empty {
+        margin: 0;
+        padding: 10px 8px;
+      }
+      .ttd-column-type-select {
+        display: block;
+        min-width: 0;
       }
 
       .ttd-footer {
@@ -1004,7 +1022,7 @@ export class TableTemplateFormDialogComponent {
     : (this.rawConfig as TableTemplate | null);
 
   // ─── Constants ─────────────────────────────────────────────
-  protected readonly columnTypes = COLUMN_TYPES;
+  protected readonly columnTypeItems = COLUMN_TYPE_ITEMS;
 
   // Icons
   protected readonly AlignLeftIcon = AlignLeft;
@@ -1044,15 +1062,12 @@ export class TableTemplateFormDialogComponent {
   protected readonly selectedFields = computed(
     () => this.selectedSource()?.fields.filter((f) => this.selectedFieldKeys().has(f.key)) ?? [],
   );
-  protected readonly sourceGroups = computed(() => {
-    const map = new Map<string, DataSourceDescriptor[]>();
-    for (const src of this.allSources()) {
-      const label = GROUP_LABELS[src.group] ?? src.group;
-      if (!map.has(label)) map.set(label, []);
-      map.get(label)!.push(src);
-    }
-    return Array.from(map.entries()).map(([label, sources]) => ({ label, sources }));
-  });
+  protected readonly sourceItems = computed<PiOverflowSelectItem[]>(() =>
+    this.allSources().map((src) => ({
+      id: src.key,
+      label: `${GROUP_LABELS[src.group] ?? src.group} · ${src.label}`,
+    })),
+  );
 
   // ─── Form ──────────────────────────────────────────────────
   protected readonly form = this.fb.group({
@@ -1132,11 +1147,17 @@ export class TableTemplateFormDialogComponent {
   }
 
   // ─── Registry methods ──────────────────────────────────────
-  protected onSourceChange(event: Event): void {
-    const key = (event.target as HTMLSelectElement).value || null;
-    this.selectedSourceKey.set(key);
+  protected onSourceChange(key: string): void {
+    this.selectedSourceKey.set(key || null);
     this.selectedFieldKeys.set(new Set());
     this.syncColumnsFromFields();
+  }
+
+  protected onColumnTypeChange(columnIndex: number, type: string): void {
+    const columnType = COLUMN_TYPES.some((item) => item.key === type)
+      ? (type as ColumnType)
+      : 'text';
+    this.columnsArray.at(columnIndex).controls.type.setValue(columnType);
   }
 
   protected toggleField(field: FieldDescriptor): void {
