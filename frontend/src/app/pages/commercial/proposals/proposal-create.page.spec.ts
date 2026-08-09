@@ -543,6 +543,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         items: [expect.objectContaining({ productId: 'prod-1', quantity: 2, unitPrice: 5000 })],
       }),
     );
+    expect(
+      (quotationCreateMock.mock.calls[0][0] as { items: Array<{ total?: number }> }).items[0].total,
+    ).toBeUndefined();
     expect(localStorage.getItem('kp.create.lastDraftId')).toBe('q-1');
     expect(toastSuccessMock).toHaveBeenCalledWith('Черновик сохранён');
 
@@ -550,7 +553,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(quotationUpdateMock).toHaveBeenCalledWith('q-1', expect.any(Object));
   }));
 
-  it('keeps Save КП visible in the studio and autosaves after template + firm settle', fakeAsync(() => {
+  it('autosaves after template + firm settle without a Save КП button', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;
       onInspectorState: (state: { organizationId: string; orgMarkupPercent: number }) => void;
@@ -561,15 +564,40 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     tick(250);
     fixture.detectChanges();
 
-    const saveButton = fixture.debugElement.query(By.css('[data-test="kp-save-draft-top"]'));
-    expect(saveButton).toBeTruthy();
-    expect(saveButton.nativeElement.textContent).toContain('Сохранить КП');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-save-draft-top"]'))).toBeNull();
 
     tick(1150);
     expect(quotationCreateMock).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 'draft', templateId: 'tpl-1', organizationId: 'org-1' }),
+      expect.objectContaining({
+        status: 'draft',
+        templateId: 'tpl-1',
+        organizationId: 'org-1',
+      }),
     );
+    const created = quotationCreateMock.mock.calls[0][0] as {
+      items: Array<Record<string, unknown>>;
+    };
+    for (const item of created.items) {
+      expect(item.total).toBeUndefined();
+    }
     expect(toastSuccessMock).toHaveBeenCalledWith('Черновик сохранён');
+  }));
+
+  it('clears local pointers when last draft was deleted (empty Create)', fakeAsync(() => {
+    localStorage.setItem('kp.create.lastDraftId', 'q-gone');
+    localStorage.setItem('kp.create.lastTemplateId', 'tpl-1');
+    quotationFindMock.mockReturnValueOnce(of({ ok: false, error: { status: 404 } }));
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      resumeLastDraft: () => void;
+      draftLines: () => ProposalDraftLine[];
+      selectedTemplate: () => DocumentTemplate | null;
+    };
+    page.resumeLastDraft();
+    tick();
+    expect(localStorage.getItem('kp.create.lastDraftId')).toBeNull();
+    expect(localStorage.getItem('kp.create.lastTemplateId')).toBeNull();
+    expect(page.draftLines()).toEqual([]);
+    expect(page.selectedTemplate()).toBeNull();
   }));
 
   it('reopens the last editable draft into the selected template and draft lines', fakeAsync(() => {

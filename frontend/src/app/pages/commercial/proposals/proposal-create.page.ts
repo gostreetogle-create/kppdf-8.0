@@ -20,8 +20,8 @@ import {
   TableProperties,
 } from 'lucide-angular';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
+import type { SilentResult } from '../../../core/silent-http';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import {
   DocumentTemplatesService,
   type BuildPreviewLine,
@@ -74,7 +74,6 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiGroupWorkspaceComponent,
-    ButtonComponent,
     LucideAngularModule,
     ProposalProductRailComponent,
     ProposalCreateInspectorComponent,
@@ -130,19 +129,8 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             data-test="kp-create-center"
             aria-label="Превью КП"
           >
-            @if (selectedTemplate()) {
+            @if (selectedTemplate() && autosaveLabel()) {
               <div class="kp-create-studio__savebar" data-test="kp-save-bar">
-                <app-pi-button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  [disabled]="!canSaveDraft()"
-                  [attr.title]="saveDraftTitle()"
-                  data-test="kp-save-draft-top"
-                  (click)="saveDraft()"
-                >
-                  Сохранить КП
-                </app-pi-button>
                 <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
                   {{ autosaveLabel() }}
                 </span>
@@ -509,7 +497,7 @@ export class ProposalCreatePage implements OnInit {
     if (queryId) {
       this.resumeDraftById(queryId);
     } else if (isNew) {
-      this.removeStorage('kp.create.lastDraftId');
+      this.clearLocalDraftPointers();
     } else {
       this.resumeLastDraft();
     }
@@ -613,6 +601,7 @@ export class ProposalCreatePage implements OnInit {
     }
     if (autosave) this.autosaveLabel.set('Автосохранение…');
 
+    // Do not send item.total — DTO forbids unknown fields (400).
     const payload: Partial<Proposal> = {
       organizationId,
       status: 'draft',
@@ -625,7 +614,6 @@ export class ProposalCreatePage implements OnInit {
         unit: line.unit,
         unitPrice: line.unitPrice,
         markupPercent: this.clampMarkup(this.orgMarkupPercent()),
-        total: this.roundMoney(line.quantity * line.unitPrice),
         sortOrder: index,
       })),
       templateId: template._id,
@@ -637,29 +625,38 @@ export class ProposalCreatePage implements OnInit {
       },
     };
     const draftId = this.readStorage('kp.create.lastDraftId');
-    const request = draftId
-      ? this.proposalsSvc.update(draftId, payload)
-      : this.proposalsSvc.create(payload);
-    request.subscribe((res) => {
-      if (!res.ok) {
-        this.autosaveLabel.set('Ошибка автосохранения');
-        this.toast.error('Не удалось сохранить черновик КП.');
+    const persist = (id: string | null) =>
+      id ? this.proposalsSvc.update(id, payload) : this.proposalsSvc.create(payload);
+
+    persist(draftId).subscribe((res) => {
+      if (!res.ok && draftId && (res.error.status === 404 || res.error.status === 400)) {
+        // Soft-deleted / stale local pointer — start a fresh draft once.
+        this.removeStorage('kp.create.lastDraftId');
+        this.proposalsSvc
+          .create(payload)
+          .subscribe((retry) => this.finishSave(retry, template._id, autosave));
         return;
       }
-      this.writeStorage('kp.create.lastDraftId', res.data._id);
-      this.writeStorage('kp.create.lastTemplateId', template._id);
-      this.autosaveLabel.set('Сохранено');
-      if (manual || !this.autosaveToastShown) {
-        this.toast.success('Черновик сохранён');
-        this.autosaveToastShown = true;
-      }
+      this.finishSave(res, template._id, autosave);
     });
   }
 
-  protected saveDraftTitle(): string {
-    if (!this.organizationId().trim()) return 'Выберите нашу фирму';
-    if (this.previewStatus() !== 'ready') return 'Дождитесь построения листа';
-    return 'Сохранить КП';
+  private finishSave(res: SilentResult<Proposal>, templateId: string, autosave: boolean): void {
+    if (!res.ok) {
+      this.autosaveLabel.set('Ошибка автосохранения');
+      if (!autosave || !this.autosaveToastShown) {
+        this.toast.error('Не удалось сохранить черновик КП.');
+        this.autosaveToastShown = true;
+      }
+      return;
+    }
+    this.writeStorage('kp.create.lastDraftId', res.data._id);
+    this.writeStorage('kp.create.lastTemplateId', templateId);
+    this.autosaveLabel.set('Сохранено');
+    if (!autosave || !this.autosaveToastShown) {
+      this.toast.success('Черновик сохранён');
+      this.autosaveToastShown = true;
+    }
   }
 
   private scheduleAutosave(): void {
@@ -685,9 +682,7 @@ export class ProposalCreatePage implements OnInit {
         this.hydrateDraft(res.data);
         return;
       }
-      if (this.readStorage('kp.create.lastDraftId') === id) {
-        this.removeStorage('kp.create.lastDraftId');
-      }
+      this.clearLocalDraftPointers();
       this.draftLines.set([]);
       this.selectedTemplate.set(null);
       this.previewHtmlSource.set(null);
@@ -705,12 +700,18 @@ export class ProposalCreatePage implements OnInit {
           this.hydrateDraft(res.data);
           return;
         }
-        this.removeStorage('kp.create.lastDraftId');
-        this.resumeLastTemplate();
+        // Deleted / missing КП — empty studio (do not resurrect last template alone).
+        this.clearLocalDraftPointers();
       });
       return;
     }
-    this.resumeLastTemplate();
+    // No draft pointer: empty studio (do not auto-pick a lonely template).
+    this.removeStorage('kp.create.lastTemplateId');
+  }
+
+  private clearLocalDraftPointers(): void {
+    this.removeStorage('kp.create.lastDraftId');
+    this.removeStorage('kp.create.lastTemplateId');
   }
 
   private resumeLastTemplate(): void {

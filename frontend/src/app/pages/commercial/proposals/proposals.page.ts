@@ -751,6 +751,12 @@ export class ProposalsPage implements OnInit {
       this.service.remove(row._id).subscribe((res) => {
         if (res.ok) {
           this.toast.success('КП удалено');
+          if (typeof localStorage !== 'undefined') {
+            if (localStorage.getItem('kp.create.lastDraftId') === row._id) {
+              localStorage.removeItem('kp.create.lastDraftId');
+              localStorage.removeItem('kp.create.lastTemplateId');
+            }
+          }
           this.listRes.reload();
         } else {
           this.toast.error(extractErrorMessage(res.error));
