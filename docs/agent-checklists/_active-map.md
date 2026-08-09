@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T01:45:02Z · TZ-PHOTO-301 DONE
+- DONE: TZ-PHOTO-301 — `/photos/upload` сохраняет original и отдельный Sharp WebP thumb child; API остаётся совместимым и отдаёт `variants.thumb` для быстрых списков.
+- IN PROGRESS: none
+- NOT DONE: TZ-PHOTO-302 READY → TZ-PHOTO-303 blocked until 302 DONE
+- NEXT: `tasks/_backlog/perf/TZ-PHOTO-302-lists-use-thumb.md`
+- HEAD: 8f2b1f4a pushed: yes (`origin/main`)
+- Blockers: Team Room registry не знает TZ-PHOTO-301; `verify-status.sh` сохраняет pre-existing 72 legacy kit-era mismatches; unrelated text-block-category test failure раскрыт в checklist.
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T01:40:00Z · UX-314 DONE · WAVE-PERF-PHOTOS READY
 - DONE: **TZ-UX-314** — PAGE_SIZE=10 на рабочих списках (вкл. products/materials/counterparties pager); Cursor session
 - IN PROGRESS: none
