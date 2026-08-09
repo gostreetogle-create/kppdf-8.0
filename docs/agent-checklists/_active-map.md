@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T08:30:00Z · TZ-SALES-319 READY (docs)
+- PO: вставка шаблона в Create КП корявая — нет фона/позиций/таблиц; лишний chrome
+- Root cause: center = stub metadata; `build()` не вызывается
+- Audit: `docs/audits/2026-08-09-kp-create-template-insert-fidelity-audit.md`
+- TZ: `tasks/_backlog/kp-vitrine/TZ-SALES-319-create-kp-template-build-preview.md`
+  · промпт `PROMPT-SALES-319.md` · checklist `docs/agent-checklists/TZ-SALES-319.md`
+- **Claim только после archive SALES-317** (shared proposal-create* keys)
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:35:00Z · TZ-DOC-TABLES-305 READY
 - PO: dialog «Редактировать шаблон таблицы» — compact row, category→Тип select, fields multi-overflow, taller columns
 - Вердикт: category = TableTemplateCategory enum (keep); not DocumentTemplateCategory dict

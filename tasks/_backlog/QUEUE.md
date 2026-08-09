@@ -11,7 +11,7 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **317 READY** focus shell; 310–316 DONE; **320 PARKED** |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **317** review; **319 READY** build-preview; 310–316 DONE; **320 PARKED** |
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
@@ -22,7 +22,8 @@
 **NEXT для universal prompt (по выбору PO):**  
 - **Таблицы dialog UX:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`  
   · промпт `tasks/prompts/TZ-DOC-TABLES-305-PROMPT.md`  
-- **Параллель closeout:** `TZ-DOC-342` → IDLE (`PROMPT-PARALLEL-CLOSEOUT-342-343.md`)  
+- **КП вставка шаблона (после archive 317):** `tasks/_backlog/kp-vitrine/TZ-SALES-319-create-kp-template-build-preview.md`  
+  · промпт `tasks/_backlog/kp-vitrine/PROMPT-SALES-319.md`  
 - **Не трогать без нужды:** SALES-317 / DOC-344 (active peers)  
 - После idle: предложить деплой **без** запуска
 
