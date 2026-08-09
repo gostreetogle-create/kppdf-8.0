@@ -1,5 +1,25 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:20:00Z · TZ-DOC-342 READY (upload-background 500)
+- PO: `POST .../document-templates/6a74f2bb…/upload-background` → 500
+- Root cause: missing multipart `file` → TypeError → 500; valid PNG/JPEG → 201; cap=5 → 409
+- Template probe cleaned (backgrounds=0)
+- TZ: `tasks/_backlog/TZ-DOC-342-upload-background-null-file-400.md`
+  · промпт `tasks/prompts/TZ-DOC-342-PROMPT.md`
+  · checklist `docs/agent-checklists/TZ-DOC-342.md`
+- CONFLICT KEYS: backend document-template + template-block upload (не пересекается с SALES-317 FE)
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:13:07Z · TZ-DOC-TABLES-304 DONE
+- DONE: TZ-DOC-TABLES-304 — Product registry fields now derive from `ProductSchema.paths` with deny-list, RU label fallback, deterministic types, and an explicit source allowlist.
+- IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
+- NOT DONE: none in WAVE-DOC-TABLES; TZ-SALES-320 PARKED; INN-301 PARKED
+- NEXT: idle — WAVE-DOC-TABLES #1–#4 complete; await next PO wave or explicit deploy command
+- HEAD: pending closeout push
+- Blockers: none for TZ-DOC-TABLES-304; browser/PO visual review not applicable
+- _active/: TZ-DOC-TABLES-304.md + TZ-SALES-317.md (foreign; 304 removed at closeout)
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:08:53Z · TZ-DOC-TABLES-303 DONE
 - DONE: TZ-DOC-TABLES-303 — Product registry now exposes schema-backed print fields and the `photoIds` text photo slot; registry e2e and backend typecheck pass.
 - IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
@@ -7,10 +27,8 @@
 - NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-304-registry-schema-autosync.md`
 - HEAD: 719cb145 pushed: yes
 - Blockers: none for TZ-DOC-TABLES-303; autosync/reflection intentionally deferred to 304
-- _active/: TZ-SALES-317.md (foreign; untouched)
+- _active/: TZ-SALES-317.md (foreign; 303 removed at closeout)
 - Deploy: NO
-
-# SESSION QUEUE
 
 ## Checkpoint 2026-08-09T03:06:05Z · TZ-DOC-TABLES-302 DONE
 - DONE: TZ-DOC-TABLES-302 — table dialog source and editable column type now use PiOverflowSelect overlays; registry field rows are readable and empty sources are explicit.
@@ -19,10 +37,8 @@
 - NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-303-registry-product-fields-photo.md`
 - HEAD: 20c62cb3 pushed: yes
 - Blockers: none for TZ-DOC-TABLES-302; browser/PO visual review unavailable
-- _active/: TZ-SALES-317.md (foreign; untouched)
+- _active/: TZ-SALES-317.md (foreign; 302 removed at closeout)
 - Deploy: NO
-
-# SESSION QUEUE
 
 ## Checkpoint 2026-08-09T03:00:36Z · TZ-DOC-TABLES-301 DONE
 - DONE: TZ-DOC-TABLES-301 — Documents sibling pages now share a dark TOC; Tables has yellow `Все таблицы` / `Из данных` subchips with the existing registry dialog reused for `view=from-data`.
@@ -32,6 +48,25 @@
 - HEAD: be0ed105 pushed: yes
 - Blockers: none for TZ-DOC-TABLES-301; browser/PO visual review unavailable
 - _active/: TZ-SALES-317.md (foreign; untouched)
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:05:00Z · TZ-SALES-317 READY FOR REVIEW
+- IN PROGRESS → review: TZ-SALES-317 focus shell (A4 + icon rails)
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T02:56:45Z
+- Gates: tsc PASS · jest proposal-create 6/6 PASS
+- Marker: `tasks/_active/TZ-SALES-317.md` (keep until Cursor/PO visual PASS)
+- Checklist: `docs/agent-checklists/TZ-SALES-317.md` + Executor report (auto)
+- NEXT: Cursor/PO visual PASS → archive; then 318 cascade fill; 320 PARK
+- Deploy: NO
+
+## Checkpoint 2026-08-09T02:56:45Z · TZ-SALES-317 CLAIMED
+- IN PROGRESS: TZ-SALES-317 — Create КП focus shell (A4 + icon rails)
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T02:56:45Z · workspace: D:\kppdf-8.0
+- Conflict keys: proposal-create.page.ts|spec · product-rail · inspector · template-center · proposals-create.page.md · kp-create-studio-spec.md
+- Marker: `tasks/_active/TZ-SALES-317.md`
+- team_room_claim: unavailable (unknown task)
+- NOT DONE: Cursor/PO visual PASS → archive
+- NEXT after: TZ-SALES-318 cascade fill; 320 PARK
 - Deploy: NO
 
 ## Checkpoint 2026-08-09T03:00:00Z · TZ-SALES-317 READY (KP focus shell)

@@ -15,13 +15,14 @@
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
-| **I — Doc tables** | `doc-tables/WAVE-DOC-TABLES.md` | **IN WORK** — 301–303 DONE; NEXT 304 |
+| **I — Doc tables** | `doc-tables/WAVE-DOC-TABLES.md` | **DONE** — 301–304 |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- КП студия: `tasks/_backlog/kp-vitrine/TZ-SALES-317-create-kp-focus-shell.md` · промпт `PROMPT-SALES-317.md`  
-- Doc tables: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-304-registry-schema-autosync.md`
+- Hotfix: `tasks/_backlog/TZ-DOC-342-upload-background-null-file-400.md` · `tasks/prompts/TZ-DOC-342-PROMPT.md`  
+- КП студия: `tasks/_backlog/kp-vitrine/TZ-SALES-317-…` (если ещё не CLAIM / review)  
+- Doc tables: wave complete; idle until new PO wave or explicit deploy command
 
 ## Idle / park / done
 

@@ -10,7 +10,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324, DOC-325, DOC-326, DOC-317/318, DOC-319 done, DOC-331 done, **DOC-332 done**, DOC-333 done, DOC-335 done; create **не** на builder (DOC-341) |
+| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342 READY** upload-background null→400 |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity 2026-08-08 |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | DOC-335/336; **UX-DIALOG-301**; **section chips** parity; **WAVE-DOC-TABLES 301–304 READY** |
