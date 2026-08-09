@@ -36,7 +36,8 @@ export type TableTemplateCategory =
   | 'cost-calc'
   | 'order-summary'
   | 'price-list'
-  | 'custom';
+  | 'custom'
+  | 'kp';
 
 export const TABLE_TEMPLATE_CATEGORIES: TableTemplateCategory[] = [
   'product-spec',
@@ -44,7 +45,26 @@ export const TABLE_TEMPLATE_CATEGORIES: TableTemplateCategory[] = [
   'order-summary',
   'price-list',
   'custom',
+  'kp',
 ];
+
+/** Canonical KP line-item preset shared by the table seed and Create КП bind. */
+export const KP_LINE_ITEM_COLUMNS: ReadonlyArray<{
+  key: string;
+  label: string;
+  type: ColumnType;
+  width: number;
+  align: 'left' | 'center' | 'right';
+}> = [
+  { key: 'index', label: '№', type: 'number', width: 56, align: 'center' },
+  { key: 'productName', label: 'Наименование', type: 'text', width: 260, align: 'left' },
+  { key: 'quantity', label: 'Кол-во', type: 'number', width: 88, align: 'right' },
+  { key: 'unit', label: 'Ед.', type: 'text', width: 72, align: 'center' },
+  { key: 'unitPrice', label: 'Цена', type: 'currency', width: 120, align: 'right' },
+  { key: 'sum', label: 'Сумма', type: 'currency', width: 128, align: 'right' },
+];
+
+export const KP_LINE_ITEM_PRESET_NAME = 'КП — позиции';
 
 @Schema({ _id: false })
 export class TableColumn {

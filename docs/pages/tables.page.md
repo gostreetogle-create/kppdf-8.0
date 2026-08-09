@@ -61,6 +61,7 @@
 - **Dialog selectors (TZ-DOC-TABLES-302)** — источник и тип столбца используют `app-pi-overflow-select` с overlay; native `<select>` в диалоге не используется; поля registry показываются читаемыми строками с явным empty state
 - **Compact table dialog (TZ-DOC-TABLES-305)** — верхняя настройка собрана в плотную строку; «Тип» сохраняет `TableTemplateCategory` enum через overflow-select; поля источника выбираются multi-overflow панелью поверх диалога с поиском от 10 полей; шапка колонок немного выше
 - **Dialog layout preview (TZ-DOC-TABLES-308)** — источник и поля выровнены на общей baseline с сопоставимой шириной; шапки колонок выше; при пустых образцах под ними видны skeleton-строки эталона, а не пустое серое поле
+- **KP preset (TZ-DOC-TABLES-307)** — категория «КП» и идемпотентный seed «КП — позиции» с канонными `index`, `productName`, `quantity`, `unit`, `unitPrice`, `sum`; «Пресет КП» заменяет колонки только в текущем диалоге с подтверждением
 - **Product registry fields (TZ-DOC-TABLES-303)** — Product exposes schema-backed print fields (notes, status, RAL, dimensions, purpose, installation, flags) and `photoIds` as the current text photo-slot binding
 - **Registry auto-sync (TZ-DOC-TABLES-304)** — Product fields are derived from `ProductSchema.paths` with an explicit deny-list, RU label overrides/fallback, deterministic scalar type mapping, and an explicit entity-source allowlist
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)

@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { TableTemplate, TableTemplateDocument } from './table-template.schema';
+import {
+  KP_LINE_ITEM_COLUMNS,
+  KP_LINE_ITEM_PRESET_NAME,
+  TableTemplate,
+  TableTemplateDocument,
+} from './table-template.schema';
 import { CreateTableTemplateDto } from './dto/create-table-template.dto';
 import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
 
@@ -19,11 +24,38 @@ import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
  *    fixing it to deleteOne() restores plugin integration.
  */
 @Injectable()
-export class TableTemplateService {
+export class TableTemplateService implements OnModuleInit {
   constructor(
     @InjectModel(TableTemplate.name)
     private readonly model: Model<TableTemplateDocument>,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.ensureKpPreset();
+  }
+
+  /** Ensure the canonical active KP preset exists exactly once by name/category. */
+  async ensureKpPreset(): Promise<TableTemplateDocument> {
+    const existing = await this.model
+      .findOne({ name: KP_LINE_ITEM_PRESET_NAME, category: 'kp' })
+      .exec();
+    if (existing) {
+      if (!existing.isActive) {
+        existing.isActive = true;
+        await existing.save();
+      }
+      return existing;
+    }
+
+    return this.model.create({
+      name: KP_LINE_ITEM_PRESET_NAME,
+      description: 'Канон колонок позиций для коммерческого предложения',
+      category: 'kp',
+      sortOrder: -100,
+      columns: KP_LINE_ITEM_COLUMNS.map((column) => ({ ...column })),
+      isActive: true,
+    });
+  }
 
   async create(dto: CreateTableTemplateDto): Promise<TableTemplateDocument> {
     return this.model.create({

@@ -306,6 +306,7 @@ export class TablesPage {
       'order-summary': 'Сводка заказа',
       'price-list': 'Прайс-лист',
       custom: 'Прочее',
+      kp: 'КП',
     }[c];
   }
 

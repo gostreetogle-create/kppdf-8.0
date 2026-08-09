@@ -1,0 +1,5 @@
+TZ-DOC-TABLES-307
+status=DONE
+closed_at=2026-08-09T14:42:11Z
+scope=kp category; canonical six-column preset; idempotent seed; dialog apply-preset confirmation
+verification=BE tsc PASS; table-template e2e 9/9 PASS; FE tsc PASS; focused Jest 52/52 PASS; diff-check PASS

@@ -329,6 +329,7 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(row).toBeTruthy();
       expect(row.querySelector('[data-test="category-select"]')).toBeTruthy();
       expect(row.querySelector('.ttd-pills')).toBeFalsy();
+      expect(dialog.categoryItems).toContainEqual({ id: 'kp', label: 'КП' });
 
       const categorySelect = fixture.debugElement.query(By.directive(PiOverflowSelectComponent))
         .componentInstance as PiOverflowSelectComponent;
@@ -336,6 +337,30 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(dialog.form.controls.category.value).toBe('price-list');
       dialog.onCategoryChange('not-an-enum');
       expect(dialog.form.controls.category.value).toBe('price-list');
+    });
+
+    it('applies the canonical KP preset and confirms replacement of non-empty columns', async () => {
+      const fixture = await createFixture(null);
+      const dialog = getDialog(fixture);
+
+      dialog.applyKpPreset();
+      expect(dialog.columnsArray.controls.map((column) => column.controls.key.value)).toEqual([
+        'index',
+        'productName',
+        'quantity',
+        'unit',
+        'unitPrice',
+        'sum',
+      ]);
+
+      dialog.addColumn();
+      dialog.applyKpPreset();
+      expect(dialog.presetConfirm()).toBe(true);
+      dialog.cancelKpPreset();
+      expect(dialog.presetConfirm()).toBe(false);
+      dialog.applyKpPreset();
+      dialog.confirmKpPreset();
+      expect(dialog.columnsArray.length).toBe(6);
     });
 
     it('renders a preview skeleton row when columns have no sample rows', async () => {

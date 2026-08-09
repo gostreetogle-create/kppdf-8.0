@@ -6,6 +6,15 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-308.done.md`; lock создан.
 **NEXT:** idle; successor P2 — авто-drift gate routes↔page.md; deploy НЕ.
 
+## [2026-08-09T14:42:11Z] — TZ-DOC-TABLES-307 DONE: KP category + preset
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; gates PASS; archive + lock; deploy НЕ
+**Что:** Добавлены `kp`/«КП», канонный preset «КП — позиции» с шестью keys, idempotent seed и «Пресет КП» в dialog с confirm для непустых колонок.
+**Gates:** BE tsc PASS; table-template e2e 9/9; FE tsc PASS; tables/dialog Jest 52/52; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-307.done.md`; lock создан; `_active/TZ-DOC-TABLES-307.md` удалён.
+**Scope:** DOC-343 WIP, 306 chips, 308 layout, 330/331, discount column, Catalog routes, deploy untouched.
+**NEXT:** TZ-SALES-330. Deploy НЕ.
+
 ## [2026-08-09T14:37:14Z] — TZ-DOC-TABLES-308 DONE: dialog layout + preview skeleton
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; gates PASS; archive + lock; deploy НЕ

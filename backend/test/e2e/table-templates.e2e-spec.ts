@@ -67,13 +67,56 @@ describe('TableTemplates (e2e)', () => {
     created.push(res.body._id);
   });
 
-  it('GET /table-templates — list returns array', async () => {
+  it('GET /table-templates — list returns array and idempotent KP preset', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/table-templates')
       .set(auth);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBeGreaterThanOrEqual(1);
+
+    const kpPreset = res.body.find(
+      (template: { name?: string; category?: string }) =>
+        template.name === 'КП — позиции' && template.category === 'kp',
+    );
+    expect(kpPreset?.isActive).toBe(true);
+    expect(kpPreset?.columns.map((column: { key: string }) => column.key)).toEqual([
+      'index',
+      'productName',
+      'quantity',
+      'unit',
+      'unitPrice',
+      'sum',
+    ]);
+  });
+
+  it('POST /table-templates — accepts category kp with canonical columns', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/table-templates')
+      .set(auth)
+      .send({
+        name: 'KP preset copy',
+        category: 'kp',
+        columns: [
+          { key: 'index', label: '№', type: 'number' },
+          { key: 'productName', label: 'Наименование', type: 'text' },
+          { key: 'quantity', label: 'Кол-во', type: 'number' },
+          { key: 'unit', label: 'Ед.', type: 'text' },
+          { key: 'unitPrice', label: 'Цена', type: 'currency' },
+          { key: 'sum', label: 'Сумма', type: 'currency' },
+        ],
+      });
+    expect([200, 201]).toContain(res.status);
+    expect(res.body.category).toBe('kp');
+    expect(res.body.columns.map((column: { key: string }) => column.key)).toEqual([
+      'index',
+      'productName',
+      'quantity',
+      'unit',
+      'unitPrice',
+      'sum',
+    ]);
+    created.push(res.body._id);
   });
 
   it('GET /table-templates/:id — single doc', async () => {

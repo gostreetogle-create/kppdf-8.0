@@ -1,5 +1,22 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:42:11Z · TZ-DOC-TABLES-307 DONE
+- DONE: `kp` / «КП» category, canonical six-column «КП — позиции» preset, idempotent seed, and dialog apply-preset confirmation.
+- Gates: backend tsc PASS; table-template e2e 9/9; frontend tsc PASS; focused tables/dialog Jest 52/52; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-TABLES-307.done.md`; lock recorded; `_active/TZ-DOC-TABLES-307.md` removed.
+- Scope guard: DOC-343 WIP, 306 chips, 308 layout, 330/331, discount column, Catalog routes, and deploy untouched.
+- NEXT: claim TZ-SALES-330; Deploy: NO
+
+
+## Checkpoint 2026-08-09T14:39:04Z · TZ-DOC-TABLES-307 CLAIMED
+- IN PROGRESS: add KP table category, canonical six-column preset, idempotent seed, and apply-preset in Documents tables.
+- Base: canonical `main` / `origin/main` at `2eab9063`; 305/306/308 archived DONE.
+- Conflict scan: `_active/` empty; all 307 table-template keys free. Team Room claim unavailable (unknown task).
+- Marker: `tasks/_active/TZ-DOC-TABLES-307.md`; checklist `docs/agent-checklists/TZ-DOC-TABLES-307.md`.
+- Scope guard: no Create КП 330, no VAT/footer 331, no DOC-343 WIP, no deploy.
+- NEXT: implement → BE/FE gates → READY/visual if required → archive/commit/push. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:37:14Z · TZ-DOC-TABLES-308 DONE
 - DONE: table dialog source/fields baseline + balanced widths, taller headers, and visible empty preview skeleton rows.
 - Gates: frontend tsc PASS; focused dialog Jest 44/44; diff-check PASS.

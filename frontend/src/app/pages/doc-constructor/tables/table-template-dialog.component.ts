@@ -83,6 +83,16 @@ const COLUMN_TYPE_ITEMS: PiOverflowSelectItem[] = COLUMN_TYPES.map((type) => ({
   label: type.label,
 }));
 
+/** Keep this mirror aligned with backend KP_LINE_ITEM_COLUMNS and TZ-SALES-325 aliases. */
+const KP_LINE_ITEM_PRESET_COLUMNS: readonly TableColumn[] = [
+  { key: 'index', label: '№', type: 'number', width: 56, align: 'center' },
+  { key: 'productName', label: 'Наименование', type: 'text', width: 260, align: 'left' },
+  { key: 'quantity', label: 'Кол-во', type: 'number', width: 88, align: 'right' },
+  { key: 'unit', label: 'Ед.', type: 'text', width: 72, align: 'center' },
+  { key: 'unitPrice', label: 'Цена', type: 'currency', width: 120, align: 'right' },
+  { key: 'sum', label: 'Сумма', type: 'currency', width: 128, align: 'right' },
+];
+
 const GROUP_LABELS: Record<string, string> = {
   contacts: 'Контакты',
   catalog: 'Каталог',
@@ -248,7 +258,26 @@ interface ClientPreviewModel {
                 >
                   + Добавить столбец
                 </button>
+                <button
+                  type="button"
+                  class="ttd-link"
+                  (click)="applyKpPreset()"
+                  data-test="apply-kp-preset"
+                >
+                  Пресет КП
+                </button>
               </div>
+              @if (presetConfirm()) {
+                <div class="ttd-preset-confirm" role="alert" data-test="kp-preset-confirm">
+                  <span>Заменить текущие столбцы каноном КП?</span>
+                  <app-pi-button variant="default" size="sm" (click)="confirmKpPreset()"
+                    >Заменить</app-pi-button
+                  >
+                  <app-pi-button variant="ghost" size="sm" (click)="cancelKpPreset()"
+                    >Отмена</app-pi-button
+                  >
+                </div>
+              }
 
               <!-- Context controls for selected column -->
               @if (selectedColumnIndex() !== null) {
@@ -581,6 +610,17 @@ interface ClientPreviewModel {
         display: flex;
         align-items: center;
         gap: 4px;
+      }
+      .ttd-preset-confirm {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        border: 1px solid var(--color-rule);
+        border-radius: 3px;
+        background: var(--color-paper-2);
+        color: var(--color-ink);
+        font-size: 11px;
       }
       .ttd-toolbar-context {
         display: flex;
@@ -988,6 +1028,7 @@ export class TableTemplateFormDialogComponent {
     { id: 'order-summary', label: 'Сводка заказа' },
     { id: 'price-list', label: 'Прайс-лист' },
     { id: 'custom', label: 'Прочее' },
+    { id: 'kp', label: 'КП' },
   ];
 
   // ─── Mode ──────────────────────────────────────────────────
@@ -1050,6 +1091,7 @@ export class TableTemplateFormDialogComponent {
 
   // ─── Selection ─────────────────────────────────────────────
   protected readonly selectedColumnIndex = signal<number | null>(null);
+  protected readonly presetConfirm = signal(false);
 
   // ─── Preview ───────────────────────────────────────────────
   protected readonly previewHtml = signal<string | null>(null);
@@ -1137,6 +1179,33 @@ export class TableTemplateFormDialogComponent {
   }
 
   // ─── Column methods ────────────────────────────────────────
+  protected applyKpPreset(): void {
+    if (this.columnsArray.length > 0) {
+      this.presetConfirm.set(true);
+      return;
+    }
+    this.replaceColumnsWithKpPreset();
+  }
+
+  protected confirmKpPreset(): void {
+    this.presetConfirm.set(false);
+    this.replaceColumnsWithKpPreset();
+  }
+
+  protected cancelKpPreset(): void {
+    this.presetConfirm.set(false);
+  }
+
+  private replaceColumnsWithKpPreset(): void {
+    while (this.columnsArray.length > 0) this.columnsArray.removeAt(0);
+    for (const column of KP_LINE_ITEM_PRESET_COLUMNS) {
+      this.columnsArray.push(this.makeColumnControl(column));
+    }
+    this.selectedColumnIndex.set(null);
+    this.form.controls.sampleRowsJson.setValue('');
+    this.previewTick.update((n) => n + 1);
+  }
+
   protected addColumn(): void {
     this.columnsArray.push(this.makeColumnControl());
   }

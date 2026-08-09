@@ -29,7 +29,7 @@ import {
 export type ColumnType = 'text' | 'number' | 'date' | 'currency' | 'bool';
 
 export type TableTemplateCategory =
-  'product-spec' | 'cost-calc' | 'order-summary' | 'price-list' | 'custom';
+  'product-spec' | 'cost-calc' | 'order-summary' | 'price-list' | 'custom' | 'kp';
 
 export interface TableColumn {
   /** Stable camelCase identifier — used as dataBinding.field cache. */
