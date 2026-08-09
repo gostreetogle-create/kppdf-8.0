@@ -1,9 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T10:15:00Z · TZ-SALES-321 READY (319 visual FAIL)
+- PO screens: Create КП broken bg + scroll + no positions vs builder OK
+- Root: mongoose `{...doc}` drops `layout` in build; iframe no scale; uploads in sandbox
+- Audit: `docs/audits/2026-08-09-kp-create-template-preview-fidelity-fail.md`
+- TZ+prompt: `TZ-SALES-321` · `PROMPT-SALES-321.md`
+- Do NOT archive 319 as visual DONE
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T09:55:00Z · TZ-SALES-319 READY FOR REVIEW
 - Center = sandboxed `build()` HTML iframe; stub chrome removed
 - Gates: FE tsc PASS · proposal-create Jest 8/8
-- Marker: `tasks/_active/TZ-SALES-319.md` — await visual PASS (template with background)
+- Marker: `tasks/_active/TZ-SALES-319.md` — **superseded by visual FAIL → 321**
 - Peers: DOC-342 / DOC-344 / TABLES-305 untouched
 - Deploy: NO
 
