@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09 · TZ-OPS-308 READY (page.md drift audit)
+- NEW docs-only: manual routes↔page.md drift audit + thin P0 index fixes.
+- Spec: `tasks/_backlog/ops/TZ-OPS-308-page-docs-drift-audit.md`
+- Prompt: `tasks/_backlog/ops/PROMPT-OPS-308-DRIFT.md`
+- Checklist RESERVED: `docs/agent-checklists/TZ-OPS-308.md`
+- BAN: product FE/BE; full page.md rewrites; deploy
+- Disjoint from WAVE-KP-TABLE-CONFIG / DOC-TABLES-305 (no tables FE keys). Claim when PO hands prompt.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T16:55:00Z · WAVE-KP-TABLE-CONFIG READY (docs)
 - Канон: `docs/audits/2026-08-09-kp-table-config-canon.md` — пресет в Документах; Create = экземпляр раскладки; наценка фоном; НДС в подвале.
 - TZ: DOC-TABLES-307 → SALES-330 → SALES-331 · wave `tasks/_backlog/kp-vitrine/WAVE-KP-TABLE-CONFIG.md`
