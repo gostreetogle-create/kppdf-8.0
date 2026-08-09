@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:06:05Z · TZ-DOC-TABLES-302 DONE
+- DONE: TZ-DOC-TABLES-302 — table dialog source and editable column type now use PiOverflowSelect overlays; registry field rows are readable and empty sources are explicit.
+- IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
+- NOT DONE: TZ-DOC-TABLES-303 → 304; TZ-SALES-320 PARKED; INN-301 PARKED
+- NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-303-registry-product-fields-photo.md`
+- HEAD: 20c62cb3 pushed: yes
+- Blockers: none for TZ-DOC-TABLES-302; browser/PO visual review unavailable
+- _active/: TZ-SALES-317.md (foreign; untouched)
+- Deploy: NO
+
+# SESSION QUEUE
+
 ## Checkpoint 2026-08-09T03:00:36Z · TZ-DOC-TABLES-301 DONE
 - DONE: TZ-DOC-TABLES-301 — Documents sibling pages now share a dark TOC; Tables has yellow `Все таблицы` / `Из данных` subchips with the existing registry dialog reused for `view=from-data`.
 - IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)

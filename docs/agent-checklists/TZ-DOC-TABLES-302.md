@@ -20,7 +20,7 @@
 - [x] Source/type selectors use PiOverflowSelect with overlay behavior.
 - [x] Registry fields are readable and have an explicit empty state.
 - [x] FE tsc and dialog Jest pass.
-- [x] Archive, lock, status/checkpoint, commit and push complete.
+- [x] Archive, lock, status/checkpoint, commit and push complete (`20c62cb3`, pushed).
 
 ## Gates (fact)
 - Frontend tsc: PASS.
