@@ -29,6 +29,6 @@
 - **323–325** — fit / empty skeleton / draftLines bind (wave-2)
 - **326** — products flyout **36–40rem** (≈×2) + transparent backdrop dismiss вне панели (вкл. iframe); A4 center/rails не сжимаются
 - **327** — PiShowcaseCard md equal-height (эталон; sm/md/lg уже есть)
-- **328** — visual trial: `PiShowcaseCard sm` grid (фото/placeholder, equal-height), search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии; PO выбирает sm vs md
+- **328** — visual trial: `PiShowcaseCard md` grid **3-col** in the wider ~58rem products flyout (narrow fallback 2→1), slightly compact rail spacing, search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии
 - Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**
 - **318** cascade — SUPERSEDED by 328

@@ -295,7 +295,7 @@ type LeftTool = 'template' | 'products' | null;
     }
 
     .kp-create-studio__flyout[data-flyout='products'] {
-      width: min(40rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
+      width: min(58rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
     }
 
     .kp-create-studio__flyout--left {

@@ -102,17 +102,17 @@ const PAGE_SIZE = 12;
       } @else if (products().length === 0) {
         <p class="rail__state" data-test="kp-rail-empty">{{ emptyHint() }}</p>
       } @else {
-        <div class="rail__grid rail__grid--sm" data-test="kp-rail-grid">
+        <div class="rail__grid" data-test="kp-rail-grid">
           @for (product of products(); track product._id) {
             <app-pi-showcase-card
-              size="sm"
+              size="md"
               [title]="product.name"
               [description]="productDescription(product)"
               [eyebrow]="product.kind === 'service' ? 'Услуга' : 'Изделие'"
               [mediaUrl]="mainPhotoUrl(product)"
               [arrow]="false"
             >
-              <span sc-actions-sm class="rail__actions">
+              <span sc-actions-md class="rail__actions">
                 <app-pi-button
                   type="button"
                   variant="default"
@@ -165,9 +165,9 @@ const PAGE_SIZE = 12;
     .rail {
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
+      gap: 0.75rem;
       min-height: 100%;
-      padding: 1rem;
+      padding: 0.75rem;
     }
 
     .rail__header,
@@ -214,9 +214,9 @@ const PAGE_SIZE = 12;
 
     .rail__grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       align-items: stretch;
-      gap: 0.85rem;
+      gap: 0.65rem;
       flex: 1;
       min-height: 0;
       overflow-y: auto;
@@ -261,8 +261,14 @@ const PAGE_SIZE = 12;
       color: var(--color-destructive, #b42318);
     }
 
+    @media (max-width: 70rem) {
+      .rail__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
     @media (max-width: 48rem) {
-      .rail__grid--sm {
+      .rail__grid {
         grid-template-columns: minmax(0, 1fr);
       }
 
