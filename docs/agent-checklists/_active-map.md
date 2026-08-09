@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:55:00Z · NEXT = deploy-prep (OPS-309), then PO deploy command
+- WAVE-KP-USABLE DONE on `origin/main` (`7a3173d5`). `_active/` empty.
+- PO: не добивать всю папку `_backlog`; перед деплоем — гигиена DOC-343/344 + smoke.
+- TZ/prompt: `tasks/_backlog/ops/TZ-OPS-309-deploy-prep-hygiene-smoke.md` · `PROMPT-DEPLOY-PREP.md`
+- BAN: WAVE-KP-COMPLETE / SALES-340+ / implement DOC-344 / auto `deploy.ps1`.
+- NEXT: agent runs OPS-309 → «готово предложить деплой» → idle until PO says «задеплой».
+
 ## Checkpoint 2026-08-09T19:44:49Z · WAVE-KP-USABLE DONE / NEXT idle
 - TZ-SALES-336 закрыта на canonical `D:\\kppdf-8.0` `main`: accepted = «Оплачена» hard-lock, unlock to draft, saved template snapshot on locked reopen, and duplicate-to-new-draft.
 - Browser self-verify PASS: «Сохранено» → «Оплачена · бланк заблокирован» with disabled edit controls → «Снять «Оплачена»» restores editing; «Копировать» returned 201 and opened Create КП with a new id.

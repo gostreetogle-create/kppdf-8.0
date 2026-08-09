@@ -20,9 +20,9 @@
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- **КП после closeout:** следующий кандидат `TZ-SALES-318` cascade fill; 319/321 DONE, 320 PARKED
-- **Таблицы dialog UX:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`  
-- После idle: предложить деплой **без** запуска
+- **Сейчас (перед деплоем):** `ops/TZ-OPS-309-deploy-prep-hygiene-smoke.md` · промпт `ops/PROMPT-DEPLOY-PREP.md`  
+- **КП после closeout:** WAVE-KP-COMPLETE только по отдельной команде PO (не авто)  
+- После idle prep: предложить деплой **без** запуска `deploy.ps1`
 
 ## Idle / park / done
 
