@@ -2,7 +2,7 @@
 TASK: TZ-DOC-TABLES-301
 OWNER: buffy-doc-tables-301
 CLOSED_AT: 2026-08-09
-COMMIT: pending closeout
+COMMIT: be0ed105
 PROTECTED_FILES:
   - frontend/src/app/pages/doc-constructor/documents/documents-group-chips.ts
   - frontend/src/app/pages/doc-constructor/tables/tables.page.ts

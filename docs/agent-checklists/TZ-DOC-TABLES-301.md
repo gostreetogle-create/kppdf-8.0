@@ -25,7 +25,7 @@
 - [x] Sibling templates/documents/texts have dark TOC and no false tables yellow chips.
 - [x] FE typecheck passes.
 - [x] Focused Jest and page documentation checks pass.
-- [x] Archive, lock, status/checkpoint, commit and push complete.
+- [x] Archive, lock, status/checkpoint, commit and push complete (`be0ed105`, pushed).
 
 ## Gates (fact)
 - Baseline focused Jest: PASS — 4 suites / 28 tests.
