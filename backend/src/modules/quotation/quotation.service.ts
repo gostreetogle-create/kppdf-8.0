@@ -99,7 +99,7 @@ export class QuotationService {
     from?: Date,
     to?: Date,
   ): Promise<QuotationDocument[]> {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { deletedAt: null };
     if (counterpartyId) {
       if (!Types.ObjectId.isValid(counterpartyId)) return [];
       filter.counterpartyId = new Types.ObjectId(counterpartyId);
@@ -130,7 +130,7 @@ export class QuotationService {
       .populate('organizationId')
       .populate('items.productId')
       .exec();
-    if (!doc) throw new NotFoundException(`Quotation ${id} not found`);
+    if (!doc || doc.deletedAt) throw new NotFoundException(`Quotation ${id} not found`);
     return doc;
   }
 
@@ -325,7 +325,7 @@ export class QuotationService {
       throw new NotFoundException(`Quotation ${id} not found`);
     }
     const doc = await this.model.findById(id).exec();
-    if (!doc) throw new NotFoundException(`Quotation ${id} not found`);
+    if (!doc || doc.deletedAt) throw new NotFoundException(`Quotation ${id} not found`);
     return doc;
   }
 

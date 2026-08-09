@@ -21,6 +21,7 @@ import {
 } from 'lucide-angular';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import {
   DocumentTemplatesService,
   type BuildPreviewLine,
@@ -73,6 +74,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     PiGroupWorkspaceComponent,
+    ButtonComponent,
     LucideAngularModule,
     ProposalProductRailComponent,
     ProposalCreateInspectorComponent,
@@ -128,6 +130,24 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             data-test="kp-create-center"
             aria-label="Превью КП"
           >
+            @if (selectedTemplate()) {
+              <div class="kp-create-studio__savebar" data-test="kp-save-bar">
+                <app-pi-button
+                  type="button"
+                  variant="default"
+                  size="sm"
+                  [disabled]="!canSaveDraft()"
+                  [attr.title]="saveDraftTitle()"
+                  data-test="kp-save-draft-top"
+                  (click)="saveDraft()"
+                >
+                  Сохранить КП
+                </app-pi-button>
+                <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
+                  {{ autosaveLabel() }}
+                </span>
+              </div>
+            }
             <app-proposal-create-template-center
               [selected]="selectedTemplate()"
               [previewHtml]="previewHtml()"
@@ -225,10 +245,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [tableTemplateId]="tableTemplateId()"
                 [tableTargets]="tableTargets()"
                 [selectedTableTargetId]="selectedTableTargetId()"
-                [saveEnabled]="canSaveDraft()"
-                [saveVisible]="!!selectedTemplate()"
                 (stateChange)="onInspectorState($event)"
-                (saveRequested)="saveDraft()"
                 (tableLayoutChange)="onTableLayoutChange($event)"
                 (tableTargetChange)="onTableTargetChange($event)"
               />
@@ -325,10 +342,21 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 
     .kp-create-studio__center {
       grid-area: center;
+      display: flex;
+      flex-direction: column;
       min-width: 0;
       min-height: 0;
       overflow: hidden;
       padding: 0.5rem;
+    }
+
+    .kp-create-studio__savebar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex: 0 0 auto;
+      min-height: 2.5rem;
+      padding: 0 0.25rem 0.4rem;
     }
 
     .kp-create-studio__flyout {
@@ -408,6 +436,9 @@ export class ProposalCreatePage implements OnInit {
   protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
   protected readonly selectedTableTargetId = signal<string | null>(null);
   private readonly tableTargetLayouts = signal<Record<string, ProposalTableLayoutColumn[]>>({});
+  protected readonly autosaveLabel = signal('');
+  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
+  private autosaveToastShown = false;
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -451,6 +482,7 @@ export class ProposalCreatePage implements OnInit {
                   this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(res.data)),
                 );
                 this.previewStatus.set('ready');
+                this.scheduleAutosave();
               } else {
                 this.previewHtmlSource.set(null);
                 this.previewHtml.set(null);
@@ -468,6 +500,7 @@ export class ProposalCreatePage implements OnInit {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
+    this.destroyRef.onDestroy(() => this.cancelAutosave());
   }
 
   ngOnInit(): void {
@@ -548,6 +581,7 @@ export class ProposalCreatePage implements OnInit {
       this.leftTool.set(null);
       this.syncTableTargets(tpl._id);
       this.rebuildPreview$.next();
+      this.scheduleAutosave();
     } else {
       this.previewHtmlSource.set(null);
       this.previewHtml.set(null);
@@ -556,21 +590,28 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected canSaveDraft(): boolean {
-    return Boolean(this.selectedTemplate()?._id && this.previewStatus() === 'ready');
+    return Boolean(
+      this.selectedTemplate()?._id &&
+      this.organizationId().trim() &&
+      this.previewStatus() === 'ready',
+    );
   }
 
-  protected saveDraft(): void {
+  protected saveDraft(manual = true): void {
+    if (manual) this.cancelAutosave();
+    const autosave = !manual;
     const template = this.selectedTemplate();
     const organizationId = this.organizationId().trim();
     const html = this.previewHtmlSource();
     if (!template?._id || !html) {
-      this.toast.error('Сначала выберите шаблон и дождитесь превью листа.');
+      if (!autosave) this.toast.error('Сначала выберите шаблон и дождитесь превью листа.');
       return;
     }
     if (!organizationId) {
-      this.toast.error('Выберите нашу фирму для сохранения черновика.');
+      if (!autosave) this.toast.error('Выберите нашу фирму для сохранения черновика.');
       return;
     }
+    if (autosave) this.autosaveLabel.set('Автосохранение…');
 
     const payload: Partial<Proposal> = {
       organizationId,
@@ -601,13 +642,40 @@ export class ProposalCreatePage implements OnInit {
       : this.proposalsSvc.create(payload);
     request.subscribe((res) => {
       if (!res.ok) {
+        this.autosaveLabel.set('Ошибка автосохранения');
         this.toast.error('Не удалось сохранить черновик КП.');
         return;
       }
       this.writeStorage('kp.create.lastDraftId', res.data._id);
       this.writeStorage('kp.create.lastTemplateId', template._id);
-      this.toast.success('Черновик сохранён');
+      this.autosaveLabel.set('Сохранено');
+      if (manual || !this.autosaveToastShown) {
+        this.toast.success('Черновик сохранён');
+        this.autosaveToastShown = true;
+      }
     });
+  }
+
+  protected saveDraftTitle(): string {
+    if (!this.organizationId().trim()) return 'Выберите нашу фирму';
+    if (this.previewStatus() !== 'ready') return 'Дождитесь построения листа';
+    return 'Сохранить КП';
+  }
+
+  private scheduleAutosave(): void {
+    if (!this.selectedTemplate()?._id || !this.organizationId().trim()) return;
+    this.cancelAutosave();
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveTimer = null;
+      if (this.canSaveDraft()) this.saveDraft(false);
+    }, 1200);
+  }
+
+  private cancelAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
   }
 
   private resumeDraftById(id: string): void {
@@ -767,7 +835,10 @@ export class ProposalCreatePage implements OnInit {
     const layout = targetId ? this.tableTargetLayouts()[targetId] : undefined;
     if (layout?.length) this.kpTableLayout.set(layout.map((column) => ({ ...column })));
     else this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
-    if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
+      this.scheduleAutosave();
+    }
   }
 
   protected onTableTargetChange(targetId: string): void {
@@ -789,6 +860,7 @@ export class ProposalCreatePage implements OnInit {
     this.kpTableLayout.set(layout.map((column) => ({ ...column })));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
+      this.scheduleAutosave();
     }
   }
 
@@ -806,6 +878,7 @@ export class ProposalCreatePage implements OnInit {
     this.dealVatPercent.set(nextVat);
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
+      this.scheduleAutosave();
     }
   }
 
@@ -834,6 +907,7 @@ export class ProposalCreatePage implements OnInit {
     this.draftLines.update((rows) => [...rows, line]);
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
+      this.scheduleAutosave();
     }
   }
 

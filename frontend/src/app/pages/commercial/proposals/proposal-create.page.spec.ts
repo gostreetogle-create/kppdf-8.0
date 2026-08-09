@@ -550,6 +550,28 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(quotationUpdateMock).toHaveBeenCalledWith('q-1', expect.any(Object));
   }));
 
+  it('keeps Save КП visible in the studio and autosaves after template + firm settle', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (state: { organizationId: string; orgMarkupPercent: number }) => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 0 });
+    tick(250);
+    fixture.detectChanges();
+
+    const saveButton = fixture.debugElement.query(By.css('[data-test="kp-save-draft-top"]'));
+    expect(saveButton).toBeTruthy();
+    expect(saveButton.nativeElement.textContent).toContain('Сохранить КП');
+
+    tick(1150);
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'draft', templateId: 'tpl-1', organizationId: 'org-1' }),
+    );
+    expect(toastSuccessMock).toHaveBeenCalledWith('Черновик сохранён');
+  }));
+
   it('reopens the last editable draft into the selected template and draft lines', fakeAsync(() => {
     localStorage.setItem('kp.create.lastDraftId', 'q-2');
     quotationFindMock.mockReturnValueOnce(

@@ -191,6 +191,7 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
 
       const result = await service.findAll(COUNTERPARTY, 'sent');
       expect(model.find).toHaveBeenCalledWith({
+        deletedAt: null,
         counterpartyId: new Types.ObjectId(COUNTERPARTY),
         status: 'sent',
       });
@@ -207,6 +208,15 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
     it('findById throws 404 when the doc is missing', async () => {
       const { service, model } = createService();
       model.findById.mockReturnValue(mockQuery(null));
+
+      await expect(service.findById(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('findById rejects a soft-deleted quotation', async () => {
+      const { service, model } = createService();
+      model.findById.mockReturnValue(mockQuery(quotationDoc({ deletedAt: new Date() })));
 
       await expect(service.findById(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
         NotFoundException,

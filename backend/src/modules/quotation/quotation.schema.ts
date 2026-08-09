@@ -132,6 +132,9 @@ export class Quotation {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
+  @Prop({ index: true })
+  deletedAt?: Date;
+
   @Prop({ type: Types.ObjectId, ref: 'DocumentTemplate' })
   templateId?: Types.ObjectId;
 

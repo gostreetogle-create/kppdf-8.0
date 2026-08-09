@@ -108,6 +108,28 @@ describe('Quotations (e2e)', () => {
     expect(refetch.body.items[0].unitPrice).toBe(oldSnapshotPrice);
   });
 
+  it('DELETE /quotations/:id — soft-deletes and hides the quotation from list/GET', async () => {
+    const create = await request(app.getHttpServer())
+      .post('/api/quotations')
+      .set(authHeader(token))
+      .send({ organizationId: orgId, counterpartyId, items: [{ productId, quantity: 1, unitPrice: 100 }] });
+
+    const removed = await request(app.getHttpServer())
+      .delete(`/api/quotations/${create.body._id}`)
+      .set(authHeader(token));
+    expect([200, 204]).toContain(removed.status);
+
+    const list = await request(app.getHttpServer())
+      .get('/api/quotations')
+      .set(authHeader(token));
+    expect(list.body.some((row: { _id: string }) => row._id === create.body._id)).toBe(false);
+
+    const get = await request(app.getHttpServer())
+      .get(`/api/quotations/${create.body._id}`)
+      .set(authHeader(token));
+    expect(get.status).toBe(404);
+  });
+
   it('POST /quotations/:id/convert-to-contract — creates Contract', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')

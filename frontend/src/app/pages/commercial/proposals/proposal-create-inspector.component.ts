@@ -103,19 +103,6 @@ export interface ProposalCreateInspectorState {
           />
         </app-pi-form-field>
 
-        @if (saveVisible()) {
-          <app-pi-button
-            type="button"
-            variant="default"
-            size="sm"
-            [disabled]="!saveEnabled()"
-            data-test="kp-save-draft"
-            (click)="saveRequested.emit()"
-          >
-            Сохранить
-          </app-pi-button>
-        }
-
         <div class="inspector__estimate" data-test="kp-insp-estimate">
           <p class="eyebrow m-0">оценка</p>
           <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
@@ -308,9 +295,6 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
   readonly tableTargetChange = output<string>();
-  readonly saveEnabled = input(false);
-  readonly saveVisible = input(false);
-  readonly saveRequested = output<void>();
 
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly organizationId = signal('');
