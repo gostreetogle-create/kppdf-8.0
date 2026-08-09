@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:25:00Z · TZ-DOC-343 scope expanded (create-parity)
+- PO follow-up: category + all create fields must be editable in Mode B props
+- TZ file on main updated (ddb5cd52): Basics/Page/Background + BE orientation in update()
+- CLAIM already held by agent-3e757640b7 — **re-read TZ before archive**; do not close as name-only
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:19:34Z · TZ-DOC-343 CLAIMED
 - IN PROGRESS: TZ-DOC-343 — builder editable template name
 - agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T03:19:34Z
