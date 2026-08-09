@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-PHOTO-301 DONE: original + lightweight thumb on upload
+
+**Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #1
+**Статус:** DONE; deploy НЕ
+**Что:** Backend `POST /photos/upload` сохраняет оригинал без перекодирования и создаёт отдельный WebP thumb через `sharp` (long side ≤320px, quality 80, без enlargement). Thumb регистрируется дочерним `Photo` с `parentPhotoId`, размерами и размером файла; API сохраняет исходные поля ответа и добавляет `variants.thumb`. Ошибка генерации thumb оставляет оригинал доступным и логирует WARN.
+**Затронуто:** `backend/src/modules/photos/*`, `backend/package.json`, `backend/pnpm-lock.yaml`, photo specs, checklist/archive/lock.
+**Gates:** BE tsc PASS; photo Jest 2 suites / 4 tests PASS; changed-photo ESLint PASS; full backend Jest 72 suites / 694 tests PASS with one unrelated pre-existing text-block-category failure; `git diff --check` PASS. `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-301.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-301-upload-variants-sharp.lock`
+**Known:** TZ-PHOTO-302 переводит списки на thumb; TZ-PHOTO-303 обрабатывает старые original; UI/pickers/business logic/deploy не затронуты.
+
 ## [2026-08-08] — TZ-PRODUCTS-309 DONE: состав изделия в FullEditor через ProductBomPanel
 
 **Исполнитель:** agent-3e757640b7 · WAVE-PRODUCT-EDITOR #2

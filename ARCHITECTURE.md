@@ -535,6 +535,7 @@ migration; no mega-collection; legacy Proposal/Quotation merge untouched.
 - **Один image-pipeline:** multer-конфиг вынесен в `photos/image-upload.options.ts` и
   переиспользован `OrganizationModule` — лимит 10 МБ и список mime не разъезжаются с
   `POST /photos/upload`. Файл регистрируется как `Photo`, поэтому уборка (unlink) уже есть.
+- **Photo performance pipeline (TZ-PHOTO-301):** multipart upload persists the original first, then creates a separate WebP `thumb` child via Sharp (long side ≤320px, no enlargement). The API preserves the original Photo shape and adds `variants.thumb`; Sharp failure is non-fatal and leaves the original usable. Lists consume this variant in TZ-PHOTO-302, while legacy originals are handled by TZ-PHOTO-303.
 - **Запись массива через `updateOne`, не `doc.save()`:** `optimisticLockPlugin` вручную
   поднимает `__v`, из-за чего любой `save()` с изменённым массивом падает `VersionError`.
   Слоты пишутся `findOneAndUpdate` (`$set` / `$pull`).

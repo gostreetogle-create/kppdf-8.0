@@ -1,7 +1,16 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-08-08
+**Last updated:** 2026-08-09
 **Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
+
+## [2026-08-09] — TZ-PHOTO-301 DONE: upload original + lightweight thumb
+**Статус:** DONE on main; deploy НЕ
+**Что:** `POST /photos/upload` сохраняет оригинал и отдельный WebP thumb через Sharp (≤320px, quality 80, без enlargement). Photo child связан через `parentPhotoId`, ответ сохраняет legacy original fields и добавляет `variants.thumb`; ошибка Sharp не ломает upload.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-301.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-301-upload-variants-sharp.lock`
+**Gates:** BE tsc PASS; photo Jest 2 suites / 4 tests PASS; changed-photo ESLint PASS; full backend 72 suites / 694 tests PASS with one unrelated pre-existing text-block-category failure; `git diff --check` PASS. `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+**Wave:** WAVE-PERF-PHOTOS #1 DONE; NEXT TZ-PHOTO-302; deploy НЕ.
+
 **Canonical workspace:** `D:\kppdf-8.0` on `main`; package manager `pnpm`
 **Task truth:** `tasks/_backlog/QUEUE.md` + archives; completed work in `tasks/_archive/`
 
@@ -1017,6 +1026,7 @@ TZ-261 and TZ-262 were implemented, regression-tested, reviewed, and archived af
 
 | TZ | Дата | Описание | Архив |
 |---|---|---|---|
+| TZ-PHOTO-301 | 2026-08-09 | Upload сохраняет original + Sharp WebP thumb, parentPhotoId и variants.thumb в API | `tasks/_archive/2026-08/TZ-PHOTO-301.done.md` |
 | TZ-PRODUCTION-303.1b | 2026-08-07 | Main landing: Gantt hotfix (rail↔bars sync, WorkType.days rollback, bar context/legend/toolbar/ACL UX) + inspector `/orders?q=<номер>` deep-link; catalog polish preserved | `tasks/_archive/2026-08/TZ-PRODUCTION-303.1b-land-hotfix-main.done.md` |
 | TZ-PRODUCTION-303.1 | 2026-08-07 | Gantt closeout: inspector `/orders?q=<номер>` deep-link, OrdersPage query-param search, production docs | `tasks/_archive/2026-08/TZ-PRODUCTION-303.1-gantt-hotfix-closeout.done.md` |
 | TZ-PRODUCTS-301 | 2026-08-02 | Справочник «Цвета» (RAL) — ColorReference entity (sparse-unique {organizationId, slug}, hex, soft-delete) + seed «Не выбран» + страница /dictionaries/color-references (pi-table, copy/edit/delete) | `tasks/_archive/2026-08/TZ-PRODUCTS-301-color-reference-dictionary.done.md` |

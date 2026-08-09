@@ -13,7 +13,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CreatePhotoDto, PhotosService } from './photos.service';
+import { CreatePhotoDto, PhotosService, UploadedPhotoFile } from './photos.service';
 
 @Controller('photos')
 export class PhotosController {
@@ -40,31 +40,22 @@ export class PhotosController {
   }
 
   /**
-   * Multipart upload. Поле формы: `file`. Сохраняет в ./uploads/{uuid}.{ext},
-   * создаёт Photo запись со storageUrl `/uploads/{filename}`.
+   * Multipart upload. Поле формы: `file`. Сохраняет оригинал и отдельный
+   * WebP-thumb в `./uploads`, возвращая original-поля в прежнем формате.
    */
   @Post('upload')
   @Roles('admin', 'manager')
   @UseInterceptors(FileInterceptor('file'))
   @AuditAction({ action: 'create', entityType: 'Photo' })
-  async upload(
-    @UploadedFile() file: {
-      filename: string;
-      originalname: string;
-      mimetype: string;
-      size: number;
-    },
-  ) {
+  async upload(@UploadedFile() file: UploadedPhotoFile) {
     if (!file) {
       throw new Error('No file uploaded (field name must be "file")');
     }
-    return this.service.create({
-      storageUrl: `/uploads/${file.filename}`,
-      originalFilename: file.originalname,
-      mimeType: file.mimetype,
-      sizeBytes: file.size,
-      variant: 'original',
-    });
+    const result = await this.service.upload(file);
+    return {
+      ...result.original.toObject(),
+      variants: result.thumb ? { thumb: result.thumb } : {},
+    };
   }
 
   @Delete(':id')

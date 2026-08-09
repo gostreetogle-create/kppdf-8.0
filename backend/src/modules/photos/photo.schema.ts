@@ -38,9 +38,8 @@ export class Photo {
   alt?: string;
 
   /**
-   * NOTE: file upload via multer + sharp variant generation is a TODO.
-   * For now, this module stores metadata only — clients POST pre-uploaded
-   * URLs (e.g. from S3 / external CDN).
+   * Multipart uploads persist the original and a separate `thumb` child;
+   * JSON registration remains available for pre-uploaded external URLs.
    */
 }
 

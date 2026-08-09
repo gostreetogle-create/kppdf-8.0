@@ -11,11 +11,12 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — #1–#7 DONE; idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — **308 + 309**; idle |
+| **E — Photo performance** | `perf/WAVE-PERF-PHOTOS.md` | **ACTIVE** — 301 DONE; **302 READY** → 303 |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** idle — READY queue empty; await new PO wave or explicit deploy command
-(волна Product Editor закрыта: 308 + 309)
+**NEXT для universal prompt:** `TZ-PHOTO-302` — photo performance wave is active; deploy only by explicit PO command
+(301 DONE; 302 READY; 303 follows strictly)
 
 ## Idle / park / done
 
@@ -26,6 +27,9 @@
 | ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ · ~~DEDUP-301~~ · ~~SELECT-301~~ | DONE |
 | TZ-INN-301 | PARKED (нужен ключ PO) |
 | SALES-304 | RESERVED |
+| ~~TZ-PHOTO-301~~ | DONE — archived and pushed |
+| TZ-PHOTO-302 | READY — next photo-performance step |
+| TZ-PHOTO-303 | BLOCKED_UNTIL_302_DONE — old originals backfill |
 | SHIPPING / Gantt 308–310 | park |
 
 ## Не брать

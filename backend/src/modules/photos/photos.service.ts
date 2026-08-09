@@ -1,11 +1,15 @@
+import { randomUUID } from 'crypto';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+import sharp from 'sharp';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { promises as fs } from 'fs';
-import { join } from 'path';
 import { Photo, PhotoDocument } from './photo.schema';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? './uploads';
+function uploadDir(): string {
+  return process.env.UPLOAD_DIR ?? './uploads';
+}
 
 export interface CreatePhotoDto {
   storageUrl: string;
@@ -17,6 +21,28 @@ export interface CreatePhotoDto {
   heightPx?: number;
   alt?: string;
   parentPhotoId?: string;
+}
+
+export interface UploadedPhotoFile {
+  filename: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
+
+export interface PhotoVariantSummary {
+  _id: string;
+  storageUrl: string;
+  variant: 'thumb';
+  mimeType?: string;
+  sizeBytes?: number;
+  widthPx?: number;
+  heightPx?: number;
+}
+
+export interface PhotoUploadResult {
+  original: PhotoDocument;
+  thumb?: PhotoVariantSummary;
 }
 
 @Injectable()
@@ -32,6 +58,69 @@ export class PhotosService {
       ...dto,
       parentPhotoId: dto.parentPhotoId ? new Types.ObjectId(dto.parentPhotoId) : undefined,
     });
+  }
+
+  /**
+   * Persist the uploaded original first, then generate a separate list thumb.
+   * A sharp failure is deliberately non-fatal: the original remains usable.
+   */
+  async upload(file: UploadedPhotoFile): Promise<PhotoUploadResult> {
+    const original = await this.create({
+      storageUrl: `/uploads/${file.filename}`,
+      originalFilename: file.originalname,
+      mimeType: file.mimetype,
+      sizeBytes: file.size,
+      variant: 'original',
+    });
+    const thumbFilename = `${randomUUID()}.webp`;
+    const thumbPath = join(uploadDir(), thumbFilename);
+    const originalPath = join(uploadDir(), file.filename);
+
+    try {
+      const output = await sharp(originalPath)
+        .resize({
+          width: 320,
+          height: 320,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 80 })
+        .toFile(thumbPath);
+      const thumb = await this.create({
+        storageUrl: `/uploads/${thumbFilename}`,
+        originalFilename: file.originalname,
+        variant: 'thumb',
+        mimeType: 'image/webp',
+        sizeBytes: output.size,
+        widthPx: output.width,
+        heightPx: output.height,
+        parentPhotoId: original._id.toString(),
+      });
+
+      return { original, thumb: this.toThumbSummary(thumb) };
+    } catch (error) {
+      this.logger.warn(
+        `Failed to generate thumb for ${file.filename}: ${(error as Error).message}`,
+      );
+      try {
+        await fs.unlink(thumbPath);
+      } catch {
+        // No partial thumb is expected when sharp fails, but cleanup is best effort.
+      }
+      return { original };
+    }
+  }
+
+  private toThumbSummary(photo: PhotoDocument): PhotoVariantSummary {
+    return {
+      _id: photo._id.toString(),
+      storageUrl: photo.storageUrl,
+      variant: 'thumb',
+      mimeType: photo.mimeType,
+      sizeBytes: photo.sizeBytes,
+      widthPx: photo.widthPx,
+      heightPx: photo.heightPx,
+    };
   }
 
   async findAll(): Promise<PhotoDocument[]> {
@@ -60,7 +149,7 @@ export class PhotosService {
     // a follow-up `scripts/cleanup-orphan-uploads.ts` (TODO).
     if (doc.storageUrl?.startsWith('/uploads/')) {
       const filename = doc.storageUrl.slice('/uploads/'.length);
-      const filePath = join(UPLOAD_DIR, filename);
+      const filePath = join(uploadDir(), filename);
       try {
         await fs.unlink(filePath);
       } catch (err) {
