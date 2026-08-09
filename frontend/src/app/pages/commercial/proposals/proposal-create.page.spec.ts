@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
 import { ProposalCreatePage } from './proposal-create.page';
+import { calculateKpPreviewScale } from './proposal-create-template-center.component';
 import { AuthService } from '../../../core/auth.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
 import { ProductsService } from '../../../shared/services/products.service';
@@ -109,6 +110,14 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     fixture = TestBed.createComponent(ProposalCreatePage);
     fixture.detectChanges();
+  });
+
+  it('fits a small sheet without upscaling or scroll gutters', () => {
+    const scale = calculateKpPreviewScale(600, 800);
+
+    expect(scale).toBeLessThan(1);
+    expect(scale * 794).toBeLessThanOrEqual(600);
+    expect(scale * 1123).toBeLessThanOrEqual(800);
   });
 
   it('keeps fixed rails with two left tools (template + products)', () => {

@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:45:00Z · TZ-SALES-323 READY FOR REVIEW
+- IN PROGRESS → READY FOR REVIEW: FE A4 contain scale now uses a 2px safety inset; build HTML now emits bounded portrait/landscape A4 page boxes with `html, body { overflow: hidden }`, body padding removed, and bounded content/table wrapping.
+- Gates: backend tsc PASS; direct build e2e 8/8 PASS (portrait + landscape CSS contract, env loaded from canonical main without printing secrets); frontend tsc PASS; proposal-create 9/9 PASS.
+- Review blocker: Cursor/PO visual PASS and browser measurement required: iframe document `scrollWidth <= clientWidth + 1px`, `scrollHeight <= clientHeight + 1px`, no visible H/V scrollbar. Archive/commit/push deferred until that PASS.
+- Scope guard: 324/325, 322/320, frozen 317 shell, Builder/DOC-344, DOC-TABLES-305, and deploy untouched.
+- NEXT: blocked at 323 review; do not claim 324 until 323 is archived DONE.
+- Deploy: NO
+
+
 ## Checkpoint 2026-08-09T11:25:55Z · KP hygiene + TABLES-305 visual wait
 - KP wave: TZ-SALES-317 / 319 / 321 are DONE and archived; next candidate is TZ-SALES-318, while TZ-SALES-320 remains PARKED.
 - Base: `origin/main` at `402807ca`; docs-only hygiene, no product code changes.

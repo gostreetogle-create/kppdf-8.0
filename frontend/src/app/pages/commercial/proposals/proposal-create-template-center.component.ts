@@ -16,6 +16,19 @@ import type { DocumentTemplate } from '../../../shared/services/pi-document-temp
 
 export type KpTemplatePreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
+const KP_A4_WIDTH_PX = 794;
+const KP_A4_HEIGHT_PX = 1123;
+const KP_SCALE_SAFETY_INSET_PX = 2;
+
+export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number): number {
+  if (sheetWidth <= 0 || sheetHeight <= 0) return 0;
+  return Math.min(
+    Math.max(0, sheetWidth - KP_SCALE_SAFETY_INSET_PX) / KP_A4_WIDTH_PX,
+    Math.max(0, sheetHeight - KP_SCALE_SAFETY_INSET_PX) / KP_A4_HEIGHT_PX,
+    1,
+  );
+}
+
 /**
  * Center A4 sheet (TZ-SALES-317 shell + TZ-SALES-319 build HTML preview).
  * No template-name chrome / draftLines on the sheet — only sandboxed build HTML.
@@ -118,6 +131,7 @@ export type KpTemplatePreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
       color: var(--color-danger, var(--color-ink));
     }
     .center__frame {
+      display: block;
       position: absolute;
       top: 0;
       left: 50%;
@@ -125,14 +139,12 @@ export type KpTemplatePreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
       height: 1123px;
       border: 0;
       background: #fff;
+      overflow: hidden;
       transform-origin: top center;
     }
   `,
 })
 export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
-  private static readonly A4_WIDTH_PX = 794;
-  private static readonly A4_HEIGHT_PX = 1123;
-
   private readonly destroyRef = inject(DestroyRef);
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
 
@@ -161,11 +173,8 @@ export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
   private recalculateScale(): void {
     const sheet = this.sheet()?.nativeElement;
     if (!sheet || sheet.clientWidth <= 0 || sheet.clientHeight <= 0) return;
-    const scale = Math.min(
-      sheet.clientWidth / ProposalCreateTemplateCenterComponent.A4_WIDTH_PX,
-      sheet.clientHeight / ProposalCreateTemplateCenterComponent.A4_HEIGHT_PX,
-      1,
+    this.previewScale.set(
+      calculateKpPreviewScale(sheet.clientWidth, sheet.clientHeight),
     );
-    this.previewScale.set(Math.max(0.1, scale));
   }
 }

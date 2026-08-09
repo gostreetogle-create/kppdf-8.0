@@ -81,7 +81,7 @@
 - Sheet `210∶297` contain, top-aligned.
 - Пустой center: **«Добавить шаблон»** → открывает tool Шаблон.
 - Пикер и «Редактировать» — только в overlay Шаблон.
-- После выбора (**319**): содержимое листа = HTML `DocumentTemplatesService.build` (sandbox iframe), не stub name/description/draftLines.
+- После выбора (**319**): содержимое листа = HTML `DocumentTemplatesService.build` (sandbox iframe), не stub name/description/draftLines; document scroll отключён внутри A4 page box.
 
 ---
 

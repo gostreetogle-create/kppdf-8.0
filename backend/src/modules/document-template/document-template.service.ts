@@ -1063,16 +1063,17 @@ export class DocumentTemplateService {
     const css = `
       <style>
         @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
-        body { font-family: 'Times New Roman', serif; width: ${pageWidth}; min-height: ${pageMinHeight}; margin: 0 auto; padding: 20px; position: relative; box-sizing: border-box; }
+        html, body { margin: 0; overflow: hidden; }
+        html { width: ${pageWidth}; height: ${pageMinHeight}; }
+        body { font-family: 'Times New Roman', serif; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 0; position: relative; box-sizing: border-box; }
         h1, h2, h3 { margin: 8px 0; }
-        .block { margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; }
-        .doc-content { position: relative; min-height: ${pageMinHeight}; }
+        .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
+        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
         .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; }
+        table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
         .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
         .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }
-        .doc-content { position: relative; z-index: 1; }
       </style>`;
     const bgImages = template.backgroundImage ?? [];
     const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;

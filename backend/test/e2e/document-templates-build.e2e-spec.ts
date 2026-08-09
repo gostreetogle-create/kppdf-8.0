@@ -107,6 +107,7 @@ describe('DocumentTemplates build (e2e)', () => {
     templateName: string;
     organizationId: string;
     blockContent: string;
+    orientation?: 'portrait' | 'landscape';
   }): Promise<{ templateId: string; blockId: string }> {
     const docTypeId = new Types.ObjectId().toString();
     const tpl = await request(app.getHttpServer())
@@ -117,6 +118,7 @@ describe('DocumentTemplates build (e2e)', () => {
         organizationId: opts.organizationId,
         docTypeId,
         pageSize: 'A4',
+        ...(opts.orientation ? { orientation: opts.orientation } : {}),
       });
     expect([200, 201]).toContain(tpl.status);
     const tId = tpl.body._id;
@@ -150,6 +152,27 @@ describe('DocumentTemplates build (e2e)', () => {
     expect(res.headers['content-type']).toMatch(/text\/html/);
     expect(res.text).toContain('LITERAL_CONTENT_HERE');
     expect(res.text).toContain('<!DOCTYPE html>');
+    expect(res.text).toContain('html, body { margin: 0; overflow: hidden; }');
+    expect(res.text).toContain('html { width: 210mm; height: 297mm; }');
+    expect(res.text).toContain('min-height: 0; padding: 0;');
+  });
+
+  it('POST /document-templates/:id/build — uses a landscape A4 page box', async () => {
+    const orgId = await createRealOrganization('Landscape Test Org');
+    const { templateId } = await createTemplateWithBlock({
+      templateName: 'Landscape Test',
+      organizationId: orgId,
+      blockContent: 'LANDSCAPE_CONTENT_HERE',
+      orientation: 'landscape',
+    });
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({});
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('LANDSCAPE_CONTENT_HERE');
+    expect(res.text).toContain('html { width: 297mm; height: 210mm; }');
   });
 
   it('POST /document-templates/:id/build — preserves layout on resolved blocks', async () => {

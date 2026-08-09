@@ -20,7 +20,7 @@
 - Смена шаблона или org из inspector `stateChange` → rebuild (debounce ~200ms)
 - Loading / error — короткий RU на листе
 - `<base href="{origin}/">` и absolute app-origin rewrite для `/uploads/...`; iframe `sandbox="allow-same-origin"` без scripts
-- A4 iframe имеет intrinsic 794×1123px, `transform: scale(contain)` через ResizeObserver; sheet `overflow: hidden` без H/V scroll
+- A4 iframe имеет intrinsic 794×1123px, `transform: scale(contain)` через ResizeObserver; sheet и документ `overflow: hidden` без H/V scroll; документ — единый A4 page box
 
 ## Дальше
 
