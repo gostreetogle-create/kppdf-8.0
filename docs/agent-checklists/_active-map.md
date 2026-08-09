@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:00:00Z · TZ-SALES-317 READY (KP focus shell)
+- Триггер PO: аудит `/proposals/create` — фокус на A4, убрать дубль «Создать КП»/zone titles, icon-rails L/R, cascade товары, параметры default свёрнуты, без page-scroll
+- Аудит: `docs/audits/2026-08-09-kp-create-studio-layout-audit.md`
+- Spec v2: `docs/ux/kp-create-studio-spec.md` (supersede always-on 3 columns)
+- TZ: `tasks/_backlog/kp-vitrine/TZ-SALES-317-create-kp-focus-shell.md`
+  · промпт `tasks/_backlog/kp-vitrine/PROMPT-SALES-317.md`
+  · checklist `docs/agent-checklists/TZ-SALES-317.md`
+- Successor: 318 cascade fill; 320 print остаётся PARK
+- IN PROGRESS: none · _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:53:59Z · TZ-UI-GOLD-332 DONE (scoped)
 - DONE: TZ-UI-GOLD-332 — light fill gold unified across aliases; `gold-deep` protects focus/border/ring/edit/text roles; docs updated.
 - IN PROGRESS: none

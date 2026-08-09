@@ -11,7 +11,7 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **DONE** — 310–316; **320 PARKED** |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **317 READY** focus shell; 310–316 DONE; **320 PARKED** |
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
@@ -19,8 +19,9 @@
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`  
-(или `doc-tables/PROMPT-CONTINUOUS.md`)
+**NEXT для universal prompt (по выбору PO):**  
+- КП студия: `tasks/_backlog/kp-vitrine/TZ-SALES-317-create-kp-focus-shell.md` · промпт `PROMPT-SALES-317.md`  
+- или Doc tables: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`
 
 ## Idle / park / done
 

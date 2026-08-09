@@ -1,8 +1,9 @@
 # WAVE-KP-VITRINE — Создать КП / Все КП (слои)
 
-**STATUS:** DONE fill #1–#7 (310–316); **320 PARKED** — await PO unpark; offer deploy
+**STATUS:** DONE fill #1–#7 (310–316); **317 READY** focus shell; **318+** cascade fill later; **320 PARKED**
 **SoT:** `D:\kppdf-8.0` на `main`  
-**Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
+**Spec v2:** [`docs/ux/kp-create-studio-spec.md`](../../../docs/ux/kp-create-studio-spec.md)  
+**Промпт 317:** [`PROMPT-SALES-317.md`](./PROMPT-SALES-317.md) · continuous: [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
 
 ## Lock имён (UI)
@@ -26,7 +27,9 @@
 | 5 | **TZ-SALES-314** левый рейл товаров | 312 DONE |
 | 6 | **TZ-SALES-315** правая панель org/% | 312 DONE |
 | 7 | **TZ-SALES-316** шаблон в центре | 314+315 желательно; min 312 |
-| 8 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
+| 8 | **TZ-SALES-317** focus shell (A4 + icon rails + cascade stub) | **READY** после PO-аудита 2026-08-09 |
+| 9 | **TZ-SALES-318** left cascade fill (категории/фильтры) | после 317 |
+| 10 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
 
 Параллель после 312: **313** (журнал) и **314/315** (создание) — CONFLICT KEYS разные страницы; не трогать чужие keys.
 
@@ -44,4 +47,5 @@
 
 ## DoD волны (до печати)
 
-Создать КП = 3-колоночный каркас + товары + правая панель + шаблон; Все КП = список с expand семьи; сумма attach = подсказка.
+Создать КП = focus shell (A4 центр + icon-rails) + товары + параметры + шаблон; Все КП = список с expand семьи; сумма attach = подсказка.  
+v1 always-on 3 columns (311/312 desktop) → **superseded** spec v2 / **317**.
