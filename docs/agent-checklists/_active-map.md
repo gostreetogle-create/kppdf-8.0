@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09 · WAVE-TABLES-TODAY CONTINUOUS READY
+- One queue: 305 closeout → 306 → 308 → 307 → 330 → 331.
+- Wave: `tasks/_backlog/doc-tables/WAVE-TABLES-TODAY-CONTINUOUS.md`
+- Prompt: `tasks/_backlog/doc-tables/PROMPT-TABLES-TODAY-CONTINUOUS.md`
+- PO: dialog controls PASS; layout in 308; from-data=306; then KP preset/instance/VAT.
+- BAN: mid-queue stops; deploy; DOC-343 dirty in commits.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09 · TZ-DOC-TABLES-306 READY (from-data → materials bug)
 - ROOT CAUSE: yellow chips put `?view=` inside `routerLink` string → Angular miss → `**` → `/materials`.
 - Spec: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-306-from-data-stays-in-documents.md`
