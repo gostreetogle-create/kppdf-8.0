@@ -122,6 +122,13 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-09 — Research wave-2 Create КП: verdict → TZ 323/324/325
+- Scroll: outer scale OK; корень — build HTML `body padding` + `doc-content min-height` → iframe scrollbar.
+- Empty table: `preview([])` = `<p>Нет данных</p>` — by design bad UX; нужен skeleton table.
+- Товары: `draftLines` не в `build()` — gap после 319, не баг клика; bind только с column-key contract.
+- Очередь: **323 fit → 324 skeleton → 325 live lines**; 322/320 PARK.
+Источник: research Cursor Mode A + audit preview-wave2.
+
 ### 2026-08-09 — Create КП после 321: scroll + пустая таблица + товары не на бланке
 - Фон/тексты ок; скролл листа всё ещё бесит — нужен более жёсткий fit A4.
 - «Нет данных» пугает: ждать Excel-скелет (заголовки + пустая строка), не plain text.

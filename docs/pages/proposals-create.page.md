@@ -1,9 +1,9 @@
 # /proposals/create — Создать КП
 
 **Route:** `/proposals/create`  
-**TZ:** **310–317 DONE** · **319 + 321 DONE** (`build` HTML fidelity) · **318** NEXT · **320 PARK**
+**TZ:** **310–317 DONE** · **319 + 321 DONE** (`build` HTML fidelity) · wave-2 **323/324/325 READY** · **318** cascade · **320/322 PARK**  
 **Spec LOCK:** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md) §0 FROZEN  
-**Аудит:** layout + overlay-correction + [`template-insert-fidelity`](../audits/2026-08-09-kp-create-template-insert-fidelity-audit.md)
+**Аудит:** layout + overlay-correction + [`template-insert-fidelity`](../audits/2026-08-09-kp-create-template-insert-fidelity-audit.md) · [`preview-wave2`](../audits/2026-08-09-kp-create-preview-wave2.md)
 
 ## Зафиксировано (не менять без PO)
 
@@ -24,6 +24,8 @@
 
 ## Дальше
 
+- **323** — A4 fit без scrollbar (FE scale + build HTML overflow/padding)
+- **324** — empty table = skeleton thead + пустая строка (не `<p>Нет данных</p>`)
+- **325** — live `draftLines` → table на бланке (column-key contract; после 323+324)
 - Overlay-каскад категорий → **318**
-- Bind draftLines → table blocks / Counterparty → later
-- Persist Quotation → later · Печать → **320 PARK**
+- Persist Quotation / snapshot → later · stale refresh → **322 PARK** · Печать → **320 PARK**
