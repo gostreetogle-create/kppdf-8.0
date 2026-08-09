@@ -14,6 +14,7 @@ import {
   type WorkTypeInModule,
 } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService, type WorkType } from '../../shared/services/pi-work-types.service';
+import { photoListUrl, type PhotoLike } from '../../shared/services/photos.service';
 import { PiWorkersService, personDisplayName } from '../../shared/services/pi-workers.service';
 import {
   buildGanttBars,
@@ -92,16 +93,15 @@ function mapModuleWorkTypes(
 }
 
 function firstPhotoUrl(
-  photoIds?: Array<string | { storageUrl?: string; _id?: string }> | null,
-  mainPhotoId?: string | { storageUrl?: string } | null,
+  photoIds?: Array<string | PhotoLike> | null,
+  mainPhotoId?: string | PhotoLike | null,
 ): string | null {
+  const photos = (photoIds ?? []).filter((photo): photo is PhotoLike => typeof photo !== 'string');
   if (mainPhotoId && typeof mainPhotoId === 'object' && mainPhotoId.storageUrl) {
-    return mainPhotoId.storageUrl;
+    return photoListUrl(mainPhotoId, photos);
   }
-  for (const p of photoIds ?? []) {
-    if (p && typeof p === 'object' && p.storageUrl) return p.storageUrl;
-  }
-  return null;
+  const first = photos[0];
+  return first ? photoListUrl(first, photos) : null;
 }
 
 @Injectable()
@@ -209,9 +209,7 @@ export class ProductionReadFacade {
       if (!productId) continue;
       const product = await this.getProduct(productId, warnings);
       if (!product) continue;
-      const url = firstPhotoUrl(
-        product.photoIds as Array<string | { storageUrl?: string }> | undefined,
-      );
+      const url = firstPhotoUrl(product.photoIds as Array<string | PhotoLike> | undefined);
       if (url) out.set(order._id, url);
     }
     return out;
@@ -337,8 +335,8 @@ export class ProductionReadFacade {
           sortOrder: compositionSort,
           workTypes: mapModuleWorkTypes(mod, workTypes),
           modulePhotoUrl: firstPhotoUrl(
-            (mod as { photoIds?: Array<string | { storageUrl?: string }> }).photoIds,
-            (mod as { mainPhotoId?: string | { storageUrl?: string } }).mainPhotoId,
+            (mod as { photoIds?: Array<string | PhotoLike> }).photoIds,
+            (mod as { mainPhotoId?: string | PhotoLike }).mainPhotoId,
           ),
         });
       }
@@ -349,9 +347,7 @@ export class ProductionReadFacade {
         productName: item.productName ?? product.name,
         quantity: item.quantity ?? 1,
         modules,
-        productPhotoUrl: firstPhotoUrl(
-          product.photoIds as Array<string | { storageUrl?: string }> | undefined,
-        ),
+        productPhotoUrl: firstPhotoUrl(product.photoIds as Array<string | PhotoLike> | undefined),
       });
     }
 

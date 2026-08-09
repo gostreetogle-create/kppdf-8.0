@@ -41,7 +41,7 @@ import {
   type CompositionTreeNode,
 } from '../../shared/services/pi-product-modules.service';
 import { CategoriesService, type Category } from '../../shared/services/categories.service';
-import type { Photo } from '../../shared/services/photos.service';
+import { photoListUrl, type Photo } from '../../shared/services/photos.service';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import {
   QuickCreateDialogComponent,
@@ -498,7 +498,7 @@ const KIND_LABELS: Record<Product['kind'], string> = {
         >
           @if (mainPhotoOf(row); as mp) {
             <img
-              [src]="mp.storageUrl"
+              [src]="mainPhotoUrl(row)"
               [alt]="mp.originalFilename || row.name"
               class="block w-[5.5rem] h-[5.5rem] object-cover hairline rounded-sm"
               loading="lazy"
@@ -1076,7 +1076,12 @@ export class ProductsPage implements OnInit {
   }
 
   protected mainPhotoUrl(row: Product): string {
-    return this.mainPhotoOf(row)?.storageUrl ?? '';
+    const photo = this.mainPhotoOf(row);
+    if (!photo) return '';
+    const allPhotos = (row.photoIds ?? []).filter(
+      (candidate): candidate is Photo => typeof candidate !== 'string',
+    );
+    return photoListUrl(photo, allPhotos);
   }
 
   protected gridEyebrow(row: Product): string {

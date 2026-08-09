@@ -36,7 +36,7 @@ import {
   MaterialsService,
   type MaterialsListResponse,
 } from '../../shared/services/materials.service';
-import { Photo, PhotosService } from '../../shared/services/photos.service';
+import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
@@ -161,7 +161,7 @@ const PAGE_SIZE = 10;
         <ng-template #photoTpl let-row>
           @if (mainPhotoOf(row); as mp) {
             <img
-              [src]="mp.storageUrl"
+              [src]="mainPhotoUrl(row)"
               [alt]="mp.originalFilename || row.name"
               class="block w-20 h-20 object-cover hairline rounded-sm"
               loading="lazy"
@@ -447,6 +447,11 @@ export class MaterialsPage implements OnInit {
     if (!row.mainPhotoId) return null;
     if (typeof row.mainPhotoId !== 'string') return row.mainPhotoId;
     return this.photosLookup.byId()[row.mainPhotoId] ?? null;
+  }
+
+  protected mainPhotoUrl(row: Material): string {
+    const photo = this.mainPhotoOf(row);
+    return photo ? photoListUrl(photo, Object.values(this.photosLookup.byId())) : '';
   }
 
   protected supplierNameOf(row: Material): string | null {

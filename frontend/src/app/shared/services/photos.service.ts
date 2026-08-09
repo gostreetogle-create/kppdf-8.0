@@ -9,12 +9,33 @@ export interface Photo {
   storageUrl: string;
   originalFilename?: string;
   variant?: 'original' | 'full' | 'medium' | 'thumb';
+  parentPhotoId?: string;
+  linkedPhotoId?: string;
   mimeType?: string;
   sizeBytes?: number;
   widthPx?: number;
   heightPx?: number;
   alt?: string;
   createdAt?: string;
+}
+
+export interface PhotoLike {
+  _id?: string;
+  storageUrl: string;
+  variant?: Photo['variant'];
+  parentPhotoId?: string;
+  linkedPhotoId?: string;
+}
+
+/** Select the cheapest suitable image for catalogue list/grid surfaces. */
+export function photoListUrl(photo: PhotoLike, allPhotos: readonly PhotoLike[] = []): string {
+  if (photo.variant === 'thumb') return photo.storageUrl;
+  const linkedThumb = allPhotos.find(
+    (candidate) =>
+      candidate.variant === 'thumb' &&
+      (candidate.parentPhotoId === photo._id || candidate.linkedPhotoId === photo._id),
+  );
+  return linkedThumb?.storageUrl ?? photo.storageUrl;
 }
 
 @Injectable({ providedIn: 'root' })

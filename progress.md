@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-PHOTO-302 DONE: catalogue lists use linked thumbs
+
+**Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #2
+**Статус:** DONE; deploy НЕ
+**Что:** Добавлен общий frontend helper `photoListUrl()`: direct/linked `thumb` выбирается для list/grid, legacy original остаётся fallback. `/products` table+grid, `/materials` list и production read-facade order/catalogue thumbs переведены на helper; `/modules` audit не нашёл list-photo surface. Detail/form/lightbox/picker оставлены на original сознательно.
+**Затронуто:** `frontend/src/app/shared/services/photos.service.ts` (+spec), products/materials pages, production read facade, products/materials page docs, checklist/archive/lock.
+**Gates:** FE tsc PASS; focused Jest 5 suites / 33 tests PASS; changed FE ESLint PASS; Prettier PASS; `git diff --check` PASS. `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-302.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-302-lists-use-thumb.lock`
+**Known:** старые original без thumb дорабатываются TZ-PHOTO-303; upload/pickers/business logic/layout/PAGE_SIZE/deploy не затронуты.
+
 ## [2026-08-09] — TZ-PHOTO-301 DONE: original + lightweight thumb on upload
 
 **Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #1

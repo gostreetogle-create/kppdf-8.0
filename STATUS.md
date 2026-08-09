@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Canonical cleanup and verification — TZ-261 and TZ-262 are closed; roadmap items remain documented backlog
+**Phase:** Canonical cleanup and verification — photo performance wave in progress; 301–302 closed, 303 next
+
+## [2026-08-09] — TZ-PHOTO-302 DONE: catalogue lists use lightweight thumbnails
+**Статус:** DONE on main; deploy НЕ
+**Что:** Shared frontend `photoListUrl()` selects direct/linked `thumb` and falls back to original. Products table/grid, Materials list and Production read-facade catalogue/order thumbs use it; Modules list audit found no photo surface. Detail/form/lightbox/picker URLs intentionally remain original.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-302.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-302-lists-use-thumb.lock`
+**Gates:** FE tsc PASS; focused Jest 5 suites / 33 tests PASS; changed FE ESLint and Prettier PASS; `git diff --check` PASS. `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+**Wave:** WAVE-PERF-PHOTOS #2 DONE; NEXT TZ-PHOTO-303; deploy НЕ.
 
 ## [2026-08-09] — TZ-PHOTO-301 DONE: upload original + lightweight thumb
 **Статус:** DONE on main; deploy НЕ

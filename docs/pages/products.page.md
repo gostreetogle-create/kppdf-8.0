@@ -211,7 +211,7 @@ module-detail).
   (load/save в try/catch, дефолт `list`).
 - **Grid-вид:** сетка `grid-cols-1 md:2 xl:3 gap-4`; каждая ячейка —
   `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="md"`:
-  - `mediaUrl` — первое populate-фото (`photoIds[].storageUrl`);
+  - `mediaUrl` — URL первого populate-фото через общий `photoListUrl`: linked `thumb`, если он есть, иначе original;
   - `eyebrow` — вид; `title` — название; `description` — подкатегория · N мод.;
   - `sc-actions-md` — цена + ед.; pager под сеткой при `total > pageSize`;
   - loading / empty (`grid-loading` / `grid-empty`).

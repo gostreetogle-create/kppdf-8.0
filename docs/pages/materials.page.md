@@ -154,7 +154,7 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 - **Server-side pagination** — backend возвращает `{ items, total, page, limit }`
 - **Client-side sort** — pi-table сортирует page slice (нет sortBy на backend)
 - **Three lookup tables** — suppliers (Organizations), categories (Categories, type `material`) + photos (Photos)
-- **Фото:** `mainPhotoOf(row)` — проверяет string | populated object
+- **Фото:** `mainPhotoOf(row)` — проверяет string | populated object; `mainPhotoUrl(row)` пропускает URL через общий `photoListUrl` и выбирает linked `thumb`, иначе original
 - **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`
 - **Refresh on dialog close:** 3 стрима: `suppliersLookup.load()` + `photosLookup.load()` + `listRes.reload()`
 - **Copy row action** — slot order в `PiRowActionsComponent`: Copy → Document → Edit → Delete
@@ -163,4 +163,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-04 (TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр; 316 закрыт после 301 архивации BE-полей)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-09 (TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._
