@@ -69,9 +69,9 @@
 | `/storage-items` | yes — `storage-items` | |
 | `/stock-movements` | yes — `stock-movements` | |
 | `/warehouses` | yes — `warehouses` | |
-| `/admin/users`, `/admin/roles` | **NO** | admin registry/roles; `/admin` → redirect |
+| `/admin/users`, `/admin/roles` | yes — `admin-users`, `admin-roles` | admin registry/roles; `/admin` → redirect |
 
-**Итог:** 36 бизнес-routes; **4 без page.md** → `/design`, `/shipping`, `/admin/users`, `/admin/roles` (OPS-307).
+**Итог:** 36 бизнес-routes; **2 без page.md** → `/design`, `/shipping` (OPS-307).
 
 > Successor hint: TZ-OPS-305+ или точечные DOC/PAGE TZ на missing page.md
 > (P1 сначала user-facing READY sections — admin/roles, doc-template-categories; stubs design/shipping — P2).

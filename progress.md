@@ -1,3 +1,12 @@
+## [2026-08-09T14:02:00Z] — TZ-OPS-306 DONE: page.md admin users + roles
+**Исполнитель:** buffy-ops-306 · WAVE-PAGE-DOCS-GAPS #2
+**Статус:** DONE; docs-only; deploy НЕ
+**Что:** Созданы `docs/pages/admin-users.page.md` (90 ≤120) и `admin-roles.page.md` (89 ≤120): route/chips, capability-гейты (user:admin / role:read + systemRoles admin), API `/admin/users` (+activate/deactivate/reset-password) и `/admin/roles`, диалоги (UserForm/ResetPassword/RoleForm view), PAGE_SIZE=10, TZ-257/262/ADMIN-301/302/306.
+**Wiring:** README 23/24 (24→26); PAGE-TZ-INDEX OPS-306 DONE; DOMAIN-MAP gap NO→yes (итог 4→2: design/shipping).
+**Gates:** Test-Path оба True; ≤120 PASS; diff без product code; чужой WIP не тронут.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-306.done.md`; lock создан.
+**NEXT:** TZ-OPS-307 (design/shipping stubs + README hygiene) — строго по очереди; deploy НЕ.
+
 ## [2026-08-09T13:52:00Z] — TZ-OPS-305 DONE: page.md doc-template-categories + text-block-categories
 **Исполнитель:** buffy-ops-305 · WAVE-PAGE-DOCS-GAPS #1
 **Статус:** DONE; docs-only; deploy НЕ

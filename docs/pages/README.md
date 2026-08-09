@@ -41,8 +41,10 @@
 | 20 | **Builder Tool Pane** | `builder-tool-pane.page.md` | _дочерний BuilderPage_ | Левая панель: палитра блоков |
 | 21 | **Builder Inspector** | `builder-inspector.page.md` | _дочерний BuilderPage_ | Правая панель: свойства блока |
 | 22 | **Production Cockpit** | `production-cockpit.page.md` | `/production` | Гант план-оценка (PRODUCTION-303) |
+| 23 | **Admin Users** | `admin-users.page.md` | `/admin/users` | Админ-реестр пользователей (RBAC) |
+| 24 | **Admin Roles** | `admin-roles.page.md` | `/admin/roles` | Роли и права (RBAC) |
 
-> 22 бизнес-страниц + 2 дочерних компонента = 24 документированы.
+> 24 бизнес-страниц + 2 дочерних компонента = 26 документированы.
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
@@ -57,4 +59,4 @@
 
 ---
 
-_Создано: 2026-07-19. Актуально: 24/24 страниц документированы (вкл. Production Cockpit)._
+_Создано: 2026-07-19. Актуально: 26/26 страниц документированы (вкл. Production Cockpit)._

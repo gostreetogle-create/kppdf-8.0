@@ -1,0 +1,6 @@
+TZ-OPS-306
+closed: 2026-08-09
+commit: 9ad197af
+zone: page.md admin users + roles
+checklist: docs/agent-checklists/TZ-OPS-306.md
+archive: tasks/_archive/2026-08/TZ-OPS-306.done.md

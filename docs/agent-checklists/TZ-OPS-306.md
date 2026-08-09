@@ -1,32 +1,32 @@
 # TZ-OPS-306 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-OPS-306.md` (создать при CLAIM)
+> Status: **DONE**
+> Marker: `tasks/_active/TZ-OPS-306.md`
 > Source: `tasks/_backlog/ops/TZ-OPS-306-page-docs-admin.md`
 > Depends: TZ-OPS-305 DONE
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до правок)
 
-- agent_id:
-- claimed_at:
+- agent_id: buffy-ops-306
+- claimed_at: 2026-08-09T13:56:00Z
 - workspace: D:\kppdf-8.0
-- team_room_claim: yes | no | unavailable
+- team_room_claim: unavailable (no Team Room CLI in this workspace)
 
 ## Preflight
 
-- [ ] 305 archived; workspace canonical
-- [ ] Нет чужого CLAIM на admin page.md keys
-- [ ] Claim slot + `_active`
+- [x] 305 archived; workspace canonical
+- [x] Нет чужого CLAIM на admin page.md keys
+- [x] Claim slot + `_active`
 
 ## Acceptance
 
-- [ ] `admin-users.page.md` + `admin-roles.page.md`
-- [ ] User ≠ Worker explicit; README/INDEX/DOMAIN-MAP
-- [ ] Нет product code в diff
+- [x] `admin-users.page.md` + `admin-roles.page.md`
+- [x] User ≠ Worker explicit; README/INDEX/DOMAIN-MAP
+- [x] Нет product code в diff
 
 ## Integrity slot (docs-only)
 
-- [ ] docs-only; FIC N/A; чужой WIP excluded
+- [x] docs-only; FIC N/A; чужой WIP excluded
 
 ## Gates
 
@@ -39,4 +39,4 @@ _(≤15 строк)_
 ## Closeout
 
 - [ ] archive + DONE
-- closed_at:
+- closed_at: 2026-08-09T14:02:00Z

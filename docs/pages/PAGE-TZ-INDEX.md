@@ -77,7 +77,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/admin/users`, `/admin/roles` | **OPS-306 READY** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
+| `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
 | `/admin` stub | — | optional redirect (P2, not tasked) |
 | `/login` | login.page.md | — |
 

@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:02:00Z · TZ-OPS-306 DONE (page.md admin users/roles)
+- DONE: `admin-users.page.md` + `admin-roles.page.md` (90/89 строк ≤120).
+- «Не путать»: User ≠ Worker; FE admin route ≠ BE admin module (только API).
+- Wiring: README 23/24 (24→26); PAGE-TZ-INDEX OPS-306 DONE; DOMAIN-MAP gap 4→2 NO.
+- Gates PASS: Test-Path True; diff без product code; чужой WIP не тронут.
+- Archive + lock; checklist DONE.
+- NEXT: TZ-OPS-307 (design/shipping stubs + README hygiene) — strict queue; Deploy: NO
+
 ## Checkpoint 2026-08-09T13:52:00Z · TZ-OPS-305 DONE (page.md doc-categories)
 - DONE: `document-template-categories.page.md` + `text-block-categories.page.md` (88/93 строк ≤120).
 - Wiring: README 12a/12b (22→24); PAGE-TZ-INDEX OPS-305 DONE; DOMAIN-MAP gap NO→yes ×2 (итог 4 NO).
