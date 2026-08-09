@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:25:00Z · WAVE-KP-USABLE + 337 (no table dup)
+- First: TZ-SALES-337 — Параметры без секции Таблица; таблица только в rail.
+- Then: 333 Save → 334 Client → 335 qty/photo → 336 lock.
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-CONTINUOUS.md`
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T16:08:44Z · TZ-SALES-332 DONE / Cursor visual PASS
 - DONE: multi-table live-table target selection, actual TableTemplate column sync, A4 hide/show and reorder accepted by Cursor.
 - Feature: `f5e0f401`; hotfix: `272550ab946600045970e31f110d3d72bd121ccd`; both pushed to `origin/main`.
