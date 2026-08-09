@@ -1,0 +1,6 @@
+TZ-SALES-328
+status=DONE
+closed_at=2026-08-09T13:51:37Z
+scope=Create КП shop-vitrine with md cards, filters, pager, and Add/Edit/Create actions
+implementation_commits=6143447f,1e40e518,3b11f89c
+visual=Cursor/PO PASS (md + 3 columns + 58rem products flyout)

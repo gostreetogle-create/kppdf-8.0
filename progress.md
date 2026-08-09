@@ -32,14 +32,24 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-304.done.md`; `_active` удалён.
 **NEXT:** idle — волна WAVE-PROJECT-KNOWLEDGE (302→303→304) ЗАКРЫТА; successors = missing page.md по gap-таблице (отдельные TZ, не эта волна); deploy НЕ.
 
+## [2026-08-09T13:51:37Z] — TZ-SALES-328 DONE: shop-витрина final visual closeout
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; Cursor/PO visual PASS; archive + lock; deploy НЕ
+**Что:** Create КП product rail accepted as `PiShowcaseCard md` cards in exactly 3 columns inside the 58rem products flyout, with scoped compactness, photos/placeholders, equal-height rows, search/category filters, API-backed pager, and Add/Edit/Create actions.
+**Commits:** `6143447f` (feat) + `1e40e518` (sm trial) + `3b11f89c` (md×3 + 58rem final visual).
+**Gates:** frontend tsc PASS; focused rail Jest 4/4; proposal-create 11/11; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-328.done.md`; lock created; `_active/TZ-SALES-328.md` removed.
+**Scope:** DOC-343/document-template.service.ts, OPS WIP, 325 bind, 322/320, and deploy untouched.
+**NEXT:** idle по KP-vitrine; do not invent. Deploy НЕ.
+
 ## [2026-08-09T13:15:28Z] — TZ-SALES-328 READY FOR REVIEW: shop-витрина
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual Cursor/PO PASS обязателен до archive
 **Что:** Create КП product rail заменён на `PiShowcaseCard md` grid с фото/placeholder, search/category filters, API-backed page/limit=12 pagination, `Добавить`, `Редактировать` и `Создать изделие` через существующие ProductForm/QuickCreate dialogs. Add-and-continue и A4 rails|center geometry сохранены.
 **Gates:** frontend tsc PASS; focused rail Jest 4/4 PASS; proposal-create Jest 11/11 PASS; diff-check PASS.
-**Canonical:** `ea4a9ae2`.
+**Canonical:** `6143447f` (feat) + `1e40e518` (sm trial) + `3b11f89c` (md×3 + 58rem final visual).
 **Scope:** foreign DOC-343 backend/docs WIP preserved/excluded; 325, 322, 320, BuilderCanvas, deploy untouched.
-**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push; deploy НЕ.
+**NEXT:** superseded by the DONE closeout above; deploy НЕ.
 
 ## [2026-08-09T13:20:00Z] — TZ-OPS-303 DONE: Docs Integrity Closeout
 **Исполнитель:** buffy-ops-303 · WAVE-PROJECT-KNOWLEDGE #2

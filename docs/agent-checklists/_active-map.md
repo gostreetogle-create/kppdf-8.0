@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T13:51:37Z · TZ-SALES-328 DONE / Cursor-PO visual PASS
+- DONE: Create КП product rail accepted in the final `md` + exactly 3-column + 58rem products-flyout variant.
+- Implementation commits: `6143447f` (feat) + `1e40e518` (sm trial) + `3b11f89c` (md×3 + 58rem final visual).
+- Gates: frontend tsc PASS; focused rail Jest 4/4; proposal-create 11/11; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-328.done.md`; lock recorded; `_active/TZ-SALES-328.md` removed.
+- Scope guard: DOC-343/document-template.service.ts, OPS WIP, 325 bind, 322/320, and deploy untouched.
+- NEXT: idle по KP-vitrine; do not invent a successor. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:10:00Z · WAVE-PAGE-DOCS-GAPS CLOSED (OPS-305→307 DONE)
 - 305: doc-template-categories + text-block-categories page.md; 306: admin-users + admin-roles; 307: design/shipping stubs + README hygiene.
 - README: /dashboard→/inventory, 36/36 бизнес-routes; DOMAIN-MAP gap inventory = 0 × NO (6 former-NO → yes).
@@ -34,10 +43,10 @@
 ## Checkpoint 2026-08-09T13:15:28Z · TZ-SALES-328 READY FOR REVIEW
 - READY: Create КП shop-витрина now uses responsive `PiShowcaseCard md` cards with photo/placeholder, equal-height grid, search/category filters, API-backed pager, Add/Edit/Create actions.
 - Gates: frontend tsc PASS; focused rail 4/4; proposal-create 11/11; diff-check PASS.
-- Canonical implementation: `6143447f` (later md×3 tune may supersede rail SHA — visual still open); active marker remains until Cursor/PO visual PASS.
+- Implementation commits: `6143447f` (feat) + `1e40e518` (sm trial) + `3b11f89c` (md×3 + 58rem final visual); Cursor/PO visual PASS recorded in the DONE closeout.
 - Visual required: shop-like cards, photo/placeholder, equal row heights, filters/pager, Add keeps flyout open, Edit/Create dialogs, no A4 compression.
 - Foreign DOC-343 backend/docs WIP remains preserved/excluded; 322, 320, deploy untouched.
-- NEXT: Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push.
+- NEXT: superseded by the DONE closeout checkpoint above.
 - Deploy: NO
 
 ## Checkpoint 2026-08-09T13:11:11Z · TZ-SALES-328 CLAIMED
