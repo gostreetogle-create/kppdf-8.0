@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T21:10:00Z · PARALLEL slot TZ-ADMIN-303 (disjoint from KP)
+- Ready: finish dirty `system-role.guard*` + `roles-admin*` WIP — admin may Edit system roles; DELETE frozen.
+- TZ/prompt: `tasks/_backlog/admin/TZ-ADMIN-303-system-roles-admin-edit.md` · `PROMPT-ADMIN-303.md`
+- Workspace: canonical `D:\kppdf-8.0` only (NOT freebuff KP worktree).
+- BAN overlap: proposals/quotation/document-template/table-template / TZ-SALES-* markers.
+- WAVE-KP-USABLE continues on agent-1; deploy NO.
+
 ## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
 - Agent crashed mid-339 review. Hotfix on main: `8a3186f1` (no Save button; fix 400 item.total; empty resume after delete).
 - `_active/TZ-SALES-339.md` still present — first job: self-verify + archive 339, then 334→335→336 to wave DONE.
