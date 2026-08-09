@@ -7,4 +7,5 @@
 | `_archive/` | Сделано |
 | `_park/` | Отложено — не смотреть без нужды |
 
-Сейчас: **TZ-UX-314 DONE** → next **WAVE-PERF-PHOTOS** (`tasks/_backlog/perf/`, PHOTO-301→303).
+Сейчас: параллельно UI-волны; **docs knowledge:** `tasks/_backlog/ops/WAVE-PROJECT-KNOWLEDGE.md` (OPS-302→304).  
+Также: **WAVE-PERF-PHOTOS** (`tasks/_backlog/perf/`, PHOTO-301→303).

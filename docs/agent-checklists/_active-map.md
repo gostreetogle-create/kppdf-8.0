@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09 · WAVE-PROJECT-KNOWLEDGE READY (OPS-302→304)
+- NEW backlog wave (docs/process only): strengthen agent knowledge warehouse — Project Memory → Integrity closeout → Domain map.
+- Specs: `tasks/_backlog/ops/WAVE-PROJECT-KNOWLEDGE.md` + TZ-OPS-302/303/304 + `PROMPT-OPS-KNOWLEDGE-CONTINUOUS.md`
+- Audit: `docs/audits/2026-08-09-project-knowledge-integrity-analysis.md`
+- Checklists RESERVED: `docs/agent-checklists/TZ-OPS-302.md` … 304
+- BAN: product FE/BE, Graphify, deploy; do not steal keys from DOC-344 / DOC-TABLES-305 / SALES-*
+- Claim when PO hands the continuous prompt; order strict 302→303→304
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T12:42:03Z · TZ-SALES-326 READY after compile fix
 - FIXED: `ProposalCreatePage.closeFlyouts()` changed from private to protected; template binding now compiles.
 - Gates: frontend tsc PASS; frontend `ng build` PASS (budget warnings only); proposal-create 11/11 PASS; diff-check PASS.
