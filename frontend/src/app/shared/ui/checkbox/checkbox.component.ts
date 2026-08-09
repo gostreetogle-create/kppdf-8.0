@@ -107,7 +107,7 @@ export class CheckboxComponent implements ControlValueAccessor {
       dim,
       'hairline',
       'rounded-sm',
-      isOn ? 'bg-sunrise-warm text-paper border-sunrise-warm' : 'bg-paper border-rule text-ink',
+      isOn ? 'bg-sunrise-warm text-on-gold border-sunrise-warm' : 'bg-paper border-rule text-ink',
       'pi-focus-ring',
       this.disabled() ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
     ].join(' ');

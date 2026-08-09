@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:46:59Z · TZ-UI-THEME-331 DONE
+- DONE: TZ-UI-THEME-331 — dark surface depth, calibrated dark text, readable `text-on-gold` active states, and theme-aware selection/scrollbar behavior.
+- IN PROGRESS: none
+- NOT DONE: TZ-UI-GOLD-332 READY (successor); PO visual review for light/dark remains
+- NEXT: `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md` (not claimed in this turn)
+- HEAD: 89c9eca0 before closeout; pushed: no
+- Blockers: browser screenshots / PO visual review unavailable; successor 332 is a separate READY scope
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T05:50:00Z · TZ-UI-GOLD-332 READY (после 331)
 - Триггер PO: «золотая кнопка слишком тёмная, хочется ближе к светлому золоту»
 - TZ: `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md`

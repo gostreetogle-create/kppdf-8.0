@@ -346,6 +346,7 @@ export function matchActiveCategoryId(
                              rounded-sm hairline transition-colors pi-focus-ring
                              cursor-pointer no-underline"
                       [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
+                      [class.text-on-gold]="activeCategoryId() === cat.id"
                       [class.text-paper]="activeCategoryId() === cat.id"
                       [class.border-sunrise-warm]="activeCategoryId() === cat.id"
                       [class.text-ink]="activeCategoryId() !== cat.id"

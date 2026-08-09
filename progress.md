@@ -1,3 +1,13 @@
+## [2026-08-09] — TZ-UI-THEME-331 DONE: dark depth + readable gold states
+
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; deploy НЕ
+**Что:** Добавлен invariant `text-on-gold` для золотых active/primary состояний, затемнены и выровнены dark surface ladders, приглушён dark text, добавлен inset highlight, исправлены selection и scrollbar правила; документация обновлена.
+**Gates:** Prettier, changed-file ESLint, FE tsc, full Jest 136 suites / 1276 tests, Angular development build, diff-check — PASS. Focused requested specs отсутствуют; `--passWithNoTests` PASS. Контрольный поиск `bg-sunrise-warm text-paper`: 0.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
+**NEXT:** TZ-UI-GOLD-332 READY; не claim в этом closeout.
+
 ## [2026-08-09] — TZ-SALES-316 DONE: Create KP template center
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #7

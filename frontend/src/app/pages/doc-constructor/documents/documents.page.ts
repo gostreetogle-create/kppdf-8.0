@@ -66,6 +66,7 @@ const PAGE_SIZE = 10;
             class="inline-block w-2 h-2 rounded-full shrink-0"
             [class.bg-accent-cool]="doc.status === 'final'"
             [class.bg-sunrise-warm]="doc.status === 'draft'"
+            [class.text-on-gold]="doc.status === 'draft'"
           ></span>
           <span>{{ statusLabel(doc) }}</span>
         </span>

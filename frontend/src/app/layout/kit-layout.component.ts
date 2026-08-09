@@ -150,7 +150,7 @@ const NAV_GROUPS: NavGroup[] = [
                     <li>
                       <a
                         [routerLink]="link.path"
-                        routerLinkActive="bg-sunrise-warm text-paper"
+                        routerLinkActive="bg-sunrise-warm text-on-gold"
                         [routerLinkActiveOptions]="{ exact: link.path === '/kit/overview' }"
                         class="block px-2 py-1.5 text-sm
                                hover:bg-paper-2 transition-colors rounded-sm"

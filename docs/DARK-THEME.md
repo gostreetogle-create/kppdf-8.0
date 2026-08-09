@@ -96,3 +96,19 @@ Dark — только через `--color-*-override` в `@variant dark`.
 - Selected table row: видимая заливка (`bg-gold-soft`) light **и** dark — не только checkbox
 - Badge secondary: semantic `success` tokens (с dark override), не raw `green-500/700`
 - Zebra / mute: theme-aware `paper-2` / `muted-foreground/70`, не `bg-black/[0.02]` и не `/50` на tiny text
+
+## Глубина в тёмной теме (TZ-UI-THEME-331)
+
+- Ступени поверхностей идут ровным шагом ≈0.04:
+  `paper 0.175 → raised 0.215 → paper-2 0.25 → paper-3 0.29 → paper-4 0.33`.
+  Неравномерный шаг превращает вложенные уровни в «серую кашу».
+- Тёмная тень на тёмном фоне не читается. Глубину даёт `inset 0 1px 0 oklch(1 0 0 / 0.05)`
+  в `--shadow-executive` — светлый блик по верхней грани.
+- Текст: `ink 0.92` (тело) → `muted-foreground-strong 0.86` → `muted-foreground 0.74`
+  → `muted 0.62` (плейсхолдер). Ярче 0.92 давало гало на больших массивах.
+
+## Золотая заливка (обе темы)
+
+Текст поверх золотого фона — **только** `text-on-gold` (`--color-on-gold`, тема-инвариантный
+тёмный). `text-paper` даёт ≈2:1 в светлой теме, `text-ink` — ≈1:1 в тёмной.
+Проверка перед мержем: поиск `bg-sunrise-warm text-paper` по `frontend/src` должен быть пустым.

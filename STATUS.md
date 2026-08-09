@@ -1,7 +1,16 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** KP vitrine 310–316 DONE; 320 PARKED; READY queue idle — offer deploy, do not run
+**Phase:** UI theme 330–331 DONE; TZ-UI-GOLD-332 READY; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-UI-THEME-331 DONE: dark depth + readable gold states
+**Статус:** DONE on main; deploy НЕ
+**Что:** Theme-invariant `text-on-gold` теперь используется на золотых active/primary состояниях; dark surface ladder выровнен, текст приглушён, добавлен inset highlight, исправлены selection и scrollbar.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
+**Gates:** FE tsc, changed-file ESLint/Prettier, full Jest 136 suites / 1276 tests, Angular development build, diff-check PASS; focused requested specs отсутствуют.
+**NEXT:** `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md` READY; не claim в этом closeout.
+
 
 ## [2026-08-09] — TZ-SALES-316 DONE: Create KP template center
 **Статус:** DONE on main; deploy НЕ

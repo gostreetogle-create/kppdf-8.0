@@ -68,7 +68,7 @@ export interface PiNavDropdownItem {
  *  - Escape + outside-pointer close
  *  - Focus returns to trigger on close
  *  - aria-haspopup="menu" + aria-expanded managed by the directive
- *  - Active state (sub-route matched) inverts the trigger to bg-sunrise-warm
+ *  - Active state (sub-route matched) inverts the trigger to bg-sunrise-warm with text-on-gold.
  *
  * Standalone + OnPush + signal-based.
  */
@@ -98,6 +98,7 @@ export interface PiNavDropdownItem {
       [class.py-1.5]="!compact()"
       [class.text-sm]="!compact()"
       [class.bg-sunrise-warm]="active()"
+      [class.text-on-gold]="active()"
       [class.text-paper]="active()"
       [class.border-sunrise-warm]="active()"
       [class.text-ink]="!active()"
@@ -198,7 +199,7 @@ export class PiNavDropdownComponent {
   /** Lucide icon reference — passed in by the layout (e.g. `Package`, `Briefcase`). */
   readonly icon = input.required<LucideIcon>();
   readonly items = input.required<readonly PiNavDropdownItem[]>();
-  /** When true, trigger is highlighted bg-sunrise-warm text-paper. */
+  /** When true, trigger is highlighted with bg-sunrise-warm and text-on-gold. */
   readonly active = input<boolean>(false);
   readonly ariaLabel = input<string>('');
   /**

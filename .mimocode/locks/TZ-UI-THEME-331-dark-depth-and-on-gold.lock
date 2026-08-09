@@ -1,0 +1,28 @@
+# TZ-UI-THEME-331 — DONE lock
+TASK: TZ-UI-THEME-331
+OWNER: agent-3e757640b7
+CLOSED_AT: 2026-08-09
+COMMIT: pending-closeout
+PROTECTED_FILES:
+  - frontend/src/styles.css
+  - frontend/src/app/shared/ui/button/button.component.ts
+  - frontend/src/app/shared/ui/checkbox/checkbox.component.ts
+  - frontend/src/app/shared/ui/select/select-option.component.ts
+  - frontend/src/app/shared/ui/pi-pagination.component.ts
+  - frontend/src/app/shared/ui/notifications/pi-notification-bell.component.ts
+  - frontend/src/app/layout/app-layout.component.ts
+  - frontend/src/app/layout/kit-layout.component.ts
+  - frontend/src/app/shared/page/pi-group-workspace.component.ts
+  - frontend/src/app/shared/ui/menu/pi-nav-dropdown.component.ts
+  - frontend/src/app/shared/command/pi-command-palette.component.ts
+  - frontend/src/app/pages/production/production-cockpit.page.ts
+  - frontend/src/app/pages/inventory/stock-movements.page.ts
+  - frontend/src/app/pages/doc-constructor/documents/documents.page.ts
+  - frontend/src/app/pages/counterparties/counterparty-full-editor-dialog.component.ts
+  - frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts
+  - docs/DARK-THEME.md
+SUCCESSOR: none
+NOTES:
+  - Full frontend gates passed; focused requested patterns have no matching specs.
+  - Browser screenshots and PO visual review remain outside this session.
+  - Replace COMMIT with the final closeout SHA before push.

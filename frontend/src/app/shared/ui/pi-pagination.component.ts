@@ -109,7 +109,7 @@ export class PaginationComponent {
       'justify-center',
       'rounded-sm',
       'bg-sunrise-warm',
-      'text-paper',
+      'text-on-gold',
       'pi-focus-ring',
     ].join(' ');
   }

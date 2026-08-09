@@ -11,7 +11,7 @@ export type PiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 const VARIANT_CLASS: Record<PiButtonVariant, string> = {
   /* TZ-UI-LIGHT-330: gold primary with ink label; raised controls stay visible. */
-  default: 'bg-gold text-ink border border-gold hover:bg-gold-hover executive-shadow',
+  default: 'bg-gold text-on-gold border border-gold hover:bg-gold-hover executive-shadow',
   secondary: 'bg-paper-2 text-ink hairline hover:bg-paper-3',
   outline: 'bg-paper-raised text-ink border border-rule-strong hover:bg-paper-2',
   ghost: 'bg-transparent text-ink hover:bg-paper-2',

@@ -56,6 +56,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
                        text-xs leading-5 rounded-sm transition-colors
                        pi-focus-ring cursor-pointer no-underline"
                 [class.bg-sunrise-warm]="chip.id === 'production'"
+                [class.text-on-gold]="chip.id === 'production'"
                 [class.text-paper]="chip.id === 'production'"
                 [class.text-ink]="chip.id !== 'production'"
                 [class.hover:bg-paper-2]="chip.id !== 'production'"

@@ -43,7 +43,7 @@ const SEVERITY_DOT: Record<NotificationSeverity, string> = {
         @if (center.unreadCount() > 0) {
           <span
             class="absolute -top-0.5 -right-0.5 min-w-[1rem] h-4 px-0.5 rounded-sm
-                   bg-sunrise-warm text-paper text-[9px] font-mono leading-4 text-center"
+                   bg-sunrise-warm text-on-gold text-[9px] font-mono leading-4 text-center"
             data-test="notification-bell-badge"
             aria-hidden="true"
             >{{ center.unreadCount() > 9 ? '9+' : center.unreadCount() }}</span

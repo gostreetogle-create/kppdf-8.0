@@ -67,6 +67,7 @@ export type CommandItem = {
                   type="button"
                   class="w-full text-left px-4 py-2 flex items-center justify-between text-sm transition-colors"
                   [class.bg-sunrise-warm]="i === selectedIdx()"
+                  [class.text-on-gold]="i === selectedIdx()"
                   [class.text-paper]="i === selectedIdx()"
                   [class.hover:bg-paper-2]="i !== selectedIdx()"
                   (click)="select(item)"

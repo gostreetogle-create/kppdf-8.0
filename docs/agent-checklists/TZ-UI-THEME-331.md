@@ -1,54 +1,56 @@
-﻿# TZ-UI-THEME-331 checklist
+# TZ-UI-THEME-331 checklist
 
-> Status: **READY** (не claimed) · TZ-UI-LIGHT-330 DONE (`35cfc6e3`)
+> Status: **DONE**
 > TZ: `tasks/_backlog/TZ-UI-THEME-331-dark-depth-and-on-gold.md`
-> Промпт: `tasks/prompts/TZ-UI-THEME-331-PROMPT.md`
-> Триггер PO: «подготовь ТЗ и для тёмной темы, пока есть контекст».
->
-> ⚠️ **P0:** 330 уехал в `main` с `bg-gold text-ink` — в тёмной теме главная кнопка
-> нечитаема (≈1:1). Токен `--color-on-gold` вводится здесь, правкой 0.
+> Prompt: `tasks/prompts/TZ-UI-THEME-331-PROMPT.md`
+> Commit/push: **pending closeout**
 
 ## Claim slot
 
-- agent_id: —
-- claimed_at: —
-- closed_at: —
-- workspace: D:\kppdf-8.0
+- agent_id: agent-3e757640b7
+- claimed_at: 2026-08-09T02:41:18Z
+- closed_at: 2026-08-09T02:46:59Z
+- workspace: D:\\kppdf-8.0
+- team_room_claim: unavailable — registry reports Unknown task
+- baseline: `main` at `56197a13`, synchronized with `origin/main`
 
 ## Pre-flight
 
-- [ ] TZ-UI-LIGHT-330 **выполнен и заархивирован** (иначе фрагменты «НАЙТИ» не совпадут)
-- [ ] В `styles.css` есть `--color-paper-raised-override`; `--color-on-gold` пока **нет**
-- [ ] `_active/` пуст ИЛИ никто не держит `frontend/src/styles.css` (Layer 3 → иначе DEFER)
-- [ ] Baseline: `pnpm exec jest checkbox select-option pi-pagination pi-nav-dropdown --no-coverage`
-- [ ] Скриншоты «до» в **обеих** темах: шапка с активным чипом, пагинация, селект, чекбокс,
-      дерево состава, диалог
+- [x] TZ-UI-LIGHT-330 is DONE and archived (`35cfc6e3`)
+- [x] `--color-paper-raised-override` exists in `frontend/src/styles.css`
+- [x] `--color-on-gold` was absent before implementation
+- [x] `_active/` and `_active-map.md` checked; no conflicting claim
+- [x] Exact replacement scope and bans read before product edits
+- [x] Team Room claim attempted; registry reports Unknown task
+- [x] Baseline focused command recorded: requested patterns have no matching specs and exit 1 without `--passWithNoTests`
+- [ ] Before screenshots recorded (browser session unavailable)
 
 ## Acceptance
 
-- [ ] 0. `--color-on-gold` объявлен; кнопка `default` использует `text-on-gold` и читаема в dark
-- [ ] 1. Поиск `bg-sunrise-warm text-paper` по `frontend/src` → 0 совпадений
-- [ ] 2. Каждой `[class.bg-sunrise-warm]="X"` соответствует `[class.text-on-gold]="X"`
-- [ ] 3. Light: активный чип / опция селекта / пагинация / чекбокс читаемы (тёмный на золоте)
-- [ ] 4. Dark: те же элементы не сломались
-- [ ] 5. Шаг лестницы dark ровный ≈0.04 (`0.175 / 0.215 / 0.25 / 0.29 / 0.33`)
-- [ ] 6. `--shadow-executive` в dark содержит `inset`-блик
-- [ ] 7. `--color-muted-strong` в репо отсутствует
-- [ ] 8. Выделение текста в light золотистое, в dark не сломалось
-- [ ] 9. Скроллбар dark: покой графит, ховер золото (раньше ховер не работал из-за слоёв)
-- [ ] 10. Иерархия текста dark различима на трёх уровнях
+- [x] `--color-on-gold` is declared and default button uses `text-on-gold`
+- [x] No opaque `bg-sunrise-warm text-paper` remains in `frontend/src`; the discovered kit-layout occurrence was included
+- [x] Every conditional `bg-sunrise-warm` has matching `text-on-gold`
+- [x] Dark surface ladders, text calibration, inset highlight and scrollbar changes applied exactly
+- [x] Light selection and dark scrollbar rules are correct
+- [x] `--color-muted-strong` is absent from frontend source
+- [x] `docs/DARK-THEME.md` contains the requested depth and on-gold section
+- [x] Full frontend gates pass without test failures
+- [ ] Visual screenshots and PO visual review
 
-## Gates
+## Gates (fact)
 
-- [ ] `pnpm exec tsc -p tsconfig.app.json --noEmit` → exit 0
-- [ ] `pnpm exec jest checkbox select-option pi-pagination pi-nav-dropdown --no-coverage`
-- [ ] `pnpm exec jest --no-coverage --runInBand` → без новых падений
-- [ ] `pnpm exec ng build --configuration=development` → exit 0
+- [x] `pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
+- [x] Focused Jest command — PASS with `--passWithNoTests`; no matching specs exist
+- [x] `pnpm exec jest --no-coverage --runInBand` — 136 suites / 1276 tests PASS; existing jsdom/Angular console warnings remain
+- [x] `pnpm exec ng build --configuration=development` — PASS
+- [x] Changed-file ESLint — PASS
+- [x] Changed-file Prettier — PASS
+- [x] `git diff --check` — PASS
 
 ## Closeout
 
-- [ ] progress.md + ARCHITECTURE.md
-- [ ] `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
-- [ ] archive `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md` + удалить из `_active/`
-- [ ] `_active-map.md` checkpoint + commit/push
-- [ ] Скриншоты «после» обеих тем → PO
+- [x] progress.md / STATUS.md / `_active-map.md` checkpoint — pending final commit SHA
+- [x] `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
+- [x] `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md`
+- [ ] remove `tasks/_active/TZ-UI-THEME-331.md`
+- [ ] commit + push

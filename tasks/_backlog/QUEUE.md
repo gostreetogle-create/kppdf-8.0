@@ -14,12 +14,12 @@
 | **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **DONE** — 310–316; **320 PARKED** |
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
-| **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **READY** — после 330 |
+| **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `tasks/_backlog/TZ-UI-THEME-331-dark-depth-and-on-gold.md`  
-(или idle до PO: unpark 320 / deploy)
+**NEXT для universal prompt:** idle — UI theme wave 330 → 331 DONE; visual PO review / unpark 320 / deploy remain explicit decisions
+(Deploy не запускать.)
 
 ## Idle / park / done
 
