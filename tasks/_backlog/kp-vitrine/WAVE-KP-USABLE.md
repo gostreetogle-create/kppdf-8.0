@@ -1,6 +1,8 @@
 # WAVE-KP-USABLE — Create КП доводим до «не стыдно»
 
-**STATUS:** IN FLIGHT — close 339 (self-verify) → 334 → 335 → 336 → DONE  
+**STATUS:** IN FLIGHT — 339 + 334 сделаны, но **лежат в ветке `freebuff/…944f2711`, не на `main`**.
+Сначала приземлить их merge'ем ([`PROMPT-KP-USABLE-RESUME.md`](./PROMPT-KP-USABLE-RESUME.md)),
+затем **349** (старые индексы `quotations`) → 335 → 336 → DONE  
 **Канон:** [`docs/audits/2026-08-09-kp-usable-gap-map.md`](../../../docs/audits/2026-08-09-kp-usable-gap-map.md)  
 **Промпт (до конца, self-verify):** [`PROMPT-KP-USABLE-CONTINUOUS.md`](./PROMPT-KP-USABLE-CONTINUOUS.md)  
 **Deploy:** только по команде PO

@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T21:55:00Z · 339 + 334 ГОТОВЫ, НО НЕ НА MAIN (обрыв агента)
+- Агент остановлен внутренним лимитом шагов, не ошибкой проекта; работал в `.freebuff` worktree вопреки промпту.
+- Ветка `freebuff/kppdf-8-0-d-kppdf-8-0-944f2711-…` (в origin), HEAD `fa14bcec`:
+  `e183a663` closeout 339 · `fa14bcec` 334 клиент (FE + archive + lock).
+- На `main` (`65ca786b`) до сих пор: `tasks/_active/TZ-SALES-339.md`, нет архивов 339/334, нет кода клиента.
+- Ветка отстала на `0086eaa5`/`e73a7a74` (ADMIN-303) + `65ca786b` (аудит полноты). Merge, **не** reset — иначе откатится ADMIN-303.
+- Регрессия в ветке: `proposals-create.page.md` — строка 334 заменила строку 339; при merge вернуть обе.
+- 335: кода нет, изменён только checklist; 336 не начата. Deploy не запускался.
+- Находка без записи в git: старый уникальный индекс `quotations` блокировал создание черновиков после удаления
+  (чинили только локальную базу; `autoIndex: !isProd` → на стенде та же мина) → **TZ-SALES-349**.
+- NEXT: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-RESUME.md` — приземлить ветку на main → 349 → 335 → 336.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T21:40:00Z · WAVE-KP-COMPLETE READY (полнота КП)
 - PO принёс аналог-редактор КП → аудит полноты: `docs/audits/2026-08-09-kp-builder-completeness-audit.md`
 - Волна: `tasks/_backlog/kp-vitrine/WAVE-KP-COMPLETE.md` · промпт `PROMPT-KP-COMPLETE-CONTINUOUS.md`
