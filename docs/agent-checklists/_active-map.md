@@ -10,6 +10,7 @@
 
 ## Checkpoint 2026-08-09T15:45:00Z · TZ-SALES-332 READY FOR REVIEW
 - READY: Create КП now syncs the selected template's actual live line-items columns into the Table rail; ←/→ and Видна/Скрыта rebuild request-only A4 layout.
+- Implementation: `f5e0f401`, pushed to `origin/main`; active marker remains until visual PASS.
 - Right rail is split into mutually exclusive Параметры / Таблица tools; CTA is PiButton «Открыть шаблон таблицы»; products closes the right overlay to avoid clipping.
 - Flyouts have inward air, content-height/max-height, light transparency and internal product-grid scroll; frozen A4 rails|center geometry remains unchanged.
 - Gates: frontend tsc PASS; proposal-create Jest 14/14; changed-file Prettier PASS; diff-check PASS.

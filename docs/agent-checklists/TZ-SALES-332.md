@@ -46,6 +46,7 @@
 
 ## Executor report (auto)
 
+- Implementation commit: `f5e0f401` (`Polish Create KP flyouts and sync table controls`), pushed to `origin/main`.
 - Selected templates now load their template blocks and actual live line-items TableTemplate columns; explicit `kpLineItems`/`line-items` wins, otherwise exactly one live table is used.
 - `kpTableLayout` carries the real keys/labels; DEFAULT_KP is only a safe fallback when no target table is discoverable.
 - Table controls use horizontal `←`/`→` and `Видна`/`Скрыта`; the last visible column is protected; changes rebuild request-only `tableLayout` and never PATCH the shared template.

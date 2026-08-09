@@ -30,6 +30,10 @@
 
 - Frontend tsc PASS; proposal-create Jest 14/14 PASS; changed-file Prettier PASS; diff-check PASS.
 
+## Implementation commit
+
+- `f5e0f401` — pushed to `origin/main`; active marker remains until visual PASS.
+
 ## Review handoff
 
 - READY FOR REVIEW — on `/proposals/create`, select a template, open Таблица, verify real A4 column labels, hide/reveal, ←/→ reorder, open the template CTA, then open Товары and verify three md cards are not clipped and the A4 center does not move.

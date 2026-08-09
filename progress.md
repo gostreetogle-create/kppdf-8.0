@@ -1,6 +1,7 @@
 ## [2026-08-09T15:45:00Z] — TZ-SALES-332 READY FOR REVIEW: flyout/table rail polish
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ
+**Implementation:** `f5e0f401` pushed to `origin/main`.
 **Что:** Layout Create КП синхронизируется с реальными columns выбранной live line-items TableTemplate; ←/→ и «Видна/Скрыта» rebuild request-only A4 layout, последний видимый столбец защищён. Правый rail разделён на Параметры/Таблица; CTA = PiButton «Открыть шаблон таблицы»; products закрывает right overlay, flyouts получили воздух/content-height/лёгкую прозрачность.
 **Gates:** frontend tsc PASS; proposal-create Jest 14/14; Prettier PASS; diff-check PASS.
 **Scope:** frozen A4 rails|center, 330 tableLayout, 331 footer/VAT, Save/Counterparty, 320/322, global tokens, DOC-343 WIP и deploy не тронуты.
