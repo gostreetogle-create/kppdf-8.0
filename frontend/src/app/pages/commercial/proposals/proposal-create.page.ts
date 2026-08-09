@@ -158,6 +158,16 @@ type LeftTool = 'template' | 'products' | null;
             </aside>
           }
 
+          @if (leftTool() || rightOpen()) {
+            <button
+              type="button"
+              class="kp-create-studio__backdrop"
+              aria-label="Закрыть панели"
+              data-test="kp-create-backdrop"
+              (click)="closeFlyouts()"
+            ></button>
+          }
+
           @if (rightOpen()) {
             <aside
               id="kp-flyout-params"
@@ -206,7 +216,19 @@ type LeftTool = 'template' | 'products' | null;
       --kp-flyout-w: min(20rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
     }
 
+    .kp-create-studio__backdrop {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      cursor: default;
+    }
+
     .kp-create-studio__rail {
+      position: relative;
+      z-index: 30;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -269,6 +291,10 @@ type LeftTool = 'template' | 'products' | null;
       box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
       overflow: auto;
       min-height: 0;
+    }
+
+    .kp-create-studio__flyout[data-flyout='products'] {
+      width: min(40rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
     }
 
     .kp-create-studio__flyout--left {

@@ -59,7 +59,7 @@
 
 | Зона | Свёрнуто | Раскрыто | Содержание |
 |------|----------|----------|------------|
-| **Left rail** | 2 icon-btn **~44–52px** (Шаблон · Товары) | один overlay ≤~20rem **поверх** center | Пикер шаблона **или** список изделий |
+| **Left rail** | 2 icon-btn **~44–52px** (Шаблон · Товары) | template overlay ≤~20rem; products overlay **36–40rem** поверх center | Пикер шаблона **или** список изделий |
 | **Center** | всегда fixed width между rails | — | Лист A4; **не сжимается** при open |
 | **Right** | icon-rail, **default collapsed** | overlay ← от рейла | Inspector |
 
@@ -71,7 +71,7 @@
 4. Flyout = `position: absolute` поверх center; scroll только внутри flyout.
 5. Default: все flyout закрыты.
 6. Left tools взаимно исключают друг друга; на узком — ещё и не вместе с Right.
-7. **Escape** / pointerdown вне rail+flyout → закрыть (CDK overlay select не считается «вне»).
+7. **Escape** / pointerdown вне rail+flyout → закрыть (CDK overlay select не считается «вне»); transparent backdrop covers the center/iframe while a flyout is open.
 8. Выбрал шаблон → панель шаблона закрывается; товары остаются open для add & continue.
 9. Глубокий category cascade L→R — **318**, тоже только overlay (не dock).
 

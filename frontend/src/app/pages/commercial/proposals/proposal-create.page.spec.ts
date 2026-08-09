@@ -170,6 +170,44 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeNull();
   });
 
+  it('uses a backdrop to close both flyouts from the center/iframe area', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      rightOpen: () => boolean;
+    };
+    fixture.debugElement
+      .query(By.css('[data-test="kp-create-toggle-left"]'))
+      .triggerEventHandler('click');
+    fixture.debugElement
+      .query(By.css('[data-test="kp-create-toggle-right"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-backdrop"]'))).toBeTruthy();
+    expect(page.rightOpen()).toBe(true);
+
+    fixture.debugElement
+      .query(By.css('[data-test="kp-create-backdrop"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-right"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-backdrop"]'))).toBeNull();
+  });
+
+  it('does not close when pointerdown originates inside a flyout', () => {
+    fixture.debugElement
+      .query(By.css('[data-test="kp-create-toggle-left"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+
+    const flyout = fixture.debugElement.query(By.css('[data-test="kp-create-products"]'));
+    flyout.nativeElement.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeTruthy();
+  });
+
   it('TZ-SALES-319: pick calls build and shows iframe without stub chrome', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       openTemplateTool: () => void;

@@ -1,5 +1,24 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:24:06Z · TZ-SALES-326 READY FOR REVIEW
+- READY: products-only flyout width now caps at 40rem (36–40rem target); transparent backdrop closes center/iframe clicks for both left and right flyouts.
+- Gates: frontend tsc PASS; proposal-create **11/11**; diff-check PASS.
+- Visual blocker: Cursor/PO must verify flyout width, outside dismiss including iframe, and unchanged A4 center width before archive.
+- DOC-344 builder code landed at `ac827f5f` but remains visual-review active; 325 remains unclaimed until 326 closes and pi service is free.
+- Scope guard: 328 content, 322/320, DOC-344, deploy untouched.
+- Deploy: NO
+
+
+
+## Checkpoint 2026-08-09T12:21:11Z · TZ-SALES-326 CLAIMED
+- IN PROGRESS: products flyout width + reliable outside/backdrop dismiss; marker `tasks/_active/TZ-SALES-326.md`.
+- Base: worktree synced/rebased to canonical `origin/main` at `ac827f5f`; DOC-344 builder code landed separately, visual archive still pending.
+- Conflict scan: proposal-create keys are free; DOC-344 builder keys untouched; 325 remains unclaimed.
+- Scope guard: no 325 draftLines, 328 vitrine content, 323/324, 322/320, or deploy.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09T12:13:28Z · TZ-SALES-329 DONE
 - DONE: Deals entry and dark «КП» now land on `/proposals/create`; yellow «Все КП» remains `/proposals`, with `/proposals` retained as active alias.
 - Gates: frontend tsc PASS; deals-group-chips 2/2; diff-check PASS.
