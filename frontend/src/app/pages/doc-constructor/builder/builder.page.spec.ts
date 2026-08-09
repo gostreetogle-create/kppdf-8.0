@@ -8,7 +8,10 @@ import { BehaviorSubject, of } from 'rxjs';
 import { BuilderPage } from './builder.page';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
-import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import {
+  DocumentTemplatesService,
+  type DocumentTemplate,
+} from '../../../shared/services/pi-document-templates.service';
 import { TextBlockCategoriesService } from '../../../shared/services/pi-text-block-categories.service';
 import { BuilderTextFilterService } from './builder-text-filter.service';
 import { PiToastService } from '../../../shared/ui/toast';
@@ -683,6 +686,46 @@ describe('BuilderPage', () => {
       expect((kept.settings as Record<string, unknown>)['imageUrl']).toBe(
         '/uploads/template-blocks/b1/a.png',
       );
+    });
+  });
+
+  describe('TZ-DOC-344 backgroundImages', () => {
+    it('returns only the default background (never stacks all when index is -1)', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as {
+        template: { set: (v: DocumentTemplate | null) => void };
+        backgroundImages: () => string[];
+      };
+      comp.template.set({
+        _id: 'tpl-1',
+        name: 'T',
+        organizationId: 'o',
+        docTypeId: 'd',
+        pageSize: 'A4',
+        orientation: 'portrait',
+        backgroundOpacity: 0.3,
+        pageNumbering: false,
+        version: 1,
+        backgroundImage: ['/a.png', '/b.png', '/c.png'],
+        defaultBackgroundIndex: -1,
+      } as DocumentTemplate);
+
+      expect(comp.backgroundImages()).toEqual(['/a.png']);
+
+      comp.template.set({
+        _id: 'tpl-1',
+        name: 'T',
+        organizationId: 'o',
+        docTypeId: 'd',
+        pageSize: 'A4',
+        orientation: 'portrait',
+        backgroundOpacity: 0.3,
+        pageNumbering: false,
+        version: 1,
+        backgroundImage: ['/a.png', '/b.png', '/c.png'],
+        defaultBackgroundIndex: 2,
+      } as DocumentTemplate);
+      expect(comp.backgroundImages()).toEqual(['/c.png']);
     });
   });
 });

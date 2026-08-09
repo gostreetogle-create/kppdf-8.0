@@ -100,6 +100,8 @@ export interface DocumentTemplateListParams {
 export interface UploadBackgroundResponse {
   url: string;
   backgroundImage: string[];
+  /** Present when API returns it; FE heals to 0 on first upload if omitted. */
+  defaultBackgroundIndex?: number;
 }
 
 export interface DocumentTypeOption {

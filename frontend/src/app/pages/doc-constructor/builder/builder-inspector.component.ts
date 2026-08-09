@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  OnInit,
   computed,
   effect,
   inject,
@@ -37,11 +38,18 @@ import {
 } from '../../../shared/template-block/template-block-layout';
 import { clampOpacity } from './block-renderer-state.service';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import {
+  DocumentTemplateCategoriesService,
+  type DocumentTemplateCategory,
+} from '../../../shared/services/pi-document-template-categories.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
+
+type PageSize = 'A3' | 'A4' | 'A5';
+type Orientation = 'portrait' | 'landscape';
 
 /**
  * BuilderInspector (right pane) — TZ-DOC-332 IA + visual canon.
@@ -134,15 +142,96 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
           </div>
         </section>
       } @else if (templateSelected() && template(); as t) {
-        <!-- Mode B: template -->
-        <section class="insp-section" data-test="insp-section-context">
-          <h3 class="insp-section__title" data-test="insp-section-header">Контекст</h3>
-          <p class="insp-context__label">Шаблон</p>
-          <p class="insp-hint">{{ t.name }}</p>
+        <!-- Mode B: template create-parity (TZ-DOC-343) -->
+        <section class="insp-section" data-test="insp-section-basics">
+          <h3 class="insp-section__title" data-test="insp-section-header">Основные</h3>
+          <label class="field">
+            <span class="field__label">Название</span>
+            <input
+              type="text"
+              class="pi-input w-full"
+              data-test="insp-template-name"
+              aria-label="Название шаблона"
+              [value]="nameDraft()"
+              (input)="onNameDraftInput($event)"
+              (blur)="commitTemplateName()"
+              (keydown.enter)="$event.preventDefault(); commitTemplateName()"
+            />
+          </label>
+          <label class="field">
+            <span class="field__label">Категория шаблона</span>
+            @if (categoriesLoading()) {
+              <p class="insp-hint insp-hint--muted m-0">Загрузка категорий…</p>
+            } @else if (categoriesError()) {
+              <p class="insp-hint m-0" role="alert">{{ categoriesError() }}</p>
+            } @else if (categories().length === 0) {
+              <p class="insp-hint insp-hint--muted m-0">Нет активных категорий</p>
+            } @else {
+              <select
+                class="pi-input w-full"
+                data-test="insp-template-category"
+                aria-label="Категория шаблона"
+                [value]="templateCategoryId()"
+                (change)="onCategoryChange($event)"
+              >
+                @for (cat of categories(); track cat._id) {
+                  <option [value]="cat._id">{{ cat.name }}</option>
+                }
+              </select>
+            }
+          </label>
         </section>
 
-        <section class="insp-section" data-test="insp-section-page-style">
-          <h3 class="insp-section__title" data-test="insp-section-header">Стиль страницы</h3>
+        <section class="insp-section" data-test="insp-section-page">
+          <h3 class="insp-section__title" data-test="insp-section-header">Страница</h3>
+          <div class="field">
+            <span class="field__label" id="insp-page-size-label">Формат</span>
+            <div class="field__chips" role="group" aria-labelledby="insp-page-size-label">
+              @for (size of pageSizes; track size) {
+                <button
+                  type="button"
+                  class="chip pi-focus-ring"
+                  [class.chip--active]="t.pageSize === size"
+                  [attr.aria-pressed]="t.pageSize === size"
+                  [attr.data-test]="'insp-page-size-' + size"
+                  (click)="onPageSizeChange(size)"
+                >
+                  {{ size }}
+                </button>
+              }
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__label" id="insp-orientation-label">Ориентация</span>
+            <div class="field__chips" role="group" aria-labelledby="insp-orientation-label">
+              @for (orient of orientations; track orient.value) {
+                <button
+                  type="button"
+                  class="chip pi-focus-ring"
+                  [class.chip--active]="t.orientation === orient.value"
+                  [attr.aria-pressed]="t.orientation === orient.value"
+                  [attr.data-test]="'insp-orientation-' + orient.value"
+                  (click)="onOrientationChange(orient.value)"
+                >
+                  {{ orient.label }}
+                </button>
+              }
+            </div>
+          </div>
+          <label class="field field--row">
+            <span class="field__label">
+              <lucide-icon [img]="HashIcon" [size]="14"></lucide-icon>
+              Нумерация страниц
+            </span>
+            <app-pi-switch
+              [checked]="t.pageNumbering ?? false"
+              (checkedChange)="onTemplateSettingChange('pageNumbering', $event)"
+            />
+          </label>
+        </section>
+
+        <section class="insp-section" data-test="insp-section-background">
+          <h3 class="insp-section__title" data-test="insp-section-header">Фон</h3>
           <label class="field">
             <div class="field__row-header">
               <span class="field__label">Прозрачность фона</span>
@@ -159,26 +248,12 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
               aria-label="Прозрачность фона"
             />
           </label>
-          <label class="field field--row">
-            <span class="field__label">
-              <lucide-icon [img]="HashIcon" [size]="14"></lucide-icon>
-              Нумерация страниц
-            </span>
-            <app-pi-switch
-              [checked]="t.pageNumbering ?? false"
-              (checkedChange)="onTemplateSettingChange('pageNumbering', $event)"
-            />
-          </label>
-        </section>
-
-        <section class="insp-section" data-test="insp-section-background">
-          <h3 class="insp-section__title" data-test="insp-section-header">Фон</h3>
           @if (t.backgroundImage && t.backgroundImage.length > 0) {
             <div class="bg-grid">
               @for (url of t.backgroundImage; track url; let i = $index) {
-                <div class="bg-grid__item" [class.is-default]="t.defaultBackgroundIndex === i">
+                <div class="bg-grid__item" [class.is-default]="effectiveDefaultBgIndex(t) === i">
                   <div class="bg-grid__thumb" [style.background-image]="'url(' + url + ')'"></div>
-                  @if (t.defaultBackgroundIndex === i) {
+                  @if (effectiveDefaultBgIndex(t) === i) {
                     <div class="bg-grid__check">
                       <lucide-icon [img]="CheckIcon" [size]="20"></lucide-icon>
                     </div>
@@ -187,17 +262,19 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
                     <button
                       type="button"
                       class="bg-grid__action-btn"
-                      [class.is-active]="t.defaultBackgroundIndex === i"
+                      [class.is-active]="effectiveDefaultBgIndex(t) === i"
                       (click)="onSetDefaultBackground(i)"
                       [attr.aria-label]="
-                        t.defaultBackgroundIndex === i
-                          ? 'Убрать из дефолтных'
+                        effectiveDefaultBgIndex(t) === i
+                          ? 'Фон по умолчанию'
                           : 'Сделать по умолчанию'
                       "
+                      [attr.aria-pressed]="effectiveDefaultBgIndex(t) === i"
                     >
                       <lucide-icon
-                        [img]="t.defaultBackgroundIndex === i ? StarFilledIcon : StarIcon"
+                        [img]="StarIcon"
                         [size]="14"
+                        [class.bg-grid__star--on]="effectiveDefaultBgIndex(t) === i"
                       ></lucide-icon>
                     </button>
                     <button
@@ -998,6 +1075,37 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
         font-family: inherit;
       }
 
+      .field__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .chip {
+        flex: 1 1 auto;
+        min-width: 3.5rem;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper);
+        color: var(--color-muted);
+        cursor: pointer;
+      }
+
+      .chip:hover {
+        border-color: var(--color-ink);
+        color: var(--color-ink);
+      }
+
+      .chip--active {
+        background: var(--color-sunrise-warm, var(--color-gold));
+        border-color: var(--color-sunrise-warm, var(--color-gold));
+        color: var(--color-on-gold, var(--color-paper));
+      }
+
       .field__input,
       .field__textarea {
         width: 100%;
@@ -1362,7 +1470,21 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
       }
 
       .bg-grid__action-btn.is-active {
-        color: var(--color-ink);
+        color: var(--color-gold-deep);
+        border-color: var(--color-gold-deep);
+        background: color-mix(in oklch, var(--color-gold) 18%, var(--color-paper));
+      }
+
+      .bg-grid__action-btn.is-active .bg-grid__star--on,
+      .bg-grid__star--on {
+        color: var(--color-gold-deep);
+      }
+
+      /* Lucide Star is outline-only; fill currentColor when default is on. */
+      .bg-grid__action-btn.is-active :is(svg, .lucide),
+      .bg-grid__star--on :is(svg, .lucide) {
+        fill: currentColor;
+        stroke: currentColor;
       }
 
       .bg-grid__action-btn--danger:hover {
@@ -1504,7 +1626,7 @@ import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
     `,
   ],
 })
-export class BuilderInspectorComponent {
+export class BuilderInspectorComponent implements OnInit {
   /** The currently-selected block (null = nothing selected). */
   readonly block = input<TemplateBlock | null>(null);
   /** Number of blocks in multi-select mode. */
@@ -1584,6 +1706,18 @@ export class BuilderInspectorComponent {
   // TZ-DOC-333: upload-first photo persist for image blocks (never blob:).
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly toast = inject(PiToastService);
+  private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
+
+  /** Local draft for Mode B template name (commit on blur/Enter only). */
+  protected readonly nameDraft = signal('');
+  protected readonly categories = signal<DocumentTemplateCategory[]>([]);
+  protected readonly categoriesLoading = signal(false);
+  protected readonly categoriesError = signal<string | null>(null);
+  protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
+  protected readonly orientations: ReadonlyArray<{ value: Orientation; label: string }> = [
+    { value: 'portrait', label: 'Книжная' },
+    { value: 'landscape', label: 'Альбомная' },
+  ];
 
   // Icons
   protected readonly ResetIcon = RotateCcw;
@@ -1592,7 +1726,6 @@ export class BuilderInspectorComponent {
   protected readonly CloseIcon = X;
   protected readonly CheckIcon = Check;
   protected readonly StarIcon = Star;
-  protected readonly StarFilledIcon = Star;
   protected readonly CloseSmallIcon = X;
   protected readonly LayerFrontIcon = ChevronsUp;
   protected readonly LayerRaiseIcon = ChevronUp;
@@ -1760,6 +1893,36 @@ export class BuilderInspectorComponent {
       this.localGridSize.set(this.gridSize());
       this.localBoundaryPadding.set(this.boundaryPadding());
     });
+
+    // Mode B: keep name draft in sync with template (after successful PATCH / load).
+    effect(() => {
+      this.nameDraft.set(this.template()?.name ?? '');
+    });
+  }
+
+  ngOnInit(): void {
+    this.loadCategories();
+  }
+
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
+    this.categoriesError.set(null);
+    this.categoriesSvc.list({ activeOnly: true }).subscribe((res) => {
+      this.categoriesLoading.set(false);
+      if (!res.ok) {
+        this.categories.set([]);
+        this.categoriesError.set('Не удалось загрузить категории');
+        return;
+      }
+      const systemOnly = (res.data ?? []).filter((c) => !c.organizationId);
+      this.categories.set(systemOnly);
+    });
+  }
+
+  protected templateCategoryId(): string {
+    const cat = this.template()?.categoryId;
+    if (!cat) return '';
+    return typeof cat === 'string' ? cat : (cat._id ?? '');
   }
 
   protected typeLabel(b: TemplateBlock): string {
@@ -1898,11 +2061,37 @@ export class BuilderInspectorComponent {
     this.closePanel.emit();
   }
 
-  protected onOrientationChange(orientation: 'portrait' | 'landscape'): void {
+  protected onNameDraftInput(event: Event): void {
+    this.nameDraft.set((event.target as HTMLInputElement).value);
+  }
+
+  /** Commit rename on blur / Enter — no per-keystroke PATCH. */
+  protected commitTemplateName(): void {
+    const current = this.template()?.name ?? '';
+    const trimmed = this.nameDraft().trim();
+    if (!trimmed) {
+      this.toast.error('Название обязательно');
+      this.nameDraft.set(current);
+      return;
+    }
+    if (trimmed === current) {
+      this.nameDraft.set(current);
+      return;
+    }
+    this.templateUpdate.emit({ name: trimmed });
+  }
+
+  protected onCategoryChange(event: Event): void {
+    const id = (event.target as HTMLSelectElement).value;
+    if (!id || id === this.templateCategoryId()) return;
+    this.templateUpdate.emit({ categoryId: id });
+  }
+
+  protected onOrientationChange(orientation: Orientation): void {
     this.templateUpdate.emit({ orientation });
   }
 
-  protected onPageSizeChange(pageSize: 'A3' | 'A4' | 'A5'): void {
+  protected onPageSizeChange(pageSize: PageSize): void {
     this.templateUpdate.emit({ pageSize });
   }
 
@@ -2060,6 +2249,17 @@ export class BuilderInspectorComponent {
 
   protected onRemoveBackground(index: number): void {
     this.removeBackground.emit(index);
+  }
+
+  /** Invalid / missing default → treat as 0 when backgrounds exist (TZ-DOC-344). */
+  protected effectiveDefaultBgIndex(t: {
+    backgroundImage?: string[] | null;
+    defaultBackgroundIndex?: number | null;
+  }): number {
+    const all = t.backgroundImage ?? [];
+    if (all.length === 0) return -1;
+    const idx = t.defaultBackgroundIndex ?? -1;
+    return idx >= 0 && idx < all.length ? idx : 0;
   }
 
   protected onSetDefaultBackground(index: number): void {

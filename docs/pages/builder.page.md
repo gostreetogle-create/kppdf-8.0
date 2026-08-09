@@ -256,14 +256,17 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 - Кнопка «Сбросить отступы»
 - Кнопка «Удалить выбранные» (внизу)
 
-#### Режим 3: Свойства шаблона (templateSelected === true)
+#### Режим 3: Свойства шаблона (templateSelected === true) — create-parity (TZ-DOC-343)
 
-- **Ориентация:** книжная / альбомная (BookOpen/Columns icons)
-- **Формат страницы:** A4 / A5 / Letter
-- **Прозрачность фона:** ползунок
-- **Нумерация страниц:** toggle (единственное сохраняемое свойство шаблона)
-- > TZ-DOC-311: «Оглавление», «Шапка» и «Подвал» убраны из панели свойств — тексты вставляются блоками
-- **Фоны:** превью загруженных, установка по умолчанию, удаление
+Секции:
+- **Основные** (`insp-section-basics`): Название (blur/Enter → PATCH); Категория (select системных active)
+- **Страница** (`insp-section-page`): Формат A3|A4|A5; Ориентация Книжная|Альбомная; Нумерация
+- **Фон** (`insp-section-background`): opacity + upload/grid/default/remove.
+  На холсте всегда **один** слой — `defaultBackgroundIndex` (невалидный/`-1` → 0).
+  Первый upload выставляет звезду на индекс 0; активная звезда — gold fill (TZ-DOC-344).
+
+BE: `DocumentTemplateService.update` пишет и `orientation` (не только отдельный PATCH).
+Org / docType в этой TZ не меняются.
 
 ## Состояние (сигналы BuilderPage)
 

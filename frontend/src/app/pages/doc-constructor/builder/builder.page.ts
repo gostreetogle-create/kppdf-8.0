@@ -574,14 +574,18 @@ export class BuilderPage {
     void this.router.navigate(['/doc-constructor/templates']);
   }
 
-  /** D.2.1: derived background images from template — respects defaultBackgroundIndex. */
+  /**
+   * D.2.1 / TZ-DOC-344: canvas always paints **one** background — the default.
+   * Invalid / missing `defaultBackgroundIndex` → fall back to index 0 (never stack all).
+   */
   protected readonly backgroundImages = computed<string[]>(() => {
     const t = this.template();
     if (!t) return [];
     const all = t.backgroundImage ?? [];
+    if (all.length === 0) return [];
     const idx = t.defaultBackgroundIndex ?? -1;
-    if (idx >= 0 && idx < all.length) return [all[idx]];
-    return all;
+    const safe = idx >= 0 && idx < all.length ? idx : 0;
+    return [all[safe]];
   });
 
   protected readonly orientation = computed<'portrait' | 'landscape'>(() => {
@@ -693,6 +697,33 @@ export class BuilderPage {
   /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */
   protected readonly sourceContext = signal<{ source: string; sourceId: string } | null>(null);
 
+  /**
+   * Apply template from API; heal legacy `defaultBackgroundIndex=-1` when
+   * backgrounds exist so star + canvas agree (TZ-DOC-344).
+   */
+  private applyLoadedTemplate(data: DocumentTemplate | null | undefined): void {
+    if (!data) {
+      this.template.set(null);
+      return;
+    }
+    const bg = data.backgroundImage ?? [];
+    let defIdx = data.defaultBackgroundIndex ?? -1;
+    if (bg.length > 0 && (defIdx < 0 || defIdx >= bg.length)) {
+      defIdx = 0;
+      this.template.set({ ...data, defaultBackgroundIndex: defIdx });
+      const tid = data._id;
+      if (tid) {
+        this.templatesSvc.setDefaultBackground(tid, 0).subscribe({
+          error: () => {
+            /* non-fatal — UI already shows index 0 */
+          },
+        });
+      }
+      return;
+    }
+    this.template.set(data);
+  }
+
   // ─────────────────────────────────────────────────────────────
   // Initial load — fetches BOTH blocks AND template (D.2.1 needs template).
   // ─────────────────────────────────────────────────────────────
@@ -701,7 +732,7 @@ export class BuilderPage {
     // Fetch template first (lightweight); blocks second.
     this.templatesSvc.findById(id).subscribe({
       next: (tRes) => {
-        if (tRes.ok) this.template.set(tRes.data);
+        if (tRes.ok) this.applyLoadedTemplate(tRes.data);
       },
       error: () => {
         // Non-fatal — canvas can still render without bg images.
@@ -742,9 +773,26 @@ export class BuilderPage {
     this.templatesSvc.uploadBackground(tid, file).subscribe({
       next: (res) => {
         if (res.ok) {
-          this.template.update((t) =>
-            t ? { ...t, backgroundImage: res.data.backgroundImage } : t,
-          );
+          let needsDefaultPersist = false;
+          this.template.update((t) => {
+            if (!t) return t;
+            const prevLen = t.backgroundImage?.length ?? 0;
+            const bg = res.data.backgroundImage ?? [];
+            let defIdx = res.data.defaultBackgroundIndex ?? t.defaultBackgroundIndex ?? -1;
+            if (prevLen === 0 || defIdx < 0 || defIdx >= bg.length) {
+              defIdx = bg.length > 0 ? 0 : -1;
+              // Legacy templates: server still -1 with existing images — persist heal.
+              if (prevLen > 0 && defIdx === 0) needsDefaultPersist = true;
+            }
+            return { ...t, backgroundImage: bg, defaultBackgroundIndex: defIdx };
+          });
+          if (needsDefaultPersist) {
+            this.templatesSvc.setDefaultBackground(tid, 0).subscribe({
+              error: () => {
+                /* non-fatal — UI already shows index 0 */
+              },
+            });
+          }
           this.toast.success('Фон загружен');
           this.saveStatus.set('saved');
           const myTick = ++this.savedTick;
@@ -1535,7 +1583,7 @@ export class BuilderPage {
           // Revert on failure — reload from server
           this.templatesSvc.findById(tid).subscribe({
             next: (tRes) => {
-              if (tRes.ok) this.template.set(tRes.data);
+              if (tRes.ok) this.applyLoadedTemplate(tRes.data);
             },
           });
         }
@@ -1543,7 +1591,7 @@ export class BuilderPage {
       error: () => {
         this.templatesSvc.findById(tid).subscribe({
           next: (tRes) => {
-            if (tRes.ok) this.template.set(tRes.data);
+            if (tRes.ok) this.applyLoadedTemplate(tRes.data);
           },
         });
       },

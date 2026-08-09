@@ -9,11 +9,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { BuilderInspectorComponent } from './builder-inspector.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 
-describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
+describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
   let fixture: ComponentFixture<BuilderInspectorComponent>;
 
   const template: DocumentTemplate = {
@@ -21,6 +22,7 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
     name: 'T',
     organizationId: 'org-1',
     docTypeId: 'dt-1',
+    categoryId: 'cat-1',
     pageSize: 'A4',
     orientation: 'portrait',
     backgroundOpacity: 0.3,
@@ -30,6 +32,7 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
 
   const uploadImageMock = jest.fn();
   const toastErrorMock = jest.fn();
+  const categoriesListMock = jest.fn();
   const createObjectURLSpy = jest.fn(() => 'blob:mock-inspector');
   const revokeObjectURLSpy = jest.fn();
 
@@ -37,6 +40,31 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
     jest.clearAllMocks();
     uploadImageMock.mockReturnValue(
       of({ ok: true, data: { url: '/uploads/template-blocks/b1/new.png' } }),
+    );
+    categoriesListMock.mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          {
+            _id: 'cat-1',
+            name: 'КП',
+            slug: 'kp',
+            isActive: true,
+            isSystem: true,
+            isDefault: true,
+            sortOrder: 0,
+          },
+          {
+            _id: 'cat-2',
+            name: 'Договор',
+            slug: 'contract',
+            isActive: true,
+            isSystem: true,
+            isDefault: false,
+            sortOrder: 1,
+          },
+        ],
+      }),
     );
     Object.defineProperty(URL, 'createObjectURL', { writable: true, value: createObjectURLSpy });
     Object.defineProperty(URL, 'revokeObjectURL', { writable: true, value: revokeObjectURLSpy });
@@ -46,6 +74,10 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
       providers: [
         { provide: TemplateBlocksService, useValue: { uploadImage: uploadImageMock } },
         { provide: PiToastService, useValue: { error: toastErrorMock } },
+        {
+          provide: DocumentTemplateCategoriesService,
+          useValue: { list: categoriesListMock },
+        },
       ],
     })
       .overrideComponent(BuilderInspectorComponent, {
@@ -100,8 +132,61 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
     expect(updates.some((p) => p.pageNumbering === true)).toBe(true);
   });
 
-  it('DOC-332 Mode B: template section headers order', () => {
-    expect(sectionHeaders()).toEqual(['Контекст', 'Стиль страницы', 'Фон']);
+  it('renders editable template name field (TZ-DOC-343)', () => {
+    const input = fixture.nativeElement.querySelector(
+      '[data-test="insp-template-name"]',
+    ) as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    expect(input?.getAttribute('aria-label')).toBe('Название шаблона');
+    expect(input?.value).toBe('T');
+  });
+
+  it('emits templateUpdate with name on commitTemplateName', () => {
+    const updates: Partial<DocumentTemplate>[] = [];
+    fixture.componentInstance.templateUpdate.subscribe((p) => updates.push(p));
+    const cmp = fixture.componentInstance as unknown as {
+      nameDraft: { set: (v: string) => void };
+      commitTemplateName: () => void;
+    };
+    cmp.nameDraft.set('Новое имя');
+    cmp.commitTemplateName();
+    expect(updates).toEqual([{ name: 'Новое имя' }]);
+  });
+
+  it('rejects empty template name and restores previous (TZ-DOC-343)', () => {
+    const updates: Partial<DocumentTemplate>[] = [];
+    fixture.componentInstance.templateUpdate.subscribe((p) => updates.push(p));
+    const cmp = fixture.componentInstance as unknown as {
+      nameDraft: { set: (v: string) => void; (): string };
+      commitTemplateName: () => void;
+    };
+    cmp.nameDraft.set('   ');
+    cmp.commitTemplateName();
+    expect(updates).toEqual([]);
+    expect(toastErrorMock).toHaveBeenCalledWith('Название обязательно');
+    expect(cmp.nameDraft()).toBe('T');
+  });
+
+  it('DOC-343 Mode B: section headers Basics / Page / Background', () => {
+    expect(sectionHeaders()).toEqual(['Основные', 'Страница', 'Фон']);
+  });
+
+  it('emits templateUpdate with categoryId / pageSize / orientation', () => {
+    const updates: Partial<DocumentTemplate>[] = [];
+    fixture.componentInstance.templateUpdate.subscribe((p) => updates.push(p));
+    const cmp = fixture.componentInstance as unknown as {
+      onCategoryChange: (e: Event) => void;
+      onPageSizeChange: (s: 'A3' | 'A4' | 'A5') => void;
+      onOrientationChange: (o: 'portrait' | 'landscape') => void;
+    };
+    cmp.onCategoryChange({ target: { value: 'cat-2' } } as unknown as Event);
+    cmp.onPageSizeChange('A5');
+    cmp.onOrientationChange('landscape');
+    expect(updates).toEqual([
+      { categoryId: 'cat-2' },
+      { pageSize: 'A5' },
+      { orientation: 'landscape' },
+    ]);
   });
 
   it('DOC-332 Mode A: document context + snap (no hero «Ничего не выбрано»)', () => {
@@ -281,5 +366,44 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332)', () => {
     expect(uploadImageMock).not.toHaveBeenCalled();
     expect(toastErrorMock).toHaveBeenCalled();
     expect(updates).toHaveLength(0);
+  });
+
+  it('TZ-DOC-344: effectiveDefaultBgIndex falls back to 0 when index invalid', () => {
+    const comp = fixture.componentInstance as unknown as {
+      effectiveDefaultBgIndex: (t: {
+        backgroundImage?: string[];
+        defaultBackgroundIndex?: number;
+      }) => number;
+    };
+    expect(
+      comp.effectiveDefaultBgIndex({
+        backgroundImage: ['/a.png', '/b.png'],
+        defaultBackgroundIndex: -1,
+      }),
+    ).toBe(0);
+    expect(
+      comp.effectiveDefaultBgIndex({
+        backgroundImage: ['/a.png', '/b.png'],
+        defaultBackgroundIndex: 1,
+      }),
+    ).toBe(1);
+    expect(comp.effectiveDefaultBgIndex({ backgroundImage: [] })).toBe(-1);
+  });
+
+  it('TZ-DOC-344: default star button has is-active when first bg is default', () => {
+    fixture.componentRef.setInput('templateSelected', true);
+    fixture.componentRef.setInput('block', null);
+    fixture.componentRef.setInput('template', {
+      ...template,
+      backgroundImage: ['/uploads/a.png', '/uploads/b.png'],
+      defaultBackgroundIndex: 0,
+    });
+    fixture.detectChanges();
+
+    const active = fixture.nativeElement.querySelector(
+      '.bg-grid__action-btn.is-active',
+    ) as HTMLButtonElement | null;
+    expect(active).toBeTruthy();
+    expect(active?.getAttribute('aria-pressed')).toBe('true');
   });
 });
