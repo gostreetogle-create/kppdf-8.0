@@ -221,5 +221,7 @@ known_limitation:
   писать в progress.md как «Известные ограничения», не чинить здесь.
 
 Промпт исполнителю:
-`GEMINI.md` + `tasks/TZ-UI-LIGHT-330-light-theme-harmony.md`;
-чек-лист `docs/agent-checklists/TZ-UI-LIGHT-330.md` — заполнять по ходу, до правок прочитать оба.
+Готовый пошаговый промпт (точные «найти / заменить», рассчитан в т.ч. на слабую модель):
+**`tasks/prompts/TZ-UI-LIGHT-330-PROMPT.md`** — копировать целиком.
+Для сильного агента: `GEMINI.md` + этот TZ; чек-лист `docs/agent-checklists/TZ-UI-LIGHT-330.md`
+заполнять по ходу.
