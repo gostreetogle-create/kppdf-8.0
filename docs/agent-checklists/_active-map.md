@@ -16,7 +16,7 @@
 - IN PROGRESS: none
 - NOT DONE: global `text-sunrise-warm` sweep outside the explicit TZ file list; browser/PO visual review
 - NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`
-- HEAD: dc5cc145; pushed: yes
+- HEAD: 64498003; pushed: yes
 - Blockers: global text-token sweep requires separate PO authorization; browser session unavailable
 - _active/: empty
 - Deploy: NO
