@@ -1,4 +1,15 @@
 
+## [2026-08-09T19:44:49Z] — TZ-SALES-336 DONE: hard-lock «Оплачена» и копирование КП
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; browser self-verify + FE/BE gates + archive/lock/closeout; deploy НЕ
+**Что:** `accepted` показывается как «Оплачена» и блокирует редактирование товаров, количества, шаблона, параметров и таблицы; снятие статуса возвращает draft/editable. При повторном открытии оплаченной КП используется сохранённый `templateSnapshot.html`, без live template build. «Копировать» вызывает duplicate API и открывает новый draft в Create КП.
+**Gates:** frontend/backend tsc PASS; proposal-create + proposals Jest 44/44; quotation service Jest 27/27; ESLint/Prettier/diff-check PASS.
+**Browser evidence:** template + фирма → «Сохранено» → «Оплачена · бланк заблокирован» → unlock restores controls; «Копировать» HTTP 201 → `/proposals/create?id=…`, RU toast «Создана копия …».
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-336.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-336-kp-lock-paid-copy.lock`
+**Scope:** foreign DOC-343/344 and system-role/admin WIP excluded; frozen 317/320 untouched. Deploy НЕ
+**NEXT:** close WAVE-KP-USABLE; do not start WAVE-KP-COMPLETE.
+
 ## [2026-08-09T19:18:00Z] — TZ-SALES-349 DONE: hygiene старых уникальных индексов quotations
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; migration/unit/e2e/browser self-verify PASS; deploy НЕ

@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Types } from 'mongoose';
 import { QuotationService } from './quotation.service';
 import { QuotationStatus } from './quotation.schema';
@@ -25,7 +29,12 @@ function quotationDoc(overrides: Record<string, unknown> = {}) {
     convertedContractId: undefined as string | undefined,
     isActive: true,
     currentVersion: 0,
-    versions: [] as Array<{ version: number; frozenAt: Date; frozenBy?: Types.ObjectId; payload: Record<string, unknown> }>,
+    versions: [] as Array<{
+      version: number;
+      frozenAt: Date;
+      frozenBy?: Types.ObjectId;
+      payload: Record<string, unknown>;
+    }>,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -51,14 +60,25 @@ function createService(overrides: Record<string, unknown> = {}) {
     updateOne: jest.fn().mockReturnValue(mockQuery({ matchedCount: 1 })),
   };
   const counter = { next: jest.fn().mockResolvedValue('QTN-0001') };
-  const contractService = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
-  const orderService = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
+  const contractService = {
+    create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
+  };
+  const orderService = {
+    create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }),
+  };
   const sites = {
     ensureDefaultForCounterparty: jest
       .fn()
       .mockResolvedValue({ _id: new Types.ObjectId() }),
   };
-  const dependencies = { model, counter, contractService, orderService, sites, ...overrides };
+  const dependencies = {
+    model,
+    counter,
+    contractService,
+    orderService,
+    sites,
+    ...overrides,
+  };
   return {
     service: new QuotationService(
       dependencies.model as never,
@@ -147,7 +167,9 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
 
       await service.create(validCreateDto({ number: undefined }) as never);
       expect(counter.next).toHaveBeenCalledWith('Quotation', 'QTN');
-      expect(model.create.mock.calls[0][0]).toMatchObject({ number: 'QTN-0001' });
+      expect(model.create.mock.calls[0][0]).toMatchObject({
+        number: 'QTN-0001',
+      });
     });
 
     it('applies a PERCENT discount to the computed total', async () => {
@@ -155,7 +177,10 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       model.create.mockResolvedValue(quotationDoc({}));
 
       await service.create(
-        validCreateDto({ discountType: 'percent', discountPercent: 10 }) as never,
+        validCreateDto({
+          discountType: 'percent',
+          discountPercent: 10,
+        }) as never,
       );
       expect(model.create.mock.calls[0][0]).toMatchObject({ total: 9000 });
     });
@@ -165,7 +190,10 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       model.create.mockResolvedValue(quotationDoc({}));
 
       await service.create(
-        validCreateDto({ discountType: 'amount', discountAmount: 2500 }) as never,
+        validCreateDto({
+          discountType: 'amount',
+          discountAmount: 2500,
+        }) as never,
       );
       expect(model.create.mock.calls[0][0]).toMatchObject({ total: 7500 });
     });
@@ -201,7 +229,9 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
     it('findById throws 404 on an invalid id before any query', async () => {
       const { service, model } = createService();
 
-      await expect(service.findById('nope')).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.findById('nope')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(model.findById).not.toHaveBeenCalled();
     });
 
@@ -209,18 +239,20 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       const { service, model } = createService();
       model.findById.mockReturnValue(mockQuery(null));
 
-      await expect(service.findById(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(
+        service.findById(new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('findById rejects a soft-deleted quotation', async () => {
       const { service, model } = createService();
-      model.findById.mockReturnValue(mockQuery(quotationDoc({ deletedAt: new Date() })));
-
-      await expect(service.findById(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
-        NotFoundException,
+      model.findById.mockReturnValue(
+        mockQuery(quotationDoc({ deletedAt: new Date() })),
       );
+
+      await expect(
+        service.findById(new Types.ObjectId().toString()),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('findById returns the STORED inline snapshot even if the live product ref changed', async () => {
@@ -277,7 +309,14 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       const src = quotationDoc({
         number: 'QTN-0001',
         status: 'accepted',
-        items: [{ productId: new Types.ObjectId(), quantity: 1, unitPrice: 10, total: 10 }],
+        items: [
+          {
+            productId: new Types.ObjectId(),
+            quantity: 1,
+            unitPrice: 10,
+            total: 10,
+          },
+        ],
       });
       model.findById.mockReturnValue(mockQuery(src));
       counter.next.mockResolvedValueOnce('QTN-0002');
@@ -290,6 +329,22 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
         notes: 'Дубликат QTN-0001',
       });
     });
+
+    it('rejects content edits while accepted, but allows unlocking to draft', async () => {
+      const { service, model } = createService();
+      const doc = quotationDoc({ status: 'accepted' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), {
+          notes: 'Попытка изменить',
+        } as never),
+      ).rejects.toThrow('Оплаченная КП заблокирована');
+
+      await service.update(doc._id.toString(), { status: 'draft' } as never);
+      expect(doc.status).toBe('draft');
+      expect(doc.save).toHaveBeenCalled();
+    });
   });
 });
 
@@ -298,7 +353,15 @@ describe('QuotationService - SALES-302 immutable versions', () => {
     const { service, model } = createService();
     const doc = quotationDoc({
       currentVersion: 0,
-      items: [{ productId: new Types.ObjectId(), productName: 'Stand', quantity: 2, unitPrice: 10, total: 20 }],
+      items: [
+        {
+          productId: new Types.ObjectId(),
+          productName: 'Stand',
+          quantity: 2,
+          unitPrice: 10,
+          total: 20,
+        },
+      ],
       total: 20,
     });
     model.findById.mockReturnValue(mockQuery(doc));
@@ -314,23 +377,43 @@ describe('QuotationService - SALES-302 immutable versions', () => {
       familyVersion: 1,
       isActive: true,
     });
-    expect((doc.versions[0].payload.items as Array<Record<string, unknown>>)[0].productName).toBe('Stand');
+    expect(
+      (doc.versions[0].payload.items as Array<Record<string, unknown>>)[0]
+        .productName,
+    ).toBe('Stand');
     expect(model.updateOne).toHaveBeenCalledWith(
       { _id: doc._id, currentVersion: 0 },
-      expect.objectContaining({ $set: { currentVersion: 1 }, $push: expect.any(Object) }),
+      expect.objectContaining({
+        $set: { currentVersion: 1 },
+        $push: expect.any(Object),
+      }),
     );
   });
 
   it('does not mutate an old snapshot when the editable quotation changes', async () => {
     const { service, model } = createService();
-    const snapshot = { version: 1, frozenAt: new Date(), payload: { title: 'Old', items: [{ productName: 'Old name' }] } };
+    const snapshot = {
+      version: 1,
+      frozenAt: new Date(),
+      payload: { title: 'Old', items: [{ productName: 'Old name' }] },
+    };
     const doc = quotationDoc({ currentVersion: 1, versions: [snapshot] });
     model.findById.mockReturnValue(mockQuery(doc));
     await service.update(doc._id.toString(), {
-      items: [{ productId: new Types.ObjectId().toString(), productName: 'New name', quantity: 1, unitPrice: 1 }],
+      items: [
+        {
+          productId: new Types.ObjectId().toString(),
+          productName: 'New name',
+          quantity: 1,
+          unitPrice: 1,
+        },
+      ],
     } as never);
 
-    expect((doc.versions[0].payload.items as Array<Record<string, unknown>>)[0].productName).toBe('Old name');
+    expect(
+      (doc.versions[0].payload.items as Array<Record<string, unknown>>)[0]
+        .productName,
+    ).toBe('Old name');
   });
 
   it('retries an optimistic conflict and fails without appending a local snapshot', async () => {
@@ -339,21 +422,29 @@ describe('QuotationService - SALES-302 immutable versions', () => {
     model.findById.mockReturnValue(mockQuery(doc));
     model.updateOne.mockReturnValue(mockQuery({ matchedCount: 0 }));
 
-    await expect(service.freeze(doc._id.toString())).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.freeze(doc._id.toString())).rejects.toBeInstanceOf(
+      ConflictException,
+    );
     expect(model.updateOne).toHaveBeenCalledTimes(5);
     expect(doc.versions).toHaveLength(0);
   });
 
   it('lists versions and returns one snapshot by number', async () => {
     const { service, model } = createService();
-    const snapshot = { version: 1, frozenAt: new Date(), payload: { title: 'Old' } };
+    const snapshot = {
+      version: 1,
+      frozenAt: new Date(),
+      payload: { title: 'Old' },
+    };
     const doc = quotationDoc({ versions: [snapshot], currentVersion: 1 });
     model.findById.mockReturnValue(mockQuery(doc));
 
     await expect(service.listVersions(doc._id.toString())).resolves.toEqual([
       { version: 1, frozenAt: snapshot.frozenAt, frozenBy: undefined },
     ]);
-    await expect(service.getVersion(doc._id.toString(), 1)).resolves.toBe(snapshot);
+    await expect(service.getVersion(doc._id.toString(), 1)).resolves.toBe(
+      snapshot,
+    );
   });
 });
 
@@ -361,7 +452,12 @@ describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
   describe('convertToOrder', () => {
     it('REJECTS a quotation that is NOT accepted (draft/sent/rejected/cancelled)', async () => {
       const { service, model } = createService();
-      for (const status of ['draft', 'sent', 'rejected', 'cancelled'] as QuotationStatus[]) {
+      for (const status of [
+        'draft',
+        'sent',
+        'rejected',
+        'cancelled',
+      ] as QuotationStatus[]) {
         model.findById.mockReturnValue(mockQuery(quotationDoc({ status })));
         await expect(
           service.convertToOrder(new Types.ObjectId().toString()),
@@ -372,7 +468,9 @@ describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
 
     it('REJECTS an already-converted quotation', async () => {
       const { service, model } = createService();
-      model.findById.mockReturnValue(mockQuery(quotationDoc({ status: 'converted' })));
+      model.findById.mockReturnValue(
+        mockQuery(quotationDoc({ status: 'converted' })),
+      );
 
       await expect(
         service.convertToOrder(new Types.ObjectId().toString()),
@@ -423,7 +521,14 @@ describe('QuotationService — ORDERS-301 (quote → order conversion)', () => {
       orderService.create.mockResolvedValue({ _id: orderId });
       const doc = quotationDoc({
         status: 'accepted',
-        items: [{ productId: new Types.ObjectId(), quantity: 1, unitPrice: 10, total: 10 }],
+        items: [
+          {
+            productId: new Types.ObjectId(),
+            quantity: 1,
+            unitPrice: 10,
+            total: 10,
+          },
+        ],
       });
       model.findById.mockReturnValue(mockQuery(doc));
 
@@ -485,15 +590,17 @@ describe('QuotationService — SALES-303 (KP family)', () => {
       counter.next
         .mockResolvedValueOnce('QTN-0002')
         .mockResolvedValueOnce('QTN-0003');
-      model.create.mockImplementation(async (payload: Record<string, unknown>) => {
-        const doc = quotationDoc({
-          ...payload,
-          _id: new Types.ObjectId(),
-          save: jest.fn().mockResolvedValue(undefined),
-        });
-        created.push(doc);
-        return doc;
-      });
+      model.create.mockImplementation(
+        async (payload: Record<string, unknown>) => {
+          const doc = quotationDoc({
+            ...payload,
+            _id: new Types.ObjectId(),
+            save: jest.fn().mockResolvedValue(undefined),
+          });
+          created.push(doc);
+          return doc;
+        },
+      );
       // getFamily after attach: findById master + find variants
       model.find.mockReturnValue({
         sort: jest.fn().mockReturnThis(),
@@ -600,7 +707,11 @@ describe('QuotationService — SALES-303 (KP family)', () => {
   describe('getFamily', () => {
     it('returns master + variants summary', async () => {
       const { service, model } = createService();
-      const master = quotationDoc({ familyRole: 'master', familyVersion: 3, total: 500 });
+      const master = quotationDoc({
+        familyRole: 'master',
+        familyVersion: 3,
+        total: 500,
+      });
       const variant = quotationDoc({
         familyRole: 'variant',
         masterId: master._id,

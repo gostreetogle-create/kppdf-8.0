@@ -1,0 +1,8 @@
+TZ-SALES-336
+status: DONE
+closed_at: 2026-08-09T19:44:49Z
+scope: accepted-paid hard-lock, saved template snapshot lock/unlock, duplicate-to-new-draft
+archive: tasks/_archive/2026-08/TZ-SALES-336.done.md
+commit: closeout commit on canonical main
+foreign_wip: excluded
+ deploy: NO

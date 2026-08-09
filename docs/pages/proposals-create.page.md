@@ -17,6 +17,7 @@
 - 334: «Клиент» — searchable `PiOverflowSelect` по всем активным Counterparty без фильтра роли; выбранный клиент входит в autosave и resume.
 - 349: индексы `quotations` приводит в порядок стартовая миграция, потому что в production `autoIndex` выключен; это предотвращает старые уникальные индексы и E11000 при создании нового черновика после удаления КП.
 - 335: в экземпляр выбранной line-items таблицы можно добавить «Кол-во», «Цена» и «Сумма» без изменения общего шаблона; количество редактируется в панели «Товары», а существующая колонка «Рисунок» получает thumb товара.
+- 336: статус `accepted` показывается как «Оплачена»; он блокирует товары, количество, шаблон, параметры и таблицу. Снятие статуса возвращает редактирование; при открытии оплаченной КП A4 использует сохранённый `templateSnapshot`, а «Копировать» создаёт новый draft в студии.
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
 - 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and «Видна/Скрыта» rebuild the A4 table; the shared TableTemplate is never patched. «Открыть шаблон таблицы» uses the existing Documents tables route.

@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Quotation, QuotationDocument, QuotationItem } from './quotation.schema';
+import {
+  Quotation,
+  QuotationDocument,
+  QuotationItem,
+} from './quotation.schema';
 import { CreateQuotationDto } from './dto/create-quotation.dto';
 import { UpdateQuotationDto } from './dto/update-quotation.dto';
 import { AttachOrganizationsDto } from './dto/attach-organizations.dto';
@@ -84,7 +88,9 @@ export class QuotationService {
       discountAmount: dto.discountAmount ?? 0,
       notes: dto.notes,
       orgMarkupPercent: dto.orgMarkupPercent,
-      templateId: dto.templateId ? new Types.ObjectId(dto.templateId) : undefined,
+      templateId: dto.templateId
+        ? new Types.ObjectId(dto.templateId)
+        : undefined,
       designSnapshot: dto.designSnapshot,
       templateSnapshot: dto.templateSnapshot,
       items,
@@ -130,31 +136,52 @@ export class QuotationService {
       .populate('organizationId')
       .populate('items.productId')
       .exec();
-    if (!doc || doc.deletedAt) throw new NotFoundException(`Quotation ${id} not found`);
+    if (!doc || doc.deletedAt)
+      throw new NotFoundException(`Quotation ${id} not found`);
     return doc;
   }
 
-  async update(id: string, dto: UpdateQuotationDto): Promise<QuotationDocument> {
+  async update(
+    id: string,
+    dto: UpdateQuotationDto,
+  ): Promise<QuotationDocument> {
     const doc = await this.findById(id);
+    if (doc.status === 'accepted') {
+      const nonStatusFields = Object.keys(dto).filter(
+        (key) => key !== 'status',
+      );
+      if (nonStatusFields.length > 0 || dto.status !== 'draft') {
+        throw new BadRequestException(
+          'Оплаченная КП заблокирована. Снимите статус «Оплачена», чтобы изменить бланк или позиции.',
+        );
+      }
+    }
     if (dto.organizationId !== undefined) {
       doc.organizationId = new Types.ObjectId(dto.organizationId);
     }
     if (dto.counterpartyId !== undefined) {
       doc.counterpartyId = new Types.ObjectId(dto.counterpartyId);
     }
-    if (dto.orgMarkupPercent !== undefined) doc.orgMarkupPercent = dto.orgMarkupPercent;
+    if (dto.orgMarkupPercent !== undefined)
+      doc.orgMarkupPercent = dto.orgMarkupPercent;
     if (dto.templateId !== undefined) {
-      doc.templateId = dto.templateId ? new Types.ObjectId(dto.templateId) : undefined;
+      doc.templateId = dto.templateId
+        ? new Types.ObjectId(dto.templateId)
+        : undefined;
     }
-    if (dto.templateSnapshot !== undefined) doc.templateSnapshot = dto.templateSnapshot;
-    if (dto.designSnapshot !== undefined) doc.designSnapshot = dto.designSnapshot;
+    if (dto.templateSnapshot !== undefined)
+      doc.templateSnapshot = dto.templateSnapshot;
+    if (dto.designSnapshot !== undefined)
+      doc.designSnapshot = dto.designSnapshot;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.validUntil !== undefined) doc.validUntil = new Date(dto.validUntil);
     if (dto.title !== undefined) doc.title = dto.title;
     if (dto.discountType !== undefined) doc.discountType = dto.discountType;
-    if (dto.discountPercent !== undefined) doc.discountPercent = dto.discountPercent;
-    if (dto.discountAmount !== undefined) doc.discountAmount = dto.discountAmount;
+    if (dto.discountPercent !== undefined)
+      doc.discountPercent = dto.discountPercent;
+    if (dto.discountAmount !== undefined)
+      doc.discountAmount = dto.discountAmount;
     if (dto.items !== undefined) {
       doc.items = dto.items.map((i) => ({
         productId: new Types.ObjectId(i.productId),
@@ -199,7 +226,9 @@ export class QuotationService {
       const payload: Record<string, unknown> = {
         number: doc.number,
         organizationId: doc.organizationId.toString(),
-        ...(doc.counterpartyId ? { counterpartyId: doc.counterpartyId.toString() } : {}),
+        ...(doc.counterpartyId
+          ? { counterpartyId: doc.counterpartyId.toString() }
+          : {}),
         tenderId: doc.tenderId?.toString(),
         title: doc.title,
         date: doc.date,
@@ -240,13 +269,10 @@ export class QuotationService {
           ? { _id: doc._id, currentVersion: { $exists: false } }
           : { _id: doc._id, currentVersion };
       const result = await this.model
-        .updateOne(
-          versionFilter,
-          {
-            $set: { currentVersion: version },
-            $push: { versions: snapshot },
-          },
-        )
+        .updateOne(versionFilter, {
+          $set: { currentVersion: version },
+          $push: { versions: snapshot },
+        })
         .exec();
       if (result.matchedCount === 1) {
         doc.currentVersion = version;
@@ -254,12 +280,16 @@ export class QuotationService {
         return doc;
       }
     }
-    throw new ConflictException('Quotation changed while freezing; please retry');
+    throw new ConflictException(
+      'Quotation changed while freezing; please retry',
+    );
   }
 
   async listVersions(
     id: string,
-  ): Promise<Array<{ version: number; frozenAt: Date; frozenBy?: Types.ObjectId }>> {
+  ): Promise<
+    Array<{ version: number; frozenAt: Date; frozenBy?: Types.ObjectId }>
+  > {
     const doc = await this.findByIdRaw(id);
     return (doc.versions ?? []).map(({ version, frozenAt, frozenBy }) => ({
       version,
@@ -278,9 +308,13 @@ export class QuotationService {
     payload: Record<string, unknown>;
   }> {
     const doc = await this.findByIdRaw(id);
-    const snapshot = (doc.versions ?? []).find((item) => item.version === version);
+    const snapshot = (doc.versions ?? []).find(
+      (item) => item.version === version,
+    );
     if (!snapshot) {
-      throw new NotFoundException(`Quotation ${id} version ${version} not found`);
+      throw new NotFoundException(
+        `Quotation ${id} version ${version} not found`,
+      );
     }
     return snapshot;
   }
@@ -325,7 +359,8 @@ export class QuotationService {
       throw new NotFoundException(`Quotation ${id} not found`);
     }
     const doc = await this.model.findById(id).exec();
-    if (!doc || doc.deletedAt) throw new NotFoundException(`Quotation ${id} not found`);
+    if (!doc || doc.deletedAt)
+      throw new NotFoundException(`Quotation ${id} not found`);
     return doc;
   }
 
@@ -344,7 +379,9 @@ export class QuotationService {
     }));
   }
 
-  private toFamilySummary(doc: QuotationDocument): QuotationFamilyMemberSummary {
+  private toFamilySummary(
+    doc: QuotationDocument,
+  ): QuotationFamilyMemberSummary {
     return {
       id: doc._id.toString(),
       number: doc.number,
@@ -358,7 +395,9 @@ export class QuotationService {
   }
 
   /** Resolve master for any family member (solo/master → self; variant → master). */
-  private async resolveMaster(doc: QuotationDocument): Promise<QuotationDocument> {
+  private async resolveMaster(
+    doc: QuotationDocument,
+  ): Promise<QuotationDocument> {
     const role = doc.familyRole ?? 'solo';
     if (role !== 'variant') return doc;
     if (!doc.masterId) {
@@ -403,7 +442,9 @@ export class QuotationService {
 
     for (const item of dto.items) {
       if (!Types.ObjectId.isValid(item.organizationId)) {
-        throw new BadRequestException(`Invalid organizationId: ${item.organizationId}`);
+        throw new BadRequestException(
+          `Invalid organizationId: ${item.organizationId}`,
+        );
       }
       // Master's own org is already the blank root — skip (idempotent).
       if (item.organizationId === masterOrg) {

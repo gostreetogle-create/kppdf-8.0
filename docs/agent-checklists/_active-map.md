@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:44:49Z · TZ-SALES-336 DONE / WAVE-KP-USABLE next DONE
+- TZ-SALES-336 закрыта на canonical `D:\\kppdf-8.0` `main`: accepted = «Оплачена» hard-lock, unlock to draft, saved template snapshot on locked reopen, and duplicate-to-new-draft.
+- Browser self-verify PASS: «Сохранено» → «Оплачена · бланк заблокирован» with disabled edit controls → «Снять «Оплачена»» restores editing; «Копировать» returned 201 and opened Create КП with a new id.
+- Gates: frontend/backend tsc PASS; proposal/Create + proposals Jest 44/44; quotation service Jest 27/27; ESLint/Prettier/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-336.done.md`; lock `.mimocode/locks/TZ-SALES-336-kp-lock-paid-copy.lock`; `_active/TZ-SALES-336.md` removed after closeout.
+- Foreign system-role/admin and DOC-343/344 WIP preserved/excluded; frozen 317/320 untouched; Deploy NO.
+- NEXT: close WAVE-KP-USABLE (339/334/349/335/336) → idle; do not start WAVE-KP-COMPLETE.
+
+### Previous checkpoints
+
 ## Checkpoint 2026-08-09T19:35:00Z · TZ-SALES-335 DONE / next 336
 - TZ-SALES-335 is DONE on canonical `main`: request-only «Кол-во»/«Цена»/«Сумма», quantity rebuild, and existing «Рисунок» thumbnail rendering.
 - Feature `d6bd43b9` is pushed; closeout commit follows immediately. Browser evidence: product with photo added, quantity `1 → 3`, A4 showed 3 / 7 000,00 ₽ / 21 000,00 ₽; Table rail showed live columns without shared-template PATCH.

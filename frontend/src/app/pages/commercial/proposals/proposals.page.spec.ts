@@ -21,6 +21,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
   const routerSpy = { navigate: jest.fn() };
   /** Reconfigurable per-test (cannot use overrideProvider after compile). */
   const freezeMock = jest.fn(() => of({ ok: true, data: {} as never }));
+  const duplicateMock = jest.fn(() =>
+    of({ ok: true, data: { _id: 'copy-1', number: 'QTN-003', status: 'draft' } as Proposal }),
+  );
   const listVersionsMock = jest.fn(() => of({ ok: true, data: [] }));
   const convertToOrderMock = jest.fn(() =>
     of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
@@ -104,8 +107,12 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     dialogSpy.open.mockClear();
     routerSpy.navigate.mockClear();
     freezeMock.mockReset();
+    duplicateMock.mockReset();
     listVersionsMock.mockReset();
     freezeMock.mockReturnValue(of({ ok: true, data: {} as never }));
+    duplicateMock.mockReturnValue(
+      of({ ok: true, data: { _id: 'copy-1', number: 'QTN-003', status: 'draft' } as Proposal }),
+    );
     listVersionsMock.mockReturnValue(of({ ok: true, data: [] }));
     convertToOrderMock.mockReset();
     convertToOrderMock.mockReturnValue(
@@ -127,7 +134,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
-            duplicate: () => of({ ok: true, data: {} as never }),
+            duplicate: duplicateMock,
             freeze: freezeMock,
             listVersions: listVersionsMock,
             getVersion: () => of({ ok: true, data: {} as never }),
@@ -280,11 +287,27 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
       statusLabel: (s: string) => string;
       statusBadgeClass: (s: string) => string;
     };
-    expect(comp.statusLabel('accepted')).toBe('Принято');
+    expect(comp.statusLabel('accepted')).toBe('Оплачена');
     expect(comp.statusLabel('draft')).toBe('Черновик');
     expect(comp.statusLabel('converted')).toBe('Преобразовано');
     expect(comp.statusBadgeClass('accepted')).toContain('pine');
     expect(comp.statusBadgeClass('draft')).toContain('muted');
+  });
+
+  it('copies a quotation and opens the new draft in Create КП', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onCopy: (p: Proposal) => void };
+    comp.onCopy(fakeProposals[0]);
+
+    expect(duplicateMock).toHaveBeenCalledWith('p1');
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/proposals/create'], {
+      queryParams: { id: 'copy-1' },
+    });
   });
 
   it('onSortChange mirrors pi-table event into page sort signals + resets page', async () => {

@@ -718,6 +718,42 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     ]);
   }));
 
+  it('keeps the saved template snapshot when an accepted КП is reopened', fakeAsync(() => {
+    quotationFindMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: {
+          _id: 'q-paid',
+          status: 'accepted',
+          organizationId: 'org-1',
+          templateId: 'tpl-1',
+          templateSnapshot: {
+            templateId: 'tpl-1',
+            html: '<html><body><p data-test="locked-snapshot">Сохранённый бланк</p></body></html>',
+          },
+          items: [],
+        },
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      resumeDraftById: (id: string) => void;
+      proposalStatus: () => string;
+      isReadOnly: () => boolean;
+      previewStatus: () => string;
+    };
+
+    page.resumeDraftById('q-paid');
+    tick();
+    fixture.detectChanges();
+
+    expect(page.proposalStatus()).toBe('accepted');
+    expect(page.isReadOnly()).toBe(true);
+    expect(page.previewStatus()).toBe('ready');
+    expect(buildMock).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-tpl-html-preview"]')).toBeTruthy();
+    expect(page.proposalStatus()).toBe('accepted');
+  }));
+
   it('merges missing commercial columns into the Create instance only', fakeAsync(() => {
     tableFindMock.mockReturnValueOnce(
       of({

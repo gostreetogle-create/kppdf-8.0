@@ -6,6 +6,7 @@
   HostListener,
   OnInit,
   ViewChild,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -41,6 +42,7 @@ import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-prod
 import {
   ProposalCreateInspectorComponent,
   type ProposalCreateInspectorState,
+  type ProposalCreateStatus,
   type ProposalTableLayoutColumn,
   type ProposalTableTarget,
 } from './proposal-create-inspector.component';
@@ -205,6 +207,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             >
               <app-proposal-product-rail
                 [draftLines]="draftLines()"
+                [readOnly]="isReadOnly()"
                 (productAdd)="onProductAdd($event)"
                 (quantityChange)="onQuantityChange($event)"
               />
@@ -238,10 +241,13 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [tableTargets]="tableTargets()"
                 [selectedTableTargetId]="selectedTableTargetId()"
                 [selectedCounterpartyId]="counterpartyId()"
+                [readOnly]="isReadOnly()"
+                [status]="proposalStatus()"
                 (stateChange)="onInspectorState($event)"
                 (tableLayoutChange)="onTableLayoutChange($event)"
                 (commercialColumnsRequest)="addCommercialColumns()"
                 (tableTargetChange)="onTableTargetChange($event)"
+                (statusRequest)="onStatusRequest($event)"
               />
             </aside>
           }
@@ -432,6 +438,8 @@ export class ProposalCreatePage implements OnInit {
   protected readonly selectedTableTargetId = signal<string | null>(null);
   private readonly tableTargetLayouts = signal<Record<string, ProposalTableLayoutColumn[]>>({});
   protected readonly autosaveLabel = signal('');
+  protected readonly proposalStatus = signal<ProposalCreateStatus>('draft');
+  protected readonly isReadOnly = computed(() => this.proposalStatus() === 'accepted');
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private autosaveToastShown = false;
 
@@ -558,6 +566,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected openTemplateTool(): void {
+    if (this.isReadOnly()) return;
     this.leftTool.set('template');
     if (!this.isWide()) this.rightOpen.set(false);
   }
@@ -587,6 +596,7 @@ export class ProposalCreatePage implements OnInit {
 
   protected canSaveDraft(): boolean {
     return Boolean(
+      !this.isReadOnly() &&
       this.selectedTemplate()?._id &&
       this.organizationId().trim() &&
       this.previewStatus() === 'ready',
@@ -594,6 +604,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected saveDraft(manual = true): void {
+    if (this.isReadOnly()) return;
     if (manual) this.cancelAutosave();
     const autosave = !manual;
     const template = this.selectedTemplate();
@@ -613,7 +624,7 @@ export class ProposalCreatePage implements OnInit {
     const payload: Partial<Proposal> = {
       organizationId,
       ...(this.counterpartyId().trim() ? { counterpartyId: this.counterpartyId().trim() } : {}),
-      status: 'draft',
+      status: this.proposalStatus(),
       orgMarkupPercent: this.clampMarkup(this.orgMarkupPercent()),
       items: this.draftLines().map((line, index) => ({
         productId: line.productId,
@@ -661,6 +672,7 @@ export class ProposalCreatePage implements OnInit {
     }
     this.writeStorage('kp.create.lastDraftId', res.data._id);
     this.writeStorage('kp.create.lastTemplateId', templateId);
+    this.proposalStatus.set(res.data.status === 'accepted' ? 'accepted' : 'draft');
     this.autosaveLabel.set('Сохранено');
     if (!autosave || !this.autosaveToastShown) {
       this.toast.success('Черновик сохранён');
@@ -686,7 +698,7 @@ export class ProposalCreatePage implements OnInit {
 
   private resumeDraftById(id: string): void {
     this.proposalsSvc.findById(id).subscribe((res) => {
-      if (res.ok && res.data.status === 'draft') {
+      if (res.ok && this.isStudioStatus(res.data.status)) {
         this.writeStorage('kp.create.lastDraftId', id);
         this.hydrateDraft(res.data);
         return;
@@ -705,7 +717,7 @@ export class ProposalCreatePage implements OnInit {
     const draftId = this.readStorage('kp.create.lastDraftId');
     if (draftId) {
       this.proposalsSvc.findById(draftId).subscribe((res) => {
-        if (res.ok && res.data.status === 'draft') {
+        if (res.ok && this.isStudioStatus(res.data.status)) {
           this.hydrateDraft(res.data);
           return;
         }
@@ -733,6 +745,7 @@ export class ProposalCreatePage implements OnInit {
 
   private hydrateDraft(draft: Proposal): void {
     const templateId = this.refId(draft.templateId);
+    this.proposalStatus.set(draft.status === 'accepted' ? 'accepted' : 'draft');
     this.organizationId.set(this.refId(draft.organizationId) ?? '');
     this.counterpartyId.set(this.refId(draft.counterpartyId) ?? '');
     this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
@@ -748,11 +761,35 @@ export class ProposalCreatePage implements OnInit {
     );
     if (templateId) {
       this.templatesSvc.findById(templateId).subscribe((res) => {
-        if (res.ok) this.onTemplateChange(res.data);
+        if (!res.ok) return;
+        if (
+          draft.status === 'accepted' &&
+          this.applyLockedTemplateSnapshot(draft.templateSnapshot)
+        ) {
+          this.selectedTemplate.set(res.data);
+          this.leftTool.set(null);
+          return;
+        }
+        this.onTemplateChange(res.data);
       });
     } else {
       this.resumeLastTemplate();
     }
+  }
+
+  /** Accepted КП must keep rendering the saved HTML snapshot, not rebuild from the live template. */
+  private applyLockedTemplateSnapshot(snapshot: Record<string, unknown> | undefined): boolean {
+    const html = snapshot?.['html'];
+    if (typeof html !== 'string' || !html.trim()) return false;
+    this.previewHtmlSource.set(html);
+    this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(html)));
+    this.previewStatus.set('ready');
+    this.autosaveLabel.set('Сохранено');
+    return true;
+  }
+
+  private isStudioStatus(status: Proposal['status']): boolean {
+    return status === 'draft' || status === 'accepted';
   }
 
   private refId(value: unknown): string | null {
@@ -853,7 +890,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onTableTargetChange(targetId: string): void {
-    if (!this.tableTargets().some((target) => target.id === targetId)) return;
+    if (this.isReadOnly() || !this.tableTargets().some((target) => target.id === targetId)) return;
     this.selectedTableTargetId.set(targetId);
     this.applyTableTarget(targetId);
   }
@@ -868,6 +905,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onTableLayoutChange(layout: ProposalTableLayoutColumn[]): void {
+    if (this.isReadOnly()) return;
     this.kpTableLayout.set(layout.map((column) => ({ ...column })));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
@@ -876,6 +914,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onInspectorState(state: ProposalCreateInspectorState): void {
+    if (this.isReadOnly()) return;
     const nextOrganization = (state.organizationId ?? '').trim();
     const nextCounterparty = (state.counterpartyId ?? '').trim();
     const nextMarkup = this.clampMarkup(state.orgMarkupPercent);
@@ -897,6 +936,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected toggleLeftTool(tool: Exclude<LeftTool, null>): void {
+    if (this.isReadOnly()) return;
     const next = this.leftTool() === tool ? null : tool;
     this.leftTool.set(next);
     if (next === 'products') this.rightOpen.set(false);
@@ -918,6 +958,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onProductAdd(line: ProposalDraftLine): void {
+    if (this.isReadOnly()) return;
     this.draftLines.update((rows) => [...rows, line]);
     if (this.tableTemplateId()) this.addCommercialColumns();
     if (this.selectedTemplate()?._id) {
@@ -927,6 +968,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onQuantityChange(change: { index: number; quantity: number }): void {
+    if (this.isReadOnly()) return;
     const quantity = Math.max(0, Number.isFinite(change.quantity) ? change.quantity : 0);
     this.draftLines.update((rows) =>
       rows.map((line, index) => (index === change.index ? { ...line, quantity } : line)),
@@ -938,6 +980,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected addCommercialColumns(): void {
+    if (this.isReadOnly()) return;
     const canonical = [
       { key: 'index', label: '№', aliases: ['index', 'number', '№', 'номер'] },
       {
@@ -962,6 +1005,26 @@ export class ProposalCreatePage implements OnInit {
         .map(({ key, label }) => ({ key, label, visible: true })),
     ];
     if (next.length !== this.kpTableLayout().length) this.onTableLayoutChange(next);
+  }
+
+  protected onStatusRequest(status: ProposalCreateStatus): void {
+    const draftId = this.readStorage('kp.create.lastDraftId');
+    if (!draftId) {
+      this.toast.error('Сначала дождитесь статуса «Сохранено».');
+      return;
+    }
+    this.cancelAutosave();
+    this.proposalsSvc.update(draftId, { status }).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(res.error.message || 'Не удалось изменить статус КП.');
+        return;
+      }
+      this.proposalStatus.set(status);
+      this.autosaveLabel.set('Сохранено');
+      this.toast.success(
+        status === 'accepted' ? 'КП отмечено как «Оплачена».' : 'Статус «Оплачена» снят.',
+      );
+    });
   }
 
   protected closeFlyouts(): void {

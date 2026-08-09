@@ -52,7 +52,7 @@ const PAGE_SIZE = 10;
 const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
   draft: 'Черновик',
   sent: 'Отправлено',
-  accepted: 'Принято',
+  accepted: 'Оплачена',
   rejected: 'Отклонено',
   converted: 'Преобразовано',
   cancelled: 'Отменено',
@@ -334,6 +334,15 @@ function counterpartyIdOf(row: Proposal): string {
                 (edit)="openEdit($event)"
                 (delete)="onDelete($event)"
               />
+              <button
+                type="button"
+                class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                [attr.data-test]="'copy-button-' + row._id"
+                [attr.aria-label]="'Копировать КП ' + row.number"
+                (click)="onCopy(row)"
+              >
+                Копировать
+              </button>
             </ng-template>
           </app-pi-table>
         </div>
@@ -732,6 +741,19 @@ export class ProposalsPage implements OnInit {
   protected openEdit(proposal: Proposal): void {
     void this.router.navigate(['/proposals/create'], {
       queryParams: { id: proposal._id },
+    });
+  }
+
+  protected onCopy(row: Proposal): void {
+    this.service.duplicate(row._id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      this.toast.success(`Создана копия ${res.data.number}`);
+      void this.router.navigate(['/proposals/create'], {
+        queryParams: { id: res.data._id },
+      });
     });
   }
 

@@ -60,6 +60,7 @@ const PAGE_SIZE = 12;
           type="button"
           variant="default"
           size="sm"
+          [disabled]="readOnly()"
           (click)="openCreate()"
           data-test="kp-rail-create"
         >
@@ -108,6 +109,7 @@ const PAGE_SIZE = 12;
                 type="number"
                 min="0"
                 [value]="line.quantity"
+                [disabled]="readOnly()"
                 [attr.data-test]="'kp-line-quantity-' + index"
                 (change)="onQuantityChange(index, $event)"
                 [attr.aria-label]="'Количество: ' + line.productName"
@@ -140,6 +142,7 @@ const PAGE_SIZE = 12;
                   variant="default"
                   size="sm"
                   (click)="addProduct(product)"
+                  [disabled]="readOnly()"
                   [attr.data-test]="'kp-rail-add-' + product._id"
                   [attr.aria-label]="'Добавить ' + product.name"
                 >
@@ -150,6 +153,7 @@ const PAGE_SIZE = 12;
                   variant="outline"
                   size="sm"
                   (click)="openEdit(product)"
+                  [disabled]="readOnly()"
                   [attr.data-test]="'kp-rail-edit-' + product._id"
                   [attr.aria-label]="'Редактировать ' + product.name"
                 >
@@ -344,6 +348,7 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   readonly productAdd = output<ProposalDraftLine>();
   readonly quantityChange = output<{ index: number; quantity: number }>();
   readonly draftLines = input<ProposalDraftLine[]>([]);
+  readonly readOnly = input(false);
 
   protected readonly query = signal('');
   protected readonly categoryId = signal('');
@@ -434,6 +439,7 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   }
 
   protected addProduct(product: Product): void {
+    if (this.readOnly()) return;
     this.productAdd.emit({
       productId: product._id,
       productName: product.name,
@@ -446,11 +452,13 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   }
 
   protected onQuantityChange(index: number, event: Event): void {
+    if (this.readOnly()) return;
     const raw = Number((event.target as HTMLInputElement).value);
     this.quantityChange.emit({ index, quantity: Number.isFinite(raw) ? raw : 0 });
   }
 
   protected openCreate(): void {
+    if (this.readOnly()) return;
     const ref = this.dialog.open(QuickCreateDialogComponent, {
       data: { entity: 'product', size: 'M' } satisfies QuickCreateDialogData,
     });
@@ -458,6 +466,7 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   }
 
   protected openEdit(product: Product): void {
+    if (this.readOnly()) return;
     const ref = this.dialog.open(ProductFormDialogComponent, { data: product, width: 'lg' });
     onDialogCloseOnce(ref, this.injector, () => this.load());
   }

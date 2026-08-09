@@ -19,7 +19,10 @@ import {
   Counterparty,
   CounterpartyService,
 } from '../../../shared/services/pi-counterparty.service';
-import { estimateFamilyTotal } from '../../../shared/services/pi-proposals.service';
+import {
+  estimateFamilyTotal,
+  type ProposalStatus,
+} from '../../../shared/services/pi-proposals.service';
 import { formatPrice } from '../../../shared/util/format';
 import { extractErrorMessage } from '../../../core/silent-http';
 import type { ProposalDraftLine } from './proposal-product-rail.component';
@@ -44,6 +47,8 @@ export interface ProposalCreateInspectorState {
   counterpartyId?: string;
 }
 
+export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>;
+
 /**
  * Right inspector for Create KP (TZ-SALES-315 + TZ-SALES-330).
  * Estimate sum is UI-only preview from draft lines × markup %.
@@ -62,6 +67,39 @@ export interface ProposalCreateInspectorState {
   template: `
     <div class="inspector" data-test="kp-create-inspector">
       @if (!tableOnly()) {
+        <div class="inspector__lock" data-test="kp-status-lock">
+          <span class="text-xs" [class.text-destructive]="status() === 'accepted'">
+            {{
+              status() === 'accepted'
+                ? 'Оплачена · бланк заблокирован'
+                : 'Черновик · доступно редактирование'
+            }}
+          </span>
+          @if (status() === 'accepted') {
+            <app-pi-button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-test="kp-unlock-paid"
+              (click)="statusRequest.emit('draft')"
+            >
+              Снять «Оплачена»
+            </app-pi-button>
+          } @else {
+            <app-pi-button
+              type="button"
+              variant="ghost"
+              size="sm"
+              data-test="kp-mark-paid"
+              (click)="statusRequest.emit('accepted')"
+            >
+              Отметить как «Оплачена»
+            </app-pi-button>
+          }
+        </div>
+      }
+
+      @if (!tableOnly()) {
         <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
           <app-pi-overflow-select
             [items]="organizationItems()"
@@ -71,6 +109,7 @@ export interface ProposalCreateInspectorState {
             placeholder="— выберите —"
             ariaLabel="Наша фирма"
             dataTest="kp-insp-org"
+            [disabled]="readOnly()"
           />
         </app-pi-form-field>
 
@@ -80,6 +119,7 @@ export interface ProposalCreateInspectorState {
             variant="ghost"
             size="sm"
             data-test="kp-insp-open-org"
+            [disabled]="readOnly()"
             (click)="openOrganization()"
           >
             Открыть организацию
@@ -92,6 +132,7 @@ export interface ProposalCreateInspectorState {
             type="number"
             [ngModel]="orgMarkupPercent()"
             (ngModelChange)="onMarkupChange($event)"
+            [disabled]="readOnly()"
             data-test="kp-insp-markup"
           />
         </app-pi-form-field>
@@ -104,6 +145,7 @@ export interface ProposalCreateInspectorState {
             type="number"
             [ngModel]="dealVatPercent()"
             (ngModelChange)="onVatChange($event)"
+            [disabled]="readOnly()"
             data-test="kp-insp-vat"
           />
         </app-pi-form-field>
@@ -132,6 +174,7 @@ export interface ProposalCreateInspectorState {
               placeholder="Выберите таблицу…"
               ariaLabel="Таблица бланка"
               dataTest="kp-table-target"
+              [disabled]="readOnly()"
             />
             <p class="inspector__table-target-hint">Выберите таблицу с позициями для настройки.</p>
           }
@@ -144,7 +187,7 @@ export interface ProposalCreateInspectorState {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    [disabled]="index === 0"
+                    [disabled]="readOnly() || index === 0"
                     [ariaLabel]="'Левее ' + column.label"
                     [attr.data-test]="'kp-table-left-' + column.key"
                     (click)="moveColumn(index, -1)"
@@ -155,7 +198,7 @@ export interface ProposalCreateInspectorState {
                     type="button"
                     variant="ghost"
                     size="icon"
-                    [disabled]="index === tableLayout().length - 1"
+                    [disabled]="readOnly() || index === tableLayout().length - 1"
                     [ariaLabel]="'Правее ' + column.label"
                     [attr.data-test]="'kp-table-right-' + column.key"
                     (click)="moveColumn(index, 1)"
@@ -167,7 +210,7 @@ export interface ProposalCreateInspectorState {
                     variant="outline"
                     size="sm"
                     class="inspector__visibility"
-                    [disabled]="column.visible && visibleColumnCount() === 1"
+                    [disabled]="readOnly() || (column.visible && visibleColumnCount() === 1)"
                     [ariaLabel]="
                       column.visible ? 'Скрыть ' + column.label : 'Показать ' + column.label
                     "
@@ -185,6 +228,7 @@ export interface ProposalCreateInspectorState {
             variant="outline"
             size="sm"
             data-test="kp-table-add-commercial-columns"
+            [disabled]="readOnly()"
             (click)="commercialColumnsRequest.emit()"
           >
             Добавить поля КП (кол-во/цена)
@@ -194,6 +238,7 @@ export interface ProposalCreateInspectorState {
             variant="ghost"
             size="sm"
             data-test="kp-table-open-template"
+            [disabled]="readOnly()"
             (click)="openTableTemplate()"
           >
             Открыть шаблон таблицы
@@ -211,6 +256,7 @@ export interface ProposalCreateInspectorState {
             placeholder="Выберите клиента…"
             ariaLabel="Клиент"
             dataTest="kp-insp-cp"
+            [disabled]="readOnly()"
           />
         </app-pi-form-field>
       }
@@ -234,6 +280,16 @@ export interface ProposalCreateInspectorState {
       min-height: 0;
       overflow: auto;
     }
+    .inspector__lock {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.55rem;
+      border: 1px solid var(--color-rule);
+      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+    }
+
     .inspector__markup-hint {
       margin: -0.35rem 0 0;
       color: var(--color-muted-foreground, #6b7280);
@@ -314,10 +370,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly tableTargets = input<ProposalTableTarget[]>([]);
   readonly selectedTableTargetId = input<string | null>(null);
   readonly selectedCounterpartyId = input('');
+  readonly readOnly = input(false);
+  readonly status = input<ProposalCreateStatus>('draft');
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
   readonly commercialColumnsRequest = output<void>();
   readonly tableTargetChange = output<string>();
+  readonly statusRequest = output<ProposalCreateStatus>();
 
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly counterpartiesList = signal<Counterparty[]>([]);
@@ -370,27 +429,32 @@ export class ProposalCreateInspectorComponent implements OnInit {
   }
 
   protected onOrgChange(id: string): void {
+    if (this.readOnly()) return;
     this.organizationId.set(id);
     this.emitState();
   }
 
   protected onMarkupChange(raw: string | number): void {
+    if (this.readOnly()) return;
     const n = Number(raw);
     this.orgMarkupPercent.set(Number.isFinite(n) ? n : 0);
     this.emitState();
   }
 
   protected onCounterpartyChange(id: string): void {
+    if (this.readOnly()) return;
     this.emitState(id);
   }
 
   protected onVatChange(raw: string | number): void {
+    if (this.readOnly()) return;
     const n = Number(raw);
     this.dealVatPercent.set(Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0);
     this.emitState();
   }
 
   protected moveColumn(index: number, delta: -1 | 1): void {
+    if (this.readOnly()) return;
     const nextIndex = index + delta;
     const current = this.tableLayout();
     if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return;
@@ -400,6 +464,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
   }
 
   protected toggleColumn(index: number): void {
+    if (this.readOnly()) return;
     const current = this.tableLayout();
     const column = current[index];
     if (!column || (column.visible && this.visibleColumnCount() === 1)) return;
@@ -411,18 +476,21 @@ export class ProposalCreateInspectorComponent implements OnInit {
   }
 
   protected selectTableTarget(id: string): void {
+    if (this.readOnly()) return;
     if (this.tableTargets().some((target) => target.id === id)) {
       this.tableTargetChange.emit(id);
     }
   }
 
   protected openOrganization(): void {
+    if (this.readOnly()) return;
     const id = this.organizationId();
     if (!id) return;
     void this.router.navigate(['/organizations'], { queryParams: { highlight: id } });
   }
 
   protected openTableTemplate(): void {
+    if (this.readOnly()) return;
     const id = this.tableTemplateId();
     void this.router.navigate(['/doc-constructor/tables'], {
       queryParams: id ? { editId: id } : undefined,

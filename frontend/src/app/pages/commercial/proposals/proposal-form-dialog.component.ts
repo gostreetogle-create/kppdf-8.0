@@ -52,7 +52,7 @@ function resolveProposalFormData(data: ProposalFormDialogData): {
 const STATUS_OPTIONS: { value: ProposalStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
   { value: 'sent', label: 'Отправлено' },
-  { value: 'accepted', label: 'Принято' },
+  { value: 'accepted', label: 'Оплачена' },
   { value: 'rejected', label: 'Отклонено' },
   { value: 'cancelled', label: 'Отменено' },
 ];
