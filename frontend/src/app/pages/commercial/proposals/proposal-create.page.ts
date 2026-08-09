@@ -17,6 +17,7 @@ import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspa
 import {
   DocumentTemplatesService,
   type BuildPreviewLine,
+  type BuildTableLayoutColumn,
   type DocumentTemplate,
 } from '../../../shared/services/pi-document-templates.service';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
@@ -24,6 +25,7 @@ import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-prod
 import {
   ProposalCreateInspectorComponent,
   type ProposalCreateInspectorState,
+  type ProposalTableLayoutColumn,
 } from './proposal-create-inspector.component';
 import {
   ProposalCreateTemplateCenterComponent,
@@ -33,6 +35,15 @@ import { ProposalCreateTemplatePickerComponent } from './proposal-create-templat
 
 /** Which left tool flyout is open (mutually exclusive). */
 type LeftTool = 'template' | 'products' | null;
+
+const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
+  { key: 'index', label: '№', visible: true },
+  { key: 'productName', label: 'Наименование', visible: true },
+  { key: 'quantity', label: 'Кол-во', visible: true },
+  { key: 'unit', label: 'Ед.', visible: true },
+  { key: 'unitPrice', label: 'Цена', visible: true },
+  { key: 'sum', label: 'Сумма', visible: true },
+];
 
 /**
  * Create-KP focus shell (TZ-SALES-317) + template build preview (TZ-SALES-319).
@@ -179,7 +190,9 @@ type LeftTool = 'template' | 'products' | null;
             >
               <app-proposal-create-inspector
                 [draftLines]="draftLines()"
+                [tableLayout]="kpTableLayout()"
                 (stateChange)="onInspectorState($event)"
+                (tableLayoutChange)="onTableLayoutChange($event)"
               />
             </aside>
           }
@@ -333,6 +346,9 @@ export class ProposalCreatePage implements OnInit {
   protected readonly previewHtml = signal<SafeHtml | null>(null);
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
+  protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
+    DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
+  );
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -357,8 +373,12 @@ export class ProposalCreatePage implements OnInit {
             ...(line.productSku ? { productSku: line.productSku } : {}),
             ...(line.unit ? { unit: line.unit } : {}),
           }));
+          const tableLayout: BuildTableLayoutColumn[] = this.kpTableLayout().map(
+            ({ key, visible }) => ({ key, visible }),
+          );
           const payload = {
             previewLines,
+            tableLayout,
             ...(org ? { organizationId: org } : {}),
           };
           return this.templatesSvc.build(tpl._id, payload).pipe(
@@ -441,12 +461,20 @@ export class ProposalCreatePage implements OnInit {
 
   protected onTemplateChange(tpl: DocumentTemplate | null): void {
     this.selectedTemplate.set(tpl);
+    this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
     if (tpl) {
       this.leftTool.set(null);
       this.rebuildPreview$.next();
     } else {
       this.previewHtml.set(null);
       this.previewStatus.set('idle');
+    }
+  }
+
+  protected onTableLayoutChange(layout: ProposalTableLayoutColumn[]): void {
+    this.kpTableLayout.set(layout.map((column) => ({ ...column })));
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
     }
   }
 

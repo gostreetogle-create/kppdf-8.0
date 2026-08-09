@@ -571,6 +571,7 @@ export class DocumentTemplateService {
           withBinding,
           dto.previewLines,
           lineItemsTargetIds.has(String(b._id)),
+          dto.tableLayout,
         );
       }),
     );
@@ -598,6 +599,7 @@ export class DocumentTemplateService {
     block: TemplateBlockDocument,
     previewLines?: BuildPreviewLineDto[],
     isLineItemsTarget = false,
+    tableLayout?: { key: string; visible?: boolean }[],
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -618,9 +620,9 @@ export class DocumentTemplateService {
       }
 
       const rows = isLineItemsTarget
-        ? await this.mapPreviewLines(tableTemplateId, previewLines)
+        ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
         : [];
-      const html = await this.tableTemplateService.preview(tableTemplateId, rows);
+      const html = await this.tableTemplateService.preview(tableTemplateId, rows, isLineItemsTarget ? tableLayout : undefined);
       return this.cloneResolvedBlock(block, { content: html });
     } catch {
       return block;
@@ -649,15 +651,30 @@ export class DocumentTemplateService {
   private async mapPreviewLines(
     tableTemplateId: string,
     lines: BuildPreviewLineDto[],
+    tableLayout?: { key: string; visible?: boolean }[],
   ): Promise<unknown[][]> {
     const table = await this.tableTemplateService.findById(tableTemplateId);
-    return lines.map((line) =>
-      (table.columns ?? []).map((column) => this.previewLineValue(column.key, line)),
+    const layoutColumns = tableLayout
+      ? tableLayout
+          .filter((entry) => entry.visible !== false)
+          .map((entry) => (table.columns ?? []).find((column) => column.key === entry.key))
+          .filter((column): column is NonNullable<typeof column> => Boolean(column))
+      : [];
+    const columns = layoutColumns.length > 0 ? layoutColumns : table.columns ?? [];
+    return lines.map((line, rowIndex) =>
+      columns.map((column) => this.previewLineValue(column.key, line, rowIndex)),
     );
   }
 
-  private previewLineValue(key: string, line: BuildPreviewLineDto): unknown {
+  private previewLineValue(
+    key: string,
+    line: BuildPreviewLineDto,
+    rowIndex = 0,
+  ): unknown {
     const normalized = key.trim().toLowerCase();
+    if (['index', 'number', '№', 'номер'].includes(normalized)) {
+      return rowIndex + 1;
+    }
     if (['productname', 'name', 'title', 'product', 'наименование'].includes(normalized)) {
       return line.productName;
     }

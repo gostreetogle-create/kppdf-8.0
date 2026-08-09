@@ -233,7 +233,16 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     tick(250);
     fixture.detectChanges();
 
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', { previewLines: [] });
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [],
+        tableLayout: expect.arrayContaining([
+          { key: 'productName', visible: true },
+          { key: 'sum', visible: true },
+        ]),
+      }),
+    );
     expect(page.previewStatus()).toBe('ready');
     const frame = fixture.debugElement.query(By.css('[data-test="kp-tpl-html-preview"]'));
     expect(frame).toBeTruthy();
@@ -256,17 +265,60 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
     tick(250);
     fixture.detectChanges();
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', { previewLines: [] });
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [],
+        tableLayout: expect.arrayContaining([
+          { key: 'productName', visible: true },
+          { key: 'sum', visible: true },
+        ]),
+      }),
+    );
 
     buildMock.mockClear();
     page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 0 });
     tick(250);
     fixture.detectChanges();
 
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', {
-      previewLines: [],
-      organizationId: 'org-1',
-    });
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [],
+        organizationId: 'org-1',
+        tableLayout: expect.any(Array),
+      }),
+    );
+  }));
+
+  it('rebuilds the template with reordered and hidden table layout', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onTableLayoutChange: (
+        layout: Array<{ key: string; label: string; visible: boolean }>,
+      ) => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    buildMock.mockClear();
+
+    page.onTableLayoutChange([
+      { key: 'sum', label: 'Сумма', visible: true },
+      { key: 'productName', label: 'Наименование', visible: false },
+    ]);
+    tick(250);
+    fixture.detectChanges();
+
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        tableLayout: [
+          { key: 'sum', visible: true },
+          { key: 'productName', visible: false },
+        ],
+      }),
+    );
   }));
 
   it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {
@@ -293,17 +345,21 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
 
     expect(page.draftLines()).toHaveLength(1);
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', {
-      previewLines: [
-        {
-          productName: 'Стенд',
-          productSku: 'ST-1',
-          quantity: 1,
-          unit: 'шт',
-          unitPrice: 5000,
-        },
-      ],
-    });
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [
+          {
+            productName: 'Стенд',
+            productSku: 'ST-1',
+            quantity: 1,
+            unit: 'шт',
+            unitPrice: 5000,
+          },
+        ],
+        tableLayout: expect.any(Array),
+      }),
+    );
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
   }));
 });

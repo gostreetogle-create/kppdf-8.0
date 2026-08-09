@@ -1,6 +1,7 @@
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import {
   IsArray,
+  IsBoolean,
   IsNumber,
   IsOptional,
   IsString,
@@ -30,6 +31,15 @@ export class BuildPreviewLineDto {
   unit?: string;
 }
 
+export class BuildTableLayoutColumnDto {
+  @IsString()
+  key!: string;
+
+  @IsOptional()
+  @IsBoolean()
+  visible?: boolean;
+}
+
 /**
  * TZ-86 Phase A.4 — BuildDocumentDto.
  *
@@ -51,6 +61,13 @@ export class BuildDocumentDto {
   @ValidateNested({ each: true })
   @Type(() => BuildPreviewLineDto)
   previewLines?: BuildPreviewLineDto[];
+
+  /** Request-only copy-on-write layout for the live КП line-items table. */
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BuildTableLayoutColumnDto)
+  tableLayout?: BuildTableLayoutColumnDto[];
 
   @IsOptional() @IsString() @IsObjectId() organizationId?: string;
 

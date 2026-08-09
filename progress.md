@@ -1,3 +1,11 @@
+## [2026-08-09T14:43:46Z] — TZ-SALES-330 READY FOR REVIEW: Create КП table layout instance
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; Cursor/PO visual PASS обязателен до archive; deploy НЕ
+**Что:** Правый flyout «Таблица» теперь управляет in-memory copy-on-write `kpTableLayout`: порядок ↑/↓ и visibility, с hint «Меняет только это КП, не общий шаблон» и ссылкой на пресет в Документах. Build DTO/backend применяют порядок/скрытие только к назначенной live line-items table, `index` = 1-based; snapshots и shared TableTemplate не меняются.
+**Gates:** backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; diff-check PASS; FE Prettier PASS.
+**Implementation:** pending scoped commit after READY marker; foreign DOC-343 dirty WIP preserved/excluded.
+**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active` → commit/push → TZ-SALES-331. Deploy НЕ.
+
 ## [2026-08-09T14:26:00Z] — TZ-OPS-308 DONE: page.md drift audit + thin P0 fix
 **Исполнитель:** buffy-ops-308 · docs-only
 **Статус:** DONE; deploy НЕ

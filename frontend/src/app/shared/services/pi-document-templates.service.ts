@@ -81,8 +81,14 @@ export interface BuildPreviewLine {
   unit?: string;
 }
 
+export interface BuildTableLayoutColumn {
+  key: string;
+  visible?: boolean;
+}
+
 export interface BuildDocumentRequest {
   previewLines?: BuildPreviewLine[];
+  tableLayout?: BuildTableLayoutColumn[];
   organizationId?: string;
   counterpartyId?: string;
   productId?: string;

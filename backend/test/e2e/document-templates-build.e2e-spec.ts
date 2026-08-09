@@ -416,6 +416,33 @@ describe('DocumentTemplates build (e2e)', () => {
     expect(res.text.match(/<table\b/g)).toHaveLength(2);
     expect(res.text.match(/Кронштейн/g)).toHaveLength(1);
     expect(res.text).not.toContain('Нет данных');
+
+    const layoutRes = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({
+        organizationId: orgId,
+        previewLines: [
+          {
+            productName: 'Кронштейн',
+            quantity: 2,
+            unitPrice: 1250,
+            productSku: 'BR-2',
+            unit: 'шт',
+          },
+        ],
+        tableLayout: [
+          { key: 'sum', visible: true },
+          { key: 'productName', visible: true },
+          { key: 'qty', visible: false },
+        ],
+      });
+    expect(layoutRes.status).toBe(201);
+    expect(layoutRes.text).not.toContain('Кол-во');
+    expect(layoutRes.text.indexOf('Сумма')).toBeLessThan(
+      layoutRes.text.indexOf('Наименование'),
+    );
+    expect(layoutRes.text).toContain('2 500');
   });
 
   it('POST block with columns[] — persists and build renders multi-column HTML', async () => {

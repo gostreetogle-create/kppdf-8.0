@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:43:46Z · TZ-SALES-330 READY FOR REVIEW
+- IN PROGRESS: Create КП copy-on-write `kpTableLayout` instance, Table flyout reorder/show-hide, and build order/visibility for the designated live line-items table.
+- Base: canonical `main` / `origin/main` at `62a54988`; foreign DOC-343 dirty WIP preserved in a stash and excluded from 330.
+- Conflict scan: `_active/` had no competing marker; 305/307/308/328 are archived/absent. Team Room unavailable (`Unknown task`, sync required).
+- Gates: backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create Jest 12/12; diff-check PASS.
+- Marker/checklist: `tasks/_active/TZ-SALES-330.md` / `docs/agent-checklists/TZ-SALES-330.md`; visual Cursor/PO PASS required before archive.
+- Scope guard: no shared TableTemplate PATCH, quotation snapshot/save, discount column, 317 shell, 320/322, DOC-343 WIP, or deploy.
+- NEXT: Cursor/PO visual PASS → archive/lock/remove `_active` → scoped commit/push → claim 331. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:42:11Z · TZ-DOC-TABLES-307 DONE
 - DONE: `kp` / «КП» category, canonical six-column «КП — позиции» preset, idempotent seed, and dialog apply-preset confirmation.
 - Gates: backend tsc PASS; table-template e2e 9/9; frontend tsc PASS; focused tables/dialog Jest 52/52; diff-check PASS.

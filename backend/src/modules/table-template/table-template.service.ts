@@ -10,6 +10,12 @@ import {
 import { CreateTableTemplateDto } from './dto/create-table-template.dto';
 import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
 
+/** Request-only copy-on-write layout applied to a live table preview. */
+export interface TablePreviewLayoutColumn {
+  key: string;
+  visible?: boolean;
+}
+
 /**
  * TZ-86 Phase A.2 — TableTemplateService extended.
  *
@@ -132,9 +138,13 @@ export class TableTemplateService implements OnModuleInit {
    * headers plus one blank data row. A table without columns keeps the short
    * Russian empty state «Нет описанных колонок.».
    */
-  async preview(id: string, previewRows?: unknown[][]): Promise<string> {
+  async preview(
+    id: string,
+    previewRows?: unknown[][],
+    layout?: TablePreviewLayoutColumn[],
+  ): Promise<string> {
     const doc = await this.findById(id);
-    const cols = doc.columns ?? [];
+    const cols = this.resolvePreviewColumns(doc.columns ?? [], layout);
     if (cols.length === 0) {
       return '<p class="pi-empty-state">Нет описанных колонок.</p>';
     }
@@ -185,6 +195,19 @@ export class TableTemplateService implements OnModuleInit {
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
+
+  private resolvePreviewColumns(
+    columns: TableTemplateDocument['columns'],
+    layout?: TablePreviewLayoutColumn[],
+  ): TableTemplateDocument['columns'] {
+    if (!layout) return columns;
+    const byKey = new Map(columns.map((column) => [column.key, column]));
+    const selected = layout
+      .filter((entry) => entry.visible !== false)
+      .map((entry) => byKey.get(entry.key))
+      .filter((column): column is TableTemplateDocument['columns'][number] => Boolean(column));
+    return selected.length > 0 ? selected : columns;
+  }
 
   private formatCell(value: unknown, type: string, format?: string): string {
     if (value === null || value === undefined || value === '') {

@@ -14,6 +14,7 @@
 - `draftLines` in-memory only (в rail / inspector estimate); до Save не пишутся в Quotation/Mongo
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
+- 330: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП: ↑/↓ and «Показать/Скрыто» rebuild the live line-items table; the shared TableTemplate is never patched. «Пресет в Документах» links back to the preset library.
 
 ## Center preview (TZ-SALES-319)
 
