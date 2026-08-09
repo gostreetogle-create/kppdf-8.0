@@ -1,12 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T01:55:10Z · TZ-PHOTO-303 DONE
+## Checkpoint 2026-08-09T01:56:27Z · TZ-PHOTO-303 DONE
 - DONE: TZ-PHOTO-303 — idempotent backend backfill script creates Sharp WebP thumbs for legacy local originals, skips missing/broken files with logs, and preserves originals; live Mongo run is intentionally left for the operator.
 - IN PROGRESS: none
 - NOT DONE: none in WAVE-PERF-PHOTOS; INN-301 PARKED, SALES-304 RESERVED, SHIPPING/Gantt park
 - NEXT: idle — READY queue empty; no deploy
-- HEAD: 9cdb0206 pushed: yes (`origin/main`)
-- Blockers: live backfill requires an operator to confirm target MongoDB/UPLOAD_DIR and run `pnpm photos:backfill-thumbs`; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+- HEAD: bdb34b23 pushed: yes (`origin/main`)
+- Blockers: live backfill requires an operator to confirm target MongoDB/UPLOAD_DIR and run `pnpm photos:backfill-thumbs`; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches. Foreign untracked `tasks/_backlog/kp-vitrine/` was left untouched.
 - _active/: empty
 - Deploy: NO
 
