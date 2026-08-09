@@ -1,3 +1,12 @@
+## [2026-08-09T13:15:28Z] — TZ-SALES-328 READY FOR REVIEW: shop-витрина
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual Cursor/PO PASS обязателен до archive
+**Что:** Create КП product rail заменён на `PiShowcaseCard md` grid с фото/placeholder, search/category filters, API-backed page/limit=12 pagination, `Добавить`, `Редактировать` и `Создать изделие` через существующие ProductForm/QuickCreate dialogs. Add-and-continue и A4 rails|center geometry сохранены.
+**Gates:** frontend tsc PASS; focused rail Jest 4/4 PASS; proposal-create Jest 11/11 PASS; diff-check PASS.
+**Canonical:** `6143447f` on `origin/main`.
+**Scope:** foreign DOC-343 backend/docs WIP preserved/excluded; 325, 322, 320, BuilderCanvas, deploy untouched.
+**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push; deploy НЕ.
+
 ## [2026-08-09T11:17:19Z] — TZ-SALES-321 + TZ-SALES-319 DONE: KP build-preview fidelity closeout
 **Исполнитель:** agent-ccee39fec2
 **Статус:** DONE; Cursor integration PASS; PO visual PASS; archive + locks; deploy НЕ

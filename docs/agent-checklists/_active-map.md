@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T13:15:28Z · TZ-SALES-328 READY FOR REVIEW
+- READY: Create КП shop-витрина uses responsive `PiShowcaseCard md` cards with photo/placeholder, equal-height grid, search/category filters, API-backed pager, Add/Edit/Create actions.
+- Gates: frontend tsc PASS; focused rail 4/4; proposal-create 11/11; diff-check PASS.
+- Canonical implementation: `6143447f`; active marker remains until Cursor/PO visual PASS.
+- Visual required: shop-like cards, photo/placeholder, equal row heights, filters/pager, Add keeps flyout open, Edit/Create dialogs, no A4 compression.
+- Foreign DOC-343 backend/docs WIP remains preserved/excluded; 322, 320, deploy untouched.
+- NEXT: Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T13:10:04Z · TZ-SALES-325 DONE / Cursor-PO visual PASS
 - DONE: request-only `previewLines` bind from Create КП `draftLines` into the assigned line-items table; empty lines retain the 324 skeleton.
 - Gates: backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 11/11; diff-check PASS.
