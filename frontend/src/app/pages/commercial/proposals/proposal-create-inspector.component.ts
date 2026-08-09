@@ -29,6 +29,7 @@ export interface ProposalTableLayoutColumn {
 export interface ProposalCreateInspectorState {
   organizationId: string;
   orgMarkupPercent: number;
+  dealVatPercent?: number;
 }
 
 /**
@@ -80,6 +81,18 @@ export interface ProposalCreateInspectorState {
           [ngModel]="orgMarkupPercent()"
           (ngModelChange)="onMarkupChange($event)"
           data-test="kp-insp-markup"
+        />
+      </app-pi-form-field>
+
+      <p class="inspector__markup-hint">Меняет цены только в этом КП; каталог не трогаем.</p>
+
+      <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
+        <app-pi-input
+          id="kp-insp-vat"
+          type="number"
+          [ngModel]="dealVatPercent()"
+          (ngModelChange)="onVatChange($event)"
+          data-test="kp-insp-vat"
         />
       </app-pi-form-field>
 
@@ -169,6 +182,11 @@ export interface ProposalCreateInspectorState {
       min-height: 0;
       overflow: auto;
     }
+    .inspector__markup-hint {
+      margin: -0.35rem 0 0;
+      color: var(--color-muted-foreground, #6b7280);
+      font-size: 0.7rem;
+    }
     .inspector__estimate,
     .inspector__table {
       display: flex;
@@ -252,6 +270,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly organizationId = signal('');
   protected readonly orgMarkupPercent = signal(0);
+  protected readonly dealVatPercent = signal(20);
   protected readonly error = signal<string | null>(null);
 
   protected readonly organizationItems = computed(() =>
@@ -288,6 +307,12 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.emitState();
   }
 
+  protected onVatChange(raw: string | number): void {
+    const n = Number(raw);
+    this.dealVatPercent.set(Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0);
+    this.emitState();
+  }
+
   protected moveColumn(index: number, delta: -1 | 1): void {
     const nextIndex = index + delta;
     const current = this.tableLayout();
@@ -318,6 +343,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.stateChange.emit({
       organizationId: this.organizationId(),
       orgMarkupPercent: this.orgMarkupPercent(),
+      dealVatPercent: this.dealVatPercent(),
     });
   }
 }

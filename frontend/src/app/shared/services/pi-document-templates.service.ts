@@ -86,9 +86,14 @@ export interface BuildTableLayoutColumn {
   visible?: boolean;
 }
 
+export interface BuildDealTotals {
+  vatPercent: number;
+}
+
 export interface BuildDocumentRequest {
   previewLines?: BuildPreviewLine[];
   tableLayout?: BuildTableLayoutColumn[];
+  dealTotals?: BuildDealTotals;
   organizationId?: string;
   counterpartyId?: string;
   productId?: string;

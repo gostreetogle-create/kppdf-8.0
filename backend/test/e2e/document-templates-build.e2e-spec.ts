@@ -443,6 +443,38 @@ describe('DocumentTemplates build (e2e)', () => {
       layoutRes.text.indexOf('Наименование'),
     );
     expect(layoutRes.text).toContain('2 500');
+
+    const totalsRes = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({
+        organizationId: orgId,
+        previewLines: [
+          {
+            productName: 'Кронштейн',
+            quantity: 2,
+            unitPrice: 1250,
+            productSku: 'BR-2',
+            unit: 'шт',
+          },
+        ],
+        dealTotals: { vatPercent: 20 },
+      });
+    expect(totalsRes.status).toBe(201);
+    expect(totalsRes.text).toContain('Итого:');
+    expect(totalsRes.text).toContain('в т.ч. НДС 20%');
+
+    const zeroVatRes = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({
+        organizationId: orgId,
+        previewLines: [],
+        dealTotals: { vatPercent: 0 },
+      });
+    expect(zeroVatRes.status).toBe(201);
+    expect(zeroVatRes.text).toContain('Итого:');
+    expect(zeroVatRes.text).not.toContain('в т.ч. НДС');
   });
 
   it('POST block with columns[] — persists and build renders multi-column HTML', async () => {

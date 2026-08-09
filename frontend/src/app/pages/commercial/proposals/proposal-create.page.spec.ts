@@ -324,11 +324,20 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
   it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (s: {
+        organizationId: string;
+        orgMarkupPercent: number;
+        dealVatPercent?: number;
+      }) => void;
       onProductAdd: (line: ProposalDraftLine) => void;
       draftLines: () => ProposalDraftLine[];
     };
 
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    buildMock.mockClear();
+
+    page.onInspectorState({ organizationId: '', orgMarkupPercent: 10, dealVatPercent: 20 });
     tick(250);
     buildMock.mockClear();
 
@@ -354,10 +363,11 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
             productSku: 'ST-1',
             quantity: 1,
             unit: 'шт',
-            unitPrice: 5000,
+            unitPrice: 5500,
           },
         ],
         tableLayout: expect.any(Array),
+        dealTotals: { vatPercent: 20 },
       }),
     );
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();

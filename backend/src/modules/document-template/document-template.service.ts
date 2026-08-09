@@ -572,6 +572,7 @@ export class DocumentTemplateService {
           dto.previewLines,
           lineItemsTargetIds.has(String(b._id)),
           dto.tableLayout,
+          dto.dealTotals,
         );
       }),
     );
@@ -600,6 +601,7 @@ export class DocumentTemplateService {
     previewLines?: BuildPreviewLineDto[],
     isLineItemsTarget = false,
     tableLayout?: { key: string; visible?: boolean }[],
+    dealTotals?: { vatPercent: number },
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -622,7 +624,18 @@ export class DocumentTemplateService {
       const rows = isLineItemsTarget
         ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
         : [];
-      const html = await this.tableTemplateService.preview(tableTemplateId, rows, isLineItemsTarget ? tableLayout : undefined);
+      const total = isLineItemsTarget
+        ? previewLines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+        : 0;
+      const totals = isLineItemsTarget && dealTotals
+        ? { total, vatPercent: dealTotals.vatPercent }
+        : undefined;
+      const html = await this.tableTemplateService.preview(
+        tableTemplateId,
+        rows,
+        isLineItemsTarget ? tableLayout : undefined,
+        totals,
+      );
       return this.cloneResolvedBlock(block, { content: html });
     } catch {
       return block;

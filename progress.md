@@ -1,3 +1,11 @@
+## [2026-08-09T15:06:00Z] — TZ-SALES-331 READY FOR REVIEW: markup + VAT footer
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ
+**Что:** Наценка вычисляет request-only `previewLines.unitPrice` из immutable catalog base price; inspector добавляет НДС % (default 20). Build считает Итого и добавляет right-aligned `в т.ч. НДС` только под live line-items table; VAT-inclusive mode зафиксирован как `sum × vat/(100+vat)`, VAT 0 скрывает VAT row.
+**Gates:** backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; Prettier PASS; diff-check PASS.
+**Scope:** 330 `tableLayout` и shell 317 сохранены; Product/listPrice не PATCH, скидочная колонка не добавлена; foreign DOC-343 WIP исключён.
+**NEXT:** Cursor/PO visual PASS на `/proposals/create` → archive/lock/remove `_active`. Deploy НЕ.
+
 ## [2026-08-09T15:01:58Z] — TZ-SALES-330 DONE: Create КП table layout instance
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; Cursor/PO visual PASS; archive + lock; deploy НЕ

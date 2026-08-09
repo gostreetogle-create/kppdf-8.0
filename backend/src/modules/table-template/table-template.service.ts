@@ -16,6 +16,11 @@ export interface TablePreviewLayoutColumn {
   visible?: boolean;
 }
 
+export interface TableDealTotals {
+  total: number;
+  vatPercent: number;
+}
+
 /**
  * TZ-86 Phase A.2 — TableTemplateService extended.
  *
@@ -142,6 +147,7 @@ export class TableTemplateService implements OnModuleInit {
     id: string,
     previewRows?: unknown[][],
     layout?: TablePreviewLayoutColumn[],
+    dealTotals?: TableDealTotals,
   ): Promise<string> {
     const doc = await this.findById(id);
     const cols = this.resolvePreviewColumns(doc.columns ?? [], layout);
@@ -165,12 +171,12 @@ export class TableTemplateService implements OnModuleInit {
       const blankCells = cols
         .map((c) => `<td style="text-align:${c.align ?? 'left'}"></td>`)
         .join('');
-      return (
+      const tableHtml =
         '<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6">' +
         `<thead><tr>${headHtml}</tr></thead>` +
         `<tbody><tr>${blankCells}</tr></tbody>` +
-        '</table>'
-      );
+        '</table>';
+      return tableHtml + this.renderDealFooter(dealTotals);
     }
 
     const bodyHtml = rows
@@ -186,12 +192,12 @@ export class TableTemplateService implements OnModuleInit {
       })
       .join('');
 
-    return (
+    const tableHtml =
       '<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6">' +
       `<thead><tr>${headHtml}</tr></thead>` +
       `<tbody>${bodyHtml}</tbody>` +
-      '</table>'
-    );
+      '</table>';
+    return tableHtml + this.renderDealFooter(dealTotals);
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -207,6 +213,33 @@ export class TableTemplateService implements OnModuleInit {
       .map((entry) => byKey.get(entry.key))
       .filter((column): column is TableTemplateDocument['columns'][number] => Boolean(column));
     return selected.length > 0 ? selected : columns;
+  }
+
+  private renderDealFooter(dealTotals?: TableDealTotals): string {
+    if (!dealTotals) return '';
+    const total = this.roundMoney(dealTotals.total);
+    const totalLabel = this.formatMoney(total);
+    const vat = this.roundMoney(
+      dealTotals.vatPercent > 0
+        ? total * dealTotals.vatPercent / (100 + dealTotals.vatPercent)
+        : 0,
+    );
+    const vatRow = dealTotals.vatPercent > 0
+      ? `<div>в т.ч. НДС ${dealTotals.vatPercent}%: ${this.formatMoney(vat)} ₽</div>`
+      : '';
+    return `<div class="pi-deal-totals" style="margin-top:8px;text-align:right">` +
+      `<div><strong>Итого: ${totalLabel} ₽</strong></div>${vatRow}</div>`;
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+  }
+
+  private formatMoney(value: number): string {
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
   }
 
   private formatCell(value: unknown, type: string, format?: string): string {

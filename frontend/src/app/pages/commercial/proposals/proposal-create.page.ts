@@ -346,6 +346,8 @@ export class ProposalCreatePage implements OnInit {
   protected readonly previewHtml = signal<SafeHtml | null>(null);
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
+  protected readonly orgMarkupPercent = signal(0);
+  protected readonly dealVatPercent = signal(20);
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
@@ -366,10 +368,11 @@ export class ProposalCreatePage implements OnInit {
           }
           this.previewStatus.set('loading');
           const org = this.organizationId().trim();
+          const markup = this.clampMarkup(this.orgMarkupPercent());
           const previewLines: BuildPreviewLine[] = this.draftLines().map((line) => ({
             productName: line.productName,
             quantity: line.quantity,
-            unitPrice: line.unitPrice,
+            unitPrice: this.roundMoney(line.unitPrice * (1 + markup / 100)),
             ...(line.productSku ? { productSku: line.productSku } : {}),
             ...(line.unit ? { unit: line.unit } : {}),
           }));
@@ -379,6 +382,7 @@ export class ProposalCreatePage implements OnInit {
           const payload = {
             previewLines,
             tableLayout,
+            dealTotals: { vatPercent: this.clampVat(this.dealVatPercent()) },
             ...(org ? { organizationId: org } : {}),
           };
           return this.templatesSvc.build(tpl._id, payload).pipe(
@@ -479,9 +483,17 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onInspectorState(state: ProposalCreateInspectorState): void {
-    const next = (state.organizationId ?? '').trim();
-    if (next === this.organizationId()) return;
-    this.organizationId.set(next);
+    const nextOrganization = (state.organizationId ?? '').trim();
+    const nextMarkup = this.clampMarkup(state.orgMarkupPercent);
+    const nextVat = this.clampVat(state.dealVatPercent ?? this.dealVatPercent());
+    const unchanged =
+      nextOrganization === this.organizationId() &&
+      nextMarkup === this.orgMarkupPercent() &&
+      nextVat === this.dealVatPercent();
+    if (unchanged) return;
+    this.organizationId.set(nextOrganization);
+    this.orgMarkupPercent.set(nextMarkup);
+    this.dealVatPercent.set(nextVat);
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
     }
@@ -513,6 +525,18 @@ export class ProposalCreatePage implements OnInit {
   protected closeFlyouts(): void {
     this.leftTool.set(null);
     this.rightOpen.set(false);
+  }
+
+  private clampMarkup(value: number): number {
+    return Math.min(1000, Math.max(-100, Number.isFinite(value) ? value : 0));
+  }
+
+  private clampVat(value: number): number {
+    return Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
+  }
+
+  private roundMoney(value: number): number {
+    return Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
   }
 
   /** Ensure relative URLs resolve against the app origin inside the sandboxed srcdoc. */

@@ -1,5 +1,23 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T15:06:00Z · TZ-SALES-331 READY FOR REVIEW
+- IN PROGRESS → READY: Create КП markup computes request-only effective `previewLines.unitPrice`; `dealTotals.vatPercent` renders whole-deal footer on the designated live line-items table.
+- Mode fixed in docs/code: prices are VAT-inclusive; VAT extraction = `sum × vat / (100 + vat)`; default VAT = 20%; VAT 0 hides only the VAT row.
+- Gates: backend tsc PASS; document-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; FE Prettier PASS; diff-check PASS.
+- Marker/checklist: `tasks/_active/TZ-SALES-331.md` / `docs/agent-checklists/TZ-SALES-331.md`; archive blocked only by Cursor/PO visual PASS.
+- Scope guard: 330 `tableLayout`, 317 shell, snapshots, Product/listPrice, discount column, foreign DOC-343 WIP, and deploy untouched.
+- NEXT: visual handoff → archive/lock/remove `_active` after PASS. Deploy: NO
+
+
+## Checkpoint 2026-08-09T15:03:14Z · TZ-SALES-331 CLAIMED
+- IN PROGRESS: Create КП effective markup prices, whole-deal VAT, and line-items footer «Итого / в т.ч. НДС».
+- Base: canonical `main` / `origin/main` at `ec839925`; TZ-SALES-330 archive/lock/_active removal completed immediately before claim.
+- Conflict scan: `_active/` has no competing 331 claim. Foreign DOC-343 dirty orientation WIP is preserved/excluded.
+- Marker/checklist: `tasks/_active/TZ-SALES-331.md` / `docs/agent-checklists/TZ-SALES-331.md`; Team Room unavailable (`Unknown task`, sync required).
+- Scope guard: no Product PATCH, discount column, per-line VAT/discount, quotation persistence/snapshot, 317 shell rewrite, 320/322, or deploy.
+- NEXT: implement → gates → READY FOR REVIEW → Cursor/PO visual PASS → archive. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T15:01:58Z · TZ-SALES-330 DONE / Cursor-PO visual PASS
 - DONE: Create КП copy-on-write `kpTableLayout` with Table panel reorder/show-hide; build applies order/visibility only to the designated live line-items table.
 - Implementation: `8c5662fe5783631c5b352d5a5e8bad8547a5dd59`; gates were backend tsc, document-build e2e 10/10, frontend tsc, proposal-create 12/12, Prettier, diff-check — PASS.

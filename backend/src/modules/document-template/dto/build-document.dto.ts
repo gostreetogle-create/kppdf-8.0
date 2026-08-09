@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsNumber,
+  Max,
   IsOptional,
   IsString,
   Min,
@@ -55,6 +56,13 @@ export class BuildTableLayoutColumnDto {
  * Whitelist-strict (forbidNonWhitelisted) in main.ts ensures unknown fields
  * are stripped before reaching the service.
  */
+export class BuildDealTotalsDto {
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  vatPercent!: number;
+}
+
 export class BuildDocumentDto {
   @IsOptional()
   @IsArray()
@@ -68,6 +76,12 @@ export class BuildDocumentDto {
   @ValidateNested({ each: true })
   @Type(() => BuildTableLayoutColumnDto)
   tableLayout?: BuildTableLayoutColumnDto[];
+
+  /** Request-only whole-deal totals; rendered only for the live line-items table. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BuildDealTotalsDto)
+  dealTotals?: BuildDealTotalsDto;
 
   @IsOptional() @IsString() @IsObjectId() organizationId?: string;
 

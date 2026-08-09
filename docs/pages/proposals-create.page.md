@@ -15,10 +15,11 @@
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
 - 330: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП: ↑/↓ and «Показать/Скрыто» rebuild the live line-items table; the shared TableTemplate is never patched. «Пресет в Документах» links back to the preset library.
+- 331: «Наценка %» changes only request `previewLines.unitPrice` (rounded to kopecks, clamped −100…1000); the catalog is never updated. «НДС %» defaults to **20** and is whole-deal, with prices treated as VAT-inclusive: footer VAT is extracted as `sum × vat / (100 + vat)`; VAT 0 hides the VAT row. No «Скидка» column.
 
 ## Center preview (TZ-SALES-319)
 
-- При выборе шаблона или добавлении изделия: `DocumentTemplatesService.build(id, { previewLines, organizationId? })`; `previewLines` — request-only
+- При выборе шаблона или добавлении изделия: `DocumentTemplatesService.build(id, { previewLines, tableLayout, dealTotals, organizationId? })`; all three are request-only
 - Лист = sandboxed `iframe` `srcdoc` (`data-test="kp-tpl-html-preview"`); без имени / «упрощённое» / bullet draftLines
 - Смена шаблона или org из inspector `stateChange` → rebuild (debounce ~200ms)
 - Loading / error — короткий RU на листе
