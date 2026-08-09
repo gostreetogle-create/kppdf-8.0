@@ -175,7 +175,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -456,7 +456,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -524,7 +524,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
   it('grid empty state renders when no products', async () => {
     const fixture = TestBed.createComponent(ProductsPage);
     fixture.detectChanges();
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 50 });
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
     fixture.detectChanges();
 

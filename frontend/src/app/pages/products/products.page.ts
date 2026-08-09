@@ -52,7 +52,7 @@ import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 
 /** Server-side pagination page size for /products endpoint. */
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 /** Backend accepts only these sortBy values (see ProductsListParams). */
 type SortKey = 'name' | 'listPrice';
