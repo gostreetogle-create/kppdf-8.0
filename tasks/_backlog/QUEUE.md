@@ -20,9 +20,9 @@
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- Rename в builder: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md` · `tasks/prompts/TZ-DOC-343-PROMPT.md`  
-- Hotfix upload: `tasks/_backlog/TZ-DOC-342-…` (если ещё не DONE)  
-- КП студия: SALES-317 (если review/active)  
+- Свойства шаблона в builder: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md` · `tasks/prompts/TZ-DOC-343-PROMPT.md`  
+- Hotfix upload: DOC-342 (если ещё review)  
+- КП студия: SALES-317 (если active/review)  
 - Doc tables: wave complete; idle until new PO wave or explicit deploy command
 
 ## Idle / park / done

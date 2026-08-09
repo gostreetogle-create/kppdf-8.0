@@ -1,90 +1,123 @@
 ═══════════════════════════════════════════════════════════════
-TZ-DOC-343: Builder — editable template name
+TZ-DOC-343: Builder — свойства шаблона (create-parity)
 ═══════════════════════════════════════════════════════════════
 
-> Domain: DocumentTemplate.name; клиент ≠ Organization.
-> Проверено: `builder-inspector.component.ts` L136–142 Mode B показывает
-> `{{ t.name }}` как `<p class="insp-hint">` (read-only); `templateUpdate`
-> уже умеет PATCH; `onTemplateUpdate` в `builder.page.ts` L1527+ шлёт
-> `templatesSvc.update(tid, patch)`; BE `UpdateDocumentTemplateDto` =
-> PartialType(Create) → `name` optional, но если передан — `@IsNotEmpty`.
+> Domain: DocumentTemplate; категория = DocumentTemplateCategory (не TextBlock).
+> Проверено:
+> - Create UX (`template-setup-dialog`): categoryId + pageSize A3|A4|A5 + orientation
+> - Create API (`templates.page`): + auto `name`, org, docType
+> - Mode B inspector (`builder-inspector` L136–229): name = read-only hint;
+>   pageSize/orientation handlers есть в .ts, **в шаблоне не подключены**;
+>   category UI отсутствует
+> - `DocumentTemplateService.update()` пишет name/pageSize/categoryId/… но
+>   **не** `orientation` (отдельный `PATCH :id/orientation` / `setOrientation`)
+> - `onTemplateUpdate` → `templatesSvc.update` — для orientation сейчас silent no-op на BE
 
-РОЛЬ АГЕНТА: Frontend UI Engineer
+РОЛЬ АГЕНТА: Frontend UI Engineer (+ минимальный BE fix orientation в update)
 
-ЗАВИСИМОСТИ: Нет (FE-only; API уже есть)
+ЗАВИСИМОСТИ: Нет
 
 LAYER: 3
 
 PAGES: /doc-constructor/builder/:id
 PAGE_DOCS: builder.page.md
 
-CONFLICT KEYS: frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.ts; frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.spec.ts; docs/pages/builder.page.md
+CONFLICT KEYS: frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.ts; frontend/src/app/pages/doc-constructor/builder/builder-inspector.component.spec.ts; frontend/src/app/pages/doc-constructor/builder/builder.page.ts; backend/src/modules/document-template/document-template.service.ts; docs/pages/builder.page.md
 
 ═══════════════════════════════════════════════════════════════
 ИСХОДНОЕ СОСТОЯНИЕ
 ═══════════════════════════════════════════════════════════════
 
-1. Список шаблонов → «Конструктор» / Редактировать → `/doc-constructor/builder/:id`.
+1. PO: после «Редактировать» нельзя сменить название/категорию и прочие
+   данные, заданные при создании — «других мест не нашёл».
 
-2. В инспекторе (клик по листу / Mode B template) секция «Контекст» показывает
-   название **только текстом** — поля ввода нет. Поэтому PO «не может поменять название».
+2. Факт: Mode B показывает в основном фон/нумерацию/opacity. Поля create-диалога
+   в свойствах шаблона **не собраны**.
 
-3. Это не баг API и не lock: **дыра UX** — rename никогда не сделали в builder.
+3. Цель: один понятный блок свойств справа (секции), всё сохраняется через
+   существующий PATCH / setOrientation.
 
 ═══════════════════════════════════════════════════════════════
 ЧТО ДЕЛАТЬ
 ═══════════════════════════════════════════════════════════════
 
-ШАГ 1: INPUT НАЗВАНИЯ В MODE B
+ШАГ 1: BE — orientation в update() (1 строка логики)
 
-  В `builder-inspector` секция `insp-section-context` (Mode B):
-  - Заменить read-only `<p>{{ t.name }}</p>` на поле:
-    - label RU: «Название»
-    - `input` (или `app-pi-input`) с `data-test="insp-template-name"`
-    - значение = `t.name`
-  - На **blur** и **Enter**: trim → если пусто — toast/ошибка «Название обязательно»,
-    вернуть предыдущее; иначе `templateUpdate.emit({ name: trimmed })`.
-  - Не спамить PATCH на каждый keystroke (только commit blur/Enter).
-  - `aria-label="Название шаблона"`.
+  В `DocumentTemplateService.update`:
+  `if (dto.orientation !== undefined) doc.orientation = dto.orientation;`
+  (DTO уже PartialType с `@IsIn(['portrait','landscape'])`).
+  Отдельный `PATCH :id/orientation` оставить (не ломать).
 
-ШАГ 2: PARENT УЖЕ ГОТОВ
+ШАГ 2: MODE B — СЕКЦИИ СВОЙСТВ (инспектор)
 
-  Не менять `onTemplateUpdate` без нужды — он уже optimistic + PATCH.
-  Убедиться, что `headerSubtitle` подхватывает новое имя из `template()` signal
-  (сейчас computed от `template()?.name` — должно обновиться само).
+  Пересобрать Mode B в явные секции (RU, `data-test` на секции):
 
-ШАГ 3: TESTS + DOCS
+  **A. Основные** (`insp-section-basics`)
+  - Название — input, commit blur/Enter → `templateUpdate.emit({ name })`;
+    пустое trim → reject + toast «Название обязательно», вернуть старое.
+    `data-test="insp-template-name"`.
+  - Категория шаблона — select активных системных категорий
+    (`DocumentTemplateCategoriesService`, тот же источник что setup-dialog).
+    Change → `templateUpdate.emit({ categoryId })`.
+    `data-test="insp-template-category"`.
+    Loading / empty / error — короткие RU-состояния; ссылка в справочник
+    категорий — опционально как в setup-dialog.
 
-  - Jest: emit `templateUpdate` with `{ name: '…' }` после commit.
-  - Строка в `docs/pages/builder.page.md`: Mode B — редактируемое название шаблона.
+  **B. Страница** (`insp-section-page`)
+  - Формат — chips A3|A4|A5 (как setup-dialog) → `onPageSizeChange` /
+    `templateUpdate.emit({ pageSize })`.
+  - Ориентация — chips Книжная|Альбомная → `templateUpdate.emit({ orientation })`
+    (после ШАГ 1 сохранится).
+  - Нумерация страниц — существующий switch (перенести сюда из «Стиль»).
+
+  **C. Фон** (`insp-section-background`) — без регресса:
+  opacity + upload/grid/default/remove как сейчас.
+
+  Не тащить в эту TZ смену organizationId / docTypeId (create подставляет
+  дефолты; отдельный successor если PO попросит).
+
+ШАГ 3: PARENT
+
+  `onTemplateUpdate` оставить; после PATCH ok можно не reload.
+  Убедиться: canvas `orientation` / pageSize computed обновляются из
+  `template()` signal (optimistic patch уже есть).
+
+ШАГ 4: TESTS + DOCS
+
+  - Jest inspector: emit name / categoryId / pageSize / orientation.
+  - `docs/pages/builder.page.md`: Mode B = свойства create-parity (секции A–C).
+  - Gates ниже.
 
 ═══════════════════════════════════════════════════════════════
 НЕ ИЗМЕНЯТЬ
 ═══════════════════════════════════════════════════════════════
 
-- Backend DTO/schema (уже ок)
-- templates.page список / create dialog (кроме если явно нужно — **не** в этой TZ)
-- Upload background / DOC-342 keys
-- Block title editing (другое поле)
-- TZ-SALES-317 / proposal-create
+- template-setup-dialog create flow (кроме copy-paste стиля chips — ок)
+- Text-block category filter (другая сущность)
+- Upload-background / DOC-342
+- SALES-317 / proposal-create
+- Список templates.page rename-inline (out of scope; builder = SoT edit)
 
 known_limitation:
-- Переименование из списка шаблонов без входа в builder — later, если PO попросит
-- description / tags edit — out of scope
+- description / tags / notes — не в create-диалоге; не обязательны здесь
+- Смена org/docType — later
+- Inline rename в списке шаблонов — later
 
 ═══════════════════════════════════════════════════════════════
 КРИТЕРИИ ПРИЁМКИ
 ═══════════════════════════════════════════════════════════════
 
-1. В builder, Mode B (шаблон выбран): видно редактируемое поле «Название».
-2. Изменение + blur/Enter → PATCH уходит; имя в шапке/subtitle обновляется.
-3. Пустое имя не сохраняется; прежнее имя остаётся.
-4. Gates:
+1. Mode B: видны редактируемые Название, Категория, Формат, Ориентация (+ фон/нумерация).
+2. Смена каждого поля → сохранение (F5 — значения на месте).
+3. Пустое название не сохраняется.
+4. Orientation через PATCH update реально пишется в Mongo (не только optimistic UI).
+5. Gates:
    ```
+   cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
    cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
    cd frontend && pnpm test -- --testPathPattern=builder-inspector
    ```
-5. Checklist + Executor report (auto); archive после Cursor/PO PASS (visual ok).
+6. Checklist + Executor report (auto); archive после Cursor/PO visual PASS.
 
 ═══════════════════════════════════════════════════════════════
 ФИНАЛИЗАЦИЯ

@@ -1,7 +1,8 @@
 # TZ-DOC-343 checklist
 
 > Status: **RESERVED**
-> TZ: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md`
+> TZ: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md`  
+>   (scope: **create-parity свойства шаблона** в Mode B, не только name)
 > Marker: `tasks/_active/TZ-DOC-343.md` при CLAIM
 
 ## Claim slot
@@ -13,12 +14,14 @@
 
 ## Acceptance
 
-- [ ] Mode B: editable «Название» (`data-test="insp-template-name"`)
-- [ ] blur/Enter → templateUpdate `{ name }`; empty rejected
-- [ ] header/subtitle reflects new name
-- [ ] Jest builder-inspector covers emit
+- [ ] BE: `update()` applies `orientation`
+- [ ] Mode B секции: Основные (name+category) / Страница (size+orient+numbering) / Фон
+- [ ] name blur/Enter; empty rejected
+- [ ] category select → PATCH categoryId
+- [ ] pageSize + orientation chips → persist + canvas updates
+- [ ] Jest emits covered
 - [ ] builder.page.md note
-- [ ] tsc + focused test PASS
+- [ ] tsc FE+BE + focused test PASS
 
 ## Gates (факт)
 

@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:19:34Z · TZ-DOC-343 CLAIMED
+- IN PROGRESS: TZ-DOC-343 — builder editable template name
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T03:19:34Z
+- Keys: builder-inspector FE · no overlap with DOC-342 / SALES-317
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:22:00Z · TZ-DOC-343 READY (rename template in builder)
 - PO: в конструкторе после «Редактировать» не может сменить название шаблона
 - Причина: Mode B inspector — `t.name` только как `insp-hint` (read-only); API PATCH name уже есть
