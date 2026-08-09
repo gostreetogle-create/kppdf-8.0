@@ -1,0 +1,9 @@
+TZ: TZ-SALES-314
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T03:15:00Z
+CLOSED_AT: 2026-08-09T03:25:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Left product rail + in-memory draft lines on Create KP.
+GATES: FE tsc PASS; proposal-create Jest 3/3 PASS.
+BAN: ModuleMaterials, print, inspector 315, deploy.

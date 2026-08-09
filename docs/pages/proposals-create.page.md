@@ -1,29 +1,25 @@
 # /proposals/create — Создать КП
 
 **Route:** `/proposals/create` (guarded lazy)
-**TZ:** **310** route · **311** design-spec · **312 DONE** shell · **314** left rail · **315** inspector · **316** template center · **320** print PARKED
-**Spec (SoT layout):** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md)
+**TZ:** **310** route · **311** design-spec · **312** shell · **314 DONE** left rail · **315** inspector · **316** template · **320** print PARKED
+**Spec:** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md)
 
-## Сейчас (после 312)
+## Сейчас
 
-Трёхзонный shell под sticky Deals chrome:
-
-- Left `data-test="kp-create-left"` — placeholder «Выберите изделие…»
-- Center `data-test="kp-create-center"` — A4 sheet placeholder
-- Right `data-test="kp-create-right"` — placeholder «Укажите нашу фирму…»
-- Desktop ≥1280: три колонки всегда видны
-- Уже: toggles «Товары» / «Параметры», одновременно ≤1 панель, Escape закрывает
-
-Quotation API / picker / шаблон / печать — ещё не подключены (314–316 / 320).
+- Три зоны shell + sticky Deals chrome.
+- Left: `app-proposal-product-rail` — поиск/список изделий (`ProductsService.list`), «Добавить».
+- Write-path draft: **in-memory** `draftLines` на странице (не PATCH quotation). Persist — later TZ.
+- Center показывает черновые строки или empty copy.
+- Right — placeholder до 315.
 
 ## Entities
 
 | UI | Код |
 |----|-----|
-| КП | Quotation / proposals routes |
+| КП | Quotation |
 | Бланк | Organization |
-| Клиент | Counterparty |
+| Изделие | Product |
 
 ## Не здесь
 
-Печать пачкой, schema family rewrite, ModuleMaterials, deploy.
+Печать, ModuleMaterials, inspector 315, template 316, deploy.

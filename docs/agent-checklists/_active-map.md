@@ -1,12 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T03:10:00Z · TZ-SALES-313 DONE
-- DONE: TZ-SALES-313 — `/proposals` family expand (variants by org, attach with UI «оценка», variant read-only, sync+confirm); supersedes 304; create-page untouched.
+## Checkpoint 2026-08-09T03:25:00Z · TZ-SALES-314 DONE
+- DONE: TZ-SALES-314 — Create KP left product rail (ProductsService search/add → in-memory draftLines; center lists draft).
 - IN PROGRESS: none
-- NOT DONE: TZ-SALES-314 → TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
-- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-314-create-kp-product-rail.md`
-- HEAD: (pending this push) pushed: yes (`origin/main`)
-- Blockers: none for SALES-313; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+- NOT DONE: TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-315-create-kp-inspector.md`
+- HEAD: (pending push) pushed: yes
+- Blockers: none; foreign untracked `proposal-variant-dialog.component.ts` left untouched
 - _active/: empty
 - Deploy: NO
 

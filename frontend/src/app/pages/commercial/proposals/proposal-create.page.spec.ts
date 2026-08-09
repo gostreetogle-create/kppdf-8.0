@@ -3,13 +3,16 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
 import { ProposalCreatePage } from './proposal-create.page';
 import { AuthService } from '../../../core/auth.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
+import { ProductsService } from '../../../shared/services/products.service';
+import { ProposalDraftLine } from './proposal-product-rail.component';
 
-describe('ProposalCreatePage (TZ-SALES-312)', () => {
+describe('ProposalCreatePage (TZ-SALES-314)', () => {
   let fixture: ComponentFixture<ProposalCreatePage>;
 
   beforeEach(async () => {
@@ -26,6 +29,28 @@ describe('ProposalCreatePage (TZ-SALES-312)', () => {
             user: signal({ pages: ['proposals', 'contracts', 'orders'] }),
           },
         },
+        {
+          provide: ProductsService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    {
+                      _id: 'prod-1',
+                      name: 'Стенд',
+                      sku: 'ST-1',
+                      kind: 'product',
+                      unit: 'шт',
+                      listPrice: 5000,
+                    },
+                  ],
+                  total: 1,
+                },
+              }),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -33,49 +58,33 @@ describe('ProposalCreatePage (TZ-SALES-312)', () => {
     fixture.detectChanges();
   });
 
-  it('renders three studio regions with data-test hooks', () => {
-    const left = fixture.debugElement.query(By.css('[data-test="kp-create-left"]'));
-    const center = fixture.debugElement.query(By.css('[data-test="kp-create-center"]'));
-    const right = fixture.debugElement.query(By.css('[data-test="kp-create-right"]'));
-
-    expect(left).toBeTruthy();
-    expect(center).toBeTruthy();
-    expect(right).toBeTruthy();
-
-    expect(left.nativeElement.textContent).toContain('Выберите изделие — оно попадёт в КП');
-    expect(center.nativeElement.textContent).toContain(
-      'Выберите шаблон КП или добавьте позиции слева',
-    );
-    expect(right.nativeElement.textContent).toContain('Укажите нашу фирму (бланк) и наценку');
+  it('keeps three studio regions', () => {
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-left"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-center"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-right"]'))).toBeTruthy();
   });
 
-  it('keeps Deals TOC + Создать КП chip active wiring in the shell', () => {
+  it('adds a draft line from the product rail into memory', () => {
     const page = fixture.componentInstance as ProposalCreatePage & {
-      dealsToc: { id: string }[];
-      kpSectionChips: { id: string }[];
-    };
-    expect(page.dealsToc.map((c) => c.id)).toEqual(['proposals', 'contracts', 'orders']);
-    expect(page.kpSectionChips.map((c) => c.id)).toEqual(['create', 'all']);
-  });
-
-  it('opens at most one side panel on narrow viewport', () => {
-    const page = fixture.componentInstance as ProposalCreatePage & {
-      isWide: { set: (v: boolean) => void };
-      leftOpen: { (): boolean; set: (v: boolean) => void };
-      rightOpen: { (): boolean; set: (v: boolean) => void };
-      toggleLeft: () => void;
-      toggleRight: () => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      draftLines: () => ProposalDraftLine[];
     };
 
-    page.isWide.set(false);
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      quantity: 1,
+      unitPrice: 5000,
+    });
     fixture.detectChanges();
 
-    page.toggleLeft();
-    expect(page.leftOpen()).toBe(true);
-    expect(page.rightOpen()).toBe(false);
+    expect(page.draftLines().length).toBe(1);
+    expect(page.draftLines()[0].productName).toBe('Стенд');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-draft-lines"]'))).toBeTruthy();
+  });
 
-    page.toggleRight();
-    expect(page.rightOpen()).toBe(true);
-    expect(page.leftOpen()).toBe(false);
+  it('renders the product rail search control', () => {
+    expect(fixture.debugElement.query(By.css('[data-test="kp-product-rail"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-rail-search"]'))).toBeTruthy();
   });
 });

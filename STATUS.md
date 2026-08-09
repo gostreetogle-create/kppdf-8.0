@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** KP vitrine — SALES-310…313 DONE; next 314→315→316; 320 PARKED; deploy not run
+**Phase:** KP vitrine — SALES-310…314 DONE; next 315→316; 320 PARKED; deploy not run
+
+## [2026-08-09] — TZ-SALES-314 DONE: Create KP left product rail
+**Статус:** DONE on main; deploy НЕ
+**Что:** Left rail изделий + in-memory draft на `/proposals/create`.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-314.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-314-create-kp-product-rail.lock`
+**Gates:** FE tsc PASS; Jest 3/3 PASS.
+**Wave:** #5 DONE; NEXT TZ-SALES-315; deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand
 **Статус:** DONE on main; deploy НЕ
@@ -9,7 +17,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-313.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-313-all-kp-family-expand.lock`
 **Gates:** FE tsc PASS; Jest 31/31 PASS.
-**Wave:** WAVE-KP-VITRINE #4 DONE; NEXT TZ-SALES-314; deploy НЕ.
+**Wave:** WAVE-KP-VITRINE #4 DONE; NEXT TZ-SALES-314 (now DONE); deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-312 DONE: Create КП three-zone shell
 **Статус:** DONE on main; deploy НЕ

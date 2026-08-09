@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -10,18 +10,18 @@ import {
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
+import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
 
 /**
- * Create-KP studio shell (TZ-SALES-312).
+ * Create-KP studio (TZ-SALES-312 shell + TZ-SALES-314 product rail).
  *
- * Layout SoT: `docs/ux/kp-create-studio-spec.md`.
- * Zones stay placeholders until 314 (rail), 315 (inspector), 316 (template).
+ * Draft lines are in-memory until a later save TZ; no quotation PATCH here.
  */
 @Component({
   selector: 'app-proposal-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, ButtonComponent],
+  imports: [PiGroupWorkspaceComponent, ButtonComponent, ProposalProductRailComponent],
   template: `
     <app-pi-group-workspace
       pathLabel="Сделки"
@@ -72,9 +72,7 @@ import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
             aria-label="Товары"
           >
             <h2 class="kp-create-studio__zone-title">Товары</h2>
-            <p class="kp-create-studio__empty" data-test="kp-create-left-empty">
-              Выберите изделие — оно попадёт в КП
-            </p>
+            <app-proposal-product-rail (productAdd)="onProductAdd($event)" />
           </aside>
 
           <section
@@ -84,9 +82,20 @@ import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
           >
             <div class="kp-create-studio__sheet" data-test="kp-create-sheet">
               <h2 class="kp-create-studio__zone-title">Превью КП</h2>
-              <p class="kp-create-studio__empty" data-test="kp-create-center-empty">
-                Выберите шаблон КП или добавьте позиции слева
-              </p>
+              @if (draftLines().length === 0) {
+                <p class="kp-create-studio__empty" data-test="kp-create-center-empty">
+                  Выберите шаблон КП или добавьте позиции слева
+                </p>
+              } @else {
+                <ul class="kp-create-studio__draft" data-test="kp-create-draft-lines">
+                  @for (line of draftLines(); track $index) {
+                    <li>
+                      {{ line.productName }}
+                      · qty {{ line.quantity }} · {{ line.unitPrice }} ₽
+                    </li>
+                  }
+                </ul>
+              }
             </div>
           </section>
 
@@ -216,6 +225,13 @@ import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
       color: var(--color-muted-foreground, var(--color-ink-muted, #6b7280));
     }
 
+    .kp-create-studio__draft {
+      margin: 0;
+      padding-left: 1.1rem;
+      font-size: 0.875rem;
+      color: var(--color-ink);
+    }
+
     .kp-create-studio__body--wide .kp-create-studio__panel--left,
     .kp-create-studio__body--wide .kp-create-studio__panel--right {
       overflow: auto;
@@ -231,6 +247,8 @@ export class ProposalCreatePage implements OnInit {
   protected readonly isWide = signal(true);
   protected readonly leftOpen = signal(false);
   protected readonly rightOpen = signal(false);
+  /** In-memory draft positions (SALES-314). Not persisted until a later save TZ. */
+  protected readonly draftLines = signal<ProposalDraftLine[]>([]);
 
   private mediaQuery: MediaQueryList | null = null;
 
@@ -269,6 +287,10 @@ export class ProposalCreatePage implements OnInit {
     const next = !this.rightOpen();
     this.rightOpen.set(next);
     if (next) this.leftOpen.set(false);
+  }
+
+  protected onProductAdd(line: ProposalDraftLine): void {
+    this.draftLines.update((rows) => [...rows, line]);
   }
 
   private applyViewport(wide: boolean): void {

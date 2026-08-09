@@ -1,3 +1,24 @@
+## [2026-08-09] — TZ-SALES-314 DONE: Create KP left product rail
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #5
+**Статус:** DONE; deploy НЕ
+**Что:** Левый рейл изделий на `/proposals/create` (поиск + Добавить через ProductsService). Draft позиции — in-memory `draftLines`, без PATCH quotation. Center показывает черновик.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-314.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-314-create-kp-product-rail.lock`
+**Gates:** FE tsc PASS; Jest 3/3 PASS.
+**NEXT:** TZ-SALES-315 inspector.
+
+## [2026-08-09] — TZ-UX-315 DONE: drop pathLabel + dense group chrome
+
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; deploy НЕ
+**Что:** `PiGroupWorkspace` больше не рисует eyebrow `pathLabel` (раздел = топ-меню); TOC/chips `pt-0` вплотную под header; jest на no-render + sticky; сняты мёртвые `pathLabel=` со страниц кроме proposals*/create (peer SALES).
+**Затронуто:** pi-group-workspace (+spec), 16 pages attr strip, page-chrome docs.
+**Gates:** FE tsc PASS; Jest pi-group-workspace 5/5 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-315.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-315-drop-pathlabel-dense-chrome.lock`
+**NEXT:** peer TZ-SALES-314 (KP product rail) — не трогать.
+
 ## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand (ex-304)
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #4
