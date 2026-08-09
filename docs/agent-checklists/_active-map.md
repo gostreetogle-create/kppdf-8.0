@@ -1,12 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T01:45:02Z · TZ-PHOTO-301 DONE
-- DONE: TZ-PHOTO-301 — `/photos/upload` сохраняет original и отдельный Sharp WebP thumb child; API остаётся совместимым и отдаёт `variants.thumb` для быстрых списков.
+## Checkpoint 2026-08-09T01:52:24Z · TZ-PHOTO-302 DONE
+- DONE: TZ-PHOTO-302 — catalogue `/products` table/grid, `/materials` list and applicable production thumbnails now select linked lightweight thumbs through shared `photoListUrl`, improving list image cost without changing layout or business behavior.
 - IN PROGRESS: none
-- NOT DONE: TZ-PHOTO-302 READY → TZ-PHOTO-303 blocked until 302 DONE
-- NEXT: `tasks/_backlog/perf/TZ-PHOTO-302-lists-use-thumb.md`
-- HEAD: 8f2b1f4a pushed: yes (`origin/main`)
-- Blockers: Team Room registry не знает TZ-PHOTO-301; `verify-status.sh` сохраняет pre-existing 72 legacy kit-era mismatches; unrelated text-block-category test failure раскрыт в checklist.
+- NOT DONE: TZ-PHOTO-303 READY — idempotent backfill for legacy original photos
+- NEXT: `tasks/_backlog/perf/TZ-PHOTO-303-backfill-thumbs.md`
+- HEAD: 002cc363 pushed: yes (`origin/main`)
+- Blockers: `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches; Materials focused harness emits existing non-failing NG0101 console noise.
 - _active/: empty
 - Deploy: NO
 
