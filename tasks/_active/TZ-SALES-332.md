@@ -20,20 +20,21 @@
 
 ## Implementation
 
-- Selected template blocks now discover the actual live line-items TableTemplate; explicit `kpLineItems`/`line-items` wins, otherwise exactly one live table.
-- Inspector layout uses actual table keys/labels; DEFAULT_KP is fallback only.
+- Selected template blocks now discover every actual live TableTemplate; explicit `kpLineItems`/`line-items` wins by default, otherwise the Table rail exposes the live-table list.
+- Inspector layout uses actual selected table keys/labels; DEFAULT_KP is fallback only when the selected table has no columns or no target exists.
+- Hotfix root cause: multi-table templates without `kpLineItems` previously synced the wrong/default layout and sent no target; `tableTargetId` now carries the selected live table through the request-only build path.
 - Horizontal `←`/`→`, `Видна`/`Скрыта`, last-visible protection, separate Параметры/Таблица rail tools, and PiButton CTA are implemented.
 - Products closes the right overlay to avoid clipping; flyouts have inward air, content height/max-height, light transparency and internal grid scroll.
 - 331 footer/VAT, 330 copy-on-write layout and frozen 317 A4 geometry are preserved.
 
 ## Gates
 
-- Frontend tsc PASS; proposal-create Jest 14/14 PASS; changed-file Prettier PASS; diff-check PASS.
+- Frontend tsc PASS; proposal-create Jest 15/15 PASS; backend tsc PASS; document-build e2e 10/10 PASS; Prettier/ESLint PASS; diff-check PASS.
 
 ## Implementation commit
 
-- `f5e0f401` — pushed to `origin/main`; active marker remains until visual PASS.
+- `f5e0f401` base + `272550ab` hotfix — pushed to `origin/main`; active marker remains until visual PASS.
 
 ## Review handoff
 
-- READY FOR REVIEW — on `/proposals/create`, select a template, open Таблица, verify real A4 column labels, hide/reveal, ←/→ reorder, open the template CTA, then open Товары and verify three md cards are not clipped and the A4 center does not move.
+- READY FOR REVIEW — on `/proposals/create`, select a multi-table template without `kpLineItems`, open Таблица, verify the table selector and labels match the chosen A4 thead, hide/reveal, ←/→ reorder, then verify the template CTA, unclipped md cards, and unchanged A4 center.

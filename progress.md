@@ -1,3 +1,12 @@
+## [2026-08-09T16:01:50Z] — TZ-SALES-332 HOTFIX READY FOR REVIEW: selected live-table binding
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ
+**Root cause:** при 2+ live tables без `kpLineItems` FE выбирал DEFAULT_KP, поэтому labels панели не совпадали с A4 и hide/reorder уходили не в ту таблицу.
+**Hotfix:** `272550ab` pushed to `origin/main`; Table rail показывает список live tables, выбранная таблица загружает реальные columns, `tableTargetId` проходит request-only build и BE применяет layout только к выбранной live table.
+**Gates:** frontend tsc PASS; backend tsc PASS; proposal-create Jest 15/15; document-build e2e 10/10; Prettier/ESLint PASS; diff-check PASS.
+**Scope:** 317 A4 rails|center, 330 copy-on-write layout, 331 footer/VAT, CTA/flyout polish, DOC-343 WIP, Save/Counterparty, 320/322 и deploy не тронуты.
+**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active`. Deploy НЕ.
+
 ## [2026-08-09T15:45:00Z] — TZ-SALES-332 READY FOR REVIEW: flyout/table rail polish
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ

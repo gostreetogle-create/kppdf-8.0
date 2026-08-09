@@ -3,7 +3,7 @@
 > Status: **READY FOR REVIEW**
 > Marker: `tasks/_active/TZ-SALES-332.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-332-kp-flyout-table-rail-polish.md`
-> Commit/push: **NO** until Cursor/PO visual PASS
+> Implementation/hotfix pushed; archive/lock remain blocked until Cursor/PO visual PASS
 
 ## Claim slot
 
@@ -40,14 +40,17 @@
 ## Gates (fact)
 
 - [x] `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
-- [x] `cd frontend && pnpm exec jest --config jest.config.js --runInBand src/app/pages/commercial/proposals/proposal-create.page.spec.ts` — PASS, 14/14
-- [x] Frontend Prettier on changed files — PASS
+- [x] `cd frontend && pnpm exec jest --config jest.config.js --runInBand src/app/pages/commercial/proposals/proposal-create.page.spec.ts` — PASS, 15/15 (hotfix)
+- [x] Frontend Prettier + ESLint on changed files — PASS
+- [x] `cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit` — PASS
+- [x] `cd backend && pnpm test:e2e test/e2e/document-templates-build.e2e-spec.ts` — PASS, 10/10
 - [x] `git diff --check` — PASS
 
 ## Executor report (auto)
 
-- Implementation commit: `f5e0f401` (`Polish Create KP flyouts and sync table controls`), pushed to `origin/main`.
-- Selected templates now load their template blocks and actual live line-items TableTemplate columns; explicit `kpLineItems`/`line-items` wins, otherwise exactly one live table is used.
+- Base implementation: `f5e0f401`; hotfix: `272550ab` (`Fix KP table rail target binding for multi-table templates`), both pushed to `origin/main`.
+- Selected templates now load every live TableTemplate target; explicit `kpLineItems`/`line-items` wins by default, otherwise the Table rail exposes the live-table list instead of falling into DEFAULT_KP.
+- Hotfix root cause: the FE previously loaded only one implicit target and sent DEFAULT_KP keys; the BE could not identify the user-selected table. `tableTargetId` now selects the chosen live table and its real columns for request-only A4 rendering.
 - `kpTableLayout` carries the real keys/labels; DEFAULT_KP is only a safe fallback when no target table is discoverable.
 - Table controls use horizontal `←`/`→` and `Видна`/`Скрыта`; the last visible column is protected; changes rebuild request-only `tableLayout` and never PATCH the shared template.
 - Right rail is split into mutually exclusive Параметры and Таблица tools; CTA is PiButton «Открыть шаблон таблицы».

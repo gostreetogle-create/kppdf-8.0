@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:01:50Z · TZ-SALES-332 HOTFIX READY FOR REVIEW
+- Root cause: multi-table templates without `kpLineItems` fell back to DEFAULT_KP in the FE; panel labels and A4 target diverged, so hide/reorder were no-ops on the intended table.
+- Hotfix: Table rail lists live tables, loads selected TableTemplate columns, and sends request-only `tableTargetId`; BE applies layout only to the selected live table.
+- Implementation: `f5e0f401` + hotfix `272550ab`, pushed to `origin/main`.
+- Gates: frontend/backend tsc PASS; proposal-create Jest 15/15; document-build e2e 10/10; Prettier/ESLint PASS; diff-check PASS.
+- Marker/checklist: `tasks/_active/TZ-SALES-332.md` / `docs/agent-checklists/TZ-SALES-332.md`; archive blocked only by Cursor/PO visual PASS.
+- NEXT: PO visual on multi-table/no-explicit template → archive/lock/remove `_active`. Deploy: NO
+
 ## Checkpoint 2026-08-09T15:35:06Z · TZ-SALES-331 DONE / Cursor-PO visual PASS
 - DONE: Create КП markup, VAT-inclusive whole-deal footer, and request-only effective prices accepted by PO.
 - Feature commit: `25512c2a`; closeout commit pending; archive `tasks/_archive/2026-08/TZ-SALES-331.done.md`; lock recorded; `_active/TZ-SALES-331.md` removed.
