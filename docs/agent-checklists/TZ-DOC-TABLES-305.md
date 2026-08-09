@@ -1,14 +1,14 @@
 # TZ-DOC-TABLES-305 checklist
 
-> Status: **BLOCKED — ждёт visual PO**
-> TZ: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`
-> Marker: `tasks/_active/TZ-DOC-TABLES-305.md`
+> Status: **DONE**
+> Marker: `tasks/_archive/2026-08/TZ-DOC-TABLES-305.done.md`
+> Closeout: visual PO PASS; archive/lock/checkpoint completed
 
 ## Claim slot
 
-- agent_id: agent-ccee39fec2
-- claimed_at: 2026-08-09T03:41:19Z
-- workspace: D:\kppdf-8.0
+- agent_id: `agent-ccee39fec2`
+- claimed_at: `2026-08-09T03:41:19Z`
+- workspace: `D:\kppdf-8.0`
 - team_room_claim: unavailable (Unknown task: TZ-DOC-TABLES-305)
 
 ## Conflict keys
@@ -23,28 +23,26 @@
 ## Preflight
 
 - [x] Get-Location + git rev-parse → D:\kppdf-8.0
-- [x] Base synchronized to `origin/main` b5ff7f3f before product edits
-- [x] `_active-map` reviewed: no conflict with DOC-344 builder, SALES-317 proposals, or DOC-342 backend upload
-- [x] `_active/` reviewed: only peer DOC-343 marker remains locally; no overlapping keys
-- [x] Claim slot filled before product code
+- [x] Base synchronized to canonical `origin/main` before product edits.
+- [x] `_active-map` and `_active/` reviewed; no conflicting DOC-344/Sales/DOC-342 scope was mixed.
+- [x] Claim slot filled before product code.
 
 ## Acceptance
 
-- [x] Category chips → overflow-select «Тип» (enum preserved)
-- [x] Source fields: multi overflow overlay (tall, search ≥10), no 100px scroll box
-- [x] Settings one dense row (name/desc/type/order/active)
-- [x] Column header slightly taller
-- [x] Jest dialog (+ overflow-select if extended)
-- [x] tables.page.md (+ ui-overflow-select.md if multi)
-- [x] tsc + tests PASS
+- [x] Category chips → overflow-select «Тип» with enum preserved.
+- [x] Source fields use a tall multi overflow overlay with search and no 100px scroll box.
+- [x] Settings use one dense row for name/description/type/order/active.
+- [x] Column header is slightly taller.
+- [x] Focused tests, typecheck, lint, formatting, and diff-check PASS.
+- [x] PO visual PASS: «Тип» overflow and multi-fields controls work; layout polish/preview is successor TZ-308, not a blocker.
 
-## Plan
+## Integrity slot
 
-1. Inspect existing dialog and overflow-select APIs/tests.
-2. Extend the shared overflow select only as needed for multi-selection.
-3. Rebuild the dialog settings and source-field controls within the listed keys.
-4. Update focused Jest coverage and page documentation.
-5. Run the required frontend typecheck/tests/lint and review the scoped diff.
+- Тип изменения: module + page UI.
+- FIC §A–E: PASS / N/A where not applicable; no new route or permission surface.
+- Page docs and UI overflow docs updated in implementation scope.
+- Foreign WIP and conflict keys excluded from closeout commit.
+- Canon: `docs/DOCS-INTEGRITY.md`.
 
 ## Gates (факт)
 
@@ -53,19 +51,26 @@
 - Focused ESLint: PASS.
 - Focused Prettier check: PASS.
 - `git diff --check`: PASS.
-- Browser/PO visual review: BLOCKED — Preview registration is unavailable in this SDK session; no visual PASS claimed.
+- PO visual PASS: «Тип» overflow + multi-поля работают.
 
 ## Executor report (auto)
 
-- Compact settings row now contains name, description, enum «Тип», order, and active switch.
+- Compact settings row contains name, description, enum «Тип», order, and active switch.
 - Category chips and the legacy 100px field scroll-box were removed.
 - `PiOverflowSelect` gained multi-selection, checkbox state, metadata, tall overlay, and existing auto-search behavior.
-- Registry fields use the multi-overflow contract and still synchronize selected columns.
+- Registry fields use the multi-overflow contract and synchronize selected columns.
 - Column header vertical padding increased modestly.
-- Documentation and focused Jest coverage updated.
-- Forbidden DOC-344, SALES-317, and DOC-342 backend scopes were not touched.
-- Cursor PASS: typecheck, focused tests, lint, formatting, and diff review.
-- Failure reason: the running Angular server built successfully on port 4300, but `register_preview` rejected the URL/PID source, so the dialog could not be inspected visually here.
-- Visual status: **ждёт visual PO**; no explicit Cursor/PO PASS is recorded, so 305 remains active and is not archived.
-- Partial progress: implementation and all automated gates are complete; no archive marker or lock was created.
-- Next steps: Cursor/PO visual review of `/doc-constructor/tables`; if PASS, archive with `ARCHIVE_MARKER`, create the lock, update status/checkpoint, then finish closeout commit/push.
+- Documentation and focused Jest coverage were updated.
+- Scope guard: DOC-343 dirty `document-template.service.ts`, DOC-344, Sales, DOC-342 backend, 307 preset, and deploy were not included.
+- Known limitation: dialog/preview alignment polish and preview/skeleton lower area belong to TZ-DOC-TABLES-308.
+
+## Review handoff
+
+- [x] READY FOR REVIEW gates completed.
+- [x] PO visual PASS received for the implemented controls.
+
+## Closeout
+
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: `2026-08-09T14:30:45Z`

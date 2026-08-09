@@ -1,0 +1,6 @@
+TZ-DOC-TABLES-305
+status=DONE
+closed_at=2026-08-09T14:30:45Z
+scope=compact table dialog settings and multi-field overflow selection
+visual=PO PASS (Тип overflow + multi-поля)
+known_limit=dialog alignment/preview polish belongs to TZ-DOC-TABLES-308

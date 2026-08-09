@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:30:45Z · TZ-DOC-TABLES-305 DONE / PO visual PASS
+- DONE: table dialog compact settings + Тип overflow + multi-fields controls accepted by PO.
+- Gates: frontend tsc PASS; focused table-template-dialog + overflow-select 2 suites / 49 tests; ESLint PASS; Prettier PASS; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-TABLES-305.done.md`; lock recorded; `_active/TZ-DOC-TABLES-305.md` removed.
+- Known limit: dialog alignment/preview polish is TZ-DOC-TABLES-308, not a blocker for 305.
+- Foreign DOC-343 dirty WIP, 307 preset, Sales, and deploy untouched.
+- NEXT: claim TZ-DOC-TABLES-306; Deploy: NO
+
+
 ## Checkpoint 2026-08-09 · WAVE-TABLES-TODAY CONTINUOUS READY
 - One queue: 305 closeout → 306 → 308 → 307 → 330 → 331.
 - Wave: `tasks/_backlog/doc-tables/WAVE-TABLES-TODAY-CONTINUOUS.md`

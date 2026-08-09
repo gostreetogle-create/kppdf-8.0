@@ -6,6 +6,15 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-308.done.md`; lock создан.
 **NEXT:** idle; successor P2 — авто-drift gate routes↔page.md; deploy НЕ.
 
+## [2026-08-09T14:30:45Z] — TZ-DOC-TABLES-305 DONE: PO visual closeout
+**Исполнитель:** agent-ccee39fec2
+**Статус:** DONE; PO visual PASS; archive + lock; deploy НЕ
+**Что:** Table dialog compact settings, enum «Тип» overflow, multi-field overlay with search, and taller column headers. Preview/alignment polish remains TZ-DOC-TABLES-308.
+**Gates:** frontend tsc PASS; focused table-template-dialog + overflow-select 2 suites / 49 tests; ESLint PASS; Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-305.done.md`; lock created; `_active/TZ-DOC-TABLES-305.md` removed.
+**Scope:** DOC-343 dirty WIP, 307 preset, Sales, and deploy untouched.
+**NEXT:** TZ-DOC-TABLES-306. Deploy НЕ.
+
 ## [2026-08-09T14:10:00Z] — TZ-OPS-307 DONE: page.md stubs design/shipping + README hygiene (WAVE CLOSED)
 **Исполнитель:** buffy-ops-307 · WAVE-PAGE-DOCS-GAPS #3 (последняя)
 **Статус:** DONE; docs-only; deploy НЕ
