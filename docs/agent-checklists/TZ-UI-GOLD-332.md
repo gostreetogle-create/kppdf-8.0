@@ -3,7 +3,7 @@
 > Status: **DONE (scoped acceptance)**
 > TZ: `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md`
 > Prompt: `tasks/prompts/TZ-UI-GOLD-332-PROMPT.md`
-> Commit: `237449e1` · push: **yes** (final checkpoint pending)
+> Commits: `237449e1`, `dc5cc145` · push: **yes**
 
 ## Claim slot
 
@@ -58,4 +58,4 @@ The requested three page replacements and the extra warning text in `product-bom
 - [x] `.mimocode/locks/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.lock`
 - [x] `tasks/_archive/2026-08/TZ-UI-GOLD-332.done.md`
 - [x] remove `tasks/_active/TZ-UI-GOLD-332.md`
-- [x] implementation commit + push; final checkpoint commit pending
+- [x] implementation and final checkpoint commits + push
