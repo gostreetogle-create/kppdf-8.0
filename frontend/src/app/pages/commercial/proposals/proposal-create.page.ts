@@ -32,7 +32,6 @@ import { ProposalCreateTemplateCenterComponent } from './proposal-create-templat
   ],
   template: `
     <app-pi-group-workspace
-      pathLabel="Сделки"
       [toc]="dealsToc"
       tocActiveId="proposals"
       [chips]="kpSectionChips"

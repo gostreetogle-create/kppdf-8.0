@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormArray, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormGroup,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
@@ -48,7 +54,7 @@ export interface ProposalFamilyAttachDialogData {
         </p>
 
         <div formArrayName="rows" class="space-y-2">
-          @for (row of rows.controls; track $index; let i = $index) {
+          @for (_ of rows.controls; track $index; let i = $index) {
             <div
               [formGroupName]="i"
               class="grid grid-cols-12 gap-2 items-end hairline rounded-sm p-2"
@@ -58,7 +64,7 @@ export interface ProposalFamilyAttachDialogData {
                 <app-pi-form-field label="Фирма (бланк)" [htmlFor]="'fa-org-' + i">
                   <app-pi-overflow-select
                     [items]="organizationItems()"
-                    [value]="row.controls.organizationId.value"
+                    [value]="rowGroup(i).controls['organizationId'].value"
                     (valueChange)="onOrgChange(i, $event)"
                     searchable="auto"
                     placeholder="— выберите —"
@@ -80,7 +86,7 @@ export interface ProposalFamilyAttachDialogData {
               <div class="col-span-6 sm:col-span-3">
                 <p class="eyebrow m-0 mb-1">оценка</p>
                 <p class="text-sm font-mono m-0" [attr.data-test]="'fa-estimate-' + i">
-                  {{ formatEstimate(row.controls.orgMarkupPercent.value) }}
+                  {{ formatEstimate(rowGroup(i).controls['orgMarkupPercent'].value) }}
                 </p>
               </div>
               <div class="col-span-2 sm:col-span-1 flex justify-end">
@@ -147,6 +153,11 @@ export class ProposalFamilyAttachDialogComponent {
 
   get rows(): FormArray {
     return this.form.controls.rows;
+  }
+
+  /** Typed access for strict template checks (AbstractControl has no `.controls`). */
+  protected rowGroup(index: number): FormGroup {
+    return this.rows.at(index) as FormGroup;
   }
 
   protected readonly organizationItems = computed(() =>

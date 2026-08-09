@@ -134,7 +134,6 @@ function counterpartyIdOf(row: Proposal): string {
   ],
   template: `
     <app-pi-group-workspace
-      pathLabel="Сделки"
       [toc]="dealsToc"
       tocActiveId="proposals"
       [chips]="kpSectionChips"
