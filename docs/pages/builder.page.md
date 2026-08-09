@@ -61,7 +61,7 @@ App layout: **denseMain** — без `pt-page-y` и без site footer (flush п
 | POST | `/api/document-templates` | Создать шаблон |
 | DELETE | `/api/document-templates/:id` | Удалить шаблон |
 | POST | `/api/document-templates/:id/duplicate` | Дублировать |
-| POST | `/api/document-templates/:id/upload-background` | Загрузить фон |
+| POST | `/api/document-templates/:id/upload-background` | Фон: только png\|jpeg\|webp ≤5MB, max 5; без поля `file` → **400** (не 500) |
 | POST | `/api/document-templates/:id/remove-background` | Удалить фон |
 | POST | `/api/document-templates/:id/set-default-background` | Установить фон по умолчанию |
 

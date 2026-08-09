@@ -89,6 +89,11 @@ export class TemplateBlockController {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException(
+        'Файл не получен. Выберите PNG, JPEG или WebP (поле «file»).',
+      );
+    }
     return this.service.uploadImage(id, file);
   }
 

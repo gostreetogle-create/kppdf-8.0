@@ -185,6 +185,11 @@ export class DocumentTemplateController {
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ url: string; backgroundImage: string[] }> {
+    if (!file) {
+      throw new BadRequestException(
+        'Файл не получен. Выберите PNG, JPEG или WebP (поле «file»).',
+      );
+    }
     const url = await this.service.uploadBackground(id, file);
     const template = await this.service.findById(id);
     return { url, backgroundImage: template.backgroundImage };

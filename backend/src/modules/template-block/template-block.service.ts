@@ -289,6 +289,12 @@ export class TemplateBlockService {
    * already expects. main.ts `useStaticAssets` serves `/uploads/*`.
    */
   async uploadImage(id: string, file: Express.Multer.File): Promise<{ url: string }> {
+    if (!file) {
+      throw new BadRequestException(
+        'Файл не получен. Выберите PNG, JPEG или WebP (поле «file»).',
+      );
+    }
+
     const doc = await this.findById(id);
 
     const ext = TemplateBlockService.MIME_TO_EXT[file.mimetype];

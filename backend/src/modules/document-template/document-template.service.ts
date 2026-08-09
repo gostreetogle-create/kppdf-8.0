@@ -1176,6 +1176,12 @@ export class DocumentTemplateService {
     id: string,
     file: Express.Multer.File,
   ): Promise<string> {
+    if (!file) {
+      throw new BadRequestException(
+        'Файл не получен. Выберите PNG, JPEG или WebP (поле «file»).',
+      );
+    }
+
     const doc = await this.findById(id);
 
     if ((doc.backgroundImage?.length ?? 0) >= DocumentTemplateService.MAX_BACKGROUND_IMAGES) {

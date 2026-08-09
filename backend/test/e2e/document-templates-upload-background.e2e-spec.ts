@@ -3,6 +3,7 @@
  *
  * Coverage:
  *  - POST /api/document-templates/:id/upload-background with valid PNG → 201 + URL
+ *  - POST without multipart `file` → 400 (not 500) — TZ-DOC-342
  *  - URL matches /uploads/document-templates/{id}/{uuid}.{ext}
  *  - backgroundImage array contains the new URL
  *  - POST with invalid MIME (text/plain) → 400 (fileFilter rejects)
@@ -83,6 +84,19 @@ describe('DocumentTemplates upload-background (e2e)', () => {
         .catch(() => undefined);
     }
     await ctx.cleanup();
+  });
+
+  it('POST upload-background without file field → 400 (not 500)', async () => {
+    const templateId = await createTestTemplate(app, auth, 'Missing File Upload Test');
+    createdTemplates.push(templateId);
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/upload-background`)
+      .set(auth)
+      .field('notFile', 'x');
+    expect(res.status).toBe(400);
+    const message = String(res.body?.message ?? '');
+    expect(message).toContain('Файл не получен');
   });
 
   it('POST upload-background with valid PNG → 201 + URL in backgroundImage', async () => {

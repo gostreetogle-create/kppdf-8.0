@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:28:00Z · TZ-DOC-342 DONE
+- DONE: missing multipart `file` → 400 RU for document-template background and template-block image; valid PNG remains 201
+- Gates: backend tsc PASS · upload-background e2e 6/6 PASS · diff-check PASS
+- Archive: `tasks/_archive/2026-08/TZ-DOC-342.done.md`
+- Lock: `.mimocode/locks/TZ-DOC-342-upload-background-null-file-400.lock`
+- _active/: TZ-DOC-343 · TZ-SALES-317 (peers; untouched)
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:22:33Z · TZ-DOC-343 DONE
 - DONE: Mode B create-parity (name/category/pageSize/orientation + BE orientation in update)
 - Gates: BE/FE tsc PASS · builder-inspector 16/16

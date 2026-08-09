@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Doc Tables wave DONE; 320 PARKED; deploy НЕ запускать
+**Phase:** TZ-DOC-342 DONE; Doc Tables wave DONE; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-DOC-342 DONE: upload-background missing file → 400
+**Статус:** DONE on main; deploy НЕ
+**Что:** Multipart upload без `file` возвращает RU 400 вместо 500 для document-template background и template-block image; валидный PNG остаётся 201.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-342.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-342-upload-background-null-file-400.lock`
+**Gates:** backend tsc PASS; upload-background e2e 6/6 PASS; `git diff --check` PASS; Cursor/PO evidence PASS.
+**NEXT:** idle; TZ-SALES-317 остаётся на visual PO; deploy только по явной команде.
 
 ## [2026-08-09] — TZ-DOC-TABLES-304 DONE: Registry schema auto-sync
 **Статус:** DONE on main; deploy НЕ

@@ -1,3 +1,12 @@
+## [2026-08-09] — TZ-DOC-342 DONE: upload-background missing file → 400
+**Исполнитель:** Buffy closeout / agent-ccee39fec2
+**Статус:** DONE; archive + lock created; deploy НЕ
+**Что:** Multipart upload без поля `file` теперь возвращает понятный RU 400 для document-template background и template-block image; валидный PNG остаётся 201.
+**Gates:** backend tsc PASS; document-templates-upload-background e2e 6/6 PASS; diff-check PASS; Cursor/PO evidence PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-342.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-342-upload-background-null-file-400.lock`
+**NEXT:** idle; TZ-SALES-317 остаётся на visual PO; deploy только по явной команде.
+
 ## [2026-08-09] — TZ-DOC-TABLES-304 DONE: Registry schema auto-sync
 **Исполнитель:** buffy-doc-tables-304
 **Статус:** DONE; archive + lock created; deploy НЕ
