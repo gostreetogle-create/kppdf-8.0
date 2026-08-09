@@ -1,6 +1,6 @@
 # WAVE-KP-VITRINE — Создать КП / Все КП (слои)
 
-**STATUS:** READY — #1–#5 DONE; next #6–7 (315→316); 320 PARKED
+**STATUS:** DONE fill #1–#7 (310–316); **320 PARKED** — await PO unpark; offer deploy
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO

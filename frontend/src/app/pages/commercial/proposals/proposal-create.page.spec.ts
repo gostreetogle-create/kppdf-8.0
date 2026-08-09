@@ -10,9 +10,11 @@ import { ProposalCreatePage } from './proposal-create.page';
 import { AuthService } from '../../../core/auth.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
 import { ProductsService } from '../../../shared/services/products.service';
+import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 
-describe('ProposalCreatePage (TZ-SALES-314)', () => {
+describe('ProposalCreatePage (TZ-SALES-314…316)', () => {
   let fixture: ComponentFixture<ProposalCreatePage>;
 
   beforeEach(async () => {
@@ -51,6 +53,46 @@ describe('ProposalCreatePage (TZ-SALES-314)', () => {
               }),
           },
         },
+        {
+          provide: OrganizationsService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: { items: [{ _id: 'org-1', name: 'ООО Альфа' }], total: 1 },
+              }),
+          },
+        },
+        {
+          provide: DocumentTemplatesService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    {
+                      _id: 'tpl-1',
+                      name: 'КП стандарт',
+                      description: 'Базовый бланк',
+                      tags: [],
+                      organizationId: 'org-1',
+                      docTypeId: 'dt-1',
+                      isDefault: true,
+                      isActive: true,
+                      pageSize: 'A4',
+                      backgroundImage: [],
+                      defaultBackgroundIndex: 0,
+                      backgroundOpacity: 1,
+                      orientation: 'portrait',
+                      version: 1,
+                    },
+                  ],
+                  total: 1,
+                },
+              }),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -80,11 +122,23 @@ describe('ProposalCreatePage (TZ-SALES-314)', () => {
 
     expect(page.draftLines().length).toBe(1);
     expect(page.draftLines()[0].productName).toBe('Стенд');
-    expect(fixture.debugElement.query(By.css('[data-test="kp-create-draft-lines"]'))).toBeTruthy();
   });
 
   it('renders the product rail search control', () => {
     expect(fixture.debugElement.query(By.css('[data-test="kp-product-rail"]'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('[data-test="kp-rail-search"]'))).toBeTruthy();
+  });
+
+  it('renders the inspector with estimate hint (SALES-315)', () => {
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-inspector"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-insp-estimate"]'))).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('оценка');
+  });
+
+  it('renders template center (SALES-316)', () => {
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-create-template-center"]')),
+    ).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-select"]'))).toBeTruthy();
   });
 });

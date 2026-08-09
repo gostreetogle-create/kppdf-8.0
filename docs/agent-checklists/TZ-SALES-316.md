@@ -1,14 +1,9 @@
 ﻿# TZ-SALES-316 checklist
-
-> Status: **READY (deps)** · Wave: KP-VITRINE
-> Source: `tasks/_backlog/kp-vitrine/` (TZ-SALES-316*)
-
-## Claim slot
-- agent_id:
-- claimed_at:
-- workspace:
-
-## Acceptance
-- [ ] TZ AC
-- [ ] Gates PASS
-- [ ] Archive + commit/push
+> Status: **DONE**
+- agent_id: agent-3e757640b7
+- claimed_at: 2026-08-09T03:42:00Z
+- closed_at: 2026-08-09T03:50:00Z
+- [x] Template visible in center
+- [x] Deep-link builder
+- [x] FE tsc + test
+- [x] Archive; 320 remains PARK

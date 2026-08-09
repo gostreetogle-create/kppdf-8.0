@@ -1,3 +1,23 @@
+## [2026-08-09] — TZ-SALES-316 DONE: Create KP template center
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #7
+**Статус:** DONE; deploy НЕ
+**Что:** Центр Создать КП — выбор DocumentTemplate, A4 preview zone, deep-link в builder. Печать 320 остаётся PARKED.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-316.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-316-create-kp-template-center.lock`
+**Gates:** FE tsc PASS; Jest 5/5 PASS.
+**NEXT:** idle — WAVE fill done; ждать PO unpark 320; можно предложить деплой.
+
+## [2026-08-09] — TZ-SALES-315 DONE: Create KP right inspector
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #6
+**Статус:** DONE; deploy НЕ
+**Что:** Правая панель Создать КП: Organization, % наценки, оценка суммы (UI), deep-link в организации.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-315.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-315-create-kp-inspector.lock`
+**Gates:** FE tsc PASS; Jest 4/4 PASS.
+**NEXT:** TZ-SALES-316 template center.
+
 ## [2026-08-09] — TZ-SALES-314 DONE: Create KP left product rail
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #5

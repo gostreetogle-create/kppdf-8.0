@@ -1,0 +1,9 @@
+TZ: TZ-SALES-316
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T03:42:00Z
+CLOSED_AT: 2026-08-09T03:50:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Create KP template select + preview + builder deep-link.
+GATES: FE tsc PASS; Jest 5/5 PASS.
+BAN: embedded builder, print 320, deploy.

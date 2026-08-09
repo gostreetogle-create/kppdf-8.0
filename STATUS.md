@@ -1,7 +1,23 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** KP vitrine — SALES-310…314 DONE; next 315→316; 320 PARKED; deploy not run
+**Phase:** KP vitrine 310–316 DONE; 320 PARKED; READY queue idle — offer deploy, do not run
+
+## [2026-08-09] — TZ-SALES-316 DONE: Create KP template center
+**Статус:** DONE on main; deploy НЕ
+**Что:** Template select + preview + builder deep-link на `/proposals/create`.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-316.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-316-create-kp-template-center.lock`
+**Gates:** FE tsc PASS; Jest 5/5 PASS.
+**Wave:** WAVE-KP-VITRINE fill DONE except 320 PARK; NEXT idle; Deploy предложить? да.
+
+## [2026-08-09] — TZ-SALES-315 DONE: Create KP right inspector
+**Статус:** DONE on main; deploy НЕ
+**Что:** Правая панель: Organization, %, оценка UI, deep-link org.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-315.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-315-create-kp-inspector.lock`
+**Gates:** FE tsc PASS; Jest PASS.
+**Wave:** #6 DONE.
 
 ## [2026-08-09] — TZ-SALES-314 DONE: Create KP left product rail
 **Статус:** DONE on main; deploy НЕ
@@ -9,7 +25,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-314.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-314-create-kp-product-rail.lock`
 **Gates:** FE tsc PASS; Jest 3/3 PASS.
-**Wave:** #5 DONE; NEXT TZ-SALES-315; deploy НЕ.
+**Wave:** #5 DONE; NEXT TZ-SALES-315 (now DONE); deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand
 **Статус:** DONE on main; deploy НЕ

@@ -11,9 +11,11 @@ import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspa
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
+import { ProposalCreateInspectorComponent } from './proposal-create-inspector.component';
+import { ProposalCreateTemplateCenterComponent } from './proposal-create-template-center.component';
 
 /**
- * Create-KP studio (TZ-SALES-312 shell + TZ-SALES-314 product rail).
+ * Create-KP studio (TZ-SALES-312…316).
  *
  * Draft lines are in-memory until a later save TZ; no quotation PATCH here.
  */
@@ -21,7 +23,13 @@ import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-prod
   selector: 'app-proposal-create-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, ButtonComponent, ProposalProductRailComponent],
+  imports: [
+    PiGroupWorkspaceComponent,
+    ButtonComponent,
+    ProposalProductRailComponent,
+    ProposalCreateInspectorComponent,
+    ProposalCreateTemplateCenterComponent,
+  ],
   template: `
     <app-pi-group-workspace
       pathLabel="Сделки"
@@ -80,23 +88,8 @@ import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-prod
             data-test="kp-create-center"
             aria-labelledby="proposal-create-title"
           >
-            <div class="kp-create-studio__sheet" data-test="kp-create-sheet">
-              <h2 class="kp-create-studio__zone-title">Превью КП</h2>
-              @if (draftLines().length === 0) {
-                <p class="kp-create-studio__empty" data-test="kp-create-center-empty">
-                  Выберите шаблон КП или добавьте позиции слева
-                </p>
-              } @else {
-                <ul class="kp-create-studio__draft" data-test="kp-create-draft-lines">
-                  @for (line of draftLines(); track $index) {
-                    <li>
-                      {{ line.productName }}
-                      · qty {{ line.quantity }} · {{ line.unitPrice }} ₽
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
+            <h2 class="kp-create-studio__zone-title">Превью КП</h2>
+            <app-proposal-create-template-center [draftLines]="draftLines()" />
           </section>
 
           <aside
@@ -107,9 +100,7 @@ import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-prod
             aria-label="Параметры"
           >
             <h2 class="kp-create-studio__zone-title">Параметры</h2>
-            <p class="kp-create-studio__empty" data-test="kp-create-right-empty">
-              Укажите нашу фирму (бланк) и наценку
-            </p>
+            <app-proposal-create-inspector [draftLines]="draftLines()" />
           </aside>
         </div>
       </div>

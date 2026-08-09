@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:50:00Z · WAVE-KP-VITRINE fill DONE (310–316)
+- DONE: TZ-SALES-310…316 — Deals chrome, create studio (rail/inspector/template), All-KP family expand. Print **320 PARKED**.
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-320 PARKED (await PO unpark)
+- NEXT: idle
+- HEAD: (pending this push) pushed: yes (`origin/main`)
+- Blockers: none for wave fill; peer UX-315 WIP left uncommitted outside this closeout
+- _active/: empty
+- Deploy: предложить? **да** (без запуска)
+
 ## Checkpoint 2026-08-09T02:13:01Z · TZ-UX-315 DONE
 - DONE: TZ-UX-315 — hide `pathLabel` eyebrow in PiGroupWorkspace; dense chrome under top nav; jest 5/5; safe page attrs stripped (proposals* left for peer)
 - IN PROGRESS: none (peer TZ-SALES-314 already DONE per prior checkpoint)

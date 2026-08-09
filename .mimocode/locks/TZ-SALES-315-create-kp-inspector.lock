@@ -1,0 +1,9 @@
+TZ: TZ-SALES-315
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T03:30:00Z
+CLOSED_AT: 2026-08-09T03:40:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Create KP right inspector org/%/estimate.
+GATES: FE tsc PASS; Jest 4/4 PASS.
+BAN: schema org markup, print, deploy, peer UX-315 WIP.
