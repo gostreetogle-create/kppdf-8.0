@@ -46,8 +46,8 @@
 | `/shipping` | **NO** | stub (TZ-NAV-301) |
 | `/dictionaries/measurements` | yes — `measurements-group` | `/dictionaries/units` legacy → redirect |
 | `/categories` | yes — `categories` | |
-| `/doc-template-categories` | **NO** | справочник категорий шаблонов (TZ-DOC-308) |
-| `/dictionaries/text-block-categories` | **NO** | категории текстовых блоков (TZ-DOC-334) |
+| `/doc-template-categories` | yes — `document-template-categories` | справочник категорий шаблонов (TZ-DOC-308) |
+| `/dictionaries/text-block-categories` | yes — `text-block-categories` | категории текстовых блоков (TZ-DOC-334) |
 | `/dictionaries/color-references` | yes — `color-references` | |
 | `/dictionaries/form-profiles` | yes — `form-profiles` | |
 | `/catalog/appearance` | yes — `catalog-appearance` | |
@@ -71,8 +71,7 @@
 | `/warehouses` | yes — `warehouses` | |
 | `/admin/users`, `/admin/roles` | **NO** | admin registry/roles; `/admin` → redirect |
 
-**Итог:** 36 бизнес-routes; **6 без page.md** → `/design`, `/shipping`, `/doc-template-categories`,
-`/dictionaries/text-block-categories`, `/admin/users`, `/admin/roles`.
+**Итог:** 36 бизнес-routes; **4 без page.md** → `/design`, `/shipping`, `/admin/users`, `/admin/roles` (OPS-307).
 
 > Successor hint: TZ-OPS-305+ или точечные DOC/PAGE TZ на missing page.md
 > (P1 сначала user-facing READY sections — admin/roles, doc-template-categories; stubs design/shipping — P2).

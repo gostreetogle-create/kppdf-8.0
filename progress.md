@@ -1,3 +1,12 @@
+## [2026-08-09T13:52:00Z] — TZ-OPS-305 DONE: page.md doc-template-categories + text-block-categories
+**Исполнитель:** buffy-ops-305 · WAVE-PAGE-DOCS-GAPS #1
+**Статус:** DONE; docs-only; deploy НЕ
+**Что:** Созданы `docs/pages/document-template-categories.page.md` (88 строк ≤120) и `text-block-categories.page.md` (93 ≤120) — route/chips, API `/document-template-categories` и `/text-block-categories`, dialogs, services (кэш activeOnly-каталога), signals, TZ-DOC-308/316/334/DICT-307/310, «системные» isSystem не edit/delete.
+**Wiring:** README строки 12a/12b (счётчик 22→24); PAGE-TZ-INDEX OPS-305 DONE; DOMAIN-MAP gap NO→yes ×2, итог 6→4.
+**Gates:** Test-Path оба True; page.md ≤120 PASS; diff без frontend/backend/desktop PASS; чужой WIP не тронут.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-305.done.md`; lock создан.
+**NEXT:** TZ-OPS-306 (admin users/roles) — строго по очереди; deploy НЕ.
+
 ## [2026-08-09T13:40:00Z] — TZ-OPS-304 DONE: Domain Canon Map + gap inventory
 **Исполнитель:** buffy-ops-304 · WAVE-PROJECT-KNOWLEDGE #3 (последняя)
 **Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ
@@ -5,6 +14,15 @@
 **Gates:** DOMAIN-MAP 84 ≤180 PASS; rg DOMAIN-MAP в 3 файлах PASS; `git diff --name-only` без frontend/backend PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-304.done.md`; `_active` удалён.
 **NEXT:** idle — волна WAVE-PROJECT-KNOWLEDGE (302→303→304) ЗАКРЫТА; successors = missing page.md по gap-таблице (отдельные TZ, не эта волна); deploy НЕ.
+
+## [2026-08-09T13:15:28Z] — TZ-SALES-328 READY FOR REVIEW: shop-витрина
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual Cursor/PO PASS обязателен до archive
+**Что:** Create КП product rail заменён на `PiShowcaseCard md` grid с фото/placeholder, search/category filters, API-backed page/limit=12 pagination, `Добавить`, `Редактировать` и `Создать изделие` через существующие ProductForm/QuickCreate dialogs. Add-and-continue и A4 rails|center geometry сохранены.
+**Gates:** frontend tsc PASS; focused rail Jest 4/4 PASS; proposal-create Jest 11/11 PASS; diff-check PASS.
+**Canonical:** `ea4a9ae2`.
+**Scope:** foreign DOC-343 backend/docs WIP preserved/excluded; 325, 322, 320, BuilderCanvas, deploy untouched.
+**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push; deploy НЕ.
 
 ## [2026-08-09T13:20:00Z] — TZ-OPS-303 DONE: Docs Integrity Closeout
 **Исполнитель:** buffy-ops-303 · WAVE-PROJECT-KNOWLEDGE #2
@@ -21,15 +39,6 @@
 **Gates:** rg PROJECT-MEMORY → 3 файла PASS; строк ≤140 PASS; product code не тронут PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-302.done.md`; `_active` удалён.
 **NEXT:** TZ-OPS-303 (Docs Integrity Closeout) — строго по очереди волны; deploy НЕ.
-
-## [2026-08-09T13:15:28Z] — TZ-SALES-328 READY FOR REVIEW: shop-витрина
-**Исполнитель:** agent-6c3d05b80e
-**Статус:** READY FOR REVIEW; visual Cursor/PO PASS обязателен до archive
-**Что:** Create КП product rail заменён на `PiShowcaseCard md` grid с фото/placeholder, search/category filters, API-backed page/limit=12 pagination, `Добавить`, `Редактировать` и `Создать изделие` через существующие ProductForm/QuickCreate dialogs. Add-and-continue и A4 rails|center geometry сохранены.
-**Gates:** frontend tsc PASS; focused rail Jest 4/4 PASS; proposal-create Jest 11/11 PASS; diff-check PASS.
-**Canonical:** `6143447f` on `origin/main`.
-**Scope:** foreign DOC-343 backend/docs WIP preserved/excluded; 325, 322, 320, BuilderCanvas, deploy untouched.
-**NEXT:** Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push; deploy НЕ.
 
 ## [2026-08-09T11:17:19Z] — TZ-SALES-321 + TZ-SALES-319 DONE: KP build-preview fidelity closeout
 **Исполнитель:** agent-ccee39fec2

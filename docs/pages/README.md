@@ -29,6 +29,8 @@
 | 11a | **Measurements group** | `measurements-group.page.md` | `/dictionaries/measurements` | Group Chip Workspace пилот (DICT-308) |
 | 11b | **Units** | `units.page.md` | `/dictionaries/units` | Единицы (legacy shell) |
 | 12 | **Categories** | `categories.page.md` | `/categories` | Категории (tree) |
+| 12a | **Doc-Template Categories** | `document-template-categories.page.md` | `/doc-template-categories` | Категории шаблонов (DOC-308) |
+| 12b | **Text-Block Categories** | `text-block-categories.page.md` | `/dictionaries/text-block-categories` | Категории текстов (DOC-334) |
 | 13 | **Storage Items** | `storage-items.page.md` | `/storage-items` | Предметы хранения |
 | 14 | **Stock Movements** | `stock-movements.page.md` | `/stock-movements` | Движения остатков |
 | 15 | **Documents** | `documents.page.md` | `/doc-constructor/documents` | Сформированные документы |
@@ -40,7 +42,7 @@
 | 21 | **Builder Inspector** | `builder-inspector.page.md` | _дочерний BuilderPage_ | Правая панель: свойства блока |
 | 22 | **Production Cockpit** | `production-cockpit.page.md` | `/production` | Гант план-оценка (PRODUCTION-303) |
 
-> 20 бизнес-страниц + 2 дочерних компонента = 22 документированы.
+> 22 бизнес-страниц + 2 дочерних компонента = 24 документированы.
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
@@ -55,4 +57,4 @@
 
 ---
 
-_Создано: 2026-07-19. Актуально: 22/22 страниц документированы (вкл. Production Cockpit)._
+_Создано: 2026-07-19. Актуально: 24/24 страниц документированы (вкл. Production Cockpit)._

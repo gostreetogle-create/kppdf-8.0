@@ -1,0 +1,6 @@
+TZ-OPS-305
+closed: 2026-08-09
+commit: 9ad9dce8
+zone: page.md doc-template-categories + text-block-categories
+checklist: docs/agent-checklists/TZ-OPS-305.md
+archive: tasks/_archive/2026-08/TZ-OPS-305.done.md
