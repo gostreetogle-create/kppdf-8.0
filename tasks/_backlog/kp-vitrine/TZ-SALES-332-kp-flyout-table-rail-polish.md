@@ -52,10 +52,12 @@ CONFLICT KEYS: frontend/src/app/pages/commercial/proposals/proposal-create.page.
    - CTA: `PiButton` ghost/secondary «Открыть шаблон таблицы» → `/doc-constructor/tables` (+ editId если известен).
    - Left flyouts (Шаблон/Товары): тот же внутренний padding, что справа (паритет).
 
-5. **Витрина не клипается**
+5. **Витрина не клипается + компактный flyout (PO 2026-08-09)**
    - Open Товары → закрыть right flyout **или** max-width products учитывает ширину open right flyout + rails.
    - AC visual: 3 md-карточки читаемы, правый край не режется панелью Параметры/Таблица.
    - Не сжимать A4 center (overlay rule FROZEN).
+   - **Высота flyout = контент**, не на весь экран: `height: auto` / `max-height: min(…, calc(100% - …))`; якорь сверху у rail (или visually у кнопки); длинный контент (витрина) — scroll **внутри** панели, оболочка не растягивается на 100vh зря.
+   - Лёгкая прозрачность панели (лёгкий tint / `color-mix` / низкая opacity фона ~0.92–0.96), чтобы лист «просвечивал»; текст/контролы остаются читаемыми (WCAG). Не делать стекло-кашу.
 
 6. **Tests + docs**
    - FE specs: layout sync; toggle visible → build payload visible:false; left/right reorder.
@@ -88,12 +90,13 @@ known_limitation:
 4. Нет текста «Пресет в Документах»; есть кнопка «Открыть шаблон таблицы».
 5. Витрина товаров не обрезана правой панелью.
 6. Flyout padding/воздух — PO visual PASS (pride).
-7. Gates:
+7. Параметры/Таблица (и короткий left) по высоте ≈ контент, не full-bleed экран; лёгкая прозрачность ок.
+8. Gates:
    ```
    cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
    cd frontend && pnpm test -- --testPathPattern=proposal-create
    ```
    (+ BE tsc/test только если трогали fallback empty-selected).
-8. Executor report (auto); archive после Cursor/PO visual PASS.
+9. Executor report (auto); archive после Cursor/PO visual PASS.
 
 Финализация: `tasks/_archive/2026-08/TZ-SALES-332.done.md`.

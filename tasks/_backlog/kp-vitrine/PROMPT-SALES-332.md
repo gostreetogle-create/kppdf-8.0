@@ -17,6 +17,7 @@ CLAIM первым (до кода):
 - docs/ux/kp-create-studio-spec.md (разморозить Right rail: Параметры+Таблица)
 
 Сделай TZ полностью. Deploy NO.
+Дополнительно (PO): высота flyout ≈ контент (не на весь экран); лёгкая прозрачность фона; витрина со scroll внутри.
 Archive только после Cursor/PO visual PASS.
 Финальный отчёт: SHA + что кликнуть PO на /proposals/create.
 ```
