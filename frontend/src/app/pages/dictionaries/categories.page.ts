@@ -238,7 +238,7 @@ export class CategoriesPage {
   }
   protected typeColor(type: Category['type']): string {
     return type === 'material'
-      ? 'bg-sunrise-warm/20 text-sunrise-warm'
+      ? 'bg-sunrise-warm/20 text-gold-deep'
       : type === 'product'
         ? 'bg-accent-cool/20 text-accent-cool'
         : 'bg-muted-foreground/20 text-muted-foreground';

@@ -1,0 +1,16 @@
+# TZ-UI-GOLD-332 — DONE lock
+TASK: TZ-UI-GOLD-332
+OWNER: agent-3e757640b7
+CLOSED_AT: 2026-08-09
+COMMIT: pending-closeout
+PROTECTED_FILES:
+  - frontend/src/styles.css
+  - frontend/src/app/pages/dictionaries/categories.page.ts
+  - frontend/src/app/pages/products/product-bom-panel.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposals.page.ts
+  - docs/paper-and-ink.md
+SUCCESSOR: TZ-DOC-TABLES-301
+NOTES:
+  - Scoped acceptance and all code gates pass.
+  - Global text-sunrise-warm search retains pre-existing matches outside the explicit file list; separate sweep required.
+  - Browser/PO visual review unavailable; deploy not run.

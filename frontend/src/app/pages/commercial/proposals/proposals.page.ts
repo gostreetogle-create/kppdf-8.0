@@ -72,7 +72,7 @@ const STATUS_CYCLE_INDEX: Record<ProposalStatus, number> = {
 /** Tailwind classes per status for the badge cell. */
 const STATUS_BADGE_CLASS: Record<ProposalStatus, string> = {
   draft: 'bg-paper-2 text-muted-foreground',
-  sent: 'bg-sunrise-warm/20 text-sunrise-warm',
+  sent: 'bg-sunrise-warm/20 text-gold-deep',
   accepted: 'bg-pine/15 text-pine',
   rejected: 'bg-destructive/10 text-destructive',
   converted: 'bg-iris/15 text-iris',

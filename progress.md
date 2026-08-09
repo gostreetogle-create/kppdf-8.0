@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-UI-GOLD-332 DONE: light fill gold + gold-deep line role
+
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE in scoped files; deploy НЕ
+**Что:** Светлое золото заливки синхронизировано между кнопкой/чипами/алиасами; `gold-deep` отделён для focus/border/ring/edit/text ролей; три requested pages and paper-and-ink docs updated.
+**Gates:** baseline/final Jest 136 suites / 1276 tests; FE tsc, changed-file ESLint/Prettier, Angular development build, diff-check — PASS.
+**Known limitation:** global `text-sunrise-warm` search retains 22 existing files outside the explicit TZ file list; do not expand scope without PO.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-GOLD-332.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.lock`
+**NEXT:** TZ-DOC-TABLES-301 READY.
+
 ## [2026-08-09] — TZ-UI-THEME-331 DONE: dark depth + readable gold states
 
 **Исполнитель:** agent-3e757640b7

@@ -1,7 +1,17 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** UI theme 330–331 DONE; TZ-UI-GOLD-332 READY; 320 PARKED; deploy НЕ запускать
+**Phase:** UI theme 330–332 DONE (scoped); Doc Tables 301→304 READY; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-UI-GOLD-332 DONE: light fill gold + gold-deep line role
+**Статус:** DONE on main; deploy НЕ
+**Что:** Разделены роли золота: светлый `gold` для заливок и `gold-deep` для focus/border/ring/edit/text на бумаге; три requested page roles migrated; documentation updated.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-GOLD-332.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.lock`
+**Gates:** FE tsc, changed-file ESLint/Prettier, full Jest baseline/final 136 suites / 1276 tests, Angular development build, diff-check PASS.
+**Known limitation:** global `text-sunrise-warm` search retains pre-existing uses outside the explicit TZ file list; separate sweep required.
+**NEXT:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`.
+
 
 ## [2026-08-09] — TZ-UI-THEME-331 DONE: dark depth + readable gold states
 **Статус:** DONE on main; deploy НЕ

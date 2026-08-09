@@ -145,7 +145,7 @@
   /* Focus-ring (TZ-96: Design Reference alignment).
      2px paper gap + 4px gold ring, identical for every interactive
      control. Gold accent matches design ref's primary action color. */
-  --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-gold);
+  --focus-ring-shadow: 0 0 0 2px var(--color-paper), 0 0 0 4px var(--color-gold-deep);
 
   /* Hover-state tokens for `.pi-icon-btn` (TZ-AUDIT-6).
      Semantic variants (danger / edit / copy / doc) set resting
@@ -176,8 +176,8 @@
   --color-paper-3: var(--color-paper-3-override, oklch(0.905 0.006 260));
   --color-paper-4: var(--color-paper-4-override, oklch(0.878 0.007 260));
 
-  /* === Gold Hover — richer brand gold on light === */
-  --color-gold-hover: oklch(0.62 0.14 86);
+  /* === Gold Hover — на тон темнее светлой базы (обратная связь на нажатие) === */
+  --color-gold-hover: oklch(0.72 0.14 88);
 }
 
 @theme inline {
@@ -205,18 +205,23 @@
   --color-on-gold: oklch(0.2 0.012 260);
   --color-muted: var(--color-muted-override, oklch(0.55 0.012 260));
   --color-destructive: var(--color-destructive-override, oklch(0.47 0.19 25));
-  --color-accent-warm: var(--color-accent-warm-override, oklch(0.7 0.135 86));
+  --color-accent-warm: var(--color-accent-warm-override, oklch(0.79 0.14 88));
   --color-accent-cool: var(--color-accent-cool-override, oklch(0.55 0.12 250));
 
-  /* === Gold accent — real gold on cool paper === */
-  --color-gold: var(--color-gold-override, oklch(0.7 0.135 86));
-  --color-gold-soft: var(--color-gold-soft-override, oklch(0.7 0.135 86 / 0.12));
+  /* === Gold accent — светлое золото ЗАЛИВКИ (кнопка, чип, выделение).
+     Для линий, иконок и золотого текста см. --color-gold-deep ниже. === */
+  --color-gold: var(--color-gold-override, oklch(0.79 0.14 88));
+  --color-gold-soft: var(--color-gold-soft-override, oklch(0.79 0.14 88 / 0.18));
 
-  /* === Sunrise palette (compat → gold) === */
-  --color-sunrise: var(--color-sunrise-override, oklch(0.7 0.135 86));
+  /* Золото ЛИНИИ: focus-ring, акцентная граница, иконка, текст на бумаге.
+     Светлое золото в этих ролях нечитаемо (≈1.6:1), поэтому роль отдельная. */
+  --color-gold-deep: var(--color-gold-deep-override, oklch(0.55 0.13 84));
+
+  /* === Sunrise palette (compat → gold заливки) === */
+  --color-sunrise: var(--color-sunrise-override, oklch(0.79 0.14 88));
   --color-sunrise-soft: var(--color-sunrise-soft-override, oklch(0.95 0.03 86));
-  --color-sunrise-warm: var(--color-sunrise-warm-override, oklch(0.7 0.135 86));
-  --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.78 0.14 86));
+  --color-sunrise-warm: var(--color-sunrise-warm-override, oklch(0.79 0.14 88));
+  --color-sunrise-glow: var(--color-sunrise-glow-override, oklch(0.86 0.13 90));
   --color-sunrise-mist: var(--color-sunrise-mist-override, oklch(0.97 0.02 260));
 
   /* === Surface container hierarchy ===
@@ -491,6 +496,7 @@
       --color-gold-override: oklch(0.84 0.145 86);
       --color-gold-hover: oklch(0.9 0.15 88);
       --color-gold-soft-override: oklch(0.84 0.145 86 / 0.22);
+      --color-gold-deep-override: oklch(0.84 0.145 86);
       --color-accent-warm-override: oklch(0.84 0.145 86);
       --color-accent-cool-override: oklch(0.7 0.05 245);
 
@@ -539,13 +545,13 @@
   .hover\:border-ink:hover,
   .focus\:border-ink:focus,
   .focus-visible\:border-ink:focus-visible {
-    border-color: var(--color-gold);
+    border-color: var(--color-gold-deep);
   }
 
   .ring-ink,
   .focus-visible\:ring-ink:focus-visible,
   .focus\:ring-ink:focus {
-    --tw-ring-color: var(--color-gold);
+    --tw-ring-color: var(--color-gold-deep);
   }
 
   /* Elevated panels — flat tonal lift (marble experiment removed) */
@@ -743,7 +749,7 @@
 /* ---- pi-input modifiers (focus, placeholder) ---- */
 @layer components {
   .pi-input:focus-visible {
-    border-color: var(--color-gold); /* TZ-96: gold accent focus ring per design ref */
+    border-color: var(--color-gold-deep); /* фокус поля — золото линии */
     box-shadow: var(--focus-ring-shadow);
   }
   .pi-input::placeholder {
@@ -768,13 +774,13 @@
     --pi-btn-hover-border: var(--color-destructive);
   }
 
-  /* Edit — brand gold */
+  /* Edit — золото линии (иконка на бумаге), подложка ховера остаётся светлой */
   .pi-icon-btn-edit {
-    color: var(--color-gold);
-    border-color: color-mix(in oklch, var(--color-gold) 45%, var(--color-rule));
+    color: var(--color-gold-deep);
+    border-color: color-mix(in oklch, var(--color-gold-deep) 45%, var(--color-rule));
     --pi-btn-hover-bg: color-mix(in oklch, var(--color-gold) 16%, var(--color-paper));
-    --pi-btn-hover-fg: var(--color-gold);
-    --pi-btn-hover-border: var(--color-gold);
+    --pi-btn-hover-fg: var(--color-gold-deep);
+    --pi-btn-hover-border: var(--color-gold-deep);
   }
 
   /* Copy / duplicate — info blue */
@@ -802,7 +808,7 @@
 
   /* ---- pi-table-row hover (not allowed inside @utility) ---- */
   .pi-table-row:hover {
-    background-color: color-mix(in oklch, var(--color-gold) 8%, transparent);
+    background-color: color-mix(in oklch, var(--color-gold) 10%, transparent);
   }
 
   /* ---- pi-menu-item (TZ-AUDIT-7) — dropdown / context menu row.

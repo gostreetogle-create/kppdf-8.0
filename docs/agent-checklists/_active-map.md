@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:53:59Z · TZ-UI-GOLD-332 DONE (scoped)
+- DONE: TZ-UI-GOLD-332 — light fill gold unified across aliases; `gold-deep` protects focus/border/ring/edit/text roles; docs updated.
+- IN PROGRESS: none
+- NOT DONE: global `text-sunrise-warm` sweep outside the explicit TZ file list; browser/PO visual review
+- NEXT: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-301-documents-toc-tables-subchips.md`
+- HEAD: bf59a0cc before closeout; pushed: no
+- Blockers: global text-token sweep requires separate PO authorization; browser session unavailable
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:46:59Z · TZ-UI-THEME-331 DONE
 - DONE: TZ-UI-THEME-331 — dark surface depth, calibrated dark text, readable `text-on-gold` active states, and theme-aware selection/scrollbar behavior.
 - IN PROGRESS: none

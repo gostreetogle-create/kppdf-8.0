@@ -335,3 +335,17 @@ User's original audit also flagged "small text (футер, подписи) reco
 - ❌ `.pi-corner-marks` (8px L-shapes) → rolled back in TZ-93.1; 1990s terminal aesthetic risk outweighed the architectural benefit.
 
 **See:** `tasks/TZ-93.md` (full adoption matrix), `tasks/TZ-94.md` (component adopters), `tasks/TZ-96.md` (design reference alignment), `/kit/foundations` (Section V showcase).
+
+## Две роли золота (TZ-UI-GOLD-332)
+
+| Роль    | Токен               | Light                 | Где применять                                                                 |
+| ------- | ------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| Заливка | `--color-gold`      | `oklch(0.79 0.14 88)` | фон кнопки, активный чип, `gold-soft` выделение — **только** с `text-on-gold` |
+| Линия   | `--color-gold-deep` | `oklch(0.55 0.13 84)` | focus-ring, акцентная граница, иконка, золотой текст на бумаге                |
+
+Светлое золото как текст или рамка на бумаге даёт ≈1.6:1 — так делать нельзя.
+Тёмное золото как заливка выглядит горчичным — тоже нельзя. Роли не смешивать.
+
+Оттенок заливки — вкусовой параметр PO, правится одной строкой `--color-gold`
+(и теми же значениями у `sunrise` / `sunrise-warm` / `accent-warm`). `gold-deep` при
+этом не трогать.

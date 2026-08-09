@@ -73,7 +73,7 @@ interface LineCostHint {
           </div>
           @if (isComplex()) {
             <span
-              class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-sunrise-warm"
+              class="inline-flex items-center px-2 py-0.5 text-[11px] hairline rounded-sm bg-sunrise-warm/10 text-gold-deep"
               data-test="composition-complex-badge"
               >Комплекс</span
             >
@@ -81,7 +81,7 @@ interface LineCostHint {
         </div>
 
         @if (warning()) {
-          <p class="px-3 py-2 text-xs text-sunrise-warm" role="status">{{ warning() }}</p>
+          <p class="px-3 py-2 text-xs text-gold-deep" role="status">{{ warning() }}</p>
         }
         @if (error()) {
           <p class="px-3 py-2 text-sm text-destructive" role="alert">{{ error() }}</p>
