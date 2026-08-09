@@ -38,9 +38,10 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 ```
 0. docs/how-to-connect-ai.md       ← ПЕРВЫМ: рабочая папка main, запрет .freebuff/worktrees, ритуал старта
 1. docs/AI-AGENT-GUIDE.md          ← Ты здесь. Обязательные паттерны, запреты, ритуалы.
-1a. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
-1b. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
-1c. docs/AUDIT-METHODOLOGY.md      ← Если АУДИТИШЬ домен / миграцию / чужой diff (не реализация)
+1a. docs/PROJECT-MEMORY.md         ← Тонкий склад: где правда, что не потерять (читать до ARCHITECTURE)
+1b. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
+1c. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
+1d. docs/AUDIT-METHODOLOGY.md      ← Если АУДИТИШЬ домен / миграцию / чужой diff (не реализация)
 2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
 3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
 4. STACK.md                         ← Технологический стек (актуален на 2026-07).

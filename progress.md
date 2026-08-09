@@ -1,3 +1,11 @@
+## [2026-08-09T13:05:00Z] — TZ-OPS-302 DONE: Project Memory Pack
+**Исполнитель:** buffy-ops-302 · WAVE-PROJECT-KNOWLEDGE #1
+**Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ
+**Что:** Создан `docs/PROJECT-MEMORY.md` (67 строк ≤140, 6 секций: Зачем / Ритуал 60 сек / Где правда / Не потерять при DONE / Не ломать / Куда идти по задаче) с заглушками DOCS-INTEGRITY (OPS-303) и DOMAIN-MAP (OPS-304). Проводка входа: GUIDE §1.2 шаг 1a до ARCHITECTURE, GEMINI.md после PO-DIARY, how-to-connect-ai п.6 после CLAIM.
+**Gates:** rg PROJECT-MEMORY → 3 файла PASS; строк ≤140 PASS; product code не тронут PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-302.done.md`; `_active` удалён.
+**NEXT:** TZ-OPS-303 (Docs Integrity Closeout) — строго по очереди волны; deploy НЕ.
+
 ## [2026-08-09T13:15:28Z] — TZ-SALES-328 READY FOR REVIEW: shop-витрина
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual Cursor/PO PASS обязателен до archive

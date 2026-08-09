@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T13:05:00Z · TZ-OPS-302 DONE (Project Memory Pack)
+- DONE: `docs/PROJECT-MEMORY.md` created (67 lines ≤140, 6 sections) — thin truth pack for agents.
+- Wiring: GUIDE §1.2 step `1a` (before ARCHITECTURE); GEMINI.md mandatory reading after PO-DIARY; how-to-connect-ai item 6 after CLAIM.
+- Stub refs to DOCS-INTEGRITY (OPS-303) and DOMAIN-MAP (OPS-304) — files NOT created here.
+- Gates: rg PROJECT-MEMORY → 3 files PASS; line count 67 ≤140 PASS; no product code diff PASS.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-302.done.md`; `_active/TZ-OPS-302.md` removed; checklist DONE.
+- Conflict scan: `_active/` = DOC-TABLES-305 (FE) only; 302 docs keys free; no overlap.
+- NEXT: TZ-OPS-303 (Docs Integrity Closeout) — strict queue order; Deploy: NO
+
 ## Checkpoint 2026-08-09T13:15:28Z · TZ-SALES-328 READY FOR REVIEW
 - READY: Create КП shop-витрина uses responsive `PiShowcaseCard md` cards with photo/placeholder, equal-height grid, search/category filters, API-backed pager, Add/Edit/Create actions.
 - Gates: frontend tsc PASS; focused rail 4/4; proposal-create 11/11; diff-check PASS.
