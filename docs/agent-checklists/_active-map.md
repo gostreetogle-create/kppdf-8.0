@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:35:00Z · KP chain E2E research READY (after USABLE)
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-CHAIN-E2E-RESEARCH.md`
+- Start ONLY when WAVE-KP-USABLE done (333–336 idle) / no Create conflict.
+- Output audit + WAVE-KP-CHAIN-HARDENING + PDF TZ (Playwright/Puppeteer Nest from build HTML).
+- Deploy: NO
+
+## Checkpoint 2026-08-09T16:20:07Z · TZ-SALES-333 CLAIMED
+- IN PROGRESS: Save draft with template snapshot and editable last-draft/last-template resume.
+- Base: canonical `main` at `0a6eb409`; TZ-SALES-337 archived/DONE immediately before claim.
+- Conflict scan: no competing `_active` 333; foreign DOC-343 files preserved/excluded. Team Room unavailable (unknown task).
+- Marker/checklist: `tasks/_active/TZ-SALES-333.md` / `docs/agent-checklists/TZ-SALES-333.md`.
+- Scope guard: no 334 client, 335 qty/photo, 336 paid/copy lock, 332 table rail, 317 shell, 320/322, or deploy.
+- NEXT: implement → fullstack gates → READY for Save/F5 visual → archive. Deploy: NO
+
 ## Checkpoint 2026-08-09T16:19:16Z · TZ-SALES-337 DONE
 - DONE: Parameters no longer contains the duplicate Table section; the Таблица rail retains columns, controls, and CTA.
 - Implementation: `0d3ea7faa34752e9765bddc378d01107e72eca9e`, pushed to `origin/main`.
