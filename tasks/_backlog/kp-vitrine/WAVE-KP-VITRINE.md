@@ -6,6 +6,7 @@
 **Аудит wave-2:** [`docs/audits/2026-08-09-kp-create-preview-wave2.md`](../../../docs/audits/2026-08-09-kp-create-preview-wave2.md)  
 **Промпт wave-2 (все TZ):** [`PROMPT-WAVE2-CONTINUOUS.md`](./PROMPT-WAVE2-CONTINUOUS.md)  
 **Промпт витрины товаров:** [`PROMPT-SALES-VITRINE.md`](./PROMPT-SALES-VITRINE.md) · аудит: [`2026-08-09-kp-create-product-vitrine.md`](../../../docs/audits/2026-08-09-kp-create-product-vitrine.md)  
+**Остаток очереди (без лишних стопов):** [`PROMPT-CONTINUOUS-KP-REMAINING.md`](./PROMPT-CONTINUOUS-KP-REMAINING.md)  
 **По одной:** [`PROMPT-SALES-323.md`](./PROMPT-SALES-323.md) · [`324`](./PROMPT-SALES-324.md) · [`325`](./PROMPT-SALES-325.md)  
 **Legacy continuous (310–316):** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO

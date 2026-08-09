@@ -130,6 +130,12 @@
 - Волна: OPS-302 Memory → 303 Integrity slot → 304 DOMAIN-MAP (`tasks/_backlog/ops/`).
 Источник: чат про Graphify → knowledge integrity.
 
+### 2026-08-09 — Continuous queue + звезда fill
+- 326 visual PASS; дальше без mid-queue стопов: archive 326 → DOC-344/345 star fill → 325 → 328.
+- Default-звезда фона: нужна жёлтая **заливка**, не только обводка (DOC-345 / closeout 344).
+- Стоп только на visual PASS по TZ или CONFLICT / грандиозное решение.
+Источник: PO после PASS 326 + замечание про звезду.
+
 ### 2026-08-09 — PASS 323 + default chip Создать КП
 - Visual PASS: скролл листа Create КП убран — как хотел PO.
 - Вход Сделки→КП сейчас на «Все КП»; хотят всегда левый chip по умолчанию = **Создать КП** (TZ-SALES-329).
