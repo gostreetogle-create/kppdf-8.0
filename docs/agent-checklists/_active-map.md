@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T05:40:00Z · WAVE-UI-THEME queued (330 → 331)
+- DONE: —
+- IN PROGRESS: none
+- NEXT: строго по порядку
+  1. `tasks/TZ-UI-LIGHT-330-light-theme-harmony.md` — промпт `tasks/prompts/TZ-UI-LIGHT-330-PROMPT.md`
+  2. `tasks/TZ-UI-THEME-331-dark-depth-and-on-gold.md` — промпт `tasks/prompts/TZ-UI-THEME-331-PROMPT.md`
+     (**жёстко после 330**: использует токены `--color-on-gold` и `--color-paper-raised`)
+- P0 внутри 331: `bg-sunrise-warm text-paper` (активные чипы, чекбокс, селект, пагинация,
+  бейдж) даёт ≈2:1 в светлой теме — нарушение запрета «gold-on-white» из PO-DIARY §2
+- Layer 3 (`frontend/src/styles.css`) — один агент за раз, 330 и 331 не параллелить
+- _active/: empty
+- Deploy: NO (сначала приёмка обеих тем глазами PO)
+
 ## Checkpoint 2026-08-09T05:20:00Z · TZ-UI-LIGHT-330 READY (queued)
 - DONE: —
 - IN PROGRESS: none
