@@ -1,5 +1,10 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:40:00Z · WAVE-KP-USABLE prompt refreshed (338 + RU + client-all)
+- PO visual: Save = button (not autosave); Edit dialog → TZ-338 studio; client = all Counterparty (334); EN UI banned in guide/diary.
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-CONTINUOUS.md`
+- Queue after 333 visual PASS: archive 333 → **338** → 334 → 335 → 336. Deploy NO.
+
 ## Checkpoint 2026-08-09T19:30:00Z · TZ-SALES-333 READY FOR REVIEW
 - Implementation `b1d51453b1e06d2e21f724028164836526c2959b` pushed to `origin/main`.
 - Save creates/updates one editable quotation draft with items, templateId, and templateSnapshot; last editable draft/template resume is request/session scoped and F5 is not blocked.

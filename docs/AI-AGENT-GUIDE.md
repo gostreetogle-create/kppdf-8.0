@@ -251,6 +251,7 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 | `@Component({ moduleId })` | Не нужно в standalone | — |
 | `RouterModule.forRoot/forChild` | Standalone routes | `provideRouter(routes)` |
 | Vector DB / semantic search | TZ-105.1 verdict — запрещено | MongoDB regex indexes |
+| Англ. слова в UI (`draft`, `Save`, `Estimate`, `placeholder` как подсказка пользователю) | PO: сайт русскоязычный; стыд на показе коллегам | RU: «черновик», «Сохранить», «оценка»; API enum `draft` в коде ок |
 
 ---
 
@@ -281,6 +282,7 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 - [ ] HTTP через `silentGet/Post/Patch/Delete` + `.subscribe((res) => { if(res.ok) ... })`
 - [ ] Никаких `any`, `OnInit`/`OnDestroy`, `box-shadow`, `#[hex]`, `bg-white`
 - [ ] Никаких Vector DB / semantic search (TZ-105.1)
+- [ ] User-visible UI (лейблы, toast, hints, disabled title) — **русский**; без `draft`/`Save` в тексте
 - [ ] Селектор: `app-<name>-page`, класс: `<Name>Page`
 - [ ] Документация страницы в `docs/pages/<name>.page.md`
 ```
