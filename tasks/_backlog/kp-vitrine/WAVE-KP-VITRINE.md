@@ -42,6 +42,7 @@
 | 10a | **TZ-SALES-326** шире flyout + dismiss | READY after 323 — [`TZ-SALES-326…`](./TZ-SALES-326-products-flyout-wide-dismiss.md) |
 | 10b | **TZ-SALES-327** md card equal-height | READY ∥ — [`TZ-SALES-327…`](./TZ-SALES-327-showcase-card-md-equal-height.md) |
 | 10c | **TZ-SALES-328** shop-витрина Add/Edit/Create | READY after 326+327 — [`TZ-SALES-328…`](./TZ-SALES-328-create-kp-shop-vitrine.md) |
+| 10d | **TZ-SALES-329** default land = Создать КП | READY — [`TZ-SALES-329…`](./TZ-SALES-329-default-land-create-kp.md) |
 | 11 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
 | — | **NOTE** snapshot/lock + «оплачена» | [`NOTE-KP-template-snapshot-lock.md`](./NOTE-KP-template-snapshot-lock.md) |
 
