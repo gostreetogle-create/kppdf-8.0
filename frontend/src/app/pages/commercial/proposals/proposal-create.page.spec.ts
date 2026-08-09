@@ -22,6 +22,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
   let fixture: ComponentFixture<ProposalCreatePage>;
   const buildMock = jest.fn();
   const tableFindMock = jest.fn();
+  const blocksListMock = jest.fn();
 
   beforeEach(async () => {
     buildMock.mockReset();
@@ -29,6 +30,18 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       of({
         ok: true,
         data: '<html><head></head><body><div class="doc-bg" data-test="DATA_TEST_BUILD_OK"><img src="/uploads/bg.png" alt=""></div></body></html>',
+      }),
+    );
+    blocksListMock.mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          {
+            type: 'table',
+            title: 'Позиции КП',
+            settings: { tableTemplateId: 'table-1', kpLineItems: true },
+          },
+        ],
       }),
     );
     tableFindMock.mockReturnValue(
@@ -126,18 +139,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         },
         {
           provide: TemplateBlocksService,
-          useValue: {
-            listByTemplate: () =>
-              of({
-                ok: true,
-                data: [
-                  {
-                    type: 'table',
-                    settings: { tableTemplateId: 'table-1', kpLineItems: true },
-                  },
-                ],
-              }),
-          },
+          useValue: { listByTemplate: blocksListMock },
         },
         {
           provide: TableTemplatesService,
@@ -414,6 +416,60 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           { key: 'name', visible: true },
           { key: 'sku', visible: true },
         ],
+      }),
+    );
+  }));
+
+  it('lets the Table rail select among multiple live tables and sends the selected target', fakeAsync(() => {
+    blocksListMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: [
+          {
+            type: 'table',
+            title: 'Коммерческие позиции',
+            settings: { tableTemplateId: 'table-1' },
+          },
+          {
+            type: 'table',
+            title: 'Позиции КП',
+            settings: { tableTemplateId: 'table-2', kpLineItems: true },
+          },
+        ],
+      }),
+    );
+    tableFindMock.mockImplementation((id: string) =>
+      of({
+        ok: true,
+        data: {
+          _id: id,
+          columns:
+            id === 'table-1'
+              ? [{ key: 'sku', label: 'Артикул' }]
+              : [{ key: 'name', label: 'Наименование' }],
+        },
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onTableTargetChange: (id: string) => void;
+      selectedTableTargetId: () => string | null;
+      kpTableLayout: () => Array<{ key: string; label: string; visible: boolean }>;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    page.onTableTargetChange('table-1');
+    tick(250);
+    fixture.detectChanges();
+
+    expect(page.selectedTableTargetId()).toBe('table-1');
+    expect(page.kpTableLayout()).toEqual([{ key: 'sku', label: 'Артикул', visible: true }]);
+    expect(buildMock).toHaveBeenLastCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        tableTargetId: 'table-1',
+        tableLayout: [{ key: 'sku', visible: true }],
       }),
     );
   }));

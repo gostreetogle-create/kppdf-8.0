@@ -563,7 +563,7 @@ export class DocumentTemplateService {
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
     await this.applyIssuerOrganization(template, bag);
-    const lineItemsTargetIds = this.resolveLineItemsTargetIds(blocks);
+    const lineItemsTargetIds = this.resolveLineItemsTargetIds(blocks, dto.tableTargetId);
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
         const withBinding = await this.resolveBlockContent(b, bag);
@@ -642,7 +642,10 @@ export class DocumentTemplateService {
     }
   }
 
-  private resolveLineItemsTargetIds(blocks: TemplateBlockDocument[]): Set<string> {
+  private resolveLineItemsTargetIds(
+    blocks: TemplateBlockDocument[],
+    requestedTableTargetId?: string,
+  ): Set<string> {
     const liveTables = blocks.filter((block) => {
       if (block.type !== 'table') return false;
       if (block.source?.kind === 'table-template' && block.source.mode === 'snapshot') {
@@ -653,6 +656,15 @@ export class DocumentTemplateService {
         ? Boolean(block.source.refId)
         : Boolean(settings?.tableTemplateId);
     });
+    if (requestedTableTargetId) {
+      const requested = liveTables.filter((block) => {
+        const sourceId = block.source?.kind === 'table-template' ? block.source.refId : undefined;
+        const settings = block.settings as { tableTemplateId?: string } | undefined;
+        return sourceId === requestedTableTargetId || settings?.tableTemplateId === requestedTableTargetId;
+      });
+      if (requested.length > 0) return new Set(requested.map((block) => String(block._id)));
+    }
+
     const explicit = liveTables.filter((block) => {
       const settings = block.settings as { kpLineItems?: boolean; role?: string } | undefined;
       return settings?.kpLineItems === true || settings?.role === 'line-items';

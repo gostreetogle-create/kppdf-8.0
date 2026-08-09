@@ -444,6 +444,28 @@ describe('DocumentTemplates build (e2e)', () => {
     );
     expect(layoutRes.text).toContain('2 500');
 
+    const selectedTargetRes = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({
+        organizationId: orgId,
+        previewLines: [
+          {
+            productName: 'Кронштейн',
+            quantity: 2,
+            unitPrice: 1250,
+            productSku: 'BR-2',
+            unit: 'шт',
+          },
+        ],
+        tableTargetId: otherTable._id.toString(),
+        tableLayout: [{ key: 'name', visible: true }],
+      });
+    expect(selectedTargetRes.status).toBe(201);
+    expect(selectedTargetRes.text).toContain('Другая таблица');
+    expect(selectedTargetRes.text).toContain('Кронштейн');
+    expect(selectedTargetRes.text.match(/Кронштейн/g)).toHaveLength(1);
+
     const totalsRes = await request(app.getHttpServer())
       .post(`/api/document-templates/${templateId}/build`)
       .set(auth)

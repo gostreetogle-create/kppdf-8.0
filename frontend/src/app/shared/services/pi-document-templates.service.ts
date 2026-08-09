@@ -93,6 +93,8 @@ export interface BuildDealTotals {
 export interface BuildDocumentRequest {
   previewLines?: BuildPreviewLine[];
   tableLayout?: BuildTableLayoutColumn[];
+  /** Request-only selected live table-template target for multi-table documents. */
+  tableTargetId?: string;
   dealTotals?: BuildDealTotals;
   organizationId?: string;
   counterpartyId?: string;

@@ -78,6 +78,12 @@ export class BuildDocumentDto {
   tableLayout?: BuildTableLayoutColumnDto[];
 
   /** Request-only whole-deal totals; rendered only for the live line-items table. */
+  /** Request-only selected live table-template target for multi-table documents. */
+  @IsOptional()
+  @IsString()
+  @IsObjectId()
+  tableTargetId?: string;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => BuildDealTotalsDto)

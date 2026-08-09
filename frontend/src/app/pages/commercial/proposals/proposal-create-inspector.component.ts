@@ -26,6 +26,13 @@ export interface ProposalTableLayoutColumn {
   visible: boolean;
 }
 
+export interface ProposalTableTarget {
+  id: string;
+  templateId: string;
+  label: string;
+  explicit: boolean;
+}
+
 export interface ProposalCreateInspectorState {
   organizationId: string;
   orgMarkupPercent: number;
@@ -110,6 +117,18 @@ export interface ProposalCreateInspectorState {
           <h3>Таблица</h3>
           <p>Меняет только это КП, не общий шаблон</p>
         </div>
+        @if (tableTargets().length > 1) {
+          <app-pi-overflow-select
+            [items]="tableTargetItems()"
+            [value]="selectedTableTargetId() ?? ''"
+            (valueChange)="selectTableTarget($event)"
+            searchable="auto"
+            placeholder="Выберите таблицу…"
+            ariaLabel="Таблица бланка"
+            dataTest="kp-table-target"
+          />
+          <p class="inspector__table-target-hint">Выберите, какую live-таблицу настраивать.</p>
+        }
         <div class="inspector__columns">
           @for (column of tableLayout(); track column.key; let index = $index) {
             <div class="inspector__column" [attr.data-test]="'kp-table-column-' + column.key">
@@ -219,6 +238,11 @@ export interface ProposalCreateInspectorState {
       color: var(--color-muted-foreground, #6b7280);
       font-size: 0.7rem;
     }
+    .inspector__table-target-hint {
+      margin: -0.35rem 0 0;
+      color: var(--color-muted-foreground, #6b7280);
+      font-size: 0.7rem;
+    }
     .inspector__columns {
       display: flex;
       flex-direction: column;
@@ -264,8 +288,11 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly tableLayout = input<ProposalTableLayoutColumn[]>([]);
   readonly tableOnly = input(false);
   readonly tableTemplateId = input<string | null>(null);
+  readonly tableTargets = input<ProposalTableTarget[]>([]);
+  readonly selectedTableTargetId = input<string | null>(null);
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
+  readonly tableTargetChange = output<string>();
 
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly organizationId = signal('');
@@ -287,6 +314,10 @@ export class ProposalCreateInspectorComponent implements OnInit {
 
   protected readonly visibleColumnCount = computed(
     () => this.tableLayout().filter((column) => column.visible).length,
+  );
+
+  protected readonly tableTargetItems = computed(() =>
+    this.tableTargets().map((target) => ({ id: target.id, label: target.label })),
   );
 
   ngOnInit(): void {
@@ -335,6 +366,12 @@ export class ProposalCreateInspectorComponent implements OnInit {
         entryIndex === index ? { ...entry, visible: !entry.visible } : entry,
       ),
     );
+  }
+
+  protected selectTableTarget(id: string): void {
+    if (this.tableTargets().some((target) => target.id === id)) {
+      this.tableTargetChange.emit(id);
+    }
   }
 
   protected openOrganization(): void {

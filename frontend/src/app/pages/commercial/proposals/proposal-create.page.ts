@@ -18,7 +18,7 @@ import {
   SlidersHorizontal,
   TableProperties,
 } from 'lucide-angular';
-import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
+import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import {
   DocumentTemplatesService,
@@ -38,6 +38,7 @@ import {
   ProposalCreateInspectorComponent,
   type ProposalCreateInspectorState,
   type ProposalTableLayoutColumn,
+  type ProposalTableTarget,
 } from './proposal-create-inspector.component';
 import {
   ProposalCreateTemplateCenterComponent,
@@ -219,8 +220,11 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 [tableLayout]="kpTableLayout()"
                 [tableOnly]="rightPane() === 'table'"
                 [tableTemplateId]="tableTemplateId()"
+                [tableTargets]="tableTargets()"
+                [selectedTableTargetId]="selectedTableTargetId()"
                 (stateChange)="onInspectorState($event)"
                 (tableLayoutChange)="onTableLayoutChange($event)"
+                (tableTargetChange)="onTableTargetChange($event)"
               />
             </aside>
           }
@@ -391,6 +395,9 @@ export class ProposalCreatePage implements OnInit {
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
   protected readonly tableTemplateId = signal<string | null>(null);
+  protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
+  protected readonly selectedTableTargetId = signal<string | null>(null);
+  private readonly tableTargetLayouts = signal<Record<string, ProposalTableLayoutColumn[]>>({});
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -422,6 +429,7 @@ export class ProposalCreatePage implements OnInit {
           const payload = {
             previewLines,
             tableLayout,
+            tableTargetId: this.tableTemplateId() ?? undefined,
             dealTotals: { vatPercent: this.clampVat(this.dealVatPercent()) },
             ...(org ? { organizationId: org } : {}),
           };
@@ -506,10 +514,13 @@ export class ProposalCreatePage implements OnInit {
   protected onTemplateChange(tpl: DocumentTemplate | null): void {
     this.selectedTemplate.set(tpl);
     this.tableTemplateId.set(null);
+    this.tableTargets.set([]);
+    this.selectedTableTargetId.set(null);
+    this.tableTargetLayouts.set({});
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
     if (tpl) {
       this.leftTool.set(null);
-      this.syncTableLayout(tpl._id);
+      this.syncTableTargets(tpl._id);
       this.rebuildPreview$.next();
     } else {
       this.previewHtml.set(null);
@@ -517,33 +528,84 @@ export class ProposalCreatePage implements OnInit {
     }
   }
 
-  private syncTableLayout(templateId: string): void {
+  private syncTableTargets(templateId: string): void {
     this.blocksSvc
       .listByTemplate(templateId)
       .pipe(
         switchMap((blocksResult) => {
-          if (!blocksResult.ok) return of(null);
+          if (!blocksResult.ok) return of({ targets: [], layouts: {} });
           const blocks = blocksResult.data ?? [];
-          const liveTables = blocks.filter((block) => this.tableTemplateIdForBlock(block));
-          const explicit = liveTables.filter((block) => {
-            const settings = block.settings ?? {};
-            return settings['kpLineItems'] === true || settings['role'] === 'line-items';
-          });
-          const target = explicit[0] ?? (liveTables.length === 1 ? liveTables[0] : null);
-          const tableId = target ? this.tableTemplateIdForBlock(target) : null;
-          return tableId ? this.tableTemplatesSvc.findById(tableId) : of(null);
+          const liveTables = blocks
+            .map((block, index) => {
+              const tableId = this.tableTemplateIdForBlock(block);
+              if (!tableId) return null;
+              const settings = block.settings ?? {};
+              return {
+                block,
+                index,
+                tableId,
+                explicit: settings['kpLineItems'] === true || settings['role'] === 'line-items',
+              };
+            })
+            .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+          const candidates = liveTables;
+          if (candidates.length === 0) return of({ targets: [], layouts: {} });
+
+          return forkJoin(
+            candidates.map((candidate) =>
+              this.tableTemplatesSvc.findById(candidate.tableId).pipe(
+                map((result) => ({ candidate, result })),
+                catchError(() => of({ candidate, result: null })),
+              ),
+            ),
+          ).pipe(
+            map((results) => {
+              const targets: ProposalTableTarget[] = results.map(({ candidate }) => ({
+                id: candidate.tableId,
+                templateId: candidate.tableId,
+                label: candidate.block.title?.trim() || `Таблица ${candidate.index + 1}`,
+                explicit: candidate.explicit,
+              }));
+              const layouts: Record<string, ProposalTableLayoutColumn[]> = {};
+              for (const { candidate, result } of results) {
+                if (!result?.ok) continue;
+                const columns = (result.data as TableTemplate).columns ?? [];
+                if (columns.length > 0) {
+                  layouts[candidate.tableId] = columns.map((column) => ({
+                    key: column.key,
+                    label: column.label,
+                    visible: true,
+                  }));
+                }
+              }
+              return { targets, layouts };
+            }),
+          );
         }),
       )
-      .subscribe((tableResult) => {
-        if (this.selectedTemplate()?._id !== templateId || !tableResult?.ok) return;
-        const columns = (tableResult.data as TableTemplate).columns ?? [];
-        if (columns.length === 0) return;
-        this.tableTemplateId.set((tableResult.data as TableTemplate)._id);
-        this.kpTableLayout.set(
-          columns.map((column) => ({ key: column.key, label: column.label, visible: true })),
-        );
-        this.rebuildPreview$.next();
+      .subscribe(({ targets, layouts }) => {
+        if (this.selectedTemplate()?._id !== templateId) return;
+        this.tableTargets.set(targets);
+        this.tableTargetLayouts.set(layouts);
+        const defaultTarget = targets.find((target) => target.explicit) ?? targets[0] ?? null;
+        this.selectedTableTargetId.set(defaultTarget?.id ?? null);
+        this.applyTableTarget(defaultTarget?.id ?? null);
       });
+  }
+
+  private applyTableTarget(targetId: string | null): void {
+    const target = this.tableTargets().find((entry) => entry.id === targetId);
+    this.tableTemplateId.set(target?.templateId ?? null);
+    const layout = targetId ? this.tableTargetLayouts()[targetId] : undefined;
+    if (layout?.length) this.kpTableLayout.set(layout.map((column) => ({ ...column })));
+    else this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
+    if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+  }
+
+  protected onTableTargetChange(targetId: string): void {
+    if (!this.tableTargets().some((target) => target.id === targetId)) return;
+    this.selectedTableTargetId.set(targetId);
+    this.applyTableTarget(targetId);
   }
 
   private tableTemplateIdForBlock(block: TemplateBlock): string | null {
