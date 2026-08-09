@@ -405,5 +405,10 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
     ) as HTMLButtonElement | null;
     expect(active).toBeTruthy();
     expect(active?.getAttribute('aria-pressed')).toBe('true');
+
+    const activeStar = fixture.nativeElement.querySelector(
+      '.bg-grid__star--on',
+    ) as HTMLElement | null;
+    expect(activeStar?.getAttribute('data-star-fill')).toBe('gold');
   });
 });

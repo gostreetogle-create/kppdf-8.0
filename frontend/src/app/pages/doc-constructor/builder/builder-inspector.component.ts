@@ -275,6 +275,9 @@ type Orientation = 'portrait' | 'landscape';
                         [img]="StarIcon"
                         [size]="14"
                         [class.bg-grid__star--on]="effectiveDefaultBgIndex(t) === i"
+                        [attr.data-star-fill]="
+                          effectiveDefaultBgIndex(t) === i ? 'gold' : null
+                        "
                       ></lucide-icon>
                     </button>
                     <button
@@ -1470,21 +1473,22 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .bg-grid__action-btn.is-active {
-        color: var(--color-gold-deep);
+        color: var(--color-gold);
         border-color: var(--color-gold-deep);
         background: color-mix(in oklch, var(--color-gold) 18%, var(--color-paper));
       }
 
       .bg-grid__action-btn.is-active .bg-grid__star--on,
       .bg-grid__star--on {
-        color: var(--color-gold-deep);
+        color: var(--color-gold);
       }
 
-      /* Lucide Star is outline-only; fill currentColor when default is on. */
-      .bg-grid__action-btn.is-active :is(svg, .lucide),
-      .bg-grid__star--on :is(svg, .lucide) {
-        fill: currentColor;
-        stroke: currentColor;
+      /* Lucide renders the SVG in a child component; pierce that boundary so
+         the active/default star is visibly yellow-filled, not outline-only. */
+      :host ::ng-deep .bg-grid__star--on svg,
+      :host ::ng-deep .bg-grid__star--on svg path {
+        fill: var(--color-gold);
+        stroke: var(--color-gold-deep);
       }
 
       .bg-grid__action-btn--danger:hover {
