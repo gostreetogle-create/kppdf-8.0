@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:30:00Z · TZ-SALES-333 READY FOR REVIEW
+- Implementation `b1d51453b1e06d2e21f724028164836526c2959b` pushed to `origin/main`.
+- Save creates/updates one editable quotation draft with items, templateId, and templateSnapshot; last editable draft/template resume is request/session scoped and F5 is not blocked.
+- Gates: backend tsc PASS; quotation e2e 5/5; frontend tsc PASS; proposal-create Jest 17/17; FE Prettier PASS; diff-check PASS.
+- Active marker/checklist remain until Cursor/PO visual Save → reload/F5 PASS. Foreign DOC-343 WIP excluded; 334–336 not claimed; deploy NO.
+- NEXT: visual PASS → archive/lock/remove `_active` → claim TZ-SALES-334.
+
 ## Checkpoint 2026-08-09T19:35:00Z · KP chain E2E research READY (after USABLE)
 - Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-CHAIN-E2E-RESEARCH.md`
 - Start ONLY when WAVE-KP-USABLE done (333–336 idle) / no Create conflict.

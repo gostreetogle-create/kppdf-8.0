@@ -1,3 +1,12 @@
+## [2026-08-09T19:30:00Z] — TZ-SALES-333 READY FOR REVIEW: Save and resume draft
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual Save → reload/F5 PASS обязателен до archive; deploy НЕ
+**Implementation:** `b1d51453b1e06d2e21f724028164836526c2959b`, pushed to `origin/main`.
+**Что:** Save создаёт draft quotation с items/templateId/templateSnapshot; повторный Save PATCH-ит тот же draft; editable last draft/template восстанавливаются без блокировки F5.
+**Gates:** backend tsc PASS; quotation e2e 5/5; frontend tsc PASS; proposal-create Jest 17/17; FE Prettier PASS; diff-check PASS.
+**Scope:** 334 Client, 335 qty/photo, 336 paid/lock/copy, 332 rail, 317 shell, DOC-343 WIP, 320/322 и deploy не тронуты.
+**NEXT:** Cursor/PO visual Save → reload/F5 PASS → archive/lock/remove `_active` → 334. Deploy НЕ
+
 ## [2026-08-09T16:19:16Z] — TZ-SALES-337 DONE: no duplicate Table section in Parameters
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; quick DOM visual PASS; deploy НЕ
