@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T05:20:00Z · TZ-UI-LIGHT-330 READY (queued)
+- DONE: —
+- IN PROGRESS: none
+- NEXT: `tasks/TZ-UI-LIGHT-330-light-theme-harmony.md` — светлая тема: канва без пересвета,
+  raised-поверхности (шапка/диалог/dropdown), контуры контролов, кнопки (`bg-tertiary` = мёртвый токен),
+  три ступени muted, destructive AA. Checklist: `docs/agent-checklists/TZ-UI-LIGHT-330.md`
+- Триггер: PO — «светлая тема очень светлая, режет глаза; гармония панелей/кнопок/списков/полей + шрифты»
+- Layer 3 (`frontend/src/styles.css`) — один агент за раз
+- _active/: empty
+- Deploy: NO (сначала приёмка светлой темы глазами PO)
+
 ## Checkpoint 2026-08-09T02:18:28Z · SALES-313 closeout pushed
 - DONE: TZ-SALES-313 correction — family variants now open in a dedicated read-only dialog; existing attach API write-path remains single and unchanged. This completes the KP vitrine fill 310–316.
 - IN PROGRESS: none
