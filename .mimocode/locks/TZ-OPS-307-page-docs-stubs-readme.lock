@@ -1,0 +1,6 @@
+TZ-OPS-307
+closed: 2026-08-09
+commit: ed15ebf4
+zone: page.md stubs design/shipping + README hygiene
+checklist: docs/agent-checklists/TZ-OPS-307.md
+archive: tasks/_archive/2026-08/TZ-OPS-307.done.md

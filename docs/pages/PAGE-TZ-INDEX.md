@@ -45,7 +45,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
-| `/design`, `/supply`, `/shipping` | supply.page.md; **design/shipping → OPS-307 READY** | **NAV-301** stubs; page.md gaps: WAVE-PAGE-DOCS-GAPS |
+| `/design`, `/supply`, `/shipping` | supply.page.md; **design/shipping OPS-307 DONE** | **NAV-301** stubs; page.md gaps: WAVE-PAGE-DOCS-GAPS |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | proposals.page.md | **SALES-301**; **303** family API; **313 DONE** family expand (ex-304); **SALES-310 DONE** — TOC + `Создать КП`/`Все КП` |

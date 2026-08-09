@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:10:00Z · WAVE-PAGE-DOCS-GAPS CLOSED (OPS-305→307 DONE)
+- 305: doc-template-categories + text-block-categories page.md; 306: admin-users + admin-roles; 307: design/shipping stubs + README hygiene.
+- README: /dashboard→/inventory, 36/36 бизнес-routes; DOMAIN-MAP gap inventory = 0 × NO (6 former-NO → yes).
+- Gates PASS (Test-Path, ≤120/≤60, Select-String NO=0); чужой WIP (SALES-328/DOC-343/PO-DIARY) не тронут.
+- Archives + locks + checklists DONE для 305/306/307.
+- NEXT: idle; successors — отсутствуют (gaps закрыты); Deploy: NO
+
 ## Checkpoint 2026-08-09T14:02:00Z · TZ-OPS-306 DONE (page.md admin users/roles)
 - DONE: `admin-users.page.md` + `admin-roles.page.md` (90/89 строк ≤120).
 - «Не путать»: User ≠ Worker; FE admin route ≠ BE admin module (только API).

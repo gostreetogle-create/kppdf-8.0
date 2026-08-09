@@ -1,3 +1,11 @@
+## [2026-08-09T14:10:00Z] — TZ-OPS-307 DONE: page.md stubs design/shipping + README hygiene (WAVE CLOSED)
+**Исполнитель:** buffy-ops-307 · WAVE-PAGE-DOCS-GAPS #3 (последняя)
+**Статус:** DONE; docs-only; deploy НЕ
+**Что:** Stub page.md `design` + `shipping` (36 строк ≤60; TZ-NAV-301, data-test, API нет — не изобретать). README hygiene: `/dashboard`→`/inventory`, добавлены 12 живых страниц (25–36), счётчик 36/36. DOMAIN-MAP: former-6 все yes (design/shipping stub-documented), итог **0 × NO**, 4 domain-ячейки обновлены, drift-пометка снята. PAGE-TZ-INDEX OPS-307 DONE.
+**Gates:** Test-Path оба True; Select-String NO = 0; page.md ≤60 PASS; diff без product code.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-307.done.md`; lock создан.
+**NEXT:** idle — волна WAVE-PAGE-DOCS-GAPS (305→306→307) ЗАКРЫТА, DOMAIN-MAP gaps = 0; deploy НЕ.
+
 ## [2026-08-09T14:02:00Z] — TZ-OPS-306 DONE: page.md admin users + roles
 **Исполнитель:** buffy-ops-306 · WAVE-PAGE-DOCS-GAPS #2
 **Статус:** DONE; docs-only; deploy НЕ

@@ -13,7 +13,7 @@
 | # | Страница | Файл | Route | Описание |
 |---|----------|------|-------|----------|
 | 1 | **Login** | `login.page.md` | `/login` | Аутентификация |
-| 2 | **Inventory Dashboard** | `inventory-dashboard.page.md` | `/dashboard` | Складская панель |
+| 2 | **Inventory Dashboard** | `inventory-dashboard.page.md` | `/inventory` | Складская панель |
 | 3 | **Materials** | `materials.page.md` | `/materials` | Справочник материалов |
 | 4 | **Products** | `products.page.md` | `/products` | Каталог продукции |
 | 4a | **Product Detail** | `product-detail.page.md` | `/products/:id` | Карточка изделия (stub 319) |
@@ -43,8 +43,20 @@
 | 22 | **Production Cockpit** | `production-cockpit.page.md` | `/production` | Гант план-оценка (PRODUCTION-303) |
 | 23 | **Admin Users** | `admin-users.page.md` | `/admin/users` | Админ-реестр пользователей (RBAC) |
 | 24 | **Admin Roles** | `admin-roles.page.md` | `/admin/roles` | Роли и права (RBAC) |
+| 25 | **Material Detail** | `material-detail.page.md` | `/materials/:id` | Карточка материала (312) |
+| 26 | **Counterparties** | `counterparties.page.md` | `/counterparties` | Заказчики (PARTY-301/303) |
+| 27 | **Warehouses** | `warehouses.page.md` | `/warehouses` | Склады (WAREHOUSE-UX-301) |
+| 28 | **Supply** | `supply.page.md` | `/supply` | Снабжение |
+| 29 | **Design** | `design.page.md` | `/design` | Очередь доукомплектования (stub NAV-301) |
+| 30 | **Shipping** | `shipping.page.md` | `/shipping` | Частичные отгрузки (stub NAV-301) |
+| 31 | **Import Todos** | `import-todos.page.md` | `/import-todos` | Импорт: finish-list менеджера (TZD-29) |
+| 32 | **Proposals** | `proposals.page.md` | `/proposals` | Коммерческие предложения (SALES-*) |
+| 33 | **Proposal Create** | `proposals-create.page.md` | `/proposals/create` | Витрина КП (SALES-317…328) |
+| 34 | **Color References** | `color-references.page.md` | `/dictionaries/color-references` | Палитра цветов (DICT-306) |
+| 35 | **Form Profiles** | `form-profiles.page.md` | `/dictionaries/form-profiles` | Профили быстрых форм (DICT-315) |
+| 36 | **Foundations (kit)** | `foundations.page.md` | `/foundations` | Стильгайд/шрифты (design-spec) |
 
-> 24 бизнес-страниц + 2 дочерних компонента = 26 документированы.
+> 36/36 бизнес-routes документированы (DOMAIN-MAP §1.3 gaps = 0) + 2 дочерних компонента Builder + kit `/foundations`.
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
@@ -59,4 +71,4 @@
 
 ---
 
-_Создано: 2026-07-19. Актуально: 26/26 страниц документированы (вкл. Production Cockpit)._
+_Создано: 2026-07-19. Актуально: 36/36 бизнес-routes (вкл. Production Cockpit, stubs design/shipping). Gap inventory = 0._
