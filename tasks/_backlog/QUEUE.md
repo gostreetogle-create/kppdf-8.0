@@ -13,11 +13,12 @@
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
 | **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **DONE** — 310–316; **320 PARKED** |
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
+| **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** idle — 310–316 DONE; ждать PO unpark TZ-SALES-320 или явную команду deploy
-**Параллель:** нет — UX chrome уже DONE; не воскрешать.
+**NEXT для universal prompt:** idle — ждать PO unpark TZ-SALES-320 / visual light+dark / явную команду deploy  
+**Параллель:** нет
 
 ## Idle / park / done
 

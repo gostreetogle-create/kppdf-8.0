@@ -10,11 +10,10 @@ export type PiButtonVariant =
 export type PiButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 
 const VARIANT_CLASS: Record<PiButtonVariant, string> = {
-  /* TZ-96: Design Reference — gold primary, grey bg (user request), executive-shadow */
-  default:
-    'bg-[oklch(0.55_0.007_260)] text-white border border-gold executive-shadow hover:brightness-110',
-  secondary: 'bg-tertiary text-white hover:brightness-110',
-  outline: 'bg-transparent border border-rule text-ink hover:bg-paper-2',
+  /* TZ-UI-LIGHT-330: gold primary with ink label; raised controls stay visible. */
+  default: 'bg-gold text-ink border border-gold hover:bg-gold-hover executive-shadow',
+  secondary: 'bg-paper-2 text-ink hairline hover:bg-paper-3',
+  outline: 'bg-paper-raised text-ink border border-rule-strong hover:bg-paper-2',
   ghost: 'bg-transparent text-ink hover:bg-paper-2',
   link: 'bg-transparent text-ink underline underline-offset-4 hover:text-ink',
   destructive: 'bg-destructive text-white hover:brightness-110',

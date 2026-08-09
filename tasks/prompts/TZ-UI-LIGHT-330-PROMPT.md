@@ -105,6 +105,11 @@
     --color-rule-strong-override,
     oklch(0.62 0.02 260)
   ); /* контуры контролов: input / select / кнопка */
+
+  /* Текст поверх золотой заливки. НАМЕРЕННО без -override: золото светлое
+     в обеих темах, поэтому лейбл всегда тёмный. Пара `bg-gold text-ink`
+     в тёмной теме дала бы ≈1:1 (ink там почти белый). */
+  --color-on-gold: oklch(0.2 0.012 260);
 ```
 
 ## Правка 3 — приглушённый текст (декоративный уровень)
@@ -500,14 +505,15 @@
 ЗАМЕНИТЬ НА:
 
 ```ts
-    'bg-gold text-ink border border-gold executive-shadow hover:bg-gold-hover',
+    'bg-gold text-on-gold border border-gold executive-shadow hover:bg-gold-hover',
   secondary: 'bg-paper-2 text-ink hairline hover:bg-paper-3',
   outline: 'bg-paper-raised border border-rule-strong text-ink hover:bg-paper-2',
 ```
 
 Пояснение: `bg-tertiary` — несуществующий токен, Tailwind такой класс не генерирует,
 поэтому кнопка `secondary` сейчас без фона и с белым текстом (невидима на светлом фоне).
-Главная кнопка становится золотой с тёмным текстом — это фирменный акцент проекта.
+Главная кнопка становится золотой с тёмным лейблом `text-on-gold` — этот токен из правки 2
+не переворачивается в тёмной теме, поэтому кнопка читается в обеих.
 
 ## Правка 20 — панель выпадающего списка
 

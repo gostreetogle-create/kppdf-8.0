@@ -50,6 +50,13 @@
 **Lock:** `.mimocode/locks/TZ-SALES-313-all-kp-family-expand.lock`
 **NEXT:** idle — WAVE-KP-VITRINE 310–316 DONE; TZ-SALES-320 PARKED.
 
+## [2026-08-09] — TZ-UI-LIGHT-330 DONE: светлая тема без пересвета
+
+Канва/raised/rule-strong, кнопки gold/secondary, контуры полей, muted-лестница; docs paper-and-ink. Build разблокирован фиксом attach-dialog.
+
+**Archive:** `tasks/_archive/2026-08/TZ-UI-LIGHT-330.done.md`  
+**NEXT:** idle / PO visual light+dark; deploy только по команде.
+
 ## [2026-08-09] — TZ-SALES-312 DONE: оболочка «Создать КП» (3 зоны)
 
 Трёхколоночный shell `/proposals/create` по design-spec: placeholders RU, toggles на узком viewport, Deals chrome сохранён. Без пикера/сохранения/печати.

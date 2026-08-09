@@ -85,7 +85,7 @@
   --header-bg: 95%;
 
   /* === Dialog System (TZ-90A) === */
-  --dialog-bg: var(--color-paper);
+  --dialog-bg: var(--color-paper-raised);
   --dialog-text: var(--color-ink);
   --dialog-radius: 8px;
   --overlay-bg: oklch(0% 0 0 / 0.5);
@@ -96,13 +96,14 @@
   --pi-marble-noise: none;
   --pi-marble-veins: none;
   --pi-marble-sheen: none;
-  --pi-bg-elevated: var(--color-paper-2);
+  --pi-bg-elevated: var(--color-paper-raised);
   --pi-bg-elevated-size: auto;
   --pi-bg-elevated-blend: normal;
   --pi-marble-image-blend: normal;
 
   /* === Executive Shadow (Logomock — TZ-210.A) === */
-  --shadow-executive: 0 4px 20px -2px rgba(18, 21, 24, 0.05), 0 2px 6px -1px rgba(18, 21, 24, 0.03);
+  --shadow-executive:
+    0 1px 2px oklch(0.2 0.01 260 / 0.06), 0 6px 16px -6px oklch(0.2 0.01 260 / 0.1);
 
   /* Light dialogs — soft depth + gold edge whisper */
   --dialog-shadow: 0 12px 40px oklch(0.35 0.02 260 / 0.12), 0 0 0 1px oklch(0.72 0.12 86 / 0.16);
@@ -172,8 +173,8 @@
 
   /* === Paper Elevation — cool graphite steps (not warm cream).
      Dark must use *-override (same cascade rule as paper/ink). === */
-  --color-paper-3: var(--color-paper-3-override, oklch(0.92 0.006 260));
-  --color-paper-4: var(--color-paper-4-override, oklch(0.895 0.007 260));
+  --color-paper-3: var(--color-paper-3-override, oklch(0.905 0.006 260));
+  --color-paper-4: var(--color-paper-4-override, oklch(0.878 0.007 260));
 
   /* === Gold Hover — richer brand gold on light === */
   --color-gold-hover: oklch(0.62 0.14 86);
@@ -182,18 +183,23 @@
 @theme inline {
   /* === Palette — cool Paper & Ink (light defaults; dark via *-override) ===
      Hue ~260 graphite family — без тёплого крема hue 80. */
-  --color-paper: var(--color-paper-override, oklch(0.978 0.003 260)); /* cool near-white canvas */
+  --color-paper: var(--color-paper-override, oklch(0.962 0.004 260)); /* спокойная холодная канва */
+  --color-paper-raised: var(
+    --color-paper-raised-override,
+    oklch(0.99 0.002 260)
+  ); /* raised: шапка, карточки, диалоги, dropdown, поля */
   --color-paper-2: var(
     --color-paper-2-override,
-    oklch(0.942 0.005 260)
-  ); /* elevated panels — visibly lifted */
+    oklch(0.932 0.005 260)
+  ); /* hover / зебра / утопленное */
   --color-ink: var(--color-ink-override, oklch(0.18 0.01 260)); /* charcoal on-surface */
-  --color-rule: var(
-    --color-rule-override,
-    oklch(0.8 0.028 86)
-  ); /* quiet frames: cool gray + gold whisper */
-  --color-muted: var(--color-muted-override, oklch(0.42 0.012 260));
-  --color-destructive: var(--color-destructive-override, oklch(0.637 0.22 25));
+  --color-rule: var(--color-rule-override, oklch(0.78 0.018 86)); /* декоративные hairline */
+  --color-rule-strong: var(
+    --color-rule-strong-override,
+    oklch(0.62 0.02 260)
+  ); /* контуры контролов */
+  --color-muted: var(--color-muted-override, oklch(0.55 0.012 260));
+  --color-destructive: var(--color-destructive-override, oklch(0.47 0.19 25));
   --color-accent-warm: var(--color-accent-warm-override, oklch(0.7 0.135 86));
   --color-accent-cool: var(--color-accent-cool-override, oklch(0.55 0.12 250));
 
@@ -211,22 +217,22 @@
   /* === Surface container hierarchy ===
    * Legacy Material-ish ladder. Prefer paper / paper-2 / paper-3 for new UI
    * (TZ-UI-COLOR-301). Dark overrides keep orphans readable if still referenced. */
-  --color-surface-lowest: oklch(1 0 0);
-  --color-surface-low: oklch(0.955 0.005 260);
-  --color-surface: oklch(0.942 0.005 260);
-  --color-surface-high: oklch(0.92 0.006 260);
-  --color-surface-highest: oklch(0.895 0.007 260);
+  --color-surface-lowest: var(--color-paper-raised);
+  --color-surface-low: oklch(0.948 0.004 260);
+  --color-surface: var(--color-paper-2);
+  --color-surface-high: var(--color-paper-3);
+  --color-surface-highest: var(--color-paper-4);
 
   /* === Muted foreground === */
-  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.4 0.014 260));
+  --color-muted-foreground: var(--color-muted-foreground-override, oklch(0.46 0.014 260));
   --color-muted-foreground-strong: var(
     --color-muted-foreground-strong-override,
-    oklch(0.32 0.015 260)
+    oklch(0.34 0.014 260)
   );
 
   /* === Paper Elevation — override pattern (never circular self-ref) === */
-  --color-paper-3: var(--color-paper-3-override, oklch(0.92 0.006 260));
-  --color-paper-4: var(--color-paper-4-override, oklch(0.895 0.007 260));
+  --color-paper-3: var(--color-paper-3-override, oklch(0.905 0.006 260));
+  --color-paper-4: var(--color-paper-4-override, oklch(0.878 0.007 260));
 
   /* === Status Colors (Logomock — TZ-210.A) === */
   --color-success: var(--color-success);
@@ -420,7 +426,16 @@
   h5,
   h6 {
     font-family: var(--font-display);
+  }
+  h1,
+  h2 {
     letter-spacing: -0.02em;
+  }
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: -0.01em;
   }
 }
 
@@ -436,6 +451,7 @@
 
       /* Surfaces — cool graphite; panels lifted vs void (no marble texture) */
       --color-paper-override: oklch(0.18 0.006 260);
+      --color-paper-raised-override: oklch(0.235 0.007 260);
       --color-paper-2-override: oklch(0.26 0.008 260);
       --color-paper-3-override: oklch(0.31 0.009 260);
       --color-paper-4-override: oklch(0.36 0.01 260);
@@ -450,7 +466,7 @@
       --pi-marble-noise: none;
       --pi-marble-veins: none;
       --pi-marble-sheen: none;
-      --pi-bg-elevated: var(--color-paper-2);
+      --pi-bg-elevated: var(--color-paper-raised);
       --pi-bg-elevated-size: auto;
       --pi-bg-elevated-blend: normal;
       --pi-marble-image-blend: normal;
@@ -464,6 +480,7 @@
 
       /* Quiet frames — graphite + whisper of gold (default hairline) */
       --color-rule-override: oklch(0.46 0.045 86);
+      --color-rule-strong-override: oklch(0.58 0.03 260);
 
       /* Real gold — тёплый акцент на холодном графите */
       --color-gold-override: oklch(0.84 0.145 86);
@@ -538,7 +555,7 @@
   font-size: var(--text-micro); /* ERP type scale micro = 11px — compact chrome only */
   text-transform: uppercase;
   letter-spacing: 0.08em; /* TZ-210.B: updated from 0.05em per Logomock */
-  color: var(--color-muted-foreground);
+  color: var(--color-muted-foreground-strong);
 }
 
 /* Informational labels (TYPE-303) — not uppercase mono; between micro and body */
@@ -649,13 +666,13 @@
   padding-inline: var(--space-control-x);
   font-family: var(--font-body);
   font-size: 14px;
-  background-color: var(--color-paper);
+  background-color: var(--color-paper-raised);
   color: var(--color-ink);
   /* Longhand so `border-ink` / `border-destructive` color overrides win
      in the cascade — see `hairline` rationale. */
   border-style: solid;
   border-width: 1px;
-  border-color: var(--color-rule);
+  border-color: var(--color-rule-strong);
   border-radius: var(--radius); /* TZ-96: 2px per design ref DEFAULT */
   transition:
     border-color 150ms ease,
@@ -684,13 +701,13 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background-color: var(--color-paper);
+  background-color: var(--color-paper-raised);
   color: var(--color-ink);
   /* Longhand so `border-ink` / `border-destructive` color overrides win
      in the cascade — see `hairline` rationale. */
   border-style: solid;
   border-width: 1px;
-  border-color: var(--color-rule);
+  border-color: var(--color-rule-strong);
   border-radius: var(--radius-sm);
   font-size: 14px;
   transition:
@@ -773,7 +790,7 @@
 
   /* ---- pi-table-row hover (not allowed inside @utility) ---- */
   .pi-table-row:hover {
-    background-color: var(--color-sunrise-soft);
+    background-color: color-mix(in oklch, var(--color-gold) 8%, transparent);
   }
 
   /* ---- pi-menu-item (TZ-AUDIT-7) — dropdown / context menu row.
@@ -837,14 +854,14 @@
     height: 36px;
     padding-inline: 16px;
     font-size: 14px;
-    background-color: var(--color-paper);
+    background-color: var(--color-paper-raised);
     color: var(--color-ink);
     /* Longhand (not `border: 1px solid ...`) so `border-ink` /
        `border-destructive` color overrides win in the cascade —
        see `hairline` rationale. */
     border-style: solid;
     border-width: 1px;
-    border-color: var(--color-rule);
+    border-color: var(--color-rule-strong);
     border-radius: var(--radius-sm);
     transition:
       background-color 150ms ease,
@@ -1185,12 +1202,6 @@
    Subtle shadow for cards, panels, dialogs. Design ref uses this
    on elevated surfaces (cards, sidebar, tables). NOT applied globally
    — each component opts in via this utility class. */
-@utility executive-shadow {
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
 @utility pi-dashed-panel {
   border: 2px dashed var(--color-rule); /* TZ-96: design ref uses 2px (was 1px) */
   background-color: transparent;
@@ -1198,13 +1209,13 @@
 
 /* Subtle table surface — separates grid from page canvas without heavy cards. */
 @utility pi-table-surface {
-  background-color: color-mix(in oklch, var(--color-paper-2) 70%, var(--color-paper));
+  background-color: var(--color-paper-raised);
   border: 1px solid var(--color-rule);
   border-radius: 2px;
 }
 
 @utility pi-table-sticky-bg {
-  background-color: color-mix(in oklch, var(--color-paper-2) 70%, var(--color-paper));
+  background-color: var(--color-paper-raised);
 }
 
 /* TZ-UI-TABLE-302 fix: CDK moves drag preview to <body>; host styles do not apply. */

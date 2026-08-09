@@ -110,6 +110,17 @@ paper-2 0.26, значит ховер в диалогах остаётся за�
 Dark: `--color-rule-strong-override: oklch(0.58 0.030 260)`; существующий
 `--color-rule-override` не трогать.
 
+Там же добавить **тема-инвариантный** токен лейбла на золоте (без `-override`, он
+намеренно НЕ переворачивается в тёмной теме — золото светлое в обеих):
+
+```
+--color-on-gold: oklch(0.20 0.012 260);   /* NEW: текст/иконка поверх золотой заливки */
+```
+
+Обоснование: `--color-ink` в dark = `oklch(0.95)`, а `--color-gold` в dark = `oklch(0.84)`.
+Пара `bg-gold text-ink` дала бы в тёмной теме ≈1:1 — кнопка исчезла бы. С `on-gold`:
+light ≈6:1, dark ≈9:1.
+
 ШАГ 3 — Контролы на приподнятой поверхности
 
 В `.pi-input` (L647), `.pi-icon-btn` (L681), `.pi-outline-btn` (L833):
@@ -141,7 +152,7 @@ Dark-override'ы muted-* не трогать.
 ШАГ 5 — Кнопки (`button.component.ts` L15–20)
 
 ```
-default:     'bg-gold text-ink border border-gold hover:bg-gold-hover executive-shadow'
+default:     'bg-gold text-on-gold border border-gold hover:bg-gold-hover executive-shadow'
 secondary:   'bg-paper-2 text-ink hairline hover:bg-paper-3'          // чинит несуществующий bg-tertiary
 outline:     'bg-paper-raised text-ink border border-rule-strong hover:bg-paper-2'
 ghost:       без изменений
@@ -149,8 +160,12 @@ link:        без изменений
 destructive: 'bg-destructive text-white hover:brightness-110'          // чинится токеном в ШАГ 6
 ```
 
-Золото = **заливка с ink-лейблом** (≈6:1), это не нарушает запрет «gold-текст на бумаге»
-из PO-DIARY / DARK-THEME.
+Золото = **заливка с тёмным лейблом** (`on-gold`, ≈6:1 light / ≈9:1 dark), это не нарушает
+запрет «gold-текст на бумаге» из PO-DIARY / DARK-THEME.
+
+Остальные места с золотой заливкой (`bg-sunrise-warm text-paper` — активные чипы, чекбокс,
+опция селекта, пагинация, бейдж колокольчика) в этом TZ **не трогать**: они уходят
+в TZ-UI-THEME-331 отдельным свипом.
 
 ШАГ 6 — Статус-цвет и ховеры
 
@@ -194,8 +209,8 @@ AC (проверяемо)
 1. `--color-paper` в light = `oklch(0.962 …)`; чистый белый (`oklch(1 0 0)`) в токенах отсутствует.
 2. Шапка, диалог и панель dropdown в light **светлее** канвы (raised), а не темнее.
 3. `bg-tertiary` в репозитории отсутствует; кнопка `secondary` имеет видимый фон и ink-текст.
-4. Кнопка `default` — золотая заливка с тёмным лейблом; в шаблонах не осталось
-   `bg-[oklch(0.55_0.007_260)]`.
+4. Кнопка `default` — золотая заливка с лейблом `text-on-gold`, читаемая в **обеих** темах;
+   в шаблонах не осталось `bg-[oklch(0.55_0.007_260)]`.
 5. Контур `.pi-input` / `.pi-icon-btn` / `.pi-outline-btn` = `--color-rule-strong` (≥3:1 к фону поля).
 6. `--color-muted`, `--color-muted-foreground`, `--color-muted-foreground-strong` — три различимые
    ступени; вторичный текст ≥4.5:1 к канве.

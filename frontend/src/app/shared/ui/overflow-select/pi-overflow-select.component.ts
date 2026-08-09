@@ -65,11 +65,11 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
 
     <ng-template #panel>
       <div
-        class="hairline rounded-sm bg-paper shadow-lg flex flex-col max-h-[min(70vh,28rem)] overflow-hidden"
+        class="hairline rounded-sm bg-paper-raised shadow-lg flex flex-col max-h-[min(70vh,28rem)] overflow-hidden"
         data-test="pi-overflow-select-panel"
       >
         @if (showSearch()) {
-          <div class="shrink-0 p-1.5 hairline-b bg-paper">
+          <div class="shrink-0 p-1.5 hairline-b bg-paper-raised">
             <input
               #searchInput
               type="search"

@@ -60,6 +60,14 @@
 - Ban: touch proposals.page while 313 claimed; deploy
 - Deploy: NO
 
+## Checkpoint 2026-08-09T02:35:00Z · worktree cleaned · LIGHT-330 DONE
+- DONE: pathLabel leftovers on KP pages; attach-dialog strict typing; **TZ-UI-LIGHT-330** closed (ng build unblocked)
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-320 PARKED; INN-301 PARKED
+- NEXT: idle — PO visual light/dark; deploy only on explicit command; optional unpark 320
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:15:00Z · TZ-SALES-312 DONE
 - DONE: TZ-SALES-312 — `/proposals/create` three-zone shell (placeholders + narrow toggles) per design-spec; WIP from agent-3e757640b7 preserved and gated
 - IN PROGRESS: none
