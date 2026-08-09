@@ -49,7 +49,7 @@
 - GEMINI.md DoD: Integrity slot до READY/archive (одна строка, не эссе).
 - DOMAIN-MAP не создавался (OPS-304); массовый backfill старых checklist’ов не делался (known_limitation).
 - Conflict scan: `_active/` только DOC-TABLES-305 (FE); ключи 303 свободны. Docs-only self-archive OK.
-- **Landed on canonical main:** `6a5771cb` (cherry-pick of `bb30b30b`), pushed to `origin/main` 2026-08-09.
+- **Landed on canonical main:** `173d1406` (cherry-pick of `bb30b30b`), pushed to `origin/main` 2026-08-09.
 
 ## Closeout
 

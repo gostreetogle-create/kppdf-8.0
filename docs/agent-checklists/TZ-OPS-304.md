@@ -50,7 +50,7 @@
 - Проводка: PROJECT-MEMORY (таблица + if/then «сначала DOMAIN-MAP»), DOCS-INTEGRITY (строка матрицы + ссылка), ARCHITECTURE pointer (1 строка), pages/README (1 строка).
 - Отмечен P2-дрейф README (индекс не перечисляет warehouses/supply/people/import-todos; `/inventory` vs `/dashboard`) — hygiene-fix successor, не эта TZ.
 - Ноль product code; DOC-TABLES-305 (FE) не пересекается. Docs-only self-archive OK.
-- **Landed on canonical main:** `3ca156ce` (cherry-pick of `b577cdff`), pushed to `origin/main` 2026-08-09.
+- **Landed on canonical main:** `07393a79` (cherry-pick of `b577cdff`), pushed to `origin/main` 2026-08-09.
 
 ## Closeout
 

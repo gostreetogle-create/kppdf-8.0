@@ -1,6 +1,6 @@
 TZ-OPS-302
 closed: 2026-08-09
-commit: ad886ed9
+commit: 9303c728
 zone: Project Memory Pack — docs/PROJECT-MEMORY.md + entry wiring
 checklist: docs/agent-checklists/TZ-OPS-302.md
 archive: tasks/_archive/2026-08/TZ-OPS-302.done.md
