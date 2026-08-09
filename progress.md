@@ -1,4 +1,19 @@
 
+## [2026-08-09T19:44:49Z] — WAVE-KP-USABLE DONE: 339 → 334 → 349 → 335 → 336
+**Исполнитель:** Buffy / continuous executor
+**Статус:** WAVE DONE; all scoped commits pushed to canonical `main`; deploy НЕ
+**Финальный отчёт PO:**
+
+| TZ | Feature SHA | Closeout SHA | Archive |
+|---|---|---|---|
+| TZ-SALES-339 | `8a3186f1` | `e183a663` | `tasks/_archive/2026-08/TZ-SALES-339.done.md` |
+| TZ-SALES-334 | `fa14bcec` | `fa14bcec` | `tasks/_archive/2026-08/TZ-SALES-334.done.md` |
+| TZ-SALES-349 | `a16d2845` | `a16d2845` | `tasks/_archive/2026-08/TZ-SALES-349.done.md` |
+| TZ-SALES-335 | `d6bd43b9` | `592d5980` | `tasks/_archive/2026-08/TZ-SALES-335.done.md` |
+| TZ-SALES-336 | `b8edffd7` | `b8edffd7` | `tasks/_archive/2026-08/TZ-SALES-336.done.md` |
+
+Merge landing for 339/334: `69752397`. `_active/` is empty; WAVE-KP-COMPLETE was not started; Deploy NO.
+
 ## [2026-08-09T19:44:49Z] — TZ-SALES-336 DONE: hard-lock «Оплачена» и копирование КП
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; browser self-verify + FE/BE gates + archive/lock/closeout; deploy НЕ

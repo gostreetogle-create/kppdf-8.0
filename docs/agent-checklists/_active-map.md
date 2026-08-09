@@ -1,12 +1,13 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T19:44:49Z · TZ-SALES-336 DONE / WAVE-KP-USABLE next DONE
+## Checkpoint 2026-08-09T19:44:49Z · WAVE-KP-USABLE DONE / NEXT idle
 - TZ-SALES-336 закрыта на canonical `D:\\kppdf-8.0` `main`: accepted = «Оплачена» hard-lock, unlock to draft, saved template snapshot on locked reopen, and duplicate-to-new-draft.
 - Browser self-verify PASS: «Сохранено» → «Оплачена · бланк заблокирован» with disabled edit controls → «Снять «Оплачена»» restores editing; «Копировать» returned 201 and opened Create КП with a new id.
 - Gates: frontend/backend tsc PASS; proposal/Create + proposals Jest 44/44; quotation service Jest 27/27; ESLint/Prettier/diff-check PASS.
 - Archive: `tasks/_archive/2026-08/TZ-SALES-336.done.md`; lock `.mimocode/locks/TZ-SALES-336-kp-lock-paid-copy.lock`; `_active/TZ-SALES-336.md` removed after closeout.
 - Foreign system-role/admin and DOC-343/344 WIP preserved/excluded; frozen 317/320 untouched; Deploy NO.
-- NEXT: close WAVE-KP-USABLE (339/334/349/335/336) → idle; do not start WAVE-KP-COMPLETE.
+- WAVE-KP-USABLE is DONE: 339/334/349/335/336 archives and locks are present; `_active/` is empty. `WAVE-KP-COMPLETE` remains READY only and was not started.
+- NEXT: idle; wait for a separate PO command before WAVE-KP-COMPLETE. Deploy NO.
 
 ### Previous checkpoints
 
