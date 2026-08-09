@@ -29,6 +29,15 @@
 
 - [ ] …из TZ…
 
+## Integrity slot (до READY / archive)
+
+- [ ] Тип изменения определён: page | permission | module | MCP | docs-only | other
+- [ ] FIC §A–E пройдены **или** N/A с причиной одной строкой
+- [ ] page.md / PAGE-TZ-INDEX обновлены **или** N/A (нет UI route)
+- [ ] SECTION-READINESS обновлён **или** N/A
+- [ ] Чужой WIP не в коммите; conflict keys соблюдены
+- [ ] Канон: docs/DOCS-INTEGRITY.md
+
 ## Gates (факт)
 
 - команды + PASS/FAIL

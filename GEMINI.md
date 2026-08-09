@@ -11,6 +11,7 @@
 Не называй задачу DONE только потому, что код изменён, тест запустился или task удалён. DONE означает одновременно:
 
 - acceptance criteria выполнены;
+- **Integrity slot в checklist заполнен до READY/archive** (см. `docs/DOCS-INTEGRITY.md`);
 - typecheck, tests и lint прошли в затронутой области;
 - для UI проверены DOM/браузерные сценарии, если это возможно;
 - документация, чек-лист и progress обновлены;

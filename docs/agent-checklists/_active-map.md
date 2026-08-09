@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T13:20:00Z · TZ-OPS-303 DONE (Docs Integrity Closeout)
+- DONE: `docs/DOCS-INTEGRITY.md` (60 lines ≤100) — rule, trigger→files matrix, Integrity slot, anti-drift.
+- `_TEMPLATE.md` Integrity slot section after Acceptance; FIC §F item; PROJECT-MEMORY live link + slot in «Не потерять»; GEMINI DoD line.
+- Gates: rg Integrity slot/DOCS-INTEGRITY → 14 hits in 6 target files PASS; line count 60 ≤100 PASS; no product code diff PASS.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-303.done.md`; `_active/TZ-OPS-303.md` removed; checklist DONE.
+- NEXT: TZ-OPS-304 (Domain Canon Map + gap inventory) — routes/modules READ-only; Deploy: NO
+
 ## Checkpoint 2026-08-09T13:05:00Z · TZ-OPS-302 DONE (Project Memory Pack)
 - DONE: `docs/PROJECT-MEMORY.md` created (67 lines ≤140, 6 sections) — thin truth pack for agents.
 - Wiring: GUIDE §1.2 step `1a` (before ARCHITECTURE); GEMINI.md mandatory reading after PO-DIARY; how-to-connect-ai item 6 after CLAIM.

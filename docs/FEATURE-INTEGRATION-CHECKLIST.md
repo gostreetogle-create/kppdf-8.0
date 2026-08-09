@@ -98,6 +98,7 @@
 - [ ] Этот чеклист пройден для типа изменения (A–E)
 - [ ] FE/BE tsc + focused tests
 - [ ] `progress.md` + checklist; чужой dirty не в коммите
+- [ ] **Integrity slot в checklist заполнен** (см. `docs/DOCS-INTEGRITY.md` + `_TEMPLATE.md`)
 
 ---
 
