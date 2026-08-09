@@ -75,15 +75,19 @@ known_limitation:
 ═══════════════════════════════════════════════════════════════
 
 1. Create КП: при выбранном шаблоне **нет** H/V scrollbar на `.center__sheet` и внутри iframe preview (PO visual + data-test).
-2. Лист целиком влезает в center между rails; пропорция 210∶297; top-aligned.
-3. Фон и absolute layout после 321 не регрессируют.
-4. Gates:
+2. **Измеримо (обязательно):** для iframe preview  
+   `scrollWidth <= clientWidth + 1` и `scrollHeight <= clientHeight + 1`  
+   (documentElement или body — что реально скроллится; tolerance 1px на mm↔px).
+3. Portrait и landscape build HTML = один page box без document overflow (`overflow:hidden` на html/body или эквивалент).
+4. Лист целиком влезает в center между rails; пропорция 210∶297; top-aligned; ResizeObserver + top-centered transform сохранены.
+5. Фон и absolute layout после 321 не регрессируют; shell §0 FROZEN не изменён.
+6. Gates:
    ```
    cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
    cd backend && pnpm test -- --testPathPattern=document-templates-build
    cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
    cd frontend && pnpm test -- --testPathPattern=proposal-create
    ```
-5. Executor report (auto) в checklist; archive только после Cursor/PO visual PASS на scroll.
+7. Executor report (auto) в checklist; archive только после Cursor/PO visual PASS на scroll.
 
 Финализация: `tasks/_archive/2026-08/TZ-SALES-323.done.md` + GEMINI.md closeout.

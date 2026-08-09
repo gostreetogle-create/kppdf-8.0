@@ -122,6 +122,13 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-09 — Wave-2 канон сверен (два research → один)
+- Scroll: outer OK; корень iframe HTML; AC = scrollWidth/Height ≤ client+1px.
+- Empty: skeleton thead+blank row; Builder colspan «Нет данных» = known_limit.
+- Bind 325: **не** все live tables — `kpLineItems` / одна live table / иначе none.
+- Промпт всей очереди: `PROMPT-WAVE2-CONTINUOUS.md`.
+Источник: PO «перепроверь и скомпонуй» два вердикта.
+
 ### 2026-08-09 — Research wave-2 Create КП: verdict → TZ 323/324/325
 - Scroll: outer scale OK; корень — build HTML `body padding` + `doc-content min-height` → iframe scrollbar.
 - Empty table: `preview([])` = `<p>Нет данных</p>` — by design bad UX; нужен skeleton table.

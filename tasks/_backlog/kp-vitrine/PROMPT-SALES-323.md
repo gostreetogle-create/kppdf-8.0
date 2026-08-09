@@ -20,7 +20,9 @@ CLAIM первым (до кода):
 
 Цель одной фразой: лист A4 в Create КП целиком влезает без H/V scrollbar (чинить и FE scale, и CSS overflow в build HTML — body padding vs doc-content min-height).
 
-НЕ делать в этой TZ: empty-table skeleton (324), draftLines bind (325), snapshot/322, print/320, builder drag, deploy.
+Измеримо: iframe scrollWidth <= clientWidth+1 и scrollHeight <= clientHeight+1 (не только спрятать overflow снаружи).
+
+НЕ делать в этой TZ: empty-table skeleton (324), draftLines bind (325), snapshot/322, print/320, builder drag, DOC-344, deploy.
 
 Gates из TZ. Archive только после Cursor/PO visual PASS на scroll.
 В checklist в конце — ## Executor report (auto) (commit full SHA).
@@ -28,4 +30,4 @@ Gates из TZ. Archive только после Cursor/PO visual PASS на scroll
 
 ---
 
-**PO one-liner:** Скопируй промпт агенту; очередь: 323 → 324 → 325; доска `_active-map`.
+**PO one-liner:** Лучше дать [`PROMPT-WAVE2-CONTINUOUS.md`](./PROMPT-WAVE2-CONTINUOUS.md) на всю очередь 323→324→325.

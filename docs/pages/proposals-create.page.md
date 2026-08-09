@@ -26,6 +26,6 @@
 
 - **323** — A4 fit без scrollbar (FE scale + build HTML overflow/padding)
 - **324** — empty table = skeleton thead + пустая строка (не `<p>Нет данных</p>`)
-- **325** — live `draftLines` → table на бланке (column-key contract; после 323+324)
+- **325** — live `draftLines` → **target** line-items table (key aliases; не все live tables; после 323+324)
 - Overlay-каскад категорий → **318**
 - Persist Quotation / snapshot → later · stale refresh → **322 PARK** · Печать → **320 PARK**
