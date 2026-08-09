@@ -16,6 +16,7 @@ import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import {
   DocumentTemplatesService,
+  type BuildPreviewLine,
   type DocumentTemplate,
 } from '../../../shared/services/pi-document-templates.service';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
@@ -349,7 +350,17 @@ export class ProposalCreatePage implements OnInit {
           }
           this.previewStatus.set('loading');
           const org = this.organizationId().trim();
-          const payload = org ? { organizationId: org } : {};
+          const previewLines: BuildPreviewLine[] = this.draftLines().map((line) => ({
+            productName: line.productName,
+            quantity: line.quantity,
+            unitPrice: line.unitPrice,
+            ...(line.productSku ? { productSku: line.productSku } : {}),
+            ...(line.unit ? { unit: line.unit } : {}),
+          }));
+          const payload = {
+            previewLines,
+            ...(org ? { organizationId: org } : {}),
+          };
           return this.templatesSvc.build(tpl._id, payload).pipe(
             tap((res) => {
               if (res.ok && typeof res.data === 'string') {
@@ -466,6 +477,9 @@ export class ProposalCreatePage implements OnInit {
 
   protected onProductAdd(line: ProposalDraftLine): void {
     this.draftLines.update((rows) => [...rows, line]);
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
+    }
   }
 
   protected closeFlyouts(): void {

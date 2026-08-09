@@ -100,7 +100,7 @@ export class TableTemplateService {
    * headers plus one blank data row. A table without columns keeps the short
    * Russian empty state «Нет описанных колонок.».
    */
-  async preview(id: string): Promise<string> {
+  async preview(id: string, previewRows?: unknown[][]): Promise<string> {
     const doc = await this.findById(id);
     const cols = doc.columns ?? [];
     if (cols.length === 0) {
@@ -115,7 +115,10 @@ export class TableTemplateService {
           }px">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
       )
       .join('');
-    const rows = doc.sampleRows ?? [];
+    // A caller-supplied array is request-scoped preview data. An explicit empty
+    // array intentionally preserves the table skeleton instead of falling back
+    // to persisted sample rows.
+    const rows = previewRows ?? doc.sampleRows ?? [];
     if (rows.length === 0) {
       const blankCells = cols
         .map((c) => `<td style="text-align:${c.align ?? 'left'}"></td>`)

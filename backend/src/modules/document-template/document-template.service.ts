@@ -13,7 +13,7 @@ import { promises as fs } from 'node:fs';
 import { DocumentTemplate, DocumentTemplateDocument } from './document-template.schema';
 import { CreateDocumentTemplateDto } from './dto/create-document-template.dto';
 import { UpdateDocumentTemplateDto } from './dto/update-document-template.dto';
-import { BuildDocumentDto } from './dto/build-document.dto';
+import { BuildDocumentDto, BuildPreviewLineDto } from './dto/build-document.dto';
 import {
   TemplateBlock,
   TemplateBlockDocument,
@@ -563,10 +563,15 @@ export class DocumentTemplateService {
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
     await this.applyIssuerOrganization(template, bag);
+    const lineItemsTargetIds = this.resolveLineItemsTargetIds(blocks);
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
         const withBinding = await this.resolveBlockContent(b, bag);
-        return this.resolveTableBlock(withBinding);
+        return this.resolveTableBlock(
+          withBinding,
+          dto.previewLines,
+          lineItemsTargetIds.has(String(b._id)),
+        );
       }),
     );
     return this.renderHtml(template, resolvedBlocks, bag);
@@ -585,26 +590,93 @@ export class DocumentTemplateService {
   }
 
   /**
-   * Resolve table blocks by looking up `settings.tableTemplateId` and
-   * injecting the rendered HTML from TableTemplateService.preview().
+   * Resolve table blocks and, when requested, inject request-only КП line items.
+   * Explicit `kpLineItems`/`line-items` blocks win; otherwise exactly one live
+   * table is the safe MVP target. Snapshot blocks are never changed.
    */
   private async resolveTableBlock(
     block: TemplateBlockDocument,
+    previewLines?: BuildPreviewLineDto[],
+    isLineItemsTarget = false,
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
-    const settings = block.settings as { tableTemplateId?: string } | undefined;
+    const settings = block.settings as {
+      tableTemplateId?: string;
+      kpLineItems?: boolean;
+      role?: string;
+    } | undefined;
     const tableTemplateId = source?.kind === 'table-template'
       ? source.refId
       : settings?.tableTemplateId;
     if (!tableTemplateId) return block;
     try {
       if (source?.kind === 'table-template' && source.mode === 'snapshot') return block;
-      const html = await this.tableTemplateService.preview(tableTemplateId);
+      if (previewLines === undefined) {
+        const html = await this.tableTemplateService.preview(tableTemplateId);
+        return this.cloneResolvedBlock(block, { content: html });
+      }
+
+      const rows = isLineItemsTarget
+        ? await this.mapPreviewLines(tableTemplateId, previewLines)
+        : [];
+      const html = await this.tableTemplateService.preview(tableTemplateId, rows);
       return this.cloneResolvedBlock(block, { content: html });
     } catch {
       return block;
     }
+  }
+
+  private resolveLineItemsTargetIds(blocks: TemplateBlockDocument[]): Set<string> {
+    const liveTables = blocks.filter((block) => {
+      if (block.type !== 'table') return false;
+      if (block.source?.kind === 'table-template' && block.source.mode === 'snapshot') {
+        return false;
+      }
+      const settings = block.settings as { tableTemplateId?: string } | undefined;
+      return block.source?.kind === 'table-template'
+        ? Boolean(block.source.refId)
+        : Boolean(settings?.tableTemplateId);
+    });
+    const explicit = liveTables.filter((block) => {
+      const settings = block.settings as { kpLineItems?: boolean; role?: string } | undefined;
+      return settings?.kpLineItems === true || settings?.role === 'line-items';
+    });
+    const targets = explicit.length > 0 ? explicit : liveTables.length === 1 ? liveTables : [];
+    return new Set(targets.map((block) => String(block._id)));
+  }
+
+  private async mapPreviewLines(
+    tableTemplateId: string,
+    lines: BuildPreviewLineDto[],
+  ): Promise<unknown[][]> {
+    const table = await this.tableTemplateService.findById(tableTemplateId);
+    return lines.map((line) =>
+      (table.columns ?? []).map((column) => this.previewLineValue(column.key, line)),
+    );
+  }
+
+  private previewLineValue(key: string, line: BuildPreviewLineDto): unknown {
+    const normalized = key.trim().toLowerCase();
+    if (['productname', 'name', 'title', 'product', 'наименование'].includes(normalized)) {
+      return line.productName;
+    }
+    if (['quantity', 'qty', 'count', 'кол-во', 'количество'].includes(normalized)) {
+      return line.quantity;
+    }
+    if (['unitprice', 'price', 'unit_price', 'цена'].includes(normalized)) {
+      return line.unitPrice;
+    }
+    if (['sum', 'total', 'amount', 'сумма'].includes(normalized)) {
+      return line.quantity * line.unitPrice;
+    }
+    if (['productsku', 'sku', 'article', 'артикул'].includes(normalized)) {
+      return line.productSku ?? '';
+    }
+    if (['unit', 'ед', 'ед.изм'].includes(normalized)) {
+      return line.unit ?? '';
+    }
+    return '';
   }
 
   /**

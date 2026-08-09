@@ -345,6 +345,79 @@ describe('DocumentTemplates build (e2e)', () => {
     expect(res.text).not.toContain('Нет данных');
   });
 
+  it('POST build with previewLines binds only the assigned live line-items table', async () => {
+    const orgId = await createRealOrganization('Line Items Org');
+    const targetTable = await tableModel.create({
+      name: 'Assigned line items',
+      columns: [
+        { key: 'productName', label: 'Наименование', type: 'text' },
+        { key: 'qty', label: 'Кол-во', type: 'number' },
+        { key: 'price', label: 'Цена', type: 'currency' },
+        { key: 'sum', label: 'Сумма', type: 'currency' },
+        { key: 'sku', label: 'Артикул', type: 'text' },
+      ],
+      sampleRows: [],
+      isActive: true,
+    });
+    const otherTable = await tableModel.create({
+      name: 'Unassigned live table',
+      columns: [{ key: 'name', label: 'Другая таблица', type: 'text' }],
+      sampleRows: [],
+      isActive: true,
+    });
+    createdTables.push(targetTable._id.toString(), otherTable._id.toString());
+
+    const docTypeId = new Types.ObjectId().toString();
+    const tpl = await request(app.getHttpServer())
+      .post('/api/document-templates')
+      .set(auth)
+      .send({ name: 'Line Items Build', organizationId: orgId, docTypeId, pageSize: 'A4' });
+    expect([200, 201]).toContain(tpl.status);
+    const templateId = tpl.body._id;
+    createdTemplates.push(templateId);
+
+    await blockModel.create([
+      {
+        templateId: new Types.ObjectId(templateId),
+        type: 'table',
+        order: 0,
+        source: { kind: 'table-template', refId: targetTable._id.toString(), mode: 'live' },
+        settings: { kpLineItems: true },
+        isActive: true,
+      },
+      {
+        templateId: new Types.ObjectId(templateId),
+        type: 'table',
+        order: 1,
+        source: { kind: 'table-template', refId: otherTable._id.toString(), mode: 'live' },
+        isActive: true,
+      },
+    ]);
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({
+        organizationId: orgId,
+        previewLines: [
+          {
+            productName: 'Кронштейн',
+            quantity: 2,
+            unitPrice: 1250,
+            productSku: 'BR-2',
+            unit: 'шт',
+          },
+        ],
+      });
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('Кронштейн');
+    expect(res.text).toContain('BR-2');
+    expect(res.text).toContain('2');
+    expect(res.text.match(/<table\b/g)).toHaveLength(2);
+    expect(res.text.match(/Кронштейн/g)).toHaveLength(1);
+    expect(res.text).not.toContain('Нет данных');
+  });
+
   it('POST block with columns[] — persists and build renders multi-column HTML', async () => {
     const orgId = await createRealOrganization('MultiCol Org');
     const docTypeId = new Types.ObjectId().toString();

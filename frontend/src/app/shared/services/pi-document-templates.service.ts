@@ -73,7 +73,16 @@ export interface DocumentTemplate {
  * a «bag» keyed by source label (`bag.organization`, `bag.counterparty`, …).
  * Empty/invalid IDs: silently skipped → block renders empty placeholder.
  */
+export interface BuildPreviewLine {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  productSku?: string;
+  unit?: string;
+}
+
 export interface BuildDocumentRequest {
+  previewLines?: BuildPreviewLine[];
   organizationId?: string;
   counterpartyId?: string;
   productId?: string;

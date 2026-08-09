@@ -233,7 +233,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     tick(250);
     fixture.detectChanges();
 
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', {});
+    expect(buildMock).toHaveBeenCalledWith('tpl-1', { previewLines: [] });
     expect(page.previewStatus()).toBe('ready');
     const frame = fixture.debugElement.query(By.css('[data-test="kp-tpl-html-preview"]'));
     expect(frame).toBeTruthy();
@@ -256,31 +256,54 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
     tick(250);
     fixture.detectChanges();
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', {});
+    expect(buildMock).toHaveBeenCalledWith('tpl-1', { previewLines: [] });
 
     buildMock.mockClear();
     page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 0 });
     tick(250);
     fixture.detectChanges();
 
-    expect(buildMock).toHaveBeenCalledWith('tpl-1', { organizationId: 'org-1' });
+    expect(buildMock).toHaveBeenCalledWith('tpl-1', {
+      previewLines: [],
+      organizationId: 'org-1',
+    });
   }));
 
-  it('keeps draftLines add path (not painted on sheet)', () => {
+  it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
       onProductAdd: (line: ProposalDraftLine) => void;
       draftLines: () => ProposalDraftLine[];
     };
 
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    buildMock.mockClear();
+
     page.onProductAdd({
       productId: 'prod-1',
       productName: 'Стенд',
+      productSku: 'ST-1',
       quantity: 1,
+      unit: 'шт',
       unitPrice: 5000,
     });
     fixture.detectChanges();
+    tick(250);
+    fixture.detectChanges();
 
-    expect(page.draftLines().length).toBe(1);
+    expect(page.draftLines()).toHaveLength(1);
+    expect(buildMock).toHaveBeenCalledWith('tpl-1', {
+      previewLines: [
+        {
+          productName: 'Стенд',
+          productSku: 'ST-1',
+          quantity: 1,
+          unit: 'шт',
+          unitPrice: 5000,
+        },
+      ],
+    });
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
-  });
+  }));
 });

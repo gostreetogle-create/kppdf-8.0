@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:56:32Z · TZ-SALES-325 READY FOR REVIEW
+- READY: request-only `previewLines` bind from Create КП `draftLines` into the assigned line-items table.
+- Gates: backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 11/11; diff-check PASS.
+- Target guard: explicit `kpLineItems` / line-items role, otherwise exactly one live table; multiple live tables and snapshots remain untouched; empty lines retain the 324 skeleton.
+- Canonical foreign dirty `document-template.service.ts` orientation WIP and DOC-343 docs remain preserved/excluded.
+- NEXT: Cursor/PO visual PASS for assigned table, empty skeleton, and no A4 H/V scroll; then archive/closeout.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T15:55:30Z · TZ-DOC-344 DONE / star-fill closeout
 - DONE: Builder now renders the active default-background star with a yellow fill through the Lucide child SVG; inactive stars remain outline.
 - Gates: frontend tsc PASS; builder-inspector + builder.page 43/43 PASS; diff-check PASS.

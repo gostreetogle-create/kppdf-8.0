@@ -1,5 +1,34 @@
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
-import { IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class BuildPreviewLineDto {
+  @IsString()
+  productName!: string;
+
+  @IsNumber()
+  @Min(0)
+  quantity!: number;
+
+  @IsNumber()
+  @Min(0)
+  unitPrice!: number;
+
+  @IsOptional()
+  @IsString()
+  productSku?: string;
+
+  @IsOptional()
+  @IsString()
+  unit?: string;
+}
 
 /**
  * TZ-86 Phase A.4 — BuildDocumentDto.
@@ -17,6 +46,12 @@ import { IsOptional, IsString } from 'class-validator';
  * are stripped before reaching the service.
  */
 export class BuildDocumentDto {
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BuildPreviewLineDto)
+  previewLines?: BuildPreviewLineDto[];
+
   @IsOptional() @IsString() @IsObjectId() organizationId?: string;
 
   @IsOptional() @IsString() @IsObjectId() counterpartyId?: string;
