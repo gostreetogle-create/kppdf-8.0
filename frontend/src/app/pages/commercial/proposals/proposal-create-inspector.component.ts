@@ -120,7 +120,7 @@ export interface ProposalCreateInspectorState {
           <p class="eyebrow m-0">оценка</p>
           <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
           <p class="text-[11px] text-muted-foreground m-0">
-            Подсказка по draft × наценка; не пишется в сохранённый total.
+            Строки × наценка; в сохранённый итог не пишется.
           </p>
         </div>
       }
@@ -141,7 +141,7 @@ export interface ProposalCreateInspectorState {
               ariaLabel="Таблица бланка"
               dataTest="kp-table-target"
             />
-            <p class="inspector__table-target-hint">Выберите, какую live-таблицу настраивать.</p>
+            <p class="inspector__table-target-hint">Выберите таблицу с позициями для настройки.</p>
           }
           <div class="inspector__columns">
             @for (column of tableLayout(); track column.key; let index = $index) {
@@ -201,9 +201,9 @@ export interface ProposalCreateInspectorState {
       }
 
       @if (!tableOnly()) {
-        <app-pi-form-field label="Клиент (заглушка)" htmlFor="kp-insp-cp">
+        <app-pi-form-field label="Клиент" htmlFor="kp-insp-cp">
           <select id="kp-insp-cp" class="pi-input w-full" disabled data-test="kp-insp-cp-stub">
-            <option>Выбор клиента — later</option>
+            <option>Выберите клиента</option>
           </select>
         </app-pi-form-field>
       }

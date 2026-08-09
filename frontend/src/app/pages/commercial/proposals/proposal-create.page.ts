@@ -11,6 +11,7 @@
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import { ActivatedRoute } from '@angular/router';
 import {
   FileText,
   LucideAngularModule,
@@ -366,6 +367,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 })
 export class ProposalCreatePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly templatesSvc = inject(DocumentTemplatesService);
   private readonly proposalsSvc = inject(ProposalsService);
   private readonly toast = inject(PiToastService);
@@ -469,7 +471,15 @@ export class ProposalCreatePage implements OnInit {
   }
 
   ngOnInit(): void {
-    this.resumeLastDraft();
+    const queryId = this.route?.snapshot.queryParamMap.get('id')?.trim();
+    const isNew = this.route?.snapshot.queryParamMap.get('new') === '1';
+    if (queryId) {
+      this.resumeDraftById(queryId);
+    } else if (isNew) {
+      this.removeStorage('kp.create.lastDraftId');
+    } else {
+      this.resumeLastDraft();
+    }
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
       this.isWide.set(true);
       return;
@@ -597,6 +607,25 @@ export class ProposalCreatePage implements OnInit {
       this.writeStorage('kp.create.lastDraftId', res.data._id);
       this.writeStorage('kp.create.lastTemplateId', template._id);
       this.toast.success('Черновик сохранён');
+    });
+  }
+
+  private resumeDraftById(id: string): void {
+    this.proposalsSvc.findById(id).subscribe((res) => {
+      if (res.ok && res.data.status === 'draft') {
+        this.writeStorage('kp.create.lastDraftId', id);
+        this.hydrateDraft(res.data);
+        return;
+      }
+      if (this.readStorage('kp.create.lastDraftId') === id) {
+        this.removeStorage('kp.create.lastDraftId');
+      }
+      this.draftLines.set([]);
+      this.selectedTemplate.set(null);
+      this.previewHtmlSource.set(null);
+      this.previewHtml.set(null);
+      this.previewStatus.set('idle');
+      this.toast.error('КП нельзя открыть для редактирования. Открыт новый лист.');
     });
   }
 

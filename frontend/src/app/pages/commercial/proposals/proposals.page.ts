@@ -18,7 +18,7 @@ import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspa
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
@@ -42,7 +42,6 @@ import {
   estimateFamilyTotal,
 } from '../../../shared/services/pi-proposals.service';
 import { ProposalFamilyAttachDialogComponent } from './proposal-family-attach-dialog.component';
-import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
 import { ProposalVariantDialogComponent } from './proposal-variant-dialog.component';
 
 type SortKey = 'number' | 'date' | 'total' | 'status';
@@ -727,19 +726,13 @@ export class ProposalsPage implements OnInit {
   }
 
   protected openCreate(): void {
-    const ref = this.dialog.open(ProposalFormDialogComponent, {
-      data: null,
-      width: 'lg',
-    });
-    this.refreshOnDialogClose(ref);
+    void this.router.navigate(['/proposals/create'], { queryParams: { new: '1' } });
   }
 
   protected openEdit(proposal: Proposal): void {
-    const ref = this.dialog.open(ProposalFormDialogComponent, {
-      data: proposal,
-      width: 'lg',
+    void this.router.navigate(['/proposals/create'], {
+      queryParams: { id: proposal._id },
     });
-    this.refreshOnDialogClose(ref);
   }
 
   protected onDelete(row: Proposal): void {
@@ -774,12 +767,5 @@ export class ProposalsPage implements OnInit {
 
   protected reload(): void {
     this.listRes.reload();
-  }
-
-  private refreshOnDialogClose(ref: DialogRef<unknown>): void {
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.counterpartiesLookup.load();
-      this.listRes.reload();
-    });
   }
 }

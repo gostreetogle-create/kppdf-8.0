@@ -12,6 +12,7 @@
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory до Save; Save создаёт/обновляет draft Quotation с items, templateId и non-null templateSnapshot, а `kp.create.lastDraftId`/`lastTemplateId` используются только для resume
+- 338: вход из списка «Редактировать» использует `/proposals/create?id=...` и гидратирует тот же editable draft; «Создать» использует `?new=1` и не открывает второй form-редактор. User-visible подсказки — на русском.
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
 - 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and «Видна/Скрыта» rebuild the A4 table; the shared TableTemplate is never patched. «Открыть шаблон таблицы» uses the existing Documents tables route.

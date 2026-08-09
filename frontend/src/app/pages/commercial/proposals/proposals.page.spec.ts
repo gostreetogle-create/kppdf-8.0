@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router } from '@angular/router';
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -17,6 +18,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/quotations`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  const routerSpy = { navigate: jest.fn() };
   /** Reconfigurable per-test (cannot use overrideProvider after compile). */
   const freezeMock = jest.fn(() => of({ ok: true, data: {} as never }));
   const listVersionsMock = jest.fn(() => of({ ok: true, data: [] }));
@@ -100,6 +102,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    routerSpy.navigate.mockClear();
     freezeMock.mockReset();
     listVersionsMock.mockReset();
     freezeMock.mockReturnValue(of({ ok: true, data: {} as never }));
@@ -157,6 +160,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
           },
         },
         { provide: PiDialogService, useValue: dialogSpy },
+        { provide: Router, useValue: routerSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
     })
@@ -234,7 +238,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(() => comp.error()).not.toThrow();
   });
 
-  it('create button triggers openCreate → dialog.open', async () => {
+  it('create button navigates to the Create studio instead of opening a form dialog', async () => {
     const fixture = TestBed.createComponent(ProposalsPage);
     fixture.detectChanges();
 
@@ -244,10 +248,13 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
-    expect(dialogSpy.open).toHaveBeenCalled();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/proposals/create'], {
+      queryParams: { new: '1' },
+    });
+    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
-  it('openEdit passes the row to the form dialog', async () => {
+  it('openEdit navigates to the Create studio with the quotation id', async () => {
     const fixture = TestBed.createComponent(ProposalsPage);
     fixture.detectChanges();
 
@@ -257,8 +264,10 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
     const comp = fixture.componentInstance as unknown as { openEdit: (p: Proposal) => void };
     comp.openEdit(fakeProposals[0]);
-    expect(dialogSpy.open).toHaveBeenCalled();
-    expect(dialogSpy.open.mock.calls[0][1]).toMatchObject({ data: fakeProposals[0] });
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/proposals/create'], {
+      queryParams: { id: 'p1' },
+    });
+    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
   it('maps proposal statuses to Russian labels + badge classes', async () => {

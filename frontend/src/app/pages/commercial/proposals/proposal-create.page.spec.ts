@@ -586,6 +586,43 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(localStorage.getItem('kp.create.lastTemplateId')).toBe('tpl-1');
   }));
 
+  it('hydrates an editable quotation addressed by the studio query id', fakeAsync(() => {
+    quotationFindMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: {
+          _id: 'q-query',
+          status: 'draft',
+          organizationId: 'org-1',
+          templateId: 'tpl-1',
+          items: [
+            { productId: 'prod-1', productName: 'Стенд', quantity: 4, unit: 'шт', unitPrice: 5000 },
+          ],
+        },
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      draftLines: () => ProposalDraftLine[];
+      resumeDraftById: (id: string) => void;
+    };
+
+    page.resumeDraftById('q-query');
+    tick();
+
+    expect(quotationFindMock).toHaveBeenCalledWith('q-query');
+    expect(localStorage.getItem('kp.create.lastDraftId')).toBe('q-query');
+    expect(page.draftLines()).toEqual([
+      {
+        productId: 'prod-1',
+        productName: 'Стенд',
+        productSku: undefined,
+        quantity: 4,
+        unit: 'шт',
+        unitPrice: 5000,
+      },
+    ]);
+  }));
+
   it('rebuilds the template with request-only previewLines after adding a product', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;
