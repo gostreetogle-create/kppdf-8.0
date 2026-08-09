@@ -1,5 +1,21 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T21:35:00Z · TZ-SALES-339 DONE / next 334
+- TZ-SALES-339 self-verified in browser: autosave «Сохранено», no «Сохранить КП», F5 restored template/product/client, delete showed «КП удалено», reload removed row, and deleted КП did not resurrect.
+- Feature `8a3186f1` was already on `main`; closeout metadata is now archived and locked.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-339.done.md`; lock: `.mimocode/locks/TZ-SALES-339-save-autosave-delete.lock`; `_active/TZ-SALES-339.md` is removed after closeout commit.
+- 334 WIP remains uncommitted and must be narrowed to client-only scope before its separate claim/commit. Foreign system-role/admin and DOC-343/344 WIP excluded. Deploy NO.
+- NEXT: claim TZ-SALES-334 → client-only gates + browser autosave/resume → archive/lock/push.
+
+## Checkpoint 2026-08-09T22:00:00Z · TZ-SALES-339 EXCLUSIVE CLOSEOUT
+- Only active TZ: `tasks/_active/TZ-SALES-339.md`; 334 WIP remains unclaimed until 339 is archived.
+- Base: `dd89897b` / `origin/main`; 339 feature + hotfix `8a3186f1` are already on main.
+- Scope guard: do not commit 334/335/336 changes during this closeout; foreign system-role/admin and DOC-343/344 WIP excluded.
+- NEXT: browser self-verify 339 → evidence → archive/lock/remove active → commit/push; then re-claim 334.
+
+
+## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
+
 ## Checkpoint 2026-08-09T20:20:00Z · WAVE-KP-USABLE handoff (self-verify continuous)
 - Agent crashed mid-339 review. Hotfix on main: `8a3186f1` (no Save button; fix 400 item.total; empty resume after delete).
 - `_active/TZ-SALES-339.md` still present — first job: self-verify + archive 339, then 334→335→336 to wave DONE.
