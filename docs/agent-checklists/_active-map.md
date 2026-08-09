@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:45:00Z · WAVE-KP-USABLE +339 (Save UX / autosave / delete)
+- PO: Save hidden under НДС; wants autosave; delete toast but row stays; speak screen RU words.
+- Queue: archive 333 → 338 → **339** → 334 → 335 → 336.
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-CONTINUOUS.md` — PO may hand off now.
+- Deploy NO.
+
 ## Checkpoint 2026-08-09T19:40:00Z · WAVE-KP-USABLE prompt refreshed (338 + RU + client-all)
 - PO visual: Save = button (not autosave); Edit dialog → TZ-338 studio; client = all Counterparty (334); EN UI banned in guide/diary.
 - Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-USABLE-CONTINUOUS.md`
