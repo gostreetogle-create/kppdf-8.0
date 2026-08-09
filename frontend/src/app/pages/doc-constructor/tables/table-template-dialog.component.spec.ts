@@ -338,6 +338,22 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(dialog.form.controls.category.value).toBe('price-list');
     });
 
+    it('renders a preview skeleton row when columns have no sample rows', async () => {
+      const fixture = await createFixture(
+        stubTableTemplate({
+          columns: [
+            { key: 'name', label: 'Наименование', type: 'text', width: 120, align: 'left' },
+          ],
+          sampleRows: undefined,
+        }),
+      );
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.ttd-ih')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.ttd-preview-skeleton-row')).toBeTruthy();
+      expect(fixture.nativeElement.querySelector('.ttd-preview-skeleton')).toBeTruthy();
+    });
+
     it('syncs selected source fields from the multi-overflow value contract', async () => {
       const fixture = await createFixture(null);
       const dialog = getDialog(fixture);

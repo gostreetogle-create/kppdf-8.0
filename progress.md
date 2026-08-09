@@ -6,6 +6,15 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-308.done.md`; lock создан.
 **NEXT:** idle; successor P2 — авто-drift gate routes↔page.md; deploy НЕ.
 
+## [2026-08-09T14:37:14Z] — TZ-DOC-TABLES-308 DONE: dialog layout + preview skeleton
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; gates PASS; archive + lock; deploy НЕ
+**Что:** Source/fields controls выровнены по baseline с сопоставимой шириной; шапки колонок выше; пустой preview показывает skeleton cells и RU guidance вместо серого void.
+**Gates:** frontend tsc PASS; dialog Jest 44/44; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-308.done.md`; lock создан; `_active/TZ-DOC-TABLES-308.md` удалён.
+**Scope:** 306 chips, 307 enum/preset, backend registry, DOC-343 WIP, deploy untouched.
+**NEXT:** TZ-DOC-TABLES-307. Deploy НЕ.
+
 ## [2026-08-09T14:33:25Z] — TZ-DOC-TABLES-306 DONE: tables query routing fix
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; gates PASS; archive + lock; deploy НЕ

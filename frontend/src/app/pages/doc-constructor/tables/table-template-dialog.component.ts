@@ -183,7 +183,7 @@ interface ClientPreviewModel {
           </div>
 
           @if (mode() === 'from-registry') {
-            <!-- Source controls stay on a separate row; field options use overlay. -->
+            <!-- Source controls share a balanced baseline; field options use overlay. -->
             <div class="ttd-settings-row ttd-settings-row--source">
               <app-pi-form-field
                 class="ttd-field ttd-field--source"
@@ -458,6 +458,11 @@ interface ClientPreviewModel {
                       </tr>
                     }
                     @if (preview.rows.length === 0) {
+                      <tr class="ttd-preview-skeleton-row" aria-hidden="true">
+                        @for (column of preview.columns; track column.key + ':' + $index) {
+                          <td><span class="ttd-preview-skeleton"></span></td>
+                        }
+                      </tr>
                       <tr>
                         <td
                           [attr.colspan]="columnsArray.controls.length"
@@ -541,7 +546,7 @@ interface ClientPreviewModel {
         align-items: flex-end;
       }
       .ttd-settings-row--source {
-        align-items: flex-start;
+        align-items: center;
       }
 
       /* ─── Main ─── */
@@ -698,7 +703,8 @@ interface ClientPreviewModel {
       /* ─── Header Cell (inline editing per column) ─── */
       .ttd-ih {
         position: relative;
-        padding: 8px 6px;
+        min-height: 124px;
+        padding: 12px 8px 14px;
         text-align: left;
         font-size: 10px;
         font-weight: 700;
@@ -828,6 +834,22 @@ interface ClientPreviewModel {
         padding: 24px;
       }
 
+      .ttd-preview-skeleton-row td {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        background: color-mix(in oklch, var(--color-paper-2) 55%, var(--color-paper));
+      }
+      .ttd-preview-skeleton {
+        display: block;
+        height: 10px;
+        width: 78%;
+        border-radius: 2px;
+        background: color-mix(in oklch, var(--color-muted) 28%, var(--color-paper));
+      }
+      .ttd-preview-skeleton-row td:nth-child(2n) .ttd-preview-skeleton {
+        width: 56%;
+      }
+
       /* ─── Shared form primitives ─── */
       .ttd-field {
         display: flex;
@@ -847,15 +869,14 @@ interface ClientPreviewModel {
       .ttd-field--order {
         flex: 0 0 80px;
       }
-      .ttd-field--source {
-        flex: 1 1 200px;
-      }
+      .ttd-field--source,
       .ttd-field--fields {
-        flex: 2 1 300px;
+        flex: 1 1 0;
+        min-width: 220px;
       }
       .ttd-field-header {
         display: flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: space-between;
       }
       .ttd-input {
@@ -920,6 +941,7 @@ interface ClientPreviewModel {
         margin: 0;
         padding: 10px 8px;
       }
+
       .ttd-column-type-select {
         display: block;
         min-width: 0;

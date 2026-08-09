@@ -1,5 +1,22 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:37:14Z · TZ-DOC-TABLES-308 DONE
+- DONE: table dialog source/fields baseline + balanced widths, taller headers, and visible empty preview skeleton rows.
+- Gates: frontend tsc PASS; focused dialog Jest 44/44; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-TABLES-308.done.md`; lock recorded; `_active/TZ-DOC-TABLES-308.md` removed.
+- Scope guard: 306 chips, 307 enum/preset, backend registry, DOC-343 WIP, and deploy untouched.
+- NEXT: TZ-DOC-TABLES-307; Deploy: NO
+
+
+## Checkpoint 2026-08-09T14:35:01Z · TZ-DOC-TABLES-308 CLAIMED
+- IN PROGRESS: table dialog source/fields baseline + balanced widths, taller headers, and live preview/skeleton lower area.
+- Base: canonical `main` / `origin/main` at `99fb6e3d`; 305 archived DONE; 306 done.
+- Conflict scan: `_active/` empty; 308 dialog keys are free. Team Room claim unavailable (unknown task).
+- Marker: `tasks/_active/TZ-DOC-TABLES-308.md`; checklist `docs/agent-checklists/TZ-DOC-TABLES-308.md`.
+- Scope guard: 306 chips, 307 preset, BE registry, DOC-343 WIP, and deploy untouched.
+- NEXT: implement → FE gates → READY/visual if required → archive/commit/push. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:33:25Z · TZ-DOC-TABLES-306 DONE
 - DONE: Documents → Tables chips now use path + queryParams; `Из данных` stays on `/doc-constructor/tables?view=from-data` and does not fall through to `/materials`.
 - Gates: frontend tsc PASS; workspace/tables Jest 2 suites / 14 tests PASS; Prettier PASS; diff-check PASS.

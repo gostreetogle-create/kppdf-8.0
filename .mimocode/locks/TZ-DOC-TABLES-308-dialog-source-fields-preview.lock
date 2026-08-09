@@ -1,0 +1,5 @@
+TZ-DOC-TABLES-308
+status=DONE
+closed_at=2026-08-09T14:37:14Z
+scope=source-fields alignment; taller headers; visible empty preview skeleton
+verification=FE tsc PASS; dialog Jest 44/44 PASS; diff-check PASS
