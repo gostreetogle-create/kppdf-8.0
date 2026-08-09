@@ -1,4 +1,11 @@
 
+## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
+**Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
+**База кода:** `fe98e763` (+ commit Unicode-fix `deploy.py` / docs)
+**Урок:** Windows cp1251 ломал лог с `→` — `_safe_print` + `PYTHONUTF8=1`
+**Docs:** `deploy/synology/README.md` § «Для ИИ-агента»; RUNBOOK/DEPLOY обновлены
+**NEXT:** idle
+
 ## [2026-08-09T20:00:36Z] — TZ-OPS-309 DONE: deploy-prep hygiene + admin smoke
 **Исполнитель:** Buffy / ops executor
 **Статус:** DONE; READY TO PROPOSE DEPLOY; Deploy НЕ
