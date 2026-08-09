@@ -22,6 +22,18 @@
 ## Checkpoint 2026-08-09T01:20:00Z · TZ-UX-314 READY (list PAGE_SIZE=10)
 - superseded by 01:40 DONE
 
+## Checkpoint 2026-08-09T02:00:00Z · WAVE-KP-VITRINE READY
+- DONE: Product Editor 308/309; prior waves idle
+- IN PROGRESS: none
+- NOT DONE: SALES-310 → 311 → 312; 313 (after 310, || ok); 314–316; **320 PARKED**
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-310-deals-kp-subchips.md`
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-CONTINUOUS.md`
+- Lock UI: TOC КП|Договоры|Заказы; yellow **Создать КП** | **Все КП**; sum attach = hint
+- Blockers: none for 310
+- _active/: empty
+- Ban: 320 until PO · SALES-304 claim · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-08T19:51:41Z · WAVE-PRODUCT-EDITOR DONE
 - DONE: TZ-PRODUCTS-309 — Product FullEditor edit mode now reuses the existing `ProductBomPanel` for passport + composition in one dialog; create mode keeps passport-only flow with a clear save-then-edit hint. Single composition API/write-path preserved.
 - IN PROGRESS: none

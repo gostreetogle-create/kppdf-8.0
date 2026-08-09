@@ -8,35 +8,32 @@
 | Агент | Волна | Статус |
 |-------|--------|--------|
 | **A — Party-docs** | `party-docs/WAVE-PARTY-DOCS.md` | **DONE** #1–#7 · **INN-301 PARKED** |
-| **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — #1–#7 DONE; idle |
+| **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
-| **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — **308 + 309**; idle |
-| **E — Photo performance** | `perf/WAVE-PERF-PHOTOS.md` | **DONE** — 301–303 archived and pushed; idle |
+| **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **READY** — 310→…316; **320 PARKED** |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `idle` — READY queue is empty; deploy only by explicit PO command
-(301–303 DONE; parked/reserved work remains untouched)
+**NEXT для universal prompt:** `tasks/_backlog/kp-vitrine/TZ-SALES-310-deals-kp-subchips.md`  
+(или `kp-vitrine/PROMPT-CONTINUOUS.md`)
 
 ## Idle / park / done
 
 | TZ / wave | Заметка |
 |-----------|---------|
 | ~~WAVE-PARTY-DOCS #1–#7~~ | DONE |
-| ~~WAVE-DESKTOP-DOC-TEXTS / TZD-30~~ | DONE |
-| ~~TYPE-303~~ · ~~DIALOG-303~~ · ~~UX-313~~ · ~~DEDUP-301~~ · ~~SELECT-301~~ | DONE |
-| TZ-INN-301 | PARKED (нужен ключ PO) |
-| SALES-304 | RESERVED |
-| ~~TZ-PHOTO-301~~ | DONE — archived and pushed |
-| ~~TZ-PHOTO-302~~ | DONE — archived and pushed |
-| ~~TZ-PHOTO-303~~ | DONE — archived and pushed; live run remains operator action |
+| ~~WAVE-PRODUCT-EDITOR~~ | DONE |
+| ~~SALES-304~~ | **SUPERSEDED** → SALES-313 |
+| TZ-INN-301 | PARKED |
+| TZ-SALES-320 | PARKED (печать) |
 | SHIPPING / Gantt 308–310 | park |
 
 ## Не брать
 
 - TZ-GIT-302 CANCELLED  
-- чужой journal / import-task без wave  
+- claim INN-301 / SALES-320 пока PARKED  
+- claim SALES-304 (superseded)  
 - deploy без команды PO  
-- claim INN-301 пока PARKED  
-- commit `desktop/mcp-runtime/**` (не SoT; канон = `desktop/mcp`)  
-- воскрешение ModuleMaterials / DONE-волн Catalog / Party-docs  
+- commit `desktop/mcp-runtime/**`  
+- воскрешение ModuleMaterials / DONE-волн  
