@@ -26,6 +26,7 @@ import { createTestApp, TestContext } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 import { TemplateBlock, TemplateBlockDocument } from '../../src/modules/template-block/template-block.schema';
 import { Organization, OrganizationDocument } from '../../src/modules/organization/organization.schema';
+import { TableTemplate, TableTemplateDocument } from '../../src/modules/table-template/table-template.schema';
 
 describe('DocumentTemplates build (e2e)', () => {
   let ctx: TestContext;
@@ -34,7 +35,9 @@ describe('DocumentTemplates build (e2e)', () => {
   let connection: Connection;
   let blockModel: Model<TemplateBlockDocument>;
   let orgModel: Model<OrganizationDocument>;
+  let tableModel: Model<TableTemplateDocument>;
   const createdTemplates: string[] = [];
+  const createdTables: string[] = [];
   const createdOrgs: string[] = [];
 
   beforeAll(async () => {
@@ -43,6 +46,7 @@ describe('DocumentTemplates build (e2e)', () => {
     connection = app.get<Connection>(getConnectionToken());
     blockModel = connection.model<TemplateBlockDocument>(TemplateBlock.name);
     orgModel = connection.model<OrganizationDocument>(Organization.name);
+    tableModel = connection.model<TableTemplateDocument>(TableTemplate.name);
     const { access } = await loginAsAdmin(app);
     auth = authHeader(access);
   });
@@ -53,6 +57,9 @@ describe('DocumentTemplates build (e2e)', () => {
         .delete(`/api/document-templates/${id}`)
         .set(auth)
         .catch(() => undefined);
+    }
+    for (const id of createdTables) {
+      await tableModel.deleteOne({ _id: new Types.ObjectId(id) }).exec().catch(() => undefined);
     }
     // Cleanup organizations created directly via Mongoose
     for (const id of createdOrgs) {
@@ -291,6 +298,51 @@ describe('DocumentTemplates build (e2e)', () => {
     // build() validates ObjectId first → BadRequestException (400).
     // Note: NOT 404, because we don't even reach the findById call.
     expect([400, 404]).toContain(res.status);
+  });
+
+  it('POST /document-templates/:id/build — empty table source renders a skeleton row', async () => {
+    const orgId = await createRealOrganization('Empty Table Org');
+    const table = await tableModel.create({
+      name: 'Empty Line Items',
+      columns: [
+        { key: 'name', label: 'Наименование', type: 'text' },
+        { key: 'qty', label: 'Кол-во', type: 'number' },
+      ],
+      sampleRows: [],
+      isActive: true,
+    });
+    createdTables.push(table._id.toString());
+
+    const docTypeId = new Types.ObjectId().toString();
+    const tpl = await request(app.getHttpServer())
+      .post('/api/document-templates')
+      .set(auth)
+      .send({ name: 'Empty Table Build', organizationId: orgId, docTypeId, pageSize: 'A4' });
+    expect([200, 201]).toContain(tpl.status);
+    const templateId = tpl.body._id;
+    createdTemplates.push(templateId);
+
+    const block = await blockModel.create({
+      templateId: new Types.ObjectId(templateId),
+      type: 'table',
+      order: 0,
+      source: { kind: 'table-template', refId: table._id.toString(), mode: 'live' },
+      isActive: true,
+    });
+    expect(block._id).toBeDefined();
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({ organizationId: orgId });
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('<table');
+    expect(res.text).toContain('<thead>');
+    expect(res.text).toContain('Наименование');
+    expect(res.text).toContain('Кол-во');
+    expect(res.text).toContain('<tbody><tr>');
+    expect(res.text.match(/<td\b/g)).toHaveLength(2);
+    expect(res.text).not.toContain('Нет данных');
   });
 
   it('POST block with columns[] — persists and build renders multi-column HTML', async () => {

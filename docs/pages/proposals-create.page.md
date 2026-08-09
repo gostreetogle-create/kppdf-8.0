@@ -12,6 +12,7 @@
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory only (в rail / inspector estimate; **не** на листе до 325)
+- Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 
 ## Center preview (TZ-SALES-319)
 

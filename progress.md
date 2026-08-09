@@ -1541,3 +1541,13 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** backend tsc PASS; document build e2e 8/8 PASS; frontend tsc PASS; proposal-create 9/9 PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-323.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-323-create-kp-a4-fit-no-scroll.lock`
+
+---
+
+## [2026-08-09] — TZ-SALES-324 DONE: Empty table skeleton
+**Исполнитель:** Buffy / agent-6c3d05b80e
+**Статус:** DONE; archive + lock + checkpoint completed
+**Что сделано кратко:** `TableTemplateService.preview()` при пустых sampleRows и объявленных columns сохраняет геометрию таблицы: thead с labels + ровно одна пустая data-row; plain «Нет данных» больше не заменяет таблицу.
+**Gates:** backend tsc PASS; table-template e2e 8/8 PASS; document-template build e2e 9/9 PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-324.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-324-empty-table-skeleton-blank.lock`

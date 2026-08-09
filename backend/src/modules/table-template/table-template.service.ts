@@ -96,19 +96,15 @@ export class TableTemplateService {
    *   - bool     → «Да» / «Нет» (Russian labels, culturally consistent)
    *   - text     → HTML-escaped via `escapeHtml()`
    *
-   * Empty sampleRows → returns the product-facing Russian empty state «Нет данных».
+   * Empty sampleRows with declared columns preserve the table geometry:
+   * headers plus one blank data row. A table without columns keeps the short
+   * Russian empty state «Нет описанных колонок.».
    */
   async preview(id: string): Promise<string> {
     const doc = await this.findById(id);
     const cols = doc.columns ?? [];
     if (cols.length === 0) {
       return '<p class="pi-empty-state">Нет описанных колонок.</p>';
-    }
-    const rows = doc.sampleRows ?? [];
-    if (rows.length === 0) {
-      return (
-        '<p class="pi-empty-state">Нет данных</p>'
-      );
     }
 
     const headHtml = cols
@@ -119,6 +115,19 @@ export class TableTemplateService {
           }px">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
       )
       .join('');
+    const rows = doc.sampleRows ?? [];
+    if (rows.length === 0) {
+      const blankCells = cols
+        .map((c) => `<td style="text-align:${c.align ?? 'left'}"></td>`)
+        .join('');
+      return (
+        '<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6">' +
+        `<thead><tr>${headHtml}</tr></thead>` +
+        `<tbody><tr>${blankCells}</tr></tbody>` +
+        '</table>'
+      );
+    }
+
     const bodyHtml = rows
       .map((row) => {
         const cells = cols

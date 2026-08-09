@@ -1,5 +1,24 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:10:52Z · TZ-SALES-324 DONE
+- DONE: `TableTemplateService.preview()` empty rows now render `<table>` with thead + exactly one blank tbody row; no `Нет данных` paragraph for declared columns.
+- Gates: backend tsc PASS; table-template e2e 8/8; document-template build e2e 9/9; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-324.done.md`; lock recorded locally; `_active/TZ-SALES-324.md` removed.
+- Conflict guard: shared canonical `document-template.service.ts` dirty WIP was preserved; DOC-344/DOC-TABLES-305 untouched.
+- NEXT: claim TZ-SALES-325 now that 323 + 324 are DONE. Do not claim 326/328 before their queue position.
+- Deploy: NO
+
+
+
+## Checkpoint 2026-08-09T12:10:00Z · TZ-SALES-324 CLAIMED
+- IN PROGRESS: empty table skeleton — `table-template.service.ts` + focused backend coverage; marker `tasks/_active/TZ-SALES-324.md`.
+- Base: worktree synced/rebased to canonical `origin/main` after 323 closeout.
+- Conflict scan: DOC-344 builder keys and DOC-TABLES-305 dialog keys do not overlap; canonical dirty shared `document-template.service.ts` WIP is preserved and excluded.
+- Scope guard: no 325 live bind, 326/328 vitrine, 322/320, Builder/DOC-344, or deploy.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09T12:07:23Z · TZ-SALES-323 DONE / PO visual PASS
 - DONE: TZ-SALES-323 archived after PO confirmed no H/V scrollbar on canonical `main`; measured scrollWidth/scrollHeight <= client + 1px.
 - Code: `a270fa09` already landed on `origin/main`; closeout archive/checklist/lock/progress now follows.

@@ -7,7 +7,7 @@
  *  - GET /api/table-templates/:id — single doc
  *  - GET /api/table-templates/:id/preview — returns text/html with column headers + row data
  *  - GET /api/table-templates/:id/preview — currency cells use Intl.NumberFormat('ru-RU', RUB)
- *  - GET /api/table-templates/:id/preview — empty sampleRows shows placeholder
+ *  - GET /api/table-templates/:id/preview — empty sampleRows keeps a table skeleton
  *  - PATCH /api/table-templates/:id — updates name
  *  - DELETE /api/table-templates/:id — soft-deletes (subsequent GET 404)
  *
@@ -141,7 +141,7 @@ describe('TableTemplates (e2e)', () => {
     expect(res.text).toMatch(/1.234,56.?\s*₽/);
   });
 
-  it('GET /table-templates/:id/preview — empty sampleRows shows placeholder', async () => {
+  it('GET /table-templates/:id/preview — empty sampleRows returns one blank table row', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/table-templates')
       .set(auth)
@@ -156,7 +156,12 @@ describe('TableTemplates (e2e)', () => {
       .get(`/api/table-templates/${create.body._id}/preview`)
       .set(auth);
     expect(res.status).toBe(200);
-    expect(res.text).toContain('Нет sample rows');
+    expect(res.text).toContain('<table');
+    expect(res.text).toContain('<thead>');
+    expect(res.text).toContain('<th');
+    expect(res.text).toContain('<tbody><tr>');
+    expect(res.text).toContain('<td style="text-align:left"></td>');
+    expect(res.text).not.toContain('Нет данных');
   });
 
   it('PATCH /table-templates/:id — updates name', async () => {
