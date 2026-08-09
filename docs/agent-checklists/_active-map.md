@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T20:00:36Z · TZ-OPS-309 DONE
+- DONE: TZ-OPS-309 — DOC-343 closeout committed, DOC-344 parked; one-Nest health and admin browser smoke PASS; FE/BE tsc PASS.
+- READY TO PROPOSE DEPLOY · NEXT idle.
+- `_active/`: empty for this TZ; WAVE-KP-COMPLETE / SALES-340…348 untouched.
+- Deploy: NO. `deploy.ps1` was not run.
+
+
+## Checkpoint 2026-08-09T19:58:46Z · TZ-OPS-309 CLAIMED
+- Only active TZ: `tasks/_active/TZ-OPS-309.md`; canonical `main` is at `12382db9`.
+- Scope: commit DOC-343 closeout + park DOC-344 backlog; one-Nest health and admin/browser smoke; FE/BE no-emit tsc.
+- BAN: deploy/deploy.ps1, WAVE-KP-COMPLETE / SALES-340…348, DOC-344 implementation, and foreign dirty WIP.
+- NEXT: smoke + tsc → archive/lock/remove active → commit/push → READY TO PROPOSE DEPLOY; Deploy NO.
+
 ## Checkpoint 2026-08-09T19:55:00Z · NEXT = deploy-prep (OPS-309), then PO deploy command
 - WAVE-KP-USABLE DONE on `origin/main` (`7a3173d5`). `_active/` empty.
 - PO: не добивать всю папку `_backlog`; перед деплоем — гигиена DOC-343/344 + smoke.

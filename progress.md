@@ -1,4 +1,13 @@
 
+## [2026-08-09T20:00:36Z] — TZ-OPS-309 DONE: deploy-prep hygiene + admin smoke
+**Исполнитель:** Buffy / ops executor
+**Статус:** DONE; READY TO PROPOSE DEPLOY; Deploy НЕ
+**Что:** DOC-343 archive committed; DOC-344 parked without implementation. Existing single Nest on :3000 returned `/api/health` HTTP 200 (`status: ok`, Mongo/memory/disk up); existing FE on :4200 passed admin browser smoke for `Все КП`, `Создать КП`, and `Роли` (system rows `Системная` + `Редактировать`, no Delete).
+**Gates:** FE tsc `--noEmit` PASS; BE tsc `--noEmit` PASS; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-309.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-309-deploy-prep-hygiene-smoke.lock`
+**Checkpoint:** READY TO PROPOSE DEPLOY · NEXT idle · Deploy NO.
+
 ## [2026-08-09T19:44:49Z] — WAVE-KP-USABLE DONE: 339 → 334 → 349 → 335 → 336
 **Исполнитель:** Buffy / continuous executor
 **Статус:** WAVE DONE; all scoped commits pushed to canonical `main`; deploy НЕ
