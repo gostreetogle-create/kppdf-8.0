@@ -30,6 +30,7 @@
 ## Gates (факт)
 
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
+- `cd frontend && pnpm run build` — PASS; existing Angular component/chunk budget warnings only
 - `cd frontend && pnpm test --testPathPattern=proposal-create --runInBand` — PASS, 11/11
 - `git diff --check` — PASS
 - Existing Angular `NG0953` destroyed OutputRef console warning remains non-failing in the focused suite.
@@ -37,7 +38,7 @@
 
 ## Executor report (auto)
 
-- implementation: products-only flyout width is capped at `min(40rem, available studio width)` while template/right flyouts retain the base width; a transparent backdrop captures center/iframe clicks; rails remain above it and flyouts remain interactive.
+- implementation: products-only flyout width is capped at `min(40rem, available studio width)` while template/right flyouts retain the base width; a transparent backdrop captures center/iframe clicks; rails remain above it and flyouts remain interactive. `closeFlyouts()` is `protected` so the template binding compiles.
 - tests: proposal-create now covers backdrop closure of both panels and pointerdown inside flyout; focused suite is 11/11.
 - docs: Spec §3 and Create КП page document the products width/backdrop behavior.
 - conflict disclosure: DOC-344 builder code and remaining foreign DOC-343 backend/docs WIP were not edited; 325 and 328 remain unclaimed.

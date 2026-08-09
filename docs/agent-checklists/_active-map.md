@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:42:03Z · TZ-SALES-326 READY after compile fix
+- FIXED: `ProposalCreatePage.closeFlyouts()` changed from private to protected; template binding now compiles.
+- Gates: frontend tsc PASS; frontend `ng build` PASS (budget warnings only); proposal-create 11/11 PASS; diff-check PASS.
+- Still pending: Cursor/PO visual PASS for 36–40rem width, center/A4 dismiss, and unchanged rails|center|rails geometry.
+- Do not archive or claim 325 until visual acceptance; DOC-344 remains visual-pending separately.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09T12:24:06Z · TZ-SALES-326 READY FOR REVIEW
 - READY: products-only flyout width now caps at 40rem (36–40rem target); transparent backdrop closes center/iframe clicks for both left and right flyouts.
 - Gates: frontend tsc PASS; proposal-create **11/11**; diff-check PASS.

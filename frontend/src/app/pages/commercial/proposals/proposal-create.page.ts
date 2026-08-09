@@ -468,7 +468,7 @@ export class ProposalCreatePage implements OnInit {
     this.draftLines.update((rows) => [...rows, line]);
   }
 
-  private closeFlyouts(): void {
+  protected closeFlyouts(): void {
     this.leftTool.set(null);
     this.rightOpen.set(false);
   }
