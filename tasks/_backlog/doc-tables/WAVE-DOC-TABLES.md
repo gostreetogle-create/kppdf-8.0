@@ -1,6 +1,6 @@
 # WAVE-DOC-TABLES — Таблицы документов: chrome + поля + дизайн
 
-**STATUS:** READY  
+**STATUS:** DONE
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
@@ -22,18 +22,17 @@
 
 ## Порядок
 
-| # | TZ | После |
-|---|-----|--------|
-| 1 | **TZ-DOC-TABLES-301** Documents TOC dark + Tables yellow chips | — |
-| 2 | **TZ-DOC-TABLES-302** dialog: overflow-select + плотный UX полей | 301 желательно; keys разные → || ok |
-| 3 | **TZ-DOC-TABLES-303** registry: product (+ др.) поля по schema SoT + фото-слот | — |
-| 4 | **TZ-DOC-TABLES-304** auto-sync registry ← mongoose schema | **после 303**; большой |
+| # | TZ | После | Статус |
+|---|-----|--------|--------|
+| 1 | **TZ-DOC-TABLES-301** Documents TOC dark + Tables yellow chips | — | DONE |
+| 2 | **TZ-DOC-TABLES-302** dialog: overflow-select + плотный UX полей | 301 желательно; keys разные → || ok | DONE |
+| 3 | **TZ-DOC-TABLES-303** registry: product (+ др.) поля по schema SoT + фото-слот | — | DONE |
+| 4 | **TZ-DOC-TABLES-304** auto-sync registry ← mongoose schema | **после 303**; большой | DONE |
 
 ## Честный север по «автополям»
 
-Сейчас поля — **ручной список** в `registry.service.ts` (не сканер БД). Поэтому фото и notes нет.  
-**303** — закрыть дыру: все осмысленные поля Product (+ photo).  
-**304** — генерация/сверка дескрипторов из schema metadata, чтобы новые `@Prop` не забывали вручную.
+Теперь поля Product строятся из `ProductSchema.paths` с явным deny-list и label/type policy; entity sources остаются allowlist.
+**303** закрыл полезные поля и photo slot; **304** убрал ручное дублирование полей, чтобы новые scalar `@Prop` не забывались в registry.
 
 ## BAN
 

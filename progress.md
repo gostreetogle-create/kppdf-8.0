@@ -1,3 +1,12 @@
+## [2026-08-09] — TZ-DOC-TABLES-304 DONE: Registry schema auto-sync
+**Исполнитель:** buffy-doc-tables-304
+**Статус:** DONE; archive + lock created; deploy НЕ
+**Что:** Product registry fields строятся из `ProductSchema.paths`, внутренние/ref/composition paths отфильтрованы deny-list; labels/types mapping детерминирован, entity source allowlist сохранён явным. Добавлен unit proof для нового mock path.
+**Gates:** backend tsc PASS; registry unit 1 suite / 2 tests и e2e 1 suite / 8 tests PASS; registry ESLint, Prettier и diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-304.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-304-registry-schema-autosync.lock`
+**NEXT:** idle — WAVE-DOC-TABLES #1–#4 DONE; deploy не запускался.
+
 ## [2026-08-09] — TZ-DOC-TABLES-303 DONE: Product registry fields + photo slot
 **Исполнитель:** buffy-doc-tables-303
 **Статус:** DONE; archive + lock created; deploy НЕ

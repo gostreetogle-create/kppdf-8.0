@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ProductSchema } from '../product/product.schema';
 
 /**
  * One addressable data source in the Document Constructor picker.
@@ -31,10 +32,104 @@ export interface DataSourceDescriptor {
  * - date     → toLocaleDateString('ru-RU')
  * - bool     → 'Да' | 'Нет'
  */
+export type FieldType = 'text' | 'number' | 'currency' | 'date' | 'bool';
+
 export interface FieldDescriptor {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'currency' | 'date' | 'bool';
+  type: FieldType;
+}
+
+export interface SchemaPathSource {
+  paths: Record<string, { instance: string; schema?: SchemaPathSource }>;
+}
+
+const PRODUCT_FIELD_LABELS: Record<string, string> = {
+  name: 'Наименование',
+  sku: 'Артикул (SKU)',
+  kind: 'Вид (товар/услуга/работа)',
+  unit: 'Единица измерения',
+  subcategory: 'Подкатегория',
+  status: 'Статус',
+  listPrice: 'Прайсовая цена',
+  basePrice: 'Базовая цена',
+  costPrice: 'Себестоимость',
+  defaultMarkupPercent: 'Наценка по умолчанию, %',
+  stockQty: 'Остаток на складе',
+  description: 'Описание',
+  notes: 'Примечания',
+  photoIds: 'Фото (ID/URL)',
+  dimensions: 'Габариты',
+  'dimensions.length': 'Длина',
+  'dimensions.width': 'Ширина',
+  'dimensions.height': 'Высота',
+  'dimensions.unit': 'Единица габаритов',
+  weightKg: 'Масса, кг',
+  ralCode: 'Код RAL',
+  hasPassport: 'Есть паспорт',
+  hasDrawing: 'Есть чертёж',
+  purpose: 'Назначение',
+  installation: 'Монтаж',
+  isActive: 'Активен',
+};
+
+const PRODUCT_FIELD_DENY = new Set([
+  '_id',
+  '__v',
+  'categoryId',
+  'copiedFromProductId',
+  'composition',
+  'createdAt',
+  'deletedAt',
+  'dimensions',
+  'isSystem',
+  'organizationId',
+  'productModuleIds',
+  'updatedAt',
+]);
+
+const PRODUCT_CURRENCY_FIELDS = new Set([
+  'basePrice',
+  'costPrice',
+  'listPrice',
+]);
+
+function humanizeKey(key: string): string {
+  return key
+    .split('.')
+    .map((part) => part.replace(/([a-z])([A-Z])/g, '$1 $2'))
+    .join(' / ')
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+export function buildFieldsFromSchema(
+  schema: SchemaPathSource,
+  prefix = '',
+): FieldDescriptor[] {
+  return Object.entries(schema.paths).flatMap(([pathKey, path]) => {
+    const key = prefix ? `${prefix}.${pathKey}` : pathKey;
+    if (path.schema) return buildFieldsFromSchema(path.schema, key);
+    if (PRODUCT_FIELD_DENY.has(key)) return [];
+    if (key === 'photoIds') {
+      return [{ key, label: PRODUCT_FIELD_LABELS[key], type: 'text' }];
+    }
+    if (!['String', 'Number', 'Boolean', 'Date'].includes(path.instance))
+      return [];
+
+    const type: FieldType =
+      path.instance === 'Number'
+        ? PRODUCT_CURRENCY_FIELDS.has(key)
+          ? 'currency'
+          : 'number'
+        : path.instance === 'Boolean'
+          ? 'bool'
+          : path.instance === 'Date'
+            ? 'date'
+            : 'text';
+    return [
+      { key, label: PRODUCT_FIELD_LABELS[key] ?? humanizeKey(key), type },
+    ];
+  });
 }
 
 @Injectable()
@@ -141,37 +236,7 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
     key: 'product',
     label: 'Продукция',
     group: 'catalog',
-    fields: [
-      { key: 'name', label: 'Наименование', type: 'text' },
-      { key: 'sku', label: 'Артикул (SKU)', type: 'text' },
-      { key: 'kind', label: 'Вид (товар/услуга/работа)', type: 'text' },
-      { key: 'unit', label: 'Единица измерения', type: 'text' },
-      { key: 'subcategory', label: 'Подкатегория', type: 'text' },
-      { key: 'description', label: 'Описание', type: 'text' },
-      { key: 'notes', label: 'Примечания', type: 'text' },
-      { key: 'status', label: 'Статус', type: 'text' },
-      { key: 'ralCode', label: 'Код RAL', type: 'text' },
-      { key: 'dimensions.length', label: 'Длина', type: 'number' },
-      { key: 'dimensions.width', label: 'Ширина', type: 'number' },
-      { key: 'dimensions.height', label: 'Высота', type: 'number' },
-      { key: 'dimensions.unit', label: 'Единица габаритов', type: 'text' },
-      { key: 'purpose', label: 'Назначение', type: 'text' },
-      { key: 'installation', label: 'Монтаж', type: 'text' },
-      { key: 'isActive', label: 'Активен', type: 'bool' },
-      { key: 'hasPassport', label: 'Есть паспорт', type: 'bool' },
-      { key: 'hasDrawing', label: 'Есть чертёж', type: 'bool' },
-      { key: 'photoIds', label: 'Фото (ID/URL)', type: 'text' },
-      { key: 'listPrice', label: 'Прайсовая цена', type: 'currency' },
-      { key: 'basePrice', label: 'Базовая цена', type: 'currency' },
-      { key: 'costPrice', label: 'Себестоимость', type: 'currency' },
-      {
-        key: 'defaultMarkupPercent',
-        label: 'Наценка по умолчанию, %',
-        type: 'number',
-      },
-      { key: 'stockQty', label: 'Остаток на складе', type: 'number' },
-      { key: 'weightKg', label: 'Масса, кг', type: 'number' },
-    ],
+    fields: buildFieldsFromSchema(ProductSchema),
   },
   {
     key: 'material',

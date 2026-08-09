@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Doc Tables #1–3 DONE; 304 READY; 320 PARKED; deploy НЕ запускать
+**Phase:** Doc Tables wave DONE; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09] — TZ-DOC-TABLES-304 DONE: Registry schema auto-sync
+**Статус:** DONE on main; deploy НЕ
+**Что:** Product registry fields теперь строятся из `ProductSchema.paths` с deny-list внутренних/ref/composition полей, RU label map/fallback и deterministic type mapping; список entity sources остаётся явным.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-304.done.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-304-registry-schema-autosync.lock`
+**Gates:** backend tsc PASS; registry unit 1/2 и e2e 1/8 PASS; registry ESLint/Prettier/diff-check PASS.
+**NEXT:** idle — WAVE-DOC-TABLES #1–#4 DONE; deploy только по явной команде PO.
 
 ## [2026-08-09] — TZ-DOC-TABLES-303 DONE: Product registry fields + photo slot
 **Статус:** DONE on main; deploy НЕ
