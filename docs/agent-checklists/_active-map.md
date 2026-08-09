@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T09:52:00Z · TZ-SALES-317 DONE
+- DONE: Create КП focus shell (A4 + icon rails / overlay RMK)
+- Cursor Verdict PASS (visual shell)
+- Archive: `tasks/_archive/2026-08/TZ-SALES-317.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-317-create-kp-focus-shell.lock`
+- _active/: no longer TZ-SALES-317 → path clear for TZ-SALES-319
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T08:30:00Z · TZ-SALES-319 READY (docs)
 - PO: вставка шаблона в Create КП корявая — нет фона/позиций/таблиц; лишний chrome
 - Root cause: center = stub metadata; `build()` не вызывается

@@ -1,3 +1,11 @@
+## [2026-08-09] — TZ-SALES-317 DONE: Create КП focus shell
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; archive + lock; deploy НЕ
+**Что:** Focus shell /proposals/create — A4 center, icon-rails, overlay flyouts (Шаблон/Товары/Параметры), без H1/zone titles; flushBody; spec §0 FROZEN.
+**Gates:** FE tsc PASS; proposal-create Jest PASS; Cursor Verdict PASS (visual shell).
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-317.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-317-create-kp-focus-shell.lock`
+**NEXT:** TZ-SALES-319 (build HTML preview); deploy НЕ.
 ## [2026-08-09] вЂ” TZ-DOC-342 DONE: upload-background missing file в†’ 400
 **РСЃРїРѕР»РЅРёС‚РµР»СЊ:** Buffy closeout / agent-ccee39fec2
 **РЎС‚Р°С‚СѓСЃ:** DONE; archive + lock created; deploy РќР•
