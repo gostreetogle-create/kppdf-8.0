@@ -135,6 +135,17 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
     expect(root.querySelector('[data-test="workspace-body"]')).toBeTruthy();
   });
 
+  it('hides empty tools strip so body sits under chips', () => {
+    const fixture = TestBed.createComponent(TocHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const tools = root.querySelector('[data-test="group-tools"]');
+    expect(tools?.classList.contains('group-tools--empty')).toBe(true);
+    expect(root.querySelector('[data-test="group-chips"]')?.classList.contains('hairline-b')).toBe(
+      true,
+    );
+  });
+
   it('hides section chips the role cannot open (page ACL)', () => {
     userSignal.set({ pages: ['products'] });
     const fixture = TestBed.createComponent(AclHostComponent);

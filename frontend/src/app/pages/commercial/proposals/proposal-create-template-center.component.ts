@@ -1,145 +1,171 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { ButtonComponent } from '../../../shared/ui/button/button.component';
-import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
-import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import {
-  DocumentTemplate,
-  DocumentTemplatesService,
-} from '../../../shared/services/pi-document-templates.service';
-import { extractErrorMessage } from '../../../core/silent-http';
-import type { ProposalDraftLine } from './proposal-product-rail.component';
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
+import type { SafeHtml } from '@angular/platform-browser';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
+
+export type KpTemplatePreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 /**
- * Center template bind + A4 preview zone (TZ-SALES-316).
- * No embedded WYSIWYG / PDF engine — deep-link to builder.
+ * Center A4 sheet (TZ-SALES-317 shell + TZ-SALES-319 build HTML preview).
+ * No template-name chrome / draftLines on the sheet — only sandboxed build HTML.
  */
 @Component({
   selector: 'app-proposal-create-template-center',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, FormFieldComponent, PiOverflowSelectComponent],
+  imports: [ButtonComponent],
   template: `
     <div class="center" data-test="kp-create-template-center">
-      <app-pi-form-field label="Шаблон КП" htmlFor="kp-tpl">
-        <app-pi-overflow-select
-          [items]="templateItems()"
-          [value]="selectedId()"
-          (valueChange)="onSelect($event)"
-          searchable="auto"
-          placeholder="— выберите шаблон —"
-          ariaLabel="Шаблон КП"
-          dataTest="kp-tpl-select"
-        />
-      </app-pi-form-field>
-
-      @if (selected()) {
-        <div class="center__actions">
-          <app-pi-button
-            type="button"
-            variant="outline"
-            size="sm"
-            data-test="kp-tpl-edit"
-            (click)="openBuilder()"
-          >
-            Редактировать шаблон
-          </app-pi-button>
+      <div class="center__stage">
+        <div #sheet class="center__sheet" data-test="kp-tpl-preview">
+          @if (!selected()) {
+            <div class="center__empty" data-test="kp-tpl-empty">
+              <app-pi-button
+                type="button"
+                variant="default"
+                size="sm"
+                data-test="kp-tpl-add"
+                (click)="requestPick.emit()"
+              >
+                Добавить шаблон
+              </app-pi-button>
+            </div>
+          } @else if (previewStatus() === 'loading') {
+            <div class="center__status" data-test="kp-tpl-loading" role="status">
+              Загрузка шаблона…
+            </div>
+          } @else if (previewStatus() === 'error') {
+            <div class="center__status center__status--error" data-test="kp-tpl-error" role="alert">
+              Не удалось загрузить шаблон
+            </div>
+          } @else if (previewStatus() === 'ready' && previewHtml()) {
+            <iframe
+              class="center__frame"
+              data-test="kp-tpl-html-preview"
+              title="Превью шаблона КП"
+              sandbox="allow-same-origin"
+              [srcdoc]="previewHtml()!"
+              [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
+            ></iframe>
+          } @else {
+            <div class="center__status" data-test="kp-tpl-loading" role="status">
+              Загрузка шаблона…
+            </div>
+          }
         </div>
-      }
-
-      <div class="center__sheet" data-test="kp-tpl-preview">
-        @if (!selected()) {
-          <p class="text-sm text-muted-foreground m-0" data-test="kp-tpl-empty">
-            Выберите шаблон КП или добавьте позиции слева
-          </p>
-        } @else {
-          <h3 class="text-sm font-semibold m-0" data-test="kp-tpl-name">{{ selected()!.name }}</h3>
-          @if (selected()!.description) {
-            <p class="text-xs text-muted-foreground m-0">{{ selected()!.description }}</p>
-          }
-          <p class="text-[11px] text-muted-foreground m-0">
-            Превью A4 (упрощённое). Полный builder — по кнопке выше.
-          </p>
-          @if (draftLines().length > 0) {
-            <ul class="center__draft" data-test="kp-tpl-draft-lines">
-              @for (line of draftLines(); track $index) {
-                <li>{{ line.productName }} · {{ line.quantity }} × {{ line.unitPrice }} ₽</li>
-              }
-            </ul>
-          }
-        }
       </div>
-
-      @if (error()) {
-        <p class="text-xs text-destructive m-0" role="alert">{{ error() }}</p>
-      }
     </div>
   `,
   styles: `
+    :host {
+      display: block;
+      height: 100%;
+      min-height: 0;
+    }
     .center {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      height: 100%;
+      min-height: 0;
     }
-    .center__actions {
+    .center__stage {
+      flex: 1 1 auto;
+      min-height: 0;
       display: flex;
-      gap: 0.5rem;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: hidden;
+      container-type: size;
     }
     .center__sheet {
-      width: 100%;
-      max-width: 794px;
-      margin-inline: auto;
-      min-height: 14rem;
-      padding: 1rem;
+      position: relative;
+      width: min(100cqw, calc(100cqh * 210 / 297));
+      height: min(100cqh, calc(100cqw * 297 / 210));
+      max-width: 100%;
+      max-height: 100%;
+      aspect-ratio: 210 / 297;
+      padding: 0;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper-2, transparent);
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      background: var(--color-paper, #fff);
+      overflow: hidden;
+      box-sizing: border-box;
     }
-    .center__draft {
-      margin: 0.5rem 0 0;
-      padding-left: 1.1rem;
+    .center__empty,
+    .center__status {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      text-align: center;
       font-size: 0.8125rem;
+      color: var(--color-muted);
+      box-sizing: border-box;
+    }
+    .center__status--error {
+      color: var(--color-danger, var(--color-ink));
+    }
+    .center__frame {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 794px;
+      height: 1123px;
+      border: 0;
+      background: #fff;
+      transform-origin: top center;
     }
   `,
 })
-export class ProposalCreateTemplateCenterComponent implements OnInit {
-  private readonly templates = inject(DocumentTemplatesService);
-  private readonly router = inject(Router);
+export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
+  private static readonly A4_WIDTH_PX = 794;
+  private static readonly A4_HEIGHT_PX = 1123;
 
-  readonly draftLines = input<ProposalDraftLine[]>([]);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
 
-  protected readonly all = signal<DocumentTemplate[]>([]);
-  protected readonly selectedId = signal('');
-  protected readonly selected = signal<DocumentTemplate | null>(null);
-  protected readonly error = signal<string | null>(null);
+  readonly selected = input<DocumentTemplate | null>(null);
+  readonly previewHtml = input<SafeHtml | null>(null);
+  readonly previewStatus = input<KpTemplatePreviewStatus>('idle');
+  readonly requestPick = output<void>();
+  protected readonly previewScale = signal(1);
 
-  protected templateItems(): { id: string; label: string }[] {
-    return this.all().map((t) => ({ id: t._id, label: t.name }));
+  ngAfterViewInit(): void {
+    const sheet = this.sheet()?.nativeElement;
+    if (!sheet) return;
+
+    const recalculate = (): void => this.recalculateScale();
+    if (typeof ResizeObserver === 'undefined') {
+      recalculate();
+      return;
+    }
+
+    const observer = new ResizeObserver(recalculate);
+    observer.observe(sheet);
+    this.destroyRef.onDestroy(() => observer.disconnect());
+    recalculate();
   }
 
-  ngOnInit(): void {
-    this.templates.list({}).subscribe((res) => {
-      if (!res.ok) {
-        this.error.set(extractErrorMessage(res.error));
-        this.all.set([]);
-        return;
-      }
-      this.all.set(res.data.items ?? []);
-    });
-  }
-
-  protected onSelect(id: string): void {
-    this.selectedId.set(id);
-    this.selected.set(this.all().find((t) => t._id === id) ?? null);
-  }
-
-  protected openBuilder(): void {
-    const id = this.selectedId();
-    if (!id) return;
-    void this.router.navigate(['/doc-constructor/templates'], {
-      queryParams: { templateId: id, source: 'quotation-create' },
-    });
+  private recalculateScale(): void {
+    const sheet = this.sheet()?.nativeElement;
+    if (!sheet || sheet.clientWidth <= 0 || sheet.clientHeight <= 0) return;
+    const scale = Math.min(
+      sheet.clientWidth / ProposalCreateTemplateCenterComponent.A4_WIDTH_PX,
+      sheet.clientHeight / ProposalCreateTemplateCenterComponent.A4_HEIGHT_PX,
+      1,
+    );
+    this.previewScale.set(Math.max(0.1, scale));
   }
 }

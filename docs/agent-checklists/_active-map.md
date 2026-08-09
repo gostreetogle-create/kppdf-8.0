@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T11:03:00Z · TZ-SALES-321 READY FOR REVIEW (main integration)
+- BE fidelity patch is in canonical `D:\kppdf-8.0` while preserving existing uncommitted 317/319 shell WIP.
+- Center remains the frozen rails/overlay shell; no template select was returned to the sheet. Build iframe now uses `allow-same-origin` without scripts, absolute `/uploads` rewrite, intrinsic A4 transform contain scale, ResizeObserver, and overflow hidden.
+- Gates: backend tsc PASS · document-templates-build 7/7 · frontend tsc PASS · proposal-create 8/8.
+- Marker: `tasks/_active/TZ-SALES-321.md`; visual Cursor/PO PASS on background + four positioned blocks required before archive.
+- DOC-344 builder WIP preserved and untouched. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T11:05:00Z · TZ-SALES-321 FAIL integration (FE base)
 - Agent READY: BE toObject OK; FE built on obsolete SALES-316 center (dropdown on sheet)
 - Would regress 317 FROZEN shell; parent WT already has uncommitted 317/319

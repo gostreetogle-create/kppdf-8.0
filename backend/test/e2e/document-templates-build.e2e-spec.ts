@@ -152,6 +152,43 @@ describe('DocumentTemplates build (e2e)', () => {
     expect(res.text).toContain('<!DOCTYPE html>');
   });
 
+  it('POST /document-templates/:id/build — preserves layout on resolved blocks', async () => {
+    const orgId = await createRealOrganization('Positioned Org');
+    const { templateId, blockId } = await createTemplateWithBlock({
+      templateName: 'Positioned Template',
+      organizationId: orgId,
+      blockContent: 'POSITIONED_CONTENT',
+    });
+
+    await blockModel.updateOne(
+      { _id: new Types.ObjectId(blockId) },
+      {
+        $set: {
+          source: { kind: 'literal', value: 'POSITIONED_CONTENT' },
+          layout: {
+            page: 1,
+            x: 0.12,
+            y: 0.24,
+            width: 0.6,
+            height: 0.1,
+            zIndex: 3,
+            rotation: 0,
+          },
+        },
+      },
+    ).exec();
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({});
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('POSITIONED_CONTENT');
+    expect(res.text).toContain('position:absolute');
+    expect(res.text).toContain('left:12%');
+    expect(res.text).toContain('top:24%');
+  });
+
   it('POST /document-templates/:id/build — substitutes {{organization.name}} from build body', async () => {
     const orgId = await createRealOrganization('SubstituteOrg');
     const { templateId } = await createTemplateWithBlock({
@@ -210,10 +247,10 @@ describe('DocumentTemplates build (e2e)', () => {
     const { templateId } = await createTemplateWithBlock({
       templateName: 'Empty Test',
       organizationId: orgId,
-      blockContent: 'Hi {{organization.name}}!',
+      blockContent: 'Hi {{counterparty.name}}!',
     });
 
-    // Build with no organizationId in body → org source not resolved → empty
+    // Build with no counterpartyId in body → counterparty source not resolved → empty
     const res = await request(app.getHttpServer())
       .post(`/api/document-templates/${templateId}/build`)
       .set(auth)

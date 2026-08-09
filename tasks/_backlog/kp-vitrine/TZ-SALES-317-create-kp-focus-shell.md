@@ -15,7 +15,7 @@ LAYER: 3
 PAGES: /proposals/create
 PAGE_DOCS: proposals-create.page.md
 
-CONFLICT KEYS: frontend/src/app/pages/commercial/proposals/proposal-create.page.ts; frontend/src/app/pages/commercial/proposals/proposal-create.page.spec.ts; frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts; frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.ts; frontend/src/app/pages/commercial/proposals/proposal-create-template-center.component.ts; docs/pages/proposals-create.page.md; docs/ux/kp-create-studio-spec.md
+CONFLICT KEYS: frontend/src/app/pages/commercial/proposals/proposal-create.page.ts; frontend/src/app/pages/commercial/proposals/proposal-create.page.spec.ts; frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts; frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.ts; frontend/src/app/pages/commercial/proposals/proposal-create-template-center.component.ts; frontend/src/app/pages/commercial/proposals/proposal-create-template-picker.component.ts; docs/pages/proposals-create.page.md; docs/ux/kp-create-studio-spec.md
 
 Проверено: `proposal-create.page.ts` (H1 + zone titles + always-on wide columns); audit viewport 1920×1080 (center≈570px, studio height≈2124px); dictation «Organization=клиент» = loose → клиент **Counterparty**, бланк **Organization**; КП = `Quotation`.
 

@@ -573,6 +573,18 @@ export class DocumentTemplateService {
   }
 
   /**
+   * Mongoose documents expose persisted fields through `_doc`, so spreading a
+   * hydrated block drops fields such as `layout`. Always clone to a plain
+   * object before applying build-time overrides.
+   */
+  private cloneResolvedBlock(
+    block: TemplateBlockDocument,
+    overrides: Partial<TemplateBlock>,
+  ): TemplateBlockDocument {
+    return Object.assign(block.toObject({ virtuals: false }), overrides) as TemplateBlockDocument;
+  }
+
+  /**
    * Resolve table blocks by looking up `settings.tableTemplateId` and
    * injecting the rendered HTML from TableTemplateService.preview().
    */
@@ -589,7 +601,7 @@ export class DocumentTemplateService {
     try {
       if (source?.kind === 'table-template' && source.mode === 'snapshot') return block;
       const html = await this.tableTemplateService.preview(tableTemplateId);
-      return { ...block, content: html } as TemplateBlockDocument;
+      return this.cloneResolvedBlock(block, { content: html });
     } catch {
       return block;
     }
@@ -859,12 +871,9 @@ export class DocumentTemplateService {
    * Returns the original block reference if no dataBinding present (pure
    * `{{key.subkey}}` substitution happens inside renderHtml).
    *
-   * Type note: spread `{ ...block, content: resolved }` produces a plain
-   * object structurally compatible with `TemplateBlockDocument` (consumers
-   * in renderHtml only read `content`/`type`/`title` fields). Cast to
-   * `TemplateBlockDocument` is required because TS can't infer that
-   * a partial-shaped object satisfies the Mongoose Document<T> brand
-   * (which carries `$assertPopulated`/`$clone` etc.). Runtime is correct.
+   * Build-time overrides use `cloneResolvedBlock()` so persisted fields,
+   * especially `layout`, survive the transition from hydrated Mongoose
+   * document to render input.
    */
   private async resolveBlockContent(
     block: TemplateBlockDocument,
@@ -872,28 +881,27 @@ export class DocumentTemplateService {
   ): Promise<TemplateBlockDocument> {
     const source = block.source;
     if (source?.kind === 'literal') {
-      return { ...block, content: source.value } as TemplateBlockDocument;
+      return this.cloneResolvedBlock(block, { content: source.value });
     }
     if (source?.kind === 'text-block') {
       if (source.mode === 'snapshot') return block;
       if (!Types.ObjectId.isValid(source.refId)) return block;
       const text = await this.textBlockModel.findById(source.refId).lean().exec();
       if (!text) return block;
-      return {
-        ...block,
+      return this.cloneResolvedBlock(block, {
         content: text.content ?? '',
         columns: text.columns?.map((column) => ({
           ...column,
           fontSize: column.fontSize ?? 14,
         })),
-      } as TemplateBlockDocument;
+      });
     }
     if (source?.kind === 'field') {
       const resolved = this.resolveBinding(
         { source: source.source, field: source.field, format: source.format },
         bag,
       );
-      return resolved === undefined ? block : ({ ...block, content: resolved } as TemplateBlockDocument);
+      return resolved === undefined ? block : this.cloneResolvedBlock(block, { content: resolved });
     }
 
     const binding = block.dataBinding;
@@ -913,20 +921,19 @@ export class DocumentTemplateService {
       // marker. Never infer a reference from an ObjectId-shaped literal or a
       // matching snapshot; that would silently change user-authored content.
       if (legacyText) {
-        return {
-          ...block,
+        return this.cloneResolvedBlock(block, {
           content: legacyText.content ?? '',
           columns: legacyText.columns?.map((column) => ({
             ...column,
             fontSize: column.fontSize ?? 14,
           })),
-        } as TemplateBlockDocument;
+        });
       }
     }
 
     const resolved = this.resolveBinding(binding, bag);
     if (resolved === undefined) return block;
-    return { ...block, content: resolved } as TemplateBlockDocument;
+    return this.cloneResolvedBlock(block, { content: resolved });
   }
 
   /**
@@ -1123,7 +1130,7 @@ export class DocumentTemplateService {
             return `<div class="${blockClass}"${styleAttr}>${signature}</div>`;
           }
           case 'table':
-            return `<div class="${blockClass}"${styleAttr}>${literalContent || '<p>(таблица без данных)</p>'}</div>`;
+            return `<div class="${blockClass}"${styleAttr}>${literalContent || '<p>Нет данных</p>'}</div>`;
           default:
             return `<div class="${blockClass}"${styleAttr}>${content}</div>`;
         }

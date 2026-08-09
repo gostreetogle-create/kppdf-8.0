@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  afterEveryRender,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { AuthService } from '../../core/auth.service';
@@ -10,8 +21,8 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
  * Chrome (sticky under app header):
  *   1) Optional TOC row — dictionary groups (Классификация / Измерения / …)
  *   2) Section chips — siblings inside the active group
- *   3) Tools slot — search / filters / CTA
- *   4) Body — table / tree
+ *   3) Tools slot — search / filters / CTA (**hidden when empty** — no ghost strip)
+ *   4) Body — table / tree / studio
  *
  * Section identity SoT = top nav (yellow). Do not render pathLabel eyebrow (TZ-UX-315).
  * Both chip rows are dense; first chrome row sits flush under the app header.
@@ -53,7 +64,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
 
       <div
         class="group-chips flex items-center gap-1 flex-wrap
-               pt-0.5 pb-1.5 min-w-0"
+               pt-0.5 pb-1 min-w-0 hairline-b"
         [class.pt-0]="visibleToc().length === 0"
         data-test="group-chips"
       >
@@ -77,14 +88,16 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
       </div>
 
       <div
-        class="group-tools flex items-center gap-form-field flex-wrap
-               hairline-b py-2 min-w-0"
+        class="group-tools flex items-center gap-form-field flex-wrap py-2 min-w-0"
+        [class.group-tools--empty]="!toolsProjected()"
+        data-test="group-tools"
+        #toolsHost
       >
         <ng-content select="[tools]" />
       </div>
     </div>
 
-    <div class="group-body pt-3">
+    <div class="group-body" [class.group-body--flush]="flushBody()" data-test="group-body">
       <ng-content />
     </div>
   `,
@@ -96,14 +109,27 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
         min-width: 0;
       }
 
+      .group-tools--empty {
+        display: none;
+      }
+
       .group-tools > * {
         min-width: 0;
+      }
+
+      .group-body {
+        padding-top: 0.5rem;
+      }
+
+      .group-body--flush {
+        padding-top: 0;
       }
     `,
   ],
 })
 export class PiGroupWorkspaceComponent {
   private readonly auth = inject(AuthService);
+  private readonly toolsHost = viewChild<ElementRef<HTMLElement>>('toolsHost');
 
   /**
    * @deprecated Unused — top nav is SoT for section identity (TZ-UX-315).
@@ -123,14 +149,30 @@ export class PiGroupWorkspaceComponent {
   /** Currently active section chip id (yellow). */
   readonly activeId = input.required<string>();
 
+  /**
+   * No body top gap under chips — for full-bleed studios (Create КП).
+   * Default keeps a small breathing room for tables/lists.
+   */
+  readonly flushBody = input(false);
+
   readonly tocClick = output<string>();
   readonly chipClick = output<string>();
+
+  /** True when `[tools]` slot projected at least one element. */
+  protected readonly toolsProjected = signal(false);
 
   /** Page-ACL filtered TOC (same source as top nav: user.pages). */
   readonly visibleToc = computed(() => filterByPageAcl(this.toc(), this.auth.user()?.pages));
 
   /** Page-ACL filtered section chips. */
   readonly visibleChips = computed(() => filterByPageAcl(this.chips(), this.auth.user()?.pages));
+
+  constructor() {
+    afterEveryRender(() => {
+      const host = this.toolsHost()?.nativeElement;
+      this.toolsProjected.set(!!host && host.childElementCount > 0);
+    });
+  }
 }
 
 /** Chip configuration for TOC or section row. */

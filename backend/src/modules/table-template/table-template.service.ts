@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { TableTemplate, TableTemplateDocument } from './table-template.schema';
@@ -96,7 +96,7 @@ export class TableTemplateService {
    *   - bool     → «Да» / «Нет» (Russian labels, culturally consistent)
    *   - text     → HTML-escaped via `escapeHtml()`
    *
-   * Empty sampleRows → returns `<p class="pi-empty-state">Нет sample data</p>`.
+   * Empty sampleRows → returns the product-facing Russian empty state «Нет данных».
    */
   async preview(id: string): Promise<string> {
     const doc = await this.findById(id);
@@ -107,7 +107,7 @@ export class TableTemplateService {
     const rows = doc.sampleRows ?? [];
     if (rows.length === 0) {
       return (
-        '<p class="pi-empty-state">Нет sample rows для preview. Добавьте sampleRows.</p>'
+        '<p class="pi-empty-state">Нет данных</p>'
       );
     }
 

@@ -108,8 +108,10 @@
 | Shell / chrome declutter / rails | 312 | **317** | — |
 | Left cascade + catalog UX | 314 list | stub in **317** | **318** |
 | Right inspector fields | 315 | reuse in flyout **317** | Counterparty write later |
-| Center template | 316 | compact + A4 fit **317** | **319** `build()` HTML (фон/layout/tables); без chrome имени |
+| Center template | 316 | compact + A4 fit **317** | **319** `build()` HTML в iframe — DONE path; без chrome имени / draftLines на листе |
 | Print | — | — | **320 PARK** |
+
+> **319 + 321:** stub «упрощённое превью» закрыт. Center = sandboxed `DocumentTemplatesService.build` HTML (фон/layout/tables), `/uploads` rewritten to app origin, and intrinsic A4 iframe contain-scaled without sheet scrollbars. Shell §0 FROZEN.
 
 ---
 
