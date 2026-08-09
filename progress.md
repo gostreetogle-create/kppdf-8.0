@@ -1,11 +1,20 @@
-## [2026-08-09] � TZ-SALES-317 DONE: Create �� focus shell
-**�����������:** agent-3e757640b7
-**������:** DONE; archive + lock; deploy ��
-**���:** Focus shell /proposals/create � A4 center, icon-rails, overlay flyouts (������/������/���������), ��� H1/zone titles; flushBody; spec �0 FROZEN.
+## [2026-08-09T11:17:19Z] — TZ-SALES-321 + TZ-SALES-319 DONE: KP build-preview fidelity closeout
+**Исполнитель:** agent-ccee39fec2
+**Статус:** DONE; Cursor integration PASS; PO visual PASS; archive + locks; deploy НЕ
+**Что:** Серверный build HTML сохраняет layout через `toObject()`, пустая таблица показывает «Нет данных», а frozen Create КП shell отображает фон и позиционированные блоки в sandboxed A4 iframe с absolute `/uploads` URLs, contain-scale, ResizeObserver и без H/V scroll.
+**Gates:** backend tsc PASS; document-templates-build e2e 7/7 PASS; frontend tsc PASS; proposal-create 8/8 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-321.done.md` + `tasks/_archive/2026-08/TZ-SALES-319.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-321-create-kp-preview-fidelity.lock` + `.mimocode/locks/TZ-SALES-319-create-kp-template-build-preview.lock`
+**NEXT:** idle; DOC-344 and DOC-TABLES-305 remain separate active WIP; deploy НЕ.
+
+## [2026-08-09] � TZ-SALES-317 DONE: Create �� focus shell
+**�����������:** agent-3e757640b7
+**������:** DONE; archive + lock; deploy ��
+**���:** Focus shell /proposals/create � A4 center, icon-rails, overlay flyouts (������/������/���������), ��� H1/zone titles; flushBody; spec �0 FROZEN.
 **Gates:** FE tsc PASS; proposal-create Jest PASS; Cursor Verdict PASS (visual shell).
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-317.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-317-create-kp-focus-shell.lock`
-**NEXT:** TZ-SALES-319 (build HTML preview); deploy ��.
+**NEXT:** TZ-SALES-319 (build HTML preview); deploy ��.
 ## [2026-08-09] — TZ-DOC-342 DONE: upload-background missing file → 400
 **Исполнитель:** Buffy closeout / agent-ccee39fec2
 **Статус:** DONE; archive + lock created; deploy НЕ

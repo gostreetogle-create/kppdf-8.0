@@ -1,0 +1,9 @@
+[DONE]
+task: TZ-SALES-319
+closed_at: 2026-08-09T11:17:19Z
+closed_by: agent-ccee39fec2
+archive: tasks/_archive/2026-08/TZ-SALES-319.done.md
+evidence: Cursor integration PASS; PO visual PASS; frontend tsc PASS; proposal-create 8/8 PASS
+superseded_by: TZ-SALES-321
+outcome: DONE
+deploy: NO

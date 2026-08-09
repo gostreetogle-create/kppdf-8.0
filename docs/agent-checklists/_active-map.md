@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T11:17:19Z · TZ-SALES-321 + TZ-SALES-319 DONE
+- DONE: combined KP build-preview fidelity closeout after Cursor integration PASS and PO visual PASS.
+- Visual evidence: template background and approximately four positioned blocks match builder preview.
+- Gates: BE tsc + document-templates-build 7/7; FE tsc + proposal-create 8/8 — PASS.
+- Archives: `tasks/_archive/2026-08/TZ-SALES-321.done.md`, `tasks/_archive/2026-08/TZ-SALES-319.done.md`
+- Locks: `.mimocode/locks/TZ-SALES-321-create-kp-preview-fidelity.lock`, `.mimocode/locks/TZ-SALES-319-create-kp-template-build-preview.lock`
+- `_active/`: 321 and 319 removed; DOC-344 and TABLES-305 remain untouched.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T11:03:00Z · TZ-SALES-321 READY FOR REVIEW (main integration)
 - BE fidelity patch is in canonical `D:\kppdf-8.0` while preserving existing uncommitted 317/319 shell WIP.
 - Center remains the frozen rails/overlay shell; no template select was returned to the sheet. Build iframe now uses `allow-same-origin` without scripts, absolute `/uploads` rewrite, intrinsic A4 transform contain scale, ResizeObserver, and overflow hidden.

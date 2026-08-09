@@ -1,0 +1,8 @@
+[DONE]
+task: TZ-SALES-321
+closed_at: 2026-08-09T11:17:19Z
+closed_by: agent-ccee39fec2
+archive: tasks/_archive/2026-08/TZ-SALES-321.done.md
+evidence: Cursor integration PASS; PO visual PASS; BE tsc + build e2e 7/7; FE tsc + proposal-create 8/8 PASS
+outcome: DONE
+deploy: NO

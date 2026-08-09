@@ -1,9 +1,9 @@
 # TZ-SALES-319 checklist
 
-> Status: **READY FOR REVIEW — Cursor visual FAIL** (см. TZ-SALES-321)
-> Marker: `tasks/_active/TZ-SALES-319.md` (закрыть вместе с 321 после PASS)
+> Status: **DONE** (Cursor integration + PO visual PASS)
+> Archive: `tasks/_archive/2026-08/TZ-SALES-319.done.md`
 > Аудит FAIL: `docs/audits/2026-08-09-kp-create-template-preview-fidelity-fail.md`
-> Commit/push: **NO** unless PO says so
+> Commit/push: closeout committed and pushed with TZ-SALES-321
 > TZ: `tasks/_backlog/kp-vitrine/TZ-SALES-319-create-kp-template-build-preview.md`
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -62,4 +62,12 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor/PO visual PASS — **FAIL 2026-08-09**: broken bg, scroll, layout lost (mongoose spread). Fix = **TZ-SALES-321**.
+- [x] Cursor integration PASS
+- [x] PO visual PASS — template with background and approximately four positioned blocks matches builder preview
+
+## Closeout
+
+- [x] archive + lock + progress + STATUS + remove `_active/TZ-SALES-319.md`
+- [x] DONE checkpoint in `_active-map`
+- closed_at: 2026-08-09T11:17:19Z
+- deploy: NO

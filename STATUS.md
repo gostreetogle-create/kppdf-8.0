@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** TZ-DOC-342 DONE; Doc Tables wave DONE; 320 PARKED; deploy НЕ запускать
+**Phase:** TZ-SALES-321 + TZ-SALES-319 DONE; DOC-344 / DOC-TABLES-305 active; 320 PARKED; deploy НЕ запускать
+
+## [2026-08-09T11:17:19Z] — TZ-SALES-321 + TZ-SALES-319 DONE: KP build-preview fidelity
+**Статус:** DONE on main; Cursor integration PASS; PO visual PASS; deploy НЕ
+**Что:** Build сохраняет layout через `toObject()`, пустая таблица показывает «Нет данных», а frozen Create КП shell показывает build HTML с фоном и позиционированными блоками в sandboxed A4 iframe без H/V scroll.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-321.done.md`; `tasks/_archive/2026-08/TZ-SALES-319.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-321-create-kp-preview-fidelity.lock`; `.mimocode/locks/TZ-SALES-319-create-kp-template-build-preview.lock`
+**Gates:** BE tsc + document-templates-build e2e 7/7 PASS; FE tsc + proposal-create 8/8 PASS.
+**NEXT:** idle for this closeout; DOC-344 builder and DOC-TABLES-305 remain separate active work; deploy НЕ.
 
 ## [2026-08-09] — TZ-DOC-342 DONE: upload-background missing file → 400
 **Статус:** DONE on main; deploy НЕ
