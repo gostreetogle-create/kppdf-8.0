@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T10:45:00Z · hygiene: stale DOC-342/343 markers
+- Agent STOP on SALES-321 cited DOC-343 — **false**: 343 DONE (`TZ-DOC-343.done.md`)
+- Real leftover: untracked `_active/TZ-DOC-342.md` after 342 DONE — **removed** (freed `document-template.service.ts`)
+- SALES-319 remains `_active` as visual-FAIL sibling; **321 claims same FE keys** to fix — not a foreign stop
+- DOC-344 = builder FE only — OK || with 321 BE
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T10:20:00Z · TZ-SALES-322 PARK (stale template refresh)
 - PO: в Параметрах КП — если шаблон в конструкторе новее → предложить «Обновить бланк»
 - TZ: `TZ-SALES-322-kp-stale-template-refresh.md` · `PROMPT-SALES-322.md`
