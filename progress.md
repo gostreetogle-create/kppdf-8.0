@@ -1,4 +1,14 @@
 
+## [2026-08-09T19:18:00Z] — TZ-SALES-349 DONE: hygiene старых уникальных индексов quotations
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; migration/unit/e2e/browser self-verify PASS; deploy НЕ
+**Что:** Стартовая guarded-миграция перечисляет индексы `quotations`, удаляет только неканонические unique (оставляет `_id_`, `number_1`, `masterId_1_organizationId_1`), безопасна на пустой базе и при гонке удаления индекса; `DatabaseModule` запускает её после подключения Mongo.
+**Gates:** backend tsc PASS; migration Jest 4/4; quotation e2e 7/7; frontend tsc PASS; proposal/Create Jest 21/21; Prettier/diff-check PASS.
+**Browser evidence:** browser-context create → delete → create → create: HTTP `[201, 200, 201, 201]`, номера `QTN-2026-025/026/027` различны, удалённая КП скрыта, две живые видны; `/proposals/create?new=1` открылся с русским UI.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-349.done.md`; lock создан; `_active/TZ-SALES-349.md` удалён.
+**Scope:** quotation schema/numbering/soft-delete, frozen 317/320, foreign system-role/admin и DOC-343/344 WIP не тронуты. Deploy НЕ
+**NEXT:** claim TZ-SALES-335 separately. Deploy НЕ
+
 ## [2026-08-09T18:18:00Z] — TZ-ADMIN-303 DONE: админ правит системные роли / delete запрещён
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; self-verify PASS; deploy НЕ

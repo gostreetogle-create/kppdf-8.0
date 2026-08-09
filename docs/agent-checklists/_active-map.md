@@ -1,5 +1,21 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T19:18:00Z · TZ-SALES-349 DONE / next 335
+- Guarded quotation index migration is DONE: only non-canonical unique `quotations` indexes are dropped; canonical `_id_`, `number_1`, and `masterId_1_organizationId_1` remain.
+- Gates: backend tsc PASS; migration Jest 4/4; quotation e2e 7/7; frontend tsc PASS; proposal/Create Jest 21/21; Prettier/diff-check PASS.
+- Browser evidence: repeated create/delete returned `[201,200,201,201]`, numbers `QTN-2026-025/026/027` distinct, deleted КП hidden and two live КП visible; Create route opened with Russian UI.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-349.done.md`; lock `.mimocode/locks/TZ-SALES-349-quotation-index-hygiene.lock`; `_active/TZ-SALES-349.md` removed after closeout.
+- Foreign system-role/admin and DOC-343/344 WIP preserved/excluded. Deploy NO.
+- NEXT: claim TZ-SALES-335 separately; do not claim 336 yet.
+
+## Checkpoint 2026-08-09T19:07:29Z · TZ-SALES-349 CLAIMED
+- Canonical `D:\\kppdf-8.0` `main` includes merge `69752397` with the completed 339/334 closeouts; base `91446a92` was incorporated before editing.
+- Only active TZ: `tasks/_active/TZ-SALES-349.md`.
+- Scope: guarded cleanup of stale unique `quotations` indexes, startup wiring, migration unit coverage, and repeated create/delete e2e.
+- 335/336 remain queued; foreign DOC-343/344 WIP is preserved and excluded. Deploy NO.
+- NEXT: implement → backend gates/e2e → browser repeated create/delete → archive/lock/remove active → commit/push; then 335.
+
+
 
 ## Checkpoint 2026-08-09T21:55:00Z · 339 + 334 ГОТОВЫ, НО НЕ НА MAIN (обрыв агента)
 - Агент остановлен внутренним лимитом шагов, не ошибкой проекта; работал в `.freebuff` worktree вопреки промпту.

@@ -24,7 +24,11 @@ describe('Quotations (e2e)', () => {
 
   beforeEach(async () => {
     await clearCollections(ctx!.connection, [
-      'quotations', 'counterparties', 'organizations', 'products', 'categories',
+      'quotations',
+      'counterparties',
+      'organizations',
+      'products',
+      'categories',
     ]);
     // Setup minimal fixtures
     const cp = await request(app.getHttpServer())
@@ -40,7 +44,13 @@ describe('Quotations (e2e)', () => {
     const prod = await request(app.getHttpServer())
       .post('/api/products')
       .set(authHeader(token))
-      .send({ name: 'Test Product', sku: 'TEST-1', kind: 'good', unit: 'шт', listPrice: 100 });
+      .send({
+        name: 'Test Product',
+        sku: 'TEST-1',
+        kind: 'good',
+        unit: 'шт',
+        listPrice: 100,
+      });
     productId = prod.body._id;
   });
 
@@ -81,7 +91,11 @@ describe('Quotations (e2e)', () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')
       .set(authHeader(token))
-      .send({ organizationId: orgId, counterpartyId, items: [{ productId, quantity: 1, unitPrice: 50 }] });
+      .send({
+        organizationId: orgId,
+        counterpartyId,
+        items: [{ productId, quantity: 1, unitPrice: 50 }],
+      });
     const dup = await request(app.getHttpServer())
       .post(`/api/quotations/${create.body._id}/duplicate`)
       .set(authHeader(token));
@@ -94,7 +108,11 @@ describe('Quotations (e2e)', () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')
       .set(authHeader(token))
-      .send({ organizationId: orgId, counterpartyId, items: [{ productId, quantity: 1, unitPrice: 100 }] });
+      .send({
+        organizationId: orgId,
+        counterpartyId,
+        items: [{ productId, quantity: 1, unitPrice: 100 }],
+      });
     const oldSnapshotPrice = create.body.items[0].unitPrice;
     // Update product price
     await request(app.getHttpServer())
@@ -112,7 +130,11 @@ describe('Quotations (e2e)', () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')
       .set(authHeader(token))
-      .send({ organizationId: orgId, counterpartyId, items: [{ productId, quantity: 1, unitPrice: 100 }] });
+      .send({
+        organizationId: orgId,
+        counterpartyId,
+        items: [{ productId, quantity: 1, unitPrice: 100 }],
+      });
 
     const removed = await request(app.getHttpServer())
       .delete(`/api/quotations/${create.body._id}`)
@@ -122,7 +144,9 @@ describe('Quotations (e2e)', () => {
     const list = await request(app.getHttpServer())
       .get('/api/quotations')
       .set(authHeader(token));
-    expect(list.body.some((row: { _id: string }) => row._id === create.body._id)).toBe(false);
+    expect(
+      list.body.some((row: { _id: string }) => row._id === create.body._id),
+    ).toBe(false);
 
     const get = await request(app.getHttpServer())
       .get(`/api/quotations/${create.body._id}`)
@@ -130,11 +154,52 @@ describe('Quotations (e2e)', () => {
     expect(get.status).toBe(404);
   });
 
+  it('create → soft-delete → create twice keeps quotation creation healthy', async () => {
+    const create = () =>
+      request(app.getHttpServer())
+        .post('/api/quotations')
+        .set(authHeader(token))
+        .send({
+          organizationId: orgId,
+          counterpartyId,
+          items: [{ productId, quantity: 1, unitPrice: 100 }],
+        });
+
+    const first = await create();
+    expect([200, 201]).toContain(first.status);
+    await request(app.getHttpServer())
+      .delete(`/api/quotations/${first.body._id}`)
+      .set(authHeader(token))
+      .expect((res) => expect([200, 204]).toContain(res.status));
+
+    const second = await create();
+    const third = await create();
+    expect([200, 201]).toContain(second.status);
+    expect([200, 201]).toContain(third.status);
+    expect(
+      new Set([first.body.number, second.body.number, third.body.number]).size,
+    ).toBe(3);
+
+    const list = await request(app.getHttpServer())
+      .get('/api/quotations')
+      .set(authHeader(token));
+    expect(list.body.map((row: { _id: string }) => row._id)).toEqual(
+      expect.arrayContaining([second.body._id, third.body._id]),
+    );
+    expect(
+      list.body.some((row: { _id: string }) => row._id === first.body._id),
+    ).toBe(false);
+  });
+
   it('POST /quotations/:id/convert-to-contract — creates Contract', async () => {
     const create = await request(app.getHttpServer())
       .post('/api/quotations')
       .set(authHeader(token))
-      .send({ organizationId: orgId, counterpartyId, items: [{ productId, quantity: 1, unitPrice: 100 }] });
+      .send({
+        organizationId: orgId,
+        counterpartyId,
+        items: [{ productId, quantity: 1, unitPrice: 100 }],
+      });
     const convert = await request(app.getHttpServer())
       .post(`/api/quotations/${create.body._id}/convert-to-contract`)
       .set(authHeader(token))

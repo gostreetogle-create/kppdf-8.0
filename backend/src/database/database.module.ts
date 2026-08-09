@@ -5,6 +5,7 @@ import { Connection } from 'mongoose';
 import { softDeletePlugin } from './soft-delete.plugin';
 import { auditPlugin } from './audit.plugin';
 import { userContextPlugin } from './user-context.plugin';
+import { QuotationIndexHygieneMigration } from './migrations/2026-08-09-TZ-SALES-349-quotation-index-hygiene';
 
 @Module({
   imports: [
@@ -27,7 +28,9 @@ import { userContextPlugin } from './user-context.plugin';
             connection.plugin(userContextPlugin);
 
             const logger = new Logger('MongoDB');
-            connection.on('connected', () => logger.log('Connected to MongoDB'));
+            connection.on('connected', () =>
+              logger.log('Connected to MongoDB'),
+            );
             connection.on('disconnected', () =>
               logger.warn('Disconnected from MongoDB'),
             );
@@ -44,6 +47,7 @@ import { userContextPlugin } from './user-context.plugin';
       },
     }),
   ],
+  providers: [QuotationIndexHygieneMigration],
   exports: [MongooseModule],
 })
 export class DatabaseModule {}

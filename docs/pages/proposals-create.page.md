@@ -15,6 +15,7 @@
 - 338: вход из списка «Редактировать» использует `/proposals/create?id=...` и гидратирует тот же editable draft; «Создать» использует `?new=1` и не открывает второй form-редактор. User-visible подсказки — на русском.
 - 339: «Сохранить КП» заменено русским статусом автосохранения «Сохранено»; после выбора шаблона и нашей фирмы draft сохраняется автоматически, а F5 восстанавливает товары, шаблон и клиента; удалённый КП не возрождается.
 - 334: «Клиент» — searchable `PiOverflowSelect` по всем активным Counterparty без фильтра роли; выбранный клиент входит в autosave и resume.
+- 349: индексы `quotations` приводит в порядок стартовая миграция, потому что в production `autoIndex` выключен; это предотвращает старые уникальные индексы и E11000 при создании нового черновика после удаления КП.
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
 - 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and «Видна/Скрыта» rebuild the A4 table; the shared TableTemplate is never patched. «Открыть шаблон таблицы» uses the existing Documents tables route.
