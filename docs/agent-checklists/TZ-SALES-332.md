@@ -1,56 +1,66 @@
 # TZ-SALES-332 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-SALES-332.md` (создать при CLAIM)
+> Status: **READY FOR REVIEW**
+> Marker: `tasks/_active/TZ-SALES-332.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-332-kp-flyout-table-rail-polish.md`
 > Commit/push: **NO** until Cursor/PO visual PASS
 
-## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+## Claim slot
 
-- agent_id: _(пусто до CLAIM)_
-- claimed_at: _
-- workspace: D:\kppdf-8.0
-- team_room_claim: _
+- agent_id: `agent-6c3d05b80e`
+- claimed_at: `2026-08-09T15:37:36Z`
+- workspace: `D:\kppdf-8.0`
+- team_room_claim: unavailable — Team Room reports unknown task; sync tasks first
 
 ## Preflight
 
-- [ ] Get-Location + git rev-parse → `D:\kppdf-8.0`
-- [ ] 331 не держит те же keys / archive 331 first if still `_active`
-- [ ] Аудит `docs/audits/2026-08-09-kp-create-flyout-polish-audit.md` прочитан
-- [ ] Claim slot заполнен; Status = CLAIMED
-- [ ] `tasks/_active/TZ-SALES-332.md` на месте
+- [x] Get-Location + git rev-parse → `D:\kppdf-8.0`; canonical `main` at `26b762b6`.
+- [x] TZ-SALES-331 archived/DONE before claim; `_active/TZ-SALES-331.md` removed.
+- [x] `_active-map` and `tasks/_active/` scanned; no competing 332 claim.
+- [x] Audit, TZ, prompt, canon §0 and 330/331 behavior read.
+- [x] Claim slot filled; Status = CLAIMED / IN PROGRESS before code.
+- [x] `tasks/_active/TZ-SALES-332.md` created.
 
 ## Acceptance
 
-- [ ] Layout sync с columns реального table-template
-- [ ] Видна/Скрыта + ←→ реально меняют A4
-- [ ] Правый rail: Параметры + Таблица
-- [ ] CTA «Открыть шаблон таблицы» = PiButton
-- [ ] Витрина не клипается; flyout padding pride PASS
-- [ ] Gates + visual PO
+- [x] Layout sync uses columns from the selected template's actual line-items table; DEFAULT is fallback only.
+- [x] `Видна`/`Скрыта` and `←`/`→` update the request-only A4 payload; the last visible column cannot be hidden.
+- [x] Right rail has mutually exclusive Параметры and Таблица tools.
+- [x] CTA is PiButton «Открыть шаблон таблицы» with `editId` when the live table is known.
+- [x] Products showcase is not clipped when the right tool is opened; flyouts have air, content height and light transparency.
+- [x] A4 center remains frozen and unsqueezed; 331 footer/VAT remains intact.
 
 ## Integrity slot
 
-- [ ] Type: page (`/proposals/create`)
-- [ ] page.md + studio spec §0 updated
-- [ ] Чужой WIP не в коммите
-- [ ] Канон: docs/DOCS-INTEGRITY.md
+- [x] Type: page (`/proposals/create`).
+- [x] Page doc and studio spec §0 updated.
+- [x] Foreign DOC-343 WIP and untracked foreign files excluded.
+- [x] Canon: `docs/DOCS-INTEGRITY.md` and `docs/audits/2026-08-09-kp-create-flyout-polish-audit.md`.
 
-## Gates (факт)
+## Gates (fact)
 
-_(исполнитель)_
+- [x] `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
+- [x] `cd frontend && pnpm exec jest --config jest.config.js --runInBand src/app/pages/commercial/proposals/proposal-create.page.spec.ts` — PASS, 14/14
+- [x] Frontend Prettier on changed files — PASS
+- [x] `git diff --check` — PASS
 
 ## Executor report (auto)
 
-_(≤15 lines; перед archive)_
+- Selected templates now load their template blocks and actual live line-items TableTemplate columns; explicit `kpLineItems`/`line-items` wins, otherwise exactly one live table is used.
+- `kpTableLayout` carries the real keys/labels; DEFAULT_KP is only a safe fallback when no target table is discoverable.
+- Table controls use horizontal `←`/`→` and `Видна`/`Скрыта`; the last visible column is protected; changes rebuild request-only `tableLayout` and never PATCH the shared template.
+- Right rail is split into mutually exclusive Параметры and Таблица tools; CTA is PiButton «Открыть шаблон таблицы».
+- Products opening closes the right overlay; flyouts use inward padding, content-height/max-height, light transparency, and an internal product-grid scroll.
+- 317 frozen A4 rails/center, 330 layout instance, 331 markup/VAT footer, Save/Counterparty, 320/322 and deploy remain out of scope.
+- READY FOR REVIEW: visual check required for A4 column sync/hide/reorder, two right tools, CTA, flyout pride and un-clipped md cards.
 
 ## Review handoff
 
-- [ ] READY FOR REVIEW
-- [ ] Не archive до Cursor/PO visual PASS
+- [x] READY FOR REVIEW
+- [ ] Do not archive until Cursor/PO visual PASS.
 
-## Closeout (после PASS)
+## Closeout (after PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
+- [ ] archive + lock + progress + remove `_active`
 - [ ] Status = DONE
 - closed_at: _

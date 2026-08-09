@@ -13,12 +13,15 @@ import { API_BASE_URL } from '../../../core/api.tokens';
 import { ProductsService } from '../../../shared/services/products.service';
 import { OrganizationsService } from '../../../shared/services/organizations.service';
 import { DocumentTemplatesService } from '../../../shared/services/pi-document-templates.service';
+import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 
 describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)', () => {
   let fixture: ComponentFixture<ProposalCreatePage>;
   const buildMock = jest.fn();
+  const tableFindMock = jest.fn();
 
   beforeEach(async () => {
     buildMock.mockReset();
@@ -26,6 +29,22 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       of({
         ok: true,
         data: '<html><head></head><body><div class="doc-bg" data-test="DATA_TEST_BUILD_OK"><img src="/uploads/bg.png" alt=""></div></body></html>',
+      }),
+    );
+    tableFindMock.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'table-1',
+          columns: [
+            { key: 'index', label: '№' },
+            { key: 'productName', label: 'Наименование' },
+            { key: 'quantity', label: 'Кол-во' },
+            { key: 'unit', label: 'Ед.' },
+            { key: 'unitPrice', label: 'Цена' },
+            { key: 'sum', label: 'Сумма' },
+          ],
+        },
       }),
     );
 
@@ -105,6 +124,25 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
             build: buildMock,
           },
         },
+        {
+          provide: TemplateBlocksService,
+          useValue: {
+            listByTemplate: () =>
+              of({
+                ok: true,
+                data: [
+                  {
+                    type: 'table',
+                    settings: { tableTemplateId: 'table-1', kpLineItems: true },
+                  },
+                ],
+              }),
+          },
+        },
+        {
+          provide: TableTemplatesService,
+          useValue: { findById: tableFindMock },
+        },
       ],
     }).compileComponents();
 
@@ -145,6 +183,25 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-picker"]'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('[data-test="kp-cascade-l1"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeNull();
+  });
+
+  it('opens a separate Table rail pane with the polished column controls', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'params' | 'table') => void;
+    };
+    page.toggleRightPane('table');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-toggle-table"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('Видна');
+    expect(fixture.nativeElement.textContent).toContain('Открыть шаблон таблицы');
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-left-productName"]')),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-right-productName"]')),
+    ).toBeTruthy();
   });
 
   it('opens products overlay from its own rail button', () => {
@@ -316,6 +373,46 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         tableLayout: [
           { key: 'sum', visible: true },
           { key: 'productName', visible: false },
+        ],
+      }),
+    );
+  }));
+
+  it('syncs the inspector layout from the selected template table columns', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      kpTableLayout: () => Array<{ key: string; label: string; visible: boolean }>;
+    };
+    tableFindMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: {
+          _id: 'table-1',
+          columns: [
+            { key: 'photo', label: 'Рисунок' },
+            { key: 'name', label: 'Наименование' },
+            { key: 'sku', label: 'Артикул' },
+          ],
+        },
+      }),
+    );
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    fixture.detectChanges();
+
+    expect(page.kpTableLayout()).toEqual([
+      { key: 'photo', label: 'Рисунок', visible: true },
+      { key: 'name', label: 'Наименование', visible: true },
+      { key: 'sku', label: 'Артикул', visible: true },
+    ]);
+    expect(buildMock).toHaveBeenLastCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        tableLayout: [
+          { key: 'photo', visible: true },
+          { key: 'name', visible: true },
+          { key: 'sku', visible: true },
         ],
       }),
     );

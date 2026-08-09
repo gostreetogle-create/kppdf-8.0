@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../../shared/ui/input/input.component';
@@ -42,7 +42,6 @@ export interface ProposalCreateInspectorState {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
-    RouterLink,
     ButtonComponent,
     FormFieldComponent,
     InputComponent,
@@ -50,59 +49,61 @@ export interface ProposalCreateInspectorState {
   ],
   template: `
     <div class="inspector" data-test="kp-create-inspector">
-      <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
-        <app-pi-overflow-select
-          [items]="organizationItems()"
-          [value]="organizationId()"
-          (valueChange)="onOrgChange($event)"
-          searchable="auto"
-          placeholder="— выберите —"
-          ariaLabel="Наша фирма"
-          dataTest="kp-insp-org"
-        />
-      </app-pi-form-field>
+      @if (!tableOnly()) {
+        <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
+          <app-pi-overflow-select
+            [items]="organizationItems()"
+            [value]="organizationId()"
+            (valueChange)="onOrgChange($event)"
+            searchable="auto"
+            placeholder="— выберите —"
+            ariaLabel="Наша фирма"
+            dataTest="kp-insp-org"
+          />
+        </app-pi-form-field>
 
-      @if (organizationId()) {
-        <app-pi-button
-          type="button"
-          variant="ghost"
-          size="sm"
-          data-test="kp-insp-open-org"
-          (click)="openOrganization()"
-        >
-          Открыть организацию
-        </app-pi-button>
+        @if (organizationId()) {
+          <app-pi-button
+            type="button"
+            variant="ghost"
+            size="sm"
+            data-test="kp-insp-open-org"
+            (click)="openOrganization()"
+          >
+            Открыть организацию
+          </app-pi-button>
+        }
+
+        <app-pi-form-field label="Наценка %" htmlFor="kp-insp-markup">
+          <app-pi-input
+            id="kp-insp-markup"
+            type="number"
+            [ngModel]="orgMarkupPercent()"
+            (ngModelChange)="onMarkupChange($event)"
+            data-test="kp-insp-markup"
+          />
+        </app-pi-form-field>
+
+        <p class="inspector__markup-hint">Меняет цены только в этом КП; каталог не трогаем.</p>
+
+        <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
+          <app-pi-input
+            id="kp-insp-vat"
+            type="number"
+            [ngModel]="dealVatPercent()"
+            (ngModelChange)="onVatChange($event)"
+            data-test="kp-insp-vat"
+          />
+        </app-pi-form-field>
+
+        <div class="inspector__estimate" data-test="kp-insp-estimate">
+          <p class="eyebrow m-0">оценка</p>
+          <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
+          <p class="text-[11px] text-muted-foreground m-0">
+            Подсказка по draft × наценка; не пишется в сохранённый total.
+          </p>
+        </div>
       }
-
-      <app-pi-form-field label="Наценка %" htmlFor="kp-insp-markup">
-        <app-pi-input
-          id="kp-insp-markup"
-          type="number"
-          [ngModel]="orgMarkupPercent()"
-          (ngModelChange)="onMarkupChange($event)"
-          data-test="kp-insp-markup"
-        />
-      </app-pi-form-field>
-
-      <p class="inspector__markup-hint">Меняет цены только в этом КП; каталог не трогаем.</p>
-
-      <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
-        <app-pi-input
-          id="kp-insp-vat"
-          type="number"
-          [ngModel]="dealVatPercent()"
-          (ngModelChange)="onVatChange($event)"
-          data-test="kp-insp-vat"
-        />
-      </app-pi-form-field>
-
-      <div class="inspector__estimate" data-test="kp-insp-estimate">
-        <p class="eyebrow m-0">оценка</p>
-        <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
-        <p class="text-[11px] text-muted-foreground m-0">
-          Подсказка по draft × наценка; не пишется в сохранённый total.
-        </p>
-      </div>
 
       <section class="inspector__table" data-test="kp-insp-table">
         <div class="inspector__section-heading">
@@ -114,56 +115,66 @@ export interface ProposalCreateInspectorState {
             <div class="inspector__column" [attr.data-test]="'kp-table-column-' + column.key">
               <span class="inspector__column-label">{{ column.label }}</span>
               <span class="inspector__column-actions">
-                <button
+                <app-pi-button
                   type="button"
-                  class="pi-focus-ring"
+                  variant="ghost"
+                  size="icon"
                   [disabled]="index === 0"
-                  [attr.aria-label]="'Поднять ' + column.label"
-                  [attr.data-test]="'kp-table-up-' + column.key"
+                  [ariaLabel]="'Левее ' + column.label"
+                  [attr.data-test]="'kp-table-left-' + column.key"
                   (click)="moveColumn(index, -1)"
                 >
-                  ↑
-                </button>
-                <button
+                  ←
+                </app-pi-button>
+                <app-pi-button
                   type="button"
-                  class="pi-focus-ring"
+                  variant="ghost"
+                  size="icon"
                   [disabled]="index === tableLayout().length - 1"
-                  [attr.aria-label]="'Опустить ' + column.label"
-                  [attr.data-test]="'kp-table-down-' + column.key"
+                  [ariaLabel]="'Правее ' + column.label"
+                  [attr.data-test]="'kp-table-right-' + column.key"
                   (click)="moveColumn(index, 1)"
                 >
-                  ↓
-                </button>
-                <button
+                  →
+                </app-pi-button>
+                <app-pi-button
                   type="button"
-                  class="pi-focus-ring inspector__visibility"
-                  role="switch"
-                  [attr.aria-checked]="column.visible"
+                  variant="outline"
+                  size="sm"
+                  class="inspector__visibility"
+                  [disabled]="column.visible && visibleColumnCount() === 1"
+                  [ariaLabel]="
+                    column.visible ? 'Скрыть ' + column.label : 'Показать ' + column.label
+                  "
                   [attr.data-test]="'kp-table-visible-' + column.key"
                   (click)="toggleColumn(index)"
                 >
-                  {{ column.visible ? 'Показать' : 'Скрыто' }}
-                </button>
+                  {{ column.visible ? 'Видна' : 'Скрыта' }}
+                </app-pi-button>
               </span>
             </div>
           }
         </div>
-        <a
-          class="inspector__preset-link"
-          routerLink="/doc-constructor/tables"
-          data-test="kp-table-open-preset"
+        <app-pi-button
+          type="button"
+          variant="ghost"
+          size="sm"
+          data-test="kp-table-open-template"
+          (click)="openTableTemplate()"
         >
-          Пресет в Документах
-        </a>
+          Открыть шаблон таблицы
+        </app-pi-button>
       </section>
 
-      <app-pi-form-field label="Клиент (заглушка)" htmlFor="kp-insp-cp">
-        <select id="kp-insp-cp" class="pi-input w-full" disabled data-test="kp-insp-cp-stub">
-          <option>Выбор клиента — later</option>
-        </select>
-      </app-pi-form-field>
+      @if (!tableOnly()) {
+        <app-pi-form-field label="Клиент (заглушка)" htmlFor="kp-insp-cp">
+          <select id="kp-insp-cp" class="pi-input w-full" disabled data-test="kp-insp-cp-stub">
+            <option>Выбор клиента — later</option>
+          </select>
+        </app-pi-form-field>
+      }
 
-      @if (error()) {
+      @if (error() && !tableOnly()) {
         <p class="text-xs text-destructive m-0" role="alert">{{ error() }}</p>
       }
     </div>
@@ -191,9 +202,10 @@ export interface ProposalCreateInspectorState {
     .inspector__table {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
-      padding: 0.5rem;
+      gap: 0.75rem;
+      padding: 0.75rem;
       border: 1px solid var(--color-rule);
+      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
     }
     .inspector__section-heading h3,
     .inspector__section-heading p {
@@ -210,7 +222,7 @@ export interface ProposalCreateInspectorState {
     .inspector__columns {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.35rem;
     }
     .inspector__column {
       display: flex;
@@ -234,27 +246,13 @@ export interface ProposalCreateInspectorState {
       gap: 0.2rem;
       flex-shrink: 0;
     }
-    .inspector__column-actions button {
-      min-width: 1.75rem;
-      min-height: 1.75rem;
-      padding: 0.15rem 0.3rem;
-      border: 1px solid var(--color-rule);
-      background: transparent;
-      color: var(--color-ink);
-      cursor: pointer;
+    .inspector__column-actions app-pi-button {
+      flex-shrink: 0;
     }
-    .inspector__column-actions button:disabled {
-      cursor: default;
-      opacity: 0.45;
-    }
+
     .inspector__column-actions .inspector__visibility {
       min-width: 4.5rem;
       font-size: 0.7rem;
-    }
-    .inspector__preset-link {
-      color: var(--color-gold-deep, var(--color-ink));
-      font-size: 0.75rem;
-      text-decoration: underline;
     }
   `,
 })
@@ -264,6 +262,8 @@ export class ProposalCreateInspectorComponent implements OnInit {
 
   readonly draftLines = input<ProposalDraftLine[]>([]);
   readonly tableLayout = input<ProposalTableLayoutColumn[]>([]);
+  readonly tableOnly = input(false);
+  readonly tableTemplateId = input<string | null>(null);
   readonly stateChange = output<ProposalCreateInspectorState>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
 
@@ -284,6 +284,10 @@ export class ProposalCreateInspectorComponent implements OnInit {
     const base = this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
     return formatPrice(estimateFamilyTotal(base, this.orgMarkupPercent()));
   });
+
+  protected readonly visibleColumnCount = computed(
+    () => this.tableLayout().filter((column) => column.visible).length,
+  );
 
   ngOnInit(): void {
     this.orgs.list({ limit: 200 }).subscribe((res) => {
@@ -325,7 +329,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
   protected toggleColumn(index: number): void {
     const current = this.tableLayout();
     const column = current[index];
-    if (!column) return;
+    if (!column || (column.visible && this.visibleColumnCount() === 1)) return;
     this.tableLayoutChange.emit(
       current.map((entry, entryIndex) =>
         entryIndex === index ? { ...entry, visible: !entry.visible } : entry,
@@ -337,6 +341,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
     const id = this.organizationId();
     if (!id) return;
     void this.router.navigate(['/organizations'], { queryParams: { highlight: id } });
+  }
+
+  protected openTableTemplate(): void {
+    const id = this.tableTemplateId();
+    void this.router.navigate(['/doc-constructor/tables'], {
+      queryParams: id ? { editId: id } : undefined,
+    });
   }
 
   private emitState(): void {

@@ -13,7 +13,7 @@
 ## 0. FROZEN — что нельзя «улучшать» молча
 
 1. **A4 center** — главная площадь; open меню **не** меняет ширину/высоту листа (только overlay).
-2. Left rail: **две** иконки — Шаблон · Товары. Right: Параметры.
+2. Left rail: **две** иконки — Шаблон · Товары. Right: **две** взаимоисключающие иконки — Параметры · Таблица (TZ-SALES-332); обе остаются overlay и не меняют A4 geometry.
 3. Нет page H1 / zone-titles / dropdown шаблона над листом.
 4. Под жёлтыми chips **нет** пустой tools-полосы; studio `flushBody` вплотную к chips.
 5. Любой откат к docked 3-колонкам / «одна кнопка → две панели» — **regression**.
@@ -61,7 +61,7 @@
 |------|----------|----------|------------|
 | **Left rail** | 2 icon-btn **~44–52px** (Шаблон · Товары) | template overlay ≤~20rem; products overlay **36–40rem** поверх center | Пикер шаблона **или** список изделий |
 | **Center** | всегда fixed width между rails | — | Лист A4; **не сжимается** при open |
-| **Right** | icon-rail, **default collapsed** | overlay ← от рейла | Inspector |
+| **Right** | icon-rail, **default collapsed** | overlay ← от рейла | Параметры **или** Таблица |
 
 ### Правила места
 

@@ -158,7 +158,8 @@ const PAGE_SIZE = 12;
   styles: `
     :host {
       display: block;
-      height: 100%;
+      height: auto;
+      max-height: 100%;
       min-height: 0;
     }
 
@@ -166,7 +167,8 @@ const PAGE_SIZE = 12;
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      min-height: 100%;
+      min-height: 0;
+      height: auto;
       padding: 0.75rem;
     }
 
@@ -217,7 +219,8 @@ const PAGE_SIZE = 12;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       align-items: stretch;
       gap: 0.65rem;
-      flex: 1;
+      flex: 0 1 auto;
+      max-height: min(34rem, calc(100vh - 16rem));
       min-height: 0;
       overflow-y: auto;
       padding: 0.1rem 0.15rem 0.25rem 0;

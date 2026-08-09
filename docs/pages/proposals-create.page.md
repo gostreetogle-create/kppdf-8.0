@@ -8,13 +8,13 @@
 ## Зафиксировано (не менять без PO)
 
 - Центр = только A4; flyout **overlay** (grid rails|center|rails fixed)
-- Left rail: **Шаблон** + **Товары**; Right: **Параметры**
+- Left rail: **Шаблон** + **Товары**; Right: **Параметры** + **Таблица** (взаимоисключающие overlay-инструменты, TZ-SALES-332)
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory only (в rail / inspector estimate); до Save не пишутся в Quotation/Mongo
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
-- 330: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП: ↑/↓ and «Показать/Скрыто» rebuild the live line-items table; the shared TableTemplate is never patched. «Пресет в Документах» links back to the preset library.
+- 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and «Видна/Скрыта» rebuild the A4 table; the shared TableTemplate is never patched. «Открыть шаблон таблицы» uses the existing Documents tables route.
 - 331: «Наценка %» changes only request `previewLines.unitPrice` (rounded to kopecks, clamped −100…1000); the catalog is never updated. «НДС %» defaults to **20** and is whole-deal, with prices treated as VAT-inclusive: footer VAT is extracted as `sum × vat / (100 + vat)`; VAT 0 hides the VAT row. No «Скидка» column.
 
 ## Center preview (TZ-SALES-319)
@@ -32,6 +32,7 @@
 - **326** — products flyout **36–40rem** (≈×2) + transparent backdrop dismiss вне панели (вкл. iframe); A4 center/rails не сжимаются
 - **327** — PiShowcaseCard md equal-height (эталон; sm/md/lg уже есть)
 - **328** — visual trial: `PiShowcaseCard md` grid **3-col** in the wider ~58rem products flyout (narrow fallback 2→1), slightly compact rail spacing, search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии
+- **332** — таблица синхронизируется с реальными columns выбранного бланка; right rail разделён на Параметры/Таблица, CTA = «Открыть шаблон таблицы», flyouts имеют воздух и content-height, витрина не клипается.
 - Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**
 - **318** cascade — SUPERSEDED by 328
 - **WAVE-KP-TABLE-CONFIG** (канон [`…-kp-table-config-canon.md`](../audits/2026-08-09-kp-table-config-canon.md)): **307** пресет → **330** layout → **331** наценка/НДС

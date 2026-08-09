@@ -11,7 +11,13 @@
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { FileText, LucideAngularModule, Package, SlidersHorizontal } from 'lucide-angular';
+import {
+  FileText,
+  LucideAngularModule,
+  Package,
+  SlidersHorizontal,
+  TableProperties,
+} from 'lucide-angular';
 import { Subject, catchError, debounceTime, of, switchMap, tap } from 'rxjs';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import {
@@ -20,6 +26,12 @@ import {
   type BuildTableLayoutColumn,
   type DocumentTemplate,
 } from '../../../shared/services/pi-document-templates.service';
+import {
+  TableTemplatesService,
+  type TableTemplate,
+} from '../../../shared/services/pi-table-templates.service';
+import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
 import {
@@ -123,21 +135,34 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
           <nav
             class="kp-create-studio__rail kp-create-studio__rail--right"
             data-test="kp-rail-right"
-            aria-label="Параметры КП"
+            aria-label="Инструменты КП"
             #rightRail
           >
             <button
               type="button"
               class="kp-create-studio__rail-btn pi-focus-ring"
-              [class.kp-create-studio__rail-btn--active]="rightOpen()"
-              [attr.aria-expanded]="rightOpen()"
+              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'params'"
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'params'"
               aria-controls="kp-flyout-params"
               aria-label="Параметры"
               title="Параметры"
               data-test="kp-create-toggle-right"
-              (click)="toggleRight()"
+              (click)="toggleRightPane('params')"
             >
               <lucide-angular [img]="slidersIcon" [size]="18" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'table'"
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'table'"
+              aria-controls="kp-flyout-table"
+              aria-label="Таблица"
+              title="Таблица"
+              data-test="kp-create-toggle-table"
+              (click)="toggleRightPane('table')"
+            >
+              <lucide-angular [img]="tableIcon" [size]="18" aria-hidden="true" />
             </button>
           </nav>
 
@@ -184,13 +209,16 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             <aside
               id="kp-flyout-params"
               class="kp-create-studio__flyout kp-create-studio__flyout--right"
+              [attr.id]="rightPane() === 'table' ? 'kp-flyout-table' : 'kp-flyout-params'"
               data-test="kp-create-right"
-              aria-label="Параметры"
+              [attr.aria-label]="rightPane() === 'table' ? 'Таблица' : 'Параметры'"
               #rightFlyout
             >
               <app-proposal-create-inspector
                 [draftLines]="draftLines()"
                 [tableLayout]="kpTableLayout()"
+                [tableOnly]="rightPane() === 'table'"
+                [tableTemplateId]="tableTemplateId()"
                 (stateChange)="onInspectorState($event)"
                 (tableLayoutChange)="onTableLayoutChange($event)"
               />
@@ -295,13 +323,16 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 
     .kp-create-studio__flyout {
       position: absolute;
-      top: 0;
-      bottom: 0;
+      top: 0.5rem;
+      bottom: auto;
       z-index: 20;
       width: var(--kp-flyout-w);
-      max-width: calc(100% - (var(--kp-rail) * 2));
+      max-width: calc(100% - (var(--kp-rail) * 2) - 1rem);
+      max-height: calc(100% - 1rem);
+      height: auto;
+      padding: 0.75rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: color-mix(in oklch, var(--color-paper, #fff) 94%, transparent);
       box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
       overflow: auto;
       min-height: 0;
@@ -318,11 +349,17 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
     .kp-create-studio__flyout--right {
       right: var(--kp-rail);
     }
+
+    .kp-create-studio__flyout[data-flyout='products'] {
+      padding: 0.5rem;
+    }
   `,
 })
 export class ProposalCreatePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly tableTemplatesSvc = inject(TableTemplatesService);
+  private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly sanitizer = inject(DomSanitizer);
 
   @ViewChild('leftRail') private leftRail?: ElementRef<HTMLElement>;
@@ -336,10 +373,12 @@ export class ProposalCreatePage implements OnInit {
   protected readonly fileIcon = FileText;
   protected readonly packageIcon = Package;
   protected readonly slidersIcon = SlidersHorizontal;
+  protected readonly tableIcon = TableProperties;
 
   protected readonly isWide = signal(true);
   protected readonly leftTool = signal<LeftTool>(null);
   protected readonly rightOpen = signal(false);
+  protected readonly rightPane = signal<'params' | 'table'>('params');
   protected readonly selectedTemplate = signal<DocumentTemplate | null>(null);
   /** In-memory draft positions (SALES-314). Not persisted; not painted on the sheet (319). */
   protected readonly draftLines = signal<ProposalDraftLine[]>([]);
@@ -351,6 +390,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
+  protected readonly tableTemplateId = signal<string | null>(null);
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -465,14 +505,54 @@ export class ProposalCreatePage implements OnInit {
 
   protected onTemplateChange(tpl: DocumentTemplate | null): void {
     this.selectedTemplate.set(tpl);
+    this.tableTemplateId.set(null);
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
     if (tpl) {
       this.leftTool.set(null);
+      this.syncTableLayout(tpl._id);
       this.rebuildPreview$.next();
     } else {
       this.previewHtml.set(null);
       this.previewStatus.set('idle');
     }
+  }
+
+  private syncTableLayout(templateId: string): void {
+    this.blocksSvc
+      .listByTemplate(templateId)
+      .pipe(
+        switchMap((blocksResult) => {
+          if (!blocksResult.ok) return of(null);
+          const blocks = blocksResult.data ?? [];
+          const liveTables = blocks.filter((block) => this.tableTemplateIdForBlock(block));
+          const explicit = liveTables.filter((block) => {
+            const settings = block.settings ?? {};
+            return settings['kpLineItems'] === true || settings['role'] === 'line-items';
+          });
+          const target = explicit[0] ?? (liveTables.length === 1 ? liveTables[0] : null);
+          const tableId = target ? this.tableTemplateIdForBlock(target) : null;
+          return tableId ? this.tableTemplatesSvc.findById(tableId) : of(null);
+        }),
+      )
+      .subscribe((tableResult) => {
+        if (this.selectedTemplate()?._id !== templateId || !tableResult?.ok) return;
+        const columns = (tableResult.data as TableTemplate).columns ?? [];
+        if (columns.length === 0) return;
+        this.tableTemplateId.set((tableResult.data as TableTemplate)._id);
+        this.kpTableLayout.set(
+          columns.map((column) => ({ key: column.key, label: column.label, visible: true })),
+        );
+        this.rebuildPreview$.next();
+      });
+  }
+
+  private tableTemplateIdForBlock(block: TemplateBlock): string | null {
+    if (block.type !== 'table') return null;
+    if (block.source?.kind === 'table-template') {
+      return block.source.mode === 'snapshot' ? null : block.source.refId;
+    }
+    const tableId = block.settings?.['tableTemplateId'];
+    return typeof tableId === 'string' && tableId.length > 0 ? tableId : null;
   }
 
   protected onTableLayoutChange(layout: ProposalTableLayoutColumn[]): void {
@@ -502,17 +582,22 @@ export class ProposalCreatePage implements OnInit {
   protected toggleLeftTool(tool: Exclude<LeftTool, null>): void {
     const next = this.leftTool() === tool ? null : tool;
     this.leftTool.set(next);
-    if (next && !this.isWide()) {
-      this.rightOpen.set(false);
+    if (next === 'products') this.rightOpen.set(false);
+    if (next && !this.isWide()) this.rightOpen.set(false);
+  }
+
+  protected toggleRightPane(pane: 'params' | 'table'): void {
+    const isSamePane = this.rightOpen() && this.rightPane() === pane;
+    this.rightPane.set(pane);
+    this.rightOpen.set(!isSamePane);
+    if (!isSamePane && pane === 'table' && this.leftTool() === 'products') {
+      this.leftTool.set(null);
     }
+    if (!isSamePane && !this.isWide()) this.leftTool.set(null);
   }
 
   protected toggleRight(): void {
-    const next = !this.rightOpen();
-    this.rightOpen.set(next);
-    if (next && !this.isWide()) {
-      this.leftTool.set(null);
-    }
+    this.toggleRightPane('params');
   }
 
   protected onProductAdd(line: ProposalDraftLine): void {

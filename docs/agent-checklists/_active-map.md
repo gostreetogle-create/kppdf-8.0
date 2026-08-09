@@ -8,6 +8,14 @@
 - Scope guard: DOC-343 dirty WIP excluded; no discount column, 317 shell rewrite, snapshots, quotation persistence, 320/322, or deploy.
 - NEXT: claim TZ-SALES-332. Deploy: NO
 
+## Checkpoint 2026-08-09T15:45:00Z · TZ-SALES-332 READY FOR REVIEW
+- READY: Create КП now syncs the selected template's actual live line-items columns into the Table rail; ←/→ and Видна/Скрыта rebuild request-only A4 layout.
+- Right rail is split into mutually exclusive Параметры / Таблица tools; CTA is PiButton «Открыть шаблон таблицы»; products closes the right overlay to avoid clipping.
+- Flyouts have inward air, content-height/max-height, light transparency and internal product-grid scroll; frozen A4 rails|center geometry remains unchanged.
+- Gates: frontend tsc PASS; proposal-create Jest 14/14; changed-file Prettier PASS; diff-check PASS.
+- Marker/checklist: `tasks/_active/TZ-SALES-332.md` / `docs/agent-checklists/TZ-SALES-332.md`; archive blocked only by Cursor/PO visual PASS.
+- NEXT: visual handoff → archive/lock/remove `_active` after PASS. Deploy: NO
+
 ## Checkpoint 2026-08-09T18:15:00Z · TZ-SALES-332 READY (flyout pride polish)
 - PO visual FAIL on Create flyouts after 330/331: hide noop (layout≠sheet columns), ↑↓, «Пресет» jargon, clipped products, cramped chrome.
 - Audit: `docs/audits/2026-08-09-kp-create-flyout-polish-audit.md`
