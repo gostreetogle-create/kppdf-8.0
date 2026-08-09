@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:07:23Z · TZ-SALES-323 DONE / PO visual PASS
+- DONE: TZ-SALES-323 archived after PO confirmed no H/V scrollbar on canonical `main`; measured scrollWidth/scrollHeight <= client + 1px.
+- Code: `a270fa09` already landed on `origin/main`; closeout archive/checklist/lock/progress now follows.
+- `_active/TZ-SALES-323.md` removed. Next: claim TZ-SALES-324 only after conflict scan.
+- DOC-344, 322, 320, and deploy remain untouched.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09T12:00:38Z · TZ-SALES-327 DONE / canonical landed
 - DONE: TZ-SALES-327 archive `tasks/_archive/2026-08/TZ-SALES-327.done.md`; PiShowcaseCard md equal-height/photo hardening is on canonical `main`.
 - Canonical commit: `cd3c265f`, pushed to `origin/main`; frontend tsc PASS; card tests 11/11 PASS.

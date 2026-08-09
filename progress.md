@@ -1531,3 +1531,13 @@ BOM inspector — вклад строки material/module read-only.
 **Gates:** tsc PASS; targeted Jest 15/15 PASS; полный сьют 129 suites / 1214 tests PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-305.done.md`
 **Lock:** `.mimocode/locks/TZ-UX-DIALOG-305.lock`
+
+---
+
+## [2026-08-09] — TZ-SALES-323 DONE: Create КП A4 fit без scrollbar
+**Исполнитель:** Buffy / agent-6c3d05b80e
+**Статус:** DONE; PO visual PASS on canonical `main`; archive + lock + checkpoint completed
+**Что сделано кратко:** FE contain-scale с safety inset/ResizeObserver и bounded portrait/landscape A4 build page box; подтверждены отсутствие H/V scrollbar и scrollWidth/scrollHeight <= client + 1px.
+**Gates:** backend tsc PASS; document build e2e 8/8 PASS; frontend tsc PASS; proposal-create 9/9 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-323.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-323-create-kp-a4-fit-no-scroll.lock`
