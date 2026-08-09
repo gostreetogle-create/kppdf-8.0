@@ -73,10 +73,10 @@
 
 **Итог:** 36 бизнес-routes; **0 × NO** — все документированы (design/shipping — stub-documented, OPS-307).
 
-> Successor hint: TZ-OPS-305+ или точечные DOC/PAGE TZ на missing page.md
-> (P1 сначала user-facing READY sections — admin/roles, doc-template-categories; stubs design/shipping — P2).
-> Дополнительно: README §индекс отстаёт (не перечисляет warehouses/supply/people/import-todos;
-> `/inventory` записан как `/dashboard`) — отдельный hygiene-fix, не эта TZ.
+> Gap fill **DONE** (WAVE-PAGE-DOCS-GAPS / OPS-305→307): шесть former-NO закрыты page.md;
+> README hygiene (`/inventory` вместо `/dashboard`, индекс живых страниц) — в OPS-307.
+> Дальше: при новых routes — page.md в том же PR/TZ (см. `docs/DOCS-INTEGRITY.md`);
+> опциональный авто-скрипт routes↔page.md — P2, не срочно.
 
 ---
 

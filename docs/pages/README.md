@@ -56,7 +56,8 @@
 | 35 | **Form Profiles** | `form-profiles.page.md` | `/dictionaries/form-profiles` | Профили быстрых форм (DICT-315) |
 | 36 | **Foundations (kit)** | `foundations.page.md` | `/foundations` | Стильгайд/шрифты (design-spec) |
 
-> 36/36 бизнес-routes документированы (DOMAIN-MAP §1.3 gaps = 0) + 2 дочерних компонента Builder + kit `/foundations`.
+> 36/36 бизнес-routes документированы (DOMAIN-MAP §1.3 gaps = 0).
+> Дополнительно в индексе: 2 дочерних компонента Builder (tool-pane / inspector) + kit `/foundations` (не бизнес-route).
 > Playground-страницы (`/kit/*`) сняты — UI showcase больше не в продукте.
 
 ## Правила
