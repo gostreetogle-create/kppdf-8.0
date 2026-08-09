@@ -122,6 +122,13 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-09 — Create КП: витрина товаров как магазин
+- Текстовый узкий rail не годится: нужны md-карточки с фото, равная высота, фильтры/pager.
+- Во время КП — Добавить + Редактировать + Создать изделие (QuickCreate / ProductForm).
+- Flyout ≈×2; клик вне (вкл. лист) закрывает L и R; эталон карточек = существующий PiShowcaseCard, не с нуля.
+- Очередь: **327 kit → 326 dismiss/width → 328 shop** (после 323); 318 superseded.
+Источник: скрин left «Товары» + диктовка PO.
+
 ### 2026-08-09 — Wave-2 канон сверен (два research → один)
 - Scroll: outer OK; корень iframe HTML; AC = scrollWidth/Height ≤ client+1px.
 - Empty: skeleton thead+blank row; Builder colspan «Нет данных» = known_limit.

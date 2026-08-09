@@ -1,9 +1,9 @@
 # /proposals/create — Создать КП
 
 **Route:** `/proposals/create`  
-**TZ:** **310–317 DONE** · **319 + 321 DONE** (`build` HTML fidelity) · wave-2 **323/324/325 READY** · **318** cascade · **320/322 PARK**  
+**TZ:** **310–317 DONE** · **319 + 321 DONE** · wave-2 **323/324/325** · витрина **326–328 READY** (318→328) · **320/322 PARK**  
 **Spec LOCK:** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md) §0 FROZEN  
-**Аудит:** layout + overlay-correction + [`template-insert-fidelity`](../audits/2026-08-09-kp-create-template-insert-fidelity-audit.md) · [`preview-wave2`](../audits/2026-08-09-kp-create-preview-wave2.md)
+**Аудит:** layout + overlay · [`preview-wave2`](../audits/2026-08-09-kp-create-preview-wave2.md) · [`product-vitrine`](../audits/2026-08-09-kp-create-product-vitrine.md)
 
 ## Зафиксировано (не менять без PO)
 
@@ -11,7 +11,7 @@
 - Left rail: **Шаблон** + **Товары**; Right: **Параметры**
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
-- `draftLines` in-memory only (в rail / inspector estimate; **не** на листе)
+- `draftLines` in-memory only (в rail / inspector estimate; **не** на листе до 325)
 
 ## Center preview (TZ-SALES-319)
 
@@ -24,8 +24,9 @@
 
 ## Дальше
 
-- **323** — A4 fit без scrollbar (FE scale + build HTML overflow/padding)
-- **324** — empty table = skeleton thead + пустая строка (не `<p>Нет данных</p>`)
-- **325** — live `draftLines` → **target** line-items table (key aliases; не все live tables; после 323+324)
-- Overlay-каскад категорий → **318**
-- Persist Quotation / snapshot → later · stale refresh → **322 PARK** · Печать → **320 PARK**
+- **323–325** — fit / empty skeleton / draftLines bind (wave-2)
+- **326** — products flyout ≈×2 + dismiss вне панели (вкл. iframe)
+- **327** — PiShowcaseCard md equal-height (эталон; sm/md/lg уже есть)
+- **328** — shop-витрина: md grid + фильтры/pager + Добавить/Редактировать/Создать
+- Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**
+- **318** cascade — SUPERSEDED by 328

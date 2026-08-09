@@ -5,6 +5,7 @@
 **Spec v2:** [`docs/ux/kp-create-studio-spec.md`](../../../docs/ux/kp-create-studio-spec.md)  
 **Аудит wave-2:** [`docs/audits/2026-08-09-kp-create-preview-wave2.md`](../../../docs/audits/2026-08-09-kp-create-preview-wave2.md)  
 **Промпт wave-2 (все TZ):** [`PROMPT-WAVE2-CONTINUOUS.md`](./PROMPT-WAVE2-CONTINUOUS.md)  
+**Промпт витрины товаров:** [`PROMPT-SALES-VITRINE.md`](./PROMPT-SALES-VITRINE.md) · аудит: [`2026-08-09-kp-create-product-vitrine.md`](../../../docs/audits/2026-08-09-kp-create-product-vitrine.md)  
 **По одной:** [`PROMPT-SALES-323.md`](./PROMPT-SALES-323.md) · [`324`](./PROMPT-SALES-324.md) · [`325`](./PROMPT-SALES-325.md)  
 **Legacy continuous (310–316):** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
@@ -37,7 +38,10 @@
 | 9d | **TZ-SALES-323** A4 fit без scrollbar | READY — [`TZ-SALES-323…`](./TZ-SALES-323-create-kp-a4-fit-no-scroll.md) |
 | 9e | **TZ-SALES-324** empty table skeleton blank | READY after/|| 323 — [`TZ-SALES-324…`](./TZ-SALES-324-empty-table-skeleton-blank.md) |
 | 9f | **TZ-SALES-325** draftLines → **target** line-items table (не все live) | READY after 323+324 — [`TZ-SALES-325…`](./TZ-SALES-325-draftlines-table-bind.md) |
-| 10 | **TZ-SALES-318** left cascade fill (категории/фильтры) | после 317; || ок с 319 по смыслу, keys разные если только rail |
+| 10 | **TZ-SALES-318** cascade | **SUPERSEDED** → **328** (фильтр категорий в shop-витрине) |
+| 10a | **TZ-SALES-326** шире flyout + dismiss | READY after 323 — [`TZ-SALES-326…`](./TZ-SALES-326-products-flyout-wide-dismiss.md) |
+| 10b | **TZ-SALES-327** md card equal-height | READY ∥ — [`TZ-SALES-327…`](./TZ-SALES-327-showcase-card-md-equal-height.md) |
+| 10c | **TZ-SALES-328** shop-витрина Add/Edit/Create | READY after 326+327 — [`TZ-SALES-328…`](./TZ-SALES-328-create-kp-shop-vitrine.md) |
 | 11 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
 | — | **NOTE** snapshot/lock + «оплачена» | [`NOTE-KP-template-snapshot-lock.md`](./NOTE-KP-template-snapshot-lock.md) |
 
