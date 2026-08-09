@@ -1,11 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T12:56:32Z · TZ-SALES-325 READY FOR REVIEW
-- READY: request-only `previewLines` bind from Create КП `draftLines` into the assigned line-items table.
+## Checkpoint 2026-08-09T13:10:04Z · TZ-SALES-325 DONE / Cursor-PO visual PASS
+- DONE: request-only `previewLines` bind from Create КП `draftLines` into the assigned line-items table; empty lines retain the 324 skeleton.
 - Gates: backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 11/11; diff-check PASS.
-- Target guard: explicit `kpLineItems` / line-items role, otherwise exactly one live table; multiple live tables and snapshots remain untouched; empty lines retain the 324 skeleton.
-- Canonical foreign dirty `document-template.service.ts` orientation WIP and DOC-343 docs remain preserved/excluded.
-- NEXT: Cursor/PO visual PASS for assigned table, empty skeleton, and no A4 H/V scroll; then archive/closeout.
+- Visual PASS: products appear in the assigned table and A4 has no H/V scroll.
+- Implementation: `e1e84cb8`; archive `tasks/_archive/2026-08/TZ-SALES-325.done.md`; lock recorded; `_active/TZ-SALES-325.md` removed.
+- Foreign DOC-343 dirty `document-template.service.ts` orientation WIP remains preserved/excluded.
+- NEXT: claim TZ-SALES-328 shop vitrine; 322, 320, deploy remain banned.
 - Deploy: NO
 
 ## Checkpoint 2026-08-09T15:55:30Z · TZ-DOC-344 DONE / star-fill closeout

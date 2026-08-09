@@ -1582,3 +1582,15 @@ BOM inspector — вклад строки material/module read-only.
 **Archive:** `tasks/_archive/2026-08/TZ-DOC-344.done.md`
 **Lock:** `.mimocode/locks/TZ-DOC-344-builder-single-default-background.lock`
 **Scope:** foreign DOC-343 checklist/backend WIP and dirty `document-template.service.ts` excluded; DOC-342, SALES-*, 322/320, deploy untouched.
+
+---
+
+## [2026-08-09] — TZ-SALES-325 DONE: draftLines → assigned line-items table
+**Исполнитель:** Buffy / agent-6c3d05b80e
+**Статус:** DONE; Cursor/PO visual PASS; archive + lock + checkpoint completed
+**Что сделано кратко:** Create КП sends request-only `previewLines`; explicit `kpLineItems`/`line-items` target selection fills only the assigned live table, while empty lines preserve the 324 skeleton and snapshots remain untouched.
+**Gates:** backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 11/11; diff-check PASS.
+**Implementation:** `e1e84cb8`
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-325.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-325-draftlines-table-bind.lock`
+**Scope:** foreign DOC-343 dirty WIP and `document-template.service.ts` orientation change preserved/excluded; deploy NO.
