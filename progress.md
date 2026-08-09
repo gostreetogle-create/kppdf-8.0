@@ -1,4 +1,13 @@
-## [2026-08-09T14:43:46Z] — TZ-SALES-330 READY FOR REVIEW: Create КП table layout instance
+## [2026-08-09T15:01:58Z] — TZ-SALES-330 DONE: Create КП table layout instance
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; Cursor/PO visual PASS; archive + lock; deploy НЕ
+**Что:** Create КП получил request-only copy-on-write `kpTableLayout`: правый flyout «Таблица» меняет порядок и visibility колонок, а build применяет их только к назначенной live line-items table. Shared TableTemplate, snapshots и frozen shell не меняются.
+**Implementation:** `8c5662fe5783631c5b352d5a5e8bad8547a5dd59`
+**Gates:** backend tsc PASS; document-templates-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-330.done.md`; lock создан; `_active/TZ-SALES-330.md` удалён.
+**Scope:** DOC-343 dirty WIP исключён; discount column, 317 shell rewrite, 320/322, deploy untouched.
+**NEXT:** TZ-SALES-331. Deploy НЕ.
+
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; Cursor/PO visual PASS обязателен до archive; deploy НЕ
 **Что:** Правый flyout «Таблица» теперь управляет in-memory copy-on-write `kpTableLayout`: порядок ↑/↓ и visibility, с hint «Меняет только это КП, не общий шаблон» и ссылкой на пресет в Документах. Build DTO/backend применяют порядок/скрытие только к назначенной live line-items table, `index` = 1-based; snapshots и shared TableTemplate не меняются.

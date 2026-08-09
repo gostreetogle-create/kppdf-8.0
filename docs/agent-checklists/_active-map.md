@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T15:01:58Z · TZ-SALES-330 DONE / Cursor-PO visual PASS
+- DONE: Create КП copy-on-write `kpTableLayout` with Table panel reorder/show-hide; build applies order/visibility only to the designated live line-items table.
+- Implementation: `8c5662fe5783631c5b352d5a5e8bad8547a5dd59`; gates were backend tsc, document-build e2e 10/10, frontend tsc, proposal-create 12/12, Prettier, diff-check — PASS.
+- Visual: Cursor/PO PASS received; A4 preview reflects layout changes and frozen rails|center|A4 geometry remains intact.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-330.done.md`; lock recorded; `_active/TZ-SALES-330.md` removed.
+- Scope guard: foreign DOC-343 / dirty `document-template.service.ts` orientation WIP excluded; 317 shell, discount column, 320/322, and deploy untouched.
+- NEXT: claim TZ-SALES-331. Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:43:46Z · TZ-SALES-330 READY FOR REVIEW
 - IN PROGRESS: Create КП copy-on-write `kpTableLayout` instance, Table flyout reorder/show-hide, and build order/visibility for the designated live line-items table.
 - Base: canonical `main` / `origin/main` at `62a54988`; foreign DOC-343 dirty WIP preserved in a stash and excluded from 330.
