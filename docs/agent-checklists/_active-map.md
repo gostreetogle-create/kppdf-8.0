@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:08:44Z · TZ-SALES-332 DONE / Cursor visual PASS
+- DONE: multi-table live-table target selection, actual TableTemplate column sync, A4 hide/show and reorder accepted by Cursor.
+- Feature: `f5e0f401`; hotfix: `272550ab946600045970e31f110d3d72bd121ccd`; both pushed to `origin/main`.
+- Gates: frontend/backend tsc PASS; proposal-create Jest 15/15; document-build e2e 10/10; Prettier/ESLint PASS; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-332.done.md`; lock recorded; `_active/TZ-SALES-332.md` removed.
+- Scope guard: DOC-343 dirty WIP, 317 shell, 330/331, Save/Counterparty, 320/322, and deploy untouched.
+- NEXT: idle по KP-vitrine. Deploy: NO
+
 ## Checkpoint 2026-08-09T16:01:50Z · TZ-SALES-332 HOTFIX READY FOR REVIEW
 - Root cause: multi-table templates without `kpLineItems` fell back to DEFAULT_KP in the FE; panel labels and A4 target diverged, so hide/reorder were no-ops on the intended table.
 - Hotfix: Table rail lists live tables, loads selected TableTemplate columns, and sends request-only `tableTargetId`; BE applies layout only to the selected live table.

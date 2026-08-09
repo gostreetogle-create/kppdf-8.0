@@ -1,3 +1,13 @@
+## [2026-08-09T16:08:44Z] — TZ-SALES-332 DONE: Cursor visual PASS on hotfix
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; Cursor visual PASS; deploy НЕ
+**Feature:** `f5e0f401`; **hotfix:** `272550ab946600045970e31f110d3d72bd121ccd`.
+**Visual:** Cursor подтвердил target selection для multi-table template, совпадение labels панели с A4, hide/show и reorder.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-332.done.md`; lock создан; `_active/TZ-SALES-332.md` удалён.
+**Gates:** frontend/backend tsc PASS; proposal-create Jest 15/15; document-build e2e 10/10; Prettier/ESLint PASS; diff-check PASS.
+**Scope:** DOC-343 dirty WIP, 317 shell, 330/331 behavior, Save/Counterparty, 320/322 и deploy не тронуты.
+**NEXT:** idle по KP-vitrine. Deploy НЕ.
+
 ## [2026-08-09T16:01:50Z] — TZ-SALES-332 HOTFIX READY FOR REVIEW: selected live-table binding
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ

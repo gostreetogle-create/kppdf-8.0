@@ -1,9 +1,9 @@
 # TZ-SALES-332 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-SALES-332.md`
+> Status: **DONE**
+> Archive: `tasks/_archive/2026-08/TZ-SALES-332.done.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-332-kp-flyout-table-rail-polish.md`
-> Implementation/hotfix pushed; archive/lock remain blocked until Cursor/PO visual PASS
+> Closeout: Cursor visual PASS; archive + lock recorded; active marker removed
 
 ## Claim slot
 
@@ -48,7 +48,7 @@
 
 ## Executor report (auto)
 
-- Base implementation: `f5e0f401`; hotfix: `272550ab` (`Fix KP table rail target binding for multi-table templates`), both pushed to `origin/main`.
+- Feature: `f5e0f401`; hotfix: `272550ab946600045970e31f110d3d72bd121ccd`; both pushed to `origin/main`.
 - Selected templates now load every live TableTemplate target; explicit `kpLineItems`/`line-items` wins by default, otherwise the Table rail exposes the live-table list instead of falling into DEFAULT_KP.
 - Hotfix root cause: the FE previously loaded only one implicit target and sent DEFAULT_KP keys; the BE could not identify the user-selected table. `tableTargetId` now selects the chosen live table and its real columns for request-only A4 rendering.
 - `kpTableLayout` carries the real keys/labels; DEFAULT_KP is only a safe fallback when no target table is discoverable.
@@ -56,15 +56,15 @@
 - Right rail is split into mutually exclusive Параметры and Таблица tools; CTA is PiButton «Открыть шаблон таблицы».
 - Products opening closes the right overlay; flyouts use inward padding, content-height/max-height, light transparency, and an internal product-grid scroll.
 - 317 frozen A4 rails/center, 330 layout instance, 331 markup/VAT footer, Save/Counterparty, 320/322 and deploy remain out of scope.
-- READY FOR REVIEW: visual check required for A4 column sync/hide/reorder, two right tools, CTA, flyout pride and un-clipped md cards.
+- Cursor visual PASS received on hotfix: multi-table target selection, panel/A4 column parity, hide/show, reorder, right tools, CTA, flyout pride and unclipped md cards accepted.
 
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] Do not archive until Cursor/PO visual PASS.
+- [x] Cursor/PO visual PASS on hotfix 272550ab.
 
 ## Closeout (after PASS)
 
-- [ ] archive + lock + progress + remove `_active`
-- [ ] Status = DONE
-- closed_at: _
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: `2026-08-09T16:08:44Z`
