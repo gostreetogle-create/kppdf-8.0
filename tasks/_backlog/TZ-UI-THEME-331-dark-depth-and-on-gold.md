@@ -11,6 +11,9 @@ TZ-UI-THEME-331: Тёмная тема — глубина вместо «сер�
 
 РОЛЬ АГЕНТА: Frontend UI Engineer
 
+STATUS: READY
+DEPENDS ON: TZ-UI-LIGHT-330 DONE
+
 ЗАВИСИМОСТИ: **TZ-UI-LIGHT-330** — жёсткая. Токен `--color-on-gold` и `--color-paper-raised`
 вводятся там; без них ШАГ 1 и ШАГ 5 этого TZ не имеют смысла. Запускать строго после.
 
