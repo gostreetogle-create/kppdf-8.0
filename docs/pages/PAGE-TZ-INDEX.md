@@ -49,7 +49,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | proposals.page.md | **SALES-301**; **303** family API; **313 DONE** family expand (ex-304); **SALES-310 DONE** — TOC + `Создать КП`/`Все КП` |
-| `/proposals/create` | **proposals-create.page.md** | **317…332 DONE**; **WAVE-KP-USABLE READY** 333 Save → 334 Client → 335 qty/photo → 336 lock; **320** PARK |
+| `/proposals/create` | **proposals-create.page.md** | **317…332 DONE**; **WAVE-KP-USABLE READY** 333 Save → 334 Client → 335 qty/photo → 336 lock; **WAVE-KP-COMPLETE READY** 340 Состав → 341 коммерч. поля → 345 PDF/Печать → 343 Получатель → 344 Условия → 342 свои строки → 346 многостраничность → 347 статус/версии → 348 витрина; **320** PARK |
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
 ## Reference

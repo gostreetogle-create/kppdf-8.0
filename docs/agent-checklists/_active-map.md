@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T21:40:00Z · WAVE-KP-COMPLETE READY (полнота КП)
+- PO принёс аналог-редактор КП → аудит полноты: `docs/audits/2026-08-09-kp-builder-completeness-audit.md`
+- Волна: `tasks/_backlog/kp-vitrine/WAVE-KP-COMPLETE.md` · промпт `PROMPT-KP-COMPLETE-CONTINUOUS.md`
+- Очередь строго: **340** Состав → **341** коммерч. поля/НДС persist → **345** PDF/Печать/архив →
+  **343** Получатель → **344** Условия → **342** свои строки → **346** многостраничность → **347** статус/версии → **348** витрина
+- START ONLY после закрытия WAVE-KP-USABLE (339 → 334 → 335 → 336): общие ключи `proposal-create*`
+- Checklists RESERVED при claim: `docs/agent-checklists/TZ-SALES-340.md` … `TZ-SALES-348.md`
+- BAN: почта клиенту · публичная ссылка · валюта · согласования/подписи · вёрстка бланка в студии · deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T18:18:00Z · TZ-ADMIN-303 DONE
 - DONE: admin may Edit/PATCH system roles; DELETE frozen (UI + API `SYSTEM_ROLE_FROZEN`); RU toast; badge «Системная».
 - Archive/lock: `tasks/_archive/2026-08/TZ-ADMIN-303.done.md` · `.mimocode/locks/TZ-ADMIN-303-system-roles-admin-edit.lock`
