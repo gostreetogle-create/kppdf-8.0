@@ -49,16 +49,16 @@
 - tests/gates: frontend tsc PASS; focused card suite PASS 11/11.
 - conflict disclosure: only listed PiShowcaseCard/docs keys; proposal page and DOC-344 untouched
 - known limits: Create КП integration is 328; wide flyout/dismiss is 326
-- commit: pending until scoped landing
-- full SHA: pending
+- commit: canonical `cd3c265f` landed on `D:\\kppdf-8.0` `main` and pushed to `origin/main`.
+- full SHA: `cd3c265f`
 
 ## Review handoff
 
 - [x] READY FOR REVIEW recorded in active map / Team Room.
-- [ ] Archive after focused PASS; visual optional for 327
+- [x] Archive after focused PASS; visual optional for 327.
 
 ## Closeout
 
 - [x] archive created with ARCHIVE_MARKER; lock created; active marker removed.
 - [x] Status = DONE
-- closed_at: 2026-08-09 (canonical landing pending)
+- closed_at: 2026-08-09; canonical landing `cd3c265f` pushed

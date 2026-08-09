@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:00:38Z · TZ-SALES-327 DONE / canonical landed
+- DONE: TZ-SALES-327 archive `tasks/_archive/2026-08/TZ-SALES-327.done.md`; PiShowcaseCard md equal-height/photo hardening is on canonical `main`.
+- Canonical commit: `cd3c265f`, pushed to `origin/main`; frontend tsc PASS; card tests 11/11 PASS.
+- `_active/TZ-SALES-327.md` removed after archive; lock recorded locally.
+- NEXT: claim TZ-SALES-326 (after 323 code is on main; 323 visual acceptance remains a separate PO review). Do not claim 328 before 326 DONE + visual and 327 DONE.
+- Scope guard: 323/324/325 logic, proposal rail changes, 322/320, Builder/DOC-344, and deploy untouched.
+- Deploy: NO
+
+
 ## Checkpoint 2026-08-09T12:04:00Z · TZ-SALES-327 DONE code / closeout ready
 - DONE: PiShowcaseCard md hardening — equal-height flex stretch, 2-line title/description clamps, fixed 16:9 cover media, and neutral empty placeholder.
 - Gates: frontend tsc PASS; focused card Jest 11/11 PASS. Existing jsdom `i-lucide` warning is non-failing.
