@@ -31,3 +31,5 @@ verification:
 - `git diff --check`: PASS.
 
 No admin registry CRUD, EAV, ModuleMaterials, or deploy changes. Browser/PO visual review was not applicable.
+
+Commit: `eba58ba6` (pushed to `origin/main`; includes peer fast-forward `fd7e8336`).

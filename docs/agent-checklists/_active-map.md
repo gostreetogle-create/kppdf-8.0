@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:13:07Z · TZ-DOC-TABLES-304 DONE
+- DONE: TZ-DOC-TABLES-304 — Product registry fields now derive from `ProductSchema.paths` with deny-list, RU label fallback, deterministic types, and an explicit source allowlist.
+- IN PROGRESS: TZ-SALES-317 review (foreign active work; untouched)
+- NOT DONE: none in WAVE-DOC-TABLES; TZ-SALES-320 PARKED; INN-301 PARKED
+- NEXT: idle — WAVE-DOC-TABLES #1–#4 complete; await next PO wave or explicit deploy command
+- HEAD: eba58ba6 pushed: yes
+- Blockers: none for TZ-DOC-TABLES-304; browser/PO visual review not applicable
+- _active/: TZ-SALES-317.md + foreign doc WIP (untouched; 304 removed at closeout)
+- Deploy: NO
+
+# SESSION QUEUE
+
 ## Checkpoint 2026-08-09T03:20:00Z · TZ-DOC-342 READY (upload-background 500)
 - PO: `POST .../document-templates/6a74f2bb…/upload-background` → 500
 - Root cause: missing multipart `file` → TypeError → 500; valid PNG/JPEG → 201; cap=5 → 409
