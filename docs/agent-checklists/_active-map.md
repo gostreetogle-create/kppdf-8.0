@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:47:00Z · TZ-SALES-338 READY FOR REVIEW
+- Implementation `fb04b05689a9dc557840781791c469b80e6c91e4`; FE gates PASS: tsc, proposals + Create Jest 37/37, Prettier, ESLint, diff-check.
+- List Create/Edit now route to `/proposals/create`; Edit carries `?id=`, Create hydrates the editable draft, invalid IDs fall back with RU feedback, and scoped hints contain no user-visible English jargon.
+- Marker/checklist remain until Cursor/PO visual Edit → studio PASS. Foreign DOC-343/admin/system-role WIP excluded; 339/334/335/336 not claimed; deploy NO.
+- NEXT: visual PASS → archive/lock/remove `_active` → claim TZ-SALES-339.
+
+## Checkpoint 2026-08-09T16:45:43Z · TZ-SALES-338 CLAIMED
+- IN PROGRESS: list Create/Edit actions route through `/proposals/create`; query-id hydration and RU Create copy, with no second form editor.
+- Base: canonical `main` at `8133237a`; TZ-SALES-333 closeout `78516c8c` pushed before claim.
+- Conflict scan: `_active/` empty; 338 proposal list/Create keys free. Foreign DOC-343/admin/system-role WIP preserved/excluded. Team Room unavailable (unknown task).
+- Marker/checklist: `tasks/_active/TZ-SALES-338.md` / `docs/agent-checklists/TZ-SALES-338.md`.
+- Scope guard: no 339 autosave/delete, 334 client, 335 qty/photo, 336 lock/copy, 317 shell, 320/322, or deploy.
+- NEXT: implement → FE gates → READY FOR REVIEW → visual Edit→studio PASS → archive. Deploy NO.
+
 ## Checkpoint 2026-08-09T16:44:27Z · TZ-SALES-333 DONE
 - PO confirmed Save/resume continuation; Save visibility/autosave pain is explicitly handed to 339.
 - Implementation `b1d51453b1e06d2e21f724028164836526c2959b`; closeout metadata `cc4ffd87`.

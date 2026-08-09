@@ -1,3 +1,12 @@
+## [2026-08-09T16:47:00Z] — TZ-SALES-338 READY FOR REVIEW: edit through Create studio
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** READY FOR REVIEW; visual Edit → studio PASS обязателен до archive; deploy НЕ
+**Implementation:** `fb04b05689a9dc557840781791c469b80e6c91e4`.
+**Что:** Список «Создать» и «Редактировать» больше не открывает второй form-диалог: оба пути ведут в `/proposals/create`, Edit передаёт `?id=`, Create гидратирует тот же editable draft. Невалидный/закрытый id даёт RU ошибку и чистый лист; Create hints переведены на RU.
+**Gates:** frontend tsc PASS; proposals + Create Jest 37/37; Prettier PASS; ESLint PASS; diff-check PASS.
+**Scope:** 339 autosave/delete, 334 client, 335 qty/photo, 336 lock/copy, 317 shell, DOC-343/admin WIP, 320/322 и deploy не тронуты.
+**NEXT:** Cursor/PO visual: `/proposals` → Редактировать → same КП in studio; Создать → no dialog. После PASS archive/lock/remove `_active` → TZ-SALES-339. Deploy НЕ
+
 ## [2026-08-09T16:44:27Z] — TZ-SALES-333 DONE: Save and resume draft
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; PO confirmed continuation; deploy НЕ
