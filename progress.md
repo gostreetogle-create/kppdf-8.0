@@ -1,4 +1,12 @@
-## [2026-08-09T15:06:00Z] — TZ-SALES-331 READY FOR REVIEW: markup + VAT footer
+## [2026-08-09T15:35:06Z] — TZ-SALES-331 DONE: markup + VAT footer
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; PO visual PASS; deploy НЕ
+**Feature:** `25512c2a` — request-only effective prices from immutable catalog base, whole-deal VAT footer under live line-items table.
+**Gates:** backend tsc PASS; document-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; Prettier PASS; diff-check PASS.
+**Visual:** PO confirmed `Итого`/НДС on the A4 sheet and markup changes displayed figures.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-331.done.md`; lock создан; `_active/TZ-SALES-331.md` удалён.
+**Scope:** DOC-343 dirty WIP excluded; discount column, 317 shell rewrite, snapshots, quotation persistence, 320/322, deploy untouched.
+**NEXT:** TZ-SALES-332. Deploy НЕ
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual PASS обязателен до archive; deploy НЕ
 **Что:** Наценка вычисляет request-only `previewLines.unitPrice` из immutable catalog base price; inspector добавляет НДС % (default 20). Build считает Итого и добавляет right-aligned `в т.ч. НДС` только под live line-items table; VAT-inclusive mode зафиксирован как `sum × vat/(100+vat)`, VAT 0 скрывает VAT row.

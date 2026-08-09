@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T15:35:06Z · TZ-SALES-331 DONE / Cursor-PO visual PASS
+- DONE: Create КП markup, VAT-inclusive whole-deal footer, and request-only effective prices accepted by PO.
+- Feature commit: `25512c2a`; closeout commit pending; archive `tasks/_archive/2026-08/TZ-SALES-331.done.md`; lock recorded; `_active/TZ-SALES-331.md` removed.
+- Gates: backend tsc PASS; document-build e2e 10/10; frontend tsc PASS; proposal-create 12/12; FE Prettier PASS; diff-check PASS.
+- Visual: PO confirmed `Итого`/НДС on the sheet and markup moves displayed figures.
+- Scope guard: DOC-343 dirty WIP excluded; no discount column, 317 shell rewrite, snapshots, quotation persistence, 320/322, or deploy.
+- NEXT: claim TZ-SALES-332. Deploy: NO
+
 ## Checkpoint 2026-08-09T18:15:00Z · TZ-SALES-332 READY (flyout pride polish)
 - PO visual FAIL on Create flyouts after 330/331: hide noop (layout≠sheet columns), ↑↓, «Пресет» jargon, clipped products, cramped chrome.
 - Audit: `docs/audits/2026-08-09-kp-create-flyout-polish-audit.md`
