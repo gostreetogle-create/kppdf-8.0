@@ -29,6 +29,6 @@
 - **323–325** — fit / empty skeleton / draftLines bind (wave-2)
 - **326** — products flyout **36–40rem** (≈×2) + transparent backdrop dismiss вне панели (вкл. iframe); A4 center/rails не сжимаются
 - **327** — PiShowcaseCard md equal-height (эталон; sm/md/lg уже есть)
-- **328** — shop-витрина: md grid + фильтры/pager + Добавить/Редактировать/Создать
+- **328** — shop-витрина: `PiShowcaseCard md` grid (фото/placeholder, equal-height), search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии
 - Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**
 - **318** cascade — SUPERSEDED by 328
