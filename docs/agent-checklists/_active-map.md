@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:15:00Z · TZ-SALES-312 DONE
+- DONE: TZ-SALES-312 — `/proposals/create` three-zone shell (placeholders + narrow toggles) per design-spec; WIP from agent-3e757640b7 preserved and gated
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-313 → 314 → 315 → 316; TZ-SALES-320 PARKED
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-313-all-kp-family-expand.md` (or 314 if parallel after keys check)
+- HEAD: (this push)
+- Blockers: none for 312
+- _active/: empty after closeout
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:08:00Z · TZ-SALES-311 DONE
 - DONE: TZ-SALES-311 — affirmable `/proposals/create` three-column layout SoT (Left 280–320 / Center flex A4 / Right 300–340, tablet/mobile drawers, empty RU, zone→312/314/315/316 map) + page-doc pointer.
 - IN PROGRESS: none

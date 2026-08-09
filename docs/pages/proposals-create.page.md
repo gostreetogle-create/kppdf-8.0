@@ -1,24 +1,28 @@
 # /proposals/create — Создать КП
 
-**Route:** `/proposals/create` (guarded lazy, SALES-310 stub → studio shell 312+)
-**TZ:** **311 DONE** (этот page doc + design-spec) · **312** shell · **314** left rail · **315** inspector · **316** template center · **320** print PARKED
+**Route:** `/proposals/create` (guarded lazy)
+**TZ:** **310** route · **311** design-spec · **312 DONE** shell · **314** left rail · **315** inspector · **316** template center · **320** print PARKED
 **Spec (SoT layout):** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md)
 
-## Сейчас (после 310)
+## Сейчас (после 312)
 
-Безопасный route-stub: заголовок «Создать КП» и общий chrome **Сделки → КП**, жёлтые подchips **Создать КП | Все КП**. Stub **не** вызывает quotation API и **не** рисует три колонки.
+Трёхзонный shell под sticky Deals chrome:
 
-## Цель студии (spec 311)
+- Left `data-test="kp-create-left"` — placeholder «Выберите изделие…»
+- Center `data-test="kp-create-center"` — A4 sheet placeholder
+- Right `data-test="kp-create-right"` — placeholder «Укажите нашу фирму…»
+- Desktop ≥1280: три колонки всегда видны
+- Уже: toggles «Товары» / «Параметры», одновременно ≤1 панель, Escape закрывает
 
-Desktop ≥1280: **Left 280–320px** (товары) · **Center flex** (превью A4) · **Right 300–340px** (Organization / % / оценка). Tablet/mobile — center + panels/drawers. Пустые фразы и ширины — только в spec.
+Quotation API / picker / шаблон / печать — ещё не подключены (314–316 / 320).
 
 ## Entities
 
-| UI     | Код                          |
-| ------ | ---------------------------- |
-| КП     | Quotation / proposals routes |
-| Бланк  | Organization                 |
-| Клиент | Counterparty                 |
+| UI | Код |
+|----|-----|
+| КП | Quotation / proposals routes |
+| Бланк | Organization |
+| Клиент | Counterparty |
 
 ## Не здесь
 

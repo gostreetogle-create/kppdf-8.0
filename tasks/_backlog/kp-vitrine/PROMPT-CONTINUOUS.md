@@ -9,7 +9,7 @@
 CLAIM первым (до кода):
 1) Get-Location + git rev-parse → корень `D:\kppdf-8.0`, ветка main; `git pull --ff-only` если clean.
 2) Прочитай `tasks/_backlog/kp-vitrine/WAVE-KP-VITRINE.md` и `tasks/PROMPT-UNIVERSAL-CONTINUOUS.md` § стоп-правил.
-3) Бери первый незакрытый не-PARKED TZ по порядку волны: **311 → 312** (310 DONE); **313** можно параллельно только если CONFLICT KEYS свободны (не трогать create-page keys 312/314…).
+3) Бери первый незакрытый не-PARKED TZ по порядку волны: **313** (Все КП+семья) и/или **314→315→316** на create-page после 312 DONE; не трогать чужие CONFLICT KEYS.
 4) `tasks/_active/<TASK-ID>.md` + checklist `docs/agent-checklists/<TASK-ID>.md` по `_TEMPLATE.md`: CLAIMED, agent_id, claimed_at ISO, workspace.
 5) `_active-map` + чужие `_active` → конфликт = STOP / DEFERRED.
 6) Team Room claim — best-effort.

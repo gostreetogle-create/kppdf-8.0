@@ -1,3 +1,22 @@
+## [2026-08-09] — TZ-SALES-312 DONE: оболочка «Создать КП» (3 зоны)
+
+Трёхколоночный shell `/proposals/create` по design-spec: placeholders RU, toggles на узком viewport, Deals chrome сохранён. Без пикера/сохранения/печати.
+
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-312.done.md`  
+**Lock:** `.mimocode/locks/TZ-SALES-312-create-kp-shell.lock`  
+**NEXT:** TZ-SALES-313 (Все КП+семья) и/или 314–315 наполнение.
+
+## [2026-08-09] — TZ-SALES-312 DONE: Create КП three-zone shell
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #3
+**Статус:** DONE; deploy НЕ
+**Что:** `/proposals/create` получил трёхзонный shell (Left/Center/Right) с RU empty-copy из spec 311, toggles на узких viewport и `data-test` для Jest. Deals TOC + жёлтые chips сохранены. Picker/save/template/print — следующие TZ.
+**Затронуто:** `proposal-create.page.ts` + spec, page doc, WAVE/ARCHITECTURE, checklist/archive/lock.
+**Gates:** FE tsc PASS; focused Jest 5/5 PASS; prettier/eslint PASS; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-312.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-312-create-kp-shell.lock`
+**NEXT:** TZ-SALES-313 (Все КП + семья) затем 314/315.
+
 ## [2026-08-09] — TZ-SALES-311 DONE: Create КП design-spec (3 columns)
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #2
