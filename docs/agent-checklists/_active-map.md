@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:02:34Z · TZ-SALES-310 DONE
+- DONE: TZ-SALES-310 — Deals navigation now has a dark TOC (КП/Договоры/Заказы), proposal-only yellow Создать КП/Все КП subchips, and a guarded `/proposals/create` route stub; existing quotation list/API remains unchanged.
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-311 → TZ-SALES-312 → TZ-SALES-313 → TZ-SALES-314 → TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-311-create-kp-design-spec.md`
+- HEAD: 31769613 pushed: yes (`origin/main`)
+- Blockers: none for SALES-310; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T01:56:53Z · TZ-PHOTO-303 DONE
 - DONE: TZ-PHOTO-303 — idempotent backend backfill script creates Sharp WebP thumbs for legacy local originals, skips missing/broken files with logs, and preserves originals; live Mongo run is intentionally left for the operator.
 - IN PROGRESS: none

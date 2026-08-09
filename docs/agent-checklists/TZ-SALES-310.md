@@ -2,7 +2,7 @@
 
 > Status: **DONE** · Wave: KP-VITRINE #1
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-310-deals-kp-subchips.md`
-> Commit/push: **pending closeout commit**
+> Commit/push: **YES** — `31769613` → `origin/main`
 
 ## Claim slot
 
