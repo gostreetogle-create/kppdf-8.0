@@ -1,10 +1,10 @@
 # TZ-SALES-338 checklist
 
-> Status: **READY FOR REVIEW**
-> Visual gate: list Edit → Create studio with same КП; Create does not open form dialog.
+> Status: **DONE**
+> Visual: Cursor/PO PASS received for list Edit/Create studio navigation.
 > Marker: `tasks/_active/TZ-SALES-338.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-338-kp-edit-opens-studio.md`
-> Commit/push: **NO** until gates and visual Edit → studio PASS
+> Commit/push: **DONE**
 
 ## Claim slot
 
@@ -54,10 +54,12 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW: list Edit → Create studio; Create → no form dialog.
-- [ ] Do not archive until Cursor/PO visual PASS.
+- [x] Cursor/PO visual PASS received; archive approved.
 
 ## Closeout
 
-- [ ] archive + lock + progress + remove `_active`
-- [ ] Status = DONE
-- closed_at: _
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: `2026-08-09T16:53:54Z`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-338.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-338-kp-edit-opens-studio.lock`

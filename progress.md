@@ -1,3 +1,14 @@
+## [2026-08-09T16:53:54Z] — TZ-SALES-338 DONE: edit through Create studio
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; Cursor/PO visual PASS; deploy НЕ
+**Implementation:** `fb04b05689a9dc557840781791c469b80e6c91e4`.
+**Что:** Список «Создать»/«Редактировать» ведёт в студию Создать КП; Edit передаёт `?id=`, draft гидратируется без второго form-диалога, EN hints убраны.
+**Gates:** frontend tsc PASS; proposals + Create Jest 37/37; Prettier PASS; ESLint PASS; diff-check PASS.
+**Visual:** PO подтвердил same КП в студии и новый лист без диалога.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-338.done.md`; lock создан; `_active/TZ-SALES-338.md` удалён.
+**Scope:** DOC-343/admin/system-role WIP, 339, 334/335/336, 317 shell, 320/322 и deploy не тронуты.
+**NEXT:** TZ-SALES-339. Deploy НЕ
+
 ## [2026-08-09T16:47:00Z] — TZ-SALES-338 READY FOR REVIEW: edit through Create studio
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual Edit → studio PASS обязателен до archive; deploy НЕ

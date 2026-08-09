@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:53:54Z · TZ-SALES-338 DONE
+- DONE after explicit Cursor/PO PASS: list Edit opens same КП in Create studio; Create opens a new studio sheet without form dialog.
+- Implementation `fb04b05689a9dc557840781791c469b80e6c91e4`; archive/lock recorded; `_active/TZ-SALES-338.md` removed.
+- Gates: frontend tsc PASS; proposals + Create Jest 37/37; Prettier PASS; ESLint PASS; diff-check PASS.
+- NEXT: claim TZ-SALES-339. Foreign DOC-343/admin/system-role WIP excluded; deploy NO.
+
 ## Checkpoint 2026-08-09T16:47:00Z · TZ-SALES-338 READY FOR REVIEW
 - Implementation `fb04b05689a9dc557840781791c469b80e6c91e4`; FE gates PASS: tsc, proposals + Create Jest 37/37, Prettier, ESLint, diff-check.
 - List Create/Edit now route to `/proposals/create`; Edit carries `?id=`, Create hydrates the editable draft, invalid IDs fall back with RU feedback, and scoped hints contain no user-visible English jargon.
