@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:44:27Z · TZ-SALES-333 DONE
+- PO confirmed Save/resume continuation; Save visibility/autosave pain is explicitly handed to 339.
+- Implementation `b1d51453b1e06d2e21f724028164836526c2959b`; closeout metadata `cc4ffd87`.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-333.done.md`; lock recorded; `_active/TZ-SALES-333.md` removed.
+- Gates: backend tsc PASS; quotation e2e 5/5; frontend tsc PASS; proposal-create Jest 17/17; FE Prettier PASS; diff-check PASS.
+- NEXT: claim TZ-SALES-338, then 339, then 334. Foreign DOC-343/admin WIP excluded; deploy NO.
+
 ## Checkpoint 2026-08-09T19:45:00Z · WAVE-KP-USABLE +339 (Save UX / autosave / delete)
 - PO: Save hidden under НДС; wants autosave; delete toast but row stays; speak screen RU words.
 - Queue: archive 333 → 338 → **339** → 334 → 335 → 336.

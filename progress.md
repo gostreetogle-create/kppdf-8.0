@@ -1,3 +1,13 @@
+## [2026-08-09T16:44:27Z] — TZ-SALES-333 DONE: Save and resume draft
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; PO confirmed continuation; deploy НЕ
+**Implementation:** `b1d51453b1e06d2e21f724028164836526c2959b`; closeout metadata `cc4ffd87`.
+**Что:** Save создаёт draft с items/templateId/templateSnapshot; повторный Save обновляет тот же draft; editable draft/template resume работает без принудительной блокировки F5. Save visibility/autosave UX переданы TZ-SALES-339.
+**Gates:** backend tsc PASS; quotation e2e 5/5; frontend tsc PASS; proposal-create Jest 17/17; FE Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-333.done.md`; lock создан; `_active/TZ-SALES-333.md` удалён.
+**Scope:** DOC-343 WIP, dirty admin/system-role WIP, 338/339, 334/335/336, 317 shell, 320/322 и deploy не тронуты.
+**NEXT:** TZ-SALES-338. Deploy НЕ
+
 ## [2026-08-09T19:30:00Z] — TZ-SALES-333 READY FOR REVIEW: Save and resume draft
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual Save → reload/F5 PASS обязателен до archive; deploy НЕ

@@ -1,10 +1,10 @@
 # TZ-SALES-333 checklist
 
-> Status: **READY FOR REVIEW**
-> Visual gate: Save → reload/F5 → same draft/template/products before archive.
+> Status: **DONE**
+> Visual: PO confirmed Save/resume ready; Save visibility/autosave UX is handed to TZ-SALES-339.
 > Marker: `tasks/_active/TZ-SALES-333.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-333-kp-save-resume-draft.md`
-> Commit/push: **NO** until gates and visual Save → F5 PASS
+> Commit/push: **DONE**
 
 ## Claim slot
 
@@ -54,10 +54,12 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW: Save → reload/F5 → same template and products.
-- [ ] Do not archive until Cursor/PO visual PASS.
+- [x] Cursor/PO visual continuation confirmation received; archive approved.
 
 ## Closeout
 
-- [ ] archive + lock + progress + remove `_active`
-- [ ] Status = DONE
-- closed_at: _
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: `2026-08-09T16:44:27Z`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-333.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-333-kp-save-resume-draft.lock`
