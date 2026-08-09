@@ -195,7 +195,14 @@ module-detail).
 - **Backend НЕ менялся:** `list()` уже populate `productModuleIds`
   (product.service.ts:72).
 
-## Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305)
+## Карточки-витрины / toggle list ↔ grid (TZ-PRODUCTS-305, SALES-327)
+
+`PiShowcaseCard` — единый card-system для каталога и будущей витрины Create КП:
+`sm` для компактных строк, `md` для shop-grid/Create КП, `lg` для detail. Размер `md`
+является stretchable flex-column плиткой: title и description зажаты до двух строк,
+media фиксирован в пропорции 16:9 с `object-fit: cover`, а actions прижаты к низу.
+Пустой `mediaUrl` сохраняет ту же геометрию нейтральным placeholder; URL фото берётся
+через общий `photoListUrl` (thumb/list pipeline), второй photo pipeline не создаётся.
 
 Каталог товаров получил переключение вида: **list** (pi-table, дефолт) ↔
 **grid** (md showcase-карточки с `mediaUrl` из populate `photoIds`).

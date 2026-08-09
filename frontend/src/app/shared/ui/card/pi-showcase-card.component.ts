@@ -7,8 +7,8 @@ import { LucideAngularModule } from 'lucide-angular';
  * Три размерных варианта одного и того же компонента:
  *   size="sm" → компактная строка для списка/каталога
  *    (40×40 медиа слева, заголовок+описание в одну строку, slots для actions-sm)
- *   size="md" → средняя плитка для сеток
- *    (заголовок + медиа 16:9 + описание + footer с actions-md)
+ *   size="md" → средняя плитка для сеток / витрины Create КП
+ *    (stretch equal-height: заголовок 2 строки + медиа 16:9 + описание 2 строки + footer)
  *   size="lg" → большая «журнальная» витрина для детального показа
  *    (eyebrow + badge + заголовок + медиа 16:9 + описание + body + related + footer actions)
  *
@@ -291,6 +291,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-weight: 600;
         color: var(--color-ink, #1a1815);
         margin: 6px 0 0;
+        min-width: 0;
         line-height: 1.3;
         min-height: calc(1.3em * 2);
         display: -webkit-box;
@@ -302,6 +303,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       .sc-media--md {
         margin: 10px 0 0;
         aspect-ratio: 16 / 9;
+        flex: 0 0 auto;
         border-radius: 4px;
         overflow: hidden;
         background: color-mix(
@@ -311,6 +313,9 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         );
         border: 1px solid var(--color-rule, #e7e3da);
         flex-shrink: 0;
+      }
+      .sc-media--md img {
+        object-fit: cover;
       }
       .sc-media--md.sc-media--empty {
         background: linear-gradient(
@@ -323,6 +328,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-size: 13px;
         color: var(--color-muted-foreground, #797063);
         margin: 8px 0 0;
+        min-width: 0;
         line-height: 1.4;
         min-height: calc(1.4em * 2);
         max-height: calc(1.4em * 2);

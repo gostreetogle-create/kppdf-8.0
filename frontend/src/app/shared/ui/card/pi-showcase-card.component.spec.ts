@@ -116,6 +116,20 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     expect(article.querySelector('[data-test="badge"]')?.textContent?.trim()).toBe('new');
     expect(article.querySelector('[data-test="title"]')?.textContent?.trim()).toBe('Module M');
     expect(article.querySelector('img')?.getAttribute('src')).toBe('/img.png');
+    expect(article.classList.contains('size-md-with-media')).toBe(true);
+    expect(article.querySelector('.sc-media--md')?.classList.contains('sc-media--empty')).toBe(false);
+  });
+
+  it('md keeps a placeholder media box when photo is missing', () => {
+    host.size.set('md');
+    host.title.set('No photo');
+    host.mediaUrl.set('');
+    fixture.detectChanges();
+
+    const media = fixture.nativeElement.querySelector('.sc-media--md');
+    expect(media).toBeTruthy();
+    expect(media.classList.contains('sc-media--empty')).toBe(true);
+    expect(media.getAttribute('style') ?? '').not.toContain('height');
   });
 
   it('size="lg" renders magazine-layout (data-size=lg, h2 title, related slot)', () => {

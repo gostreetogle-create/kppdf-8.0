@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:04:00Z · TZ-SALES-327 DONE code / closeout ready
+- DONE: PiShowcaseCard md hardening — equal-height flex stretch, 2-line title/description clamps, fixed 16:9 cover media, and neutral empty placeholder.
+- Gates: frontend tsc PASS; focused card Jest 11/11 PASS. Existing jsdom `i-lucide` warning is non-failing.
+- Archive prepared: `tasks/_archive/2026-08/TZ-SALES-327.done.md`; active marker remains until scoped commit/push closeout.
+- Scope guard: proposal rail/create page, 326, 328, 323 logic, 322/320, Builder/DOC-344, and deploy untouched.
+- NEXT: land 327 on canonical main, then claim 326 (323 code is already on main; visual acceptance remains separate).
+- Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:52:23Z · TZ-SALES-323 on canonical main — visual wait
 - DONE (landing only): scoped TZ-SALES-323 commit `a270fa09` is on canonical `D:\\kppdf-8.0` `main` and pushed to `origin/main`.
 - Canonical gates: backend tsc PASS; direct build e2e 8/8 PASS; frontend tsc PASS; proposal-create 9/9 PASS.

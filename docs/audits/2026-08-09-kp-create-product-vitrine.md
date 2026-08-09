@@ -13,7 +13,7 @@
 | Список | `proposal-product-rail.component.ts` — name+sku+«Добавить», без фото | Не витрина |
 | Ширина | `proposal-create.page.ts` `--kp-flyout-w: min(20rem, …)` (~320px) | PO: почти ×2 |
 | Данные | `ProductsService.list({ limit: 30, search })` — page/category API уже есть, UI нет | Нет пагинации/фильтров |
-| Карточки | `shared/ui/card/pi-showcase-card.component.ts` **sm/md/lg уже есть** (PRODUCTS-305) | В Create KP **не подключены** |
+| Карточки | `shared/ui/card/pi-showcase-card.component.ts` **sm/md/lg** (PRODUCTS-305; md hardened in SALES-327) | В Create KP подключение остаётся за 328 |
 | Каталог `/products` | grid = sm + фото через `photoListUrl` | Эталон есть, rail не reuse |
 | Click-outside | `onDocumentPointerDown` + Escape | Spec требует; PO: «вне поля не закрывает» надёжно — клик по **iframe** A4 часто не всплывает на `document` |
 | Edit/Create | нет в rail | Каталог: QuickCreate + ProductFormDialog — reuse |
@@ -40,7 +40,7 @@
 | ID | Суть |
 |----|------|
 | **TZ-SALES-326** | Шире products-flyout + надёжный dismiss L/R |
-| **TZ-SALES-327** | md-карточка: равная высота, фото, line-clamp (kit) |
+| **TZ-SALES-327** | md-карточка: равная высота, фото, line-clamp (kit) — DONE code; Create wiring остаётся 328 |
 | **TZ-SALES-328** | Rail → shop-витрина (grid md + фильтры + pager + Add/Edit/Create) |
 
 **OUT:** 322/320 · Builder · deploy · cascade L1/L2 дерево (можно chips категорий) · docked 3-колонки.
