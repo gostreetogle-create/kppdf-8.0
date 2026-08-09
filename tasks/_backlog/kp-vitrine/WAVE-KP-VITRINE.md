@@ -29,7 +29,8 @@
 | 6 | **TZ-SALES-315** правая панель org/% | 312 DONE |
 | 7 | **TZ-SALES-316** шаблон в центре | 314+315 желательно; min 312 |
 | 8 | **TZ-SALES-317** focus shell (A4 + icon rails + cascade stub) | review → archive |
-| 9 | **TZ-SALES-319** center = `build()` HTML (фон/позиции/таблицы) | **после archive 317** |
+| 9 | **TZ-SALES-319** center = `build()` HTML | wiring DONE; **visual FAIL** → 321 |
+| 9b | **TZ-SALES-321** preview fidelity (layout/bg/scale) | **READY** после FAIL-аудита |
 | 10 | **TZ-SALES-318** left cascade fill (категории/фильтры) | после 317; || ок с 319 по смыслу, keys разные если только rail |
 | 11 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |
 | — | **NOTE** snapshot/lock бланка + «оплачена» | [`NOTE-KP-template-snapshot-lock.md`](./NOTE-KP-template-snapshot-lock.md) — после 319 → TZ persist/lock |

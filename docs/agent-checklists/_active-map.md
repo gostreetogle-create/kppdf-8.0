@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T09:55:00Z · TZ-SALES-319 READY FOR REVIEW
+- Center = sandboxed `build()` HTML iframe; stub chrome removed
+- Gates: FE tsc PASS · proposal-create Jest 8/8
+- Marker: `tasks/_active/TZ-SALES-319.md` — await visual PASS (template with background)
+- Peers: DOC-342 / DOC-344 / TABLES-305 untouched
+- Deploy: NO
+
+## Checkpoint 2026-08-09T09:53:00Z · TZ-SALES-319 CLAIMED
+- IN PROGRESS: Create КП center ← `build()` HTML (iframe/srcdoc)
+- agent_id: agent-3e757640b7 · claimed_at: 2026-08-09T09:52:45Z
+- Keys: proposal-create.page|spec|template-center + page/spec docs
+- Peers OK: DOC-342 / DOC-344 / TABLES-305 (no overlap); SALES-317 archived
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T09:52:00Z · TZ-SALES-317 DONE
 - DONE: Create КП focus shell (A4 + icon rails / overlay RMK)
 - Cursor Verdict PASS (visual shell)
