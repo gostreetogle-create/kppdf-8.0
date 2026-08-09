@@ -55,8 +55,8 @@
 - tests/gates: backend/FE typechecks PASS; focused FE 9/9 PASS; direct backend build e2e 8/8 PASS with portrait + landscape CSS contract. Visual measurement remains pending.
 - conflict disclosure: only listed conflict keys; DOC-344 and frozen 317 shell untouched
 - known limits: bit-identical print PDF (320), empty table skeleton (324), live products (325)
-- commit: pending until Cursor/PO visual PASS and archive closeout
-- full SHA: pending
+- commit: `a270fa09` landed on canonical `D:\\kppdf-8.0` `main` and pushed to `origin/main`.
+- full SHA: `a270fa09` (visual PASS and archive still pending)
 
 ## Review handoff
 

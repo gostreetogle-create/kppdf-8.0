@@ -29,5 +29,6 @@ Acceptance scope:
 
 - implementation: FE contain scale uses a 2px safety inset; build HTML is one fixed portrait/landscape A4 page box with hidden document overflow and bounded content/table wrapping.
 - gates: backend/FE typechecks PASS; focused FE 9/9 PASS; direct backend build e2e 8/8 PASS with portrait + landscape CSS contract.
-- review: READY FOR REVIEW; Cursor/PO must measure iframe document scrollWidth/Height and provide visual PASS before archive.
+- review: READY FOR REVIEW on canonical main commit `a270fa09`; Cursor/PO must measure iframe document scrollWidth/Height and provide visual PASS before archive.
+- push: `a270fa09` is on `origin/main`.
 - known limits: empty table skeleton remains 324; live products remain 325; print/snapshot remain PARK.

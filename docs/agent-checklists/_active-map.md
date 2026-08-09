@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:52:23Z · TZ-SALES-323 on canonical main — visual wait
+- DONE (landing only): scoped TZ-SALES-323 commit `a270fa09` is on canonical `D:\\kppdf-8.0` `main` and pushed to `origin/main`.
+- Canonical gates: backend tsc PASS; direct build e2e 8/8 PASS; frontend tsc PASS; proposal-create 9/9 PASS.
+- NOT DONE: Cursor/PO visual PASS and browser measurement on main (`scrollWidth <= clientWidth + 1px`, `scrollHeight <= clientHeight + 1px`, no H/V scrollbar); do not archive yet.
+- Canonical main contains unrelated uncommitted DOC-344 WIP; preserved untouched, including its orientation line in `document-template.service.ts`.
+- NEXT: idle at 323 review; do not claim 324 until PO accepts main visual.
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T14:45:00Z · TZ-SALES-323 READY FOR REVIEW
 - IN PROGRESS → READY FOR REVIEW: FE A4 contain scale now uses a 2px safety inset; build HTML now emits bounded portrait/landscape A4 page boxes with `html, body { overflow: hidden }`, body padding removed, and bounded content/table wrapping.
 - Gates: backend tsc PASS; direct build e2e 8/8 PASS (portrait + landscape CSS contract, env loaded from canonical main without printing secrets); frontend tsc PASS; proposal-create 9/9 PASS.
