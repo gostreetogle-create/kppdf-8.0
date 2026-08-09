@@ -1,3 +1,11 @@
+## [2026-08-09T13:20:00Z] — TZ-OPS-303 DONE: Docs Integrity Closeout
+**Исполнитель:** buffy-ops-303 · WAVE-PROJECT-KNOWLEDGE #2
+**Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ
+**Что:** Создан `docs/DOCS-INTEGRITY.md` (60 строк ≤100): правило «код + docs = один PR/TZ», матрица триггер→файлы, Integrity slot, анти-дрейф (код + живая schema побеждают). `_TEMPLATE.md` получил секцию **Integrity slot** после Acceptance; FIC §F — пункт про slot; PROJECT-MEMORY — живая ссылка DOCS-INTEGRITY + Integrity slot в «Не потерять»; GEMINI.md DoD — Integrity slot до READY/archive.
+**Gates:** rg Integrity slot/DOCS-INTEGRITY → 14 hits в 6 целевых файлах PASS; DOCS-INTEGRITY 60 ≤100 строк PASS; product code не тронут PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-303.done.md`; `_active` удалён.
+**NEXT:** TZ-OPS-304 (Domain Canon Map + gap inventory) — строго по очереди волны; deploy НЕ.
+
 ## [2026-08-09T13:05:00Z] — TZ-OPS-302 DONE: Project Memory Pack
 **Исполнитель:** buffy-ops-302 · WAVE-PROJECT-KNOWLEDGE #1
 **Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ

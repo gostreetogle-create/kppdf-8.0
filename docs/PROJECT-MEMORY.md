@@ -31,7 +31,7 @@
 | «Не забыть списки» | `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC) |
 | Очередь агентов / бронь | `docs/agent-checklists/_active-map.md` + `tasks/_active/` |
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
-| Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` (появится в OPS-303) |
+| Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` — протокол триггер→файлы + Integrity slot |
 | Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` (появится в OPS-304) |
 
 ## 4. Не потерять при DONE (чеклист)
@@ -42,6 +42,7 @@
 - Всегда: `progress.md` + `## Executor report (auto)` в checklist + Checkpoint в `_active-map`.
 - Чужой WIP / чужие conflict keys — не stage и не коммитить (`git add <свои файлы>` поимённо).
 - Archive только после зелёных gates и (если TZ требует) Cursor/PO PASS.
+- Перед READY/archive — **Integrity slot** в checklist заполнен (`docs/DOCS-INTEGRITY.md`).
 
 ## 5. Не ломать (BAN)
 
