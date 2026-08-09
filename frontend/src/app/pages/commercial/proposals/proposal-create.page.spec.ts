@@ -204,6 +204,11 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(
       fixture.debugElement.query(By.css('[data-test="kp-table-right-productName"]')),
     ).toBeTruthy();
+
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-insp-table"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeTruthy();
   });
 
   it('opens products overlay from its own rail button', () => {

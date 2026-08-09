@@ -112,78 +112,80 @@ export interface ProposalCreateInspectorState {
         </div>
       }
 
-      <section class="inspector__table" data-test="kp-insp-table">
-        <div class="inspector__section-heading">
-          <h3>Таблица</h3>
-          <p>Меняет только это КП, не общий шаблон</p>
-        </div>
-        @if (tableTargets().length > 1) {
-          <app-pi-overflow-select
-            [items]="tableTargetItems()"
-            [value]="selectedTableTargetId() ?? ''"
-            (valueChange)="selectTableTarget($event)"
-            searchable="auto"
-            placeholder="Выберите таблицу…"
-            ariaLabel="Таблица бланка"
-            dataTest="kp-table-target"
-          />
-          <p class="inspector__table-target-hint">Выберите, какую live-таблицу настраивать.</p>
-        }
-        <div class="inspector__columns">
-          @for (column of tableLayout(); track column.key; let index = $index) {
-            <div class="inspector__column" [attr.data-test]="'kp-table-column-' + column.key">
-              <span class="inspector__column-label">{{ column.label }}</span>
-              <span class="inspector__column-actions">
-                <app-pi-button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  [disabled]="index === 0"
-                  [ariaLabel]="'Левее ' + column.label"
-                  [attr.data-test]="'kp-table-left-' + column.key"
-                  (click)="moveColumn(index, -1)"
-                >
-                  ←
-                </app-pi-button>
-                <app-pi-button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  [disabled]="index === tableLayout().length - 1"
-                  [ariaLabel]="'Правее ' + column.label"
-                  [attr.data-test]="'kp-table-right-' + column.key"
-                  (click)="moveColumn(index, 1)"
-                >
-                  →
-                </app-pi-button>
-                <app-pi-button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  class="inspector__visibility"
-                  [disabled]="column.visible && visibleColumnCount() === 1"
-                  [ariaLabel]="
-                    column.visible ? 'Скрыть ' + column.label : 'Показать ' + column.label
-                  "
-                  [attr.data-test]="'kp-table-visible-' + column.key"
-                  (click)="toggleColumn(index)"
-                >
-                  {{ column.visible ? 'Видна' : 'Скрыта' }}
-                </app-pi-button>
-              </span>
-            </div>
+      @if (tableOnly()) {
+        <section class="inspector__table" data-test="kp-insp-table">
+          <div class="inspector__section-heading">
+            <h3>Таблица</h3>
+            <p>Меняет только это КП, не общий шаблон</p>
+          </div>
+          @if (tableTargets().length > 1) {
+            <app-pi-overflow-select
+              [items]="tableTargetItems()"
+              [value]="selectedTableTargetId() ?? ''"
+              (valueChange)="selectTableTarget($event)"
+              searchable="auto"
+              placeholder="Выберите таблицу…"
+              ariaLabel="Таблица бланка"
+              dataTest="kp-table-target"
+            />
+            <p class="inspector__table-target-hint">Выберите, какую live-таблицу настраивать.</p>
           }
-        </div>
-        <app-pi-button
-          type="button"
-          variant="ghost"
-          size="sm"
-          data-test="kp-table-open-template"
-          (click)="openTableTemplate()"
-        >
-          Открыть шаблон таблицы
-        </app-pi-button>
-      </section>
+          <div class="inspector__columns">
+            @for (column of tableLayout(); track column.key; let index = $index) {
+              <div class="inspector__column" [attr.data-test]="'kp-table-column-' + column.key">
+                <span class="inspector__column-label">{{ column.label }}</span>
+                <span class="inspector__column-actions">
+                  <app-pi-button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    [disabled]="index === 0"
+                    [ariaLabel]="'Левее ' + column.label"
+                    [attr.data-test]="'kp-table-left-' + column.key"
+                    (click)="moveColumn(index, -1)"
+                  >
+                    ←
+                  </app-pi-button>
+                  <app-pi-button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    [disabled]="index === tableLayout().length - 1"
+                    [ariaLabel]="'Правее ' + column.label"
+                    [attr.data-test]="'kp-table-right-' + column.key"
+                    (click)="moveColumn(index, 1)"
+                  >
+                    →
+                  </app-pi-button>
+                  <app-pi-button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="inspector__visibility"
+                    [disabled]="column.visible && visibleColumnCount() === 1"
+                    [ariaLabel]="
+                      column.visible ? 'Скрыть ' + column.label : 'Показать ' + column.label
+                    "
+                    [attr.data-test]="'kp-table-visible-' + column.key"
+                    (click)="toggleColumn(index)"
+                  >
+                    {{ column.visible ? 'Видна' : 'Скрыта' }}
+                  </app-pi-button>
+                </span>
+              </div>
+            }
+          </div>
+          <app-pi-button
+            type="button"
+            variant="ghost"
+            size="sm"
+            data-test="kp-table-open-template"
+            (click)="openTableTemplate()"
+          >
+            Открыть шаблон таблицы
+          </app-pi-button>
+        </section>
+      }
 
       @if (!tableOnly()) {
         <app-pi-form-field label="Клиент (заглушка)" htmlFor="kp-insp-cp">
