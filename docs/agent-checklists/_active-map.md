@@ -1,12 +1,12 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T01:52:24Z · TZ-PHOTO-302 DONE
-- DONE: TZ-PHOTO-302 — catalogue `/products` table/grid, `/materials` list and applicable production thumbnails now select linked lightweight thumbs through shared `photoListUrl`, improving list image cost without changing layout or business behavior.
+## Checkpoint 2026-08-09T01:55:10Z · TZ-PHOTO-303 DONE
+- DONE: TZ-PHOTO-303 — idempotent backend backfill script creates Sharp WebP thumbs for legacy local originals, skips missing/broken files with logs, and preserves originals; live Mongo run is intentionally left for the operator.
 - IN PROGRESS: none
-- NOT DONE: TZ-PHOTO-303 READY — idempotent backfill for legacy original photos
-- NEXT: `tasks/_backlog/perf/TZ-PHOTO-303-backfill-thumbs.md`
-- HEAD: 002cc363 pushed: yes (`origin/main`)
-- Blockers: `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches; Materials focused harness emits existing non-failing NG0101 console noise.
+- NOT DONE: none in WAVE-PERF-PHOTOS; INN-301 PARKED, SALES-304 RESERVED, SHIPPING/Gantt park
+- NEXT: idle — READY queue empty; no deploy
+- HEAD: 9cdb0206 pushed: yes (`origin/main`)
+- Blockers: live backfill requires an operator to confirm target MongoDB/UPLOAD_DIR and run `pnpm photos:backfill-thumbs`; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
 - _active/: empty
 - Deploy: NO
 

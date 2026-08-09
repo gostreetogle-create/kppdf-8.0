@@ -1,7 +1,7 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Canonical cleanup and verification — photo performance wave in progress; 301–302 closed, 303 next
+**Phase:** Canonical cleanup and verification — photo performance wave complete; READY queue idle, deploy not run
 
 ## [2026-08-09] — TZ-PHOTO-302 DONE: catalogue lists use lightweight thumbnails
 **Статус:** DONE on main; deploy НЕ
@@ -10,6 +10,14 @@
 **Lock:** `.mimocode/locks/TZ-PHOTO-302-lists-use-thumb.lock`
 **Gates:** FE tsc PASS; focused Jest 5 suites / 33 tests PASS; changed FE ESLint and Prettier PASS; `git diff --check` PASS. `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
 **Wave:** WAVE-PERF-PHOTOS #2 DONE; NEXT TZ-PHOTO-303; deploy НЕ.
+
+## [2026-08-09] — TZ-PHOTO-303 DONE: legacy originals backfill script
+**Статус:** DONE on main; deploy НЕ
+**Что:** Идемпотентный `backend/scripts/tz-photo-303-backfill-thumbs.ts` + `pnpm photos:backfill-thumbs` создаёт Sharp WebP thumbs для старых локальных originals без child thumb, пропускает missing/unsupported/broken files с логом и никогда не удаляет originals. Повторный запуск — 0 дублей.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-303.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-303-backfill-thumbs.lock`
+**Gates:** BE tsc (`--noEmit` и build config) PASS; photo Jest 3 suites / 6 tests PASS; ESLint PASS; `git diff --check` PASS. `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+**Wave:** WAVE-PERF-PHOTOS complete; READY queue idle; live backfill command documented but not run; deploy НЕ.
 
 ## [2026-08-09] — TZ-PHOTO-301 DONE: upload original + lightweight thumb
 **Статус:** DONE on main; deploy НЕ

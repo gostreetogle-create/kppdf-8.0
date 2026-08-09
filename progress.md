@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-PHOTO-303 DONE: legacy originals backfill script
+
+**Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #3
+**Статус:** DONE; deploy НЕ
+**Что:** Добавлен идемпотентный `backend/scripts/tz-photo-303-backfill-thumbs.ts` и команда `pnpm photos:backfill-thumbs`. Скрипт находит старые `original` без thumb, создаёт связанный Sharp WebP thumb, пропускает missing/unsupported/broken файлы с логом, не меняет и не удаляет originals. Повторный запуск не плодит дубли.
+**Затронуто:** backend script, focused photo backfill spec, backend package script, checklist/archive/lock.
+**Gates:** BE tsc PASS (`--noEmit` и build config); focused photos Jest 3 suites / 6 tests PASS; ESLint PASS; `git diff --check` PASS. `verify-status.sh` сохраняет pre-existing drift 72 legacy kit-era entries.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-303.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-303-backfill-thumbs.lock`
+**Run:** из `backend/` → `pnpm photos:backfill-thumbs`; live Mongo backfill намеренно не запускался, оператор должен выполнить после проверки окружения.
+
 ## [2026-08-09] — TZ-PHOTO-302 DONE: catalogue lists use linked thumbs
 
 **Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #2

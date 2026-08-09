@@ -11,12 +11,12 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — #1–#7 DONE; idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — **308 + 309**; idle |
-| **E — Photo performance** | `perf/WAVE-PERF-PHOTOS.md` | **ACTIVE** — 301–302 DONE; **303 READY** |
+| **E — Photo performance** | `perf/WAVE-PERF-PHOTOS.md` | **DONE** — 301–303 archived and pushed; idle |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `TZ-PHOTO-303` — photo performance wave is active; deploy only by explicit PO command
-(301–302 DONE; 303 READY)
+**NEXT для universal prompt:** `idle` — READY queue is empty; deploy only by explicit PO command
+(301–303 DONE; parked/reserved work remains untouched)
 
 ## Idle / park / done
 
@@ -29,7 +29,7 @@
 | SALES-304 | RESERVED |
 | ~~TZ-PHOTO-301~~ | DONE — archived and pushed |
 | ~~TZ-PHOTO-302~~ | DONE — archived and pushed |
-| TZ-PHOTO-303 | READY — old originals backfill |
+| ~~TZ-PHOTO-303~~ | DONE — archived and pushed; live run remains operator action |
 | SHIPPING / Gantt 308–310 | park |
 
 ## Не брать
