@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** KP vitrine navigation — SALES-310 DONE; next design-spec 311; deploy not run
+**Phase:** KP vitrine — SALES-310/311 DONE; next shell 312; deploy not run
+
+## [2026-08-09] — TZ-SALES-311 DONE: Create КП design-spec
+**Статус:** DONE on main; deploy НЕ
+**Что:** Layout SoT `/proposals/create` — три колонки с явными ширинами, responsive drawers, empty RU, карта слоёв 312→314/315/316. Page doc pointer; Angular shell не кодили.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-311.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-311-create-kp-design-spec.lock`
+**Gates:** docs-only Markdown review PASS; `git diff --check` PASS.
+**Wave:** WAVE-KP-VITRINE #2 DONE; NEXT TZ-SALES-312; deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-310 DONE: Deals TOC and КП subchips
 **Статус:** DONE on main; deploy НЕ
@@ -9,7 +17,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-310.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-310-deals-kp-subchips.lock`
 **Gates:** FE tsc PASS; focused Jest 2 suites / 18 tests PASS; Angular development build PASS; Prettier PASS; `git diff --check` PASS.
-**Wave:** WAVE-KP-VITRINE #1 DONE; NEXT TZ-SALES-311; deploy НЕ.
+**Wave:** WAVE-KP-VITRINE #1 DONE; NEXT TZ-SALES-311 (now DONE); deploy НЕ.
 
 **Canonical workspace:** `D:\\kppdf-8.0` on `main`; package manager `pnpm`
 

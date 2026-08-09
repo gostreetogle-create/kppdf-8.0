@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-SALES-311 DONE: Create КП design-spec (3 columns)
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #2
+**Статус:** DONE; deploy НЕ
+**Что:** Утверждаемый layout SoT для `/proposals/create`: desktop Left 280–320 / Center flex A4 / Right 300–340; tablet/mobile drawers; пустые RU-фразы; карта зон → 312/314/315/316. Page doc + WAVE/ARCHITECTURE обновлены. Angular-shell остаётся за 312.
+**Затронуто:** `docs/ux/kp-create-studio-spec.md`, `docs/pages/proposals-create.page.md`, PAGE-TZ-INDEX, WAVE, ARCHITECTURE, checklist/archive/lock.
+**Gates:** docs-only Markdown review PASS; `git diff --check` PASS; product tsc/tests N/A.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-311.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-311-create-kp-design-spec.lock`
+**NEXT:** TZ-SALES-312 shell Создать КП.
+
 ## [2026-08-09] — TZ-SALES-310 DONE: Deals TOC and КП subchips
 
 **Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #1

@@ -1,6 +1,6 @@
 # WAVE-KP-VITRINE — Создать КП / Все КП (слои)
 
-**STATUS:** READY — #1 DONE; next #2
+**STATUS:** READY — #1–#2 DONE; next #3
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO

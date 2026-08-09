@@ -1040,4 +1040,10 @@ transaction. See `docs/data-model.md` § Concurrency & Transactions.
   (default 1), `orgMarkupPercent?`; unique sparse `{ masterId, organizationId }`.
 - Thin API: `POST :id/family/attach-organizations`, `POST :id/family/sync-from-master`,
   `GET :id/family`. Convert of a **variant** → 400 (master/solo only).
-- UI expand / markup dialog / variant editor → **TZ-SALES-304** (stub READY).
+- UI expand / markup dialog / variant editor → **TZ-SALES-313** (ex-304; family list UI).
+
+## KP create studio (WAVE-KP-VITRINE)
+
+- **IA chrome (310):** Deals dark TOC КП|Договоры|Заказы; proposal-only yellow **Создать КП**|**Все КП**; guarded `/proposals/create` stub.
+- **Layout SoT (311):** `docs/ux/kp-create-studio-spec.md` — desktop 3 columns (Left 280–320 / Center flex A4 / Right 300–340), tablet/mobile drawers, empty RU copy; page doc `docs/pages/proposals-create.page.md`.
+- **Next:** shell 312 → rails 314/315 → template 316; print **320 PARKED**.

@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T02:08:00Z · TZ-SALES-311 DONE
+- DONE: TZ-SALES-311 — affirmable `/proposals/create` three-column layout SoT (Left 280–320 / Center flex A4 / Right 300–340, tablet/mobile drawers, empty RU, zone→312/314/315/316 map) + page-doc pointer.
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-312 → TZ-SALES-313 → TZ-SALES-314 → TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-312-create-kp-shell.md`
+- HEAD: (pending push this commit) pushed: yes (`origin/main`)
+- Blockers: none for SALES-311; Team Room claim unavailable for this id; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:02:34Z · TZ-SALES-310 DONE
 - DONE: TZ-SALES-310 — Deals navigation now has a dark TOC (КП/Договоры/Заказы), proposal-only yellow Создать КП/Все КП subchips, and a guarded `/proposals/create` route stub; existing quotation list/API remains unchanged.
 - IN PROGRESS: none
