@@ -14,10 +14,15 @@ CHECKLIST: docs/agent-checklists/TZ-SALES-310.md
 CONFLICT KEYS:
 frontend/src/app/pages/commercial/deals-group-chips.ts;
 frontend/src/app/pages/commercial/proposals/proposals.page.ts;
+frontend/src/app/pages/commercial/proposals/proposal-create.page.ts;
 frontend/src/app/app.routes.ts;
 frontend/src/app/pages/contracts/contracts.page.ts;
 frontend/src/app/pages/orders/orders.page.ts;
 docs/pages/proposals.page.md;
+docs/pages/proposals-create.page.md;
+docs/pages/contracts.page.md;
+docs/pages/orders.page.md;
+docs/pages/PAGE-TZ-INDEX.md;
 docs/agent-checklists/TZ-SALES-310.md;
 
 Проверено: `pi-group-workspace` — TOC = тёмный ряд (`bg-ink`), chips = жёлтый

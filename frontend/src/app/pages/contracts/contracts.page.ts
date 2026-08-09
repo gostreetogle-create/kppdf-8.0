@@ -14,7 +14,7 @@ import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { DEALS_SECTION_CHIPS } from '../commercial/deals-group-chips';
+import { DEALS_TOC_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -176,7 +176,13 @@ function organizationIdOf(row: Contract): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="contracts">
+    <app-pi-group-workspace
+      pathLabel="Сделки"
+      [toc]="dealsToc"
+      tocActiveId="contracts"
+      [chips]="emptyChips"
+      activeId=""
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="contracts-search"
@@ -264,7 +270,8 @@ function organizationIdOf(row: Contract): string {
   `,
 })
 export class ContractsPage implements OnInit {
-  protected readonly chips = DEALS_SECTION_CHIPS;
+  protected readonly dealsToc = DEALS_TOC_CHIPS;
+  protected readonly emptyChips: readonly never[] = [];
 
   constructor() {
     this.counterpartiesLookup.load();

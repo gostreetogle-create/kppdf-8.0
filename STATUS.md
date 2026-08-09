@@ -1,7 +1,17 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** Canonical cleanup and verification — photo performance wave complete; READY queue idle, deploy not run
+**Phase:** KP vitrine navigation — SALES-310 DONE; next design-spec 311; deploy not run
+
+## [2026-08-09] — TZ-SALES-310 DONE: Deals TOC and КП subchips
+**Статус:** DONE on main; deploy НЕ
+**Что:** Общий тёмный TOC Сделок теперь показывает КП / Договоры / Заказы. Только на `/proposals` и `/proposals/create` есть жёлтые подchips Создать КП / Все КП; contracts/orders получают пустой жёлтый ряд. Добавлен guarded lazy route-stub `/proposals/create`; quotation API, семья и бизнес-логика не менялись.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-310.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-310-deals-kp-subchips.lock`
+**Gates:** FE tsc PASS; focused Jest 2 suites / 18 tests PASS; Angular development build PASS; Prettier PASS; `git diff --check` PASS.
+**Wave:** WAVE-KP-VITRINE #1 DONE; NEXT TZ-SALES-311; deploy НЕ.
+
+**Canonical workspace:** `D:\\kppdf-8.0` on `main`; package manager `pnpm`
 
 ## [2026-08-09] — TZ-PHOTO-302 DONE: catalogue lists use lightweight thumbnails
 **Статус:** DONE on main; deploy НЕ

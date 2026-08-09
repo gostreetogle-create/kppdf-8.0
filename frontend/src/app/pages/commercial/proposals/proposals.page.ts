@@ -14,7 +14,7 @@ import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
-import { DEALS_SECTION_CHIPS } from '../deals-group-chips';
+import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -127,7 +127,13 @@ function counterpartyIdOf(row: Proposal): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="proposals">
+    <app-pi-group-workspace
+      pathLabel="Сделки"
+      [toc]="dealsToc"
+      tocActiveId="proposals"
+      [chips]="kpSectionChips"
+      activeId="all"
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="proposals-search"
@@ -274,7 +280,8 @@ function counterpartyIdOf(row: Proposal): string {
   `,
 })
 export class ProposalsPage implements OnInit {
-  protected readonly chips = DEALS_SECTION_CHIPS;
+  protected readonly dealsToc = DEALS_TOC_CHIPS;
+  protected readonly kpSectionChips = KP_SECTION_CHIPS;
 
   constructor() {
     this.counterpartiesLookup.load();

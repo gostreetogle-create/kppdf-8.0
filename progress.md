@@ -1,3 +1,14 @@
+## [2026-08-09] — TZ-SALES-310 DONE: Deals TOC and КП subchips
+
+**Исполнитель:** agent-3e757640b7 · WAVE-KP-VITRINE #1
+**Статус:** DONE; deploy НЕ
+**Что:** Сделки переведены на общий тёмный TOC **КП | Договоры | Заказы**; под КП добавлены жёлтые **Создать КП | Все КП**. Добавлен guarded lazy `/proposals/create` route-stub с заголовком «Создать КП». Contracts/orders используют тот же TOC с пустым жёлтым рядом; существующий `/proposals` и quotation API не менялись.
+**Затронуто:** FE navigation/chips/routes, focused chips spec, page docs, PAGE-TZ-INDEX, checklist/archive/lock.
+**Gates:** FE tsc PASS; focused Jest 2 suites / 18 tests PASS; Angular development build PASS; Prettier PASS; `git diff --check` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-310.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-310-deals-kp-subchips.lock`
+**NEXT:** TZ-SALES-311 design-spec `/proposals/create`; full three-zone studio remains 312+.
+
 ## [2026-08-09] — TZ-PHOTO-303 DONE: legacy originals backfill script
 
 **Исполнитель:** agent-3e757640b7 · WAVE-PERF-PHOTOS #3

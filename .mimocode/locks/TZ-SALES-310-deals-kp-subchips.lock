@@ -1,0 +1,9 @@
+TZ: TZ-SALES-310
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T01:57:53Z
+CLOSED_AT: 2026-08-09T02:01:30Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Deals dark TOC, proposal-only yellow subchips, guarded /proposals/create stub, and page documentation.
+GATES: FE tsc PASS; focused Jest 18/18 PASS; Angular development build PASS; Prettier PASS; git diff --check PASS.
+BAN: quotation API/schema rewrite, family expand, ModuleMaterials, second write-path, deploy.

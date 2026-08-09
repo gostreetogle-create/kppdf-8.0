@@ -1,6 +1,6 @@
 # WAVE-KP-VITRINE — Создать КП / Все КП (слои)
 
-**STATUS:** READY  
+**STATUS:** READY — #1 DONE; next #2
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Промпт:** [`PROMPT-CONTINUOUS.md`](./PROMPT-CONTINUOUS.md)  
 **Deploy:** только по команде PO
@@ -19,7 +19,7 @@
 
 | # | TZ | После |
 |---|-----|--------|
-| 1 | **TZ-SALES-310** IA chrome | — |
+| 1 | **TZ-SALES-310** IA chrome | **DONE** — dark Deals TOC + КП subchips + create stub |
 | 2 | **TZ-SALES-311** design-spec Создать КП | 310 DONE |
 | 3 | **TZ-SALES-312** shell Создать КП | 311 DONE |
 | 4 | **TZ-SALES-313** Все КП + семья (ex-304) | 310 DONE (можно || 312 после 310) |

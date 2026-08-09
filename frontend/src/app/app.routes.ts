@@ -318,6 +318,18 @@ export const routes: Routes = [
         title: 'KPPDF — Производство',
       },
       {
+        // TZ-SALES-310 — stable create-KP destination; full studio follows in
+        // TZ-SALES-312+ and keeps the existing Quotation API.
+        path: 'proposals/create',
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'proposals' },
+        loadComponent: () =>
+          import('./pages/commercial/proposals/proposal-create.page').then(
+            (m) => m.ProposalCreatePage,
+          ),
+        title: 'KPPDF — Создать КП',
+      },
+      {
         // TZ-SALES-301 — КП (коммерческие предложения). Thin UI поверх
         // существующего QuotationModule (single API — дубль не создавался).
         // Admin/manager surface: мутации @Roles('admin','manager').

@@ -15,7 +15,7 @@ import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
-import { DEALS_SECTION_CHIPS } from '../commercial/deals-group-chips';
+import { DEALS_TOC_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -180,7 +180,13 @@ function counterpartyIdOf(row: Order): string {
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace pathLabel="Сделки" [chips]="chips" activeId="orders">
+    <app-pi-group-workspace
+      pathLabel="Сделки"
+      [toc]="dealsToc"
+      tocActiveId="orders"
+      [chips]="emptyChips"
+      activeId=""
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="orders-search"
@@ -273,7 +279,8 @@ function counterpartyIdOf(row: Order): string {
   `,
 })
 export class OrdersPage implements OnInit {
-  protected readonly chips = DEALS_SECTION_CHIPS;
+  protected readonly dealsToc = DEALS_TOC_CHIPS;
+  protected readonly emptyChips: readonly never[] = [];
 
   constructor() {
     this.counterpartiesLookup.load();

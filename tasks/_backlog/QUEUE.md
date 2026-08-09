@@ -11,11 +11,11 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **READY** — 310→…316; **320 PARKED** |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **READY** — #1 SALES-310 DONE; NEXT 311→…316; **320 PARKED** |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `tasks/_backlog/kp-vitrine/TZ-SALES-310-deals-kp-subchips.md`  
+**NEXT для universal prompt:** `tasks/_backlog/kp-vitrine/TZ-SALES-311-create-kp-design-spec.md`
 (или `kp-vitrine/PROMPT-CONTINUOUS.md`)
 
 ## Idle / park / done

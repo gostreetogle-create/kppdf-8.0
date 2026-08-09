@@ -14,6 +14,8 @@
 - Route: `/proposals` (`frontend/src/app/app.routes.ts`) — `canMatch: [authGuard, adminOnlyRouteGuard]`.
   Мутации КП на backend — `@Roles('admin','manager')`, чтение доступно `user`.
 - Навигация: раздел **«Сделки» → «КП»** (`app-layout.component.ts`), между «Организации» и «Договоры».
+- Workspace chrome: тёмный TOC **КП | Договоры | Заказы** и жёлтые подchips **Создать КП | Все КП**. `Все КП` активен на этом route; create ведёт на `/proposals/create`.
+
 
 ## Backend-контракт (QuotationModule, не изменялся в SALES-301)
 
