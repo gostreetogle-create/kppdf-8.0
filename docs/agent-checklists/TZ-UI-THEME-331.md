@@ -3,7 +3,7 @@
 > Status: **DONE**
 > TZ: `tasks/_backlog/TZ-UI-THEME-331-dark-depth-and-on-gold.md`
 > Prompt: `tasks/prompts/TZ-UI-THEME-331-PROMPT.md`
-> Commit: `3683dd37` · push: **pending**
+> Commits: `3683dd37`, `d92c9961` · push: **yes**
 
 ## Claim slot
 
@@ -53,4 +53,4 @@
 - [x] `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
 - [x] `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md`
 - [x] `tasks/_active/TZ-UI-THEME-331.md` absent
-- [ ] commit + push
+- [x] commit + push
