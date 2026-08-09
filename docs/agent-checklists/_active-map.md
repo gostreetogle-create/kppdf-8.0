@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T12:52:45Z · TZ-SALES-326 DONE / Cursor visual PASS
+- DONE: products flyout 40rem cap + center/iframe backdrop dismiss; Cursor confirmed L+R closure and unchanged A4 rails|center|rails geometry.
+- Gates: frontend tsc PASS; ng build PASS (budget warnings only); proposal-create 11/11; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-326.done.md`; lock recorded locally; `_active/TZ-SALES-326.md` removed.
+- NEXT: DOC-344 thin star-fill fix/closeout, then claim TZ-SALES-325.
+- DOC-343 dirty backend/docs WIP remains excluded; 322, 320, deploy untouched.
+- Deploy: NO
+
+
+
 ## Checkpoint 2026-08-09 · WAVE-PROJECT-KNOWLEDGE READY (OPS-302→304)
 - NEW backlog wave (docs/process only): strengthen agent knowledge warehouse — Project Memory → Integrity closeout → Domain map.
 - Specs: `tasks/_backlog/ops/WAVE-PROJECT-KNOWLEDGE.md` + TZ-OPS-302/303/304 + `PROMPT-OPS-KNOWLEDGE-CONTINUOUS.md`
