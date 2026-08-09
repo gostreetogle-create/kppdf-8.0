@@ -1,5 +1,22 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:19:16Z · TZ-SALES-337 DONE
+- DONE: Parameters no longer contains the duplicate Table section; the Таблица rail retains columns, controls, and CTA.
+- Implementation: `0d3ea7faa34752e9765bddc378d01107e72eca9e`, pushed to `origin/main`.
+- Gates: frontend tsc PASS; proposal-create Jest 15/15; Prettier/ESLint PASS; diff-check PASS.
+- Quick DOM visual PASS: `kp-insp-table` absent in Parameters and present in Таблица.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-337.done.md`; lock recorded; `_active/TZ-SALES-337.md` removed.
+- Scope guard: no 332 sync/layout, backend, Save/Client/qty/photo/lock, 317 shell, DOC-343 WIP, 320/322, or deploy changes.
+- NEXT: claim TZ-SALES-333. Deploy: NO
+
+## Checkpoint 2026-08-09T16:17:52Z · TZ-SALES-337 CLAIMED
+- IN PROGRESS: remove duplicate Table section from Parameters; Table controls remain only in the Таблица rail.
+- Base: canonical `main` at `5694d64d`; TZ-SALES-332 archived/DONE before claim.
+- Conflict scan: no competing `_active` 337; foreign DOC-343 files preserved/excluded. Team Room unavailable (unknown task).
+- Marker/checklist: `tasks/_active/TZ-SALES-337.md` / `docs/agent-checklists/TZ-SALES-337.md`.
+- Scope guard: no BE/sync changes, Save/Client/qty/photo/lock, FROZEN 317 shell, or deploy.
+- NEXT: implement → FE gates → quick visual → archive/lock/remove `_active`. Deploy: NO
+
 ## Checkpoint 2026-08-09T19:25:00Z · WAVE-KP-USABLE + 337 (no table dup)
 - First: TZ-SALES-337 — Параметры без секции Таблица; таблица только в rail.
 - Then: 333 Save → 334 Client → 335 qty/photo → 336 lock.

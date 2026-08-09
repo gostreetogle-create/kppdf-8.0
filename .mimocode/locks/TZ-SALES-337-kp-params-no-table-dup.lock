@@ -1,0 +1,6 @@
+TASK: TZ-SALES-337
+STATUS: DONE
+CLOSED_AT: 2026-08-09T16:19:16Z
+IMPLEMENTATION_COMMIT: 0d3ea7faa34752e9765bddc378d01107e72eca9e
+ARCHIVE: tasks/_archive/2026-08/TZ-SALES-337.done.md
+VISUAL: Quick DOM PASS — Parameters has no duplicate table section; Таблица retains controls and CTA

@@ -1,3 +1,13 @@
+## [2026-08-09T16:19:16Z] — TZ-SALES-337 DONE: no duplicate Table section in Parameters
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; quick DOM visual PASS; deploy НЕ
+**Implementation:** `0d3ea7faa34752e9765bddc378d01107e72eca9e`.
+**Что:** Parameters оставляет фирму/наценку/НДС/оценку/клиента; columns, hide/reorder и CTA «Открыть шаблон таблицы» остаются только в rail Таблица.
+**Gates:** frontend tsc PASS; proposal-create Jest 15/15; Prettier PASS; ESLint PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-337.done.md`; lock создан; `_active/TZ-SALES-337.md` удалён.
+**Scope:** 332 sync/layout, backend, Save/Client/qty/photo/lock, 317 shell, DOC-343 WIP, 320/322 и deploy не тронуты.
+**NEXT:** claim TZ-SALES-333. Deploy НЕ.
+
 ## [2026-08-09T16:08:44Z] — TZ-SALES-332 DONE: Cursor visual PASS on hotfix
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** DONE; Cursor visual PASS; deploy НЕ
