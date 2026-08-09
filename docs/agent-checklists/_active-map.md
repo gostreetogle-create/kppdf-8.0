@@ -10,6 +10,15 @@
 - _active/: empty
 - Deploy: NO
 
+## Checkpoint 2026-08-09T02:20:00Z · TZ-UX-315 READY (pathLabel drop)
+- DONE: prior 310–312
+- IN PROGRESS: TZ-SALES-313 CLAIMED (peer)
+- NOT DONE: 313…316; **TZ-UX-315 READY** (pi-group-workspace only — safe ||)
+- NEXT KP: 313 then 314+
+- NEXT UX parallel: `tasks/_backlog/TZ-UX-315-drop-pathlabel-dense-chrome.md`
+- Ban: touch proposals.page while 313 claimed; deploy
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:15:00Z · TZ-SALES-312 DONE
 - DONE: TZ-SALES-312 — `/proposals/create` three-zone shell (placeholders + narrow toggles) per design-spec; WIP from agent-3e757640b7 preserved and gated
 - IN PROGRESS: none

@@ -11,12 +11,14 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **READY** — 310–312 DONE; NEXT **313** (|| 314/315); **320 PARKED** |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **IN WORK** — 310–312 DONE; **313 CLAIMED**; 314–316; **320 PARKED** |
+| **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **READY** — убрать pathLabel (дубль топ-меню); || после keys |
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для universal prompt:** `tasks/_backlog/kp-vitrine/TZ-SALES-313-all-kp-family-expand.md`  
-(или `kp-vitrine/PROMPT-CONTINUOUS.md`)
+**NEXT для universal prompt:** добить **313** (уже CLAIMED) → затем 314/315/316  
+**Параллель (свободный агент):** `tasks/_backlog/TZ-UX-315-drop-pathlabel-dense-chrome.md`  
+(CONFLICT: только `pi-group-workspace*` — не трогать proposals CLAIM 313)
 
 ## Idle / park / done
 
