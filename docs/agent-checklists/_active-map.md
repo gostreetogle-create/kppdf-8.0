@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T18:18:00Z · TZ-ADMIN-303 DONE
+- DONE: admin may Edit/PATCH system roles; DELETE frozen (UI + API `SYSTEM_ROLE_FROZEN`); RU toast; badge «Системная».
+- Archive/lock: `tasks/_archive/2026-08/TZ-ADMIN-303.done.md` · `.mimocode/locks/TZ-ADMIN-303-system-roles-admin-edit.lock`
+- Gates: BE/FE tsc PASS; system-role 7/7; roles-admin.page 13/13; Prettier/diff-check PASS; browser self-verify PASS.
+- `_active/TZ-ADMIN-303.md` removed. Peer WAVE-KP-USABLE / TZ-SALES-* untouched.
+- NEXT: idle. Deploy NO.
+
 ## Checkpoint 2026-08-09T21:10:00Z · PARALLEL slot TZ-ADMIN-303 (disjoint from KP)
 - Ready: finish dirty `system-role.guard*` + `roles-admin*` WIP — admin may Edit system roles; DELETE frozen.
 - TZ/prompt: `tasks/_backlog/admin/TZ-ADMIN-303-system-roles-admin-edit.md` · `PROMPT-ADMIN-303.md`

@@ -79,7 +79,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (typeof payload === 'string') {
       message = payload;
     } else {
-      const raw = (payload as { message?: string | string[] }).message ?? payload;
+      const raw =
+        (payload as { message?: string | string[] }).message ?? payload;
       if (Array.isArray(raw)) {
         message = raw.map(humanizeValidationMessage).filter(Boolean);
       } else {
@@ -89,13 +90,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    const errorResponse = {
+    const errorResponse: Record<string, unknown> = {
       statusCode: status,
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
       message,
     };
+
+    // Preserve structured codes from HttpException object payloads
+    // (e.g. SYSTEM_ROLE_FROZEN / SYSTEM_ROLE_ESCALATION) for FE toast routing.
+    if (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'code' in payload &&
+      typeof (payload as { code?: unknown }).code === 'string'
+    ) {
+      errorResponse.code = (payload as { code: string }).code;
+    }
 
     if (status >= 500) {
       this.logger.error(

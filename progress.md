@@ -1,3 +1,12 @@
+## [2026-08-09T18:18:00Z] — TZ-ADMIN-303 DONE: админ правит системные роли / delete запрещён
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; self-verify PASS; deploy НЕ
+**Что:** Site-admin PATCH системных ролей (permissions/pages); DELETE всегда 403 `SYSTEM_ROLE_FROZEN`; FE «Редактировать» при `role:write`; RU toast; бейдж «Системная»; filter сохраняет `code`.
+**Gates:** BE/FE tsc PASS; system-role Jest 7/7; roles-admin.page Jest 13/13; Prettier/diff-check PASS; browser Edit→Save PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ADMIN-303.done.md`; lock создан; `_active/TZ-ADMIN-303.md` удалён.
+**Scope:** WAVE-KP-USABLE / TZ-SALES-* / freebuff worktree / deploy не тронуты.
+**NEXT:** idle. Deploy НЕ
+
 ## [2026-08-09T17:00:00Z] — TZ-SALES-339 READY FOR REVIEW: visible Save КП, autosave, soft-delete
 **Исполнитель:** agent-6c3d05b80e
 **Статус:** READY FOR REVIEW; visual autosave/delete PASS обязателен до archive; deploy НЕ

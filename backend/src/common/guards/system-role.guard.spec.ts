@@ -1,13 +1,13 @@
 /**
- * TZ-257.A — SystemRoleGuard unit tests.
+ * SystemRoleGuard unit tests.
  *
- * Covers 4 AC cases:
- *  1. target role has `isSystem: false` → mutator returns true.
- *  2. target role has `isSystem: true` AND mutator is patch/delete → throws ForbiddenException('SYSTEM_ROLE_FROZEN').
- *  3. target role has `isSystem: true` AND mutator is read (GET) → returns true.
- *  4. PATCH attempting to set `isSystem: true` on a non-system role → throws ForbiddenException('SYSTEM_ROLE_ESCALATION').
- *
- * Mongoose `Role` model is mocked via the standard DI token; no real Mongo.
+ * Policy (PO 2026-08-09):
+ *  - non-system role → PATCH/DELETE allowed (further guards decide)
+ *  - system role + DELETE → SYSTEM_ROLE_FROZEN always
+ *  - system role + PATCH without admin → SYSTEM_ROLE_FROZEN
+ *  - system role + PATCH as admin → allowed
+ *  - GET always allowed
+ *  - escalate isSystem:true on custom → SYSTEM_ROLE_ESCALATION
  */
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
@@ -25,11 +25,16 @@ function buildModelMock(existing: Record<string, unknown> | null = null) {
   };
 }
 
-describe('SystemRoleGuard (TZ-257.A)', () => {
-  function makeContext(method: string, params: Record<string, string>, body?: unknown) {
+describe('SystemRoleGuard', () => {
+  function makeContext(
+    method: string,
+    params: Record<string, string>,
+    body?: unknown,
+    user?: { id: string; role: string; permissions?: string[] },
+  ) {
     return {
       switchToHttp: () => ({
-        getRequest: () => ({ method, params, body }),
+        getRequest: () => ({ method, params, body, user }),
       }),
     } as unknown as Parameters<SystemRoleGuard['canActivate']>[0];
   }
@@ -45,20 +50,42 @@ describe('SystemRoleGuard (TZ-257.A)', () => {
   }
 
   it('allows PATCH on a non-system role (isSystem: false)', async () => {
-    const guard = await boot(buildModelMock({ isSystem: false, name: 'editor' }));
+    const guard = await boot(
+      buildModelMock({ isSystem: false, name: 'editor' }),
+    );
     await expect(
-      guard.canActivate(makeContext('PATCH', { id: '64a0000000000000000000aa' }, { displayName: 'X' })),
+      guard.canActivate(
+        makeContext(
+          'PATCH',
+          { id: '64a0000000000000000000aa' },
+          { displayName: 'X' },
+        ),
+      ),
     ).resolves.toBe(true);
   });
 
-  it('refuses PATCH on a system role with code SYSTEM_ROLE_FROZEN', async () => {
-    const guard = await boot(buildModelMock({ isSystem: true, name: 'admin' }));
+  it('refuses PATCH on a system role when actor is not admin', async () => {
+    const guard = await boot(
+      buildModelMock({ isSystem: true, name: 'manager' }),
+    );
     await expect(
-      guard.canActivate(makeContext('PATCH', { id: '64a0000000000000000000bb' }, { displayName: 'X' })),
+      guard.canActivate(
+        makeContext(
+          'PATCH',
+          { id: '64a0000000000000000000bb' },
+          { displayName: 'X' },
+          { id: 'u1', role: 'manager', permissions: ['role:write'] },
+        ),
+      ),
     ).rejects.toThrow(ForbiddenException);
     try {
       await guard.canActivate(
-        makeContext('PATCH', { id: '64a0000000000000000000bb' }, { displayName: 'X' }),
+        makeContext(
+          'PATCH',
+          { id: '64a0000000000000000000bb' },
+          { displayName: 'X' },
+          { id: 'u1', role: 'manager', permissions: ['role:write'] },
+        ),
       );
     } catch (err) {
       expect((err as ForbiddenException).getResponse()).toMatchObject({
@@ -67,28 +94,72 @@ describe('SystemRoleGuard (TZ-257.A)', () => {
     }
   });
 
-  it('refuses DELETE on a system role with code SYSTEM_ROLE_FROZEN', async () => {
+  it('allows PATCH on a system role when actor is admin', async () => {
+    const guard = await boot(
+      buildModelMock({ isSystem: true, name: 'director' }),
+    );
+    await expect(
+      guard.canActivate(
+        makeContext(
+          'PATCH',
+          { id: '64a0000000000000000000bb' },
+          { label: 'Директор', permissions: ['sales:read'] },
+          { id: 'u-admin', role: 'admin', permissions: [] },
+        ),
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('allows PATCH on a system role when actor has wildcard permissions', async () => {
+    const guard = await boot(
+      buildModelMock({ isSystem: true, name: 'manager' }),
+    );
+    await expect(
+      guard.canActivate(
+        makeContext(
+          'PATCH',
+          { id: '64a0000000000000000000bb' },
+          { pages: ['products'] },
+          { id: 'u-star', role: 'custom-admin', permissions: ['*'] },
+        ),
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it('refuses DELETE on a system role even for admin', async () => {
     const guard = await boot(buildModelMock({ isSystem: true, name: 'admin' }));
     await expect(
-      guard.canActivate(makeContext('DELETE', { id: '64a0000000000000000000cc' }, {})),
+      guard.canActivate(
+        makeContext(
+          'DELETE',
+          { id: '64a0000000000000000000cc' },
+          {},
+          { id: 'u-admin', role: 'admin', permissions: ['*'] },
+        ),
+      ),
     ).rejects.toThrow(ForbiddenException);
   });
 
   it('GET (read) bypasses the guard, even on a system role', async () => {
     const guard = await boot(buildModelMock({ isSystem: true, name: 'admin' }));
     await expect(
-      guard.canActivate(makeContext('GET', { id: '64a0000000000000000000dd' }, {})),
+      guard.canActivate(
+        makeContext('GET', { id: '64a0000000000000000000dd' }, {}),
+      ),
     ).resolves.toBe(true);
   });
 
   it('refuses PATCH trying to set isSystem: true on a non-system role (escalation)', async () => {
-    const guard = await boot(buildModelMock({ isSystem: false, name: 'editor' }));
+    const guard = await boot(
+      buildModelMock({ isSystem: false, name: 'editor' }),
+    );
     await expect(
       guard.canActivate(
         makeContext(
           'PATCH',
           { id: '64a0000000000000000000ee' },
           { isSystem: true },
+          { id: 'u-admin', role: 'admin', permissions: [] },
         ),
       ),
     ).rejects.toThrow(ForbiddenException);
@@ -98,6 +169,7 @@ describe('SystemRoleGuard (TZ-257.A)', () => {
           'PATCH',
           { id: '64a0000000000000000000ee' },
           { isSystem: true },
+          { id: 'u-admin', role: 'admin', permissions: [] },
         ),
       );
     } catch (err) {

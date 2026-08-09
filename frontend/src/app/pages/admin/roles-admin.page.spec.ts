@@ -181,8 +181,8 @@ describe('RolesAdminPage capability gating', () => {
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).not.toBeNull();
   });
 
-  it('shows system badge + view for frozen system roles (TZ-ADMIN-301)', async () => {
-    hasAny.mockImplementation(() => true);
+  it('shows system badge + Edit (no Delete) for admin on system roles', async () => {
+    hasAny.mockImplementation((keys: readonly string[]) => keys.includes('role:write'));
     const fixture = TestBed.createComponent(RolesAdminPage);
     httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [
@@ -205,9 +205,33 @@ describe('RolesAdminPage capability gating', () => {
       fixture.nativeElement.querySelector('[data-test="roles-admin-system-badge"]'),
     ).not.toBeNull();
     expect(fixture.nativeElement.textContent).toContain('Системная');
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-edit"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-view"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).toBeNull();
+  });
+
+  it('keeps view-only for system roles when actor lacks role:write', async () => {
+    hasAny.mockImplementation((keys: readonly string[]) => keys.includes('role:read'));
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
+      items: [
+        {
+          id: 'sys-mgr',
+          name: 'manager',
+          label: 'Менеджер',
+          permissions: ['sales:read'],
+          pages: ['proposals'],
+          isSystem: true,
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 10,
+    });
+    await fixture.whenStable();
+    fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-view"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="roles-admin-edit"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="roles-admin-delete"]')).toBeNull();
   });
 
   it('shows Edit for non-system director/manager (TZ-ADMIN-302)', async () => {
@@ -263,5 +287,53 @@ describe('RolesAdminPage capability gating', () => {
       .expectOne(`${BASE_URL}/admin/roles/r1`)
       .flush({ message: 'Server exploded' }, { status: 500, statusText: 'Server Error' });
     expect(comp.loadingRowId()).toBeNull();
+  });
+
+  it('toasts RU SYSTEM_ROLE_FROZEN when delete of a system role is refused', () => {
+    const toast = TestBed.inject(PiToastService) as { error: jest.Mock };
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    });
+
+    const http = TestBed.inject(HttpClient);
+    const obs = silentDelete(http, `${BASE_URL}/admin/roles/sys-admin`);
+    comp.silentRun(obs, 'Роль удалена', 'sys-admin');
+    httpMock.expectOne(`${BASE_URL}/admin/roles/sys-admin`).flush(
+      {
+        statusCode: 403,
+        code: 'SYSTEM_ROLE_FROZEN',
+        message: 'System roles cannot be deleted',
+      },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    expect(toast.error).toHaveBeenCalledWith('Системные роли нельзя удалить');
+  });
+
+  it('toasts RU frozen message when filter body has message but no code', () => {
+    const toast = TestBed.inject(PiToastService) as { error: jest.Mock };
+    const fixture = TestBed.createComponent(RolesAdminPage);
+    const comp = fixture.componentInstance as unknown as PageHarness;
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+    });
+
+    const http = TestBed.inject(HttpClient);
+    const obs = silentDelete(http, `${BASE_URL}/admin/roles/sys-admin`);
+    comp.silentRun(obs, 'Роль удалена', 'sys-admin');
+    httpMock
+      .expectOne(`${BASE_URL}/admin/roles/sys-admin`)
+      .flush(
+        { statusCode: 403, message: 'System roles cannot be deleted' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    expect(toast.error).toHaveBeenCalledWith('Системные роли нельзя удалить');
   });
 });

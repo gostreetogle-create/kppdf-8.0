@@ -9,7 +9,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { normalizeAdminListQuery, type AdminListResponse, escapeRegex } from './admin-list-query';
+import {
+  normalizeAdminListQuery,
+  type AdminListResponse,
+  escapeRegex,
+} from './admin-list-query';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permissions } from '../../common/decorators/permissions.decorator';
@@ -30,11 +34,11 @@ import { toClientRole } from './dto/mapper';
  * (real /admin body — Roles CRUD remainder after TZ-257.A.1 shipped
  * Users CRUD).
  *
- * System-role semantics: system roles (`isSystem: true`) are
- * read-only after creation per TZ-257 §ШАГ 0. `SystemRoleGuard`
- * refuses PATCH/DELETE on system roles (403 `SYSTEM_ROLE_FROZEN`)
- * and escalation patches (403 `SYSTEM_ROLE_ESCALATION`). POST always
- * forces `isSystem: false` regardless of payload.
+ * System-role semantics (TZ-ADMIN-303 / PO 2026-08-09):
+ * `SystemRoleGuard` allows PATCH of `isSystem` roles for site admins
+ * only; DELETE of system roles stays 403 `SYSTEM_ROLE_FROZEN` for
+ * everyone; escalation patches stay 403 `SYSTEM_ROLE_ESCALATION`.
+ * POST always forces `isSystem: false` regardless of payload.
  *
  * TZ-257.B DTO-whitelist: mutations accept ONLY `AdminCreateRoleDto` /
  * `AdminUpdateRoleDto` (name/label/description/permissions/pages). Internal
@@ -73,7 +77,11 @@ export class RolesAdminController {
     const filter: Record<string, unknown> = {};
     if (query.search) {
       const pattern = new RegExp(escapeRegex(query.search), 'i');
-      filter.$or = [{ name: pattern }, { label: pattern }, { description: pattern }];
+      filter.$or = [
+        { name: pattern },
+        { label: pattern },
+        { description: pattern },
+      ];
     }
     const [docs, total] = await Promise.all([
       this.roleModel
@@ -102,21 +110,27 @@ export class RolesAdminController {
   @Permissions('role:write')
   @Roles('admin')
   @AuditAction({ action: 'admin.role.created', entityType: 'Role' })
-  async create(@Body() dto: AdminCreateRoleDto): Promise<ReturnType<typeof toClientRole>> {
+  async create(
+    @Body() dto: AdminCreateRoleDto,
+  ): Promise<ReturnType<typeof toClientRole>> {
     const doc = await this.roleService.create({ ...dto, isSystem: false });
     return toClientRole(doc as unknown as Record<string, unknown>);
   }
 
   /**
    * PATCH /api/admin/roles/:id
-   * Update a custom role. System roles and escalation patches are
-   * refused by `SystemRoleGuard`.
+   * Update role permissions/pages/label. System-role PATCH allowed for
+   * site admins; escalation patches refused by `SystemRoleGuard`.
    */
   @Patch(':id')
   @Permissions('role:write')
   @Roles('admin')
   @UseGuards(SystemRoleGuard)
-  @AuditAction({ action: 'admin.role.updated', entityType: 'Role', idParam: 'id' })
+  @AuditAction({
+    action: 'admin.role.updated',
+    entityType: 'Role',
+    idParam: 'id',
+  })
   async update(
     @Param('id') id: string,
     @Body() dto: AdminUpdateRoleDto,
@@ -134,7 +148,11 @@ export class RolesAdminController {
   @Permissions('role:admin')
   @Roles('admin')
   @UseGuards(SystemRoleGuard)
-  @AuditAction({ action: 'admin.role.deleted', entityType: 'Role', idParam: 'id' })
+  @AuditAction({
+    action: 'admin.role.deleted',
+    entityType: 'Role',
+    idParam: 'id',
+  })
   async remove(@Param('id') id: string): Promise<{ success: true }> {
     await this.roleService.remove(id);
     return { success: true };
@@ -147,7 +165,9 @@ export class RolesAdminController {
   @Get(':id')
   @Permissions('role:read')
   @Roles('admin')
-  async getById(@Param('id') id: string): Promise<ReturnType<typeof toClientRole>> {
+  async getById(
+    @Param('id') id: string,
+  ): Promise<ReturnType<typeof toClientRole>> {
     const doc = await this.roleModel.findById(id).lean().exec();
     if (!doc) {
       throw new Error(`Role ${id} not found`);
@@ -161,7 +181,9 @@ export class RolesAdminController {
  * lands in TZ-257.A on this controller. Mirrors the contract from
  * `users-admin.controller.ts`.
  *
- * System roles (`isSystem: true`) MUST refuse `@UseGuards`-mutating
+ * System roles (`isSystem: true`): DELETE refused; PATCH allowed for
+ * site admins (SystemRoleGuard). Escalation `isSystem: true` on custom
+ * roles MUST refuse `@UseGuards`-mutating
  * requests with 403 — apply either an inline check via
  * `this.roleModel.findById(id)` pre-mutation or a small `SystemRoleGuard`
  * (added in TZ-257.A).
@@ -173,7 +195,8 @@ export class RolesAdminController {
  *   @AuditAction({ action: 'admin.role.created', entityType: 'Role' })
  *   async create(@Body() dto: CreateRoleDto): Promise<ClientRole> {...}
  *
- *   // PATCH /api/admin/roles/:id — edit role (refuse if isSystem)
+ *   // PATCH /api/admin/roles/:id — edit role (admin may PATCH system;
+ *   // DELETE still refuses isSystem)
  *   @Patch(':id')
  *   @Permissions('role:write')
  *   @Roles('admin')

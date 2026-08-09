@@ -28,8 +28,18 @@ Group Chip TOC: Пользователи | Роли (`ADMIN_TOC_CHIPS`), акт�
 | PATCH | `/admin/roles/:id` | Обновление `{ label, description, permissions, pages }` |
 | DELETE | `/admin/roles/:id` | Удаление (пользователи сохраняются, права теряются) |
 
-403 `SYSTEM_ROLE_FROZEN` / `SYSTEM_ROLE_ESCALATION` → «Системные роли доступны
-только для чтения».
+## Политика системных ролей (TZ-ADMIN-303)
+
+Системная роль (`isSystem: true`) — **не** read-only для админа сайта:
+
+| Действие | Кто | Результат |
+|----------|-----|-----------|
+| PATCH permissions/pages/label | site-admin (`role.name === 'admin'` / `*` / `role:admin`) | разрешено |
+| DELETE | любой | **запрещён** — UI без «Удалить»; API 403 `SYSTEM_ROLE_FROZEN` |
+| PATCH `isSystem: true` на кастомной | любой | 403 `SYSTEM_ROLE_ESCALATION` |
+
+FE при `role:write`: системная строка → бейдж «Системная» + **«Редактировать»** (не «Просмотр»).
+Без `role:write` остаётся «Просмотр». Toast при 403 delete: «Системные роли нельзя удалить».
 
 ## Dialogs
 
@@ -65,7 +75,7 @@ RU-лейблы прав и summary — из `permission-labels.ru.ts` (`roleLab
 | Computed | Назначение |
 |----------|-----------|
 | `cols` | name (mono, sticky), label (RU), permissions (summary), isSystem (бейдж) |
-| rowActions | system → бейдж + «Смотреть» (view); custom → edit/delete |
+| rowActions | system + `role:write` → бейдж + Edit (без Delete); system без write → View; custom → edit/delete |
 
 ## TZ reference
 
@@ -74,16 +84,15 @@ RU-лейблы прав и summary — из `permission-labels.ru.ts` (`roleLab
 | TZ-256.B | roles-admin page — полная CRUD-поверхность |
 | TZ-ADMIN-301 | Системные роли: RU-бейдж + read-only view; кастомные — edit pages[]+permissions |
 | TZ-ADMIN-302 | «Смотреть» у системных показывает полный каталог прав (не пустое `*`) |
+| TZ-ADMIN-303 | Админ PATCH системных ролей; DELETE системных запрещён |
 | TZ-ADMIN-306 | `/admin` redirect → `/admin/users` |
 
 ## Особенности
 
-- Системные роли (`isSystem: true`) **заморожены**: только view; backend
-  SystemRoleGuard → 403 (SYSTEM_ROLE_FROZEN / SYSTEM_ROLE_ESCALATION).
-- Удаление роли не удаляет пользователей — они теряют связанные права
+- Удаление кастомной роли не удаляет пользователей — они теряют связанные права
   (предупреждение в confirm-диалоге).
 - Server-side пагинация + search; все HTTP через `silent-*`.
 
 ---
 
-_Создано: 2026-08-09. Последнее обновление: 2026-08-09._
+_Создано: 2026-08-09. Последнее обновление: 2026-08-09 (TZ-ADMIN-303)._

@@ -39,13 +39,9 @@ import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-la
 
 /**
  * TZ-256.B — `roles-admin.page` (full CRUD surface).
- * TZ-ADMIN-301 — system roles show RU badge + read-only view; custom
- * roles edit pages[] (nav pageKey ACL) + permissions.
- * TZ-ADMIN-302 — system «Смотреть» shows full catalog checked (not empty `*`).
- *
- * System roles (`isSystem: true`) are frozen by design —
- * `SystemRoleGuard` returns 403 `SYSTEM_ROLE_FROZEN` / `SYSTEM_ROLE_ESCALATION`.
- * Non-system (custom / director / manager when `isSystem: false`) keep Edit.
+ * TZ-ADMIN-301 / PO 2026-08-09 — system roles keep badge; site admin
+ * (`role:write`) may Edit permissions/pages. DELETE of system roles
+ * stays forbidden (BE `SYSTEM_ROLE_FROZEN`). Custom roles unchanged.
  */
 type ClientRole = AdminRole;
 const PAGE_SIZE = 10;
@@ -129,15 +125,28 @@ const PAGE_SIZE = 10;
               >
                 {{ copy.systemBadge }}
               </span>
-              <app-pi-button
-                variant="ghost"
-                size="sm"
-                type="button"
-                (click)="onView(r)"
-                data-test="roles-admin-view"
-              >
-                {{ copy.viewLabel }}
-              </app-pi-button>
+              @if (caps.hasAny(['role:write'])) {
+                <app-pi-row-actions
+                  [row]="r"
+                  [showEdit]="true"
+                  [showDelete]="false"
+                  [loading]="loadingRowId() === r.id"
+                  editLabel="Редактировать"
+                  deleteLabel="Удалить"
+                  dataTestEdit="roles-admin-edit"
+                  (edit)="onEdit($event)"
+                />
+              } @else {
+                <app-pi-button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  (click)="onView(r)"
+                  data-test="roles-admin-view"
+                >
+                  {{ copy.viewLabel }}
+                </app-pi-button>
+              }
             </div>
           }
         </ng-template>
@@ -340,11 +349,18 @@ export class RolesAdminPage implements OnInit {
         return;
       }
       if (res.error.status === 403) {
-        const body = res.error.error as { code?: string } | null;
+        const body = res.error.error as { code?: string; message?: string } | null;
+        const msg = typeof body?.message === 'string' ? body.message : '';
+        const frozen =
+          body?.code === 'SYSTEM_ROLE_FROZEN' || msg === 'System roles cannot be deleted';
+        const escalation =
+          body?.code === 'SYSTEM_ROLE_ESCALATION' || /Cannot set isSystem/i.test(msg);
         this.toast.error(
-          body?.code === 'SYSTEM_ROLE_FROZEN' || body?.code === 'SYSTEM_ROLE_ESCALATION'
-            ? 'Системные роли доступны только для чтения'
-            : extractErrorMessage(res.error),
+          frozen
+            ? 'Системные роли нельзя удалить'
+            : escalation
+              ? 'Нельзя сделать роль системной'
+              : extractErrorMessage(res.error),
         );
         return;
       }
