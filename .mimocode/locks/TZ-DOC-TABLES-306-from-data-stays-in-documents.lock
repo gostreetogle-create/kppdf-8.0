@@ -1,0 +1,5 @@
+TZ-DOC-TABLES-306
+status=DONE
+closed_at=2026-08-09T14:33:25Z
+scope=Documents Tables chips path plus queryParams; prevent /materials fallthrough
+verification=FE tsc PASS; workspace/tables Jest 2 suites 14 tests PASS; route href contract PASS

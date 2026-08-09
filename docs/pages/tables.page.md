@@ -1,6 +1,6 @@
 # Страница: Шаблоны таблиц (TablesPage)
 
-**Chrome:** `PiGroupWorkspace` с тёмным TOC `DOCUMENTS_TOC_CHIPS` и жёлтыми под-табами `TABLES_SECTION_CHIPS` (TZ-DOC-TABLES-301).
+**Chrome:** `PiGroupWorkspace` с тёмным TOC `DOCUMENTS_TOC_CHIPS` и жёлтыми под-табами `TABLES_SECTION_CHIPS` (TZ-DOC-TABLES-301); chips передают path и `queryParams` отдельно, без `?` в route string (TZ-DOC-TABLES-306).
 
 **Краткое описание:** Конструктор шаблонов таблиц — задают форму колонок, типы данных и форматирование. Используются в шаблонах документов.
 

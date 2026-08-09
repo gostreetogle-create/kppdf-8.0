@@ -45,6 +45,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
           @for (chip of visibleToc(); track chip.id) {
             <a
               [routerLink]="chip.route"
+              [queryParams]="chip.queryParams"
               class="group-toc-chip inline-flex items-center px-2 py-0.5
                      text-[11px] leading-4 font-medium tracking-wide rounded-sm
                      transition-colors pi-focus-ring cursor-pointer no-underline"
@@ -71,6 +72,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
         @for (chip of visibleChips(); track chip.id) {
           <a
             [routerLink]="chip.route"
+            [queryParams]="chip.queryParams"
             class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
                    text-xs leading-5 rounded-sm transition-colors
                    pi-focus-ring cursor-pointer no-underline"
@@ -180,6 +182,8 @@ export interface GroupChip {
   id: string;
   label: string;
   route: string;
+  /** Optional query parameters kept separate from the route path for RouterLink. */
+  queryParams?: Record<string, string | null>;
   /** Must be in role `pages` when set (ACCESS page ACL). */
   pageKey?: string;
   /** TOC groups spanning several pages — show if any key is granted. */

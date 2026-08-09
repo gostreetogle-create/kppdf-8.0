@@ -98,10 +98,13 @@ describe('TablesPage', () => {
       'texts',
       'tables',
     ]);
-    expect(TABLES_SECTION_CHIPS.map((chip) => [chip.id, chip.label, chip.route])).toEqual([
-      ['all', 'Все таблицы', '/doc-constructor/tables?view=all'],
-      ['from-data', 'Из данных', '/doc-constructor/tables?view=from-data'],
+    expect(
+      TABLES_SECTION_CHIPS.map((chip) => [chip.id, chip.label, chip.route, chip.queryParams]),
+    ).toEqual([
+      ['all', 'Все таблицы', '/doc-constructor/tables', { view: 'all' }],
+      ['from-data', 'Из данных', '/doc-constructor/tables', { view: 'from-data' }],
     ]);
+    expect(TABLES_SECTION_CHIPS.every((chip) => !chip.route.includes('?'))).toBe(true);
   });
 
   it('creates successfully', async () => {

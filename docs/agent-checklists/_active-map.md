@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T14:33:25Z · TZ-DOC-TABLES-306 DONE
+- DONE: Documents → Tables chips now use path + queryParams; `Из данных` stays on `/doc-constructor/tables?view=from-data` and does not fall through to `/materials`.
+- Gates: frontend tsc PASS; workspace/tables Jest 2 suites / 14 tests PASS; Prettier PASS; diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-TABLES-306.done.md`; lock recorded; `_active/TZ-DOC-TABLES-306.md` removed.
+- Scope guard: 307 dialog/preset, Catalog routes, KP Create, DOC-343 WIP, and deploy untouched.
+- NEXT: TZ-DOC-TABLES-308; Deploy: NO
+
+
 ## Checkpoint 2026-08-09T14:31:48Z · TZ-DOC-TABLES-306 CLAIMED
 - IN PROGRESS: Documents → Tables chips route via path + queryParams; fix `Из данных` fallthrough to `/materials`.
 - Base: canonical `main` / `origin/main` at `3c1ce597`; TZ-DOC-TABLES-305 archived DONE.

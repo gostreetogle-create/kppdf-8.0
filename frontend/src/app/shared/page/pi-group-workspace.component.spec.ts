@@ -54,6 +54,22 @@ class PathLabelHostComponent {
 @Component({
   standalone: true,
   imports: [PiGroupWorkspaceComponent],
+  template: ` <app-pi-group-workspace [chips]="chips" activeId="from-data" /> `,
+})
+class QueryParamsHostComponent {
+  readonly chips = [
+    {
+      id: 'from-data',
+      label: 'Из данных',
+      route: '/doc-constructor/tables',
+      queryParams: { view: 'from-data' },
+    },
+  ] as const;
+}
+
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
   template: ` <app-pi-group-workspace [chips]="chips" activeId="products" /> `,
 })
 class AclHostComponent {
@@ -69,7 +85,13 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
   beforeEach(async () => {
     userSignal.set(null);
     await TestBed.configureTestingModule({
-      imports: [TestHostComponent, TocHostComponent, PathLabelHostComponent, AclHostComponent],
+      imports: [
+        TestHostComponent,
+        TocHostComponent,
+        PathLabelHostComponent,
+        QueryParamsHostComponent,
+        AclHostComponent,
+      ],
       providers: [
         provideRouter([]),
         {
@@ -144,6 +166,15 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
     expect(root.querySelector('[data-test="group-chips"]')?.classList.contains('hairline-b')).toBe(
       true,
     );
+  });
+
+  it('keeps query params separate from the route path in generated chip links', () => {
+    const fixture = TestBed.createComponent(QueryParamsHostComponent);
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector('.group-chip') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toContain('/doc-constructor/tables?view=from-data');
+    expect(link.getAttribute('href')).not.toContain('/materials');
   });
 
   it('hides section chips the role cannot open (page ACL)', () => {

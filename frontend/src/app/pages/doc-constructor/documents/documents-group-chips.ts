@@ -24,13 +24,15 @@ export const TABLES_SECTION_CHIPS: readonly GroupChip[] = [
   {
     id: 'all',
     label: 'Все таблицы',
-    route: '/doc-constructor/tables?view=all',
+    route: '/doc-constructor/tables',
+    queryParams: { view: 'all' },
     pageKey: 'doc-tables',
   },
   {
     id: 'from-data',
     label: 'Из данных',
-    route: '/doc-constructor/tables?view=from-data',
+    route: '/doc-constructor/tables',
+    queryParams: { view: 'from-data' },
     pageKey: 'doc-tables',
   },
 ];

@@ -6,6 +6,15 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-308.done.md`; lock создан.
 **NEXT:** idle; successor P2 — авто-drift gate routes↔page.md; deploy НЕ.
 
+## [2026-08-09T14:33:25Z] — TZ-DOC-TABLES-306 DONE: tables query routing fix
+**Исполнитель:** agent-6c3d05b80e
+**Статус:** DONE; gates PASS; archive + lock; deploy НЕ
+**Что:** GroupChip/PiGroupWorkspace теперь разделяют route path и queryParams; `Из данных` остаётся на `/doc-constructor/tables?view=from-data`, `Все таблицы` — на `?view=all`, без fallthrough в `/materials`.
+**Gates:** frontend tsc PASS; workspace/tables Jest 2 suites / 14 tests; Prettier PASS; diff-check PASS; generated RouterLink href contract PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-306.done.md`; lock создан; `_active/TZ-DOC-TABLES-306.md` удалён.
+**Scope:** 307 dialog/preset, Catalog routes, KP Create, DOC-343 WIP, deploy untouched.
+**NEXT:** TZ-DOC-TABLES-308. Deploy НЕ.
+
 ## [2026-08-09T14:30:45Z] — TZ-DOC-TABLES-305 DONE: PO visual closeout
 **Исполнитель:** agent-ccee39fec2
 **Статус:** DONE; PO visual PASS; archive + lock; deploy НЕ
