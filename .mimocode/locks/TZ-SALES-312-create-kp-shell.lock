@@ -1,0 +1,9 @@
+TZ: TZ-SALES-312
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T02:10:00Z
+CLOSED_AT: 2026-08-09T02:20:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: Three-zone /proposals/create shell with narrow toggles and empty RU placeholders.
+GATES: FE tsc PASS; focused Jest PASS; prettier/eslint PASS; git diff --check PASS.
+BAN: product picker, quotation save, PDF fill, print, deploy, ModuleMaterials.
