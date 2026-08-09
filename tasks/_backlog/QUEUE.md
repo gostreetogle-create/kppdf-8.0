@@ -11,7 +11,7 @@
 | **B — Shop north** | `shop-north-b/WAVE-SHOP-NORTH-B.md` | **DONE** — idle |
 | **C — Catalog UX** | `catalog-ux-c/WAVE-CATALOG-UX-C.md` | **DONE** — не воскрешать |
 | **D — Product editor** | `product-editor/WAVE-PRODUCT-EDITOR.md` | **DONE** — 308+309 |
-| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **321 READY** fidelity; 319 visual FAIL; 317 DONE; **320 PARKED** |
+| **E — KP vitrine** | `kp-vitrine/WAVE-KP-VITRINE.md` | **317/319/321 DONE**; **318 NEXT**; **320 PARKED** |
 | **F — UX chrome** | `TZ-UX-315-drop-pathlabel-dense-chrome.md` | **DONE** — pathLabel убран; не воскрешать |
 | **G — Light theme** | `TZ-UI-LIGHT-330` | **DONE** — канва/raised/кнопки |
 | **H — Dark theme** | `TZ-UI-THEME-331-dark-depth-and-on-gold.md` | **DONE** — dark depth + on-gold |
@@ -20,7 +20,7 @@
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- **КП preview fidelity (сейчас):** `tasks/_backlog/kp-vitrine/PROMPT-SALES-321.md`  
+- **КП после closeout:** следующий кандидат `TZ-SALES-318` cascade fill; 319/321 DONE, 320 PARKED
 - **Таблицы dialog UX:** `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`  
 - После idle: предложить деплой **без** запуска
 

@@ -1,6 +1,6 @@
 # TZ-DOC-TABLES-305 checklist
 
-> Status: **BLOCKED**
+> Status: **BLOCKED — ждёт visual PO**
 > TZ: `tasks/_backlog/doc-tables/TZ-DOC-TABLES-305-table-dialog-compact-fields-multi.md`
 > Marker: `tasks/_active/TZ-DOC-TABLES-305.md`
 
@@ -66,5 +66,6 @@
 - Forbidden DOC-344, SALES-317, and DOC-342 backend scopes were not touched.
 - Cursor PASS: typecheck, focused tests, lint, formatting, and diff review.
 - Failure reason: the running Angular server built successfully on port 4300, but `register_preview` rejected the URL/PID source, so the dialog could not be inspected visually here.
+- Visual status: **ждёт visual PO**; no explicit Cursor/PO PASS is recorded, so 305 remains active and is not archived.
 - Partial progress: implementation and all automated gates are complete; no archive marker or lock was created.
 - Next steps: Cursor/PO visual review of `/doc-constructor/tables`; if PASS, archive with `ARCHIVE_MARKER`, create the lock, update status/checkpoint, then finish closeout commit/push.

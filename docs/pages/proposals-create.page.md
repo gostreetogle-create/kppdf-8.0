@@ -1,7 +1,7 @@
 # /proposals/create — Создать КП
 
 **Route:** `/proposals/create`  
-**TZ:** **310–317 DONE** · **319 + 321** READY FOR REVIEW (`build` HTML fidelity) · **318+** · **320 PARK**
+**TZ:** **310–317 DONE** · **319 + 321 DONE** (`build` HTML fidelity) · **318** NEXT · **320 PARK**
 **Spec LOCK:** [`docs/ux/kp-create-studio-spec.md`](../ux/kp-create-studio-spec.md) §0 FROZEN  
 **Аудит:** layout + overlay-correction + [`template-insert-fidelity`](../audits/2026-08-09-kp-create-template-insert-fidelity-audit.md)
 

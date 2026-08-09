@@ -1,6 +1,6 @@
 # WAVE-KP-VITRINE — Создать КП / Все КП (слои)
 
-**STATUS:** DONE fill #1–#7 (310–316); **317** review/archive; **319 READY** template build-preview; **318** cascade later; **320 PARKED**
+**STATUS:** DONE fill #1–#7 (310–316); **317/319/321 DONE**; **318** cascade next; **320 PARKED**
 **SoT:** `D:\kppdf-8.0` на `main`  
 **Spec v2:** [`docs/ux/kp-create-studio-spec.md`](../../../docs/ux/kp-create-studio-spec.md)  
 **Аудит вставки шаблона:** [`docs/audits/2026-08-09-kp-create-template-insert-fidelity-audit.md`](../../../docs/audits/2026-08-09-kp-create-template-insert-fidelity-audit.md)  
@@ -28,9 +28,9 @@
 | 5 | **TZ-SALES-314** левый рейл товаров | 312 DONE |
 | 6 | **TZ-SALES-315** правая панель org/% | 312 DONE |
 | 7 | **TZ-SALES-316** шаблон в центре | 314+315 желательно; min 312 |
-| 8 | **TZ-SALES-317** focus shell (A4 + icon rails + cascade stub) | review → archive |
-| 9 | **TZ-SALES-319** center = `build()` HTML | wiring DONE; **visual FAIL** → 321 |
-| 9b | **TZ-SALES-321** preview fidelity (layout/bg/scale) | **READY** после FAIL-аудита |
+| 8 | **TZ-SALES-317** focus shell (A4 + icon rails + cascade stub) | **DONE** |
+| 9 | **TZ-SALES-319** center = `build()` HTML | **DONE**; visual accepted with 321 fidelity integration |
+| 9b | **TZ-SALES-321** preview fidelity (layout/bg/scale) | **DONE**; Cursor/PO PASS |
 | 9c | **TZ-SALES-322** stale template → «Обновить бланк» в Параметрах | **PARK** до snapshot Save + 321 |
 | 10 | **TZ-SALES-318** left cascade fill (категории/фильтры) | после 317; || ок с 319 по смыслу, keys разные если только rail |
 | 11 | **TZ-SALES-320** печать пачкой | **PARK** до PO: «витрина собирает» |

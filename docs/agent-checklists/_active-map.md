@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T11:25:55Z · KP hygiene + TABLES-305 visual wait
+- KP wave: TZ-SALES-317 / 319 / 321 are DONE and archived; next candidate is TZ-SALES-318, while TZ-SALES-320 remains PARKED.
+- Base: `origin/main` at `402807ca`; docs-only hygiene, no product code changes.
+- TZ-DOC-TABLES-305 remains `_active` and **BLOCKED — ждёт visual PO**; no explicit Cursor/PO visual PASS for the compact tables dialog is recorded, so no archive or lock.
+- DOC-344 builder WIP untouched; SALES-322 remains PARKED; deploy: NO.
+
 ## Checkpoint 2026-08-09T11:17:19Z · TZ-SALES-321 + TZ-SALES-319 DONE
 - DONE: combined KP build-preview fidelity closeout after Cursor integration PASS and PO visual PASS.
 - Visual evidence: template background and approximately four positioned blocks match builder preview.
