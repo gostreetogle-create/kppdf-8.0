@@ -1,3 +1,11 @@
+## [2026-08-09T13:40:00Z] — TZ-OPS-304 DONE: Domain Canon Map + gap inventory
+**Исполнитель:** buffy-ops-304 · WAVE-PROJECT-KNOWLEDGE #3 (последняя)
+**Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ
+**Что:** Создан `docs/DOMAIN-MAP.md` (84 строки ≤180): 12 доменов (домен → BE modules → FE routes → page.md → SoT) + «Не путать» с 4 канонами (Counterparty≠Organization, StorageItem SoT, КП≠Order, composition≠stock) + gap inventory 36 routes → 6 NO без page.md (`/design`, `/shipping`, `/doc-template-categories`, `/dictionaries/text-block-categories`, `/admin/users`, `/admin/roles`) — page.md не создавались, только таблица. Проводка: PROJECT-MEMORY, DOCS-INTEGRITY, ARCHITECTURE pointer (1 строка), pages/README (1 строка).
+**Gates:** DOMAIN-MAP 84 ≤180 PASS; rg DOMAIN-MAP в 3 файлах PASS; `git diff --name-only` без frontend/backend PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-304.done.md`; `_active` удалён.
+**NEXT:** idle — волна WAVE-PROJECT-KNOWLEDGE (302→303→304) ЗАКРЫТА; successors = missing page.md по gap-таблице (отдельные TZ, не эта волна); deploy НЕ.
+
 ## [2026-08-09T13:20:00Z] — TZ-OPS-303 DONE: Docs Integrity Closeout
 **Исполнитель:** buffy-ops-303 · WAVE-PROJECT-KNOWLEDGE #2
 **Статус:** DONE; docs-only self-archive OK (AC зелёные); deploy НЕ

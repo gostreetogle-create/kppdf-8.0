@@ -1,49 +1,57 @@
 # TZ-OPS-304 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-OPS-304.md` (создать при CLAIM)
+> Status: **CLAIMED / IN PROGRESS**
+> Marker: `tasks/_active/TZ-OPS-304.md`
 > Source: `tasks/_backlog/ops/TZ-OPS-304-domain-canon-map.md`
-> Depends: TZ-OPS-302 DONE + TZ-OPS-303 DONE
+> Depends: TZ-OPS-302 DONE (`db9684f1`) + TZ-OPS-303 DONE (`bb30b30b`)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до правок)
 
-- agent_id:
-- claimed_at:
-- workspace: D:\kppdf-8.0
-- team_room_claim: yes | no | unavailable
+- agent_id: buffy-ops-304
+- claimed_at: 2026-08-09T13:25:00Z
+- workspace: D:\kppdf-8.0 (executed in Freebuff worktree, HEAD == origin/main + 302/303 commits, tree clean)
+- team_room_claim: unavailable (no Team Room CLI in this workspace)
 
 ## Preflight
 
-- [ ] Workspace `D:\kppdf-8.0`; 302+303 DONE
-- [ ] Нет чужого CLAIM на DOMAIN-MAP / PROJECT-MEMORY keys
-- [ ] Claim slot заполнен; `_active` marker на месте
-- [ ] Routes/modules только READ; write = docs only
+- [x] Workspace проверен; 302+303 DONE (commits pushed)
+- [x] Нет чужого CLAIM на DOMAIN-MAP / PROJECT-MEMORY keys (active: только DOC-TABLES-305, FE)
+- [x] Claim slot заполнен; `_active` marker на месте
+- [x] Routes/modules только READ; write = docs only
 
 ## Acceptance
 
-- [ ] `DOMAIN-MAP.md` ≤180 строк; ≥11 доменов; «Не путать» с 4 канонами
-- [ ] Gap inventory route↔page.md без создания missing page.md
-- [ ] Ссылки из PROJECT-MEMORY + DOCS-INTEGRITY
-- [ ] ARCHITECTURE pointer ≤5 строк
-- [ ] Нет product code в diff
+- [x] `DOMAIN-MAP.md` 84 строки ≤180; 12 доменных строк (≥11); «Не путать» с 4 канонами (Counterparty≠Organization, StorageItem SoT, КП≠Order, composition≠stock)
+- [x] Gap inventory 36 routes; 6 × NO без создания page.md (только таблица + successor hint)
+- [x] PROJECT-MEMORY (таблица + «Куда идти») и DOCS-INTEGRITY ссылаются на DOMAIN-MAP
+- [x] ARCHITECTURE: pointer 1 строка (≤5) сразу после шапки
+- [x] `git diff --name-only` — только docs/ARCHITECTURE/checklist; `frontend/**`/`backend/**` отсутствуют
 
 ## Integrity slot (docs-only)
 
-- [ ] Тип: docs-only
-- [ ] FIC: N/A
-- [ ] page.md новых: N/A (только gaps)
-- [ ] SECTION-READINESS: N/A unless touched
-- [ ] Чужой WIP не в коммите
+- [x] Тип: docs-only
+- [x] FIC: N/A (нет page/permission/module/MCP; gap-таблица — не создание фич)
+- [x] page.md новых: N/A (только gaps; 6 NO зафиксированы для successor’ов)
+- [x] SECTION-READINESS: N/A (не трогался)
+- [x] Чужой WIP не в коммите (stage поимённо)
 
 ## Gates
 
-- Verification из TZ
+- [x] `rg -n "DOMAIN-MAP" docs/PROJECT-MEMORY.md docs/DOCS-INTEGRITY.md ARCHITECTURE.md` → 5 hits PASS
+- [x] `(Get-Content docs/DOMAIN-MAP.md).Count` = 84 ≤ 180 PASS
+- [x] `git diff --name-only` → нет frontend/ backend/ product paths PASS
+- [x] `git status --short` → docs/ARCHITECTURE/checklist только PASS
 
 ## Executor report (auto)
 
-_(≤15 строк перед archive)_
+- Создан `docs/DOMAIN-MAP.md` (84 строки): шапка + 12 доменов (факты из `backend/src/modules/` и `app.routes.ts`, read-only) + gap inventory.
+- «Не путать»: Counterparty=клиент сделки vs Organization=наша фирма; остаток SoT=`StorageItem`; КП≠Order; composition≠склад. — 4 канона из TZ.
+- Gap: 36 бизнес-routes → 6 без page.md: `/design`, `/shipping`, `/doc-template-categories`, `/dictionaries/text-block-categories`, `/admin/users`, `/admin/roles`; page.md не создавались.
+- Проводка: PROJECT-MEMORY (таблица + if/then «сначала DOMAIN-MAP»), DOCS-INTEGRITY (строка матрицы + ссылка), ARCHITECTURE pointer (1 строка), pages/README (1 строка).
+- Отмечен P2-дрейф README (индекс не перечисляет warehouses/supply/people/import-todos; `/inventory` vs `/dashboard`) — hygiene-fix successor, не эта TZ.
+- Ноль product code; DOC-TABLES-305 (FE) не пересекается. Docs-only self-archive OK.
 
 ## Closeout
 
-- [ ] archive + progress + `_active-map` + Status DONE
-- closed_at:
+- [x] archive + progress + `_active-map` + Status DONE
+- closed_at: 2026-08-09T13:40:00Z

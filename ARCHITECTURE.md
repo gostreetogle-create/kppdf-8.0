@@ -2,6 +2,8 @@
 
 > Корневой архитектурный документ.
 
+**Быстрая карта доменов:** `docs/DOMAIN-MAP.md` (домен → BE module → FE route → page.md → SoT docs).
+
 ## Local Team Room (2026-08-01)
 
 `OrchestratorKit/team-room/` — локальный coordination layer для параллельных coding agents. Это dependency-free Node.js standard-library сервис, который слушает только `127.0.0.1`, хранит repository-scoped JSON state вне worktrees и переиспользуется всеми linked worktrees одного Git repository.
