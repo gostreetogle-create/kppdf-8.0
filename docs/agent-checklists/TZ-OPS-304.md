@@ -1,7 +1,7 @@
 # TZ-OPS-304 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
-> Marker: `tasks/_active/TZ-OPS-304.md`
+> Status: **DONE**
+> Marker: `tasks/_active/TZ-OPS-304.md` (удалён при archive)
 > Source: `tasks/_backlog/ops/TZ-OPS-304-domain-canon-map.md`
 > Depends: TZ-OPS-302 DONE (`db9684f1`) + TZ-OPS-303 DONE (`bb30b30b`)
 
@@ -50,6 +50,7 @@
 - Проводка: PROJECT-MEMORY (таблица + if/then «сначала DOMAIN-MAP»), DOCS-INTEGRITY (строка матрицы + ссылка), ARCHITECTURE pointer (1 строка), pages/README (1 строка).
 - Отмечен P2-дрейф README (индекс не перечисляет warehouses/supply/people/import-todos; `/inventory` vs `/dashboard`) — hygiene-fix successor, не эта TZ.
 - Ноль product code; DOC-TABLES-305 (FE) не пересекается. Docs-only self-archive OK.
+- **Landed on canonical main:** `3ca156ce` (cherry-pick of `b577cdff`), pushed to `origin/main` 2026-08-09.
 
 ## Closeout
 

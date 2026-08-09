@@ -1,7 +1,7 @@
 # TZ-OPS-303 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
-> Marker: `tasks/_active/TZ-OPS-303.md`
+> Status: **DONE**
+> Marker: `tasks/_active/TZ-OPS-303.md` (удалён при archive)
 > Source: `tasks/_backlog/ops/TZ-OPS-303-docs-integrity-closeout.md`
 > Depends: TZ-OPS-302 DONE (committed `db9684f1`, pushed)
 
@@ -49,6 +49,7 @@
 - GEMINI.md DoD: Integrity slot до READY/archive (одна строка, не эссе).
 - DOMAIN-MAP не создавался (OPS-304); массовый backfill старых checklist’ов не делался (known_limitation).
 - Conflict scan: `_active/` только DOC-TABLES-305 (FE); ключи 303 свободны. Docs-only self-archive OK.
+- **Landed on canonical main:** `6a5771cb` (cherry-pick of `bb30b30b`), pushed to `origin/main` 2026-08-09.
 
 ## Closeout
 

@@ -1,7 +1,7 @@
 # TZ-OPS-302 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
-> Marker: `tasks/_active/TZ-OPS-302.md`
+> Status: **DONE**
+> Marker: `tasks/_active/TZ-OPS-302.md` (удалён при archive)
 > Source: `tasks/_backlog/ops/TZ-OPS-302-project-memory-pack.md`
 > Commit/push: после DONE — scoped; чужой WIP не трогать
 
@@ -50,6 +50,7 @@
 - Ноль product code: frontend/backend/desktop не тронуты; активный DOC-TABLES-305 (FE) не пересекается.
 - Conflict scan: `_active/` только TZ-DOC-TABLES-305; ключи 302 свободны.
 - Docs-only self-archive OK по TZ (AC зелёные).
+- **Landed on canonical main:** `ad886ed9` (cherry-pick of `db9684f1`), pushed to `origin/main` 2026-08-09.
 
 ## Closeout
 
