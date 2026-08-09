@@ -45,7 +45,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
-| `/design`, `/supply`, `/shipping` | — | **NAV-301** stubs |
+| `/design`, `/supply`, `/shipping` | supply.page.md; **design/shipping → OPS-307 READY** | **NAV-301** stubs; page.md gaps: WAVE-PAGE-DOCS-GAPS |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | proposals.page.md | **SALES-301**; **303** family API; **313 DONE** family expand (ex-304); **SALES-310 DONE** — TOC + `Создать КП`/`Все КП` |
@@ -60,8 +60,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/dictionaries/measurements` | measurements-group.page.md | **DICT-308 DONE**, **DICT-309** (units cutover), **DICT-312** (dense/adaptive Group Chip chrome) |
 | `/dictionaries/units` | units.page.md | DICT-304 DONE; **DICT-309** → redirect |
 | `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group); **DICT-312** (dense/adaptive Group Chip chrome) |
-| `/doc-template-categories` | — | UX-304; DICT-307; **DICT-310** (documents-ref chip); **DICT-312** (CTA + adaptive sticky chrome) |
-| `/dictionaries/text-block-categories` | — | DOC-334; DICT-307; **DICT-310** (documents-ref chip); **DICT-312** (CTA + adaptive sticky chrome) |
+| `/doc-template-categories` | **OPS-305 READY** → `document-template-categories.page.md` | UX-304; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS |
+| `/dictionaries/text-block-categories` | **OPS-305 READY** → `text-block-categories.page.md` | DOC-334; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS |
 | `/dictionaries/color-references` | color-references.page.md | PRODUCTS-301; DICT-306; **DICT-310** (appearance group); **DICT-312** (dense/adaptive Group Chip chrome) |
 
 ## Warehouse
@@ -77,7 +77,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/admin/users`, `/admin/roles` | — | ADMIN/RBAC archived |
+| `/admin/users`, `/admin/roles` | **OPS-306 READY** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
 | `/admin` stub | — | optional redirect (P2, not tasked) |
 | `/login` | login.page.md | — |
 

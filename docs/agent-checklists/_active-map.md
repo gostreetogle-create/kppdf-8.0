@@ -1,5 +1,32 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09 · WAVE-PAGE-DOCS-GAPS READY (OPS-305→307)
+- NEW backlog wave (docs-only): fill 6 missing page.md from DOMAIN-MAP §1.3 + README hygiene.
+- Specs: `tasks/_backlog/ops/WAVE-PAGE-DOCS-GAPS.md` + TZ-OPS-305/306/307 + `PROMPT-PAGE-DOCS-GAPS-CONTINUOUS.md`
+- Checklists RESERVED: `docs/agent-checklists/TZ-OPS-305.md` … 307
+- Order: 305 doc-categories → 306 admin users/roles → 307 stubs + README
+- BAN: product FE/BE/desktop; deploy; do not steal keys from SALES-328 / DOC-TABLES-305 / DOC-343
+- Parallel OK with KP vitrine work (disjoint keys). Claim when PO hands continuous prompt.
+- Deploy: NO
+
+## Checkpoint 2026-08-09T13:15:28Z · TZ-SALES-328 READY FOR REVIEW
+- READY: Create КП shop-витрина now uses responsive `PiShowcaseCard md` cards with photo/placeholder, equal-height grid, search/category filters, API-backed pager, Add/Edit/Create actions.
+- Gates: frontend tsc PASS; focused rail 4/4; proposal-create 11/11; diff-check PASS.
+- Canonical implementation: `6143447f` (later md×3 tune may supersede rail SHA — visual still open); active marker remains until Cursor/PO visual PASS.
+- Visual required: shop-like cards, photo/placeholder, equal row heights, filters/pager, Add keeps flyout open, Edit/Create dialogs, no A4 compression.
+- Foreign DOC-343 backend/docs WIP remains preserved/excluded; 322, 320, deploy untouched.
+- NEXT: Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push.
+- Deploy: NO
+
+## Checkpoint 2026-08-09T13:11:11Z · TZ-SALES-328 CLAIMED
+- IN PROGRESS: Create КП shop vitrine — PiShowcaseCard md grid, photos/placeholders, search/category/pager, Add/Edit/Create.
+- Base: canonical `main` / `origin/main` at `aa8362ff`; TZ-SALES-325 archived DONE after Cursor/PO visual PASS.
+- Conflict scan: proposal-product-rail/create-page keys are free; DOC-TABLES-305 has no overlap. Foreign DOC-343 backend/docs WIP remains preserved/excluded.
+- Scope guard: reuse existing PiShowcaseCard, ProductFormDialog, QuickCreate; no 325 bind, A4 compression, 322/320, BuilderCanvas, or deploy.
+- NEXT: implement → gates → READY FOR REVIEW; archive only after Cursor/PO visual PASS.
+- Deploy: NO
+
+
 ## Checkpoint 2026-08-09T13:40:00Z · TZ-OPS-304 DONE (Domain Canon Map) — WAVE COMPLETE
 - DONE: `docs/DOMAIN-MAP.md` (84 lines ≤180) — 12 domain rows (domain → BE modules → FE routes → page.md → SoT) + «Не путать» 4 canon pairs + gap inventory 36 routes.
 - Gaps: 6 routes NO page.md — `/design`, `/shipping`, `/doc-template-categories`, `/dictionaries/text-block-categories`, `/admin/users`, `/admin/roles`; page.md NOT created (table only + successor hint).
@@ -23,15 +50,6 @@
 - Archive: `tasks/_archive/2026-08/TZ-OPS-302.done.md`; `_active/TZ-OPS-302.md` removed; checklist DONE.
 - Conflict scan: `_active/` = DOC-TABLES-305 (FE) only; 302 docs keys free; no overlap.
 - NEXT: TZ-OPS-303 (Docs Integrity Closeout) — strict queue order; Deploy: NO
-
-## Checkpoint 2026-08-09T13:15:28Z · TZ-SALES-328 READY FOR REVIEW
-- READY: Create КП shop-витрина uses responsive `PiShowcaseCard md` cards with photo/placeholder, equal-height grid, search/category filters, API-backed pager, Add/Edit/Create actions.
-- Gates: frontend tsc PASS; focused rail 4/4; proposal-create 11/11; diff-check PASS.
-- Canonical implementation: `6143447f`; active marker remains until Cursor/PO visual PASS.
-- Visual required: shop-like cards, photo/placeholder, equal row heights, filters/pager, Add keeps flyout open, Edit/Create dialogs, no A4 compression.
-- Foreign DOC-343 backend/docs WIP remains preserved/excluded; 322, 320, deploy untouched.
-- NEXT: Cursor/PO visual PASS → archive/lock/remove `_active` → closeout commit/push.
-- Deploy: NO
 
 ## Checkpoint 2026-08-09T13:10:04Z · TZ-SALES-325 DONE / Cursor-PO visual PASS
 - DONE: request-only `previewLines` bind from Create КП `draftLines` into the assigned line-items table; empty lines retain the 324 skeleton.
