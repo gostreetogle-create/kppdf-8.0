@@ -480,7 +480,15 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleFamily: (p: Proposal) => void;
-      openVariantView: (id: string) => void;
+      openVariantView: (member: {
+        id: string;
+        number: string;
+        organizationId: string;
+        familyRole: string;
+        familyVersion: number;
+        total: number;
+        status: string;
+      }) => void;
       familyVariantsFor: (id: string) => { id: string }[];
       expandedFamilyId: () => string | null;
     };
@@ -492,12 +500,19 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(comp.familyVariantsFor('p1').length).toBe(1);
 
     dialogSpy.open.mockClear();
-    comp.openVariantView('p-var');
-    await tickMicrotask();
-    expect(findByIdMock).toHaveBeenCalledWith('p-var');
+    comp.openVariantView({
+      id: 'p-var',
+      number: 'QTN-001-B',
+      organizationId: 'org-2',
+      familyRole: 'variant',
+      familyVersion: 1,
+      total: 10000,
+      status: 'draft',
+    });
+    expect(dialogSpy.open).toHaveBeenCalled();
     expect(dialogSpy.open.mock.calls[0][1]?.data).toMatchObject({
-      mode: 'view',
-      proposal: expect.objectContaining({ _id: 'p-var' }),
+      member: expect.objectContaining({ id: 'p-var' }),
+      organizationName: 'ООО Бета',
     });
   });
 

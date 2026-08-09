@@ -13,6 +13,7 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
 import { Router } from '@angular/router';
+import { OrganizationsService, Organization } from '../../../shared/services/organizations.service';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { PiRowActionsComponent } from '../../../shared/ui/pi-row-actions/pi-row-actions.component';
@@ -33,15 +34,16 @@ import {
 } from '../../../shared/services/pi-counterparty.service';
 import {
   Proposal,
+  ProposalFamilyMemberSummary,
   ProposalFamilyResponse,
   ProposalStatus,
   ProposalVersionSummary,
   ProposalsService,
   estimateFamilyTotal,
 } from '../../../shared/services/pi-proposals.service';
-import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
 import { ProposalFamilyAttachDialogComponent } from './proposal-family-attach-dialog.component';
-import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
+import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
+import { ProposalVariantDialogComponent } from './proposal-variant-dialog.component';
 
 type SortKey = 'number' | 'date' | 'total' | 'status';
 
@@ -283,7 +285,7 @@ function counterpartyIdOf(row: Proposal): string {
                         type="button"
                         class="block w-full text-left text-[10px] pi-focus-ring underline underline-offset-2"
                         [attr.data-test]="'family-variant-' + member.id"
-                        (click)="openVariantView(member.id)"
+                        (click)="openVariantView(member)"
                       >
                         {{ orgNameOf(member.organizationId) }}
                         ·
@@ -361,9 +363,8 @@ export class ProposalsPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly expandedVersionsId = signal<string | null>(null);
-  private readonly versionsByProposal = signal<Record<string, ProposalVersionSummary[]>>({});
-
   protected readonly expandedFamilyId = signal<string | null>(null);
+  private readonly versionsByProposal = signal<Record<string, ProposalVersionSummary[]>>({});
   private readonly familyByProposal = signal<Record<string, ProposalFamilyResponse>>({});
 
   protected readonly RefreshIcon = RefreshCw;
@@ -384,7 +385,6 @@ export class ProposalsPage implements OnInit {
   private readonly counterpartiesLookup = createLookupTable<Counterparty>(
     this.counterpartyService.list({ limit: 200 }),
   );
-
   private readonly organizationsLookup = createLookupTable<Organization>(
     this.organizationsService.list({ limit: 200 }),
   );
@@ -522,8 +522,8 @@ export class ProposalsPage implements OnInit {
       counterpartyId: this.counterpartyTplRef,
       status: this.statusTplRef,
       convertedOrderId: this.convertTplRef,
-      currentVersion: this.versionsTplRef,
       familyRole: this.familyTplRef,
+      currentVersion: this.versionsTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
@@ -686,17 +686,14 @@ export class ProposalsPage implements OnInit {
     });
   }
 
-  protected openVariantView(variantId: string): void {
-    this.service.findById(variantId).subscribe((res) => {
-      if (!res.ok) {
-        this.toast.error(extractErrorMessage(res.error));
-        return;
-      }
-      this.dialog.open(ProposalFormDialogComponent, {
-        data: { proposal: res.data, mode: 'view' },
-        width: 'lg',
-        parentDestroyRef: this.destroyRef,
-      });
+  protected openVariantView(member: ProposalFamilyMemberSummary): void {
+    this.dialog.open(ProposalVariantDialogComponent, {
+      data: {
+        member,
+        organizationName: this.orgNameOf(member.organizationId),
+      },
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
     });
   }
 

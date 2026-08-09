@@ -17,7 +17,7 @@
 
 - Expand «Семья» → `GET /quotations/:id/family`; варианты по Organization.
 - «Несколько фирм» → attach dialog: org + % + колонка **оценка** (UI preview, не BE total).
-- Клик variant → `ProposalFormDialog` `mode: 'view'` (read-only).
+- Клик variant → отдельный `ProposalVariantDialogComponent` (read-only; строки и цены не редактируются).
 - «Синхронизировать» (master) → confirm → `POST …/sync-from-master`.
 
 ## Не здесь

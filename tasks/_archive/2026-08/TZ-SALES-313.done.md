@@ -26,7 +26,7 @@ supersedes: TZ-SALES-304
 - отдельная колонка Семья (не Versions);
 - expand → variants по Organization;
 - «Несколько фирм» attach с % и UI-колонкой «оценка»;
-- variant → read-only ProposalFormDialog;
+- variant → отдельный read-only `ProposalVariantDialogComponent`;
 - sync master → confirm + API.
 
 ## Gates
@@ -39,6 +39,6 @@ supersedes: TZ-SALES-304
 
 - `frontend/src/app/shared/services/pi-proposals.service.ts` (+spec)
 - `frontend/src/app/pages/commercial/proposals/proposals.page.ts` (+spec)
-- `frontend/src/app/pages/commercial/proposals/proposal-form-dialog.component.ts`
 - `frontend/src/app/pages/commercial/proposals/proposal-family-attach-dialog.component.ts`
+- `frontend/src/app/pages/commercial/proposals/proposal-variant-dialog.component.ts`
 - page docs / WAVE / checklist / archive / lock
