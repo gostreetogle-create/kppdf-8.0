@@ -73,7 +73,7 @@
 
 | Computed | Трансформация |
 |----------|--------------|
-| `listParams` | `{ page, limit: 50, search?, materialKind? }` |
+| `listParams` | `{ page, limit: 10, search?, materialKind? }` |
 | `data` | `listRes.value()?.items ?? []` |
 | `total` | `listRes.value()?.total ?? 0` |
 | `loading` | `listRes.isLoading()` |

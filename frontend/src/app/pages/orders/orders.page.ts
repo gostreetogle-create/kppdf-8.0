@@ -35,7 +35,7 @@ import { OrderFormDialogComponent } from './order-form-dialog.component';
 type SortKey = 'number' | 'date' | 'total' | 'status';
 
 /** Client-side pagination page size for /orders flat-array endpoint. */
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',

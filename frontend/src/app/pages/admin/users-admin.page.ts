@@ -54,7 +54,7 @@ import {
  * error, so RxJS never logs noise for expected 4xx responses.
  */
 type ClientUser = AdminUser;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 @Component({
   selector: 'pi-users-admin-page',

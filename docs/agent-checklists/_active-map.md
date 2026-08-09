@@ -1,14 +1,16 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-09T01:20:00Z · TZ-UX-314 READY (list PAGE_SIZE=10)
-- DONE: none this slot
+## Checkpoint 2026-08-09T01:40:00Z · UX-314 DONE · WAVE-PERF-PHOTOS READY
+- DONE: **TZ-UX-314** — PAGE_SIZE=10 на рабочих списках (вкл. products/materials/counterparties pager); Cursor session
 - IN PROGRESS: none
-- NOT DONE / NEXT: **TZ-UX-314** — единый `PAGE_SIZE=10` на рабочих списках (products/materials/…); counterparties pager+limit=10
-- Source: `tasks/TZ-UX-314-list-page-size-10.md` · checklist `docs/agent-checklists/TZ-UX-314.md`
-- Prompt: см. one-liner в TZ
-- _active/: empty (claim = executor)
-- Ban: picker `limit:200` · A4 pageSize · forms demo · generated-document HTML strip (отдельный follow-up)
+- NOT DONE / NEXT: **WAVE-PERF-PHOTOS** — TZ-PHOTO-301 → 302 → 303 (`tasks/_backlog/perf/`)
+- Prompt: см. `WAVE-PERF-PHOTOS.md`
+- _active/: empty
+- Ban: ломать дизайн/бизнес ради балла Lighthouse · удалять original фото · deploy без команды
 - Deploy: NO
+
+## Checkpoint 2026-08-09T01:20:00Z · TZ-UX-314 READY (list PAGE_SIZE=10)
+- superseded by 01:40 DONE
 
 ## Checkpoint 2026-08-08T19:51:41Z · WAVE-PRODUCT-EDITOR DONE
 - DONE: TZ-PRODUCTS-309 — Product FullEditor edit mode now reuses the existing `ProductBomPanel` for passport + composition in one dialog; create mode keeps passport-only flow with a clear save-then-edit hint. Single composition API/write-path preserved.

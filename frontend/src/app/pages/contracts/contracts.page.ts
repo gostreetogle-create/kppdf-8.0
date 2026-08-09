@@ -35,7 +35,7 @@ import { ContractFormDialogComponent } from './contract-form-dialog.component';
 type SortKey = 'number' | 'expiresAt' | 'totalAmount' | 'status';
 
 /** Client-side pagination page size for /contracts flat-array endpoint. */
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 /**
  * Contract lifecycle for sort: draft → sent → signed → active →

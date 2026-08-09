@@ -48,7 +48,7 @@ import { ROLE_FORM_COPY, permissionsSummary, roleLabelRu } from './permission-la
  * Non-system (custom / director / manager when `isSystem: false`) keep Edit.
  */
 type ClientRole = AdminRole;
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 @Component({
   selector: 'pi-roles-admin-page',

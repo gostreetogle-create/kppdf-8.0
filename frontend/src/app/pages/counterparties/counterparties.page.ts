@@ -25,6 +25,9 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { CounterpartyFullEditorDialogComponent } from './counterparty-full-editor-dialog.component';
 
+/** Server-side list page size (TZ-UX-314). */
+const PAGE_SIZE = 10;
+
 /**
  * TZ-NAV-301 — thin Заказчики list (Counterparty API).
  * TZ-NAV-302 — Клиенты chips (Заказчики | Люди).
@@ -105,8 +108,9 @@ import { CounterpartyFullEditorDialogComponent } from './counterparty-full-edito
           [rowActions]="rowActionsTplBinding()"
           [loading]="loading()"
           [total]="total()"
-          [page]="1"
-          [pageSize]="200"
+          [page]="page()"
+          [pageSize]="PAGE_SIZE"
+          (pageChange)="onPageChange($event)"
           emptyMessage="Заказчиков пока нет. Нажмите «Создать», чтобы добавить первого."
         />
       </div>
@@ -125,6 +129,8 @@ export class CounterpartiesPage implements OnInit {
   private readonly injector = inject(Injector);
 
   protected readonly chips = CLIENTS_SECTION_CHIPS;
+  protected readonly PAGE_SIZE = PAGE_SIZE;
+  protected readonly page = signal(1);
 
   protected readonly cols: ColumnDef<Counterparty>[] = [
     { key: 'name', label: 'Название', sortable: false },
@@ -207,10 +213,15 @@ export class CounterpartiesPage implements OnInit {
     });
   }
 
+  protected onPageChange(next: number): void {
+    this.page.set(next);
+    this.reload();
+  }
+
   private reload(): void {
     this.loading.set(true);
     this.api
-      .list({ page: 1, limit: 200 })
+      .list({ page: this.page(), limit: PAGE_SIZE })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         this.loading.set(false);
@@ -221,8 +232,16 @@ export class CounterpartiesPage implements OnInit {
           return;
         }
         this.error.set(null);
-        this.rows.set(res.data.items ?? []);
-        this.total.set(res.data.total ?? 0);
+        const items = res.data.items ?? [];
+        const total = res.data.total ?? 0;
+        this.rows.set(items);
+        this.total.set(total);
+        // After delete on last page — step back once.
+        const maxPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+        if (items.length === 0 && total > 0 && this.page() > maxPage) {
+          this.page.set(maxPage);
+          this.reload();
+        }
       });
   }
 }

@@ -7,4 +7,4 @@
 | `_archive/` | Сделано |
 | `_park/` | Отложено — не смотреть без нужды |
 
-Сейчас: **TZ-UX-314** (PAGE_SIZE=10 на списках) READY → дальше idle / SALES-304 park.
+Сейчас: **TZ-UX-314 DONE** → next **WAVE-PERF-PHOTOS** (`tasks/_backlog/perf/`, PHOTO-301→303).

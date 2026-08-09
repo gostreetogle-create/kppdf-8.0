@@ -41,7 +41,7 @@ describe('CounterpartiesPage (TZ-PARTY-301 stub INN · TZ-PARTY-303 CRUD)', () =
   async function render(items: Counterparty[], deleteConfirmed = true) {
     list = jest
       .fn()
-      .mockReturnValue(of({ ok: true, data: { items, total: items.length, page: 1, limit: 200 } }));
+      .mockReturnValue(of({ ok: true, data: { items, total: items.length, page: 1, limit: 10 } }));
     remove = jest.fn().mockReturnValue(of({ ok: true, data: undefined }));
     open = jest
       .fn()

@@ -193,7 +193,7 @@ export class ColorReferencesPage {
   protected readonly searchQuery = signal('');
   protected readonly activeFilter = signal<ActiveFilter>('all');
   protected readonly page = signal(1);
-  protected readonly pageSize = 100;
+  protected readonly pageSize = 10;
 
   /**
    * Full filtered + sorted list (name/slug search + active state filter;

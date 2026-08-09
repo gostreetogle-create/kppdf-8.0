@@ -31,7 +31,7 @@ import { WorkTypeFormDialogComponent } from './work-type-form-dialog.component';
 
 type SortKey = 'name' | 'section' | 'department' | 'hourlyRate' | 'days' | null;
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 function compareValues(av: unknown, bv: unknown, sign: 1 | -1): number {
   if (av == null && bv == null) return 0;

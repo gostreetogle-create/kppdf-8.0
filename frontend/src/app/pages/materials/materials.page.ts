@@ -42,7 +42,7 @@ import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 /** Server-side pagination page size for /materials endpoint. */
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 /**
  * Полная документация страницы: docs/pages/materials.page.md

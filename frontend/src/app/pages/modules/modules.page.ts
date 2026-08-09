@@ -48,7 +48,7 @@ import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind
 type SortKey = 'name' | 'article' | null;
 
 /** Client-side pagination page size for /modules flat-array endpoint. */
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 /**
  * Compare two values per the sign direction. Mirrors `compareValues`

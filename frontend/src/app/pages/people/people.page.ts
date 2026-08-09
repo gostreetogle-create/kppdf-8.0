@@ -32,7 +32,7 @@ import { PeopleFormDialogComponent } from './people-form-dialog.component';
 
 type SortKey = 'lastName' | 'position' | 'email' | null;
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 /**
  * TZ-UX-306 — каталог «Люди» (/people) поверх Worker API.

@@ -37,7 +37,7 @@ import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 
 type SortKey = 'name' | 'inn' | 'shortName' | null;
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 10;
 
 /**
  * TZ-104.3 batch-2-A-mixed — OrganizationsPage migrated to <app-pi-table>,

@@ -62,11 +62,11 @@ describe('RolesAdminPage capability gating', () => {
 
   async function createPage() {
     const fixture = TestBed.createComponent(RolesAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [CLIENT_ROLE],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -77,11 +77,11 @@ describe('RolesAdminPage capability gating', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).not.toBeNull();
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -92,20 +92,20 @@ describe('RolesAdminPage capability gating', () => {
   it('requests the selected page once and applies returned metadata', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [CLIENT_ROLE],
       total: 101,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     comp.onPageChange(2);
-    const requests = httpMock.match(`${BASE_URL}/admin/roles?page=2&limit=50`);
+    const requests = httpMock.match(`${BASE_URL}/admin/roles?page=2&limit=10`);
     expect(requests).toHaveLength(1);
     requests[0].flush({
       items: [{ ...CLIENT_ROLE, id: 'r2', name: 'manager' }],
       total: 101,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
     expect(comp.page()).toBe(2);
     expect(comp.total()).toBe(101);
@@ -115,18 +115,18 @@ describe('RolesAdminPage capability gating', () => {
   it('resets to page one and includes search in the next request', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [CLIENT_ROLE],
       total: 101,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     comp.onPageChange(2);
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=2&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=2&limit=10`).flush({
       items: [],
       total: 101,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
     comp.onSearchInput({ target: { value: 'manager' } } as unknown as Event);
     const requests = httpMock.match(
@@ -134,23 +134,23 @@ describe('RolesAdminPage capability gating', () => {
     );
     expect(requests).toHaveLength(1);
     expect(requests[0].request.params.get('page')).toBe('1');
-    requests[0].flush({ items: [CLIENT_ROLE], total: 1, page: 1, limit: 50 });
+    requests[0].flush({ items: [CLIENT_ROLE], total: 1, page: 1, limit: 10 });
     expect(comp.page()).toBe(1);
   });
 
   it('ignores a stale earlier page response after a newer request wins', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    const initial = httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`);
+    const initial = httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`);
     comp.onPageChange(2);
-    const pageTwo = httpMock.expectOne(`${BASE_URL}/admin/roles?page=2&limit=50`);
+    const pageTwo = httpMock.expectOne(`${BASE_URL}/admin/roles?page=2&limit=10`);
     pageTwo.flush({
       items: [{ ...CLIENT_ROLE, id: 'r2', name: 'page-two' }],
       total: 100,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
-    initial.flush({ items: [CLIENT_ROLE], total: 100, page: 1, limit: 50 });
+    initial.flush({ items: [CLIENT_ROLE], total: 100, page: 1, limit: 10 });
     expect(comp.page()).toBe(2);
     expect(comp.roles()[0].name).toBe('page-two');
   });
@@ -184,7 +184,7 @@ describe('RolesAdminPage capability gating', () => {
   it('shows system badge + view for frozen system roles (TZ-ADMIN-301)', async () => {
     hasAny.mockImplementation(() => true);
     const fixture = TestBed.createComponent(RolesAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [
         {
           id: 'sys-admin',
@@ -197,7 +197,7 @@ describe('RolesAdminPage capability gating', () => {
       ],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -213,7 +213,7 @@ describe('RolesAdminPage capability gating', () => {
   it('shows Edit for non-system director/manager (TZ-ADMIN-302)', async () => {
     hasAny.mockImplementation((keys: readonly string[]) => keys.includes('role:write'));
     const fixture = TestBed.createComponent(RolesAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [
         {
           id: 'r-dir',
@@ -234,7 +234,7 @@ describe('RolesAdminPage capability gating', () => {
       ],
       total: 2,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -248,11 +248,11 @@ describe('RolesAdminPage capability gating', () => {
   it('tracks row loading and clears it after an error', () => {
     const fixture = TestBed.createComponent(RolesAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/roles?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const http = TestBed.inject(HttpClient);

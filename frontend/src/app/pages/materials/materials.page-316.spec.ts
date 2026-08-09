@@ -54,7 +54,7 @@ describe('MaterialsPage kindFilter (TZ-CATALOG-316)', () => {
         {
           provide: MaterialsService,
           useValue: {
-            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } }),
+            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 10 } }),
             findById: () => of({ ok: true, data: {} as never }),
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
@@ -83,7 +83,7 @@ describe('MaterialsPage kindFilter (TZ-CATALOG-316)', () => {
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 50 });
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
     TestBed.flushEffects();
     fixture.detectChanges();
@@ -102,7 +102,7 @@ describe('MaterialsPage kindFilter (TZ-CATALOG-316)', () => {
         r.params.get('page') === '1',
     );
     expect(req.request.params.has('search')).toBe(false);
-    req.flush({ items: [], total: 0, page: 1, limit: 50 });
+    req.flush({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
   });
 });

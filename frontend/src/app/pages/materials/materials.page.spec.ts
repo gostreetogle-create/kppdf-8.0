@@ -43,7 +43,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
  * Why function matchers EVERY time:
  *   `httpMock.expectOne(string)` matches `req.urlWithParams`
  *   (URL INCLUDING query string), so `'/api/materials'` would NOT
- *   match `'/api/materials?page=1&limit=50'`. The function form
+ *   match `'/api/materials?page=1&limit=10'`. The function form
  *   checks `r.url` (the path) directly, regardless of query string.
  *
  * Setup details:
@@ -110,7 +110,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
         {
           provide: MaterialsService,
           useValue: {
-            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } }),
+            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 10 } }),
             findById: () => of({ ok: true, data: {} as never }),
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
@@ -165,7 +165,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
     expect(comp.cellTemplates['stockQty']).toBeDefined();
 
     // Слить pending GET /materials, иначе httpMock.verify() упадёт.
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 50 });
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
   });
 
@@ -180,7 +180,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
     const req = httpMock.expectOne(matchListGet);
     // req is a TestRequest; req.request is the actual HttpRequest.
     expect(req.request.params.get('page')).toBe('1');
-    expect(req.request.params.get('limit')).toBe('50');
+    expect(req.request.params.get('limit')).toBe('10');
     // initial debouncedSearch is '' (falsy) → search param omitted entirely
     expect(req.request.params.has('search')).toBe(false);
 
@@ -188,7 +188,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
       items: fakeItems,
       total: fakeItems.length,
       page: 1,
-      limit: 50,
+      limit: 10,
     };
     req.flush(body);
     await tickMicrotask();
@@ -280,7 +280,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
     flushEffects();
 
     // 1. Initial load.
-    flushBody({ items: [], total: 0, page: 1, limit: 50 });
+    flushBody({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
     flushEffects();
     fixture.detectChanges();
@@ -299,13 +299,13 @@ describe('MaterialsPage (httpResource refactor)', () => {
         r.url === listUrl &&
         r.params.get('search') === 'steel' &&
         r.params.get('page') === '1' &&
-        r.params.get('limit') === '50',
+        r.params.get('limit') === '10',
     );
     req.flush({
       items: [fakeItems[0]],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await tickMicrotask();
     flushEffects();

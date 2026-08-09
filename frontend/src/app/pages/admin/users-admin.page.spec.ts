@@ -84,16 +84,16 @@ describe('UsersAdminPage', () => {
   it('creates successfully and issues the initial list request', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     expect(fixture.componentInstance).toBeTruthy();
-    const req = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`);
+    const req = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`);
     expect(req.request.method).toBe('GET');
-    req.flush({ items: [], total: 0, page: 1, limit: 50 });
+    req.flush({ items: [], total: 0, page: 1, limit: 10 });
   });
 
   it('loads users on construction', async () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance;
-    const req = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`);
-    req.flush({ items: [CLIENT_USER], total: 1, page: 1, limit: 50 });
+    const req = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`);
+    req.flush({ items: [CLIENT_USER], total: 1, page: 1, limit: 10 });
     await fixture.whenStable();
 
     expect(comp.users().length).toBe(1);
@@ -105,11 +105,11 @@ describe('UsersAdminPage', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[aria-busy="true"]')).not.toBeNull();
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -120,21 +120,21 @@ describe('UsersAdminPage', () => {
   it('requests the selected page exactly once and applies returned metadata', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [CLIENT_USER],
       total: 101,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     comp.onPageChange(2);
-    const requests = httpMock.match(`${BASE_URL}/admin/users?page=2&limit=50`);
+    const requests = httpMock.match(`${BASE_URL}/admin/users?page=2&limit=10`);
     expect(requests).toHaveLength(1);
     requests[0].flush({
       items: [{ ...CLIENT_USER, id: 'u2', username: 'bob' }],
       total: 101,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
 
     expect(comp.page()).toBe(2);
@@ -145,18 +145,18 @@ describe('UsersAdminPage', () => {
   it('resets to page one and includes search in the next request', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [CLIENT_USER],
       total: 101,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     comp.onPageChange(2);
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=2&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=2&limit=10`).flush({
       items: [],
       total: 101,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
 
     comp.onSearchInput({ target: { value: 'alice' } } as unknown as Event);
@@ -165,23 +165,23 @@ describe('UsersAdminPage', () => {
     );
     expect(requests).toHaveLength(1);
     expect(requests[0].request.params.get('page')).toBe('1');
-    requests[0].flush({ items: [CLIENT_USER], total: 1, page: 1, limit: 50 });
+    requests[0].flush({ items: [CLIENT_USER], total: 1, page: 1, limit: 10 });
     expect(comp.page()).toBe(1);
   });
 
   it('ignores a stale earlier page response after a newer request wins', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    const initial = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`);
+    const initial = httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`);
     comp.onPageChange(2);
-    const pageTwo = httpMock.expectOne(`${BASE_URL}/admin/users?page=2&limit=50`);
+    const pageTwo = httpMock.expectOne(`${BASE_URL}/admin/users?page=2&limit=10`);
     pageTwo.flush({
       items: [{ ...CLIENT_USER, id: 'u2', username: 'page-two' }],
       total: 100,
       page: 2,
-      limit: 50,
+      limit: 10,
     });
-    initial.flush({ items: [CLIENT_USER], total: 100, page: 1, limit: 50 });
+    initial.flush({ items: [CLIENT_USER], total: 100, page: 1, limit: 10 });
     expect(comp.page()).toBe(2);
     expect(comp.users()[0].username).toBe('page-two');
   });
@@ -189,11 +189,11 @@ describe('UsersAdminPage', () => {
   it('maps LAST_ADMIN_INVARIANT 403 to the invariant toast', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const obs = silentPost(http, `${BASE_URL}/admin/users/u1/deactivate`, {});
@@ -213,11 +213,11 @@ describe('UsersAdminPage', () => {
   it('shows the raw error message for non-invariant failures', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const obs = silentDelete(http, `${BASE_URL}/admin/users/u1`);
@@ -232,11 +232,11 @@ describe('UsersAdminPage', () => {
 
   it('hides users action controls when capabilities are missing', async () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [CLIENT_USER],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await fixture.whenStable();
     fixture.detectChanges();
@@ -255,11 +255,11 @@ describe('UsersAdminPage', () => {
   it('renders users actions only for their required capabilities', async () => {
     hasAny.mockImplementation((keys: readonly string[]) => keys.includes('user:write'));
     const writeFixture = TestBed.createComponent(UsersAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [CLIENT_USER],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await writeFixture.whenStable();
     writeFixture.detectChanges();
@@ -281,11 +281,11 @@ describe('UsersAdminPage', () => {
 
     hasAny.mockImplementation((keys: readonly string[]) => keys.includes('user:admin'));
     const adminFixture = TestBed.createComponent(UsersAdminPage);
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [CLIENT_USER],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
     await adminFixture.whenStable();
     adminFixture.detectChanges();
@@ -305,11 +305,11 @@ describe('UsersAdminPage', () => {
   it('tracks row loading, blocks duplicate row mutation, and clears on error', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const obs = silentPost(http, `${BASE_URL}/admin/users/u1/deactivate`, {});
@@ -327,11 +327,11 @@ describe('UsersAdminPage', () => {
   it('wires reset-password POST and clears row loading on success and error', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const success = comp.resetPassword('u1', '12345678');
@@ -352,11 +352,11 @@ describe('UsersAdminPage', () => {
   it('clears row loading after a successful mutation and refreshes', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const obs = silentPost(http, `${BASE_URL}/admin/users/u1/activate`, {});
@@ -364,22 +364,22 @@ describe('UsersAdminPage', () => {
     expect(comp.loadingRowId()).toBe('u1');
     httpMock.expectOne(`${BASE_URL}/admin/users/u1/activate`).flush(CLIENT_USER);
     expect(comp.loadingRowId()).toBeNull();
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
   });
 
   it('shows the success toast and refreshes after a successful mutation', () => {
     const fixture = TestBed.createComponent(UsersAdminPage);
     const comp = fixture.componentInstance as unknown as PageHarness;
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
 
     const obs = silentPost(http, `${BASE_URL}/admin/users/u1/activate`, {});
@@ -392,11 +392,11 @@ describe('UsersAdminPage', () => {
 
     expect(toastSuccess).toHaveBeenCalledWith('Пользователь активирован');
     // success → refresh() → second list request.
-    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=50`).flush({
+    httpMock.expectOne(`${BASE_URL}/admin/users?page=1&limit=10`).flush({
       items: [],
       total: 0,
       page: 1,
-      limit: 50,
+      limit: 10,
     });
   });
 });

@@ -42,7 +42,7 @@ import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
 type SortKey = 'number' | 'date' | 'total' | 'status';
 
 /** Client-side pagination page size for /quotations flat-array endpoint. */
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
   draft: 'Черновик',
