@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T16:55:00Z · WAVE-KP-TABLE-CONFIG READY (docs)
+- Канон: `docs/audits/2026-08-09-kp-table-config-canon.md` — пресет в Документах; Create = экземпляр раскладки; наценка фоном; НДС в подвале.
+- TZ: DOC-TABLES-307 → SALES-330 → SALES-331 · wave `tasks/_backlog/kp-vitrine/WAVE-KP-TABLE-CONFIG.md`
+- Промпт: `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-CONFIG-CONTINUOUS.md`
+- Checklists RESERVED: `TZ-DOC-TABLES-307` / `TZ-SALES-330` / `TZ-SALES-331`
+- BAN: колонка скидки; PATCH TableTemplate из Create; 320/322; deploy
+- NEXT: claim 307 when PO hands continuous prompt (после/мимо visual 305)
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T13:51:37Z · TZ-SALES-328 DONE / Cursor-PO visual PASS
 - DONE: Create КП product rail accepted in the final `md` + exactly 3-column + 58rem products-flyout variant.
 - Implementation commits: `6143447f` (feat) + `1e40e518` (sm trial) + `3b11f89c` (md×3 + 58rem final visual).

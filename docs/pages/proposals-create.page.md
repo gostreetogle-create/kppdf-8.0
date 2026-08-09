@@ -32,3 +32,4 @@
 - **328** — visual trial: `PiShowcaseCard md` grid **3-col** in the wider ~58rem products flyout (narrow fallback 2→1), slightly compact rail spacing, search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии
 - Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**
 - **318** cascade — SUPERSEDED by 328
+- **WAVE-KP-TABLE-CONFIG** (канон [`…-kp-table-config-canon.md`](../audits/2026-08-09-kp-table-config-canon.md)): **307** пресет КП в Документах → **330** экземпляр раскладки (панель «Таблица») → **331** наценка→цена + footer Итого/НДС; скидка не колонкой

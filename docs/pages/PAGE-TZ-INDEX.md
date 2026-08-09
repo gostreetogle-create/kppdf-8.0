@@ -13,7 +13,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity свойства шаблона (name/category/page/orient) |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity 2026-08-08 |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
-| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–304 DONE**; **305 READY / ждёт visual PO** compact + fields multi-overflow |
+| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–304 DONE**; **305 READY / ждёт visual PO**; **307 READY** category КП + seed preset (`WAVE-KP-TABLE-CONFIG`) |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
 | `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 
@@ -49,7 +49,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | proposals.page.md | **SALES-301**; **303** family API; **313 DONE** family expand (ex-304); **SALES-310 DONE** — TOC + `Создать КП`/`Все КП` |
-| `/proposals/create` | **proposals-create.page.md** | **317/319/321 DONE**; wave-2 **323–325**; витрина READY **326–328** (318→328); **320/322** PARK |
+| `/proposals/create` | **proposals-create.page.md** | **317/319/321 DONE**; wave-2 **323–325**; витрина **326–328 DONE**; **330/331 READY** table layout + VAT footer (`WAVE-KP-TABLE-CONFIG`); **320/322** PARK |
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
 ## Reference

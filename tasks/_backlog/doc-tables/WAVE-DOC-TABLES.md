@@ -29,6 +29,7 @@
 | 3 | **TZ-DOC-TABLES-303** registry: product (+ др.) поля по schema SoT + фото-слот | — | DONE |
 | 4 | **TZ-DOC-TABLES-304** auto-sync registry ← mongoose schema | **после 303**; большой | DONE |
 | 5 | **TZ-DOC-TABLES-305** dialog compact + category select + fields multi-overflow | после 302 | **READY** |
+| 6 | **TZ-DOC-TABLES-307** category `kp` + seed КП-preset + apply-preset | после 305 visual желательно | **READY** → см. `../kp-vitrine/WAVE-KP-TABLE-CONFIG.md` |
 
 ## Честный север по «автополям»
 

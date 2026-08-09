@@ -78,8 +78,11 @@
 | TZ-DOC-TABLES-303 | Product schema-backed registry fields + `photoIds` text slot |
 | TZ-DOC-TABLES-304 | Product field auto-sync from schema paths with deny-list and label/type policy |
 | TZ-DOC-TABLES-305 | Compact settings row, enum «Тип», source fields multi-overflow and taller column headers |
+| TZ-DOC-TABLES-307 | Category `kp` («КП») + seed «КП — позиции» + apply-preset columns (WAVE-KP-TABLE-CONFIG) |
 | TZ-DOC-335 | `editId` queryParam auto-open from builder |
 | TZ-DOC-336 | Pi shell; remove promo; copy slot; dialog FormField/Switch |
+
+**КП-канон:** [`docs/audits/2026-08-09-kp-table-config-canon.md`](../audits/2026-08-09-kp-table-config-canon.md) — пресет здесь; порядок столбцов на сделку — в Create (330), не PATCH этого шаблона из Create.
 
 ---
 
