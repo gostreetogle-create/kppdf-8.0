@@ -1,5 +1,20 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:22:33Z · TZ-DOC-343 DONE
+- DONE: Mode B create-parity (name/category/pageSize/orientation + BE orientation in update)
+- Gates: BE/FE tsc PASS · builder-inspector 16/16
+- Archive: `tasks/_archive/2026-08/TZ-DOC-343.done.md`
+- Lock: `.mimocode/locks/TZ-DOC-343-builder-template-props-create-parity.lock`
+- _active/: TZ-DOC-342 · TZ-SALES-317 (peers)
+- Deploy: NO
+
+## Checkpoint 2026-08-09T03:23:00Z · TZ-DOC-343 READY FOR REVIEW (create-parity)
+- Mode B: Название + Категория + Формат + Ориентация + Фон/нумерация
+- BE update writes orientation; gates tsc BE/FE + builder-inspector 16/16
+- Marker: `tasks/_active/TZ-DOC-343.md` (await visual PASS → archive)
+- Peers: DOC-342 / SALES-317 — upload/FE proposals untouched except orientation line in shared service
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T03:25:00Z · TZ-DOC-343 scope expanded (create-parity)
 - PO follow-up: category + all create fields must be editable in Mode B props
 - TZ file on main updated (ddb5cd52): Basics/Page/Background + BE orientation in update()

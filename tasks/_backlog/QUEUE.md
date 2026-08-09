@@ -20,10 +20,10 @@
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- Свойства шаблона в builder: `tasks/_backlog/TZ-DOC-343-builder-editable-template-name.md` · `tasks/prompts/TZ-DOC-343-PROMPT.md`  
-- Hotfix upload: DOC-342 (если ещё review)  
-- КП студия: SALES-317 (если active/review)  
-- Doc tables: wave complete; idle until new PO wave or explicit deploy command
+- **Параллель (пока PO на шаблонах/КП):** closeout `TZ-DOC-342` → `TZ-DOC-343` (оба READY FOR REVIEW; код есть; не трогать SALES-317)  
+- После idle: предложить деплой **без** запуска, либо ждать unpark / новый TZ от Cursor  
+- **Не брать:** SALES-317 (review у PO), SALES-320/INN park, stale READY в backlog без `.done` в archive = уже DONE  
+- Doc tables / GOLD-332 / UX-312 / DEDUP-301…304 / PHOTO — **DONE**, не воскрешать
 
 ## Idle / park / done
 
