@@ -38,6 +38,31 @@ export interface ProposalVersion {
   payload: Record<string, unknown>;
 }
 
+/** D21 / SALES-303 family role on Quotation. */
+export type ProposalFamilyRole = 'solo' | 'master' | 'variant';
+
+export interface ProposalFamilyMemberSummary {
+  id: string;
+  number: string;
+  organizationId: string;
+  familyRole: ProposalFamilyRole | string;
+  familyVersion: number;
+  orgMarkupPercent?: number;
+  total: number;
+  status: string;
+}
+
+export interface ProposalFamilyResponse {
+  master: ProposalFamilyMemberSummary;
+  variants: ProposalFamilyMemberSummary[];
+  familyVersion: number;
+}
+
+export interface AttachOrganizationItem {
+  organizationId: string;
+  orgMarkupPercent?: number;
+}
+
 export interface Proposal {
   _id: string;
   number: string;
@@ -63,6 +88,11 @@ export interface Proposal {
   createdAt?: string;
   updatedAt?: string;
   currentVersion?: number;
+  /** D21 family fields (SALES-303). Default solo when absent. */
+  familyRole?: ProposalFamilyRole;
+  masterId?: string;
+  familyVersion?: number;
+  orgMarkupPercent?: number;
 }
 
 /**
@@ -138,4 +168,36 @@ export class ProposalsService {
       body,
     );
   }
+
+  /** TZ-SALES-313 — GET /quotations/:id/family */
+  getFamily(id: string): Observable<SilentResult<ProposalFamilyResponse>> {
+    return silentGet<ProposalFamilyResponse>(this.http, `${this.baseUrl}/quotations/${id}/family`);
+  }
+
+  /** TZ-SALES-313 — POST /quotations/:id/family/attach-organizations */
+  attachOrganizations(
+    id: string,
+    items: AttachOrganizationItem[],
+  ): Observable<SilentResult<ProposalFamilyResponse>> {
+    return silentPost<ProposalFamilyResponse>(
+      this.http,
+      `${this.baseUrl}/quotations/${id}/family/attach-organizations`,
+      { items },
+    );
+  }
+
+  /** TZ-SALES-313 — POST /quotations/:id/family/sync-from-master */
+  syncFromMaster(id: string): Observable<SilentResult<ProposalFamilyResponse>> {
+    return silentPost<ProposalFamilyResponse>(
+      this.http,
+      `${this.baseUrl}/quotations/${id}/family/sync-from-master`,
+      {},
+    );
+  }
+}
+
+/** UI-only estimate: base total × (1 + markup%). Not written to BE. */
+export function estimateFamilyTotal(baseTotal: number, orgMarkupPercent?: number): number {
+  const pct = orgMarkupPercent ?? 0;
+  return Math.round(baseTotal * (1 + pct / 100) * 100) / 100;
 }

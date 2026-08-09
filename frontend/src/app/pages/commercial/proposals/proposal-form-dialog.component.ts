@@ -34,6 +34,21 @@ import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi
 
 type Result = Proposal | null | undefined;
 
+/** Create = null; edit = Proposal; view variant = { proposal, mode:'view' }. */
+export type ProposalFormDialogData =
+  Proposal | null | { proposal: Proposal; mode: 'view' | 'edit' };
+
+function resolveProposalFormData(data: ProposalFormDialogData): {
+  proposal: Proposal | null;
+  readOnly: boolean;
+} {
+  if (data == null) return { proposal: null, readOnly: false };
+  if (typeof data === 'object' && 'mode' in data && 'proposal' in data) {
+    return { proposal: data.proposal, readOnly: data.mode === 'view' };
+  }
+  return { proposal: data, readOnly: false };
+}
+
 const STATUS_OPTIONS: { value: ProposalStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
   { value: 'sent', label: 'Отправлено' },
@@ -87,7 +102,7 @@ interface ItemFormGroup extends FormGroup {
     PiOverflowSelectComponent,
   ],
   template: `
-    <app-pi-dialog [title]="isEdit() ? 'Редактировать КП' : 'Создать КП'" [width]="'lg'">
+    <app-pi-dialog [title]="dialogTitle()" [width]="'lg'">
       <form
         body
         [formGroup]="form"
@@ -111,6 +126,7 @@ interface ItemFormGroup extends FormGroup {
                 placeholder="— выберите —"
                 ariaLabel="Наша организация"
                 dataTest="pr-org"
+                [disabled]="readOnly()"
               />
             </app-pi-form-field>
 
@@ -128,6 +144,7 @@ interface ItemFormGroup extends FormGroup {
                 placeholder="— выберите —"
                 ariaLabel="Контрагент"
                 dataTest="pr-cp"
+                [disabled]="readOnly()"
               />
             </app-pi-form-field>
 
@@ -202,15 +219,17 @@ interface ItemFormGroup extends FormGroup {
           <div>
             <div class="flex items-baseline justify-between mb-form-row">
               <p class="text-sm font-medium">Позиции <span class="text-destructive">*</span></p>
-              <app-pi-button
-                type="button"
-                variant="outline"
-                size="sm"
-                (click)="addItem()"
-                data-test="add-item"
-              >
-                + Добавить позицию
-              </app-pi-button>
+              @if (!readOnly()) {
+                <app-pi-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  (click)="addItem()"
+                  data-test="add-item"
+                >
+                  + Добавить позицию
+                </app-pi-button>
+              }
             </div>
 
             @if (itemsArray.length === 0) {
@@ -236,6 +255,7 @@ interface ItemFormGroup extends FormGroup {
                       placeholder="— выберите —"
                       [ariaLabel]="'Продукт ' + (i + 1)"
                       [dataTest]="'pr-item-product-' + i"
+                      [disabled]="readOnly()"
                     />
                   </label>
 
@@ -271,16 +291,18 @@ interface ItemFormGroup extends FormGroup {
                     />
                   </label>
 
-                  <app-pi-button
-                    type="button"
-                    variant="destructive"
-                    size="icon"
-                    [attr.aria-label]="'Удалить позицию ' + (i + 1)"
-                    (click)="removeItem(i)"
-                    data-test="remove-item"
-                  >
-                    ×
-                  </app-pi-button>
+                  @if (!readOnly()) {
+                    <app-pi-button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      [attr.aria-label]="'Удалить позицию ' + (i + 1)"
+                      (click)="removeItem(i)"
+                      data-test="remove-item"
+                    >
+                      ×
+                    </app-pi-button>
+                  }
                 </div>
               }
             </div>
@@ -308,26 +330,37 @@ interface ItemFormGroup extends FormGroup {
       </form>
 
       <div footer class="flex gap-3">
-        <app-pi-button
-          type="button"
-          variant="default"
-          [disabled]="submitting()"
-          (click)="onSubmit()"
-        >
-          {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
+        @if (!readOnly()) {
+          <app-pi-button
+            type="button"
+            variant="default"
+            [disabled]="submitting()"
+            (click)="onSubmit()"
+          >
+            {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
+          </app-pi-button>
+        }
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()">
+          {{ readOnly() ? 'Закрыть' : 'Отмена' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
 })
 export class ProposalFormDialogComponent {
+  private readonly resolved = resolveProposalFormData(
+    inject<ProposalFormDialogData>(PI_DIALOG_DATA),
+  );
+
   constructor() {
     this.loadLookups();
-    if (this.data) {
-      this.patchFromData(this.data);
+    if (this.proposal) {
+      this.patchFromData(this.proposal);
     } else {
       this.addItem();
+    }
+    if (this.readOnly()) {
+      this.form.disable({ emitEvent: false });
     }
   }
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
@@ -340,11 +373,17 @@ export class ProposalFormDialogComponent {
   private readonly productsService = inject(ProductsService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
-  private readonly data = inject<Proposal | null>(PI_DIALOG_DATA);
+  private readonly proposal = this.resolved.proposal;
 
-  protected readonly isEdit = signal<boolean>(this.data != null);
+  protected readonly readOnly = signal<boolean>(this.resolved.readOnly);
+  protected readonly isEdit = signal<boolean>(this.proposal != null && !this.resolved.readOnly);
   protected readonly submitting = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
+
+  protected readonly dialogTitle = computed(() => {
+    if (this.readOnly()) return 'Просмотр КП (вариант)';
+    return this.isEdit() ? 'Редактировать КП' : 'Создать КП';
+  });
 
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly counterparties = signal<Counterparty[]>([]);
@@ -456,9 +495,11 @@ export class ProposalFormDialogComponent {
    * rule §S1) — catalog renames do NOT mutate existing КП.
    */
   onProductPick(index: number, productId: string): void {
+    if (this.readOnly()) return;
+    const group = this.itemsArray.at(index);
+    group.controls.productId.setValue(productId);
     const selected = this.products().find((p) => p._id === productId);
     if (!selected) return;
-    const group = this.itemsArray.at(index);
     group.controls.productName.setValue(selected.name);
     if (selected.unit && !group.controls.unit.value) {
       group.controls.unit.setValue(selected.unit);
@@ -496,7 +537,7 @@ export class ProposalFormDialogComponent {
   }
 
   protected onSubmit(): void {
-    if (this.submitting()) return;
+    if (this.readOnly() || this.submitting()) return;
     if (this.form.invalid || this.itemsArray.length === 0) {
       this.form.markAllAsTouched();
       if (this.itemsArray.length === 0) {
@@ -530,8 +571,8 @@ export class ProposalFormDialogComponent {
 
     this.submitting.set(true);
     this.errorMessage.set(null);
-    const obs = this.data
-      ? this.service.update(this.data._id, payload)
+    const obs = this.proposal
+      ? this.service.update(this.proposal._id, payload)
       : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {

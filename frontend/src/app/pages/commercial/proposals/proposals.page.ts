@@ -33,11 +33,15 @@ import {
 } from '../../../shared/services/pi-counterparty.service';
 import {
   Proposal,
+  ProposalFamilyResponse,
   ProposalStatus,
   ProposalVersionSummary,
   ProposalsService,
+  estimateFamilyTotal,
 } from '../../../shared/services/pi-proposals.service';
 import { ProposalFormDialogComponent } from './proposal-form-dialog.component';
+import { ProposalFamilyAttachDialogComponent } from './proposal-family-attach-dialog.component';
+import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
 
 type SortKey = 'number' | 'date' | 'total' | 'status';
 
@@ -259,6 +263,64 @@ function counterpartyIdOf(row: Proposal): string {
               </div>
             </ng-template>
 
+            <ng-template #familyTpl let-row>
+              <div
+                class="flex flex-col items-end gap-1"
+                [attr.data-test]="'family-cell-' + row._id"
+              >
+                <button
+                  type="button"
+                  class="text-[10px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
+                  [attr.data-test]="'family-button-' + row._id"
+                  (click)="toggleFamily(row)"
+                >
+                  {{ expandedFamilyId() === row._id ? 'Скрыть семью' : familyToggleLabel(row) }}
+                </button>
+                @if (expandedFamilyId() === row._id) {
+                  <div class="text-right space-y-1 max-w-[14rem]" data-test="family-list">
+                    @for (member of familyVariantsFor(row._id); track member.id) {
+                      <button
+                        type="button"
+                        class="block w-full text-left text-[10px] pi-focus-ring underline underline-offset-2"
+                        [attr.data-test]="'family-variant-' + member.id"
+                        (click)="openVariantView(member.id)"
+                      >
+                        {{ orgNameOf(member.organizationId) }}
+                        ·
+                        {{ member.orgMarkupPercent ?? 0 }}% · оценка
+                        {{ formatEstimate(row.total ?? 0, member.orgMarkupPercent) }}
+                      </button>
+                    }
+                    @if (familyVariantsFor(row._id).length === 0) {
+                      <span class="block text-[10px] text-muted-foreground"
+                        >Нет вариантов фирм</span
+                      >
+                    }
+                    <div class="flex flex-wrap justify-end gap-1 pt-0.5">
+                      <button
+                        type="button"
+                        class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                        [attr.data-test]="'family-attach-' + row._id"
+                        (click)="openFamilyAttach(row)"
+                      >
+                        Несколько фирм
+                      </button>
+                      @if ((row.familyRole ?? 'solo') === 'master') {
+                        <button
+                          type="button"
+                          class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                          [attr.data-test]="'family-sync-' + row._id"
+                          (click)="onFamilySync(row)"
+                        >
+                          Синхронизировать
+                        </button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </ng-template>
+
             <ng-template #rowActionsTpl let-row>
               <app-pi-row-actions
                 [row]="row"
@@ -285,10 +347,12 @@ export class ProposalsPage implements OnInit {
 
   constructor() {
     this.counterpartiesLookup.load();
+    this.organizationsLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
   private readonly service = inject(ProposalsService);
   private readonly counterpartyService = inject(CounterpartyService);
+  private readonly organizationsService = inject(OrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -298,6 +362,9 @@ export class ProposalsPage implements OnInit {
 
   protected readonly expandedVersionsId = signal<string | null>(null);
   private readonly versionsByProposal = signal<Record<string, ProposalVersionSummary[]>>({});
+
+  protected readonly expandedFamilyId = signal<string | null>(null);
+  private readonly familyByProposal = signal<Record<string, ProposalFamilyResponse>>({});
 
   protected readonly RefreshIcon = RefreshCw;
 
@@ -318,6 +385,10 @@ export class ProposalsPage implements OnInit {
     this.counterpartyService.list({ limit: 200 }),
   );
 
+  private readonly organizationsLookup = createLookupTable<Organization>(
+    this.organizationsService.list({ limit: 200 }),
+  );
+
   /** Single debounced search state — owns its own `searchQuery` signal. */
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
@@ -335,7 +406,7 @@ export class ProposalsPage implements OnInit {
   });
 
   protected readonly filteredRows = computed<Proposal[]>(() => {
-    const rows = this.data();
+    const rows = this.data().filter((p) => (p.familyRole ?? 'solo') !== 'variant');
     const q = this.search.debouncedSearch().trim().toLowerCase();
     if (!q) return rows.slice();
     return rows.filter((p) => {
@@ -419,6 +490,12 @@ export class ProposalsPage implements OnInit {
       width: '150px',
       cellClass: 'text-right',
     },
+    {
+      key: 'familyRole',
+      label: 'Семья',
+      width: '168px',
+      cellClass: 'text-right',
+    },
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
@@ -430,6 +507,8 @@ export class ProposalsPage implements OnInit {
   private readonly convertTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('versionsTpl', { static: true })
   private readonly versionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
+  @ViewChild('familyTpl', { static: true })
+  private readonly familyTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
 
@@ -444,6 +523,7 @@ export class ProposalsPage implements OnInit {
       status: this.statusTplRef,
       convertedOrderId: this.convertTplRef,
       currentVersion: this.versionsTplRef,
+      familyRole: this.familyTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
@@ -536,6 +616,94 @@ export class ProposalsPage implements OnInit {
     this.service.listVersions(id).subscribe((res) => {
       if (res.ok) {
         this.versionsByProposal.update((all) => ({ ...all, [id]: res.data }));
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected familyToggleLabel(row: Proposal): string {
+    const role = row.familyRole ?? 'solo';
+    if (role === 'master') return 'Семья';
+    return 'Семья';
+  }
+
+  protected toggleFamily(row: Proposal): void {
+    if (this.expandedFamilyId() === row._id) {
+      this.expandedFamilyId.set(null);
+      return;
+    }
+    this.expandedFamilyId.set(row._id);
+    this.loadFamily(row._id);
+  }
+
+  protected familyVariantsFor(id: string) {
+    return this.familyByProposal()[id]?.variants ?? [];
+  }
+
+  protected orgNameOf(organizationId: string): string {
+    return this.organizationsLookup.byId()[organizationId]?.name ?? organizationId;
+  }
+
+  protected formatEstimate(baseTotal: number, markup?: number): string {
+    return formatPrice(estimateFamilyTotal(baseTotal, markup));
+  }
+
+  protected openFamilyAttach(row: Proposal): void {
+    const ref = this.dialog.open(ProposalFamilyAttachDialogComponent, {
+      data: { master: row },
+      width: 'md',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result: unknown) => {
+      if (!result) return;
+      this.loadFamily(row._id);
+      this.listRes.reload();
+    });
+  }
+
+  protected onFamilySync(row: Proposal): void {
+    const ref = this.dialog.open(AlertDialogComponent, {
+      data: {
+        title: 'Синхронизировать семью?',
+        description: `Перезаписать строки и familyVersion всех вариантов из master «${row.number}»?`,
+        confirmLabel: 'Синхронизировать',
+        variant: 'default',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.service.syncFromMaster(row._id).subscribe((res) => {
+        if (res.ok) {
+          this.toast.success('Семья синхронизирована с master');
+          this.familyByProposal.update((all) => ({ ...all, [row._id]: res.data }));
+          this.listRes.reload();
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
+  }
+
+  protected openVariantView(variantId: string): void {
+    this.service.findById(variantId).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      this.dialog.open(ProposalFormDialogComponent, {
+        data: { proposal: res.data, mode: 'view' },
+        width: 'lg',
+        parentDestroyRef: this.destroyRef,
+      });
+    });
+  }
+
+  private loadFamily(id: string): void {
+    this.service.getFamily(id).subscribe((res) => {
+      if (res.ok) {
+        this.familyByProposal.update((all) => ({ ...all, [id]: res.data }));
       } else {
         this.toast.error(extractErrorMessage(res.error));
       }

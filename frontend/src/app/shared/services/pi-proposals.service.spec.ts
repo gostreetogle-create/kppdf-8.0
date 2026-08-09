@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { ProposalsService, Proposal } from './pi-proposals.service';
+import { ProposalsService, Proposal, estimateFamilyTotal } from './pi-proposals.service';
 
 function proposal(overrides: Partial<Proposal> = {}): Proposal {
   return {
@@ -76,9 +76,7 @@ describe('ProposalsService (TZ-SALES-301)', () => {
 
   it('update PATCHes /quotations/:id', () => {
     const updated = proposal({ status: 'sent' });
-    service
-      .update('prop-1', { status: 'sent' })
-      .subscribe((res) => expect(res.ok).toBe(true));
+    service.update('prop-1', { status: 'sent' }).subscribe((res) => expect(res.ok).toBe(true));
 
     const req = httpMock.expectOne('http://test/api/quotations/prop-1');
     expect(req.request.method).toBe('PATCH');
@@ -103,17 +101,87 @@ describe('ProposalsService (TZ-SALES-301)', () => {
   });
 
   it('convertToOrder POSTs to /quotations/:id/convert-to-order with deliveryAddress', () => {
-    service
-      .convertToOrder('prop-1', { deliveryAddress: 'ул. Ленина, 1' })
-      .subscribe((res) => {
-        expect(res.ok).toBe(true);
-        expect(res.data?.orderId).toBe('ord-77');
-      });
+    service.convertToOrder('prop-1', { deliveryAddress: 'ул. Ленина, 1' }).subscribe((res) => {
+      expect(res.ok).toBe(true);
+      expect(res.data?.orderId).toBe('ord-77');
+    });
 
     const req = httpMock.expectOne('http://test/api/quotations/prop-1/convert-to-order');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ deliveryAddress: 'ул. Ленина, 1' });
     req.flush({ quotation: proposal(), orderId: 'ord-77' });
+  });
+
+  it('getFamily GETs /quotations/:id/family', () => {
+    const family = {
+      master: {
+        id: 'prop-1',
+        number: 'QTN-0001',
+        organizationId: 'org-1',
+        familyRole: 'master',
+        familyVersion: 2,
+        total: 10000,
+        status: 'draft',
+      },
+      variants: [],
+      familyVersion: 2,
+    };
+    service.getFamily('prop-1').subscribe((res) => {
+      expect(res.ok).toBe(true);
+      expect(res.data?.familyVersion).toBe(2);
+    });
+    const req = httpMock.expectOne('http://test/api/quotations/prop-1/family');
+    expect(req.request.method).toBe('GET');
+    req.flush(family);
+  });
+
+  it('attachOrganizations POSTs items payload', () => {
+    service
+      .attachOrganizations('prop-1', [{ organizationId: 'org-2', orgMarkupPercent: 10 }])
+      .subscribe((res) => expect(res.ok).toBe(true));
+    const req = httpMock.expectOne('http://test/api/quotations/prop-1/family/attach-organizations');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      items: [{ organizationId: 'org-2', orgMarkupPercent: 10 }],
+    });
+    req.flush({
+      master: {
+        id: 'prop-1',
+        number: 'QTN-0001',
+        organizationId: 'org-1',
+        familyRole: 'master',
+        familyVersion: 1,
+        total: 10000,
+        status: 'draft',
+      },
+      variants: [],
+      familyVersion: 1,
+    });
+  });
+
+  it('syncFromMaster POSTs empty body', () => {
+    service.syncFromMaster('prop-1').subscribe((res) => expect(res.ok).toBe(true));
+    const req = httpMock.expectOne('http://test/api/quotations/prop-1/family/sync-from-master');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({
+      master: {
+        id: 'prop-1',
+        number: 'QTN-0001',
+        organizationId: 'org-1',
+        familyRole: 'master',
+        familyVersion: 3,
+        total: 10000,
+        status: 'draft',
+      },
+      variants: [],
+      familyVersion: 3,
+    });
+  });
+
+  it('estimateFamilyTotal is UI preview only', () => {
+    expect(estimateFamilyTotal(10000, 10)).toBe(11000);
+    expect(estimateFamilyTotal(10000)).toBe(10000);
   });
 
   it('surfaces a backend error as ok:false with the error payload', () => {

@@ -1,0 +1,10 @@
+TZ: TZ-SALES-313
+STATUS: DONE
+CLAIMED_BY: agent-3e757640b7
+CLAIMED_AT: 2026-08-09T02:25:00Z
+CLOSED_AT: 2026-08-09T03:10:00Z
+WORKSPACE: D:\\kppdf-8.0
+SCOPE: All-KP family expand, attach estimate dialog, variant read-only, sync confirm.
+GATES: FE tsc PASS; Jest 31/31 PASS; prettier/eslint PASS.
+BAN: schema rewrite, convert variant, print, create-page, ModuleMaterials, deploy.
+SUPERSEDES: TZ-SALES-304

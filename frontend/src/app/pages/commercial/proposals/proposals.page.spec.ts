@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { ProposalsPage } from './proposals.page';
 import { ProposalsService, Proposal } from '../../../shared/services/pi-proposals.service';
 import { CounterpartyService } from '../../../shared/services/pi-counterparty.service';
+import { OrganizationsService } from '../../../shared/services/organizations.service';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { API_BASE_URL } from '../../../core/api.tokens';
@@ -21,6 +22,47 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
   const listVersionsMock = jest.fn(() => of({ ok: true, data: [] }));
   const convertToOrderMock = jest.fn(() =>
     of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
+  );
+  const getFamilyMock = jest.fn(() =>
+    of({
+      ok: true,
+      data: {
+        master: {
+          id: 'p1',
+          number: 'QTN-001',
+          organizationId: 'org-1',
+          familyRole: 'master',
+          familyVersion: 1,
+          total: 10000,
+          status: 'draft',
+        },
+        variants: [
+          {
+            id: 'p-var',
+            number: 'QTN-001-B',
+            organizationId: 'org-2',
+            familyRole: 'variant',
+            familyVersion: 1,
+            orgMarkupPercent: 10,
+            total: 10000,
+            status: 'draft',
+          },
+        ],
+        familyVersion: 1,
+      },
+    }),
+  );
+  const syncFromMasterMock = jest.fn(() => of({ ok: true, data: {} as never }));
+  const findByIdMock = jest.fn(() =>
+    of({
+      ok: true,
+      data: {
+        _id: 'p-var',
+        number: 'QTN-001-B',
+        status: 'draft',
+        familyRole: 'variant',
+      } as Proposal,
+    }),
   );
 
   const fakeCounterparties = [
@@ -66,6 +108,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     convertToOrderMock.mockReturnValue(
       of({ ok: true, data: { quotation: {}, orderId: 'ord-42' } }),
     );
+    getFamilyMock.mockClear();
+    syncFromMasterMock.mockClear();
+    findByIdMock.mockClear();
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
@@ -75,7 +120,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
           provide: ProposalsService,
           useValue: {
             list: () => of({ ok: true, data: [] }),
-            findById: () => of({ ok: true, data: {} as never }),
+            findById: findByIdMock,
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
@@ -84,12 +129,31 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
             listVersions: listVersionsMock,
             getVersion: () => of({ ok: true, data: {} as never }),
             convertToOrder: convertToOrderMock,
+            getFamily: getFamilyMock,
+            attachOrganizations: () => of({ ok: true, data: {} as never }),
+            syncFromMaster: syncFromMasterMock,
           },
         },
         {
           provide: CounterpartyService,
           useValue: {
             list: () => of({ ok: true, data: { items: fakeCounterparties, total: 2 } }),
+          },
+        },
+        {
+          provide: OrganizationsService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    { _id: 'org-1', name: 'ООО Альфа' },
+                    { _id: 'org-2', name: 'ООО Бета' },
+                  ],
+                  total: 2,
+                },
+              }),
           },
         },
         { provide: PiDialogService, useValue: dialogSpy },
@@ -379,5 +443,90 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     // Unknown id → '—' fallback (null).
     const unknown: Proposal = { ...fakeProposals[1], counterpartyId: 'cp-999' } as Proposal;
     expect(comp.counterpartyNameOf(unknown)).toBeNull();
+  });
+
+  it('hides family variants from the list rows (SALES-313)', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([
+      ...fakeProposals,
+      {
+        ...fakeProposals[0],
+        _id: 'p-var',
+        number: 'QTN-001-B',
+        familyRole: 'variant',
+        masterId: 'p1',
+      } as Proposal,
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      data: () => Proposal[];
+      total: () => number;
+    };
+    expect(comp.data().length).toBe(3);
+    expect(comp.total()).toBe(2);
+  });
+
+  it('toggleFamily loads family and openVariantView uses read-only dialog data', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(matchListGet)
+      .flush([{ ...fakeProposals[0], familyRole: 'master' } as Proposal, fakeProposals[1]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      toggleFamily: (p: Proposal) => void;
+      openVariantView: (id: string) => void;
+      familyVariantsFor: (id: string) => { id: string }[];
+      expandedFamilyId: () => string | null;
+    };
+
+    comp.toggleFamily({ ...fakeProposals[0], familyRole: 'master' } as Proposal);
+    await tickMicrotask();
+    expect(getFamilyMock).toHaveBeenCalledWith('p1');
+    expect(comp.expandedFamilyId()).toBe('p1');
+    expect(comp.familyVariantsFor('p1').length).toBe(1);
+
+    dialogSpy.open.mockClear();
+    comp.openVariantView('p-var');
+    await tickMicrotask();
+    expect(findByIdMock).toHaveBeenCalledWith('p-var');
+    expect(dialogSpy.open.mock.calls[0][1]?.data).toMatchObject({
+      mode: 'view',
+      proposal: expect.objectContaining({ _id: 'p-var' }),
+    });
+  });
+
+  it('onFamilySync opens confirm dialog for master', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(matchListGet)
+      .flush([{ ...fakeProposals[0], familyRole: 'master' } as Proposal]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const closeSignal = signal<unknown>(undefined);
+    dialogSpy.open.mockReturnValue({ closed: closeSignal });
+
+    const comp = fixture.componentInstance as unknown as {
+      onFamilySync: (p: Proposal) => void;
+    };
+    comp.onFamilySync({ ...fakeProposals[0], familyRole: 'master' } as Proposal);
+    expect(dialogSpy.open).toHaveBeenCalled();
+    const data = dialogSpy.open.mock.calls[0][1]?.data;
+    expect(data.title).toContain('Синхронизировать');
+
+    closeSignal.set(true);
+    await tickMicrotask();
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(syncFromMasterMock).toHaveBeenCalledWith('p1');
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
   });
 });

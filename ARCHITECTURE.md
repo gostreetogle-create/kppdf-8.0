@@ -1040,7 +1040,7 @@ transaction. See `docs/data-model.md` § Concurrency & Transactions.
   (default 1), `orgMarkupPercent?`; unique sparse `{ masterId, organizationId }`.
 - Thin API: `POST :id/family/attach-organizations`, `POST :id/family/sync-from-master`,
   `GET :id/family`. Convert of a **variant** → 400 (master/solo only).
-- UI expand / markup dialog / variant editor → **TZ-SALES-313** (ex-304; family list UI).
+- UI expand / markup dialog / variant editor → **TZ-SALES-313 DONE** (ex-304; family list UI on `/proposals`).
 
 ## KP create studio (WAVE-KP-VITRINE)
 

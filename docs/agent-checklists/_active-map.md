@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-09T03:10:00Z · TZ-SALES-313 DONE
+- DONE: TZ-SALES-313 — `/proposals` family expand (variants by org, attach with UI «оценка», variant read-only, sync+confirm); supersedes 304; create-page untouched.
+- IN PROGRESS: none
+- NOT DONE: TZ-SALES-314 → TZ-SALES-315 → TZ-SALES-316; TZ-SALES-320 PARKED
+- NEXT: `tasks/_backlog/kp-vitrine/TZ-SALES-314-create-kp-product-rail.md`
+- HEAD: (pending this push) pushed: yes (`origin/main`)
+- Blockers: none for SALES-313; `verify-status.sh` retains pre-existing 72 legacy kit-era mismatches.
+- _active/: empty
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T02:20:00Z · TZ-SALES-312 DONE
 - DONE: TZ-SALES-312 — `/proposals/create` three-zone shell (Left/Center/Right placeholders, narrow toggles, Deals chrome kept); fill remains 314–316.
 - IN PROGRESS: none

@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-09
-**Phase:** KP vitrine — SALES-310/311/312 DONE; next 313 list family or 314/315 rails; deploy not run
+**Phase:** KP vitrine — SALES-310…313 DONE; next 314→315→316; 320 PARKED; deploy not run
+
+## [2026-08-09] — TZ-SALES-313 DONE: Все КП family expand
+**Статус:** DONE on main; deploy НЕ
+**Что:** Family expand на `/proposals`, attach с оценкой, variant read-only, sync+confirm. Supersedes 304.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-313.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-313-all-kp-family-expand.lock`
+**Gates:** FE tsc PASS; Jest 31/31 PASS.
+**Wave:** WAVE-KP-VITRINE #4 DONE; NEXT TZ-SALES-314; deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-312 DONE: Create КП three-zone shell
 **Статус:** DONE on main; deploy НЕ
@@ -9,7 +17,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-312.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-312-create-kp-shell.lock`
 **Gates:** FE tsc PASS; focused Jest PASS; prettier/eslint PASS; `git diff --check` PASS.
-**Wave:** WAVE-KP-VITRINE #3 DONE; NEXT TZ-SALES-313; deploy НЕ.
+**Wave:** WAVE-KP-VITRINE #3 DONE; NEXT TZ-SALES-313 (now DONE); deploy НЕ.
 
 ## [2026-08-09] — TZ-SALES-311 DONE: Create КП design-spec
 **Статус:** DONE on main; deploy НЕ
