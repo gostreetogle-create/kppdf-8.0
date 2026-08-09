@@ -3,7 +3,7 @@
 > Status: **DONE**
 > TZ: `tasks/_backlog/TZ-UI-THEME-331-dark-depth-and-on-gold.md`
 > Prompt: `tasks/prompts/TZ-UI-THEME-331-PROMPT.md`
-> Commit/push: **pending closeout**
+> Commit: `3683dd37` · push: **pending**
 
 ## Claim slot
 
@@ -49,8 +49,8 @@
 
 ## Closeout
 
-- [x] progress.md / STATUS.md / `_active-map.md` checkpoint — pending final commit SHA
+- [x] progress.md / STATUS.md / `_active-map.md` checkpoint — `3683dd37`
 - [x] `.mimocode/locks/TZ-UI-THEME-331-dark-depth-and-on-gold.lock`
 - [x] `tasks/_archive/2026-08/TZ-UI-THEME-331.done.md`
-- [ ] remove `tasks/_active/TZ-UI-THEME-331.md`
+- [x] `tasks/_active/TZ-UI-THEME-331.md` absent
 - [ ] commit + push

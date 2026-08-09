@@ -5,7 +5,7 @@
 - IN PROGRESS: none
 - NOT DONE: TZ-UI-GOLD-332 READY (successor); PO visual review for light/dark remains
 - NEXT: `tasks/_backlog/TZ-UI-GOLD-332-light-gold-fill-and-deep-accent.md` (not claimed in this turn)
-- HEAD: 89c9eca0 before closeout; pushed: no
+- HEAD: 3683dd37; pushed: no
 - Blockers: browser screenshots / PO visual review unavailable; successor 332 is a separate READY scope
 - _active/: empty
 - Deploy: NO
