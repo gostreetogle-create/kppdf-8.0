@@ -90,10 +90,10 @@ describe('ProposalProductRailComponent (TZ-SALES-328)', () => {
     added.mockReset();
   });
 
-  it('renders md showcase cards with photo, add/edit actions, and pager', () => {
+  it('renders sm showcase cards with photo, add/edit actions, and pager', () => {
     expect(listMock).toHaveBeenCalledWith({ page: 1, limit: 12 });
-    expect(fixture.nativeElement.querySelectorAll('[data-test="showcase-card"]').length).toBe(1);
-    expect(fixture.nativeElement.querySelector('[data-test="showcase-media"] img').src).toContain(
+    expect(fixture.nativeElement.querySelector('[data-size="sm"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-size="sm"] .sc-media--sm img').src).toContain(
       '/uploads/stand-thumb.jpg',
     );
     expect(fixture.nativeElement.querySelector('[data-test="kp-rail-add-product-1"]')).toBeTruthy();
