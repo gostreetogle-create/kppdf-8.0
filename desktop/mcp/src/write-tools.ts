@@ -20,9 +20,39 @@ export const WRITE_TOOL_NAMES = [
   'kppdf_cancel_batch',
   'kppdf_propose_product_create',
   'kppdf_propose_product_update',
+  'kppdf_propose_module_create',
+  'kppdf_confirm_module_create',
+  'kppdf_propose_composition_line',
+  'kppdf_confirm_composition_line',
 ] as const;
 
 const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
+const COMPOSITION_PARENT_ENUM = z.enum(['product', 'module']);
+const COMPOSITION_LINE_ENUM = z.enum(['material', 'module', 'product']);
+export const compositionLineInput = {
+  parentType: COMPOSITION_PARENT_ENUM.describe('Parent catalog entity'),
+  parentId: z.string().min(1).describe('Product or module id'),
+  lineType: COMPOSITION_LINE_ENUM.describe('Child catalog entity type'),
+  refId: z.string().min(1).describe('Child entity id'),
+  quantity: z.number().positive().describe('Quantity (> 0)'),
+  unit: z.string().optional(),
+};
+
+export type CompositionLineDraft = {
+  parentType: 'product' | 'module';
+  parentId: string;
+  lineType: 'material' | 'module' | 'product';
+  refId: string;
+  quantity: number;
+  unit?: string;
+};
+
+export function buildCompositionLineProposal(args: CompositionLineDraft) {
+  if (args.parentType === 'module' && args.lineType === 'product') {
+    throw new Error('Product lines are not allowed on module composition');
+  }
+  return { kind: 'composition.add' as const, ...args };
+}
 
 /** TZD-32: зеркало ProposeMaterialCreateDto whitelist (backend). */
 const MATERIAL_KINDS_ENUM = z.enum(['raw', 'part', 'fastener', 'purchased', 'other']);
@@ -293,6 +323,94 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         return toolOk({ ok: true, proposal: result });
       } catch (err) {
         return toolFail('kppdf_propose_product_update', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_module_create',
+    {
+      title: 'Propose module create',
+      description:
+        'Creates a human-reviewable module draft. No request is sent and no SoT write occurs until the confirm tool receives userOk=true.',
+      inputSchema: {
+        name: z.string().min(1),
+        article: z.string().min(1),
+      },
+    },
+    async ({ name, article }) =>
+      toolOk({
+        ok: true,
+        proposal: { kind: 'module.create', create: { name: name.trim(), article: article.trim() } },
+        note: 'Draft only — ask the user to confirm before calling kppdf_confirm_module_create.',
+      }),
+  );
+
+  server.registerTool(
+    'kppdf_confirm_module_create',
+    {
+      title: 'Confirm module create',
+      description: 'Creates a module only after explicit userOk=true.',
+      inputSchema: {
+        name: z.string().min(1),
+        article: z.string().min(1),
+        userOk: z.boolean().describe('Human approval — must be true'),
+      },
+    },
+    async ({ name, article, userOk }) => {
+      if (userOk !== true) return toolFail('kppdf_confirm_module_create', new Error('userOk=true is required; no request sent'));
+      try {
+        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, '/api/modules', {
+          name: name.trim(),
+          article: article.trim(),
+        });
+        return toolOk({ ok: true, module: result });
+      } catch (err) {
+        return toolFail('kppdf_confirm_module_create', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_composition_line',
+    {
+      title: 'Propose composition line',
+      description:
+        'Builds a composition-line draft for HITL review. It does not call the backend or write SoT.',
+      inputSchema: compositionLineInput,
+    },
+    async (args) =>
+      toolOk({
+        ok: true,
+        proposal: buildCompositionLineProposal(args),
+        note: 'Draft only — call kppdf_confirm_composition_line after the user approves this exact line.',
+      }),
+  );
+
+  server.registerTool(
+    'kppdf_confirm_composition_line',
+    {
+      title: 'Confirm composition line',
+      description: 'Writes one approved line through the existing Product/Module composition REST endpoint.',
+      inputSchema: { ...compositionLineInput, userOk: z.boolean().describe('Human approval — must be true') },
+    },
+    async ({ parentType, parentId, lineType, refId, quantity, unit, userOk }) => {
+      if (userOk !== true) return toolFail('kppdf_confirm_composition_line', new Error('userOk=true is required; no request sent'));
+      try {
+        buildCompositionLineProposal({ parentType, parentId, lineType, refId, quantity, unit });
+      } catch (err) {
+        return toolFail('kppdf_confirm_composition_line', err);
+      }
+      try {
+        const result = await backendPostJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          `/api/${parentType === 'module' ? 'modules' : 'products'}/${encodeURIComponent(parentId)}/composition`,
+          { lineType, refId, quantity, ...(unit ? { unit } : {}), sourceCode: refId },
+        );
+        return toolOk({ ok: true, composition: result });
+      } catch (err) {
+        return toolFail('kppdf_confirm_composition_line', err);
       }
     },
   );

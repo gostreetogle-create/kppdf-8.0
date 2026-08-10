@@ -1,0 +1,27 @@
+{
+  "taskId": "TZD-38",
+  "slug": "spec-bom-composition-import",
+  "status": "DONE",
+  "agentId": "Buffy/canonical-main",
+  "workspace": "D:\\kppdf-8.0",
+  "claimedAt": "2026-08-10T18:53:59Z",
+  "closedAt": "2026-08-10T19:01:12Z",
+  "commit": "pending-closeout",
+  "scope": [
+    "desktop/src/core/specification-import.ts",
+    "desktop/src/core/specification-import.test.ts",
+    "desktop/src/App.svelte",
+    "desktop/mcp/src/write-tools.ts",
+    "desktop/mcp/src/write-tools.test.ts",
+    "desktop/docs/MCP.md",
+    "desktop/README.md",
+    "tasks/_backlog/desktop/WAVE-MCP-GAP-2026-08-10.md"
+  ],
+  "forbiddenPathsUntouched": [
+    "desktop/mcp-runtime/**",
+    "deploy.ps1",
+    "desktop ZIP publish",
+    "orders/quotes bulk import",
+    "EAV"
+  ]
+}

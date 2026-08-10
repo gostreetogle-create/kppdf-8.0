@@ -3,7 +3,7 @@
 Десктоп-компаньон kppdf-8.0: **массовый ввод данных через AI** с сохранением
 единого backend (multi-device — актуальные данные везде: веб, десктоп, телефон).
 
-> **Статус: v0.6 (2026-08-10).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
+> **Статус: v0.7 (2026-08-10).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
 > Excel/CSV-импорт + UI (v0.3), **Import Studio shell (TZD-36)**: отдельные вкладки
 > «Импорт Excel» и «MCP», большая зона drop + таблица предпросмотра, connected-user chip;
 > **MCP host в приложении (TZD-14)**: автозапуск при
@@ -52,6 +52,7 @@ desktop/
 │   ├── App.svelte         ← Import Studio tabs / pairing / MCP / Inbox / ImportTask (TZD-36, TZD-15/22)
 │   ├── core/
 │   │   ├── config.ts      ← apiBaseUrl, pairing key, mcp{port,allowLan}, inbox{dir}
+│   │   ├── specification-import.ts ← TZD-38 hierarchy preview/validation
 │   │   ├── api.ts         ← Bearer + idempotencyKey()
 │   │   ├── pairing.ts     ← parsePairing()
 │   │   ├── mcpHost.ts     ← TZD-14: spawn/stop MCP host
@@ -81,7 +82,7 @@ Desktop открывается на вкладке **«Импорт Excel»**: �
 Вкладка **«MCP»** содержит pairing, статус и URL host, Start/Stop, настройки порта/LAN
 и копирование `mcp.json`. Переключение вкладок не перезапускает host и не стирает pairing.
 В TZD-37 добавлены выбор листа, обязательное сопоставление полей с красными unfit/conflict,
-профили организации с ★ default и статусы строк до предложения в журнал. BOM hierarchy относится к TZD-38.
+профили организации с ★ default и статусы строк до предложения в журнал. **TZD-38:** hierarchy columns (`level`, `parentArticle`, `article`, `name`, `qty`, `unit`, `kind`) строят product → module → material preview, блокируют invalid qty/missing parent/duplicate links и записывают состав только после явного HITL подтверждения. BOM hierarchy закрывает TZD-35 PARK.
 
 ## MCP source of truth (TZ-DESKTOP-SOT-301)
 

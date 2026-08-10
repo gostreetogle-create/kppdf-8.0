@@ -1,4 +1,14 @@
 
+## [2026-08-10T19:01:12Z] — TZD-38 DONE — hierarchical specification → BOM composition HITL
+**Исполнитель:** Buffy / canonical-main
+**Статус:** DONE; archive/lock/closeout complete; Deploy НЕ; desktop ZIP publish НЕ
+**Что:** Desktop Import Studio распознаёт `level/parentArticle/article/name/qty/unit/kind`, строит дерево изделие → модуль → материалы, блокирует qty≤0, missing parent, duplicate article/link и invalid root/type. Явное HITL-подтверждение создаёт недостающие Product/Module/Material и вызывает существующие Product/Module composition REST endpoints; flat TZD-37 path не изменён. MCP получил draft-only module/composition tools и `userOk:true` confirm gate. TZD-35 PARK закрыт этим TZ.
+**Gates:** desktop typecheck PASS; svelte-check 0/0 PASS; desktop build PASS; specification parser 4/4 PASS; MCP typecheck + 93/93 tests PASS; diff-check PASS. Native Tauri/live catalog smoke unavailable in headless session.
+**Archive:** `tasks/_archive/2026-08/TZD-38.done.md`
+**Lock:** `.mimocode/locks/TZD-38-spec-bom-composition-import.lock`
+**Scope:** `desktop/mcp-runtime/**`, orders/quotes bulk, EAV, deploy, ZIP publish, and foreign dirty WIP untouched. Deploy НЕ
+**Итог:** WAVE-EXCEL-IMPORT-STUDIO TZD-36→38 DONE; готово предложить desktop publish отдельно, но publish НЕ выполнялся.
+
 ## [2026-08-10T18:52:06Z] — TZD-37 DONE — Excel mapping profiles + validation HITL
 **Исполнитель:** Buffy / canonical-main
 **Статус:** DONE; desktop/backend gates, archive/lock/closeout complete; Deploy НЕ

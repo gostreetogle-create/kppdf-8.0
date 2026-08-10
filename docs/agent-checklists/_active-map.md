@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T19:01:12Z · TZD-38 DONE → WAVE COMPLETE
+- DONE: hierarchical specification import — product/module/material tree preview, qty/conflict validation, explicit HITL confirm, and existing Product/Module composition REST writes.
+- MCP: draft-only module/composition proposals plus fail-closed `userOk:true` confirm tools; flat TZD-37 path unchanged.
+- Gates: desktop typecheck + svelte-check 0/0 + build PASS; specification parser 4/4 PASS; MCP typecheck + 93/93 tests PASS; diff-check PASS. Native Tauri/live catalog smoke unavailable in headless session.
+- Archive: `tasks/_archive/2026-08/TZD-38.done.md`; lock: `.mimocode/locks/TZD-38-spec-bom-composition-import.lock`; active marker removed.
+- TZD-35 PARK is CLOSED/UNPARKED by TZD-38 in `WAVE-MCP-GAP-2026-08-10.md`.
+- Foreign dirty TZ-AUTH-301/login/PAGE-TZ-INDEX WIP preserved and excluded. Deploy NO; desktop ZIP publish NO.
+- `_active/`: empty for this wave. NEXT: ready to propose desktop publish separately; no publish performed.
+
 ## Checkpoint 2026-08-10T18:43:36Z · TZD-36 DONE → NEXT TZD-37
 - DONE: Desktop Import Studio shell — default «Импорт Excel» tab, large dropzone/preview table, secondary Inbox, separate «MCP» tab with preserved pairing/host controls and connected-user chip.
 - Gates: desktop typecheck PASS; svelte-check 0 errors / 0 warnings PASS; desktop build PASS; MCP typecheck + 91/91 tests PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.

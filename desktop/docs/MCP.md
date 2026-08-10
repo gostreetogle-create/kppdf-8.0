@@ -156,7 +156,7 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 | `kppdf_get_module_where_used` | `GET /api/modules/:id/where-used` |
 | `kppdf_run_integrity_suite` | smoke composition/where_used на sample ids → `{ ok, checks[], warnings[] }` |
 
-### Product path (TZD-27) — паспорт, не BOM
+### Product path (TZD-27) — паспорт и BOM через отдельный HITL-контур
 
 1. `kppdf_get_domain_schema` `entity=product` — обязательные поля (name, kind).
 2. `kppdf_validate_product` — passport dry-run (name/kind/unit; без BOM).
@@ -166,7 +166,24 @@ Stdio: `pnpm start:stdio` (для клиентов, которые спавня�
 4. **Перед update** — where_used/composition (TZD-19).
 5. `kppdf_confirm_batch` → SoT. Undo зеркально material.
 
-**Запрет:** BOM/состав через импорт в этой волне (reuse web BomPanel);
+**BOM/specification import (TZD-38):** the Desktop Import Studio recognizes
+`level | parentArticle | article | name | qty | unit | kind` and renders a tree
+before any request. Missing parent, duplicate link, and `qty <= 0` are blocked.
+The final button is an explicit HITL confirmation; it creates missing catalog
+entities and then calls the existing Product/Module composition REST endpoint.
+The same safety split is available to MCP:
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_propose_module_create` | Draft only; no request |
+| `kppdf_confirm_module_create` | Creates a module only with `userOk: true` |
+| `kppdf_propose_composition_line` | Draft only; no request |
+| `kppdf_confirm_composition_line` | Calls existing composition endpoint only with `userOk: true`; rejects product child on module |
+
+Flat files without hierarchy columns remain on the TZD-37 mapping/validation
+path. Composition writes never target orders/quotes and never use a local DB.
+
+**TZD-35 PARK is unparked/closed by TZD-38.**
 Order / коммерческое КП kinds — не этот TZ.
 
 ### Graph protocol (TZD-19) — before destructive-ish propose
@@ -252,8 +269,7 @@ SoT сразу (нет journal) — для demo/ops ок; не «тихо» об
 `transfer` без `toWarehouseId` → toolFail, 0 запросов.
 
 **Известное ограничение:** journal/undo для stock — нет; `POST storage-items`
-404 не чинится в этом TZ (отдельный inventory TZ при нужде); Composition
-propose — TZD-35 (park).
+404 не чинится в этом TZ (отдельный inventory TZ при нужде).
 
 ## Tools — commercial (TZD-33) — read + draft HITL
 
@@ -403,6 +419,7 @@ Inbox-папка настраивается в десктоп-приложени
 
 - **TZD-29** ✅ DONE (2026-08-08, wave #7 — волна завершена) — import todos: BE `import-todo` module (POST/GET/PATCH, admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; todo protocol выше; FE тонкая `/import-todos` страница.
 - **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: `kppdf_doc_types_list` / `kppdf_doc_template_categories_list` / `kppdf_doc_templates_list` / `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
+- **TZD-38** ✅ DONE (2026-08-10, Excel Studio wave #3) — hierarchical specification preview and conflict gate; explicit confirm creates missing catalog entities and writes Product/Module composition through existing REST endpoints; MCP draft/confirm tools; flat TZD-37 path unchanged. TZD-35 PARK closed.
 - **TZD-27** ✅ DONE (2026-08-08, wave #5) — journal `product.create`/`product.update` (propose→confirm→undo зеркально material; org scope); MCP `kppdf_propose_product_create`/`_update` + `kppdf_validate_product` + domain schema product; `aiReport.rows[].entity` ветка в `apply_plan` (тот же batch).
 - **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.
 - **TZD-18** ✅ DONE (2026-08-08, wave #3) — batch: `propose-batch` / `confirm-batch` / `cancel-batch` (all-or-nothing + idempotencyKey); MCP `kppdf_propose_material_batch` / `kppdf_confirm_batch` / `kppdf_cancel_batch`; `apply_plan` чанками по 100; ImportTask cap **2000**; `inbox_propose_file` limit/offset.

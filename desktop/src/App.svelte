@@ -4,7 +4,7 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readFile } from '@tauri-apps/plugin-fs';
-  import { apiGet, ApiError } from './core/api';
+  import { apiGet, apiPost, ApiError } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import { parsePairing } from './core/pairing';
   import { importerFor, type RawRow } from './importers';
@@ -20,6 +20,11 @@
     type MappingResult,
     type ValidatedImportRow,
   } from './core/import-mapping';
+  import {
+    buildSpecificationPreview,
+    type SpecificationPreview,
+    type SpecificationTreeNode,
+  } from './core/specification-import';
   import {
     createImportMappingProfile,
     deleteImportMappingProfile,
@@ -245,6 +250,9 @@
   let profiles = $state<ImportMappingProfile[]>([]);
   let selectedProfileId = $state('');
   let rowProposalIds = $state<string[]>([]);
+  let specificationPreview = $state<SpecificationPreview | null>(null);
+  let specificationBusy = $state(false);
+  let specificationMessage = $state('');
 
   let disposed = false;
 
@@ -563,10 +571,20 @@
   }
 
   function prepareMapping(rows: RawRow[]) {
+    specificationPreview = buildSpecificationPreview(rows);
     mappingResult = classifyHeaders(Object.keys(rows[0] ?? {}));
+    // Hierarchy columns belong to the specification graph, not the flat material
+    // canonical map. Keep TZD-37 flat mapping available without red conflicts.
+    for (const header of Object.keys(rows[0] ?? {})) {
+      const normalized = header.trim().toLowerCase();
+      if (['level', 'parentarticle', 'parent article', 'родитель', 'артикул родителя', 'уровень', 'kind', 'тип элемента'].includes(normalized)) {
+        mappingResult = updateMapping(mappingResult, header, null);
+      }
+    }
     validatedRows = [];
     importStage = 'mapping';
     mappingMessage = '';
+    specificationMessage = '';
     rowProposalIds = [];
     const defaultProfile = profiles.find((profile) => profile.isDefault);
     if (defaultProfile) {
@@ -746,6 +764,93 @@
       mappingMessage = 'Предложения отменены; SoT не изменён.';
     } finally {
       mappingBusy = false;
+    }
+  }
+
+  interface CatalogRef {
+    _id?: string;
+    id?: string;
+    article?: string;
+    sku?: string;
+    name?: string;
+  }
+
+  function catalogId(item: CatalogRef): string | undefined {
+    return item._id ?? item.id;
+  }
+
+  function catalogArticle(item: CatalogRef): string {
+    return String(item.article ?? item.sku ?? '').trim();
+  }
+
+  /**
+   * TZD-38: explicit final confirmation is the only write step. Missing catalog
+   * entities are created first, then composition lines use the existing REST
+   * composition APIs. No local DB and no silent graph writes.
+   */
+  async function confirmSpecification() {
+    const preview = specificationPreview;
+    if (!preview?.hierarchical) return;
+    if (preview.issues.length > 0) {
+      specificationMessage = 'Исправьте конфликты спецификации перед подтверждением.';
+      return;
+    }
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      specificationMessage = 'Подтверждение состава требует подключённого аккаунта.';
+      return;
+    }
+    specificationBusy = true;
+    specificationMessage = 'Готовим предложения и проверяем каталог…';
+    try {
+      const [productsResponse, materialsResponse, modulesResponse] = await Promise.all([
+        apiGet<{ items?: CatalogRef[] }>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/products?limit=100&search='),
+        apiGet<{ items?: CatalogRef[] }>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/materials?limit=100&search='),
+        apiGet<CatalogRef[]>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/modules'),
+      ]);
+      const byKind = new Map<string, CatalogRef>();
+      for (const item of productsResponse.items ?? []) byKind.set(`product:${catalogArticle(item)}`, item);
+      for (const item of materialsResponse.items ?? []) byKind.set(`material:${catalogArticle(item)}`, item);
+      for (const item of modulesResponse ?? []) byKind.set(`module:${catalogArticle(item)}`, item);
+
+      const ids = new Map<string, string>();
+      for (const line of preview.lines) {
+        const key = `${line.kind}:${line.article}`;
+        const existing = byKind.get(key);
+        if (existing && catalogId(existing)) {
+          ids.set(key, catalogId(existing)!);
+          continue;
+        }
+        const path = line.kind === 'product' ? '/api/products' : line.kind === 'module' ? '/api/modules' : '/api/materials';
+        const body = line.kind === 'product'
+          ? { name: line.name, sku: line.article, kind: 'good', unit: line.unit }
+          : { name: line.name, article: line.article, unit: line.unit, ...(line.kind === 'material' ? { materialKind: 'purchased' } : {}) };
+        const created = await apiPost<CatalogRef>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, path, body);
+        const createdId = catalogId(created);
+        if (!createdId) throw new Error(`Сервер не вернул id для «${line.article}»`);
+        ids.set(key, createdId);
+      }
+
+      let compositionLines = 0;
+      for (const line of preview.lines) {
+        if (!line.parentArticle) continue;
+        const parent = preview.lines.find((candidate) => candidate.article === line.parentArticle);
+        const parentId = parent ? ids.get(`${parent.kind}:${parent.article}`) : undefined;
+        const childId = ids.get(`${line.kind}:${line.article}`);
+        if (!parentId || !childId) throw new Error(`Не удалось связать «${line.parentArticle} → ${line.article}»`);
+        if (parent?.kind === 'module' && line.kind === 'product') throw new Error('Модуль не может содержать изделие');
+        await apiPost(
+          { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+          `/api/${parent?.kind === 'module' ? 'modules' : 'products'}/${encodeURIComponent(parentId)}/composition`,
+          { lineType: line.kind, refId: childId, quantity: line.quantity, unit: line.unit, sourceCode: line.article },
+        );
+        compositionLines += 1;
+      }
+      specificationMessage = `Состав подтверждён: сущностей ${ids.size}, строк состава ${compositionLines}. Откройте изделие в веб-каталоге для проверки.`;
+    } catch (err) {
+      specificationMessage = err instanceof Error ? err.message : 'Не удалось подтвердить состав.';
+    } finally {
+      specificationBusy = false;
     }
   }
 
@@ -1229,6 +1334,37 @@
           {#if activeSheetName} · лист: <strong>{activeSheetName}</strong>{/if}
         </p>
 
+        {#if specificationPreview?.hierarchical}
+          <section class="specification-panel" aria-label="Иерархия спецификации">
+            <div class="specification-panel__head">
+              <div>
+                <h3>Спецификация: дерево состава</h3>
+                <p class="hint">Проверьте изделие → модули → материалы и количество. До кнопки подтверждения SoT не меняется.</p>
+              </div>
+              <span class:specification-badge--error={specificationPreview.issues.length > 0} class="specification-badge">
+                {specificationPreview.issues.length > 0 ? `Конфликтов: ${specificationPreview.issues.length}` : 'Готово к HITL'}
+              </span>
+            </div>
+            {#if specificationPreview.issues.length > 0}
+              <ul class="specification-issues" role="alert">
+                {#each specificationPreview.issues as issue (issue.rowIndex + issue.code + issue.message)}
+                  <li>#{issue.rowIndex + 1}: {issue.message}</li>
+                {/each}
+              </ul>
+            {:else}
+              <div class="specification-tree">
+                {#each specificationPreview.roots as root (root.article)}
+                  {@render SpecificationTree(root)}
+                {/each}
+              </div>
+              <button class="btn btn--primary" type="button" onclick={confirmSpecification} disabled={specificationBusy || !connected}>
+                {specificationBusy ? 'Подтверждаем…' : 'Подтвердить и записать состав'}
+              </button>
+            {/if}
+            {#if specificationMessage}<p class="hint" role="status">{specificationMessage}</p>{/if}
+          </section>
+        {/if}
+
         {#if importStage === 'mapping' && mappingResult}
           <section class="mapping-panel" aria-label="Сопоставление полей">
             <div class="mapping-panel__head">
@@ -1512,6 +1648,23 @@
     <p>v0.5 — паринг, импорт, MCP host (TZD-14) и inbox для агента (TZD-15): файл → аудит → предложение → подтверждение через журнал изменений.</p>
   </footer>
 </main>
+
+<!-- Дерево спецификации: recursive preview only, no writes. -->
+{#snippet SpecificationTree(node: SpecificationTreeNode)}
+  <div class="specification-node" style={`--spec-level: ${node.level}`}>
+    <span class="specification-node__kind">{node.kind}</span>
+    <strong>{node.article}</strong>
+    <span>{node.name}</span>
+    <span class="specification-node__qty">× {node.quantity} {node.unit}</span>
+  </div>
+  {#if node.children.length > 0}
+    <div class="specification-node__children">
+      {#each node.children as child (child.article + child.rowIndex)}
+        {@render SpecificationTree(child)}
+      {/each}
+    </div>
+  {/if}
+{/snippet}
 
 <!-- Таблица предпросмотра: первые строки + внутренний скролл (окно не «ломается»). -->
 {#snippet PreviewTable(rows: RawRow[])}
@@ -1925,6 +2078,92 @@
 
   .sheet-picker__button span {
     color: #7a8794;
+  }
+
+  .specification-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    margin: 0.65rem 0;
+    padding: 0.75rem;
+    border: 1px solid #c9d8e6;
+    border-radius: 8px;
+    background: #f7fbff;
+  }
+
+  .specification-panel__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .specification-panel h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .specification-badge {
+    flex-shrink: 0;
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    background: #e6f4eb;
+    color: #1e7d43;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .specification-badge--error {
+    background: #fdf0ef;
+    color: #a12b23;
+  }
+
+  .specification-issues {
+    margin: 0;
+    padding: 0.5rem 0.75rem 0.5rem 1.8rem;
+    border: 1px solid #efc5bf;
+    border-radius: 7px;
+    background: #fff6f5;
+    color: #a12b23;
+    font-size: 0.78rem;
+  }
+
+  .specification-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    max-height: 17rem;
+    overflow: auto;
+  }
+
+  .specification-node {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(7rem, 0.8fr) minmax(8rem, 1.5fr) auto;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: calc(var(--spec-level) * 1rem);
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #d9e3ec;
+    border-radius: 6px;
+    background: #ffffff;
+    font-size: 0.78rem;
+  }
+
+  .specification-node__kind {
+    color: #5a6a78;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+  }
+
+  .specification-node__qty {
+    color: #44535f;
+    white-space: nowrap;
+  }
+
+  .specification-node__children {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
   }
 
   .mapping-panel,

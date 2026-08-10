@@ -12,6 +12,8 @@ import {
   buildMaterialCreateProposal,
   batchItemSchema,
   materialCreateInput,
+  buildCompositionLineProposal,
+  WRITE_TOOL_NAMES,
 } from './write-tools.js';
 
 describe('material propose fields (TZD-32)', () => {
@@ -99,5 +101,40 @@ describe('material propose fields (TZD-32)', () => {
     assert.throws(() =>
       batchItemSchema.parse({ name: 'X', materialKind: 'nope' }),
     );
+  });
+});
+
+describe('composition HITL tools (TZD-38)', () => {
+  it('registers module and composition draft/confirm tools', () => {
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_module_create'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_module_create'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_propose_composition_line'));
+    assert.ok(WRITE_TOOL_NAMES.includes('kppdf_confirm_composition_line'));
+  });
+
+  it('builds a composition draft and rejects product child on module', () => {
+    assert.deepEqual(buildCompositionLineProposal({
+      parentType: 'product',
+      parentId: 'p1',
+      lineType: 'module',
+      refId: 'm1',
+      quantity: 2,
+      unit: 'шт',
+    }), {
+      kind: 'composition.add',
+      parentType: 'product',
+      parentId: 'p1',
+      lineType: 'module',
+      refId: 'm1',
+      quantity: 2,
+      unit: 'шт',
+    });
+    assert.throws(() => buildCompositionLineProposal({
+      parentType: 'module',
+      parentId: 'm1',
+      lineType: 'product',
+      refId: 'p1',
+      quantity: 1,
+    }));
   });
 });

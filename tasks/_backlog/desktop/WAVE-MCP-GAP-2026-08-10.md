@@ -3,7 +3,7 @@
 > Аудит: `docs/audits/2026-08-10-mcp-sport-demo-audit.md`  
 > Статус: **READY** — выполнять **serial** 31→32→33→34  
 > Промпт: `tasks/_backlog/desktop/PROMPT-MCP-GAP-WAVE.md`  
-> TZD-35 (composition propose) — **PARK** до команды PO
+> TZD-35 (composition propose) — **CLOSED / UNPARKED by TZD-38** on 2026-08-10; the Excel wave owns the explicit composition HITL path.
 
 ## Порядок
 
@@ -13,7 +13,7 @@
 | 2 | TZD-32 | `tasks/TZD-32-material-propose-fields.md` | 31 |
 | 3 | TZD-33 | `tasks/TZD-33-commercial-mcp-hitl.md` | 31+32 |
 | 4 | TZD-34 | `tasks/TZD-34-stock-movement-mcp.md` | 31+33 |
-| — | TZD-35 | PARK composition propose | after 34 + PO |
+| — | TZD-35 | CLOSED by TZD-38 — composition propose/confirm | after 34 + Excel wave |
 
 ## Правила
 
