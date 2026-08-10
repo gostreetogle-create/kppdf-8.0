@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="KPPDF — личный проект для обучения и тестирования." />
     <meta name="robots" content="noindex, nofollow" />
+    <!-- deploy/synology/deploy.py may set content from DESKTOP_DOWNLOAD_URL (no attr = default). -->
+    <meta name="kppdf-desktop-download-url" />
     <link
       rel="icon"
       type="image/svg+xml"
@@ -14,10 +16,6 @@
     />
   </head>
   <body>
-    <!-- deploy/synology/deploy.py replaces undefined from DESKTOP_DOWNLOAD_URL when configured. -->
-    <script>
-      window.__DESKTOP_DOWNLOAD_URL__ = undefined;
-    </script>
     <app-root></app-root>
   </body>
 </html>

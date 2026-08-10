@@ -1,20 +1,26 @@
 # TZ-AUTH-302 checklist — CSP inline / login
 
-> Status: **READY** P0  
-> Spec: `tasks/_backlog/ops/TZ-AUTH-302-csp-inline-desktop-url.md`
+> Status: **CODE DONE** — warm deploy pending PO «деплой»  
+> Spec: `tasks/_backlog/ops/TZ-AUTH-302-csp-inline-desktop-url.md`  
+> Archive: `tasks/_archive/2026-08/TZ-AUTH-302.done.md`
 
 ## Claim slot
 
-- agent_id:
-- claimed_at:
+- agent_id: cursor-architect-ops
+- claimed_at: 2026-08-11T00:24:00+03:00
 - workspace: D:\kppdf-8.0
 
 ## Acceptance
 
-- [ ] Inline script removed from index.html
-- [ ] desktop-download-url reads meta/data (specs green)
-- [ ] deploy.py patch updated if needed
-- [ ] No `'unsafe-inline'` in helmet scriptSrc
-- [ ] FE/BE gates PASS
-- [ ] Warm deploy; login smoke after Basic Auth
-- [ ] Archive + lock + push
+- [x] Inline script removed from index.html
+- [x] desktop-download-url reads meta/data (specs green)
+- [x] deploy.py patch updated if needed
+- [x] No `'unsafe-inline'` in helmet scriptSrc
+- [x] FE tsc + jest desktop-download-url PASS
+- [ ] Warm deploy; login smoke after Basic Auth — **ждёт PO «деплой»**
+- [x] Archive + lock + push (code)
+
+## Notes
+
+- Prod still serves old inline script until warm deploy.
+- API `POST /api/auth/login` with Basic + admin password already 200 on prod; browser 401 = wrong app password (не путать с Basic `kppdf`).

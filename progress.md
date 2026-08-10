@@ -1,3 +1,11 @@
+## [2026-08-11] — TZ-AUTH-302 CODE DONE — CSP inline desktop URL removed
+**Исполнитель:** cursor-architect-ops
+**Статус:** code DONE + archive; warm deploy ждёт PO «деплой»
+**Что:** Убран inline script из `index.html`; URL установщика через meta `kppdf-desktop-download-url`; `deploy.py` пишет content; Helmet scriptSrc без unsafe-inline.
+**Gates:** FE tsc; jest desktop-download-url 7/7.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-302.done.md`
+**NEXT:** warm deploy по «деплой»; на проде проверить отсутствие CSP inline + вход admin.
+
 ## [2026-08-11] — TZ-OPS-310 DONE — server harden (deploy gate)
 **Исполнитель:** cursor-architect-ops
 **Статус:** DONE; evidence + archive + lock; deploy НЕ

@@ -24,6 +24,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import secrets
 import shutil
 import subprocess
@@ -307,17 +308,37 @@ class RemoteHost:
 # -- Frontend build -----------------------------------------------------
 
 def inject_desktop_download_url(project_root, configured_url):
-    """Inject DESKTOP_DOWNLOAD_URL into the built SPA without committing config."""
+    """Inject DESKTOP_DOWNLOAD_URL into built SPA via CSP-safe meta (no inline script)."""
     index_path = project_root / "frontend" / "browser" / "index.html"
     if not index_path.exists():
         fail("frontend/browser/index.html not found for desktop download URL injection")
-    value = "undefined" if configured_url is None else json.dumps(configured_url)
     html = index_path.read_text(encoding="utf-8")
-    marker = "window.__DESKTOP_DOWNLOAD_URL__ = undefined;"
-    if marker not in html:
-        fail("desktop download URL runtime marker not found in built index.html")
-    index_path.write_text(html.replace(marker, f"window.__DESKTOP_DOWNLOAD_URL__ = {value};", 1), encoding="utf-8")
-    ok("Desktop installer URL injected" if configured_url is not None else "Desktop installer URL uses default")
+    meta_name = 'name="kppdf-desktop-download-url"'
+    if meta_name not in html:
+        fail("desktop download URL meta marker not found in built index.html")
+    # Absent content attr = app default; content="" = disable; content="url" = that URL.
+    if configured_url is None:
+        replacement = '<meta name="kppdf-desktop-download-url" />'
+    else:
+        replacement = (
+            '<meta name="kppdf-desktop-download-url" content='
+            + json.dumps(configured_url)
+            + " />"
+        )
+    html2, n = re.subn(
+        r'<meta\s+name="kppdf-desktop-download-url"[^>]*/?>',
+        replacement,
+        html,
+        count=1,
+    )
+    if n != 1:
+        fail("failed to replace desktop download URL meta in built index.html")
+    index_path.write_text(html2, encoding="utf-8")
+    ok(
+        "Desktop installer URL injected"
+        if configured_url is not None
+        else "Desktop installer URL uses default"
+    )
 
 
 def build_frontend(project_root):

@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-AUTH-302 CODE DONE — needs warm deploy
+- DONE (code): removed inline desktop URL script; meta `kppdf-desktop-download-url`; deploy.py inject; jest 7/7; FE tsc.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-302.done.md`. Prod still old until deploy.
+- Login API on prod already 200 with admin password; browser 401 ≠ CSP — usually Basic vs admin password mix-up.
+- NEXT: PO says **«деплой»** (warm, WIPE=false) → verify no CSP inline + admin login.
+- Deploy: NO until PO command.
+
 ## Checkpoint 2026-08-11 · TZ-OPS-310 DONE — deploy gate green
 - DONE: SUID/SGID inventory VPS+VM; Basic Auth 401/200; htpasswd 640; tunnel+LAN health; UFW 22/80/443; evidence filled.
 - Archive: `tasks/_archive/2026-08/TZ-OPS-310.done.md`; lock: `.mimocode/locks/TZ-OPS-310-server-harden.lock`; `_active/` empty.

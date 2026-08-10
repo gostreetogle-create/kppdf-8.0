@@ -10,12 +10,12 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | Warm deploy | `deploy/synology/README.md` | gate **OPS-310 green** — ждать слово PO **«деплой»** (без wipe) |
-| — | AUTH-302 | уже в main `1675e0e3` | проверить вход после выката |
-| — | OPS-310 | archive DONE | evidence `docs/ops/server-harden-evidence.md` |
-| — | KP-COMPLETE | 348 DONE `e23a665d` | coding idle |
+| **1** | Warm deploy | `deploy/synology/README.md` | OPS-310 + AUTH-302 code green — ждать **«деплой»** (без wipe) |
+| — | AUTH-302 | archive code DONE | на проде заработает после выката (CSP) |
+| — | OPS-310 | archive DONE | gate green |
+| — | KP-COMPLETE | 348 DONE | coding idle |
 
-**Канон сейчас:** ждать **«деплой»**. Wipe запрещён без русского подтверждения.
+**Канон сейчас:** ждать **«деплой»**. После выката: Basic `kppdf` → `/login` → **admin** (другой пароль из CREDENTIALS). Wipe запрещён без русского подтверждения.
 
 ## Не брать
 
