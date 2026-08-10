@@ -26,7 +26,11 @@
 Пока жив хвост КП: агент сам подхватит `WAVE-KP-COMPLETE` / TZ-SALES-348 из git.  
 Отдельные одноразовые `PROMPT-SALES-…` в backlog **убраны в архив** — не искать.
 
-**План PO на закрытие вечера:** 348 → VPN off → OPS-310 → AUTH-302 (CSP/вход) → один «деплой».
+**План PO на закрытие вечера:** 348 → VPN off → OPS-310 → (AUTH-302 уже в main `1675e0e3`, проверить на деплое) → один «деплой».
+
+**Если Buffy пишет «tools bound to freebuff worktree»:** этот чат мёртв для правок.  
+Закройте его → откройте **новый** чат Buffy с workspace = папка `D:\kppdf-8.0` (не `.freebuff\…`) → снова `PROMPT-RESUME-ANY`.  
+Claim `tasks/_active/TZ-SALES-348.md` уже в каноне — не пересоздавать.
 
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)

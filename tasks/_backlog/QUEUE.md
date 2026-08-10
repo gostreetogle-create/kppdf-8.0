@@ -10,13 +10,13 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | добить текущего агента (`PROMPT-RESUME-ANY`) |
-| **2** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | после **VPN OFF** (параллельный агент / новый чат) |
-| **3** | CSP / вход P0 | `ops/TZ-AUTH-302` · `PROMPT-AUTH-302-CSP.md` | в том же деплой-пакете после 348+310 |
+| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | claim в каноне; **новый** Buffy на `D:\kppdf-8.0` + `PROMPT-RESUME-ANY` (старый freebuff-чат мёртв) |
+| **2** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | после **VPN OFF** |
+| **3** | CSP / вход | AUTH-302 | код уже в main (`1675e0e3`) — проверить после warm deploy |
 | **4** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe) |
 
-**Канон вечера (PO):** сначала 348 → VPN off → OPS-310 → AUTH-302 → один warm deploy со всеми сегодняшними фиксами.  
-Вход на проде подождёт — сайт ещё не в ежедневной работе.
+**Канон вечера (PO):** 348 → VPN off → OPS-310 → warm deploy (AUTH-302 уже в git).  
+Если Buffy: «tools bound to freebuff» → не продолжать тот чат, открыть новый на каноне.
 
 ## Не брать
 

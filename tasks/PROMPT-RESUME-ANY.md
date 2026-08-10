@@ -12,11 +12,29 @@
 
 ```text
 Ты — непрерывный исполнитель kppdf-8.0.
-Корень: D:\kppdf-8.0 · ветка main (канон; не уводи продукт в случайный freebuff без нужды).
+Корень ТОЛЬКО: D:\kppdf-8.0 · ветка main.
 Skills: .agents/skills/kppdf-executor-continuous/SKILL.md + GEMINI.md + OrchestratorKit/AGENTS.md
 PO-канон: docs/PO-DIARY.md §1–§4
 Карта: docs/agent-checklists/_active-map.md · tasks/_backlog/QUEUE.md · docs/PO-AGENT-FLOW.md
 Этот промпт: tasks/PROMPT-RESUME-ANY.md
+
+════════════════════════════════════════════════════════
+HARD GATE WORKSPACE (до любого кода)
+════════════════════════════════════════════════════════
+Сразу проверь:
+  Get-Location
+  git rev-parse --show-toplevel
+Оба пути должны быть ровно D:\kppdf-8.0 (или D:/kppdf-8.0).
+
+СТОП без правок кода, если:
+  - toplevel содержит `.freebuff\worktrees` / `.freebuff/worktrees`
+  - инструменты правок (ApplyPatch/str_replace) привязаны к другому корню, а канон только read-only
+  - нельзя писать в D:\kppdf-8.0 через обычные edit-tools
+
+Тогда одна карточка PO:
+  «BLOCKED: tools bound to freebuff worktree X; need new chat rooted on D:\kppdf-8.0»
+и заверши ход. НЕ пиши продукт в freebuff. НЕ «обходи» через shell-edit запрещённых путей.
+Claim/checklist в каноне не трогай — их подхватит новый чат.
 
 ════════════════════════════════════════════════════════
 ГЛАВНОЕ
@@ -31,10 +49,12 @@ PO-канон: docs/PO-DIARY.md §1–§4
 5) После каждой закрытой TZ: archive + lock + commit + push main → Checkpoint → сразу next.
 6) Крупная TZ: mid-commit+push после зелёных gates куска (чтобы лимит шагов не съел WIP).
 7) Чужой dirty WIP не затирай и не мешай в свой коммит.
+8) НЕ создавай новые worktree в .freebuff для продукта. Канон = D:\kppdf-8.0.
 
 ════════════════════════════════════════════════════════
 СТАРТ (обязательный порядок)
 ════════════════════════════════════════════════════════
+(после PASS hard gate)
 git fetch origin
 git checkout main
 git pull --ff-only

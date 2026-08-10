@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Buffy stuck on freebuff worktree — resume on canon
+- Blocker: edit tools bound to `.freebuff/worktrees/4a700e85-…`; canon `D:\kppdf-8.0` was read-only for that chat.
+- Claim already in canon: `tasks/_active/TZ-SALES-348.md` + `docs/agent-checklists/TZ-SALES-348.md`.
+- PO action: **new** Buffy chat rooted on `D:\kppdf-8.0` + `PROMPT-RESUME-ANY` (hard gate added). Do not continue dead freebuff chat.
+- Order: **348** → VPN OFF → **OPS-310** → warm deploy. AUTH-302 already on main (`1675e0e3`); verify after deploy.
+- Deploy: NO until PO says «деплой».
+
 ## Checkpoint 2026-08-11 · PO plan: 348 → VPN → OPS-310 → AUTH-302 → warm deploy
 - Login/CSP not urgent (site not in daily use) — AUTH-302 waits for deploy package.
 - Order: finish **SALES-348** (current agent) → PO **VPN OFF** → **OPS-310** → **AUTH-302** → one warm deploy (no wipe) with today's fixes.
@@ -11,7 +18,7 @@
   `window.__DESKTOP_DOWNLOAD_URL__` in `index.html`.
 - API login with Basic+admin OK from curl; fix = remove inline script (meta/data), not loosen CSP.
 - Spec/prompt: `tasks/_backlog/ops/TZ-AUTH-302-csp-inline-desktop-url.md` · `PROMPT-AUTH-302-CSP.md`
-- Deferred until after SALES-348 + OPS-310 (PO: site not in daily use yet).
+- Deferred until after SALES-348 + OPS-310 (PO: site not in daily use yet). Code already landed `1675e0e3` — verify on deploy.
 - Deploy: warm only; remind two passwords (Basic vs admin).
 
 ## Checkpoint 2026-08-11 · RESUME TZ-SALES-348 (agent step-limit after 347)
