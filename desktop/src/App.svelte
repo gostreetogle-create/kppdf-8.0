@@ -42,6 +42,8 @@
   let errors = $state<string[]>([]);
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
+  type DesktopTab = 'import' | 'mcp';
+  let activeTab = $state<DesktopTab>('import');
 
   // MCP host (TZD-14): автозапуск при подключённом аккаунте, статус + настройки.
   let mcp: McpHostController;
@@ -663,11 +665,44 @@
 
 <main class="shell">
   <header class="shell__header">
-    <h1>KPPDF Desktop</h1>
-    <p class="shell__subtitle">Десктоп-компаньон kppdf-8.0 — массовый ввод данных через AI</p>
+    <div class="shell__brand">
+      <div>
+        <h1>KPPDF Desktop</h1>
+        <p class="shell__subtitle">Студия импорта спецификаций и локальный доступ для AI</p>
+      </div>
+      <div class="session-chip" data-test="session-chip" aria-live="polite">
+        <span class="session-chip__dot" aria-hidden="true"></span>
+        {connected ? `Подключено: ${connected.username}` : 'Аккаунт не подключён'}
+      </div>
+    </div>
+    <div class="tabs" aria-label="Разделы Desktop" role="tablist">
+      <button
+        class:tabs__button--active={activeTab === 'import'}
+        class="tabs__button"
+        data-test="tab-import"
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'import'}
+        onclick={() => (activeTab = 'import')}
+      >
+        Импорт Excel
+      </button>
+      <button
+        class:tabs__button--active={activeTab === 'mcp'}
+        class="tabs__button"
+        data-test="tab-mcp"
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'mcp'}
+        onclick={() => (activeTab = 'mcp')}
+      >
+        MCP
+      </button>
+    </div>
   </header>
 
   <section class="cards">
+    {#if activeTab === 'mcp'}
     <article class="card">
       <h2>Подключение</h2>
 
@@ -882,9 +917,10 @@
       {/if}
     </article>
 
-    <article class="card">
-      <h2>Импорт</h2>
-      <p>Файл → парсинг → таблица предпросмотра. Подтверждение и отправка — будущие TZ.</p>
+    {:else}
+    <article class="card card--studio">
+      <h2>Импорт Excel</h2>
+      <p>Перетащите спецификацию сюда или выберите файл — ниже появится широкая таблица предпросмотра.</p>
 
       <button
         class="btn btn--primary"
@@ -1093,6 +1129,7 @@
         </details>
       {/if}
     </article>
+    {/if}
   </section>
 
   <div class="shell__hint" role="status" aria-live="polite">{uiHint}</div>
@@ -1164,6 +1201,58 @@
     flex-shrink: 0;
   }
 
+  .shell__brand {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .session-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+    padding: 0.35rem 0.65rem;
+    border: 1px solid #d9dee3;
+    border-radius: 999px;
+    background: #fbfcfd;
+    color: #44535f;
+    font-size: 0.78rem;
+  }
+
+  .session-chip__dot {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: #9aa6b1;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0.35rem;
+    margin-top: 0.85rem;
+  }
+
+  .tabs__button {
+    appearance: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #5a6a78;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .tabs__button:hover,
+  .tabs__button--active {
+    border-bottom-color: #1c2733;
+    color: #1c2733;
+  }
+
   h1 {
     margin: 0;
     font-size: 1.35rem;
@@ -1180,8 +1269,8 @@
     flex: 1;
     min-height: 0;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: minmax(220px, auto) 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
     gap: 0.85rem;
     align-items: stretch;
     overflow: hidden;
@@ -1398,9 +1487,24 @@
     border-color: #d9a39d;
   }
 
-  .card--wide {
+  .card--wide,
+  .card--studio {
     grid-column: 1 / -1;
     min-height: 0;
+  }
+
+  .card--studio .table-wrap {
+    flex: 1;
+    min-height: 12rem;
+    max-height: min(42vh, 30rem);
+  }
+
+  .card--studio .dropzone {
+    min-height: 6.5rem;
+    display: grid;
+    place-items: center;
+    border-style: dashed;
+    background: #fbfcfd;
   }
 
   .inbox-dir {
@@ -1640,6 +1744,16 @@
   }
 
   @media (max-width: 1100px) {
+    .shell__brand {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .session-chip {
+      align-self: flex-start;
+    }
+
     .cards {
       grid-template-columns: 1fr;
       grid-template-rows: none;

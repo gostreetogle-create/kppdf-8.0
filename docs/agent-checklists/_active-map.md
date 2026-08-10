@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T18:43:36Z · TZD-36 DONE → NEXT TZD-37
+- DONE: Desktop Import Studio shell — default «Импорт Excel» tab, large dropzone/preview table, secondary Inbox, separate «MCP» tab with preserved pairing/host controls and connected-user chip.
+- Gates: desktop typecheck PASS; svelte-check 0 errors / 0 warnings PASS; desktop build PASS; MCP typecheck + 91/91 tests PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
+- Archive: `tasks/_archive/2026-08/TZD-36.done.md`; lock: `.mimocode/locks/TZD-36-desktop-import-studio-shell.lock`; active marker removed.
+- Conflict scan: TZD-36 keys only; `desktop/mcp/**`, `desktop/mcp-runtime/**`, WAVE-MCP-GAP implementation, deploy, ZIP publish, and foreign dirty WIP excluded. Deploy NO.
+- NEXT: claim TZD-37 strictly; mapping/multi-sheet/HITL remains next, BOM hierarchy TZD-38 after it.
+
 ## Checkpoint 2026-08-10T21:35:00Z · WAVE-MCP-GAP LANDED on main (TZD-31→34) · NEXT idle
 - Merged `fc0eca4b` into main via merge commit; DICT wave preserved (EXCEL READY + TZ-AUTH-301 checkpoints kept).
 - Archives `tasks/_archive/2026-08/TZD-31..34.done.md` + locks visible on main; `_active/` empty.

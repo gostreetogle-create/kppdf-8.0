@@ -1,4 +1,14 @@
 
+## [2026-08-10T18:43:36Z] — TZD-36 DONE — Desktop Import Studio shell
+**Исполнитель:** Buffy / canonical-main
+**Статус:** DONE; desktop typecheck, Svelte check, build, MCP tests, archive/lock complete; Deploy НЕ
+**Что:** Desktop открывается на вкладке «Импорт Excel» с отдельной вкладкой «MCP», connected-user chip, большой dropzone/preview table и вторичным Inbox. Pairing/MCP host controls сохранены внутри MCP; окно Tauri увеличено до `1280×800` (`1080×720` minimum). README/INSTALL обновлены; TZD-37 mapping/multi-sheet и TZD-38 BOM hierarchy остаются отдельными.
+**Gates:** desktop typecheck PASS; svelte-check 0 errors / 0 warnings PASS; desktop build PASS; MCP typecheck + 91/91 tests PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
+**Archive:** `tasks/_archive/2026-08/TZD-36.done.md`
+**Lock:** `.mimocode/locks/TZD-36-desktop-import-studio-shell.lock`
+**Scope:** `desktop/mcp/**`, `desktop/mcp-runtime/**`, deploy, ZIP publish, WAVE-MCP-GAP implementation, and foreign dirty WIP untouched.
+**NEXT:** claim TZD-37 strictly after conflict scan. Deploy НЕ
+
 ## [2026-08-10T22:10:00Z] — TZD-34 DONE — WAVE-MCP-GAP CLOSED (31→34)
 **Исполнитель:** Buffy / continuous executor
 **Статус:** WAVE DONE; 4/4 TZ в archive + locks; `_active/` пуст; deploy НЕ (готово предложить деплой)

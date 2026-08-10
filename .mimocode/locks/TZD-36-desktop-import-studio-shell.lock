@@ -1,0 +1,10 @@
+task_id: TZD-36
+status: DONE
+locked_at: 2026-08-10T18:43:36Z
+locked_by: Buffy/canonical-main
+workspace: D:\kppdf-8.0
+scope: Desktop Import Studio shell tabs, import dropzone/preview layout, MCP surface, window sizing, docs
+archive: tasks/_archive/2026-08/TZD-36.done.md
+verification: desktop typecheck, svelte-check, build, MCP 91/91 tests, diff-check PASS
+known_limitations: native Tauri smoke unavailable in headless session; mapping/multi-sheet TZD-37; BOM hierarchy TZD-38
+forbidden_paths_untouched: desktop/mcp/**, desktop/mcp-runtime/**, deploy.ps1, desktop ZIP publish

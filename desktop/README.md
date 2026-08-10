@@ -3,8 +3,10 @@
 Десктоп-компаньон kppdf-8.0: **массовый ввод данных через AI** с сохранением
 единого backend (multi-device — актуальные данные везде: веб, десктоп, телефон).
 
-> **Статус: v0.5+ (2026-08-08).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
-> Excel/CSV-импорт + UI (v0.3), **MCP host в приложении (TZD-14)**: автозапуск при
+> **Статус: v0.6 (2026-08-10).** Готово: скелет (v0.1), паринг + конфиг (v0.2),
+> Excel/CSV-импорт + UI (v0.3), **Import Studio shell (TZD-36)**: отдельные вкладки
+> «Импорт Excel» и «MCP», большая зона drop + таблица предпросмотра, connected-user chip;
+> **MCP host в приложении (TZD-14)**: автозапуск при
 > подключении, статус/URL/копирование, порт и LAN в config.ts, stop on quit,
 > **Inbox для агента (TZD-15)**: каталог-капельница → аудит → propose (без записи
 > в SoT) → confirm/cancel через журнал; MCP `kppdf_inbox_list` / `kppdf_inbox_propose_file`;
@@ -47,7 +49,7 @@ desktop/
 ├── svelte.config.js
 ├── src/
 │   ├── main.ts            ← точка входа Svelte
-│   ├── App.svelte         ← pairing / MCP card / Inbox / ImportTask (TZD-15/22)
+│   ├── App.svelte         ← Import Studio tabs / pairing / MCP / Inbox / ImportTask (TZD-36, TZD-15/22)
 │   ├── core/
 │   │   ├── config.ts      ← apiBaseUrl, pairing key, mcp{port,allowLan}, inbox{dir}
 │   │   ├── api.ts         ← Bearer + idempotencyKey()
@@ -68,6 +70,17 @@ desktop/
 
 Дальше по PO-vision: matching+HITL (**TZD-23**), reshape колонок, products, doc drafts —
 см. `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`.
+
+## Import Studio (TZD-36)
+
+Desktop открывается на вкладке **«Импорт Excel»**: перетащите `.xlsx`, `.xls` или `.csv`
+в большую зону или нажмите «Выбрать файл», после чего разобранные строки появятся в
+основной таблице предпросмотра. Панель Inbox остаётся вторичной и сохраняет существующий
+поток «Разобрать → Создать задачу для ИИ / Предложить строки → Подтвердить».
+
+Вкладка **«MCP»** содержит pairing, статус и URL host, Start/Stop, настройки порта/LAN
+и копирование `mcp.json`. Переключение вкладок не перезапускает host и не стирает pairing.
+Проверка профиля колонок, статусы строк, multi-sheet и BOM hierarchy относятся к TZD-37/38.
 
 ## MCP source of truth (TZ-DESKTOP-SOT-301)
 
