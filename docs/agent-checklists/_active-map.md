@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T16:47:00Z · TZ-DICT-318 DONE
+- DONE: RAL dialog has digit-only code input, automatic prefix, optional title composition, edit parsing, non-RAL preservation, and dead plural twin removal.
+- Gates: FE tsc PASS; focused Jest 21/21 PASS; FE build PASS; ESLint/diff-check/dead-twin grep PASS.
+- Archive: `tasks/_archive/2026-08/TZ-DICT-318.done.md`; lock: `.mimocode/locks/TZ-DICT-318-ral-auto-prefix.lock`; active marker removed after closeout.
+- Host path remains Freebuff isolated worktree; logical workspace is `D:\\kppdf-8.0`; canonical `main` is not writable from this managed session.
+- NEXT: claim TZ-MATERIALS-312 strictly; Deploy: NO.
+
 ## Checkpoint 2026-08-10T16:43:00Z · TZ-DICT-317 DONE
 - DONE: Measurements units now have a real edit dialog (label/symbol/category), manager mutation roles, RU error handling, and system delete protection.
 - Gates: FE/BE tsc PASS; Measurements Jest 6/6; Unit RBAC Jest 2/2; FE build PASS; ESLint/diff-check PASS.

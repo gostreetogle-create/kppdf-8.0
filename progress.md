@@ -1950,3 +1950,13 @@ BOM inspector — вклад строки material/module read-only.
 **Lock:** `.mimocode/locks/TZ-DICT-317-units-crud-edit-roles.lock`
 **Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
 **NEXT:** claim TZ-DICT-318 строго по очереди.
+
+## [2026-08-10T16:47:00Z] — TZ-DICT-318 DONE: RAL auto-prefix and digit input
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE typecheck/build/focused tests/ESLint/diff-check PASS; deploy НЕ
+**Что:** В справочнике цветов код RAL вводится четырьмя цифрами с readonly-префиксом `RAL`; необязательное название формирует `RAL 9003 — Сигнальный белый`. Редактирование разбирает существующий RAL name, а не-RAL имена не меняет. Неиспользуемый plural dialog twin удалён после grep импортов.
+**Gates:** focused dialog/page Jest 21/21; frontend tsc PASS; frontend development build PASS; ESLint/dead-twin grep/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-318.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-318-ral-auto-prefix.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-MATERIALS-312 строго по очереди.
