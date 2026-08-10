@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T22:40:00Z · TZ-OPS-310 READY (server harden = deploy gate)
+- Spec: `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`
+- Prompt: `tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md` (VPN OFF)
+- Evidence template: `docs/ops/server-harden-evidence.md`
+- Gate: `deploy.ps1` + `preflight.ps1` требуют `tasks/_archive/2026-08/TZ-OPS-310.done.md` (даже с `-SkipPreflight`)
+- Не блокирует KP-COMPLETE coding; **обязателен** перед следующим warm deploy
+- Deploy: NO until PO «деплой» (+ OPS-310 done)
+
 ## Checkpoint 2026-08-11 · TZ-SALES-345 DONE → NEXT TZ-SALES-343
 - DONE: AUTH-301, SALES-340, SALES-341 and SALES-345. 345 adds server PDF from the saved/build HTML, browser print of the current A4 iframe, final quotation archive records, and PDF/Печать actions in «Все КП».
 - Gates: backend tsc + quotation/generated-document suites PASS (31/31 focused; 13/13 generated-document); frontend tsc + proposal-create 27/27 + proposals 20/20 + development build PASS; ESLint/Prettier/diff-check PASS; DOM self-verify PASS.
