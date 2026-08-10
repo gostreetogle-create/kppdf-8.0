@@ -81,8 +81,8 @@ IP allowlist — только запасной костыль, не страте
 
 **Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
 
-1. **Сейчас (~15 мин, бесплатно):** HTTP Basic Auth на VPS в `/etc/nginx/sites-available/kppdf-proxy` (чеклист §6).
-2. **На этой неделе:** Tailscale на VM/Synology (чеклист §7); публичный домен можно оставить только с Basic как запасной вход.
+1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401.
+2. **Дальше по желанию:** Tailscale на VM/Synology (чеклист §7); публичный домен можно оставить только с Basic как запасной вход.
 3. App-login (`authGuard`) — второй слой (роли ERP), не единственный.
 4. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».
 5. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
