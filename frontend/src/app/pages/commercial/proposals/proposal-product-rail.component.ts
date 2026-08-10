@@ -5,6 +5,7 @@ import {
   Injector,
   OnDestroy,
   OnInit,
+  computed,
   inject,
   input,
   output,
@@ -20,6 +21,13 @@ import { Product, ProductsService } from '../../../shared/services/products.serv
 import { CategoriesService, type Category } from '../../../shared/services/categories.service';
 import { photoListUrl, type Photo } from '../../../shared/services/photos.service';
 import { ProductFormDialogComponent } from '../../products/product-form-dialog.component';
+import { ModuleFormDialogComponent } from '../../modules/module-form-dialog.component';
+import { MaterialFormDialogComponent } from '../../materials/material-form-dialog.component';
+import {
+  ProductModulesService,
+  type ProductModule,
+} from '../../../shared/services/pi-product-modules.service';
+import { MaterialsService, type Material } from '../../../shared/services/materials.service';
 import {
   QuickCreateDialogComponent,
   type QuickCreateDialogData,
@@ -28,10 +36,15 @@ import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { formatPrice } from '../../../shared/util/format';
 
+export type ProposalLineKind = 'catalog' | 'custom' | 'module' | 'material';
+
 export interface ProposalDraftLine {
-  /** Catalog lines keep the Product FK; custom lines intentionally do not. */
-  lineKind?: 'catalog' | 'custom';
+  /** Catalog = Product FK; module/material = refId; custom has no catalog FK. */
+  lineKind?: ProposalLineKind;
+  /** UI track id: productId (catalog), refId (module/material), or custom-* . */
   productId: string;
+  /** Persisted typed ref for module/material lines (SALES-348). */
+  refId?: string;
   productName: string;
   description?: string;
   productSku?: string;
@@ -43,11 +56,25 @@ export interface ProposalDraftLine {
   isOptional?: boolean;
 }
 
+type RailKind = 'catalog' | 'module' | 'material';
+
+interface RailCard {
+  id: string;
+  name: string;
+  sku?: string;
+  unit?: string;
+  unitPrice: number;
+  photoUrl?: string;
+  eyebrow: string;
+  kind: RailKind;
+  raw: Product | ProductModule | Material;
+}
+
 const PAGE_SIZE = 12;
 
 /**
- * Shop-style product picker for Create КП (TZ-SALES-328).
- * Emits products to add; the parent owns the in-memory draft.
+ * Shop-style catalog picker for Create КП (TZ-SALES-328 + 348).
+ * Emits draft lines; parent owns composition. Add & continue — panel stays open.
  */
 @Component({
   selector: 'app-proposal-product-rail',
@@ -58,7 +85,7 @@ const PAGE_SIZE = 12;
     <div class="rail" data-test="kp-product-rail">
       <div class="rail__header">
         <div>
-          <p class="eyebrow m-0">Каталог изделий</p>
+          <p class="eyebrow m-0">Каталог</p>
           <h2 class="rail__title">Товары</h2>
         </div>
         <app-pi-button
@@ -69,8 +96,49 @@ const PAGE_SIZE = 12;
           (click)="openCreate()"
           data-test="kp-rail-create"
         >
-          Создать изделие
+          {{ createLabel() }}
         </app-pi-button>
+      </div>
+
+      <div
+        class="rail__chips"
+        role="tablist"
+        aria-label="Вид каталога"
+        data-test="kp-rail-kind-chips"
+      >
+        <button
+          type="button"
+          class="rail__chip"
+          role="tab"
+          [attr.aria-selected]="railKind() === 'catalog'"
+          [class.rail__chip--active]="railKind() === 'catalog'"
+          (click)="setRailKind('catalog')"
+          data-test="kp-rail-kind-catalog"
+        >
+          Изделия
+        </button>
+        <button
+          type="button"
+          class="rail__chip"
+          role="tab"
+          [attr.aria-selected]="railKind() === 'module'"
+          [class.rail__chip--active]="railKind() === 'module'"
+          (click)="setRailKind('module')"
+          data-test="kp-rail-kind-module"
+        >
+          Модули
+        </button>
+        <button
+          type="button"
+          class="rail__chip"
+          role="tab"
+          [attr.aria-selected]="railKind() === 'material'"
+          [class.rail__chip--active]="railKind() === 'material'"
+          (click)="setRailKind('material')"
+          data-test="kp-rail-kind-material"
+        >
+          Материалы
+        </button>
       </div>
 
       <div class="rail__filters">
@@ -79,34 +147,36 @@ const PAGE_SIZE = 12;
           <input
             type="search"
             class="pi-input w-full"
-            placeholder="Название или артикул…"
+            [placeholder]="searchPlaceholder()"
             [ngModel]="query()"
             (ngModelChange)="onQuery($event)"
             data-test="kp-rail-search"
-            aria-label="Поиск изделий"
+            [attr.aria-label]="searchPlaceholder()"
           />
         </label>
-        <label class="rail__category">
-          <span class="eyebrow">Категория</span>
-          <select
-            class="pi-input w-full"
-            [value]="categoryId()"
-            (change)="onCategoryChange($event)"
-            data-test="kp-rail-category"
-            aria-label="Категория изделий"
-          >
-            <option value="">Все категории</option>
-            @for (category of categories(); track category._id) {
-              <option [value]="category._id">{{ category.name }}</option>
-            }
-          </select>
-        </label>
+        @if (railKind() !== 'module') {
+          <label class="rail__category">
+            <span class="eyebrow">Категория</span>
+            <select
+              class="pi-input w-full"
+              [value]="categoryId()"
+              (change)="onCategoryChange($event)"
+              data-test="kp-rail-category"
+              aria-label="Категория"
+            >
+              <option value="">Все категории</option>
+              @for (category of categories(); track category._id) {
+                <option [value]="category._id">{{ category.name }}</option>
+              }
+            </select>
+          </label>
+        }
       </div>
 
       @if (draftLines().length > 0) {
         <section class="rail__draft-lines" data-test="kp-rail-draft-lines">
           <p class="eyebrow m-0">Позиции КП</p>
-          @for (line of draftLines(); track line.productId + '-' + $index; let index = $index) {
+          @for (line of draftLines(); track lineTrack(line, $index); let index = $index) {
             <label class="rail__draft-line">
               <span class="rail__draft-line-name">{{ line.productName }}</span>
               <input
@@ -128,39 +198,60 @@ const PAGE_SIZE = 12;
         <p class="rail__state" data-test="kp-rail-loading">Загрузка…</p>
       } @else if (error()) {
         <p class="rail__state rail__state--error" role="alert">{{ error() }}</p>
-      } @else if (products().length === 0) {
+      } @else if (cards().length === 0) {
         <p class="rail__state" data-test="kp-rail-empty">{{ emptyHint() }}</p>
       } @else {
         <div class="rail__grid" data-test="kp-rail-grid">
-          @for (product of products(); track product._id) {
+          @for (card of cards(); track card.id) {
             <app-pi-showcase-card
               size="md"
-              [title]="product.name"
-              [description]="productDescription(product)"
-              [eyebrow]="product.kind === 'service' ? 'Услуга' : 'Изделие'"
-              [mediaUrl]="mainPhotoUrl(product)"
+              [title]="card.name"
+              [description]="cardDescription(card)"
+              [eyebrow]="card.eyebrow"
+              [mediaUrl]="card.photoUrl || ''"
               [arrow]="false"
             >
               <span sc-actions-md class="rail__actions">
-                <app-pi-button
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  (click)="addProduct(product)"
-                  [disabled]="readOnly()"
-                  [attr.data-test]="'kp-rail-add-' + product._id"
-                  [attr.aria-label]="'Добавить ' + product.name"
-                >
-                  Добавить
-                </app-pi-button>
+                <span class="rail__add-block">
+                  @if (inKpQty(card) > 0) {
+                    <span class="rail__in-kp" [attr.data-test]="'kp-rail-in-kp-' + card.id"
+                      >В КП: {{ inKpQty(card) }}</span
+                    >
+                  }
+                  <label class="rail__add-qty">
+                    <span class="sr-only">Количество для добавления</span>
+                    <input
+                      class="pi-input rail__add-qty-input"
+                      type="number"
+                      min="1"
+                      step="1"
+                      [value]="addQty(card.id)"
+                      [disabled]="readOnly()"
+                      [attr.data-test]="'kp-rail-add-qty-' + card.id"
+                      (change)="onAddQtyChange(card.id, $event)"
+                      (click)="$event.stopPropagation()"
+                    />
+                  </label>
+                  <app-pi-button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    (click)="addCard(card)"
+                    [disabled]="readOnly()"
+                    [attr.data-test]="'kp-rail-add-' + card.id"
+                    [attr.aria-label]="addLabel(card)"
+                  >
+                    {{ addLabel(card) }}
+                  </app-pi-button>
+                </span>
                 <app-pi-button
                   type="button"
                   variant="outline"
                   size="sm"
-                  (click)="openEdit(product)"
+                  (click)="openEdit(card)"
                   [disabled]="readOnly()"
-                  [attr.data-test]="'kp-rail-edit-' + product._id"
-                  [attr.aria-label]="'Редактировать ' + product.name"
+                  [attr.data-test]="'kp-rail-edit-' + card.id"
+                  [attr.aria-label]="'Редактировать ' + card.name"
                 >
                   Редактировать
                 </app-pi-button>
@@ -178,7 +269,7 @@ const PAGE_SIZE = 12;
               [total]="total()"
               [pageSize]="pageSize"
               [currentPage]="page()"
-              ariaLabel="Страницы изделий"
+              [ariaLabel]="pagerAria()"
               (pageChange)="onPageChange($event)"
             />
           </div>
@@ -222,6 +313,27 @@ const PAGE_SIZE = 12;
       font-family: var(--font-display, Georgia, serif);
       font-size: 1.35rem;
       line-height: 1.1;
+    }
+
+    .rail__chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+
+    .rail__chip {
+      border: 1px solid var(--color-rule);
+      background: transparent;
+      color: var(--color-ink);
+      font-size: 0.8125rem;
+      line-height: 1.2;
+      padding: 0.35rem 0.7rem;
+      cursor: pointer;
+    }
+
+    .rail__chip--active {
+      border-color: color-mix(in oklch, var(--color-accent, #c9a227) 70%, var(--color-rule));
+      background: color-mix(in oklch, var(--color-accent, #c9a227) 18%, transparent);
     }
 
     .rail__filters {
@@ -270,9 +382,16 @@ const PAGE_SIZE = 12;
       font-size: 0.75rem;
     }
 
-    .rail__quantity {
+    .rail__quantity,
+    .rail__add-qty-input {
       width: 4.5rem;
       flex: 0 0 4.5rem;
+    }
+
+    .rail__add-qty-input {
+      width: 3.5rem;
+      flex: 0 0 3.5rem;
+      padding-inline: 0.35rem;
     }
 
     .rail__grid {
@@ -293,13 +412,25 @@ const PAGE_SIZE = 12;
 
     .rail__actions {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 0.5rem;
       width: 100%;
     }
 
-    .rail__actions app-pi-button:first-child {
+    .rail__add-block {
+      display: flex;
       flex: 1;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .rail__in-kp {
+      flex: 1 1 100%;
+      font-size: 0.6875rem;
+      color: var(--color-muted-foreground, #6b7280);
+      letter-spacing: 0.02em;
     }
 
     .rail__actions app-pi-button:last-child {
@@ -325,6 +456,18 @@ const PAGE_SIZE = 12;
       color: var(--color-destructive, #b42318);
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     @media (max-width: 70rem) {
       .rail__grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -345,6 +488,8 @@ const PAGE_SIZE = 12;
 })
 export class ProposalProductRailComponent implements OnInit, OnDestroy {
   private readonly productsService = inject(ProductsService);
+  private readonly modulesService = inject(ProductModulesService);
+  private readonly materialsService = inject(MaterialsService);
   private readonly categoriesService = inject(CategoriesService);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
@@ -355,62 +500,107 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   readonly draftLines = input<ProposalDraftLine[]>([]);
   readonly readOnly = input(false);
 
+  protected readonly railKind = signal<RailKind>('catalog');
   protected readonly query = signal('');
   protected readonly categoryId = signal('');
-  protected readonly products = signal<Product[]>([]);
+  protected readonly cards = signal<RailCard[]>([]);
   protected readonly categories = signal<Category[]>([]);
   protected readonly total = signal(0);
   protected readonly page = signal(1);
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly pageSize = PAGE_SIZE;
+  /** Per-card add quantity (defaults to 1). */
+  private readonly addQtyById = signal<Record<string, number>>({});
 
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Full module list for client-side search/page (API returns array). */
+  private allModules: ProductModule[] = [];
+
+  protected readonly createLabel = computed(() => {
+    switch (this.railKind()) {
+      case 'module':
+        return 'Создать модуль';
+      case 'material':
+        return 'Создать материал';
+      default:
+        return 'Создать изделие';
+    }
+  });
 
   ngOnInit(): void {
+    this.loadCategories();
     this.load();
-    this.categoriesService
-      .list('product')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        if (res.ok) {
-          this.categories.set((res.data ?? []).filter((category) => category.isActive !== false));
-        }
-      });
   }
 
   ngOnDestroy(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
   }
 
-  protected emptyHint(): string {
-    return this.query().trim() || this.categoryId()
-      ? 'Ничего не найдено'
-      : 'Изделий пока нет. Создайте первое прямо здесь.';
+  protected lineTrack(line: ProposalDraftLine, index: number): string {
+    return `${line.lineKind ?? 'catalog'}:${line.refId ?? line.productId}:${index}`;
   }
 
-  protected productDescription(product: Product): string {
+  protected searchPlaceholder(): string {
+    return 'Название или артикул…';
+  }
+
+  protected pagerAria(): string {
+    switch (this.railKind()) {
+      case 'module':
+        return 'Страницы модулей';
+      case 'material':
+        return 'Страницы материалов';
+      default:
+        return 'Страницы изделий';
+    }
+  }
+
+  protected emptyHint(): string {
+    const filtered = this.query().trim() || this.categoryId();
+    if (filtered) return 'Ничего не найдено';
+    switch (this.railKind()) {
+      case 'module':
+        return 'Модулей пока нет. Создайте первый прямо здесь.';
+      case 'material':
+        return 'Материалов пока нет. Создайте первый прямо здесь.';
+      default:
+        return 'Изделий пока нет. Создайте первое прямо здесь.';
+    }
+  }
+
+  protected cardDescription(card: RailCard): string {
     return (
-      [product.sku, product.listPrice != null ? formatPrice(product.listPrice) : null]
+      [card.sku, card.unitPrice > 0 ? formatPrice(card.unitPrice) : null]
         .filter(Boolean)
         .join(' · ') || 'Цена по запросу'
     );
   }
 
-  protected mainPhotoOf(product: Product): Photo | null {
-    for (const photo of product.photoIds ?? []) {
-      if (typeof photo !== 'string' && photo?.storageUrl) return photo;
-    }
-    return null;
+  protected inKpQty(card: RailCard): number {
+    return this.draftLines()
+      .filter((line) => this.lineMatchesCard(line, card))
+      .reduce((sum, line) => sum + (Number.isFinite(line.quantity) ? line.quantity : 0), 0);
   }
 
-  protected mainPhotoUrl(product: Product): string {
-    const photo = this.mainPhotoOf(product);
-    if (!photo) return '';
-    const allPhotos = (product.photoIds ?? []).filter(
-      (candidate): candidate is Photo => typeof candidate !== 'string',
-    );
-    return photoListUrl(photo, allPhotos);
+  protected addQty(id: string): number {
+    return this.addQtyById()[id] ?? 1;
+  }
+
+  protected addLabel(card: RailCard): string {
+    const qty = this.addQty(card.id);
+    return this.inKpQty(card) > 0 ? `Ещё +${qty}` : 'Добавить';
+  }
+
+  protected setRailKind(kind: RailKind): void {
+    if (this.railKind() === kind) return;
+    this.railKind.set(kind);
+    this.query.set('');
+    this.categoryId.set('');
+    this.page.set(1);
+    this.addQtyById.set({});
+    this.loadCategories();
+    this.load();
   }
 
   protected onQuery(value: string): void {
@@ -431,6 +621,13 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  protected onAddQtyChange(id: string, event: Event): void {
+    if (this.readOnly()) return;
+    const raw = Number((event.target as HTMLInputElement).value);
+    const qty = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    this.addQtyById.update((map) => ({ ...map, [id]: qty }));
+  }
+
   protected totalPages(): number {
     return Math.max(1, Math.ceil(this.total() / PAGE_SIZE));
   }
@@ -443,16 +640,19 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
     return `${start}–${end} из ${count}`;
   }
 
-  protected addProduct(product: Product): void {
+  protected addCard(card: RailCard): void {
     if (this.readOnly()) return;
+    const quantity = Math.max(1, this.addQty(card.id));
     this.productAdd.emit({
-      productId: product._id,
-      productName: product.name,
-      productSku: product.sku,
-      photoUrl: this.mainPhotoUrl(product) || undefined,
-      quantity: 1,
-      unit: product.unit,
-      unitPrice: product.listPrice ?? 0,
+      lineKind: card.kind,
+      productId: card.id,
+      ...(card.kind !== 'catalog' ? { refId: card.id } : {}),
+      productName: card.name,
+      productSku: card.sku,
+      photoUrl: card.photoUrl || undefined,
+      quantity,
+      unit: card.unit,
+      unitPrice: card.unitPrice,
     });
   }
 
@@ -464,21 +664,88 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   protected openCreate(): void {
     if (this.readOnly()) return;
-    const ref = this.dialog.open(QuickCreateDialogComponent, {
-      data: { entity: 'product', size: 'M' } satisfies QuickCreateDialogData,
+    if (this.railKind() === 'catalog') {
+      const ref = this.dialog.open(QuickCreateDialogComponent, {
+        data: { entity: 'product', size: 'M' } satisfies QuickCreateDialogData,
+      });
+      onDialogCloseOnce(ref, this.injector, () => this.load());
+      return;
+    }
+    if (this.railKind() === 'module') {
+      const ref = this.dialog.open(QuickCreateDialogComponent, {
+        data: { entity: 'module', size: 'M' } satisfies QuickCreateDialogData,
+      });
+      onDialogCloseOnce(ref, this.injector, () => this.load());
+      return;
+    }
+    const ref = this.dialog.open(MaterialFormDialogComponent, { data: null, width: 'lg' });
+    onDialogCloseOnce(ref, this.injector, () => this.load());
+  }
+
+  protected openEdit(card: RailCard): void {
+    if (this.readOnly()) return;
+    if (card.kind === 'catalog') {
+      const ref = this.dialog.open(ProductFormDialogComponent, {
+        data: card.raw as Product,
+        width: 'lg',
+      });
+      onDialogCloseOnce(ref, this.injector, () => this.load());
+      return;
+    }
+    if (card.kind === 'module') {
+      const ref = this.dialog.open(ModuleFormDialogComponent, {
+        data: card.raw as ProductModule,
+        width: 'lg',
+      });
+      onDialogCloseOnce(ref, this.injector, () => this.load());
+      return;
+    }
+    const ref = this.dialog.open(MaterialFormDialogComponent, {
+      data: card.raw as Material,
+      width: 'lg',
     });
     onDialogCloseOnce(ref, this.injector, () => this.load());
   }
 
-  protected openEdit(product: Product): void {
-    if (this.readOnly()) return;
-    const ref = this.dialog.open(ProductFormDialogComponent, { data: product, width: 'lg' });
-    onDialogCloseOnce(ref, this.injector, () => this.load());
+  private lineMatchesCard(line: ProposalDraftLine, card: RailCard): boolean {
+    const kind = line.lineKind ?? 'catalog';
+    if (kind !== card.kind) return false;
+    if (kind === 'catalog') return line.productId === card.id;
+    return (line.refId ?? line.productId) === card.id;
+  }
+
+  private loadCategories(): void {
+    const type = this.railKind() === 'material' ? 'material' : 'product';
+    if (this.railKind() === 'module') {
+      this.categories.set([]);
+      return;
+    }
+    this.categoriesService
+      .list(type)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) {
+          this.categories.set((res.data ?? []).filter((category) => category.isActive !== false));
+        }
+      });
   }
 
   private load(): void {
     this.loading.set(true);
     this.error.set(null);
+    const kind = this.railKind();
+    if (kind === 'catalog') {
+      this.loadProducts();
+      return;
+    }
+    if (kind === 'module') {
+      this.loadModules();
+      return;
+    }
+    this.loadMaterials();
+  }
+
+  private loadProducts(): void {
     this.productsService
       .list({
         page: this.page(),
@@ -490,13 +757,120 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
       .subscribe((res) => {
         this.loading.set(false);
         if (!res.ok) {
-          this.products.set([]);
+          this.cards.set([]);
           this.total.set(0);
           this.error.set(extractErrorMessage(res.error));
           return;
         }
-        this.products.set(res.data.items ?? []);
+        const items = res.data.items ?? [];
+        this.cards.set(items.map((product) => this.productCard(product)));
         this.total.set(res.data.total ?? 0);
       });
+  }
+
+  private loadModules(): void {
+    this.modulesService
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.loading.set(false);
+        if (!res.ok) {
+          this.cards.set([]);
+          this.total.set(0);
+          this.allModules = [];
+          this.error.set(extractErrorMessage(res.error));
+          return;
+        }
+        this.allModules = res.data ?? [];
+        const q = this.query().trim().toLowerCase();
+        const filtered = q
+          ? this.allModules.filter(
+              (mod) =>
+                mod.name.toLowerCase().includes(q) || (mod.article ?? '').toLowerCase().includes(q),
+            )
+          : this.allModules;
+        this.total.set(filtered.length);
+        const start = (this.page() - 1) * PAGE_SIZE;
+        this.cards.set(filtered.slice(start, start + PAGE_SIZE).map((mod) => this.moduleCard(mod)));
+      });
+  }
+
+  private loadMaterials(): void {
+    this.materialsService
+      .list({
+        page: this.page(),
+        limit: PAGE_SIZE,
+        ...(this.query().trim() ? { search: this.query().trim() } : {}),
+        ...(this.categoryId() ? { categoryId: this.categoryId() } : {}),
+      })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.loading.set(false);
+        if (!res.ok) {
+          this.cards.set([]);
+          this.total.set(0);
+          this.error.set(extractErrorMessage(res.error));
+          return;
+        }
+        const items = res.data.items ?? [];
+        this.cards.set(items.map((material) => this.materialCard(material)));
+        this.total.set(res.data.total ?? 0);
+      });
+  }
+
+  private productCard(product: Product): RailCard {
+    return {
+      id: product._id,
+      name: product.name,
+      sku: product.sku,
+      unit: product.unit,
+      unitPrice: product.listPrice ?? 0,
+      photoUrl: this.mainPhotoUrl(product) || undefined,
+      eyebrow: product.kind === 'service' ? 'Услуга' : 'Изделие',
+      kind: 'catalog',
+      raw: product,
+    };
+  }
+
+  private moduleCard(mod: ProductModule): RailCard {
+    return {
+      id: mod._id,
+      name: mod.name,
+      sku: mod.article,
+      unit: 'шт',
+      unitPrice: 0,
+      eyebrow: 'Модуль',
+      kind: 'module',
+      raw: mod,
+    };
+  }
+
+  private materialCard(material: Material): RailCard {
+    return {
+      id: material._id,
+      name: material.name,
+      sku: material.article ?? material.sku,
+      unit: material.unit,
+      unitPrice: material.pricePerUnit ?? 0,
+      eyebrow: 'Материал',
+      kind: 'material',
+      raw: material,
+    };
+  }
+
+  private mainPhotoOf(product: Product): Photo | null {
+    for (const photo of product.photoIds ?? []) {
+      if (typeof photo !== 'string' && photo?.storageUrl) return photo;
+    }
+    return null;
+  }
+
+  private mainPhotoUrl(product: Product): string {
+    const photo = this.mainPhotoOf(product);
+    if (!photo) return '';
+    const allPhotos = (product.photoIds ?? []).filter(
+      (candidate): candidate is Photo => typeof candidate !== 'string',
+    );
+    return photoListUrl(photo, allPhotos);
   }
 }

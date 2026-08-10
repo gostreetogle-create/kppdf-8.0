@@ -58,6 +58,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     findById: jest.fn(),
     create: jest.fn(),
     updateOne: jest.fn().mockReturnValue(mockQuery({ matchedCount: 1 })),
+    db: { models: {} as Record<string, unknown> },
   };
   const counter = { next: jest.fn().mockResolvedValue('QTN-0001') };
   const contractService = {
@@ -196,6 +197,56 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
         }) as never,
       );
       expect(model.create.mock.calls[0][0]).toMatchObject({ total: 7500 });
+    });
+
+    it('creates a module line with refId and snapshot fields', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+      const moduleId = new Types.ObjectId().toString();
+
+      await service.create(
+        validCreateDto({
+          items: [
+            {
+              lineKind: 'module',
+              refId: moduleId,
+              productName: 'Каркас',
+              productSku: 'MD-01',
+              quantity: 2,
+              unit: 'шт',
+              unitPrice: 1500,
+            },
+          ],
+        }) as never,
+      );
+
+      expect(model.create.mock.calls[0][0].items[0]).toMatchObject({
+        lineKind: 'module',
+        productName: 'Каркас',
+        productSku: 'MD-01',
+        total: 3000,
+      });
+      expect(model.create.mock.calls[0][0].items[0].refId).toBeInstanceOf(Types.ObjectId);
+      expect(model.create.mock.calls[0][0].items[0].productId).toBeUndefined();
+    });
+
+    it('rejects a module line without refId', async () => {
+      const { service, model } = createService();
+      await expect(
+        service.create(
+          validCreateDto({
+            items: [
+              {
+                lineKind: 'module',
+                productName: 'Каркас',
+                quantity: 1,
+                unitPrice: 10,
+              },
+            ],
+          }) as never,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
     });
 
     it('creates a custom line without a product and applies its line discount', async () => {

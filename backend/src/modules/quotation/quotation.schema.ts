@@ -3,11 +3,23 @@ import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ _id: false })
 export class QuotationItem {
-  @Prop({ enum: ['catalog', 'custom'], default: 'catalog' })
-  lineKind!: 'catalog' | 'custom';
+  /** catalog=Product FK; custom=no FK; module/material=refId → ProductModule/Material. */
+  @Prop({
+    enum: ['catalog', 'custom', 'module', 'material'],
+    default: 'catalog',
+  })
+  lineKind!: 'catalog' | 'custom' | 'module' | 'material';
 
+  /** Legacy + catalog lines: Product ObjectId. Absent for custom/module/material. */
   @Prop({ type: Types.ObjectId, ref: 'Product' })
   productId!: Types.ObjectId;
+
+  /**
+   * Typed catalog ref for module/material lines (SALES-348).
+   * Populated in QuotationService by lineKind (ProductModule | Material).
+   */
+  @Prop({ type: Types.ObjectId })
+  refId?: Types.ObjectId;
 
   @Prop()
   productName?: string;

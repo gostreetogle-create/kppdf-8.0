@@ -17,12 +17,22 @@ import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class QuotationItemDto {
   @IsOptional()
-  @IsIn(['catalog', 'custom'])
-  lineKind?: 'catalog' | 'custom';
+  @IsIn(['catalog', 'custom', 'module', 'material'])
+  lineKind?: 'catalog' | 'custom' | 'module' | 'material';
 
-  @ValidateIf((item) => item.lineKind !== 'custom')
+  @ValidateIf(
+    (item) =>
+      (item.lineKind ?? 'catalog') === 'catalog' ||
+      (!item.lineKind && !item.refId),
+  )
   @IsObjectId()
   productId?: string;
+
+  @ValidateIf(
+    (item) => item.lineKind === 'module' || item.lineKind === 'material',
+  )
+  @IsObjectId()
+  refId?: string;
 
   @ValidateIf((item) => item.lineKind === 'custom')
   @IsString()

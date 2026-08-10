@@ -1,3 +1,13 @@
+## [2026-08-11] — TZ-SALES-348 DONE — витрина КП: «В КП», qty, модули/материалы
+**Исполнитель:** cursor-composer-sales348
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** Витрина Create КП — chips Изделия/Модули/Материалы; «В КП: N» из реального состава; поле кол-ва на карточке (Add & continue / «Ещё +N»). Module/material пишут `lineKind` + `refId` со снимком; старые catalog `productId` читаются; GET populate по виду.
+**Gates:** backend tsc + quotation 40/40; frontend tsc + proposal-create/rail 41/41 + Angular development build; Prettier/ESLint/diff-check PASS; DOM/component self-check PASS; authenticated browser/data smoke unavailable without backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-348.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-348-kp-vitrine-added-badge-modules.lock`
+**Commit/push:** pending closeout commit on canonical `main`.
+**NEXT:** idle coding → VPN OFF → OPS-310 → warm deploy (PO); Deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-347 DONE — статус, версии и заказ из КП
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ

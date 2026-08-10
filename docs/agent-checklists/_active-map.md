@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-SALES-348 DONE → WAVE-KP-COMPLETE idle
+- DONE: SALES-348 vitrine «В КП», add qty, chips Изделия/Модули/Материалы, `lineKind` module|material + `refId`, legacy catalog safe.
+- Gates: BE tsc; quotation 40/40; FE tsc; proposal-create/rail 41/41; Angular development build; Prettier/ESLint/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-348.done.md`; lock: `.mimocode/locks/TZ-SALES-348-kp-vitrine-added-badge-modules.lock`; `_active/` empty.
+- NEXT: **idle coding** — PO: VPN OFF → **OPS-310** → warm deploy (AUTH-302 already on main `1675e0e3`, verify after deploy).
+- Deploy: NO until PO says «деплой». Wipe: NO.
+
 ## Checkpoint 2026-08-11 · Freebuff closed — executor = Cursor Agent only
 - PO: close Freebuff; paste `PROMPT-RESUME-ANY` into **new Cursor Agent** on `D:\kppdf-8.0`.
 - Claim ready: `tasks/_active/TZ-SALES-348.md` (+ checklist). No need to recreate.

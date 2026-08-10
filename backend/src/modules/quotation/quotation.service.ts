@@ -120,7 +120,7 @@ export class QuotationService {
       if (to) range.$lte = to;
       filter.date = range;
     }
-    return this.model
+    const docs = await this.model
       .find(filter)
       .populate('counterpartyId')
       .populate('contactPersonId')
@@ -129,6 +129,8 @@ export class QuotationService {
       .populate('items.productId')
       .sort({ date: -1 })
       .exec();
+    await Promise.all(docs.map((doc) => this.populateTypedItemRefs(doc)));
+    return docs;
   }
 
   async findById(id: string): Promise<QuotationDocument> {
@@ -145,6 +147,7 @@ export class QuotationService {
       .exec();
     if (!doc || doc.deletedAt)
       throw new NotFoundException(`Quotation ${id} not found`);
+    await this.populateTypedItemRefs(doc);
     return doc;
   }
 
@@ -279,6 +282,9 @@ export class QuotationService {
         items: this.cloneItems(doc.items).map((item) => ({
           ...item,
           ...(item.productId ? { productId: item.productId.toString() } : {}),
+          ...(item.refId
+            ? { refId: this.asObjectId(item.refId)?.toString() }
+            : {}),
         })),
       };
       const snapshot = {
@@ -385,9 +391,11 @@ export class QuotationService {
   }
 
   private cloneItem(item: QuotationItem): QuotationItem {
+    const refId = this.asObjectId(item.refId);
     return {
       lineKind: item.lineKind ?? (item.productId ? 'catalog' : 'custom'),
       ...(item.productId ? { productId: item.productId } : {}),
+      ...(refId ? { refId } : {}),
       productName: item.productName,
       description: item.description,
       productSku: item.productSku,
@@ -408,8 +416,9 @@ export class QuotationService {
   }
 
   private toQuotationItem(item: {
-    lineKind?: 'catalog' | 'custom';
+    lineKind?: 'catalog' | 'custom' | 'module' | 'material';
     productId?: string;
+    refId?: string;
     productName?: string;
     description?: string;
     productSku?: string;
@@ -429,6 +438,16 @@ export class QuotationService {
     if (lineKind === 'custom' && !item.productName?.trim()) {
       throw new BadRequestException('Для своей строки требуется название');
     }
+    if (
+      (lineKind === 'module' || lineKind === 'material') &&
+      !item.refId
+    ) {
+      throw new BadRequestException(
+        lineKind === 'module'
+          ? 'Для строки модуля требуется ссылка на модуль'
+          : 'Для строки материала требуется ссылка на материал',
+      );
+    }
     const discountPercent = Math.min(
       100,
       Math.max(0, item.discountPercent ?? 0),
@@ -440,6 +459,7 @@ export class QuotationService {
       ...(item.productId
         ? { productId: new Types.ObjectId(item.productId) }
         : {}),
+      ...(item.refId ? { refId: new Types.ObjectId(item.refId) } : {}),
       productName: item.productName,
       description: item.description,
       productSku: item.productSku,
@@ -453,6 +473,80 @@ export class QuotationService {
       total,
       sortOrder: item.sortOrder ?? 0,
     } as QuotationItem;
+  }
+
+  /** Resolve module/material refs after product populate (SALES-348). */
+  private async populateTypedItemRefs(
+    doc: QuotationDocument,
+  ): Promise<void> {
+    const items = doc.items ?? [];
+    const moduleIds = items
+      .filter((item) => item.lineKind === 'module' && item.refId)
+      .map((item) => this.asObjectId(item.refId)!)
+      .filter(Boolean);
+    const materialIds = items
+      .filter((item) => item.lineKind === 'material' && item.refId)
+      .map((item) => this.asObjectId(item.refId)!)
+      .filter(Boolean);
+    if (moduleIds.length === 0 && materialIds.length === 0) return;
+
+    const moduleModel = this.model.db.models['ProductModule'];
+    const materialModel = this.model.db.models['Material'];
+    const [modules, materials] = await Promise.all([
+      moduleIds.length && moduleModel
+        ? moduleModel
+            .find({ _id: { $in: moduleIds } })
+            .select('name article unit')
+            .lean()
+            .exec()
+        : Promise.resolve([] as Array<Record<string, unknown>>),
+      materialIds.length && materialModel
+        ? materialModel
+            .find({ _id: { $in: materialIds } })
+            .select('name article sku unit pricePerUnit')
+            .lean()
+            .exec()
+        : Promise.resolve([] as Array<Record<string, unknown>>),
+    ]);
+    const moduleMap = new Map(
+      (modules as Array<{ _id: Types.ObjectId }>).map((row) => [
+        row._id.toString(),
+        row,
+      ]),
+    );
+    const materialMap = new Map(
+      (materials as Array<{ _id: Types.ObjectId }>).map((row) => [
+        row._id.toString(),
+        row,
+      ]),
+    );
+    for (const item of items) {
+      const id = this.asObjectId(item.refId)?.toString();
+      if (!id) continue;
+      if (item.lineKind === 'module' && moduleMap.has(id)) {
+        (item as { refId?: unknown }).refId = moduleMap.get(id);
+      } else if (item.lineKind === 'material' && materialMap.has(id)) {
+        (item as { refId?: unknown }).refId = materialMap.get(id);
+      }
+    }
+  }
+
+  private asObjectId(
+    value: Types.ObjectId | string | { _id?: Types.ObjectId } | undefined | null,
+  ): Types.ObjectId | undefined {
+    if (!value) return undefined;
+    if (value instanceof Types.ObjectId) return value;
+    if (typeof value === 'string' && Types.ObjectId.isValid(value)) {
+      return new Types.ObjectId(value);
+    }
+    if (
+      typeof value === 'object' &&
+      '_id' in value &&
+      value._id instanceof Types.ObjectId
+    ) {
+      return value._id;
+    }
+    return undefined;
   }
 
   private toFamilySummary(

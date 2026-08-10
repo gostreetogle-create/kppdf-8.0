@@ -1048,6 +1048,7 @@ transaction. See `docs/data-model.md` § Concurrency & Transactions.
 
 - **IA chrome (310):** Deals dark TOC КП|Договоры|Заказы; proposal-only yellow **Создать КП**|**Все КП**; guarded `/proposals/create` stub.
 - **Layout SoT (311):** `docs/ux/kp-create-studio-spec.md` — desktop 3 columns (Left 280–320 / Center flex A4 / Right 300–340), tablet/mobile drawers, empty RU copy; page doc `docs/pages/proposals-create.page.md`.
+- **Vitrine (348 DONE):** chips Изделия/Модули/Материалы; «В КП: N» from draft; add qty; `lineKind` module|material + `refId` on QuotationItem (legacy `productId` catalog intact).
 - **Shell (312 DONE):** `proposal-create.page.ts` three-zone placeholders + narrow toggles; fill → **314/315/316**; family list → **313**.
 - **Shell (312):** `/proposals/create` three-zone placeholder studio with narrow toggles; fill remains 314/315/316; print **320 PARKED**.
 - **Next:** rails 314/315 → template 316; list family UI **313**; print **320 PARKED**.

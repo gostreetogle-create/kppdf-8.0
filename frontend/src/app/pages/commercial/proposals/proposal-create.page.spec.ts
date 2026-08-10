@@ -703,6 +703,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     tick();
     expect(page.draftLines()).toEqual([
       {
+        lineKind: 'catalog',
         productId: 'prod-1',
         productName: 'Стенд',
         productSku: undefined,
@@ -742,6 +743,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(localStorage.getItem('kp.create.lastDraftId')).toBe('q-query');
     expect(page.draftLines()).toEqual([
       {
+        lineKind: 'catalog',
         productId: 'prod-1',
         productName: 'Стенд',
         productSku: undefined,
@@ -968,6 +970,57 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
   }));
+
+  it('adds module/material lines by refId and merges quantity on repeat', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onProductAdd: (line: ProposalDraftLine) => void;
+      removeCompositionLine: (index: number) => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+
+    page.onProductAdd({
+      lineKind: 'module',
+      productId: 'module-1',
+      refId: 'module-1',
+      productName: 'Каркас',
+      productSku: 'MD-01',
+      quantity: 2,
+      unit: 'шт',
+      unitPrice: 0,
+    });
+    page.onProductAdd({
+      lineKind: 'module',
+      productId: 'module-1',
+      refId: 'module-1',
+      productName: 'Каркас',
+      quantity: 1,
+      unitPrice: 0,
+    });
+    expect(page.draftLines()).toEqual([
+      expect.objectContaining({
+        lineKind: 'module',
+        refId: 'module-1',
+        quantity: 3,
+        productName: 'Каркас',
+      }),
+    ]);
+
+    page.onProductAdd({
+      lineKind: 'material',
+      productId: 'material-1',
+      refId: 'material-1',
+      productName: 'Труба',
+      productSku: 'MT-1',
+      quantity: 5,
+      unit: 'м',
+      unitPrice: 450,
+    });
+    expect(page.draftLines()).toHaveLength(2);
+    page.removeCompositionLine(0);
+    expect(page.draftLines()).toEqual([
+      expect.objectContaining({ lineKind: 'material', refId: 'material-1', quantity: 5 }),
+    ]);
+  });
 
   it('adds a custom line, rebuilds it on the sheet, and includes it in persistence', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {

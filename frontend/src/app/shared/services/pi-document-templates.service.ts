@@ -74,7 +74,7 @@ export interface DocumentTemplate {
  * Empty/invalid IDs: silently skipped → block renders empty placeholder.
  */
 export interface BuildPreviewLine {
-  lineKind?: 'catalog' | 'custom';
+  lineKind?: 'catalog' | 'custom' | 'module' | 'material';
   productName: string;
   description?: string;
   quantity: number;

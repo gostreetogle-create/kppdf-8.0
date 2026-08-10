@@ -5,6 +5,8 @@ import { of } from 'rxjs';
 
 import { ProductsService, type Product } from '../../../shared/services/products.service';
 import { CategoriesService } from '../../../shared/services/categories.service';
+import { ProductModulesService } from '../../../shared/services/pi-product-modules.service';
+import { MaterialsService } from '../../../shared/services/materials.service';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { ProposalProductRailComponent } from './proposal-product-rail.component';
 
@@ -24,9 +26,11 @@ const product: Product = {
   ],
 };
 
-describe('ProposalProductRailComponent (TZ-SALES-328)', () => {
+describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
   let fixture: ComponentFixture<ProposalProductRailComponent>;
   let listMock: jest.Mock;
+  let modulesListMock: jest.Mock;
+  let materialsListMock: jest.Mock;
   let openMock: jest.Mock;
   const added = jest.fn();
 
@@ -37,6 +41,39 @@ describe('ProposalProductRailComponent (TZ-SALES-328)', () => {
         data: {
           items: [product],
           total: 13,
+          page: 1,
+          limit: 12,
+        },
+      }),
+    );
+    modulesListMock = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          {
+            _id: 'module-1',
+            name: 'Каркас',
+            article: 'MD-01',
+            workTypes: [],
+            materials: [],
+          },
+        ],
+      }),
+    );
+    materialsListMock = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          items: [
+            {
+              _id: 'material-1',
+              name: 'Труба 40×40',
+              article: 'MT-01',
+              unit: 'м',
+              pricePerUnit: 450,
+            },
+          ],
+          total: 1,
           page: 1,
           limit: 12,
         },
@@ -53,6 +90,14 @@ describe('ProposalProductRailComponent (TZ-SALES-328)', () => {
         {
           provide: ProductsService,
           useValue: { list: listMock },
+        },
+        {
+          provide: ProductModulesService,
+          useValue: { list: modulesListMock },
+        },
+        {
+          provide: MaterialsService,
+          useValue: { list: materialsListMock },
         },
         {
           provide: CategoriesService,
@@ -104,21 +149,98 @@ describe('ProposalProductRailComponent (TZ-SALES-328)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="kp-rail-category"]').value).toBe('');
   });
 
-  it('emits a draft line without closing the rail when adding a product', () => {
+  it('emits a draft line with quantity from the card field and keeps the rail open', () => {
+    const qtyInput = fixture.nativeElement.querySelector(
+      '[data-test="kp-rail-add-qty-product-1"]',
+    ) as HTMLInputElement;
+    qtyInput.value = '3';
+    qtyInput.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
     const addButton = fixture.nativeElement.querySelector(
       '[data-test="kp-rail-add-product-1"] button',
     ) as HTMLButtonElement;
     addButton.click();
     fixture.detectChanges();
     expect(added).toHaveBeenCalledWith({
+      lineKind: 'catalog',
       productId: 'product-1',
       productName: 'Стенд ресепшн',
       productSku: 'ST-001',
-      quantity: 1,
+      quantity: 3,
       unit: 'шт',
       unitPrice: 12500,
+      photoUrl: expect.stringContaining('/uploads/stand-thumb.jpg'),
     });
     expect(fixture.nativeElement.querySelector('[data-test="kp-product-rail"]')).toBeTruthy();
+  });
+
+  it('shows В КП badge from draftLines and switches add label', () => {
+    fixture.componentRef.setInput('draftLines', [
+      {
+        lineKind: 'catalog',
+        productId: 'product-1',
+        productName: 'Стенд ресепшн',
+        quantity: 2,
+        unitPrice: 12500,
+      },
+    ]);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-rail-in-kp-product-1"]').textContent,
+    ).toContain('В КП: 2');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-rail-add-product-1"]').textContent,
+    ).toContain('Ещё +1');
+  });
+
+  it('switches chips to modules and emits module lineKind/refId', () => {
+    (
+      fixture.nativeElement.querySelector('[data-test="kp-rail-kind-module"]') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(modulesListMock).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-rail-category"]')).toBeNull();
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="kp-rail-add-module-1"] button',
+      ) as HTMLButtonElement
+    ).click();
+    expect(added).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lineKind: 'module',
+        productId: 'module-1',
+        refId: 'module-1',
+        productName: 'Каркас',
+        productSku: 'MD-01',
+        quantity: 1,
+        unitPrice: 0,
+      }),
+    );
+  });
+
+  it('switches chips to materials and loads materials API', () => {
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="kp-rail-kind-material"]',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(materialsListMock).toHaveBeenCalledWith({ page: 1, limit: 12 });
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="kp-rail-add-material-1"] button',
+      ) as HTMLButtonElement
+    ).click();
+    expect(added).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lineKind: 'material',
+        refId: 'material-1',
+        productName: 'Труба 40×40',
+        unitPrice: 450,
+      }),
+    );
   });
 
   it('passes category, search, and page state to the products API', fakeAsync(() => {

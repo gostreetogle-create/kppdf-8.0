@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-348 DONE: KP vitrine badge + modules/materials
+**Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** Витрина Create КП — chips Изделия/Модули/Материалы; «В КП: N» из состава; qty на карточке (Add & continue). Module/material → `lineKind` + `refId` со снимком; legacy `productId` читается; GET populate по виду.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-348.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-348-kp-vitrine-added-badge-modules.lock`
+**Gates:** BE tsc + quotation 40/40; FE tsc + proposal-create/rail 41/41 + development build; Prettier/ESLint/diff-check PASS; DOM/component self-check PASS; live authenticated browser/data smoke unavailable without backend data stack.
+**NEXT:** idle coding → VPN OFF → OPS-310 → warm deploy (PO); deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-347 DONE: status, versions and order flow
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** Верхняя строка Create КП показывает RU статус и разрешённые переходы; `freeze` используется для «Сохранить версию» и read-only просмотра snapshot без PATCH/autosave. Принятое КП можно превратить в заказ с переходом на карточку заказа; duplicate открывается в студии.
@@ -38,7 +46,7 @@
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; deploy НЕ; desktop ZIP publish НЕ.
 
 **Last updated:** 2026-08-11
-**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-347 DONE; next SALES-348; deploy НЕ запускать
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-348 DONE; next OPS-310 (deploy gate); deploy НЕ запускать
 
 ## [2026-08-11] — TZ-SALES-343 DONE: recipient overlay and references
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ

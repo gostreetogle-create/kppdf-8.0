@@ -777,7 +777,7 @@ export class ProposalCreatePage implements OnInit {
           const org = this.organizationId().trim();
           const markup = this.clampMarkup(this.orgMarkupPercent());
           const previewLines: BuildPreviewLine[] = this.draftLines().map((line) => ({
-            ...(line.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
+            ...(line.lineKind && line.lineKind !== 'catalog' ? { lineKind: line.lineKind } : {}),
             productName: line.productName || 'Своя строка',
             ...(line.description ? { description: line.description } : {}),
             quantity: line.quantity,
@@ -986,9 +986,11 @@ export class ProposalCreatePage implements OnInit {
       terms: this.terms(),
       items: this.draftLines().map((line, index) => ({
         lineKind: line.lineKind ?? (line.productId ? 'catalog' : 'custom'),
-        ...(line.productId && !line.productId.startsWith('custom-')
-          ? { productId: line.productId }
-          : {}),
+        ...(line.lineKind === 'module' || line.lineKind === 'material'
+          ? { refId: line.refId ?? line.productId }
+          : line.productId && !line.productId.startsWith('custom-')
+            ? { productId: line.productId }
+            : {}),
         productName: line.productName,
         ...(line.description ? { description: line.description } : {}),
         productSku: line.productSku,
@@ -1209,18 +1211,27 @@ export class ProposalCreatePage implements OnInit {
     this.deliveryDays.set(Math.max(0, draft.deliveryDays ?? 0));
     this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, ...(draft.sheetLayout ?? {}) });
     this.draftLines.set(
-      (draft.items ?? []).map((item) => ({
-        ...(item.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
-        productId: this.refId(item.productId) ?? `custom-${item.sortOrder ?? 0}`,
-        productName: item.productName ?? 'Своя строка',
-        ...(item.description ? { description: item.description } : {}),
-        productSku: item.productSku,
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-        ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
-        ...(item.isOptional ? { isOptional: true } : {}),
-      })),
+      (draft.items ?? []).map((item) => {
+        const lineKind = item.lineKind ?? (this.refId(item.productId) ? 'catalog' : 'custom');
+        const refId = this.refId(item.refId);
+        const productId =
+          lineKind === 'module' || lineKind === 'material'
+            ? (refId ?? `typed-${item.sortOrder ?? 0}`)
+            : (this.refId(item.productId) ?? `custom-${item.sortOrder ?? 0}`);
+        return {
+          lineKind,
+          productId,
+          ...(refId ? { refId } : {}),
+          productName: item.productName ?? 'Своя строка',
+          ...(item.description ? { description: item.description } : {}),
+          productSku: item.productSku,
+          quantity: item.quantity,
+          unit: item.unit,
+          unitPrice: item.unitPrice,
+          ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
+          ...(item.isOptional ? { isOptional: true } : {}),
+        };
+      }),
     );
     if (templateId) {
       this.templatesSvc.findById(templateId).subscribe((res) => {
@@ -1636,16 +1647,32 @@ export class ProposalCreatePage implements OnInit {
   protected onProductAdd(line: ProposalDraftLine): void {
     if (this.isReadOnly()) return;
     this.draftLines.update((rows) => {
-      const catalogLine = { ...line, lineKind: 'catalog' as const };
-      const existing = rows.findIndex(
-        (row) => (row.lineKind ?? 'catalog') === 'catalog' && row.productId === line.productId,
-      );
-      if (existing < 0)
-        return [...rows, { ...catalogLine, quantity: Math.max(0.001, line.quantity) }];
+      const lineKind = line.lineKind ?? 'catalog';
+      const qty = Math.max(0.001, line.quantity);
+      if (lineKind === 'custom') {
+        return [...rows, { ...line, lineKind, quantity: qty }];
+      }
+      const matchId =
+        lineKind === 'module' || lineKind === 'material'
+          ? (line.refId ?? line.productId)
+          : line.productId;
+      const existing = rows.findIndex((row) => {
+        const rowKind = row.lineKind ?? 'catalog';
+        if (rowKind !== lineKind) return false;
+        if (lineKind === 'catalog') return row.productId === matchId;
+        return (row.refId ?? row.productId) === matchId;
+      });
+      const nextLine: ProposalDraftLine = {
+        ...line,
+        lineKind,
+        ...(lineKind === 'module' || lineKind === 'material'
+          ? { refId: matchId, productId: matchId }
+          : {}),
+        quantity: qty,
+      };
+      if (existing < 0) return [...rows, nextLine];
       return rows.map((row, index) =>
-        index === existing
-          ? { ...row, quantity: row.quantity + Math.max(0.001, line.quantity) }
-          : row,
+        index === existing ? { ...row, quantity: row.quantity + qty } : row,
       );
     });
     if (this.tableTemplateId()) this.addCommercialColumns();

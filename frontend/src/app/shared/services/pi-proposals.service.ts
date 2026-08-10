@@ -28,9 +28,11 @@ export interface ProposalSheetLayout {
 }
 
 export interface ProposalItem {
-  /** Catalog lines have a Product FK; custom lines use lineKind=custom. */
-  lineKind?: 'catalog' | 'custom';
+  /** catalog=Product; custom=no FK; module/material=refId (SALES-348). */
+  lineKind?: 'catalog' | 'custom' | 'module' | 'material';
   productId?: string;
+  /** Typed catalog ref for module/material lines. */
+  refId?: string;
   /** IMMUTABLE inline snapshot captured at quotation creation (plan §S1). */
   productName?: string;
   description?: string;

@@ -16,8 +16,8 @@ import { Type } from 'class-transformer';
 
 export class BuildPreviewLineDto {
   @IsOptional()
-  @IsIn(['catalog', 'custom'])
-  lineKind?: 'catalog' | 'custom';
+  @IsIn(['catalog', 'custom', 'module', 'material'])
+  lineKind?: 'catalog' | 'custom' | 'module' | 'material';
 
   @IsString()
   productName!: string;
