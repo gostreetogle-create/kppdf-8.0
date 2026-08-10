@@ -27,6 +27,7 @@ function makeService(options: {
   quotation?: Record<string, unknown>;
   order?: Record<string, unknown>;
   blocks: Record<string, unknown>[];
+  tableTemplate?: Record<string, unknown>;
 }) {
   const template = {
     _id: TEMPLATE_ID,
@@ -79,7 +80,7 @@ function makeService(options: {
     workTypeModel as never,
     textBlockModel as never,
     {} as never,
-    {} as never,
+    (options.tableTemplate ?? {}) as never,
     {} as never,
     invoiceModel as never,
   );
@@ -99,7 +100,11 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
           { role: 'signature', storageUrl: '/uploads/org/signature.png' },
         ],
       },
-      counterparty: { _id: COUNTERPARTY_ID, name: 'ООО Заказчик', organizationId: ORG_ID },
+      counterparty: {
+        _id: COUNTERPARTY_ID,
+        name: 'ООО Заказчик',
+        organizationId: ORG_ID,
+      },
       quotation: {
         _id: QUOTATION_ID,
         number: 'QTN-2026-001',
@@ -150,7 +155,11 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
         legalAddress: 'г. Москва',
         assets: [],
       },
-      counterparty: { _id: COUNTERPARTY_ID, name: 'ООО Заказчик', organizationId: ORG_ID },
+      counterparty: {
+        _id: COUNTERPARTY_ID,
+        name: 'ООО Заказчик',
+        organizationId: ORG_ID,
+      },
       quotation: {
         _id: QUOTATION_ID,
         number: 'QTN-STUB-001',
@@ -188,6 +197,56 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).toContain('height:80px');
     expect(html).not.toContain('src="/uploads/org/');
     expect(html).toContain('Подпись: ___________________');
+  });
+
+  it('renders 30 positions across configured pages with repeated headers and one footer', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [
+          {
+            key: 'productName',
+            label: 'Наименование',
+            type: 'text',
+            align: 'left',
+          },
+        ],
+      }),
+      preview: jest.fn(
+        (
+          _id: string,
+          rows: unknown[][],
+          _layout: unknown,
+          totals?: { total: number },
+        ) =>
+          `<table><thead><tr><th>Наименование</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${String(typeof row[0] === 'object' && row[0] !== null ? (row[0] as { title?: unknown }).title : row[0])}</td></tr>`).join('')}</tbody></table>${totals ? '<div class="pi-deal-totals">Итого</div>' : ''}`,
+      ),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+        },
+      ],
+    });
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: Array.from({ length: 30 }, (_, index) => ({
+        productName: `Позиция ${index + 1}`,
+        quantity: 1,
+        unitPrice: 100,
+      })),
+      sheetLayout: { rowsFirstPage: 4, rowsNextPage: 6 },
+      dealTotals: { vatPercent: 20 },
+    });
+
+    expect((html.match(/class="doc-page"/g) ?? []).length).toBe(6);
+    expect((html.match(/<thead>/g) ?? []).length).toBe(6);
+    expect((html.match(/pi-deal-totals/g) ?? []).length).toBe(1);
+    expect(html).toContain('Позиция 30');
   });
 
   it('renders КП terms with values and preserves unknown variables', async () => {

@@ -41,6 +41,14 @@ export interface ProposalTableTarget {
   explicit: boolean;
 }
 
+export interface ProposalSheetLayoutState {
+  rowsFirstPage: number;
+  rowsNextPage: number;
+  photoScalePercent: number;
+  photoCropYPercent: number;
+  showPhotoColumn: boolean;
+}
+
 export interface ProposalCreateInspectorState {
   organizationId: string;
   orgMarkupPercent: number;
@@ -56,6 +64,7 @@ export interface ProposalCreateInspectorState {
   prepaymentPercent?: number;
   productionDays?: number;
   deliveryDays?: number;
+  sheetLayout?: ProposalSheetLayoutState;
 }
 
 export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>;
@@ -205,6 +214,71 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
             data-test="kp-insp-vat"
           />
         </app-pi-form-field>
+
+        <section class="inspector__sheet" data-test="kp-insp-sheet-layout">
+          <div class="inspector__section-heading">
+            <h3>Вид листа</h3>
+            <p>Настройки сохраняются только в этом КП.</p>
+          </div>
+          <label
+            >Строк на 1-й странице
+            <input
+              type="number"
+              min="0"
+              max="200"
+              [value]="sheetLayout().rowsFirstPage"
+              [disabled]="readOnly()"
+              data-test="kp-sheet-rows-first"
+              (change)="onSheetNumberChange('rowsFirstPage', $event)"
+            />
+          </label>
+          <label
+            >Строк на следующих
+            <input
+              type="number"
+              min="0"
+              max="200"
+              [value]="sheetLayout().rowsNextPage"
+              [disabled]="readOnly()"
+              data-test="kp-sheet-rows-next"
+              (change)="onSheetNumberChange('rowsNextPage', $event)"
+            />
+          </label>
+          <label
+            >Размер фото %
+            <input
+              type="number"
+              min="10"
+              max="400"
+              [value]="sheetLayout().photoScalePercent"
+              [disabled]="readOnly()"
+              data-test="kp-sheet-photo-scale"
+              (change)="onSheetNumberChange('photoScalePercent', $event)"
+            />
+          </label>
+          <label
+            >Обрезка фото %
+            <input
+              type="number"
+              min="0"
+              max="100"
+              [value]="sheetLayout().photoCropYPercent"
+              [disabled]="readOnly()"
+              data-test="kp-sheet-photo-crop"
+              (change)="onSheetNumberChange('photoCropYPercent', $event)"
+            />
+          </label>
+          <label class="inspector__checkbox">
+            <input
+              type="checkbox"
+              [checked]="sheetLayout().showPhotoColumn"
+              [disabled]="readOnly()"
+              data-test="kp-sheet-photo-column"
+              (change)="onPhotoColumnChange($event)"
+            />
+            Колонка фото
+          </label>
+        </section>
 
         <section class="inspector__section" data-test="kp-insp-discount">
           <div class="inspector__section-heading">
@@ -458,7 +532,8 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
     }
     .inspector__section,
     .inspector__estimate,
-    .inspector__table {
+    .inspector__table,
+    .inspector__sheet {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
@@ -467,6 +542,22 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
       background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
     }
     .inspector__section > label,
+    .inspector__sheet label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    .inspector__sheet input[type='number'] {
+      width: 5rem;
+      padding: 0.25rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+    }
+    .inspector__sheet .inspector__checkbox {
+      justify-content: flex-start;
+    }
     .inspector__section-heading h3,
     .inspector__section-heading p {
       margin: 0;
@@ -553,6 +644,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly initialOrganizationId = input('');
   readonly initialOrgMarkupPercent = input(0);
   readonly initialDealVatPercent = input(20);
+  readonly initialSheetLayout = input<ProposalSheetLayoutState>({
+    rowsFirstPage: 0,
+    rowsNextPage: 0,
+    photoScalePercent: 100,
+    photoCropYPercent: 0,
+    showPhotoColumn: true,
+  });
   readonly readOnly = input(false);
   readonly status = input<ProposalCreateStatus>('draft');
   readonly stateChange = output<ProposalCreateInspectorState>();
@@ -577,6 +675,13 @@ export class ProposalCreateInspectorComponent implements OnInit {
   protected readonly prepaymentPercent = signal(0);
   protected readonly productionDays = signal(0);
   protected readonly deliveryDays = signal(0);
+  protected readonly sheetLayout = signal<ProposalSheetLayoutState>({
+    rowsFirstPage: 0,
+    rowsNextPage: 0,
+    photoScalePercent: 100,
+    photoCropYPercent: 0,
+    showPhotoColumn: true,
+  });
   protected readonly error = signal<string | null>(null);
 
   private readonly syncInitialState = effect(() => {
@@ -593,6 +698,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.prepaymentPercent.set(this.initialPrepaymentPercent());
     this.productionDays.set(this.initialProductionDays());
     this.deliveryDays.set(this.initialDeliveryDays());
+    this.sheetLayout.set(this.initialSheetLayout());
   });
 
   protected readonly organizationItems = computed(() =>
@@ -672,6 +778,33 @@ export class ProposalCreateInspectorComponent implements OnInit {
     if (this.readOnly()) return;
     const n = Number(raw);
     this.dealVatPercent.set(Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : 0);
+    this.emitState();
+  }
+
+  protected onSheetNumberChange(
+    field: 'rowsFirstPage' | 'rowsNextPage' | 'photoScalePercent' | 'photoCropYPercent',
+    event: Event,
+  ): void {
+    if (this.readOnly()) return;
+    const raw = Number((event.target as HTMLInputElement).value);
+    const limits = {
+      rowsFirstPage: [0, 200],
+      rowsNextPage: [0, 200],
+      photoScalePercent: [10, 400],
+      photoCropYPercent: [0, 100],
+    } as const;
+    const [min, max] = limits[field];
+    const value = Number.isFinite(raw) ? Math.min(max, Math.max(min, Math.round(raw))) : min;
+    this.sheetLayout.update((current) => ({ ...current, [field]: value }));
+    this.emitState();
+  }
+
+  protected onPhotoColumnChange(event: Event): void {
+    if (this.readOnly()) return;
+    this.sheetLayout.update((current) => ({
+      ...current,
+      showPhotoColumn: (event.target as HTMLInputElement).checked,
+    }));
     this.emitState();
   }
 
@@ -782,6 +915,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
       prepaymentPercent: this.prepaymentPercent(),
       productionDays: this.productionDays(),
       deliveryDays: this.deliveryDays(),
+      sheetLayout: this.sheetLayout(),
     });
   }
 }

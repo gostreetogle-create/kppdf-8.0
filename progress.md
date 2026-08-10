@@ -1,3 +1,14 @@
+## [2026-08-11] — TZ-SALES-346 DONE — многостраничный лист КП
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** Добавлен `Quotation.sheetLayout` с лимитами строк, размером/обрезкой фото и переключателем photo column. Backend build режет длинный состав на страницы, повторяет шапку таблицы и фон, выводит итоги/условия только на последней странице и добавляет нумерацию при `pageNumbering`.
+**Preview:** Центр Create КП показывает вертикальный стек A4 iframe-листов и «Страница 1 из N»; одношитный режим и frozen shell 317 сохранены.
+**Gates:** backend tsc + document-template/table-template/quotation 102/102; frontend tsc + proposal-create 33/33 + Angular development build; changed-file ESLint/Prettier/diff-check PASS (ESLint 0 errors, 3 existing any warnings); DOM/component self-check PASS; authenticated browser/data smoke unavailable without backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-346.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-346-kp-multipage-sheet-layout.lock`
+**Commit/push:** pending closeout commit.
+**NEXT:** TZ-SALES-347 → 348; Deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-342 DONE — свои строки КП и line-level commerce
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

@@ -53,6 +53,14 @@ export class QuotationTermDto {
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
 }
 
+export class QuotationSheetLayoutDto {
+  @IsOptional() @IsInt() @Min(0) @Max(200) rowsFirstPage?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(200) rowsNextPage?: number;
+  @IsOptional() @IsInt() @Min(10) @Max(400) photoScalePercent?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(100) photoCropYPercent?: number;
+  @IsOptional() @IsBoolean() showPhotoColumn?: boolean;
+}
+
 export class CreateQuotationDto {
   @IsOptional() @IsString() number?: string;
   @IsOptional() @IsString() title?: string;
@@ -103,6 +111,11 @@ export class CreateQuotationDto {
   @IsOptional() @IsObjectId() templateId?: string;
   @IsOptional() designSnapshot?: Record<string, unknown>;
   @IsOptional() templateSnapshot?: Record<string, unknown>;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuotationSheetLayoutDto)
+  sheetLayout?: QuotationSheetLayoutDto;
 
   @IsArray()
   @ValidateNested({ each: true })

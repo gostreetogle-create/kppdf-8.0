@@ -28,6 +28,7 @@ import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspa
 import {
   DocumentTemplatesService,
   type BuildPreviewLine,
+  type BuildSheetLayout,
   type BuildTableLayoutColumn,
   type DocumentTemplate,
 } from '../../../shared/services/pi-document-templates.service';
@@ -50,6 +51,7 @@ import {
   ProposalCreateInspectorComponent,
   type ProposalCreateInspectorState,
   type ProposalCreateStatus,
+  type ProposalSheetLayoutState,
   type ProposalTableLayoutColumn,
   type ProposalTableTarget,
 } from './proposal-create-inspector.component';
@@ -68,6 +70,14 @@ import { ProposalCreateTermsComponent, type ProposalTerm } from './proposal-crea
 type LeftTool = 'template' | 'products' | 'recipient' | null;
 
 type RightPane = 'params' | 'table' | 'composition' | 'terms';
+
+const DEFAULT_KP_SHEET_LAYOUT: ProposalSheetLayoutState = {
+  rowsFirstPage: 0,
+  rowsNextPage: 0,
+  photoScalePercent: 100,
+  photoCropYPercent: 0,
+  showPhotoColumn: true,
+};
 
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   { key: 'index', label: '№', visible: true },
@@ -166,6 +176,9 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
                   {{ autosaveLabel() }}
                 </span>
+                <span class="text-[11px] text-muted-foreground" data-test="kp-page-count">
+                  Страница 1 из {{ previewPageCount() }}
+                </span>
                 @if (previewStatus() === 'ready') {
                   <div class="relative ml-auto">
                     <button
@@ -217,6 +230,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               #templateCenter
               [selected]="selectedTemplate()"
               [previewHtml]="previewHtml()"
+              [previewPages]="previewPages()"
               [previewStatus]="previewStatus()"
               (requestPick)="openTemplateTool()"
             />
@@ -410,6 +424,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   [initialOrganizationId]="organizationId()"
                   [initialOrgMarkupPercent]="orgMarkupPercent()"
                   [initialDealVatPercent]="dealVatPercent()"
+                  [initialSheetLayout]="sheetLayout()"
                   [readOnly]="isReadOnly()"
                   [status]="proposalStatus()"
                   (stateChange)="onInspectorState($event)"
@@ -601,6 +616,7 @@ export class ProposalCreatePage implements OnInit {
   /** In-memory draft positions (SALES-314). Not persisted; not painted on the sheet (319). */
   protected readonly draftLines = signal<ProposalDraftLine[]>([]);
   protected readonly previewHtml = signal<SafeHtml | null>(null);
+  protected readonly previewPages = signal<SafeHtml[]>([]);
   private readonly previewHtmlSource = signal<string | null>(null);
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
@@ -623,6 +639,8 @@ export class ProposalCreatePage implements OnInit {
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
+  protected readonly sheetLayout = signal<ProposalSheetLayoutState>({ ...DEFAULT_KP_SHEET_LAYOUT });
+  protected readonly previewPageCount = computed(() => Math.max(1, this.previewPages().length));
   protected readonly compositionTotal = computed(() => this.calculateDealTotal());
   protected readonly tableTemplateId = signal<string | null>(null);
   protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
@@ -647,7 +665,7 @@ export class ProposalCreatePage implements OnInit {
         switchMap(() => {
           const tpl = this.selectedTemplate();
           if (!tpl?._id) {
-            this.previewHtml.set(null);
+            this.setPreviewHtml(null);
             this.previewStatus.set('idle');
             return of(null);
           }
@@ -674,6 +692,7 @@ export class ProposalCreatePage implements OnInit {
           const payload = {
             previewLines,
             tableLayout,
+            sheetLayout: this.sheetLayout() as BuildSheetLayout,
             tableTargetId: this.tableTemplateId() ?? undefined,
             dealTotals: {
               vatPercent: this.clampVat(this.dealVatPercent()),
@@ -701,10 +720,7 @@ export class ProposalCreatePage implements OnInit {
           return this.templatesSvc.build(tpl._id, payload).pipe(
             tap((res) => {
               if (res.ok && typeof res.data === 'string') {
-                this.previewHtmlSource.set(res.data);
-                this.previewHtml.set(
-                  this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(res.data)),
-                );
+                this.setPreviewHtml(res.data);
                 this.previewStatus.set('ready');
                 this.scheduleAutosave();
                 if (this.pendingRoutePrint) {
@@ -712,14 +728,12 @@ export class ProposalCreatePage implements OnInit {
                   setTimeout(() => this.printCurrentPreview(), 0);
                 }
               } else {
-                this.previewHtmlSource.set(null);
-                this.previewHtml.set(null);
+                this.setPreviewHtml(null);
                 this.previewStatus.set('error');
               }
             }),
             catchError(() => {
-              this.previewHtmlSource.set(null);
-              this.previewHtml.set(null);
+              this.setPreviewHtml(null);
               this.previewStatus.set('error');
               return of(null);
             }),
@@ -799,14 +813,14 @@ export class ProposalCreatePage implements OnInit {
 
   protected onTemplateChange(tpl: DocumentTemplate | null): void {
     this.selectedTemplate.set(tpl);
-    this.previewHtmlSource.set(null);
-    this.previewHtml.set(null);
+    this.setPreviewHtml(null);
     if (tpl) this.writeStorage('kp.create.lastTemplateId', tpl._id);
     this.tableTemplateId.set(null);
     this.tableTargets.set([]);
     this.selectedTableTargetId.set(null);
     this.tableTargetLayouts.set({});
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
+    this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT });
     if (tpl) {
       this.previewStatus.set('loading');
       this.leftTool.set(null);
@@ -814,8 +828,7 @@ export class ProposalCreatePage implements OnInit {
       this.rebuildPreview$.next();
       this.scheduleAutosave();
     } else {
-      this.previewHtmlSource.set(null);
-      this.previewHtml.set(null);
+      this.setPreviewHtml(null);
       this.previewStatus.set('idle');
     }
   }
@@ -865,6 +878,7 @@ export class ProposalCreatePage implements OnInit {
       prepaymentPercent: this.prepaymentPercent(),
       productionDays: this.productionDays(),
       deliveryDays: this.deliveryDays(),
+      sheetLayout: this.sheetLayout(),
       terms: this.terms(),
       items: this.draftLines().map((line, index) => ({
         lineKind: line.lineKind ?? (line.productId ? 'catalog' : 'custom'),
@@ -887,6 +901,7 @@ export class ProposalCreatePage implements OnInit {
         templateId: template._id,
         html,
         tableLayout: this.kpTableLayout().map(({ key, visible }) => ({ key, visible })),
+        sheetLayout: this.sheetLayout(),
         builtAt: new Date().toISOString(),
       },
     };
@@ -1022,8 +1037,7 @@ export class ProposalCreatePage implements OnInit {
       this.draftLines.set([]);
       this.terms.set([]);
       this.selectedTemplate.set(null);
-      this.previewHtmlSource.set(null);
-      this.previewHtml.set(null);
+      this.setPreviewHtml(null);
       this.previewStatus.set('idle');
       this.toast.error('КП нельзя открыть для редактирования. Открыт новый лист.');
     });
@@ -1085,6 +1099,7 @@ export class ProposalCreatePage implements OnInit {
     this.prepaymentPercent.set(Math.min(100, Math.max(0, draft.prepaymentPercent ?? 0)));
     this.productionDays.set(Math.max(0, draft.productionDays ?? 0));
     this.deliveryDays.set(Math.max(0, draft.deliveryDays ?? 0));
+    this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, ...(draft.sheetLayout ?? {}) });
     this.draftLines.set(
       (draft.items ?? []).map((item) => ({
         ...(item.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
@@ -1121,11 +1136,40 @@ export class ProposalCreatePage implements OnInit {
   private applyLockedTemplateSnapshot(snapshot: Record<string, unknown> | undefined): boolean {
     const html = snapshot?.['html'];
     if (typeof html !== 'string' || !html.trim()) return false;
-    this.previewHtmlSource.set(html);
-    this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(html)));
+    this.setPreviewHtml(html);
     this.previewStatus.set('ready');
     this.autosaveLabel.set('Сохранено');
     return true;
+  }
+
+  private setPreviewHtml(html: string | null): void {
+    this.previewHtmlSource.set(html);
+    if (!html) {
+      this.previewHtml.set(null);
+      this.previewPages.set([]);
+      return;
+    }
+    this.previewHtml.set(this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(html)));
+    if (typeof DOMParser === 'undefined') {
+      this.previewPages.set([this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(html))]);
+      return;
+    }
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const pages = Array.from(parsed.querySelectorAll('.doc-page'));
+    if (pages.length === 0) {
+      this.previewPages.set([this.sanitizer.bypassSecurityTrustHtml(this.withBaseHref(html))]);
+      return;
+    }
+    const head = parsed.head?.innerHTML ?? '';
+    this.previewPages.set(
+      pages.map((page) =>
+        this.sanitizer.bypassSecurityTrustHtml(
+          this.withBaseHref(
+            `<!DOCTYPE html><html><head>${head}</head><body>${page.outerHTML}</body></html>`,
+          ),
+        ),
+      ),
+    );
   }
 
   private isStudioStatus(status: Proposal['status']): boolean {
@@ -1298,7 +1342,9 @@ export class ProposalCreatePage implements OnInit {
       (state.validUntil ?? this.proposalValidUntil()) === this.proposalValidUntil() &&
       (state.prepaymentPercent ?? this.prepaymentPercent()) === this.prepaymentPercent() &&
       (state.productionDays ?? this.productionDays()) === this.productionDays() &&
-      (state.deliveryDays ?? this.deliveryDays()) === this.deliveryDays();
+      (state.deliveryDays ?? this.deliveryDays()) === this.deliveryDays() &&
+      JSON.stringify(state.sheetLayout ?? this.sheetLayout()) ===
+        JSON.stringify(this.sheetLayout());
     if (nextUnchanged) return;
     this.organizationId.set(nextOrganization);
     this.counterpartyId.set(nextCounterparty);
@@ -1316,6 +1362,7 @@ export class ProposalCreatePage implements OnInit {
     );
     this.productionDays.set(Math.max(0, state.productionDays ?? this.productionDays()));
     this.deliveryDays.set(Math.max(0, state.deliveryDays ?? this.deliveryDays()));
+    if (state.sheetLayout) this.sheetLayout.set({ ...this.sheetLayout(), ...state.sheetLayout });
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();

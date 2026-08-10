@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsDateString,
   IsNumber,
+  IsInt,
   IsIn,
   Max,
   IsOptional,
@@ -87,6 +88,14 @@ export class BuildTableLayoutColumnDto {
  * Whitelist-strict (forbidNonWhitelisted) in main.ts ensures unknown fields
  * are stripped before reaching the service.
  */
+export class BuildSheetLayoutDto {
+  @IsOptional() @IsInt() @Min(0) @Max(200) rowsFirstPage?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(200) rowsNextPage?: number;
+  @IsOptional() @IsInt() @Min(10) @Max(400) photoScalePercent?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(100) photoCropYPercent?: number;
+  @IsOptional() @IsBoolean() showPhotoColumn?: boolean;
+}
+
 export class BuildDealTotalsDto {
   @IsNumber()
   @Min(0)
@@ -123,6 +132,11 @@ export class BuildDocumentDto {
   terms?: BuildTermDto[];
 
   /** Request-only whole-deal totals; rendered only for the live line-items table. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BuildSheetLayoutDto)
+  sheetLayout?: BuildSheetLayoutDto;
+
   /** Request-only selected live table-template target for multi-table documents. */
   @IsOptional()
   @IsString()

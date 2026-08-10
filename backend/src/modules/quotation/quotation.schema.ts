@@ -49,6 +49,27 @@ export class QuotationItem {
 const QuotationItemSchema = SchemaFactory.createForClass(QuotationItem);
 
 @Schema({ _id: false })
+export class QuotationSheetLayout {
+  @Prop({ default: 0, min: 0, max: 200 })
+  rowsFirstPage!: number;
+
+  @Prop({ default: 0, min: 0, max: 200 })
+  rowsNextPage!: number;
+
+  @Prop({ default: 100, min: 10, max: 400 })
+  photoScalePercent!: number;
+
+  @Prop({ default: 0, min: 0, max: 100 })
+  photoCropYPercent!: number;
+
+  @Prop({ default: true })
+  showPhotoColumn!: boolean;
+}
+
+const QuotationSheetLayoutSchema =
+  SchemaFactory.createForClass(QuotationSheetLayout);
+
+@Schema({ _id: false })
 export class QuotationTerm {
   @Prop({ required: true, default: '' })
   text!: string;
@@ -193,6 +214,9 @@ export class Quotation {
 
   @Prop({ type: Object })
   templateSnapshot?: Record<string, unknown>;
+
+  @Prop({ type: QuotationSheetLayoutSchema, default: () => ({}) })
+  sheetLayout!: QuotationSheetLayout;
 
   @Prop({ type: [QuotationItemSchema], default: [] })
   items!: QuotationItem[];

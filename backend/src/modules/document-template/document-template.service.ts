@@ -647,26 +647,90 @@ export class DocumentTemplateService {
       blocks,
       dto.tableTargetId,
     );
-    const resolvedBlocks = await Promise.all(
-      blocks.map(async (b) => {
-        const withBinding = await this.resolveBlockContent(b, bag);
-        const rendered = await this.resolveTableBlock(
-          withBinding,
-          dto.previewLines,
-          lineItemsTargetIds.has(String(b._id)),
-          dto.tableLayout,
-          dto.dealTotals,
-        );
-        const settings = rendered.settings as { role?: string } | undefined;
-        return settings?.role === 'terms' && termsHtml
-          ? this.cloneResolvedBlock(rendered, { content: termsHtml })
-          : rendered;
-      }),
-    );
-    return this.renderHtml(template, resolvedBlocks, {
+    const pages = this.splitPreviewLines(dto.previewLines, dto.sheetLayout);
+    const pageBlocks: TemplateBlockDocument[][] = [];
+
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
+      const isLastPage = pageIndex === pages.length - 1;
+      const pageLines =
+        dto.previewLines === undefined ? undefined : pages[pageIndex];
+      const resolved = await Promise.all(
+        blocks.map(async (b) => {
+          const settings = b.settings as { role?: string } | undefined;
+          if (settings?.role === 'terms' && !isLastPage) return null;
+          const withBinding = await this.resolveBlockContent(b, bag);
+          const rendered = await this.resolveTableBlock(
+            withBinding,
+            pageLines,
+            lineItemsTargetIds.has(String(b._id)),
+            dto.tableLayout,
+            isLastPage ? dto.dealTotals : undefined,
+            dto.sheetLayout,
+          );
+          return settings?.role === 'terms' && termsHtml
+            ? this.cloneResolvedBlock(rendered, { content: termsHtml })
+            : rendered;
+        }),
+      );
+      pageBlocks.push(
+        resolved.filter((block): block is TemplateBlockDocument =>
+          Boolean(block),
+        ),
+      );
+    }
+
+    if (pageBlocks.length === 1) {
+      return this.renderHtml(template, pageBlocks[0], {
+        ...bag,
+        __termsHtml: termsHtml,
+      });
+    }
+    return this.renderHtmlPages(template, pageBlocks, {
       ...bag,
       __termsHtml: termsHtml,
     });
+  }
+
+  private splitPreviewLines(
+    lines: BuildPreviewLineDto[] | undefined,
+    layout: BuildDocumentDto['sheetLayout'],
+  ): BuildPreviewLineDto[][] {
+    if (lines === undefined) return [[]];
+    if (lines.length === 0) return [[]];
+    const first =
+      layout?.rowsFirstPage && layout.rowsFirstPage > 0
+        ? layout.rowsFirstPage
+        : 20;
+    const next =
+      layout?.rowsNextPage && layout.rowsNextPage > 0
+        ? layout.rowsNextPage
+        : 25;
+    const result: BuildPreviewLineDto[][] = [];
+    result.push(lines.slice(0, first));
+    for (let offset = first; offset < lines.length; offset += next) {
+      result.push(lines.slice(offset, offset + next));
+    }
+    return result;
+  }
+
+  private renderHtmlPages(
+    template: DocumentTemplateDocument,
+    pages: TemplateBlockDocument[][],
+    data: Record<string, unknown>,
+  ): string {
+    const renderedBodies = pages.map((page, index) => {
+      const html = this.renderHtml(template, page, {
+        ...data,
+        __pageNumber: index + 1,
+        __pageCount: pages.length,
+      });
+      const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      return match?.[1] ?? '';
+    });
+    const orientation = (template as any).orientation === 'landscape';
+    const width = orientation ? '297mm' : '210mm';
+    const height = orientation ? '210mm' : '297mm';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
   }
 
   private renderQuotationTerms(
@@ -755,6 +819,7 @@ export class DocumentTemplateService {
       productionDays?: number;
       deliveryDays?: number;
     },
+    sheetLayout?: BuildDocumentDto['sheetLayout'],
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -810,6 +875,7 @@ export class DocumentTemplateService {
         rows,
         isLineItemsTarget ? tableLayout : undefined,
         totals,
+        isLineItemsTarget ? sheetLayout : undefined,
       );
       return this.cloneResolvedBlock(block, { content: html });
     } catch {
@@ -1619,7 +1685,18 @@ export class DocumentTemplateService {
       )
         ? `<section class="block kp-terms"><h3>Условия</h3>${termsHtml}</section>`
         : '';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div></body></html>`;
+    const pageNumber = data['__pageNumber'];
+    const pageCount = data['__pageCount'];
+    const pageNumberHtml =
+      template.pageNumbering &&
+      typeof pageNumber === 'number' &&
+      typeof pageCount === 'number'
+        ? `<div class="kp-page-number">Страница ${pageNumber} из ${pageCount}</div>`
+        : '';
+    const pageNumberCss = template.pageNumbering
+      ? '<style>.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}</style>'
+      : '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

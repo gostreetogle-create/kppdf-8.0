@@ -63,15 +63,20 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
               Не удалось загрузить шаблон
             </div>
           } @else if (previewStatus() === 'ready' && previewHtml()) {
-            <iframe
-              class="center__frame"
-              data-test="kp-tpl-html-preview"
-              title="Превью шаблона КП"
-              sandbox="allow-same-origin"
-              #previewFrame
-              [srcdoc]="previewHtml()!"
-              [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
-            ></iframe>
+            @for (page of previewPages().length ? previewPages() : [previewHtml()!]; track $index) {
+              <div class="center__page" [attr.data-test]="'kp-tpl-page-' + ($index + 1)">
+                <div class="center__page-label">Страница {{ $index + 1 }}</div>
+                <iframe
+                  class="center__frame"
+                  data-test="kp-tpl-html-preview"
+                  title="Превью листа КП"
+                  sandbox="allow-same-origin"
+                  #previewFrame
+                  [srcdoc]="page"
+                  [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
+                ></iframe>
+              </div>
+            }
           } @else {
             <div class="center__status" data-test="kp-tpl-loading" role="status">
               Загрузка шаблона…
@@ -97,23 +102,35 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      overflow: hidden;
-      container-type: size;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      overflow: auto;
+      padding: 0.75rem 0.25rem 1rem;
+      container-type: inline-size;
     }
     .center__sheet {
+      width: 100%;
+      min-height: 0;
+      box-sizing: border-box;
+    }
+    .center__page {
       position: relative;
-      width: min(100cqw, calc(100cqh * 210 / 297));
-      height: min(100cqh, calc(100cqw * 297 / 210));
+      width: min(100%, 794px);
       max-width: 100%;
-      max-height: 100%;
       aspect-ratio: 210 / 297;
-      padding: 0;
+      margin: 0 auto;
       border: 1px solid var(--color-rule);
       background: var(--color-paper, #fff);
       overflow: hidden;
       box-sizing: border-box;
+    }
+    .center__page-label {
+      position: absolute;
+      top: -1.1rem;
+      left: 0;
+      color: var(--color-muted);
+      font-size: 0.6875rem;
     }
     .center__empty,
     .center__status {
@@ -152,6 +169,7 @@ export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
 
   readonly selected = input<DocumentTemplate | null>(null);
   readonly previewHtml = input<SafeHtml | null>(null);
+  readonly previewPages = input<SafeHtml[]>([]);
   readonly previewStatus = input<KpTemplatePreviewStatus>('idle');
   readonly requestPick = output<void>();
   protected readonly previewScale = signal(1);

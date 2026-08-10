@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-346 DONE: multipage КП sheet
+**Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** `Quotation.sheetLayout` хранит лимиты строк, масштаб/обрезку фото и видимость photo column. Build режет 30 строк по 4/6 в 6 A4-листов, повторяет шапку/фон, оставляет итоги и условия на последнем листе и уважает `pageNumbering`.
+**Preview:** Центр студии разбирает `.doc-page` в вертикальную ленту sandboxed A4 iframe; верхняя строка показывает «Страница 1 из N», один лист остаётся без внутренних скроллов.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-346.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-346-kp-multipage-sheet-layout.lock`
+**Gates:** BE tsc + document-template/table-template/quotation 102/102; FE tsc + proposal-create 33/33 + development build; ESLint/Prettier/diff-check PASS (ESLint 0 errors, 3 existing any warnings); DOM/component self-check PASS; live authenticated browser/data smoke unavailable without backend data stack.
+**NEXT:** TZ-SALES-347 → 348; deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-342 DONE: custom quotation lines
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
 **Что:** В «Состав КП» добавлена «Своя строка» без карточки каталога. Для всех строк доступны описание, ед. изм., скидка %, и флаг «Не входит в стоимость»; скидка пересчитывает сумму строки.
@@ -21,7 +30,7 @@
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; deploy НЕ; desktop ZIP publish НЕ.
 
 **Last updated:** 2026-08-11
-**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-344 DONE; next SALES-342→346→347→348; deploy НЕ запускать
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-346 DONE; next SALES-347→348; deploy НЕ запускать
 
 ## [2026-08-11] — TZ-SALES-343 DONE: recipient overlay and references
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ

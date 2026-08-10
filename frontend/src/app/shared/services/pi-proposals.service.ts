@@ -19,6 +19,14 @@ export interface ProposalTerm {
   sortOrder: number;
 }
 
+export interface ProposalSheetLayout {
+  rowsFirstPage: number;
+  rowsNextPage: number;
+  photoScalePercent: number;
+  photoCropYPercent: number;
+  showPhotoColumn: boolean;
+}
+
 export interface ProposalItem {
   /** Catalog lines have a Product FK; custom lines use lineKind=custom. */
   lineKind?: 'catalog' | 'custom';
@@ -102,6 +110,7 @@ export interface Proposal {
   deliveryDays?: number;
   notes?: string;
   terms?: ProposalTerm[];
+  sheetLayout?: ProposalSheetLayout;
   items?: ProposalItem[];
   convertedOrderId?: string;
   createdAt?: string;

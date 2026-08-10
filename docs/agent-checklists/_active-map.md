@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-SALES-346 DONE → NEXT TZ-SALES-347
+- DONE: `Quotation.sheetLayout` persistence and hydration; configured multi-page A4 rendering with repeated table headers/background, last-page-only totals/terms, optional page numbering, and bounded photo scale/crop/visibility.
+- Preview center now splits `.doc-page` output into a vertical stack of sandboxed A4 iframes and shows `Страница 1 из N`; frozen single-sheet overflow rule remains intact.
+- Gates: BE tsc; document-template/table-template/quotation 102/102; FE tsc; proposal-create 33/33; Angular development build; changed-file ESLint (0 errors, 3 existing any warnings); Prettier; diff-check PASS. Browser/data smoke unavailable without backend data stack; preview server built on 4203.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-346.done.md`; lock: `.mimocode/locks/TZ-SALES-346-kp-multipage-sheet-layout.lock`; `_active/` removed.
+- Commit/push: pending closeout commit on canonical `main`. Deploy NO; ZIP NO.
+
 ## Checkpoint 2026-08-11 · PO-AGENT-FLOW + PROMPT-RESUME-ANY (discipline complete)
 - Added: `docs/PO-AGENT-FLOW.md` (PO cheatsheet) + `tasks/PROMPT-RESUME-ANY.md` (eternal resume).
 - QUEUE / UNIVERSAL / PO-DIARY link to them. Goal: PO stops courier Cursor↔Buffy.

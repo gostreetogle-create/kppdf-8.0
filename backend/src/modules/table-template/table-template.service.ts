@@ -25,6 +25,12 @@ export interface TableDealTotals {
   discountAmount?: number;
 }
 
+export interface TablePhotoOptions {
+  photoScalePercent?: number;
+  photoCropYPercent?: number;
+  showPhotoColumn?: boolean;
+}
+
 /**
  * TZ-86 Phase A.2 — TableTemplateService extended.
  *
@@ -154,9 +160,14 @@ export class TableTemplateService implements OnModuleInit {
     previewRows?: unknown[][],
     layout?: TablePreviewLayoutColumn[],
     dealTotals?: TableDealTotals,
+    photoOptions?: TablePhotoOptions,
   ): Promise<string> {
     const doc = await this.findById(id);
-    const cols = this.resolvePreviewColumns(doc.columns ?? [], layout);
+    const cols = this.resolvePreviewColumns(
+      doc.columns ?? [],
+      layout,
+      photoOptions,
+    );
     if (cols.length === 0) {
       return '<p class="pi-empty-state">Нет описанных колонок.</p>';
     }
@@ -190,7 +201,12 @@ export class TableTemplateService implements OnModuleInit {
         const cells = cols
           .map((c, idx) => {
             const cell = Array.isArray(row) ? row[idx] : undefined;
-            const formatted = this.formatCell(cell, c.type, c.format);
+            const formatted = this.formatCell(
+              cell,
+              c.type,
+              c.format,
+              photoOptions,
+            );
             return `<td style="text-align:${c.align ?? 'left'}">${formatted}</td>`;
           })
           .join('');
@@ -211,11 +227,21 @@ export class TableTemplateService implements OnModuleInit {
   private resolvePreviewColumns(
     columns: TableTemplateDocument['columns'],
     layout?: TablePreviewLayoutColumn[],
+    photoOptions?: TablePhotoOptions,
   ): TableTemplateDocument['columns'] {
-    if (!layout) return columns;
+    if (!layout) {
+      return photoOptions?.showPhotoColumn === false
+        ? columns.filter((column) => !this.isPhotoColumn(column.key))
+        : columns;
+    }
     const byKey = new Map(columns.map((column) => [column.key, column]));
     const selected = layout
       .filter((entry) => entry.visible !== false)
+      .filter(
+        (entry) =>
+          photoOptions?.showPhotoColumn !== false ||
+          !this.isPhotoColumn(entry.key),
+      )
       .map((entry) => byKey.get(entry.key) ?? this.syntheticKpColumn(entry.key))
       .filter((column): column is TableTemplateDocument['columns'][number] =>
         Boolean(column),
@@ -282,7 +308,12 @@ export class TableTemplateService implements OnModuleInit {
     }).format(value);
   }
 
-  private formatCell(value: unknown, type: string, format?: string): string {
+  private formatCell(
+    value: unknown,
+    type: string,
+    format?: string,
+    photoOptions?: TablePhotoOptions,
+  ): string {
     if (value === null || value === undefined || value === '') {
       return '';
     }
@@ -291,7 +322,10 @@ export class TableTemplateService implements OnModuleInit {
       value !== null &&
       (value as { kind?: string }).kind === 'image'
     ) {
-      return this.formatImageCell((value as { url?: unknown }).url);
+      return this.formatImageCell(
+        (value as { url?: unknown }).url,
+        photoOptions,
+      );
     }
     if (
       typeof value === 'object' &&
@@ -355,7 +389,16 @@ export class TableTemplateService implements OnModuleInit {
     }
   }
 
-  private formatImageCell(value: unknown): string {
+  private isPhotoColumn(key: string): boolean {
+    return ['photo', 'image', 'рисунок', 'photourl'].includes(
+      key.trim().toLowerCase(),
+    );
+  }
+
+  private formatImageCell(
+    value: unknown,
+    photoOptions?: TablePhotoOptions,
+  ): string {
     if (typeof value !== 'string' || !value) return '';
     const url = value.trim();
     const allowed =
@@ -363,7 +406,20 @@ export class TableTemplateService implements OnModuleInit {
       /^\/(?!\/)/.test(url) ||
       /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url);
     if (!allowed) return '';
-    return `<img src="${this.escapeHtml(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
+    if (!photoOptions) {
+      return `<img src="${this.escapeHtml(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
+    }
+    const scale = Math.min(
+      400,
+      Math.max(10, photoOptions.photoScalePercent ?? 100),
+    );
+    const cropY = Math.min(
+      100,
+      Math.max(0, photoOptions?.photoCropYPercent ?? 0),
+    );
+    const width = Math.min(240, Math.max(10, (72 * scale) / 100));
+    const height = Math.min(120, Math.max(10, (48 * scale) / 100));
+    return `<img src="${this.escapeHtml(url)}" alt="" style="width:${width}px;height:${height}px;max-width:100%;object-fit:cover;object-position:center ${cropY}%" />`;
   }
 
   /** Minimal HTML escaper; output rendered as `[innerHTML]` on consumer side. */

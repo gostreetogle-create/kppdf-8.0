@@ -95,6 +95,7 @@ export class QuotationService {
         : undefined,
       designSnapshot: dto.designSnapshot,
       templateSnapshot: dto.templateSnapshot,
+      sheetLayout: this.mapSheetLayout(dto.sheetLayout),
       items,
       familyRole: 'solo',
       familyVersion: 1,
@@ -191,6 +192,8 @@ export class QuotationService {
     }
     if (dto.templateSnapshot !== undefined)
       doc.templateSnapshot = dto.templateSnapshot;
+    if (dto.sheetLayout !== undefined)
+      doc.sheetLayout = this.mapSheetLayout(dto.sheetLayout);
     if (dto.designSnapshot !== undefined)
       doc.designSnapshot = dto.designSnapshot;
     if (dto.notes !== undefined) doc.notes = dto.notes;
@@ -272,6 +275,7 @@ export class QuotationService {
         templateId: doc.templateId?.toString(),
         designSnapshot: doc.designSnapshot,
         templateSnapshot: doc.templateSnapshot,
+        sheetLayout: this.mapSheetLayout(doc.sheetLayout),
         items: this.cloneItems(doc.items).map((item) => ({
           ...item,
           ...(item.productId ? { productId: item.productId.toString() } : {}),
@@ -364,6 +368,7 @@ export class QuotationService {
       templateId: src.templateId,
       designSnapshot: src.designSnapshot,
       templateSnapshot: src.templateSnapshot,
+      sheetLayout: this.mapSheetLayout(src.sheetLayout),
       items: src.items.map((item) => this.cloneItem(item)),
     });
   }
@@ -561,6 +566,7 @@ export class QuotationService {
           templateId: master.templateId,
           designSnapshot: master.designSnapshot,
           templateSnapshot: master.templateSnapshot,
+          sheetLayout: this.mapSheetLayout(master.sheetLayout),
           items: this.cloneItems(master.items),
           familyRole: 'variant',
           masterId: master._id,
@@ -707,6 +713,33 @@ export class QuotationService {
     q.convertedOrderId = order._id.toString();
     await q.save();
     return { quotation: q, orderId: order._id.toString() };
+  }
+
+  private mapSheetLayout(
+    layout:
+      | CreateQuotationDto['sheetLayout']
+      | QuotationDocument['sheetLayout']
+      | undefined,
+  ): {
+    rowsFirstPage: number;
+    rowsNextPage: number;
+    photoScalePercent: number;
+    photoCropYPercent: number;
+    showPhotoColumn: boolean;
+  } {
+    return {
+      rowsFirstPage: Math.min(200, Math.max(0, layout?.rowsFirstPage ?? 0)),
+      rowsNextPage: Math.min(200, Math.max(0, layout?.rowsNextPage ?? 0)),
+      photoScalePercent: Math.min(
+        400,
+        Math.max(10, layout?.photoScalePercent ?? 100),
+      ),
+      photoCropYPercent: Math.min(
+        100,
+        Math.max(0, layout?.photoCropYPercent ?? 0),
+      ),
+      showPhotoColumn: layout?.showPhotoColumn ?? true,
+    };
   }
 
   private mapTerms(
