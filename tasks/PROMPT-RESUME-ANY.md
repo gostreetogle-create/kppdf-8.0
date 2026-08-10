@@ -25,6 +25,9 @@ PO-канон: docs/PO-DIARY.md §1–§4
 2) Правда только в git-файлах, не в прошлом чате.
 3) Не выдумывай новые TZ и не лезь в PARKED.
 4) deploy.ps1 / wipe / desktop ZIP — только если PO явно сказал в ЭТОМ чате.
+   «деплой» = только warm update (WIPE=false), данные не трогать.
+   Wipe/удаление БД/rm прод-данных — СТОП и спроси PO **по-русски** по канону
+   docs/ops/DANGEROUS-OPS.md (сначала бэкап backup.sh, потом явное «да, разрешаю wipe после бэкапа»).
 5) После каждой закрытой TZ: archive + lock + commit + push main → Checkpoint → сразу next.
 6) Крупная TZ: mid-commit+push после зелёных gates куска (чтобы лимит шагов не съел WIP).
 7) Чужой dirty WIP не затирай и не мешай в свой коммит.

@@ -22,6 +22,8 @@ description: >-
    «готово предложить деплой» и **остановись**.
 5. `deploy.ps1` запускай **только** при явном «задеплой» / «деплой» / «кати на сервер» /
    «warm deploy» / «выкати». Без wipe, если PO отдельно не сказал wipe.
+6. Опасные ops (wipe, дроп БД, rm прод): **стоп** + вопрос PO **по-русски** по
+   `docs/ops/DANGEROUS-OPS.md`; перед wipe — `backup.sh`.
 
 Универсальный handoff-промпт: `tasks/PROMPT-UNIVERSAL-CONTINUOUS.md`.
 
