@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T19:25:00Z · WAVE-DICT-DEMO READY (+ PRODUCTS-310 P0)
+- PO demo dictation → audit `docs/audits/2026-08-10-dictionaries-demo-audit.md`
+- Wave: `tasks/_backlog/dictionaries/WAVE-DICT-DEMO-2026-08-10.md` · prompt `PROMPT-DICT-DEMO-WAVE.md`
+- Order: **PRODUCTS-310** (ɵcmp circular edit) → DICT-317 → 318 → MATERIALS-312 → CATALOG-338 → DICT-319 → 320 → UX-DIALOG-306 → 307; SUPPLY-303 PARK
+- `_active/`: empty at authoring; NEXT = claim PRODUCTS-310
+- Deploy: NO
+
 ## Checkpoint 2026-08-09T20:10:00Z · WARM DEPLOY OK + deploy docs refreshed
 - Git was already clean/`origin/main` at `fe98e763` before deploy; no pending product WIP.
 - Warm deploy (no wipe) PASS: Auth login OK, FE 200, `https://kppdf-crm.ru/api/health/ready` ok.
