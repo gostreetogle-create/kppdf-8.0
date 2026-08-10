@@ -1,13 +1,16 @@
 # Desktop READY wave
 
-**Старт:** [`WAVE-DESKTOP-BULK-IMPORT.md`](./WAVE-DESKTOP-BULK-IMPORT.md)
+## Сейчас: WAVE-MCP-GAP
 
-Порядок: **23 → 26 → 18 → 19 → 27 → 28 → 29**
+**Старт:** [`WAVE-MCP-GAP-2026-08-10.md`](./WAVE-MCP-GAP-2026-08-10.md) · промпт [`PROMPT-MCP-GAP-WAVE.md`](./PROMPT-MCP-GAP-WAVE.md)
 
-Аудит PO-vision: `docs/audits/2026-08-08-desktop-bulk-import-vision-audit.md`
+Порядок: **TZD-31 → 32 → 33 → 34** (serial). TZD-35 PARK.
 
-## Статус волны
+Аудит: `docs/audits/2026-08-10-mcp-sport-demo-audit.md`
 
-**DONE — 2026-08-08** (все 7 TZ: 23, 26, 18, 19, 27, 28, 29 — archived, на main).
-Checkpoint: `docs/agent-checklists/_active-map.md` → DONE wave desktop bulk-import · NEXT idle.
+## Предыдущая: bulk-import
+
+**Старт (архив волны):** [`WAVE-DESKTOP-BULK-IMPORT.md`](./WAVE-DESKTOP-BULK-IMPORT.md)
+
+Порядок был: **23 → 26 → 18 → 19 → 27 → 28 → 29** — **DONE 2026-08-08**.
 Deploy — только по отдельной команде PO.

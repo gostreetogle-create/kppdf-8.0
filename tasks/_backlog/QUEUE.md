@@ -20,9 +20,10 @@
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
 **NEXT для universal prompt (по выбору PO):**  
-- **Сейчас (перед деплоем):** `ops/TZ-OPS-309-deploy-prep-hygiene-smoke.md` · промпт `ops/PROMPT-DEPLOY-PREP.md`  
+- **Сейчас (PO 2026-08-10):** `desktop/WAVE-MCP-GAP-2026-08-10.md` · промпт `desktop/PROMPT-MCP-GAP-WAVE.md` · TZ `tasks/TZD-31`→`34` serial  
+- **Парк рядом:** WAVE-DICT-DEMO (`dictionaries/WAVE-DICT-DEMO-2026-08-10.md`) — не мешать MCP-волне  
 - **КП после closeout:** WAVE-KP-COMPLETE только по отдельной команде PO (не авто)  
-- После idle prep: предложить деплой **без** запуска `deploy.ps1`
+- После MCP-волны idle: предложить деплой **без** запуска `deploy.ps1`
 
 ## Idle / park / done
 

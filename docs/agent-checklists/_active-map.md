@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T19:40:00Z · WAVE-MCP-GAP READY (TZD-31→34)
+- PO: executable TZ + continuous prompt after sport-demo MCP audit.
+- Wave: `tasks/_backlog/desktop/WAVE-MCP-GAP-2026-08-10.md` · prompt `PROMPT-MCP-GAP-WAVE.md`
+- Order **serial**: TZD-31 (runtime sync) → 32 (material propose fields) → 33 (commercial HITL) → 34 (stock movements); TZD-35 PARK
+- TZ files: `tasks/TZD-31-mcp-runtime-sync.md` … `tasks/TZD-34-stock-movement-mcp.md`; checklists RESERVED
+- BAN this session: WAVE-DICT-DEMO / KP-COMPLETE / deploy.ps1 / mcp-runtime commits
+- `_active/`: empty at authoring; NEXT = claim TZD-31
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T19:25:00Z · WAVE-DICT-DEMO READY (+ PRODUCTS-310 P0)
 - PO demo dictation → audit `docs/audits/2026-08-10-dictionaries-demo-audit.md`
 - Wave: `tasks/_backlog/dictionaries/WAVE-DICT-DEMO-2026-08-10.md` · prompt `PROMPT-DICT-DEMO-WAVE.md`
