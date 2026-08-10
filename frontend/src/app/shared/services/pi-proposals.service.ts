@@ -25,6 +25,7 @@ export interface ProposalItem {
   unitPrice: number;
   markupPercent?: number;
   total?: number;
+  sortOrder?: number;
 }
 
 export interface ProposalVersionSummary {
@@ -84,6 +85,10 @@ export interface Proposal {
   discountType?: DiscountType;
   discountPercent?: number;
   discountAmount?: number;
+  vatPercent?: number;
+  prepaymentPercent?: number;
+  productionDays?: number;
+  deliveryDays?: number;
   notes?: string;
   items?: ProposalItem[];
   convertedOrderId?: string;

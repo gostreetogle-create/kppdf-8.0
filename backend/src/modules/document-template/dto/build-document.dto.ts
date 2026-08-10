@@ -3,6 +3,7 @@ import {
   IsArray,
   IsBoolean,
   IsNumber,
+  IsIn,
   Max,
   IsOptional,
   IsString,
@@ -65,6 +66,14 @@ export class BuildDealTotalsDto {
   @Min(0)
   @Max(100)
   vatPercent!: number;
+
+  @IsOptional() @IsIn(['none', 'percent', 'amount']) discountType?:
+    'none' | 'percent' | 'amount';
+  @IsOptional() @IsNumber() @Min(0) @Max(100) discountPercent?: number;
+  @IsOptional() @IsNumber() @Min(0) discountAmount?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) prepaymentPercent?: number;
+  @IsOptional() @IsNumber() @Min(0) productionDays?: number;
+  @IsOptional() @IsNumber() @Min(0) deliveryDays?: number;
 }
 
 export class BuildDocumentDto {

@@ -1,4 +1,14 @@
 
+## [2026-08-10T23:50:00Z] — TZ-SALES-341 DONE — КП commercial fields and VAT persistence
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** В «Параметры» добавлены секции «Документ», «Деньги» и «Сроки»; номер/название/даты, НДС, скидка %/₽, предоплата и сроки идут в autosave и гидратируются после F5. Backend хранит новые поля и пересчитывает итог как наценка → скидка; A4 footer получает тот же dealTotals без колонки скидки.
+**Gates:** frontend tsc + proposal-create 26/26 PASS; backend tsc + quotation 32/32 PASS; ESLint/Prettier/diff-check PASS; Angular DOM self-check PASS. Live authenticated browser smoke unavailable without backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-341.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-341-kp-commercial-fields.lock`
+**Scope:** shell 317, catalog, shared table presets, PDF/print and foreign WIP untouched.
+**NEXT:** TZ-SALES-345 → 343 → 344 → 342 → 346 → 347 → 348; Deploy НЕ.
+
 ## [2026-08-10T23:25:00Z] — TZ-SALES-340 DONE — КП composition panel
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

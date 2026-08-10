@@ -89,6 +89,12 @@ export interface BuildTableLayoutColumn {
 
 export interface BuildDealTotals {
   vatPercent: number;
+  discountType?: 'none' | 'percent' | 'amount';
+  discountPercent?: number;
+  discountAmount?: number;
+  prepaymentPercent?: number;
+  productionDays?: number;
+  deliveryDays?: number;
 }
 
 export interface BuildDocumentRequest {

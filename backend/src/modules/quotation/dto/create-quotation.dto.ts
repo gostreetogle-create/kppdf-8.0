@@ -1,5 +1,16 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class QuotationItemDto {
@@ -10,11 +21,13 @@ export class QuotationItemDto {
   @IsOptional() @IsString() productSku?: string;
   @IsOptional() @IsString() sourceItemId?: string;
 
-  @IsNumber() @Min(0)
+  @IsNumber()
+  @Min(0)
   quantity!: number;
 
   @IsOptional() @IsString() unit?: string;
-  @IsNumber() @Min(0)
+  @IsNumber()
+  @Min(0)
   unitPrice!: number;
 
   @IsOptional() @IsNumber() @Min(0) markupPercent?: number;
@@ -29,10 +42,16 @@ export class CreateQuotationDto {
   organizationId!: string;
 
   /** Drafts may be saved before the Client picker (TZ-SALES-333/334). */
-  @IsOptional() @IsObjectId()
+  @IsOptional()
+  @IsObjectId()
   counterpartyId?: string;
 
-  @IsOptional() @IsNumber() @Min(-100) orgMarkupPercent?: number;
+  @IsOptional() @IsNumber() @Min(-100) @Max(1000) orgMarkupPercent?: number;
+
+  @IsOptional() @IsNumber() @Min(0) @Max(100) vatPercent?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) prepaymentPercent?: number;
+  @IsOptional() @IsInt() @Min(0) productionDays?: number;
+  @IsOptional() @IsInt() @Min(0) deliveryDays?: number;
 
   @IsOptional() @IsObjectId() tenderId?: string;
 
@@ -41,7 +60,8 @@ export class CreateQuotationDto {
 
   @IsOptional()
   @IsIn(['draft', 'sent', 'accepted', 'rejected', 'converted', 'cancelled'])
-  status?: 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
+  status?:
+    'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 
   @IsOptional()
   @IsIn(['none', 'percent', 'amount'])

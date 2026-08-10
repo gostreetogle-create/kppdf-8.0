@@ -657,7 +657,15 @@ export class DocumentTemplateService {
     previewLines?: BuildPreviewLineDto[],
     isLineItemsTarget = false,
     tableLayout?: { key: string; visible?: boolean }[],
-    dealTotals?: { vatPercent: number },
+    dealTotals?: {
+      vatPercent: number;
+      discountType?: 'none' | 'percent' | 'amount';
+      discountPercent?: number;
+      discountAmount?: number;
+      prepaymentPercent?: number;
+      productionDays?: number;
+      deliveryDays?: number;
+    },
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -684,12 +692,18 @@ export class DocumentTemplateService {
       const rows = isLineItemsTarget
         ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
         : [];
-      const total = isLineItemsTarget
+      const baseTotal = isLineItemsTarget
         ? previewLines.reduce(
             (sum, line) => sum + line.quantity * line.unitPrice,
             0,
           )
         : 0;
+      const total =
+        dealTotals?.discountType === 'percent'
+          ? baseTotal * (1 - (dealTotals.discountPercent ?? 0) / 100)
+          : dealTotals?.discountType === 'amount'
+            ? Math.max(0, baseTotal - (dealTotals.discountAmount ?? 0))
+            : baseTotal;
       const totals =
         isLineItemsTarget && dealTotals
           ? { total, vatPercent: dealTotals.vatPercent }

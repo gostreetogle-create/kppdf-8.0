@@ -50,6 +50,7 @@ export class QuotationService {
 
   async create(dto: CreateQuotationDto): Promise<QuotationDocument> {
     const number = dto.number ?? (await this.counter.next('Quotation', 'QTN'));
+    const markup = dto.orgMarkupPercent ?? 0;
     const items: QuotationItem[] = dto.items.map((i) => {
       const total = (i.quantity ?? 0) * (i.unitPrice ?? 0);
       return {
@@ -65,13 +66,14 @@ export class QuotationService {
         sortOrder: i.sortOrder ?? 0,
       };
     });
-    const subtotal = items.reduce((s, i) => s + i.total, 0);
-    let total = subtotal;
-    if (dto.discountType === 'percent') {
-      total = subtotal * (1 - (dto.discountPercent ?? 0) / 100);
-    } else if (dto.discountType === 'amount') {
-      total = subtotal - (dto.discountAmount ?? 0);
-    }
+    const subtotal =
+      items.reduce((s, i) => s + i.total, 0) * (1 + markup / 100);
+    const total = this.applyDiscount(
+      subtotal,
+      dto.discountType,
+      dto.discountPercent,
+      dto.discountAmount,
+    );
     return this.model.create({
       number,
       organizationId: new Types.ObjectId(dto.organizationId),
@@ -88,6 +90,10 @@ export class QuotationService {
       discountAmount: dto.discountAmount ?? 0,
       notes: dto.notes,
       orgMarkupPercent: dto.orgMarkupPercent,
+      vatPercent: dto.vatPercent ?? 20,
+      prepaymentPercent: dto.prepaymentPercent ?? 0,
+      productionDays: dto.productionDays ?? 0,
+      deliveryDays: dto.deliveryDays ?? 0,
       templateId: dto.templateId
         ? new Types.ObjectId(dto.templateId)
         : undefined,
@@ -164,6 +170,12 @@ export class QuotationService {
     }
     if (dto.orgMarkupPercent !== undefined)
       doc.orgMarkupPercent = dto.orgMarkupPercent;
+    if (dto.vatPercent !== undefined) doc.vatPercent = dto.vatPercent;
+    if (dto.prepaymentPercent !== undefined)
+      doc.prepaymentPercent = dto.prepaymentPercent;
+    if (dto.productionDays !== undefined)
+      doc.productionDays = dto.productionDays;
+    if (dto.deliveryDays !== undefined) doc.deliveryDays = dto.deliveryDays;
     if (dto.templateId !== undefined) {
       doc.templateId = dto.templateId
         ? new Types.ObjectId(dto.templateId)
@@ -196,15 +208,16 @@ export class QuotationService {
         sortOrder: i.sortOrder ?? 0,
       }));
     }
-    // Recompute total from items + current discount
-    const subtotal = (doc.items ?? []).reduce((s, i) => s + (i.total ?? 0), 0);
-    if (doc.discountType === 'percent') {
-      doc.total = subtotal * (1 - (doc.discountPercent ?? 0) / 100);
-    } else if (doc.discountType === 'amount') {
-      doc.total = subtotal - (doc.discountAmount ?? 0);
-    } else {
-      doc.total = subtotal;
-    }
+    // Recompute total from items + markup + current discount.
+    const subtotal =
+      (doc.items ?? []).reduce((s, i) => s + (i.total ?? 0), 0) *
+      (1 + (doc.orgMarkupPercent ?? 0) / 100);
+    doc.total = this.applyDiscount(
+      subtotal,
+      doc.discountType,
+      doc.discountPercent,
+      doc.discountAmount,
+    );
     return doc.save();
   }
 
@@ -243,6 +256,10 @@ export class QuotationService {
         masterId: doc.masterId?.toString(),
         familyVersion: doc.familyVersion,
         orgMarkupPercent: doc.orgMarkupPercent,
+        vatPercent: doc.vatPercent,
+        prepaymentPercent: doc.prepaymentPercent,
+        productionDays: doc.productionDays,
+        deliveryDays: doc.deliveryDays,
         isActive: doc.isActive,
         convertedContractId: doc.convertedContractId,
         convertedOrderId: doc.convertedOrderId,
@@ -633,6 +650,21 @@ export class QuotationService {
     q.convertedOrderId = order._id.toString();
     await q.save();
     return { quotation: q, orderId: order._id.toString() };
+  }
+
+  private applyDiscount(
+    subtotal: number,
+    discountType: CreateQuotationDto['discountType'],
+    discountPercent?: number,
+    discountAmount?: number,
+  ): number {
+    const discounted =
+      discountType === 'percent'
+        ? subtotal * (1 - (discountPercent ?? 0) / 100)
+        : discountType === 'amount'
+          ? subtotal - (discountAmount ?? 0)
+          : subtotal;
+    return Math.max(0, Math.round(discounted * 100) / 100);
   }
 
   async remove(id: string): Promise<void> {

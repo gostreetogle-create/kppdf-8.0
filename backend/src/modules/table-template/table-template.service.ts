@@ -19,6 +19,9 @@ export interface TablePreviewLayoutColumn {
 export interface TableDealTotals {
   total: number;
   vatPercent: number;
+  discountType?: 'none' | 'percent' | 'amount';
+  discountPercent?: number;
+  discountAmount?: number;
 }
 
 /**

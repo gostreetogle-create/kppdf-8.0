@@ -3,6 +3,14 @@
 **Last updated:** 2026-08-10
 **Phase:** TZ-AUTH-301 DONE; next WAVE-KP-COMPLETE 340→341→345→343→344→342→346→347→348; deploy НЕ запускать
 
+## [2026-08-10T23:50:00Z] — TZ-SALES-341 DONE: commercial fields and VAT persistence
+**Статус:** DONE on main; frontend/backend gates, archive and lock complete; deploy НЕ
+**Что:** Параметры КП разделены на Документ/Деньги/Сроки; коммерческие поля сохраняются в Quotation, а скидка и НДС приходят в общий build footer.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-341.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-341-kp-commercial-fields.lock`
+**Gates:** FE tsc + proposal-create 26/26 PASS; BE tsc + quotation 32/32 PASS; ESLint/Prettier/diff-check PASS.
+**NEXT:** TZ-SALES-345; deploy НЕ.
+
 ## [2026-08-10T23:25:00Z] — TZ-SALES-340 DONE: Состав КП
 **Статус:** DONE on main; frontend/backend gates, archive and lock complete; deploy НЕ
 **Что:** В `/proposals/create` добавлен overlay «Состав КП» с редактированием количества, цены, единицы, дублированием, удалением и порядком; повторное добавление изделия увеличивает количество. Сохранение и A4 используют существующий draft/build/autosave путь.

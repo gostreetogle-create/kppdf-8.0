@@ -1,11 +1,11 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-10T23:25:00Z · TZ-SALES-340 DONE → NEXT TZ-SALES-341
-- DONE: AUTH-301 and SALES-340. 340 adds the Russian «Состав КП» overlay, shared draft/build/autosave updates, quantity/price/unit editing, duplicate/delete/reorder, and repeat-add quantity increment.
-- Gates: frontend tsc PASS; proposal-create 25/25 PASS; backend tsc PASS; ESLint/Prettier/diff-check PASS; Angular DOM self-verify PASS. Live authenticated browser smoke unavailable without backend data stack.
-- Archives: `tasks/_archive/2026-08/TZ-AUTH-301.done.md`, `tasks/_archive/2026-08/TZ-SALES-340.done.md`; locks for both present; 340 `_active/` removed.
-- Commit/push: 340 closeout pending on canonical `main`; foreign WIP remains excluded.
-- NEXT continuous: **TZ-SALES-341** → 345 → 343 → 344 → 342 → 346 → 347 → 348.
+## Checkpoint 2026-08-10T23:50:00Z · TZ-SALES-341 DONE → NEXT TZ-SALES-345
+- DONE: AUTH-301, SALES-340 and SALES-341. 341 persists VAT/discount/document/timing fields, applies markup-before-discount server totals, and hydrates Russian Параметры sections through F5/autosave/build footer.
+- Gates: frontend tsc + proposal-create 26/26 PASS; backend tsc + quotation 32/32 PASS; ESLint/Prettier/diff-check PASS; Angular DOM self-verify PASS. Live authenticated browser smoke unavailable without backend data stack.
+- Archives: AUTH-301, SALES-340, SALES-341; locks for all present; 341 `_active/` removed.
+- Commit/push: 341 closeout pending on canonical `main`; foreign WIP remains excluded.
+- NEXT continuous: **TZ-SALES-345** → 343 → 344 → 342 → 346 → 347 → 348.
 - Deploy: NO; desktop ZIP publish: NO; nginx/VPS untouched.
 
 ## Checkpoint 2026-08-10T22:12:00Z · READY QUEUE для continuous (AUTH-301 → KP-COMPLETE)

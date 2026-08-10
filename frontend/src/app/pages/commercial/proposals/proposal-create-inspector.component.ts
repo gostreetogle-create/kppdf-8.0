@@ -3,6 +3,7 @@ import {
   Component,
   OnInit,
   computed,
+  effect,
   inject,
   input,
   output,
@@ -45,6 +46,16 @@ export interface ProposalCreateInspectorState {
   orgMarkupPercent: number;
   dealVatPercent?: number;
   counterpartyId?: string;
+  number?: string;
+  title?: string;
+  date?: string;
+  validUntil?: string;
+  discountType?: 'none' | 'percent' | 'amount';
+  discountPercent?: number;
+  discountAmount?: number;
+  prepaymentPercent?: number;
+  productionDays?: number;
+  deliveryDays?: number;
 }
 
 export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>;
@@ -100,6 +111,51 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
       }
 
       @if (!tableOnly()) {
+        <section class="inspector__section" data-test="kp-insp-document">
+          <div class="inspector__section-heading">
+            <h3>Документ</h3>
+            <p>Данные на бланке КП</p>
+          </div>
+          <label
+            ><span>Номер КП</span
+            ><input
+              class="pi-input w-full"
+              [value]="number()"
+              (change)="onTextChange('number', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-number"
+          /></label>
+          <label
+            ><span>Название</span
+            ><input
+              class="pi-input w-full"
+              [value]="title()"
+              (change)="onTextChange('title', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-title"
+          /></label>
+          <label
+            ><span>Дата</span
+            ><input
+              class="pi-input w-full"
+              type="date"
+              [value]="date()"
+              (change)="onTextChange('date', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-date"
+          /></label>
+          <label
+            ><span>Действует до</span
+            ><input
+              class="pi-input w-full"
+              type="date"
+              [value]="validUntil()"
+              (change)="onTextChange('validUntil', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-valid-until"
+          /></label>
+        </section>
+
         <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
           <app-pi-overflow-select
             [items]="organizationItems()"
@@ -150,13 +206,66 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
           />
         </app-pi-form-field>
 
-        <div class="inspector__estimate" data-test="kp-insp-estimate">
-          <p class="eyebrow m-0">оценка</p>
-          <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
-          <p class="text-[11px] text-muted-foreground m-0">
-            Строки × наценка; в сохранённый итог не пишется.
-          </p>
-        </div>
+        <section class="inspector__section" data-test="kp-insp-discount">
+          <div class="inspector__section-heading">
+            <h3>Деньги</h3>
+            <p>Скидка действует только в этом КП</p>
+          </div>
+          <label
+            ><span>Тип скидки</span
+            ><select
+              class="pi-input w-full"
+              [value]="discountType()"
+              (change)="onDiscountTypeChange($event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-discount-type"
+            >
+              <option value="none">Нет скидки</option>
+              <option value="percent">Процент</option>
+              <option value="amount">Сумма, ₽</option>
+            </select></label
+          >
+          @if (discountType() === 'percent') {
+            <label
+              ><span>Скидка %</span
+              ><input
+                class="pi-input w-full"
+                type="number"
+                min="0"
+                max="100"
+                [value]="discountPercent()"
+                (change)="onNumberChange('discountPercent', $event)"
+                [disabled]="readOnly()"
+                data-test="kp-insp-discount-percent"
+            /></label>
+          }
+          @if (discountType() === 'amount') {
+            <label
+              ><span>Скидка, ₽</span
+              ><input
+                class="pi-input w-full"
+                type="number"
+                min="0"
+                [value]="discountAmount()"
+                (change)="onNumberChange('discountAmount', $event)"
+                [disabled]="readOnly()"
+                data-test="kp-insp-discount-amount"
+            /></label>
+          }
+          <app-pi-button
+            type="button"
+            variant="ghost"
+            size="sm"
+            [disabled]="readOnly()"
+            (click)="resetCommercials()"
+            data-test="kp-insp-reset"
+            >Сбросить наценку и скидку</app-pi-button
+          >
+          <div class="inspector__estimate" data-test="kp-insp-estimate">
+            <p class="eyebrow m-0">Итого с НДС {{ dealVatPercent() }}%</p>
+            <p class="text-base font-mono m-0">{{ estimateLabel() }}</p>
+          </div>
+        </section>
       }
 
       @if (tableOnly()) {
@@ -261,6 +370,49 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
         </app-pi-form-field>
       }
 
+      @if (!tableOnly()) {
+        <section class="inspector__section" data-test="kp-insp-terms">
+          <div class="inspector__section-heading">
+            <h3>Сроки</h3>
+            <p>Значения доступны для бланка и условий</p>
+          </div>
+          <label
+            ><span>Предоплата %</span
+            ><input
+              class="pi-input w-full"
+              type="number"
+              min="0"
+              max="100"
+              [value]="prepaymentPercent()"
+              (change)="onNumberChange('prepaymentPercent', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-prepayment"
+          /></label>
+          <label
+            ><span>Срок изготовления, дней</span
+            ><input
+              class="pi-input w-full"
+              type="number"
+              min="0"
+              [value]="productionDays()"
+              (change)="onNumberChange('productionDays', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-production-days"
+          /></label>
+          <label
+            ><span>Срок поставки, дней</span
+            ><input
+              class="pi-input w-full"
+              type="number"
+              min="0"
+              [value]="deliveryDays()"
+              (change)="onNumberChange('deliveryDays', $event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-delivery-days"
+          /></label>
+        </section>
+      }
+
       @if (error() && !tableOnly()) {
         <p class="text-xs text-destructive m-0" role="alert">{{ error() }}</p>
       }
@@ -295,6 +447,7 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
       color: var(--color-muted-foreground, #6b7280);
       font-size: 0.7rem;
     }
+    .inspector__section,
     .inspector__estimate,
     .inspector__table {
       display: flex;
@@ -304,9 +457,17 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
       border: 1px solid var(--color-rule);
       background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
     }
+    .inspector__section > label,
     .inspector__section-heading h3,
     .inspector__section-heading p {
       margin: 0;
+    }
+    .inspector__section > label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      color: var(--color-muted-foreground, #6b7280);
+      font-size: 0.7rem;
     }
     .inspector__section-heading h3 {
       font-size: 0.9rem;
@@ -370,6 +531,19 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly tableTargets = input<ProposalTableTarget[]>([]);
   readonly selectedTableTargetId = input<string | null>(null);
   readonly selectedCounterpartyId = input('');
+  readonly initialNumber = input('');
+  readonly initialTitle = input('');
+  readonly initialDate = input('');
+  readonly initialValidUntil = input('');
+  readonly initialDiscountType = input<'none' | 'percent' | 'amount'>('none');
+  readonly initialDiscountPercent = input(0);
+  readonly initialDiscountAmount = input(0);
+  readonly initialPrepaymentPercent = input(0);
+  readonly initialProductionDays = input(0);
+  readonly initialDeliveryDays = input(0);
+  readonly initialOrganizationId = input('');
+  readonly initialOrgMarkupPercent = input(0);
+  readonly initialDealVatPercent = input(20);
   readonly readOnly = input(false);
   readonly status = input<ProposalCreateStatus>('draft');
   readonly stateChange = output<ProposalCreateInspectorState>();
@@ -383,7 +557,33 @@ export class ProposalCreateInspectorComponent implements OnInit {
   protected readonly organizationId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
+  protected readonly number = signal('');
+  protected readonly title = signal('');
+  protected readonly date = signal('');
+  protected readonly validUntil = signal('');
+  protected readonly discountType = signal<'none' | 'percent' | 'amount'>('none');
+  protected readonly discountPercent = signal(0);
+  protected readonly discountAmount = signal(0);
+  protected readonly prepaymentPercent = signal(0);
+  protected readonly productionDays = signal(0);
+  protected readonly deliveryDays = signal(0);
   protected readonly error = signal<string | null>(null);
+
+  private readonly syncInitialState = effect(() => {
+    this.organizationId.set(this.initialOrganizationId());
+    this.orgMarkupPercent.set(this.initialOrgMarkupPercent());
+    this.dealVatPercent.set(this.initialDealVatPercent());
+    this.number.set(this.initialNumber());
+    this.title.set(this.initialTitle());
+    this.date.set(this.initialDate());
+    this.validUntil.set(this.initialValidUntil());
+    this.discountType.set(this.initialDiscountType());
+    this.discountPercent.set(this.initialDiscountPercent());
+    this.discountAmount.set(this.initialDiscountAmount());
+    this.prepaymentPercent.set(this.initialPrepaymentPercent());
+    this.productionDays.set(this.initialProductionDays());
+    this.deliveryDays.set(this.initialDeliveryDays());
+  });
 
   protected readonly organizationItems = computed(() =>
     this.organizations().map((o) => ({
@@ -401,7 +601,14 @@ export class ProposalCreateInspectorComponent implements OnInit {
 
   protected readonly estimateLabel = computed(() => {
     const base = this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
-    return formatPrice(estimateFamilyTotal(base, this.orgMarkupPercent()));
+    const marked = estimateFamilyTotal(base, this.orgMarkupPercent());
+    const total =
+      this.discountType() === 'percent'
+        ? marked * (1 - Math.min(100, this.discountPercent()) / 100)
+        : this.discountType() === 'amount'
+          ? Math.max(0, marked - this.discountAmount())
+          : marked;
+    return formatPrice(Math.round(total * 100) / 100);
   });
 
   protected readonly visibleColumnCount = computed(
@@ -497,12 +704,69 @@ export class ProposalCreateInspectorComponent implements OnInit {
     });
   }
 
+  protected onTextChange(field: 'number' | 'title' | 'date' | 'validUntil', event: Event): void {
+    if (this.readOnly()) return;
+    const value = (event.target as HTMLInputElement).value;
+    if (field === 'number') this.number.set(value);
+    if (field === 'title') this.title.set(value);
+    if (field === 'date') this.date.set(value);
+    if (field === 'validUntil') this.validUntil.set(value);
+    this.emitState();
+  }
+
+  protected onDiscountTypeChange(event: Event): void {
+    if (this.readOnly()) return;
+    this.discountType.set(
+      (event.target as HTMLSelectElement).value as 'none' | 'percent' | 'amount',
+    );
+    this.emitState();
+  }
+
+  protected onNumberChange(
+    field:
+      | 'discountPercent'
+      | 'discountAmount'
+      | 'prepaymentPercent'
+      | 'productionDays'
+      | 'deliveryDays',
+    event: Event,
+  ): void {
+    if (this.readOnly()) return;
+    const raw = Number((event.target as HTMLInputElement).value);
+    const value = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+    if (field === 'discountPercent') this.discountPercent.set(Math.min(100, value));
+    if (field === 'discountAmount') this.discountAmount.set(value);
+    if (field === 'prepaymentPercent') this.prepaymentPercent.set(Math.min(100, value));
+    if (field === 'productionDays') this.productionDays.set(Math.round(value));
+    if (field === 'deliveryDays') this.deliveryDays.set(Math.round(value));
+    this.emitState();
+  }
+
+  protected resetCommercials(): void {
+    if (this.readOnly()) return;
+    this.orgMarkupPercent.set(0);
+    this.discountType.set('none');
+    this.discountPercent.set(0);
+    this.discountAmount.set(0);
+    this.emitState();
+  }
+
   private emitState(counterpartyId = this.selectedCounterpartyId()): void {
     this.stateChange.emit({
       organizationId: this.organizationId(),
       orgMarkupPercent: this.orgMarkupPercent(),
       dealVatPercent: this.dealVatPercent(),
       counterpartyId,
+      number: this.number(),
+      title: this.title(),
+      date: this.date(),
+      validUntil: this.validUntil(),
+      discountType: this.discountType(),
+      discountPercent: this.discountPercent(),
+      discountAmount: this.discountAmount(),
+      prepaymentPercent: this.prepaymentPercent(),
+      productionDays: this.productionDays(),
+      deliveryDays: this.deliveryDays(),
     });
   }
 }

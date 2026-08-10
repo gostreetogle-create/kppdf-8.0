@@ -197,6 +197,31 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       );
       expect(model.create.mock.calls[0][0]).toMatchObject({ total: 7500 });
     });
+
+    it('persists bounded commercial fields and applies markup before discount', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+
+      await service.create(
+        validCreateDto({
+          orgMarkupPercent: 10,
+          vatPercent: 20,
+          prepaymentPercent: 30,
+          productionDays: 7,
+          deliveryDays: 3,
+          discountType: 'percent',
+          discountPercent: 10,
+        }) as never,
+      );
+      expect(model.create.mock.calls[0][0]).toMatchObject({
+        orgMarkupPercent: 10,
+        vatPercent: 20,
+        prepaymentPercent: 30,
+        productionDays: 7,
+        deliveryDays: 3,
+        total: 9900,
+      });
+    });
   });
 
   describe('findAll / findById', () => {

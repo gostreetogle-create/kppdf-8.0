@@ -881,7 +881,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           },
         ],
         tableLayout: expect.any(Array),
-        dealTotals: { vatPercent: 20 },
+        dealTotals: expect.objectContaining({ vatPercent: 20 }),
       }),
     );
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
@@ -933,5 +933,66 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(page.draftLines()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
+  }));
+
+  it('persists commercial fields and sends discounted totals to build', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (state: {
+        organizationId: string;
+        orgMarkupPercent: number;
+        dealVatPercent: number;
+        title: string;
+        date: string;
+        validUntil: string;
+        discountType: 'percent';
+        discountPercent: number;
+        prepaymentPercent: number;
+        productionDays: number;
+        deliveryDays: number;
+      }) => void;
+      saveDraft: () => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.onInspectorState({
+      organizationId: 'org-1',
+      orgMarkupPercent: 10,
+      dealVatPercent: 20,
+      title: 'КП для цеха',
+      date: '2026-08-10',
+      validUntil: '2026-08-20',
+      discountType: 'percent',
+      discountPercent: 5,
+      prepaymentPercent: 30,
+      productionDays: 7,
+      deliveryDays: 3,
+    });
+    tick(250);
+    page.saveDraft();
+
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'КП для цеха',
+        date: '2026-08-10',
+        validUntil: '2026-08-20',
+        vatPercent: 20,
+        discountType: 'percent',
+        discountPercent: 5,
+        prepaymentPercent: 30,
+        productionDays: 7,
+        deliveryDays: 3,
+      }),
+    );
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        dealTotals: expect.objectContaining({
+          vatPercent: 20,
+          discountType: 'percent',
+          discountPercent: 5,
+        }),
+      }),
+    );
   }));
 });

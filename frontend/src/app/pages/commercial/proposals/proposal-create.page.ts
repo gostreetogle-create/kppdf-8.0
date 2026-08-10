@@ -285,6 +285,19 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   [tableTargets]="tableTargets()"
                   [selectedTableTargetId]="selectedTableTargetId()"
                   [selectedCounterpartyId]="counterpartyId()"
+                  [initialNumber]="proposalNumber()"
+                  [initialTitle]="proposalTitle()"
+                  [initialDate]="proposalDate()"
+                  [initialValidUntil]="proposalValidUntil()"
+                  [initialDiscountType]="discountType()"
+                  [initialDiscountPercent]="discountPercent()"
+                  [initialDiscountAmount]="discountAmount()"
+                  [initialPrepaymentPercent]="prepaymentPercent()"
+                  [initialProductionDays]="productionDays()"
+                  [initialDeliveryDays]="deliveryDays()"
+                  [initialOrganizationId]="organizationId()"
+                  [initialOrgMarkupPercent]="orgMarkupPercent()"
+                  [initialDealVatPercent]="dealVatPercent()"
                   [readOnly]="isReadOnly()"
                   [status]="proposalStatus()"
                   (stateChange)="onInspectorState($event)"
@@ -476,16 +489,20 @@ export class ProposalCreatePage implements OnInit {
   protected readonly counterpartyId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
+  protected readonly proposalNumber = signal('');
+  protected readonly proposalTitle = signal('');
+  protected readonly proposalDate = signal('');
+  protected readonly proposalValidUntil = signal('');
+  protected readonly discountType = signal<'none' | 'percent' | 'amount'>('none');
+  protected readonly discountPercent = signal(0);
+  protected readonly discountAmount = signal(0);
+  protected readonly prepaymentPercent = signal(0);
+  protected readonly productionDays = signal(0);
+  protected readonly deliveryDays = signal(0);
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
-  protected readonly compositionTotal = computed(() => {
-    const markup = this.clampMarkup(this.orgMarkupPercent());
-    return this.roundMoney(
-      this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0) *
-        (1 + markup / 100),
-    );
-  });
+  protected readonly compositionTotal = computed(() => this.calculateDealTotal());
   protected readonly tableTemplateId = signal<string | null>(null);
   protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
   protected readonly selectedTableTargetId = signal<string | null>(null);
@@ -528,7 +545,15 @@ export class ProposalCreatePage implements OnInit {
             previewLines,
             tableLayout,
             tableTargetId: this.tableTemplateId() ?? undefined,
-            dealTotals: { vatPercent: this.clampVat(this.dealVatPercent()) },
+            dealTotals: {
+              vatPercent: this.clampVat(this.dealVatPercent()),
+              discountType: this.discountType(),
+              discountPercent: this.discountPercent(),
+              discountAmount: this.discountAmount(),
+              prepaymentPercent: this.prepaymentPercent(),
+              productionDays: this.productionDays(),
+              deliveryDays: this.deliveryDays(),
+            },
             ...(org ? { organizationId: org } : {}),
           };
           return this.templatesSvc.build(tpl._id, payload).pipe(
@@ -675,10 +700,21 @@ export class ProposalCreatePage implements OnInit {
 
     // Do not send item.total — DTO forbids unknown fields (400).
     const payload: Partial<Proposal> = {
+      number: this.proposalNumber().trim() || undefined,
+      title: this.proposalTitle().trim() || undefined,
+      ...(this.proposalDate() ? { date: this.proposalDate() } : {}),
+      ...(this.proposalValidUntil() ? { validUntil: this.proposalValidUntil() } : {}),
       organizationId,
       ...(this.counterpartyId().trim() ? { counterpartyId: this.counterpartyId().trim() } : {}),
       status: this.proposalStatus(),
       orgMarkupPercent: this.clampMarkup(this.orgMarkupPercent()),
+      vatPercent: this.clampVat(this.dealVatPercent()),
+      discountType: this.discountType(),
+      discountPercent: this.discountPercent(),
+      discountAmount: this.discountAmount(),
+      prepaymentPercent: this.prepaymentPercent(),
+      productionDays: this.productionDays(),
+      deliveryDays: this.deliveryDays(),
       items: this.draftLines().map((line, index) => ({
         productId: line.productId,
         productName: line.productName,
@@ -725,6 +761,7 @@ export class ProposalCreatePage implements OnInit {
     }
     this.writeStorage('kp.create.lastDraftId', res.data._id);
     this.writeStorage('kp.create.lastTemplateId', templateId);
+    this.proposalNumber.set(res.data.number ?? this.proposalNumber());
     this.proposalStatus.set(res.data.status === 'accepted' ? 'accepted' : 'draft');
     this.autosaveLabel.set('Сохранено');
     if (!autosave || !this.autosaveToastShown) {
@@ -802,6 +839,17 @@ export class ProposalCreatePage implements OnInit {
     this.organizationId.set(this.refId(draft.organizationId) ?? '');
     this.counterpartyId.set(this.refId(draft.counterpartyId) ?? '');
     this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
+    this.proposalNumber.set(draft.number ?? '');
+    this.proposalTitle.set(draft.title ?? '');
+    this.proposalDate.set(draft.date ? draft.date.slice(0, 10) : '');
+    this.proposalValidUntil.set(draft.validUntil ? draft.validUntil.slice(0, 10) : '');
+    this.dealVatPercent.set(this.clampVat(draft.vatPercent ?? 20));
+    this.discountType.set(draft.discountType ?? 'none');
+    this.discountPercent.set(Math.max(0, draft.discountPercent ?? 0));
+    this.discountAmount.set(Math.max(0, draft.discountAmount ?? 0));
+    this.prepaymentPercent.set(Math.min(100, Math.max(0, draft.prepaymentPercent ?? 0)));
+    this.productionDays.set(Math.max(0, draft.productionDays ?? 0));
+    this.deliveryDays.set(Math.max(0, draft.deliveryDays ?? 0));
     this.draftLines.set(
       (draft.items ?? []).map((item) => ({
         productId: this.refId(item.productId) ?? '',
@@ -972,16 +1020,41 @@ export class ProposalCreatePage implements OnInit {
     const nextCounterparty = (state.counterpartyId ?? '').trim();
     const nextMarkup = this.clampMarkup(state.orgMarkupPercent);
     const nextVat = this.clampVat(state.dealVatPercent ?? this.dealVatPercent());
-    const unchanged =
+    const nextDiscountType = state.discountType ?? this.discountType();
+    const nextDiscountPercent = Math.max(0, state.discountPercent ?? this.discountPercent());
+    const nextDiscountAmount = Math.max(0, state.discountAmount ?? this.discountAmount());
+    const nextUnchanged =
       nextOrganization === this.organizationId() &&
       nextCounterparty === this.counterpartyId() &&
       nextMarkup === this.orgMarkupPercent() &&
-      nextVat === this.dealVatPercent();
-    if (unchanged) return;
+      nextVat === this.dealVatPercent() &&
+      nextDiscountType === this.discountType() &&
+      nextDiscountPercent === this.discountPercent() &&
+      nextDiscountAmount === this.discountAmount() &&
+      (state.number ?? this.proposalNumber()) === this.proposalNumber() &&
+      (state.title ?? this.proposalTitle()) === this.proposalTitle() &&
+      (state.date ?? this.proposalDate()) === this.proposalDate() &&
+      (state.validUntil ?? this.proposalValidUntil()) === this.proposalValidUntil() &&
+      (state.prepaymentPercent ?? this.prepaymentPercent()) === this.prepaymentPercent() &&
+      (state.productionDays ?? this.productionDays()) === this.productionDays() &&
+      (state.deliveryDays ?? this.deliveryDays()) === this.deliveryDays();
+    if (nextUnchanged) return;
     this.organizationId.set(nextOrganization);
     this.counterpartyId.set(nextCounterparty);
     this.orgMarkupPercent.set(nextMarkup);
     this.dealVatPercent.set(nextVat);
+    this.discountType.set(nextDiscountType);
+    this.discountPercent.set(nextDiscountPercent);
+    this.discountAmount.set(nextDiscountAmount);
+    this.proposalNumber.set(state.number ?? this.proposalNumber());
+    this.proposalTitle.set(state.title ?? this.proposalTitle());
+    this.proposalDate.set(state.date ?? this.proposalDate());
+    this.proposalValidUntil.set(state.validUntil ?? this.proposalValidUntil());
+    this.prepaymentPercent.set(
+      Math.min(100, Math.max(0, state.prepaymentPercent ?? this.prepaymentPercent())),
+    );
+    this.productionDays.set(Math.max(0, state.productionDays ?? this.productionDays()));
+    this.deliveryDays.set(Math.max(0, state.deliveryDays ?? this.deliveryDays()));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();
@@ -1131,6 +1204,18 @@ export class ProposalCreatePage implements OnInit {
   protected closeFlyouts(): void {
     this.leftTool.set(null);
     this.rightOpen.set(false);
+  }
+
+  private calculateDealTotal(): number {
+    const base = this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
+    const marked = base * (1 + this.clampMarkup(this.orgMarkupPercent()) / 100);
+    if (this.discountType() === 'percent') {
+      return this.roundMoney(marked * (1 - Math.min(100, this.discountPercent()) / 100));
+    }
+    if (this.discountType() === 'amount') {
+      return this.roundMoney(Math.max(0, marked - this.discountAmount()));
+    }
+    return this.roundMoney(marked);
   }
 
   private clampMarkup(value: number): number {

@@ -54,7 +54,8 @@ export class QuotationVersion {
 
 const QuotationVersionSchema = SchemaFactory.createForClass(QuotationVersion);
 
-export type QuotationStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
+export type QuotationStatus =
+  'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 export type DiscountType = 'none' | 'percent' | 'amount';
 /** D21 / SALES-303: solo = standalone; master = family root; variant = org clone. */
 export type QuotationFamilyRole = 'solo' | 'master' | 'variant';
@@ -65,7 +66,12 @@ export class Quotation {
   @Prop({ required: true, unique: true, index: true })
   number!: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Organization', required: true, index: true })
+  @Prop({
+    type: Types.ObjectId,
+    ref: 'Organization',
+    required: true,
+    index: true,
+  })
   organizationId!: Types.ObjectId;
 
   /** Family role (default solo — existing docs stay valid without migration). */
@@ -87,6 +93,18 @@ export class Quotation {
   /** Per-KP org markup override (%). Default applied later from Organization. */
   @Prop({ default: undefined })
   orgMarkupPercent?: number;
+
+  @Prop({ default: 20, min: 0, max: 100 })
+  vatPercent!: number;
+
+  @Prop({ default: 0, min: 0, max: 100 })
+  prepaymentPercent!: number;
+
+  @Prop({ default: 0, min: 0 })
+  productionDays!: number;
+
+  @Prop({ default: 0, min: 0 })
+  deliveryDays!: number;
 
   /** Drafts may exist before the Create КП client picker is completed. */
   @Prop({ type: Types.ObjectId, ref: 'Counterparty', index: true })
