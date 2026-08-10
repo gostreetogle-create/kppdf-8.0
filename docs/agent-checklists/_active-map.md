@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T22:12:00Z · READY QUEUE для continuous (AUTH-301 → KP-COMPLETE)
+- DONE waves: MCP-GAP 31–34 · Excel 36–38 · DICT-DEMO · KP-USABLE · OPS-309 · VPS Basic Auth (ops).
+- `_active/`: empty.
+- NEXT continuous: **TZ-AUTH-301** → **WAVE-KP-COMPLETE** 340→341→345→343→344→342→346→347→348.
+- Prompt: `tasks/PROMPT-READY-QUEUE-CONTINUOUS.md` · QUEUE обновлён.
+- BAN авто: deploy.ps1 · desktop ZIP publish · parked DOC-344/SUPPLY-303 · nginx/VPS.
+- Deploy: NO until PO says «деплой».
+
 ## Checkpoint 2026-08-10T19:01:12Z · TZD-38 DONE → WAVE COMPLETE
 - DONE: hierarchical specification import — product/module/material tree preview, qty/conflict validation, explicit HITL confirm, and existing Product/Module composition REST writes.
 - MCP: draft-only module/composition proposals plus fail-closed `userOk:true` confirm tools; flat TZD-37 path unchanged.
@@ -9,12 +17,6 @@
 - Foreign dirty TZ-AUTH-301/login/PAGE-TZ-INDEX WIP preserved and excluded. Deploy NO; desktop ZIP publish NO.
 - `_active/`: empty for this wave. NEXT: ready to propose desktop publish separately; no publish performed.
 
-## Checkpoint 2026-08-10T18:43:36Z · TZD-36 DONE → NEXT TZD-37
-- DONE: Desktop Import Studio shell — default «Импорт Excel» tab, large dropzone/preview table, secondary Inbox, separate «MCP» tab with preserved pairing/host controls and connected-user chip.
-- Gates: desktop typecheck PASS; svelte-check 0 errors / 0 warnings PASS; desktop build PASS; MCP typecheck + 91/91 tests PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
-- Archive: `tasks/_archive/2026-08/TZD-36.done.md`; lock: `.mimocode/locks/TZD-36-desktop-import-studio-shell.lock`; active marker removed.
-- Conflict scan: TZD-36 keys only; `desktop/mcp/**`, `desktop/mcp-runtime/**`, WAVE-MCP-GAP implementation, deploy, ZIP publish, and foreign dirty WIP excluded. Deploy NO.
-- NEXT: claim TZD-37 strictly; mapping/multi-sheet/HITL remains next, BOM hierarchy TZD-38 after it.
 
 ## Checkpoint 2026-08-10T18:52:06Z · TZD-37 DONE → NEXT TZD-38
 - DONE: multi-sheet Excel mapping HITL with red unfit/conflict + ignore, canonical reshape, row statuses, journal confirmation, MCP suggestion, and org-scoped saved profiles with ★ default.
@@ -23,16 +25,25 @@
 - Conflict scan: TZD-37 keys only; `desktop/mcp-runtime/**`, deploy, ZIP publish, commercial MCP, BOM composition, and foreign dirty WIP excluded. Deploy NO.
 - NEXT: claim TZD-38 strictly; BOM hierarchy/composition write graph remains queued.
 
+
+## Checkpoint 2026-08-10T18:43:36Z · TZD-36 DONE → NEXT TZD-37
+- DONE: Desktop Import Studio shell — default «Импорт Excel» tab, large dropzone/preview table, secondary Inbox, separate «MCP» tab with preserved pairing/host controls and connected-user chip.
+- Gates: desktop typecheck PASS; svelte-check 0 errors / 0 warnings PASS; desktop build PASS; MCP typecheck + 91/91 tests PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
+- Archive: `tasks/_archive/2026-08/TZD-36.done.md`; lock: `.mimocode/locks/TZD-36-desktop-import-studio-shell.lock`; active marker removed.
+- Conflict scan: TZD-36 keys only; `desktop/mcp/**`, `desktop/mcp-runtime/**`, WAVE-MCP-GAP implementation, deploy, ZIP publish, and foreign dirty WIP excluded. Deploy NO.
+- NEXT: claim TZD-37 strictly; mapping/multi-sheet/HITL remains next, BOM hierarchy TZD-38 after it.
+
+
 ## Checkpoint 2026-08-10T21:35:00Z · WAVE-MCP-GAP LANDED on main (TZD-31→34) · NEXT idle
 - Merged `fc0eca4b` into main via merge commit; DICT wave preserved (EXCEL READY + TZ-AUTH-301 checkpoints kept).
 - Archives `tasks/_archive/2026-08/TZD-31..34.done.md` + locks visible on main; `_active/` empty.
 - Deploy: NO — «готово предложить деплой» (по отдельной команде PO).
 
-## Checkpoint 2026-08-10T22:25:00Z · TZ-AUTH-301 READY (login personal learning/test notice)
-- Spec: `tasks/TZ-AUTH-301-login-private-system-notice.md` (текст: личный проект обучения/тестирования; **без** «организация/корпоратив/сотрудники»)
-- Checklist RESERVED: `docs/agent-checklists/TZ-AUTH-301.md`
-- Scope: `/login` notice + `index.html` robots noindex; Deploy: NO
-- NEXT: claim TZ-AUTH-301 (тонкий FE Layer 3)
+## Checkpoint 2026-08-10T22:35:00Z · TZ-AUTH-301 READY (soft notice) + home-host-access note
+- Spec: `tasks/TZ-AUTH-301-login-private-system-notice.md` — **low priority** косметика; без «доступ запрещён»; не compliance
+- Ops note: `docs/ops/home-host-access.md` (VPN / allowlist / Basic Auth > дисклеймер)
+- Checklist: `docs/agent-checklists/TZ-AUTH-301.md`
+- Deploy: NO; NEXT: ops (VPN) важнее claim AUTH-301
 
 ## Checkpoint 2026-08-10T22:10:00Z · WAVE-MCP-GAP DONE (TZD-31→34) · NEXT idle
 - DONE: TZD-31 (runtime sync), TZD-32 (material propose fields), TZD-33 (commercial HITL), TZD-34 (stock movements).
