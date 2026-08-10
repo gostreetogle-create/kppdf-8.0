@@ -1,4 +1,13 @@
 
+## [2026-08-10T17:37:39.9429139Z] — TZ-DICT-319 DONE: kind labels backend
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; backend gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Added idempotent global RU seeds for product/material kind labels, organization-plus-global read/active endpoints, admin/manager rename/order/active patch with immutable keys, and unique `(organizationId, scope, key)` identity with RU duplicate handling. FE dropdown/nav wire remains TZ-DICT-320.
+**Gates:** backend tsc PASS; dictionary-label Jest 2 suites / 9 tests PASS; ESLint PASS with one non-blocking test-helper warning; diff-check PASS; backend Prettier unavailable because no formatter dependency is declared.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-319.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-319-kind-labels-dictionary-be.lock`
+**NEXT:** claim TZ-DICT-320 strictly. Deploy НЕ
+
 ## [2026-08-10T17:32:05.3769468Z] — TZ-CATALOG-338 DONE: article identity contract
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; BE/FE gates, archive, lock, and closeout metadata complete; deploy НЕ

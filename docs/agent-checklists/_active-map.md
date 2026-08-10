@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T17:37:39.9429139Z · TZ-DICT-319 DONE / next DICT-320
+- DONE: backend dictionary-label schema/API, idempotent product/material kind seeds, organization/global reads, active filtering, admin/manager patch, immutable keys, unique identity, and RU conflict handling.
+- Gates: backend tsc PASS; dictionary-label Jest 2 suites / 9 tests PASS; ESLint PASS with one non-blocking test-helper warning; diff-check PASS. Backend Prettier unavailable because package has no formatter dependency.
+- Archive: `tasks/_archive/2026-08/TZ-DICT-319.done.md`; lock: `.mimocode/locks/TZ-DICT-319-kind-labels-dictionary-be.lock`; active marker removed.
+- FE dropdown/nav wire remains strictly for TZ-DICT-320. Deploy: NO
+- NEXT: claim TZ-DICT-320 strictly.
+
+## Checkpoint 2026-08-10T17:34:30.8634091Z · TZ-DICT-319 CLAIMED
+- Active marker: `tasks/_active/TZ-DICT-319.md`; checklist: `docs/agent-checklists/TZ-DICT-319.md`.
+- Scope: backend dictionary-label model/API, idempotent kind seeds, manager/admin patch with immutable key, tests and closeout. FE wire is reserved for TZ-DICT-320.
+- Conflict scan: `_active/` was empty; no competing keys found. TZ-CATALOG-338 is archived/locked/pushed on this branch.
+- Team Room: best-effort pending. Deploy: NO
+- NEXT: inspect existing dictionary/module conventions → implement → backend gates → archive/commit/push.
+
 ## Checkpoint 2026-08-10T17:32:05.3769468Z · TZ-CATALOG-338 DONE / next DICT-319
 - DONE: Product `sku` required + name fallback; Module/Material `article` required and organization-scoped unique; RU duplicate feedback; forms, QuickCreate, LockedRequired profiles, DTOs, schemas, services, and docs aligned.
 - Gates: backend tsc PASS; backend targeted Jest 6 suites / 63 tests PASS; frontend tsc PASS; frontend targeted Jest 5 suites / 95 tests PASS; FE build PASS; ESLint PASS with legacy warnings; diff-check PASS. Prettier CRLF/style baseline documented.

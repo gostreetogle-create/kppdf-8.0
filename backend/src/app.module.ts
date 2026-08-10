@@ -72,6 +72,7 @@ import { DocumentTemplateModule } from './modules/document-template/document-tem
 import { DocumentTemplateCategoryModule } from './modules/document-template-category/document-template-category.module';
 import { TextBlockCategoryModule } from './modules/text-block-category/text-block-category.module';
 import { ColorReferenceModule } from './modules/color-reference/color-reference.module';
+import { DictionaryLabelModule } from './modules/dictionary-label/dictionary-label.module';
 import { TemplateBlockModule } from './modules/template-block/template-block.module';
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
@@ -232,6 +233,7 @@ import { RequestMethod } from '@nestjs/common';
     TextBlockCategoryModule,
     // TZ-PRODUCTS-301: справочник цветов (RAL) — продуктовая словарная сущность
     ColorReferenceModule,
+    DictionaryLabelModule,
     TemplateBlockModule,
     TextBlockModule, // TZ-86 Фаза A.1: новая entity для reusable text snippets
     TableTemplateModule,
