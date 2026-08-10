@@ -156,11 +156,15 @@ export class QuotationOutputService {
     const tableTargetId = snapshot?.['tableTargetId'];
     return {
       previewLines: (quotation.items ?? []).map((item) => ({
+        ...(item.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
         productName: item.productName ?? 'Изделие',
+        ...(item.description ? { description: item.description } : {}),
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         ...(item.productSku ? { productSku: item.productSku } : {}),
         ...(item.unit ? { unit: item.unit } : {}),
+        ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
+        ...(item.isOptional ? { isOptional: true } : {}),
       })),
       ...(Array.isArray(tableLayout) ? { tableLayout } : {}),
       ...(typeof tableTargetId === 'string' ? { tableTargetId } : {}),

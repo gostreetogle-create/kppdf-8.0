@@ -969,6 +969,73 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
   }));
 
+  it('adds a custom line, rebuilds it on the sheet, and includes it in persistence', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onInspectorState: (state: { organizationId: string; orgMarkupPercent: number }) => void;
+      addCustomLine: () => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      draftLines: () => ProposalDraftLine[];
+      saveDraft: () => void;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.addCustomLine();
+    page.onCompositionLineChange({
+      index: 0,
+      patch: {
+        productName: 'Монтаж',
+        description: 'Шеф-монтаж на площадке',
+        quantity: 2,
+        unitPrice: 1000,
+        discountPercent: 10,
+        isOptional: true,
+      },
+    });
+    expect(page.draftLines()[0]).toEqual(
+      expect.objectContaining({
+        lineKind: 'custom',
+        productName: 'Монтаж',
+        description: 'Шеф-монтаж на площадке',
+        isOptional: true,
+      }),
+    );
+
+    tick(250);
+    expect(buildMock).toHaveBeenLastCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        previewLines: [
+          expect.objectContaining({
+            lineKind: 'custom',
+            description: 'Шеф-монтаж на площадке',
+            discountPercent: 10,
+            isOptional: true,
+          }),
+        ],
+      }),
+    );
+
+    page.onInspectorState({ organizationId: 'org-1', orgMarkupPercent: 0 });
+    page.saveDraft();
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            lineKind: 'custom',
+            productName: 'Монтаж',
+            discountPercent: 10,
+            isOptional: true,
+          }),
+        ],
+      }),
+    );
+    expect(quotationCreateMock.mock.calls[0][0].items[0].productId).toBeUndefined();
+  }));
+
   it('shows the three Russian output actions in one download menu', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;

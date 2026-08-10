@@ -377,6 +377,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   [total]="compositionTotal()"
                   [readOnly]="isReadOnly()"
                   (lineChange)="onCompositionLineChange($event)"
+                  (addCustom)="addCustomLine()"
                   (remove)="removeCompositionLine($event)"
                   (duplicate)="duplicateCompositionLine($event)"
                   (move)="moveCompositionLine($event)"
@@ -654,12 +655,18 @@ export class ProposalCreatePage implements OnInit {
           const org = this.organizationId().trim();
           const markup = this.clampMarkup(this.orgMarkupPercent());
           const previewLines: BuildPreviewLine[] = this.draftLines().map((line) => ({
-            productName: line.productName,
+            ...(line.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
+            productName: line.productName || 'Своя строка',
+            ...(line.description ? { description: line.description } : {}),
             quantity: line.quantity,
             unitPrice: this.roundMoney(line.unitPrice * (1 + markup / 100)),
             ...(line.productSku ? { productSku: line.productSku } : {}),
             ...(line.photoUrl ? { photoUrl: line.photoUrl } : {}),
             ...(line.unit ? { unit: line.unit } : {}),
+            ...(line.discountPercent
+              ? { discountPercent: Math.min(100, Math.max(0, line.discountPercent)) }
+              : {}),
+            ...(line.isOptional ? { isOptional: true } : {}),
           }));
           const tableLayout: BuildTableLayoutColumn[] = this.kpTableLayout().map(
             ({ key, visible }) => ({ key, visible }),
@@ -860,13 +867,19 @@ export class ProposalCreatePage implements OnInit {
       deliveryDays: this.deliveryDays(),
       terms: this.terms(),
       items: this.draftLines().map((line, index) => ({
-        productId: line.productId,
+        lineKind: line.lineKind ?? (line.productId ? 'catalog' : 'custom'),
+        ...(line.productId && !line.productId.startsWith('custom-')
+          ? { productId: line.productId }
+          : {}),
         productName: line.productName,
+        ...(line.description ? { description: line.description } : {}),
         productSku: line.productSku,
         quantity: line.quantity,
         unit: line.unit,
         unitPrice: line.unitPrice,
         markupPercent: this.clampMarkup(this.orgMarkupPercent()),
+        discountPercent: Math.min(100, Math.max(0, line.discountPercent ?? 0)),
+        isOptional: line.isOptional === true,
         sortOrder: index,
       })),
       templateId: template._id,
@@ -1074,12 +1087,16 @@ export class ProposalCreatePage implements OnInit {
     this.deliveryDays.set(Math.max(0, draft.deliveryDays ?? 0));
     this.draftLines.set(
       (draft.items ?? []).map((item) => ({
-        productId: this.refId(item.productId) ?? '',
-        productName: item.productName ?? 'Изделие',
+        ...(item.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
+        productId: this.refId(item.productId) ?? `custom-${item.sortOrder ?? 0}`,
+        productName: item.productName ?? 'Своя строка',
+        ...(item.description ? { description: item.description } : {}),
         productSku: item.productSku,
         quantity: item.quantity,
         unit: item.unit,
         unitPrice: item.unitPrice,
+        ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
+        ...(item.isOptional ? { isOptional: true } : {}),
       })),
     );
     if (templateId) {
@@ -1334,8 +1351,12 @@ export class ProposalCreatePage implements OnInit {
   protected onProductAdd(line: ProposalDraftLine): void {
     if (this.isReadOnly()) return;
     this.draftLines.update((rows) => {
-      const existing = rows.findIndex((row) => row.productId === line.productId);
-      if (existing < 0) return [...rows, { ...line, quantity: Math.max(0.001, line.quantity) }];
+      const catalogLine = { ...line, lineKind: 'catalog' as const };
+      const existing = rows.findIndex(
+        (row) => (row.lineKind ?? 'catalog') === 'catalog' && row.productId === line.productId,
+      );
+      if (existing < 0)
+        return [...rows, { ...catalogLine, quantity: Math.max(0.001, line.quantity) }];
       return rows.map((row, index) =>
         index === existing
           ? { ...row, quantity: row.quantity + Math.max(0.001, line.quantity) }
@@ -1343,6 +1364,25 @@ export class ProposalCreatePage implements OnInit {
       );
     });
     if (this.tableTemplateId()) this.addCommercialColumns();
+    this.refreshComposition();
+  }
+
+  protected addCustomLine(): void {
+    if (this.isReadOnly()) return;
+    const id = `custom-${Date.now()}-${this.draftLines().length}`;
+    this.draftLines.update((rows) => [
+      ...rows,
+      {
+        lineKind: 'custom',
+        productId: id,
+        productName: '',
+        quantity: 1,
+        unit: 'шт',
+        unitPrice: 0,
+        discountPercent: 0,
+        isOptional: false,
+      },
+    ]);
     this.refreshComposition();
   }
 
@@ -1451,7 +1491,11 @@ export class ProposalCreatePage implements OnInit {
   }
 
   private calculateDealTotal(): number {
-    const base = this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
+    const base = this.draftLines().reduce((sum, line) => {
+      if (line.isOptional) return sum;
+      const discount = Math.min(100, Math.max(0, line.discountPercent ?? 0));
+      return sum + line.quantity * line.unitPrice * (1 - discount / 100);
+    }, 0);
     const marked = base * (1 + this.clampMarkup(this.orgMarkupPercent()) / 100);
     if (this.discountType() === 'percent') {
       return this.roundMoney(marked * (1 - Math.min(100, this.discountPercent()) / 100));

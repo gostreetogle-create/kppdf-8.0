@@ -29,14 +29,27 @@ export interface ProposalCompositionLineChange {
           <p class="eyebrow m-0">КП</p>
           <h2 class="composition__title">Состав КП</h2>
         </div>
-        <span class="composition__total" data-test="kp-composition-total">{{
-          price(total())
-        }}</span>
+        <div class="composition__header-actions">
+          <app-pi-button
+            type="button"
+            variant="outline"
+            size="sm"
+            [disabled]="readOnly()"
+            (click)="addCustom.emit()"
+            data-test="kp-add-custom-line"
+          >
+            Своя строка
+          </app-pi-button>
+          <span class="composition__total" data-test="kp-composition-total">{{
+            price(total())
+          }}</span>
+        </div>
       </header>
 
       @if (lines().length === 0) {
         <div class="composition__empty" data-test="kp-composition-empty">
           <p>Добавьте изделия из панели «Товары».</p>
+          <p>Или нажмите «Своя строка» для услуги, доставки или монтажа.</p>
           <span class="text-xs text-muted-foreground"
             >Здесь появятся позиции, количество и итог.</span
           >
@@ -67,6 +80,31 @@ export interface ProposalCompositionLineChange {
                 </div>
                 <strong class="composition__line-total">{{ price(lineTotal(line)) }}</strong>
               </div>
+
+              @if (line.lineKind === 'custom') {
+                <label class="composition__custom-field">
+                  <span>Название</span>
+                  <input
+                    class="pi-input"
+                    type="text"
+                    [value]="line.productName"
+                    [disabled]="readOnly()"
+                    (change)="nameChanged(index, $event)"
+                    [attr.data-test]="'kp-composition-name-' + index"
+                  />
+                </label>
+              }
+              <label class="composition__description-field">
+                <span>Описание</span>
+                <input
+                  class="pi-input"
+                  type="text"
+                  [value]="line.description || ''"
+                  [disabled]="readOnly()"
+                  (change)="descriptionChanged(index, $event)"
+                  [attr.data-test]="'kp-composition-description-' + index"
+                />
+              </label>
 
               <div class="composition__fields">
                 <label>
@@ -125,6 +163,33 @@ export interface ProposalCompositionLineChange {
                     (change)="unitChanged(index, $event)"
                     [attr.data-test]="'kp-composition-unit-' + index"
                   />
+                </label>
+                <label>
+                  <span>Скидка, %</span>
+                  <input
+                    class="pi-input"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    [value]="line.discountPercent || 0"
+                    [disabled]="readOnly()"
+                    (change)="discountChanged(index, $event)"
+                    [attr.data-test]="'kp-composition-discount-' + index"
+                  />
+                </label>
+                <label class="composition__optional">
+                  <span>Стоимость</span>
+                  <span class="composition__checkbox">
+                    <input
+                      type="checkbox"
+                      [checked]="line.isOptional === true"
+                      [disabled]="readOnly()"
+                      (change)="optionalChanged(index, $event)"
+                      [attr.data-test]="'kp-composition-optional-' + index"
+                    />
+                    Не входит
+                  </span>
                 </label>
               </div>
 
@@ -193,6 +258,7 @@ export interface ProposalCompositionLineChange {
       min-height: 0;
     }
     .composition__header,
+    .composition__header-actions,
     .composition__line-heading,
     .composition__actions {
       display: flex;
@@ -206,6 +272,27 @@ export interface ProposalCompositionLineChange {
       font-family: var(--font-display, Georgia, serif);
       font-size: 1.35rem;
       line-height: 1.1;
+    }
+    .composition__header-actions {
+      justify-content: flex-end;
+    }
+    .composition__custom-field,
+    .composition__description-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .composition__custom-field > span,
+    .composition__description-field > span {
+      color: var(--color-muted);
+      font-size: 0.68rem;
+    }
+    .composition__checkbox {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--color-ink) !important;
+      font-size: 0.72rem !important;
     }
     .composition__total {
       color: var(--color-ink);
@@ -281,7 +368,7 @@ export interface ProposalCompositionLineChange {
     }
     .composition__fields {
       display: grid;
-      grid-template-columns: 1.2fr 1fr 0.8fr;
+      grid-template-columns: 1.2fr 1fr 0.8fr 0.7fr 1fr;
       gap: 0.45rem;
     }
     .composition__fields label {
@@ -332,6 +419,7 @@ export class ProposalCreateCompositionComponent {
   readonly total = input(0);
   readonly readOnly = input(false);
   readonly lineChange = output<ProposalCompositionLineChange>();
+  readonly addCustom = output<void>();
   readonly remove = output<number>();
   readonly duplicate = output<number>();
   readonly move = output<{ index: number; direction: -1 | 1 }>();
@@ -348,7 +436,11 @@ export class ProposalCreateCompositionComponent {
   }
 
   protected lineTotal(line: ProposalDraftLine): number {
-    return Math.round((line.quantity * line.unitPrice + Number.EPSILON) * 100) / 100;
+    const discount = Math.min(100, Math.max(0, line.discountPercent ?? 0));
+    return (
+      Math.round((line.quantity * line.unitPrice * (1 - discount / 100) + Number.EPSILON) * 100) /
+      100
+    );
   }
 
   protected stepQuantity(index: number, delta: number): void {
@@ -372,10 +464,41 @@ export class ProposalCreateCompositionComponent {
       });
   }
 
+  protected nameChanged(index: number, event: Event): void {
+    this.lineChange.emit({
+      index,
+      patch: { productName: (event.target as HTMLInputElement).value.trim() },
+    });
+  }
+
+  protected descriptionChanged(index: number, event: Event): void {
+    this.lineChange.emit({
+      index,
+      patch: { description: (event.target as HTMLInputElement).value.trim() || undefined },
+    });
+  }
+
   protected unitChanged(index: number, event: Event): void {
     this.lineChange.emit({
       index,
       patch: { unit: (event.target as HTMLInputElement).value.trim() || undefined },
+    });
+  }
+
+  protected discountChanged(index: number, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (Number.isFinite(value)) {
+      this.lineChange.emit({
+        index,
+        patch: { discountPercent: Math.min(100, Math.max(0, value)) },
+      });
+    }
+  }
+
+  protected optionalChanged(index: number, event: Event): void {
+    this.lineChange.emit({
+      index,
+      patch: { isOptional: (event.target as HTMLInputElement).checked },
     });
   }
 }

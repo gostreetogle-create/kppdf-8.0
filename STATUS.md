@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-342 DONE: custom quotation lines
+**Статус:** DONE locally after fullstack gates; closeout commit/push pending; deploy НЕ
+**Что:** В «Состав КП» добавлена «Своя строка» без карточки каталога. Для всех строк доступны описание, ед. изм., скидка %, и флаг «Не входит в стоимость»; скидка пересчитывает сумму строки.
+**Persistence/render:** `QuotationItem` поддерживает `lineKind=custom`, legacy catalog items остаются читаемыми; optional lines исключаются из «Итого» и показываются отдельным «Дополнительно (не входит в стоимость)»; build/PDF carry description, discount and optional marker.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-342.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-342-kp-custom-lines.lock`
+**Gates:** BE tsc + quotation/generated-document 48/48; FE tsc + proposal-create/terms 33/33 + development build; ESLint/Prettier/diff-check PASS; DOM/component self-check PASS; authenticated data browser smoke unavailable without backend data stack.
+**NEXT:** commit/push closeout → TZ-SALES-346; deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-344 DONE: conditions panel and term rendering
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
 **Что:** Правый рейл «Условия» добавляет, редактирует, переставляет и удаляет строки текущего КП; библиотека TextBlock фильтруется по активной категории и остаётся открытой после добавления; переменные вставляются в позицию курсора.

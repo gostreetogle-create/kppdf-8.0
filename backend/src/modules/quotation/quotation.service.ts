@@ -51,23 +51,14 @@ export class QuotationService {
   async create(dto: CreateQuotationDto): Promise<QuotationDocument> {
     const number = dto.number ?? (await this.counter.next('Quotation', 'QTN'));
     const markup = dto.orgMarkupPercent ?? 0;
-    const items: QuotationItem[] = dto.items.map((i) => {
-      const total = (i.quantity ?? 0) * (i.unitPrice ?? 0);
-      return {
-        productId: new Types.ObjectId(i.productId),
-        productName: i.productName,
-        productSku: i.productSku,
-        sourceItemId: i.sourceItemId,
-        quantity: i.quantity,
-        unit: i.unit,
-        unitPrice: i.unitPrice,
-        markupPercent: i.markupPercent ?? 0,
-        total,
-        sortOrder: i.sortOrder ?? 0,
-      };
-    });
+    const items: QuotationItem[] = dto.items.map((item) =>
+      this.toQuotationItem(item),
+    );
     const subtotal =
-      items.reduce((s, i) => s + i.total, 0) * (1 + markup / 100);
+      items
+        .filter((item) => !item.isOptional)
+        .reduce((s, i) => s + i.total, 0) *
+      (1 + markup / 100);
     const total = this.applyDiscount(
       subtotal,
       dto.discountType,
@@ -213,22 +204,13 @@ export class QuotationService {
     if (dto.discountAmount !== undefined)
       doc.discountAmount = dto.discountAmount;
     if (dto.items !== undefined) {
-      doc.items = dto.items.map((i) => ({
-        productId: new Types.ObjectId(i.productId),
-        productName: i.productName,
-        productSku: i.productSku,
-        sourceItemId: i.sourceItemId,
-        quantity: i.quantity,
-        unit: i.unit,
-        unitPrice: i.unitPrice,
-        markupPercent: i.markupPercent ?? 0,
-        total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
-        sortOrder: i.sortOrder ?? 0,
-      }));
+      doc.items = dto.items.map((item) => this.toQuotationItem(item));
     }
     // Recompute total from items + markup + current discount.
     const subtotal =
-      (doc.items ?? []).reduce((s, i) => s + (i.total ?? 0), 0) *
+      (doc.items ?? [])
+        .filter((item) => !item.isOptional)
+        .reduce((s, i) => s + (i.total ?? 0), 0) *
       (1 + (doc.orgMarkupPercent ?? 0) / 100);
     doc.total = this.applyDiscount(
       subtotal,
@@ -292,7 +274,7 @@ export class QuotationService {
         templateSnapshot: doc.templateSnapshot,
         items: this.cloneItems(doc.items).map((item) => ({
           ...item,
-          productId: item.productId.toString(),
+          ...(item.productId ? { productId: item.productId.toString() } : {}),
         })),
       };
       const snapshot = {
@@ -382,18 +364,7 @@ export class QuotationService {
       templateId: src.templateId,
       designSnapshot: src.designSnapshot,
       templateSnapshot: src.templateSnapshot,
-      items: src.items.map((i) => ({
-        productId: i.productId,
-        productName: i.productName,
-        productSku: i.productSku,
-        sourceItemId: i.sourceItemId,
-        quantity: i.quantity,
-        unit: i.unit,
-        unitPrice: i.unitPrice,
-        markupPercent: i.markupPercent,
-        total: i.total,
-        sortOrder: i.sortOrder,
-      })),
+      items: src.items.map((item) => this.cloneItem(item)),
     });
   }
 
@@ -408,19 +379,75 @@ export class QuotationService {
     return doc;
   }
 
+  private cloneItem(item: QuotationItem): QuotationItem {
+    return {
+      lineKind: item.lineKind ?? (item.productId ? 'catalog' : 'custom'),
+      ...(item.productId ? { productId: item.productId } : {}),
+      productName: item.productName,
+      description: item.description,
+      productSku: item.productSku,
+      sourceItemId: item.sourceItemId,
+      quantity: item.quantity,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      markupPercent: item.markupPercent,
+      discountPercent: item.discountPercent ?? 0,
+      isOptional: item.isOptional ?? false,
+      total: item.total,
+      sortOrder: item.sortOrder,
+    } as QuotationItem;
+  }
+
   private cloneItems(items: QuotationItem[]): QuotationItem[] {
-    return (items ?? []).map((i) => ({
-      productId: i.productId,
-      productName: i.productName,
-      productSku: i.productSku,
-      sourceItemId: i.sourceItemId,
-      quantity: i.quantity,
-      unit: i.unit,
-      unitPrice: i.unitPrice,
-      markupPercent: i.markupPercent,
-      total: i.total,
-      sortOrder: i.sortOrder,
-    }));
+    return (items ?? []).map((item) => this.cloneItem(item));
+  }
+
+  private toQuotationItem(item: {
+    lineKind?: 'catalog' | 'custom';
+    productId?: string;
+    productName?: string;
+    description?: string;
+    productSku?: string;
+    sourceItemId?: string;
+    quantity: number;
+    unit?: string;
+    unitPrice: number;
+    markupPercent?: number;
+    discountPercent?: number;
+    isOptional?: boolean;
+    sortOrder?: number;
+  }): QuotationItem {
+    const lineKind = item.lineKind ?? 'catalog';
+    if (lineKind === 'catalog' && !item.productId) {
+      throw new BadRequestException('Для каталожной строки требуется изделие');
+    }
+    if (lineKind === 'custom' && !item.productName?.trim()) {
+      throw new BadRequestException('Для своей строки требуется название');
+    }
+    const discountPercent = Math.min(
+      100,
+      Math.max(0, item.discountPercent ?? 0),
+    );
+    const gross = (item.quantity ?? 0) * (item.unitPrice ?? 0);
+    const total = Math.round(gross * (1 - discountPercent / 100) * 100) / 100;
+    return {
+      lineKind,
+      ...(item.productId
+        ? { productId: new Types.ObjectId(item.productId) }
+        : {}),
+      productName: item.productName,
+      description: item.description,
+      productSku: item.productSku,
+      sourceItemId: item.sourceItemId,
+      quantity: item.quantity,
+      unit: item.unit,
+      unitPrice: item.unitPrice,
+      markupPercent: item.markupPercent ?? 0,
+      discountPercent,
+      isOptional: item.isOptional ?? false,
+      total,
+      sortOrder: item.sortOrder ?? 0,
+    } as QuotationItem;
   }
 
   private toFamilySummary(

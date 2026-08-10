@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsIn,
   IsInt,
@@ -8,16 +9,25 @@ import {
   IsOptional,
   IsString,
   Max,
+  ValidateIf,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class QuotationItemDto {
-  @IsObjectId()
-  productId!: string;
+  @IsOptional()
+  @IsIn(['catalog', 'custom'])
+  lineKind?: 'catalog' | 'custom';
 
-  @IsOptional() @IsString() productName?: string;
+  @ValidateIf((item) => item.lineKind !== 'custom')
+  @IsObjectId()
+  productId?: string;
+
+  @ValidateIf((item) => item.lineKind === 'custom')
+  @IsString()
+  productName?: string;
+  @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() productSku?: string;
   @IsOptional() @IsString() sourceItemId?: string;
 
@@ -31,6 +41,8 @@ export class QuotationItemDto {
   unitPrice!: number;
 
   @IsOptional() @IsNumber() @Min(0) markupPercent?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(100) discountPercent?: number;
+  @IsOptional() @IsBoolean() isOptional?: boolean;
   @IsOptional() @IsNumber() @Min(0) sortOrder?: number;
 }
 

@@ -29,13 +29,18 @@ import { extractErrorMessage } from '../../../core/silent-http';
 import { formatPrice } from '../../../shared/util/format';
 
 export interface ProposalDraftLine {
+  /** Catalog lines keep the Product FK; custom lines intentionally do not. */
+  lineKind?: 'catalog' | 'custom';
   productId: string;
   productName: string;
+  description?: string;
   productSku?: string;
   photoUrl?: string;
   quantity: number;
   unit?: string;
   unitPrice: number;
+  discountPercent?: number;
+  isOptional?: boolean;
 }
 
 const PAGE_SIZE = 12;

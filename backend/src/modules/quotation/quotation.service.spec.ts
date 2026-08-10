@@ -198,6 +198,78 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       expect(model.create.mock.calls[0][0]).toMatchObject({ total: 7500 });
     });
 
+    it('creates a custom line without a product and applies its line discount', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+
+      await service.create(
+        validCreateDto({
+          items: [
+            {
+              lineKind: 'custom',
+              productName: 'Монтаж',
+              description: 'Шеф-монтаж на площадке',
+              quantity: 2,
+              unit: 'усл.',
+              unitPrice: 1000,
+              discountPercent: 10,
+            },
+          ],
+        }) as never,
+      );
+
+      expect(model.create.mock.calls[0][0]).toMatchObject({ total: 1800 });
+      expect(model.create.mock.calls[0][0].items[0]).toMatchObject({
+        lineKind: 'custom',
+        productName: 'Монтаж',
+        description: 'Шеф-монтаж на площадке',
+        total: 1800,
+        isOptional: false,
+      });
+      expect(model.create.mock.calls[0][0].items[0].productId).toBeUndefined();
+    });
+
+    it('excludes optional lines from the document total but keeps their amount', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+
+      await service.create(
+        validCreateDto({
+          items: [
+            {
+              productId: new Types.ObjectId().toString(),
+              quantity: 1,
+              unitPrice: 500,
+            },
+            {
+              lineKind: 'custom',
+              productName: 'Доставка',
+              quantity: 1,
+              unitPrice: 300,
+              isOptional: true,
+            },
+          ],
+        }) as never,
+      );
+
+      const created = model.create.mock.calls[0][0];
+      expect(created.total).toBe(500);
+      expect(created.items[1].total).toBe(300);
+      expect(created.items[1].isOptional).toBe(true);
+    });
+
+    it('rejects a catalog line without a product', async () => {
+      const { service, model } = createService();
+      await expect(
+        service.create(
+          validCreateDto({
+            items: [{ productName: 'Без изделия', quantity: 1, unitPrice: 10 }],
+          }) as never,
+        ),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
     it('persists bounded commercial fields and applies markup before discount', async () => {
       const { service, model } = createService();
       model.create.mockResolvedValue(quotationDoc({}));

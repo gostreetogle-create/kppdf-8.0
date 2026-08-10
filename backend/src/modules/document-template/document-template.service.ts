@@ -781,11 +781,19 @@ export class DocumentTemplateService {
       const rows = isLineItemsTarget
         ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
         : [];
+      const lineAmount = (line: BuildPreviewLineDto): number =>
+        line.quantity *
+        line.unitPrice *
+        (1 - Math.min(100, Math.max(0, line.discountPercent ?? 0)) / 100);
       const baseTotal = isLineItemsTarget
-        ? previewLines.reduce(
-            (sum, line) => sum + line.quantity * line.unitPrice,
-            0,
-          )
+        ? previewLines
+            .filter((line) => line.isOptional !== true)
+            .reduce((sum, line) => sum + lineAmount(line), 0)
+        : 0;
+      const additionalTotal = isLineItemsTarget
+        ? previewLines
+            .filter((line) => line.isOptional === true)
+            .reduce((sum, line) => sum + lineAmount(line), 0)
         : 0;
       const total =
         dealTotals?.discountType === 'percent'
@@ -795,7 +803,7 @@ export class DocumentTemplateService {
             : baseTotal;
       const totals =
         isLineItemsTarget && dealTotals
-          ? { total, vatPercent: dealTotals.vatPercent }
+          ? { total, additionalTotal, vatPercent: dealTotals.vatPercent }
           : undefined;
       const html = await this.tableTemplateService.preview(
         tableTemplateId,
@@ -926,7 +934,12 @@ export class DocumentTemplateService {
         normalized,
       )
     ) {
-      return line.productName;
+      return {
+        kind: 'line-text',
+        title: line.productName,
+        description: line.description,
+        optional: line.isOptional === true,
+      };
     }
     if (
       ['quantity', 'qty', 'count', 'кол-во', 'количество'].includes(normalized)
@@ -937,7 +950,11 @@ export class DocumentTemplateService {
       return line.unitPrice;
     }
     if (['sum', 'total', 'amount', 'сумма'].includes(normalized)) {
-      return line.quantity * line.unitPrice;
+      return (
+        line.quantity *
+        line.unitPrice *
+        (1 - Math.min(100, Math.max(0, line.discountPercent ?? 0)) / 100)
+      );
     }
     if (['photo', 'image', 'рисунок', 'photourl'].includes(normalized)) {
       return line.photoUrl ? { kind: 'image', url: line.photoUrl } : '';

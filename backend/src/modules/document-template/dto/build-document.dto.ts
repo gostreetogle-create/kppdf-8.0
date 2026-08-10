@@ -14,8 +14,16 @@ import {
 import { Type } from 'class-transformer';
 
 export class BuildPreviewLineDto {
+  @IsOptional()
+  @IsIn(['catalog', 'custom'])
+  lineKind?: 'catalog' | 'custom';
+
   @IsString()
   productName!: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsNumber()
   @Min(0)
@@ -36,6 +44,16 @@ export class BuildPreviewLineDto {
   @IsOptional()
   @IsString()
   unit?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  discountPercent?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isOptional?: boolean;
 }
 
 export class BuildTermDto {

@@ -1,3 +1,14 @@
+## [2026-08-11] — TZ-SALES-342 DONE — свои строки КП и line-level commerce
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; commit/push closeout pending; deploy НЕ
+**Что:** В «Состав КП» добавлена «Своя строка» без создания карточки каталога. Позиции получили название/описание, ед. изм., скидку %, и флаг «Не входит в стоимость»; custom/catalog discriminator сохраняет старые КП.
+**Persistence/render:** Backend считает `quantity × unitPrice × (1 − discountPercent/100)`, optional lines не входят в документный итог, но остаются на листе с отдельным «Дополнительно (не входит в стоимость)». Build и PDF получают описание, скидку и optional marker.
+**Gates:** backend tsc + quotation/generated-document 48/48; frontend tsc + proposal-create/terms 33/33 + Angular development build; changed-file ESLint/Prettier/diff-check PASS. DOM/component self-check PASS; authenticated browser data smoke unavailable без backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-342.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-342-kp-custom-lines.lock`
+**NEXT:** commit/push closeout → TZ-SALES-346 → 347 → 348; Deploy НЕ; desktop ZIP publish НЕ.
+
+
 ## [2026-08-11] — TZ-SALES-344 DONE — КП условия, библиотека и переменные
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

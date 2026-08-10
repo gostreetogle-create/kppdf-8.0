@@ -3,11 +3,17 @@ import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ _id: false })
 export class QuotationItem {
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
+  @Prop({ enum: ['catalog', 'custom'], default: 'catalog' })
+  lineKind!: 'catalog' | 'custom';
+
+  @Prop({ type: Types.ObjectId, ref: 'Product' })
   productId!: Types.ObjectId;
 
   @Prop()
   productName?: string;
+
+  @Prop()
+  description?: string;
 
   @Prop()
   productSku?: string;
@@ -26,6 +32,12 @@ export class QuotationItem {
 
   @Prop({ default: 0 })
   markupPercent!: number;
+
+  @Prop({ default: 0, min: 0, max: 100 })
+  discountPercent!: number;
+
+  @Prop({ default: false })
+  isOptional!: boolean;
 
   @Prop({ required: true, default: 0 })
   total!: number;

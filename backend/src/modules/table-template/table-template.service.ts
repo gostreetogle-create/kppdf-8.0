@@ -18,6 +18,7 @@ export interface TablePreviewLayoutColumn {
 
 export interface TableDealTotals {
   total: number;
+  additionalTotal?: number;
   vatPercent: number;
   discountType?: 'none' | 'percent' | 'amount';
   discountPercent?: number;
@@ -260,9 +261,13 @@ export class TableTemplateService implements OnModuleInit {
       dealTotals.vatPercent > 0
         ? `<div>в т.ч. НДС ${dealTotals.vatPercent}%: ${this.formatMoney(vat)} ₽</div>`
         : '';
+    const additional =
+      (dealTotals.additionalTotal ?? 0) > 0
+        ? `<div>Дополнительно (не входит в стоимость): ${this.formatMoney(this.roundMoney(dealTotals.additionalTotal ?? 0))} ₽</div>`
+        : '';
     return (
       `<div class="pi-deal-totals" style="margin-top:8px;text-align:right">` +
-      `<div><strong>Итого: ${totalLabel} ₽</strong></div>${vatRow}</div>`
+      `<div><strong>Итого: ${totalLabel} ₽</strong></div>${additional}${vatRow}</div>`
     );
   }
 
@@ -287,6 +292,25 @@ export class TableTemplateService implements OnModuleInit {
       (value as { kind?: string }).kind === 'image'
     ) {
       return this.formatImageCell((value as { url?: unknown }).url);
+    }
+    if (
+      typeof value === 'object' &&
+      value !== null &&
+      (value as { kind?: string }).kind === 'line-text'
+    ) {
+      const line = value as {
+        title?: unknown;
+        description?: unknown;
+        optional?: boolean;
+      };
+      const title = this.escapeHtml(String(line.title ?? ''));
+      const description = line.description
+        ? `<div style="font-size:0.85em;color:#666">${this.escapeHtml(String(line.description))}</div>`
+        : '';
+      const optional = line.optional
+        ? ' <span style="font-size:0.8em;color:#666">(не входит в стоимость)</span>'
+        : '';
+      return `<div>${title}${optional}</div>${description}`;
     }
     switch (type) {
       case 'currency': {

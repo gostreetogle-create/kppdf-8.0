@@ -20,15 +20,19 @@ export interface ProposalTerm {
 }
 
 export interface ProposalItem {
-  /** Product FK. May be populated to a Product object by GET endpoints. */
-  productId: string;
+  /** Catalog lines have a Product FK; custom lines use lineKind=custom. */
+  lineKind?: 'catalog' | 'custom';
+  productId?: string;
   /** IMMUTABLE inline snapshot captured at quotation creation (plan §S1). */
   productName?: string;
+  description?: string;
   productSku?: string;
   quantity: number;
   unit?: string;
   unitPrice: number;
   markupPercent?: number;
+  discountPercent?: number;
+  isOptional?: boolean;
   total?: number;
   sortOrder?: number;
 }
