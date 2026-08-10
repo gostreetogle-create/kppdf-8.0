@@ -6,7 +6,7 @@
 **Gates:** backend tsc + document-template/quotation 96/96; frontend tsc + proposal-create/terms 32/32; Angular development build; ESLint/Prettier/diff-check PASS. DOM/component self-check PASS; authenticated browser data smoke unavailable без backend data stack.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-344.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-344-kp-terms-panel.lock`
-**Commit/push:** closeout pending on canonical `main`.
+**Commit/push:** `36601821` on canonical `main` and `origin/main`.
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; Deploy НЕ; desktop ZIP publish НЕ.
 
 

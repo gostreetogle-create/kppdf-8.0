@@ -7,7 +7,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-344.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-344-kp-terms-panel.lock`
 **Gates:** BE tsc + document-template/quotation 96/96; FE tsc + proposal-create/terms 32/32 + dev build; ESLint/Prettier/diff-check PASS; DOM/component self-check PASS; authenticated data browser smoke unavailable without backend data stack.
-**Commit/push:** closeout pending on canonical `main`.
+**Commit/push:** `36601821` on `main` and `origin/main`.
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; deploy НЕ; desktop ZIP publish НЕ.
 
 **Last updated:** 2026-08-11

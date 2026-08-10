@@ -5,7 +5,7 @@
 - Persistence/render: `Quotation.terms` is stored, returned, autosaved and hydrated after F5; build receives terms plus KP number/date/total and renders known variables safely in a terms block or fallback section; unknown variables remain literal. PDF rebuild payload includes terms and commercial metadata.
 - Gates: frontend tsc + proposal-create/terms 32/32 PASS; backend tsc + document-template/quotation 96/96 PASS; Angular development build PASS; changed-file ESLint/Prettier/diff-check PASS. DOM/component self-check PASS; authenticated backend-data browser smoke unavailable in headless workspace.
 - Archive/lock: `tasks/_archive/2026-08/TZ-SALES-344.done.md`; `.mimocode/locks/TZ-SALES-344-kp-terms-panel.lock`; `_active/` empty.
-- Commit/push: pending closeout on canonical `main`; foreign WIP remains excluded.
+- Commit/push: `36601821` on canonical `main` and `origin/main`; foreign WIP remains excluded.
 - NEXT continuous: **TZ-SALES-342** → 346 → 347 → 348. Deploy NO; desktop ZIP publish NO; nginx/VPS untouched.
 
 ## Checkpoint 2026-08-11 · TZ-SALES-343 DONE → NEXT TZ-SALES-344
