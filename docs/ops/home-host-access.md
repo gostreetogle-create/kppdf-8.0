@@ -99,11 +99,73 @@ KPPDF — индивидуальный проект для обучения, э�
 Не использовать: организация/корпоратив/сотрудники; «несанкционированный доступ запрещён»; угрозы, штрафы, РКН.  
 Помнить: текст = этикетка, не compliance.
 
-## 5. Что сказать себе при настройке
+## 5. Фактический мост kppdf-8.0 (канон из deploy)
 
-Нужно знать схему моста:
+Source of truth: [`deploy/synology/DEPLOY.md`](../../deploy/synology/DEPLOY.md).
 
-- простой **port forward** → сначала Basic Auth, параллельно Tailscale, потом убрать forward;
-- **VPS + nginx** → Basic Auth (или oauth2-proxy) на VPS; цель — свернуть публичный proxy после VPN;
-- **Cloudflare Tunnel** → Cloudflare Access первым делом;
-- уже **VPN** → не открывать веб наружу повторно «для удобства».
+```
+Интернет
+  → DNS kppdf-crm.ru → VPS 193.222.62.240
+  → nginx:443 (Let's Encrypt, конфиг /etc/nginx/sites-available/kppdf-proxy)
+  → proxy_pass http://127.0.0.1:4200
+  → SSH reverse tunnel (autossh / kppdf-tunnel с VM)
+  → Ubuntu VM на Synology 192.168.1.103:3000 (Docker kppdf-backend + mongo)
+```
+
+Это **не** Cloudflare Tunnel. Упоминание cloudflared в `CREDENTIALS.example.md` — legacy из kppdf-3.0; для v8 канон = VPS + SSH `-R`.
+
+| Мера | Под вашу схему |
+|------|----------------|
+| **1-я (сегодня)** | HTTP Basic Auth **на VPS nginx** перед `proxy_pass` |
+| Cloudflare Access | Не «из коробки» — нужен перенос DNS/прокси на Cloudflare |
+| Цель (неделя) | Tailscale на VM/Synology → при желании свернуть публичный nginx к приложению |
+
+## 6. Чеклист: Basic Auth на VPS (~15 мин)
+
+SSH: `ssh root@193.222.62.240` (секреты в gitignored `deploy/synology/CREDENTIALS.md`).
+
+1. [ ] Создать пароль (только вы + 1–2 человека; хранить в менеджере паролей):
+   ```bash
+   apt-get install -y apache2-utils
+   htpasswd -c /etc/nginx/.htpasswd-kppdf YOUR_LOGIN
+   # для второго человека: htpasswd /etc/nginx/.htpasswd-kppdf OTHER_LOGIN  (без -c)
+   chmod 640 /etc/nginx/.htpasswd-kppdf
+   ```
+2. [ ] В `/etc/nginx/sites-available/kppdf-proxy` внутри `server { … 443 … }` добавить **до** `location`-блоков (или в каждый `location /` и static — проще в `location /` и в static location):
+   ```nginx
+   auth_basic "Private";
+   auth_basic_user_file /etc/nginx/.htpasswd-kppdf;
+   ```
+   Практично: поставить эти две строки в `location /` **и** в `location ~* \.(js|css|…)` — иначе статика отдастся без пароля (менее критично, но лучше закрыть).
+3. [ ] Не закрывать Basic Auth на `location = /robots.txt`, если хотите оставлять noindex снаружи — по желанию; для «не публичный» можно закрыть и его.
+4. [ ] Проверка конфига и reload:
+   ```bash
+   nginx -t && systemctl reload nginx
+   ```
+5. [ ] С телефона / инкогнито (без сохранённого пароля):
+   - `https://kppdf-crm.ru/` → браузер просит логин/пароль Basic;
+   - без пароля — **нет** Angular `/login`;
+   - с паролем → обычная форма входа приложения.
+6. [ ] С офиса/дома убедиться, что app-login (admin) по-прежнему работает после Basic.
+7. [ ] Health снаружи без Basic должен давать 401:
+   ```bash
+   curl -sI https://kppdf-crm.ru/api/health/ready
+   # ожидаем HTTP/2 401
+   curl -sI -u 'LOGIN:PASS' https://kppdf-crm.ru/api/health/ready
+   # ожидаем 200
+   ```
+
+**Не делать:** IP allowlist офиса как основную меру; Cloudflare Access «на авось» без смены моста; открывать `:3000` VM в интернет.
+
+## 7. Чеклист: цель Tailscale (когда будет вечер)
+
+1. [ ] Поставить Tailscale на VM `192.168.1.103` (или Synology + route к VM).
+2. [ ] Клиенты на телефон/ноут; ACL: только ваши устройства.
+3. [ ] Заход на `http://100.x.y.z:3000` (или MagicDNS) для проверки.
+4. [ ] Когда стабильно: решить, оставлять ли публичный `kppdf-crm.ru` только с Basic Auth как «запасной вход», или отключить proxy на приложение (радикально непублично).
+
+## 8. Что сказать себе при настройке
+
+- **Ваш мост сейчас:** VPS + nginx + SSH reverse tunnel → **сначала Basic Auth на VPS**.
+- Cloudflare Access — только если сознательно переедете на Cloudflare Tunnel/Proxy.
+- Уже **VPN/Tailscale** и убрали публичный веб → не открывать снова «для удобства».
