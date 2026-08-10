@@ -22,7 +22,7 @@ CLAIM первым (до кода):
 1. **TZD-36** `tasks/TZD-36-desktop-import-studio-shell.md`  
    Вкладки «Импорт Excel» | «MCP»; большая студия drop+таблица; pairing в MCP-вкладке.
 2. **TZD-37** `tasks/TZD-37-excel-validation-hitl-studio.md`  
-   Валидация дублей/коллизий/ошибок; multi-sheet; Отправить через propose/confirm; кнопка «Проверить через ИИ» если MCP up.
+   Профиль сопоставления полей (auto + красные unfit + save/★) → валидация строк → multi-sheet → Отправить HITL → опц. ИИ (map + rows) если MCP up.
 3. **TZD-38** `tasks/TZD-38-spec-bom-composition-import.md`  
    Иерархия спецификации → product/module + composition HITL (закрывает TZD-35 PARK).
 

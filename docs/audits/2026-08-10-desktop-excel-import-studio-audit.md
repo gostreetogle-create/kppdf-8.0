@@ -57,8 +57,13 @@ UI сейчас: **стопка карточек** Подключение → MC
 | G4 | Нет composition propose | Спека «из чего состоит» не сядет в состав изделия |
 | G5 | AI-check кнопка в UI | pipeline stub; MCP HITL есть, но не как явная кнопка студии |
 | G6 | Runtime MCP drift | Без TZD-31 «проверить через ИИ» может звать старый toolset |
+| G7 | Нет **сохранённых профилей сопоставления полей** | TZD-26 = one-shot `classifyColumns` + `columnMap` на task; нет UI «Excel-заголовок → наше поле», красных сомнительных, шаблонов «из SolidWorks / из …», default ★ |
 
-**Не строить:** вторая БД; silent write без confirm; обязательный bundled LLM; web ImportTask UI; заказы/КП bulk в этой волне.
+**Термин (канон для TZ):** **профиль сопоставления полей** (EN: *field mapping profile* / *import mapping template*). Не «переходник» в UI — в подсказке можно: «Шаблон: как колонки Excel из другого ПО стыкуются с полями kppdf».
+
+**Уже есть кирпичи:** `classifyColumns` → ready/unfit/mapping/conflicts (`desktop/mcp/src/inbox.ts`); `kppdf_inbox_classify_columns`; `kppdf_import_task_reshape` + `columnMap`. Не хватает: studio UI подтверждения, **persist named profiles** (org-scoped), default ★, AI-propose mapping → user confirm.
+
+**Не строить:** вторая БД; silent write без confirm; обязательный bundled LLM; web ImportTask UI; заказы/КП bulk в этой волне; EAV «поля из воздуха» (маппить только на известный канон domain-schema).
 
 ---
 
@@ -66,14 +71,16 @@ UI сейчас: **стопка карточек** Подключение → MC
 
 | # | TZ | Слой | Суть |
 |---|-----|------|------|
-| 1 | **TZD-36** | Desktop UI | Import Studio shell: вкладки **Импорт Excel** \| **MCP**; pairing внутри MCP; большой drop+table chrome; перенос текущего flat-flow под студию |
-| 2 | **TZD-37** | Desktop + тонкий BE/MCP | Валидация строк (дубли, обязательные, коллизии SoT); статусы; multi-sheet picker; apply → journal; кнопка «Проверить через ИИ» (MCP) |
-| 3 | **TZD-38** | MCP + journal/REST | Иерархия спецификации → module/product + **composition propose/confirm** (unpark TZD-35) |
+| 1 | **TZD-36** | Desktop UI | Import Studio shell: вкладки **Импорт Excel** \| **MCP**; pairing внутри MCP; большой drop+table chrome |
+| 2 | **TZD-37** | Desktop + тонкий BE/MCP | **Профиль сопоставления** (auto-match + красные unfit + confirm + save/★ default) → валидация строк → multi-sheet → apply journal → опц. ИИ |
+| 3 | **TZD-38** | MCP + journal/REST | Иерархия спецификации → module/product + **composition propose/confirm** |
+
+Отдельный TZ на «только mapping» **не нужен** — это сердце TZD-37 (иначе 4 TZ). Persist профилей: local Desktop store **или** тонкий Nest collection `import_mapping_profiles` (org-scoped) — предпочтение **Nest**, чтобы шаблон жил между ПК (проектировщик/офис).
 
 **Параллель с другими волнами**
 
 - `WAVE-DICT-DEMO` — FE web; keys не пересекаются с `desktop/**` → можно другой агент.
-- `WAVE-MCP-GAP` (31–34) — общий `desktop/mcp/src/tools.ts` → **не** параллелить с TZD-37/38; TZD-36 (в основном `desktop/src`) можно до/параллельно аккуратно.
+- `WAVE-MCP-GAP` (31–34) — общий `desktop/mcp/src/tools.ts` → **не** параллелить с TZD-37/38; TZD-36 можно до/параллельно аккуратно.
 - Рекомендация: **TZD-36 сразу**; 37 после 36; 38 после 37 (+ желательно TZD-31 DONE).
 
 ---
@@ -82,13 +89,19 @@ UI сейчас: **стопка карточек** Подключение → MC
 
 ```text
 [Tab: Импорт Excel]
-  Dropzone → parse (sheets[]) → column map → validate → grid
+  Dropzone → parse (sheets[])
+       → [Профиль сопоставления] auto-suggest + красные сомнительные
+            ├─ Подтвердить / поправить
+            ├─ Сохранить как профиль (+ ★ default)
+            └─ (опц. ИИ) предложить map → тот же confirm UI
+       → reshape rows by profile
+       → validate rows → grid
        ├─ Отправить → ImportTask / journal propose → confirm → SoT
-       └─ Проверить через ИИ (если MCP up) → set_report / audit tools → merge flags в grid
+       └─ Проверить строки через ИИ (если MCP up) → merge flags
 
 [Tab: MCP]
   Pairing + Start/Stop host + mcp.json snippet
-       └─ тот же apiBaseUrl / token, что у Excel-tab writes
+       └─ тот же apiBaseUrl / token
 ```
 
 SoT = Nest/Mongo. Desktop = оркестратор + HITL UI, не склад данных.
