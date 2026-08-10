@@ -50,21 +50,21 @@ export class UnitController {
   }
 
   @Post()
-  @Roles('admin')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'Unit' })
   create(@Body() dto: CreateUnitDto) {
     return this.service.create(dto);
   }
 
   @Patch(':key')
-  @Roles('admin')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'Unit', idParam: 'key' })
   update(@Param('key') key: string, @Body() dto: UpdateUnitDto) {
     return this.service.update(key, dto);
   }
 
   @Delete(':key')
-  @Roles('admin')
+  @Roles('admin', 'manager')
   @AuditAction({ action: 'delete', entityType: 'Unit', idParam: 'key' })
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('key') key: string) {

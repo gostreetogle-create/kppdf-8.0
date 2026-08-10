@@ -1940,3 +1940,13 @@ BOM inspector — вклад строки material/module read-only.
 **Lock:** `.mimocode/locks/TZ-PRODUCTS-310-product-bom-circular-cmp.lock`
 **Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
 **NEXT:** claim TZ-DICT-317 строго по очереди.
+
+## [2026-08-10T16:43:00Z] — TZ-DICT-317 DONE: Units CRUD edit + manager roles
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE/BE typecheck, focused tests, FE build, ESLint and diff-check PASS; deploy НЕ
+**Что:** На странице «Измерения» карандаш теперь открывает компактный диалог редактирования названия, символа и категории; после PATCH список обновляется. POST/PATCH/DELETE единиц разрешены `admin` и `manager`, чтение оставлено `user`; удаление системных единиц по-прежнему запрещено.
+**Gates:** Measurements Jest 6/6; Unit RBAC Jest 2/2; frontend/backend tsc PASS; frontend development build PASS; ESLint/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-317.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-317-units-crud-edit-roles.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-DICT-318 строго по очереди.
