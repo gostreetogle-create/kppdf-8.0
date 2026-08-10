@@ -1,4 +1,13 @@
 
+## [2026-08-10T21:00:00Z] — TZD-32 DONE: material propose fields (WAVE-MCP-GAP #2)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; propose create price/kind/description/dimensions → SoT; deploy НЕ
+**Что:** `ProposeMaterialCreateDto` расширен whitelist-полями `pricePerUnit` (≥0), `materialKind` (MATERIAL_KINDS), `description` (≤2000), `dimensions` (`DimensionDto` переиспользован). propose→confirm передаёт поля в `MaterialService.create` без потерь; batch items — те же поля. MCP zod (`materialCreateInput`/`batchItemSchema`) зеркалит DTO + `buildMaterialCreateProposal` (default unit `шт`); MCP.md write-таблица обновлена. Invalid kind/цена/размер → 400/zod reject, 0 SoT; regression без новых полей PASS.
+**Gates:** BE tsc PASS; mutation-journal Jest 20/20 PASS; desktop/mcp test 79/79 PASS; mcp tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-32.done.md`
+**Lock:** `.mimocode/locks/TZD-32-material-propose-fields.lock`
+**Checkpoint:** NEXT = claim TZD-33. Deploy НЕ
+
 ## [2026-08-10T20:30:00Z] — TZD-31 DONE: MCP runtime sync (WAVE-MCP-GAP #1)
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; live /healthz toolCount 51 ≥ 40; deploy НЕ

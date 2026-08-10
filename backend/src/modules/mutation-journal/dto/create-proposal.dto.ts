@@ -6,12 +6,16 @@ import {
   IsArray,
   IsIn,
   IsMongoId,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
   Length,
+  Min,
   ValidateNested,
 } from 'class-validator';
+import { MATERIAL_KINDS, type MaterialKind } from '../../material/material.schema';
+import { DimensionDto } from '../../material/dto/create-material.dto';
 import { MUTATION_KINDS } from '../mutation-journal.schema';
 
 export class ProposeMaterialCreateDto {
@@ -42,6 +46,31 @@ export class ProposeMaterialCreateDto {
   @IsOptional()
   @IsMongoId()
   categoryId?: string;
+
+  // TZD-32: whitelist расширения propose create (зеркало CreateMaterialDto).
+  @ApiPropertyOptional({ description: 'Цена за единицу (RUB)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  pricePerUnit?: number;
+
+  @ApiPropertyOptional({ enum: MATERIAL_KINDS, description: 'Тип каталожной позиции' })
+  @IsOptional()
+  @IsIn(MATERIAL_KINDS)
+  materialKind?: MaterialKind;
+
+  @ApiPropertyOptional({ description: 'Описание материала' })
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  description?: string;
+
+  @ApiPropertyOptional({ type: [DimensionDto], description: 'Размеры материала' })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DimensionDto)
+  dimensions?: DimensionDto[];
 }
 
 export class ProposeMaterialUpdateDto {

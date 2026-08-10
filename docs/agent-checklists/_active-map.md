@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T21:00:00Z · TZD-32 DONE → NEXT TZD-33
+- DONE: TZD-32 (material propose fields) — whitelist pricePerUnit/materialKind/description/dimensions in ProposeMaterialCreateDto, confirm round-trip to MaterialService.create, batch items same fields, MCP zod mirror + payload builder, MCP.md write-table.
+- Gates: BE tsc PASS; mutation-journal Jest 20/20; desktop/mcp test 79/79 + tsc PASS.
+- Archive `tasks/_archive/2026-08/TZD-32.done.md` + lock `.mimocode/locks/TZD-32-material-propose-fields.lock`; `_active/TZD-32.md` removed.
+- IN PROGRESS: TZD-33 (commercial MCP HITL) — next claim.
+- NOT DONE: TZD-34. BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T20:30:00Z · TZD-31 DONE → NEXT TZD-32
 - DONE: TZD-31 (MCP runtime sync) — registry `listRegisteredToolNames()` (toolCount 51 ≥ 40), /healthz ok/port/toolCount/packageVersion/hostDir/toolsSample (sample = list_categories + propose_product_create), startup log hostDir+toolCount, `KPPDF_MCP_HOST_DIR` override + package.json name validation in mcpHost, docs Restart-after-pull.
 - Gates: desktop/mcp test 74/74 PASS; mcp tsc PASS; desktop zone typecheck PASS; live smoke toolCount 51 PASS.

@@ -243,7 +243,7 @@ Order / коммерческое КП kinds — не этот TZ.
 
 | Tool | Effect |
 |------|--------|
-| `kppdf_propose_material_create` | Proposal only (`name`, optional `unit` default `шт`) |
+| `kppdf_propose_material_create` | Proposal only. TZD-32: `name` + optional `unit` (default `шт`), `article`, `sku`, `categoryId`, `pricePerUnit` (≥ 0), `materialKind` (`raw\|part\|fastener\|purchased\|other`), `description`, `dimensions` (`{type, value, isImmutable?}`) — whitelist как в `CreateMaterialDto`; без новых полей поведение прежнее |
 | `kppdf_propose_material_update` | Proposal + before snapshot |
 | `kppdf_propose_product_create` | TZD-27 — product.create proposal (`name`+`kind` required, `unit` default `шт`); **не** ProductService до confirm |
 | `kppdf_propose_product_update` | TZD-27 — product.update proposal + before snapshot |
@@ -251,7 +251,7 @@ Order / коммерческое КП kinds — не этот TZ.
 | `kppdf_cancel_proposal` | Drop proposal, no SoT change |
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
-| `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT |
+| `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT. TZD-32: items принимают те же поля, что `_create` (цена/kind/description/dimensions) |
 | `kppdf_confirm_batch` | TZD-18 — `POST /api/mutation-journal/confirm-batch` (SoT write шаг) |
 | `kppdf_cancel_batch` | TZD-18 — `POST /api/mutation-journal/cancel-batch` (без SoT) |
 

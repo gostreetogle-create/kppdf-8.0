@@ -99,6 +99,120 @@ describe('MutationJournalService (TZD-13)', () => {
     expect(create).toHaveBeenCalled();
   });
 
+  it('propose material.create stores extended fields in payload (TZD-32)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'material.create',
+        toolName: 'kppdf_propose_material_create',
+        payload: {},
+        entityType: 'Material',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    await service.propose(
+      {
+        kind: 'material.create',
+        create: {
+          name: 'Стекло 4мм',
+          unit: 'м2',
+          pricePerUnit: 420,
+          materialKind: 'purchased',
+          description: 'Полированное',
+          dimensions: [{ type: 'thickness', value: 4 }],
+        },
+      },
+      user,
+    );
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          name: 'Стекло 4мм',
+          unit: 'м2',
+          pricePerUnit: 420,
+          materialKind: 'purchased',
+          description: 'Полированное',
+          dimensions: [{ type: 'thickness', value: 4 }],
+        }),
+      }),
+    );
+  });
+
+  it('confirm material.create passes pricePerUnit/kind/description/dimensions to MaterialService.create (TZD-32)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'material.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Material',
+      payload: {
+        name: 'Стекло 4мм',
+        unit: 'м2',
+        pricePerUnit: 420,
+        materialKind: 'purchased',
+        description: 'Полированное',
+        dimensions: [{ type: 'thickness', value: 4 }],
+      },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, materials } = buildService({
+      findByIdDoc: doc,
+      materialsCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439044',
+        name: 'Стекло 4мм',
+        pricePerUnit: 420,
+        toObject: () => ({
+          _id: '507f1f77bcf86cd799439044',
+          name: 'Стекло 4мм',
+          pricePerUnit: 420,
+        }),
+      }),
+    });
+
+    const view = await service.confirm('507f1f77bcf86cd799439033', user);
+    expect(materials.create).toHaveBeenCalledWith({
+      name: 'Стекло 4мм',
+      unit: 'м2',
+      pricePerUnit: 420,
+      materialKind: 'purchased',
+      description: 'Полированное',
+      dimensions: [{ type: 'thickness', value: 4 }],
+    });
+    expect(doc.status).toBe('applied');
+    expect(view.mutationId).toBe('507f1f77bcf86cd799439033');
+  });
+
+  it('regression: propose without extended fields stores only basic fields (TZD-32)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'material.create',
+        toolName: 't',
+        payload: {},
+        entityType: 'Material',
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    await service.propose(
+      { kind: 'material.create', create: { name: 'Oak', unit: 'шт' } },
+      user,
+    );
+    const payload = create.mock.calls[0][0].payload as Record<string, unknown>;
+    expect(payload).toEqual({ name: 'Oak', unit: 'шт' });
+    expect(payload).not.toHaveProperty('pricePerUnit');
+    expect(payload).not.toHaveProperty('materialKind');
+    expect(payload).not.toHaveProperty('dimensions');
+  });
+
   it('confirm create applies material and marks applied', async () => {
     const save = jest.fn().mockResolvedValue(undefined);
     const doc: any = {
