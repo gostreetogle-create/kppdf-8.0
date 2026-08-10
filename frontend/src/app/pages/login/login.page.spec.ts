@@ -4,12 +4,7 @@ import { LoginPage } from './login.page';
 import { AuthService } from '../../core/auth.service';
 
 /**
- * Tests for the dev-only autofill helper on `LoginPage`.
- *
- * The `isDevMode()`-gated button in the template is not tested here
- * (Jest's test env has `isDevMode() === false`; the @if branch is a
- * template concern verified manually in the browser). We only cover
- * the `fillDemoCredentials()` method contract.
+ * Tests for the dev-only autofill helper and the public login notice.
  */
 describe('LoginPage', () => {
   let fixture: ComponentFixture<LoginPage>;
@@ -31,6 +26,20 @@ describe('LoginPage', () => {
     component = fixture.componentInstance;
     authLogin.mockReset();
     routerNavigateByUrl.mockReset();
+  });
+
+  describe('personal project notice', () => {
+    it('renders the personal-project notice with the canonical heading', () => {
+      fixture.detectChanges();
+
+      const notice = fixture.nativeElement.querySelector('[data-test="personal-project-notice"]');
+
+      expect(notice).not.toBeNull();
+      expect(notice.textContent).toContain('Личный проект для обучения и тестирования');
+      expect(notice.textContent).toContain(
+        'KPPDF — индивидуальный проект для обучения, экспериментов и проверки идей.',
+      );
+    });
   });
 
   describe('fillDemoCredentials()', () => {

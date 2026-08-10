@@ -38,7 +38,8 @@
 - **publicOnlyGuard** — already-authed users redirect to /
 - **Guard** — `authGuard` не нужен (public page)
 - **No httpResource** — использует `AuthService.login()` (async/await, не Observable)
+- **Personal-project notice (TZ-AUTH-301, optional):** мягкий текст «личный проект для обучения и тестирования» для приглашённых. **Не** access control и не юридический щит — см. `docs/ops/home-host-access.md`. `robots noindex` только для поисковиков.
 
 ---
 
-_Создано: 2026-07-19._
+_Создано: 2026-07-19. Обновлено: 2026-08-10 (TZ-AUTH-301)._

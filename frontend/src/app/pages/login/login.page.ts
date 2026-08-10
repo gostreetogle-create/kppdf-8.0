@@ -35,9 +35,20 @@ import { InputComponent } from '../../shared/ui/input/input.component';
         </div>
 
         <h1 class="font-display text-2xl font-semibold mb-3">С возвращением.</h1>
-        <p class="text-sm text-muted-foreground mb-8">
+        <p class="text-sm text-muted-foreground mb-4">
           Введите учётные данные для входа в систему.
         </p>
+
+        <aside
+          class="text-sm text-muted-foreground border-l-2 border-sunrise-warm pl-3 mb-8"
+          data-test="personal-project-notice"
+        >
+          <h2 class="font-medium text-ink mb-1">Личный проект для обучения и тестирования</h2>
+          <p>
+            KPPDF — индивидуальный проект для обучения, экспериментов и проверки идей. Это не
+            публичный сервис и не коммерческий сайт. Вход — для автора и приглашённых участников.
+          </p>
+        </aside>
 
         <form
           (submit)="onSubmit($event)"

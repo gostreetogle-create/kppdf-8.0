@@ -80,7 +80,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
 | `/admin` stub | — | optional redirect (P2, not tasked) |
-| `/login` | login.page.md | — |
+| `/login` | login.page.md | TZ-AUTH-301 (personal learning/test notice) |
 
 ## Cross-cutting UX batch (this sweep)
 

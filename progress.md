@@ -1,4 +1,14 @@
 
+## [2026-08-10T23:05:00Z] — TZ-AUTH-301 DONE — login personal-project notice
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** На `/login` добавлен русскоязычный мягкий notice «Личный проект для обучения и тестирования» с канон-текстом, без запрещённой copy. `index.html` получил мягкое description и `robots noindex, nofollow`; документация явно отделяет notice от контроля доступа.
+**Gates:** frontend app tsc PASS; `pnpm test -- login.page --runInBand` 4/4 PASS; `git diff --check` PASS. `verify-status.sh` имеет 72 pre-existing historical FWD mismatches, не относящихся к AUTH-301.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-301.done.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-301-personal-project-notice.lock`
+**Scope:** auth API/guards, backend, nginx/VPS, deploy и foreign WIP не затронуты.
+**NEXT:** TZ-SALES-340 → 341 → 345 → 343 → 344 → 342 → 346 → 347 → 348; Deploy НЕ.
+
 ## [2026-08-10T19:01:12Z] — TZD-38 DONE — hierarchical specification → BOM composition HITL
 **Исполнитель:** Buffy / canonical-main
 **Статус:** DONE; archive/lock/closeout complete; Deploy НЕ; desktop ZIP publish НЕ

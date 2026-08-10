@@ -1,7 +1,16 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-08-09
-**Phase:** TZ-SALES-321 + TZ-SALES-319 DONE; DOC-344 / DOC-TABLES-305 active; 320 PARKED; deploy НЕ запускать
+**Last updated:** 2026-08-10
+**Phase:** TZ-AUTH-301 DONE; next WAVE-KP-COMPLETE 340→341→345→343→344→342→346→347→348; deploy НЕ запускать
+
+## [2026-08-10T23:05:00Z] — TZ-AUTH-301 DONE: Login personal-project notice
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** На `/login` добавлен мягкий русскоязычный notice для личного учебного проекта, а `index.html` получил description и `robots noindex, nofollow`. Документация фиксирует, что notice — косметика, а не access control; ops/VPS не менялись.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-301.done.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-301-personal-project-notice.lock`
+**Gates:** frontend tsc PASS; login.page Jest 4/4 PASS; diff-check PASS.
+**NEXT:** TZ-SALES-340; deploy НЕ.
+
 
 ## [2026-08-09T11:17:19Z] — TZ-SALES-321 + TZ-SALES-319 DONE: KP build-preview fidelity
 **Статус:** DONE on main; Cursor integration PASS; PO visual PASS; deploy НЕ

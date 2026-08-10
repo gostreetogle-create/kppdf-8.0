@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T23:05:00Z · TZ-AUTH-301 DONE → NEXT TZ-SALES-340
+- DONE: AUTH-301 — Russian personal-project notice on `/login`, canonical description, and `robots noindex,nofollow`; notice is explicitly not access control.
+- Gates: frontend app tsc PASS; `pnpm test -- login.page --runInBand` PASS (4/4); `git diff --check` PASS.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-301.done.md`; lock: `.mimocode/locks/TZ-AUTH-301-personal-project-notice.lock`; `tasks/_active/` removed.
+- Commit/push: pending closeout on canonical `main`; foreign WIP remains excluded.
+- NEXT continuous: **TZ-SALES-340** → 341 → 345 → 343 → 344 → 342 → 346 → 347 → 348.
+- Deploy: NO; desktop ZIP publish: NO; nginx/VPS untouched.
+
 ## Checkpoint 2026-08-10T22:12:00Z · READY QUEUE для continuous (AUTH-301 → KP-COMPLETE)
 - DONE waves: MCP-GAP 31–34 · Excel 36–38 · DICT-DEMO · KP-USABLE · OPS-309 · VPS Basic Auth (ops).
 - `_active/`: empty.
