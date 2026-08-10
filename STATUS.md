@@ -1,7 +1,17 @@
 # STATUS — KPPDF ERP Project Status
 
-**Last updated:** 2026-08-10
-**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-345 DONE; next SALES-343→344→342→346→347→348; deploy НЕ запускать
+## [2026-08-11] — TZ-SALES-343 DONE: recipient overlay and references
+**Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** «Получатель» в левом рейле выбирает Counterparty, назначенный Person и Site, показывает реквизиты и поддерживает quick-create. A4 shell не сжимается; «Параметры» содержит одну summary-строку с «Изменить».
+**Persistence/build:** Quotation stores/populates `contactPersonId`/`siteId`; autosave/F5 hydrates them; build receives buyer/contact/site ids and exposes contact/address fields on `counterparty.*`.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-343.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-343-kp-recipient-panel.lock`
+**Gates:** BE tsc + quotation 35/35; FE tsc + proposal-create 28/28 + dev build; ESLint/Prettier/diff-check PASS; DOM/test self-check PASS; authenticated data browser smoke unavailable without backend data stack.
+**Commit/push:** `5299db91` on `main` and `origin/main`.
+**NEXT:** TZ-SALES-344; deploy НЕ; desktop ZIP publish НЕ.
+
+**Last updated:** 2026-08-11
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-343 DONE; next SALES-344→342→346→347→348; deploy НЕ запускать
 
 ## [2026-08-11] — TZ-SALES-345 DONE: PDF, Печать and archive
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ

@@ -1,3 +1,14 @@
+## [2026-08-11] — TZ-SALES-343 DONE — КП получатель, контакт и объект
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** Добавлен левый overlay «Получатель» без изменения frozen A4 geometry: активные Counterparty с поиском, карточка реквизитов, назначенный Person, Site объект/адрес и quick-create клиента. «Параметры» оставляет одну summary-строку с «Изменить» в тот же overlay.
+**Persistence/build:** Quotation хранит и populate-ит `contactPersonId`/`siteId`; autosave/F5 восстанавливают refs; build получает buyer/contact/site ids и добавляет `contactName`, `contactPosition`, `siteName`, `siteAddress` к `counterparty` source.
+**Gates:** backend tsc + quotation 35/35; frontend tsc + proposal-create 28/28; Angular development build; ESLint/Prettier/diff-check PASS. DOM/test self-check PASS; authenticated browser data smoke unavailable без backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-343.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-343-kp-recipient-panel.lock`
+**Commit/push:** `5299db91` on canonical `main` and `origin/main`.
+**NEXT:** TZ-SALES-344 → 342 → 346 → 347 → 348; Deploy НЕ; desktop ZIP publish НЕ.
+
 
 ## [2026-08-11] — TZ-SALES-345 DONE — КП PDF, Печать and archive
 **Исполнитель:** Buffy / agent-d2515d7a53
