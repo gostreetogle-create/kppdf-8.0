@@ -1,5 +1,20 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T16:52:42.9338327Z · TZ-MATERIALS-312 DONE
+- DONE: Material supplier picker now queries Organization `type=supplier`, exposes RU empty/error/loading states, and links empty setup to `/organizations`.
+- DONE: «Габариты» is `w-full lg:w-1/2 max-w-xl` on the form; existing dimension and `isImmutable` payload behavior is unchanged.
+- Gates: FE tsc PASS; focused material-form Jest 43/43 PASS; ESLint PASS; diff-check PASS. Prettier baseline CRLF mismatch documented.
+- Archive: `tasks/_archive/2026-08/TZ-MATERIALS-312.done.md`; lock: `.mimocode/locks/TZ-MATERIALS-312-supplier-empty-dims-half.lock`; active marker removed after closeout.
+- NEXT: claim TZ-CATALOG-338 strictly. Deploy: NO
+
+## Checkpoint 2026-08-10T16:48:40.2231150Z · TZ-MATERIALS-312 CLAIMED
+- Active marker: `tasks/_active/TZ-MATERIALS-312.md`; checklist: `docs/agent-checklists/TZ-MATERIALS-312.md`.
+- Scope: supplier empty/error/loading states and desktop half-width dimensions block; no backend or dimensions-contract changes.
+- Conflict scan: `_active/` empty; no competing keys found. Team Room already joined; root task claim unavailable because sync does not recognize root TZ files.
+- Previous TZ-318 is archived/locked/pushed on the Freebuff branch; canonical `main` remains outside this managed worktree.
+- NEXT: implement → FE typecheck/focused material-form tests → archive/lock → commit/push.
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T16:47:00Z · TZ-DICT-318 DONE
 - DONE: RAL dialog has digit-only code input, automatic prefix, optional title composition, edit parsing, non-RAL preservation, and dead plural twin removal.
 - Gates: FE tsc PASS; focused Jest 21/21 PASS; FE build PASS; ESLint/diff-check/dead-twin grep PASS.

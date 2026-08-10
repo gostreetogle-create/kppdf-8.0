@@ -44,12 +44,22 @@
 | `MaterialFormDialogComponent` | create / edit | `null` / `Material` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
+В поле «Поставщик» показываются только активные организации с типом `supplier`.
+Пустой список не выглядит как обычный пустой dropdown: под селектом отображается
+подсказка «Нет поставщиков — создайте организацию с типом Поставщик» со ссылкой
+на `/organizations`. Ошибка загрузки показывается под селектом; во время загрузки
+селект отключён и выводится короткая подсказка.
+
+Секция «Габариты» занимает полную ширину на мобильном экране и примерно половину
+ширины тела диалога на desktop (`lg:w-1/2`, `max-w-xl`). Типы, значения и флаг
+«Неизменяемый» остаются в одной читаемой строке.
+
 ## Services
 
 | Сервис | Методы |
 |--------|--------|
 | `MaterialsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)`, **`duplicate(id)`** (TZ-MATERIALS-310) |
-| `OrganizationsService` | `list(params)` — для lookup поставщиков |
+| `OrganizationsService` | `list({ type: 'supplier', limit: 200 })` — lookup организаций-поставщиков |
 | `PhotosService` | `list()` — для lookup фото |
 | `CategoriesService` | `list('material')` — активные категории и префиксы внутреннего кода |
 
@@ -57,7 +67,7 @@
 
 | Lookup | Источник | Ключ |
 |--------|----------|------|
-| `suppliersLookup` | `orgs.list({ limit: 200 })` | `Organization._id` |
+| `suppliersLookup` | `orgs.list({ type: 'supplier', limit: 200 })` | `Organization._id` |
 | `photosLookup` | `photos.list()` | `Photo._id` |
 
 ## State (signals)
@@ -155,7 +165,7 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 - **Client-side sort** — pi-table сортирует page slice (нет sortBy на backend)
 - **Three lookup tables** — suppliers (Organizations), categories (Categories, type `material`) + photos (Photos)
 - **Фото:** `mainPhotoOf(row)` — проверяет string | populated object; `mainPhotoUrl(row)` пропускает URL через общий `photoListUrl` и выбирает linked `thumb`, иначе original
-- **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`
+- **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`; в форме блок ограничен половиной ширины на desktop.
 - **Refresh on dialog close:** 3 стрима: `suppliersLookup.load()` + `photosLookup.load()` + `listRes.reload()`
 - **Copy row action** — slot order в `PiRowActionsComponent`: Copy → Document → Edit → Delete
   (TZ-MATERIALS-310 ввёл copy slot как левый-most, потому что это наименее-mutative действие)
@@ -163,4 +173,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-09 (TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-10 (TZ-MATERIALS-312: supplier empty/error/loading states и desktop half-width «Габариты»; TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._

@@ -86,12 +86,13 @@ interface DimensionFormGroup extends FormGroup {
  *  - Two-column grid (collapses to one column on narrow viewports):
  *      LEFT  → required basics (name, article, unit, sku, price); stock moved to Склад
  *      RIGHT → optional data (supplier, description, notes, photos)
- *  - Dimensions stay in their own full-width section.
+ *  - Dimensions stay in their own half-width section on desktop and use the
+ *    full dialog width on mobile.
  *
  * Sections (in order):
  *  1. Основные данные (left): name, article, unit, sku, pricePerUnit
  *  2. Дополнительно (right): supplier, description, notes, photos
- *  3. Габариты (full-width FormArray of {type, value, isImmutable})
+ *  3. Габариты (desktop half-width; FormArray of {type, value, isImmutable})
  *
  * On submit:
  *  - Upload any new files via PhotosService
@@ -296,16 +297,30 @@ interface DimensionFormGroup extends FormGroup {
               </app-pi-form-field>
             </div>
 
-            <app-pi-form-field label="Поставщик" htmlFor="mat-supplier">
+            <app-pi-form-field
+              label="Поставщик"
+              htmlFor="mat-supplier"
+              [error]="suppliersError()"
+              [hint]="suppliersLoading() ? 'Загрузка поставщиков…' : null"
+            >
               <app-pi-overflow-select
                 [items]="supplierItems()"
                 [value]="form.controls.supplierId.value ?? ''"
                 (valueChange)="onSupplierChange($event)"
+                [disabled]="suppliersLoading()"
                 searchable="auto"
                 placeholder="— не указан —"
                 ariaLabel="Поставщик"
                 dataTest="mat-supplier"
               />
+              @if (!suppliersLoading() && !suppliersError() && suppliers().length === 0) {
+                <p class="mt-1 text-xs text-muted-foreground" data-test="supplier-empty-hint">
+                  Нет поставщиков — создайте организацию с типом Поставщик.
+                  <a href="/organizations" class="underline underline-offset-2"
+                    >Создать организацию</a
+                  >
+                </p>
+              }
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -398,75 +413,77 @@ interface DimensionFormGroup extends FormGroup {
           </app-pi-form-section>
         </div>
 
-        <!-- ─── Dimensions (full-width section) ─── -->
-        <app-pi-form-section title="Габариты" headingId="mat-sec-dims" tone="dimensions">
-          <div class="flex items-baseline justify-between mb-form-row">
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              [disabled]="!canAddDimension()"
-              (click)="addDimension()"
-              data-test="add-dimension"
-              [attr.title]="canAddDimension() ? null : 'Все типы габаритов уже добавлены'"
-            >
-              + Добавить размер
-            </app-pi-button>
-          </div>
-          <div formArrayName="dimensions" class="space-y-2">
-            @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
-              <div
-                [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper"
-                [attr.data-test]="'dimension-row-' + i"
+        <!-- ─── Dimensions: half-width on desktop, full-width on mobile ─── -->
+        <div class="w-full lg:w-1/2 max-w-xl" data-test="dimensions-section-wrap">
+          <app-pi-form-section title="Габариты" headingId="mat-sec-dims" tone="dimensions">
+            <div class="flex items-baseline justify-between mb-form-row">
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                [disabled]="!canAddDimension()"
+                (click)="addDimension()"
+                data-test="add-dimension"
+                [attr.title]="canAddDimension() ? null : 'Все типы габаритов уже добавлены'"
               >
-                <select
-                  [attr.id]="'mat-dim-type-' + i"
-                  [attr.name]="'dim-type-' + i"
-                  formControlName="type"
-                  class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
-                  [attr.aria-label]="'Тип габарита ' + (i + 1)"
+                + Добавить размер
+              </app-pi-button>
+            </div>
+            <div formArrayName="dimensions" class="space-y-2">
+              @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
+                <div
+                  [formGroupName]="i"
+                  class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper"
+                  [attr.data-test]="'dimension-row-' + i"
                 >
-                  @for (opt of dimensionTypeOptionsFor(i); track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-                <app-pi-input
-                  [attr.id]="'mat-dim-value-' + i"
-                  type="number"
-                  formControlName="value"
-                  placeholder="0"
-                  size="sm"
-                  [attr.aria-label]="'Значение ' + (i + 1)"
-                  class="col-span-3"
-                />
-                <label
-                  class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
-                  title="Нельзя менять в модулях/изделиях (например толщина листа)"
-                >
-                  <input
-                    [attr.id]="'mat-dim-immutable-' + i"
-                    [attr.name]="'dim-immutable-' + i"
-                    type="checkbox"
-                    formControlName="isImmutable"
-                    class="w-4 h-4"
-                    [attr.aria-label]="'Неизменяемый ' + (i + 1)"
+                  <select
+                    [attr.id]="'mat-dim-type-' + i"
+                    [attr.name]="'dim-type-' + i"
+                    formControlName="type"
+                    class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
+                    [attr.aria-label]="'Тип габарита ' + (i + 1)"
+                  >
+                    @for (opt of dimensionTypeOptionsFor(i); track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <app-pi-input
+                    [attr.id]="'mat-dim-value-' + i"
+                    type="number"
+                    formControlName="value"
+                    placeholder="0"
+                    size="sm"
+                    [attr.aria-label]="'Значение ' + (i + 1)"
+                    class="col-span-3"
                   />
-                  <span>Неизменяемый</span>
-                </label>
-                <app-pi-button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  [attr.aria-label]="'Удалить габарит ' + (i + 1)"
-                  (click)="removeDimension(i)"
-                >
-                  ×
-                </app-pi-button>
-              </div>
-            }
-          </div>
-        </app-pi-form-section>
+                  <label
+                    class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
+                    title="Нельзя менять в модулях/изделиях (например толщина листа)"
+                  >
+                    <input
+                      [attr.id]="'mat-dim-immutable-' + i"
+                      [attr.name]="'dim-immutable-' + i"
+                      type="checkbox"
+                      formControlName="isImmutable"
+                      class="w-4 h-4"
+                      [attr.aria-label]="'Неизменяемый ' + (i + 1)"
+                    />
+                    <span>Неизменяемый</span>
+                  </label>
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить габарит ' + (i + 1)"
+                    (click)="removeDimension(i)"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
+          </app-pi-form-section>
+        </div>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">

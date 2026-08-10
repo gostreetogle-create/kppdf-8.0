@@ -5,11 +5,12 @@ import { of } from 'rxjs';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { Material, MaterialsService } from '../../shared/services/materials.service';
-import { OrganizationsService } from '../../shared/services/organizations.service';
+import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { PhotosService } from '../../shared/services/photos.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 
 /**
  * TZ-MATERIALS-301 — MaterialFormDialogComponent unit spec.
@@ -59,6 +60,9 @@ async function setup(
   data: Material | null,
   opts: {
     unitsResult?: { ok: true; data: Unit[] } | { ok: false; error: unknown };
+    supplierResult?:
+      | { ok: true; data: { items: Organization[]; total: number; page: number; limit: number } }
+      | { ok: false; error: unknown };
     uploadResults?: Array<{ ok: boolean; data?: unknown; error?: unknown }>;
     photoList?: unknown[];
   } = {},
@@ -95,18 +99,20 @@ async function setup(
         provide: OrganizationsService,
         useValue: {
           list: () =>
-            of({
-              ok: true,
-              data: {
-                items: [
-                  { _id: 'sup-1', name: 'Поставщик А', inn: '111', isActive: true },
-                  { _id: 'sup-2', name: 'Поставщик Б (неактив)', inn: '222', isActive: false },
-                ],
-                total: 2,
-                page: 1,
-                limit: 200,
+            of(
+              opts.supplierResult ?? {
+                ok: true,
+                data: {
+                  items: [
+                    { _id: 'sup-1', name: 'Поставщик А', inn: '111', isActive: true },
+                    { _id: 'sup-2', name: 'Поставщик Б (неактив)', inn: '222', isActive: false },
+                  ],
+                  total: 2,
+                  page: 1,
+                  limit: 200,
+                },
               },
-            }),
+            ),
         },
       },
       {
@@ -156,7 +162,10 @@ async function setup(
     ],
   })
     .overrideComponent(MaterialFormDialogComponent, {
-      set: { imports: [PiFormSectionComponent], schemas: [NO_ERRORS_SCHEMA] },
+      set: {
+        imports: [PiFormSectionComponent, FormFieldComponent],
+        schemas: [NO_ERRORS_SCHEMA],
+      },
     })
     .compileComponents();
 
@@ -298,6 +307,39 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     const suppliers = comp.suppliers() as Array<{ _id: string; isActive?: boolean }>;
     expect(suppliers.some((o) => o._id === 'sup-2')).toBe(false);
     expect(suppliers.some((o) => o._id === 'sup-1')).toBe(true);
+  });
+
+  it('shows a create-organization hint when there are no suppliers (TZ-MATERIALS-312)', async () => {
+    const { fixture, comp } = await setup(null, {
+      supplierResult: {
+        ok: true,
+        data: { items: [], total: 0, page: 1, limit: 200 },
+      },
+    });
+    fixture.detectChanges();
+    const hint = fixture.nativeElement.querySelector('[data-test="supplier-empty-hint"]');
+    expect(hint?.textContent).toContain('Нет поставщиков');
+    expect(hint?.textContent).toContain('типом Поставщик');
+    expect(hint?.querySelector('a')?.getAttribute('href')).toBe('/organizations');
+    expect(comp.suppliersError()).toBeNull();
+  });
+
+  it('shows supplier loading errors instead of an empty-state hint (TZ-MATERIALS-312)', async () => {
+    const { fixture, comp } = await setup(null, {
+      supplierResult: { ok: false, error: { message: 'Сервер поставщиков недоступен' } },
+    });
+    fixture.detectChanges();
+    expect(comp.suppliersError()).toBe('Сервер поставщиков недоступен');
+    expect(fixture.nativeElement.textContent).toContain('Сервер поставщиков недоступен');
+    expect(fixture.nativeElement.querySelector('[data-test="supplier-empty-hint"]')).toBeNull();
+  });
+
+  it('keeps the dimensions section half-width on desktop and full-width on mobile (TZ-MATERIALS-312)', async () => {
+    const { fixture } = await setup(null);
+    fixture.detectChanges();
+    const wrapper = fixture.nativeElement.querySelector('[data-test="dimensions-section-wrap"]');
+    expect(wrapper?.className).toContain('lg:w-1/2');
+    expect(wrapper?.className).toContain('w-full');
   });
 
   it('labels the sku field «Внутренний код материала» — no unexplained SKU (TZ-MATERIALS-303)', async () => {

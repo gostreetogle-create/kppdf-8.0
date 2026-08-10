@@ -1,4 +1,13 @@
 
+## [2026-08-10T16:52:42.9338327Z] — TZ-MATERIALS-312 DONE: supplier states + half-width dimensions
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + focused Jest 43/43 + archive/lock; deploy НЕ
+**Что:** Material supplier lookup остаётся на Organization `type=supplier`; пустое состояние показывает RU hint и `/organizations`, ошибка видна под полем, loading отключает selector. «Габариты» ограничены `w-full lg:w-1/2 max-w-xl`; contract/isImmutable не менялись.
+**Gates:** frontend tsc PASS; material-form Jest 43/43 PASS; ESLint PASS; `git diff --check` PASS; Prettier baseline CRLF mismatch documented.
+**Archive:** `tasks/_archive/2026-08/TZ-MATERIALS-312.done.md`
+**Lock:** `.mimocode/locks/TZ-MATERIALS-312-supplier-empty-dims-half.lock`
+**NEXT:** claim TZ-CATALOG-338 strictly. Deploy НЕ
+
 ## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
 **Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
 **База кода:** `fe98e763` (+ commit Unicode-fix `deploy.py` / docs)
