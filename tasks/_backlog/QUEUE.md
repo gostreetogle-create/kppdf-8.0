@@ -10,12 +10,12 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | **сейчас** — PO: VPN OFF → новый Cursor Agent + этот промпт |
-| **2** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe); gate = `TZ-OPS-310.done.md` |
+| **1** | Warm deploy | `deploy/synology/README.md` | gate **OPS-310 green** — ждать слово PO **«деплой»** (без wipe) |
 | — | AUTH-302 | уже в main `1675e0e3` | проверить вход после выката |
+| — | OPS-310 | archive DONE | evidence `docs/ops/server-harden-evidence.md` |
 | — | KP-COMPLETE | 348 DONE `e23a665d` | coding idle |
 
-**Канон сейчас:** VPN off → OPS-310 → (потом) «деплой». Wipe запрещён без русского подтверждения.
+**Канон сейчас:** ждать **«деплой»**. Wipe запрещён без русского подтверждения.
 
 ## Не брать
 

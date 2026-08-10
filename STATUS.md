@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-OPS-310 DONE: server harden (deploy gate green)
+**Статус:** DONE on main; evidence + archive + lock; deploy НЕ
+**Что:** VPN OFF. SUID/SGID inventory VPS+VM; Basic Auth 401/200; htpasswd 640; tunnel+LAN health; UFW 22/80/443. REVIEW: VPS :4200 listen on 0.0.0.0 but UFW closed.
+**Evidence:** `docs/ops/server-harden-evidence.md`
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-310.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-310-server-harden.lock`
+**NEXT:** warm deploy only on PO «деплой»; verify login after (AUTH-302); wipe НЕ.
+
 ## [2026-08-11] — TZ-SALES-348 DONE: KP vitrine badge + modules/materials
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
 **Что:** Витрина Create КП — chips Изделия/Модули/Материалы; «В КП: N» из состава; qty на карточке (Add & continue). Module/material → `lineKind` + `refId` со снимком; legacy `productId` читается; GET populate по виду.
@@ -46,7 +54,7 @@
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; deploy НЕ; desktop ZIP publish НЕ.
 
 **Last updated:** 2026-08-11
-**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-348 DONE; next OPS-310 (deploy gate); deploy НЕ запускать
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-348 DONE; TZ-OPS-310 DONE (deploy gate green); deploy только по «деплой»
 
 ## [2026-08-11] — TZ-SALES-343 DONE: recipient overlay and references
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ

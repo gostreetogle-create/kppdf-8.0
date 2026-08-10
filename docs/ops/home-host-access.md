@@ -1,7 +1,7 @@
 # Доступ к домашнему хосту (Synology) — что реально закрывает
 
 > Не юридическая консультация. Памятка для личного стенда kppdf (домашний Synology + внешний мост).
-> Обновлено: 2026-08-10 (разбор «публичность» / Basic Auth / Cloudflare Access / VPN).
+> Обновлено: 2026-08-11 (TZ-OPS-310 harden evidence DONE).
 
 ## 1. Юридический ориентир (кратко)
 
@@ -82,9 +82,9 @@ IP allowlist — только запасной костыль, не страте
 **Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
 
 1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401.
-2. **Перед следующим деплоем (обязательный gate):** **TZ-OPS-310** — SUID/порты/SSH-гигиена + evidence.  
-   Spec: `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md` · промпт `PROMPT-OPS-310-HARDEN.md`.  
-   `deploy/synology/preflight.ps1` не пустит деплой без `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
+2. **Сделано 2026-08-11 (TZ-OPS-310):** SUID/SGID inventory VPS+VM, порты, UFW, tunnel, htpasswd 640 — evidence `docs/ops/server-harden-evidence.md`, archive `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
+   Gate деплоя: `deploy/synology/preflight.ps1` требует этот archive. Warm deploy только по слову PO **«деплой»**.
+   Spec (история): `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
 3. **Дальше по желанию:** Tailscale на VM/Synology (чеклист §7).
 4. App-login (`authGuard`) — второй слой (роли ERP), не единственный.
 5. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».

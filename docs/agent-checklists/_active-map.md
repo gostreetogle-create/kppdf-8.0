@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-OPS-310 DONE — deploy gate green
+- DONE: SUID/SGID inventory VPS+VM; Basic Auth 401/200; htpasswd 640; tunnel+LAN health; UFW 22/80/443; evidence filled.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-310.done.md`; lock: `.mimocode/locks/TZ-OPS-310-server-harden.lock`; `_active/` empty.
+- REVIEW (no change): VPS `:4200` listens on `0.0.0.0` but UFW does not allow it externally.
+- NEXT: idle until PO says **«деплой»** (warm, WIPE=false). After deploy: verify login (AUTH-302 `1675e0e3`).
+- Deploy: NO until PO command. Wipe: NO.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-348 DONE → WAVE-KP-COMPLETE idle
 - DONE: SALES-348 vitrine «В КП», add qty, chips Изделия/Модули/Материалы, `lineKind` module|material + `refId`, legacy catalog safe.
 - Gates: BE tsc; quotation 40/40; FE tsc; proposal-create/rail 41/41; Angular development build; Prettier/ESLint/diff-check PASS.

@@ -1,3 +1,12 @@
+## [2026-08-11] — TZ-OPS-310 DONE — server harden (deploy gate)
+**Исполнитель:** cursor-architect-ops
+**Статус:** DONE; evidence + archive + lock; deploy НЕ
+**Что:** VPN OFF → SSH jump VM→VPS. Inventory SUID/SGID на box-946037 и ubuntuserver (без снятия битов — всё пакетное/allowlist). UFW VPS только 22/80/443; :4200 listen но снаружи закрыт. Basic Auth 401/200. htpasswd root:www-data 640. Tunnel + LAN health 200.
+**Evidence:** `docs/ops/server-harden-evidence.md`
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-310.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-310-server-harden.lock`
+**NEXT:** warm deploy только по PO «деплой»; после выката проверить вход (AUTH-302). Wipe НЕ.
+
 ## [2026-08-11] — TZ-SALES-348 DONE — витрина КП: «В КП», qty, модули/материалы
 **Исполнитель:** cursor-composer-sales348
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
