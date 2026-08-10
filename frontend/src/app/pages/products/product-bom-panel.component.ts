@@ -36,7 +36,6 @@ import {
   type ProductCompositionPickerResult,
 } from './product-composition-picker-dialog.component';
 import { ModuleFormDialogComponent } from '../modules/module-form-dialog.component';
-import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { MaterialFormDialogComponent } from '../materials/material-form-dialog.component';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
@@ -578,17 +577,28 @@ export class ProductBomPanelComponent {
 
     if (kind === 'product') {
       this.products.findById(id).subscribe((res) => {
-        this.editLoading.set(false);
         if (!res.ok || !res.data) {
+          this.editLoading.set(false);
           this.toast.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
           return;
         }
-        const ref = this.dialog.open(ProductFormDialogComponent, {
-          data: res.data,
-          width: 'lg',
-          parentDestroyRef: this.destroyRef,
-        });
-        onDialogCloseOnce(ref, this.injector, afterClose);
+
+        // Keep ProductFormDialog out of this module's static graph. The form imports
+        // ProductBomPanel for edit mode, so a static import here makes one side of
+        // the ESM cycle undefined when Angular evaluates `imports`/`ɵcmp`.
+        void import('./product-form-dialog.component')
+          .then(({ ProductFormDialogComponent }) => {
+            const ref = this.dialog.open(ProductFormDialogComponent, {
+              data: res.data,
+              width: 'lg',
+              parentDestroyRef: this.destroyRef,
+            });
+            onDialogCloseOnce(ref, this.injector, afterClose);
+          })
+          .catch(() => {
+            this.toast.error('Не удалось открыть редактирование изделия.');
+          })
+          .finally(() => this.editLoading.set(false));
       });
       return;
     }

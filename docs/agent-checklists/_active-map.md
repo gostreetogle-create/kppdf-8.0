@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T16:34:00Z · TZ-PRODUCTS-310 DONE
+- DONE: Product edit no longer has a static ProductFormDialog ↔ ProductBomPanel import; nested product edit uses a dynamic import and focused regression passes.
+- Gates: FE tsc PASS; focused Jest 33/33 PASS; FE build PASS; ESLint/diff-check/static mutual-import grep PASS. Madge reports the intentional dynamic edge plus unrelated pre-existing template-block cycle; documented in archive/checklist.
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTS-310.done.md`; lock: `.mimocode/locks/TZ-PRODUCTS-310-product-bom-circular-cmp.lock`; active marker removed after closeout.
+- Host path is Freebuff isolated worktree; logical workspace remains `D:\\kppdf-8.0`; canonical `main` is not writable from this managed session.
+- NEXT: claim TZ-DICT-317 strictly; Deploy: NO.
+
 ## Checkpoint 2026-08-10T19:25:00Z · WAVE-DICT-DEMO READY (+ PRODUCTS-310 P0)
 - PO demo dictation → audit `docs/audits/2026-08-10-dictionaries-demo-audit.md`
 - Wave: `tasks/_backlog/dictionaries/WAVE-DICT-DEMO-2026-08-10.md` · prompt `PROMPT-DICT-DEMO-WAVE.md`

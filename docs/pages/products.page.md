@@ -120,7 +120,7 @@ isActive), «Цена и учёт» (listPrice/category/subcategory), «Габа
 остаются полноширинными ниже. В режиме редактирования ниже паспорта встроен тот
 же `ProductBomPanel`, что и на карточке, в bounded scrollable panel; create mode
 показывает подсказку «Сначала сохраните изделие — затем откройте редактирование,
-чтобы собрать состав.» Паспортный payload и composition write-path разделены.
+чтобы собрать состав.» Паспортный payload и composition write-path разделены. Nested-редактирование изделия из состава загружает `ProductFormDialogComponent` динамически, чтобы не возвращать статический цикл с `ProductBomPanel` (`ɵcmp`).
 
 **RAL contract (TZ-PRODUCTS-301/302):**
 

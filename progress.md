@@ -1930,3 +1930,13 @@ BOM inspector — вклад строки material/module read-only.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-335.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-335-kp-line-items-columns-photo.lock`
 **Next:** TZ-SALES-336; deploy NO.
+
+## [2026-08-10T16:34:00Z] — TZ-PRODUCTS-310 DONE: Product edit ɵcmp cycle removed
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE typecheck/build/focused tests/static import check PASS; deploy НЕ
+**Что:** `ProductBomPanelComponent` больше не импортирует `ProductFormDialogComponent` статически. Nested edit загружает FullEditor динамически после `ProductsService.findById`, поэтому `ProductFormDialog` может безопасно встраивать BOM panel без undefined `ɵcmp`.
+**Gates:** frontend tsc PASS; focused `product-form-dialog` + `product-bom-panel` Jest 33/33 PASS; Angular development build PASS; ESLint PASS; diff-check PASS. Madge показывает intentional dynamic edge и отдельный pre-existing template-block cycle; статическая взаимная связь отсутствует.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-310.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTS-310-product-bom-circular-cmp.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-DICT-317 строго по очереди.

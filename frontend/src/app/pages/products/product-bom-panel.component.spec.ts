@@ -140,11 +140,7 @@ describe('ProductBomPanelComponent', () => {
     fixture.detectChanges();
     const mat = tree.children[0].children[0];
     const comp = fixture.componentInstance as unknown as {
-      onSelect: (e: {
-        node: typeof mat;
-        parent: (typeof tree.children)[0];
-        depth: number;
-      }) => void;
+      onSelect: (e: { node: typeof mat; parent: (typeof tree.children)[0]; depth: number }) => void;
     };
     comp.onSelect({ node: mat, parent: tree.children[0], depth: 2 });
     fixture.detectChanges();
@@ -239,6 +235,44 @@ describe('ProductBomPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="bom-edit"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="bom-open-module"]')).toBeTruthy();
+  });
+
+  it('opens nested product edit through a dynamic import (TZ-PRODUCTS-310)', async () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (event: {
+        node: {
+          _id: string;
+          name: string;
+          kind: 'product';
+          quantity: number;
+          children: never[];
+        };
+        parent: typeof tree;
+        depth: number;
+      }) => void;
+      openEditSelected: () => void;
+    };
+    comp.onSelect({
+      node: {
+        _id: 'p2',
+        name: 'Дочернее изделие',
+        kind: 'product',
+        quantity: 1,
+        children: [],
+      },
+      parent: tree,
+      depth: 1,
+    });
+    comp.openEditSelected();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(products.findById).toHaveBeenCalledWith('p2');
+    expect(dialogService.open).toHaveBeenCalledTimes(1);
+    expect(dialogService.open.mock.calls[0][0]).toHaveProperty('ɵcmp', expect.anything());
   });
 
   it('openAddPicker wires onAdded and POSTs without waiting for dialog close (TZ-UX-DIALOG-303)', async () => {
