@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · RESUME TZ-SALES-342 (agent step-limit stop)
+- Stop cause: host **max sequential responses** — not a project blocker.
+- DONE pushed: … → SALES-344 (`36601821`); AUTH-301 / 340 / 341 / 345 / 343 / 344 archives on main.
+- IN PROGRESS: `tasks/_active/TZ-SALES-342.md` + checklist IN PROGRESS; AC unchecked.
+- Working tree at resume check: **no** uncommitted product code for 342 (only claim/checklist untracked) → implement from claim, do not restart wave.
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-RESUME-342.md`
+- NEXT: finish **342** → 346 → 347 → 348. Deploy NO; ZIP NO; OPS-310 only before deploy.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-344 DONE → NEXT TZ-SALES-342
 - DONE: right-rail «Условия» overlay in the frozen Create КП shell; add/reorder/delete multiline conditions, active TextBlockCategory filter, library Add & continue, and cursor-position variable insertion.
 - Persistence/render: `Quotation.terms` is stored, returned, autosaved and hydrated after F5; build receives terms plus KP number/date/total and renders known variables safely in a terms block or fallback section; unknown variables remain literal. PDF rebuild payload includes terms and commercial metadata.
