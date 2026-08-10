@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T19:45:00Z · WAVE-EXCEL-IMPORT-STUDIO READY (TZD-36→38)
+- PO: после показа Desktop коллегам — Excel спецификация проектировщика + вкладки Импорт|MCP.
+- Audit: `docs/audits/2026-08-10-desktop-excel-import-studio-audit.md`
+- Wave: `tasks/_backlog/desktop/WAVE-EXCEL-IMPORT-STUDIO.md` · prompt `PROMPT-EXCEL-IMPORT-STUDIO.md`
+- Order: TZD-36 shell → 37 validation HITL → 38 BOM composition (unpark 35)
+- NOTE: не параллелить 37/38 с WAVE-MCP-GAP; 36 ok vs DICT-DEMO
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T19:40:00Z · WAVE-MCP-GAP READY (TZD-31→34)
 - PO: executable TZ + continuous prompt after sport-demo MCP audit.
 - Wave: `tasks/_backlog/desktop/WAVE-MCP-GAP-2026-08-10.md` · prompt `PROMPT-MCP-GAP-WAVE.md`
