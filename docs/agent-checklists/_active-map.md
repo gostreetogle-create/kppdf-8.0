@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Hotfix: JWT via X-Access-Token (Basic Auth coexist)
+- DONE: nginx Basic uses `Authorization`; SPA JWT moved to `X-Access-Token`; Nest accepts both.
+- Redeployed warm `50fe342b`. Smoke: Basic+X-Access-Token `/auth/me` = 200; Bearer-only = nginx 401 (expected).
+- `/auth/me` 401 **before** login in console = normal. After login should work.
+- NEXT: idle. Clear site data if old tokens stuck, then Basic → admin login.
+
 ## Checkpoint 2026-08-11 · Warm deploy OK (AUTH-302 + KP wave on prod)
 - DONE: warm deploy WIPE=false; preflight OPS-310 green; Auth login OK; Frontend 200.
 - HEAD at deploy: `c8ebdeb6` (AUTH-302) on main; includes SALES-348 + OPS-310.
