@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Freebuff closed — executor = Cursor Agent only
+- PO: close Freebuff; paste `PROMPT-RESUME-ANY` into **new Cursor Agent** on `D:\kppdf-8.0`.
+- Claim ready: `tasks/_active/TZ-SALES-348.md` (+ checklist). No need to recreate.
+- NEXT: implement SALES-348 → gates → archive/push → then VPN OFF → OPS-310 → warm deploy.
+- Deploy: NO until PO says «деплой».
+
 ## Checkpoint 2026-08-11 · Buffy stuck on freebuff worktree — resume on canon
 - Blocker: edit tools bound to `.freebuff/worktrees/4a700e85-…`; canon `D:\kppdf-8.0` was read-only for that chat.
 - Claim already in canon: `tasks/_active/TZ-SALES-348.md` + `docs/agent-checklists/TZ-SALES-348.md`.

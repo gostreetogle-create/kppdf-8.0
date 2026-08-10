@@ -10,7 +10,7 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | claim в каноне; **новый** Buffy на `D:\kppdf-8.0` + `PROMPT-RESUME-ANY` (старый freebuff-чат мёртв) |
+| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | claim в каноне; **новый Cursor Agent** + `PROMPT-RESUME-ANY` (Freebuff закрыт) |
 | **2** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | после **VPN OFF** |
 | **3** | CSP / вход | AUTH-302 | код уже в main (`1675e0e3`) — проверить после warm deploy |
 | **4** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe) |

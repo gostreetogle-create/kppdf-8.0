@@ -127,6 +127,12 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-11 — Исполнитель только Cursor Agent (Freebuff закрыт)
+- Freebuff/Buffy откладываем: worktree-binding ломал правки канона.
+- Тот же `PROMPT-RESUME-ANY` вставляется в новый Cursor Agent на `D:\kppdf-8.0` — без разницы по смыслу.
+- Не хочет быть курьером между двумя host-ами; один инструмент проще.
+- Источник: вечерний closeout 348 / freebuff stuck.
+
 ### 2026-08-11 — Мусор в tasks/: промпты и DONE в архив
 - Хочет чистый `tasks/`: без десятка одноразовых PROMPT и копий закрытых TZ.
 - Канон: корень = RESUME-ANY + UNIVERSAL; `_backlog` только живое; spent → `_archive/.../prompts-spent|waves-done`.
