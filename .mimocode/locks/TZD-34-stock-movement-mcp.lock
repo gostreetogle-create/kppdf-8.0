@@ -1,0 +1,13 @@
+# Lock file
+Locked as of 2026-08-10 — TZD-34: stock movement MCP (list + create).
+
+Owner: buffy
+Protected files:
+- desktop/mcp/src/stock-tools.ts
+- desktop/mcp/src/stock-tools.test.ts
+- desktop/mcp/src/tools.ts
+- desktop/docs/MCP.md
+- docs/agent-checklists/TZD-34.md
+
+Unlock: only via orchestrator approval (successor TZD).
+Deploy: NO

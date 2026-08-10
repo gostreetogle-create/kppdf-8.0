@@ -1,0 +1,15 @@
+# Lock file
+Locked as of 2026-08-10 — TZD-32: material propose fields (price/kind/description/dimensions).
+
+Owner: buffy
+Protected files:
+- backend/src/modules/mutation-journal/dto/create-proposal.dto.ts
+- backend/src/modules/mutation-journal/mutation-journal.service.ts
+- backend/src/modules/mutation-journal/mutation-journal.service.spec.ts
+- desktop/mcp/src/write-tools.ts
+- desktop/mcp/src/write-tools.test.ts
+- desktop/docs/MCP.md
+- docs/agent-checklists/TZD-32.md
+
+Unlock: only via orchestrator approval (successor TZD).
+Deploy: NO

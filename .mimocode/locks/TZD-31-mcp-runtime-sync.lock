@@ -1,0 +1,17 @@
+# Lock file
+Locked as of 2026-08-10 — TZD-31: MCP runtime sync (registry + healthz + host path).
+
+Owner: buffy
+Protected files:
+- desktop/src/core/mcpHost.ts
+- desktop/mcp/src/http-server.ts
+- desktop/mcp/src/tools.ts
+- desktop/mcp/src/tools-registry.test.ts
+- desktop/mcp/src/config.ts
+- desktop/docs/MCP.md
+- desktop/docs/INSTALL.md
+- docs/agent-checklists/TZD-31.md
+- tasks/_backlog/desktop/WAVE-MCP-GAP-2026-08-10.md
+
+Unlock: only via orchestrator approval (successor TZD).
+Deploy: NO
