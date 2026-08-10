@@ -1,4 +1,14 @@
 
+## [2026-08-10T23:25:00Z] — TZ-SALES-340 DONE — КП composition panel
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** В студии `/proposals/create` добавлен взаимоисключающий overlay «Состав КП»: позиции с фото/артикулом, quantity −/+, цена, ед. изм., сумма, дублирование, удаление и порядок. Повторное добавление изделия увеличивает количество; изменения идут через существующий build/autosave путь.
+**Gates:** frontend tsc PASS; proposal-create 25/25 PASS; backend tsc PASS; ESLint/Prettier/diff-check PASS; Angular DOM self-check PASS. Live authenticated browser smoke unavailable without backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-340.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-340-kp-composition-panel.lock`
+**Scope:** shell 317, shared TableTemplate, catalog prices, PDF/print and foreign WIP untouched.
+**NEXT:** TZ-SALES-341 → 345 → 343 → 344 → 342 → 346 → 347 → 348; Deploy НЕ.
+
 ## [2026-08-10T23:05:00Z] — TZ-AUTH-301 DONE — login personal-project notice
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ

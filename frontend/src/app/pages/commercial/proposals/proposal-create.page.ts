@@ -19,6 +19,7 @@ import {
   Package,
   SlidersHorizontal,
   TableProperties,
+  ListTree,
 } from 'lucide-angular';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import type { SilentResult } from '../../../core/silent-http';
@@ -39,6 +40,10 @@ import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
 import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
+import {
+  ProposalCreateCompositionComponent,
+  type ProposalCompositionLineChange,
+} from './proposal-create-composition.component';
 import {
   ProposalCreateInspectorComponent,
   type ProposalCreateInspectorState,
@@ -78,6 +83,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
     PiGroupWorkspaceComponent,
     LucideAngularModule,
     ProposalProductRailComponent,
+    ProposalCreateCompositionComponent,
     ProposalCreateInspectorComponent,
     ProposalCreateTemplateCenterComponent,
     ProposalCreateTemplatePickerComponent,
@@ -155,6 +161,21 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             <button
               type="button"
               class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="
+                rightOpen() && rightPane() === 'composition'
+              "
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'composition'"
+              aria-controls="kp-flyout-composition"
+              aria-label="Состав"
+              title="Состав"
+              data-test="kp-create-toggle-composition"
+              (click)="toggleRightPane('composition')"
+            >
+              <lucide-angular [img]="compositionIcon" [size]="18" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
               [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'params'"
               [attr.aria-expanded]="rightOpen() && rightPane() === 'params'"
               aria-controls="kp-flyout-params"
@@ -228,27 +249,51 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             <aside
               id="kp-flyout-params"
               class="kp-create-studio__flyout kp-create-studio__flyout--right"
-              [attr.id]="rightPane() === 'table' ? 'kp-flyout-table' : 'kp-flyout-params'"
+              [attr.id]="
+                rightPane() === 'composition'
+                  ? 'kp-flyout-composition'
+                  : rightPane() === 'table'
+                    ? 'kp-flyout-table'
+                    : 'kp-flyout-params'
+              "
               data-test="kp-create-right"
-              [attr.aria-label]="rightPane() === 'table' ? 'Таблица' : 'Параметры'"
+              [attr.aria-label]="
+                rightPane() === 'composition'
+                  ? 'Состав КП'
+                  : rightPane() === 'table'
+                    ? 'Таблица'
+                    : 'Параметры'
+              "
               #rightFlyout
             >
-              <app-proposal-create-inspector
-                [draftLines]="draftLines()"
-                [tableLayout]="kpTableLayout()"
-                [tableOnly]="rightPane() === 'table'"
-                [tableTemplateId]="tableTemplateId()"
-                [tableTargets]="tableTargets()"
-                [selectedTableTargetId]="selectedTableTargetId()"
-                [selectedCounterpartyId]="counterpartyId()"
-                [readOnly]="isReadOnly()"
-                [status]="proposalStatus()"
-                (stateChange)="onInspectorState($event)"
-                (tableLayoutChange)="onTableLayoutChange($event)"
-                (commercialColumnsRequest)="addCommercialColumns()"
-                (tableTargetChange)="onTableTargetChange($event)"
-                (statusRequest)="onStatusRequest($event)"
-              />
+              @if (rightPane() === 'composition') {
+                <app-proposal-create-composition
+                  [lines]="draftLines()"
+                  [total]="compositionTotal()"
+                  [readOnly]="isReadOnly()"
+                  (lineChange)="onCompositionLineChange($event)"
+                  (remove)="removeCompositionLine($event)"
+                  (duplicate)="duplicateCompositionLine($event)"
+                  (move)="moveCompositionLine($event)"
+                />
+              } @else {
+                <app-proposal-create-inspector
+                  [draftLines]="draftLines()"
+                  [tableLayout]="kpTableLayout()"
+                  [tableOnly]="rightPane() === 'table'"
+                  [tableTemplateId]="tableTemplateId()"
+                  [tableTargets]="tableTargets()"
+                  [selectedTableTargetId]="selectedTableTargetId()"
+                  [selectedCounterpartyId]="counterpartyId()"
+                  [readOnly]="isReadOnly()"
+                  [status]="proposalStatus()"
+                  (stateChange)="onInspectorState($event)"
+                  (tableLayoutChange)="onTableLayoutChange($event)"
+                  (commercialColumnsRequest)="addCommercialColumns()"
+                  (tableTargetChange)="onTableTargetChange($event)"
+                  (statusRequest)="onStatusRequest($event)"
+                />
+              }
             </aside>
           }
         </div>
@@ -415,11 +460,12 @@ export class ProposalCreatePage implements OnInit {
   protected readonly packageIcon = Package;
   protected readonly slidersIcon = SlidersHorizontal;
   protected readonly tableIcon = TableProperties;
+  protected readonly compositionIcon = ListTree;
 
   protected readonly isWide = signal(true);
   protected readonly leftTool = signal<LeftTool>(null);
   protected readonly rightOpen = signal(false);
-  protected readonly rightPane = signal<'params' | 'table'>('params');
+  protected readonly rightPane = signal<'params' | 'table' | 'composition'>('params');
   protected readonly selectedTemplate = signal<DocumentTemplate | null>(null);
   /** In-memory draft positions (SALES-314). Not persisted; not painted on the sheet (319). */
   protected readonly draftLines = signal<ProposalDraftLine[]>([]);
@@ -433,6 +479,13 @@ export class ProposalCreatePage implements OnInit {
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
+  protected readonly compositionTotal = computed(() => {
+    const markup = this.clampMarkup(this.orgMarkupPercent());
+    return this.roundMoney(
+      this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0) *
+        (1 + markup / 100),
+    );
+  });
   protected readonly tableTemplateId = signal<string | null>(null);
   protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
   protected readonly selectedTableTargetId = signal<string | null>(null);
@@ -943,11 +996,15 @@ export class ProposalCreatePage implements OnInit {
     if (next && !this.isWide()) this.rightOpen.set(false);
   }
 
-  protected toggleRightPane(pane: 'params' | 'table'): void {
+  protected toggleRightPane(pane: 'params' | 'table' | 'composition'): void {
     const isSamePane = this.rightOpen() && this.rightPane() === pane;
     this.rightPane.set(pane);
     this.rightOpen.set(!isSamePane);
-    if (!isSamePane && pane === 'table' && this.leftTool() === 'products') {
+    if (
+      !isSamePane &&
+      (pane === 'table' || pane === 'composition') &&
+      this.leftTool() === 'products'
+    ) {
       this.leftTool.set(null);
     }
     if (!isSamePane && !this.isWide()) this.leftTool.set(null);
@@ -959,24 +1016,68 @@ export class ProposalCreatePage implements OnInit {
 
   protected onProductAdd(line: ProposalDraftLine): void {
     if (this.isReadOnly()) return;
-    this.draftLines.update((rows) => [...rows, line]);
+    this.draftLines.update((rows) => {
+      const existing = rows.findIndex((row) => row.productId === line.productId);
+      if (existing < 0) return [...rows, { ...line, quantity: Math.max(0.001, line.quantity) }];
+      return rows.map((row, index) =>
+        index === existing
+          ? { ...row, quantity: row.quantity + Math.max(0.001, line.quantity) }
+          : row,
+      );
+    });
     if (this.tableTemplateId()) this.addCommercialColumns();
-    if (this.selectedTemplate()?._id) {
-      this.rebuildPreview$.next();
-      this.scheduleAutosave();
-    }
+    this.refreshComposition();
   }
 
   protected onQuantityChange(change: { index: number; quantity: number }): void {
     if (this.isReadOnly()) return;
-    const quantity = Math.max(0, Number.isFinite(change.quantity) ? change.quantity : 0);
+    const quantity = Math.max(0.001, Number.isFinite(change.quantity) ? change.quantity : 0.001);
     this.draftLines.update((rows) =>
       rows.map((line, index) => (index === change.index ? { ...line, quantity } : line)),
     );
-    if (this.selectedTemplate()?._id) {
-      this.rebuildPreview$.next();
-      this.scheduleAutosave();
-    }
+    this.refreshComposition();
+  }
+
+  protected onCompositionLineChange(change: ProposalCompositionLineChange): void {
+    if (this.isReadOnly()) return;
+    this.draftLines.update((rows) =>
+      rows.map((line, index) => (index === change.index ? { ...line, ...change.patch } : line)),
+    );
+    this.refreshComposition();
+  }
+
+  protected removeCompositionLine(index: number): void {
+    if (this.isReadOnly()) return;
+    this.draftLines.update((rows) => rows.filter((_, rowIndex) => rowIndex !== index));
+    this.refreshComposition();
+  }
+
+  protected duplicateCompositionLine(index: number): void {
+    if (this.isReadOnly()) return;
+    this.draftLines.update((rows) => {
+      const line = rows[index];
+      if (!line) return rows;
+      const copy = { ...line, quantity: line.quantity };
+      return [...rows.slice(0, index + 1), copy, ...rows.slice(index + 1)];
+    });
+    this.refreshComposition();
+  }
+
+  protected moveCompositionLine(change: { index: number; direction: -1 | 1 }): void {
+    if (this.isReadOnly()) return;
+    this.draftLines.update((rows) => {
+      const nextIndex = change.index + change.direction;
+      if (change.index < 0 || nextIndex < 0 || nextIndex >= rows.length) return rows;
+      const next = [...rows];
+      [next[change.index], next[nextIndex]] = [next[nextIndex], next[change.index]];
+      return next;
+    });
+    this.refreshComposition();
+  }
+
+  private refreshComposition(): void {
+    if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+    this.scheduleAutosave();
   }
 
   protected addCommercialColumns(): void {

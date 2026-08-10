@@ -886,4 +886,52 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     );
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
   }));
+
+  it('opens the Состав panel and edits one shared draft write path', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'composition') => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      duplicateCompositionLine: (index: number) => void;
+      moveCompositionLine: (change: { index: number; direction: -1 | 1 }) => void;
+      removeCompositionLine: (index: number) => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+
+    page.toggleRightPane('composition');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-composition-panel"]'))).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Добавьте изделия из панели «Товары».');
+
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    expect(page.draftLines()[0].quantity).toBe(2);
+
+    page.onCompositionLineChange({ index: 0, patch: { quantity: 3, unitPrice: 5100 } });
+    expect(page.draftLines()[0]).toEqual(expect.objectContaining({ quantity: 3, unitPrice: 5100 }));
+    page.duplicateCompositionLine(0);
+    expect(page.draftLines()).toHaveLength(2);
+    page.moveCompositionLine({ index: 1, direction: -1 });
+    page.removeCompositionLine(1);
+    expect(page.draftLines()).toHaveLength(1);
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
+  }));
 });

@@ -3,6 +3,14 @@
 **Last updated:** 2026-08-10
 **Phase:** TZ-AUTH-301 DONE; next WAVE-KP-COMPLETE 340→341→345→343→344→342→346→347→348; deploy НЕ запускать
 
+## [2026-08-10T23:25:00Z] — TZ-SALES-340 DONE: Состав КП
+**Статус:** DONE on main; frontend/backend gates, archive and lock complete; deploy НЕ
+**Что:** В `/proposals/create` добавлен overlay «Состав КП» с редактированием количества, цены, единицы, дублированием, удалением и порядком; повторное добавление изделия увеличивает количество. Сохранение и A4 используют существующий draft/build/autosave путь.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-340.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-340-kp-composition-panel.lock`
+**Gates:** frontend tsc PASS; proposal-create 25/25 PASS; backend tsc PASS; ESLint/Prettier/diff-check PASS.
+**NEXT:** TZ-SALES-341; deploy НЕ.
+
 ## [2026-08-10T23:05:00Z] — TZ-AUTH-301 DONE: Login personal-project notice
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** На `/login` добавлен мягкий русскоязычный notice для личного учебного проекта, а `index.html` получил description и `robots noindex, nofollow`. Документация фиксирует, что notice — косметика, а не access control; ops/VPS не менялись.

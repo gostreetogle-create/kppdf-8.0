@@ -8,7 +8,8 @@
 ## Зафиксировано (не менять без PO)
 
 - Центр = только A4; flyout **overlay** (grid rails|center|rails fixed)
-- Left rail: **Шаблон** + **Товары**; Right: **Параметры** + **Таблица** (взаимоисключающие overlay-инструменты, TZ-SALES-332)
+- Left rail: **Шаблон** + **Товары**; Right: **Состав** + **Параметры** + **Таблица** (взаимоисключающие overlay-инструменты, TZ-SALES-340/332)
+- 340: «Состав КП» показывает добавленные строки, позволяет менять количество/цену/единицу, дублировать, удалять и менять порядок; повторное добавление изделия увеличивает его количество. Изменения используют тот же build/autosave путь, что и лист.
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory до Save; Save создаёт/обновляет draft Quotation с items, templateId и non-null templateSnapshot, а `kp.create.lastDraftId`/`lastTemplateId` используются только для resume
