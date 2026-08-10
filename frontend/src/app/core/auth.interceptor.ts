@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 
 import { AuthService } from './auth.service';
+import { JWT_ACCESS_HEADER } from './jwt-access-header';
 
 /**
  * Marker attached to a request that has already been replayed once after
@@ -46,7 +47,7 @@ export const SKIP_FORBIDDEN_REDIRECT = new HttpContextToken<boolean>(() => true)
  *
  * Request path:
  *   1. If a token exists and the URL is not a public auth endpoint, attach
- *      `Authorization: Bearer <access>`.
+ *      `X-Access-Token: <access>` (not Authorization — nginx Basic Auth owns that).
  *
  * Response path (only on 401):
  *   - Skip refresh for /auth/{login,register,refresh} and /auth/me
@@ -55,7 +56,7 @@ export const SKIP_FORBIDDEN_REDIRECT = new HttpContextToken<boolean>(() => true)
  *   - Skip if the request is already a retry.
  *   - Skip if we have no refresh token (no point).
  *   - Otherwise call AuthService.refresh() (single-flight) and:
- *       • on success: replay the original request with the new Bearer.
+ *       • on success: replay the original request with the new access header.
  *       • on failure: clear state, navigate to /login (if not already
  *         there), and re-throw the ORIGINAL 401 to the caller.
  */
@@ -84,8 +85,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Attach the access token to every request except the three
   // skipToken endpoints. /auth/me is intentionally NOT in this list —
   // it needs the access token to validate the session.
+  // Use X-Access-Token so browser can still send Authorization: Basic
+  // to nginx in front of prod.
   const authedReq =
-    access && !skipToken ? req.clone({ setHeaders: { Authorization: `Bearer ${access}` } }) : req;
+    access && !skipToken ? req.clone({ setHeaders: { [JWT_ACCESS_HEADER]: access } }) : req;
 
   return next(authedReq).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -134,7 +137,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         switchMap((newAccess) =>
           next(
             req.clone({
-              setHeaders: { Authorization: `Bearer ${newAccess}` },
+              setHeaders: { [JWT_ACCESS_HEADER]: newAccess },
               context: req.context.set(IS_RETRY, true),
             }),
           ),

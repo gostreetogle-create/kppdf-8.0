@@ -1,8 +1,9 @@
 import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { Strategy } from 'passport-jwt';
 import { UserService } from '../../user/user.service';
+import { jwtFromRequest } from '../jwt-from-request';
 
 export interface JwtRefreshPayload {
   sub: string;
@@ -23,7 +24,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     const secret = config.get<string>('jwt.refreshSecret');
     if (!secret) throw new Error('jwt.refreshSecret not configured');
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest,
       ignoreExpiration: false,
       secretOrKey: secret,
       passReqToCallback: false,

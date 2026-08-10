@@ -169,7 +169,7 @@ describe('AuthService', () => {
       await tick();
 
       const refreshReq = httpMock.expectOne(refreshUrl);
-      expect(refreshReq.request.headers.get('Authorization')).toBe('Bearer refresh-1');
+      expect(refreshReq.request.headers.get('X-Access-Token')).toBe('refresh-1');
       refreshReq.flush({ access: 'access-2' });
       await tick();
 
@@ -189,7 +189,7 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(meUrl);
       expect(req.request.method).toBe('GET');
-      expect(req.request.headers.get('Authorization')).toBe('Bearer access-1');
+      expect(req.request.headers.get('X-Access-Token')).toBe('access-1');
       req.flush(fakeUser);
 
       await promise;
@@ -235,13 +235,13 @@ describe('AuthService', () => {
       //    /auth/refresh returns new access token
       const refreshReq = httpMock.expectOne(refreshUrl);
       expect(refreshReq.request.method).toBe('POST');
-      expect(refreshReq.request.headers.get('Authorization')).toBe('Bearer refresh-1');
+      expect(refreshReq.request.headers.get('X-Access-Token')).toBe('refresh-1');
       refreshReq.flush({ access: 'access-2' });
       await tick();
 
       // 3. AuthService retries /auth/me with the new access token
       const meRetryReq = httpMock.expectOne(meUrl);
-      expect(meRetryReq.request.headers.get('Authorization')).toBe('Bearer access-2');
+      expect(meRetryReq.request.headers.get('X-Access-Token')).toBe('access-2');
       meRetryReq.flush(fakeUser);
 
       await promise;
@@ -367,7 +367,7 @@ describe('AuthService', () => {
 
       const req = httpMock.expectOne(refreshUrl);
       expect(req.request.method).toBe('POST');
-      expect(req.request.headers.get('Authorization')).toBe('Bearer refresh-1');
+      expect(req.request.headers.get('X-Access-Token')).toBe('refresh-1');
       req.flush({ access: 'access-2' });
 
       const newAccess = await promise;

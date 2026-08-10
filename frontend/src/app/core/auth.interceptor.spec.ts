@@ -16,10 +16,10 @@ import { authInterceptor } from './auth.interceptor';
  *
  * Contract under test (locks in the `skipToken` / `skipRefresh` split
  * that fixed a production bug where /auth/me was not receiving the
- * Authorization header, AND prevents a regression where 401 on
+ * X-Access-Token header, AND prevents a regression where 401 on
  * /auth/me would trigger an infinite auto-refresh loop):
  *
- *  skipToken (Authorization header attachment)
+ *  skipToken (X-Access-Token header attachment)
  *   - GET  /auth/me          WITH access token → header IS attached (the fix)
  *   - GET  /auth/me          WITHOUT access token → header NOT attached
  *   - GET  /api/materials    WITH access token → header IS attached
@@ -103,10 +103,10 @@ describe('authInterceptor', () => {
     httpMock.verify();
   });
 
-  // ─── skipToken: attaches Authorization header ─────────────────────
+  // ─── skipToken: attaches X-Access-Token header ─────────────────────
 
-  describe('skipToken: attaches Authorization header', () => {
-    it('attaches Authorization: Bearer <access> to /auth/me (the production bug fix)', () => {
+  describe('skipToken: attaches X-Access-Token header', () => {
+    it('attaches X-Access-Token: <access> to /auth/me (the production bug fix)', () => {
       mockAuth.accessToken.mockReturnValue('access-1');
       httpClient.get(meUrl).subscribe();
       const req = httpMock.expectOne(meUrl);
@@ -114,45 +114,45 @@ describe('authInterceptor', () => {
       // split, /auth/me was treated as "public auth" and the header was
       // NEVER attached, so the backend's jwt guard always 401'd the
       // session-validation call.
-      expect(req.request.headers.get('Authorization')).toBe('Bearer access-1');
+      expect(req.request.headers.get('X-Access-Token')).toBe('access-1');
       req.flush({ id: '1' });
     });
 
-    it('attaches Authorization: Bearer <access> to non-auth endpoints like /api/materials', () => {
+    it('attaches X-Access-Token: <access> to non-auth endpoints like /api/materials', () => {
       mockAuth.accessToken.mockReturnValue('access-1');
       httpClient.get(materialsUrl).subscribe();
       const req = httpMock.expectOne(materialsUrl);
-      expect(req.request.headers.get('Authorization')).toBe('Bearer access-1');
+      expect(req.request.headers.get('X-Access-Token')).toBe('access-1');
       req.flush([]);
     });
 
-    it('does NOT attach Authorization when no access token is present', () => {
+    it('does NOT attach X-Access-Token when no access token is present', () => {
       mockAuth.accessToken.mockReturnValue(null);
       httpClient.get(meUrl).subscribe();
       const req = httpMock.expectOne(meUrl);
       // No token → no header (the `access && !skipToken` guard).
-      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.headers.has('X-Access-Token')).toBe(false);
       req.flush({ id: '1' });
     });
   });
 
-  // ─── skipToken: does NOT attach Authorization header ──────────────
+  // ─── skipToken: does NOT attach X-Access-Token header ──────────────
 
-  describe('skipToken: does NOT attach Authorization header', () => {
-    it('does NOT attach Authorization to /auth/login', () => {
+  describe('skipToken: does NOT attach X-Access-Token header', () => {
+    it('does NOT attach X-Access-Token to /auth/login', () => {
       mockAuth.accessToken.mockReturnValue('access-1');
       httpClient.post(loginUrl, {}).subscribe();
       const req = httpMock.expectOne(loginUrl);
       // /auth/login has no token yet — sending one would be wrong.
-      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.headers.has('X-Access-Token')).toBe(false);
       req.flush({});
     });
 
-    it('does NOT attach Authorization to /auth/register', () => {
+    it('does NOT attach X-Access-Token to /auth/register', () => {
       mockAuth.accessToken.mockReturnValue('access-1');
       httpClient.post(registerUrl, {}).subscribe();
       const req = httpMock.expectOne(registerUrl);
-      expect(req.request.headers.has('Authorization')).toBe(false);
+      expect(req.request.headers.has('X-Access-Token')).toBe(false);
       req.flush({});
     });
 
@@ -163,11 +163,9 @@ describe('authInterceptor', () => {
       // backend uses `AuthGuard('jwt-refresh')`, not `AuthGuard('jwt')`,
       // so an access token here would be rejected.
       mockAuth.accessToken.mockReturnValue('access-1');
-      httpClient
-        .post(refreshUrl, {}, { headers: { Authorization: 'Bearer refresh-1' } })
-        .subscribe();
+      httpClient.post(refreshUrl, {}, { headers: { 'X-Access-Token': 'refresh-1' } }).subscribe();
       const req = httpMock.expectOne(refreshUrl);
-      expect(req.request.headers.get('Authorization')).toBe('Bearer refresh-1');
+      expect(req.request.headers.get('X-Access-Token')).toBe('refresh-1');
       req.flush({ access: 'access-2' });
     });
   });
@@ -237,10 +235,10 @@ describe('authInterceptor', () => {
       await tick();
 
       // 3. The retry request arrives with the NEW access token in the
-      //    Authorization header (set by the interceptor from
+      //    X-Access-Token header (set by the interceptor from
       //    auth.refresh()'s resolved value).
       const retryReq = httpMock.expectOne(materialsUrl);
-      expect(retryReq.request.headers.get('Authorization')).toBe('Bearer access-2');
+      expect(retryReq.request.headers.get('X-Access-Token')).toBe('access-2');
       retryReq.flush([{ id: '1' }]);
 
       // Drain microtasks so the retry response can be delivered to
@@ -330,7 +328,7 @@ describe('authInterceptor', () => {
       //    meaningful — without this, a hypothetical bug where the
       //    interceptor re-issues with the stale token would still pass).
       const retryReq = httpMock.expectOne(materialsUrl);
-      expect(retryReq.request.headers.get('Authorization')).toBe('Bearer access-2');
+      expect(retryReq.request.headers.get('X-Access-Token')).toBe('access-2');
       retryReq.flush('Unauthorized', {
         status: 401,
         statusText: 'Unauthorized',

@@ -4,6 +4,7 @@ import { firstValueFrom, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 import { API_BASE_URL } from './api.tokens';
+import { JWT_ACCESS_HEADER } from './jwt-access-header';
 import { silentPost } from './silent-http';
 
 export interface AuthUser {
@@ -183,7 +184,7 @@ export class AuthService {
    *
    * Backend contract (`POST /api/auth/refresh`):
    *   - Authenticated by `AuthGuard('jwt-refresh')` which reads the
-   *     refresh token from the `Authorization: Bearer` header (NOT body).
+   *     refresh token from `X-Access-Token` (or legacy `Authorization: Bearer`).
    *   - Body can be empty; `RefreshTokenDto` is a placeholder.
    *   - Response: `{ access: string }`. Refresh token is NOT rotated.
    */
@@ -207,7 +208,7 @@ export class AuthService {
           .post<{ access: string }>(
             `${this.baseUrl}/auth/refresh`,
             {},
-            { headers: { Authorization: `Bearer ${refresh}` } },
+            { headers: { [JWT_ACCESS_HEADER]: refresh } },
           )
           .pipe(
             map((data) => ({ ok: true as const, access: data.access })),
