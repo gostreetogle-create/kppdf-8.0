@@ -1,4 +1,14 @@
 
+## [2026-08-10T20:30:00Z] — TZD-31 DONE: MCP runtime sync (WAVE-MCP-GAP #1)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; live /healthz toolCount 51 ≥ 40; deploy НЕ
+**Что:** Реестр имён tools в `desktop/mcp` (единый источник из `*_TOOL_NAMES` + `kppdf_ping`, без ручного дублирования); `/healthz` отдаёт `ok/port/toolCount/packageVersion/hostDir/toolsSample` (sample включает `kppdf_list_categories` + `kppdf_propose_product_create`); стартовый лог печатает hostDir + toolCount. Desktop host: `KPPDF_MCP_HOST_DIR` (import.meta.env `KPPDF_` / process.env) имеет приоритет над resourceDir walk; `package.json name ≠ @kppdf/desktop-mcp` → понятная RU ошибка, процесс не спавнится. Docs MCP.md/INSTALL.md: после `git pull` → Restart MCP → проверка healthz → Cursor Reload MCP.
+**Gates:** desktop/mcp `pnpm test` 74/74 PASS (новые suites registry + healthz payload); mcp `tsc --noEmit` PASS; desktop zone `pnpm typecheck` PASS (mcpHost.ts).
+**Smoke:** `GET /healthz` → `toolCount: 51`, `packageVersion: 0.1.0`, abs hostDir, startup log `tools 51 registered`.
+**Archive:** `tasks/_archive/2026-08/TZD-31.done.md`
+**Lock:** `.mimocode/locks/TZD-31-mcp-runtime-sync.lock`
+**Checkpoint:** `_active/` пуст для 31; NEXT = claim TZD-32. Deploy НЕ
+
 ## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
 **Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
 **База кода:** `fe98e763` (+ commit Unicode-fix `deploy.py` / docs)

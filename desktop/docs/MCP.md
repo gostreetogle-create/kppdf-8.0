@@ -57,8 +57,43 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 - При **закрытии приложения** MCP останавливается автоматически.
 - Неподключённый десктоп MCP **не запускает** (карточка показывает причину).
 
-Проверка: `GET http://127.0.0.1:9743/healthz` → `{ ok: true }`.  
+Проверка: `GET http://127.0.0.1:9743/healthz` →  
+
+```json
+{
+  "ok": true,
+  "service": "kppdf-desktop-mcp",
+  "port": 9743,
+  "toolCount": 51,
+  "packageVersion": "0.1.0",
+  "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
+  "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
+}
+```
+
+- `toolCount` — число зарегистрированных tools из реестра `desktop/mcp` (единый источник, без ручного дублирования).  
+- `toolsSample` — до 10 имён; всегда включает `kppdf_list_categories` и `kppdf_propose_product_create`, если они зарегистрированы.  
+- `hostDir` — абсолютный путь, из которого запущен host (`process.cwd()`).
+
 Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
+
+### После `git pull` → Restart MCP (TZD-31)
+
+MCP host стартует из каталога пакета `desktop/mcp` в рабочей копии. После
+обновления репозитория (`git pull`) старый процесс держит старую версию
+tools — **обязательно перезапустите MCP**:
+
+1. В Desktop: карточка «MCP — локальный доступ для AI» → **«Перезапустить»**
+   (или «Остановить» → «Запустить»).
+2. Проверка: `GET http://127.0.0.1:<порт>/healthz` → `toolCount` ≥ 40
+   (актуально 51) и в `toolsSample` видны `kppdf_list_categories` +
+   `kppdf_propose_product_create`.
+3. Cursor / LM Studio: **Reload MCP** (сервер `kppdf`) — клиент кэширует tools/list.
+
+Если host поднялся не из ожидаемой папки (например, после копии репозитория):
+Desktop проверяет `package.json` пакета и показывает понятную ошибку, когда
+`name ≠ @kppdf/desktop-mcp`. Задать каталог явно для dev Desktop можно через
+`KPPDF_MCP_HOST_DIR` (см. Env ниже).
 
 > **Cursor / Streamable HTTP:** MCP host отвечает на `GET|DELETE /mcp` кодом
 > **405** (POST-only, без SSE stream). Ответ **404** на GET ломает клиент Cursor
@@ -91,6 +126,7 @@ pnpm start
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |
 | `KPPDF_INBOX_DIR` | no | — | inbox dir for `kppdf_inbox_*` tools (desktop sets it) |
+| `KPPDF_MCP_HOST_DIR` | no | resourceDir walk | dev Desktop override: абсолютный путь к пакету `desktop/mcp` (приоритет над resourceDir). Для Tauri dev задаётся в `desktop/.env` (prefix `KPPDF_`), напр. `KPPDF_MCP_HOST_DIR=D:\kppdf-8.0\desktop\mcp`; в Node-контексте читается из `process.env`. Если `package.json` в каталоге имеет `name ≠ @kppdf/desktop-mcp` — host не стартует и показывает ошибку |
 | `MUTATION_JOURNAL_RING_SIZE` | no | `50` | backend ring (applied/undone) |
 
 Stdio: `pnpm start:stdio` (для клиентов, которые спавнят процесс).

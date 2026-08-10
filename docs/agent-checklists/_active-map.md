@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T20:30:00Z · TZD-31 DONE → NEXT TZD-32
+- DONE: TZD-31 (MCP runtime sync) — registry `listRegisteredToolNames()` (toolCount 51 ≥ 40), /healthz ok/port/toolCount/packageVersion/hostDir/toolsSample (sample = list_categories + propose_product_create), startup log hostDir+toolCount, `KPPDF_MCP_HOST_DIR` override + package.json name validation in mcpHost, docs Restart-after-pull.
+- Gates: desktop/mcp test 74/74 PASS; mcp tsc PASS; desktop zone typecheck PASS; live smoke toolCount 51 PASS.
+- Archive `tasks/_archive/2026-08/TZD-31.done.md` + lock `.mimocode/locks/TZD-31-mcp-runtime-sync.lock`; `_active/TZD-31.md` removed.
+- IN PROGRESS: TZD-32 (material propose fields) — next claim.
+- NOT DONE: TZD-33, TZD-34. BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T19:40:00Z · WAVE-MCP-GAP READY (TZD-31→34)
 - PO: executable TZ + continuous prompt after sport-demo MCP audit.
 - Wave: `tasks/_backlog/desktop/WAVE-MCP-GAP-2026-08-10.md` · prompt `PROMPT-MCP-GAP-WAVE.md`

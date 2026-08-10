@@ -11,6 +11,7 @@
 
 import { Command, type Child } from '@tauri-apps/plugin-shell';
 import { dirname, join, resourceDir } from '@tauri-apps/api/path';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 import { DEFAULT_MCP_PORT } from './config';
 
 export type McpHostStatus = 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
@@ -55,6 +56,27 @@ export function validateMcpPort(port: number): string | null {
     return `Порт должен быть целым числом от ${MCP_PORT_MIN} до ${MCP_PORT_MAX}.`;
   }
   return null;
+}
+
+/** Имя пакета MCP (package.json name), которому доверяет host (TZD-31). */
+export const MCP_PACKAGE_NAME = '@kppdf/desktop-mcp';
+
+/** Имя env-переменной с абсолютным путём к пакету desktop/mcp (TZD-31). */
+export const MCP_HOST_DIR_ENV = 'KPPDF_MCP_HOST_DIR';
+
+/**
+ * Значение env `KPPDF_MCP_HOST_DIR` из Vite `import.meta.env` (dev Desktop,
+ * .env с envPrefix KPPDF_) или `process.env` (Node-контекст, напр. тесты).
+ * Приоритет над resourceDir walk — см. McpHostController.start().
+ */
+export function envMcpHostDir(): string | undefined {
+  const metaEnv = (import.meta as { env?: Record<string, unknown> }).env;
+  const fromMeta = typeof metaEnv?.[MCP_HOST_DIR_ENV] === 'string' ? metaEnv[MCP_HOST_DIR_ENV] : '';
+  if (fromMeta.trim()) return fromMeta.trim();
+  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+  const fromProcess = proc?.env?.[MCP_HOST_DIR_ENV];
+  if (fromProcess?.trim()) return fromProcess.trim();
+  return undefined;
 }
 
 /**
@@ -138,12 +160,27 @@ export class McpHostController {
 
     let hostDir: string;
     try {
-      hostDir = opts.hostDir ?? (await resolveMcpHostDir());
+      hostDir = opts.hostDir ?? envMcpHostDir() ?? (await resolveMcpHostDir());
     } catch (err) {
       this.expectedRunning = false;
       this.setState({
         status: 'error',
         lastError: `Не удалось определить каталог MCP: ${err instanceof Error ? err.message : String(err)}`,
+      });
+      return;
+    }
+
+    // TZD-31: не поднимать host из «не той» папки — пакет должен быть @kppdf/desktop-mcp.
+    const pkgName = await this.readPackageName(hostDir);
+    if (pkgName !== MCP_PACKAGE_NAME) {
+      this.expectedRunning = false;
+      this.setState({
+        status: 'error',
+        lastError:
+          `Каталог MCP «${hostDir}» — не пакет ${MCP_PACKAGE_NAME} ` +
+          `(package.json name: ${pkgName ?? 'нет/не читается'}). ` +
+          `Задайте ${MCP_HOST_DIR_ENV} (например ${MCP_HOST_DIR_ENV}=D:\\kppdf-8.0\\desktop\\mcp), ` +
+          `выполните git pull в рабочей копии и перезапустите MCP.`,
       });
       return;
     }
@@ -263,6 +300,17 @@ export class McpHostController {
     this.expectedRunning = false;
     if (child) {
       void child.kill().catch(() => undefined);
+    }
+  }
+
+  /** Читает name из package.json пакета MCP; null если нет/не читается. */
+  private async readPackageName(hostDir: string): Promise<string | null> {
+    try {
+      const raw = await readTextFile(await join(hostDir, 'package.json'));
+      const pkg = JSON.parse(raw) as { name?: unknown };
+      return typeof pkg.name === 'string' ? pkg.name : null;
+    } catch {
+      return null;
     }
   }
 
