@@ -1,10 +1,12 @@
-# Backlog = очередь NOW
+# _backlog — только живое
 
-См. [`QUEUE.md`](./QUEUE.md).
+| Путь | Статус |
+|------|--------|
+| [`QUEUE.md`](./QUEUE.md) | Что сейчас / куда копировать промпт |
+| [`kp-vitrine/`](./kp-vitrine/) | WAVE-KP-COMPLETE (хвост 348) |
+| [`ops/`](./ops/) | TZ-OPS-310 harden before deploy |
+| [`perf/`](./perf/) | WAVE-PERF-PHOTOS |
 
-**Универсальный промпт любому агенту (продолжает с места остановки):**  
-→ [`../PROMPT-UNIVERSAL-CONTINUOUS.md`](../PROMPT-UNIVERSAL-CONTINUOUS.md)
-
-Волновые промпты (узкие) лежат рядом с WAVE; для смены агента/дня предпочти универсальный.
-
-Лишнее — в `../_park/`.
+Закрытые волны (catalog-ux, desktop MCP/Excel, dict, party-docs, …) лежат в  
+`tasks/_archive/2026-08/waves-done/`.  
+Отработанные промпты — в `tasks/_archive/2026-08/prompts-spent/`.
