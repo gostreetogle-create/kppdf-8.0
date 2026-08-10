@@ -2,7 +2,7 @@
 
 **Шпаргалка PO:** [`docs/PO-AGENT-FLOW.md`](../../docs/PO-AGENT-FLOW.md)
 
-**Обрыв / новый чат Buffy — всегда:** [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)
+**Обрыв / новый чат исполнителя:** [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)
 
 **Перед деплоем (VPN OFF):** [`ops/PROMPT-OPS-310-HARDEN.md`](./ops/PROMPT-OPS-310-HARDEN.md)
 
@@ -10,13 +10,12 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | claim в каноне; **новый Cursor Agent** + `PROMPT-RESUME-ANY` (Freebuff закрыт) |
-| **2** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | после **VPN OFF** |
-| **3** | CSP / вход | AUTH-302 | код уже в main (`1675e0e3`) — проверить после warm deploy |
-| **4** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe) |
+| **1** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | **сейчас** — PO: VPN OFF → новый Cursor Agent + этот промпт |
+| **2** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe); gate = `TZ-OPS-310.done.md` |
+| — | AUTH-302 | уже в main `1675e0e3` | проверить вход после выката |
+| — | KP-COMPLETE | 348 DONE `e23a665d` | coding idle |
 
-**Канон вечера (PO):** 348 → VPN off → OPS-310 → warm deploy (AUTH-302 уже в git).  
-Если Buffy: «tools bound to freebuff» → не продолжать тот чат, открыть новый на каноне.
+**Канон сейчас:** VPN off → OPS-310 → (потом) «деплой». Wipe запрещён без русского подтверждения.
 
 ## Не брать
 
