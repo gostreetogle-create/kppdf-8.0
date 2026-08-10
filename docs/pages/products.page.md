@@ -106,7 +106,7 @@
 - **Lockstep sort signals** — `sortKeySig` + `sortDirSig` синхронизированы с pi-table internal state
 - **Сброс page на search** — `pageSig.set(1)` при изменении поиска
 - **Сброс page на sort** — `pageSig.set(1)` при изменении сортировки
-- **Format functions:** `formatPrice()` для `listPrice`, `KIND_LABELS`/`STATUS_LABELS` для enum-полей
+- **Format functions:** `formatPrice()` для `listPrice`, `PiDictionaryLabelsService` для API-backed подписи вида (fallback seed labels), `STATUS_LABELS` для статусов
 - **Refresh on dialog close:** `onDialogCloseOnce` → `listRes.reload()`
 
 ## ProductFormDialog — FullEditor «Изделие» (TZ-PRODUCTS-308)
@@ -114,8 +114,7 @@
 `ProductFormDialogComponent` — единый FullEditor для создания и редактирования
 изделия: `variant="content"` + `[maxWidth]="'min(1120px, calc(100vw - 2rem))'"`,
 body со скроллом и всегда видимый sticky footer («Сохранить» / «Отмена»).
-Пользовательские заголовки, вид `good` и уведомления используют слово
-«Изделие»; код `Product`, API и `/products` не переименовываются.
+Пользовательские заголовки, вид `good` и уведомления используют подпись из `PiDictionaryLabelsService`; ключ `Product`, API и `/products` не переименовываются.
 
 На desktop основные блоки стоят в три колонки: «Основные» (name/sku/kind/status/
 isActive), «Цена и учёт» (listPrice/category/subcategory), «Габариты и цвет»

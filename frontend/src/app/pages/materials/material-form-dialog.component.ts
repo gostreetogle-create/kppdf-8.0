@@ -28,7 +28,6 @@ import {
   Material,
   MaterialDimensionType,
   MaterialKind,
-  MATERIAL_KIND_LABELS,
   MATERIAL_KINDS,
   MaterialsService,
 } from '../../shared/services/materials.service';
@@ -37,6 +36,10 @@ import { Organization, OrganizationsService } from '../../shared/services/organi
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 
 type Result = Material | null | undefined;
 
@@ -61,10 +64,7 @@ const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
  */
 const KIND_NULL_SENTINEL = '';
 /** Selector options for «Тип материала», keyed by canonical kind + sentinel for unknown. */
-const KIND_OPTIONS: { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[] = [
-  { value: KIND_NULL_SENTINEL, label: '— не указан —' },
-  ...MATERIAL_KINDS.map((k) => ({ value: k, label: MATERIAL_KIND_LABELS[k] })),
-];
+const KIND_KEYS: readonly MaterialKind[] = ['raw', 'part', 'fastener', 'purchased', 'other'];
 
 interface DimensionFormGroup extends FormGroup {
   controls: {
@@ -214,7 +214,7 @@ interface DimensionFormGroup extends FormGroup {
                   class="pi-input w-full"
                   data-test="material-kind-select"
                 >
-                  @for (opt of KIND_OPTIONS; track opt.value) {
+                  @for (opt of kindOptions(); track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
@@ -515,23 +515,25 @@ interface DimensionFormGroup extends FormGroup {
 export class MaterialFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadSuppliers();
+    this.loadKindLabels();
     this.loadUnits();
     if (this.data) {
       this.patchFromData(this.data);
     }
   }
   protected readonly DIMENSION_TYPES = DIMENSION_TYPES;
-  /**
-   * TZ-CATALOG-316: bind KIND_OPTIONS into the template so the
-   * `<select formControlName="materialKind">` can iterate of it.
-   * Re-exposing the module-level const keeps template-source simple.
-   */
-  protected readonly KIND_OPTIONS = KIND_OPTIONS;
+  protected readonly kindOptions = signal([
+    { value: KIND_NULL_SENTINEL, label: '— не указан —' },
+    ...dictionaryLabelOptions('materialKind')
+      .filter((item) => KIND_KEYS.includes(item.key as MaterialKind))
+      .map((item) => ({ value: item.key as MaterialKind, label: item.label })),
+  ] as { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[]);
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(MaterialsService);
   private readonly orgs = inject(OrganizationsService);
   private readonly unitsService = inject(UnitsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly photosService = inject(PhotosService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
@@ -644,6 +646,18 @@ export class MaterialFormDialogComponent implements OnDestroy {
    * The canonical `Unit.key` is stored in `Material.unit` (free-text FK
    * contract); label/symbol are display-only.
    */
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      const options: { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[] = [
+        { value: KIND_NULL_SENTINEL, label: '— не указан —' },
+        ...labels
+          .filter((item) => KIND_KEYS.includes(item.key as MaterialKind))
+          .map((item) => ({ value: item.key as MaterialKind, label: item.label })),
+      ];
+      if (options.length > 1) this.kindOptions.set(options);
+    });
+  }
+
   private loadUnits(): void {
     this.unitsLoading.set(true);
     this.unitsError.set(null);

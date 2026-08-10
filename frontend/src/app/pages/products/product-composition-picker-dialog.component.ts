@@ -10,11 +10,11 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { Material, MaterialsService } from '../../shared/services/materials.service';
 import {
-  Material,
-  MATERIAL_KIND_LABELS,
-  MaterialsService,
-} from '../../shared/services/materials.service';
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
@@ -92,7 +92,10 @@ export interface ProductCompositionPickerData {
         </div>
 
         @if (data.restrictToModule) {
-          <p class="text-xs text-muted-foreground m-0 leading-snug" data-test="picker-inclusion-hint">
+          <p
+            class="text-xs text-muted-foreground m-0 leading-snug"
+            data-test="picker-inclusion-hint"
+          >
             В состав модуля можно добавить модуль или материал.
           </p>
         }
@@ -209,6 +212,12 @@ export class ProductCompositionPickerDialogComponent {
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
   private readonly productsSvc = inject(ProductsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
+  protected readonly materialKindLabels = signal<Record<string, string>>(
+    Object.fromEntries(
+      dictionaryLabelOptions('materialKind').map((item) => [item.key, item.label]),
+    ),
+  );
 
   /**
    * Order: изделие → модуль → деталь/материал.
@@ -267,7 +276,7 @@ export class ProductCompositionPickerDialogComponent {
       return this.materials()
         .map((item) => ({
           id: item._id,
-          label: `${item.name} · ${item.materialKind ? MATERIAL_KIND_LABELS[item.materialKind] : 'тип не указан'}`,
+          label: `${item.name} · ${item.materialKind ? (this.materialKindLabels()[item.materialKind] ?? item.materialKind) : 'тип не указан'}`,
         }))
         .filter((item) => filter(item.label));
     return this.products()
@@ -279,6 +288,9 @@ export class ProductCompositionPickerDialogComponent {
   });
 
   constructor() {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      this.materialKindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
     this.load();
   }
 

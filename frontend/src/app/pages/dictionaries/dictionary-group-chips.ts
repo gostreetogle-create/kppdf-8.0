@@ -34,6 +34,12 @@ export const DICTIONARY_TOC_CHIPS: readonly GroupChip[] = [
 
 export const CLASSIFICATION_CHIPS: readonly GroupChip[] = [
   { id: 'categories', label: 'Категории', route: '/categories', pageKey: 'categories' },
+  {
+    id: 'kind-labels',
+    label: 'Виды изделий и материалов',
+    route: '/dictionaries/kind-labels',
+    pageKey: 'dictionaries',
+  },
 ];
 
 export const APPEARANCE_CHIPS: readonly GroupChip[] = [

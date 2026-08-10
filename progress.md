@@ -1,4 +1,13 @@
 
+## [2026-08-10T17:51:30.8247358Z] — TZ-DICT-320 DONE: kind labels FE wire + nav
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Shared `PiDictionaryLabelsService` now loads/caches active product/material labels with one RU fallback warning; `/dictionaries/kind-labels` supports admin/manager rename/active PATCH. Product/material FullEditors, QuickCreate, catalog filters/rails, detail, BOM and composition picker use the same service; stable keys remain unchanged.
+**Gates:** frontend tsc PASS; focused Jest 6 suites / 103/103; ESLint PASS; new-file Prettier PASS; FE build PASS; diff-check PASS with CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-320.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-320-kind-labels-fe-nav.lock`
+**NEXT:** claim TZ-UX-DIALOG-306 strictly. Deploy НЕ
+
 ## [2026-08-10T17:37:39.9429139Z] — TZ-DICT-319 DONE: kind labels backend
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; backend gates + archive/lock/closeout complete; deploy НЕ

@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T17:51:30.8247358Z · TZ-DICT-320 DONE / next UX-DIALOG-306
+- DONE: shared FE dictionary-label API/cache/fallback, `/dictionaries/kind-labels` admin/manager page, route/nav/chips, and dynamic product/material/QuickCreate/catalog/detail/BOM/picker labels. Stable payload keys unchanged.
+- Gates: FE tsc PASS; focused Jest 6 suites / 103 tests PASS; ESLint PASS; new-file Prettier PASS; FE build PASS; diff-check PASS with line-ending warnings only.
+- Archive: `tasks/_archive/2026-08/TZ-DICT-320.done.md`; lock: `.mimocode/locks/TZ-DICT-320-kind-labels-fe-nav.lock`; active marker removed.
+- Team Room: unavailable until task sync; backend TZ-319 remained dependency-only. Deploy: NO
+- NEXT: claim TZ-UX-DIALOG-306 strictly.
+
+## Checkpoint 2026-08-10T17:38:36.3297297Z · TZ-DICT-320 CLAIMED
+- Active marker: `tasks/_active/TZ-DICT-320.md`; checklist: `docs/agent-checklists/TZ-DICT-320.md`.
+- Scope: kind-label service/cache, `/dictionaries/kind-labels` page/nav, product/material/QuickCreate active-label wire and seed fallback. Backend TZ-319 is DONE and pushed.
+- Conflict scan: `_active/` was empty; no competing keys found. Team Room claim unavailable (`Unknown task; sync tasks first`). Deploy: NO
+- NEXT: inspect FE conventions → implement route/page/service wire → FE gates → archive/commit/push.
+
 ## Checkpoint 2026-08-10T17:37:39.9429139Z · TZ-DICT-319 DONE / next DICT-320
 - DONE: backend dictionary-label schema/API, idempotent product/material kind seeds, organization/global reads, active filtering, admin/manager patch, immutable keys, unique identity, and RU conflict handling.
 - Gates: backend tsc PASS; dictionary-label Jest 2 suites / 9 tests PASS; ESLint PASS with one non-blocking test-helper warning; diff-check PASS. Backend Prettier unavailable because package has no formatter dependency.

@@ -30,7 +30,6 @@ import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import {
   Material,
-  MATERIAL_KIND_LABELS,
   MATERIAL_KINDS,
   type MaterialKind,
   MaterialsService,
@@ -40,6 +39,10 @@ import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 
 /** Server-side pagination page size for /materials endpoint. */
 const PAGE_SIZE = 10;
@@ -119,8 +122,8 @@ const PAGE_SIZE = 10;
           class="pi-input w-40"
         >
           <option value="">Все типы</option>
-          @for (k of KIND_OPTIONS; track k) {
-            <option [value]="k">{{ kindLabel(k) }}</option>
+          @for (k of kindOptions(); track k.value) {
+            <option [value]="k.value">{{ k.label }}</option>
           }
         </select>
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
@@ -232,6 +235,7 @@ const PAGE_SIZE = 10;
 })
 export class MaterialsPage implements OnInit {
   constructor() {
+    this.loadKindLabels();
     this.suppliersLookup.load();
     this.photosLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
@@ -415,10 +419,25 @@ export class MaterialsPage implements OnInit {
     },
   ];
 
-  /** Toolbar options for the kind filter dropdown — same order as MATERIAL_KINDS. */
-  protected readonly KIND_OPTIONS = MATERIAL_KINDS;
+  /** Toolbar options use the same API-backed cache as material forms. */
+  protected readonly kindOptions = signal(
+    dictionaryLabelOptions('materialKind')
+      .filter((item) => MATERIAL_KINDS.includes(item.key as MaterialKind))
+      .map((item) => ({ value: item.key as MaterialKind, label: item.label })),
+  );
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
+
   protected kindLabel(k: MaterialKind): string {
-    return MATERIAL_KIND_LABELS[k];
+    return this.kindOptions().find((item) => item.value === k)?.label ?? k;
+  }
+
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      const options = labels
+        .filter((item) => MATERIAL_KINDS.includes(item.key as MaterialKind))
+        .map((item) => ({ value: item.key as MaterialKind, label: item.label }));
+      if (options.length > 0) this.kindOptions.set(options);
+    });
   }
 
   ngOnInit(): void {
@@ -472,7 +491,7 @@ export class MaterialsPage implements OnInit {
   protected kindLabelOf(row: Material): string | null {
     const k = row.materialKind;
     if (!k) return null;
-    return MATERIAL_KIND_LABELS[k] ?? null;
+    return this.kindOptions().find((item) => item.value === k)?.label ?? null;
   }
 
   protected dimensionsSummary(row: Material): string {

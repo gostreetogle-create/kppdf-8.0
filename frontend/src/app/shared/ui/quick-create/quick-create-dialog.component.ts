@@ -51,6 +51,10 @@ import { PiPhotoDropzoneComponent } from '../photo';
 import { PhotosService, type Photo } from '../../services/photos.service';
 import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../services/pi-dictionary-labels.service';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -61,11 +65,7 @@ export interface QuickCreateDialogData {
 
 export type QuickCreateResult = Product | ProductModule | null;
 
-const KIND_OPTIONS: { value: ProductKind; label: string }[] = [
-  { value: 'good', label: 'Товар' },
-  { value: 'service', label: 'Услуга' },
-  { value: 'work', label: 'Работа' },
-];
+const KIND_KEYS: readonly ProductKind[] = ['good', 'service', 'work'];
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
@@ -197,7 +197,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                               [class]="controlClass(key)"
                               [attr.data-test]="'qc-field-' + key"
                             >
-                              @for (opt of kindOptions; track opt.value) {
+                              @for (opt of kindOptions(); track opt.value) {
                                 <option [value]="opt.value">{{ opt.label }}</option>
                               }
                             </select>
@@ -489,10 +489,15 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private readonly categoriesSvc = inject(CategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly photosService = inject(PhotosService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
 
   protected readonly entity: FormProfileEntity = this.data.entity;
   protected readonly sizes = FORM_PROFILE_SIZES;
-  protected readonly kindOptions = KIND_OPTIONS;
+  protected readonly kindOptions = signal(
+    dictionaryLabelOptions('productKind')
+      .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+      .map((item) => ({ value: item.key as ProductKind, label: item.label })),
+  );
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly dimUnitOptions = DIM_UNIT_OPTIONS;
 
@@ -606,6 +611,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly form: FormGroup = this.buildForm(this.entity);
 
   constructor() {
+    this.loadKindLabels();
     this.reloadProfile();
     if (this.entity === 'product') {
       this.categoriesSvc.list('product').subscribe((res) => {
@@ -614,6 +620,16 @@ export class QuickCreateDialogComponent implements OnDestroy {
         }
       });
     }
+  }
+
+  private loadKindLabels(): void {
+    if (this.entity !== 'product') return;
+    this.dictionaryLabels?.active('productKind').subscribe((labels) => {
+      const options = labels
+        .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+        .map((item) => ({ value: item.key as ProductKind, label: item.label }));
+      if (options.length > 0) this.kindOptions.set(options);
+    });
   }
 
   protected kindOf(key: string): QuickCreateControlKind {

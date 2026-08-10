@@ -97,7 +97,7 @@
 |-----|---------|-----------|
 | `photoTpl` | `mainPhotoId` | `<img>` или `<pi-empty-tile>` |
 | `supplierTpl` | `supplierId` | Название организации (lookup) |
-| `kindTpl` | `materialKind` | **TZ-CATALOG-316** — короткий русский лейбл kinds (`сырьё`, `деталь`…); для legacy без kind — пусто (empty-cell) |
+| `kindTpl` | `materialKind` | **TZ-DICT-320 / CATALOG-316** — подпись из общего `PiDictionaryLabelsService` (`сырьё`, `деталь`…); для legacy без kind — пусто (empty-cell) |
 | `dimsTpl` | `dimensions` | `Д. 3000мм × Ш. 2000мм × Т. 2мм` |
 | `stockTpl` | `stockQty` (legacy-key) | **TZ-MATERIALS-308** — ссылка «Склад →» на `/storage-items?materialId=<id>` |
 | `rowActionsTpl` | (actions) | Copy / Edit / Delete (TZ-MATERIALS-310 добавил copy slot) |
@@ -166,6 +166,7 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 - **Server-side pagination** — backend возвращает `{ items, total, page, limit }`
 - **Client-side sort** — pi-table сортирует page slice (нет sortBy на backend)
 - **Three lookup tables** — suppliers (Organizations), categories (Categories, type `material`) + photos (Photos)
+- **Kind labels** — toolbar filter, FullEditor, detail and composition picker use the same cached `PiDictionaryLabelsService`; API failure shows seed fallback and one RU warning
 - **Фото:** `mainPhotoOf(row)` — проверяет string | populated object; `mainPhotoUrl(row)` пропускает URL через общий `photoListUrl` и выбирает linked `thumb`, иначе original
 - **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`; в форме блок ограничен половиной ширины на desktop.
 - **Refresh on dialog close:** 3 стрима: `suppliersLookup.load()` + `photosLookup.load()` + `listRes.reload()`

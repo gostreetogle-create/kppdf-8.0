@@ -21,6 +21,10 @@ import {
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
 import { MaterialsService } from '../../shared/services/materials.service';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { ProductsService } from '../../shared/services/products.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
@@ -317,6 +321,7 @@ export class ProductBomPanelComponent {
 
   private readonly service = inject(ProductModulesService);
   private readonly materials = inject(MaterialsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly products = inject(ProductsService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -352,8 +357,14 @@ export class ProductBomPanelComponent {
   protected readonly kindLegend = computed(() => {
     const items = [
       { label: 'Модуль', color: catalogKindOklch('module') },
-      { label: 'Деталь/мат', color: catalogKindOklch('material', 'part') },
-      { label: 'Сырьё', color: catalogKindOklch('material', 'raw') },
+      {
+        label: this.materialKindLabels()['part'] ?? 'деталь',
+        color: catalogKindOklch('material', 'part'),
+      },
+      {
+        label: this.materialKindLabels()['raw'] ?? 'сырьё',
+        color: catalogKindOklch('material', 'raw'),
+      },
     ];
     if (this.rootKind() === 'product') {
       return [{ label: 'Изделие', color: catalogKindOklch('product') }, ...items];
@@ -361,7 +372,16 @@ export class ProductBomPanelComponent {
     return items;
   });
 
+  protected readonly materialKindLabels = signal<Record<string, string>>(
+    Object.fromEntries(
+      dictionaryLabelOptions('materialKind').map((item) => [item.key, item.label]),
+    ),
+  );
+
   constructor() {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      this.materialKindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
     effect(() => {
       const id = this.productId();
       this.rootKind();
@@ -398,10 +418,7 @@ export class ProductBomPanelComponent {
   protected kindLabel(node: CompositionTreeNode): string {
     if (node.kind === 'product') return 'Изделие';
     if (node.kind === 'module') return 'Модуль';
-    if (node.materialKind === 'part') return 'Деталь';
-    if (node.materialKind === 'fastener') return 'Метиз';
-    if (node.materialKind === 'purchased') return 'Покупное';
-    if (node.materialKind === 'raw') return 'Сырьё';
+    if (node.materialKind) return this.materialKindLabels()[node.materialKind] ?? node.materialKind;
     return 'Материал';
   }
 

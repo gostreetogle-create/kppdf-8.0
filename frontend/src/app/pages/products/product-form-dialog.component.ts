@@ -33,6 +33,10 @@ import {
   PiColorReferencesService,
   ColorReference,
 } from '../../shared/services/pi-color-references.service';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
@@ -40,11 +44,7 @@ import { ProductBomPanelComponent } from './product-bom-panel.component';
 
 type Result = Product | null | undefined;
 
-const KIND_OPTIONS: { value: ProductKind; label: string }[] = [
-  { value: 'good', label: 'Изделие' },
-  { value: 'service', label: 'Услуга' },
-  { value: 'work', label: 'Работа' },
-];
+const KIND_KEYS: readonly ProductKind[] = ['good', 'service', 'work'];
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
@@ -159,7 +159,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
                   formControlName="kind"
                   class="w-full h-10 px-control-x text-sm hairline rounded-sm bg-paper text-ink font-body pi-focus-ring transition-colors"
                 >
-                  @for (opt of KIND_OPTIONS; track opt.value) {
+                  @for (opt of kindOptions(); track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
@@ -554,6 +554,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
 export class ProductFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadCategories();
+    this.loadKindLabels();
     this.loadColors();
     this.loadPhotos();
     if (this.data) {
@@ -580,7 +581,11 @@ export class ProductFormDialogComponent implements OnDestroy {
     }
   }
 
-  protected readonly KIND_OPTIONS = KIND_OPTIONS;
+  protected readonly kindOptions = signal(
+    dictionaryLabelOptions('productKind')
+      .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+      .map((item) => ({ value: item.key as ProductKind, label: item.label })),
+  );
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   protected readonly DIMENSION_UNIT_OPTIONS = DIMENSION_UNIT_OPTIONS;
 
@@ -591,6 +596,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly data = inject<Product | null>(PI_DIALOG_DATA);
   private readonly categoriesService = inject(CategoriesService);
   private readonly colorsService = inject(PiColorReferencesService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly photosService = inject(PhotosService);
   private readonly auth = inject(AuthService);
 
@@ -709,6 +715,15 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.categories.set([]);
         this.categoriesError.set(extractErrorMessage(res.error));
       }
+    });
+  }
+
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('productKind').subscribe((labels) => {
+      const options = labels
+        .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+        .map((item) => ({ value: item.key as ProductKind, label: item.label }));
+      if (options.length > 0) this.kindOptions.set(options);
     });
   }
 
