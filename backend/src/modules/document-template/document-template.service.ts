@@ -38,6 +38,8 @@ import {
   CounterpartyDocument,
 } from '../counterparty/counterparty.schema';
 import { Invoice, InvoiceDocument } from '../invoice/invoice.schema';
+import { Person, PersonDocument } from '../person/person.schema';
+import { Site, SiteDocument } from '../site/site.schema';
 import { Product, ProductDocument } from '../product/product.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
@@ -132,6 +134,12 @@ export class DocumentTemplateService {
     @Optional()
     @InjectModel(Invoice.name)
     private readonly invoiceModel?: Model<InvoiceDocument>,
+    @Optional()
+    @InjectModel(Person.name)
+    private readonly personModel?: Model<PersonDocument>,
+    @Optional()
+    @InjectModel(Site.name)
+    private readonly siteModel?: Model<SiteDocument>,
   ) {}
 
   /**
@@ -520,6 +528,27 @@ export class DocumentTemplateService {
         assertOrganizationSource(supplier);
       }
     }
+    const contactPersonId = requireSourceId(dto.contactPersonId);
+    if (contactPersonId) {
+      if (!this.personModel) throw new NotFoundException('Source not found');
+      const person = await this.personModel
+        .findById(contactPersonId)
+        .lean()
+        .exec();
+      if (!person) throw new NotFoundException('Source not found');
+    }
+    const siteId = requireSourceId(dto.siteId);
+    if (siteId) {
+      if (!this.siteModel) throw new NotFoundException('Source not found');
+      const site = await this.siteModel.findById(siteId).lean().exec();
+      if (!site) throw new NotFoundException('Source not found');
+      if (
+        dto.counterpartyId &&
+        String(site.counterpartyId) !== dto.counterpartyId
+      ) {
+        throw new NotFoundException('Source not found');
+      }
+    }
     const productId = requireSourceId(dto.productId);
     if (productId) {
       const product = await this.productModel.findById(productId).lean().exec();
@@ -902,6 +931,32 @@ export class DocumentTemplateService {
           }),
       );
     }
+    if (
+      dto.contactPersonId &&
+      Types.ObjectId.isValid(dto.contactPersonId) &&
+      this.personModel
+    ) {
+      lookups.push(
+        this.personModel
+          .findById(dto.contactPersonId)
+          .lean()
+          .exec()
+          .then((doc) => {
+            if (doc) bag.contactPerson = doc;
+          }),
+      );
+    }
+    if (dto.siteId && Types.ObjectId.isValid(dto.siteId) && this.siteModel) {
+      lookups.push(
+        this.siteModel
+          .findById(dto.siteId)
+          .lean()
+          .exec()
+          .then((doc) => {
+            if (doc) bag.site = doc;
+          }),
+      );
+    }
     if (dto.productId && Types.ObjectId.isValid(dto.productId)) {
       lookups.push(
         this.productModel
@@ -1035,6 +1090,8 @@ export class DocumentTemplateService {
     const quotation = bag.quotation as
       | {
           counterpartyId?: Types.ObjectId | string;
+          contactPersonId?: Types.ObjectId | string;
+          siteId?: Types.ObjectId | string;
           organizationId?: Types.ObjectId | string;
         }
       | undefined;
@@ -1051,6 +1108,42 @@ export class DocumentTemplateService {
         const org = await this.orgModel.findById(orgId).lean().exec();
         if (org) bag.organization = this.organizationRenderData(org);
       }
+    }
+    if (quotation?.contactPersonId && !bag.contactPerson) {
+      const personId = String(quotation.contactPersonId);
+      if (this.personModel && Types.ObjectId.isValid(personId)) {
+        const person = await this.personModel.findById(personId).lean().exec();
+        if (person) bag.contactPerson = person;
+      }
+    }
+    if (quotation?.siteId && !bag.site) {
+      const siteId = String(quotation.siteId);
+      if (this.siteModel && Types.ObjectId.isValid(siteId)) {
+        const site = await this.siteModel.findById(siteId).lean().exec();
+        if (site) bag.site = site;
+      }
+    }
+    const counterparty = bag.counterparty as
+      Record<string, unknown> | undefined;
+    const contactPerson = bag.contactPerson as
+      Record<string, unknown> | undefined;
+    const site = bag.site as Record<string, unknown> | undefined;
+    if (counterparty) {
+      bag.counterparty = {
+        ...counterparty,
+        contactName: contactPerson
+          ? [
+              contactPerson['lastName'],
+              contactPerson['firstName'],
+              contactPerson['patronymic'],
+            ]
+              .filter(Boolean)
+              .join(' ')
+          : '',
+        contactPosition: contactPerson?.['position'] ?? '',
+        siteName: site?.['name'] ?? '',
+        siteAddress: site?.['address'] ?? '',
+      };
     }
 
     const invoice = bag.invoice as

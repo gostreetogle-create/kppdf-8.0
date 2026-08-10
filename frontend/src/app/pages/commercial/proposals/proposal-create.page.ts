@@ -14,6 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import {
+  ContactRound,
   FileText,
   LucideAngularModule,
   Package,
@@ -57,9 +58,13 @@ import {
   type KpTemplatePreviewStatus,
 } from './proposal-create-template-center.component';
 import { ProposalCreateTemplatePickerComponent } from './proposal-create-template-picker.component';
+import {
+  ProposalCreateRecipientComponent,
+  type ProposalRecipientState,
+} from './proposal-create-recipient.component';
 
 /** Which left tool flyout is open (mutually exclusive). */
-type LeftTool = 'template' | 'products' | null;
+type LeftTool = 'template' | 'products' | 'recipient' | null;
 
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   { key: 'index', label: '№', visible: true },
@@ -88,6 +93,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
     ProposalCreateInspectorComponent,
     ProposalCreateTemplateCenterComponent,
     ProposalCreateTemplatePickerComponent,
+    ProposalCreateRecipientComponent,
   ],
   template: `
     <app-pi-group-workspace
@@ -130,6 +136,19 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               (click)="toggleLeftTool('products')"
             >
               <lucide-angular [img]="packageIcon" [size]="18" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="leftTool() === 'recipient'"
+              [attr.aria-expanded]="leftTool() === 'recipient'"
+              aria-controls="kp-flyout-recipient"
+              aria-label="Получатель"
+              title="Получатель"
+              data-test="kp-create-toggle-recipient"
+              (click)="toggleLeftTool('recipient')"
+            >
+              <lucide-angular [img]="recipientIcon" [size]="18" aria-hidden="true" />
             </button>
           </nav>
 
@@ -282,6 +301,25 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             </aside>
           }
 
+          @if (leftTool() === 'recipient') {
+            <aside
+              id="kp-flyout-recipient"
+              class="kp-create-studio__flyout kp-create-studio__flyout--left"
+              data-test="kp-create-recipient"
+              data-flyout="recipient"
+              aria-label="Получатель"
+              #recipientFlyout
+            >
+              <app-proposal-create-recipient
+                [selectedCounterpartyId]="counterpartyId()"
+                [selectedContactPersonId]="contactPersonId()"
+                [selectedSiteId]="siteId()"
+                [readOnly]="isReadOnly()"
+                (stateChange)="onRecipientState($event)"
+              />
+            </aside>
+          }
+
           @if (leftTool() || rightOpen()) {
             <button
               type="button"
@@ -348,6 +386,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   [readOnly]="isReadOnly()"
                   [status]="proposalStatus()"
                   (stateChange)="onInspectorState($event)"
+                  (recipientEditRequest)="openRecipientTool()"
                   (tableLayoutChange)="onTableLayoutChange($event)"
                   (commercialColumnsRequest)="addCommercialColumns()"
                   (tableTargetChange)="onTableTargetChange($event)"
@@ -513,6 +552,7 @@ export class ProposalCreatePage implements OnInit {
   @ViewChild('rightRail') private rightRail?: ElementRef<HTMLElement>;
   @ViewChild('leftFlyout') private leftFlyout?: ElementRef<HTMLElement>;
   @ViewChild('productsFlyout') private productsFlyout?: ElementRef<HTMLElement>;
+  @ViewChild('recipientFlyout') private recipientFlyout?: ElementRef<HTMLElement>;
   @ViewChild('rightFlyout') private rightFlyout?: ElementRef<HTMLElement>;
   @ViewChild('templateCenter') private templateCenter?: ProposalCreateTemplateCenterComponent;
 
@@ -520,6 +560,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly kpSectionChips = KP_SECTION_CHIPS;
   protected readonly fileIcon = FileText;
   protected readonly packageIcon = Package;
+  protected readonly recipientIcon = ContactRound;
   protected readonly slidersIcon = SlidersHorizontal;
   protected readonly tableIcon = TableProperties;
   protected readonly compositionIcon = ListTree;
@@ -536,6 +577,8 @@ export class ProposalCreatePage implements OnInit {
   protected readonly previewStatus = signal<KpTemplatePreviewStatus>('idle');
   protected readonly organizationId = signal('');
   protected readonly counterpartyId = signal('');
+  protected readonly contactPersonId = signal('');
+  protected readonly siteId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
   protected readonly proposalNumber = signal('');
@@ -607,6 +650,13 @@ export class ProposalCreatePage implements OnInit {
               deliveryDays: this.deliveryDays(),
             },
             ...(org ? { organizationId: org } : {}),
+            ...(this.counterpartyId().trim()
+              ? { counterpartyId: this.counterpartyId().trim() }
+              : {}),
+            ...(this.contactPersonId().trim()
+              ? { contactPersonId: this.contactPersonId().trim() }
+              : {}),
+            ...(this.siteId().trim() ? { siteId: this.siteId().trim() } : {}),
           };
           return this.templatesSvc.build(tpl._id, payload).pipe(
             tap((res) => {
@@ -692,6 +742,7 @@ export class ProposalCreatePage implements OnInit {
       this.rightRail?.nativeElement,
       this.leftFlyout?.nativeElement,
       this.productsFlyout?.nativeElement,
+      this.recipientFlyout?.nativeElement,
       this.rightFlyout?.nativeElement,
     ].some((el) => !!el && el.contains(target));
 
@@ -763,6 +814,8 @@ export class ProposalCreatePage implements OnInit {
       ...(this.proposalValidUntil() ? { validUntil: this.proposalValidUntil() } : {}),
       organizationId,
       ...(this.counterpartyId().trim() ? { counterpartyId: this.counterpartyId().trim() } : {}),
+      contactPersonId: this.contactPersonId().trim() || null,
+      siteId: this.siteId().trim() || null,
       status: this.proposalStatus(),
       orgMarkupPercent: this.clampMarkup(this.orgMarkupPercent()),
       vatPercent: this.clampVat(this.dealVatPercent()),
@@ -963,6 +1016,8 @@ export class ProposalCreatePage implements OnInit {
     this.proposalStatus.set(draft.status === 'accepted' ? 'accepted' : 'draft');
     this.organizationId.set(this.refId(draft.organizationId) ?? '');
     this.counterpartyId.set(this.refId(draft.counterpartyId) ?? '');
+    this.contactPersonId.set(this.refId(draft.contactPersonId) ?? '');
+    this.siteId.set(this.refId(draft.siteId) ?? '');
     this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
     this.proposalNumber.set(draft.number ?? '');
     this.proposalTitle.set(draft.title ?? '');
@@ -1139,6 +1194,21 @@ export class ProposalCreatePage implements OnInit {
     }
   }
 
+  protected onRecipientState(state: ProposalRecipientState): void {
+    if (this.isReadOnly()) return;
+    this.counterpartyId.set(state.counterpartyId.trim());
+    this.contactPersonId.set(state.contactPersonId.trim());
+    this.siteId.set(state.siteId.trim());
+    if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+    this.scheduleAutosave();
+  }
+
+  protected openRecipientTool(): void {
+    if (this.isReadOnly()) return;
+    this.leftTool.set('recipient');
+    this.rightOpen.set(false);
+  }
+
   protected onInspectorState(state: ProposalCreateInspectorState): void {
     if (this.isReadOnly()) return;
     const nextOrganization = (state.organizationId ?? '').trim();
@@ -1190,7 +1260,7 @@ export class ProposalCreatePage implements OnInit {
     if (this.isReadOnly()) return;
     const next = this.leftTool() === tool ? null : tool;
     this.leftTool.set(next);
-    if (next === 'products') this.rightOpen.set(false);
+    if (next === 'products' || next === 'recipient') this.rightOpen.set(false);
     if (next && !this.isWide()) this.rightOpen.set(false);
   }
 
@@ -1201,7 +1271,7 @@ export class ProposalCreatePage implements OnInit {
     if (
       !isSamePane &&
       (pane === 'table' || pane === 'composition') &&
-      this.leftTool() === 'products'
+      (this.leftTool() === 'products' || this.leftTool() === 'recipient')
     ) {
       this.leftTool.set(null);
     }

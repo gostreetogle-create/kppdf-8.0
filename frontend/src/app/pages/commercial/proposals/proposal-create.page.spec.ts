@@ -960,6 +960,45 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.nativeElement.textContent).toContain('Сохранить в архив документов');
   }));
 
+  it('persists recipient references and sends them to build', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      onRecipientState: (state: {
+        counterpartyId: string;
+        contactPersonId: string;
+        siteId: string;
+      }) => void;
+      saveDraft: () => void;
+      organizationId: { set: (value: string) => void };
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.onRecipientState({
+      counterpartyId: 'cp-1',
+      contactPersonId: 'person-1',
+      siteId: 'site-1',
+    });
+    page.organizationId.set('org-1');
+    tick(250);
+    page.saveDraft();
+
+    expect(quotationCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        counterpartyId: 'cp-1',
+        contactPersonId: 'person-1',
+        siteId: 'site-1',
+      }),
+    );
+    expect(buildMock).toHaveBeenCalledWith(
+      'tpl-1',
+      expect.objectContaining({
+        counterpartyId: 'cp-1',
+        contactPersonId: 'person-1',
+        siteId: 'site-1',
+      }),
+    );
+  }));
+
   it('persists commercial fields and sends discounted totals to build', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;

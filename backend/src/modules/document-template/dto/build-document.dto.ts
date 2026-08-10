@@ -106,6 +106,10 @@ export class BuildDocumentDto {
 
   @IsOptional() @IsString() @IsObjectId() counterpartyId?: string;
 
+  @IsOptional() @IsString() @IsObjectId() contactPersonId?: string;
+
+  @IsOptional() @IsString() @IsObjectId() siteId?: string;
+
   @IsOptional() @IsString() @IsObjectId() productId?: string;
 
   @IsOptional() @IsString() @IsObjectId() materialId?: string;

@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DocumentTemplate, DocumentTemplateSchema } from './document-template.schema';
+import {
+  DocumentTemplate,
+  DocumentTemplateSchema,
+} from './document-template.schema';
 import { DocumentTemplateService } from './document-template.service';
 import { DocumentTemplateController } from './document-template.controller';
 import { TemplateBlockModule } from '../template-block/template-block.module';
@@ -10,6 +13,8 @@ import { OrderModule } from '../order/order.module';
 import { InvoiceModule } from '../invoice/invoice.module';
 import { CounterModule } from '../counter/counter.module';
 import { OrganizationModule } from '../organization/organization.module';
+import { PersonModule } from '../person/person.module';
+import { SiteModule } from '../site/site.module';
 import { CounterpartyModule } from '../counterparty/counterparty.module';
 import { ProductModule } from '../product/product.module';
 import { MaterialModule } from '../material/material.module';
@@ -39,7 +44,9 @@ import { DocumentTemplateCategoryModule } from '../document-template-category/do
  */
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: DocumentTemplate.name, schema: DocumentTemplateSchema }]),
+    MongooseModule.forFeature([
+      { name: DocumentTemplate.name, schema: DocumentTemplateSchema },
+    ]),
     TemplateBlockModule,
     QuotationModule,
     ContractModule,
@@ -48,6 +55,8 @@ import { DocumentTemplateCategoryModule } from '../document-template-category/do
     CounterModule,
     // TZ-86 Phase A.4 — data source models for build()
     OrganizationModule,
+    PersonModule,
+    SiteModule,
     CounterpartyModule,
     ProductModule,
     MaterialModule,

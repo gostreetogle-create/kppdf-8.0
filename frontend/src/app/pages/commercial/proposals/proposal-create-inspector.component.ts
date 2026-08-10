@@ -356,18 +356,27 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
       }
 
       @if (!tableOnly()) {
-        <app-pi-form-field label="Клиент" htmlFor="kp-insp-cp">
-          <app-pi-overflow-select
-            [items]="counterpartyItems()"
-            [value]="selectedCounterpartyId()"
-            (valueChange)="onCounterpartyChange($event)"
-            searchable="auto"
-            placeholder="Выберите клиента…"
-            ariaLabel="Клиент"
-            dataTest="kp-insp-cp"
+        <section class="inspector__section" data-test="kp-insp-recipient">
+          <div class="inspector__section-heading">
+            <h3>Получатель</h3>
+            <p>{{ selectedRecipient()?.name || 'Клиент не выбран' }}</p>
+          </div>
+          @if (selectedRecipient(); as recipient) {
+            <span class="text-xs text-muted-foreground"
+              >ИНН {{ recipient.inn }}{{ recipient.kpp ? ' · КПП ' + recipient.kpp : '' }}</span
+            >
+          }
+          <app-pi-button
+            type="button"
+            variant="ghost"
+            size="sm"
+            data-test="kp-insp-edit-recipient"
             [disabled]="readOnly()"
-          />
-        </app-pi-form-field>
+            (click)="recipientEditRequest.emit()"
+          >
+            Изменить получателя
+          </app-pi-button>
+        </section>
       }
 
       @if (!tableOnly()) {
@@ -551,6 +560,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly commercialColumnsRequest = output<void>();
   readonly tableTargetChange = output<string>();
   readonly statusRequest = output<ProposalCreateStatus>();
+  readonly recipientEditRequest = output<void>();
 
   protected readonly organizations = signal<Organization[]>([]);
   protected readonly counterpartiesList = signal<Counterparty[]>([]);
@@ -590,6 +600,11 @@ export class ProposalCreateInspectorComponent implements OnInit {
       id: o._id,
       label: `${o.name}${o.inn ? ' · ИНН ' + o.inn : ''}`,
     })),
+  );
+
+  protected readonly selectedRecipient = computed(
+    () =>
+      this.counterpartiesList().find((item) => item._id === this.selectedCounterpartyId()) ?? null,
   );
 
   protected readonly counterpartyItems = computed(() =>

@@ -110,6 +110,12 @@ export class Quotation {
   @Prop({ type: Types.ObjectId, ref: 'Counterparty', index: true })
   counterpartyId?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Person', index: true })
+  contactPersonId?: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Site', index: true })
+  siteId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'Tender', index: true })
   tenderId?: Types.ObjectId;
 

@@ -105,6 +105,8 @@ export interface BuildDocumentRequest {
   dealTotals?: BuildDealTotals;
   organizationId?: string;
   counterpartyId?: string;
+  contactPersonId?: string;
+  siteId?: string;
   productId?: string;
   materialId?: string;
   workTypeId?: string;

@@ -80,6 +80,10 @@ export class QuotationService {
       counterpartyId: dto.counterpartyId
         ? new Types.ObjectId(dto.counterpartyId)
         : undefined,
+      contactPersonId: dto.contactPersonId
+        ? new Types.ObjectId(dto.contactPersonId)
+        : undefined,
+      siteId: dto.siteId ? new Types.ObjectId(dto.siteId) : undefined,
       tenderId: dto.tenderId ? new Types.ObjectId(dto.tenderId) : undefined,
       date: dto.date ? new Date(dto.date) : new Date(),
       validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
@@ -126,6 +130,8 @@ export class QuotationService {
     return this.model
       .find(filter)
       .populate('counterpartyId')
+      .populate('contactPersonId')
+      .populate('siteId')
       .populate('organizationId')
       .populate('items.productId')
       .sort({ date: -1 })
@@ -139,6 +145,8 @@ export class QuotationService {
     const doc = await this.model
       .findById(id)
       .populate('counterpartyId')
+      .populate('contactPersonId')
+      .populate('siteId')
       .populate('organizationId')
       .populate('items.productId')
       .exec();
@@ -167,6 +175,14 @@ export class QuotationService {
     }
     if (dto.counterpartyId !== undefined) {
       doc.counterpartyId = new Types.ObjectId(dto.counterpartyId);
+    }
+    if (dto.contactPersonId !== undefined) {
+      doc.contactPersonId = dto.contactPersonId
+        ? new Types.ObjectId(dto.contactPersonId)
+        : undefined;
+    }
+    if (dto.siteId !== undefined) {
+      doc.siteId = dto.siteId ? new Types.ObjectId(dto.siteId) : undefined;
     }
     if (dto.orgMarkupPercent !== undefined)
       doc.orgMarkupPercent = dto.orgMarkupPercent;
@@ -242,6 +258,8 @@ export class QuotationService {
         ...(doc.counterpartyId
           ? { counterpartyId: doc.counterpartyId.toString() }
           : {}),
+        contactPersonId: doc.contactPersonId?.toString(),
+        siteId: doc.siteId?.toString(),
         tenderId: doc.tenderId?.toString(),
         title: doc.title,
         date: doc.date,
@@ -343,6 +361,8 @@ export class QuotationService {
       number,
       organizationId: src.organizationId,
       counterpartyId: src.counterpartyId,
+      contactPersonId: src.contactPersonId,
+      siteId: src.siteId,
       tenderId: src.tenderId,
       date: new Date(),
       validUntil: src.validUntil,
@@ -491,6 +511,8 @@ export class QuotationService {
           number,
           organizationId: orgOid,
           counterpartyId: master.counterpartyId,
+          contactPersonId: master.contactPersonId,
+          siteId: master.siteId,
           tenderId: master.tenderId,
           title: master.title,
           date: new Date(),

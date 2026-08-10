@@ -46,6 +46,9 @@ export class CreateQuotationDto {
   @IsObjectId()
   counterpartyId?: string;
 
+  @IsOptional() @IsObjectId() contactPersonId?: string | null;
+  @IsOptional() @IsObjectId() siteId?: string | null;
+
   @IsOptional() @IsNumber() @Min(-100) @Max(1000) orgMarkupPercent?: number;
 
   @IsOptional() @IsNumber() @Min(0) @Max(100) vatPercent?: number;

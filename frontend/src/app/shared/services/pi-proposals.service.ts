@@ -75,6 +75,8 @@ export interface Proposal {
    */
   organizationId?: string | { _id: string; name?: string };
   counterpartyId?: string | { _id: string; name?: string };
+  contactPersonId?: string | { _id: string } | null;
+  siteId?: string | { _id: string } | null;
   templateId?: string | { _id: string };
   templateSnapshot?: Record<string, unknown>;
   title?: string;
