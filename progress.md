@@ -1,4 +1,14 @@
 
+## [2026-08-10T17:32:05.3769468Z] — TZ-CATALOG-338 DONE: article identity contract
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; BE/FE gates, archive, lock, and closeout metadata complete; deploy НЕ
+**Что:** Product `sku` стал обязательным артикулом, Product.name — optional с SKU fallback; Module/Material `article` обязательны и уникальны в организации; E11000 переводится в RU 409 «Артикул уже используется». QuickCreate, FullEditor, LockedRequired profiles, DTO/schema/service tests and page docs aligned. Material clone receives an `-COPY` article suffix.
+**Gates:** backend tsc PASS; backend focused Jest 63/63; frontend tsc PASS; focused FE Jest 95/95; FE build PASS; ESLint PASS with legacy warnings; diff-check PASS; Prettier CRLF/style baseline documented.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-338.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-338-article-required-unique.lock`
+**Known limit:** legacy rows without article remain readable and need migration/backfill before schema-validating edits; no cross-entity uniqueness.
+**NEXT:** claim TZ-DICT-319 strictly. Deploy НЕ
+
 ## [2026-08-10T16:52:42.9338327Z] — TZ-MATERIALS-312 DONE: supplier states + half-width dimensions
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; FE gates + focused Jest 43/43 + archive/lock; deploy НЕ

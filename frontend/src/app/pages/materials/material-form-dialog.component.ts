@@ -150,9 +150,15 @@ interface DimensionFormGroup extends FormGroup {
               <app-pi-form-field
                 label="Артикул"
                 htmlFor="mat-article"
+                [required]="true"
                 [error]="errorFor('article')"
               >
-                <app-pi-input id="mat-article" formControlName="article" placeholder="Артикул" />
+                <app-pi-input
+                  id="mat-article"
+                  formControlName="article"
+                  placeholder="Артикул материала"
+                  [invalid]="hasError('article')"
+                />
               </app-pi-form-field>
 
               <app-pi-form-field
@@ -577,7 +583,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
       Validators.minLength(1),
       Validators.maxLength(256),
     ]),
-    article: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
+    article: this.fb.control<string | null>(null, [Validators.required, Validators.maxLength(64)]),
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
     // TZ-CATALOG-301 / 316 — new fields on FE:
@@ -880,7 +886,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
       name: v.name,
       unit: v.unit,
     };
-    if (v.article) payload.article = v.article;
+    payload.article = v.article?.trim() ?? '';
     if (v.sku) payload.sku = v.sku;
     // TZ-CATALOG-301 / 316 — new fields on FE;
     // empty-string sentinel → field omitted; non-empty → typed value.

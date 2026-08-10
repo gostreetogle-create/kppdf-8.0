@@ -30,15 +30,23 @@ export class ProductService {
   ) {}
 
   async create(dto: CreateProductDto, organizationId?: string | null): Promise<ProductDocument> {
-    let sku = dto.sku;
-    if (!sku && dto.categoryId) { const cat = await this.categoryModel.findById(dto.categoryId).exec(); if (!cat) throw new BadRequestException(`Category ${dto.categoryId} not found`); sku = await this.counter.next('Product', cat.skuPrefix); }
+    const sku = this.normalizeRequiredCode(dto.sku, 'Артикул изделия');
     const { attributes, ...rest } = dto;
-    const doc = await this.model.create({ ...rest, sku, ...this.organizationWrite(organizationId) });
-    if (attributes && Object.keys(attributes).length > 0) { const catId = doc.categoryId ? new Types.ObjectId(doc.categoryId as unknown as string) : undefined; await this.eav.resolveAttributes('Product', doc._id, attributes, catId); }
-    return doc;
+    try {
+      const doc = await this.model.create({ ...rest, sku, ...this.organizationWrite(organizationId) });
+      if (attributes && Object.keys(attributes).length > 0) {
+        const catId = doc.categoryId
+          ? new Types.ObjectId(doc.categoryId as unknown as string)
+          : undefined;
+        await this.eav.resolveAttributes('Product', doc._id, attributes, catId);
+      }
+      return doc;
+    } catch (err) {
+      this.rethrowDuplicateSku(err);
+    }
   }
 
-  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; status?: string; isActive?: boolean; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}, organizationId?: string | null) {
+  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; status?: string; isActive?: boolean; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}, organizationId?: string | null): Promise<{ items: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, q.page ?? 1); const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = { deletedAt: null }; const clauses: Record<string, unknown>[] = []; const scope = this.organizationFilter(organizationId);
     if (scope.$or) clauses.push(scope);
@@ -46,7 +54,8 @@ export class ProductService {
     if (clauses.length > 0) filter.$and = clauses;
     if (q.categoryId) filter.categoryId = new Types.ObjectId(q.categoryId); if (q.status) filter.status = q.status; if (typeof q.isActive === 'boolean') filter.isActive = q.isActive;
     const sortField = q.sortBy ?? 'createdAt'; const sortOrder = q.sortOrder === 'asc' ? 1 : -1;
-    const [items, total] = await Promise.all([this.model.find(filter).populate('categoryId').populate('photoIds').populate('productModuleIds').sort({ [sortField]: sortOrder }).skip((page - 1) * limit).limit(limit).lean().exec(), this.model.countDocuments(filter).exec()]);
+    const [rawItems, total] = await Promise.all([this.model.find(filter).populate('categoryId').populate('photoIds').populate('productModuleIds').sort({ [sortField]: sortOrder }).skip((page - 1) * limit).limit(limit).lean().exec(), this.model.countDocuments(filter).exec()]);
+    const items = rawItems.map((item) => ({ ...item, name: item.name?.trim() || item.sku })) as Record<string, unknown>[];
     return { items, total, page, limit };
   }
 
@@ -54,6 +63,7 @@ export class ProductService {
     const doc = await this.findActive(id, organizationId);
     const populated = await this.model.findOne({ _id: doc._id, deletedAt: null, ...this.organizationFilter(organizationId) }).populate('categoryId').populate('photoIds').populate({ path: 'productModuleIds', populate: [{ path: 'workTypes.workTypeId', model: 'WorkType' }, { path: 'materials.materialId', model: 'Material', select: 'name photoIds unit materialKind' }] }).exec();
     if (!populated) throw new NotFoundException(`Product ${id} not found`);
+    if (!populated.name?.trim()) populated.name = populated.sku;
     const composition = (populated.composition ?? []) as unknown as CompositionLineDocumentShape[]; const isComplex = composition.some((line) => line.lineType === 'product');
     return Object.assign(populated, { attributes: await this.eav.loadAttributes('Product', populated._id), isComplex });
   }
@@ -61,6 +71,7 @@ export class ProductService {
   async update(id: string, dto: UpdateProductDto, organizationId?: string | null): Promise<ProductDocument> {
     const doc = await this.findActive(id, organizationId);
     const { attributes, ...rest } = dto;
+    if (dto.sku !== undefined) rest.sku = this.normalizeRequiredCode(dto.sku, 'Артикул изделия');
     Object.assign(doc, rest);
     let saved: ProductDocument;
     try {
@@ -72,7 +83,7 @@ export class ProductService {
           `Изделие уже изменено (обновите карточку и сохраните снова)`,
         );
       }
-      throw err;
+      this.rethrowDuplicateSku(err);
     }
     if (attributes && Object.keys(attributes).length > 0) {
       const catId = saved.categoryId
@@ -118,6 +129,17 @@ export class ProductService {
   async detachModule(_productId: string, _moduleId: string): Promise<void> { void _productId; void _moduleId; throw new GoneException('Legacy productModuleIds writes are disabled; use the composition API'); }
 
   private async findActive(id: string, organizationId?: string | null): Promise<ProductDocument> { if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Product ${id} not found`); const doc = await this.model.findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.organizationFilter(organizationId) }).exec(); if (!doc) throw new NotFoundException(`Product ${id} not found`); return doc; }
+  private normalizeRequiredCode(value: string | undefined, label: string): string {
+    const code = value?.trim() ?? '';
+    if (!code) throw new BadRequestException(`${label} обязателен`);
+    return code;
+  }
+  private rethrowDuplicateSku(err: unknown): never {
+    if ((err as { code?: number })?.code === 11000) {
+      throw new ConflictException('Артикул уже используется');
+    }
+    throw err;
+  }
   private organizationFilter(organizationId?: string | null): Record<string, unknown> { if (!organizationId) return {}; if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope'); const id = new Types.ObjectId(organizationId); return { $or: [{ organizationId: id }, { organizationId: null }, { organizationId: { $exists: false } }] }; }
   private organizationWrite(organizationId?: string | null): Record<string, unknown> { if (!organizationId) return {}; if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope'); return { organizationId: new Types.ObjectId(organizationId) }; }
   private versionedCompositionFilter(doc: ProductDocument): Record<string, unknown> { return { _id: doc._id, $or: [{ __v: doc.__v ?? 0 }, { __v: { $exists: false } }] }; }

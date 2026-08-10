@@ -20,13 +20,14 @@ export class MaterialService {
 
   async create(dto: CreateMaterialDto, organizationId?: string | null): Promise<MaterialDocument> {
     this.assertUniqueDimensionTypes(dto.dimensions);
+    const article = this.normalizeRequiredArticle(dto.article);
     let sku = dto.sku;
     const category = dto.categoryId ? await this.loadAssignableMaterialCategory(dto.categoryId, organizationId) : null;
     if (!sku && category) {
       if (!category.skuPrefix) throw new BadRequestException(`У категории «${category.name}» не настроен префикс внутреннего кода материала`);
       sku = await this.counter.next('Material', category.skuPrefix);
     }
-    try { return await this.model.create({ ...dto, sku, ...this.organizationWrite(organizationId) }); } catch (err) { this.rethrowDuplicateSku(err); }
+    try { return await this.model.create({ ...dto, article, sku, ...this.organizationWrite(organizationId) }); } catch (err) { this.rethrowDuplicate(err); }
   }
 
   async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; supplierId?: string; materialKind?: CreateMaterialDto['materialKind'] } = {}, organizationId?: string | null) {
@@ -57,13 +58,14 @@ export class MaterialService {
   async update(id: string, dto: UpdateMaterialDto, organizationId?: string | null): Promise<MaterialDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
     if (dto.categoryId) await this.loadAssignableMaterialCategory(dto.categoryId, organizationId);
+    if (dto.article !== undefined) dto.article = this.normalizeRequiredArticle(dto.article);
     if (dto.dimensions !== undefined) this.assertUniqueDimensionTypes(dto.dimensions);
     const doc = organizationId
       ? await this.model.findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.organizationFilter(organizationId) }).exec()
       : await this.model.findById(id).exec();
     if (!doc || doc.deletedAt) throw new NotFoundException(`Material ${id} not found`);
     Object.assign(doc, dto);
-    try { return await doc.save(); } catch (err) { this.rethrowDuplicateSku(err); }
+    try { return await doc.save(); } catch (err) { this.rethrowDuplicate(err); }
   }
 
   private async loadAssignableMaterialCategory(categoryId: string, organizationId?: string | null): Promise<CategoryDocument> {
@@ -80,7 +82,20 @@ export class MaterialService {
     for (const d of dimensions) { const t = d?.type; if (!t) continue; if (seen.has(t)) throw new BadRequestException(`Габарит «${t}» указан дважды. У материала каждый тип размера только один раз.`); seen.add(t); }
   }
 
-  private rethrowDuplicateSku(err: unknown): never { if ((err as { code?: number })?.code === 11000) throw new ConflictException('Материал с таким внутренним кодом уже существует'); throw err; }
+  private normalizeRequiredArticle(value: string | undefined): string {
+    const article = value?.trim() ?? '';
+    if (!article) throw new BadRequestException('Артикул материала обязателен');
+    return article;
+  }
+
+  private rethrowDuplicate(err: unknown): never {
+    if ((err as { code?: number })?.code === 11000) {
+      const keyPattern = JSON.stringify((err as { keyPattern?: unknown })?.keyPattern ?? {});
+      if (keyPattern.includes('article')) throw new ConflictException('Артикул уже используется');
+      throw new ConflictException('Материал с таким внутренним кодом уже существует');
+    }
+    throw err;
+  }
 
   async remove(id: string, organizationId?: string | null): Promise<void> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
@@ -105,13 +120,18 @@ export class MaterialService {
     const { _id: ignoredId, sku: ignoredSourceSku, photoIds: ignoredPhotos, mainPhotoId: ignoredMainPhoto, deletedAt: ignoredDeletedAt, createdAt: ignoredCreatedAt, updatedAt: ignoredUpdatedAt, organizationId: legacyOrg, isSystem: ignoredIsSystem, ...copiableFields } = sourceObj;
     void [ignoredId, ignoredSourceSku, ignoredPhotos, ignoredMainPhoto, ignoredDeletedAt, ignoredCreatedAt, ignoredUpdatedAt, legacyOrg, ignoredIsSystem];
     const baseName = String(copiableFields.name ?? 'Материал'); const suffix = ' (копия)'; const copiedName = baseName.length + suffix.length <= 256 ? `${baseName}${suffix}` : `${baseName.slice(0, 256 - suffix.length)}${suffix}`;
+    const sourceArticle = String(copiableFields.article ?? '').trim();
+    const articleSuffix = '-COPY';
+    const copiedArticle = sourceArticle.length + articleSuffix.length <= 64
+      ? `${sourceArticle}${articleSuffix}`
+      : `${sourceArticle.slice(0, 64 - articleSuffix.length)}${articleSuffix}`;
     let nextSku: string | undefined;
     if (copiableFields.categoryId) {
       const categoryId = String((copiableFields.categoryId as Types.ObjectId)?.toString?.() ?? copiableFields.categoryId);
       try { const category = await this.loadAssignableMaterialCategory(categoryId, organizationId); if (category.skuPrefix) nextSku = await this.counter.next('Material', category.skuPrefix); } catch { nextSku = undefined; }
     }
-    const payload: Record<string, unknown> = { ...copiableFields, name: copiedName, ...(nextSku ? { sku: nextSku } : {}), photoIds: [], mainPhotoId: undefined, ...this.organizationWrite(organizationId) };
-    try { return await this.model.create(payload); } catch (err) { this.rethrowDuplicateSku(err); }
+    const payload: Record<string, unknown> = { ...copiableFields, name: copiedName, article: copiedArticle, ...(nextSku ? { sku: nextSku } : {}), photoIds: [], mainPhotoId: undefined, ...this.organizationWrite(organizationId) };
+    try { return await this.model.create(payload); } catch (err) { this.rethrowDuplicate(err); }
   }
 
   private organizationFilter(organizationId?: string | null): Record<string, unknown> {

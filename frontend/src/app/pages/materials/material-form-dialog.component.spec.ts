@@ -171,6 +171,11 @@ async function setup(
 
   const fixture = TestBed.createComponent(MaterialFormDialogComponent);
   const comp = fixture.componentInstance as unknown as Harness;
+  const article = comp.form.controls['article'] as unknown as {
+    setValue(v: string): void;
+    value: string | null;
+  };
+  if (!article.value) article.setValue('TEST-ARTICLE');
   return { comp, close, create, update, remove, upload, fixture };
 }
 
@@ -307,6 +312,15 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     const suppliers = comp.suppliers() as Array<{ _id: string; isActive?: boolean }>;
     expect(suppliers.some((o) => o._id === 'sup-2')).toBe(false);
     expect(suppliers.some((o) => o._id === 'sup-1')).toBe(true);
+  });
+
+  it('blocks material save when article is empty (TZ-CATALOG-338)', async () => {
+    const { comp, create } = await setup(null);
+    comp.form.controls['article'].setValue('');
+    comp.form.controls['name'].setValue('Стекло');
+    comp.form.controls['unit'].setValue('m2');
+    comp.onSubmit();
+    expect(create).not.toHaveBeenCalled();
   });
 
   it('shows a create-organization hint when there are no suppliers (TZ-MATERIALS-312)', async () => {

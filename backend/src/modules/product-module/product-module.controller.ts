@@ -6,6 +6,8 @@ import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-
 import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
 import { CatalogGraphService, MAX_DEPTH } from '../catalog-graph/catalog-graph.service';
 import { ProductModuleService, UpsertProductModuleDto } from './product-module.service';
+import { CreateProductModuleDto } from './dto/create-product-module.dto';
+import { UpdateProductModuleDto } from './dto/update-product-module.dto';
 
 @ApiTags('Справочники — Модули')
 @Controller('modules')
@@ -62,12 +64,16 @@ export class ProductModuleController {
   @Post()
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'ProductModule' })
-  create(@Body() dto: UpsertProductModuleDto) { return this.service.create(dto); }
+  create(@Body() dto: CreateProductModuleDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.create(dto as unknown as UpsertProductModuleDto, user.organizationId);
+  }
 
   @Patch(':id')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'update', entityType: 'ProductModule', idParam: 'id' })
-  update(@Param('id') id: string, @Body() dto: Partial<UpsertProductModuleDto>) { return this.service.update(id, dto); }
+  update(@Param('id') id: string, @Body() dto: UpdateProductModuleDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.update(id, dto as unknown as Partial<UpsertProductModuleDto>, user.organizationId);
+  }
 
   @Delete(':id')
   @Roles('admin', 'manager')

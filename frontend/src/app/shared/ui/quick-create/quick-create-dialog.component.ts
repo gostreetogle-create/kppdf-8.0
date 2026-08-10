@@ -574,7 +574,9 @@ export class QuickCreateDialogComponent implements OnDestroy {
    */
   protected readonly useCapacityGrid = computed(() => {
     const sz = this.size();
-    return sz === 'M' || sz === 'L' || this.visibleKeys().length >= 4;
+    // S is intentionally a single-column quick form, regardless of how many
+    // locked fields the profile contributes.
+    return sz === 'M' || sz === 'L';
   });
 
   /** @deprecated alias for tests / callers expecting useTwoCol */
@@ -770,7 +772,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private buildForm(entity: FormProfileEntity): FormGroup {
     if (entity === 'product') {
       return this.fb.group({
-        name: this.fb.control('', [Validators.required, Validators.maxLength(200)]),
+        name: this.fb.control('', [Validators.maxLength(200)]),
         kind: this.fb.control<ProductKind>('good', [Validators.required]),
         unit: this.fb.control('шт', [Validators.required, Validators.maxLength(16)]),
         sku: this.fb.control(''),
@@ -855,8 +857,8 @@ export class QuickCreateDialogComponent implements OnDestroy {
     const vis = this.visibleSet();
     const payload: ProductModuleUpsertDto = {
       name: String(v['name'] ?? ''),
+      article: vis.has('article') ? String(v['article'] ?? '').trim() : '',
     };
-    if (vis.has('article') && v['article']) payload.article = String(v['article']);
     if (vis.has('weight') && v['weight'] != null && v['weight'] !== '') {
       payload.weight = Number(v['weight']);
     }

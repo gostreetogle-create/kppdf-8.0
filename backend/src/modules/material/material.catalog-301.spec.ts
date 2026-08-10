@@ -24,6 +24,7 @@ describe('TZ-CATALOG-301 Material fields', () => {
 
     await service.create({
       name: 'Лист Ст3',
+      article: 'MAT-301',
       unit: 'кг',
       materialKind: 'raw',
       assortment: 'Лист',
@@ -47,6 +48,7 @@ describe('TZ-CATALOG-301 Material fields', () => {
     const errors = await validate(
       plainToInstance(CreateMaterialDto, {
         name: 'Покупной насос',
+        article: 'MAT-PUMP',
         unit: 'шт',
         materialKind: 'purchased',
         weightKg: 1.5,
@@ -60,6 +62,7 @@ describe('TZ-CATALOG-301 Material fields', () => {
     const errors = await validate(
       plainToInstance(CreateMaterialDto, {
         name: 'Некорректная позиция',
+        article: 'MAT-BAD',
         unit: 'шт',
         materialKind: 'unknown',
         weightKg: -1,

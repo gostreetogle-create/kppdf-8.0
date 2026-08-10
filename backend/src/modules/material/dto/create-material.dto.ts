@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -49,11 +49,11 @@ export class CreateMaterialDto {
   @Length(1, 256)
   name!: string;
 
-  @ApiPropertyOptional({ example: 'STK-004', description: 'Артикул' })
-  @IsOptional()
-  @IsString()
-  @Length(0, 64)
-  article?: string;
+  @ApiProperty({ example: 'STK-004', description: 'Артикул материала' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString({ message: 'Артикул материала обязателен' })
+  @Length(1, 64, { message: 'Артикул материала: от 1 до 64 символов' })
+  article!: string;
 
   @ApiPropertyOptional({ example: 'M-0001', description: 'Внутренний код материала (уникальный, поисковый)' })
   @IsOptional()

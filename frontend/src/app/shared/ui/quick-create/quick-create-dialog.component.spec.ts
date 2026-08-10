@@ -277,18 +277,18 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     c.onSizeChange('S');
     expect(profiles.getOne).toHaveBeenCalledWith('product', 'S');
     expect(c.size()).toBe('S');
-    expect(c.visibleKeys()).toEqual(['name', 'kind', 'unit']);
+    expect(c.visibleKeys()).toEqual(['name', 'kind', 'unit', 'sku']);
     expect(c.dialogWidth()).toBe('md');
   });
 
   it('creates product with only visible fields; omits empty optional', async () => {
     const { component: c } = await setup({ entity: 'product', size: 'M' });
-    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: '', listPrice: null });
+    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: 'ST-001', listPrice: null });
     c.onSubmit();
     expect(products.create).toHaveBeenCalledTimes(1);
     const payload = products.create.mock.calls[0][0];
     expect(payload).toMatchObject({ name: 'Стол', kind: 'good', unit: 'шт', isActive: true });
-    expect(payload.sku).toBeUndefined();
+    expect(payload.sku).toBe('ST-001');
     expect(payload.listPrice).toBeUndefined();
     expect(close).toHaveBeenCalled();
     expect(success).toHaveBeenCalled();
@@ -300,7 +300,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         of(
           ok({
             ...productM,
-            visibleFieldKeys: ['sku'], // missing locked — must still show name/kind/unit
+            visibleFieldKeys: ['name'], // missing locked — kind/unit/sku must be restored
           }),
         ),
       ),
@@ -400,10 +400,10 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
       { _id: 'photo-1', storageUrl: '/uploads/photo-1.jpg', originalFilename: 'front.jpg' },
     ];
     c.onPhotosChange(photos);
-    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
+    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: 'ST-002' });
     c.onSubmit();
     expect(products.create).toHaveBeenCalledWith(
-      expect.objectContaining({ photoIds: ['photo-1'] }),
+      expect.objectContaining({ photoIds: ['photo-1'], sku: 'ST-002' }),
     );
   });
 
@@ -411,7 +411,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     const { component: c, fixture } = await setup({ entity: 'product', size: 'M' });
     profiles.getOne.mockReturnValue(of(ok(productLAll)));
     c.onSizeChange('L');
-    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт' });
+    c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: 'ST-003' });
     c.onSubmit();
     fixture.detectChanges();
     expect(c.createdProduct()?._id).toBe('p1');
@@ -428,7 +428,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     const { component: c, fixture } = await setup({ entity: 'module', size: 'M' });
     profiles.getOne.mockReturnValue(of(ok(moduleLAll)));
     c.onSizeChange('L');
-    c.form.patchValue({ name: 'Каркас' });
+    c.form.patchValue({ name: 'Каркас', article: 'MOD-001' });
     c.onSubmit();
     fixture.detectChanges();
     expect(c.createdModule()?._id).toBe('m1');

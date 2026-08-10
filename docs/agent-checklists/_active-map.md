@@ -1,5 +1,19 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T17:32:05.3769468Z · TZ-CATALOG-338 DONE / next DICT-319
+- DONE: Product `sku` required + name fallback; Module/Material `article` required and organization-scoped unique; RU duplicate feedback; forms, QuickCreate, LockedRequired profiles, DTOs, schemas, services, and docs aligned.
+- Gates: backend tsc PASS; backend targeted Jest 6 suites / 63 tests PASS; frontend tsc PASS; frontend targeted Jest 5 suites / 95 tests PASS; FE build PASS; ESLint PASS with legacy warnings; diff-check PASS. Prettier CRLF/style baseline documented.
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-338.done.md`; lock: `.mimocode/locks/TZ-CATALOG-338-article-required-unique.lock`; active marker removed.
+- Known limit: legacy empty articles remain readable and need backfill before schema-validating edits; no cross-entity uniqueness. Deploy: NO
+- NEXT: claim TZ-DICT-319 strictly.
+
+## Checkpoint 2026-08-10T16:54:22.5951215Z · TZ-CATALOG-338 CLAIMED
+- Active marker: `tasks/_active/TZ-CATALOG-338.md`; checklist: `docs/agent-checklists/TZ-CATALOG-338.md`.
+- Scope: Product `sku` required / name optional; Module and Material `article` required + org-scoped unique; forms, QuickCreate, locked form profiles, RU duplicate feedback, and legacy-row note.
+- Conflict scan: `_active/` empty before claim; no competing keys found. Previous TZ-MATERIALS-312 is archived/locked/pushed.
+- Team Room claim: unavailable (`Unknown task`; sync required). Deploy: NO
+- NEXT: inspect BE schemas/DTOs/services and FE forms/profiles → implement → targeted BE/FE gates → archive/commit/push.
+
 ## Checkpoint 2026-08-10T16:52:42.9338327Z · TZ-MATERIALS-312 DONE
 - DONE: Material supplier picker now queries Organization `type=supplier`, exposes RU empty/error/loading states, and links empty setup to `/organizations`.
 - DONE: «Габариты» is `w-full lg:w-1/2 max-w-xl` on the form; existing dimension and `isImmutable` payload behavior is unchanged.

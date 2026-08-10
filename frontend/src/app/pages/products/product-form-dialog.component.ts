@@ -125,12 +125,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
           <!-- ─── Основные ─── -->
           <app-pi-form-section title="Основные" headingId="product-sec-basics" tone="gold">
             <div class="grid grid-cols-1 gap-form-field">
-              <app-pi-form-field
-                label="Название"
-                htmlFor="prod-name"
-                [required]="true"
-                [error]="errorFor('name')"
-              >
+              <app-pi-form-field label="Название" htmlFor="prod-name" [error]="errorFor('name')">
                 <app-pi-input
                   id="prod-name"
                   formControlName="name"
@@ -140,12 +135,17 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
               </app-pi-form-field>
 
               <app-pi-form-field
-                label="SKU"
+                label="Артикул"
                 htmlFor="prod-sku"
-                hint="Если не задан — генерируется автоматически"
+                [required]="true"
                 [error]="errorFor('sku')"
               >
-                <app-pi-input id="prod-sku" formControlName="sku" placeholder="Артикул" />
+                <app-pi-input
+                  id="prod-sku"
+                  formControlName="sku"
+                  placeholder="Артикул изделия"
+                  [invalid]="hasError('sku')"
+                />
               </app-pi-form-field>
 
               <app-pi-form-field
@@ -665,12 +665,8 @@ export class ProductFormDialogComponent implements OnDestroy {
   private submitted = false;
 
   protected readonly form = this.fb.group({
-    name: this.fb.control('', [
-      Validators.required,
-      Validators.minLength(1),
-      Validators.maxLength(256),
-    ]),
-    sku: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
+    name: this.fb.control('', [Validators.maxLength(256)]),
+    sku: this.fb.control<string | null>(null, [Validators.required, Validators.maxLength(64)]),
     kind: this.fb.control<ProductKind>('good', Validators.required),
     unit: this.fb.control('', [Validators.required, Validators.maxLength(16)]),
     subcategory: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
@@ -879,7 +875,8 @@ export class ProductFormDialogComponent implements OnDestroy {
       status: v.status,
       isActive: v.isActive,
     };
-    if (v.sku) payload.sku = v.sku;
+    payload.sku = v.sku?.trim() ?? '';
+
     if (v.subcategory) payload.subcategory = v.subcategory;
     if (listPrice != null) payload.listPrice = listPrice;
     // ralCode/categoryId are PATCHED EXPLICITLY (including null) so that

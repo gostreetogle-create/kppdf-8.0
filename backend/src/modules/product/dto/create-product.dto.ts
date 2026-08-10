@@ -48,16 +48,17 @@ class ProductDimensionsDto {
 }
 
 export class CreateProductDto {
-  @ApiProperty({ example: 'Окно ПВХ 1200x1400', description: 'Название продукта' })
-  @IsString({ message: 'Название обязательно' })
-  @Length(1, 256, { message: 'Название: от 1 до 256 символов' })
-  name!: string;
-
-  @ApiPropertyOptional({ example: 'WIN-PVH-1214', description: 'Артикул' })
+  @ApiPropertyOptional({ example: 'Окно ПВХ 1200x1400', description: 'Название продукта' })
   @IsOptional()
   @IsString()
-  @Length(0, 64)
-  sku?: string;
+  @Length(0, 256, { message: 'Название: не более 256 символов' })
+  name?: string;
+
+  @ApiProperty({ example: 'WIN-PVH-1214', description: 'Артикул изделия' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString({ message: 'Артикул изделия обязателен' })
+  @Length(1, 64, { message: 'Артикул изделия: от 1 до 64 символов' })
+  sku!: string;
 
   @ApiProperty({ enum: ['good', 'service', 'work'], description: 'Тип: товар/услуга/работа' })
   @IsIn(['good', 'service', 'work'], { message: 'Недопустимый тип изделия' })

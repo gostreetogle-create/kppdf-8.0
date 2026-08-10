@@ -76,11 +76,21 @@ import { extractErrorMessage } from '../../core/silent-http';
                 data-test="name-input"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Артикул" htmlFor="mod-article">
+            <app-pi-form-field
+              label="Артикул"
+              htmlFor="mod-article"
+              [required]="true"
+              [error]="
+                form.controls.article.invalid && form.controls.article.touched
+                  ? 'Обязательное поле'
+                  : ''
+              "
+            >
               <app-pi-input
                 id="mod-article"
                 formControlName="article"
-                placeholder="Артикул"
+                placeholder="Артикул модуля"
+                [invalid]="form.controls.article.invalid && form.controls.article.touched"
                 data-test="article-input"
               />
             </app-pi-form-field>
@@ -217,8 +227,8 @@ import { extractErrorMessage } from '../../core/silent-http';
         <!-- TZ-UX-COMPOSE-301: состав не редактируется в форме — на карточке / QC L -->
         <app-pi-form-section title="Состав" headingId="module-sec-composition" tone="neutral">
           <p class="text-sm text-muted-foreground" data-test="composition-hint">
-            Состав (модули и материалы) собирается на карточке модуля или в быстром
-            создании (профиль L).
+            Состав (модули и материалы) собирается на карточке модуля или в быстром создании
+            (профиль L).
           </p>
         </app-pi-form-section>
 
@@ -266,7 +276,10 @@ export class ModuleFormDialogComponent {
       Validators.required,
       Validators.maxLength(200),
     ]),
-    article: this.fb.control<string>(this.data?.article ?? ''),
+    article: this.fb.control<string>(this.data?.article ?? '', [
+      Validators.required,
+      Validators.maxLength(64),
+    ]),
     dimensions: this.fb.group({
       width: this.fb.control<number | null>(this.data?.dimensions?.width ?? null),
       height: this.fb.control<number | null>(this.data?.dimensions?.height ?? null),
@@ -326,7 +339,7 @@ export class ModuleFormDialogComponent {
     const workTypesRaw = v.workTypes ?? [];
     const payload: ProductModuleUpsertDto = {
       name: v.name,
-      article: v.article || undefined,
+      article: v.article.trim(),
       dimensions: {
         width: v.dimensions.width ?? undefined,
         height: v.dimensions.height ?? undefined,

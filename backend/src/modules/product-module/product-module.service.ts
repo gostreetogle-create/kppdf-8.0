@@ -15,7 +15,7 @@ import {
 
 export interface MaterialInModuleDto { materialId: string; quantity?: number; unit?: string; isPurchased?: boolean; overrideDimensions?: { length?: number; width?: number; height?: number; unit?: string }; sortOrder?: number; }
 export interface WorkTypeInModuleDto { workTypeId: string; estimatedHours?: number; sortOrder?: number; }
-export interface UpsertProductModuleDto { name: string; article?: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; }
+export interface UpsertProductModuleDto { name: string; article: string; dimensions?: { width?: number; height?: number; depth?: number; unit?: string }; weight?: number; sortOrder?: number; workTypes?: WorkTypeInModuleDto[]; materials?: MaterialInModuleDto[]; }
 
 type DimensionKey = 'length' | 'width' | 'height';
 
@@ -32,9 +32,14 @@ export class ProductModuleService {
     private readonly costCalculation: CostCalculationService,
   ) { this.compositionLines = compositionLines ?? new CompositionLineService(); }
 
-  async create(dto: UpsertProductModuleDto): Promise<ProductModuleDocument> {
+  async create(dto: UpsertProductModuleDto, organizationId?: string | null): Promise<ProductModuleDocument> {
     this.rejectLegacyMaterialsWrite(dto.materials);
-    return this.model.create(this.toPersistence(dto));
+    const article = this.normalizeRequiredArticle(dto.article);
+    try {
+      return await this.model.create(this.toPersistence({ ...dto, article }, organizationId));
+    } catch (err) {
+      this.rethrowDuplicateArticle(err);
+    }
   }
 
   async findAll(productId?: string): Promise<ProductModuleDocument[]> {
@@ -65,16 +70,23 @@ export class ProductModuleService {
     return this.costCalculation.previewModuleCost(id);
   }
 
-  async update(id: string, dto: Partial<UpsertProductModuleDto>): Promise<ProductModuleDocument> {
+  async update(id: string, dto: Partial<UpsertProductModuleDto>, organizationId?: string | null): Promise<ProductModuleDocument> {
+    // Keep the controller/service contract ready for organization-scoped reads;
+    // the compound unique index enforces the write boundary for this task.
+    void organizationId;
     this.rejectLegacyMaterialsWrite(dto.materials);
     const doc = await this.findById(id);
     if (dto.name !== undefined) doc.name = dto.name;
-    if (dto.article !== undefined) doc.article = dto.article;
+    if (dto.article !== undefined) doc.article = this.normalizeRequiredArticle(dto.article);
     if (dto.dimensions !== undefined) doc.dimensions = dto.dimensions;
     if (dto.weight !== undefined) doc.weight = dto.weight;
     if (dto.sortOrder !== undefined) doc.sortOrder = dto.sortOrder;
     if (dto.workTypes) doc.workTypes = dto.workTypes.map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0 }));
-    return doc.save();
+    try {
+      return await doc.save();
+    } catch (err) {
+      this.rethrowDuplicateArticle(err);
+    }
   }
 
   async getComposition(id: string): Promise<CompositionLineDocumentShape[]> {
@@ -166,7 +178,30 @@ export class ProductModuleService {
     }
   }
 
-  private toPersistence(dto: UpsertProductModuleDto) {
-    return { ...dto, workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0 })), materials: [] };
+  private normalizeRequiredArticle(value: string | undefined): string {
+    const article = value?.trim() ?? '';
+    if (!article) throw new BadRequestException('Артикул модуля обязателен');
+    return article;
+  }
+
+  private rethrowDuplicateArticle(err: unknown): never {
+    if ((err as { code?: number })?.code === 11000) {
+      throw new ConflictException('Артикул уже используется');
+    }
+    throw err;
+  }
+
+  private toPersistence(dto: UpsertProductModuleDto, organizationId?: string | null) {
+    return {
+      ...dto,
+      organizationId: organizationId ? this.organizationId(organizationId) : undefined,
+      workTypes: (dto.workTypes ?? []).map((w) => ({ workTypeId: new Types.ObjectId(w.workTypeId), estimatedHours: w.estimatedHours ?? 0, sortOrder: w.sortOrder ?? 0 })),
+      materials: [],
+    };
+  }
+
+  private organizationId(value: string): Types.ObjectId {
+    if (!Types.ObjectId.isValid(value)) throw new BadRequestException('Invalid organization scope');
+    return new Types.ObjectId(value);
   }
 }

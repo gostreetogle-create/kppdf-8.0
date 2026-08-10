@@ -97,11 +97,18 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       .compileComponents();
     fixture = TestBed.createComponent(ProductFormDialogComponent);
     fixture.detectChanges();
+    const controls = (
+      fixture.componentInstance as unknown as {
+        form: { controls: { sku: { setValue(v: string): void; value: string | null } } };
+      }
+    ).form.controls;
+    if (!controls.sku.value) controls.sku.setValue('TEST-SKU');
   }
 
   /** Typed handle to the reactive form controls used in the tests. */
   function formControls(): {
     name: { setValue(v: string): void; value: string };
+    sku: { setValue(v: string | null): void; value: string | null };
     unit: { setValue(v: string): void; value: string };
     ralCode: { setValue(v: string | null): void; value: string | null };
     categoryId: { setValue(v: string | null): void; value: string | null };
@@ -111,6 +118,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     };
     return comp.form.controls as unknown as {
       name: { setValue(v: string): void; value: string };
+      sku: { setValue(v: string | null): void; value: string | null };
       unit: { setValue(v: string): void; value: string };
       ralCode: { setValue(v: string | null): void; value: string | null };
       categoryId: { setValue(v: string | null): void; value: string | null };
@@ -271,6 +279,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   it('create submits a payload that preserves legacy fields and adds ralCode + categoryId', async () => {
     await setup(null);
     formControls().name.setValue('Продукт с цветом');
+    formControls().sku.setValue('P-001');
     formControls().unit.setValue('шт');
     formControls().categoryId.setValue('cat-1');
     instance().selectColor(ACTIVE_COLORS[0]);
@@ -353,6 +362,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(instance().photos()).toHaveLength(1);
 
     formControls().name.setValue('С фото');
+    formControls().sku.setValue('P-002');
     formControls().unit.setValue('шт');
     instance().onSubmit();
     const payload = productsSvc.create.mock.calls[0][0];
@@ -430,8 +440,18 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(close).toHaveBeenCalled();
   });
 
-  it('blocks submit when name is empty (required validation)', async () => {
+  it('allows submit when name is empty because the article identifies the product', async () => {
     await setup(null);
+    formControls().name.setValue('');
+    formControls().unit.setValue('шт');
+    instance().onSubmit();
+    expect(productsSvc.create).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalled();
+  });
+
+  it('blocks submit when article is empty (TZ-CATALOG-338)', async () => {
+    await setup(null);
+    formControls().sku.setValue('');
     formControls().unit.setValue('шт');
     instance().onSubmit();
     expect(productsSvc.create).not.toHaveBeenCalled();
@@ -441,6 +461,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   it('cancel closes WITHOUT saving (null) — no mutation fired', async () => {
     await setup(null);
     formControls().name.setValue('Не сохранён');
+    formControls().sku.setValue('P-004');
     formControls().unit.setValue('шт');
     instance().onCancel();
     expect(close).toHaveBeenCalledTimes(1);
@@ -457,6 +478,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     );
     await setup(null);
     formControls().name.setValue('Ошибка');
+    formControls().sku.setValue('P-005');
     formControls().unit.setValue('шт');
     instance().onSubmit();
     expect(close).not.toHaveBeenCalled();
@@ -465,6 +487,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   it('double-submit guard: a second onSubmit while submitting is a no-op', async () => {
     await setup(null);
     formControls().name.setValue('Продукт');
+    formControls().sku.setValue('P-006');
     formControls().unit.setValue('шт');
     instance().onSubmit();
     instance().onSubmit();

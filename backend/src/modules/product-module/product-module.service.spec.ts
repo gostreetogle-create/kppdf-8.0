@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ProductModuleService, UpsertProductModuleDto, MaterialInModuleDto } from './product-module.service';
 
@@ -44,10 +44,25 @@ function serviceWith(materials: unknown[]) {
   };
 }
 function legacyMaterialsDto(overrideDimensions?: MaterialInModuleDto['overrideDimensions']): UpsertProductModuleDto {
-  return { name: 'Тестовый модуль', materials: [{ materialId: MATERIAL_ID, quantity: 1, overrideDimensions }] };
+  return { name: 'Тестовый модуль', article: 'MOD-TEST', materials: [{ materialId: MATERIAL_ID, quantity: 1, overrideDimensions }] };
 }
 
 describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
+  it('rejects a missing article before creating a module (TZ-CATALOG-338)', async () => {
+    const { service, model } = serviceWith([]);
+    await expect(service.create({ name: 'Без артикула', article: '   ' })).rejects.toBeInstanceOf(BadRequestException);
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('maps duplicate module articles to a Russian conflict (TZ-CATALOG-338)', async () => {
+    const { service, model } = serviceWith([]);
+    model.create.mockRejectedValueOnce({ code: 11000, keyPattern: { organizationId: 1, article: 1 } });
+    await expect(service.create({ name: 'Дубликат', article: 'MOD-DUP' })).rejects.toMatchObject({
+      constructor: ConflictException,
+      message: 'Артикул уже используется',
+    });
+  });
+
   it('rejects non-empty legacy materials[] on create', async () => {
     const { service, model } = serviceWith([]);
     await expect(service.create(legacyMaterialsDto({ length: 900 }))).rejects.toBeInstanceOf(BadRequestException);
@@ -69,13 +84,13 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
 
   it('allows create when materials is omitted', async () => {
     const { service, model } = serviceWith([]);
-    await expect(service.create({ name: 'Empty materials module', workTypes: [] })).resolves.toBeDefined();
+    await expect(service.create({ name: 'Empty materials module', article: 'MOD-EMPTY', workTypes: [] })).resolves.toBeDefined();
     expect(model.create).toHaveBeenCalledTimes(1);
   });
 
   it('allows create when materials is an empty array (treated as omit)', async () => {
     const { service, model } = serviceWith([]);
-    await expect(service.create({ name: 'Empty array module', materials: [], workTypes: [] })).resolves.toBeDefined();
+    await expect(service.create({ name: 'Empty array module', article: 'MOD-EMPTY-ARRAY', materials: [], workTypes: [] })).resolves.toBeDefined();
     expect(model.create).toHaveBeenCalledTimes(1);
   });
 

@@ -43,7 +43,7 @@ export interface ProductModule {
 
 export interface ProductModuleUpsertDto {
   name: string;
-  article?: string;
+  article: string;
   dimensions?: ProductModuleDimensions;
   weight?: number;
   sortOrder?: number;
