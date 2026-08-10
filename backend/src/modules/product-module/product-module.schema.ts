@@ -48,7 +48,9 @@ export type ProductModuleDocument = HydratedDocument<ProductModule>;
 @Schema({ collection: 'productmodules', timestamps: true })
 export class ProductModule {
   @Prop({ required: true }) name!: string;
-  @Prop() article?: string;
+  /** Required external article; sparse compound index keeps legacy empty rows readable. */
+  @Prop({ required: true, trim: true }) article!: string;
+  @Prop({ type: Types.ObjectId, index: true, sparse: true }) organizationId?: Types.ObjectId;
   @Prop({ type: ModuleDimensionsSchemaFactory }) dimensions?: { width?: number; height?: number; depth?: number; unit?: string };
   @Prop({ default: 0 }) weight?: number;
   @Prop({ default: 0 }) sortOrder!: number;
@@ -66,4 +68,5 @@ export class ProductModule {
 
 export const ProductModuleSchema = SchemaFactory.createForClass(ProductModule);
 ProductModuleSchema.index({ sortOrder: 1 });
+ProductModuleSchema.index({ organizationId: 1, article: 1 }, { unique: true, sparse: true });
 ProductModuleSchema.index({ deletedAt: 1, sortOrder: 1 });

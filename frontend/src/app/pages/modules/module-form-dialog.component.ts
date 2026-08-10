@@ -17,6 +17,8 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { extractErrorMessage } from '../../core/silent-http';
+import { HostListener } from '@angular/core';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 /**
  * TZ-83 Phase C: ModuleFormDialog.
@@ -71,16 +73,27 @@ import { extractErrorMessage } from '../../core/silent-http';
               <app-pi-input
                 id="mod-name"
                 formControlName="name"
+                data-save-continue-first="true"
                 placeholder="Название модуля"
                 [invalid]="form.controls.name.invalid && form.controls.name.touched"
                 data-test="name-input"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Артикул" htmlFor="mod-article">
+            <app-pi-form-field
+              label="Артикул"
+              htmlFor="mod-article"
+              [required]="true"
+              [error]="
+                form.controls.article.invalid && form.controls.article.touched
+                  ? 'Обязательное поле'
+                  : ''
+              "
+            >
               <app-pi-input
                 id="mod-article"
                 formControlName="article"
-                placeholder="Артикул"
+                placeholder="Артикул модуля"
+                [invalid]="form.controls.article.invalid && form.controls.article.touched"
                 data-test="article-input"
               />
             </app-pi-form-field>
@@ -217,8 +230,8 @@ import { extractErrorMessage } from '../../core/silent-http';
         <!-- TZ-UX-COMPOSE-301: состав не редактируется в форме — на карточке / QC L -->
         <app-pi-form-section title="Состав" headingId="module-sec-composition" tone="neutral">
           <p class="text-sm text-muted-foreground" data-test="composition-hint">
-            Состав (модули и материалы) собирается на карточке модуля или в быстром
-            создании (профиль L).
+            Состав (модули и материалы) собирается на карточке модуля или в быстром создании
+            (профиль L).
           </p>
         </app-pi-form-section>
 
@@ -229,7 +242,10 @@ import { extractErrorMessage } from '../../core/silent-http';
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+          Ctrl+Enter — сохранить и создать ещё
+        </span>
         <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
           Отмена
         </app-pi-button>
@@ -266,7 +282,10 @@ export class ModuleFormDialogComponent {
       Validators.required,
       Validators.maxLength(200),
     ]),
-    article: this.fb.control<string>(this.data?.article ?? ''),
+    article: this.fb.control<string>(this.data?.article ?? '', [
+      Validators.required,
+      Validators.maxLength(64),
+    ]),
     dimensions: this.fb.group({
       width: this.fb.control<number | null>(this.data?.dimensions?.width ?? null),
       height: this.fb.control<number | null>(this.data?.dimensions?.height ?? null),
@@ -317,7 +336,14 @@ export class ModuleFormDialogComponent {
     (this.form.controls.workTypes as FormArray).removeAt(idx);
   }
 
-  protected onSubmit(): void {
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
+  protected onSubmit(saveAndContinue = false): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -326,7 +352,7 @@ export class ModuleFormDialogComponent {
     const workTypesRaw = v.workTypes ?? [];
     const payload: ProductModuleUpsertDto = {
       name: v.name,
-      article: v.article || undefined,
+      article: v.article.trim(),
       dimensions: {
         width: v.dimensions.width ?? undefined,
         height: v.dimensions.height ?? undefined,
@@ -347,6 +373,11 @@ export class ModuleFormDialogComponent {
     op.subscribe((res) => {
       this.submitting.set(false);
       if (res.ok) {
+        if (saveAndContinue) {
+          if (!this.isEdit) this.resetForNextCreate();
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit ? 'Модуль обновлён' : 'Модуль создан');
         this.ref.close(res.data ?? null);
       } else {
@@ -355,6 +386,20 @@ export class ModuleFormDialogComponent {
         this.toast.error(msg);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.form.controls.workTypes.clear();
+    this.form.reset({
+      name: '',
+      article: '',
+      dimensions: { width: null, height: null, depth: null, unit: 'мм' },
+      weight: null,
+      notes: '',
+      workTypes: [],
+    });
+    this.formError.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCancel(): void {

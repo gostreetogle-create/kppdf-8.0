@@ -230,6 +230,12 @@ const NAV_CATEGORIES: NavCategory[] = [
         pageKey: 'dictionaries',
         label: 'Профили быстрых форм',
       },
+      {
+        // TZ-DICT-320 — editable product/material kind labels.
+        path: '/dictionaries/kind-labels',
+        pageKey: 'dictionaries',
+        label: 'Виды изделий и материалов',
+      },
     ],
   },
   {
@@ -596,6 +602,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/categories',
     '/dictionaries/color-references',
     '/dictionaries/form-profiles',
+    '/dictionaries/kind-labels',
     '/doc-template-categories',
     '/dictionaries/text-block-categories',
     '/products',

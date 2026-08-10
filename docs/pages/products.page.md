@@ -35,6 +35,10 @@
 
 Ответ GET: `{ items: Product[], total: number, page: number, limit: number }`
 
+## Идентификация изделия (TZ-CATALOG-338)
+
+`sku` — обязательный артикул изделия, уникальный внутри организации; пустые и пробельные значения отклоняются до сохранения, а конфликт возвращается как HTTP 409 с сообщением «Артикул уже используется». `name` необязательно: список и detail показывают `sku` как fallback, если название пустое. Старые строки без артикула остаются читаемыми и требуют backfill перед редактированием с изменением `sku`.
+
 ## Dialogs
 
 | Компонент | Режим | Данные |
@@ -102,7 +106,7 @@
 - **Lockstep sort signals** — `sortKeySig` + `sortDirSig` синхронизированы с pi-table internal state
 - **Сброс page на search** — `pageSig.set(1)` при изменении поиска
 - **Сброс page на sort** — `pageSig.set(1)` при изменении сортировки
-- **Format functions:** `formatPrice()` для `listPrice`, `KIND_LABELS`/`STATUS_LABELS` для enum-полей
+- **Format functions:** `formatPrice()` для `listPrice`, `PiDictionaryLabelsService` для API-backed подписи вида (fallback seed labels), `STATUS_LABELS` для статусов
 - **Refresh on dialog close:** `onDialogCloseOnce` → `listRes.reload()`
 
 ## ProductFormDialog — FullEditor «Изделие» (TZ-PRODUCTS-308)
@@ -110,8 +114,7 @@
 `ProductFormDialogComponent` — единый FullEditor для создания и редактирования
 изделия: `variant="content"` + `[maxWidth]="'min(1120px, calc(100vw - 2rem))'"`,
 body со скроллом и всегда видимый sticky footer («Сохранить» / «Отмена»).
-Пользовательские заголовки, вид `good` и уведомления используют слово
-«Изделие»; код `Product`, API и `/products` не переименовываются.
+Пользовательские заголовки, вид `good` и уведомления используют подпись из `PiDictionaryLabelsService`; ключ `Product`, API и `/products` не переименовываются.
 
 На desktop основные блоки стоят в три колонки: «Основные» (name/sku/kind/status/
 isActive), «Цена и учёт» (listPrice/category/subcategory), «Габариты и цвет»
@@ -120,7 +123,7 @@ isActive), «Цена и учёт» (listPrice/category/subcategory), «Габа
 остаются полноширинными ниже. В режиме редактирования ниже паспорта встроен тот
 же `ProductBomPanel`, что и на карточке, в bounded scrollable panel; create mode
 показывает подсказку «Сначала сохраните изделие — затем откройте редактирование,
-чтобы собрать состав.» Паспортный payload и composition write-path разделены.
+чтобы собрать состав.» Паспортный payload и composition write-path разделены. Nested-редактирование изделия из состава загружает `ProductFormDialogComponent` динамически, чтобы не возвращать статический цикл с `ProductBomPanel` (`ɵcmp`).
 
 **RAL contract (TZ-PRODUCTS-301/302):**
 

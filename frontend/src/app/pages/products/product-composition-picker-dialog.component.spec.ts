@@ -94,8 +94,9 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     available: () => unknown[];
     activeKind: () => string;
     selectedId: { (): string; set: (v: string) => void };
+    quantity: { (): string; set: (v: string) => void };
     unitPriceOverride: { (): string; set: (v: string) => void };
-    sessionAdded: () => { label: string; kind: string }[];
+    sessionAdded: () => { label: string; kind: string; quantity: number }[];
     adding: () => boolean;
     onSelectItem: (id: string) => void;
     selectKind: (kind: unknown) => void;
@@ -106,8 +107,9 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
       available: () => unknown[];
       activeKind: () => string;
       selectedId: { (): string; set: (v: string) => void };
+      quantity: { (): string; set: (v: string) => void };
       unitPriceOverride: { (): string; set: (v: string) => void };
-      sessionAdded: () => { label: string; kind: string }[];
+      sessionAdded: () => { label: string; kind: string; quantity: number }[];
       adding: () => boolean;
       onSelectItem: (id: string) => void;
       selectKind: (kind: unknown) => void;
@@ -147,6 +149,24 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     const el = fixture.nativeElement as HTMLElement;
     expect(el.textContent).toContain('Цена в составе, ₽');
     expect(el.textContent).toContain('Карточку ребёнка не меняет');
+  });
+
+  it('accepts quantity >= 0.001 and includes it in the result', () => {
+    const component = instance();
+    component.selectKind('module' as never);
+    component.selectedId.set('m1');
+    component.quantity.set('3');
+    component.onSubmit();
+    expect(close).toHaveBeenCalledWith({ lineType: 'module', refId: 'm1', quantity: 3 });
+  });
+
+  it('rejects quantity below 0.001', () => {
+    const component = instance();
+    component.selectKind('module' as never);
+    component.selectedId.set('m1');
+    component.quantity.set('0.0009');
+    component.onSubmit();
+    expect(close).not.toHaveBeenCalled();
   });
 
   it('prefills costPrice then listPrice on product select (D3)', () => {
@@ -230,21 +250,25 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
 
     expect(onAdded).toHaveBeenCalledTimes(1);
     expect(onAdded).toHaveBeenCalledWith(
-      expect.objectContaining({ lineType: 'module', refId: 'm1' }),
+      expect.objectContaining({ lineType: 'module', refId: 'm1', quantity: 1 }),
     );
     expect(close).not.toHaveBeenCalled();
     expect(component.selectedId()).toBe('');
     expect(component.sessionAdded().map((s) => s.label)).toEqual(['Модуль A']);
+    expect(component.sessionAdded()[0].quantity).toBe(1);
 
     component.selectedId.set('m2');
+    component.quantity.set('2.5');
     component.onSubmit();
     await Promise.resolve();
     await Promise.resolve();
     fixture.detectChanges();
 
     expect(onAdded).toHaveBeenCalledTimes(2);
+    expect(onAdded).toHaveBeenLastCalledWith({ lineType: 'module', refId: 'm2', quantity: 2.5 });
     expect(close).not.toHaveBeenCalled();
     expect(component.sessionAdded().map((s) => s.label)).toEqual(['Модуль A', 'Модуль B']);
+    expect(component.sessionAdded().map((s) => s.quantity)).toEqual([1, 2.5]);
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('[data-test="picker-session-added"]')
         ?.textContent,
@@ -316,6 +340,7 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     expect(close).not.toHaveBeenCalled();
     expect(component.selectedId()).toBe('');
     expect(component.unitPriceOverride()).toBe('');
+    expect(component.quantity()).toBe('1');
   });
 });
 
@@ -347,9 +372,7 @@ describe('ProductCompositionPickerDialogComponent restrictToModule (TZ-UX-COMPOS
               of({
                 ok: true,
                 data: {
-                  items: [
-                    { _id: 'raw', name: 'Сталь листовая', unit: 'кг', materialKind: 'raw' },
-                  ],
+                  items: [{ _id: 'raw', name: 'Сталь листовая', unit: 'кг', materialKind: 'raw' }],
                 },
               }),
             ),

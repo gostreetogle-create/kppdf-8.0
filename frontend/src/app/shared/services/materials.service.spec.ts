@@ -2,18 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
-import {
-  MATERIAL_KIND_LABELS,
-  MATERIAL_KINDS,
-  type MaterialKind,
-  MaterialsService,
-} from './materials.service';
+import { MATERIAL_KINDS, type MaterialKind, MaterialsService } from './materials.service';
+import { dictionaryLabelOptions } from './pi-dictionary-labels.service';
 
 /**
  * TZ-CATALOG-316 — runtime guards on the 301 exports added next to
  * the existing `Material` interface.
  *
- * `MATERIAL_KINDS` / `MATERIAL_KIND_LABELS` are pure constants; the
+ * `MATERIAL_KINDS` and dictionary-label fallbacks are pure constants; the
  * HttpParams assembly is exercised through HttpTestingController to
  * verify the service attaches `?materialKind=` only when the param
  * is set (mirrors how the page wires `kindFilterSig()`).
@@ -47,7 +43,8 @@ describe('MaterialsService (TZ-CATALOG-316)', () => {
 
   it('provides a Russian label for every MaterialKind', () => {
     for (const k of MATERIAL_KINDS) {
-      const label = MATERIAL_KIND_LABELS[k];
+      const label =
+        dictionaryLabelOptions('materialKind').find((item) => item.key === k)?.label ?? '';
       expect(typeof label).toBe('string');
       expect(label.length).toBeGreaterThan(0);
     }

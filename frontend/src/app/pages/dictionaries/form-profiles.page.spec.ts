@@ -82,12 +82,14 @@ describe('FormProfilesPage (TZ-DICT-315)', () => {
     expect(c.visible().size).toBe(0);
   });
 
-  it('cannot uncheck locked required fields', () => {
+  it('locks article identity fields but leaves product name optional', () => {
     const c = createComp();
     c.onToggle('name', false);
-    expect(c.visible().has('name')).toBe(true);
+    expect(c.visible().has('name')).toBe(false);
     c.onToggle('sku', false);
-    expect(c.visible().has('sku')).toBe(false);
+    expect(c.visible().has('sku')).toBe(true);
+    c.onToggle('kind', false);
+    expect(c.visible().has('kind')).toBe(true);
   });
 
   it('switches size and reloads', () => {
@@ -145,11 +147,13 @@ describe('FormProfilesPage (TZ-DICT-315)', () => {
     expect(c.saveError()).toBe('Нельзя снять обязательное');
   });
 
-  it('fieldRows mark locked fields as visible+locked', () => {
+  it('fieldRows mark sku as visible+locked while product name stays optional', () => {
     const c = createComp();
+    const skuRow = c.fieldRows().find((r) => r.key === 'sku');
+    expect(skuRow?.locked).toBe(true);
+    expect(skuRow?.visible).toBe(true);
+    expect(skuRow?.label).toBe('Артикул');
     const nameRow = c.fieldRows().find((r) => r.key === 'name');
-    expect(nameRow?.locked).toBe(true);
-    expect(nameRow?.visible).toBe(true);
-    expect(nameRow?.label).toBe('Название');
+    expect(nameRow?.locked).toBe(false);
   });
 });

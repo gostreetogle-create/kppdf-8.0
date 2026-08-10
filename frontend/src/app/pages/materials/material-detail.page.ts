@@ -21,10 +21,13 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import {
   Material,
-  MATERIAL_KIND_LABELS,
   type MaterialDimension,
   type MaterialKind,
 } from '../../shared/services/materials.service';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { Photo } from '../../shared/services/photos.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
@@ -386,7 +389,13 @@ export class MaterialDetailPage {
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly baseUrl = inject(API_BASE_URL);
+  protected readonly kindLabels = signal<Record<string, string>>(
+    Object.fromEntries(
+      dictionaryLabelOptions('materialKind').map((item) => [item.key, item.label]),
+    ),
+  );
 
   private readonly id = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -414,6 +423,12 @@ export class MaterialDetailPage {
 
   protected readonly openPhotos = signal(false);
   protected readonly openPrice = signal(false);
+
+  constructor() {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      this.kindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
+  }
 
   protected readonly photos = computed<Photo[]>(() => {
     const list = this.material()?.photoIds ?? [];
@@ -490,13 +505,14 @@ export class MaterialDetailPage {
     const parts: string[] = [];
     if (m.article) parts.push(`арт. ${m.article}`);
     if (m.sku) parts.push(`SKU ${m.sku}`);
-    parts.push(kindLabelFor(m.materialKind));
+    parts.push(this.kindLabel(m.materialKind));
     if (m.unit) parts.push(m.unit);
     return parts.join(' · ');
   }
 
   protected kindLabel(k: MaterialKind | null | undefined): string {
-    return kindLabelFor(k);
+    if (!k) return '—';
+    return this.kindLabels()[k] ?? k;
   }
 
   protected formatPrice(n: number | undefined): string {
@@ -532,14 +548,8 @@ export class MaterialDetailPage {
       )
       .join(' · ');
   }
-
   protected formatDimValue(n: number): string {
     if (n >= 1) return `${n} мм`;
     return `${(n * 1000).toFixed(0)} мкм`;
   }
-}
-
-function kindLabelFor(k: MaterialKind | null | undefined): string {
-  if (!k) return '—';
-  return MATERIAL_KIND_LABELS[k] ?? k;
 }

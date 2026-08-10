@@ -30,16 +30,16 @@ import {
   CostCalculation,
   CostCalculationsService,
 } from '../../shared/services/pi-cost-calculations.service';
+import { Material, MaterialsService } from '../../shared/services/materials.service';
 import {
-  Material,
-  MATERIAL_KIND_LABELS,
-  MaterialsService,
-} from '../../shared/services/materials.service';
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
-import { Product, ProductKind, ProductStatus } from '../../shared/services/products.service';
+import { Product, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
@@ -48,12 +48,6 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
   active: 'Активный',
   archived: 'Архив',
   draft: 'Черновик',
-};
-
-const KIND_LABELS: Record<ProductKind, string> = {
-  good: 'Товар',
-  service: 'Услуга',
-  work: 'Работа',
 };
 
 /**
@@ -377,7 +371,16 @@ export class ProductDetailPage {
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly costSvc = inject(CostCalculationsService);
   private readonly materialsSvc = inject(MaterialsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly baseUrl = inject(API_BASE_URL);
+  protected readonly productKindLabels = signal<Record<string, string>>(
+    Object.fromEntries(dictionaryLabelOptions('productKind').map((item) => [item.key, item.label])),
+  );
+  protected readonly materialKindLabels = signal<Record<string, string>>(
+    Object.fromEntries(
+      dictionaryLabelOptions('materialKind').map((item) => [item.key, item.label]),
+    ),
+  );
 
   private readonly id = toSignal(this.route.paramMap, {
     initialValue: this.route.snapshot.paramMap,
@@ -443,7 +446,7 @@ export class ProductDetailPage {
 
   protected kindLabel(kind?: string): string {
     if (!kind) return '—';
-    return KIND_LABELS[kind as ProductKind] ?? kind;
+    return this.productKindLabels()[kind] ?? kind;
   }
 
   protected dimensionsLabel(p: {
@@ -514,6 +517,7 @@ export class ProductDetailPage {
   }));
 
   constructor() {
+    this.loadKindLabels();
     this.loadModuleCatalog();
     this.materialsSvc.list({ limit: 200 }).subscribe((res) => {
       if (res.ok) this.materialCatalog.set(res.data.items);
@@ -563,7 +567,16 @@ export class ProductDetailPage {
   }
 
   protected materialKindLabel(kind: Material['materialKind']): string {
-    return kind ? (MATERIAL_KIND_LABELS[kind] ?? kind) : 'тип не указан';
+    return kind ? (this.materialKindLabels()[kind] ?? kind) : 'тип не указан';
+  }
+
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('productKind').subscribe((labels) => {
+      this.productKindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      this.materialKindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
   }
 
   protected productLinePrice(line: CompositionLine): number | string {

@@ -44,12 +44,22 @@
 | `MaterialFormDialogComponent` | create / edit | `null` / `Material` |
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
+В поле «Поставщик» показываются только активные организации с типом `supplier`.
+Пустой список не выглядит как обычный пустой dropdown: под селектом отображается
+подсказка «Нет поставщиков — создайте организацию с типом Поставщик» со ссылкой
+на `/organizations`. Ошибка загрузки показывается под селектом; во время загрузки
+селект отключён и выводится короткая подсказка.
+
+Секция «Габариты» занимает полную ширину на мобильном экране и примерно половину
+ширины тела диалога на desktop (`lg:w-1/2`, `max-w-xl`). Типы, значения и флаг
+«Неизменяемый» остаются в одной читаемой строке.
+
 ## Services
 
 | Сервис | Методы |
 |--------|--------|
 | `MaterialsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)`, **`duplicate(id)`** (TZ-MATERIALS-310) |
-| `OrganizationsService` | `list(params)` — для lookup поставщиков |
+| `OrganizationsService` | `list({ type: 'supplier', limit: 200 })` — lookup организаций-поставщиков |
 | `PhotosService` | `list()` — для lookup фото |
 | `CategoriesService` | `list('material')` — активные категории и префиксы внутреннего кода |
 
@@ -57,7 +67,7 @@
 
 | Lookup | Источник | Ключ |
 |--------|----------|------|
-| `suppliersLookup` | `orgs.list({ limit: 200 })` | `Organization._id` |
+| `suppliersLookup` | `orgs.list({ type: 'supplier', limit: 200 })` | `Organization._id` |
 | `photosLookup` | `photos.list()` | `Photo._id` |
 
 ## State (signals)
@@ -87,15 +97,17 @@
 |-----|---------|-----------|
 | `photoTpl` | `mainPhotoId` | `<img>` или `<pi-empty-tile>` |
 | `supplierTpl` | `supplierId` | Название организации (lookup) |
-| `kindTpl` | `materialKind` | **TZ-CATALOG-316** — короткий русский лейбл kinds (`сырьё`, `деталь`…); для legacy без kind — пусто (empty-cell) |
+| `kindTpl` | `materialKind` | **TZ-DICT-320 / CATALOG-316** — подпись из общего `PiDictionaryLabelsService` (`сырьё`, `деталь`…); для legacy без kind — пусто (empty-cell) |
 | `dimsTpl` | `dimensions` | `Д. 3000мм × Ш. 2000мм × Т. 2мм` |
 | `stockTpl` | `stockQty` (legacy-key) | **TZ-MATERIALS-308** — ссылка «Склад →» на `/storage-items?materialId=<id>` |
 | `rowActionsTpl` | (actions) | Copy / Edit / Delete (TZ-MATERIALS-310 добавил copy slot) |
 
 ## Идентификация: «Артикул» vs «Внутренний код материала»
 
-- **Артикул** (`article`) — пользовательский/внешний код (поставщик, каталог клиента). Необязателен, может повторяться.
-- **Внутренний код материала** (`sku`) — уникальный системный идентификатор для поиска (`$or: [name, article, sku]`) и связей.
+- **Артикул** (`article`) — обязательный пользовательский/внешний код (поставщик, каталог клиента), уникальный внутри организации. Пустое значение отклоняется, дубликат даёт HTTP 409 «Артикул уже используется».
+- **Внутренний код материала** (`sku`) — необязательный уникальный системный идентификатор для поиска (`$or: [name, article, sku]`) и связей; при отсутствии может быть сгенерирован через CounterService.
+
+Legacy-строки без артикула остаются читаемыми до backfill; новые create/update их не допускают.
   Уникальность гарантируется сервером: Mongo `unique: true, sparse: true` + E11000 → HTTP 409 (не 500).
   Пользователь может ввести его вручную; если поле пустое и выбрана активная категория типа `material` с префиксом,
   сервер создаёт код через атомарный counter в формате `PREFIX-YYYY-NNN`. Локальной генерации на клиенте нет.
@@ -138,7 +150,7 @@
 |------|-----------|
 | `name` | `${source.name} (копия)`, truncate до 256 символов, если переполнение |
 | `sku` | перегенерируется через `CounterService.next('Material', category.skuPrefix)` если у категории есть `skuPrefix`; **не копируется** с исходника (защита от коллизий) |
-| `article` | копируется as-is (пользовательский код, может повторяться) |
+| `article` | получает суффикс `-COPY` (обрезается до 64 символов), чтобы клон не нарушал уникальность внутри организации |
 | `unit`, `description`, `pricePerUnit`, `supplierId`, `notes`, `dimensions` | копируются verbatim |
 | `photoIds`, `mainPhotoId` | **НЕ копируются** — пользователь заново выбирает фото в открывшемся edit-dialog (избегаем orphan-ссылок и mixed-upload конфликтов по контракту TZ-MATERIALS-306) |
 | `createdAt`/`updatedAt`/`organizationId`/`isSystem`/`deletedAt` | не копируются — clone получает свежие значения на момент create |
@@ -154,8 +166,9 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 - **Server-side pagination** — backend возвращает `{ items, total, page, limit }`
 - **Client-side sort** — pi-table сортирует page slice (нет sortBy на backend)
 - **Three lookup tables** — suppliers (Organizations), categories (Categories, type `material`) + photos (Photos)
+- **Kind labels** — toolbar filter, FullEditor, detail and composition picker use the same cached `PiDictionaryLabelsService`; API failure shows seed fallback and one RU warning
 - **Фото:** `mainPhotoOf(row)` — проверяет string | populated object; `mainPhotoUrl(row)` пропускает URL через общий `photoListUrl` и выбирает linked `thumb`, иначе original
-- **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`
+- **Габариты:** `dimensionsSummary(row)` — `L 3000мм × W 2000мм × T 2мм`; в форме блок ограничен половиной ширины на desktop.
 - **Refresh on dialog close:** 3 стрима: `suppliersLookup.load()` + `photosLookup.load()` + `listRes.reload()`
 - **Copy row action** — slot order в `PiRowActionsComponent`: Copy → Document → Edit → Delete
   (TZ-MATERIALS-310 ввёл copy slot как левый-most, потому что это наименее-mutative действие)
@@ -163,4 +176,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-09 (TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-10 (TZ-MATERIALS-312: supplier empty/error/loading states и desktop half-width «Габариты»; TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._

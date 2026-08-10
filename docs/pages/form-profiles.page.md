@@ -8,7 +8,8 @@
 ## Назначение
 
 Оператор настраивает, **какие FieldKeys** видны в коротком диалоге создания
-(QuickCreate) для сущности × размера диалога `S | M | L`. Это UX форм, не
+(QuickCreate) для сущности × размера диалога `S | M | L`. Для изделий поле
+`sku` отображается пользователю как «Артикул». Это UX форм, не
 цвета kind в каталоге (`/catalog/appearance`) и не RAL.
 
 Полный редактор (product-form / module-form) **не меняется**. Wire диалога
@@ -19,8 +20,9 @@ QuickCreate → TZ-DICT-316.
 1. **Сущность** — overflow-select: Изделие (`product`) / Модуль (`module`).
 2. **Размер** — chips `S | M | L` (ширина будущего `pi-dialog`: sm / md / lg).
 3. **Матрица** — чекбоксы allowlist FieldKeys с RU-лейблами.
-4. **LockedRequired** — всегда включены, `disabled` (product: name/kind/unit;
-   module: name). Снять нельзя (иначе BE 400 / сломанный create).
+4. **LockedRequired** — всегда включены, `disabled` (product: kind/unit/sku;
+   module: name/article). Название изделия остаётся видимым,
+   но необязательным. Снять нельзя (иначе BE 400 / сломанный create).
 5. **Сохранить** → `PUT /api/form-profiles/:entity/:size` с
    `{ visibleFieldKeys }`. Ошибка → toast + текст на странице.
 

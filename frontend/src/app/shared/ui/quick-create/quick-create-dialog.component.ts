@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnDestroy,
   computed,
   inject,
@@ -51,6 +52,11 @@ import { PiPhotoDropzoneComponent } from '../photo';
 import { PhotosService, type Photo } from '../../services/photos.service';
 import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../services/pi-dictionary-labels.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../util/dialog-save-and-continue';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -61,11 +67,7 @@ export interface QuickCreateDialogData {
 
 export type QuickCreateResult = Product | ProductModule | null;
 
-const KIND_OPTIONS: { value: ProductKind; label: string }[] = [
-  { value: 'good', label: 'Товар' },
-  { value: 'service', label: 'Услуга' },
-  { value: 'work', label: 'Работа' },
-];
+const KIND_KEYS: readonly ProductKind[] = ['good', 'service', 'work'];
 
 const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
@@ -197,7 +199,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                               [class]="controlClass(key)"
                               [attr.data-test]="'qc-field-' + key"
                             >
-                              @for (opt of kindOptions; track opt.value) {
+                              @for (opt of kindOptions(); track opt.value) {
                                 <option [value]="opt.value">{{ opt.label }}</option>
                               }
                             </select>
@@ -455,6 +457,9 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
             Готово
           </app-pi-button>
         } @else {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
           <app-pi-button
             variant="ghost"
             type="button"
@@ -489,10 +494,15 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private readonly categoriesSvc = inject(CategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly photosService = inject(PhotosService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
 
   protected readonly entity: FormProfileEntity = this.data.entity;
   protected readonly sizes = FORM_PROFILE_SIZES;
-  protected readonly kindOptions = KIND_OPTIONS;
+  protected readonly kindOptions = signal(
+    dictionaryLabelOptions('productKind')
+      .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+      .map((item) => ({ value: item.key as ProductKind, label: item.label })),
+  );
   protected readonly statusOptions = STATUS_OPTIONS;
   protected readonly dimUnitOptions = DIM_UNIT_OPTIONS;
 
@@ -574,7 +584,9 @@ export class QuickCreateDialogComponent implements OnDestroy {
    */
   protected readonly useCapacityGrid = computed(() => {
     const sz = this.size();
-    return sz === 'M' || sz === 'L' || this.visibleKeys().length >= 4;
+    // S is intentionally a single-column quick form, regardless of how many
+    // locked fields the profile contributes.
+    return sz === 'M' || sz === 'L';
   });
 
   /** @deprecated alias for tests / callers expecting useTwoCol */
@@ -604,6 +616,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly form: FormGroup = this.buildForm(this.entity);
 
   constructor() {
+    this.loadKindLabels();
     this.reloadProfile();
     if (this.entity === 'product') {
       this.categoriesSvc.list('product').subscribe((res) => {
@@ -612,6 +625,16 @@ export class QuickCreateDialogComponent implements OnDestroy {
         }
       });
     }
+  }
+
+  private loadKindLabels(): void {
+    if (this.entity !== 'product') return;
+    this.dictionaryLabels?.active('productKind').subscribe((labels) => {
+      const options = labels
+        .filter((item) => KIND_KEYS.includes(item.key as ProductKind))
+        .map((item) => ({ value: item.key as ProductKind, label: item.label }));
+      if (options.length > 0) this.kindOptions.set(options);
+    });
   }
 
   protected kindOf(key: string): QuickCreateControlKind {
@@ -683,7 +706,14 @@ export class QuickCreateDialogComponent implements OnDestroy {
     this.photosUploading.set(uploading);
   }
 
-  protected onSubmit(): void {
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting() || this.loading() || this.loadError() || this.photosUploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -697,6 +727,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
         this.submitting.set(false);
         if (res.ok) {
           this.submitted = true;
+          if (saveAndContinue) {
+            this.resetForNextCreate();
+            this.toast.success('Сохранено — можно создать следующий');
+            return;
+          }
           this.toast.success('Продукт создан');
           if (this.compositionCapable() && res.data) {
             this.createdProduct.set(res.data);
@@ -714,6 +749,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
         this.submitting.set(false);
         if (res.ok) {
           this.submitted = true;
+          if (saveAndContinue) {
+            this.resetForNextCreate();
+            this.toast.success('Сохранено — можно создать следующий');
+            return;
+          }
           this.toast.success('Модуль создан');
           if (this.compositionCapable() && res.data) {
             this.createdModule.set(res.data);
@@ -731,6 +771,48 @@ export class QuickCreateDialogComponent implements OnDestroy {
 
   protected onDone(): void {
     this.ref.close(this.createdProduct() ?? this.createdModule());
+  }
+
+  private resetForNextCreate(): void {
+    if (this.entity === 'product') {
+      this.form.reset({
+        name: '',
+        kind: 'good',
+        unit: 'шт',
+        sku: '',
+        listPrice: null,
+        categoryId: '',
+        isActive: true,
+        status: 'draft',
+        dimLength: null,
+        dimWidth: null,
+        dimHeight: null,
+        dimUnit: 'mm',
+        weightKg: null,
+        description: '',
+        notes: '',
+      });
+    } else {
+      this.form.reset({
+        name: '',
+        article: '',
+        width: null,
+        height: null,
+        depth: null,
+        unit: 'мм',
+        weight: null,
+        notes: '',
+      });
+    }
+    this.photos.set([]);
+    this.uploadedPhotoIds.set([]);
+    this.createdProduct.set(null);
+    this.createdModule.set(null);
+    this.formError.set(null);
+    this.submitted = false;
+    focusDialogField(
+      this.entity === 'product' ? '[data-test="qc-field-sku"]' : '[data-test="qc-field-name"]',
+    );
   }
 
   protected onCancel(): void {
@@ -770,7 +852,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private buildForm(entity: FormProfileEntity): FormGroup {
     if (entity === 'product') {
       return this.fb.group({
-        name: this.fb.control('', [Validators.required, Validators.maxLength(200)]),
+        name: this.fb.control('', [Validators.maxLength(200)]),
         kind: this.fb.control<ProductKind>('good', [Validators.required]),
         unit: this.fb.control('шт', [Validators.required, Validators.maxLength(16)]),
         sku: this.fb.control(''),
@@ -855,8 +937,8 @@ export class QuickCreateDialogComponent implements OnDestroy {
     const vis = this.visibleSet();
     const payload: ProductModuleUpsertDto = {
       name: String(v['name'] ?? ''),
+      article: vis.has('article') ? String(v['article'] ?? '').trim() : '',
     };
-    if (vis.has('article') && v['article']) payload.article = String(v['article']);
     if (vis.has('weight') && v['weight'] != null && v['weight'] !== '') {
       payload.weight = Number(v['weight']);
     }

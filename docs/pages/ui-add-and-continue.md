@@ -5,9 +5,9 @@
 
 ## Паттерн
 
-1. Выбрал в списке → **Добавить** → запись сразу применена → селект очищен →
+1. Выбрал в списке, указал **Кол-во** (по умолчанию `1`, минимум `0,001`) → **Добавить** → запись сразу применена → селект и количество сброшены →
    диалог остаётся открыт.
-2. Под селектом — короткий список «Добавлено сейчас» (feedback).
+2. Под селектом — короткий список «Добавлено сейчас» с количеством (feedback).
 3. **Закрыть** / ✕ — выйти, когда закончил. Уже добавленное не откатывается.
 
 ## Когда так
@@ -22,14 +22,23 @@
 | Одна позиция и ушёл | close-on-submit (как было) |
 | Много **однородных** id без per-line полей | checkbox multi + одно «Добавить» (module multi) |
 | Создание сущности с id после save | create→остаться (FORM-304/306) |
+| Каталожный create-диалог | Ctrl+Enter / ⌘+Enter → сохранить и создать ещё; обычное «Сохранить» закрывает |
 
 ## Реализация (composition picker)
 
 - Data: `onAdded?: (result) => void | Promise<void>` в `ProductCompositionPickerData`
-- UI: session list `data-test="picker-session-added"`; footer «Закрыть»; primary
-  не закрывает при успехе
+- UI: session list `data-test="picker-session-added"` показывает количество; поле
+  `data-test="composition-picker-quantity"`; footer «Закрыть»; primary не закрывает при успехе
+- BOM: `onAdded` передаёт `quantity` в POST; после успешного добавления поле возвращается к `1`
 - Parent: `ProductBomPanel.openAddPicker` → `applyCompositionLine` на каждый Add
 - Legacy без `onAdded`: close(result) как раньше
+
+## Save & continue для create-диалогов (TZ-UX-DIALOG-307)
+
+- `Ctrl+Enter` / `⌘+Enter` сохраняет текущую форму, не закрывая диалог.
+- После успешного create поля возвращаются к значениям по умолчанию, фокус уходит на первое обязательное поле, а footer показывает `Ctrl+Enter — сохранить и создать ещё`.
+- В edit обычное «Сохранить» и горячая клавиша сохраняют прежнее окно открытым; обычный create-submit по-прежнему закрывает диалог.
+- Контракт относится к Product/Module/Material/Color reference FullEditor и QuickCreate; `Escape` и закрытие через shell не перехватываются.
 
 ## Фото (TZ-UX-DIALOG-304)
 

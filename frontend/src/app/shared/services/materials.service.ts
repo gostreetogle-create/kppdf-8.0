@@ -33,15 +33,6 @@ export interface MaterialDimension {
 export const MATERIAL_KINDS = ['raw', 'part', 'fastener', 'purchased', 'other'] as const;
 export type MaterialKind = (typeof MATERIAL_KINDS)[number];
 
-/** Short Russian label per MaterialKind — used in UI lists / sort headers. */
-export const MATERIAL_KIND_LABELS: Record<MaterialKind, string> = {
-  raw: 'сырьё',
-  part: 'деталь',
-  fastener: 'метиз',
-  purchased: 'покупное',
-  other: 'другое',
-};
-
 export interface Material {
   _id: string;
   name: string;

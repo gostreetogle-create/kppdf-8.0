@@ -19,8 +19,10 @@ export type ProductStatus = 'new' | 'active' | 'archived' | 'draft';
 
 @Schema({ collection: 'products', timestamps: true })
 export class Product {
-  @Prop({ required: true, index: true }) name!: string;
-  @Prop({ unique: true, sparse: true, index: true }) sku?: string;
+  /** Optional display name; catalog UIs fall back to the required SKU. */
+  @Prop({ index: true }) name?: string;
+  /** New products must carry a trimmed article; sparse keeps legacy rows readable. */
+  @Prop({ required: true, trim: true, index: true }) sku!: string;
   @Prop({ required: true, enum: ['good', 'service', 'work'], default: 'good' }) kind!: ProductKind;
   @Prop({ required: true, default: 'шт' }) unit!: string;
   @Prop({ type: Types.ObjectId, ref: 'Category', index: true }) categoryId?: Types.ObjectId;
@@ -61,4 +63,5 @@ export class Product {
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.plugin(optimisticLockPlugin);
 ProductSchema.index({ status: 1, isActive: 1 });
+ProductSchema.index({ organizationId: 1, sku: 1 }, { unique: true, sparse: true });
 ProductSchema.index({ deletedAt: 1, organizationId: 1 });

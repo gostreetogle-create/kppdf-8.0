@@ -36,6 +36,7 @@ function buildService(
 function dto(overrides: Partial<CreateMaterialDto> = {}): CreateMaterialDto {
   return {
     name: 'Стекло 4мм',
+    article: 'STK-TEST',
     unit: 'm2',
     ...overrides,
   } as CreateMaterialDto;
@@ -45,6 +46,7 @@ function doc(overrides: Record<string, unknown> = {}) {
   return {
     _id: new Types.ObjectId().toString(),
     name: 'Стекло 4мм',
+    article: 'STK-TEST',
     unit: 'm2',
     save: jest.fn(),
     toObject() {
@@ -58,6 +60,24 @@ function doc(overrides: Record<string, unknown> = {}) {
 }
 
 describe('MaterialService (TZ-MATERIALS-303/307)', () => {
+  describe('article contract (TZ-CATALOG-338)', () => {
+    it('rejects a missing article before touching persistence', async () => {
+      const { service, create } = buildService();
+      await expect(service.create(dto({ article: '   ' }))).rejects.toBeInstanceOf(BadRequestException);
+      expect(create).not.toHaveBeenCalled();
+    });
+
+    it('maps duplicate article index errors to a Russian conflict', async () => {
+      const { service } = buildService({
+        create: jest.fn().mockRejectedValue({ code: 11000, keyPattern: { organizationId: 1, article: 1 } }),
+      });
+      await expect(service.create(dto())).rejects.toMatchObject({
+        constructor: ConflictException,
+        message: 'Артикул уже используется',
+      });
+    });
+  });
+
   describe('create', () => {
     it('persists the user-supplied sku without generating another code', async () => {
       const { service, create, categoryFindById, counterNext } = buildService({

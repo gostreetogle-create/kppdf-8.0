@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
+import { ProductService } from './product.service';
 
 /**
  * TZ-CATALOG-305: Product→Product composition tests.
@@ -15,6 +16,37 @@ import { BadRequestException } from '@nestjs/common';
 function computeIsComplex(composition: Array<{ lineType: string }>): boolean {
   return composition.some((line) => line.lineType === 'product');
 }
+
+describe('TZ-CATALOG-338 — Product article contract', () => {
+  function buildService(model: { create: jest.Mock }) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  it('rejects a missing or whitespace-only sku before persistence', async () => {
+    const model = { create: jest.fn() };
+    const service = buildService(model);
+    await expect(service.create({ name: '', sku: '   ', kind: 'good', unit: 'шт' } as never)).rejects.toBeInstanceOf(BadRequestException);
+    expect(model.create).not.toHaveBeenCalled();
+  });
+
+  it('maps duplicate sku index errors to a Russian conflict', async () => {
+    const model = { create: jest.fn().mockRejectedValue({ code: 11000, keyPattern: { organizationId: 1, sku: 1 } }) };
+    const service = buildService(model);
+    await expect(service.create({ name: '', sku: 'P-DUP', kind: 'good', unit: 'шт' } as never)).rejects.toMatchObject({
+      constructor: ConflictException,
+      message: 'Артикул уже используется',
+    });
+  });
+});
 
 describe('TZ-CATALOG-305 — isComplex derivation', () => {
   it('returns false when composition is empty', () => {

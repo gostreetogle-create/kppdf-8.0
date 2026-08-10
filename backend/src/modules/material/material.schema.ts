@@ -30,8 +30,9 @@ export class Material {
   @Prop({ required: true, index: true })
   name!: string;
 
-  @Prop({ index: true })
-  article?: string;
+  /** New materials require a trimmed external article; legacy empty rows remain readable. */
+  @Prop({ required: true, trim: true })
+  article!: string;
 
   /** Classification of the catalog leaf; legacy rows are backfilled to `other`. */
   @Prop({ type: String, enum: MATERIAL_KINDS, index: true, required: false })
@@ -96,4 +97,5 @@ export class Material {
 export const MaterialSchema = SchemaFactory.createForClass(Material);
 MaterialSchema.plugin(optimisticLockPlugin);
 MaterialSchema.index({ supplierId: 1 });
+MaterialSchema.index({ organizationId: 1, article: 1 }, { unique: true, sparse: true });
 MaterialSchema.index({ deletedAt: 1, organizationId: 1 });

@@ -37,6 +37,11 @@ export interface CreateUnitPayload {
   isActive?: boolean;
 }
 
+export type UpdateUnitPayload = Omit<Partial<CreateUnitPayload>, 'symbol' | 'category'> & {
+  symbol?: string | null;
+  category?: string | null;
+};
+
 /**
  * TZ-NEW UnitsService — wraps the units CRUD endpoints behind
  * `SilentResult` so the observable never errors and consumers can
@@ -70,7 +75,7 @@ export class UnitsService {
     return silentPost<Unit>(this.http, `${this.baseUrl}/units`, payload);
   }
 
-  update(key: string, payload: Partial<CreateUnitPayload>): Observable<SilentResult<Unit>> {
+  update(key: string, payload: UpdateUnitPayload): Observable<SilentResult<Unit>> {
     return silentPatch<Unit>(this.http, `${this.baseUrl}/units/${key}`, payload);
   }
 

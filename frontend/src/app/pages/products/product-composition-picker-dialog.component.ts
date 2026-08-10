@@ -10,18 +10,24 @@ import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { Material, MaterialsService } from '../../shared/services/materials.service';
 import {
-  Material,
-  MATERIAL_KIND_LABELS,
-  MaterialsService,
-} from '../../shared/services/materials.service';
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 export type ProductCompositionPickerResult =
-  | { lineType: 'module'; refId: string }
-  | { lineType: 'material'; refId: string; material: Material }
-  | { lineType: 'product'; refId: string; product: Product; unitPriceOverride?: number };
+  | { lineType: 'module'; refId: string; quantity: number }
+  | { lineType: 'material'; refId: string; quantity: number; material: Material }
+  | {
+      lineType: 'product';
+      refId: string;
+      quantity: number;
+      product: Product;
+      unitPriceOverride?: number;
+    };
 
 type PickerKind = 'product' | 'module' | 'material';
 
@@ -32,6 +38,7 @@ export type ProductCompositionPickerCloseResult =
 export interface ProductCompositionPickerSessionItem {
   label: string;
   kind: PickerKind;
+  quantity: number;
 }
 
 export interface ProductCompositionPickerData {
@@ -92,7 +99,10 @@ export interface ProductCompositionPickerData {
         </div>
 
         @if (data.restrictToModule) {
-          <p class="text-xs text-muted-foreground m-0 leading-snug" data-test="picker-inclusion-hint">
+          <p
+            class="text-xs text-muted-foreground m-0 leading-snug"
+            data-test="picker-inclusion-hint"
+          >
             В состав модуля можно добавить модуль или материал.
           </p>
         }
@@ -142,6 +152,18 @@ export interface ProductCompositionPickerData {
                   <span>· фильтр</span>
                 }
               </p>
+              <label class="block max-w-[10rem] mt-3">
+                <span class="eyebrow block mb-1.5">Кол-во</span>
+                <input
+                  class="pi-input w-full"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  [value]="quantity()"
+                  (input)="onQuantityChange($event)"
+                  data-test="composition-picker-quantity"
+                />
+              </label>
             </div>
           </div>
 
@@ -180,7 +202,9 @@ export interface ProductCompositionPickerData {
                 @for (item of sessionAdded(); track $index) {
                   <li class="text-sm text-ink leading-snug">
                     {{ item.label }}
-                    <span class="text-muted-foreground">· {{ kindSessionLabel(item.kind) }}</span>
+                    <span class="text-muted-foreground"
+                      >· {{ kindSessionLabel(item.kind) }} · Кол-во {{ item.quantity }}</span
+                    >
                   </li>
                 }
               </ul>
@@ -209,6 +233,12 @@ export class ProductCompositionPickerDialogComponent {
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
   private readonly productsSvc = inject(ProductsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
+  protected readonly materialKindLabels = signal<Record<string, string>>(
+    Object.fromEntries(
+      dictionaryLabelOptions('materialKind').map((item) => [item.key, item.label]),
+    ),
+  );
 
   /**
    * Order: изделие → модуль → деталь/материал.
@@ -240,6 +270,7 @@ export class ProductCompositionPickerDialogComponent {
     this.data.restrictToModule ? 'material' : 'product',
   );
   protected readonly selectedId = signal('');
+  protected readonly quantity = signal('1');
   protected readonly unitPriceOverride = signal('');
   protected readonly query = signal('');
   protected readonly validationError = signal<string | null>(null);
@@ -267,7 +298,7 @@ export class ProductCompositionPickerDialogComponent {
       return this.materials()
         .map((item) => ({
           id: item._id,
-          label: `${item.name} · ${item.materialKind ? MATERIAL_KIND_LABELS[item.materialKind] : 'тип не указан'}`,
+          label: `${item.name} · ${item.materialKind ? (this.materialKindLabels()[item.materialKind] ?? item.materialKind) : 'тип не указан'}`,
         }))
         .filter((item) => filter(item.label));
     return this.products()
@@ -279,6 +310,9 @@ export class ProductCompositionPickerDialogComponent {
   });
 
   constructor() {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      this.materialKindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
     this.load();
   }
 
@@ -333,6 +367,7 @@ export class ProductCompositionPickerDialogComponent {
   protected selectKind(kind: PickerKind): void {
     this.activeKind.set(kind);
     this.selectedId.set('');
+    this.quantity.set('1');
     this.unitPriceOverride.set('');
     this.query.set('');
     this.validationError.set(null);
@@ -355,6 +390,11 @@ export class ProductCompositionPickerDialogComponent {
 
   protected onPriceChange(event: Event): void {
     this.unitPriceOverride.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onQuantityChange(event: Event): void {
+    this.quantity.set((event.target as HTMLInputElement).value);
+    this.validationError.set(null);
   }
 
   protected kindSessionLabel(kind: PickerKind): string {
@@ -381,9 +421,14 @@ export class ProductCompositionPickerDialogComponent {
         this.usedAddAndContinue = true;
         this.sessionAdded.update((list) => [
           ...list,
-          { label: this.sessionLabel(result), kind: result.lineType as PickerKind },
+          {
+            label: this.sessionLabel(result),
+            kind: result.lineType as PickerKind,
+            quantity: result.quantity,
+          },
         ]);
         this.selectedId.set('');
+        this.quantity.set('1');
         this.unitPriceOverride.set('');
         this.validationError.set(null);
       })
@@ -406,6 +451,11 @@ export class ProductCompositionPickerDialogComponent {
   private buildResult(): ProductCompositionPickerResult | null {
     const id = this.selectedId();
     if (!id) return null;
+    const quantity = Number(this.quantity());
+    if (!Number.isFinite(quantity) || quantity < 0.001) {
+      this.validationError.set('Количество должно быть не меньше 0,001.');
+      return null;
+    }
     if (this.activeKind() === 'product') {
       const rawPrice = this.unitPriceOverride().trim();
       const unitPriceOverride = rawPrice === '' ? undefined : Number(rawPrice);
@@ -415,14 +465,14 @@ export class ProductCompositionPickerDialogComponent {
       }
       const product = this.products().find((item) => item._id === id);
       if (!product) return null;
-      return { lineType: 'product', refId: id, product, unitPriceOverride };
+      return { lineType: 'product', refId: id, product, quantity, unitPriceOverride };
     }
     if (this.activeKind() === 'module') {
-      return { lineType: 'module', refId: id };
+      return { lineType: 'module', refId: id, quantity };
     }
     const material = this.materials().find((item) => item._id === id);
     if (!material) return null;
-    return { lineType: 'material', refId: id, material };
+    return { lineType: 'material', refId: id, material, quantity };
   }
 
   private sessionLabel(result: ProductCompositionPickerResult): string {

@@ -140,11 +140,7 @@ describe('ProductBomPanelComponent', () => {
     fixture.detectChanges();
     const mat = tree.children[0].children[0];
     const comp = fixture.componentInstance as unknown as {
-      onSelect: (e: {
-        node: typeof mat;
-        parent: (typeof tree.children)[0];
-        depth: number;
-      }) => void;
+      onSelect: (e: { node: typeof mat; parent: (typeof tree.children)[0]; depth: number }) => void;
     };
     comp.onSelect({ node: mat, parent: tree.children[0], depth: 2 });
     fixture.detectChanges();
@@ -181,8 +177,8 @@ describe('ProductBomPanelComponent', () => {
     expect(legend).toBeTruthy();
     expect(legend!.textContent).toContain('Изделие');
     expect(legend!.textContent).toContain('Модуль');
-    expect(legend!.textContent).toContain('Деталь/мат');
-    expect(legend!.textContent).toContain('Сырьё');
+    expect(legend!.textContent).toContain('деталь');
+    expect(legend!.textContent).toContain('сырьё');
   });
 
   it('shows module cost contribution in inspector (preview × qty)', () => {
@@ -241,6 +237,44 @@ describe('ProductBomPanelComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-test="bom-open-module"]')).toBeTruthy();
   });
 
+  it('opens nested product edit through a dynamic import (TZ-PRODUCTS-310)', async () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (event: {
+        node: {
+          _id: string;
+          name: string;
+          kind: 'product';
+          quantity: number;
+          children: never[];
+        };
+        parent: typeof tree;
+        depth: number;
+      }) => void;
+      openEditSelected: () => void;
+    };
+    comp.onSelect({
+      node: {
+        _id: 'p2',
+        name: 'Дочернее изделие',
+        kind: 'product',
+        quantity: 1,
+        children: [],
+      },
+      parent: tree,
+      depth: 1,
+    });
+    comp.openEditSelected();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(products.findById).toHaveBeenCalledWith('p2');
+    expect(dialogService.open).toHaveBeenCalledTimes(1);
+    expect(dialogService.open.mock.calls[0][0]).toHaveProperty('ɵcmp', expect.anything());
+  });
+
   it('openAddPicker wires onAdded and POSTs without waiting for dialog close (TZ-UX-DIALOG-303)', async () => {
     const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
     dialog.open.mockReturnValue({ closed: signal(undefined), close: jest.fn() });
@@ -254,17 +288,17 @@ describe('ProductBomPanelComponent', () => {
     expect(dialog.open).toHaveBeenCalled();
     const openArgs = dialog.open.mock.calls[0][1] as {
       data: {
-        onAdded?: (r: { lineType: string; refId: string }) => Promise<void>;
+        onAdded?: (r: { lineType: string; refId: string; quantity: number }) => Promise<void>;
       };
     };
     expect(typeof openArgs.data.onAdded).toBe('function');
 
-    await openArgs.data.onAdded!({ lineType: 'module', refId: 'm1' });
+    await openArgs.data.onAdded!({ lineType: 'module', refId: 'm1', quantity: 3 });
 
     expect(service.addProductCompositionLine).toHaveBeenCalledWith('p1', {
       lineType: 'module',
       refId: 'm1',
-      quantity: 1,
+      quantity: 3,
     });
     expect(service.getProductTree).toHaveBeenCalled();
   });

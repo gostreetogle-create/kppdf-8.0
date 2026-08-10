@@ -50,6 +50,10 @@ import {
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 10;
@@ -65,12 +69,6 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
 };
 
 const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
-
-const KIND_LABELS: Record<Product['kind'], string> = {
-  good: 'Товар',
-  service: 'Услуга',
-  work: 'Работа',
-};
 
 /**
  * Полная документация страницы: docs/pages/products.page.md
@@ -698,6 +696,7 @@ const KIND_LABELS: Record<Product['kind'], string> = {
 })
 export class ProductsPage implements OnInit {
   constructor() {
+    this.loadKindLabels();
     this.destroyRef.onDestroy(() => this.search.destroy());
     effect(() => {
       const needsCatalog = this.data().some((p) =>
@@ -722,6 +721,10 @@ export class ProductsPage implements OnInit {
   private readonly modulesService = inject(ProductModulesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly appearance = inject(CatalogAppearanceService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
+  protected readonly kindLabels = signal<Record<string, string>>(
+    Object.fromEntries(dictionaryLabelOptions('productKind').map((item) => [item.key, item.label])),
+  );
 
   protected readonly RefreshIcon = RefreshCw;
   protected readonly ListIcon = List;
@@ -1085,7 +1088,13 @@ export class ProductsPage implements OnInit {
   }
 
   protected gridEyebrow(row: Product): string {
-    return row.kind ? (KIND_LABELS[row.kind] ?? row.kind) : '';
+    return row.kind ? (this.kindLabels()[row.kind] ?? row.kind) : '';
+  }
+
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('productKind').subscribe((labels) => {
+      this.kindLabels.set(Object.fromEntries(labels.map((item) => [item.key, item.label])));
+    });
   }
 
   protected gridDescription(row: Product): string {

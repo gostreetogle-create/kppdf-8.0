@@ -10,7 +10,7 @@
 
 | Группа | Alias route | Body |
 |--------|-------------|------|
-| Классификация | `/dictionaries/classification` → `/categories` | chip Категории |
+| Классификация | `/dictionaries/classification` → `/categories` | chips Категории / Виды изделий и материалов |
 | Измерения | `/dictionaries/measurements` | chip Единицы |
 | Оформление | `/dictionaries/appearance` → color-references | chip Цвета |
 | Документы | `/dictionaries/documents-ref` → doc-template-cats | chips шаблоны / тексты |
@@ -18,6 +18,10 @@
 ## Chrome (TZ-DICT-312)
 
 Все канонические group routes используют dense main: chips начинаются сразу под app header без `pt-page-y` и отдельного footer-gap. `PiGroupWorkspace` держит chips и tools в одном sticky `top-0` стеке внутри `main`; перенос chips на второй ряд автоматически увеличивает стек, без ручного offset. Tools и CTA сохраняют `min-width: 0`, поэтому CTA не должен обрезаться по правому краю.
+
+## Виды изделий и материалов (TZ-DICT-319/320)
+
+`/dictionaries/kind-labels` — admin/manager-страница с вкладками «Виды изделий» и «Виды материалов». Подпись, сортировка и активность сохраняются через `PATCH /api/dictionary-labels/:id`; ключи `good`/`service`/`work` и `raw`/`part`/`fastener`/`purchased`/`other` не меняются. Product/Material FullEditor, QuickCreate, каталоги и composition picker используют общий `PiDictionaryLabelsService` с кэшем активных подписей и однократным RU fallback-toast при недоступности API.
 
 SoT: `docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`
 

@@ -43,8 +43,8 @@ export const MODULE_FIELD_KEYS = [
 export type FormFieldKey = (typeof PRODUCT_FIELD_KEYS)[number] | (typeof MODULE_FIELD_KEYS)[number];
 
 export const LOCKED_REQUIRED: Record<FormProfileEntity, readonly string[]> = {
-  product: ['name', 'kind', 'unit'],
-  module: ['name'],
+  product: ['kind', 'unit', 'sku'],
+  module: ['name', 'article'],
 };
 
 export const ALLOWED_FIELD_KEYS: Record<FormProfileEntity, readonly string[]> = {

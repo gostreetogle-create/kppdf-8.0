@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  HostListener,
   inject,
   signal,
   OnDestroy,
@@ -28,7 +29,6 @@ import {
   Material,
   MaterialDimensionType,
   MaterialKind,
-  MATERIAL_KIND_LABELS,
   MATERIAL_KINDS,
   MaterialsService,
 } from '../../shared/services/materials.service';
@@ -37,6 +37,11 @@ import { Organization, OrganizationsService } from '../../shared/services/organi
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = Material | null | undefined;
 
@@ -61,10 +66,7 @@ const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
  */
 const KIND_NULL_SENTINEL = '';
 /** Selector options for «Тип материала», keyed by canonical kind + sentinel for unknown. */
-const KIND_OPTIONS: { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[] = [
-  { value: KIND_NULL_SENTINEL, label: '— не указан —' },
-  ...MATERIAL_KINDS.map((k) => ({ value: k, label: MATERIAL_KIND_LABELS[k] })),
-];
+const KIND_KEYS: readonly MaterialKind[] = ['raw', 'part', 'fastener', 'purchased', 'other'];
 
 interface DimensionFormGroup extends FormGroup {
   controls: {
@@ -86,12 +88,13 @@ interface DimensionFormGroup extends FormGroup {
  *  - Two-column grid (collapses to one column on narrow viewports):
  *      LEFT  → required basics (name, article, unit, sku, price); stock moved to Склад
  *      RIGHT → optional data (supplier, description, notes, photos)
- *  - Dimensions stay in their own full-width section.
+ *  - Dimensions stay in their own half-width section on desktop and use the
+ *    full dialog width on mobile.
  *
  * Sections (in order):
  *  1. Основные данные (left): name, article, unit, sku, pricePerUnit
  *  2. Дополнительно (right): supplier, description, notes, photos
- *  3. Габариты (full-width FormArray of {type, value, isImmutable})
+ *  3. Габариты (desktop half-width; FormArray of {type, value, isImmutable})
  *
  * On submit:
  *  - Upload any new files via PhotosService
@@ -141,6 +144,7 @@ interface DimensionFormGroup extends FormGroup {
                 <app-pi-input
                   id="mat-name"
                   formControlName="name"
+                  data-save-continue-first="true"
                   placeholder="Название материала"
                   [invalid]="hasError('name')"
                 />
@@ -149,9 +153,15 @@ interface DimensionFormGroup extends FormGroup {
               <app-pi-form-field
                 label="Артикул"
                 htmlFor="mat-article"
+                [required]="true"
                 [error]="errorFor('article')"
               >
-                <app-pi-input id="mat-article" formControlName="article" placeholder="Артикул" />
+                <app-pi-input
+                  id="mat-article"
+                  formControlName="article"
+                  placeholder="Артикул материала"
+                  [invalid]="hasError('article')"
+                />
               </app-pi-form-field>
 
               <app-pi-form-field
@@ -207,7 +217,7 @@ interface DimensionFormGroup extends FormGroup {
                   class="pi-input w-full"
                   data-test="material-kind-select"
                 >
-                  @for (opt of KIND_OPTIONS; track opt.value) {
+                  @for (opt of kindOptions(); track opt.value) {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
@@ -296,16 +306,30 @@ interface DimensionFormGroup extends FormGroup {
               </app-pi-form-field>
             </div>
 
-            <app-pi-form-field label="Поставщик" htmlFor="mat-supplier">
+            <app-pi-form-field
+              label="Поставщик"
+              htmlFor="mat-supplier"
+              [error]="suppliersError()"
+              [hint]="suppliersLoading() ? 'Загрузка поставщиков…' : null"
+            >
               <app-pi-overflow-select
                 [items]="supplierItems()"
                 [value]="form.controls.supplierId.value ?? ''"
                 (valueChange)="onSupplierChange($event)"
+                [disabled]="suppliersLoading()"
                 searchable="auto"
                 placeholder="— не указан —"
                 ariaLabel="Поставщик"
                 dataTest="mat-supplier"
               />
+              @if (!suppliersLoading() && !suppliersError() && suppliers().length === 0) {
+                <p class="mt-1 text-xs text-muted-foreground" data-test="supplier-empty-hint">
+                  Нет поставщиков — создайте организацию с типом Поставщик.
+                  <a href="/organizations" class="underline underline-offset-2"
+                    >Создать организацию</a
+                  >
+                </p>
+              }
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -398,75 +422,77 @@ interface DimensionFormGroup extends FormGroup {
           </app-pi-form-section>
         </div>
 
-        <!-- ─── Dimensions (full-width section) ─── -->
-        <app-pi-form-section title="Габариты" headingId="mat-sec-dims" tone="dimensions">
-          <div class="flex items-baseline justify-between mb-form-row">
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              [disabled]="!canAddDimension()"
-              (click)="addDimension()"
-              data-test="add-dimension"
-              [attr.title]="canAddDimension() ? null : 'Все типы габаритов уже добавлены'"
-            >
-              + Добавить размер
-            </app-pi-button>
-          </div>
-          <div formArrayName="dimensions" class="space-y-2">
-            @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
-              <div
-                [formGroupName]="i"
-                class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper"
-                [attr.data-test]="'dimension-row-' + i"
+        <!-- ─── Dimensions: half-width on desktop, full-width on mobile ─── -->
+        <div class="w-full lg:w-1/2 max-w-xl" data-test="dimensions-section-wrap">
+          <app-pi-form-section title="Габариты" headingId="mat-sec-dims" tone="dimensions">
+            <div class="flex items-baseline justify-between mb-form-row">
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                [disabled]="!canAddDimension()"
+                (click)="addDimension()"
+                data-test="add-dimension"
+                [attr.title]="canAddDimension() ? null : 'Все типы габаритов уже добавлены'"
               >
-                <select
-                  [attr.id]="'mat-dim-type-' + i"
-                  [attr.name]="'dim-type-' + i"
-                  formControlName="type"
-                  class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
-                  [attr.aria-label]="'Тип габарита ' + (i + 1)"
+                + Добавить размер
+              </app-pi-button>
+            </div>
+            <div formArrayName="dimensions" class="space-y-2">
+              @for (dimGroup of dimensionsArray.controls; track $index; let i = $index) {
+                <div
+                  [formGroupName]="i"
+                  class="grid grid-cols-12 gap-2 items-center p-2 hairline rounded-sm bg-paper"
+                  [attr.data-test]="'dimension-row-' + i"
                 >
-                  @for (opt of dimensionTypeOptionsFor(i); track opt.value) {
-                    <option [value]="opt.value">{{ opt.label }}</option>
-                  }
-                </select>
-                <app-pi-input
-                  [attr.id]="'mat-dim-value-' + i"
-                  type="number"
-                  formControlName="value"
-                  placeholder="0"
-                  size="sm"
-                  [attr.aria-label]="'Значение ' + (i + 1)"
-                  class="col-span-3"
-                />
-                <label
-                  class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
-                  title="Нельзя менять в модулях/изделиях (например толщина листа)"
-                >
-                  <input
-                    [attr.id]="'mat-dim-immutable-' + i"
-                    [attr.name]="'dim-immutable-' + i"
-                    type="checkbox"
-                    formControlName="isImmutable"
-                    class="w-4 h-4"
-                    [attr.aria-label]="'Неизменяемый ' + (i + 1)"
+                  <select
+                    [attr.id]="'mat-dim-type-' + i"
+                    [attr.name]="'dim-type-' + i"
+                    formControlName="type"
+                    class="col-span-4 h-8 px-3 text-xs hairline rounded-sm bg-paper pi-focus-ring"
+                    [attr.aria-label]="'Тип габарита ' + (i + 1)"
+                  >
+                    @for (opt of dimensionTypeOptionsFor(i); track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                  <app-pi-input
+                    [attr.id]="'mat-dim-value-' + i"
+                    type="number"
+                    formControlName="value"
+                    placeholder="0"
+                    size="sm"
+                    [attr.aria-label]="'Значение ' + (i + 1)"
+                    class="col-span-3"
                   />
-                  <span>Неизменяемый</span>
-                </label>
-                <app-pi-button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  [attr.aria-label]="'Удалить габарит ' + (i + 1)"
-                  (click)="removeDimension(i)"
-                >
-                  ×
-                </app-pi-button>
-              </div>
-            }
-          </div>
-        </app-pi-form-section>
+                  <label
+                    class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"
+                    title="Нельзя менять в модулях/изделиях (например толщина листа)"
+                  >
+                    <input
+                      [attr.id]="'mat-dim-immutable-' + i"
+                      [attr.name]="'dim-immutable-' + i"
+                      type="checkbox"
+                      formControlName="isImmutable"
+                      class="w-4 h-4"
+                      [attr.aria-label]="'Неизменяемый ' + (i + 1)"
+                    />
+                    <span>Неизменяемый</span>
+                  </label>
+                  <app-pi-button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    [attr.aria-label]="'Удалить габарит ' + (i + 1)"
+                    (click)="removeDimension(i)"
+                  >
+                    ×
+                  </app-pi-button>
+                </div>
+              }
+            </div>
+          </app-pi-form-section>
+        </div>
 
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive">
@@ -475,7 +501,12 @@ interface DimensionFormGroup extends FormGroup {
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        @if (!isEdit()) {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
+        }
         <app-pi-button
           type="button"
           variant="default"
@@ -492,23 +523,25 @@ interface DimensionFormGroup extends FormGroup {
 export class MaterialFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadSuppliers();
+    this.loadKindLabels();
     this.loadUnits();
     if (this.data) {
       this.patchFromData(this.data);
     }
   }
   protected readonly DIMENSION_TYPES = DIMENSION_TYPES;
-  /**
-   * TZ-CATALOG-316: bind KIND_OPTIONS into the template so the
-   * `<select formControlName="materialKind">` can iterate of it.
-   * Re-exposing the module-level const keeps template-source simple.
-   */
-  protected readonly KIND_OPTIONS = KIND_OPTIONS;
+  protected readonly kindOptions = signal([
+    { value: KIND_NULL_SENTINEL, label: '— не указан —' },
+    ...dictionaryLabelOptions('materialKind')
+      .filter((item) => KIND_KEYS.includes(item.key as MaterialKind))
+      .map((item) => ({ value: item.key as MaterialKind, label: item.label })),
+  ] as { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[]);
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(MaterialsService);
   private readonly orgs = inject(OrganizationsService);
   private readonly unitsService = inject(UnitsService);
+  private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly photosService = inject(PhotosService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
@@ -560,7 +593,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
       Validators.minLength(1),
       Validators.maxLength(256),
     ]),
-    article: this.fb.control<string | null>(null, [Validators.maxLength(64)]),
+    article: this.fb.control<string | null>(null, [Validators.required, Validators.maxLength(64)]),
     unit: this.fb.control('', [Validators.required, Validators.maxLength(32)]),
     sku: this.fb.control<string | null>(null),
     // TZ-CATALOG-301 / 316 — new fields on FE:
@@ -592,6 +625,13 @@ export class MaterialFormDialogComponent implements OnDestroy {
    * Without this hook, photos uploaded then dismissed via X/Esc/backdrop
    * remain in the DB as orphans with no Material.photoIds reference.
    */
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
   ngOnDestroy(): void {
     this.cleanupOrphanUploads();
   }
@@ -621,6 +661,18 @@ export class MaterialFormDialogComponent implements OnDestroy {
    * The canonical `Unit.key` is stored in `Material.unit` (free-text FK
    * contract); label/symbol are display-only.
    */
+  private loadKindLabels(): void {
+    this.dictionaryLabels?.active('materialKind').subscribe((labels) => {
+      const options: { value: typeof KIND_NULL_SENTINEL | MaterialKind; label: string }[] = [
+        { value: KIND_NULL_SENTINEL, label: '— не указан —' },
+        ...labels
+          .filter((item) => KIND_KEYS.includes(item.key as MaterialKind))
+          .map((item) => ({ value: item.key as MaterialKind, label: item.label })),
+      ];
+      if (options.length > 1) this.kindOptions.set(options);
+    });
+  }
+
   private loadUnits(): void {
     this.unitsLoading.set(true);
     this.unitsError.set(null);
@@ -837,7 +889,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
 
   // ─── Submit ───
 
-  protected onSubmit(): void {
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting() || this.uploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -863,7 +915,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
       name: v.name,
       unit: v.unit,
     };
-    if (v.article) payload.article = v.article;
+    payload.article = v.article?.trim() ?? '';
     if (v.sku) payload.sku = v.sku;
     // TZ-CATALOG-301 / 316 — new fields on FE;
     // empty-string sentinel → field omitted; non-empty → typed value.
@@ -892,6 +944,12 @@ export class MaterialFormDialogComponent implements OnDestroy {
         this.submitted = true;
         // Atomic: after material save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
+        if (saveAndContinue) {
+          if (!this.isEdit()) this.resetForNextCreate();
+          this.submitting.set(false);
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit() ? 'Материал обновлён' : 'Материал создан');
         this.ref.close(res.data);
       } else {
@@ -899,6 +957,33 @@ export class MaterialFormDialogComponent implements OnDestroy {
         this.submitting.set(false);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.dimensionsArray.clear();
+    this.form.reset({
+      name: '',
+      article: null,
+      unit: '',
+      sku: null,
+      materialKind: KIND_NULL_SENTINEL,
+      weightKg: null,
+      assortment: null,
+      standardRef: null,
+      materialGrade: null,
+      pricePerUnit: null,
+      supplierId: null,
+      dimensions: [],
+      description: null,
+      notes: null,
+    });
+    this.photos.set([]);
+    this.mainPhotoId.set(null);
+    this.newlyUploadedIds.set([]);
+    this.pendingPhotoDeletions.set([]);
+    this.submitted = false;
+    this.errorMessage.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCancel(): void {

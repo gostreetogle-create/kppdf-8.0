@@ -210,6 +210,15 @@ export const routes: Routes = [
         title: 'KPPDF — Цвета',
       },
       {
+        // TZ-DICT-320 — editable product/material kind labels.
+        path: 'dictionaries/kind-labels',
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'dictionaries' },
+        loadComponent: () =>
+          import('./pages/dictionaries/kind-labels.page').then((m) => m.KindLabelsPage),
+        title: 'KPPDF — Виды изделий и материалов',
+      },
+      {
         // TZ-DICT-315 — профили быстрого create (S/M/L). API: DICT-314.
         path: 'dictionaries/form-profiles',
         canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],

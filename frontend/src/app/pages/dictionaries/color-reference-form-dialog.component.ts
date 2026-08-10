@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -14,10 +14,22 @@ import {
   PiColorReferencesService,
   ColorReference,
 } from '../../shared/services/pi-color-references.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = ColorReference | null | undefined;
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const RAL_NAME_RE = /^RAL\s*(\d{4})(?:\s*[—-]\s*(.+))?$/i;
+
+interface ParsedRalName {
+  code: string | null;
+  title: string;
+}
+
+function parseRalName(name: string | undefined): ParsedRalName {
+  const match = name?.trim().match(RAL_NAME_RE);
+  return match ? { code: match[1], title: match[2]?.trim() ?? '' } : { code: null, title: '' };
+}
 
 /**
  * TZ-PRODUCTS-301 — create/edit dialog for color references (RAL).
@@ -71,23 +83,61 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
       >
         <!-- ─── Two-column layout: basics (left) + appearance (right) ─── -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-form-field items-start">
-          <!-- ─── LEFT: обязательные основные данные ─── -->
+          <!-- ─── LEFT: код и подпись ─── -->
           <div class="space-y-form-field">
             <p class="eyebrow">Основное</p>
 
-            <app-pi-form-field
-              label="Название"
-              htmlFor="cr-name"
-              [required]="true"
-              [error]="errorFor('name')"
-            >
-              <app-pi-input
-                id="cr-name"
-                formControlName="name"
-                placeholder="RAL 9003 — Сигнальный белый"
-                [invalid]="hasError('name')"
-              />
-            </app-pi-form-field>
+            @if (isRalMode()) {
+              <app-pi-form-field
+                label="Код RAL"
+                htmlFor="cr-ral-code"
+                hint="Введите номер RAL — префикс подставится сам. Только 4 цифры."
+                [required]="true"
+                [error]="errorFor('ralCode')"
+              >
+                <div class="flex items-center gap-2">
+                  <span
+                    class="h-10 inline-flex items-center px-3 hairline rounded-sm bg-paper-2 font-mono text-sm"
+                    >RAL</span
+                  >
+                  <app-pi-input
+                    id="cr-ral-code"
+                    type="tel"
+                    formControlName="ralCode"
+                    placeholder="9003"
+                    ariaLabel="Четыре цифры кода RAL"
+                    [invalid]="hasError('ralCode')"
+                    (valueChange)="onRalCodeInput($event)"
+                    data-test="ral-code-input"
+                    data-save-continue-first="true"
+                  />
+                </div>
+              </app-pi-form-field>
+
+              <app-pi-form-field label="Название / описание" htmlFor="cr-title">
+                <app-pi-input
+                  id="cr-title"
+                  formControlName="title"
+                  placeholder="Сигнальный белый"
+                  data-test="ral-title-input"
+                />
+              </app-pi-form-field>
+            } @else {
+              <app-pi-form-field
+                label="Название"
+                htmlFor="cr-name"
+                [required]="true"
+                [error]="errorFor('name')"
+              >
+                <app-pi-input
+                  id="cr-name"
+                  formControlName="name"
+                  placeholder="Название цвета"
+                  data-save-continue-first="true"
+                  [invalid]="hasError('name')"
+                />
+              </app-pi-form-field>
+            }
 
             <app-pi-form-field
               label="Slug (ключ)"
@@ -187,7 +237,12 @@ const HEX_RE = /^#[0-9a-fA-F]{6}$/;
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        @if (!isEdit()) {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
+        }
         <app-pi-button
           type="button"
           variant="default"
@@ -210,14 +265,28 @@ export class ColorReferenceFormDialogComponent {
 
   /**
    * Create-mode when no `_id` — supports the page's copy flow, which passes
-   * `{ ...c, _id: undefined }` to pre-fill a new color from an existing one.
+   * `{ ...c, _id: undefined }` to pre-fill the fields.
    */
   protected readonly isEdit = signal(this.data != null && !!this.data._id);
+  private readonly parsedRalName = parseRalName(this.data?.name);
+  protected readonly isRalMode = signal(this.data == null || this.parsedRalName.code != null);
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    name: this.fb.control(this.data?.name ?? '', [Validators.required, Validators.maxLength(128)]),
+    name: this.fb.control(
+      this.data?.name ?? '',
+      this.isRalMode()
+        ? [Validators.maxLength(128)]
+        : [Validators.required, Validators.maxLength(128)],
+    ),
+    ralCode: this.fb.control(
+      this.parsedRalName.code ?? '',
+      this.isRalMode()
+        ? [Validators.required, Validators.pattern(/^\d{4}$/)]
+        : [Validators.pattern(/^\d{4}$/)],
+    ),
+    title: this.fb.control(this.parsedRalName.title, [Validators.maxLength(128)]),
     slug: this.fb.control(this.data?.slug ?? '', [
       Validators.maxLength(64),
       Validators.pattern(/^[a-z0-9-]+$/),
@@ -250,6 +319,7 @@ export class ColorReferenceFormDialogComponent {
       return `Максимум ${c.errors['maxlength'].requiredLength} символов`;
     }
     if (c.errors?.['pattern']) {
+      if (name === 'ralCode') return 'Введите ровно 4 цифры';
       return name === 'hex'
         ? 'Формат: #RRGGBB (например, #F4F4F4)'
         : 'Только строчные латинские, цифры, дефис';
@@ -257,17 +327,32 @@ export class ColorReferenceFormDialogComponent {
     return 'Некорректное значение';
   }
 
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
   protected onIsDefaultChange(value: boolean): void {
     this.form.controls.isDefault.setValue(value);
   }
 
-  protected onSubmit(): void {
+  protected onRalCodeInput(value: string): void {
+    const digits = value.replace(/\D/g, '').slice(0, 4);
+    if (digits !== value) this.form.controls.ralCode.setValue(digits);
+  }
+
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
     const v = this.form.getRawValue();
+    const name = this.isRalMode()
+      ? `RAL ${v.ralCode}${v.title.trim() ? ` — ${v.title.trim()}` : ''}`
+      : v.name.trim();
     const payload: {
       name: string;
       slug?: string;
@@ -276,7 +361,7 @@ export class ColorReferenceFormDialogComponent {
       isActive?: boolean;
       isDefault?: boolean;
     } = {
-      name: v.name,
+      name,
       slug: v.slug || undefined,
       isActive: v.isActive,
       isDefault: v.isDefault,
@@ -294,6 +379,12 @@ export class ColorReferenceFormDialogComponent {
 
     obs.subscribe((res) => {
       if (res.ok) {
+        if (saveAndContinue) {
+          if (!this.isEdit()) this.resetForNextCreate();
+          this.submitting.set(false);
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit() ? 'Цвет обновлён' : 'Цвет создан');
         this.ref.close(res.data);
       } else {
@@ -301,6 +392,21 @@ export class ColorReferenceFormDialogComponent {
         this.submitting.set(false);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.form.reset({
+      name: '',
+      ralCode: '',
+      title: '',
+      slug: '',
+      hex: '',
+      description: '',
+      isActive: true,
+      isDefault: false,
+    });
+    this.errorMessage.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCancel(): void {

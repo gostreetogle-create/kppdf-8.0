@@ -12,6 +12,7 @@ export interface MaterialDimension {
 export interface Material {
   _id: string;
   name: string;
+  /** Optional only for legacy rows; create/edit forms require an article. */
   article?: string;
   sku?: string;
   unit: string;

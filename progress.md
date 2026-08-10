@@ -1,4 +1,59 @@
 
+## [2026-08-10T18:03:51.7524650Z] — TZ-UX-DIALOG-307 DONE: save & continue hotkey
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Product/Module/Material/Color reference и QuickCreate получили общий Ctrl+Enter/⌘+Enter save-and-continue pattern. Create сбрасывает default values и фокусирует первое обязательное поле; edit остаётся открыт; обычный Save/Create close behavior сохранён. Добавлены RU footer hints, helper tests и обновлены `ui-add-and-continue.md` / `DIALOG-COOKBOOK.md`.
+**Gates:** frontend tsc PASS; focused Jest 6 suites / 92 tests PASS; changed-file ESLint PASS; Prettier PASS; FE build PASS; `git diff --check` PASS с CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-307.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-307-save-and-continue-hotkey.lock`
+**NEXT:** land DICT wave into canonical `D:\\kppdf-8.0` main. Deploy НЕ
+
+## [2026-08-10T17:54:56.7912096Z] — TZ-UX-DIALOG-306 DONE: composition quantity
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Picker получил поле «Кол-во» с минимумом `0,001` и default `1`; quantity теперь входит в result/session feedback. BOM передаёт quantity в POST вместо hardcoded `1`; Add & continue сбрасывает quantity в `1`. Canonical `ui-add-and-continue.md` и focused specs обновлены.
+**Gates:** frontend tsc PASS; focused Jest 2 suites / 22 tests PASS; changed-file ESLint PASS; Prettier PASS; `git diff --check` PASS с CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-306.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-306-composition-picker-qty.lock`
+**NEXT:** claim TZ-UX-DIALOG-307 strictly. Deploy НЕ
+
+## [2026-08-10T17:51:30.8247358Z] — TZ-DICT-320 DONE: kind labels FE wire + nav
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Shared `PiDictionaryLabelsService` now loads/caches active product/material labels with one RU fallback warning; `/dictionaries/kind-labels` supports admin/manager rename/active PATCH. Product/material FullEditors, QuickCreate, catalog filters/rails, detail, BOM and composition picker use the same service; stable keys remain unchanged.
+**Gates:** frontend tsc PASS; focused Jest 6 suites / 103/103; ESLint PASS; new-file Prettier PASS; FE build PASS; diff-check PASS with CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-320.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-320-kind-labels-fe-nav.lock`
+**NEXT:** claim TZ-UX-DIALOG-306 strictly. Deploy НЕ
+
+## [2026-08-10T17:37:39.9429139Z] — TZ-DICT-319 DONE: kind labels backend
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; backend gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Added idempotent global RU seeds for product/material kind labels, organization-plus-global read/active endpoints, admin/manager rename/order/active patch with immutable keys, and unique `(organizationId, scope, key)` identity with RU duplicate handling. FE dropdown/nav wire remains TZ-DICT-320.
+**Gates:** backend tsc PASS; dictionary-label Jest 2 suites / 9 tests PASS; ESLint PASS with one non-blocking test-helper warning; diff-check PASS; backend Prettier unavailable because no formatter dependency is declared.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-319.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-319-kind-labels-dictionary-be.lock`
+**NEXT:** claim TZ-DICT-320 strictly. Deploy НЕ
+
+## [2026-08-10T17:32:05.3769468Z] — TZ-CATALOG-338 DONE: article identity contract
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; BE/FE gates, archive, lock, and closeout metadata complete; deploy НЕ
+**Что:** Product `sku` стал обязательным артикулом, Product.name — optional с SKU fallback; Module/Material `article` обязательны и уникальны в организации; E11000 переводится в RU 409 «Артикул уже используется». QuickCreate, FullEditor, LockedRequired profiles, DTO/schema/service tests and page docs aligned. Material clone receives an `-COPY` article suffix.
+**Gates:** backend tsc PASS; backend focused Jest 63/63; frontend tsc PASS; focused FE Jest 95/95; FE build PASS; ESLint PASS with legacy warnings; diff-check PASS; Prettier CRLF/style baseline documented.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-338.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-338-article-required-unique.lock`
+**Known limit:** legacy rows without article remain readable and need migration/backfill before schema-validating edits; no cross-entity uniqueness.
+**NEXT:** claim TZ-DICT-319 strictly. Deploy НЕ
+
+## [2026-08-10T16:52:42.9338327Z] — TZ-MATERIALS-312 DONE: supplier states + half-width dimensions
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + focused Jest 43/43 + archive/lock; deploy НЕ
+**Что:** Material supplier lookup остаётся на Organization `type=supplier`; пустое состояние показывает RU hint и `/organizations`, ошибка видна под полем, loading отключает selector. «Габариты» ограничены `w-full lg:w-1/2 max-w-xl`; contract/isImmutable не менялись.
+**Gates:** frontend tsc PASS; material-form Jest 43/43 PASS; ESLint PASS; `git diff --check` PASS; Prettier baseline CRLF mismatch documented.
+**Archive:** `tasks/_archive/2026-08/TZ-MATERIALS-312.done.md`
+**Lock:** `.mimocode/locks/TZ-MATERIALS-312-supplier-empty-dims-half.lock`
+**NEXT:** claim TZ-CATALOG-338 strictly. Deploy НЕ
+
 ## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
 **Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
 **База кода:** `fe98e763` (+ commit Unicode-fix `deploy.py` / docs)
@@ -1930,3 +1985,33 @@ BOM inspector — вклад строки material/module read-only.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-335.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-335-kp-line-items-columns-photo.lock`
 **Next:** TZ-SALES-336; deploy NO.
+
+## [2026-08-10T16:34:00Z] — TZ-PRODUCTS-310 DONE: Product edit ɵcmp cycle removed
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE typecheck/build/focused tests/static import check PASS; deploy НЕ
+**Что:** `ProductBomPanelComponent` больше не импортирует `ProductFormDialogComponent` статически. Nested edit загружает FullEditor динамически после `ProductsService.findById`, поэтому `ProductFormDialog` может безопасно встраивать BOM panel без undefined `ɵcmp`.
+**Gates:** frontend tsc PASS; focused `product-form-dialog` + `product-bom-panel` Jest 33/33 PASS; Angular development build PASS; ESLint PASS; diff-check PASS. Madge показывает intentional dynamic edge и отдельный pre-existing template-block cycle; статическая взаимная связь отсутствует.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTS-310.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTS-310-product-bom-circular-cmp.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-DICT-317 строго по очереди.
+
+## [2026-08-10T16:43:00Z] — TZ-DICT-317 DONE: Units CRUD edit + manager roles
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE/BE typecheck, focused tests, FE build, ESLint and diff-check PASS; deploy НЕ
+**Что:** На странице «Измерения» карандаш теперь открывает компактный диалог редактирования названия, символа и категории; после PATCH список обновляется. POST/PATCH/DELETE единиц разрешены `admin` и `manager`, чтение оставлено `user`; удаление системных единиц по-прежнему запрещено.
+**Gates:** Measurements Jest 6/6; Unit RBAC Jest 2/2; frontend/backend tsc PASS; frontend development build PASS; ESLint/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-317.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-317-units-crud-edit-roles.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-DICT-318 строго по очереди.
+
+## [2026-08-10T16:47:00Z] — TZ-DICT-318 DONE: RAL auto-prefix and digit input
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE typecheck/build/focused tests/ESLint/diff-check PASS; deploy НЕ
+**Что:** В справочнике цветов код RAL вводится четырьмя цифрами с readonly-префиксом `RAL`; необязательное название формирует `RAL 9003 — Сигнальный белый`. Редактирование разбирает существующий RAL name, а не-RAL имена не меняет. Неиспользуемый plural dialog twin удалён после grep импортов.
+**Gates:** focused dialog/page Jest 21/21; frontend tsc PASS; frontend development build PASS; ESLint/dead-twin grep/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-318.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-318-ral-auto-prefix.lock`
+**Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
+**NEXT:** claim TZ-MATERIALS-312 строго по очереди.

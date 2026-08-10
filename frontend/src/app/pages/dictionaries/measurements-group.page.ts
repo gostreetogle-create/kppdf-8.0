@@ -26,12 +26,116 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
+import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { InputComponent } from '../../shared/ui/input/input.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { TableComponent, ColumnDef } from '../../shared/ui/pi-table.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { Unit, UnitsService, type UnitsListResponse } from './units.service';
+import {
+  Unit,
+  UnitsService,
+  type UnitsListResponse,
+  type UpdateUnitPayload,
+} from './units.service';
+
+type UnitDialogResult = Unit | null | undefined;
+
+@Component({
+  selector: 'app-unit-form-dialog',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    ReactiveFormsModule,
+    PiDialogComponent,
+    ButtonComponent,
+    FormFieldComponent,
+    InputComponent,
+  ],
+  template: `
+    <app-pi-dialog [title]="'Редактировать единицу'" [variant]="'content'" [maxWidth]="'30rem'">
+      <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-form-field">
+        <div class="hairline rounded-sm bg-paper-2 px-3 py-2 text-sm">
+          <span class="text-muted-foreground">Ключ:</span>
+          <code class="ml-2 font-mono">{{ data.key }}</code>
+          @if (data.isSystem) {
+            <span class="ml-2 text-xs text-muted-foreground">системная</span>
+          }
+        </div>
+        <app-pi-form-field label="Название" htmlFor="unit-edit-label" [required]="true">
+          <app-pi-input
+            id="unit-edit-label"
+            formControlName="label"
+            [invalid]="form.controls.label.invalid && form.controls.label.touched"
+          />
+        </app-pi-form-field>
+        <app-pi-form-field label="Символ" htmlFor="unit-edit-symbol">
+          <app-pi-input id="unit-edit-symbol" formControlName="symbol" />
+        </app-pi-form-field>
+        <app-pi-form-field label="Категория" htmlFor="unit-edit-category">
+          <app-pi-input id="unit-edit-category" formControlName="category" />
+        </app-pi-form-field>
+      </form>
+      <div footer class="flex gap-3">
+        <app-pi-button
+          type="button"
+          variant="default"
+          [disabled]="submitting()"
+          (click)="onSubmit()"
+        >
+          {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
+        </app-pi-button>
+        <app-pi-button type="button" variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
+      </div>
+    </app-pi-dialog>
+  `,
+})
+export class UnitFormDialogComponent {
+  private readonly fb = inject(NonNullableFormBuilder);
+  private readonly service = inject(UnitsService);
+  private readonly toast = inject(PiToastService);
+  private readonly ref = inject<DialogRef<UnitDialogResult>>(PI_DIALOG_REF);
+  protected readonly data = inject<Unit>(PI_DIALOG_DATA);
+  protected readonly submitting = signal(false);
+
+  protected readonly form = this.fb.group({
+    label: this.fb.control(this.data.label, [Validators.required, Validators.maxLength(128)]),
+    symbol: this.fb.control(this.data.symbol ?? '', Validators.maxLength(16)),
+    category: this.fb.control(this.data.category ?? '', Validators.maxLength(32)),
+  });
+
+  protected onSubmit(): void {
+    if (this.submitting()) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    const value = this.form.getRawValue();
+    const payload: UpdateUnitPayload = {
+      label: value.label.trim(),
+      symbol: value.symbol.trim() || null,
+      category: value.category.trim() || null,
+    };
+    this.submitting.set(true);
+    this.service.update(this.data.key, payload).subscribe((res) => {
+      if (res.ok) {
+        this.toast.success(`Единица «${value.label}» обновлена`);
+        this.ref.close(res.data);
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+        this.submitting.set(false);
+      }
+    });
+  }
+
+  protected onCancel(): void {
+    this.ref.close(null);
+  }
+}
 
 /**
  * TZ-DICT-308 — Measurements group page (/dictionaries/measurements).
@@ -148,11 +252,13 @@ import { Unit, UnitsService, type UnitsListResponse } from './units.service';
       <ng-template #rowActionsTpl let-u>
         <app-pi-row-actions
           [row]="u"
-          editLabel="Не применимо (системный справочник)"
+          [editLabel]="'Редактировать ' + u.label"
+          [dataTestEdit]="'edit-button-' + u.key"
           [deleteLabel]="'Удалить ' + u.label"
           [deleteTitle]="u.isSystem ? 'Системный юнит — нельзя удалить' : 'Удалить'"
           [deleteDisabled]="u.isSystem"
           [dataTestDelete]="'delete-button-' + u.key"
+          (edit)="onEdit($event)"
           (delete)="onDelete($event)"
         />
       </ng-template>
@@ -274,6 +380,15 @@ export class MeasurementsGroupPage {
           this.adding.set(false);
         }
       });
+  }
+
+  protected onEdit(u: Unit): void {
+    const ref = this.dialog.open(UnitFormDialogComponent, {
+      data: u,
+      width: 'md',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
   }
 
   protected onToggleActive(u: Unit, checked: boolean): void {
