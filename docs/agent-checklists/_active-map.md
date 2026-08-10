@@ -1,5 +1,21 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T18:03:51.7524650Z · TZ-UX-DIALOG-307 DONE / DICT wave ready to land
+- DONE: shared Ctrl/Cmd+Enter save-and-continue helper, catalog create-dialog reset/focus behavior, edit stay-open hotkey behavior, RU footer hints, tests, and dialog docs.
+- Gates: FE tsc PASS; focused Jest 6 suites / 92 tests PASS; changed-file ESLint PASS; Prettier PASS; FE build PASS; diff-check PASS with CRLF normalization warnings only.
+- Archive: `tasks/_archive/2026-08/TZ-UX-DIALOG-307.done.md`; lock: `.mimocode/locks/TZ-UX-DIALOG-307-save-and-continue-hotkey.lock`; active marker removed.
+- MCP/Excel/desktop/mcp-runtime and deploy untouched. Deploy: NO
+- NEXT: merge branch into canonical `D:\\kppdf-8.0` main, push `origin/main`, verify `_active/` empty.
+
+
+## Checkpoint 2026-08-10T17:56:01.3657604Z · TZ-UX-DIALOG-307 CLAIMED
+- Active marker: `tasks/_active/TZ-UX-DIALOG-307.md`; checklist: `docs/agent-checklists/TZ-UX-DIALOG-307.md`.
+- Scope: Ctrl/Cmd+Enter save-and-continue for catalog create dialogs, ordinary Save regression, footer hints, and docs/tests.
+- Conflict scan: `_active/` empty before claim; TZ-UX-DIALOG-306 is archived/locked/pushed. Team Room unavailable (`Unknown task; sync tasks first`).
+- Deploy: NO. Forbidden `desktop/**`/`mcp-runtime/**` paths excluded.
+- NEXT: inspect form submit contracts → implement shared hotkey pattern → FE gates → archive/commit/push.
+
+
 ## Checkpoint 2026-08-10T17:54:56.7912096Z · TZ-UX-DIALOG-306 DONE / next UX-DIALOG-307
 - DONE: composition picker quantity field (`>=0.001`, default 1), quantity in result/session feedback, BOM POST wiring, and reset-to-1 Add & continue behavior.
 - Gates: FE tsc PASS; focused Jest 2 suites / 22 tests PASS; changed-file ESLint PASS; Prettier PASS; diff-check PASS with CRLF normalization warnings only.

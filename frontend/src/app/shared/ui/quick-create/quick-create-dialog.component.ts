@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnDestroy,
   computed,
   inject,
@@ -55,6 +56,7 @@ import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
 } from '../../services/pi-dictionary-labels.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../util/dialog-save-and-continue';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -455,6 +457,9 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
             Готово
           </app-pi-button>
         } @else {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
           <app-pi-button
             variant="ghost"
             type="button"
@@ -701,7 +706,14 @@ export class QuickCreateDialogComponent implements OnDestroy {
     this.photosUploading.set(uploading);
   }
 
-  protected onSubmit(): void {
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting() || this.loading() || this.loadError() || this.photosUploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -715,6 +727,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
         this.submitting.set(false);
         if (res.ok) {
           this.submitted = true;
+          if (saveAndContinue) {
+            this.resetForNextCreate();
+            this.toast.success('Сохранено — можно создать следующий');
+            return;
+          }
           this.toast.success('Продукт создан');
           if (this.compositionCapable() && res.data) {
             this.createdProduct.set(res.data);
@@ -732,6 +749,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
         this.submitting.set(false);
         if (res.ok) {
           this.submitted = true;
+          if (saveAndContinue) {
+            this.resetForNextCreate();
+            this.toast.success('Сохранено — можно создать следующий');
+            return;
+          }
           this.toast.success('Модуль создан');
           if (this.compositionCapable() && res.data) {
             this.createdModule.set(res.data);
@@ -749,6 +771,48 @@ export class QuickCreateDialogComponent implements OnDestroy {
 
   protected onDone(): void {
     this.ref.close(this.createdProduct() ?? this.createdModule());
+  }
+
+  private resetForNextCreate(): void {
+    if (this.entity === 'product') {
+      this.form.reset({
+        name: '',
+        kind: 'good',
+        unit: 'шт',
+        sku: '',
+        listPrice: null,
+        categoryId: '',
+        isActive: true,
+        status: 'draft',
+        dimLength: null,
+        dimWidth: null,
+        dimHeight: null,
+        dimUnit: 'mm',
+        weightKg: null,
+        description: '',
+        notes: '',
+      });
+    } else {
+      this.form.reset({
+        name: '',
+        article: '',
+        width: null,
+        height: null,
+        depth: null,
+        unit: 'мм',
+        weight: null,
+        notes: '',
+      });
+    }
+    this.photos.set([]);
+    this.uploadedPhotoIds.set([]);
+    this.createdProduct.set(null);
+    this.createdModule.set(null);
+    this.formError.set(null);
+    this.submitted = false;
+    focusDialogField(
+      this.entity === 'product' ? '[data-test="qc-field-sku"]' : '[data-test="qc-field-name"]',
+    );
   }
 
   protected onCancel(): void {

@@ -41,6 +41,7 @@ import { PhotosService, type Photo } from '../../shared/services/photos.service'
 import { AuthService } from '../../core/auth.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = Product | null | undefined;
 
@@ -143,6 +144,7 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
                 <app-pi-input
                   id="prod-sku"
                   formControlName="sku"
+                  data-save-continue-first="true"
                   placeholder="Артикул изделия"
                   [invalid]="hasError('sku')"
                 />
@@ -537,7 +539,12 @@ const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        @if (!isEdit()) {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
+        }
         <app-pi-button
           type="button"
           variant="default"
@@ -700,6 +707,13 @@ export class ProductFormDialogComponent implements OnDestroy {
     }
   }
 
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
   ngOnDestroy(): void {
     this.cleanupOrphanUploads();
   }
@@ -856,7 +870,7 @@ export class ProductFormDialogComponent implements OnDestroy {
 
   // ─── Submit ───
 
-  protected onSubmit(): void {
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting() || this.uploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -916,6 +930,12 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.submitted = true;
         // Atomic: after the product save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
+        if (saveAndContinue) {
+          if (!this.isEdit()) this.resetForNextCreate();
+          this.submitting.set(false);
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit() ? 'Изделие обновлено' : 'Изделие создано');
         this.ref.close(res.data);
       } else {
@@ -923,6 +943,34 @@ export class ProductFormDialogComponent implements OnDestroy {
         this.submitting.set(false);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.form.reset({
+      name: '',
+      sku: null,
+      kind: 'good',
+      unit: '',
+      subcategory: null,
+      status: 'new',
+      listPrice: null,
+      isActive: true,
+      categoryId: null,
+      dimLength: null,
+      dimWidth: null,
+      dimHeight: null,
+      dimUnit: 'mm',
+      weightKg: null,
+      ralCode: null,
+      description: null,
+      notes: null,
+    });
+    this.photos.set([]);
+    this.newlyUploadedIds.set([]);
+    this.pendingPhotoDeletions.set([]);
+    this.submitted = false;
+    this.errorMessage.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCompositionChanged(): void {

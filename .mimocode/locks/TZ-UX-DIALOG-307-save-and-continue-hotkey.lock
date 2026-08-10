@@ -1,0 +1,22 @@
+{
+  "task_id": "TZ-UX-DIALOG-307",
+  "status": "DONE",
+  "agent_id": "Buffy/freebuff-259639d6",
+  "claimed_at": "2026-08-10T17:56:01.3657604Z",
+  "closed_at": "2026-08-10T18:03:51.7524650Z",
+  "workspace": "D:\\kppdf-8.0",
+  "scope": [
+    "frontend/src/app/shared/util/dialog-save-and-continue.ts",
+    "frontend/src/app/shared/util/dialog-save-and-continue.spec.ts",
+    "frontend/src/app/pages/products/product-form-dialog.component.ts",
+    "frontend/src/app/pages/modules/module-form-dialog.component.ts",
+    "frontend/src/app/pages/materials/material-form-dialog.component.ts",
+    "frontend/src/app/pages/dictionaries/color-reference-form-dialog.component.ts",
+    "frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.ts",
+    "docs/pages/ui-add-and-continue.md",
+    "docs/DIALOG-COOKBOOK.md"
+  ],
+  "deploy": false,
+  "mcp": false,
+  "excel": false
+}

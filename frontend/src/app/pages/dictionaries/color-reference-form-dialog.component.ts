@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, HostListener, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -14,6 +14,7 @@ import {
   PiColorReferencesService,
   ColorReference,
 } from '../../shared/services/pi-color-references.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = ColorReference | null | undefined;
 
@@ -108,6 +109,7 @@ function parseRalName(name: string | undefined): ParsedRalName {
                     [invalid]="hasError('ralCode')"
                     (valueChange)="onRalCodeInput($event)"
                     data-test="ral-code-input"
+                    data-save-continue-first="true"
                   />
                 </div>
               </app-pi-form-field>
@@ -131,6 +133,7 @@ function parseRalName(name: string | undefined): ParsedRalName {
                   id="cr-name"
                   formControlName="name"
                   placeholder="Название цвета"
+                  data-save-continue-first="true"
                   [invalid]="hasError('name')"
                 />
               </app-pi-form-field>
@@ -234,7 +237,12 @@ function parseRalName(name: string | undefined): ParsedRalName {
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        @if (!isEdit()) {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
+        }
         <app-pi-button
           type="button"
           variant="default"
@@ -319,6 +327,13 @@ export class ColorReferenceFormDialogComponent {
     return 'Некорректное значение';
   }
 
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
   protected onIsDefaultChange(value: boolean): void {
     this.form.controls.isDefault.setValue(value);
   }
@@ -328,7 +343,7 @@ export class ColorReferenceFormDialogComponent {
     if (digits !== value) this.form.controls.ralCode.setValue(digits);
   }
 
-  protected onSubmit(): void {
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -364,6 +379,12 @@ export class ColorReferenceFormDialogComponent {
 
     obs.subscribe((res) => {
       if (res.ok) {
+        if (saveAndContinue) {
+          if (!this.isEdit()) this.resetForNextCreate();
+          this.submitting.set(false);
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit() ? 'Цвет обновлён' : 'Цвет создан');
         this.ref.close(res.data);
       } else {
@@ -371,6 +392,21 @@ export class ColorReferenceFormDialogComponent {
         this.submitting.set(false);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.form.reset({
+      name: '',
+      ralCode: '',
+      title: '',
+      slug: '',
+      hex: '',
+      description: '',
+      isActive: true,
+      isDefault: false,
+    });
+    this.errorMessage.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCancel(): void {

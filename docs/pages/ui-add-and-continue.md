@@ -22,6 +22,7 @@
 | Одна позиция и ушёл | close-on-submit (как было) |
 | Много **однородных** id без per-line полей | checkbox multi + одно «Добавить» (module multi) |
 | Создание сущности с id после save | create→остаться (FORM-304/306) |
+| Каталожный create-диалог | Ctrl+Enter / ⌘+Enter → сохранить и создать ещё; обычное «Сохранить» закрывает |
 
 ## Реализация (composition picker)
 
@@ -31,6 +32,13 @@
 - BOM: `onAdded` передаёт `quantity` в POST; после успешного добавления поле возвращается к `1`
 - Parent: `ProductBomPanel.openAddPicker` → `applyCompositionLine` на каждый Add
 - Legacy без `onAdded`: close(result) как раньше
+
+## Save & continue для create-диалогов (TZ-UX-DIALOG-307)
+
+- `Ctrl+Enter` / `⌘+Enter` сохраняет текущую форму, не закрывая диалог.
+- После успешного create поля возвращаются к значениям по умолчанию, фокус уходит на первое обязательное поле, а footer показывает `Ctrl+Enter — сохранить и создать ещё`.
+- В edit обычное «Сохранить» и горячая клавиша сохраняют прежнее окно открытым; обычный create-submit по-прежнему закрывает диалог.
+- Контракт относится к Product/Module/Material/Color reference FullEditor и QuickCreate; `Escape` и закрытие через shell не перехватываются.
 
 ## Фото (TZ-UX-DIALOG-304)
 

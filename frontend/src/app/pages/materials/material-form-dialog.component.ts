@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  HostListener,
   inject,
   signal,
   OnDestroy,
@@ -40,6 +41,7 @@ import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
+import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = Material | null | undefined;
 
@@ -142,6 +144,7 @@ interface DimensionFormGroup extends FormGroup {
                 <app-pi-input
                   id="mat-name"
                   formControlName="name"
+                  data-save-continue-first="true"
                   placeholder="Название материала"
                   [invalid]="hasError('name')"
                 />
@@ -498,7 +501,12 @@ interface DimensionFormGroup extends FormGroup {
         }
       </form>
 
-      <div footer class="flex gap-3">
+      <div footer class="flex gap-3 items-center">
+        @if (!isEdit()) {
+          <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
+            Ctrl+Enter — сохранить и создать ещё
+          </span>
+        }
         <app-pi-button
           type="button"
           variant="default"
@@ -617,6 +625,13 @@ export class MaterialFormDialogComponent implements OnDestroy {
    * Without this hook, photos uploaded then dismissed via X/Esc/backdrop
    * remain in the DB as orphans with no Material.photoIds reference.
    */
+  @HostListener('document:keydown', ['$event'])
+  protected onDocumentKeydown(event: KeyboardEvent): void {
+    if (!isSaveAndContinueKey(event)) return;
+    event.preventDefault();
+    this.onSubmit(true);
+  }
+
   ngOnDestroy(): void {
     this.cleanupOrphanUploads();
   }
@@ -874,7 +889,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
 
   // ─── Submit ───
 
-  protected onSubmit(): void {
+  protected onSubmit(saveAndContinue = false): void {
     if (this.submitting() || this.uploading()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -929,6 +944,12 @@ export class MaterialFormDialogComponent implements OnDestroy {
         this.submitted = true;
         // Atomic: after material save succeeds, apply pending photo deletions.
         this.applyPendingPhotoDeletions();
+        if (saveAndContinue) {
+          if (!this.isEdit()) this.resetForNextCreate();
+          this.submitting.set(false);
+          this.toast.success('Сохранено — можно создать следующий');
+          return;
+        }
         this.toast.success(this.isEdit() ? 'Материал обновлён' : 'Материал создан');
         this.ref.close(res.data);
       } else {
@@ -936,6 +957,33 @@ export class MaterialFormDialogComponent implements OnDestroy {
         this.submitting.set(false);
       }
     });
+  }
+
+  private resetForNextCreate(): void {
+    this.dimensionsArray.clear();
+    this.form.reset({
+      name: '',
+      article: null,
+      unit: '',
+      sku: null,
+      materialKind: KIND_NULL_SENTINEL,
+      weightKg: null,
+      assortment: null,
+      standardRef: null,
+      materialGrade: null,
+      pricePerUnit: null,
+      supplierId: null,
+      dimensions: [],
+      description: null,
+      notes: null,
+    });
+    this.photos.set([]);
+    this.mainPhotoId.set(null);
+    this.newlyUploadedIds.set([]);
+    this.pendingPhotoDeletions.set([]);
+    this.submitted = false;
+    this.errorMessage.set(null);
+    focusDialogField('[data-save-continue-first="true"]');
   }
 
   protected onCancel(): void {

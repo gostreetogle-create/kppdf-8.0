@@ -70,6 +70,16 @@ Opener `dialog.open(..., { width })` не должен **перебивать** 
 | xl | ~920 (form) | QuickCreate L / широкие forms — **clamp к viewport** |
 | content + maxWidth | 1120 / 1400 | kinds C / D |
 
+## Save & continue (TZ-UX-DIALOG-307)
+
+Для catalog create-диалогов Product/Module/Material/Color reference и QuickCreate:
+
+- `Ctrl+Enter` / `⌘+Enter` вызывает save-and-continue; `Escape` остаётся штатным закрытием shell.
+- После успешного create форма сбрасывается к default values и фокусируется первое обязательное поле.
+- Обычная primary-кнопка `Сохранить`/`Создать` сохраняет прежний close-on-submit; в edit hotkey сохраняет и оставляет окно открытым.
+- Footer hint: `Ctrl+Enter — сохранить и создать ещё`.
+- Общие keyboard/focus helpers лежат в `shared/util/dialog-save-and-continue.ts`; не дублировать отдельные Overlay/shortcut handlers.
+
 ## Sticky footer
 
 Header + footer не скроллятся; body `overflow-auto` / `min-h-0`. Не дублировать второй footer вне shell.

@@ -1,4 +1,13 @@
 
+## [2026-08-10T18:03:51.7524650Z] — TZ-UX-DIALOG-307 DONE: save & continue hotkey
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Product/Module/Material/Color reference и QuickCreate получили общий Ctrl+Enter/⌘+Enter save-and-continue pattern. Create сбрасывает default values и фокусирует первое обязательное поле; edit остаётся открыт; обычный Save/Create close behavior сохранён. Добавлены RU footer hints, helper tests и обновлены `ui-add-and-continue.md` / `DIALOG-COOKBOOK.md`.
+**Gates:** frontend tsc PASS; focused Jest 6 suites / 92 tests PASS; changed-file ESLint PASS; Prettier PASS; FE build PASS; `git diff --check` PASS с CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-307.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-307-save-and-continue-hotkey.lock`
+**NEXT:** land DICT wave into canonical `D:\\kppdf-8.0` main. Deploy НЕ
+
 ## [2026-08-10T17:54:56.7912096Z] — TZ-UX-DIALOG-306 DONE: composition quantity
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
