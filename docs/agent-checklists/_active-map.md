@@ -1,5 +1,48 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T21:35:00Z · WAVE-MCP-GAP LANDED on main (TZD-31→34) · NEXT idle
+- Merged `fc0eca4b` into main via merge commit; DICT wave preserved (EXCEL READY + TZ-AUTH-301 checkpoints kept).
+- Archives `tasks/_archive/2026-08/TZD-31..34.done.md` + locks visible on main; `_active/` empty.
+- Deploy: NO — «готово предложить деплой» (по отдельной команде PO).
+
+## Checkpoint 2026-08-10T22:25:00Z · TZ-AUTH-301 READY (login personal learning/test notice)
+- Spec: `tasks/TZ-AUTH-301-login-private-system-notice.md` (текст: личный проект обучения/тестирования; **без** «организация/корпоратив/сотрудники»)
+- Checklist RESERVED: `docs/agent-checklists/TZ-AUTH-301.md`
+- Scope: `/login` notice + `index.html` robots noindex; Deploy: NO
+- NEXT: claim TZ-AUTH-301 (тонкий FE Layer 3)
+
+## Checkpoint 2026-08-10T22:10:00Z · WAVE-MCP-GAP DONE (TZD-31→34) · NEXT idle
+- DONE: TZD-31 (runtime sync), TZD-32 (material propose fields), TZD-33 (commercial HITL), TZD-34 (stock movements).
+- Wave acceptance: healthz.toolCount = source registry (70 live); material propose с ценой → SoT; MCP draft КП/заказ + gated ship/convert; stock-movement create. `_active/` пуст.
+- Archives: `tasks/_archive/2026-08/TZD-31..34.done.md`; locks `.mimocode/locks/TZD-31…34-*.lock`.
+- Commits: TZD-31 `930fcbc1`, TZD-32 `63ea90aa`, TZD-33 `e788553a`, TZD-34 (после closeout push).
+- NOT DONE: none (TZD-35 PARK, dict/KP waves не брались).
+- Deploy: NO — «готово предложить деплой» (только по явной команде PO).
+
+## Checkpoint 2026-08-10T21:40:00Z · TZD-33 DONE → NEXT TZD-34
+- DONE: TZD-33 (commercial MCP HITL) — 17 tools (9 read slim, 4 draft write forced status=draft, 4 gated with userOk:true); registry toolCount 51 → 68; MCP.md Commercial HITL section.
+- Gates: desktop/mcp test 86/86; mcp tsc PASS; live healthz toolCount 68.
+- Archive `tasks/_archive/2026-08/TZD-33.done.md` + lock `.mimocode/locks/TZD-33-commercial-mcp-hitl.lock`; `_active/TZD-33.md` removed.
+- IN PROGRESS: TZD-34 (stock movement MCP) — next claim.
+- NOT DONE: — (последняя TZ волны). BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
+## Checkpoint 2026-08-10T21:00:00Z · TZD-32 DONE → NEXT TZD-33
+- DONE: TZD-32 (material propose fields) — whitelist pricePerUnit/materialKind/description/dimensions in ProposeMaterialCreateDto, confirm round-trip to MaterialService.create, batch items same fields, MCP zod mirror + payload builder, MCP.md write-table.
+- Gates: BE tsc PASS; mutation-journal Jest 20/20; desktop/mcp test 79/79 + tsc PASS.
+- Archive `tasks/_archive/2026-08/TZD-32.done.md` + lock `.mimocode/locks/TZD-32-material-propose-fields.lock`; `_active/TZD-32.md` removed.
+- IN PROGRESS: TZD-33 (commercial MCP HITL) — next claim.
+- NOT DONE: TZD-34. BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
+## Checkpoint 2026-08-10T20:30:00Z · TZD-31 DONE → NEXT TZD-32
+- DONE: TZD-31 (MCP runtime sync) — registry `listRegisteredToolNames()` (toolCount 51 ≥ 40), /healthz ok/port/toolCount/packageVersion/hostDir/toolsSample (sample = list_categories + propose_product_create), startup log hostDir+toolCount, `KPPDF_MCP_HOST_DIR` override + package.json name validation in mcpHost, docs Restart-after-pull.
+- Gates: desktop/mcp test 74/74 PASS; mcp tsc PASS; desktop zone typecheck PASS; live smoke toolCount 51 PASS.
+- Archive `tasks/_archive/2026-08/TZD-31.done.md` + lock `.mimocode/locks/TZD-31-mcp-runtime-sync.lock`; `_active/TZD-31.md` removed.
+- IN PROGRESS: TZD-32 (material propose fields) — next claim.
+- NOT DONE: TZD-33, TZD-34. BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T19:45:00Z · WAVE-EXCEL-IMPORT-STUDIO READY (TZD-36→38)
 - PO: после показа Desktop коллегам — Excel спецификация проектировщика + вкладки Импорт|MCP.
 - Audit: `docs/audits/2026-08-10-desktop-excel-import-studio-audit.md`

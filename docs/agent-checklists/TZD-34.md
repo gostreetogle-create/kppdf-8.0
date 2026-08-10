@@ -1,45 +1,54 @@
 # TZD-34 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZD-34.md` (создать при CLAIM)
+> Status: **CLAIMED / IN PROGRESS**
+> Marker: `tasks/_active/TZD-34.md` (создан при CLAIM)
 > Commit/push: yes after DONE
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
-- agent_id: _(fill on claim)_
-- claimed_at: _(ISO)_
-- workspace: D:\kppdf-8.0
-- team_room_claim: _(yes|no|unavailable)_
+- agent_id: `buffy`
+- claimed_at: `2026-08-10T21:50:00Z`
+- workspace: `D:\kppdf-8.0`
+- team_room_claim: `unavailable`
 
 ## Preflight
 
-- [ ] TZD-33 DONE in archive
-- [ ] Прочитал `tasks/TZD-34-stock-movement-mcp.md` + audit note storage-items 404
-- [ ] Claim + `_active/TZD-34.md`
+- [x] TZD-33 DONE in archive
+- [x] Прочитал `tasks/TZD-34-stock-movement-mcp.md` + audit note storage-items 404
+- [x] Claim + `_active/TZD-34.md`
 
 ## Acceptance
 
-- [ ] kppdf_list_stock_movements + kppdf_stock_movement_create
-- [ ] exactly one of materialId|productId; transfer needs toWarehouseId
-- [ ] MCP.md stock via movements
-- [ ] desktop/mcp test+tsc PASS
+- [x] kppdf_list_stock_movements + kppdf_stock_movement_create
+- [x] exactly one of materialId|productId; transfer needs toWarehouseId
+- [x] MCP.md stock via movements
+- [x] desktop/mcp test+tsc PASS
 
 ## Integrity slot
 
-- [ ] Тип: MCP
-- [ ] N/A pages
-- [ ] Conflict keys only
+- [x] Тип: MCP
+- [x] N/A pages
+- [x] Conflict keys only
 
 ## Gates (факт)
 
-- _(fill)_
+- desktop/mcp `pnpm test`: 91/91 PASS (5 новых stock tests)
+- desktop/mcp `pnpm exec tsc --noEmit`: PASS
+- Live smoke: `GET /healthz` → `toolCount: 70` (68 + 2), startup log `tools 70 registered`
+- Deploy: NO
 
 ## Executor report (auto)
 
-- _(≤15 lines)_
+- NEW `desktop/mcp/src/stock-tools.ts`: `kppdf_list_stock_movements` (GET /api/stock-movements, фильтры warehouseId/materialId/productId/type) + `kppdf_stock_movement_create` (POST /api/stock-movements, SoT сразу, без journal).
+- `validateStockMovement()` до POST: ровно один из materialId|productId; transfer требует toWarehouseId → toolFail, 0 запросов.
+- `buildStockMovementBody()` — whitelist из CreateStockMovementDto (type/warehouseId/qty/toWarehouseId/zoneName/toZoneName/cost/documentRef/orderId).
+- Register в tools.ts + `STOCK_TOOL_NAMES` в реестре (toolCount 68 → 70).
+- MCP.md раздел «Tools — stock movements (TZD-34)»: склад через stock-movements, не storage-items POST.
+- commercial-tools.ts не трогали (только register в tools.ts); deploy NO.
+- Commit: `fc0eca4bc170d8f053aeeba297cf59dd47e88300`
 
 ## Closeout
 
-- [ ] archive + lock + progress; commit+push; deploy NO
-- [ ] WAVE-MCP-GAP #1–#4 DONE → checkpoint idle / propose deploy
-- closed_at: _(ISO)_
+- [x] archive + lock + progress; commit+push; deploy NO
+- [x] WAVE-MCP-GAP #1–#4 DONE → checkpoint idle / propose deploy
+- closed_at: `2026-08-10T22:10:00Z`

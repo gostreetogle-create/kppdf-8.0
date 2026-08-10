@@ -52,6 +52,25 @@ pnpm mcp:check
 
 Требование на машине клиента: **Node.js** в PATH (MCP host пока не sidecar).
 
+### Обновление dev Desktop после `git pull` (TZD-31)
+
+MCP host стартует из canonical `desktop/mcp/` рабочей копии, поэтому после
+`git pull` **перезапустите MCP** (карточка «MCP» → «Перезапустить»), иначе
+host продолжит держать старую версию tools. Проверка: `GET /healthz` →
+`toolCount` ≥ 40 (актуально 51). Клиенты (Cursor / LM Studio) — **Reload MCP**.
+
+Если Desktop стартует host не из ожидаемой папки: задайте каталог явно в
+`desktop/.env` (для `tauri dev`):
+
+```text
+KPPDF_MCP_HOST_DIR=D:\kppdf-8.0\desktop\mcp
+```
+
+Desktop проверит `package.json` (`name = @kppdf/desktop-mcp`) и покажет
+понятную ошибку при неверном каталоге — молча поднимать host из чужого дерева
+не будет. В собранном MSI (sidecar пока не поставляется) это ограничение
+dev-раскладки — см. `MCP.md`.
+
 ---
 
 ## Куда ставится приложение

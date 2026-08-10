@@ -57,8 +57,43 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 - При **закрытии приложения** MCP останавливается автоматически.
 - Неподключённый десктоп MCP **не запускает** (карточка показывает причину).
 
-Проверка: `GET http://127.0.0.1:9743/healthz` → `{ ok: true }`.  
+Проверка: `GET http://127.0.0.1:9743/healthz` →  
+
+```json
+{
+  "ok": true,
+  "service": "kppdf-desktop-mcp",
+  "port": 9743,
+  "toolCount": 51,
+  "packageVersion": "0.1.0",
+  "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
+  "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
+}
+```
+
+- `toolCount` — число зарегистрированных tools из реестра `desktop/mcp` (единый источник, без ручного дублирования).  
+- `toolsSample` — до 10 имён; всегда включает `kppdf_list_categories` и `kppdf_propose_product_create`, если они зарегистрированы.  
+- `hostDir` — абсолютный путь, из которого запущен host (`process.cwd()`).
+
 Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
+
+### После `git pull` → Restart MCP (TZD-31)
+
+MCP host стартует из каталога пакета `desktop/mcp` в рабочей копии. После
+обновления репозитория (`git pull`) старый процесс держит старую версию
+tools — **обязательно перезапустите MCP**:
+
+1. В Desktop: карточка «MCP — локальный доступ для AI» → **«Перезапустить»**
+   (или «Остановить» → «Запустить»).
+2. Проверка: `GET http://127.0.0.1:<порт>/healthz` → `toolCount` ≥ 40
+   (актуально 51) и в `toolsSample` видны `kppdf_list_categories` +
+   `kppdf_propose_product_create`.
+3. Cursor / LM Studio: **Reload MCP** (сервер `kppdf`) — клиент кэширует tools/list.
+
+Если host поднялся не из ожидаемой папки (например, после копии репозитория):
+Desktop проверяет `package.json` пакета и показывает понятную ошибку, когда
+`name ≠ @kppdf/desktop-mcp`. Задать каталог явно для dev Desktop можно через
+`KPPDF_MCP_HOST_DIR` (см. Env ниже).
 
 > **Cursor / Streamable HTTP:** MCP host отвечает на `GET|DELETE /mcp` кодом
 > **405** (POST-only, без SSE stream). Ответ **404** на GET ломает клиент Cursor
@@ -91,6 +126,7 @@ pnpm start
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |
 | `KPPDF_INBOX_DIR` | no | — | inbox dir for `kppdf_inbox_*` tools (desktop sets it) |
+| `KPPDF_MCP_HOST_DIR` | no | resourceDir walk | dev Desktop override: абсолютный путь к пакету `desktop/mcp` (приоритет над resourceDir). Для Tauri dev задаётся в `desktop/.env` (prefix `KPPDF_`), напр. `KPPDF_MCP_HOST_DIR=D:\kppdf-8.0\desktop\mcp`; в Node-контексте читается из `process.env`. Если `package.json` в каталоге имеет `name ≠ @kppdf/desktop-mcp` — host не стартует и показывает ошибку |
 | `MUTATION_JOURNAL_RING_SIZE` | no | `50` | backend ring (applied/undone) |
 
 Stdio: `pnpm start:stdio` (для клиентов, которые спавнят процесс).
@@ -201,13 +237,85 @@ Order / коммерческое КП kinds — не этот TZ.
 3. Менеджер закрывает в вебе кнопкой «Готово»; агент может `set_status done`
    только когда его явно попросили (не silent auto-close).
 
+## Tools — stock movements (TZD-34)
+
+Склад наполняется через **stock-movements** (`POST /api/stock-movements`),
+а НЕ через `POST /api/storage-items` (на стенде этот путь даёт 404). Пишет
+SoT сразу (нет journal) — для demo/ops ок; не «тихо» обнуляет склад.
+
+| Tool | REST | Замечание |
+|------|------|-----------|
+| `kppdf_list_stock_movements` | `GET /api/stock-movements?warehouseId&materialId&productId&type` | `{ items, total }`; read-only |
+| `kppdf_stock_movement_create` | `POST /api/stock-movements` | required `type` (`in\|out\|transfer\|adjust`), `warehouseId`, `qty` (> 0); **ровно один** из `materialId` \| `productId`; optional `toWarehouseId` (обязателен при `transfer`), `zoneName`, `toZoneName`, `cost`, `documentRef`, `orderId` |
+
+Валидация до POST: оба/ни одного из materialId\|productId → toolFail, 0 запросов;
+`transfer` без `toWarehouseId` → toolFail, 0 запросов.
+
+**Известное ограничение:** journal/undo для stock — нет; `POST storage-items`
+404 не чинится в этом TZ (отдельный inventory TZ при нужде); Composition
+propose — TZD-35 (park).
+
+## Tools — commercial (TZD-33) — read + draft HITL
+
+Контур «КП / заказ / клиент» **без** mutation-journal kinds (это отдельная
+BE-волна): reads везде; writes — только **draft** (или create counterparty/site
+с предупреждением «пишет SoT сразу»); опасные действия — **только** с
+`userOk: true`, иначе toolFail и **0** запросов к backend.
+
+Термины (канон): «КП» = **Quotation** (`/api/quotations`), «Клиент» =
+**Counterparty**, «Площадка» = **Site**, «Наша фирма» = **Organization**
+(read / organizationId только; create org — запрещён).
+
+### Read (slim-ответы: id + name/number + status; без HTML snapshot КП)
+
+| Tool | REST |
+|------|------|
+| `kppdf_list_counterparties` | `GET /api/counterparties?page&limit&search` |
+| `kppdf_get_counterparty` | `GET /api/counterparties/:id` |
+| `kppdf_list_persons` | `GET /api/persons?page&limit&search` |
+| `kppdf_list_sites` | `GET /api/sites?counterpartyId=` (без id backend вернёт `[]`) |
+| `kppdf_list_quotations` | `GET /api/quotations?counterpartyId&status` |
+| `kppdf_get_quotation` | `GET /api/quotations/:id` — slim, БЕЗ HTML snapshot |
+| `kppdf_list_orders` | `GET /api/orders?counterpartyId&status` |
+| `kppdf_get_order` | `GET /api/orders/:id` |
+| `kppdf_list_contracts` | `GET /api/contracts?counterpartyId&status` |
+
+### Draft write (обязательно статус draft; input `status` не принимается)
+
+| Tool | REST | Замечание |
+|------|------|-----------|
+| `kppdf_counterparty_create` | `POST /api/counterparties` | whitelist: name\*, inn\*, roles\*, shortName, legalForm, legalType, type, partyTypes, phone, paymentTermDays, vatRate. **Пишет SoT сразу** (нет journal) |
+| `kppdf_site_create` | `POST /api/sites` | `{ counterpartyId, name, address }` — SoT сразу |
+| `kppdf_quotation_create_draft` | `POST /api/quotations` | **force `status: 'draft'`**; required `organizationId` + `items[]`; optional counterpartyId/title/notes/discount\* |
+| `kppdf_order_create_draft` | `POST /api/orders` | **force `status: 'draft'`**; required `counterpartyId`, `siteId`, `items[]` |
+
+### Gated mutations (userOk:true обязателен)
+
+| Tool | REST | Whitelist |
+|------|------|-----------|
+| `kppdf_quotation_set_status` | `PATCH /api/quotations/:id` | только `draft\|sent\|accepted\|rejected` |
+| `kppdf_quotation_convert_to_order` | `POST /api/quotations/:id/convert-to-order` | `deliveryAddress?`, `managerId?` |
+| `kppdf_quotation_convert_to_contract` | `POST /api/quotations/:id/convert-to-contract` | `title?` |
+| `kppdf_order_ship` | `POST /api/orders/:id/ship` | `recipient?`, `address?`, `warehouseId?`, `driverInfo?` |
+
+### Commercial HITL protocol
+
+1. Агент создаёт **draft** (`*_create_draft`) → менеджер доводит и публикует в
+   вебе (`/proposals`, `/orders`). Агент **не** публикует КП молча.
+2. `ship` / `convert-to-*` / `set_status` — спросить человека, получить «ок»,
+   затем вызвать с `userOk: true`. Без `userOk:true` → toolFail, 0 write.
+3. Не Gantt, не supply explode, не Organization create, не admin users.
+
+**Известное ограничение:** нет journal undo для КП/заказа — менеджер правит в
+вебе; Composition BOM write — TZD-35 (park); stock write — TZD-34.
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:
 
 | Tool | Effect |
 |------|--------|
-| `kppdf_propose_material_create` | Proposal only (`name`, optional `unit` default `шт`) |
+| `kppdf_propose_material_create` | Proposal only. TZD-32: `name` + optional `unit` (default `шт`), `article`, `sku`, `categoryId`, `pricePerUnit` (≥ 0), `materialKind` (`raw\|part\|fastener\|purchased\|other`), `description`, `dimensions` (`{type, value, isImmutable?}`) — whitelist как в `CreateMaterialDto`; без новых полей поведение прежнее |
 | `kppdf_propose_material_update` | Proposal + before snapshot |
 | `kppdf_propose_product_create` | TZD-27 — product.create proposal (`name`+`kind` required, `unit` default `шт`); **не** ProductService до confirm |
 | `kppdf_propose_product_update` | TZD-27 — product.update proposal + before snapshot |
@@ -215,7 +323,7 @@ Order / коммерческое КП kinds — не этот TZ.
 | `kppdf_cancel_proposal` | Drop proposal, no SoT change |
 | `kppdf_undo_mutation` | Revert last / by id (create→soft-delete; update→restore before) |
 | `kppdf_list_mutations` | Recent applied/undone (ring) |
-| `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT |
+| `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT. TZD-32: items принимают те же поля, что `_create` (цена/kind/description/dimensions) |
 | `kppdf_confirm_batch` | TZD-18 — `POST /api/mutation-journal/confirm-batch` (SoT write шаг) |
 | `kppdf_cancel_batch` | TZD-18 — `POST /api/mutation-journal/cancel-batch` (без SoT) |
 

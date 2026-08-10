@@ -3,6 +3,7 @@
  * Env: KPPDF_API_BASE_URL, KPPDF_API_KEY, KPPDF_MCP_PORT, KPPDF_MCP_ALLOW_LAN
  */
 
+import { createRequire } from 'node:module';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
 import type { Request, Response } from 'express';
@@ -11,7 +12,12 @@ import {
   isAuthorized,
   loadRuntimeConfig,
 } from './config.js';
-import { createKppdfMcpServer } from './tools.js';
+import { buildHealthzPayload, createKppdfMcpServer, listRegisteredToolNames } from './tools.js';
+
+const require = createRequire(import.meta.url);
+/** Версия пакета @kppdf/desktop-mcp (для /healthz packageVersion). */
+const packageJson = require('../package.json') as { version?: string };
+const PACKAGE_VERSION = packageJson.version ?? '0.0.0';
 
 async function main(): Promise<void> {
   const cfg = loadRuntimeConfig();
@@ -55,14 +61,24 @@ async function main(): Promise<void> {
   });
 
   app.get('/healthz', (_req: Request, res: Response) => {
-    res.json({ ok: true, service: 'kppdf-desktop-mcp', port: cfg.port });
+    res.json(
+      buildHealthzPayload({
+        port: cfg.port,
+        packageVersion: PACKAGE_VERSION,
+        hostDir: process.cwd(),
+      }),
+    );
   });
 
   app.listen(cfg.port, cfg.host, () => {
     const displayHost = cfg.host === '0.0.0.0' ? '127.0.0.1' : cfg.host;
+    const hostDir = process.cwd();
+    const toolCount = listRegisteredToolNames().length;
     console.log(`[kppdf-mcp] listening http://${displayHost}:${cfg.port}/mcp`);
     console.log(`[kppdf-mcp] healthz  http://${displayHost}:${cfg.port}/healthz`);
     console.log(`[kppdf-mcp] auth     Bearer token = pairing JWT (KPPDF_API_KEY)`);
+    console.log(`[kppdf-mcp] hostDir  ${hostDir}`);
+    console.log(`[kppdf-mcp] tools    ${toolCount} registered`);
   });
 }
 

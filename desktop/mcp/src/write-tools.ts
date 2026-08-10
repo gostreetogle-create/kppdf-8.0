@@ -24,13 +24,65 @@ export const WRITE_TOOL_NAMES = [
 
 const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
 
-const batchItemSchema = z.object({
+/** TZD-32: зеркало ProposeMaterialCreateDto whitelist (backend). */
+const MATERIAL_KINDS_ENUM = z.enum(['raw', 'part', 'fastener', 'purchased', 'other']);
+
+const DIMENSION_TYPES = ['length', 'width', 'height', 'thickness', 'diameter', 'depth'] as const;
+
+const dimensionSchema = z.object({
+  type: z.enum(DIMENSION_TYPES).describe('Dimension type'),
+  value: z.number().min(0).describe('Dimension value'),
+  isImmutable: z.boolean().optional().describe('Fixed dimension (not resizable)'),
+});
+
+/** Поля material.create (общие для single propose и batch item). */
+export const materialCreateFields = {
   name: z.string().min(1).describe('Material name'),
-  unit: z.string().optional().describe('Unit (default шт)'),
+  unit: z.string().optional().describe('Unit (default шт — pieces)'),
   article: z.string().optional(),
   sku: z.string().optional(),
   categoryId: z.string().optional(),
-});
+  pricePerUnit: z
+    .number()
+    .min(0)
+    .optional()
+    .describe('Price per unit (RUB), optional — propose only'),
+  materialKind: MATERIAL_KINDS_ENUM.optional().describe(
+    'Catalog kind: raw | part | fastener | purchased | other',
+  ),
+  description: z.string().max(2000).optional().describe('Material description'),
+  dimensions: z.array(dimensionSchema).optional().describe('Material dimensions'),
+};
+
+export const materialCreateInput = z.object(materialCreateFields);
+
+export const batchItemSchema = z.object(materialCreateFields);
+
+/**
+ * TZD-32: тело propose material.create (payload зеркалит DTO; новые поля
+ * опциональны — без них поведение как раньше).
+ */
+export function buildMaterialCreateProposal(args: z.infer<typeof materialCreateInput>): {
+  kind: 'material.create';
+  toolName: string;
+  create: Record<string, unknown>;
+} {
+  return {
+    kind: 'material.create',
+    toolName: 'kppdf_propose_material_create',
+    create: {
+      name: args.name,
+      unit: args.unit?.trim() || 'шт',
+      article: args.article,
+      sku: args.sku,
+      categoryId: args.categoryId,
+      ...(args.pricePerUnit !== undefined ? { pricePerUnit: args.pricePerUnit } : {}),
+      ...(args.materialKind ? { materialKind: args.materialKind } : {}),
+      ...(args.description ? { description: args.description } : {}),
+      ...(args.dimensions ? { dimensions: args.dimensions } : {}),
+    },
+  };
+}
 
 export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
@@ -39,16 +91,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       title: 'Propose material create',
       description:
         'Creates a proposal only (no SoT write). Confirm with kppdf_confirm_proposal.',
-      inputSchema: {
-        name: z.string().min(1).describe('Material name'),
-        unit: z
-          .string()
-          .optional()
-          .describe('Unit of measure (default шт — pieces)'),
-        article: z.string().optional(),
-        sku: z.string().optional(),
-        categoryId: z.string().optional(),
-      },
+      inputSchema: materialCreateInput,
     },
     async (args) => {
       try {
@@ -56,17 +99,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
           cfg.apiBaseUrl,
           cfg.apiKey,
           '/api/mutation-journal/proposals',
-          {
-            kind: 'material.create',
-            toolName: 'kppdf_propose_material_create',
-            create: {
-              name: args.name,
-              unit: args.unit?.trim() || 'шт',
-              article: args.article,
-              sku: args.sku,
-              categoryId: args.categoryId,
-            },
-          },
+          buildMaterialCreateProposal(args),
         );
         return toolOk({ ok: true, proposal: result });
       } catch (err) {
@@ -128,7 +161,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
             items: items.map((item) => ({
               kind: 'material.create',
               toolName: 'kppdf_propose_material_batch',
-              create: item,
+              create: buildMaterialCreateProposal(item).create,
             })),
             ...(idempotencyKey ? { idempotencyKey } : {}),
           },

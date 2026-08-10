@@ -81,6 +81,8 @@ Loose wording: «MCP не видит tools» → hostDir указывает не
 1. `GET http://127.0.0.1:<port>/healthz` содержит `toolCount` ≥ числа
    зарегистрированных в source tools и `toolsSample` включает
    `kppdf_list_categories` **и** `kppdf_propose_product_create`.
+   Факт после подсчёта реестра export list: **toolCount = 51** (порог ≥ 40;
+   TZD-12/13 + TZD-17…30 + `kppdf_ping`).
 2. Документация: как задать `KPPDF_MCP_HOST_DIR=D:\kppdf-8.0\desktop\mcp`
    для dev Desktop.
 3. Unit/smoke в `desktop/mcp` на registry/health payload.

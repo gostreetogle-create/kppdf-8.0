@@ -1,4 +1,41 @@
 
+## [2026-08-10T22:10:00Z] — TZD-34 DONE — WAVE-MCP-GAP CLOSED (31→34)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** WAVE DONE; 4/4 TZ в archive + locks; `_active/` пуст; deploy НЕ (готово предложить деплой)
+**Что:** NEW `stock-tools.ts`: `kppdf_list_stock_movements` (GET /api/stock-movements, фильтры) + `kppdf_stock_movement_create` (POST /api/stock-movements — приход/расход/перевод/корректировка; SoT сразу, без journal). Валидация до POST: ровно один из materialId|productId; transfer требует toWarehouseId → toolFail, 0 запросов. Body из whitelist CreateStockMovementDto. Register в tools.ts; registry toolCount 68 → 70. MCP.md: «склад через stock-movements, не storage-items POST».
+**Gates:** desktop/mcp test 91/91 PASS; mcp tsc PASS; live healthz toolCount 70 PASS.
+**Архивы:** TZD-31/32/33/34 `.done.md` в `tasks/_archive/2026-08/`; locks TZD-31…34.
+**Итог волны:** healthz toolCount = source registry (70); material propose с ценой → SoT; MCP draft КП/заказ + gated ship/convert; stock-movement create.
+**Checkpoint:** WAVE-MCP-GAP DONE · NEXT idle · готово предложить деплой · Deploy НЕ
+
+## [2026-08-10T21:40:00Z] — TZD-33 DONE: commercial MCP HITL (WAVE-MCP-GAP #3)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; MCP read + draft write для КП/заказ/клиент; userOk-гейты; deploy НЕ
+**Что:** NEW `commercial-tools.ts` (17 tools): 9 read (counterparties/persons/sites/quotations/orders/contracts, slim без HTML snapshot), 4 draft write (counterparty_create — SoT сразу, site_create, quotation/order_create_draft — ПРИНУДИТЕЛЬНО status draft), 4 gated (quotation_set_status draft|sent|accepted|rejected, convert_to_order/contract, order_ship) — только с `userOk:true`, иначе toolFail и 0 backend call. Поля сверены с реальными DTO (QuotationItemDto, OrderItemDto unitPrice optional, CreateCounterpartyDto inn/roles). Register в tools.ts; registry toolCount 51 → 68.
+**Gates:** desktop/mcp test 86/86 PASS; mcp tsc PASS; live healthz toolCount 68 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-33.done.md`
+**Lock:** `.mimocode/locks/TZD-33-commercial-mcp-hitl.lock`
+**Checkpoint:** NEXT = claim TZD-34. Deploy НЕ
+
+## [2026-08-10T21:00:00Z] — TZD-32 DONE: material propose fields (WAVE-MCP-GAP #2)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; propose create price/kind/description/dimensions → SoT; deploy НЕ
+**Что:** `ProposeMaterialCreateDto` расширен whitelist-полями `pricePerUnit` (≥0), `materialKind` (MATERIAL_KINDS), `description` (≤2000), `dimensions` (`DimensionDto` переиспользован). propose→confirm передаёт поля в `MaterialService.create` без потерь; batch items — те же поля. MCP zod (`materialCreateInput`/`batchItemSchema`) зеркалит DTO + `buildMaterialCreateProposal` (default unit `шт`); MCP.md write-таблица обновлена. Invalid kind/цена/размер → 400/zod reject, 0 SoT; regression без новых полей PASS.
+**Gates:** BE tsc PASS; mutation-journal Jest 20/20 PASS; desktop/mcp test 79/79 PASS; mcp tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-32.done.md`
+**Lock:** `.mimocode/locks/TZD-32-material-propose-fields.lock`
+**Checkpoint:** NEXT = claim TZD-33. Deploy НЕ
+
+## [2026-08-10T20:30:00Z] — TZD-31 DONE: MCP runtime sync (WAVE-MCP-GAP #1)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; live /healthz toolCount 51 ≥ 40; deploy НЕ
+**Что:** Реестр имён tools в `desktop/mcp` (единый источник из `*_TOOL_NAMES` + `kppdf_ping`, без ручного дублирования); `/healthz` отдаёт `ok/port/toolCount/packageVersion/hostDir/toolsSample` (sample включает `kppdf_list_categories` + `kppdf_propose_product_create`); стартовый лог печатает hostDir + toolCount. Desktop host: `KPPDF_MCP_HOST_DIR` (import.meta.env `KPPDF_` / process.env) имеет приоритет над resourceDir walk; `package.json name ≠ @kppdf/desktop-mcp` → понятная RU ошибка, процесс не спавнится. Docs MCP.md/INSTALL.md: после `git pull` → Restart MCP → проверка healthz → Cursor Reload MCP.
+**Gates:** desktop/mcp `pnpm test` 74/74 PASS (новые suites registry + healthz payload); mcp `tsc --noEmit` PASS; desktop zone `pnpm typecheck` PASS (mcpHost.ts).
+**Smoke:** `GET /healthz` → `toolCount: 51`, `packageVersion: 0.1.0`, abs hostDir, startup log `tools 51 registered`.
+**Archive:** `tasks/_archive/2026-08/TZD-31.done.md`
+**Lock:** `.mimocode/locks/TZD-31-mcp-runtime-sync.lock`
+**Checkpoint:** `_active/` пуст для 31; NEXT = claim TZD-32. Deploy НЕ
+
 ## [2026-08-10T18:03:51.7524650Z] — TZ-UX-DIALOG-307 DONE: save & continue hotkey
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
@@ -53,6 +90,8 @@
 **Archive:** `tasks/_archive/2026-08/TZ-MATERIALS-312.done.md`
 **Lock:** `.mimocode/locks/TZ-MATERIALS-312-supplier-empty-dims-half.lock`
 **NEXT:** claim TZ-CATALOG-338 strictly. Deploy НЕ
+
+ freebuff/kppdf-8-0-wave-mcp-gap-d933f405-1386-42a7-acf9-965bef47b771
 
 ## [2026-08-09T20:10:00Z] — Warm deploy OK + deploy docs for agents
 **Статус:** prod `https://kppdf-crm.ru` health/ready ok; LAN `:3000` ok; wipe НЕ
