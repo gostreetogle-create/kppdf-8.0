@@ -87,6 +87,11 @@ export interface BuildTableLayoutColumn {
   visible?: boolean;
 }
 
+export interface BuildTerm {
+  text: string;
+  sortOrder: number;
+}
+
 export interface BuildDealTotals {
   vatPercent: number;
   discountType?: 'none' | 'percent' | 'amount';
@@ -100,6 +105,7 @@ export interface BuildDealTotals {
 export interface BuildDocumentRequest {
   previewLines?: BuildPreviewLine[];
   tableLayout?: BuildTableLayoutColumn[];
+  terms?: BuildTerm[];
   /** Request-only selected live table-template target for multi-table documents. */
   tableTargetId?: string;
   dealTotals?: BuildDealTotals;
@@ -114,6 +120,10 @@ export interface BuildDocumentRequest {
   quotationId?: string;
   invoiceId?: string;
   contractId?: string;
+  proposalNumber?: string;
+  proposalDate?: string;
+  validUntil?: string;
+  totalPrice?: number;
 }
 
 export interface DocumentTemplateListResponse {

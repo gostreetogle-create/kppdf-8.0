@@ -14,6 +14,11 @@ export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'conve
 
 export type DiscountType = 'none' | 'percent' | 'amount';
 
+export interface ProposalTerm {
+  text: string;
+  sortOrder: number;
+}
+
 export interface ProposalItem {
   /** Product FK. May be populated to a Product object by GET endpoints. */
   productId: string;
@@ -92,6 +97,7 @@ export interface Proposal {
   productionDays?: number;
   deliveryDays?: number;
   notes?: string;
+  terms?: ProposalTerm[];
   items?: ProposalItem[];
   convertedOrderId?: string;
   createdAt?: string;

@@ -18,6 +18,8 @@ import { TableTemplatesService } from '../../../shared/services/pi-table-templat
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { ProposalsService } from '../../../shared/services/pi-proposals.service';
 import { GeneratedDocumentsService } from '../../../shared/services/pi-generated-documents.service';
+import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import { TextBlockCategoriesService } from '../../../shared/services/pi-text-block-categories.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
@@ -194,6 +196,18 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           useValue: { archiveQuotation: jest.fn() },
         },
         {
+          provide: TextBlocksService,
+          useValue: {
+            list: jest.fn(() => of({ ok: true, data: { items: [], total: 0 } })),
+          },
+        },
+        {
+          provide: TextBlockCategoriesService,
+          useValue: {
+            list: jest.fn(() => of({ ok: true, data: [] })),
+          },
+        },
+        {
           provide: PiToastService,
           useValue: { success: toastSuccessMock, error: toastErrorMock },
         },
@@ -265,6 +279,17 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-table"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeTruthy();
+  });
+
+  it('opens the Условия overlay from the right rail without changing the shell', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'terms') => void;
+    };
+    page.toggleRightPane('terms');
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-terms-panel"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-center"]'))).toBeTruthy();
   });
 
   it('opens products overlay from its own rail button', () => {
@@ -662,6 +687,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           organizationId: 'org-1',
           templateId: 'tpl-1',
           orgMarkupPercent: 8,
+          terms: [{ text: 'Оплата: {{total_price}}', sortOrder: 0 }],
           items: [
             { productId: 'prod-1', productName: 'Стенд', quantity: 3, unit: 'шт', unitPrice: 5000 },
           ],
@@ -670,6 +696,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     );
     const page = fixture.componentInstance as ProposalCreatePage & {
       draftLines: () => ProposalDraftLine[];
+      terms: () => { text: string; sortOrder: number }[];
       resumeLastDraft: () => void;
     };
     page.resumeLastDraft();
@@ -685,6 +712,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       },
     ]);
     expect(localStorage.getItem('kp.create.lastTemplateId')).toBe('tpl-1');
+    expect(page.terms()).toEqual([{ text: 'Оплата: {{total_price}}', sortOrder: 0 }]);
   }));
 
   it('hydrates an editable quotation addressed by the studio query id', fakeAsync(() => {

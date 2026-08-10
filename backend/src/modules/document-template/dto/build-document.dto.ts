@@ -2,6 +2,7 @@ import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import {
   IsArray,
   IsBoolean,
+  IsDateString,
   IsNumber,
   IsIn,
   Max,
@@ -35,6 +36,13 @@ export class BuildPreviewLineDto {
   @IsOptional()
   @IsString()
   unit?: string;
+}
+
+export class BuildTermDto {
+  @IsString()
+  text!: string;
+
+  @IsOptional() @IsNumber() @Min(0) sortOrder?: number;
 }
 
 export class BuildTableLayoutColumnDto {
@@ -90,6 +98,12 @@ export class BuildDocumentDto {
   @Type(() => BuildTableLayoutColumnDto)
   tableLayout?: BuildTableLayoutColumnDto[];
 
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BuildTermDto)
+  terms?: BuildTermDto[];
+
   /** Request-only whole-deal totals; rendered only for the live line-items table. */
   /** Request-only selected live table-template target for multi-table documents. */
   @IsOptional()
@@ -123,4 +137,9 @@ export class BuildDocumentDto {
   @IsOptional() @IsString() @IsObjectId() invoiceId?: string;
 
   @IsOptional() @IsString() @IsObjectId() contractId?: string;
+
+  @IsOptional() @IsString() proposalNumber?: string;
+  @IsOptional() @IsDateString() proposalDate?: string;
+  @IsOptional() @IsDateString() validUntil?: string;
+  @IsOptional() @IsNumber() @Min(0) totalPrice?: number;
 }

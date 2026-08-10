@@ -164,6 +164,10 @@ export class QuotationOutputService {
       })),
       ...(Array.isArray(tableLayout) ? { tableLayout } : {}),
       ...(typeof tableTargetId === 'string' ? { tableTargetId } : {}),
+      terms: (quotation.terms ?? []).map((term, sortOrder) => ({
+        text: term.text,
+        sortOrder: term.sortOrder ?? sortOrder,
+      })),
       dealTotals: {
         vatPercent: quotation.vatPercent ?? 20,
         discountType: quotation.discountType ?? 'none',
@@ -177,6 +181,18 @@ export class QuotationOutputService {
       ...(quotation.counterpartyId
         ? { counterpartyId: this.referenceId(quotation.counterpartyId) }
         : {}),
+      ...(quotation.contactPersonId
+        ? { contactPersonId: this.referenceId(quotation.contactPersonId) }
+        : {}),
+      ...(quotation.siteId
+        ? { siteId: this.referenceId(quotation.siteId) }
+        : {}),
+      proposalNumber: quotation.number,
+      proposalDate: quotation.date?.toISOString(),
+      ...(quotation.validUntil
+        ? { validUntil: quotation.validUntil.toISOString() }
+        : {}),
+      totalPrice: quotation.total ?? 0,
       quotationId: quotation._id.toString(),
     };
   }

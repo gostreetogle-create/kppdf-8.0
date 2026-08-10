@@ -189,4 +189,28 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).not.toContain('src="/uploads/org/');
     expect(html).toContain('Подпись: ___________________');
   });
+
+  it('renders КП terms with values and preserves unknown variables', async () => {
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      blocks: [{ type: 'text', settings: { role: 'terms' } }],
+    });
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      terms: [
+        {
+          text: 'КП {{kp_number}} на сумму {{total_price}}; {{unknown_token}}',
+          sortOrder: 0,
+        },
+      ],
+      proposalNumber: 'QTN-2026-009',
+      proposalDate: '2026-08-11T00:00:00.000Z',
+      totalPrice: 12345.67,
+    });
+
+    expect(html).toContain('QTN-2026-009');
+    expect(html).toContain('12');
+    expect(html).toContain('{{unknown_token}}');
+    expect(html).not.toContain('undefined');
+  });
 });

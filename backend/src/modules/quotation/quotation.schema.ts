@@ -36,6 +36,17 @@ export class QuotationItem {
 
 const QuotationItemSchema = SchemaFactory.createForClass(QuotationItem);
 
+@Schema({ _id: false })
+export class QuotationTerm {
+  @Prop({ required: true, default: '' })
+  text!: string;
+
+  @Prop({ required: true, default: 0 })
+  sortOrder!: number;
+}
+
+const QuotationTermSchema = SchemaFactory.createForClass(QuotationTerm);
+
 /** Immutable payload captured when a quotation is frozen/sent (SALES-302). */
 @Schema({ _id: false })
 export class QuotationVersion {
@@ -152,6 +163,9 @@ export class Quotation {
 
   @Prop()
   notes?: string;
+
+  @Prop({ type: [QuotationTermSchema], default: [] })
+  terms!: QuotationTerm[];
 
   @Prop({ default: true, index: true })
   isActive!: boolean;

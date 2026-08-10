@@ -8,11 +8,12 @@
 ## Зафиксировано (не менять без PO)
 
 - Центр = только A4; flyout **overlay** (grid rails|center|rails fixed)
-- Left rail: **Шаблон** + **Товары**; Right: **Состав** + **Параметры** + **Таблица** (взаимоисключающие overlay-инструменты, TZ-SALES-340/332)
+- Left rail: **Шаблон** + **Товары** + **Получатель**; Right: **Состав** + **Параметры** + **Таблица** + **Условия** (взаимоисключающие overlay-инструменты, TZ-SALES-340/332/343/344)
 - 340: «Состав КП» показывает добавленные строки, позволяет менять количество/цену/единицу, дублировать, удалять и менять порядок; повторное добавление изделия увеличивает его количество. Изменения используют тот же build/autosave путь, что и лист.
 - 341: «Параметры» разделены на «Документ», «Деньги» и «Сроки»: номер/название/даты, НДС, скидка в % или ₽, предоплата и сроки сохраняются в КП и гидратируются после F5. Скидка меняет итог фоном, отдельной колонки на бланке нет.
 - 345: верхняя строка «Скачать ▾» содержит только русские действия «PDF», «Печать» и «Сохранить в архив документов». Перед выводом дожимается автосохранение; PDF строится из того же сохранённого HTML, а «Печать» вызывает системную печать текущего A4 iframe. Сервер использует `puppeteer-core` и `PUPPETEER_EXECUTABLE_PATH`/системный Chrome; без движка приложение работает, PDF возвращает 503 с русской подсказкой.
 - 343: левый рейл «Получатель» открывает overlay без сжатия A4: выбираются клиент, назначенный контакт и объект/адрес; карточка показывает ИНН/КПП, банк и подписанта, а «Параметры» содержит краткую строку и кнопку «Изменить». Ссылки `contactPersonId` и `siteId` сохраняются в КП, F5 их восстанавливает, а build передаёт их в реквизиты `counterparty.*` вместе с `contactName`, `contactPosition`, `siteName` и `siteAddress`.
+- 344: правый рейл «Условия» редактирует только экземпляр текущего КП: строки можно добавить, удалить и переставить ↑/↓, библиотечный `TextBlock` добавляется без выхода из студии, а токены вставляются в позицию курсора. Условия сохраняются в `Quotation.terms`, восстанавливаются после F5 и попадают в HTML/PDF; неизвестные токены остаются текстом.
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory до Save; Save создаёт/обновляет draft Quotation с items, templateId и non-null templateSnapshot, а `kp.create.lastDraftId`/`lastTemplateId` используются только для resume
@@ -31,7 +32,7 @@
 
 - При выборе шаблона или добавлении изделия: `DocumentTemplatesService.build(id, { previewLines, tableLayout, dealTotals, organizationId? })`; all three are request-only
 - Лист = sandboxed `iframe` `srcdoc` (`data-test="kp-tpl-html-preview"`); без имени / «упрощённое» / bullet draftLines
-- Смена шаблона или org из inspector `stateChange` → rebuild (debounce ~200ms)
+- Смена шаблона, org, получателя или условий из панели → rebuild (debounce ~200ms)
 - Loading / error — короткий RU на листе
 - `<base href="{origin}/">` и absolute app-origin rewrite для `/uploads/...`; iframe `sandbox="allow-same-origin"` без scripts
 - A4 iframe имеет intrinsic 794×1123px, `transform: scale(contain)` через ResizeObserver; sheet и документ `overflow: hidden` без H/V scroll; документ — единый A4 page box

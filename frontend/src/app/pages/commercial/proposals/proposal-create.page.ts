@@ -62,9 +62,12 @@ import {
   ProposalCreateRecipientComponent,
   type ProposalRecipientState,
 } from './proposal-create-recipient.component';
+import { ProposalCreateTermsComponent, type ProposalTerm } from './proposal-create-terms.component';
 
 /** Which left tool flyout is open (mutually exclusive). */
 type LeftTool = 'template' | 'products' | 'recipient' | null;
+
+type RightPane = 'params' | 'table' | 'composition' | 'terms';
 
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   { key: 'index', label: '№', visible: true },
@@ -94,6 +97,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
     ProposalCreateTemplateCenterComponent,
     ProposalCreateTemplatePickerComponent,
     ProposalCreateRecipientComponent,
+    ProposalCreateTermsComponent,
   ],
   template: `
     <app-pi-group-workspace
@@ -265,6 +269,19 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             >
               <lucide-angular [img]="tableIcon" [size]="18" aria-hidden="true" />
             </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'terms'"
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'terms'"
+              aria-controls="kp-flyout-terms"
+              aria-label="Условия"
+              title="Условия"
+              data-test="kp-create-toggle-terms"
+              (click)="toggleRightPane('terms')"
+            >
+              <lucide-angular [img]="termsIcon" [size]="18" aria-hidden="true" />
+            </button>
           </nav>
 
           @if (leftTool() === 'template') {
@@ -332,14 +349,15 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 
           @if (rightOpen()) {
             <aside
-              id="kp-flyout-params"
               class="kp-create-studio__flyout kp-create-studio__flyout--right"
               [attr.id]="
                 rightPane() === 'composition'
                   ? 'kp-flyout-composition'
                   : rightPane() === 'table'
                     ? 'kp-flyout-table'
-                    : 'kp-flyout-params'
+                    : rightPane() === 'terms'
+                      ? 'kp-flyout-terms'
+                      : 'kp-flyout-params'
               "
               data-test="kp-create-right"
               [attr.aria-label]="
@@ -347,7 +365,9 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   ? 'Состав КП'
                   : rightPane() === 'table'
                     ? 'Таблица'
-                    : 'Параметры'
+                    : rightPane() === 'terms'
+                      ? 'Условия'
+                      : 'Параметры'
               "
               #rightFlyout
             >
@@ -360,6 +380,12 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   (remove)="removeCompositionLine($event)"
                   (duplicate)="duplicateCompositionLine($event)"
                   (move)="moveCompositionLine($event)"
+                />
+              } @else if (rightPane() === 'terms') {
+                <app-proposal-create-terms
+                  [terms]="terms()"
+                  [readOnly]="isReadOnly()"
+                  (termsChange)="onTermsChange($event)"
                 />
               } @else {
                 <app-proposal-create-inspector
@@ -563,12 +589,13 @@ export class ProposalCreatePage implements OnInit {
   protected readonly recipientIcon = ContactRound;
   protected readonly slidersIcon = SlidersHorizontal;
   protected readonly tableIcon = TableProperties;
+  protected readonly termsIcon = FileText;
   protected readonly compositionIcon = ListTree;
 
   protected readonly isWide = signal(true);
   protected readonly leftTool = signal<LeftTool>(null);
   protected readonly rightOpen = signal(false);
-  protected readonly rightPane = signal<'params' | 'table' | 'composition'>('params');
+  protected readonly rightPane = signal<RightPane>('params');
   protected readonly selectedTemplate = signal<DocumentTemplate | null>(null);
   /** In-memory draft positions (SALES-314). Not persisted; not painted on the sheet (319). */
   protected readonly draftLines = signal<ProposalDraftLine[]>([]);
@@ -579,6 +606,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly counterpartyId = signal('');
   protected readonly contactPersonId = signal('');
   protected readonly siteId = signal('');
+  protected readonly terms = signal<ProposalTerm[]>([]);
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
   protected readonly proposalNumber = signal('');
@@ -657,6 +685,11 @@ export class ProposalCreatePage implements OnInit {
               ? { contactPersonId: this.contactPersonId().trim() }
               : {}),
             ...(this.siteId().trim() ? { siteId: this.siteId().trim() } : {}),
+            terms: this.terms(),
+            proposalNumber: this.proposalNumber().trim() || undefined,
+            ...(this.proposalDate() ? { proposalDate: this.proposalDate() } : {}),
+            ...(this.proposalValidUntil() ? { validUntil: this.proposalValidUntil() } : {}),
+            totalPrice: this.compositionTotal(),
           };
           return this.templatesSvc.build(tpl._id, payload).pipe(
             tap((res) => {
@@ -825,6 +858,7 @@ export class ProposalCreatePage implements OnInit {
       prepaymentPercent: this.prepaymentPercent(),
       productionDays: this.productionDays(),
       deliveryDays: this.deliveryDays(),
+      terms: this.terms(),
       items: this.draftLines().map((line, index) => ({
         productId: line.productId,
         productName: line.productName,
@@ -973,6 +1007,7 @@ export class ProposalCreatePage implements OnInit {
       }
       this.clearLocalDraftPointers();
       this.draftLines.set([]);
+      this.terms.set([]);
       this.selectedTemplate.set(null);
       this.previewHtmlSource.set(null);
       this.previewHtml.set(null);
@@ -991,6 +1026,7 @@ export class ProposalCreatePage implements OnInit {
         }
         // Deleted / missing КП — empty studio (do not resurrect last template alone).
         this.clearLocalDraftPointers();
+        this.terms.set([]);
       });
       return;
     }
@@ -1018,6 +1054,12 @@ export class ProposalCreatePage implements OnInit {
     this.counterpartyId.set(this.refId(draft.counterpartyId) ?? '');
     this.contactPersonId.set(this.refId(draft.contactPersonId) ?? '');
     this.siteId.set(this.refId(draft.siteId) ?? '');
+    this.terms.set(
+      (draft.terms ?? []).map((term, index) => ({
+        text: term.text ?? '',
+        sortOrder: term.sortOrder ?? index,
+      })),
+    );
     this.orgMarkupPercent.set(this.clampMarkup(draft.orgMarkupPercent ?? 0));
     this.proposalNumber.set(draft.number ?? '');
     this.proposalTitle.set(draft.title ?? '');
@@ -1203,6 +1245,13 @@ export class ProposalCreatePage implements OnInit {
     this.scheduleAutosave();
   }
 
+  protected onTermsChange(terms: ProposalTerm[]): void {
+    if (this.isReadOnly()) return;
+    this.terms.set(terms.map((term, sortOrder) => ({ text: term.text, sortOrder })));
+    if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+    this.scheduleAutosave();
+  }
+
   protected openRecipientTool(): void {
     if (this.isReadOnly()) return;
     this.leftTool.set('recipient');
@@ -1264,13 +1313,13 @@ export class ProposalCreatePage implements OnInit {
     if (next && !this.isWide()) this.rightOpen.set(false);
   }
 
-  protected toggleRightPane(pane: 'params' | 'table' | 'composition'): void {
+  protected toggleRightPane(pane: RightPane): void {
     const isSamePane = this.rightOpen() && this.rightPane() === pane;
     this.rightPane.set(pane);
     this.rightOpen.set(!isSamePane);
     if (
       !isSamePane &&
-      (pane === 'table' || pane === 'composition') &&
+      (pane === 'table' || pane === 'composition' || pane === 'terms') &&
       (this.leftTool() === 'products' || this.leftTool() === 'recipient')
     ) {
       this.leftTool.set(null);

@@ -34,6 +34,13 @@ export class QuotationItemDto {
   @IsOptional() @IsNumber() @Min(0) sortOrder?: number;
 }
 
+export class QuotationTermDto {
+  @IsString()
+  text!: string;
+
+  @IsOptional() @IsInt() @Min(0) sortOrder?: number;
+}
+
 export class CreateQuotationDto {
   @IsOptional() @IsString() number?: string;
   @IsOptional() @IsString() title?: string;
@@ -74,6 +81,13 @@ export class CreateQuotationDto {
   @IsOptional() @IsNumber() @Min(0) discountAmount?: number;
 
   @IsOptional() @IsString() notes?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuotationTermDto)
+  terms?: QuotationTermDto[];
+
   @IsOptional() @IsObjectId() templateId?: string;
   @IsOptional() designSnapshot?: Record<string, unknown>;
   @IsOptional() templateSnapshot?: Record<string, unknown>;

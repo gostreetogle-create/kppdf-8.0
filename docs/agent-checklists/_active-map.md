@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-SALES-344 DONE → NEXT TZ-SALES-342
+- DONE: right-rail «Условия» overlay in the frozen Create КП shell; add/reorder/delete multiline conditions, active TextBlockCategory filter, library Add & continue, and cursor-position variable insertion.
+- Persistence/render: `Quotation.terms` is stored, returned, autosaved and hydrated after F5; build receives terms plus KP number/date/total and renders known variables safely in a terms block or fallback section; unknown variables remain literal. PDF rebuild payload includes terms and commercial metadata.
+- Gates: frontend tsc + proposal-create/terms 32/32 PASS; backend tsc + document-template/quotation 96/96 PASS; Angular development build PASS; changed-file ESLint/Prettier/diff-check PASS. DOM/component self-check PASS; authenticated backend-data browser smoke unavailable in headless workspace.
+- Archive/lock: `tasks/_archive/2026-08/TZ-SALES-344.done.md`; `.mimocode/locks/TZ-SALES-344-kp-terms-panel.lock`; `_active/` empty.
+- Commit/push: pending closeout on canonical `main`; foreign WIP remains excluded.
+- NEXT continuous: **TZ-SALES-342** → 346 → 347 → 348. Deploy NO; desktop ZIP publish NO; nginx/VPS untouched.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-343 DONE → NEXT TZ-SALES-344
 - DONE: recipient overlay in the frozen Create КП shell; all active Counterparty records with search, read-only requisites card, assigned contact Person, Site object/address, and in-studio quick-create.
 - Persistence/build: Quotation stores and populates `contactPersonId`/`siteId`; autosave and F5 hydrate both; build receives all three recipient ids and exposes contact/address fields on `counterparty.*`; Parameters has one summary with «Изменить» back to the same overlay.

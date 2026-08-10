@@ -1,3 +1,15 @@
+## [2026-08-11] — TZ-SALES-344 DONE — КП условия, библиотека и переменные
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** В правом рейле студии добавлена русская панель «Условия»: строки условий с multiline-редактором, ↑/↓, удалением, библиотекой TextBlock по активным категориям и вставкой переменных в позицию курсора. Shell 317/A4 geometry не изменялись.
+**Persistence/render:** `Quotation.terms` сохраняется и восстанавливается после F5; build получает terms, номер/дату/итог и печатает известные переменные в блок условий или fallback-секцию. Неизвестные токены остаются литералом; PDF rebuild payload включает terms.
+**Gates:** backend tsc + document-template/quotation 96/96; frontend tsc + proposal-create/terms 32/32; Angular development build; ESLint/Prettier/diff-check PASS. DOM/component self-check PASS; authenticated browser data smoke unavailable без backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-344.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-344-kp-terms-panel.lock`
+**Commit/push:** closeout pending on canonical `main`.
+**NEXT:** TZ-SALES-342 → 346 → 347 → 348; Deploy НЕ; desktop ZIP publish НЕ.
+
+
 ## [2026-08-11] — TZ-SALES-343 DONE — КП получатель, контакт и объект
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

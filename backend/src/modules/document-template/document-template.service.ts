@@ -642,6 +642,7 @@ export class DocumentTemplateService {
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
     await this.applyIssuerOrganization(template, bag);
+    const termsHtml = this.renderQuotationTerms(dto, bag);
     const lineItemsTargetIds = this.resolveLineItemsTargetIds(
       blocks,
       dto.tableTargetId,
@@ -649,16 +650,73 @@ export class DocumentTemplateService {
     const resolvedBlocks = await Promise.all(
       blocks.map(async (b) => {
         const withBinding = await this.resolveBlockContent(b, bag);
-        return this.resolveTableBlock(
+        const rendered = await this.resolveTableBlock(
           withBinding,
           dto.previewLines,
           lineItemsTargetIds.has(String(b._id)),
           dto.tableLayout,
           dto.dealTotals,
         );
+        const settings = rendered.settings as { role?: string } | undefined;
+        return settings?.role === 'terms' && termsHtml
+          ? this.cloneResolvedBlock(rendered, { content: termsHtml })
+          : rendered;
       }),
     );
-    return this.renderHtml(template, resolvedBlocks, bag);
+    return this.renderHtml(template, resolvedBlocks, {
+      ...bag,
+      __termsHtml: termsHtml,
+    });
+  }
+
+  private renderQuotationTerms(
+    dto: BuildDocumentDto,
+    bag: Record<string, unknown>,
+  ): string {
+    const quotation = bag.quotation as Record<string, unknown> | undefined;
+    const counterparty = bag.counterparty as
+      Record<string, unknown> | undefined;
+    const terms = (dto.terms ?? [])
+      .map((term, index) => ({
+        text: term.text,
+        sortOrder: term.sortOrder ?? index,
+      }))
+      .filter((term) => term.text.trim().length > 0)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    if (terms.length === 0) return '';
+    const values: Record<string, string> = {
+      client_name: String(counterparty?.['name'] ?? ''),
+      kp_number: String(dto.proposalNumber ?? quotation?.['number'] ?? ''),
+      total_price: this.formatValue(
+        dto.totalPrice ?? quotation?.['total'],
+        'currency',
+      ),
+      date: this.formatValue(dto.proposalDate ?? quotation?.['date'], 'date'),
+      valid_until: this.formatValue(
+        dto.validUntil ?? quotation?.['validUntil'],
+        'date',
+      ),
+      prepayment_percent: String(
+        dto.dealTotals?.prepaymentPercent ??
+          quotation?.['prepaymentPercent'] ??
+          '',
+      ),
+      production_days: String(
+        dto.dealTotals?.productionDays ?? quotation?.['productionDays'] ?? '',
+      ),
+      delivery_days: String(
+        dto.dealTotals?.deliveryDays ?? quotation?.['deliveryDays'] ?? '',
+      ),
+    };
+    return terms
+      .map((term) => {
+        const text = escapeHtmlValue(term.text).replace(
+          /\{\{([a-z_]+)\}\}/g,
+          (token, key: string) => values[key] ?? token,
+        );
+        return `<p>${text.replace(/\n+/g, '<br>')}</p>`;
+      })
+      .join('');
   }
 
   /**
@@ -670,10 +728,12 @@ export class DocumentTemplateService {
     block: TemplateBlockDocument,
     overrides: Partial<TemplateBlock>,
   ): TemplateBlockDocument {
-    return Object.assign(
-      block.toObject({ virtuals: false }),
-      overrides,
-    ) as TemplateBlockDocument;
+    const plain =
+      typeof (block as TemplateBlockDocument & { toObject?: unknown })
+        .toObject === 'function'
+        ? (block as TemplateBlockDocument).toObject({ virtuals: false })
+        : block;
+    return Object.assign({}, plain, overrides) as TemplateBlockDocument;
   }
 
   /**
@@ -1470,13 +1530,23 @@ export class DocumentTemplateService {
           : '';
       })
       .join('');
+    const termsHtml =
+      typeof data['__termsHtml'] === 'string' ? data['__termsHtml'] : '';
     const body = blocks
       .map((b) => {
-        const content = substitute(b.content ?? b.title);
-        const literalContent =
-          b.source?.kind === 'literal' ? sanitizeHtml(b.source.value) : content;
-        const imageSettings = b.settings as
+        const blockSettings = b.settings as
           { role?: string; imageUrl?: string } | undefined;
+        const isTermsBlock = blockSettings?.role === 'terms';
+        const rawContent = b.content ?? b.title;
+        const content = isTermsBlock
+          ? (rawContent ?? '')
+          : substitute(rawContent);
+        const literalContent = isTermsBlock
+          ? content
+          : b.source?.kind === 'literal'
+            ? sanitizeHtml(b.source.value)
+            : content;
+        const imageSettings = blockSettings;
         const imageContent =
           safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
         const layoutStyle = blockLayoutStyle(b.layout);
@@ -1524,7 +1594,15 @@ export class DocumentTemplateService {
         }
       })
       .join('\n');
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}</div></body></html>`;
+    const fallbackTerms =
+      termsHtml &&
+      !blocks.some(
+        (block) =>
+          (block.settings as { role?: string } | undefined)?.role === 'terms',
+      )
+        ? `<section class="block kp-terms"><h3>Условия</h3>${termsHtml}</section>`
+        : '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div></body></html>`;
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

@@ -93,6 +93,7 @@ export class QuotationService {
       discountPercent: dto.discountPercent ?? 0,
       discountAmount: dto.discountAmount ?? 0,
       notes: dto.notes,
+      terms: this.mapTerms(dto.terms),
       orgMarkupPercent: dto.orgMarkupPercent,
       vatPercent: dto.vatPercent ?? 20,
       prepaymentPercent: dto.prepaymentPercent ?? 0,
@@ -202,6 +203,7 @@ export class QuotationService {
     if (dto.designSnapshot !== undefined)
       doc.designSnapshot = dto.designSnapshot;
     if (dto.notes !== undefined) doc.notes = dto.notes;
+    if (dto.terms !== undefined) doc.terms = this.mapTerms(dto.terms);
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.validUntil !== undefined) doc.validUntil = new Date(dto.validUntil);
     if (dto.title !== undefined) doc.title = dto.title;
@@ -270,6 +272,10 @@ export class QuotationService {
         discountPercent: doc.discountPercent,
         discountAmount: doc.discountAmount,
         notes: doc.notes,
+        terms: (doc.terms ?? []).map((term) => ({
+          text: term.text,
+          sortOrder: term.sortOrder,
+        })),
         familyRole: doc.familyRole,
         masterId: doc.masterId?.toString(),
         familyVersion: doc.familyVersion,
@@ -372,6 +378,7 @@ export class QuotationService {
       discountPercent: src.discountPercent,
       discountAmount: src.discountAmount,
       notes: `Дубликат ${src.number}`,
+      terms: this.mapTerms(src.terms),
       templateId: src.templateId,
       designSnapshot: src.designSnapshot,
       templateSnapshot: src.templateSnapshot,
@@ -523,6 +530,7 @@ export class QuotationService {
           discountPercent: master.discountPercent,
           discountAmount: master.discountAmount,
           notes: master.notes,
+          terms: this.mapTerms(master.terms),
           templateId: master.templateId,
           designSnapshot: master.designSnapshot,
           templateSnapshot: master.templateSnapshot,
@@ -672,6 +680,18 @@ export class QuotationService {
     q.convertedOrderId = order._id.toString();
     await q.save();
     return { quotation: q, orderId: order._id.toString() };
+  }
+
+  private mapTerms(
+    terms: CreateQuotationDto['terms'] | QuotationDocument['terms'],
+  ): Array<{ text: string; sortOrder: number }> {
+    return (terms ?? [])
+      .map((term, index) => ({
+        text: String(term.text ?? ''),
+        sortOrder: term.sortOrder ?? index,
+      }))
+      .filter((term) => term.text.trim().length > 0)
+      .map((term, sortOrder) => ({ ...term, sortOrder }));
   }
 
   private applyDiscount(
