@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · TZ-SALES-347 DONE → NEXT TZ-SALES-348
+- DONE: Create КП status badge and allowed transitions, `freeze` version save/list/read-only viewer, accepted-to-order navigation and duplicate shortcut; accepted lock remains stronger than edits.
+- Gates: FE tsc; proposal-create 33/33; Angular development build; changed-file ESLint/Prettier/diff-check PASS. Browser/data smoke unavailable without backend stack; DOM/component self-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-347.done.md`; lock: `.mimocode/locks/TZ-SALES-347-kp-status-versions-in-studio.lock`; `_active/` removed.
+- Commit/push: pending closeout commit on canonical `main`. Deploy NO; ZIP NO.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-346 DONE → NEXT TZ-SALES-347
 - DONE: `Quotation.sheetLayout` persistence and hydration; configured multi-page A4 rendering with repeated table headers/background, last-page-only totals/terms, optional page numbering, and bounded photo scale/crop/visibility.
 - Preview center now splits `.doc-page` output into a vertical stack of sandboxed A4 iframes and shows `Страница 1 из N`; frozen single-sheet overflow rule remains intact.

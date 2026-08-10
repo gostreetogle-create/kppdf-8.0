@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-347 DONE: status, versions and order flow
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Верхняя строка Create КП показывает RU статус и разрешённые переходы; `freeze` используется для «Сохранить версию» и read-only просмотра snapshot без PATCH/autosave. Принятое КП можно превратить в заказ с переходом на карточку заказа; duplicate открывается в студии.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-347.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-347-kp-status-versions-in-studio.lock`
+**Gates:** FE tsc + proposal-create/terms 33/33 + development build; ESLint/Prettier/diff-check PASS; DOM/component self-check PASS; live authenticated browser/data smoke unavailable without backend data stack.
+**NEXT:** TZ-SALES-348; deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-346 DONE: multipage КП sheet
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
 **Что:** `Quotation.sheetLayout` хранит лимиты строк, масштаб/обрезку фото и видимость photo column. Build режет 30 строк по 4/6 в 6 A4-листов, повторяет шапку/фон, оставляет итоги и условия на последнем листе и уважает `pageNumbering`.
@@ -30,7 +38,7 @@
 **NEXT:** TZ-SALES-342 → 346 → 347 → 348; deploy НЕ; desktop ZIP publish НЕ.
 
 **Last updated:** 2026-08-11
-**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-346 DONE; next SALES-347→348; deploy НЕ запускать
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-347 DONE; next SALES-348; deploy НЕ запускать
 
 ## [2026-08-11] — TZ-SALES-343 DONE: recipient overlay and references
 **Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ

@@ -67,7 +67,7 @@ export interface ProposalCreateInspectorState {
   sheetLayout?: ProposalSheetLayoutState;
 }
 
-export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>;
+export type ProposalCreateStatus = ProposalStatus;
 
 /**
  * Right inspector for Create KP (TZ-SALES-315 + TZ-SALES-330).
@@ -88,12 +88,9 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
     <div class="inspector" data-test="kp-create-inspector">
       @if (!tableOnly()) {
         <div class="inspector__lock" data-test="kp-status-lock">
-          <span class="text-xs" [class.text-destructive]="status() === 'accepted'">
-            {{
-              status() === 'accepted'
-                ? 'Оплачена · бланк заблокирован'
-                : 'Черновик · доступно редактирование'
-            }}
+          <span class="text-xs" [class.text-destructive]="readOnly()">
+            {{ statusLabel() }} ·
+            {{ readOnly() ? 'бланк заблокирован' : 'доступно редактирование' }}
           </span>
           @if (status() === 'accepted') {
             <app-pi-button
@@ -105,16 +102,19 @@ export type ProposalCreateStatus = Extract<ProposalStatus, 'draft' | 'accepted'>
             >
               Снять «Оплачена»
             </app-pi-button>
-          } @else {
-            <app-pi-button
-              type="button"
-              variant="ghost"
-              size="sm"
-              data-test="kp-mark-paid"
-              (click)="statusRequest.emit('accepted')"
+          } @else if (statusOptions().length > 0) {
+            <select
+              class="pi-input w-auto text-xs"
+              [value]="status()"
+              [disabled]="readOnly()"
+              data-test="kp-status-select"
+              (change)="onStatusChange($event)"
             >
-              Отметить как «Оплачена»
-            </app-pi-button>
+              <option [value]="status()">Изменить статус…</option>
+              @for (option of statusOptions(); track option) {
+                <option [value]="option">{{ statusLabel(option) }}</option>
+              }
+            </select>
           }
         </div>
       }
@@ -740,6 +740,18 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.tableTargets().map((target) => ({ id: target.id, label: target.label })),
   );
 
+  protected readonly statusOptions = computed<ProposalStatus[]>(() => {
+    const transitions: Record<ProposalStatus, ProposalStatus[]> = {
+      draft: ['sent'],
+      sent: ['accepted', 'rejected'],
+      accepted: [],
+      rejected: ['sent'],
+      converted: [],
+      cancelled: [],
+    };
+    return transitions[this.status()] ?? [];
+  });
+
   ngOnInit(): void {
     this.orgs.list({ limit: 200 }).subscribe((res) => {
       if (!res.ok) {
@@ -767,6 +779,24 @@ export class ProposalCreateInspectorComponent implements OnInit {
     const n = Number(raw);
     this.orgMarkupPercent.set(Number.isFinite(n) ? n : 0);
     this.emitState();
+  }
+
+  protected statusLabel(status = this.status()): string {
+    const labels: Record<ProposalStatus, string> = {
+      draft: 'Черновик',
+      sent: 'Отправлено',
+      accepted: 'Принято',
+      rejected: 'Отклонено',
+      converted: 'В заказе',
+      cancelled: 'Отменено',
+    };
+    return labels[status];
+  }
+
+  protected onStatusChange(event: Event): void {
+    if (this.readOnly()) return;
+    const next = (event.target as HTMLSelectElement).value as ProposalStatus;
+    if (this.statusOptions().includes(next)) this.statusRequest.emit(next);
   }
 
   protected onCounterpartyChange(id: string): void {

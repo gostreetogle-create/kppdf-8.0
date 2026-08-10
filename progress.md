@@ -1,3 +1,13 @@
+## [2026-08-11] — TZ-SALES-347 DONE — статус, версии и заказ из КП
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Create КП получил RU status badge и разрешённые переходы, использующий existing API `freeze` version viewer без PATCH/autosave, кнопку «Создать заказ» для принятого КП с переходом в `/orders/:id` и «Копировать КП» через duplicate.
+**Gates:** frontend tsc + proposal-create/terms 33/33 + Angular development build; changed-file ESLint/Prettier/diff-check PASS; DOM/component self-check PASS; authenticated browser/data smoke unavailable without backend data stack.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-347.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-347-kp-status-versions-in-studio.lock`
+**Commit/push:** pending closeout commit.
+**NEXT:** TZ-SALES-348; Deploy НЕ; desktop ZIP publish НЕ.
+
 ## [2026-08-11] — TZ-SALES-346 DONE — многостраничный лист КП
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

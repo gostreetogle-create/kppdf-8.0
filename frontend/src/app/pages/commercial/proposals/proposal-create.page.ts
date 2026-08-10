@@ -12,7 +12,7 @@
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   ContactRound,
   FileText,
@@ -38,7 +38,11 @@ import {
 } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { GeneratedDocumentsService } from '../../../shared/services/pi-generated-documents.service';
-import { ProposalsService, type Proposal } from '../../../shared/services/pi-proposals.service';
+import {
+  ProposalsService,
+  type Proposal,
+  type ProposalVersionSummary,
+} from '../../../shared/services/pi-proposals.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
@@ -179,7 +183,94 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 <span class="text-[11px] text-muted-foreground" data-test="kp-page-count">
                   Страница 1 из {{ previewPageCount() }}
                 </span>
-                @if (previewStatus() === 'ready') {
+                <span
+                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]"
+                  data-test="kp-studio-status"
+                >
+                  {{ statusLabel() }}
+                </span>
+                @if (!isVersionView() && !isReadOnly() && nextStatusOptions().length) {
+                  <select
+                    class="pi-input w-auto text-xs"
+                    [value]="proposalStatus()"
+                    data-test="kp-top-status-select"
+                    (change)="onTopStatusChange($event)"
+                  >
+                    <option [value]="proposalStatus()">Изменить статус…</option>
+                    @for (option of nextStatusOptions(); track option) {
+                      <option [value]="option">{{ statusLabel(option) }}</option>
+                    }
+                  </select>
+                }
+                @if (isVersionView()) {
+                  <button
+                    type="button"
+                    class="text-xs underline pi-focus-ring"
+                    data-test="kp-version-return"
+                    (click)="returnToCurrentVersion()"
+                  >
+                    Вернуться к текущему
+                  </button>
+                }
+                @if (previewStatus() === 'ready' && !isVersionView()) {
+                  @if (hasDraftId()) {
+                    <button
+                      type="button"
+                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                      data-test="kp-save-version"
+                      [disabled]="isReadOnly()"
+                      (click)="saveVersion()"
+                    >
+                      Сохранить версию
+                    </button>
+                    <button
+                      type="button"
+                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                      data-test="kp-toggle-versions"
+                      (click)="toggleVersionMenu()"
+                    >
+                      Версии ({{ versionSummaries().length }}) ▾
+                    </button>
+                    @if (versionMenuOpen()) {
+                      <div
+                        class="absolute right-0 top-full z-40 mt-1 min-w-[18rem] border hairline rounded-sm bg-paper p-2 shadow-lg"
+                        data-test="kp-version-menu"
+                      >
+                        @for (version of versionSummaries(); track version.version) {
+                          <button
+                            type="button"
+                            class="block w-full text-left px-2 py-1 text-xs hover:bg-paper-2"
+                            (click)="openVersion(version.version)"
+                          >
+                            v{{ version.version }} · {{ formatVersionDate(version.frozenAt) }}
+                          </button>
+                        }
+                        @if (!versionSummaries().length) {
+                          <span class="block px-2 py-1 text-xs text-muted-foreground"
+                            >Версий пока нет</span
+                          >
+                        }
+                      </div>
+                    }
+                    @if (proposalStatus() === 'accepted') {
+                      <button
+                        type="button"
+                        class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                        data-test="kp-create-order"
+                        (click)="createOrder()"
+                      >
+                        Создать заказ
+                      </button>
+                    }
+                    <button
+                      type="button"
+                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                      data-test="kp-duplicate"
+                      (click)="duplicateCurrent()"
+                    >
+                      Копировать КП
+                    </button>
+                  }
                   <div class="relative ml-auto">
                     <button
                       type="button"
@@ -583,6 +674,7 @@ export class ProposalCreatePage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly router = inject(Router);
   private readonly proposalsSvc = inject(ProposalsService);
   private readonly generatedDocumentsSvc = inject(GeneratedDocumentsService);
   private readonly toast = inject(PiToastService);
@@ -649,7 +741,19 @@ export class ProposalCreatePage implements OnInit {
   protected readonly autosaveLabel = signal('');
   protected readonly downloadMenuOpen = signal(false);
   protected readonly proposalStatus = signal<ProposalCreateStatus>('draft');
-  protected readonly isReadOnly = computed(() => this.proposalStatus() === 'accepted');
+  protected readonly versionMenuOpen = signal(false);
+  protected readonly versionSummaries = signal<ProposalVersionSummary[]>([]);
+  protected readonly currentDraftId = signal<string | null>(null);
+  protected readonly hasDraftId = computed(() => Boolean(this.currentDraftId()));
+  protected readonly isVersionView = signal(false);
+  protected readonly isReadOnly = computed(
+    () =>
+      this.isVersionView() ||
+      this.proposalStatus() === 'accepted' ||
+      this.proposalStatus() === 'converted' ||
+      this.proposalStatus() === 'cancelled',
+  );
+  private currentPreviewBeforeVersion: string | null = null;
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private autosaveToastShown = false;
   private pendingOutput: (() => void) | null = null;
@@ -933,9 +1037,10 @@ export class ProposalCreatePage implements OnInit {
       return;
     }
     this.writeStorage('kp.create.lastDraftId', res.data._id);
+    this.currentDraftId.set(res.data._id);
     this.writeStorage('kp.create.lastTemplateId', templateId);
     this.proposalNumber.set(res.data.number ?? this.proposalNumber());
-    this.proposalStatus.set(res.data.status === 'accepted' ? 'accepted' : 'draft');
+    this.proposalStatus.set(res.data.status ?? this.proposalStatus());
     this.autosaveLabel.set('Сохранено');
     if (!autosave || !this.autosaveToastShown) {
       this.toast.success('Черновик сохранён');
@@ -1030,6 +1135,7 @@ export class ProposalCreatePage implements OnInit {
     this.proposalsSvc.findById(id).subscribe((res) => {
       if (res.ok && this.isStudioStatus(res.data.status)) {
         this.writeStorage('kp.create.lastDraftId', id);
+        this.currentDraftId.set(id);
         this.hydrateDraft(res.data);
         return;
       }
@@ -1062,6 +1168,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   private clearLocalDraftPointers(): void {
+    this.currentDraftId.set(null);
     this.removeStorage('kp.create.lastDraftId');
     this.removeStorage('kp.create.lastTemplateId');
   }
@@ -1075,6 +1182,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   private hydrateDraft(draft: Proposal): void {
+    this.currentDraftId.set(this.readStorage('kp.create.lastDraftId'));
     const templateId = this.refId(draft.templateId);
     this.proposalStatus.set(draft.status === 'accepted' ? 'accepted' : 'draft');
     this.organizationId.set(this.refId(draft.organizationId) ?? '');
@@ -1173,7 +1281,137 @@ export class ProposalCreatePage implements OnInit {
   }
 
   private isStudioStatus(status: Proposal['status']): boolean {
-    return status === 'draft' || status === 'accepted';
+    return (
+      status === 'draft' || status === 'sent' || status === 'accepted' || status === 'rejected'
+    );
+  }
+
+  protected statusLabel(status = this.proposalStatus()): string {
+    const labels: Record<Proposal['status'], string> = {
+      draft: 'Черновик',
+      sent: 'Отправлено',
+      accepted: 'Принято',
+      rejected: 'Отклонено',
+      converted: 'В заказе',
+      cancelled: 'Отменено',
+    };
+    return labels[status];
+  }
+
+  protected formatVersionDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('ru-RU');
+  }
+
+  protected readonly nextStatusOptions = computed<ProposalCreateStatus[]>(() => {
+    const transitions: Record<ProposalCreateStatus, ProposalCreateStatus[]> = {
+      draft: ['sent'],
+      sent: ['accepted', 'rejected'],
+      accepted: ['draft'],
+      rejected: ['sent'],
+      converted: [],
+      cancelled: [],
+    };
+    return transitions[this.proposalStatus()] ?? [];
+  });
+
+  protected onTopStatusChange(event: Event): void {
+    const status = (event.target as HTMLSelectElement).value as ProposalCreateStatus;
+    if (this.nextStatusOptions().includes(status)) this.onStatusRequest(status);
+  }
+
+  protected toggleVersionMenu(): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id) return;
+    this.versionMenuOpen.update((open) => !open);
+    if (this.versionMenuOpen()) this.loadVersionSummaries(id);
+  }
+
+  private loadVersionSummaries(id: string): void {
+    this.proposalsSvc.listVersions(id).subscribe((res) => {
+      if (res.ok) this.versionSummaries.set(res.data);
+      else this.toast.error('Не удалось загрузить версии КП.');
+    });
+  }
+
+  protected saveVersion(): void {
+    if (this.isReadOnly()) return;
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id) return;
+    this.proposalsSvc.freeze(id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось сохранить версию КП.');
+        return;
+      }
+      this.proposalStatus.set(res.data.status ?? this.proposalStatus());
+      this.versionSummaries.update((versions) => [
+        ...versions,
+        ...(res.data.currentVersion
+          ? [{ version: res.data.currentVersion, frozenAt: new Date().toISOString() }]
+          : []),
+      ]);
+      this.toast.success('Версия КП сохранена');
+    });
+  }
+
+  protected openVersion(version: number): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id || this.isVersionView()) return;
+    this.proposalsSvc.getVersion(id, version).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось открыть версию КП.');
+        return;
+      }
+      const snapshot = res.data.payload?.['templateSnapshot'];
+      const html =
+        snapshot && typeof snapshot === 'object'
+          ? (snapshot as Record<string, unknown>)['html']
+          : undefined;
+      if (typeof html !== 'string' || !html.trim()) {
+        this.toast.error('В версии нет сохранённого листа для просмотра.');
+        return;
+      }
+      this.currentPreviewBeforeVersion = this.previewHtmlSource();
+      this.isVersionView.set(true);
+      this.versionMenuOpen.set(false);
+      this.cancelAutosave();
+      this.setPreviewHtml(html);
+      this.previewStatus.set('ready');
+    });
+  }
+
+  protected returnToCurrentVersion(): void {
+    if (!this.isVersionView()) return;
+    this.isVersionView.set(false);
+    this.setPreviewHtml(this.currentPreviewBeforeVersion);
+    this.currentPreviewBeforeVersion = null;
+    this.previewStatus.set(this.previewHtmlSource() ? 'ready' : 'idle');
+  }
+
+  protected createOrder(): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id || this.proposalStatus() !== 'accepted' || this.isVersionView()) return;
+    this.proposalsSvc.convertToOrder(id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось создать заказ из КП.');
+        return;
+      }
+      this.proposalStatus.set('converted');
+      this.toast.success('Заказ создан из КП');
+      void this.router.navigate(['/orders', res.data.orderId]);
+    });
+  }
+
+  protected duplicateCurrent(): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id || this.isVersionView()) return;
+    this.proposalsSvc.duplicate(id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось скопировать КП.');
+        return;
+      }
+      this.toast.success(`Создана копия ${res.data.number}`);
+      void this.router.navigate(['/proposals/create'], { queryParams: { id: res.data._id } });
+    });
   }
 
   private refId(value: unknown): string | null {
@@ -1513,6 +1751,17 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected onStatusRequest(status: ProposalCreateStatus): void {
+    if (this.isVersionView()) return;
+    const current = this.proposalStatus();
+    const allowed: Record<ProposalCreateStatus, ProposalCreateStatus[]> = {
+      draft: ['sent'],
+      sent: ['accepted', 'rejected'],
+      accepted: ['draft'],
+      rejected: ['sent'],
+      converted: [],
+      cancelled: [],
+    };
+    if (!allowed[current].includes(status)) return;
     const draftId = this.readStorage('kp.create.lastDraftId');
     if (!draftId) {
       this.toast.error('Сначала дождитесь статуса «Сохранено».');
@@ -1524,11 +1773,9 @@ export class ProposalCreatePage implements OnInit {
         this.toast.error(res.error.message || 'Не удалось изменить статус КП.');
         return;
       }
-      this.proposalStatus.set(status);
+      this.proposalStatus.set(res.data.status ?? status);
       this.autosaveLabel.set('Сохранено');
-      this.toast.success(
-        status === 'accepted' ? 'КП отмечено как «Оплачена».' : 'Статус «Оплачена» снят.',
-      );
+      this.toast.success(`Статус КП: ${this.statusLabel(res.data.status ?? status)}`);
     });
   }
 
