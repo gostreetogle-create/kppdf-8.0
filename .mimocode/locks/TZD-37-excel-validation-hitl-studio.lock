@@ -1,0 +1,10 @@
+task_id: TZD-37
+status: DONE
+locked_at: 2026-08-10T18:52:06Z
+locked_by: Buffy/canonical-main
+workspace: D:\kppdf-8.0
+scope: multi-sheet Excel mapping HITL, canonical reshape/validation, org-scoped saved profiles, MCP suggestion wiring
+archive: tasks/_archive/2026-08/TZD-37.done.md
+verification: desktop typecheck, svelte-check, build, MCP 91/91 tests, backend tsc, profile service 6/6, diff-check PASS
+known_limitations: native Tauri smoke unavailable; MCP classify remains human-confirmed; live SoT collision lookup deferred; BOM columns TZD-38
+forbidden_paths_untouched: desktop/mcp-runtime/**, deploy.ps1, desktop ZIP publish, commercial MCP, composition graph

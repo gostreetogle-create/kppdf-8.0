@@ -1,4 +1,14 @@
 
+## [2026-08-10T18:52:06Z] — TZD-37 DONE — Excel mapping profiles + validation HITL
+**Исполнитель:** Buffy / canonical-main
+**Статус:** DONE; desktop/backend gates, archive/lock/closeout complete; Deploy НЕ
+**Что:** Добавлены multi-sheet выбор, обязательный mapping HITL с красными unfit/conflict и ignore, canonical reshape, row statuses `ok_new/ok_update/skip/conflict/error`, journal-only proposal confirmation, MCP classify suggestion и org-scoped `import_mapping_profiles` CRUD с единственным ★ default.
+**Gates:** desktop typecheck + svelte-check 0/0 + build PASS; MCP typecheck + 91/91 tests PASS; backend tsc PASS; mapping profile service 6/6 PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
+**Archive:** `tasks/_archive/2026-08/TZD-37.done.md`
+**Lock:** `.mimocode/locks/TZD-37-excel-validation-hitl-studio.lock`
+**Scope:** `desktop/mcp-runtime/**`, deploy, ZIP publish, commercial MCP, BOM composition and foreign dirty WIP untouched. Deploy НЕ
+**NEXT:** claim TZD-38 strictly after conflict scan.
+
 ## [2026-08-10T18:43:36Z] — TZD-36 DONE — Desktop Import Studio shell
 **Исполнитель:** Buffy / canonical-main
 **Статус:** DONE; desktop typecheck, Svelte check, build, MCP tests, archive/lock complete; Deploy НЕ

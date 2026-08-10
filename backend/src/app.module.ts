@@ -34,6 +34,7 @@ import { PhotosModule } from './modules/photos/photos.module';
 import { AttachmentModule } from './modules/attachments/attachment.module';
 import { MutationJournalModule } from './modules/mutation-journal/mutation-journal.module';
 import { ImportTaskModule } from './modules/import-task/import-task.module';
+import { ImportMappingProfileModule } from './modules/import-mapping-profile/import-mapping-profile.module';
 import { ImportTodoModule } from './modules/import-todo/import-todo.module';
 import { BomModule } from './modules/bom/bom.module';
 import { WorkCenterModule } from './modules/work-center/work-center.module';
@@ -193,6 +194,7 @@ import { RequestMethod } from '@nestjs/common';
     AttachmentModule,
     MutationJournalModule,
     ImportTaskModule, // TZD-22: AI Import Task assembly point (no SoT / no journal)
+    ImportMappingProfileModule, // TZD-37: org-scoped field mapping profiles
     ImportTodoModule, // TZD-29: manager import todos (finish list)
     BomModule,
     WorkCenterModule,

@@ -55,27 +55,43 @@ export async function apiGet<T>(
   return (await res.json()) as T;
 }
 
-/**
- * POST-запрос. Передача key — через заголовок Idempotency-Key.
- * TODO(import): добавить retry/таймаут, формирование ошибок от сервера.
- */
+/** POST-запрос с опциональным Idempotency-Key. */
 export async function apiPost<T>(
   options: ApiClientOptions,
   path: string,
   body: unknown,
   key?: string,
 ): Promise<T> {
+  return requestJson<T>(options, 'POST', path, body, key);
+}
+
+export async function apiPatch<T>(
+  options: ApiClientOptions,
+  path: string,
+  body: unknown,
+): Promise<T> {
+  return requestJson<T>(options, 'PATCH', path, body);
+}
+
+export async function apiDelete<T>(options: ApiClientOptions, path: string): Promise<T> {
+  return requestJson<T>(options, 'DELETE', path);
+}
+
+async function requestJson<T>(
+  options: ApiClientOptions,
+  method: 'POST' | 'PATCH' | 'DELETE',
+  path: string,
+  body?: unknown,
+  key?: string,
+): Promise<T> {
   const headers = headersOf(options);
-  if (key) {
-    headers['Idempotency-Key'] = key;
-  }
+  if (key) headers['Idempotency-Key'] = key;
   const res = await fetch(`${baseUrlOf(options)}${path}`, {
-    method: 'POST',
+    method,
     headers,
-    body: JSON.stringify(body),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
-  if (!res.ok) {
-    throw new ApiError(`POST ${path} → ${res.status}`, res.status);
-  }
+  if (!res.ok) throw new ApiError(`${method} ${path} → ${res.status}`, res.status);
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }

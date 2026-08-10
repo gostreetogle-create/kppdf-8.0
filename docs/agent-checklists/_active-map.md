@@ -7,6 +7,13 @@
 - Conflict scan: TZD-36 keys only; `desktop/mcp/**`, `desktop/mcp-runtime/**`, WAVE-MCP-GAP implementation, deploy, ZIP publish, and foreign dirty WIP excluded. Deploy NO.
 - NEXT: claim TZD-37 strictly; mapping/multi-sheet/HITL remains next, BOM hierarchy TZD-38 after it.
 
+## Checkpoint 2026-08-10T18:52:06Z · TZD-37 DONE → NEXT TZD-38
+- DONE: multi-sheet Excel mapping HITL with red unfit/conflict + ignore, canonical reshape, row statuses, journal confirmation, MCP suggestion, and org-scoped saved profiles with ★ default.
+- Gates: desktop typecheck + svelte-check 0/0 + build PASS; MCP typecheck + 91/91 tests PASS; backend tsc PASS; mapping profile service 6/6 PASS; diff-check PASS. Native Tauri smoke unavailable in headless session.
+- Archive: `tasks/_archive/2026-08/TZD-37.done.md`; lock: `.mimocode/locks/TZD-37-excel-validation-hitl-studio.lock`; active marker removed.
+- Conflict scan: TZD-37 keys only; `desktop/mcp-runtime/**`, deploy, ZIP publish, commercial MCP, BOM composition, and foreign dirty WIP excluded. Deploy NO.
+- NEXT: claim TZD-38 strictly; BOM hierarchy/composition write graph remains queued.
+
 ## Checkpoint 2026-08-10T21:35:00Z · WAVE-MCP-GAP LANDED on main (TZD-31→34) · NEXT idle
 - Merged `fc0eca4b` into main via merge commit; DICT wave preserved (EXCEL READY + TZ-AUTH-301 checkpoints kept).
 - Archives `tasks/_archive/2026-08/TZD-31..34.done.md` + locks visible on main; `_active/` empty.

@@ -8,6 +8,26 @@
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import { parsePairing } from './core/pairing';
   import { importerFor, type RawRow } from './importers';
+  import { parseExcelWorkbook, type ExcelSheetPreview } from './importers/excel';
+  import {
+    CANONICAL_COLUMNS,
+    canConfirmMapping,
+    classifyHeaders,
+    reshapeRows,
+    updateMapping,
+    validateMappedRows,
+    type CanonicalColumn,
+    type MappingResult,
+    type ValidatedImportRow,
+  } from './core/import-mapping';
+  import {
+    createImportMappingProfile,
+    deleteImportMappingProfile,
+    listImportMappingProfiles,
+    suggestMappingThroughMcp,
+    updateImportMappingProfile,
+    type ImportMappingProfile,
+  } from './core/import-mapping-profiles';
   import {
     appendInboxLog,
     auditInboxFile,
@@ -213,6 +233,18 @@
   let importRows = $state<RawRow[]>([]);
   let importError = $state('');
   let importing = $state(false);
+  let importStage = $state<'mapping' | 'rows'>('mapping');
+  let importFileName = $state('');
+  let importSheets = $state<ExcelSheetPreview[]>([]);
+  let activeSheetName = $state('');
+  let mappingResult = $state<MappingResult | null>(null);
+  let validatedRows = $state<ValidatedImportRow[]>([]);
+  let mappingBusy = $state(false);
+  let mappingMessage = $state('');
+  let profileName = $state('');
+  let profiles = $state<ImportMappingProfile[]>([]);
+  let selectedProfileId = $state('');
+  let rowProposalIds = $state<string[]>([]);
 
   let disposed = false;
 
@@ -508,6 +540,215 @@
     }
   }
 
+  async function loadMappingProfiles() {
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      profiles = [];
+      return;
+    }
+    try {
+      profiles = await listImportMappingProfiles({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey });
+    } catch {
+      profiles = [];
+    }
+  }
+
+  function setMappingFromMap(sourceMap: Record<string, CanonicalColumn | null>) {
+    const headers = Object.keys(importRows[0] ?? {});
+    let result = classifyHeaders(headers);
+    for (const header of headers) {
+      result = updateMapping(result, header, sourceMap[header] ?? null);
+    }
+    mappingResult = result;
+  }
+
+  function prepareMapping(rows: RawRow[]) {
+    mappingResult = classifyHeaders(Object.keys(rows[0] ?? {}));
+    validatedRows = [];
+    importStage = 'mapping';
+    mappingMessage = '';
+    rowProposalIds = [];
+    const defaultProfile = profiles.find((profile) => profile.isDefault);
+    if (defaultProfile) {
+      selectedProfileId = defaultProfile.id;
+      setMappingFromMap(defaultProfile.columnMap);
+      mappingMessage = `Профиль «${defaultProfile.name}» применён автоматически — проверьте карту перед подтверждением.`;
+    }
+  }
+
+  function selectImportSheet(sheetName: string) {
+    const sheet = importSheets.find((item) => item.name === sheetName);
+    if (!sheet) return;
+    activeSheetName = sheet.name;
+    importRows = sheet.rows;
+    prepareMapping(sheet.rows);
+  }
+
+  function changeMapping(header: string, event: Event) {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    mappingResult = updateMapping(
+      mappingResult ?? classifyHeaders(Object.keys(importRows[0] ?? {})),
+      header,
+      value === '__ignore__' ? null : (value as CanonicalColumn),
+    );
+  }
+
+  function confirmMapping() {
+    if (!mappingResult || !canConfirmMapping(mappingResult)) {
+      mappingMessage = 'Сначала исправьте красные колонки или выберите «Игнорировать». Отправка закрыта.';
+      return;
+    }
+    importRows = reshapeRows(importRows, mappingResult.mapping);
+    validatedRows = validateMappedRows(importRows);
+    importStage = 'rows';
+    mappingMessage = 'Сопоставление подтверждено. Проверьте статусы строк перед отправкой.';
+  }
+
+  async function saveMappingProfile() {
+    const name = profileName.trim();
+    if (!name || !mappingResult) {
+      mappingMessage = 'Введите название профиля после сопоставления колонок.';
+      return;
+    }
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      mappingMessage = 'Сохранение профиля требует подключённого аккаунта.';
+      return;
+    }
+    mappingBusy = true;
+    try {
+      const created = await createImportMappingProfile(
+        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        { name, columnMap: mappingResult.mapping, targetEntity: 'material', isDefault: false },
+      );
+      profiles = [created, ...profiles.filter((profile) => profile.id !== created.id)];
+      selectedProfileId = created.id;
+      profileName = '';
+      mappingMessage = `Профиль «${created.name}» сохранён.`;
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось сохранить профиль.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  async function setDefaultMappingProfile(profile: ImportMappingProfile) {
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) return;
+    mappingBusy = true;
+    try {
+      const updated = await updateImportMappingProfile(
+        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        profile.id,
+        { isDefault: true },
+      );
+      profiles = profiles.map((item) => ({ ...item, isDefault: item.id === updated.id }));
+      mappingMessage = `Профиль «${updated.name}» выбран по умолчанию.`;
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось выбрать профиль по умолчанию.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  async function removeMappingProfile(profile: ImportMappingProfile) {
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) return;
+    mappingBusy = true;
+    try {
+      await deleteImportMappingProfile({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, profile.id);
+      profiles = profiles.filter((item) => item.id !== profile.id);
+      if (selectedProfileId === profile.id) selectedProfileId = '';
+      mappingMessage = `Профиль «${profile.name}» удалён.`;
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось удалить профиль.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  function applySavedProfile(profile: ImportMappingProfile) {
+    selectedProfileId = profile.id;
+    setMappingFromMap(profile.columnMap);
+    mappingMessage = `Профиль «${profile.name}» загружен — подтвердите сопоставление вручную.`;
+  }
+
+  async function suggestMappingWithMcp() {
+    if (!mappingResult || mcpState.status !== 'running' || !pairedApiKey) return;
+    mappingBusy = true;
+    try {
+      const suggested = await suggestMappingThroughMcp(
+        mcpState.port,
+        pairedApiKey,
+        Object.keys(importRows[0] ?? {}),
+        importRows.slice(0, 5),
+      );
+      setMappingFromMap(suggested);
+      mappingMessage = 'MCP предложил карту. Красные поля по-прежнему требуют подтверждения человека.';
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'MCP не смог предложить карту.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  async function sendValidatedRows() {
+    const allowed = validatedRows.filter((row) => row.status === 'ok_new' || row.status === 'ok_update');
+    if (allowed.length === 0) {
+      mappingMessage = 'Нет строк без ошибок для отправки на подтверждение.';
+      return;
+    }
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      mappingMessage = 'Отправка требует подключённого аккаунта.';
+      return;
+    }
+    mappingBusy = true;
+    try {
+      const result = await proposeMaterialRows(
+        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        allowed.map((row) => row.values),
+      );
+      rowProposalIds = result.proposalIds;
+      mappingMessage = `Создано предложений: ${result.proposed}. SoT не изменён — подтвердите их отдельной кнопкой.`;
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось отправить строки на подтверждение.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  async function confirmMappedRows() {
+    if (rowProposalIds.length === 0) return;
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) return;
+    mappingBusy = true;
+    try {
+      const result = await confirmProposals(
+        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        rowProposalIds,
+      );
+      rowProposalIds = [];
+      mappingMessage = `Подтверждено: ${result.applied}. Изменения записаны через журнал.`;
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
+  async function cancelMappedRows() {
+    if (rowProposalIds.length === 0) return;
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) return;
+    mappingBusy = true;
+    try {
+      await cancelProposals({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, rowProposalIds);
+      rowProposalIds = [];
+      mappingMessage = 'Предложения отменены; SoT не изменён.';
+    } finally {
+      mappingBusy = false;
+    }
+  }
+
   onMount(async () => {
     mcp = new McpHostController((state) => {
       mcpState = state;
@@ -537,6 +778,7 @@
 
     // Inbox (TZD-15): подготовка каталога + периодическое сканирование.
     await initInbox();
+    await loadMappingProfiles();
     startInboxWatcher();
   });
 
@@ -568,6 +810,7 @@
       mcpError = '';
       // Подключённый (paired) десктоп автоматически поднимает MCP host.
       await startMcp();
+      await loadMappingProfiles();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         errors = ['Подключение устарело — сгенерируйте новый паринг.'];
@@ -591,6 +834,7 @@
     await saveConfig({ ...cfg, apiKey: undefined, username: undefined });
     connected = null;
     pairedApiKey = undefined;
+    profiles = [];
     pairingJson = '';
     errors = [];
   }
@@ -613,7 +857,7 @@
     }
   }
 
-  /** Общий путь: имя файла + байты → импортёр → parse (для диалога и drag&drop). */
+  /** Общий путь: имя файла + байты → импортёр → mapping HITL. */
   async function parseBytes(name: string, data: ArrayBuffer | Uint8Array) {
     const importer = importerFor(name);
     if (!importer) {
@@ -624,10 +868,24 @@
     importing = true;
     importError = '';
     try {
-      importRows = await importer.parse({ name, data });
+      importFileName = name;
+      if (importer.id === 'excel') {
+        const workbook = await parseExcelWorkbook({ name, data });
+        importSheets = workbook.sheets;
+        activeSheetName = workbook.activeSheet;
+        importRows = workbook.sheets.find((sheet) => sheet.name === workbook.activeSheet)?.rows ?? [];
+      } else {
+        importSheets = [];
+        activeSheetName = '';
+        importRows = await importer.parse({ name, data });
+      }
+      prepareMapping(importRows);
     } catch (err) {
       importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
       importRows = [];
+      importSheets = [];
+      mappingResult = null;
+      validatedRows = [];
     } finally {
       importing = false;
     }
@@ -949,11 +1207,127 @@
         <p class="errors" role="alert">{importError}</p>
       {/if}
 
+      {#if importSheets.length > 1}
+        <div class="sheet-picker" aria-label="Листы Excel">
+          <span class="sheet-picker__label">Лист:</span>
+          {#each importSheets as sheet (sheet.name)}
+            <button
+              class:sheet-picker__button--active={sheet.name === activeSheetName}
+              class="sheet-picker__button"
+              type="button"
+              onclick={() => selectImportSheet(sheet.name)}
+            >
+              {sheet.name} <span>({sheet.rows.length})</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+
       {#if importRows.length > 0}
         <p class="import-status">
-          Импортировано строк: <strong>{importRows.length}</strong>
+          {importFileName ? `Файл: ${importFileName}` : 'Файл'} · строк: <strong>{importRows.length}</strong>
+          {#if activeSheetName} · лист: <strong>{activeSheetName}</strong>{/if}
         </p>
-        {@render PreviewTable(importRows)}
+
+        {#if importStage === 'mapping' && mappingResult}
+          <section class="mapping-panel" aria-label="Сопоставление полей">
+            <div class="mapping-panel__head">
+              <div>
+                <h3>1. Сопоставление полей</h3>
+                <p class="hint">Готовые поля выбраны автоматически. Красные строки нужно исправить или явно игнорировать.</p>
+              </div>
+              <button
+                class="btn btn--small"
+                type="button"
+                onclick={suggestMappingWithMcp}
+                disabled={mappingBusy || mcpState.status !== 'running' || !pairedApiKey}
+                title={mcpState.status === 'running' ? 'MCP предложит карту; подтверждение остаётся у человека.' : 'Сначала подключите и запустите MCP.'}
+              >
+                Предложить через ИИ
+              </button>
+            </div>
+
+            <div class="mapping-list">
+              {#each mappingResult.rows as row (row.header)}
+                <div class:mapping-row--bad={row.state !== 'ready'} class="mapping-row">
+                  <span class="mapping-row__source">{row.header || 'Без заголовка'}</span>
+                  <span class="mapping-row__state">{row.state === 'ready' ? 'Готово' : row.state === 'conflict' ? 'Конфликт' : row.state === 'ignored' ? 'Игнорировано' : 'Нужно проверить'}</span>
+                  <select
+                    aria-label={`Канон для ${row.header}`}
+                    value={row.canonical ?? '__ignore__'}
+                    onchange={(event) => changeMapping(row.header, event)}
+                  >
+                    <option value="__ignore__">Игнорировать колонку</option>
+                    {#each CANONICAL_COLUMNS as canonical (canonical)}
+                      <option value={canonical}>{canonical}</option>
+                    {/each}
+                  </select>
+                </div>
+              {/each}
+            </div>
+
+            <div class="mapping-actions">
+              <button class="btn btn--primary" type="button" onclick={confirmMapping} disabled={!canConfirmMapping(mappingResult)}>
+                Подтвердить сопоставление
+              </button>
+              <input class="profile-name" bind:value={profileName} placeholder="Название профиля…" aria-label="Название профиля" />
+              <button class="btn btn--small" type="button" onclick={saveMappingProfile} disabled={mappingBusy || !canConfirmMapping(mappingResult)}>
+                Сохранить профиль
+              </button>
+            </div>
+
+            {#if profiles.length > 0}
+              <div class="profiles">
+                <span class="profiles__label">Сохранённые профили:</span>
+                {#each profiles as profile (profile.id)}
+                  <button class="profile-chip" type="button" onclick={() => applySavedProfile(profile)}>
+                    {profile.isDefault ? '★ ' : ''}{profile.name}
+                  </button>
+                  <button class="profile-chip profile-chip--icon" type="button" aria-label={`Сделать профиль ${profile.name} основным`} onclick={() => setDefaultMappingProfile(profile)}>★</button>
+                  <button class="profile-chip profile-chip--icon" type="button" aria-label={`Удалить профиль ${profile.name}`} onclick={() => removeMappingProfile(profile)}>×</button>
+                {/each}
+              </div>
+            {/if}
+          </section>
+        {:else if importStage === 'rows'}
+          <section class="validation-panel" aria-label="Проверка строк">
+            <div class="validation-panel__head">
+              <div>
+                <h3>2. Проверка строк</h3>
+                <p class="hint">До подтверждения предложения ничего не записывается в SoT.</p>
+              </div>
+              <div class="validation-counts">
+                <span>Новые: {validatedRows.filter((row) => row.status === 'ok_new').length}</span>
+                <span>Обновления: {validatedRows.filter((row) => row.status === 'ok_update').length}</span>
+                <span>Конфликты: {validatedRows.filter((row) => row.status === 'conflict').length}</span>
+                <span>Ошибки: {validatedRows.filter((row) => row.status === 'error').length}</span>
+              </div>
+            </div>
+            <div class="validation-list">
+              {#each validatedRows as row (row.rowIndex)}
+                <div class="validation-row validation-row--{row.status}">
+                  <span>#{row.rowIndex + 1}</span>
+                  <strong>{String(row.values.article ?? row.values.name ?? 'Строка')}</strong>
+                  <span>{row.status}</span>
+                  <small>{row.message}</small>
+                </div>
+              {/each}
+            </div>
+            {@render PreviewTable(importRows)}
+            {#if mappingMessage}<p class="hint" role="status">{mappingMessage}</p>{/if}
+            <div class="mapping-actions">
+              {#if rowProposalIds.length === 0}
+                <button class="btn btn--primary" type="button" onclick={sendValidatedRows} disabled={mappingBusy || validatedRows.every((row) => row.status !== 'ok_new' && row.status !== 'ok_update')}>
+                  Отправить на подтверждение
+                </button>
+              {:else}
+                <button class="btn btn--primary" type="button" onclick={confirmMappedRows} disabled={mappingBusy}>Подтвердить предложения ({rowProposalIds.length})</button>
+                <button class="btn btn--small" type="button" onclick={cancelMappedRows} disabled={mappingBusy}>Отменить</button>
+              {/if}
+              <button class="btn btn--small" type="button" onclick={() => prepareMapping(importRows)}>Изменить сопоставление</button>
+            </div>
+          </section>
+        {/if}
       {/if}
     </article>
 
@@ -1505,6 +1879,165 @@
     place-items: center;
     border-style: dashed;
     background: #fbfcfd;
+  }
+
+  .sheet-picker,
+  .mapping-actions,
+  .profiles,
+  .validation-panel__head,
+  .mapping-panel__head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .sheet-picker {
+    margin: 0.4rem 0 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e4e8ec;
+  }
+
+  .sheet-picker__label,
+  .profiles__label {
+    color: #5a6a78;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .sheet-picker__button,
+  .profile-chip {
+    border: 1px solid #d9dee3;
+    border-radius: 999px;
+    background: #fbfcfd;
+    color: #44535f;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.76rem;
+    padding: 0.25rem 0.55rem;
+  }
+
+  .sheet-picker__button--active,
+  .profile-chip:hover {
+    border-color: #1c2733;
+    color: #1c2733;
+  }
+
+  .sheet-picker__button span {
+    color: #7a8794;
+  }
+
+  .mapping-panel,
+  .validation-panel {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .mapping-panel h3,
+  .validation-panel h3 {
+    margin: 0;
+    font-size: 0.95rem;
+  }
+
+  .mapping-list,
+  .validation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    overflow: auto;
+    max-height: 13rem;
+    padding-right: 0.2rem;
+  }
+
+  .mapping-row,
+  .validation-row {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) auto minmax(10rem, 14rem);
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #d9dee3;
+    border-radius: 7px;
+    background: #fbfcfd;
+    font-size: 0.78rem;
+  }
+
+  .mapping-row--bad {
+    border-color: #d9a39d;
+    background: #fdf0ef;
+  }
+
+  .mapping-row__source {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mapping-row__state {
+    color: #1e7d43;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+
+  .mapping-row--bad .mapping-row__state {
+    color: #a12b23;
+  }
+
+  .mapping-row select,
+  .profile-name {
+    min-width: 0;
+    padding: 0.35rem 0.45rem;
+    border: 1px solid #b7c0c8;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1c2733;
+    font: inherit;
+    font-size: 0.78rem;
+  }
+
+  .profile-name {
+    width: 12rem;
+  }
+
+  .profiles {
+    padding-top: 0.35rem;
+  }
+
+  .profile-chip--icon {
+    margin-left: -0.4rem;
+    padding-inline: 0.4rem;
+  }
+
+  .validation-counts {
+    display: flex;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    color: #5a6a78;
+    font-size: 0.72rem;
+  }
+
+  .validation-row {
+    grid-template-columns: 2.5rem minmax(8rem, 1fr) 5rem minmax(12rem, 2fr);
+  }
+
+  .validation-row--ok_new {
+    border-color: #a8cdb4;
+  }
+
+  .validation-row--ok_update {
+    border-color: #a9c4dc;
+  }
+
+  .validation-row--conflict,
+  .validation-row--error {
+    border-color: #d9a39d;
+    background: #fdf0ef;
+  }
+
+  .validation-row small {
+    color: #5a6a78;
   }
 
   .inbox-dir {
