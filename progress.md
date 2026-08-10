@@ -1,3 +1,10 @@
+## [2026-08-11] — Warm deploy OK — AUTH-302 + KP на прод
+**Исполнитель:** cursor-architect-ops
+**Статус:** warm deploy WIPE=false complete
+**SHA:** `c8ebdeb6`
+**Smoke:** LAN+prod health ok; prod index без inline desktop script (meta OK); admin login 200 после Basic.
+**NEXT:** idle.
+
 ## [2026-08-11] — TZ-AUTH-302 CODE DONE — CSP inline desktop URL removed
 **Исполнитель:** cursor-architect-ops
 **Статус:** code DONE + archive; warm deploy ждёт PO «деплой»
