@@ -1,4 +1,13 @@
 
+## [2026-08-10T17:54:56.7912096Z] — TZ-UX-DIALOG-306 DONE: composition quantity
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ
+**Что:** Picker получил поле «Кол-во» с минимумом `0,001` и default `1`; quantity теперь входит в result/session feedback. BOM передаёт quantity в POST вместо hardcoded `1`; Add & continue сбрасывает quantity в `1`. Canonical `ui-add-and-continue.md` и focused specs обновлены.
+**Gates:** frontend tsc PASS; focused Jest 2 suites / 22 tests PASS; changed-file ESLint PASS; Prettier PASS; `git diff --check` PASS с CRLF warnings only.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-DIALOG-306.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-DIALOG-306-composition-picker-qty.lock`
+**NEXT:** claim TZ-UX-DIALOG-307 strictly. Deploy НЕ
+
 ## [2026-08-10T17:51:30.8247358Z] — TZ-DICT-320 DONE: kind labels FE wire + nav
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; FE gates + archive/lock/closeout complete; deploy НЕ

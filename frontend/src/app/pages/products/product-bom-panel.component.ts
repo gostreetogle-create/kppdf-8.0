@@ -479,12 +479,12 @@ export class ProductBomPanelComponent {
         ? {
             lineType: 'product',
             refId: result.refId,
-            quantity: 1,
+            quantity: result.quantity,
             ...(result.unitPriceOverride != null
               ? { unitPriceOverride: result.unitPriceOverride }
               : {}),
           }
-        : { lineType: result.lineType, refId: result.refId, quantity: 1 };
+        : { lineType: result.lineType, refId: result.refId, quantity: result.quantity };
 
     const req =
       parentKind === 'product'

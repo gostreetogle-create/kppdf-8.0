@@ -1,5 +1,21 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T17:54:56.7912096Z · TZ-UX-DIALOG-306 DONE / next UX-DIALOG-307
+- DONE: composition picker quantity field (`>=0.001`, default 1), quantity in result/session feedback, BOM POST wiring, and reset-to-1 Add & continue behavior.
+- Gates: FE tsc PASS; focused Jest 2 suites / 22 tests PASS; changed-file ESLint PASS; Prettier PASS; diff-check PASS with CRLF normalization warnings only.
+- Archive: `tasks/_archive/2026-08/TZ-UX-DIALOG-306.done.md`; lock: `.mimocode/locks/TZ-UX-DIALOG-306-composition-picker-qty.lock`; active marker removed.
+- Foreign WIP and forbidden paths untouched. Deploy: NO
+- NEXT: claim TZ-UX-DIALOG-307 strictly.
+
+
+## Checkpoint 2026-08-10T17:53:15.8644271Z · TZ-UX-DIALOG-306 CLAIMED
+- Active marker: `tasks/_active/TZ-UX-DIALOG-306.md`; checklist: `docs/agent-checklists/TZ-UX-DIALOG-306.md`.
+- Scope: picker quantity input/result/session list and BOM persistence; Add & continue resets quantity to 1.
+- Conflict scan: `_active/` empty before claim; TZ-DICT-320 is archived/locked/pushed. Team Room unavailable (`Unknown task; sync tasks first`).
+- Deploy: NO. Forbidden `desktop/**`/`mcp-runtime/**` paths excluded.
+- NEXT: implement → FE tsc/focused picker+BOM Jest → archive/lock/commit/push.
+
+
 ## Checkpoint 2026-08-10T17:51:30.8247358Z · TZ-DICT-320 DONE / next UX-DIALOG-306
 - DONE: shared FE dictionary-label API/cache/fallback, `/dictionaries/kind-labels` admin/manager page, route/nav/chips, and dynamic product/material/QuickCreate/catalog/detail/BOM/picker labels. Stable payload keys unchanged.
 - Gates: FE tsc PASS; focused Jest 6 suites / 103 tests PASS; ESLint PASS; new-file Prettier PASS; FE build PASS; diff-check PASS with line-ending warnings only.

@@ -177,8 +177,8 @@ describe('ProductBomPanelComponent', () => {
     expect(legend).toBeTruthy();
     expect(legend!.textContent).toContain('Изделие');
     expect(legend!.textContent).toContain('Модуль');
-    expect(legend!.textContent).toContain('Деталь/мат');
-    expect(legend!.textContent).toContain('Сырьё');
+    expect(legend!.textContent).toContain('деталь');
+    expect(legend!.textContent).toContain('сырьё');
   });
 
   it('shows module cost contribution in inspector (preview × qty)', () => {
@@ -288,17 +288,17 @@ describe('ProductBomPanelComponent', () => {
     expect(dialog.open).toHaveBeenCalled();
     const openArgs = dialog.open.mock.calls[0][1] as {
       data: {
-        onAdded?: (r: { lineType: string; refId: string }) => Promise<void>;
+        onAdded?: (r: { lineType: string; refId: string; quantity: number }) => Promise<void>;
       };
     };
     expect(typeof openArgs.data.onAdded).toBe('function');
 
-    await openArgs.data.onAdded!({ lineType: 'module', refId: 'm1' });
+    await openArgs.data.onAdded!({ lineType: 'module', refId: 'm1', quantity: 3 });
 
     expect(service.addProductCompositionLine).toHaveBeenCalledWith('p1', {
       lineType: 'module',
       refId: 'm1',
-      quantity: 1,
+      quantity: 3,
     });
     expect(service.getProductTree).toHaveBeenCalled();
   });

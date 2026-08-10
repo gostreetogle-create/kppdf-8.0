@@ -5,9 +5,9 @@
 
 ## Паттерн
 
-1. Выбрал в списке → **Добавить** → запись сразу применена → селект очищен →
+1. Выбрал в списке, указал **Кол-во** (по умолчанию `1`, минимум `0,001`) → **Добавить** → запись сразу применена → селект и количество сброшены →
    диалог остаётся открыт.
-2. Под селектом — короткий список «Добавлено сейчас» (feedback).
+2. Под селектом — короткий список «Добавлено сейчас» с количеством (feedback).
 3. **Закрыть** / ✕ — выйти, когда закончил. Уже добавленное не откатывается.
 
 ## Когда так
@@ -26,8 +26,9 @@
 ## Реализация (composition picker)
 
 - Data: `onAdded?: (result) => void | Promise<void>` в `ProductCompositionPickerData`
-- UI: session list `data-test="picker-session-added"`; footer «Закрыть»; primary
-  не закрывает при успехе
+- UI: session list `data-test="picker-session-added"` показывает количество; поле
+  `data-test="composition-picker-quantity"`; footer «Закрыть»; primary не закрывает при успехе
+- BOM: `onAdded` передаёт `quantity` в POST; после успешного добавления поле возвращается к `1`
 - Parent: `ProductBomPanel.openAddPicker` → `applyCompositionLine` на каждый Add
 - Legacy без `onAdded`: close(result) как раньше
 

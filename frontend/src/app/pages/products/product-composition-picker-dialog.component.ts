@@ -19,9 +19,15 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 
 export type ProductCompositionPickerResult =
-  | { lineType: 'module'; refId: string }
-  | { lineType: 'material'; refId: string; material: Material }
-  | { lineType: 'product'; refId: string; product: Product; unitPriceOverride?: number };
+  | { lineType: 'module'; refId: string; quantity: number }
+  | { lineType: 'material'; refId: string; quantity: number; material: Material }
+  | {
+      lineType: 'product';
+      refId: string;
+      quantity: number;
+      product: Product;
+      unitPriceOverride?: number;
+    };
 
 type PickerKind = 'product' | 'module' | 'material';
 
@@ -32,6 +38,7 @@ export type ProductCompositionPickerCloseResult =
 export interface ProductCompositionPickerSessionItem {
   label: string;
   kind: PickerKind;
+  quantity: number;
 }
 
 export interface ProductCompositionPickerData {
@@ -145,6 +152,18 @@ export interface ProductCompositionPickerData {
                   <span>· фильтр</span>
                 }
               </p>
+              <label class="block max-w-[10rem] mt-3">
+                <span class="eyebrow block mb-1.5">Кол-во</span>
+                <input
+                  class="pi-input w-full"
+                  type="number"
+                  min="0.001"
+                  step="0.001"
+                  [value]="quantity()"
+                  (input)="onQuantityChange($event)"
+                  data-test="composition-picker-quantity"
+                />
+              </label>
             </div>
           </div>
 
@@ -183,7 +202,9 @@ export interface ProductCompositionPickerData {
                 @for (item of sessionAdded(); track $index) {
                   <li class="text-sm text-ink leading-snug">
                     {{ item.label }}
-                    <span class="text-muted-foreground">· {{ kindSessionLabel(item.kind) }}</span>
+                    <span class="text-muted-foreground"
+                      >· {{ kindSessionLabel(item.kind) }} · Кол-во {{ item.quantity }}</span
+                    >
                   </li>
                 }
               </ul>
@@ -249,6 +270,7 @@ export class ProductCompositionPickerDialogComponent {
     this.data.restrictToModule ? 'material' : 'product',
   );
   protected readonly selectedId = signal('');
+  protected readonly quantity = signal('1');
   protected readonly unitPriceOverride = signal('');
   protected readonly query = signal('');
   protected readonly validationError = signal<string | null>(null);
@@ -345,6 +367,7 @@ export class ProductCompositionPickerDialogComponent {
   protected selectKind(kind: PickerKind): void {
     this.activeKind.set(kind);
     this.selectedId.set('');
+    this.quantity.set('1');
     this.unitPriceOverride.set('');
     this.query.set('');
     this.validationError.set(null);
@@ -367,6 +390,11 @@ export class ProductCompositionPickerDialogComponent {
 
   protected onPriceChange(event: Event): void {
     this.unitPriceOverride.set((event.target as HTMLInputElement).value);
+  }
+
+  protected onQuantityChange(event: Event): void {
+    this.quantity.set((event.target as HTMLInputElement).value);
+    this.validationError.set(null);
   }
 
   protected kindSessionLabel(kind: PickerKind): string {
@@ -393,9 +421,14 @@ export class ProductCompositionPickerDialogComponent {
         this.usedAddAndContinue = true;
         this.sessionAdded.update((list) => [
           ...list,
-          { label: this.sessionLabel(result), kind: result.lineType as PickerKind },
+          {
+            label: this.sessionLabel(result),
+            kind: result.lineType as PickerKind,
+            quantity: result.quantity,
+          },
         ]);
         this.selectedId.set('');
+        this.quantity.set('1');
         this.unitPriceOverride.set('');
         this.validationError.set(null);
       })
@@ -418,6 +451,11 @@ export class ProductCompositionPickerDialogComponent {
   private buildResult(): ProductCompositionPickerResult | null {
     const id = this.selectedId();
     if (!id) return null;
+    const quantity = Number(this.quantity());
+    if (!Number.isFinite(quantity) || quantity < 0.001) {
+      this.validationError.set('Количество должно быть не меньше 0,001.');
+      return null;
+    }
     if (this.activeKind() === 'product') {
       const rawPrice = this.unitPriceOverride().trim();
       const unitPriceOverride = rawPrice === '' ? undefined : Number(rawPrice);
@@ -427,14 +465,14 @@ export class ProductCompositionPickerDialogComponent {
       }
       const product = this.products().find((item) => item._id === id);
       if (!product) return null;
-      return { lineType: 'product', refId: id, product, unitPriceOverride };
+      return { lineType: 'product', refId: id, product, quantity, unitPriceOverride };
     }
     if (this.activeKind() === 'module') {
-      return { lineType: 'module', refId: id };
+      return { lineType: 'module', refId: id, quantity };
     }
     const material = this.materials().find((item) => item._id === id);
     if (!material) return null;
-    return { lineType: 'material', refId: id, material };
+    return { lineType: 'material', refId: id, material, quantity };
   }
 
   private sessionLabel(result: ProductCompositionPickerResult): string {
