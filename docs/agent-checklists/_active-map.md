@@ -4,6 +4,7 @@
 - DONE: SALES-348 vitrine «В КП», add qty, chips Изделия/Модули/Материалы, `lineKind` module|material + `refId`, legacy catalog safe.
 - Gates: BE tsc; quotation 40/40; FE tsc; proposal-create/rail 41/41; Angular development build; Prettier/ESLint/diff-check PASS.
 - Archive: `tasks/_archive/2026-08/TZ-SALES-348.done.md`; lock: `.mimocode/locks/TZ-SALES-348-kp-vitrine-added-badge-modules.lock`; `_active/` empty.
+- HEAD: `e23a665d` on `main` / `origin/main`.
 - NEXT: **idle coding** — PO: VPN OFF → **OPS-310** → warm deploy (AUTH-302 already on main `1675e0e3`, verify after deploy).
 - Deploy: NO until PO says «деплой». Wipe: NO.
 

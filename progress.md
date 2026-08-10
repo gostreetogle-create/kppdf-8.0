@@ -5,7 +5,7 @@
 **Gates:** backend tsc + quotation 40/40; frontend tsc + proposal-create/rail 41/41 + Angular development build; Prettier/ESLint/diff-check PASS; DOM/component self-check PASS; authenticated browser/data smoke unavailable without backend data stack.
 **Archive:** `tasks/_archive/2026-08/TZ-SALES-348.done.md`
 **Lock:** `.mimocode/locks/TZ-SALES-348-kp-vitrine-added-badge-modules.lock`
-**Commit/push:** pending closeout commit on canonical `main`.
+**Commit/push:** `e23a665d` on canonical `main` and `origin/main`.
 **NEXT:** idle coding → VPN OFF → OPS-310 → warm deploy (PO); Deploy НЕ; desktop ZIP publish НЕ.
 
 ## [2026-08-11] — TZ-SALES-347 DONE — статус, версии и заказ из КП
