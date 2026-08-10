@@ -1,12 +1,16 @@
 # Очередь
 
-**Универсальный промпт (любой агент / продолжение после обрыва):**  
+**Шпаргалка PO (куда что копировать):**  
+→ [`docs/PO-AGENT-FLOW.md`](../../docs/PO-AGENT-FLOW.md)
+
+**Обрыв / новый чат исполнителя (Buffy) — ВСЕГДА этот промпт:**  
+→ [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)
+
+**Универсальный continuous (длинный канон):**  
 → [`tasks/PROMPT-UNIVERSAL-CONTINUOUS.md`](../PROMPT-UNIVERSAL-CONTINUOUS.md)
 
-**Сейчас (2026-08-10 вечер) — готовая непрерывная очередь:**  
-→ [`tasks/PROMPT-READY-QUEUE-CONTINUOUS.md`](../PROMPT-READY-QUEUE-CONTINUOUS.md)  
-Порядок: **TZ-AUTH-301** → **WAVE-KP-COMPLETE** (340→341→345→343→344→342→346→347→348).  
-Deploy / desktop ZIP — только по отдельной команде PO.
+**Перед деплоем (VPN OFF):**  
+→ [`ops/PROMPT-OPS-310-HARDEN.md`](./ops/PROMPT-OPS-310-HARDEN.md) · TZ `ops/TZ-OPS-310-server-harden-before-deploy.md`
 
 ## Параллель
 
@@ -27,11 +31,10 @@ Deploy / desktop ZIP — только по отдельной команде PO.
 
 Все только из `D:\kppdf-8.0` на `main`. Не пересекать CONFLICT KEYS.
 
-**NEXT для continuous prompt:**  
-1. `TZ-AUTH-301` (мягкий notice `/login`)  
-2. `kp-vitrine/WAVE-KP-COMPLETE.md` · 340…348 serial  
-3. **Перед деплоем (gate):** `ops/TZ-OPS-310-server-harden-before-deploy.md` · `PROMPT-OPS-310-HARDEN.md` (VPN OFF)  
-4. Idle → warm deploy **только** по команде PO (preflight требует archive OPS-310)
+**NEXT сейчас:**  
+1. Добить **WAVE-KP-COMPLETE**: смотри `_active-map` / `_active/` (обычно 346→347→348) через `PROMPT-RESUME-ANY`  
+2. Параллель (VPN OFF): **TZ-OPS-310**  
+3. Idle → warm deploy только по команде PO (preflight требует OPS-310)
 
 ## Idle / park / done
 

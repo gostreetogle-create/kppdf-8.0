@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · PO-AGENT-FLOW + PROMPT-RESUME-ANY (discipline complete)
+- Added: `docs/PO-AGENT-FLOW.md` (PO cheatsheet) + `tasks/PROMPT-RESUME-ANY.md` (eternal resume).
+- QUEUE / UNIVERSAL / PO-DIARY link to them. Goal: PO stops courier Cursor↔Buffy.
+- Product queue unchanged: KP agent on **346** (after 342 DONE `2736d28e`); OPS-310 still deploy gate.
+- Deploy: NO.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-342 DONE → NEXT TZ-SALES-346
 - DONE: «Своя строка» без Product FK, description/unit/line discount/optional persistence, discounted totals, optional additional footer amount, and legacy catalog compatibility.
 - Gates: backend tsc + quotation/generated-document focused 48/48; frontend tsc + proposal-create/terms 33/33 + Angular development build; changed-file ESLint/Prettier/diff-check PASS.
