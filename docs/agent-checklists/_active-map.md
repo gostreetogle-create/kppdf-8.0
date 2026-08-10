@@ -5,7 +5,7 @@
 - Gates: backend tsc + quotation/generated-document focused 48/48; frontend tsc + proposal-create/terms 33/33 + Angular development build; changed-file ESLint/Prettier/diff-check PASS.
 - Visual-equivalent evidence: DOM/component checks confirm composition overlay, custom-line preview payload and persistence payload; authenticated backend-data browser smoke unavailable without data stack.
 - Archive: `tasks/_archive/2026-08/TZ-SALES-342.done.md`; lock: `.mimocode/locks/TZ-SALES-342-kp-custom-lines.lock`; `_active/` removed.
-- Commit/push: pending closeout commit from this checkpoint. NEXT: claim **TZ-SALES-346**. Deploy NO; ZIP NO.
+- Commit/push: `2736d28e` on canonical `main` and `origin/main`. NEXT: claim **TZ-SALES-346**. Deploy NO; ZIP NO.
 
 ## Checkpoint 2026-08-11 · RESUME TZ-SALES-342 (agent step-limit stop)
 - Stop cause: host **max sequential responses** — not a project blocker.
