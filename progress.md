@@ -1,4 +1,13 @@
 
+## [2026-08-10T22:10:00Z] — TZD-34 DONE — WAVE-MCP-GAP CLOSED (31→34)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** WAVE DONE; 4/4 TZ в archive + locks; `_active/` пуст; deploy НЕ (готово предложить деплой)
+**Что:** NEW `stock-tools.ts`: `kppdf_list_stock_movements` (GET /api/stock-movements, фильтры) + `kppdf_stock_movement_create` (POST /api/stock-movements — приход/расход/перевод/корректировка; SoT сразу, без journal). Валидация до POST: ровно один из materialId|productId; transfer требует toWarehouseId → toolFail, 0 запросов. Body из whitelist CreateStockMovementDto. Register в tools.ts; registry toolCount 68 → 70. MCP.md: «склад через stock-movements, не storage-items POST».
+**Gates:** desktop/mcp test 91/91 PASS; mcp tsc PASS; live healthz toolCount 70 PASS.
+**Архивы:** TZD-31/32/33/34 `.done.md` в `tasks/_archive/2026-08/`; locks TZD-31…34.
+**Итог волны:** healthz toolCount = source registry (70); material propose с ценой → SoT; MCP draft КП/заказ + gated ship/convert; stock-movement create.
+**Checkpoint:** WAVE-MCP-GAP DONE · NEXT idle · готово предложить деплой · Deploy НЕ
+
 ## [2026-08-10T21:40:00Z] — TZD-33 DONE: commercial MCP HITL (WAVE-MCP-GAP #3)
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; MCP read + draft write для КП/заказ/клиент; userOk-гейты; deploy НЕ

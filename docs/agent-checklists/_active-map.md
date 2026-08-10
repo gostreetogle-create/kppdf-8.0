@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T22:10:00Z · WAVE-MCP-GAP DONE (TZD-31→34) · NEXT idle
+- DONE: TZD-31 (runtime sync), TZD-32 (material propose fields), TZD-33 (commercial HITL), TZD-34 (stock movements).
+- Wave acceptance: healthz.toolCount = source registry (70 live); material propose с ценой → SoT; MCP draft КП/заказ + gated ship/convert; stock-movement create. `_active/` пуст.
+- Archives: `tasks/_archive/2026-08/TZD-31..34.done.md`; locks `.mimocode/locks/TZD-31…34-*.lock`.
+- Commits: TZD-31 `930fcbc1`, TZD-32 `63ea90aa`, TZD-33 `e788553a`, TZD-34 (после closeout push).
+- NOT DONE: none (TZD-35 PARK, dict/KP waves не брались).
+- Deploy: NO — «готово предложить деплой» (только по явной команде PO).
+
 ## Checkpoint 2026-08-10T21:40:00Z · TZD-33 DONE → NEXT TZD-34
 - DONE: TZD-33 (commercial MCP HITL) — 17 tools (9 read slim, 4 draft write forced status=draft, 4 gated with userOk:true); registry toolCount 51 → 68; MCP.md Commercial HITL section.
 - Gates: desktop/mcp test 86/86; mcp tsc PASS; live healthz toolCount 68.

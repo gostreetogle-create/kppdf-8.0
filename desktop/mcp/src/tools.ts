@@ -38,6 +38,7 @@ import {
   READ_TOOL_NAMES,
   registerReadTools,
 } from './read-tools.js';
+import { registerStockTools, STOCK_TOOL_NAMES } from './stock-tools.js';
 import { registerWriteTools, WRITE_TOOL_NAMES } from './write-tools.js';
 import { toolFail, toolOk } from './tool-result.js';
 
@@ -59,6 +60,7 @@ export function listRegisteredToolNames(): readonly string[] {
     ...TEXT_BLOCK_TOOL_NAMES,
     ...DOC_TOOL_NAMES,
     ...COMMERCIAL_TOOL_NAMES,
+    ...STOCK_TOOL_NAMES,
   ];
 }
 
@@ -160,6 +162,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerWriteTools(server, cfg);
   registerDomainTools(server, cfg);
   registerCommercialTools(server, cfg);
+  registerStockTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
   registerImportTodoTools(server, cfg);

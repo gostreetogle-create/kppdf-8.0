@@ -237,6 +237,24 @@ Order / коммерческое КП kinds — не этот TZ.
 3. Менеджер закрывает в вебе кнопкой «Готово»; агент может `set_status done`
    только когда его явно попросили (не silent auto-close).
 
+## Tools — stock movements (TZD-34)
+
+Склад наполняется через **stock-movements** (`POST /api/stock-movements`),
+а НЕ через `POST /api/storage-items` (на стенде этот путь даёт 404). Пишет
+SoT сразу (нет journal) — для demo/ops ок; не «тихо» обнуляет склад.
+
+| Tool | REST | Замечание |
+|------|------|-----------|
+| `kppdf_list_stock_movements` | `GET /api/stock-movements?warehouseId&materialId&productId&type` | `{ items, total }`; read-only |
+| `kppdf_stock_movement_create` | `POST /api/stock-movements` | required `type` (`in\|out\|transfer\|adjust`), `warehouseId`, `qty` (> 0); **ровно один** из `materialId` \| `productId`; optional `toWarehouseId` (обязателен при `transfer`), `zoneName`, `toZoneName`, `cost`, `documentRef`, `orderId` |
+
+Валидация до POST: оба/ни одного из materialId\|productId → toolFail, 0 запросов;
+`transfer` без `toWarehouseId` → toolFail, 0 запросов.
+
+**Известное ограничение:** journal/undo для stock — нет; `POST storage-items`
+404 не чинится в этом TZ (отдельный inventory TZ при нужде); Composition
+propose — TZD-35 (park).
+
 ## Tools — commercial (TZD-33) — read + draft HITL
 
 Контур «КП / заказ / клиент» **без** mutation-journal kinds (это отдельная
