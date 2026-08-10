@@ -10,9 +10,10 @@
 
 | Поток | Где | Статус |
 |-------|-----|--------|
-| KP-COMPLETE | `kp-vitrine/WAVE-KP-COMPLETE.md` | хвост **TZ-SALES-348** (+ continuous prompt рядом) |
-| Server harden | `ops/TZ-OPS-310-…` | gate перед `deploy.ps1` |
-| Perf photos | `perf/WAVE-PERF-PHOTOS.md` | backlog (не мешать KP) |
+| **AUTH-302 CSP/login P0** | `ops/TZ-AUTH-302-…` · `PROMPT-AUTH-302-CSP.md` | **сначала**, если вход на проде сломан |
+| KP-COMPLETE | `kp-vitrine/WAVE-KP-COMPLETE.md` | хвост **TZ-SALES-348** |
+| Server harden | `ops/TZ-OPS-310-…` | gate перед обычным деплоем |
+| Perf photos | `perf/WAVE-PERF-PHOTOS.md` | backlog |
 
 ## Не брать
 

@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · P0 TZ-AUTH-302 (CSP inline blocks / login flicker)
+- Prod: after Basic Auth, app login flickers; console CSP `script-src 'self'` blocks inline
+  `window.__DESKTOP_DOWNLOAD_URL__` in `index.html`.
+- API login with Basic+admin OK from curl; fix = remove inline script (meta/data), not loosen CSP.
+- Spec/prompt: `tasks/_backlog/ops/TZ-AUTH-302-csp-inline-desktop-url.md` · `PROMPT-AUTH-302-CSP.md`
+- NEXT: claim AUTH-302 (+ warm deploy) before or instead of 348 if PO needs login now.
+- Deploy: warm only; remind two passwords (Basic vs admin).
+
 ## Checkpoint 2026-08-11 · RESUME TZ-SALES-348 (agent step-limit after 347)
 - Stop cause: host max sequential responses — not a project blocker.
 - DONE pushed: SALES-347 (`08c13b0d`); tree clean on `main`.
