@@ -26,6 +26,8 @@
 Пока жив хвост КП: агент сам подхватит `WAVE-KP-COMPLETE` / TZ-SALES-348 из git.  
 Отдельные одноразовые `PROMPT-SALES-…` в backlog **убраны в архив** — не искать.
 
+**План PO на закрытие вечера:** 348 → VPN off → OPS-310 → AUTH-302 (CSP/вход) → один «деплой».
+
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)
 

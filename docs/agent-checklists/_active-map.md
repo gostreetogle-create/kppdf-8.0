@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · PO plan: 348 → VPN → OPS-310 → AUTH-302 → warm deploy
+- Login/CSP not urgent (site not in daily use) — AUTH-302 waits for deploy package.
+- Order: finish **SALES-348** (current agent) → PO **VPN OFF** → **OPS-310** → **AUTH-302** → one warm deploy (no wipe) with today's fixes.
+- Do not jump AUTH-302 ahead of 348 unless PO changes plan.
+- Deploy: NO until PO says «деплой».
+
 ## Checkpoint 2026-08-11 · P0 TZ-AUTH-302 (CSP inline blocks / login flicker)
 - Prod: after Basic Auth, app login flickers; console CSP `script-src 'self'` blocks inline
   `window.__DESKTOP_DOWNLOAD_URL__` in `index.html`.

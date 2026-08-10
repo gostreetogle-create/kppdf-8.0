@@ -8,12 +8,15 @@
 
 ## Живые потоки
 
-| Поток | Где | Статус |
-|-------|-----|--------|
-| **AUTH-302 CSP/login P0** | `ops/TZ-AUTH-302-…` · `PROMPT-AUTH-302-CSP.md` | **сначала**, если вход на проде сломан |
-| KP-COMPLETE | `kp-vitrine/WAVE-KP-COMPLETE.md` | хвост **TZ-SALES-348** |
-| Server harden | `ops/TZ-OPS-310-…` | gate перед обычным деплоем |
-| Perf photos | `perf/WAVE-PERF-PHOTOS.md` | backlog |
+| Порядок | Поток | Где | Статус |
+|---------|--------|-----|--------|
+| **1** | KP-COMPLETE хвост | `kp-vitrine/` · **TZ-SALES-348** | добить текущего агента (`PROMPT-RESUME-ANY`) |
+| **2** | Server harden | `ops/TZ-OPS-310` · `PROMPT-OPS-310-HARDEN.md` | после **VPN OFF** (параллельный агент / новый чат) |
+| **3** | CSP / вход P0 | `ops/TZ-AUTH-302` · `PROMPT-AUTH-302-CSP.md` | в том же деплой-пакете после 348+310 |
+| **4** | Warm deploy | `deploy/synology/README.md` | только по слову PO **«деплой»** (без wipe) |
+
+**Канон вечера (PO):** сначала 348 → VPN off → OPS-310 → AUTH-302 → один warm deploy со всеми сегодняшними фиксами.  
+Вход на проде подождёт — сайт ещё не в ежедневной работе.
 
 ## Не брать
 
