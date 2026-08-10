@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · tasks/ hygiene (spent prompts & done waves archived)
+- Live `tasks/` root: only `PROMPT-RESUME-ANY`, `PROMPT-UNIVERSAL-CONTINUOUS`, README.
+- Live `_backlog/`: `kp-vitrine` (348 + KP-COMPLETE), `ops` (OPS-310), `perf`, QUEUE.
+- Archived: `prompts-spent/`, `specs-dup-root/`, `waves-done/` (incl. desktop, catalog, …).
+- Removed empty `tasks/prompts/`. See `tasks/README.md`.
+
 ## Checkpoint 2026-08-11 · TZ-SALES-347 DONE → NEXT TZ-SALES-348
 - DONE: Create КП status badge and allowed transitions, `freeze` version save/list/read-only viewer, accepted-to-order navigation and duplicate shortcut; accepted lock remains stronger than edits.
 - Gates: FE tsc; proposal-create 33/33; Angular development build; changed-file ESLint/Prettier/diff-check PASS. Browser/data smoke unavailable without backend stack; DOM/component self-check PASS.
