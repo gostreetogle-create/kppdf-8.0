@@ -1,7 +1,7 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
 > **Одна точка входа.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
-> **Последний успешный warm deploy:** 2026-08-09 · код `fe98e763` + fix Unicode в `deploy.py` · prod `https://kppdf-crm.ru` health/ready = ok.
+> **Последний успешный warm deploy:** 2026-08-11 · код `c8ebdeb6` (AUTH-302 CSP meta + SALES-348 + OPS-310) · prod `https://kppdf-crm.ru` health/ready = ok · Auth login OK.
 
 | Файл | Зачем |
 |------|--------|

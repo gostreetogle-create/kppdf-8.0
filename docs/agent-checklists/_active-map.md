@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Warm deploy OK (AUTH-302 + KP wave on prod)
+- DONE: warm deploy WIPE=false; preflight OPS-310 green; Auth login OK; Frontend 200.
+- HEAD at deploy: `c8ebdeb6` (AUTH-302) on main; includes SALES-348 + OPS-310.
+- Smoke next: browser Basic → /login → admin (not Basic password); no CSP inline desktop script.
+- NEXT: idle. Deploy again only on new PO «деплой».
+
 ## Checkpoint 2026-08-11 · TZ-AUTH-302 CODE DONE — needs warm deploy
 - DONE (code): removed inline desktop URL script; meta `kppdf-desktop-download-url`; deploy.py inject; jest 7/7; FE tsc.
 - Archive: `tasks/_archive/2026-08/TZ-AUTH-302.done.md`. Prod still old until deploy.

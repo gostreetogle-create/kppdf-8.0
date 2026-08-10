@@ -1,6 +1,6 @@
 # TZ-AUTH-302 checklist — CSP inline / login
 
-> Status: **CODE DONE** — warm deploy pending PO «деплой»  
+> Status: **DONE** (code + warm deploy 2026-08-11)  
 > Spec: `tasks/_backlog/ops/TZ-AUTH-302-csp-inline-desktop-url.md`  
 > Archive: `tasks/_archive/2026-08/TZ-AUTH-302.done.md`
 
@@ -17,7 +17,7 @@
 - [x] deploy.py patch updated if needed
 - [x] No `'unsafe-inline'` in helmet scriptSrc
 - [x] FE tsc + jest desktop-download-url PASS
-- [ ] Warm deploy; login smoke after Basic Auth — **ждёт PO «деплой»**
+- [x] Warm deploy; login smoke after Basic Auth
 - [x] Archive + lock + push (code)
 
 ## Notes
