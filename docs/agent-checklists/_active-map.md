@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · RESUME TZ-SALES-348 (agent step-limit after 347)
+- Stop cause: host max sequential responses — not a project blocker.
+- DONE pushed: SALES-347 (`08c13b0d`); tree clean on `main`.
+- NEXT: claim **TZ-SALES-348** (`tasks/_backlog/kp-vitrine/TZ-SALES-348-kp-vitrine-added-badge-modules.md`) → checklist → implement → gates → archive+push.
+- Resume prompt: `tasks/PROMPT-RESUME-ANY.md` (достаточен; очередь сама укажет 348).
+- Deploy NO; ZIP NO; OPS-310 only before deploy.
+
 ## Checkpoint 2026-08-11 · tasks/ hygiene (spent prompts & done waves archived)
 - Live `tasks/` root: only `PROMPT-RESUME-ANY`, `PROMPT-UNIVERSAL-CONTINUOUS`, README.
 - Live `_backlog/`: `kp-vitrine` (348 + KP-COMPLETE), `ops` (OPS-310), `perf`, QUEUE.
