@@ -1,7 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
 **Last updated:** 2026-08-10
-**Phase:** TZ-AUTH-301 DONE; next WAVE-KP-COMPLETE 340→341→345→343→344→342→346→347→348; deploy НЕ запускать
+**Phase:** TZ-AUTH-301 DONE; WAVE-KP-COMPLETE through SALES-345 DONE; next SALES-343→344→342→346→347→348; deploy НЕ запускать
+
+## [2026-08-11] — TZ-SALES-345 DONE: PDF, Печать and archive
+**Статус:** DONE on main; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** `POST /quotations/:id/pdf` использует сохранённый/build HTML и optional system Chrome через `puppeteer-core`; без движка — RU 503. В студии одна кнопка «Скачать ▾» с PDF/Печать/архивом, а «Все КП» получил PDF/Печать.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-345.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-345-kp-pdf-print-archive.lock`
+**Gates:** BE tsc + quotation/generated-document 31/31 focused; FE tsc + proposal-create 27/27 + proposals 20/20 + dev build; ESLint/Prettier/diff-check PASS. Real browser/PDF smoke unavailable without Chrome/backend data stack; 503 fallback tested.
+**NEXT:** TZ-SALES-343; deploy НЕ.
 
 ## [2026-08-10T23:50:00Z] — TZ-SALES-341 DONE: commercial fields and VAT persistence
 **Статус:** DONE on main; frontend/backend gates, archive and lock complete; deploy НЕ

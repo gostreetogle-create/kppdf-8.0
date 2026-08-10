@@ -131,6 +131,10 @@ export class ProposalsService {
     return silentGet<Proposal>(this.http, `${this.baseUrl}/quotations/${id}`);
   }
 
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.post(`${this.baseUrl}/quotations/${id}/pdf`, {}, { responseType: 'blob' });
+  }
+
   create(payload: Partial<Proposal>): Observable<SilentResult<Proposal>> {
     return silentPost<Proposal>(this.http, `${this.baseUrl}/quotations`, payload);
   }

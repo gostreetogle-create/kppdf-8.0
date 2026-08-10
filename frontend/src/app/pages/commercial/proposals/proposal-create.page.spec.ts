@@ -17,6 +17,7 @@ import { DocumentTemplatesService } from '../../../shared/services/pi-document-t
 import { TableTemplatesService } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { ProposalsService } from '../../../shared/services/pi-proposals.service';
+import { GeneratedDocumentsService } from '../../../shared/services/pi-generated-documents.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
@@ -185,7 +186,12 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
             create: quotationCreateMock,
             update: quotationUpdateMock,
             findById: quotationFindMock,
+            downloadPdf: jest.fn(),
           },
+        },
+        {
+          provide: GeneratedDocumentsService,
+          useValue: { archiveQuotation: jest.fn() },
         },
         {
           provide: PiToastService,
@@ -933,6 +939,25 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(page.draftLines()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
+  }));
+
+  it('shows the three Russian output actions in one download menu', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      toggleDownloadMenu: () => void;
+      autosaveLabel: { set: (value: string) => void };
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    page.autosaveLabel.set('Сохранено');
+    page.toggleDownloadMenu();
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-download-menu"]'))).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('PDF');
+    expect(fixture.nativeElement.textContent).toContain('Печать');
+    expect(fixture.nativeElement.textContent).toContain('Сохранить в архив документов');
   }));
 
   it('persists commercial fields and sends discounted totals to build', fakeAsync(() => {

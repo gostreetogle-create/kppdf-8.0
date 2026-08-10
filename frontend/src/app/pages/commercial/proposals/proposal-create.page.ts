@@ -35,6 +35,7 @@ import {
   type TableTemplate,
 } from '../../../shared/services/pi-table-templates.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
+import { GeneratedDocumentsService } from '../../../shared/services/pi-generated-documents.service';
 import { ProposalsService, type Proposal } from '../../../shared/services/pi-proposals.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
@@ -142,9 +143,55 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
                   {{ autosaveLabel() }}
                 </span>
+                @if (previewStatus() === 'ready') {
+                  <div class="relative ml-auto">
+                    <button
+                      type="button"
+                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                      data-test="kp-download-menu"
+                      aria-haspopup="menu"
+                      [attr.aria-expanded]="downloadMenuOpen()"
+                      (click)="toggleDownloadMenu()"
+                    >
+                      Скачать ▾
+                    </button>
+                    @if (downloadMenuOpen()) {
+                      <div
+                        class="absolute right-0 top-full z-40 mt-1 min-w-[14rem] border hairline rounded-sm bg-paper p-1 shadow-lg"
+                        role="menu"
+                      >
+                        <button
+                          type="button"
+                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
+                          role="menuitem"
+                          (click)="requestOutput('pdf')"
+                        >
+                          PDF
+                        </button>
+                        <button
+                          type="button"
+                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
+                          role="menuitem"
+                          (click)="requestOutput('print')"
+                        >
+                          Печать
+                        </button>
+                        <button
+                          type="button"
+                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
+                          role="menuitem"
+                          (click)="requestOutput('archive')"
+                        >
+                          Сохранить в архив документов
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
               </div>
             }
             <app-proposal-create-template-center
+              #templateCenter
               [selected]="selectedTemplate()"
               [previewHtml]="previewHtml()"
               [previewStatus]="previewStatus()"
@@ -456,6 +503,7 @@ export class ProposalCreatePage implements OnInit {
   private readonly route = inject(ActivatedRoute, { optional: true });
   private readonly templatesSvc = inject(DocumentTemplatesService);
   private readonly proposalsSvc = inject(ProposalsService);
+  private readonly generatedDocumentsSvc = inject(GeneratedDocumentsService);
   private readonly toast = inject(PiToastService);
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly blocksSvc = inject(TemplateBlocksService);
@@ -466,6 +514,7 @@ export class ProposalCreatePage implements OnInit {
   @ViewChild('leftFlyout') private leftFlyout?: ElementRef<HTMLElement>;
   @ViewChild('productsFlyout') private productsFlyout?: ElementRef<HTMLElement>;
   @ViewChild('rightFlyout') private rightFlyout?: ElementRef<HTMLElement>;
+  @ViewChild('templateCenter') private templateCenter?: ProposalCreateTemplateCenterComponent;
 
   protected readonly dealsToc = DEALS_TOC_CHIPS;
   protected readonly kpSectionChips = KP_SECTION_CHIPS;
@@ -508,10 +557,13 @@ export class ProposalCreatePage implements OnInit {
   protected readonly selectedTableTargetId = signal<string | null>(null);
   private readonly tableTargetLayouts = signal<Record<string, ProposalTableLayoutColumn[]>>({});
   protected readonly autosaveLabel = signal('');
+  protected readonly downloadMenuOpen = signal(false);
   protected readonly proposalStatus = signal<ProposalCreateStatus>('draft');
   protected readonly isReadOnly = computed(() => this.proposalStatus() === 'accepted');
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private autosaveToastShown = false;
+  private pendingOutput: (() => void) | null = null;
+  private pendingRoutePrint = false;
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -565,6 +617,10 @@ export class ProposalCreatePage implements OnInit {
                 );
                 this.previewStatus.set('ready');
                 this.scheduleAutosave();
+                if (this.pendingRoutePrint) {
+                  this.pendingRoutePrint = false;
+                  setTimeout(() => this.printCurrentPreview(), 0);
+                }
               } else {
                 this.previewHtmlSource.set(null);
                 this.previewHtml.set(null);
@@ -586,6 +642,7 @@ export class ProposalCreatePage implements OnInit {
   }
 
   ngOnInit(): void {
+    this.pendingRoutePrint = this.route?.snapshot.queryParamMap.get('action') === 'print';
     const queryId = this.route?.snapshot.queryParamMap.get('id')?.trim();
     const isNew = this.route?.snapshot.queryParamMap.get('new') === '1';
     if (queryId) {
@@ -752,6 +809,7 @@ export class ProposalCreatePage implements OnInit {
 
   private finishSave(res: SilentResult<Proposal>, templateId: string, autosave: boolean): void {
     if (!res.ok) {
+      this.pendingOutput = null;
       this.autosaveLabel.set('Ошибка автосохранения');
       if (!autosave || !this.autosaveToastShown) {
         this.toast.error('Не удалось сохранить черновик КП.');
@@ -768,6 +826,73 @@ export class ProposalCreatePage implements OnInit {
       this.toast.success('Черновик сохранён');
       this.autosaveToastShown = true;
     }
+    const output = this.pendingOutput;
+    this.pendingOutput = null;
+    output?.();
+  }
+
+  protected toggleDownloadMenu(): void {
+    this.downloadMenuOpen.update((open) => !open);
+  }
+
+  protected requestOutput(action: 'pdf' | 'print' | 'archive'): void {
+    this.downloadMenuOpen.set(false);
+    const run = (): void => {
+      if (action === 'pdf') this.downloadPdf();
+      else if (action === 'print') this.printCurrentPreview();
+      else this.archiveCurrentQuotation();
+    };
+    if (this.proposalStatus() === 'accepted') {
+      run();
+      return;
+    }
+    if (!this.canSaveDraft()) {
+      this.toast.error('Дождитесь готового превью и выберите нашу фирму.');
+      return;
+    }
+    this.pendingOutput = run;
+    this.cancelAutosave();
+    this.saveDraft(false);
+  }
+
+  private downloadPdf(): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id) {
+      this.toast.error('Сначала сохраните черновик КП.');
+      return;
+    }
+    this.proposalsSvc.downloadPdf(id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `КП-${this.proposalNumber() || id}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        this.toast.success('PDF подготовлен');
+      },
+      error: () => this.toast.error('Сервис печати недоступен, используйте Печать в браузере.'),
+    });
+  }
+
+  private printCurrentPreview(): void {
+    if (!this.previewHtmlSource()) {
+      this.toast.error('Превью листа ещё не готово.');
+      return;
+    }
+    this.templateCenter?.printPreview();
+  }
+
+  private archiveCurrentQuotation(): void {
+    const id = this.readStorage('kp.create.lastDraftId');
+    if (!id) {
+      this.toast.error('Сначала сохраните черновик КП.');
+      return;
+    }
+    this.generatedDocumentsSvc.archiveQuotation(id).subscribe((res) => {
+      if (res.ok) this.toast.success('КП сохранено в архив документов');
+      else this.toast.error('Не удалось сохранить КП в архив документов.');
+    });
   }
 
   private scheduleAutosave(): void {

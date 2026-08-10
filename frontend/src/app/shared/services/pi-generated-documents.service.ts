@@ -52,6 +52,14 @@ export class GeneratedDocumentsService {
     return silentGet<GeneratedDocument>(this.http, `${this.baseUrl}/generated-documents/${id}`);
   }
 
+  archiveQuotation(id: string): Observable<SilentResult<GeneratedDocument>> {
+    return silentPost<GeneratedDocument>(
+      this.http,
+      `${this.baseUrl}/quotations/${id}/generated-document`,
+      {},
+    );
+  }
+
   generate(
     templateId: string,
     payload: GenerateDocumentRequest,

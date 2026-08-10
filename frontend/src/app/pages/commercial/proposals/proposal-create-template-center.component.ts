@@ -68,6 +68,7 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
               data-test="kp-tpl-html-preview"
               title="Превью шаблона КП"
               sandbox="allow-same-origin"
+              #previewFrame
               [srcdoc]="previewHtml()!"
               [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
             ></iframe>
@@ -147,12 +148,19 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
 export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
+  private readonly previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
   readonly selected = input<DocumentTemplate | null>(null);
   readonly previewHtml = input<SafeHtml | null>(null);
   readonly previewStatus = input<KpTemplatePreviewStatus>('idle');
   readonly requestPick = output<void>();
   protected readonly previewScale = signal(1);
+
+  printPreview(): void {
+    const frame = this.previewFrame()?.nativeElement;
+    frame?.contentWindow?.focus();
+    frame?.contentWindow?.print();
+  }
 
   ngAfterViewInit(): void {
     const sheet = this.sheet()?.nativeElement;
@@ -173,8 +181,6 @@ export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
   private recalculateScale(): void {
     const sheet = this.sheet()?.nativeElement;
     if (!sheet || sheet.clientWidth <= 0 || sheet.clientHeight <= 0) return;
-    this.previewScale.set(
-      calculateKpPreviewScale(sheet.clientWidth, sheet.clientHeight),
-    );
+    this.previewScale.set(calculateKpPreviewScale(sheet.clientWidth, sheet.clientHeight));
   }
 }

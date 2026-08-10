@@ -337,6 +337,24 @@ function counterpartyIdOf(row: Proposal): string {
               <button
                 type="button"
                 class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                [attr.data-test]="'pdf-button-' + row._id"
+                [attr.aria-label]="'Скачать PDF КП ' + row.number"
+                (click)="onDownloadPdf(row)"
+              >
+                PDF
+              </button>
+              <button
+                type="button"
+                class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                [attr.data-test]="'print-button-' + row._id"
+                [attr.aria-label]="'Печать КП ' + row.number"
+                (click)="onPrint(row)"
+              >
+                Печать
+              </button>
+              <button
+                type="button"
+                class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
                 [attr.data-test]="'copy-button-' + row._id"
                 [attr.aria-label]="'Копировать КП ' + row.number"
                 (click)="onCopy(row)"
@@ -741,6 +759,27 @@ export class ProposalsPage implements OnInit {
   protected openEdit(proposal: Proposal): void {
     void this.router.navigate(['/proposals/create'], {
       queryParams: { id: proposal._id },
+    });
+  }
+
+  protected onDownloadPdf(row: Proposal): void {
+    this.service.downloadPdf(row._id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `КП-${row.number}.pdf`;
+        anchor.click();
+        URL.revokeObjectURL(url);
+        this.toast.success('PDF подготовлен');
+      },
+      error: () => this.toast.error('Сервис печати недоступен, используйте Печать в браузере.'),
+    });
+  }
+
+  protected onPrint(row: Proposal): void {
+    void this.router.navigate(['/proposals/create'], {
+      queryParams: { id: row._id, action: 'print' },
     });
   }
 

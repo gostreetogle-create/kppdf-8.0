@@ -1,4 +1,14 @@
 
+## [2026-08-11] — TZ-SALES-345 DONE — КП PDF, Печать and archive
+**Исполнитель:** Buffy / agent-d2515d7a53
+**Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ
+**Что:** Добавлены `POST /quotations/:id/pdf` из сохранённого/build HTML с `puppeteer-core`, RU 503 fallback при отсутствии Chrome, final archive `GeneratedDocument`, единое меню «Скачать ▾» в студии и PDF/Печать в «Все КП». Печать использует текущий A4 iframe; повторный архив создаёт новую запись.
+**Gates:** backend tsc + quotation/generated-document 31/31 focused и 13/13 generated-document; frontend tsc + proposal-create 27/27 + proposals 20/20 + development build; ESLint/Prettier/diff-check PASS. DOM self-check PASS; real browser/PDF smoke unavailable without Chrome/backend data stack, 503 path tested.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-345.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-345-kp-pdf-print-archive.lock`
+**Scope:** frozen shell 317, recipient/terms/custom lines/multipage/status/versions/vitrine, deploy, ZIP publish and foreign WIP untouched.
+**NEXT:** TZ-SALES-343 → 344 → 342 → 346 → 347 → 348; Deploy НЕ.
+
 ## [2026-08-10T23:50:00Z] — TZ-SALES-341 DONE — КП commercial fields and VAT persistence
 **Исполнитель:** Buffy / agent-d2515d7a53
 **Статус:** DONE; fullstack gates, archive and lock complete; deploy НЕ

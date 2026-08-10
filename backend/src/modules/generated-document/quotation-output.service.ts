@@ -1,0 +1,261 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import puppeteer, { type Browser, type Page } from 'puppeteer-core';
+import { existsSync } from 'node:fs';
+import { Model, Types } from 'mongoose';
+import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
+import { DocumentTemplateService } from '../document-template/document-template.service';
+import { BuildDocumentDto } from '../document-template/dto/build-document.dto';
+import { GeneratedDocumentService } from './generated-document.service';
+import type { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+
+type OutputUser = Pick<AuthenticatedUser, 'organizationId'>;
+
+type RenderedQuotation = {
+  quotation: QuotationDocument;
+  html: string;
+  buildPayload: BuildDocumentDto;
+  templateId: string;
+};
+
+@Injectable()
+export class QuotationOutputService {
+  private browserPromise: Promise<Browser> | null = null;
+
+  constructor(
+    @InjectModel(Quotation.name)
+    private readonly quotationModel: Model<QuotationDocument>,
+    private readonly templateService: DocumentTemplateService,
+    private readonly generatedDocuments: GeneratedDocumentService,
+  ) {}
+
+  async renderPdf(
+    id: string,
+    user?: OutputUser,
+  ): Promise<{ buffer: Buffer; number: string }> {
+    const rendered = await this.renderQuotation(id, user);
+    const browser = await this.getBrowser();
+    let page: Page | undefined;
+    try {
+      page = await browser.newPage();
+      await page.setContent(rendered.html, {
+        waitUntil: 'load',
+        timeout: 15_000,
+      });
+      const buffer = Buffer.from(
+        await page.pdf({
+          format: this.pageFormat(rendered.html),
+          landscape: this.isLandscape(rendered.html),
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: { top: '0', right: '0', bottom: '0', left: '0' },
+        }),
+      );
+      return { buffer, number: rendered.quotation.number };
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException) throw error;
+      throw new ServiceUnavailableException(
+        'Сервис печати недоступен, используйте Печать в браузере.',
+      );
+    } finally {
+      await page?.close().catch(() => undefined);
+    }
+  }
+
+  async archive(
+    id: string,
+    user?: OutputUser,
+  ): Promise<Record<string, unknown>> {
+    const rendered = await this.renderQuotation(id, user);
+    const doc = await this.generatedDocuments.archiveRendered({
+      templateId: rendered.templateId,
+      templateName: `КП ${rendered.quotation.number}`,
+      name: `КП ${rendered.quotation.number}`,
+      sourceId: rendered.quotation._id,
+      organizationId: this.organizationId(rendered.quotation),
+      html: rendered.html,
+      buildPayload: rendered.buildPayload as unknown as Record<string, unknown>,
+    });
+    return doc.toObject() as unknown as Record<string, unknown>;
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    const browser = this.browserPromise
+      ? await this.browserPromise.catch(() => null)
+      : null;
+    this.browserPromise = null;
+    await browser?.close().catch(() => undefined);
+  }
+
+  private async renderQuotation(
+    id: string,
+    user?: OutputUser,
+  ): Promise<RenderedQuotation> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`КП ${id} не найдено`);
+    }
+    const quotation = await this.quotationModel.findById(id).exec();
+    if (!quotation || quotation.deletedAt) {
+      throw new NotFoundException(`КП ${id} не найдено`);
+    }
+    const quotationOrganizationId = this.organizationId(quotation);
+    if (
+      user?.organizationId &&
+      quotationOrganizationId !== user.organizationId
+    ) {
+      throw new NotFoundException(`КП ${id} не найдено`);
+    }
+
+    const snapshot = quotation.templateSnapshot as
+      Record<string, unknown> | undefined;
+    const snapshotHtml = snapshot?.['html'];
+    const templateId = this.templateIdOf(quotation.templateId, snapshot);
+    if (typeof snapshotHtml === 'string' && snapshotHtml.trim() && templateId) {
+      return {
+        quotation,
+        html: snapshotHtml,
+        buildPayload: this.buildPayload(quotation, snapshot),
+        templateId,
+      };
+    }
+    if (!templateId) {
+      throw new BadRequestException(
+        'У КП нет шаблона для печати. Выберите шаблон и сохраните КП.',
+      );
+    }
+
+    const template = await this.templateService.findById(templateId);
+    const templateOrganizationId = this.referenceId(template.organizationId);
+    if (
+      templateOrganizationId &&
+      templateOrganizationId !== quotationOrganizationId
+    ) {
+      throw new NotFoundException(`КП ${id} не найдено`);
+    }
+    const buildPayload = this.buildPayload(quotation, snapshot);
+    if (user?.organizationId) {
+      await this.templateService.assertBuildSourcesInOrganization(
+        buildPayload,
+        user.organizationId,
+      );
+    }
+    const html = await this.templateService.build(templateId, buildPayload);
+    return { quotation, html, buildPayload, templateId };
+  }
+
+  private buildPayload(
+    quotation: QuotationDocument,
+    snapshot?: Record<string, unknown>,
+  ): BuildDocumentDto {
+    const tableLayout = snapshot?.['tableLayout'];
+    const tableTargetId = snapshot?.['tableTargetId'];
+    return {
+      previewLines: (quotation.items ?? []).map((item) => ({
+        productName: item.productName ?? 'Изделие',
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        ...(item.productSku ? { productSku: item.productSku } : {}),
+        ...(item.unit ? { unit: item.unit } : {}),
+      })),
+      ...(Array.isArray(tableLayout) ? { tableLayout } : {}),
+      ...(typeof tableTargetId === 'string' ? { tableTargetId } : {}),
+      dealTotals: {
+        vatPercent: quotation.vatPercent ?? 20,
+        discountType: quotation.discountType ?? 'none',
+        discountPercent: quotation.discountPercent ?? 0,
+        discountAmount: quotation.discountAmount ?? 0,
+        prepaymentPercent: quotation.prepaymentPercent ?? 0,
+        productionDays: quotation.productionDays ?? 0,
+        deliveryDays: quotation.deliveryDays ?? 0,
+      },
+      organizationId: this.organizationId(quotation),
+      ...(quotation.counterpartyId
+        ? { counterpartyId: this.referenceId(quotation.counterpartyId) }
+        : {}),
+      quotationId: quotation._id.toString(),
+    };
+  }
+
+  private async getBrowser(): Promise<Browser> {
+    if (this.browserPromise) return this.browserPromise;
+    const executablePath = this.executablePath();
+    if (!executablePath) {
+      throw new ServiceUnavailableException(
+        'Сервис печати недоступен, используйте Печать в браузере.',
+      );
+    }
+    this.browserPromise = puppeteer
+      .launch({
+        executablePath,
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        timeout: 5_000,
+      })
+      .catch((error: unknown) => {
+        this.browserPromise = null;
+        throw new ServiceUnavailableException(
+          'Сервис печати недоступен, используйте Печать в браузере.',
+          { cause: error instanceof Error ? error : undefined },
+        );
+      });
+    return this.browserPromise;
+  }
+
+  private executablePath(): string | undefined {
+    const configured =
+      process.env.PUPPETEER_EXECUTABLE_PATH ?? process.env.CHROME_PATH;
+    if (configured?.trim()) return configured.trim();
+    const candidates =
+      process.platform === 'win32'
+        ? [
+            `${process.env.PROGRAMFILES ?? 'C:/Program Files'}/Google/Chrome/Application/chrome.exe`,
+            `${process.env['PROGRAMFILES(X86)'] ?? 'C:/Program Files (x86)'}/Google/Chrome/Application/chrome.exe`,
+            `${process.env.LOCALAPPDATA ?? ''}/Google/Chrome/Application/chrome.exe`,
+          ]
+        : process.platform === 'darwin'
+          ? ['/Applications/Google Chrome.app/Contents/MacOS/Google Chrome']
+          : [
+              '/usr/bin/google-chrome',
+              '/usr/bin/chromium',
+              '/usr/bin/chromium-browser',
+            ];
+    return candidates.find((candidate) => candidate && existsSync(candidate));
+  }
+
+  private pageFormat(html: string): 'A4' | 'A3' {
+    return /@page\s*\{[^}]*size:\s*A3/i.test(html) ? 'A3' : 'A4';
+  }
+
+  private isLandscape(html: string): boolean {
+    return /@page\s*\{[^}]*size:\s*landscape/i.test(html);
+  }
+
+  private organizationId(quotation: QuotationDocument): string {
+    return this.referenceId(quotation.organizationId);
+  }
+
+  private templateIdOf(
+    templateId: unknown,
+    snapshot?: Record<string, unknown>,
+  ): string | null {
+    const candidate = this.referenceId(templateId);
+    if (candidate && Types.ObjectId.isValid(candidate)) return candidate;
+    const snapshotId = snapshot?.['templateId'];
+    return typeof snapshotId === 'string' && Types.ObjectId.isValid(snapshotId)
+      ? snapshotId
+      : null;
+  }
+
+  private referenceId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (value && typeof value === 'object' && '_id' in value) {
+      return String((value as { _id: unknown })._id);
+    }
+    return String(value ?? '');
+  }
+}

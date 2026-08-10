@@ -43,7 +43,10 @@ export class GeneratedDocumentService {
     return this.model.find(q).sort({ createdAt: -1 }).exec();
   }
 
-  async findById(id: string, user?: OrgScopedUser): Promise<GeneratedDocumentDocument> {
+  async findById(
+    id: string,
+    user?: OrgScopedUser,
+  ): Promise<GeneratedDocumentDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`GeneratedDocument ${id} not found`);
     }
@@ -82,7 +85,10 @@ export class GeneratedDocumentService {
       throw new NotFoundException('Organization not found');
     }
     if (userOrgId) {
-      await this.templateService.assertBuildSourcesInOrganization(dto, userOrgId);
+      await this.templateService.assertBuildSourcesInOrganization(
+        dto,
+        userOrgId,
+      );
     }
     const html = await this.templateService.build(templateId, dto);
     const number = await this.counter.next('generated-document', 'DOC');
@@ -124,6 +130,37 @@ export class GeneratedDocumentService {
     });
   }
 
+  async archiveRendered(input: {
+    templateId: string;
+    templateName?: string;
+    name: string;
+    sourceId: Types.ObjectId;
+    organizationId: string;
+    html: string;
+    buildPayload: Record<string, unknown>;
+  }): Promise<GeneratedDocumentDocument> {
+    if (
+      !Types.ObjectId.isValid(input.templateId) ||
+      !Types.ObjectId.isValid(input.organizationId)
+    ) {
+      throw new NotFoundException('Шаблон или организация не найдены');
+    }
+    const number = await this.counter.next('generated-document', 'DOC');
+    return this.model.create({
+      number,
+      name: input.name,
+      templateId: new Types.ObjectId(input.templateId),
+      templateName: input.templateName,
+      sourceType: 'quotation',
+      sourceId: input.sourceId,
+      organizationId: new Types.ObjectId(input.organizationId),
+      html: input.html,
+      buildPayload: input.buildPayload,
+      status: 'final',
+      isActive: true,
+    });
+  }
+
   async remove(id: string, user?: OrgScopedUser): Promise<void> {
     const doc = await this.findById(id, user);
     if (user?.organizationId && !this.organizationIdOf(doc.organizationId)) {
@@ -143,7 +180,9 @@ export class GeneratedDocumentService {
     return value ? String(value) : null;
   }
 
-  private organizationScope(user?: OrgScopedUser): Record<string, unknown> | null {
+  private organizationScope(
+    user?: OrgScopedUser,
+  ): Record<string, unknown> | null {
     const organizationId = user?.organizationId;
     if (!organizationId) return null;
     if (!Types.ObjectId.isValid(organizationId)) {
