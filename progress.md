@@ -1,4 +1,13 @@
 
+## [2026-08-10T21:40:00Z] — TZD-33 DONE: commercial MCP HITL (WAVE-MCP-GAP #3)
+**Исполнитель:** Buffy / continuous executor
+**Статус:** DONE; MCP read + draft write для КП/заказ/клиент; userOk-гейты; deploy НЕ
+**Что:** NEW `commercial-tools.ts` (17 tools): 9 read (counterparties/persons/sites/quotations/orders/contracts, slim без HTML snapshot), 4 draft write (counterparty_create — SoT сразу, site_create, quotation/order_create_draft — ПРИНУДИТЕЛЬНО status draft), 4 gated (quotation_set_status draft|sent|accepted|rejected, convert_to_order/contract, order_ship) — только с `userOk:true`, иначе toolFail и 0 backend call. Поля сверены с реальными DTO (QuotationItemDto, OrderItemDto unitPrice optional, CreateCounterpartyDto inn/roles). Register в tools.ts; registry toolCount 51 → 68.
+**Gates:** desktop/mcp test 86/86 PASS; mcp tsc PASS; live healthz toolCount 68 PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-33.done.md`
+**Lock:** `.mimocode/locks/TZD-33-commercial-mcp-hitl.lock`
+**Checkpoint:** NEXT = claim TZD-34. Deploy НЕ
+
 ## [2026-08-10T21:00:00Z] — TZD-32 DONE: material propose fields (WAVE-MCP-GAP #2)
 **Исполнитель:** Buffy / continuous executor
 **Статус:** DONE; propose create price/kind/description/dimensions → SoT; deploy НЕ

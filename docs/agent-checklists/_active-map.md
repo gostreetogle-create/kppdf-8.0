@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-10T21:40:00Z · TZD-33 DONE → NEXT TZD-34
+- DONE: TZD-33 (commercial MCP HITL) — 17 tools (9 read slim, 4 draft write forced status=draft, 4 gated with userOk:true); registry toolCount 51 → 68; MCP.md Commercial HITL section.
+- Gates: desktop/mcp test 86/86; mcp tsc PASS; live healthz toolCount 68.
+- Archive `tasks/_archive/2026-08/TZD-33.done.md` + lock `.mimocode/locks/TZD-33-commercial-mcp-hitl.lock`; `_active/TZD-33.md` removed.
+- IN PROGRESS: TZD-34 (stock movement MCP) — next claim.
+- NOT DONE: — (последняя TZ волны). BAN: deploy, mcp-runtime commits, TZD-35, dict/KP waves.
+- Deploy: NO
+
 ## Checkpoint 2026-08-10T21:00:00Z · TZD-32 DONE → NEXT TZD-33
 - DONE: TZD-32 (material propose fields) — whitelist pricePerUnit/materialKind/description/dimensions in ProposeMaterialCreateDto, confirm round-trip to MaterialService.create, batch items same fields, MCP zod mirror + payload builder, MCP.md write-table.
 - Gates: BE tsc PASS; mutation-journal Jest 20/20; desktop/mcp test 79/79 + tsc PASS.

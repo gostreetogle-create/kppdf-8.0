@@ -237,6 +237,60 @@ Order / коммерческое КП kinds — не этот TZ.
 3. Менеджер закрывает в вебе кнопкой «Готово»; агент может `set_status done`
    только когда его явно попросили (не silent auto-close).
 
+## Tools — commercial (TZD-33) — read + draft HITL
+
+Контур «КП / заказ / клиент» **без** mutation-journal kinds (это отдельная
+BE-волна): reads везде; writes — только **draft** (или create counterparty/site
+с предупреждением «пишет SoT сразу»); опасные действия — **только** с
+`userOk: true`, иначе toolFail и **0** запросов к backend.
+
+Термины (канон): «КП» = **Quotation** (`/api/quotations`), «Клиент» =
+**Counterparty**, «Площадка» = **Site**, «Наша фирма» = **Organization**
+(read / organizationId только; create org — запрещён).
+
+### Read (slim-ответы: id + name/number + status; без HTML snapshot КП)
+
+| Tool | REST |
+|------|------|
+| `kppdf_list_counterparties` | `GET /api/counterparties?page&limit&search` |
+| `kppdf_get_counterparty` | `GET /api/counterparties/:id` |
+| `kppdf_list_persons` | `GET /api/persons?page&limit&search` |
+| `kppdf_list_sites` | `GET /api/sites?counterpartyId=` (без id backend вернёт `[]`) |
+| `kppdf_list_quotations` | `GET /api/quotations?counterpartyId&status` |
+| `kppdf_get_quotation` | `GET /api/quotations/:id` — slim, БЕЗ HTML snapshot |
+| `kppdf_list_orders` | `GET /api/orders?counterpartyId&status` |
+| `kppdf_get_order` | `GET /api/orders/:id` |
+| `kppdf_list_contracts` | `GET /api/contracts?counterpartyId&status` |
+
+### Draft write (обязательно статус draft; input `status` не принимается)
+
+| Tool | REST | Замечание |
+|------|------|-----------|
+| `kppdf_counterparty_create` | `POST /api/counterparties` | whitelist: name\*, inn\*, roles\*, shortName, legalForm, legalType, type, partyTypes, phone, paymentTermDays, vatRate. **Пишет SoT сразу** (нет journal) |
+| `kppdf_site_create` | `POST /api/sites` | `{ counterpartyId, name, address }` — SoT сразу |
+| `kppdf_quotation_create_draft` | `POST /api/quotations` | **force `status: 'draft'`**; required `organizationId` + `items[]`; optional counterpartyId/title/notes/discount\* |
+| `kppdf_order_create_draft` | `POST /api/orders` | **force `status: 'draft'`**; required `counterpartyId`, `siteId`, `items[]` |
+
+### Gated mutations (userOk:true обязателен)
+
+| Tool | REST | Whitelist |
+|------|------|-----------|
+| `kppdf_quotation_set_status` | `PATCH /api/quotations/:id` | только `draft\|sent\|accepted\|rejected` |
+| `kppdf_quotation_convert_to_order` | `POST /api/quotations/:id/convert-to-order` | `deliveryAddress?`, `managerId?` |
+| `kppdf_quotation_convert_to_contract` | `POST /api/quotations/:id/convert-to-contract` | `title?` |
+| `kppdf_order_ship` | `POST /api/orders/:id/ship` | `recipient?`, `address?`, `warehouseId?`, `driverInfo?` |
+
+### Commercial HITL protocol
+
+1. Агент создаёт **draft** (`*_create_draft`) → менеджер доводит и публикует в
+   вебе (`/proposals`, `/orders`). Агент **не** публикует КП молча.
+2. `ship` / `convert-to-*` / `set_status` — спросить человека, получить «ок»,
+   затем вызвать с `userOk: true`. Без `userOk:true` → toolFail, 0 write.
+3. Не Gantt, не supply explode, не Organization create, не admin users.
+
+**Известное ограничение:** нет journal undo для КП/заказа — менеджер правит в
+вебе; Composition BOM write — TZD-35 (park); stock write — TZD-34.
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:

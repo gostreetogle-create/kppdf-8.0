@@ -6,6 +6,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, BackendError } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import {
+  COMMERCIAL_TOOL_NAMES,
+  registerCommercialTools,
+} from './commercial-tools.js';
+import {
   DOC_TOOL_NAMES,
   registerDocTools,
 } from './doc-tools.js';
@@ -54,6 +58,7 @@ export function listRegisteredToolNames(): readonly string[] {
     ...IMPORT_TODO_TOOL_NAMES,
     ...TEXT_BLOCK_TOOL_NAMES,
     ...DOC_TOOL_NAMES,
+    ...COMMERCIAL_TOOL_NAMES,
   ];
 }
 
@@ -154,6 +159,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerReadTools(server, cfg);
   registerWriteTools(server, cfg);
   registerDomainTools(server, cfg);
+  registerCommercialTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
   registerImportTodoTools(server, cfg);
