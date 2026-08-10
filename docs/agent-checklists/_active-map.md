@@ -1,12 +1,14 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-10T23:50:00Z · TZ-SALES-341 DONE → NEXT TZ-SALES-345
-- DONE: AUTH-301, SALES-340 and SALES-341. 341 persists VAT/discount/document/timing fields, applies markup-before-discount server totals, and hydrates Russian Параметры sections through F5/autosave/build footer.
-- Gates: frontend tsc + proposal-create 26/26 PASS; backend tsc + quotation 32/32 PASS; ESLint/Prettier/diff-check PASS; Angular DOM self-verify PASS. Live authenticated browser smoke unavailable without backend data stack.
-- Archives: AUTH-301, SALES-340, SALES-341; locks for all present; 341 `_active/` removed.
-- Commit/push: 341 closeout pending on canonical `main`; foreign WIP remains excluded.
-- NEXT continuous: **TZ-SALES-345** → 343 → 344 → 342 → 346 → 347 → 348.
+## Checkpoint 2026-08-11 · TZ-SALES-345 DONE → NEXT TZ-SALES-343
+- DONE: AUTH-301, SALES-340, SALES-341 and SALES-345. 345 adds server PDF from the saved/build HTML, browser print of the current A4 iframe, final quotation archive records, and PDF/Печать actions in «Все КП».
+- Gates: backend tsc + quotation/generated-document suites PASS (31/31 focused; 13/13 generated-document); frontend tsc + proposal-create 27/27 + proposals 20/20 + development build PASS; ESLint/Prettier/diff-check PASS; DOM self-verify PASS.
+- Real authenticated browser/PDF smoke unavailable: no backend data stack and no Chrome executable in headless workspace; missing-engine RU 503 is unit-tested.
+- Archives: AUTH-301, SALES-340, SALES-341, SALES-345; locks for all present; 345 `_active/` removed.
+- Commit/push: 345 closeout pending on canonical `main`; foreign WIP remains excluded.
+- NEXT continuous: **TZ-SALES-343** → 344 → 342 → 346 → 347 → 348.
 - Deploy: NO; desktop ZIP publish: NO; nginx/VPS untouched.
+
 
 ## Checkpoint 2026-08-10T22:12:00Z · READY QUEUE для continuous (AUTH-301 → KP-COMPLETE)
 - DONE waves: MCP-GAP 31–34 · Excel 36–38 · DICT-DEMO · KP-USABLE · OPS-309 · VPS Basic Auth (ops).

@@ -12,8 +12,10 @@
 | **`RUNBOOK.md`** | Короткий чеклист (502, бэкап, VPN) |
 | **`DEPLOY.md`** | Архитектура (VPS + tunnel + VM) |
 | **`INSTALL.md`** | Установка с нуля |
+| **`preflight.ps1`** | Проверки до деплоя (+ gate **TZ-OPS-310**) |
 | **`backup.sh`** | Бэкап Mongo на VM |
 | **`reset-admin-password.py`** | Сброс пароля admin (опционально) |
+| **Ops harden** | `tasks/_backlog/ops/TZ-OPS-310-…` · evidence `docs/ops/server-harden-evidence.md` |
 
 ---
 
@@ -23,24 +25,30 @@
 
 1. Workspace: `D:\kppdf-8.0`, ветка `main`, `git pull --ff-only`.  
    Перед деплоем: `git status` чист и `main` = `origin/main` (иначе сначала commit+push — иначе завтра на работе будет асинхрон).
-2. Секреты уже лежат локально (gitignore): `deploy/synology/config.env` + `CREDENTIALS.md`.  
+2. **Gate гигиены серверов (TZ-OPS-310):**  
+   должен существовать `tasks/_archive/2026-08/TZ-OPS-310.done.md` + заполненный `docs/ops/server-harden-evidence.md`.  
+   Если нет — **сначала** выполни `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`  
+   (промпт `tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`, VPN OFF), **потом** деплой.  
+   `preflight.ps1` тоже проверяет этот archive.
+3. Секреты уже лежат локально (gitignore): `deploy/synology/config.env` + `CREDENTIALS.md`.  
    **Не** коммитить их. **Не** печатать пароли в чат.
-3. **VPN OFF.** SSH на `192.168.1.103` из домашней LAN.
-4. **Без wipe**, если PO отдельно не сказал wipe:
+4. **VPN OFF.** SSH на `192.168.1.103` из домашней LAN.
+5. **Без wipe**, если PO отдельно не сказал wipe:
    ```powershell
    cd D:\kppdf-8.0
    $env:PYTHONUTF8='1'
    $env:PYTHONIOENCODING='utf-8'
    .\deploy\synology\deploy.ps1
    ```
-5. Ждать до ~10–15 мин (Angular build + docker). Успех = блок `=== Deploy complete ===` + Auth login OK + Frontend HTTP 200.
-6. Smoke:
+6. Ждать до ~10–15 мин (Angular build + docker). Успех = блок `=== Deploy complete ===` + Auth login OK + Frontend HTTP 200.  
+   Учти: снаружи корень/`/api` могут требовать **HTTP Basic Auth** (подъездный пароль из `CREDENTIALS.md`) — для curl используй `-u`.
+7. Smoke:
    ```powershell
-   curl.exe -sf https://kppdf-crm.ru/api/health/ready
-   curl.exe -sf -o NUL -w "%{http_code}" https://kppdf-crm.ru/
+   curl.exe -sf -u "LOGIN:PASS" https://kppdf-crm.ru/api/health/ready
+   curl.exe -sf -u "LOGIN:PASS" -o NUL -w "%{http_code}" https://kppdf-crm.ru/
    curl.exe -sf http://192.168.1.103:3000/api/health/ready
    ```
-7. Отчёт PO: SHA git + «warm deploy OK» + health. **Не** стартовать wipe / COMPLETE / новые TZ без команды.
+8. Отчёт PO: SHA git + «warm deploy OK» + health. **Не** стартовать wipe / COMPLETE / новые TZ без команды.
 
 Запреты: параллельный второй `deploy.ps1`; `--wipe` без явного PO; коммит `config.env`/`CREDENTIALS.md`; деплой из freebuff worktree «на глаз».
 

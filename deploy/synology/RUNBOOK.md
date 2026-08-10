@@ -46,16 +46,20 @@ openssl rand -hex 32   # JWT_REFRESH_SECRET
 
 ## Pre-deploy checklist (10 строк)
 
-1. **VPN OFF** — иначе LAN `192.168.1.103` часто недоступен.
-2. `config.env` + `CREDENTIALS.md` скопированы из `*.example` и заполнены.
-3. `JWT_SECRET` ≠ `JWT_REFRESH_SECRET`, оба ≥32; `ADMIN_PASSWORD` ≥12, не demo-default.
-4. `CORS_ORIGIN=https://kppdf-crm.ru` (канон).
-5. SSH: `DEPLOY_SSH_KEY` (предпочтительно) или `DEPLOY_PASSWORD`.
-6. `WIPE=false` после первой чистой установки (не сносить живые данные).
-7. FE artifact: `pnpm --dir frontend build` → `frontend/browser/` (делает `deploy.py`).
-8. Compose health URL: `/api/health/ready`.
-9. Первый логин: `admin` + пароль из CREDENTIALS (не admin123).
-10. После up: smoke `/login`, `/materials`, `/orders`, `/inventory`, `/doc-constructor/templates`.
+1. **TZ-OPS-310 DONE** — есть `tasks/_archive/2026-08/TZ-OPS-310.done.md` и заполненный `docs/ops/server-harden-evidence.md`.  
+   Иначе: VPN OFF → промпт `tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md` → закрыть harden → потом деплой.  
+   Spec: `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
+2. **VPN OFF** — иначе LAN `192.168.1.103` часто недоступен.
+3. `config.env` + `CREDENTIALS.md` скопированы из `*.example` и заполнены.
+4. `JWT_SECRET` ≠ `JWT_REFRESH_SECRET`, оба ≥32; `ADMIN_PASSWORD` ≥12, не demo-default.
+5. `CORS_ORIGIN=https://kppdf-crm.ru` (канон).
+6. SSH: `DEPLOY_SSH_KEY` (предпочтительно) или `DEPLOY_PASSWORD`.
+7. `WIPE=false` после первой чистой установки (не сносить живые данные).
+8. FE artifact: `pnpm --dir frontend build` → `frontend/browser/` (делает `deploy.py`).
+9. Compose health URL: `/api/health/ready`.
+10. Первый логин: `admin` + пароль из CREDENTIALS (не admin123).  
+    Снаружи ещё Basic Auth (`CREDENTIALS.md` § HTTP Basic Auth).
+11. После up: smoke `/login`, `/materials`, `/orders` (с Basic Auth на публичном URL).
 
 ---
 

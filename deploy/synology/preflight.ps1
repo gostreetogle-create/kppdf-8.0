@@ -11,6 +11,28 @@ Write-Host ""
 
 $ok = $true
 
+# Deploy gate: server harden TZ-OPS-310 must be archived before warm deploy
+$ops310 = Join-Path $Root "tasks\_archive\2026-08\TZ-OPS-310.done.md"
+$ops310Evidence = Join-Path $Root "docs\ops\server-harden-evidence.md"
+if (Test-Path $ops310) {
+    Write-Host "  [OK] TZ-OPS-310 archive (server harden gate)" -ForegroundColor Green
+} else {
+    Write-Host "  [FAIL] TZ-OPS-310 not done — run server harden BEFORE deploy" -ForegroundColor Red
+    Write-Host "         Spec: tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md" -ForegroundColor Yellow
+    Write-Host "         Prompt: tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md" -ForegroundColor Yellow
+    $ok = $false
+}
+if (Test-Path $ops310Evidence) {
+    $ev = Get-Content $ops310Evidence -Raw
+    if ($ev -match "_YYYY-MM-DD_" -or $ev -match "\(paste paths\)") {
+        Write-Host "  [WARN] server-harden-evidence.md still looks like a template — fill during OPS-310" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [OK] docs/ops/server-harden-evidence.md present" -ForegroundColor Green
+    }
+} else {
+    Write-Host "  [WARN] docs/ops/server-harden-evidence.md missing" -ForegroundColor Yellow
+}
+
 function Check($name, $cmd) {
     try {
         $null = Invoke-Expression $cmd 2>$null

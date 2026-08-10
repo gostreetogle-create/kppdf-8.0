@@ -37,6 +37,15 @@ if ($LASTEXITCODE -ne 0) {
     pip install -r (Join-Path $Here "requirements.txt")
 }
 
+# Deploy gate: TZ-OPS-310 always required (even with -SkipPreflight)
+$ops310 = Join-Path $Root "tasks\_archive\2026-08\TZ-OPS-310.done.md"
+if (-not (Test-Path $ops310)) {
+    Write-Host "[FAIL] TZ-OPS-310 server harden not archived." -ForegroundColor Red
+    Write-Host "  Do first (VPN OFF): tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md" -ForegroundColor Yellow
+    Write-Host "  Spec: tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md" -ForegroundColor Yellow
+    exit 1
+}
+
 if (-not $SkipPreflight) {
     $pre = Join-Path $Here "preflight.ps1"
     if (Test-Path $pre) {

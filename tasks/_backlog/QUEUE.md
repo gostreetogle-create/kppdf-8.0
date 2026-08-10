@@ -29,8 +29,9 @@ Deploy / desktop ZIP — только по отдельной команде PO.
 
 **NEXT для continuous prompt:**  
 1. `TZ-AUTH-301` (мягкий notice `/login`)  
-2. `kp-vitrine/WAVE-KP-COMPLETE.md` · `PROMPT-KP-COMPLETE-CONTINUOUS.md` · 340…348 serial  
-3. Idle → предложить warm deploy + desktop ZIP **без** автозапуска
+2. `kp-vitrine/WAVE-KP-COMPLETE.md` · 340…348 serial  
+3. **Перед деплоем (gate):** `ops/TZ-OPS-310-server-harden-before-deploy.md` · `PROMPT-OPS-310-HARDEN.md` (VPN OFF)  
+4. Idle → warm deploy **только** по команде PO (preflight требует archive OPS-310)
 
 ## Idle / park / done
 
@@ -55,4 +56,5 @@ Deploy / desktop ZIP — только по отдельной команде PO.
 - deploy / wipe / desktop ZIP без команды PO  
 - commit `desktop/mcp-runtime/**`  
 - воскрешение ModuleMaterials / DONE-волн  
-- nginx/VPS Basic Auth (уже включён; секреты в `CREDENTIALS.md`)
+- nginx/VPS Basic Auth (уже включён; секреты в `CREDENTIALS.md`)  
+- деплой **без** `TZ-OPS-310.done.md` (preflight FAIL — сначала harden)

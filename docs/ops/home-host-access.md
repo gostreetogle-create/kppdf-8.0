@@ -82,10 +82,14 @@ IP allowlist — только запасной костыль, не страте
 **Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
 
 1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401.
-2. **Дальше по желанию:** Tailscale на VM/Synology (чеклист §7); публичный домен можно оставить только с Basic как запасной вход.
-3. App-login (`authGuard`) — второй слой (роли ERP), не единственный.
-4. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».
-5. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
+2. **Перед следующим деплоем (обязательный gate):** **TZ-OPS-310** — SUID/порты/SSH-гигиена + evidence.  
+   Spec: `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md` · промпт `PROMPT-OPS-310-HARDEN.md`.  
+   `deploy/synology/preflight.ps1` не пустит деплой без `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
+3. **Дальше по желанию:** Tailscale на VM/Synology (чеклист §7).
+4. App-login (`authGuard`) — второй слой (роли ERP), не единственный.
+5. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».
+6. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
+
 
 ### Текст на временной заглушке / notice (канон)
 
