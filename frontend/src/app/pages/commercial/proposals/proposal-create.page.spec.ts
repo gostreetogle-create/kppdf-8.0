@@ -396,9 +396,58 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       `${window.location.origin}/uploads/bg.png`,
     );
     expect(frame.styles['transform']).toContain('scale(');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-page-count"]'))).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-page-count"]')).nativeElement.textContent,
+    ).toContain('Страница 1');
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-page-count"]')).nativeElement.textContent,
+    ).not.toContain('из 1');
+    expect(getComputedStyle(frame.nativeElement).pointerEvents).toBe('none');
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-name"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('упрощённое');
+  }));
+
+  it('shows a clear page count for a multi-page build', fakeAsync(() => {
+    buildMock.mockReturnValueOnce(
+      of({
+        ok: true,
+        data: `<html><body><section class="doc-page">Лист 1</section><section class="doc-page">Лист 2</section></body></html>`,
+      }),
+    );
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      autosaveLabel: { set: (value: string) => void };
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    page.autosaveLabel.set('Сохранено');
+    tick(250);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Страница 1 из 2');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-page-1"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-page-2"]'))).toBeTruthy();
+  }));
+
+  it('keeps preview loading and build failures short and Russian', fakeAsync(() => {
+    buildMock.mockReturnValueOnce(of({ ok: false, error: { message: 'Raw Exception: failed' } }));
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      previewStatus: () => string;
+    };
+
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Загрузка превью…');
+
+    tick(250);
+    fixture.detectChanges();
+
+    expect(page.previewStatus()).toBe('error');
+    expect(fixture.nativeElement.textContent).toContain('Не удалось построить превью');
+    expect(fixture.nativeElement.textContent).not.toContain('Raw Exception');
   }));
 
   it('TZ-SALES-319: org change rebuilds with organizationId', fakeAsync(() => {
@@ -687,6 +736,13 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           organizationId: 'org-1',
           templateId: 'tpl-1',
           orgMarkupPercent: 8,
+          sheetLayout: {
+            rowsFirstPage: 12,
+            rowsNextPage: 8,
+            photoScalePercent: 85,
+            photoCropYPercent: 10,
+            showPhotoColumn: false,
+          },
           terms: [{ text: 'Оплата: {{total_price}}', sortOrder: 0 }],
           items: [
             { productId: 'prod-1', productName: 'Стенд', quantity: 3, unit: 'шт', unitPrice: 5000 },
@@ -697,6 +753,13 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     const page = fixture.componentInstance as ProposalCreatePage & {
       draftLines: () => ProposalDraftLine[];
       terms: () => { text: string; sortOrder: number }[];
+      sheetLayout: () => {
+        rowsFirstPage: number;
+        rowsNextPage: number;
+        photoScalePercent: number;
+        photoCropYPercent: number;
+        showPhotoColumn: boolean;
+      };
       resumeLastDraft: () => void;
     };
     page.resumeLastDraft();
@@ -714,6 +777,13 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     ]);
     expect(localStorage.getItem('kp.create.lastTemplateId')).toBe('tpl-1');
     expect(page.terms()).toEqual([{ text: 'Оплата: {{total_price}}', sortOrder: 0 }]);
+    expect(page.sheetLayout()).toEqual({
+      rowsFirstPage: 12,
+      rowsNextPage: 8,
+      photoScalePercent: 85,
+      photoCropYPercent: 10,
+      showPhotoColumn: false,
+    });
   }));
 
   it('hydrates an editable quotation addressed by the studio query id', fakeAsync(() => {

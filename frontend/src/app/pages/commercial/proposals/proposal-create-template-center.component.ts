@@ -56,11 +56,11 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
             </div>
           } @else if (previewStatus() === 'loading') {
             <div class="center__status" data-test="kp-tpl-loading" role="status">
-              Загрузка шаблона…
+              Загрузка превью…
             </div>
           } @else if (previewStatus() === 'error') {
             <div class="center__status center__status--error" data-test="kp-tpl-error" role="alert">
-              Не удалось загрузить шаблон
+              Не удалось построить превью
             </div>
           } @else if (previewStatus() === 'ready' && previewHtml()) {
             @for (page of previewPages().length ? previewPages() : [previewHtml()!]; track $index) {
@@ -73,13 +73,14 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
                   sandbox="allow-same-origin"
                   #previewFrame
                   [srcdoc]="page"
+                  [style.pointer-events]="'none'"
                   [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
                 ></iframe>
               </div>
             }
           } @else {
             <div class="center__status" data-test="kp-tpl-loading" role="status">
-              Загрузка шаблона…
+              Загрузка превью…
             </div>
           }
         </div>
@@ -158,6 +159,7 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
       border: 0;
       background: #fff;
       overflow: hidden;
+      pointer-events: none;
       transform-origin: top center;
     }
   `,

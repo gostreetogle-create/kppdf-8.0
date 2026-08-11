@@ -1,3 +1,12 @@
+## [2026-08-11T18:05:00Z] — TZ-SALES-353 DONE — превью A4, F5 и страницы
+**Исполнитель:** Buffy / buffy-sales353
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Превью показывает короткие RU loading/error, один лист — «Страница 1», несколько — «Страница 1 из N»; iframe sandboxed/view-only. F5 восстанавливает состав и сохранённый `sheetLayout` после выбора шаблона.
+**Gates:** FE tsc PASS; proposal-create Jest 34/34 PASS; changed TS Prettier/ESLint PASS; `git diff --check` PASS; DOM self-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-353.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-353-kp-preview-f5-shame.lock`
+**NEXT:** TZ-SALES-354; deploy НЕ.
+
 ## [2026-08-11T17:20:00Z] — TZ-SALES-352 DONE — chrome состава, условий и статуса
 **Исполнитель:** Buffy / buffy-sales352
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ

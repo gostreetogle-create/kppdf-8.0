@@ -175,14 +175,18 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             data-test="kp-create-center"
             aria-label="Превью КП"
           >
-            @if (selectedTemplate() && autosaveLabel()) {
+            @if (selectedTemplate()) {
               <div class="kp-create-studio__savebar" data-test="kp-save-bar">
-                <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
-                  {{ autosaveLabel() }}
-                </span>
-                <span class="text-[11px] text-muted-foreground" data-test="kp-page-count">
-                  Страница 1 из {{ previewPageCount() }}
-                </span>
+                @if (autosaveLabel()) {
+                  <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
+                    {{ autosaveLabel() }}
+                  </span>
+                }
+                @if (previewStatus() === 'ready') {
+                  <span class="text-[11px] text-muted-foreground" data-test="kp-page-count">
+                    Страница 1{{ previewPageCount() > 1 ? ' из ' + previewPageCount() : '' }}
+                  </span>
+                }
                 <span
                   class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]"
                   data-test="kp-studio-status"
@@ -1269,6 +1273,8 @@ export class ProposalCreatePage implements OnInit {
           return;
         }
         this.onTemplateChange(res.data);
+        this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, ...(draft.sheetLayout ?? {}) });
+        this.rebuildPreview$.next();
       });
     } else {
       this.resumeLastTemplate();

@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T18:05:00Z · TZ-SALES-353 DONE
+- DONE: RU preview loading/error, single-page «Страница 1», multipage «Страница 1 из N», sandboxed view-only iframe, F5 sheetLayout restoration after template hydration.
+- Gates: FE tsc PASS; proposal-create Jest 34/34 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-353.done.md`; lock: `.mimocode/locks/TZ-SALES-353-kp-preview-f5-shame.lock`.
+- HEAD: closeout commit pending; `_active/`: TZ-SALES-353 until commit closeout.
+- NEXT: TZ-SALES-354. Deploy НЕ.
+
 ## Checkpoint 2026-08-11T17:20:00Z · TZ-SALES-352 DONE
 - DONE: Empty «Состав КП» → «Открыть «Товары»», custom blank name → «Своя строка», terms empty → «Добавить условие», status chrome canonical «Принято», visible disabled «Создать заказ» with RU reason.
 - Gates: FE tsc PASS; proposal-create + terms Jest 36/36 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.

@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-353 DONE: preview/F5/multipage chrome
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** RU preview loading/error; single-page «Страница 1»; multipage «Страница 1 из N»; sandboxed iframe explicitly view-only; F5 restores saved sheetLayout after template hydration.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-353.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-353-kp-preview-f5-shame.lock`
+**Gates:** FE tsc; proposal-create Jest 34/34; TS Prettier/ESLint; diff-check; DOM self-check PASS.
+**NEXT:** TZ-SALES-354; deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-352 DONE: composition/terms/status chrome
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** Empty «Состав КП» ведёт в «Товары», пустая «Своя строка» получает русское имя, «Условия» имеют явный «Добавить условие», status chrome использует «Принято», а «Создать заказ» объясняет disabled до принятия.

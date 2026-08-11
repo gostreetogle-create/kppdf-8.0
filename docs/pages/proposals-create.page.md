@@ -37,7 +37,8 @@
 
 - При выборе шаблона или добавлении изделия: `DocumentTemplatesService.build(id, { previewLines, tableLayout, dealTotals, organizationId? })`; all three are request-only
 - Лист = sandboxed `iframe` `srcdoc` (`data-test="kp-tpl-html-preview"`); без имени / «упрощённое» / bullet draftLines
-- При нескольких листах backend возвращает `.doc-page`, frontend разбирает его в вертикальный стек A4; верхняя строка показывает «Страница 1 из N».
+- При нескольких листах backend возвращает `.doc-page`, frontend разбирает его в вертикальный стек A4; верхняя строка показывает «Страница 1 из N», а для одного листа — только «Страница 1».
+- Превью доступно только для просмотра: iframe sandboxed и не принимает клики/редактирование внутри документа. Loading/error на листе — короткие русские «Загрузка превью…» / «Не удалось построить превью». F5 гидратирует состав, получателя, условия и `sheetLayout` из сохранённого черновика.
 - Смена шаблона, org, получателя или условий из панели → rebuild (debounce ~200ms)
 - Loading / error — короткий RU на листе
 - `<base href="{origin}/">` и absolute app-origin rewrite для `/uploads/...`; iframe `sandbox="allow-same-origin"` без scripts
