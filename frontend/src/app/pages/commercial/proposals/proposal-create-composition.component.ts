@@ -3,7 +3,6 @@ import {
   LucideAngularModule,
   ChevronDown,
   ChevronUp,
-  Copy,
   Minus,
   Pencil,
   Plus,
@@ -19,8 +18,8 @@ export interface ProposalCompositionLineChange {
 }
 
 /**
- * TZ-SALES-355 — «Состав КП» as a wide table (not a card heap).
- * A4 stays visual-only; qty/price/discount edit lives here.
+ * TZ-SALES-355.1 — dense composition table (compact controls, editable sum,
+ * vertical reorder on the left, no «База» clutter / no duplicate-row chrome).
  */
 @Component({
   selector: 'app-proposal-create-composition',
@@ -34,7 +33,7 @@ export interface ProposalCompositionLineChange {
           <p class="eyebrow m-0">КП</p>
           <h2 class="composition__title">Состав КП</h2>
           <p class="composition__hint">
-            Здесь правятся количество, цена и скидка. Лист A4 — только превью.
+            Количество, цена и сумма — здесь. Лист A4 только показывает результат.
           </p>
         </div>
         <div class="composition__header-actions">
@@ -58,9 +57,6 @@ export interface ProposalCompositionLineChange {
         <div class="composition__empty" data-test="kp-composition-empty">
           <p>Добавьте изделия из панели «Товары».</p>
           <p>Или нажмите «Своя строка» для услуги, доставки или монтажа.</p>
-          <span class="text-xs text-muted-foreground"
-            >Здесь появятся позиции, количество и итог.</span
-          >
           <app-pi-button
             type="button"
             variant="outline"
@@ -77,14 +73,17 @@ export interface ProposalCompositionLineChange {
           <table class="composition__table">
             <thead>
               <tr>
+                <th class="composition__col-move" scope="col">
+                  <span class="sr-only">Порядок</span>
+                </th>
                 <th class="composition__col-num" scope="col">№</th>
                 <th class="composition__col-name" scope="col">Наименование</th>
                 <th class="composition__col-qty" scope="col">Кол-во</th>
                 <th class="composition__col-unit" scope="col">Ед.</th>
-                <th class="composition__col-price" scope="col">Цена, ₽</th>
-                <th class="composition__col-disc" scope="col">Скидка %</th>
+                <th class="composition__col-price" scope="col">Цена</th>
+                <th class="composition__col-disc" scope="col">%</th>
                 <th class="composition__col-sum" scope="col">Сумма</th>
-                <th class="composition__col-opt" scope="col" title="Не входит в стоимость">Опц.</th>
+                <th class="composition__col-opt" scope="col" title="Не входит в итог">Опц.</th>
                 <th class="composition__col-act" scope="col">
                   <span class="sr-only">Действия</span>
                 </th>
@@ -97,6 +96,30 @@ export interface ProposalCompositionLineChange {
                   [class.composition__row--optional]="line.isOptional === true"
                   [attr.data-test]="'kp-composition-line-' + index"
                 >
+                  <td class="composition__col-move">
+                    <div class="composition__move">
+                      <button
+                        type="button"
+                        class="composition__icon-btn"
+                        [disabled]="readOnly() || index === 0"
+                        (click)="move.emit({ index, direction: -1 })"
+                        [attr.aria-label]="'Поднять строку: ' + line.productName"
+                        title="Выше"
+                      >
+                        <lucide-angular [img]="upIcon" [size]="14" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        class="composition__icon-btn"
+                        [disabled]="readOnly() || index === lines().length - 1"
+                        (click)="move.emit({ index, direction: 1 })"
+                        [attr.aria-label]="'Опустить строку: ' + line.productName"
+                        title="Ниже"
+                      >
+                        <lucide-angular [img]="downIcon" [size]="14" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </td>
                   <td class="composition__col-num">{{ index + 1 }}</td>
                   <td class="composition__col-name">
                     <div class="composition__name-cell">
@@ -112,7 +135,7 @@ export interface ProposalCompositionLineChange {
                       <div class="composition__name-body">
                         @if (line.lineKind === 'custom') {
                           <input
-                            class="pi-input composition__name-input"
+                            class="composition__field"
                             type="text"
                             [value]="line.productName"
                             [disabled]="readOnly()"
@@ -124,19 +147,18 @@ export interface ProposalCompositionLineChange {
                           <strong class="composition__name">{{
                             line.productName || 'Без названия'
                           }}</strong>
+                          @if (line.productSku) {
+                            <span class="composition__sku">{{ line.productSku }}</span>
+                          }
                         }
-                        <span class="composition__meta"
-                          >Арт: {{ line.productSku || '—' }} · База:
-                          {{ price(line.unitPrice) }}</span
-                        >
                         <input
-                          class="pi-input composition__desc-input"
+                          class="composition__field composition__field--muted"
                           type="text"
                           [value]="line.description || ''"
                           [disabled]="readOnly()"
                           (change)="descriptionChanged(index, $event)"
                           [attr.data-test]="'kp-composition-description-' + index"
-                          placeholder="Описание (необязательно)"
+                          placeholder="Описание"
                           aria-label="Описание строки"
                         />
                       </div>
@@ -146,15 +168,15 @@ export interface ProposalCompositionLineChange {
                     <div class="composition__stepper">
                       <button
                         type="button"
-                        class="composition__step"
+                        class="composition__icon-btn"
                         [disabled]="readOnly()"
                         (click)="stepQuantity(index, -1)"
                         [attr.aria-label]="'Уменьшить количество: ' + line.productName"
                       >
-                        <lucide-angular [img]="minusIcon" [size]="13" aria-hidden="true" />
+                        <lucide-angular [img]="minusIcon" [size]="12" aria-hidden="true" />
                       </button>
                       <input
-                        class="pi-input"
+                        class="composition__field composition__field--num"
                         type="number"
                         min="0.001"
                         step="1"
@@ -165,29 +187,29 @@ export interface ProposalCompositionLineChange {
                       />
                       <button
                         type="button"
-                        class="composition__step"
+                        class="composition__icon-btn"
                         [disabled]="readOnly()"
                         (click)="stepQuantity(index, 1)"
                         [attr.aria-label]="'Увеличить количество: ' + line.productName"
                       >
-                        <lucide-angular [img]="plusIcon" [size]="13" aria-hidden="true" />
+                        <lucide-angular [img]="plusIcon" [size]="12" aria-hidden="true" />
                       </button>
                     </div>
                   </td>
                   <td class="composition__col-unit">
                     <input
-                      class="pi-input"
+                      class="composition__field"
                       type="text"
                       [value]="line.unit || ''"
                       [disabled]="readOnly()"
                       (change)="unitChanged(index, $event)"
                       [attr.data-test]="'kp-composition-unit-' + index"
-                      aria-label="Единица измерения"
+                      aria-label="Единица"
                     />
                   </td>
                   <td class="composition__col-price">
                     <input
-                      class="pi-input"
+                      class="composition__field composition__field--num"
                       type="number"
                       min="0"
                       step="0.01"
@@ -195,12 +217,13 @@ export interface ProposalCompositionLineChange {
                       [disabled]="readOnly()"
                       (change)="priceChanged(index, $event)"
                       [attr.data-test]="'kp-composition-price-' + index"
-                      aria-label="Цена за единицу"
+                      aria-label="Цена за единицу в КП"
+                      title="Цена только в этом КП, каталог не меняется"
                     />
                   </td>
                   <td class="composition__col-disc">
                     <input
-                      class="pi-input"
+                      class="composition__field composition__field--num"
                       type="number"
                       min="0"
                       max="100"
@@ -209,14 +232,25 @@ export interface ProposalCompositionLineChange {
                       [disabled]="readOnly()"
                       (change)="discountChanged(index, $event)"
                       [attr.data-test]="'kp-composition-discount-' + index"
-                      aria-label="Скидка в процентах"
+                      aria-label="Скидка %"
                     />
                   </td>
                   <td class="composition__col-sum">
-                    <strong class="composition__line-total">{{ price(lineTotal(line)) }}</strong>
+                    <input
+                      class="composition__field composition__field--num composition__field--sum"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      [value]="lineTotal(line)"
+                      [disabled]="readOnly()"
+                      (change)="sumChanged(index, $event)"
+                      [attr.data-test]="'kp-composition-sum-' + index"
+                      aria-label="Сумма строки в КП"
+                      title="Правка суммы пересчитает цену за ед. только в этом КП"
+                    />
                   </td>
                   <td class="composition__col-opt">
-                    <label class="composition__optional" title="Не входит в стоимость">
+                    <label class="composition__optional" title="Не входит в итог">
                       <input
                         type="checkbox"
                         [checked]="line.isOptional === true"
@@ -224,69 +258,35 @@ export interface ProposalCompositionLineChange {
                         (change)="optionalChanged(index, $event)"
                         [attr.data-test]="'kp-composition-optional-' + index"
                       />
-                      <span class="sr-only">Не входит в стоимость</span>
+                      <span class="sr-only">Не входит в итог</span>
                     </label>
                   </td>
                   <td class="composition__col-act">
                     <div class="composition__actions">
                       @if (canEditCatalog(line)) {
-                        <app-pi-button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
+                          class="composition__icon-btn"
                           [disabled]="readOnly()"
                           (click)="editLine.emit(index)"
-                          [attr.aria-label]="'Редактировать изделие: ' + line.productName"
-                          title="Редактировать в каталоге"
+                          [attr.aria-label]="'Редактировать: ' + line.productName"
+                          title="Карточка каталога"
                           [attr.data-test]="'kp-composition-edit-' + index"
                         >
                           <lucide-angular [img]="pencilIcon" [size]="14" aria-hidden="true" />
-                        </app-pi-button>
+                        </button>
                       }
-                      <app-pi-button
+                      <button
                         type="button"
-                        variant="ghost"
-                        size="sm"
-                        [disabled]="readOnly() || index === 0"
-                        (click)="move.emit({ index, direction: -1 })"
-                        [attr.aria-label]="'Поднять строку: ' + line.productName"
-                        title="Поднять"
-                      >
-                        <lucide-angular [img]="upIcon" [size]="14" aria-hidden="true" />
-                      </app-pi-button>
-                      <app-pi-button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        [disabled]="readOnly() || index === lines().length - 1"
-                        (click)="move.emit({ index, direction: 1 })"
-                        [attr.aria-label]="'Опустить строку: ' + line.productName"
-                        title="Опустить"
-                      >
-                        <lucide-angular [img]="downIcon" [size]="14" aria-hidden="true" />
-                      </app-pi-button>
-                      <app-pi-button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        [disabled]="readOnly()"
-                        (click)="duplicate.emit(index)"
-                        [attr.aria-label]="'Дублировать строку: ' + line.productName"
-                        title="Дублировать"
-                      >
-                        <lucide-angular [img]="copyIcon" [size]="14" aria-hidden="true" />
-                      </app-pi-button>
-                      <app-pi-button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
+                        class="composition__icon-btn composition__icon-btn--danger"
                         [disabled]="readOnly()"
                         (click)="remove.emit(index)"
                         [attr.aria-label]="'Удалить строку: ' + line.productName"
-                        title="Удалить"
+                        title="Убрать из КП"
+                        [attr.data-test]="'kp-composition-remove-' + index"
                       >
                         <lucide-angular [img]="trashIcon" [size]="14" aria-hidden="true" />
-                      </app-pi-button>
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -306,8 +306,8 @@ export interface ProposalCompositionLineChange {
     .composition {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
-      padding: 0.15rem 0.25rem 0.35rem;
+      gap: 0.55rem;
+      padding: 0.1rem 0.15rem 0.25rem;
       min-height: 0;
       height: 100%;
     }
@@ -315,58 +315,57 @@ export interface ProposalCompositionLineChange {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.65rem;
       flex: 0 0 auto;
     }
     .composition__title {
-      margin: 0.1rem 0 0;
+      margin: 0.05rem 0 0;
       color: var(--color-ink);
       font-family: var(--font-display, Georgia, serif);
-      font-size: 1.35rem;
-      line-height: 1.1;
+      font-size: 1.2rem;
+      line-height: 1.15;
     }
     .composition__hint {
-      margin: 0.35rem 0 0;
+      margin: 0.25rem 0 0;
       color: var(--color-muted);
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       line-height: 1.35;
-      max-width: 28rem;
+      max-width: 26rem;
     }
     .composition__header-actions {
       display: flex;
       align-items: center;
-      gap: 0.65rem;
-      flex: 0 0 auto;
+      gap: 0.55rem;
     }
     .composition__total {
       color: var(--color-ink);
       font-weight: 600;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
-      font-size: 1rem;
+      font-size: 0.95rem;
     }
     .composition__empty {
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
       border: 1px dashed var(--color-rule);
-      color: var(--color-ink);
       text-align: center;
+      color: var(--color-ink);
     }
     .composition__empty p {
-      margin: 0 0 0.35rem;
-      font-size: 0.875rem;
+      margin: 0 0 0.3rem;
+      font-size: 0.8125rem;
     }
     .composition__table-wrap {
       flex: 1 1 auto;
       min-height: 0;
       overflow: auto;
       border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 96%, transparent);
+      background: var(--color-paper, #fff);
     }
     .composition__table {
       width: 100%;
       border-collapse: collapse;
       table-layout: fixed;
-      font-size: 0.8125rem;
+      font-size: 0.75rem;
     }
     .composition__table thead th {
       position: sticky;
@@ -374,64 +373,94 @@ export interface ProposalCompositionLineChange {
       z-index: 1;
       background: var(--color-paper-raised, var(--color-paper, #fff));
       border-bottom: 1px solid var(--color-rule);
-      padding: 0.45rem 0.4rem;
+      padding: 0.35rem 0.3rem;
       text-align: left;
       color: var(--color-muted);
-      font-size: 0.68rem;
+      font-size: 0.62rem;
       font-weight: 600;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
     }
     .composition__row td {
       border-bottom: 1px solid var(--color-rule);
-      padding: 0.45rem 0.35rem;
-      vertical-align: top;
+      padding: 0.3rem 0.25rem;
+      vertical-align: middle;
     }
     .composition__row--optional {
-      background: color-mix(in oklch, var(--color-muted) 6%, transparent);
+      background: color-mix(in oklch, var(--color-muted) 7%, transparent);
+    }
+    .composition__col-move {
+      width: 1.75rem;
     }
     .composition__col-num {
-      width: 2.25rem;
+      width: 1.75rem;
       text-align: center;
       color: var(--color-muted);
       font-variant-numeric: tabular-nums;
     }
-    .composition__col-name {
-      width: auto;
-    }
     .composition__col-qty {
-      width: 7.5rem;
+      width: 6.25rem;
     }
     .composition__col-unit {
-      width: 3.5rem;
+      width: 2.75rem;
     }
-    .composition__col-price {
-      width: 5.5rem;
+    .composition__col-price,
+    .composition__col-sum {
+      width: 5.25rem;
     }
     .composition__col-disc {
-      width: 4.5rem;
-    }
-    .composition__col-sum {
-      width: 6rem;
-      text-align: right;
+      width: 3.25rem;
     }
     .composition__col-opt {
-      width: 2.5rem;
+      width: 2rem;
       text-align: center;
     }
     .composition__col-act {
-      width: 9.5rem;
+      width: 3.75rem;
+    }
+    .composition__move,
+    .composition__actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.1rem;
+    }
+    .composition__actions {
+      flex-direction: row;
+      justify-content: flex-end;
+      gap: 0.15rem;
+    }
+    .composition__icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35rem;
+      height: 1.35rem;
+      padding: 0;
+      border: 1px solid var(--color-rule);
+      background: transparent;
+      color: var(--color-ink);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .composition__icon-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+    .composition__icon-btn--danger:hover:not(:disabled) {
+      border-color: var(--color-destructive, #b00);
+      color: var(--color-destructive, #b00);
     }
     .composition__name-cell {
       display: flex;
       align-items: flex-start;
-      gap: 0.5rem;
+      gap: 0.4rem;
       min-width: 0;
     }
     .composition__photo {
-      width: 2.25rem;
-      height: 2.25rem;
-      flex: 0 0 2.25rem;
+      width: 1.75rem;
+      height: 1.75rem;
+      flex: 0 0 1.75rem;
       object-fit: cover;
       border: 1px solid var(--color-rule);
     }
@@ -440,72 +469,62 @@ export interface ProposalCompositionLineChange {
       align-items: center;
       justify-content: center;
       color: var(--color-muted);
-      font-size: 1rem;
+      font-size: 0.75rem;
     }
     .composition__name-body {
       display: flex;
       flex-direction: column;
-      gap: 0.2rem;
+      gap: 0.15rem;
       min-width: 0;
       flex: 1 1 auto;
     }
     .composition__name {
       color: var(--color-ink);
-      font-size: 0.875rem;
+      font-size: 0.78rem;
       line-height: 1.25;
       font-weight: 600;
-      white-space: normal;
       overflow-wrap: anywhere;
     }
-    .composition__meta {
+    .composition__sku {
       color: var(--color-muted);
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       line-height: 1.2;
     }
-    .composition__name-input,
-    .composition__desc-input {
+    .composition__field {
       width: 100%;
       min-width: 0;
+      height: 1.45rem;
+      box-sizing: border-box;
+      padding: 0 0.3rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      color: var(--color-ink);
+      font-size: 0.72rem;
+      border-radius: 2px;
     }
-    .composition__desc-input {
-      font-size: 0.75rem;
+    .composition__field--muted {
+      color: var(--color-muted);
+    }
+    .composition__field--num {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .composition__field--sum {
+      font-weight: 600;
+    }
+    .composition__field:disabled {
+      opacity: 0.55;
     }
     .composition__stepper {
       display: grid;
-      grid-template-columns: 1.4rem minmax(0, 1fr) 1.4rem;
-      gap: 0.15rem;
-    }
-    .composition__step {
-      display: inline-flex;
+      grid-template-columns: 1.35rem minmax(0, 1fr) 1.35rem;
+      gap: 0.12rem;
       align-items: center;
-      justify-content: center;
-      border: 1px solid var(--color-rule);
-      background: transparent;
-      color: var(--color-ink);
-      cursor: pointer;
-      min-height: 1.75rem;
-    }
-    .composition__step:disabled {
-      cursor: not-allowed;
-      opacity: 0.45;
-    }
-    .composition__line-total {
-      font-variant-numeric: tabular-nums;
-      white-space: nowrap;
-      font-size: 0.8125rem;
     }
     .composition__optional {
       display: inline-flex;
-      align-items: center;
-      justify-content: center;
       margin: 0;
       cursor: pointer;
-    }
-    .composition__actions {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 0.1rem;
     }
     .sr-only {
       position: absolute;
@@ -517,11 +536,6 @@ export interface ProposalCompositionLineChange {
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;
       border: 0;
-    }
-    .pi-input {
-      width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
     }
   `,
 })
@@ -535,14 +549,12 @@ export class ProposalCreateCompositionComponent {
   readonly remove = output<number>();
   readonly duplicate = output<number>();
   readonly move = output<{ index: number; direction: -1 | 1 }>();
-  /** Open FullEditor for catalog/module/material without leaving the studio. */
   readonly editLine = output<number>();
 
   protected readonly minusIcon = Minus;
   protected readonly plusIcon = Plus;
   protected readonly upIcon = ChevronUp;
   protected readonly downIcon = ChevronDown;
-  protected readonly copyIcon = Copy;
   protected readonly trashIcon = Trash2;
   protected readonly pencilIcon = Pencil;
 
@@ -582,6 +594,20 @@ export class ProposalCreateCompositionComponent {
         index,
         patch: { unitPrice: Math.max(0, Math.round(value * 100) / 100) },
       });
+  }
+
+  /** KP-only: editing sum back-calculates unitPrice (catalog listPrice untouched). */
+  protected sumChanged(index: number, event: Event): void {
+    const line = this.lines()[index];
+    if (!line || this.readOnly()) return;
+    const sum = Number((event.target as HTMLInputElement).value);
+    if (!Number.isFinite(sum) || sum < 0) return;
+    const qty = Math.max(0.001, line.quantity);
+    const discount = Math.min(100, Math.max(0, line.discountPercent ?? 0));
+    const factor = 1 - discount / 100;
+    const denom = qty * (factor <= 0 ? 1 : factor);
+    const unitPrice = Math.max(0, Math.round((sum / denom) * 100) / 100);
+    this.lineChange.emit({ index, patch: { unitPrice } });
   }
 
   protected nameChanged(index: number, event: Event): void {

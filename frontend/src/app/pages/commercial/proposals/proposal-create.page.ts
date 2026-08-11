@@ -829,7 +829,12 @@ export class ProposalCreatePage implements OnInit {
             this.previewStatus.set('idle');
             return of(null);
           }
-          this.previewStatus.set('loading');
+          // Keep previous A4 visible while rebuilding — avoids blink on qty/price edits.
+          const keepShowing =
+            this.previewStatus() === 'ready' && !!this.previewHtmlSource()?.trim();
+          if (!keepShowing) {
+            this.previewStatus.set('loading');
+          }
           const org = this.organizationId().trim();
           const markup = this.clampMarkup(this.orgMarkupPercent());
           const previewLines: BuildPreviewLine[] = this.draftLines().map((line) => ({
@@ -887,14 +892,20 @@ export class ProposalCreatePage implements OnInit {
                   this.pendingRoutePrint = false;
                   setTimeout(() => this.printCurrentPreview(), 0);
                 }
-              } else {
+              } else if (!keepShowing) {
                 this.setPreviewHtml(null);
                 this.previewStatus.set('error');
+              } else {
+                this.toast.warning('Не удалось обновить превью — на листе предыдущая версия');
               }
             }),
             catchError(() => {
-              this.setPreviewHtml(null);
-              this.previewStatus.set('error');
+              if (!keepShowing) {
+                this.setPreviewHtml(null);
+                this.previewStatus.set('error');
+              } else {
+                this.toast.warning('Не удалось обновить превью — на листе предыдущая версия');
+              }
               return of(null);
             }),
           );
@@ -1843,16 +1854,22 @@ export class ProposalCreatePage implements OnInit {
             data: res.data,
             width: 'lg',
           });
-          onDialogCloseOnce(ref, this.injector, (closed) => {
-            const product = closed as Product | null | undefined;
-            if (!product?._id) return;
-            this.applyCatalogEditToLine(index, {
-              productName: product.name ?? line.productName,
-              productSku: product.sku,
-              unit: product.unit ?? line.unit,
-              unitPrice: typeof product.listPrice === 'number' ? product.listPrice : line.unitPrice,
-              photoUrl: this.firstPhotoUrl(product.photoIds) ?? line.photoUrl,
-            });
+          onDialogCloseOnce(ref, this.injector, () => {
+            this.productsSvc
+              .findById(id)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe((fresh) => {
+                if (!fresh.ok) return;
+                const product = fresh.data;
+                this.applyCatalogEditToLine(index, {
+                  productName: product.name ?? line.productName,
+                  productSku: product.sku,
+                  unit: product.unit ?? line.unit,
+                  unitPrice:
+                    typeof product.listPrice === 'number' ? product.listPrice : line.unitPrice,
+                  photoUrl: this.mainPhotoUrlFromProduct(product) ?? line.photoUrl,
+                });
+              });
           });
         });
       return;
@@ -1915,9 +1932,23 @@ export class ProposalCreatePage implements OnInit {
   }
 
   private firstPhotoUrl(photoIds?: Array<string | Photo> | null): string | undefined {
-    const photos = (photoIds ?? []).filter((p): p is Photo => typeof p !== 'string');
+    const photos = (photoIds ?? []).filter(
+      (p): p is Photo => typeof p !== 'string' && !!p?.storageUrl,
+    );
     if (!photos.length) return undefined;
     return photoListUrl(photos[0], photos) || undefined;
+  }
+
+  private mainPhotoUrlFromProduct(product: Product): string | undefined {
+    for (const photo of product.photoIds ?? []) {
+      if (typeof photo !== 'string' && photo?.storageUrl) {
+        const all = (product.photoIds ?? []).filter(
+          (p): p is Photo => typeof p !== 'string' && !!p?.storageUrl,
+        );
+        return photoListUrl(photo, all) || undefined;
+      }
+    }
+    return undefined;
   }
 
   private refreshComposition(): void {
