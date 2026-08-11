@@ -25,14 +25,12 @@
 Файл: [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md)  
 → откройте **новый** Cursor Agent-чат с workspace = `D:\kppdf-8.0`  
 → вставьте блок `text` **целиком**.  
-Тот же текст после обрыва = продолжение. **Не** объясняйте историю вечера.
 
-Пока жив хвост КП: агент сам подхватит claim `tasks/_active/TZ-SALES-348.md`.  
-Отдельные одноразовые `PROMPT-SALES-…` в backlog **убраны в архив** — не искать.
+**Сейчас живая волна:** стыд Create КП — лучше сразу  
+[`tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md`](../tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md)  
+(350→354). RESUME-ANY тоже подхватит из QUEUE/`_active-map`.
 
-**План PO на закрытие вечера:** 348 → VPN off → OPS-310 → warm deploy (AUTH-302 уже в main `1675e0e3`).
-
-**Не открывать** чаты в `.freebuff\worktrees\…` — только канон `D:\kppdf-8.0`.
+По-человечески агенту: *«Дожми Create КП после 348: только стыд на показе, WAVE-KP-SHAME-POLISH, без деплоя.»*
 
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)

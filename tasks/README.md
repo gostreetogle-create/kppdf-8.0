@@ -23,6 +23,6 @@
 ## Сейчас в `_backlog/` (ожидаемо тонко)
 
 - `QUEUE.md` — карта  
-- `kp-vitrine/` — хвост **WAVE-KP-COMPLETE** (сейчас TZ-SALES-348 + continuous prompt)  
-- `ops/` — **TZ-OPS-310** (gate перед деплоем)  
-- `perf/` — WAVE-PERF-PHOTOS (если ещё актуальна)
+- `kp-vitrine/` — **WAVE-KP-SHAME-POLISH** (350→354) + spent COMPLETE specs; continuous `PROMPT-KP-SHAME-CONTINUOUS.md`  
+- `ops/` — OPS-310 / AUTH-302 (DONE, specs may remain as history)  
+- `perf/` — WAVE-PERF-PHOTOS DONE (история)

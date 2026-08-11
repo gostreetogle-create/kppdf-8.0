@@ -13,6 +13,13 @@
 - NEXT: PO **«деплой»** (warm) + Desktop rebuild/publish; then pair with подъезд login/pass (same as browser before /login, not admin).
 - Do NOT download random old Desktop alone — without this code+Basic fields prod pairing still fails.
 
+## Checkpoint 2026-08-11 · WAVE-KP-SHAME-POLISH READY (350→354)
+- NEXT: claim **TZ-SALES-350** → 351 → 352 → 353 → 354.
+- Wave: `tasks/_backlog/kp-vitrine/WAVE-KP-SHAME-POLISH.md`
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md` (or PROMPT-RESUME-ANY).
+- Goal: shame polish Create КП after 348 — RU/empty/F5 only; no new features; Deploy NO.
+- `_active/`: empty until agent claims 350.
+
 ## Checkpoint 2026-08-11 · Coding queue idle — no READY TZ for agent
 - KP / OPS-310 / AUTH-302+JWT hotfix on prod; `_active/` empty.
 - Perf photo wave already DONE; leftover specs in `_backlog/perf` are history.

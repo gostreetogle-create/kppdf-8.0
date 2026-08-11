@@ -1,6 +1,6 @@
 # WAVE-KP-COMPLETE — КП делается целиком в приложении
 
-**STATUS:** READY (backlog) — стартовать **после** `WAVE-KP-USABLE` (339 → 334 → 335 → 336)
+**STATUS:** DONE — 340…348 archived; successor shame polish = `WAVE-KP-SHAME-POLISH`
 **Канон:** [`docs/audits/2026-08-09-kp-builder-completeness-audit.md`](../../../docs/audits/2026-08-09-kp-builder-completeness-audit.md)
 **Spec LOCK:** `docs/ux/kp-create-studio-spec.md` §0 — шелл 317 не переписывать
 **Промпт:** [`PROMPT-KP-COMPLETE-CONTINUOUS.md`](./PROMPT-KP-COMPLETE-CONTINUOUS.md)
