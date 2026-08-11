@@ -30,7 +30,7 @@ import { FIELD_CAPACITY, spanForKey } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
-import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
+import { ProductBomPanelComponent } from '../composition/product-bom-panel.component';
 import type { Photo } from '../../services/photos.service';
 
 describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {

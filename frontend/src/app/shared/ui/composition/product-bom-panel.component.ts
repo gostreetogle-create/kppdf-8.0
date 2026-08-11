@@ -19,31 +19,29 @@ import {
   CompositionTreeNode,
   ModuleCostPreview,
   ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import { MaterialsService } from '../../shared/services/materials.service';
+} from '../../services/pi-product-modules.service';
+import { MaterialsService } from '../../services/materials.service';
 import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
-} from '../../shared/services/pi-dictionary-labels.service';
-import { ProductsService } from '../../shared/services/products.service';
-import { extractErrorMessage } from '../../core/silent-http';
-import { PiToastService } from '../../shared/ui/toast';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
+} from '../../services/pi-dictionary-labels.service';
+import { ProductsService } from '../../services/products.service';
+import { extractErrorMessage } from '../../../core/silent-http';
+import { PiToastService } from '../toast';
+import { ButtonComponent } from '../button/button.component';
 import {
   CompositionTreeComponent,
   type CompositionTreeSelectEvent,
-} from '../../shared/ui/composition/composition-tree.component';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+} from './composition-tree.component';
+import { PiDialogService } from '../dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../util/on-dialog-close-once';
 import {
   ProductCompositionPickerDialogComponent,
   type ProductCompositionPickerResult,
 } from './product-composition-picker-dialog.component';
-import { ModuleFormDialogComponent } from '../modules/module-form-dialog.component';
-import { MaterialFormDialogComponent } from '../materials/material-form-dialog.component';
-import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
-import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
-import { formatPrice } from '../../shared/util/format';
+import { PiFactCardComponent, PiFactStackComponent } from '../fact-card';
+import { catalogKindOklch } from '../catalog/catalog-kind-oklch';
+import { formatPrice } from '../../util/format';
 
 /** TZ-COST-303: read-only line contribution shown in BOM inspector. */
 interface LineCostHint {
@@ -577,17 +575,26 @@ export class ProductBomPanelComponent {
 
     if (kind === 'module') {
       this.service.findById(id).subscribe((res) => {
-        this.editLoading.set(false);
         if (!res.ok || !res.data) {
+          this.editLoading.set(false);
           this.toast.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
           return;
         }
-        const ref = this.dialog.open(ModuleFormDialogComponent, {
-          data: res.data,
-          width: 'lg',
-          parentDestroyRef: this.destroyRef,
-        });
-        onDialogCloseOnce(ref, this.injector, afterClose);
+        // TZ-OPS-311: shared panel must not statically import pages — same
+        // lazy pattern as the product form below.
+        void import('../../../pages/modules/module-form-dialog.component')
+          .then(({ ModuleFormDialogComponent }) => {
+            const ref = this.dialog.open(ModuleFormDialogComponent, {
+              data: res.data,
+              width: 'lg',
+              parentDestroyRef: this.destroyRef,
+            });
+            onDialogCloseOnce(ref, this.injector, afterClose);
+          })
+          .catch(() => {
+            this.toast.error('Не удалось открыть редактирование модуля.');
+          })
+          .finally(() => this.editLoading.set(false));
       });
       return;
     }
@@ -603,7 +610,7 @@ export class ProductBomPanelComponent {
         // Keep ProductFormDialog out of this module's static graph. The form imports
         // ProductBomPanel for edit mode, so a static import here makes one side of
         // the ESM cycle undefined when Angular evaluates `imports`/`ɵcmp`.
-        void import('./product-form-dialog.component')
+        void import('../../../pages/products/product-form-dialog.component')
           .then(({ ProductFormDialogComponent }) => {
             const ref = this.dialog.open(ProductFormDialogComponent, {
               data: res.data,
@@ -621,17 +628,26 @@ export class ProductBomPanelComponent {
     }
 
     this.materials.findById(id).subscribe((res) => {
-      this.editLoading.set(false);
       if (!res.ok || !res.data) {
+        this.editLoading.set(false);
         this.toast.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
         return;
       }
-      const ref = this.dialog.open(MaterialFormDialogComponent, {
-        data: res.data,
-        width: 'lg',
-        parentDestroyRef: this.destroyRef,
-      });
-      onDialogCloseOnce(ref, this.injector, afterClose);
+      // TZ-OPS-311: shared panel must not statically import pages — same
+      // lazy pattern as the product form above.
+      void import('../../../pages/materials/material-form-dialog.component')
+        .then(({ MaterialFormDialogComponent }) => {
+          const ref = this.dialog.open(MaterialFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+            parentDestroyRef: this.destroyRef,
+          });
+          onDialogCloseOnce(ref, this.injector, afterClose);
+        })
+        .catch(() => {
+          this.toast.error('Не удалось открыть редактирование материала.');
+        })
+        .finally(() => this.editLoading.set(false));
     });
   }
 

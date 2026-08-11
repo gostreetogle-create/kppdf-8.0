@@ -1,3 +1,12 @@
+## [2026-08-11] — TZ-OPS-311 DONE — shared→pages BOM убран (architecture:check)
+**Исполнитель:** Buffy / freebuff executor (land Cursor→main)
+**Статус:** DONE; FE gates + archive + lock; landed on main
+**Что:** BOM panel + composition picker перенесены `pages/products/` → `shared/ui/composition`; quick-create (shared) больше не импортирует `pages/*`. В панели module/material edit-диалоги стали lazy dynamic imports (паттерн product-form, без ESM-цикла, один write-path состава). Обновлены импорты quick-create / product-form-dialog / product-detail / module-detail (+spec'ы).
+**Gates:** FE tsc PASS; `pnpm architecture:check` baseline 7 → 3 (resolved: quick-create:52, module-detail:33, bom-panel:41/42; новых нет) PASS; Jest focused 4/4 suites (63) PASS; Prettier/ESLint PASS. Pre-existing (чистый HEAD, stash-тест): module-detail.page.spec/products.page.spec 24 fail — dictionary-labels flush, не регрессия.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-311.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-311-shared-bom-extract.lock`
+**NEXT:** idle; WAVE-KP-SHAME-POLISH already DONE on main; deploy НЕ.
+
 ## [2026-08-11T18:30:00Z] — TZ-SALES-354 DONE — self-pass менеджера, WAVE-KP-SHAME-POLISH DONE
 **Исполнитель:** Buffy / buffy-sales354
 **Статус:** DONE; manager self-pass, frontend gates, archive and lock complete; deploy НЕ

@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-OPS-311 DONE: shared→pages BOM убран (architecture:check)
+**Статус:** DONE on main (landed); gates green; archive + lock; deploy НЕ
+**Что:** BOM panel и composition picker переехали из `pages/products/` в `shared/ui/composition`; quick-create больше не импортирует страницы (правило fe-shared-must-not-import-pages). Диалоги редактирования в панели стали lazy (dynamic imports, как у product-form); callers products/modules/proposals обновлены.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-311.done.md`
+**Lock:** `.mimocode/locks/TZ-OPS-311-shared-bom-extract.lock`
+**Gates:** FE tsc PASS; `pnpm architecture:check` PASS (baseline 7 → 3); Jest focused 4/4 suites PASS; Prettier/ESLint PASS.
+**NEXT:** idle; ready to propose deploy; Deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-354 DONE: manager self-pass; shame wave closed
 **Статус:** WAVE-KP-SHAME-POLISH DONE on main; idle; ready to propose deploy; deploy НЕ
 **Что:** Manager walkthrough evidence covers journal/create studio/vitrine/composition/terms/status/F5/preview/copy/edit/print. Thin RU fixes removed legacy `strip-commerce` and `master` confirmation copy; print route regression added.

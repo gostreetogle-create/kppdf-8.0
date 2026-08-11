@@ -40,7 +40,7 @@ import {
 import { PhotosService, type Photo } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
-import { ProductBomPanelComponent } from './product-bom-panel.component';
+import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 
 type Result = Product | null | undefined;

@@ -1,13 +1,9 @@
 {
-  "generatedAt": "2026-08-11T16:23:36.989Z",
+  "generatedAt": "2026-08-11T16:35:10.876Z",
   "fileCount": 914,
   "keys": [
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:22:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:23:fe-page-cross-component",
-    "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:24:fe-page-cross-component",
-    "frontend/src/app/pages/modules/module-detail.page.ts:33:fe-page-cross-component",
-    "frontend/src/app/pages/products/product-bom-panel.component.ts:41:fe-page-cross-component",
-    "frontend/src/app/pages/products/product-bom-panel.component.ts:42:fe-page-cross-component",
-    "frontend/src/app/shared/ui/quick-create/quick-create-dialog.component.ts:52:fe-shared-must-not-import-pages"
+    "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:24:fe-page-cross-component"
   ]
 }

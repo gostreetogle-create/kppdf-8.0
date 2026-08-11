@@ -2,11 +2,11 @@ import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { ProductCompositionPickerDialogComponent } from './product-composition-picker-dialog.component';
-import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
-import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
-import { MaterialsService } from '../../shared/services/materials.service';
-import { ProductsService } from '../../shared/services/products.service';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
+import type { DialogRef } from '../dialog/pi-dialog.service';
+import { ProductModulesService } from '../../services/pi-product-modules.service';
+import { MaterialsService } from '../../services/materials.service';
+import { ProductsService } from '../../services/products.service';
 
 describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)', () => {
   let fixture: ComponentFixture<ProductCompositionPickerDialogComponent>;

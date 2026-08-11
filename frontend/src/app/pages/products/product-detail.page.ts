@@ -37,7 +37,7 @@ import {
 } from '../../shared/services/pi-dictionary-labels.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
-import { ProductBomPanelComponent } from './product-bom-panel.component';
+import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { Product, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';

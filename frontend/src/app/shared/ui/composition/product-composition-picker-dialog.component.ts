@@ -1,22 +1,22 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
-import { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
-import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
-import { Product, ProductsService } from '../../shared/services/products.service';
+import { ButtonComponent } from '../button/button.component';
+import { PiDialogComponent } from '../dialog/pi-dialog.component';
+import { DialogRef } from '../dialog/pi-dialog.service';
+import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
+import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
+import { Product, ProductsService } from '../../services/products.service';
 import {
   isValidProductUnitPriceOverride,
   ProductModule,
   ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import { Material, MaterialsService } from '../../shared/services/materials.service';
+} from '../../services/pi-product-modules.service';
+import { Material, MaterialsService } from '../../services/materials.service';
 import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
-} from '../../shared/services/pi-dictionary-labels.service';
-import { extractErrorMessage } from '../../core/silent-http';
-import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
+} from '../../services/pi-dictionary-labels.service';
+import { extractErrorMessage } from '../../../core/silent-http';
+import { CatalogKindMarkerComponent } from '../catalog/catalog-kind-marker.component';
 
 export type ProductCompositionPickerResult =
   | { lineType: 'module'; refId: string; quantity: number }

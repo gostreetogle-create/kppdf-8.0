@@ -3,11 +3,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
-import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
-import { MaterialsService } from '../../shared/services/materials.service';
-import { ProductsService } from '../../shared/services/products.service';
-import { PiToastService } from '../../shared/ui/toast';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { ProductModulesService } from '../../services/pi-product-modules.service';
+import { MaterialsService } from '../../services/materials.service';
+import { ProductsService } from '../../services/products.service';
+import { PiToastService } from '../toast';
+import { PiDialogService } from '../dialog/pi-dialog.service';
 
 describe('ProductBomPanelComponent', () => {
   let fixture: ComponentFixture<ProductBomPanelComponent>;

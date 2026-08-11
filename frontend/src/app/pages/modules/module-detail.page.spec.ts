@@ -12,7 +12,7 @@ import { MaterialsService } from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
+import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
 import { CatalogReturnStore } from '../../shared/navigation/catalog-return.util';
 
 async function tickMicrotask(): Promise<void> {

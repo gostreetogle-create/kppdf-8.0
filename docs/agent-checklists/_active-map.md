@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 — TZ-OPS-311 DONE (shared→pages BOM убран)
+- DONE (Buffy/freebuff → landed main): BOM panel + picker → `shared/ui/composition`; quick-create без `pages/*`; module/material edit в панели — lazy dynamic imports; callers (products/modules/proposal rail) обновлены.
+- Gates: FE tsc PASS; `pnpm architecture:check` baseline 7 → 3 PASS; Jest 4/4 focused PASS; Prettier/ESLint PASS. Pre-existing (чистый HEAD): module-detail/products.page specs 24 fail — не регрессия.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-311.done.md`; lock: `.mimocode/locks/TZ-OPS-311-shared-bom-extract.lock`; `_active/` пуст.
+- WAVE-KP-SHAME-POLISH (350→354) already DONE on main. Deploy: NO.
+
 ## Checkpoint 2026-08-11T18:30:00Z · WAVE-KP-SHAME-POLISH DONE
 - DONE: TZ-SALES-350…354; manager self-pass confirms RU empty/status chrome, create/edit/copy/print navigation, vitrine qty/chips, composition/custom line/terms, status/F5 and preview pages.
 - Thin fixes 354: conversion confirmation no legacy `strip-commerce`; family sync no legacy `master`; print route regression.

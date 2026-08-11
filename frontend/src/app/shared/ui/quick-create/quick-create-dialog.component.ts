@@ -50,7 +50,7 @@ import { colSpanClass, controlMaxClass } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
 import { PhotosService, type Photo } from '../../services/photos.service';
-import { ProductBomPanelComponent } from '../../../pages/products/product-bom-panel.component';
+import { ProductBomPanelComponent } from '../composition/product-bom-panel.component';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 import {
   dictionaryLabelOptions,

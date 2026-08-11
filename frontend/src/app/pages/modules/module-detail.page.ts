@@ -31,7 +31,7 @@ import {
   ProductModulePhotosService,
 } from '../../shared/services/pi-product-module-photos.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
-import { ProductBomPanelComponent } from '../products/product-bom-panel.component';
+import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
