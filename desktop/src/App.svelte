@@ -863,15 +863,25 @@
     mcp = new McpHostController((state) => {
       mcpState = state;
     });
-    // Остановка MCP при закрытии окна. В Tauri 2 onCloseRequested сам
-    // вызывает destroy() после handler — нужны ACL allow-close/destroy.
-    await getCurrentWindow().onCloseRequested(() => {
+    // Закрытие по крестику (Tauri 2): listener + destroy ACL.
+    // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
+    await getCurrentWindow().onCloseRequested(async (event) => {
+      event.preventDefault();
       disposed = true;
       stopInboxWatcher();
       try {
         mcp?.dispose();
       } catch {
-        // не блокируем закрытие окна из‑за MCP
+        // MCP не должен блокировать выход
+      }
+      try {
+        await getCurrentWindow().destroy();
+      } catch {
+        try {
+          await getCurrentWindow().close();
+        } catch {
+          // last resort: OS may still keep the process; user can End Task
+        }
       }
     });
 
