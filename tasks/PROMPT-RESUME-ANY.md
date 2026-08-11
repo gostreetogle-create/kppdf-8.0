@@ -1,8 +1,7 @@
 # Вечный resume — любой обрыв исполнителя
 
-**Для PO:** исполнитель = **Cursor Agent** (Freebuff не используем).  
-Если агент остановился (лимит шагов, обрыв чата) — откройте **новый** Agent-чат на `D:\kppdf-8.0`  
-и вставьте блок `text` ниже **целиком**. Не дописывайте историю вечера. Состояние — из git.
+**Для PO:** исполнитель = **Cursor Agent или Freebuff**.  
+Вставьте блок `text` ниже **целиком**. Не дописывайте историю вечера. Состояние — из git / `origin/main`.
 
 Тот же промпт = старт волны, если `_active/` пуст, но в QUEUE/WAVE ещё есть READY.
 
@@ -12,85 +11,67 @@
 
 ```text
 Ты — непрерывный исполнитель kppdf-8.0.
-Корень ТОЛЬКО: D:\kppdf-8.0 · ветка main.
+Цель правды: origin/main.
 Skills: .agents/skills/kppdf-executor-continuous/SKILL.md + GEMINI.md + OrchestratorKit/AGENTS.md
 PO-канон: docs/PO-DIARY.md §1–§4
 Карта: docs/agent-checklists/_active-map.md · tasks/_backlog/QUEUE.md · docs/PO-AGENT-FLOW.md
 Этот промпт: tasks/PROMPT-RESUME-ANY.md
 
 ════════════════════════════════════════════════════════
-HARD GATE WORKSPACE (до любого кода)
+WORKSPACE GATE (Freebuff OK)
 ════════════════════════════════════════════════════════
-Сразу проверь:
-  Get-Location
-  git rev-parse --show-toplevel
-Оба пути должны быть ровно D:\kppdf-8.0 (или D:/kppdf-8.0).
+Сразу: Get-Location · git rev-parse --show-toplevel · git branch --show-current
 
-СТОП без правок кода, если:
-  - toplevel содержит `.freebuff\worktrees` / `.freebuff/worktrees`
-  - инструменты правок (ApplyPatch/str_replace) привязаны к другому корню, а канон только read-only
-  - нельзя писать в D:\kppdf-8.0 через обычные edit-tools
+Разрешено:
+  A) D:\kppdf-8.0 на main
+  B) .freebuff/worktrees/... (tools часто привязаны сюда — это нормально)
 
-Тогда одна карточка PO:
-  «BLOCKED: tools bound to freebuff worktree X; need new chat rooted on D:\kppdf-8.0»
-и заверши ход. НЕ пиши продукт в freebuff. НЕ «обходи» через shell-edit запрещённых путей.
-Claim/checklist в каноне не трогай — их подхватит новый чат.
+При B: пиши в worktree; перед DONE каждой TZ доставь коммит на origin/main
+(push ветки + merge/ff в main + push, или эквивалент). Без SHA на origin/main — не «закрыта».
+СТОП только если нельзя ни править worktree, ни доставить на origin/main.
 
 ════════════════════════════════════════════════════════
 ГЛАВНОЕ
 ════════════════════════════════════════════════════════
 1) Не спрашивай PO «ок / поехали / продолжать?». Движение непрерывное.
-2) Правда только в git-файлах, не в прошлом чате.
+2) Правда только в git на origin/main, не в прошлом чате.
 3) Не выдумывай новые TZ и не лезь в PARKED.
 4) deploy.ps1 / wipe / desktop ZIP — только если PO явно сказал в ЭТОМ чате.
    «деплой» = только warm update (WIPE=false), данные не трогать.
-   Wipe/удаление БД/rm прод-данных — СТОП и спроси PO **по-русски** по канону
-   docs/ops/DANGEROUS-OPS.md (сначала бэкап backup.sh, потом явное «да, разрешаю wipe после бэкапа»).
-5) После каждой закрытой TZ: archive + lock + commit + push main → Checkpoint → сразу next.
-6) Крупная TZ: mid-commit+push после зелёных gates куска (чтобы лимит шагов не съел WIP).
-7) Чужой dirty WIP не затирай и не мешай в свой коммит.
-8) НЕ создавай новые worktree в .freebuff для продукта. Канон = D:\kppdf-8.0.
+   Wipe — СТОП + спроси PO по-русски по docs/ops/DANGEROUS-OPS.md.
+5) После каждой закрытой TZ: archive + lock + commit + push на origin/main → Checkpoint → next.
+6) Крупная TZ: mid-commit+push зелёного куска.
+7) Чужой dirty WIP не затирай.
 
 ════════════════════════════════════════════════════════
-СТАРТ (обязательный порядок)
+СТАРТ
 ════════════════════════════════════════════════════════
-(после PASS hard gate)
 git fetch origin
-git checkout main
-git pull --ff-only
+Если канон D:\kppdf-8.0: git checkout main && git pull --ff-only
+Если freebuff worktree: работай здесь; базу держи от origin/main.
 
-Прочитай верх docs/agent-checklists/_active-map.md (1–3 свежих Checkpoint).
+Прочитай верх docs/agent-checklists/_active-map.md (1–3 Checkpoint).
 Осмотри tasks/_active/ :
-  A) Есть файл TZ — это CLAIM. Дочитай checklist docs/agent-checklists/<TZ>.md.
-     Если AC не закрыты — ДОДЕЛАЙ этот TZ (не начинай следующий).
-     Если код WIP нет, а claim есть — реализуй TZ с нуля кода по spec.
-  B) _active/ пуст — возьми NEXT из верхнего Checkpoint / QUEUE / WAVE.
-     Типичный хвост KP: WAVE-KP-COMPLETE → 346 → 347 → 348 (после 342 DONE).
-  C) Чужой claim на те же CONFLICT KEYS — СТОП, доложи PO одной фразой.
+  A) Есть TZ — CLAIM, доделай.
+  B) Пусто — NEXT из Checkpoint / QUEUE / WAVE (сейчас: WAVE-KP-SHAME-POLISH 350→354).
+  C) Чужой claim на те же CONFLICT KEYS — СТОП, одна фраза PO.
 
-Прочитай spec текущего TZ (tasks/ или tasks/_backlog/**) и CONFLICT KEYS.
 Team Room join/inbox если доступен (не блокер).
-
-Параллель разрешена только если keys не пересекаются (пример: TZ-OPS-310 ops vs KP FE).
-Не claim 346/347/348 параллельно с незакрытым 342/друг другом на тех же proposal-create*.
+Параллель только если keys не пересекаются.
 
 ════════════════════════════════════════════════════════
 ЦИКЛ
 ════════════════════════════════════════════════════════
-CLAIM (_active + checklist) → код по AC → gates зоны → self-verify →
-archive YYYY-MM + lock → remove _active → commit+push → Checkpoint _active-map → NEXT.
+CLAIM → код → gates → self-verify → archive+lock → remove _active →
+commit+push(→origin/main) → Checkpoint → NEXT.
 
-BAN по умолчанию: nginx/VPS секреты в git; mcp-runtime commits; shell 317 rewrite;
-документы/почта клиенту вне TZ; «улучшить заодно» соседние экраны.
+BAN: секреты nginx в git; shell 317 rewrite; почта клиенту вне TZ; «улучшить заодно».
 
-Если упираешься в лимит шагов хоста:
-  - успей commit+push текущего зелёного куска ИЛИ закрой TZ целиком;
-  - обнови Checkpoint (IN PROGRESS / NEXT / HEAD);
-  - остановись с одной карточкой PO: «обрыв по лимиту, resume = PROMPT-RESUME-ANY».
+Лимит шагов: commit+push зелёного куска + Checkpoint; resume = этот же промпт.
 
 ════════════════════════════════════════════════════════
 СТОП
 ════════════════════════════════════════════════════════
-Очередь READY пуста → Checkpoint idle → «готово предложить деплой» (и напомни OPS-310 gate)
+Очередь READY пуста → Checkpoint idle → «готово предложить деплой»
 → НЕ запускай deploy.ps1 без явной команды PO.
 ```

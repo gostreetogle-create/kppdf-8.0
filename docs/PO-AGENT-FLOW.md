@@ -11,8 +11,8 @@
 | **Cursor · архитектор** (этот тип чата) | TZ, очередь, resume-промпт, «что дальше» | Не обязан кодить всю волну сам |
 | **Cursor · Agent / исполнитель** | Код по TZ до archive+push | Не выдумывает фичи вне очереди |
 
-**Freebuff/Buffy — не нужен.** PO закрыл: весь код идёт в Cursor Agent на каноне `D:\kppdf-8.0`.  
-Тот же `PROMPT-RESUME-ANY` вставляется в новый Agent-чат Cursor — без разницы с Freebuff.
+**Исполнитель:** Cursor Agent **или Freebuff** — как удобнее PO.  
+Правда только на **`origin/main`**. Worktree `.freebuff\…` можно для кода, но DONE = SHA уже на main.
 
 Состояние правды — **в git**, не в чате:  
 `docs/agent-checklists/_active-map.md` · `tasks/_active/` · `tasks/_archive/2026-08/`.
@@ -21,19 +21,14 @@
 
 ## Что копировать агенту (всего 3 кнопки)
 
-### 1) Старт / продолжение любой волны (Cursor Agent)
-Файл: [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md)  
-→ откройте **новый** Cursor Agent-чат с workspace = `D:\kppdf-8.0`  
-→ вставьте блок `text` **целиком**.  
-
-**Сейчас живая волна:** стыд Create КП — лучше сразу  
+### 1) Старт / продолжение любой волны (Cursor Agent или Freebuff)
+Файл для стыда КП сейчас:  
 [`tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md`](../tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md)  
-(350→354). RESUME-ANY тоже подхватит из QUEUE/`_active-map`.
+→ вставьте блок `text` **целиком** в Freebuff / Cursor Agent.
 
-По-человечески агенту: *«Дожми Create КП после 348: только стыд на показе, WAVE-KP-SHAME-POLISH, без деплоя.»*
+По-человечески: *«Дожми Create КП после 348: только стыд на показе, WAVE-KP-SHAME-POLISH, без деплоя. Можно freebuff worktree — но каждый TZ дотащи до origin/main.»*
 
-**Перед вставкой промпта (обязательно):** в Cursor откройте папку **`D:\kppdf-8.0`** (File → Open Folder), не worktree под `.freebuff\worktrees\…`.  
-Если агент пишет `HARD GATE WORKSPACE` / путь с `.freebuff` — **закройте тот чат**, откройте новый Agent уже на каноне, вставьте промпт снова. Очередь в git не трогать.
+Универсальный resume (любая волна): [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md) — тоже разрешает freebuff при доставке на main.
 
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)
