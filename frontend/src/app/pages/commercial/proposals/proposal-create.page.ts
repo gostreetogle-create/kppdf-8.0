@@ -4,6 +4,7 @@
   DestroyRef,
   ElementRef,
   HostListener,
+  Injector,
   OnInit,
   ViewChild,
   computed,
@@ -24,7 +25,20 @@ import {
 } from 'lucide-angular';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import type { SilentResult } from '../../../core/silent-http';
+import { extractErrorMessage } from '../../../core/silent-http';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
+import { Product, ProductsService } from '../../../shared/services/products.service';
+import {
+  ProductModulesService,
+  type ProductModule,
+} from '../../../shared/services/pi-product-modules.service';
+import { MaterialsService, type Material } from '../../../shared/services/materials.service';
+import { ProductFormDialogComponent } from '../../products/product-form-dialog.component';
+import { ModuleFormDialogComponent } from '../../modules/module-form-dialog.component';
+import { MaterialFormDialogComponent } from '../../materials/material-form-dialog.component';
+import { photoListUrl, type Photo } from '../../../shared/services/photos.service';
 import {
   DocumentTemplatesService,
   type BuildPreviewLine,
@@ -482,6 +496,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
           @if (rightOpen()) {
             <aside
               class="kp-create-studio__flyout kp-create-studio__flyout--right"
+              [attr.data-flyout]="rightPane()"
               [attr.id]="
                 rightPane() === 'composition'
                   ? 'kp-flyout-composition'
@@ -514,6 +529,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   (remove)="removeCompositionLine($event)"
                   (duplicate)="duplicateCompositionLine($event)"
                   (move)="moveCompositionLine($event)"
+                  (editLine)="editCompositionLine($event)"
                 />
               } @else if (rightPane() === 'terms') {
                 <app-proposal-create-terms
@@ -685,6 +701,13 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
       width: min(58rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
     }
 
+    /* TZ-SALES-355: Состав ≈ половина экрана, табличный стиль (не 20rem-куча карточек). */
+    .kp-create-studio__flyout[data-flyout='composition'] {
+      width: min(50vw, 52rem);
+      max-width: calc(100% - (var(--kp-rail) * 2) - 1rem);
+      padding: 0.55rem 0.65rem;
+    }
+
     .kp-create-studio__flyout--left {
       left: var(--kp-rail);
     }
@@ -709,6 +732,11 @@ export class ProposalCreatePage implements OnInit {
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly dialog = inject(PiDialogService);
+  private readonly productsSvc = inject(ProductsService);
+  private readonly modulesSvc = inject(ProductModulesService);
+  private readonly materialsSvc = inject(MaterialsService);
+  private readonly injector = inject(Injector);
 
   @ViewChild('leftRail') private leftRail?: ElementRef<HTMLElement>;
   @ViewChild('rightRail') private rightRail?: ElementRef<HTMLElement>;
@@ -1785,6 +1813,111 @@ export class ProposalCreatePage implements OnInit {
       return next;
     });
     this.refreshComposition();
+  }
+
+  /** TZ-SALES-355: FullEditor from composition without leaving studio. */
+  protected editCompositionLine(index: number): void {
+    if (this.isReadOnly()) return;
+    const line = this.draftLines()[index];
+    if (!line) return;
+    const kind = line.lineKind ?? 'catalog';
+    if (kind === 'custom') {
+      this.toast.warning('Свою строку правьте прямо в составе');
+      return;
+    }
+    const id = kind === 'catalog' ? line.productId : (line.refId ?? line.productId);
+    if (!id) {
+      this.toast.error('Не удалось открыть карточку: нет id позиции');
+      return;
+    }
+    if (kind === 'catalog') {
+      this.productsSvc
+        .findById(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
+            return;
+          }
+          const ref = this.dialog.open(ProductFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+          });
+          onDialogCloseOnce(ref, this.injector, (closed) => {
+            const product = closed as Product | null | undefined;
+            if (!product?._id) return;
+            this.applyCatalogEditToLine(index, {
+              productName: product.name ?? line.productName,
+              productSku: product.sku,
+              unit: product.unit ?? line.unit,
+              unitPrice: typeof product.listPrice === 'number' ? product.listPrice : line.unitPrice,
+              photoUrl: this.firstPhotoUrl(product.photoIds) ?? line.photoUrl,
+            });
+          });
+        });
+      return;
+    }
+    if (kind === 'module') {
+      this.modulesSvc
+        .findById(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error));
+            return;
+          }
+          const ref = this.dialog.open(ModuleFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+          });
+          onDialogCloseOnce(ref, this.injector, (closed) => {
+            const mod = closed as ProductModule | null | undefined;
+            if (!mod?._id) return;
+            this.applyCatalogEditToLine(index, {
+              productName: mod.name ?? line.productName,
+              productSku: mod.article ?? line.productSku,
+            });
+          });
+        });
+      return;
+    }
+    this.materialsSvc
+      .findById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error));
+          return;
+        }
+        const ref = this.dialog.open(MaterialFormDialogComponent, {
+          data: res.data,
+          width: 'lg',
+        });
+        onDialogCloseOnce(ref, this.injector, (closed) => {
+          const material = closed as Material | null | undefined;
+          if (!material?._id) return;
+          this.applyCatalogEditToLine(index, {
+            productName: material.name ?? line.productName,
+            productSku: material.article ?? material.sku ?? line.productSku,
+            unit: material.unit ?? line.unit,
+            unitPrice:
+              typeof material.pricePerUnit === 'number' ? material.pricePerUnit : line.unitPrice,
+          });
+        });
+      });
+  }
+
+  private applyCatalogEditToLine(index: number, patch: Partial<ProposalDraftLine>): void {
+    this.draftLines.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+    this.refreshComposition();
+  }
+
+  private firstPhotoUrl(photoIds?: Array<string | Photo> | null): string | undefined {
+    const photos = (photoIds ?? []).filter((p): p is Photo => typeof p !== 'string');
+    if (!photos.length) return undefined;
+    return photoListUrl(photos[0], photos) || undefined;
   }
 
   private refreshComposition(): void {

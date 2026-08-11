@@ -1,3 +1,12 @@
+## [2026-08-11] — TZ-SALES-355 DONE — Состав КП: wide table + edit in place
+**Автор:** Cursor
+**Статус:** DONE (код); deploy позже
+**Что:** Правый «Состав КП» — таблица на ~½ экрана вместо кучи карточек; карандаш открывает FullEditor без ухода со студии; A4 = превью.
+**Gates:** FE tsc PASS; proposal-create 34/34 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-355.done.md`
+**Audit:** `docs/audits/2026-08-11-kp-composition-table-audit.md`
+**NEXT:** PO смотрит локально/после деплоя; деплой по команде.
+
 ## [2026-08-11] — TZ-CATALOG-339 DONE — фото изделия без «уже изменено»
 **Автор:** Cursor
 **Статус:** DONE (код); warm deploy — ждёт PO «деплой»

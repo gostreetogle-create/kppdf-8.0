@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 — TZ-SALES-355 DONE (Состав КП → wide table)
+- DONE: composition flyout `min(50vw,52rem)` + table rows; pencil → FullEditor in-studio; A4 remains preview-only.
+- Gates: FE tsc PASS; proposal-create Jest 34/34 PASS.
+- Audit: `docs/audits/2026-08-11-kp-composition-table-audit.md`; archive `TZ-SALES-355.done.md`.
+- Deploy НЕ (PO: позже). NEXT after deploy: MCP wave TZD-41… or further KP polish by PO.
+
 ## Checkpoint 2026-08-11 — TZ-CATALOG-339 DONE (фото изделия / VersionError)
 - DONE: product/material update через findOneAndUpdate; optimisticLockPlugin без ручного __v; attachPhoto append.
 - Gates: focused Jest PASS; backend tsc PASS.
