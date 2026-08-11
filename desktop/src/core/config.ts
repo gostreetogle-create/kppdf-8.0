@@ -30,6 +30,11 @@ export interface McpHostConfig {
   port: number;
   /** Bind 0.0.0.0 (доступ по локальной сети). По умолчанию выключено. */
   allowLan: boolean;
+  /**
+   * Абсолютный путь к пакету `desktop/mcp` (`@kppdf/desktop-mcp`).
+   * Нужен для установленного NSIS: resourceDir walk иначе даёт `%USERPROFILE%\mcp`.
+   */
+  hostDir?: string;
 }
 
 /** Настройки inbox-папки (TZD-15): куда класть файлы для агента. */
@@ -73,8 +78,9 @@ export const DEFAULT_MCP_CONFIG: McpHostConfig = {
  * v2 (TZD-14): добавлен блок `mcp` { port, allowLan }.
  * v3 (TZD-15): добавлен блок `inbox` { dir }.
  * v4: optional `basicAuth` { username, password } for nginx «подъезд».
+ * v5: optional `mcp.hostDir` absolute path to @kppdf/desktop-mcp.
  */
-export const CONFIG_VERSION = 4;
+export const CONFIG_VERSION = 5;
 
 export const DEFAULT_CONFIG: AppConfig = {
   apiBaseUrl: '',
@@ -128,7 +134,9 @@ function migrateMcp(raw: unknown): McpHostConfig {
     typeof mcp?.port === 'number' && Number.isInteger(mcp.port) && mcp.port > 0 && mcp.port <= 65535
       ? mcp.port
       : DEFAULT_MCP_PORT;
-  return { port, allowLan: mcp?.allowLan === true };
+  const hostDir =
+    typeof mcp?.hostDir === 'string' && mcp.hostDir.trim() ? mcp.hostDir.trim() : undefined;
+  return { port, allowLan: mcp?.allowLan === true, hostDir };
 }
 
 /** Нормализует блок inbox из файла (старые конфиги без inbox → дефолт). */

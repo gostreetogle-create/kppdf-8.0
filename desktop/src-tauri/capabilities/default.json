@@ -16,7 +16,13 @@
     "fs:allow-exists",
     {
       "identifier": "fs:scope",
-      "allow": ["$APPDATA", "$APPDATA/**", "$HOME/**"]
+      "allow": [
+        "$APPDATA",
+        "$APPDATA/**",
+        "$HOME/**",
+        "D:/kppdf-8.0/desktop/mcp",
+        "D:/kppdf-8.0/desktop/mcp/**"
+      ]
     },
     "shell:allow-kill",
     {

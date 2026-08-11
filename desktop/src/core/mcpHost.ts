@@ -82,17 +82,48 @@ export function envMcpHostDir(): string | undefined {
 }
 
 /**
- * Каталог пакета `desktop/mcp` в dev/repo-раскладке:
- * resourceDir() (target/<profile>) → desktop → mcp.
- * В собранном MSI пакет не входит — это известное ограничение dev-стадии
- * (см. desktop/docs/MCP.md).
+ * Каталог пакета `desktop/mcp`.
+ * 1) явный hostDir / env
+ * 2) обход вверх от resourceDir в поисках package.json name=@kppdf/desktop-mcp
+ * 3) legacy join(…/desktop, 'mcp') — для ошибки в UI
  */
 export async function resolveMcpHostDir(): Promise<string> {
+  const tried: string[] = [];
+  const pushUnique = (p: string) => {
+    const n = p.replace(/[\\/]+$/, '');
+    if (n && !tried.includes(n)) tried.push(n);
+  };
+
+  let dir = await resourceDir();
+  for (let i = 0; i < 10; i++) {
+    pushUnique(await join(dir, 'mcp'));
+    pushUnique(await join(dir, 'desktop', 'mcp'));
+    const parent = await dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+
+  for (const candidate of tried) {
+    const name = await readPackageNameAt(candidate);
+    if (name === MCP_PACKAGE_NAME) return candidate;
+  }
+
+  // Legacy path (часто %USERPROFILE%\mcp у NSIS) — для понятного сообщения об ошибке.
   const resource = await resourceDir();
   const parent1 = await dirname(resource);
   const parent2 = await dirname(parent1);
   const desktopDir = await dirname(parent2);
   return join(desktopDir, 'mcp');
+}
+
+async function readPackageNameAt(hostDir: string): Promise<string | null> {
+  try {
+    const raw = await readTextFile(await join(hostDir, 'package.json'));
+    const parsed = JSON.parse(raw) as { name?: unknown };
+    return typeof parsed.name === 'string' ? parsed.name : null;
+  } catch {
+    return null;
+  }
 }
 
 export class McpHostController {
@@ -162,7 +193,10 @@ export class McpHostController {
 
     let hostDir: string;
     try {
-      hostDir = opts.hostDir ?? envMcpHostDir() ?? (await resolveMcpHostDir());
+      hostDir =
+        opts.hostDir?.trim() ||
+        envMcpHostDir() ||
+        (await resolveMcpHostDir());
     } catch (err) {
       this.expectedRunning = false;
       this.setState({

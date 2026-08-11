@@ -128,7 +128,7 @@ pnpm start
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |
 | `KPPDF_INBOX_DIR` | no | — | inbox dir for `kppdf_inbox_*` tools (desktop sets it) |
-| `KPPDF_MCP_HOST_DIR` | no | resourceDir walk | dev Desktop override: абсолютный путь к пакету `desktop/mcp` (приоритет над resourceDir). Для Tauri dev задаётся в `desktop/.env` (prefix `KPPDF_`), напр. `KPPDF_MCP_HOST_DIR=D:\kppdf-8.0\desktop\mcp`; в Node-контексте читается из `process.env`. Если `package.json` в каталоге имеет `name ≠ @kppdf/desktop-mcp` — host не стартует и показывает ошибку |
+| `KPPDF_MCP_HOST_DIR` | no | auto-resolve | Абсолютный путь к пакету `desktop/mcp`. **NSIS install:** без этого (или без копии в `%USERPROFILE%\mcp`) Desktop ошибочно смотрит на `%USERPROFILE%\mcp`. Канон: `D:\kppdf-8.0\desktop\mcp`. Dev: `desktop/.env`. |
 | `MUTATION_JOURNAL_RING_SIZE` | no | `50` | backend ring (applied/undone) |
 
 Stdio: `pnpm start:stdio` (для клиентов, которые спавнят процесс).

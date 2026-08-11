@@ -152,6 +152,7 @@
       allowLan,
       inboxDir,
       basicAuth: cfg.basicAuth,
+      hostDir: cfg.mcp.hostDir,
     });
     // Если порт не менялся — всё равно синхронизируем фактический.
     const st = mcp.getState();
