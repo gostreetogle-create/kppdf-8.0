@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T16:58:00Z · TZ-SALES-351 DONE
+- DONE: витрина Create КП получила RU empty-подсказки для пустого вида/поиска, search сохраняется при смене chip, qty clamp ≥1 с дробными материалами, badge считается из актуального `draftLines`.
+- Gates: FE tsc PASS; proposal-product-rail Jest 12/12 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-351.done.md`; lock: `.mimocode/locks/TZ-SALES-351-kp-vitrine-edge-shame.lock`.
+- HEAD: closeout commit pending; `_active/`: TZ-SALES-351 until commit closeout.
+- NEXT: TZ-SALES-352. Deploy НЕ.
+
 ## Checkpoint 2026-08-11T16:40:00Z · TZ-SALES-350 DONE
 - DONE: «Все КП» RU status dictionary aligned with Create КП 347 (`accepted` = «Принято», `converted` = «В заказе»), Russian empty journal with explicit «Создать КП» CTA, search-empty copy without misleading CTA.
 - Gates: FE tsc PASS; proposals.page Jest 21/21 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; architecture check PASS; DOM self-check PASS.

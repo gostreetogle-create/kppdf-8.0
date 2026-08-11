@@ -1,3 +1,12 @@
+## [2026-08-11T16:58:00Z] — TZ-SALES-351 DONE — витрина Create КП без краевых ловушек
+**Исполнитель:** Buffy / buffy-sales351
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Витрина Create КП получила русские empty-подсказки для пустого вида/поиска, сохранение поиска при смене chip, qty минимум 1 с поддержкой дробных материалов и badge «В КП» из актуального `draftLines`.
+**Gates:** FE tsc PASS; proposal-product-rail Jest 12/12 PASS; changed TS Prettier/ESLint PASS; `git diff --check` PASS; DOM self-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-351.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-351-kp-vitrine-edge-shame.lock`
+**NEXT:** TZ-SALES-352; deploy НЕ.
+
 ## [2026-08-11T16:40:00Z] — TZ-SALES-350 DONE — журнал «Все КП» без стыда
 **Исполнитель:** Buffy / buffy-sales350
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ

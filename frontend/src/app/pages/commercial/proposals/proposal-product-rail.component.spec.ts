@@ -33,6 +33,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
   let materialsListMock: jest.Mock;
   let openMock: jest.Mock;
   const added = jest.fn();
+  let quantityChanges: Array<{ index: number; quantity: number }>;
 
   beforeEach(async () => {
     listMock = jest.fn().mockReturnValue(
@@ -127,7 +128,9 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProposalProductRailComponent);
+    quantityChanges = [];
     fixture.componentInstance.productAdd.subscribe(added);
+    fixture.componentInstance.quantityChange.subscribe((change) => quantityChanges.push(change));
     fixture.detectChanges();
   });
 
@@ -175,6 +178,95 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="kp-product-rail"]')).toBeTruthy();
   });
 
+  it('clamps card add quantity below one and preserves valid fractional quantity', () => {
+    const qtyInput = fixture.nativeElement.querySelector(
+      '[data-test="kp-rail-add-qty-product-1"]',
+    ) as HTMLInputElement;
+    qtyInput.value = '0';
+    qtyInput.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="kp-rail-add-product-1"] button',
+      ) as HTMLButtonElement
+    ).click();
+    expect(added).toHaveBeenCalledWith(expect.objectContaining({ quantity: 1 }));
+
+    added.mockClear();
+    qtyInput.value = '1.5';
+    qtyInput.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="kp-rail-add-product-1"] button',
+      ) as HTMLButtonElement
+    ).click();
+    expect(added).toHaveBeenCalledWith(expect.objectContaining({ quantity: 1.5 }));
+  });
+
+  it('keeps the search query when switching catalog kind', fakeAsync(() => {
+    const rail = fixture.componentInstance as ProposalProductRailComponent & {
+      onQuery: (value: string) => void;
+    };
+    rail.onQuery('каркас');
+    tick(250);
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector('[data-test="kp-rail-kind-module"]') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    expect(
+      (fixture.nativeElement.querySelector('[data-test="kp-rail-search"]') as HTMLInputElement)
+        .value,
+    ).toBe('каркас');
+  }));
+
+  it('shows an actionable Russian empty hint for an empty module view', () => {
+    modulesListMock.mockReturnValueOnce(of({ ok: true, data: [] }));
+    (
+      fixture.nativeElement.querySelector('[data-test="kp-rail-kind-module"]') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    const empty = fixture.nativeElement.querySelector('[data-test="kp-rail-empty"]');
+    expect(empty?.textContent).toContain('Выберите «Изделия» или «Материалы»');
+    expect(empty?.textContent).not.toContain('No data');
+  });
+
+  it('explains how to recover from a search with no results', fakeAsync(() => {
+    const rail = fixture.componentInstance as ProposalProductRailComponent & {
+      onQuery: (value: string) => void;
+    };
+    listMock.mockReturnValueOnce(
+      of({ ok: true, data: { items: [], total: 0, page: 1, limit: 12 } }),
+    );
+    rail.onQuery('несуществующее');
+    tick(250);
+    fixture.detectChanges();
+
+    const empty = fixture.nativeElement.querySelector('[data-test="kp-rail-empty"]');
+    expect(empty?.textContent).toContain('Измените поиск или выберите другой вид каталога');
+  }));
+
+  it('clamps draft-line quantity input to a minimum of one', () => {
+    fixture.componentRef.setInput('draftLines', [
+      {
+        lineKind: 'catalog',
+        productId: 'product-1',
+        productName: 'Стенд ресепшн',
+        quantity: 2,
+        unitPrice: 12500,
+      },
+    ]);
+    fixture.detectChanges();
+    const quantityInput = fixture.nativeElement.querySelector(
+      '[data-test="kp-line-quantity-0"]',
+    ) as HTMLInputElement;
+    quantityInput.value = '-4';
+    quantityInput.dispatchEvent(new Event('change'));
+    expect(quantityChanges).toEqual([{ index: 0, quantity: 1 }]);
+  });
+
   it('shows В КП badge from draftLines and switches add label', () => {
     fixture.componentRef.setInput('draftLines', [
       {
@@ -192,6 +284,13 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="kp-rail-add-product-1"]').textContent,
     ).toContain('Ещё +1');
+
+    fixture.componentRef.setInput('draftLines', []);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-rail-in-kp-product-1"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-rail-add-product-1"]').textContent,
+    ).toContain('Добавить');
   });
 
   it('switches chips to modules and emits module lineKind/refId', () => {

@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-351 DONE: витрина Create КП edge polish
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Пустые виды/поиск в витрине объясняют следующий шаг по-русски; поиск сохраняется при смене chip; qty ниже 1 нормализуется в 1, дробные значения материалов сохраняются; «В КП» остаётся производным от draftLines.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-351.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-351-kp-vitrine-edge-shame.lock`
+**Gates:** FE tsc; rail Jest 12/12; TS Prettier/ESLint; diff-check; DOM self-check PASS.
+**NEXT:** TZ-SALES-352; deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-350 DONE: «Все КП» RU status + empty CTA
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** Список «Все КП» совпадает со студией Create КП: accepted = «Принято», converted = «В заказе». Пустой журнал говорит по-русски и ведёт кнопкой «Создать КП» в `/proposals/create`; поиск без результатов не показывает ложный CTA.

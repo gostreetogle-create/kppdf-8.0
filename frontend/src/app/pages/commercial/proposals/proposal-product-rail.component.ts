@@ -182,7 +182,8 @@ const PAGE_SIZE = 12;
               <input
                 class="pi-input rail__quantity"
                 type="number"
-                min="0"
+                min="1"
+                step="any"
                 [value]="line.quantity"
                 [disabled]="readOnly()"
                 [attr.data-test]="'kp-line-quantity-' + index"
@@ -224,7 +225,7 @@ const PAGE_SIZE = 12;
                       class="pi-input rail__add-qty-input"
                       type="number"
                       min="1"
-                      step="1"
+                      step="any"
                       [value]="addQty(card.id)"
                       [disabled]="readOnly()"
                       [attr.data-test]="'kp-rail-add-qty-' + card.id"
@@ -558,14 +559,14 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   protected emptyHint(): string {
     const filtered = this.query().trim() || this.categoryId();
-    if (filtered) return 'Ничего не найдено';
+    if (filtered) return 'Ничего не найдено. Измените поиск или выберите другой вид каталога.';
     switch (this.railKind()) {
       case 'module':
-        return 'Модулей пока нет. Создайте первый прямо здесь.';
+        return 'Модулей пока нет. Выберите «Изделия» или «Материалы» либо создайте модуль здесь.';
       case 'material':
-        return 'Материалов пока нет. Создайте первый прямо здесь.';
+        return 'Материалов пока нет. Выберите «Изделия» или «Модули» либо создайте материал здесь.';
       default:
-        return 'Изделий пока нет. Создайте первое прямо здесь.';
+        return 'Изделий пока нет. Выберите «Модули» или «Материалы» либо создайте изделие здесь.';
     }
   }
 
@@ -595,7 +596,6 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   protected setRailKind(kind: RailKind): void {
     if (this.railKind() === kind) return;
     this.railKind.set(kind);
-    this.query.set('');
     this.categoryId.set('');
     this.page.set(1);
     this.addQtyById.set({});
@@ -624,7 +624,7 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   protected onAddQtyChange(id: string, event: Event): void {
     if (this.readOnly()) return;
     const raw = Number((event.target as HTMLInputElement).value);
-    const qty = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+    const qty = Number.isFinite(raw) && raw >= 1 ? raw : 1;
     this.addQtyById.update((map) => ({ ...map, [id]: qty }));
   }
 
@@ -659,7 +659,8 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   protected onQuantityChange(index: number, event: Event): void {
     if (this.readOnly()) return;
     const raw = Number((event.target as HTMLInputElement).value);
-    this.quantityChange.emit({ index, quantity: Number.isFinite(raw) ? raw : 0 });
+    const quantity = Number.isFinite(raw) && raw >= 1 ? raw : 1;
+    this.quantityChange.emit({ index, quantity });
   }
 
   protected openCreate(): void {

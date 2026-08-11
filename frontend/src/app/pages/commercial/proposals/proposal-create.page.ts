@@ -1700,7 +1700,7 @@ export class ProposalCreatePage implements OnInit {
 
   protected onQuantityChange(change: { index: number; quantity: number }): void {
     if (this.isReadOnly()) return;
-    const quantity = Math.max(0.001, Number.isFinite(change.quantity) ? change.quantity : 0.001);
+    const quantity = Number.isFinite(change.quantity) && change.quantity >= 1 ? change.quantity : 1;
     this.draftLines.update((rows) =>
       rows.map((line, index) => (index === change.index ? { ...line, quantity } : line)),
     );
