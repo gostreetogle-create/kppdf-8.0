@@ -81,7 +81,8 @@ IP allowlist — только запасной костыль, не страте
 
 **Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
 
-1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401.
+1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401 на HTML/UI.
+   **Уточнение 2026-08-11:** `location /api/` — `auth_basic off` (Nest JWT/pairing сам закрывает API; иначе Desktop/Tauri ловит `Failed to fetch` из‑за CORS/Basic). OPTIONS тоже без Basic (preflight). UI `/` по-прежнему за подъездом.
 2. **Сделано 2026-08-11 (TZ-OPS-310):** SUID/SGID inventory VPS+VM, порты, UFW, tunnel, htpasswd 640 — evidence `docs/ops/server-harden-evidence.md`, archive `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
    Gate деплоя: `deploy/synology/preflight.ps1` требует этот archive. Warm deploy только по слову PO **«деплой»**.
    Spec (история): `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
