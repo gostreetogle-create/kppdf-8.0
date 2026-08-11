@@ -16,7 +16,7 @@
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-311.done.md`
 **Lock:** `.mimocode/locks/TZ-OPS-311-shared-bom-extract.lock`
 **Gates:** FE tsc PASS; `pnpm architecture:check` PASS (baseline 7 → 3); Jest focused 4/4 suites PASS; Prettier/ESLint PASS.
-**NEXT:** TZ-OPS-312 READY; Deploy НЕ.
+**NEXT:** TZ-OPS-312 DONE; idle; Deploy НЕ.
 
 ## [2026-08-11] — TZ-SALES-354 DONE: manager self-pass; shame wave closed
 **Статус:** WAVE-KP-SHAME-POLISH DONE on main; idle; ready to propose deploy; deploy НЕ
