@@ -15,9 +15,15 @@ import {
   backendPostJson,
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  createEnvelope,
+  readEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 export const IMPORT_TASK_TOOL_NAMES = [
+  'kppdf_list_import_tasks',
   'kppdf_import_task_list',
   'kppdf_import_task_get',
   'kppdf_import_task_create',
@@ -344,33 +350,47 @@ export function registerImportTaskTools(
   server: McpServer,
   cfg: McpRuntimeConfig,
 ): void {
+  async function listImportTasks(args: {
+    status?: 'draft' | 'ready_for_ai' | 'analyzing' | 'awaiting_user' | 'applying' | 'done' | 'cancelled' | 'failed';
+    limit?: number;
+    page?: number;
+  }) {
+    try {
+      const q = new URLSearchParams();
+      if (args.status) q.set('status', args.status);
+      if (args.limit) q.set('limit', String(args.limit));
+      if (args.page) q.set('page', String(args.page));
+      const qs = q.toString();
+      const path = `/api/import-tasks${qs ? `?${qs}` : ''}`;
+      const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
+      return toolOkStructured({ ok: true, ...((result as object) ?? {}) });
+    } catch (err) {
+      return toolFail('kppdf_list_import_tasks', err);
+    }
+  }
+
+  const importTaskListConfig = {
+    title: 'List import tasks',
+    description:
+      'Lists ImportTask containers (AI assembly point). Returns summary/rowCount ' +
+      'without full rows. Does not write SoT or create proposals. Matching → TZD-23.',
+    inputSchema: {
+      status: STATUS_ENUM.optional().describe('Filter by status'),
+      limit: z.number().int().min(1).max(100).optional(),
+      page: z.number().int().min(1).optional(),
+    },
+    outputSchema: readEnvelopeSchema,
+  };
+  server.registerTool('kppdf_list_import_tasks', importTaskListConfig, listImportTasks);
   server.registerTool(
     'kppdf_import_task_list',
     {
-      title: 'List import tasks',
+      ...importTaskListConfig,
+      title: 'List import tasks (deprecated alias — use kppdf_list_import_tasks)',
       description:
-        'Lists ImportTask containers (AI assembly point). Returns summary/rowCount ' +
-        'without full rows. Does not write SoT or create proposals. Matching → TZD-23.',
-      inputSchema: {
-        status: STATUS_ENUM.optional().describe('Filter by status'),
-        limit: z.number().int().min(1).max(100).optional(),
-        page: z.number().int().min(1).optional(),
-      },
+        'TZD-41: deprecated alias of kppdf_list_import_tasks (removed after one wave).',
     },
-    async (args) => {
-      try {
-        const q = new URLSearchParams();
-        if (args.status) q.set('status', args.status);
-        if (args.limit) q.set('limit', String(args.limit));
-        if (args.page) q.set('page', String(args.page));
-        const qs = q.toString();
-        const path = `/api/import-tasks${qs ? `?${qs}` : ''}`;
-        const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, ...((result as object) ?? {}) });
-      } catch (err) {
-        return toolFail('kppdf_import_task_list', err);
-      }
-    },
+    listImportTasks,
   );
 
   server.registerTool(
@@ -391,7 +411,7 @@ export function registerImportTaskTools(
           cfg.apiKey,
           `/api/import-tasks/${encodeURIComponent(id)}`,
         );
-        return toolOk({ ok: true, task: result });
+        return toolOkStructured({ ...createEnvelope(result), task: result });
       } catch (err) {
         return toolFail('kppdf_import_task_get', err);
       }
@@ -432,7 +452,7 @@ export function registerImportTaskTools(
             ...(args.summary ? { summary: args.summary } : {}),
           },
         );
-        return toolOk({ ok: true, task: result });
+        return toolOkStructured({ ...createEnvelope(result), task: result });
       } catch (err) {
         return toolFail('kppdf_import_task_create', err);
       }
@@ -463,7 +483,7 @@ export function registerImportTaskTools(
             ...(errorMessage !== undefined ? { errorMessage } : {}),
           },
         );
-        return toolOk({ ok: true, task: result });
+        return toolOkStructured({ ...createEnvelope(result), task: result });
       } catch (err) {
         return toolFail('kppdf_import_task_set_status', err);
       }
@@ -532,7 +552,7 @@ export function registerImportTaskTools(
             status: 'awaiting_user',
           },
         );
-        return toolOk({ ok: true, task: result });
+        return toolOkStructured({ ...createEnvelope(result), task: result });
       } catch (err) {
         return toolFail('kppdf_import_task_set_report', err);
       }
@@ -558,7 +578,7 @@ export function registerImportTaskTools(
           createApplyPlanBackendDeps(cfg),
           { id, userOk },
         );
-        return toolOk(result);
+        return toolOkStructured(result);
       } catch (err) {
         return toolFail('kppdf_import_task_apply_plan', err);
       }
@@ -596,8 +616,8 @@ export function registerImportTaskTools(
             ...(reshapeNote !== undefined ? { reshapeNote } : {}),
           },
         );
-        return toolOk({
-          ok: true,
+        return toolOkStructured({
+          ...createEnvelope(result),
           task: result,
           note: 'Rows replaced — re-audit / re-match (set_report) before apply_plan.',
         });

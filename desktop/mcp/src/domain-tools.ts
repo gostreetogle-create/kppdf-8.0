@@ -14,7 +14,7 @@ import {
   isProductKind,
 } from './domain-schema.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { toolFail, toolOkStructured } from './tool-result.js';
 import {
   createBackendValidateDeps,
   slimCategory,
@@ -116,7 +116,7 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
         const resolved = entity ?? 'material';
         if (resolved === 'product') {
           const schema = getProductDomainSchema();
-          return toolOk({
+          return toolOkStructured({
             ok: true,
             version: schema.version,
             entity: resolved,
@@ -130,7 +130,7 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
           );
         }
         const schema = getMaterialDomainSchema();
-        return toolOk({
+        return toolOkStructured({
           ok: true,
           version: DOMAIN_SCHEMA_VERSION,
           entity: resolved,
@@ -159,7 +159,7 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
     async (args) => {
       try {
         const result = validateProduct(args);
-        return toolOk({
+        return toolOkStructured({
           ...result,
           note: 'Validate only — no proposal, no SoT write, no BOM.',
         });
@@ -201,7 +201,7 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
         const p = page ?? 1;
         const l = limit ?? 50;
         const pageResult = paginateCategories(items, p, l);
-        return toolOk({
+        return toolOkStructured({
           ok: true,
           path,
           ...pageResult,
@@ -237,7 +237,7 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
           backendGetJson,
         );
         const result = await validateMaterial(args, deps);
-        return toolOk({
+        return toolOkStructured({
           ...result,
           note: 'Validate only — no proposal, no SoT write.',
         });

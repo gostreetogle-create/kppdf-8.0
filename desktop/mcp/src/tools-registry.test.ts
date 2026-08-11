@@ -26,9 +26,10 @@ const cfg: McpRuntimeConfig = {
 };
 
 describe('MCP tool registry (TZD-31)', () => {
-  it('registry count >= 40 (fact: 51 incl. kppdf_ping)', () => {
+  it('registry count >= 40 (fact: 82 incl. kppdf_ping + TZD-41 aliases)', () => {
     const names = listRegisteredToolNames();
     assert.ok(names.length >= 40, `toolCount ${names.length} ниже порога 40`);
+    assert.equal(names.length, 82, 'toolCount изменился — обнови MCP.md');
   });
 
   it('registry includes TZD-17..30 key tools', () => {
@@ -43,8 +44,54 @@ describe('MCP tool registry (TZD-31)', () => {
     assert.ok(names.has('kppdf_doc_template_create_draft'), 'doc draft missing');
   });
 
+  it('TZD-41 naming canon: kppdf_list_* canonical + deprecated aliases present', () => {
+    const names = new Set(listRegisteredToolNames());
+    for (const canonical of [
+      'kppdf_list_doc_types',
+      'kppdf_list_doc_template_categories',
+      'kppdf_list_doc_templates',
+      'kppdf_list_import_tasks',
+      'kppdf_list_import_todos',
+      'kppdf_list_text_block_categories',
+      'kppdf_list_text_blocks',
+      'kppdf_list_inbox',
+    ]) {
+      assert.ok(names.has(canonical), `${canonical} missing`);
+    }
+    // deprecated aliases всё ещё зарегистрированы (1 волна)
+    for (const alias of [
+      'kppdf_doc_types_list',
+      'kppdf_import_task_list',
+      'kppdf_text_block_categories_list',
+      'kppdf_inbox_list',
+    ]) {
+      assert.ok(names.has(alias), `${alias} (deprecated alias) missing`);
+    }
+  });
+
   it('createKppdfMcpServer constructs without throwing', () => {
     assert.doesNotThrow(() => createKppdfMcpServer(cfg));
+  });
+
+  it('TZD-41 AC: key tools declare outputSchema (propose/confirm/list/core create)', () => {
+    const server = createKppdfMcpServer(cfg);
+    const tools = (
+      server as unknown as { _registeredTools: Record<string, { outputSchema?: unknown }> }
+    )._registeredTools;
+    const keys = Object.keys(tools);
+    assert.ok(keys.length >= 40, `registered ${keys.length}`);
+    const withSchema = keys.filter((n) => tools[n].outputSchema);
+    for (const name of [
+      'kppdf_propose_material_create',
+      'kppdf_propose_product_create',
+      'kppdf_confirm_proposal',
+      'kppdf_confirm_batch',
+      'kppdf_list_materials',
+      'kppdf_list_products',
+      'kppdf_counterparty_create',
+    ]) {
+      assert.ok(withSchema.includes(name), `${name} должен иметь outputSchema (TZD-41)`);
+    }
   });
 
   it('toolsSample puts must-include first, no duplicates, respects limit', () => {

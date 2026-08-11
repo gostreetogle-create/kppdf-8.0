@@ -22,7 +22,7 @@ import {
   type MaterialRow,
   type RawRow,
 } from './inbox.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { toolFail, toolOkStructured } from './tool-result.js';
 import {
   createBackendValidateDeps,
   validateMaterial,
@@ -31,6 +31,7 @@ import {
 } from './validate-material.js';
 
 export const INBOX_TOOL_NAMES = [
+  'kppdf_list_inbox',
   'kppdf_inbox_list',
   'kppdf_inbox_propose_file',
   'kppdf_inbox_audit_file',
@@ -181,29 +182,37 @@ async function classifyInboxFile(
 }
 
 export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): void {
+  async function handleListInbox() {
+    try {
+      const dir = requireInboxDir();
+      if (!dir) {
+        return toolOkStructured({
+          ok: false,
+          reason: 'KPPDF_INBOX_DIR not set — desktop did not configure inbox for MCP.',
+          files: [],
+        });
+      }
+      const files = await listInboxFiles(dir);
+      return toolOkStructured({ ok: true, dir, files });
+    } catch (err) {
+      return toolFail('kppdf_list_inbox', err);
+    }
+  }
+
+  const listInboxConfig = {
+    title: 'List inbox files',
+    description:
+      'Lists files in the desktop inbox dir (KPPDF_INBOX_DIR). Excludes processed/failed subfolders.',
+  };
+  server.registerTool('kppdf_list_inbox', listInboxConfig, handleListInbox);
   server.registerTool(
     'kppdf_inbox_list',
     {
-      title: 'List inbox files',
-      description:
-        'Lists files in the desktop inbox dir (KPPDF_INBOX_DIR). Excludes processed/failed subfolders.',
+      ...listInboxConfig,
+      title: 'List inbox files (deprecated alias — use kppdf_list_inbox)',
+      description: 'TZD-41: deprecated alias of kppdf_list_inbox (removed after one wave).',
     },
-    async () => {
-      try {
-        const dir = requireInboxDir();
-        if (!dir) {
-          return toolOk({
-            ok: false,
-            reason: 'KPPDF_INBOX_DIR not set — desktop did not configure inbox for MCP.',
-            files: [],
-          });
-        }
-        const files = await listInboxFiles(dir);
-        return toolOk({ ok: true, dir, files });
-      } catch (err) {
-        return toolFail('kppdf_inbox_list', err);
-      }
-    },
+    handleListInbox,
   );
 
   server.registerTool(
@@ -246,12 +255,12 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
         } else if (headers?.length) {
           result = classifyColumnSet(headers, sample ?? []);
         } else {
-          return toolOk({
+          return toolOkStructured({
             ok: false,
             reason: 'Provide fileName OR headers (with optional sample) to classify columns.',
           });
         }
-        return toolOk({
+        return toolOkStructured({
           ok: true,
           note: 'Classify only — no proposal, no SoT write. Reshape → kppdf_import_task_reshape.',
           ...result,
@@ -277,7 +286,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
     async ({ fileName }) => {
       try {
         const report = await runAuditFile(cfg, fileName);
-        return toolOk({ ok: true, ...report });
+        return toolOkStructured({ ok: true, ...report });
       } catch (err) {
         return toolFail('kppdf_inbox_audit_file', err);
       }
@@ -319,7 +328,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
         const resolvedMode = mode ?? 'propose';
         if (resolvedMode === 'validate') {
           const report = await runAuditFile(cfg, fileName);
-          return toolOk({
+          return toolOkStructured({
             ok: true,
             mode: 'validate',
             ...report,
@@ -371,7 +380,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
           }
         }
 
-        return toolOk({
+        return toolOkStructured({
           ok: true,
           mode: 'propose',
           dir,

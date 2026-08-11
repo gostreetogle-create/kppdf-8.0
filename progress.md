@@ -1,3 +1,13 @@
+## [2026-08-11] — TZD-41 DONE — MCP envelope + outputSchema + list naming canon
+**Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0)
+**Статус:** DONE; commit+push; deploy НЕ
+**Что:** Единый response envelope для MCP: success = `{ ok, result, id?, proposalId? }` со `structuredContent`; все `kppdf_propose_*` отдают top-level `proposalId` (фикс аудит-бага §5.2 — агент не подтвердил 10 продуктов из-за вложенного `proposal.proposalId`); SoT-creates — top-level `id` (нормализация `_id`); naming canon `kppdf_list_*` + deprecated aliases (8 имён: doc-types/templates/categories, import-tasks/todos, text-block-categories/blocks, inbox); outputSchema на 61 туле (propose/confirm/batch/list/core create). MCP.md: «Response envelope (TZD-41)» + naming table + toolCount 82.
+**Gates:** `cd desktop/mcp && pnpm test` 113/113 PASS; `tsc --noEmit` PASS. Попутно починен stale `desktop/pnpm-lock.yaml` (tsx в dependencies, diff 6 строк).
+**Archive:** `tasks/_archive/2026-08/TZD-41.done.md`
+**Checklist:** `docs/agent-checklists/TZD-41.md`
+**Lock:** `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`
+**NEXT:** TZD-42 (confirm-404).
+
 ## [2026-08-11] — TZ-OPS-312 DONE — catalog page specs dictionary-labels flush
 **Автор:** Buffy / buffy-ops-312
 **Статус:** DONE; specs-only harness fix; deploy НЕ

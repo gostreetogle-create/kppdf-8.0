@@ -19,7 +19,13 @@ import {
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  createEnvelope,
+  createEnvelopeSchema,
+  readEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 export const COMMERCIAL_TOOL_NAMES = [
   'kppdf_list_counterparties',
@@ -268,12 +274,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         'TZD-33: GET /api/counterparties — page/limit/search; slim fields ' +
         '(id, name, shortName, inn, roles). Read-only.',
       inputSchema: pageLimitSearch,
+      outputSchema: readEnvelopeSchema,
     },
     async ({ page, limit, search }) => {
       try {
         const path = withQuery('/api/counterparties', { page, limit, search });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, counterpartyKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, counterpartyKeys) });
       } catch (err) {
         return toolFail('kppdf_list_counterparties', err);
       }
@@ -286,12 +293,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       title: 'Get counterparty',
       description: 'TZD-33: GET /api/counterparties/:id — slim fields. Read-only.',
       inputSchema: { id: z.string().min(1).describe('Counterparty id') },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/counterparties/${encodeURIComponent(id)}`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimPick(result, counterpartyKeys) });
+        return toolOkStructured({ ok: true, path, result: slimPick(result, counterpartyKeys) });
       } catch (err) {
         return toolFail('kppdf_get_counterparty', err);
       }
@@ -304,12 +312,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       title: 'List persons',
       description: 'TZD-33: GET /api/persons — page/limit/search; slim fields. Read-only.',
       inputSchema: pageLimitSearch,
+      outputSchema: readEnvelopeSchema,
     },
     async ({ page, limit, search }) => {
       try {
         const path = withQuery('/api/persons', { page, limit, search });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, personKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, personKeys) });
       } catch (err) {
         return toolFail('kppdf_list_persons', err);
       }
@@ -326,12 +335,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       inputSchema: {
         counterpartyId: z.string().optional().describe('Filter by counterparty'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ counterpartyId }) => {
       try {
         const path = withQuery('/api/sites', { counterpartyId });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, siteKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, siteKeys) });
       } catch (err) {
         return toolFail('kppdf_list_sites', err);
       }
@@ -349,12 +359,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         counterpartyId: z.string().optional(),
         status: z.string().optional().describe('draft|sent|accepted|rejected|converted|cancelled'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ counterpartyId, status }) => {
       try {
         const path = withQuery('/api/quotations', { counterpartyId, status });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, quotationKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, quotationKeys) });
       } catch (err) {
         return toolFail('kppdf_list_quotations', err);
       }
@@ -368,12 +379,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       description:
         'TZD-33: GET /api/quotations/:id — slim fields, БЕЗ HTML snapshot. Read-only.',
       inputSchema: { id: z.string().min(1).describe('Quotation id') },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/quotations/${encodeURIComponent(id)}`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimPick(result, quotationKeys) });
+        return toolOkStructured({ ok: true, path, result: slimPick(result, quotationKeys) });
       } catch (err) {
         return toolFail('kppdf_get_quotation', err);
       }
@@ -390,12 +402,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         counterpartyId: z.string().optional(),
         status: z.string().optional().describe('draft|confirmed|in_production|ready|shipped|delivered|cancelled'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ counterpartyId, status }) => {
       try {
         const path = withQuery('/api/orders', { counterpartyId, status });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, orderKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, orderKeys) });
       } catch (err) {
         return toolFail('kppdf_list_orders', err);
       }
@@ -408,12 +421,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       title: 'Get order',
       description: 'TZD-33: GET /api/orders/:id — slim fields. Read-only.',
       inputSchema: { id: z.string().min(1).describe('Order id') },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/orders/${encodeURIComponent(id)}`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimPick(result, orderKeys) });
+        return toolOkStructured({ ok: true, path, result: slimPick(result, orderKeys) });
       } catch (err) {
         return toolFail('kppdf_get_order', err);
       }
@@ -430,12 +444,13 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         counterpartyId: z.string().optional(),
         status: z.string().optional(),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ counterpartyId, status }) => {
       try {
         const path = withQuery('/api/contracts', { counterpartyId, status });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimList(result, contractKeys) });
+        return toolOkStructured({ ok: true, path, result: slimList(result, contractKeys) });
       } catch (err) {
         return toolFail('kppdf_list_contracts', err);
       }
@@ -453,6 +468,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         'Whitelist: name*, inn*, roles*, shortName, legalForm, legalType, type, ' +
         'partyTypes, phone, paymentTermDays, vatRate.',
       inputSchema: counterpartyCreateInput,
+      outputSchema: createEnvelopeSchema,
     },
     async (args) => {
       try {
@@ -462,10 +478,9 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
           '/api/counterparties',
           buildCounterpartyCreateBody(args),
         );
-        return toolOk({
-          ok: true,
+        return toolOkStructured({
+          ...createEnvelope(result),
           note: 'SoT write (no journal) — verify INN before POST',
-          result,
         });
       } catch (err) {
         return toolFail('kppdf_counterparty_create', err);
@@ -485,11 +500,12 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         name: z.string().min(1).max(256).describe('Site name'),
         address: z.string().min(1).max(512).describe('Site address'),
       },
+      outputSchema: createEnvelopeSchema,
     },
     async (args) => {
       try {
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, '/api/sites', args);
-        return toolOk({ ok: true, result });
+        return toolOkStructured(createEnvelope(result));
       } catch (err) {
         return toolFail('kppdf_site_create', err);
       }
@@ -505,6 +521,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         'accepted/converted этим tool). Менеджер доводит и публикует в вебе. ' +
         'Required: organizationId + items[]; optional counterpartyId/title/notes/discount*.',
       inputSchema: quotationDraftInput,
+      outputSchema: createEnvelopeSchema,
     },
     async (args) => {
       try {
@@ -514,7 +531,11 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
           '/api/quotations',
           buildQuotationDraftBody(args),
         );
-        return toolOk({ ok: true, draft: true, note: 'status forced to draft', result });
+        return toolOkStructured({
+          ...createEnvelope(result),
+          draft: true,
+          note: 'status forced to draft',
+        });
       } catch (err) {
         return toolFail('kppdf_quotation_create_draft', err);
       }
@@ -529,6 +550,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         'TZD-33: POST /api/orders с ПРИНУДИТЕЛЬНЫМ status=draft. ' +
         'Required: counterpartyId, siteId, items[].',
       inputSchema: orderDraftInput,
+      outputSchema: createEnvelopeSchema,
     },
     async (args) => {
       try {
@@ -538,7 +560,11 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
           '/api/orders',
           buildOrderDraftBody(args),
         );
-        return toolOk({ ok: true, draft: true, note: 'status forced to draft', result });
+        return toolOkStructured({
+          ...createEnvelope(result),
+          draft: true,
+          note: 'status forced to draft',
+        });
       } catch (err) {
         return toolFail('kppdf_order_create_draft', err);
       }
@@ -559,6 +585,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         status: z.enum(['draft', 'sent', 'accepted', 'rejected']),
         userOk: z.boolean().describe('Must be true — human approved'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id, status, userOk }) => {
       const gate = userOkGate('kppdf_quotation_set_status', userOk);
@@ -566,7 +593,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
       try {
         const path = `/api/quotations/${encodeURIComponent(id)}`;
         const result = await backendPatchJson(cfg.apiBaseUrl, cfg.apiKey, path, { status });
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_quotation_set_status', err);
       }
@@ -585,6 +612,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         managerId: z.string().optional(),
         userOk: z.boolean().describe('Must be true — human approved'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id, deliveryAddress, managerId, userOk }) => {
       const gate = userOkGate('kppdf_quotation_convert_to_order', userOk);
@@ -595,7 +623,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
           ...(deliveryAddress ? { deliveryAddress } : {}),
           ...(managerId ? { managerId } : {}),
         });
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_quotation_convert_to_order', err);
       }
@@ -613,6 +641,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         title: z.string().optional(),
         userOk: z.boolean().describe('Must be true — human approved'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id, title, userOk }) => {
       const gate = userOkGate('kppdf_quotation_convert_to_contract', userOk);
@@ -622,7 +651,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {
           ...(title ? { title } : {}),
         });
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_quotation_convert_to_contract', err);
       }
@@ -644,6 +673,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         driverInfo: z.string().optional(),
         userOk: z.boolean().describe('Must be true — human approved'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id, recipient, address, warehouseId, driverInfo, userOk }) => {
       const gate = userOkGate('kppdf_order_ship', userOk);
@@ -656,7 +686,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
           ...(warehouseId ? { warehouseId } : {}),
           ...(driverInfo ? { driverInfo } : {}),
         });
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_order_ship', err);
       }

@@ -1,12 +1,30 @@
 /**
  * Write protocol MCP tools — propose / confirm / undo (TZD-13).
+ *
+ * TZD-41: все success-ответы идут через канонический envelope
+ *   propose → top-level `proposalId` (result = полный journal response)
+ *   confirm/cancel/undo → top-level `id` / `proposalId`
+ *   batch → top-level `proposalIds` / `applied` / `cancelled` + `result`
+ * Все тулы с outputSchema возвращают structuredContent (SDK валидирует).
  */
 
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  batchEnvelopeSchema,
+  createEnvelopeSchema,
+  draftEnvelopeSchema,
+  mutationEnvelopeSchema,
+  plainOkSchema,
+  proposeEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+  createEnvelope,
+  mutationEnvelope,
+  proposeEnvelope,
+} from './tool-result.js';
 
 export const WRITE_TOOL_NAMES = [
   'kppdf_propose_material_create',
@@ -114,24 +132,35 @@ export function buildMaterialCreateProposal(args: z.infer<typeof materialCreateI
   };
 }
 
+/** Общий контур propose→journal: top-level proposalId (TZD-41). */
+async function proposeJournal(
+  cfg: McpRuntimeConfig,
+  toolName: string,
+  payload: Record<string, unknown>,
+) {
+  const result = await backendPostJson(
+    cfg.apiBaseUrl,
+    cfg.apiKey,
+    '/api/mutation-journal/proposals',
+    payload,
+  );
+  return toolOkStructured(proposeEnvelope(result));
+}
+
 export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
     'kppdf_propose_material_create',
     {
       title: 'Propose material create',
       description:
-        'Creates a proposal only (no SoT write). Confirm with kppdf_confirm_proposal.',
+        'Creates a proposal only (no SoT write). Confirm with kppdf_confirm_proposal. ' +
+        'Response envelope (TZD-41): top-level proposalId + full journal result.',
       inputSchema: materialCreateInput,
+      outputSchema: proposeEnvelopeSchema,
     },
     async (args) => {
       try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          buildMaterialCreateProposal(args),
-        );
-        return toolOk({ ok: true, proposal: result });
+        return await proposeJournal(cfg, 'kppdf_propose_material_create', buildMaterialCreateProposal(args));
       } catch (err) {
         return toolFail('kppdf_propose_material_create', err);
       }
@@ -143,25 +172,21 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     {
       title: 'Propose material update',
       description:
-        'Proposes a PATCH; stores before snapshot. Confirm with kppdf_confirm_proposal.',
+        'Proposes a PATCH; stores before snapshot. Confirm with kppdf_confirm_proposal. ' +
+        'Response envelope (TZD-41): top-level proposalId.',
       inputSchema: {
         id: z.string().min(1).describe('Material id'),
         patch: z.record(z.string(), z.unknown()).describe('Partial material fields'),
       },
+      outputSchema: proposeEnvelopeSchema,
     },
     async ({ id, patch }) => {
       try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          {
-            kind: 'material.update',
-            toolName: 'kppdf_propose_material_update',
-            update: { id, patch },
-          },
-        );
-        return toolOk({ ok: true, proposal: result });
+        return await proposeJournal(cfg, 'kppdf_propose_material_update', {
+          kind: 'material.update',
+          toolName: 'kppdf_propose_material_update',
+          update: { id, patch },
+        });
       } catch (err) {
         return toolFail('kppdf_propose_material_update', err);
       }
@@ -175,15 +200,17 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       description:
         'TZD-18: creates material.create PROPOSALS for many rows in one backend call ' +
         '(all-or-nothing best-effort — on error created proposals are rolled back). ' +
-        'No SoT write until kppdf_confirm_batch. Optional idempotencyKey for safe retries.',
+        'No SoT write until kppdf_confirm_batch. Optional idempotencyKey for safe retries. ' +
+        'Top-level proposalIds (TZD-41).',
       inputSchema: {
         items: z.array(batchItemSchema).min(1).max(500),
         idempotencyKey: z.string().optional(),
       },
+      outputSchema: batchEnvelopeSchema,
     },
     async ({ items, idempotencyKey }) => {
       try {
-        const result = await backendPostJson(
+        const result = (await backendPostJson(
           cfg.apiBaseUrl,
           cfg.apiKey,
           '/api/mutation-journal/propose-batch',
@@ -195,8 +222,9 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
             })),
             ...(idempotencyKey ? { idempotencyKey } : {}),
           },
-        );
-        return toolOk({ ok: true, ...((result as object) ?? {}) });
+        )) as Record<string, unknown> | null;
+        const rest = result && typeof result === 'object' ? result : {};
+        return toolOkStructured({ ok: true, result, ...rest });
       } catch (err) {
         return toolFail('kppdf_propose_material_batch', err);
       }
@@ -213,16 +241,18 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       inputSchema: {
         ids: z.array(z.string().min(1)).min(1).max(500),
       },
+      outputSchema: batchEnvelopeSchema,
     },
     async ({ ids }) => {
       try {
-        const result = await backendPostJson(
+        const result = (await backendPostJson(
           cfg.apiBaseUrl,
           cfg.apiKey,
           '/api/mutation-journal/confirm-batch',
           { ids },
-        );
-        return toolOk({ ok: true, ...((result as object) ?? {}) });
+        )) as Record<string, unknown> | null;
+        const rest = result && typeof result === 'object' ? result : {};
+        return toolOkStructured({ ok: true, result, ...rest });
       } catch (err) {
         return toolFail('kppdf_confirm_batch', err);
       }
@@ -238,16 +268,18 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       inputSchema: {
         ids: z.array(z.string().min(1)).min(1).max(500),
       },
+      outputSchema: batchEnvelopeSchema,
     },
     async ({ ids }) => {
       try {
-        const result = await backendPostJson(
+        const result = (await backendPostJson(
           cfg.apiBaseUrl,
           cfg.apiKey,
           '/api/mutation-journal/cancel-batch',
           { ids },
-        );
-        return toolOk({ ok: true, ...((result as object) ?? {}) });
+        )) as Record<string, unknown> | null;
+        const rest = result && typeof result === 'object' ? result : {};
+        return toolOkStructured({ ok: true, result, ...rest });
       } catch (err) {
         return toolFail('kppdf_cancel_batch', err);
       }
@@ -261,6 +293,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       description:
         'TZD-27: creates a product.create PROPOSAL (name + kind required, unit ' +
         'defaults to шт). No SoT write — confirm with kppdf_confirm_proposal. ' +
+        'Response envelope (TZD-41): top-level proposalId. ' +
         'Check kppdf_get_product_where_used / composition before mass updates.',
       inputSchema: {
         name: z.string().min(1).describe('Product name'),
@@ -269,26 +302,21 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         sku: z.string().optional(),
         notes: z.string().optional(),
       },
+      outputSchema: proposeEnvelopeSchema,
     },
     async (args) => {
       try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          {
-            kind: 'product.create',
-            toolName: 'kppdf_propose_product_create',
-            productCreate: {
-              name: args.name,
-              kind: args.kind,
-              unit: args.unit?.trim() || 'шт',
-              sku: args.sku,
-              notes: args.notes,
-            },
+        return await proposeJournal(cfg, 'kppdf_propose_product_create', {
+          kind: 'product.create',
+          toolName: 'kppdf_propose_product_create',
+          productCreate: {
+            name: args.name,
+            kind: args.kind,
+            unit: args.unit?.trim() || 'шт',
+            sku: args.sku,
+            notes: args.notes,
           },
-        );
-        return toolOk({ ok: true, proposal: result });
+        });
       } catch (err) {
         return toolFail('kppdf_propose_product_create', err);
       }
@@ -301,26 +329,22 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       title: 'Propose product update',
       description:
         'TZD-27: proposes a PATCH on a product passport; stores before snapshot. ' +
-        'Confirm with kppdf_confirm_proposal. Run kppdf_get_product_composition / ' +
+        'Confirm with kppdf_confirm_proposal. Response envelope (TZD-41): top-level proposalId. ' +
+        'Run kppdf_get_product_composition / ' +
         'kppdf_get_product_where_used first to avoid breaking BOM parents.',
       inputSchema: {
         id: z.string().min(1).describe('Product id'),
         patch: z.record(z.string(), z.unknown()).describe('Partial product passport fields'),
       },
+      outputSchema: proposeEnvelopeSchema,
     },
     async ({ id, patch }) => {
       try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          {
-            kind: 'product.update',
-            toolName: 'kppdf_propose_product_update',
-            productUpdate: { id, patch },
-          },
-        );
-        return toolOk({ ok: true, proposal: result });
+        return await proposeJournal(cfg, 'kppdf_propose_product_update', {
+          kind: 'product.update',
+          toolName: 'kppdf_propose_product_update',
+          productUpdate: { id, patch },
+        });
       } catch (err) {
         return toolFail('kppdf_propose_product_update', err);
       }
@@ -337,9 +361,10 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         name: z.string().min(1),
         article: z.string().min(1),
       },
+      outputSchema: draftEnvelopeSchema,
     },
     async ({ name, article }) =>
-      toolOk({
+      toolOkStructured({
         ok: true,
         proposal: { kind: 'module.create', create: { name: name.trim(), article: article.trim() } },
         note: 'Draft only — ask the user to confirm before calling kppdf_confirm_module_create.',
@@ -350,12 +375,13 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     'kppdf_confirm_module_create',
     {
       title: 'Confirm module create',
-      description: 'Creates a module only after explicit userOk=true.',
+      description: 'Creates a module only after explicit userOk=true. Response envelope (TZD-41): top-level id.',
       inputSchema: {
         name: z.string().min(1),
         article: z.string().min(1),
         userOk: z.boolean().describe('Human approval — must be true'),
       },
+      outputSchema: createEnvelopeSchema,
     },
     async ({ name, article, userOk }) => {
       if (userOk !== true) return toolFail('kppdf_confirm_module_create', new Error('userOk=true is required; no request sent'));
@@ -364,7 +390,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
           name: name.trim(),
           article: article.trim(),
         });
-        return toolOk({ ok: true, module: result });
+        return toolOkStructured({ ...createEnvelope(result), module: result });
       } catch (err) {
         return toolFail('kppdf_confirm_module_create', err);
       }
@@ -378,9 +404,10 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       description:
         'Builds a composition-line draft for HITL review. It does not call the backend or write SoT.',
       inputSchema: compositionLineInput,
+      outputSchema: draftEnvelopeSchema,
     },
     async (args) =>
-      toolOk({
+      toolOkStructured({
         ok: true,
         proposal: buildCompositionLineProposal(args),
         note: 'Draft only — call kppdf_confirm_composition_line after the user approves this exact line.',
@@ -391,8 +418,9 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     'kppdf_confirm_composition_line',
     {
       title: 'Confirm composition line',
-      description: 'Writes one approved line through the existing Product/Module composition REST endpoint.',
+      description: 'Writes one approved line through the existing Product/Module composition REST endpoint. Response envelope (TZD-41): top-level id.',
       inputSchema: { ...compositionLineInput, userOk: z.boolean().describe('Human approval — must be true') },
+      outputSchema: createEnvelopeSchema,
     },
     async ({ parentType, parentId, lineType, refId, quantity, unit, userOk }) => {
       if (userOk !== true) return toolFail('kppdf_confirm_composition_line', new Error('userOk=true is required; no request sent'));
@@ -408,7 +436,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
           `/api/${parentType === 'module' ? 'modules' : 'products'}/${encodeURIComponent(parentId)}/composition`,
           { lineType, refId, quantity, ...(unit ? { unit } : {}), sourceCode: refId },
         );
-        return toolOk({ ok: true, composition: result });
+        return toolOkStructured({ ...createEnvelope(result), composition: result });
       } catch (err) {
         return toolFail('kppdf_confirm_composition_line', err);
       }
@@ -419,16 +447,17 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     'kppdf_confirm_proposal',
     {
       title: 'Confirm proposal',
-      description: 'Applies proposal via Material API and records journal entry.',
+      description: 'Applies proposal via Material API and records journal entry. Response envelope (TZD-41): top-level id/proposalId.',
       inputSchema: {
         proposalId: z.string().min(1),
       },
+      outputSchema: mutationEnvelopeSchema,
     },
     async ({ proposalId }) => {
       try {
         const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/confirm`;
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
-        return toolOk({ ok: true, mutation: result });
+        return toolOkStructured({ ...mutationEnvelope(result), mutation: result });
       } catch (err) {
         return toolFail('kppdf_confirm_proposal', err);
       }
@@ -439,16 +468,17 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     'kppdf_cancel_proposal',
     {
       title: 'Cancel proposal',
-      description: 'Cancels a pending proposal without mutating SoT.',
+      description: 'Cancels a pending proposal without mutating SoT. Response envelope (TZD-41): top-level proposalId.',
       inputSchema: {
         proposalId: z.string().min(1),
       },
+      outputSchema: proposeEnvelopeSchema,
     },
     async ({ proposalId }) => {
       try {
         const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/cancel`;
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
-        return toolOk({ ok: true, proposal: result });
+        return toolOkStructured(proposeEnvelope(result));
       } catch (err) {
         return toolFail('kppdf_cancel_proposal', err);
       }
@@ -460,13 +490,15 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     {
       title: 'Undo mutation',
       description:
-        'Reverts an applied journal entry (or last applied if mutationId omitted). Ring buffer limited.',
+        'Reverts an applied journal entry (or last applied if mutationId omitted). Ring buffer limited. ' +
+        'Response envelope (TZD-41): top-level id.',
       inputSchema: {
         mutationId: z
           .string()
           .optional()
           .describe('Mutation id; omit to undo last applied'),
       },
+      outputSchema: mutationEnvelopeSchema,
     },
     async ({ mutationId }) => {
       try {
@@ -474,7 +506,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
           ? `/api/mutation-journal/${encodeURIComponent(mutationId)}/undo`
           : '/api/mutation-journal/undo-last';
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
-        return toolOk({ ok: true, mutation: result });
+        return toolOkStructured({ ...mutationEnvelope(result), mutation: result });
       } catch (err) {
         return toolFail('kppdf_undo_mutation', err);
       }
@@ -489,6 +521,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       inputSchema: {
         limit: z.number().int().min(1).max(100).optional(),
       },
+      outputSchema: plainOkSchema,
     },
     async ({ limit }) => {
       try {
@@ -498,7 +531,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
           cfg.apiKey,
           `/api/mutation-journal${q}`,
         );
-        return toolOk({ ok: true, result });
+        return toolOkStructured({ ok: true, result });
       } catch (err) {
         return toolFail('kppdf_list_mutations', err);
       }

@@ -38,9 +38,11 @@ function json(body: unknown, status = 200): Response {
 }
 
 describe('text-block tools (TZD-30)', () => {
-  it('registers the category/list/create draft tool names', () => {
+  it('registers canonical kppdf_list_* names + deprecated aliases (TZD-41)', () => {
     assert.deepEqual([...TEXT_BLOCK_TOOL_NAMES], [
+      'kppdf_list_text_block_categories',
       'kppdf_text_block_categories_list',
+      'kppdf_list_text_blocks',
       'kppdf_text_blocks_list',
       'kppdf_text_block_category_create',
       'kppdf_text_block_create_draft',

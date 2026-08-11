@@ -11,7 +11,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  createEnvelope,
+  createEnvelopeSchema,
+  readEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 export const STOCK_TOOL_NAMES = [
   'kppdf_list_stock_movements',
@@ -85,6 +91,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
         productId: z.string().optional(),
         type: z.enum(['in', 'out', 'transfer', 'adjust']).optional(),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ warehouseId, materialId, productId, type }) => {
       try {
@@ -95,7 +102,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
           type,
         });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_list_stock_movements', err);
       }
@@ -112,6 +119,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
         'productId; type=transfer требует toWarehouseId. Склад пополняется этим ' +
         'инструментом, а НЕ POST storage-items.',
       inputSchema: stockMovementInput,
+      outputSchema: createEnvelopeSchema,
     },
     async (args) => {
       const validationError = validateStockMovement(args);
@@ -125,7 +133,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
           '/api/stock-movements',
           buildStockMovementBody(args),
         );
-        return toolOk({ ok: true, note: 'SoT write (no journal)', result });
+        return toolOkStructured({ ...createEnvelope(result), note: 'SoT write (no journal)' });
       } catch (err) {
         return toolFail('kppdf_stock_movement_create', err);
       }

@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T23:10:00Z — TZD-41 DONE (WAVE-MCP-AUDIT-P0 #1)
+- DONE: envelope-канон `{ ok, result, id?, proposalId? }` + structuredContent; propose →
+  top-level proposalId (фикс §5.2); SoT-create → top-level id; naming canon `kppdf_list_*`
+  + deprecated aliases (8); outputSchema на 61 туле; MCP.md обновлён; toolCount 82.
+- Gates: desktop/mcp `pnpm test` 113/113 PASS; `tsc --noEmit` PASS; stale desktop/pnpm-lock
+  починен (tsx deps). Archive `tasks/_archive/2026-08/TZD-41.done.md`; lock
+  `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`; checklist DONE; `_active/` пуст.
+- NEXT: **TZD-42** confirm-404 (`tasks/_backlog/desktop/TZD-42-mcp-confirm-404.md`). Deploy НЕ.
+
 ## Checkpoint 2026-08-11 — WAVE-MCP-AUDIT-P0 READY (после полного MCP-аудита)
 - Аудит в git: `docs/audits/2026-08-11-mcp-full-audit.md` + `reports/mcp-audit/AUDIT-REPORT.md`
 - Verdict: MCP рабочий/HITL ок; P0 = envelope+outputSchema, confirm-404, product categoryId; P1 hygiene; P2 production/supply.

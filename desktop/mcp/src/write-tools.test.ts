@@ -8,6 +8,8 @@
 
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import type { McpRuntimeConfig } from './config.js';
+import { createKppdfMcpServer } from './tools.js';
 import {
   buildMaterialCreateProposal,
   batchItemSchema,
@@ -136,5 +138,108 @@ describe('composition HITL tools (TZD-38)', () => {
       refId: 'p1',
       quantity: 1,
     }));
+  });
+});
+
+describe('TZD-41 envelope through registered tool handlers (mock fetch)', () => {
+  const cfg: McpRuntimeConfig = {
+    apiBaseUrl: 'http://127.0.0.1:3000',
+    apiKey: 'test-pairing-key',
+    host: '127.0.0.1',
+    port: 9743,
+    allowLan: false,
+  };
+
+  function installFetch(
+    handler: (url: string, method: string, body: unknown) => unknown,
+  ): () => void {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const body = init?.body ? (JSON.parse(String(init.body)) as unknown) : undefined;
+      return new Response(JSON.stringify(handler(url, method, body)), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+    return () => {
+      globalThis.fetch = original;
+    };
+  }
+
+  async function runTool(name: string, args: unknown): Promise<Record<string, unknown>> {
+    const server = createKppdfMcpServer(cfg);
+    const tools = (
+      server as unknown as { _registeredTools: Record<string, { handler: (a: unknown) => Promise<unknown> }> }
+    )._registeredTools;
+    const tool = tools[name];
+    assert.ok(tool, `tool ${name} not registered`);
+    const out = (await tool.handler(args)) as {
+      structuredContent?: Record<string, unknown>;
+    };
+    assert.ok(out.structuredContent, `${name} должен отдавать structuredContent (outputSchema)`);
+    return out.structuredContent;
+  }
+
+  it('propose_material_create → top-level proposalId (аудит-баг §5.2)', async () => {
+    const restore = installFetch((url, method) => {
+      assert.equal(method, 'POST');
+      assert.match(url, /\/api\/mutation-journal\/proposals$/);
+      return { proposalId: 'prop-abc-123', kind: 'material.create', create: { name: 'X' } };
+    });
+    try {
+      const out = await runTool('kppdf_propose_material_create', { name: 'Сталь 09Г2С' });
+      assert.equal(out.ok, true);
+      assert.equal(out.proposalId, 'prop-abc-123');
+      assert.ok(out.result);
+    } finally {
+      restore();
+    }
+  });
+
+  it('propose_product_create → top-level proposalId even when backend nests nothing (regression §5.2)', async () => {
+    const restore = installFetch((_url, _method) => ({
+      proposalId: 'prop-prod-1',
+      kind: 'product.create',
+    }));
+    try {
+      const out = await runTool('kppdf_propose_product_create', {
+        name: 'Турник',
+        kind: 'good',
+      });
+      assert.equal(out.proposalId, 'prop-prod-1');
+    } finally {
+      restore();
+    }
+  });
+
+  it('confirm_proposal → structured envelope with result', async () => {
+    const restore = installFetch((_url, _method) => ({ _id: 'mutation-1' }));
+    try {
+      const out = await runTool('kppdf_confirm_proposal', { proposalId: 'prop-abc-123' });
+      assert.equal(out.ok, true);
+      assert.equal(out.id, 'mutation-1');
+      assert.ok(out.result);
+    } finally {
+      restore();
+    }
+  });
+
+  it('counterparty_create → top-level id normalized from _id (аудит-баг §5.2)', async () => {
+    const restore = installFetch((_url, _method) => ({
+      _id: '507f1f77bcf86cd799439601',
+      name: 'ООО Тест',
+    }));
+    try {
+      const out = await runTool('kppdf_counterparty_create', {
+        name: 'ООО Тест',
+        inn: '7701234567',
+        roles: ['customer'],
+      });
+      assert.equal(out.id, '507f1f77bcf86cd799439601');
+    } finally {
+      restore();
+    }
   });
 });

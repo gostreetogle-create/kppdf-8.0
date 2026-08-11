@@ -7,7 +7,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { slimProduct, slimProductList, toolFail, toolOk } from './tool-result.js';
+import {
+  readEnvelopeSchema,
+  slimProduct,
+  slimProductList,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 const pageLimitSearch = {
   page: z.number().int().min(1).optional().describe('Page number (default backend)'),
@@ -179,12 +185,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       title: 'List materials',
       description: 'GET /api/materials — paginated materials (org-scoped by JWT). Read-only.',
       inputSchema: pageLimitSearch,
+      outputSchema: readEnvelopeSchema,
     },
     async ({ page, limit, search }) => {
       try {
         const path = withQuery('/api/materials', { page, limit, search });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_list_materials', err);
       }
@@ -199,12 +206,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Material id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/materials/${encodeURIComponent(id)}`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_material', err);
       }
@@ -217,12 +225,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       title: 'List products',
       description: 'GET /api/products — paginated products, minimal fields. Read-only.',
       inputSchema: pageLimitSearch,
+      outputSchema: readEnvelopeSchema,
     },
     async ({ page, limit, search }) => {
       try {
         const path = withQuery('/api/products', { page, limit, search });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimProductList(result) });
+        return toolOkStructured({ ok: true, path, result: slimProductList(result) });
       } catch (err) {
         return toolFail('kppdf_list_products', err);
       }
@@ -237,12 +246,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Product id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/products/${encodeURIComponent(id)}`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result: slimProduct(result) });
+        return toolOkStructured({ ok: true, path, result: slimProduct(result) });
       } catch (err) {
         return toolFail('kppdf_get_product', err);
       }
@@ -255,12 +265,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       title: 'List modules',
       description: 'GET /api/modules — paginated modules (slim). Read-only. Supporting tool for graph (TZD-19).',
       inputSchema: pageLimitSearch,
+      outputSchema: readEnvelopeSchema,
     },
     async ({ page, limit, search }) => {
       try {
         const path = withQuery('/api/modules', { page, limit, search });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_list_modules', err);
       }
@@ -277,12 +288,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Product id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/products/${encodeURIComponent(id)}/composition`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_product_composition', err);
       }
@@ -298,12 +310,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Product id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/products/${encodeURIComponent(id)}/where-used`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_product_where_used', err);
       }
@@ -320,12 +333,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Material id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/materials/${encodeURIComponent(id)}/where-used`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_material_where_used', err);
       }
@@ -341,12 +355,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Module id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/modules/${encodeURIComponent(id)}/composition`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_module_composition', err);
       }
@@ -362,12 +377,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
       inputSchema: {
         id: z.string().min(1).describe('Module id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ id }) => {
       try {
         const path = `/api/modules/${encodeURIComponent(id)}/where-used`;
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_get_module_where_used', err);
       }
@@ -394,7 +410,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
     async ({ sample }) => {
       try {
         const result = await runIntegritySuite(createGraphBackendDeps(cfg), { sample });
-        return toolOk(result);
+        return toolOkStructured(result);
       } catch (err) {
         return toolFail('kppdf_run_integrity_suite', err);
       }
@@ -412,6 +428,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
         materialId: z.string().optional().describe('Filter by material id'),
         productId: z.string().optional().describe('Filter by product id'),
       },
+      outputSchema: readEnvelopeSchema,
     },
     async ({ warehouseId, materialId, productId }) => {
       try {
@@ -421,7 +438,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
           productId,
         });
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_list_storage_items', err);
       }
@@ -433,12 +450,13 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
     {
       title: 'List warehouses',
       description: 'GET /api/warehouses — workshop warehouses. Read-only.',
+      outputSchema: readEnvelopeSchema,
     },
     async () => {
       try {
         const path = '/api/warehouses';
         const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
+        return toolOkStructured({ ok: true, path, result });
       } catch (err) {
         return toolFail('kppdf_list_warehouses', err);
       }

@@ -11,14 +11,21 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BackendError, backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  createEnvelope,
+  readEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 const TEXT_BLOCK_DRAFT_PREFIX = 'Черновик ИИ — ';
 const AI_DRAFT_TAG = 'ai-draft';
 const TEXT_BLOCK_DRAFT_HREF = '/doc-constructor/texts?editId=';
 
 export const TEXT_BLOCK_TOOL_NAMES = [
+  'kppdf_list_text_block_categories',
   'kppdf_text_block_categories_list',
+  'kppdf_list_text_blocks',
   'kppdf_text_blocks_list',
   'kppdf_text_block_category_create',
   'kppdf_text_block_create_draft',
@@ -190,47 +197,79 @@ export async function createTextBlockDraft(
 }
 
 export function registerTextBlockTools(server: McpServer, cfg: McpRuntimeConfig): void {
+  async function handleListCategories(args: { activeOnly?: boolean }) {
+    try {
+      const activeOnly = args.activeOnly ?? true;
+      const result = await listTextBlockCategories(cfg, activeOnly);
+      return toolOkStructured({
+        ok: true,
+        path: withQuery('/api/text-block-categories', { activeOnly }),
+        result,
+      });
+    } catch (err) {
+      return toolFail('kppdf_list_text_block_categories', err);
+    }
+  }
+
+  const listCategoriesConfig = {
+    title: 'List text-block categories',
+    description:
+      'TZD-30: lists active TextBlockCategory «shelves» from the backend. ' +
+      'Read-only; use the returned categoryId instead of falling back to «Общее».',
+    inputSchema: {
+      activeOnly: z.boolean().optional().default(true).describe('Only active categories'),
+    },
+    outputSchema: readEnvelopeSchema,
+  };
+  server.registerTool('kppdf_list_text_block_categories', listCategoriesConfig, handleListCategories);
   server.registerTool(
     'kppdf_text_block_categories_list',
     {
-      title: 'List text-block categories',
+      ...listCategoriesConfig,
+      title: 'List text-block categories (deprecated alias — use kppdf_list_text_block_categories)',
       description:
-        'TZD-30: lists active TextBlockCategory «shelves» from the backend. ' +
-        'Read-only; use the returned categoryId instead of falling back to «Общее».',
-      inputSchema: {
-        activeOnly: z.boolean().optional().default(true).describe('Only active categories'),
-      },
+        'TZD-41: deprecated alias of kppdf_list_text_block_categories (removed after one wave).',
     },
-    async ({ activeOnly }) => {
-      try {
-        const result = await listTextBlockCategories(cfg, activeOnly);
-        return toolOk({ ok: true, path: withQuery('/api/text-block-categories', { activeOnly }), result });
-      } catch (err) {
-        return toolFail('kppdf_text_block_categories_list', err);
-      }
-    },
+    handleListCategories,
   );
 
+  async function handleListBlocks(args: { categoryId: string; isActive?: boolean }) {
+    try {
+      const path = withQuery('/api/text-blocks', {
+        categoryId: args.categoryId,
+        isActive: args.isActive,
+      });
+      return toolOkStructured({
+        ok: true,
+        path,
+        result: await listTextBlocks(cfg, args.categoryId, args.isActive),
+      });
+    } catch (err) {
+      return toolFail('kppdf_list_text_blocks', err);
+    }
+  }
+
+  const listBlocksConfig = {
+    title: 'List text blocks in a category',
+    description:
+      'TZD-30: lists text blocks in the required TextBlockCategory. ' +
+      'Use this before creating a draft to avoid duplicates.',
+    inputSchema: {
+      categoryId: z.string().min(1).describe('TextBlockCategory id'),
+      isActive: z.boolean().optional().describe('Optional active-state filter'),
+    },
+    outputSchema: readEnvelopeSchema,
+  };
+  server.registerTool('kppdf_list_text_blocks', listBlocksConfig, handleListBlocks);
   server.registerTool(
     'kppdf_text_blocks_list',
     {
-      title: 'List text blocks in a category',
+      ...listBlocksConfig,
+      title: 'List text blocks in a category (deprecated alias — use kppdf_list_text_blocks)',
       description:
-        'TZD-30: lists text blocks in the required TextBlockCategory. ' +
-        'Use this before creating a draft to avoid duplicates.',
-      inputSchema: {
-        categoryId: z.string().min(1).describe('TextBlockCategory id'),
-        isActive: z.boolean().optional().describe('Optional active-state filter'),
-      },
+        'TZD-41: deprecated alias of kppdf_list_text_blocks (removed after one wave).',
     },
-    async ({ categoryId, isActive }) => {
-      try {
-        const path = withQuery('/api/text-blocks', { categoryId, isActive });
-        return toolOk({ ok: true, path, result: await listTextBlocks(cfg, categoryId, isActive) });
-      } catch (err) {
-        return toolFail('kppdf_text_blocks_list', err);
-      }
-    },
+    handleListBlocks,
   );
 
   server.registerTool(
@@ -248,7 +287,7 @@ export function registerTextBlockTools(server: McpServer, cfg: McpRuntimeConfig)
     async ({ name, slug }) => {
       try {
         const result = await createTextBlockCategory(cfg, { name, slug });
-        return toolOk({ ok: true, category: result });
+        return toolOkStructured({ ...createEnvelope(result), category: result });
       } catch (err) {
         return toolFail('kppdf_text_block_category_create', err);
       }
@@ -294,7 +333,12 @@ export function registerTextBlockTools(server: McpServer, cfg: McpRuntimeConfig)
           columns,
           tags,
         });
-        return toolOk({ ok: true, draft: true, ...result });
+        return toolOkStructured({
+          ok: true,
+          draft: true,
+          ...result,
+          ...(result.textBlockId ? { id: result.textBlockId } : {}),
+        });
       } catch (err) {
         return toolFail('kppdf_text_block_create_draft', err);
       }

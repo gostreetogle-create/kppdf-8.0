@@ -13,10 +13,16 @@ import {
   backendPostJson,
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import {
+  createEnvelope,
+  readEnvelopeSchema,
+  toolFail,
+  toolOkStructured,
+} from './tool-result.js';
 
 export const IMPORT_TODO_TOOL_NAMES = [
   'kppdf_import_todo_create',
+  'kppdf_list_import_todos',
   'kppdf_import_todo_list',
   'kppdf_import_todo_set_status',
 ] as const;
@@ -55,37 +61,47 @@ export function registerImportTodoTools(
             ...(templateId ? { templateId } : {}),
           },
         );
-        return toolOk({ ok: true, todo: result });
+        return toolOkStructured({ ...createEnvelope(result), todo: result });
       } catch (err) {
         return toolFail('kppdf_import_todo_create', err);
       }
     },
   );
 
+  async function listImportTodos(args: { status?: 'open' | 'done' }) {
+    try {
+      const path = args.status
+        ? `/api/import-todos?status=${args.status}`
+        : '/api/import-todos';
+      const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
+      return toolOkStructured({ ok: true, path, result });
+    } catch (err) {
+      return toolFail('kppdf_list_import_todos', err);
+    }
+  }
+
+  const importTodoListConfig = {
+    title: 'List import todos',
+    description:
+      'TZD-29: GET /api/import-todos?status= — open/done manager todos. Read-only.',
+    inputSchema: {
+      status: z
+        .enum(['open', 'done'])
+        .optional()
+        .describe('Filter by status (default: all)'),
+    },
+    outputSchema: readEnvelopeSchema,
+  };
+  server.registerTool('kppdf_list_import_todos', importTodoListConfig, listImportTodos);
   server.registerTool(
     'kppdf_import_todo_list',
     {
-      title: 'List import todos',
+      ...importTodoListConfig,
+      title: 'List import todos (deprecated alias — use kppdf_list_import_todos)',
       description:
-        'TZD-29: GET /api/import-todos?status= — open/done manager todos. Read-only.',
-      inputSchema: {
-        status: z
-          .enum(['open', 'done'])
-          .optional()
-          .describe('Filter by status (default: all)'),
-      },
+        'TZD-41: deprecated alias of kppdf_list_import_todos (removed after one wave).',
     },
-    async ({ status }) => {
-      try {
-        const path = status
-          ? `/api/import-todos?status=${status}`
-          : '/api/import-todos';
-        const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
-      } catch (err) {
-        return toolFail('kppdf_import_todo_list', err);
-      }
-    },
+    listImportTodos,
   );
 
   server.registerTool(
@@ -108,7 +124,7 @@ export function registerImportTodoTools(
           `/api/import-todos/${encodeURIComponent(id)}`,
           { status },
         );
-        return toolOk({ ok: true, todo: result });
+        return toolOkStructured({ ...createEnvelope(result), todo: result });
       } catch (err) {
         return toolFail('kppdf_import_todo_set_status', err);
       }
