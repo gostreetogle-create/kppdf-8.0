@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 — TZ-CATALOG-339 DONE (фото изделия / VersionError)
+- DONE: product/material update через findOneAndUpdate; optimisticLockPlugin без ручного __v; attachPhoto append.
+- Gates: focused Jest PASS; backend tsc PASS.
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-339.done.md`
+- NEXT: PO **«деплой»** (warm) чтобы фото на kppdf-crm.ru заработали; затем WAVE-MCP-AUDIT-P0 (TZD-41…).
+- Deploy НЕ until PO.
+
 ## Checkpoint 2026-08-11 — WAVE-MCP-AUDIT-P0 READY (после полного MCP-аудита)
 - Аудит в git: `docs/audits/2026-08-11-mcp-full-audit.md` + `reports/mcp-audit/AUDIT-REPORT.md`
 - Verdict: MCP рабочий/HITL ок; P0 = envelope+outputSchema, confirm-404, product categoryId; P1 hygiene; P2 production/supply.

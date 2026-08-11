@@ -72,12 +72,35 @@ export class ProductService {
     const doc = await this.findActive(id, organizationId);
     const { attributes, ...rest } = dto;
     if (dto.sku !== undefined) rest.sku = this.normalizeRequiredCode(dto.sku, 'Артикул изделия');
-    Object.assign(doc, rest);
+
+    // findOneAndUpdate — не doc.save(): массив photoIds + legacy optimisticLockPlugin
+    // (ручной __v) давали VersionError → «Изделие уже изменено» при добавлении фото.
+    // Composition по-прежнему versioned; passport/photo — last-write-wins на полях $set.
+    const $set: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(rest)) {
+      if (value !== undefined) $set[key] = value;
+    }
+    if (Array.isArray(rest.photoIds)) {
+      $set.photoIds = rest.photoIds.map((pid) => new Types.ObjectId(String(pid)));
+    }
+
     let saved: ProductDocument;
     try {
-      saved = await doc.save();
+      const updated = await this.model
+        .findOneAndUpdate(
+          { _id: doc._id, deletedAt: null, ...this.organizationFilter(organizationId) },
+          { $set, $inc: { __v: 1 } },
+          { new: true, runValidators: true },
+        )
+        .exec();
+      if (!updated) {
+        throw new ConflictException(
+          `Изделие уже изменено (обновите карточку и сохраните снова)`,
+        );
+      }
+      saved = updated;
     } catch (err) {
-      // Stale __v from parallel tab / composition write → 409, not opaque 500.
+      if (err instanceof ConflictException) throw err;
       if ((err as { name?: string })?.name === 'VersionError') {
         throw new ConflictException(
           `Изделие уже изменено (обновите карточку и сохраните снова)`,

@@ -102,6 +102,46 @@ describe('TZ-CATALOG-305 — unitPriceOverride guard', () => {
 // ---------------------------------------------------------------------------
 // Composition does not mutate child Product (by design — parent only stores ref)
 // ---------------------------------------------------------------------------
+describe('TZ-CATALOG-339 — product.update photoIds via findOneAndUpdate', () => {
+  function buildService(model: Record<string, unknown>) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  it('PATCH with photoIds uses findOneAndUpdate (not doc.save)', async () => {
+    const id = new Types.ObjectId();
+    const photoId = new Types.ObjectId().toString();
+    const existing = {
+      _id: id,
+      __v: 3,
+      photoIds: [],
+      categoryId: undefined,
+    };
+    const updated = { ...existing, __v: 4, photoIds: [new Types.ObjectId(photoId)] };
+    const execFind = jest.fn().mockResolvedValue(existing);
+    const execUpdate = jest.fn().mockResolvedValue(updated);
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      findOneAndUpdate: jest.fn(() => ({ exec: execUpdate })),
+    };
+    const service = buildService(model);
+    const result = await service.update(id.toString(), { photoIds: [photoId] } as never);
+    expect(model.findOneAndUpdate).toHaveBeenCalled();
+    const [, update] = (model.findOneAndUpdate as jest.Mock).mock.calls[0];
+    expect(update.$set.photoIds).toHaveLength(1);
+    expect(update.$inc).toEqual({ __v: 1 });
+    expect(result.__v).toBe(4);
+  });
+});
+
 describe('TZ-CATALOG-305 — child Product independence', () => {
   it('composition ref does not mutate child listPrice', () => {
     const childProduct = { _id: new Types.ObjectId(), name: 'Child', listPrice: 500, basePrice: 300 };

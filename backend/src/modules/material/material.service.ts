@@ -64,8 +64,28 @@ export class MaterialService {
       ? await this.model.findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.organizationFilter(organizationId) }).exec()
       : await this.model.findById(id).exec();
     if (!doc || doc.deletedAt) throw new NotFoundException(`Material ${id} not found`);
-    Object.assign(doc, dto);
-    try { return await doc.save(); } catch (err) { this.rethrowDuplicate(err); }
+
+    // findOneAndUpdate — тот же баг photoIds/VersionError, что у Product (TZ-CATALOG-339).
+    const $set: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(dto as Record<string, unknown>)) {
+      if (value !== undefined) $set[key] = value;
+    }
+    if (Array.isArray(dto.photoIds)) {
+      $set.photoIds = dto.photoIds.map((pid) => new Types.ObjectId(String(pid)));
+    }
+    try {
+      const updated = await this.model
+        .findOneAndUpdate(
+          { _id: doc._id, deletedAt: null, ...this.organizationFilter(organizationId) },
+          { $set, $inc: { __v: 1 } },
+          { new: true, runValidators: true },
+        )
+        .exec();
+      if (!updated) throw new NotFoundException(`Material ${id} not found`);
+      return updated;
+    } catch (err) {
+      this.rethrowDuplicate(err);
+    }
   }
 
   private async loadAssignableMaterialCategory(categoryId: string, organizationId?: string | null): Promise<CategoryDocument> {

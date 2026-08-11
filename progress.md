@@ -1,3 +1,12 @@
+## [2026-08-11] — TZ-CATALOG-339 DONE — фото изделия без «уже изменено»
+**Автор:** Cursor
+**Статус:** DONE (код); warm deploy — ждёт PO «деплой»
+**Что:** VersionError при сохранении photoIds: optimisticLockPlugin больше не трогает __v вручную; Product/Material update через findOneAndUpdate; attachPhoto — нормальный append.
+**Gates:** Jest product.service + optimistic-lock PASS; backend tsc PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-339.done.md`
+**Checklist:** `docs/agent-checklists/TZ-CATALOG-339.md`
+**NEXT:** деплой по команде PO → снова WAVE-MCP-AUDIT-P0 (TZD-41).
+
 ## [2026-08-11] — TZ-OPS-312 DONE — catalog page specs dictionary-labels flush
 **Автор:** Buffy / buffy-ops-312
 **Статус:** DONE; specs-only harness fix; deploy НЕ
