@@ -1,12 +1,19 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-OPS-312 READY: catalog page specs dictionary-labels flush
+**Статус:** READY executor; deploy НЕ
+**Что:** Pre-existing Jest: `products.page.spec` (~21) open `GET /dictionary-labels?scope=productKind`; `module-detail.page.spec` (~3) leftover `flush({})` → `result.data.filter` TypeError. Specs-only fix.
+**TZ:** `tasks/_backlog/ops/TZ-OPS-312-catalog-page-specs-dictionary-labels-flush.md`
+**Prompt:** `tasks/_backlog/ops/PROMPT-OPS-312.md`
+**NEXT:** claim OPS-312; Deploy НЕ.
+
 ## [2026-08-11] — TZ-OPS-311 DONE: shared→pages BOM убран (architecture:check)
 **Статус:** DONE on main (landed); gates green; archive + lock; deploy НЕ
 **Что:** BOM panel и composition picker переехали из `pages/products/` в `shared/ui/composition`; quick-create больше не импортирует страницы (правило fe-shared-must-not-import-pages). Диалоги редактирования в панели стали lazy (dynamic imports, как у product-form); callers products/modules/proposals обновлены.
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-311.done.md`
 **Lock:** `.mimocode/locks/TZ-OPS-311-shared-bom-extract.lock`
 **Gates:** FE tsc PASS; `pnpm architecture:check` PASS (baseline 7 → 3); Jest focused 4/4 suites PASS; Prettier/ESLint PASS.
-**NEXT:** idle; ready to propose deploy; Deploy НЕ.
+**NEXT:** TZ-OPS-312 READY; Deploy НЕ.
 
 ## [2026-08-11] — TZ-SALES-354 DONE: manager self-pass; shame wave closed
 **Статус:** WAVE-KP-SHAME-POLISH DONE on main; idle; ready to propose deploy; deploy НЕ

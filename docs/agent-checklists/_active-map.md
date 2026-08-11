@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 — TZ-OPS-312 READY (catalog page specs dict flush)
+- READY executor: `tasks/_backlog/ops/TZ-OPS-312-catalog-page-specs-dictionary-labels-flush.md`
+- Prompt: `tasks/_backlog/ops/PROMPT-OPS-312.md`
+- Scope: `products.page.spec.ts` + `module-detail.page.spec.ts` only — flush `GET /dictionary-labels` as **array**; stop leftover `flush({})` poison.
+- Evidence: 24 fail / dictionary-labels open request + `result.data.filter` TypeError (pre-existing vs OPS-311).
+- NEXT: claim OPS-312 → green Jest both suites → archive+push origin/main. Deploy НЕ.
+
 ## Checkpoint 2026-08-11 — TZ-OPS-311 DONE (shared→pages BOM убран)
 - DONE (Buffy/freebuff → landed main): BOM panel + picker → `shared/ui/composition`; quick-create без `pages/*`; module/material edit в панели — lazy dynamic imports; callers (products/modules/proposal rail) обновлены.
 - Gates: FE tsc PASS; `pnpm architecture:check` baseline 7 → 3 PASS; Jest 4/4 focused PASS; Prettier/ESLint PASS. Pre-existing (чистый HEAD): module-detail/products.page specs 24 fail — не регрессия.
