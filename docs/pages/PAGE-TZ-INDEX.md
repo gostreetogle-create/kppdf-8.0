@@ -48,9 +48,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/design`, `/supply`, `/shipping` | supply.page.md; **design/shipping OPS-307 DONE** | **NAV-301** stubs; page.md gaps: WAVE-PAGE-DOCS-GAPS |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
-| `/proposals` | proposals.page.md | **SALES-301**; **303** family API; **313 DONE** family expand (ex-304); **SALES-310 DONE** — TOC + `Создать КП`/`Все КП` |
-| `/proposals/create` | **proposals-create.page.md** | **317…332 DONE**; **WAVE-KP-USABLE DONE**; **WAVE-KP-COMPLETE DONE** 340…348; **WAVE-KP-SHAME-POLISH READY** 350 list RU → 351 vitrine edge → 352 compose/terms → 353 preview/F5 → 354 self-pass; **320** PARK |
-| `/proposals` | **proposals.page.md** | list/family DONE; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
+| `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
+| `/proposals/create` | **proposals-create.page.md** | **317…332 DONE**; **WAVE-KP-USABLE DONE**; **WAVE-KP-COMPLETE DONE** 340…348; **WAVE-KP-SHAME-POLISH READY** 350→354; **320** PARK |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
