@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Warm deploy DONE (99395585 — Desktop Basic Auth coexist)
+- Deploy: WIPE=false OK; Auth login OK; Frontend 200; Desktop installer published to `/downloads/`.
+- Includes: pairing revoke hard-delete + Copy next to Issue; Nest/Desktop X-Access-Token + Basic fields.
+- PO next: сайт → Basic → admin → «Подключить десктоп» → **Скачать приложение** (новый) → в Desktop: JSON + подъездные поля → Подключиться.
+- TZD-40 version gate still backlog (not in this deploy).
+
 ## Checkpoint 2026-08-11 · Desktop Failed to fetch = Basic Auth (не «другая версия»)
 - Root cause: nginx Basic consumes `Authorization`; Desktop/MCP still sent `Bearer kppd_…` → 401 HTML / Failed to fetch.
 - CODE: Nest pairing via `X-Access-Token`; Desktop fields «подъезд»; MCP `KPPDF_HTTP_BASIC_*`; revoke hard-delete; Copy next to Issue.
