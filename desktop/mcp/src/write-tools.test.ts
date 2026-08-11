@@ -214,6 +214,42 @@ describe('TZD-41 envelope through registered tool handlers (mock fetch)', () => 
     }
   });
 
+  it('TZD-43: propose_product_create шлёт categoryId/status в journal payload', async () => {
+    const captured: Array<{ productCreate?: Record<string, unknown> }> = [];
+    const restore = installFetch((_url, _method, body) => {
+      captured.push(body as { productCreate?: Record<string, unknown> });
+      return { proposalId: 'prop-cat-1', kind: 'product.create' };
+    });
+    try {
+      await runTool('kppdf_propose_product_create', {
+        name: 'Корт падел Pro 20×10',
+        kind: 'good',
+        categoryId: '507f1f77bcf86cd799439601',
+        status: 'active',
+      });
+      assert.equal(captured[0]?.productCreate?.categoryId, '507f1f77bcf86cd799439601');
+      assert.equal(captured[0]?.productCreate?.status, 'active');
+    } finally {
+      restore();
+    }
+  });
+
+  it('TZD-43: propose_product_create без categoryId/status — регрессия (полей нет)', async () => {
+    const captured: Array<{ productCreate?: Record<string, unknown> }> = [];
+    const restore = installFetch((_url, _method, body) => {
+      captured.push(body as { productCreate?: Record<string, unknown> });
+      return { proposalId: 'prop-plain-1', kind: 'product.create' };
+    });
+    try {
+      await runTool('kppdf_propose_product_create', { name: 'Турник', kind: 'good' });
+      assert.ok(captured[0]?.productCreate);
+      assert.ok(!('categoryId' in (captured[0]?.productCreate ?? {})));
+      assert.ok(!('status' in (captured[0]?.productCreate ?? {})));
+    } finally {
+      restore();
+    }
+  });
+
   it('confirm_proposal → structured envelope with result', async () => {
     const restore = installFetch((_url, _method) => ({ _id: 'mutation-1' }));
     try {

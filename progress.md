@@ -1,3 +1,13 @@
+## [2026-08-12] — TZD-43 DONE — propose_product_create categoryId + status
+**Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0 #3)
+**Статус:** DONE; commit+push; deploy НЕ
+**Что:** `kppdf_propose_product_create` принимает `categoryId` (MongoId) и `status` (whitelist `new|active|archived|draft`) как в вебе; проброс через journal payload → backend `ProposeProductCreateDto` (+`@IsMongoId`/`@IsIn`) → `products.create`. `validate_product`/domain schema обновлены (CATEGORY_ID_INVALID, STATUS_INVALID). Backward compatible (без полей — как раньше).
+**Gates:** backend `pnpm test -- mutation-journal` 28/28 PASS; desktop/mcp `pnpm test` 119/119 PASS; `tsc --noEmit` PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-43.done.md`
+**Checklist:** `docs/agent-checklists/TZD-43.md`
+**Lock:** `.mimocode/locks/TZD-43-mcp-product-category-status.lock`
+**NEXT:** TZD-44 (data hygiene tools).
+
 ## [2026-08-11] — TZD-42 DONE — confirm-404 root cause + hardening
 **Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0 #2)
 **Статус:** DONE; commit+push; deploy НЕ

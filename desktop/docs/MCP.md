@@ -232,8 +232,9 @@ top-level `proposalId`).
 
 ### Product path (TZD-27) — паспорт и BOM через отдельный HITL-контур
 
-1. `kppdf_get_domain_schema` `entity=product` — обязательные поля (name, kind).
-2. `kppdf_validate_product` — passport dry-run (name/kind/unit; без BOM).
+1. `kppdf_get_domain_schema` `entity=product` — обязательные поля (name, kind); TZD-43: optional `unit, sku, notes, categoryId, status`.
+2. `kppdf_validate_product` — passport dry-run (name/kind/unit; TZD-43: также
+   `categoryId` MongoId + `status` whitelist `new|active|archived|draft`; без BOM).
 3. classify/match → HITL → `kppdf_import_task_apply_plan` с `entity='product'`
    в строках плана (`aiReport.rows[].entity`, default material) — new →
    product.create proposal, update → product.update proposal (тот же batch).
@@ -407,7 +408,7 @@ BE-волна): reads везде; writes — только **draft** (или crea
 |------|--------|
 | `kppdf_propose_material_create` | Proposal only. TZD-32: `name` + optional `unit` (default `шт`), `article`, `sku`, `categoryId`, `pricePerUnit` (≥ 0), `materialKind` (`raw\|part\|fastener\|purchased\|other`), `description`, `dimensions` (`{type, value, isImmutable?}`) — whitelist как в `CreateMaterialDto`; без новых полей поведение прежнее |
 | `kppdf_propose_material_update` | Proposal + before snapshot |
-| `kppdf_propose_product_create` | TZD-27 — product.create proposal (`name`+`kind` required, `unit` default `шт`); **не** ProductService до confirm |
+| `kppdf_propose_product_create` | TZD-27/43 — product.create proposal (`name`+`kind` required, `unit` default `шт`, `sku`; TZD-43: `categoryId` MongoId + `status` `new|active|archived|draft` — как в вебе); **не** ProductService до confirm |
 | `kppdf_propose_product_update` | TZD-27 — product.update proposal + before snapshot |
 | `kppdf_confirm_proposal` | Apply Material POST/PATCH + journal `applied` |
 | `kppdf_cancel_proposal` | Drop proposal, no SoT change |

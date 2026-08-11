@@ -96,12 +96,15 @@ export function getProductDomainSchema(): ProductDomainSchema {
     productKinds: [...PRODUCT_KINDS],
     createProposal: {
       required: ['name', 'kind'],
-      optional: ['unit', 'sku', 'notes'],
+      // TZD-43: categoryId/status добавлены как в вебе (CreateProductDto).
+      optional: ['unit', 'sku', 'notes', 'categoryId', 'status'],
     },
     rules: {
       en: [
         'name and kind (good|service|work) are required.',
         'unit is a free string; empty unit defaults to шт on propose.',
+        'categoryId is an optional MongoId of the product category (like web).',
+        'status is optional; whitelist new|active|archived|draft, default new.',
         'Passport only — BOM/composition is NOT written via import in this wave (use web BomPanel).',
         'Before product.update: run kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
         'Propose creates a mutation-journal proposal only — not a SoT write. Confirm separately.',
@@ -109,6 +112,8 @@ export function getProductDomainSchema(): ProductDomainSchema {
       ru: [
         'name и kind (good|service|work) обязательны.',
         'unit — произвольная строка; пустой unit → шт при propose.',
+        'categoryId — опциональный MongoId категории продукта (как в вебе).',
+        'status — опционален; whitelist new|active|archived|draft, default new.',
         'Только паспорт — BOM/состав через импорт в этой волне НЕ пишется (reuse web BomPanel).',
         'Перед product.update: kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
         'Propose создаёт только proposal в журнале — не запись в SoT. Confirm отдельно.',

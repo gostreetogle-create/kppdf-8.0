@@ -485,6 +485,87 @@ describe('MutationJournalService (TZD-13)', () => {
     expect(create).toHaveBeenCalled();
   });
 
+  it('propose product.create stores categoryId/status in payload (TZD-43)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'product.create',
+        toolName: 'kppdf_propose_product_create',
+        entityType: 'Product',
+        payload: {},
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    await service.propose(
+      {
+        kind: 'product.create',
+        productCreate: {
+          name: 'Турник',
+          kind: 'good',
+          categoryId: '507f1f77bcf86cd799439601',
+          status: 'active',
+        },
+      },
+      user,
+    );
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          name: 'Турник',
+          kind: 'good',
+          categoryId: '507f1f77bcf86cd799439601',
+          status: 'active',
+        }),
+      }),
+    );
+  });
+
+  it('confirm product.create passes categoryId/status to ProductService.create (TZD-43)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'product.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Product',
+      payload: {
+        name: 'Турник',
+        kind: 'good',
+        unit: 'шт',
+        categoryId: '507f1f77bcf86cd799439601',
+        status: 'active',
+      },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, products } = buildService({
+      findByIdDoc: doc,
+      productsCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439044',
+        name: 'Турник',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439044', name: 'Турник' }),
+      }),
+    });
+
+    await service.confirm('507f1f77bcf86cd799439033', user);
+    expect(products.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Турник',
+        kind: 'good',
+        unit: 'шт',
+        categoryId: '507f1f77bcf86cd799439601',
+        status: 'active',
+      }),
+      user.organizationId,
+    );
+    expect(doc.status).toBe('applied');
+  });
+
   it('propose product.create rejects missing kind (TZD-27)', async () => {
     const { service } = buildService();
     await expect(

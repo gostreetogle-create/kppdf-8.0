@@ -135,6 +135,9 @@ export class MutationJournalService {
         unit: p.unit?.trim() || 'шт',
         ...(p.sku ? { sku: p.sku } : {}),
         ...(p.notes ? { notes: p.notes } : {}),
+        // TZD-43: категория и статус как в вебе (CreateProductDto).
+        ...(p.categoryId ? { categoryId: p.categoryId } : {}),
+        ...(p.status ? { status: p.status } : {}),
       };
       const doc = await this.model.create({
         status: 'proposed',

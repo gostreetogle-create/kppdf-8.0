@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T00:40:00Z — TZD-43 DONE (WAVE-MCP-AUDIT-P0 #3)
+- DONE: propose_product_create принимает categoryId (MongoId) + status
+  (new|active|archived|draft) как в вебе; проброс journal payload → backend DTO →
+  products.create; validate_product + domain schema обновлены; backward compatible.
+- Gates: backend mutation-journal 28/28 PASS; desktop/mcp 119/119 PASS; tsc PASS.
+- Archive `tasks/_archive/2026-08/TZD-43.done.md`; lock `.mimocode/locks/TZD-43-mcp-product-category-status.lock`;
+  checklist DONE; `_active/` пуст.
+- NEXT: **TZD-44** data hygiene (find_duplicates + cleanup_test_data). Deploy НЕ.
+
 ## Checkpoint 2026-08-11T23:55:00Z — TZD-42 DONE (WAVE-MCP-AUDIT-P0 #2)
 - DONE: root cause confirm-404 = неверный id из парсинга §5.2 (TZD-41 fix), журнал sound.
   Доказано тестами: 100× propose→confirm без 404; wrong-id → 404 с id; cross-user/admin-org

@@ -60,6 +60,31 @@ describe('validateProduct (TZD-27)', () => {
     const badKind = validateProduct({ name: 'X', kind: 'widget' });
     assert.ok(badKind.errors.some((e) => e.code === 'KIND_INVALID'));
   });
+
+  it('TZD-43: categoryId/status проходят валидацию (MongoId + whitelist)', () => {
+    const ok = validateProduct({
+      name: 'Турник',
+      kind: 'good',
+      categoryId: '507f1f77bcf86cd799439601',
+      status: 'active',
+    });
+    assert.equal(ok.ok, true);
+    assert.equal(ok.normalized.categoryId, '507f1f77bcf86cd799439601');
+    assert.equal(ok.normalized.status, 'active');
+
+    const badCat = validateProduct({ name: 'X', kind: 'good', categoryId: 'not-an-id' });
+    assert.ok(badCat.errors.some((e) => e.code === 'CATEGORY_ID_INVALID'));
+
+    const badStatus = validateProduct({ name: 'X', kind: 'good', status: 'bogus' });
+    assert.ok(badStatus.errors.some((e) => e.code === 'STATUS_INVALID'));
+  });
+
+  it('TZD-43: без categoryId/status — регрессия, по-прежнему валидно', () => {
+    const result = validateProduct({ name: 'Окно ПВХ', kind: 'good' });
+    assert.equal(result.ok, true);
+    assert.ok(!('categoryId' in result.normalized));
+    assert.ok(!('status' in result.normalized));
+  });
 });
 
 describe('validateMaterial (TZD-17)', () => {

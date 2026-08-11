@@ -110,6 +110,17 @@ export class ProposeProductCreateDto {
   @IsString()
   @Length(0, 512)
   notes?: string;
+
+  // TZD-43: категория и статус как в вебе (зеркало CreateProductDto).
+  @ApiPropertyOptional({ description: 'ID категории продукта (MongoId)' })
+  @IsOptional()
+  @IsMongoId({ message: 'Некорректная категория' })
+  categoryId?: string;
+
+  @ApiPropertyOptional({ enum: ['new', 'active', 'archived', 'draft'], description: 'Статус (default new)' })
+  @IsOptional()
+  @IsIn(['new', 'active', 'archived', 'draft'], { message: 'Недопустимый статус' })
+  status?: 'new' | 'active' | 'archived' | 'draft';
 }
 
 export class ProposeProductUpdateDto {

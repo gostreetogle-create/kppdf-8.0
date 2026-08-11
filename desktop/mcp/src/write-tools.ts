@@ -299,8 +299,17 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         name: z.string().min(1).describe('Product name'),
         kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
         unit: z.string().optional().describe('Unit (default шт)'),
-        sku: z.string().optional(),
+        sku: z.string().optional().describe('SKU/артикул (обязателен на backend при confirm)'),
         notes: z.string().optional(),
+        categoryId: z
+          .string()
+          .regex(/^[0-9a-fA-F]{24}$/, 'categoryId должен быть MongoId (24 hex)')
+          .optional()
+          .describe('TZD-43: категория продукта (MongoId, как в вебе)'),
+        status: z
+          .enum(['new', 'active', 'archived', 'draft'])
+          .optional()
+          .describe('TZD-43: статус (whitelist CreateProductDto; default new)'),
       },
       outputSchema: proposeEnvelopeSchema,
     },
@@ -315,6 +324,8 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
             unit: args.unit?.trim() || 'шт',
             sku: args.sku,
             notes: args.notes,
+            ...(args.categoryId ? { categoryId: args.categoryId } : {}),
+            ...(args.status ? { status: args.status } : {}),
           },
         });
       } catch (err) {

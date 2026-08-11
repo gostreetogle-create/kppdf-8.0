@@ -37,17 +37,25 @@ export interface ValidateProductResult {
     name?: string;
     kind?: string;
     unit: string;
+    categoryId?: string;
+    status?: string;
   };
 }
 
+const PRODUCT_STATUSES = ['new', 'active', 'archived', 'draft'] as const;
+const MONGO_ID_RE = /^[0-9a-fA-F]{24}$/;
+
 /**
- * TZD-27 — passport-only product dry-run: name + kind обязательны,
- * unit default шт. НЕ пишет BOM и НЕ трогает SoT.
+ * TZD-27/TZD-43 — passport-only product dry-run: name + kind обязательны,
+ * unit default шт, categoryId — MongoId, status — whitelist.
+ * НЕ пишет BOM и НЕ трогает SoT.
  */
 export function validateProduct(args: {
   name?: string;
   kind?: string;
   unit?: string;
+  categoryId?: string;
+  status?: string;
 }): ValidateProductResult {
   const errors: ValidateProductResult['errors'] = [];
   const infos: ValidateProductResult['infos'] = [];
@@ -68,6 +76,22 @@ export function validateProduct(args: {
     unit = 'шт';
   }
 
+  // TZD-43: категория и статус как в вебе.
+  const categoryId = args.categoryId?.trim();
+  if (categoryId && !MONGO_ID_RE.test(categoryId)) {
+    errors.push({
+      code: 'CATEGORY_ID_INVALID',
+      message: `categoryId must be a MongoId (24 hex), got «${categoryId}»`,
+    });
+  }
+  const status = args.status?.trim();
+  if (status && !(PRODUCT_STATUSES as readonly string[]).includes(status)) {
+    errors.push({
+      code: 'STATUS_INVALID',
+      message: `status must be one of ${PRODUCT_STATUSES.join('|')} (got «${status}»)`,
+    });
+  }
+
   return {
     ok: errors.length === 0,
     errors,
@@ -76,6 +100,8 @@ export function validateProduct(args: {
       ...(name ? { name } : {}),
       ...(kind ? { kind } : {}),
       unit,
+      ...(categoryId ? { categoryId } : {}),
+      ...(status ? { status } : {}),
     },
   };
 }
@@ -154,6 +180,14 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
         name: z.string().optional().describe('Product name (required for ok:true)'),
         kind: z.enum(['good', 'service', 'work']).optional(),
         unit: z.string().optional().describe('Unit; empty → default шт (info)'),
+        categoryId: z
+          .string()
+          .optional()
+          .describe('TZD-43: product category MongoId (optional)'),
+        status: z
+          .enum(['new', 'active', 'archived', 'draft'])
+          .optional()
+          .describe('TZD-43: status whitelist (default new)'),
       },
     },
     async (args) => {
