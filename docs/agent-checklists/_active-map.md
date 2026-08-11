@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 — WAVE-MCP-AUDIT-P0 READY (после полного MCP-аудита)
+- Аудит в git: `docs/audits/2026-08-11-mcp-full-audit.md` + `reports/mcp-audit/AUDIT-REPORT.md`
+- Verdict: MCP рабочий/HITL ок; P0 = envelope+outputSchema, confirm-404, product categoryId; P1 hygiene; P2 production/supply.
+- READY queue: **TZD-41 → 42 → 43 → 44** (`tasks/_backlog/desktop/TZD-41…44-*.md`)
+- Continuous prompt: `tasks/_backlog/desktop/PROMPT-MCP-AUDIT-P0.md`
+- Park: TZD-45 production/supply read (`TZD-45-mcp-production-supply-read.md`)
+- Также backlog: TZD-40 version gate (Desktop). OPS-312 уже DONE.
+- Deploy НЕ. Prod cleanup «ТестФорма» — после TZD-44 + явное «да, чисти».
+
 ## Checkpoint 2026-08-11 — TZ-OPS-312 DONE (catalog page specs dict flush)
 - DONE: `products.page.spec.ts` + `module-detail.page.spec.ts` flush GET `/dictionary-labels` as **array**; module-detail generic leftover cleanup no longer poisons dictionary responses with `{}`.
 - Gates: focused Jest 25/25; frontend app tsc PASS; ESLint PASS; Prettier code style PASS with checkout CRLF override; `git diff --check` PASS.

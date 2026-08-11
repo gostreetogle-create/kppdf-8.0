@@ -1,0 +1,106 @@
+{
+  "integrity": {
+    "total": 55,
+    "failed": [],
+    "warnings": []
+  },
+  "module_dpost_where_used": {
+    "ok": true,
+    "path": "/api/modules/6a7b5f4fdc6ec4a9d4d87f63/where-used",
+    "result": {
+      "items": [
+        {
+          "id": "6a7b5f68dc6ec4a9d4d881b5",
+          "kind": "product",
+          "name": "Турник двойной ТД-1500",
+          "relation": "module",
+          "quantity": 1,
+          "sortOrder": 0
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "limit": 20
+    }
+  },
+  "module_dpost_composition": {
+    "ok": true,
+    "path": "/api/modules/6a7b5f4fdc6ec4a9d4d87f63/composition",
+    "result": [
+      {
+        "lineType": "material",
+        "refId": "6a79fc6964775196a9cf9537",
+        "quantity": 6,
+        "sortOrder": 0,
+        "sourceCode": "6a79fc6964775196a9cf9537",
+        "_id": "6a7b5f53dc6ec4a9d4d87fb4"
+      },
+      {
+        "lineType": "material",
+        "refId": "6a79fc6c64775196a9cf9573",
+        "quantity": 16,
+        "sortOrder": 0,
+        "sourceCode": "6a79fc6c64775196a9cf9573",
+        "_id": "6a7b5f53dc6ec4a9d4d87fc6"
+      }
+    ]
+  },
+  "product_turnik_composition": {
+    "ok": true,
+    "path": "/api/products/6a7b5f68dc6ec4a9d4d881b5/composition",
+    "result": [
+      {
+        "lineType": "module",
+        "refId": "6a7b5f4fdc6ec4a9d4d87f63",
+        "quantity": 1,
+        "sortOrder": 0,
+        "sourceCode": "6a7b5f4fdc6ec4a9d4d87f63",
+        "_id": "6a7b5f89dc6ec4a9d4d88247"
+      },
+      {
+        "lineType": "module",
+        "refId": "6a7b5f50dc6ec4a9d4d87f6f",
+        "quantity": 2,
+        "sortOrder": 0,
+        "sourceCode": "6a7b5f50dc6ec4a9d4d87f6f",
+        "_id": "6a7b5f8adc6ec4a9d4d88279"
+      }
+    ]
+  },
+  "material_shveller_where_used": {
+    "ok": true,
+    "path": "/api/materials/6a7b5f4cdc6ec4a9d4d87ed9/where-used",
+    "result": {
+      "items": [
+        {
+          "id": "6a7b5f51dc6ec4a9d4d87f8d",
+          "kind": "module",
+          "name": "Основание для турника",
+          "relation": "material",
+          "quantity": 2.4,
+          "sortOrder": 0
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "limit": 20
+    }
+  },
+  "counts": {
+    "materials": "?",
+    "products": "?",
+    "categories": "?",
+    "warehouses": 7,
+    "storage_items": "?",
+    "stock_movements": 24,
+    "counterparties": "?",
+    "persons": "?",
+    "quotations": 7,
+    "orders": 6,
+    "contracts": 1,
+    "doc_templates": 5,
+    "text_block_categories": 3,
+    "import_tasks": 2,
+    "import_todos": 5
+  }
+}
