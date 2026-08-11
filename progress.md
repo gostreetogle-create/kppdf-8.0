@@ -1,3 +1,11 @@
+## [2026-08-11] — TZ-OPS-312 READY — catalog page specs dictionary-labels flush
+**Автор:** cursor-architect
+**Статус:** READY executor; product code НЕ
+**Что:** Executable TZ на pre-existing Jest fail (`products.page.spec` open GET dictionary-labels; `module-detail` leftover `flush({})` → `data.filter` TypeError). Specs-only.
+**TZ:** `tasks/_backlog/ops/TZ-OPS-312-catalog-page-specs-dictionary-labels-flush.md`
+**Prompt:** `tasks/_backlog/ops/PROMPT-OPS-312.md`
+**NEXT:** Buffy/executor claim OPS-312; Deploy НЕ.
+
 ## [2026-08-11] — TZ-OPS-311 DONE — shared→pages BOM убран (architecture:check)
 **Исполнитель:** Buffy / freebuff executor (land Cursor→main)
 **Статус:** DONE; FE gates + archive + lock; landed on main
