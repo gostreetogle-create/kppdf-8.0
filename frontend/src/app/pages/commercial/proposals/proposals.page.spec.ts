@@ -11,6 +11,8 @@ import { CounterpartyService } from '../../../shared/services/pi-counterparty.se
 import { OrganizationsService } from '../../../shared/services/organizations.service';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../../shared/ui/toast';
+import { TableComponent } from '../../../shared/ui/pi-table.component';
+import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { API_BASE_URL } from '../../../core/api.tokens';
 
 describe('ProposalsPage (TZ-SALES-301)', () => {
@@ -172,7 +174,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
       ],
     })
       .overrideComponent(ProposalsPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [TableComponent, ButtonComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
@@ -232,6 +234,27 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(comp.total()).toBe(0);
   });
 
+  it('empty journal shows a RU create CTA that opens the Create studio', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="proposals-empty"]')).toBeTruthy();
+    const cta = fixture.nativeElement.querySelector(
+      '[data-test="empty-create-button"] button',
+    ) as HTMLButtonElement;
+    expect(cta).toBeTruthy();
+    expect(cta.textContent).toContain('Создать КП');
+
+    cta.click();
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/proposals/create'], {
+      queryParams: { new: '1' },
+    });
+  });
+
   it('handles error response gracefully', async () => {
     const fixture = TestBed.createComponent(ProposalsPage);
     fixture.detectChanges();
@@ -287,9 +310,10 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
       statusLabel: (s: string) => string;
       statusBadgeClass: (s: string) => string;
     };
-    expect(comp.statusLabel('accepted')).toBe('Оплачена');
+    expect(comp.statusLabel('accepted')).toBe('Принято');
     expect(comp.statusLabel('draft')).toBe('Черновик');
-    expect(comp.statusLabel('converted')).toBe('Преобразовано');
+    expect(comp.statusLabel('converted')).toBe('В заказе');
+    expect(comp.statusLabel('unknown' as never)).toBe('Неизвестный статус');
     expect(comp.statusBadgeClass('accepted')).toContain('pine');
     expect(comp.statusBadgeClass('draft')).toContain('muted');
   });

@@ -1,3 +1,12 @@
+## [2026-08-11T16:40:00Z] — TZ-SALES-350 DONE — журнал «Все КП» без стыда
+**Исполнитель:** Buffy / buffy-sales350
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Список «Все КП» выровнен со студией Create КП 347: `accepted` = «Принято», `converted` = «В заказе»; неизвестные коды не протекают в UI как сырой EN. Пустой журнал получил русское объяснение и явную кнопку «Создать КП» → `/proposals/create`; при пустом поиске CTA не вводит в заблуждение.
+**Gates:** FE tsc PASS; proposals.page Jest 21/21 PASS; changed TS Prettier/ESLint PASS; `git diff --check` PASS; `pnpm architecture:check` PASS; DOM self-check PASS. Root Markdown Prettier unavailable in environment.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-350.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-350-proposals-list-shame.lock`
+**NEXT:** TZ-SALES-351; deploy НЕ.
+
 ## [2026-08-11] — Adopt vibe org: ledger + task modes + architecture:check
 **Исполнитель:** cursor-architect
 **Статус:** docs + tooling on main; product code НЕ

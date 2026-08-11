@@ -52,9 +52,9 @@ const PAGE_SIZE = 10;
 const PROPOSAL_STATUS_LABELS: Record<ProposalStatus, string> = {
   draft: 'Черновик',
   sent: 'Отправлено',
-  accepted: 'Оплачена',
+  accepted: 'Принято',
   rejected: 'Отклонено',
-  converted: 'Преобразовано',
+  converted: 'В заказе',
   cancelled: 'Отменено',
 };
 
@@ -184,6 +184,7 @@ function counterpartyIdOf(row: Proposal): string {
             [page]="page()"
             [pageSize]="pageSize"
             [emptyMessage]="emptyMessage()"
+            [emptyTemplate]="emptyTemplate"
             [ariaLabel]="'Список КП'"
             [cellTemplates]="cellTemplates"
             [rowActions]="rowActionsTplBinding"
@@ -193,6 +194,29 @@ function counterpartyIdOf(row: Proposal): string {
             (pageChange)="onPageChange($event)"
             (sortChange)="onSortChange($event)"
           >
+            <ng-template #emptyTpl>
+              <div
+                class="max-w-sm mx-auto p-6 pi-dashed-panel flex flex-col items-center gap-3"
+                data-test="proposals-empty"
+              >
+                @if (searchQuery()) {
+                  <span class="text-sm">По вашему запросу КП не найдено.</span>
+                } @else {
+                  <span class="text-sm">В журнале пока нет КП.</span>
+                  <span class="text-xs text-muted-foreground"
+                    >Создайте первое коммерческое предложение.</span
+                  >
+                  <app-pi-button
+                    variant="default"
+                    data-test="empty-create-button"
+                    (click)="openCreate()"
+                  >
+                    Создать КП
+                  </app-pi-button>
+                }
+              </div>
+            </ng-template>
+
             <ng-template #counterpartyTpl let-row>
               {{ counterpartyNameOf(row) ?? '—' }}
             </ng-template>
@@ -536,13 +560,18 @@ export class ProposalsPage implements OnInit {
   private readonly familyTplRef!: TemplateRef<{ $implicit: Proposal }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Proposal }>;
+  @ViewChild('emptyTpl', { static: true })
+  private readonly emptyTplRef!: TemplateRef<unknown>;
 
   /** Built in ngOnInit after ViewChild fields resolve. Stable reference. */
   protected cellTemplates: Record<string, TemplateRef<{ $implicit: Proposal }>> = {};
+  /** Custom RU empty state with an explicit path to the Create studio. */
+  protected emptyTemplate!: TemplateRef<unknown>;
   /** Built in ngOnInit; null until then so pi-table defers the slot. */
   protected rowActionsTplBinding: TemplateRef<{ $implicit: Proposal }> | null = null;
 
   ngOnInit(): void {
+    this.emptyTemplate = this.emptyTplRef;
     this.cellTemplates = {
       counterpartyId: this.counterpartyTplRef,
       status: this.statusTplRef,
@@ -565,7 +594,7 @@ export class ProposalsPage implements OnInit {
   }
 
   protected statusLabel(status: ProposalStatus): string {
-    return PROPOSAL_STATUS_LABELS[status] ?? status;
+    return PROPOSAL_STATUS_LABELS[status] ?? 'Неизвестный статус';
   }
 
   protected statusBadgeClass(status: ProposalStatus): string {

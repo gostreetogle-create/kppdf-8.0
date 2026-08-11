@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-350 DONE: «Все КП» RU status + empty CTA
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Список «Все КП» совпадает со студией Create КП: accepted = «Принято», converted = «В заказе». Пустой журнал говорит по-русски и ведёт кнопкой «Создать КП» в `/proposals/create`; поиск без результатов не показывает ложный CTA.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-350.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-350-proposals-list-shame.lock`
+**Gates:** FE tsc; proposals.page Jest 21/21; TS Prettier/ESLint; diff-check; architecture check; DOM self-check PASS. Root Markdown Prettier unavailable.
+**NEXT:** TZ-SALES-351; deploy НЕ.
+
 ## [2026-08-11] — Org adopt (vibe): ledger + modes + architecture:check
 **Статус:** docs/tooling READY on main; deploy НЕ
 **Что:** `docs/CAPABILITY-LEDGER.md`, `docs/AGENT-TASK-MODES.md`, `pnpm architecture:check` (+ baseline 7). Executor next: `tasks/_backlog/ops/TZ-OPS-311-architecture-check-shared-bom.md`.

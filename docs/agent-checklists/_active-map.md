@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T16:40:00Z · TZ-SALES-350 DONE
+- DONE: «Все КП» RU status dictionary aligned with Create КП 347 (`accepted` = «Принято», `converted` = «В заказе»), Russian empty journal with explicit «Создать КП» CTA, search-empty copy without misleading CTA.
+- Gates: FE tsc PASS; proposals.page Jest 21/21 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; architecture check PASS; DOM self-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-350.done.md`; lock: `.mimocode/locks/TZ-SALES-350-proposals-list-shame.lock`.
+- HEAD: closeout commit pending; `_active/`: TZ-SALES-350 until commit closeout.
+- NEXT: TZ-SALES-351. Deploy НЕ.
+
 ## Checkpoint 2026-08-11 · Org adopt from vibe (docs + arch gate)
 - DONE (Cursor): capability ledger, task modes, `pnpm architecture:check` + baseline (7 keys).
 - READY executor: `tasks/_backlog/ops/TZ-OPS-311-architecture-check-shared-bom.md` (+ `PROMPT-OPS-311.md`).
