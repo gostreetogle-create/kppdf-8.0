@@ -1,3 +1,12 @@
+## [2026-08-11T18:30:00Z] — TZ-SALES-354 DONE — self-pass менеджера, WAVE-KP-SHAME-POLISH DONE
+**Исполнитель:** Buffy / buffy-sales354
+**Статус:** DONE; manager self-pass, frontend gates, archive and lock complete; deploy НЕ
+**Что:** Один проход «Все КП → Создать КП» подтвердил RU empty/status chrome, create/edit/copy/print routes, витрина/qty/modules/materials, состав/своя строка/условия, status/F5/preview. Точечно убраны legacy `strip-commerce` и `master` из подтверждений.
+**Gates:** FE tsc PASS; proposals + proposal-create + product-rail Jest 68/68 PASS; changed TS Prettier/ESLint PASS; `git diff --check` PASS; DOM self-check PASS. Browser/auth smoke unavailable headlessly.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-354.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-354-kp-manager-selfpass.lock`
+**CHECKPOINT:** WAVE-KP-SHAME-POLISH DONE; idle; готово предложить деплой; deploy НЕ.
+
 ## [2026-08-11T18:05:00Z] — TZ-SALES-353 DONE — превью A4, F5 и страницы
 **Исполнитель:** Buffy / buffy-sales353
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ

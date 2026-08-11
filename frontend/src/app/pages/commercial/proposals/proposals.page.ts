@@ -617,8 +617,8 @@ export class ProposalsPage implements OnInit {
       data: {
         title: 'Преобразовать в заказ?',
         description:
-          `Создать заказ из «${row.number}»? Позиции перейдут без цен ` +
-          `(strip-commerce), КП станет «Преобразовано».`,
+          `Создать заказ из «${row.number}»? Позиции перейдут без цен и коммерческих условий, ` +
+          `КП станет «В заказе».`,
         confirmLabel: 'В заказ',
         variant: 'default',
       },
@@ -720,7 +720,7 @@ export class ProposalsPage implements OnInit {
     const ref = this.dialog.open(AlertDialogComponent, {
       data: {
         title: 'Синхронизировать семью?',
-        description: `Перезаписать строки и familyVersion всех вариантов из master «${row.number}»?`,
+        description: `Перезаписать строки и версию семьи всех вариантов из главной КП «${row.number}»?`,
         confirmLabel: 'Синхронизировать',
         variant: 'default',
       },

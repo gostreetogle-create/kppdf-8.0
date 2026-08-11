@@ -1,6 +1,6 @@
 # WAVE-KP-SHAME-POLISH — Create КП: стыд на показе (после 348)
 
-**STATUS:** READY  
+**STATUS:** DONE
 **После:** WAVE-KP-COMPLETE (340…348 DONE) + warm deploy 2026-08-11  
 **Spec LOCK:** [`docs/ux/kp-create-studio-spec.md`](../../../docs/ux/kp-create-studio-spec.md) §0 — шелл 317 не переписывать  
 **Промпт:** [`PROMPT-KP-SHAME-CONTINUOUS.md`](./PROMPT-KP-SHAME-CONTINUOUS.md)  

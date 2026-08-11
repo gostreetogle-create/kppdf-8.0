@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T18:30:00Z · WAVE-KP-SHAME-POLISH DONE
+- DONE: TZ-SALES-350…354; manager self-pass confirms RU empty/status chrome, create/edit/copy/print navigation, vitrine qty/chips, composition/custom line/terms, status/F5 and preview pages.
+- Thin fixes 354: conversion confirmation no legacy `strip-commerce`; family sync no legacy `master`; print route regression.
+- Gates: FE tsc PASS; proposals + proposal-create + product-rail Jest 68/68 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.
+- Archives/locks: TZ-SALES-350…354 present; `_active/`: empty after 354 closeout.
+- NOT DONE: authenticated browser smoke unavailable headlessly; backend/PDF/infra unchanged.
+- NEXT: idle; ready to propose deploy; Deploy НЕ.
+
 ## Checkpoint 2026-08-11T18:05:00Z · TZ-SALES-353 DONE
 - DONE: RU preview loading/error, single-page «Страница 1», multipage «Страница 1 из N», sandboxed view-only iframe, F5 sheetLayout restoration after template hydration.
 - Gates: FE tsc PASS; proposal-create Jest 34/34 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.

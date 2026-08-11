@@ -334,6 +334,21 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     });
   });
 
+  it('opens the current proposal in the print-capable Create studio', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onPrint: (p: Proposal) => void };
+    comp.onPrint(fakeProposals[0]);
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/proposals/create'], {
+      queryParams: { id: 'p1', action: 'print' },
+    });
+  });
+
   it('onSortChange mirrors pi-table event into page sort signals + resets page', async () => {
     const fixture = TestBed.createComponent(ProposalsPage);
     fixture.detectChanges();
@@ -416,6 +431,9 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     const data = dialogSpy.open.mock.calls[0][1]?.data;
     expect(data.title).toContain('Преобразовать в заказ');
     expect(data.description).toContain('QTN-001');
+    expect(data.description).toContain('Позиции перейдут без цен и коммерческих условий');
+    expect(data.description).toContain('КП станет «В заказе»');
+    expect(data.description).not.toContain('strip-commerce');
   });
 
   it('confirmed conversion calls convertToOrder, toasts and reloads the list', async () => {
@@ -591,6 +609,8 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(dialogSpy.open).toHaveBeenCalled();
     const data = dialogSpy.open.mock.calls[0][1]?.data;
     expect(data.title).toContain('Синхронизировать');
+    expect(data.description).toContain('главной КП');
+    expect(data.description).not.toContain('master');
 
     closeSignal.set(true);
     await tickMicrotask();

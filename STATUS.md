@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-354 DONE: manager self-pass; shame wave closed
+**Статус:** WAVE-KP-SHAME-POLISH DONE on main; idle; ready to propose deploy; deploy НЕ
+**Что:** Manager walkthrough evidence covers journal/create studio/vitrine/composition/terms/status/F5/preview/copy/edit/print. Thin RU fixes removed legacy `strip-commerce` and `master` confirmation copy; print route regression added.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-354.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-354-kp-manager-selfpass.lock`
+**Gates:** FE tsc; proposals + proposal-create + product-rail Jest 68/68; TS Prettier/ESLint; diff-check; DOM self-check PASS. Browser/auth smoke unavailable headlessly.
+**NEXT:** idle; ready to propose deploy; Deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-353 DONE: preview/F5/multipage chrome
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** RU preview loading/error; single-page «Страница 1»; multipage «Страница 1 из N»; sandboxed iframe explicitly view-only; F5 restores saved sheetLayout after template hydration.
