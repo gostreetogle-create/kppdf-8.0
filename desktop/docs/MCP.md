@@ -64,7 +64,7 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
   "ok": true,
   "service": "kppdf-desktop-mcp",
   "port": 9743,
-  "toolCount": 82,
+  "toolCount": 84,
   "packageVersion": "0.1.0",
   "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
   "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
@@ -86,7 +86,7 @@ tools — **обязательно перезапустите MCP**:
 1. В Desktop: карточка «MCP — локальный доступ для AI» → **«Перезапустить»**
    (или «Остановить» → «Запустить»).
 2. Проверка: `GET http://127.0.0.1:<порт>/healthz` → `toolCount` ≥ 40
-   (актуально **82** после TZD-41) и в `toolsSample` видны `kppdf_list_categories` +
+   (актуально **84** после TZD-41/44) и в `toolsSample` видны `kppdf_list_categories` +
    `kppdf_propose_product_create`.
 3. Cursor / LM Studio: **Reload MCP** (сервер `kppdf`) — клиент кэширует tools/list.
 
@@ -509,6 +509,29 @@ Inbox-папка настраивается в десктоп-приложени
 - **TZD-15** ✅ DONE (2026-08-06) — inbox workspace: файл → аудит → propose (без записи в SoT) → confirm/cancel через журнал; `kppdf_inbox_list` / `kppdf_inbox_propose_file`; файл → processed/ или failed/ + лог; каталог в config.ts (v3).
 - **TZD-14** ✅ DONE (2026-08-06) — Tauri autostart MCP + статус/URL/копирование в UI; порт/bind в config.ts (v2); stop on quit; LAN по умолчанию OFF.
 - **TZD-05** ✅ DONE — web pairing button.
+
+## Tools — data hygiene (TZD-44)
+
+SoT на проде засмущён тестовым мусором (`fbdb`, `fhfbgf`, `6565`, `Тест ·…`,
+`ООО «ТестФорма»`). Инструменты гигиены — read-only поиск и **гейтинг**
+мягкой очистки. Канон опасных ops: `docs/ops/DANGEROUS-OPS.md`.
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_find_duplicates` | Read-only группы дублей по `name` (нормализованный) / `sku` / `inn` для `material\|product\|module\|counterparty`. Default criteria: material/product → name+sku, module → name, counterparty → name+inn. 0 мутаций. |
+| `kppdf_cleanup_test_data` | Мягкая очистка (soft-delete через **существующие** DELETE endpoints: `deletedAt`/`status=archived`). ТРЕБУЕТ `userOk:true` **и** хотя бы один фильтр (`namePrefix` \| `nameRegex` \| `ids[]` ≤100), иначе toolFail, 0 мутаций. `dryRun:true` → список кандидатов, 0 DELETE. `max` кандидатов (default 200). |
+
+### Hygiene protocol (TZD-44)
+
+1. `kppdf_find_duplicates` (entity) → группы. Человек/агент выбирает, что чистить.
+2. `kppdf_cleanup_test_data` с `dryRun:true` + фильтром → кандидаты, 0 мутаций.
+3. Показать человеку список → получить «да, чисти …» → повторить без `dryRun`
+   с `userOk:true`.
+4. Возврат: `deletedCount` / `failed[]` (404/409 — уже удалено/референсы).
+
+**Запреты:** без `userOk:true` — 0 DELETE; без фильтра (пустой cleanup) —
+toolFail; hard delete / wipe — запрещены; на проде запускать только после
+явного PO «да, чисти Тест*».
 
 ## Security
 

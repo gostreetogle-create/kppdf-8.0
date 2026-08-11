@@ -26,10 +26,10 @@ const cfg: McpRuntimeConfig = {
 };
 
 describe('MCP tool registry (TZD-31)', () => {
-  it('registry count >= 40 (fact: 82 incl. kppdf_ping + TZD-41 aliases)', () => {
+  it('registry count >= 40 (fact: 84 incl. kppdf_ping + TZD-41 aliases + TZD-44 hygiene)', () => {
     const names = listRegisteredToolNames();
     assert.ok(names.length >= 40, `toolCount ${names.length} ниже порога 40`);
-    assert.equal(names.length, 82, 'toolCount изменился — обнови MCP.md');
+    assert.equal(names.length, 84, 'toolCount изменился — обнови MCP.md');
   });
 
   it('registry includes TZD-17..30 key tools', () => {

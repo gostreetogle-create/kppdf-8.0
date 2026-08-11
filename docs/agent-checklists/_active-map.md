@@ -1,5 +1,16 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T01:20:00Z — TZD-44 DONE · WAVE-MCP-AUDIT-P0 ЗАВЕРШЕНА
+- DONE: kppdf_find_duplicates (name/sku/inn, read-only) + kppdf_cleanup_test_data
+  (userOk:true + фильтр, dryRun → 0 мутаций, soft-delete через существующие DELETE).
+  backendDeleteJson; toolCount 84; MCP.md Hygiene protocol.
+- Gates: desktop/mcp 132/132 PASS; tsc PASS. Archive `tasks/_archive/2026-08/TZD-44.done.md`;
+  lock `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`; checklist DONE; `_active/` пуст.
+- WAVE-MCP-AUDIT-P0: TZD-41→42→43→44 все DONE (commit 5de482d4, 13d8688d, 9d4d141e, next).
+- ОЧЕРЕДЬ ПУСТА: **НЕ деплой**. Готово предложить деплой. Prod cleanup «ТестФорма» —
+  после явного PO «да, чисти Тест*» (tool готов: kppdf_cleanup_test_data dryRun → userOk).
+- Park: TZD-45 production/supply read (только по PO); TZD-40 version gate (Desktop backlog).
+
 ## Checkpoint 2026-08-12T00:40:00Z — TZD-43 DONE (WAVE-MCP-AUDIT-P0 #3)
 - DONE: propose_product_create принимает categoryId (MongoId) + status
   (new|active|archived|draft) как в вебе; проброс journal payload → backend DTO →

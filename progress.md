@@ -1,3 +1,13 @@
+## [2026-08-12] — TZD-44 DONE — data hygiene tools (WAVE-MCP-AUDIT-P0 DONE)
+**Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0 #4 — волна завершена)
+**Статус:** DONE; commit+push; deploy НЕ; прод-cleanup НЕ (ждёт PO «да, чисти Тест*»)
+**Что:** `kppdf_find_duplicates` (name/sku/inn, read-only, нормализация) + `kppdf_cleanup_test_data` (гейты: userOk:true + фильтр namePrefix|nameRegex|ids[]≤100; dryRun → 0 мутаций; soft-delete через существующие DELETE endpoints; max кандидатов). backendDeleteJson; toolCount 84; MCP.md Hygiene protocol.
+**Gates:** desktop/mcp `pnpm test` 132/132 PASS; `tsc --noEmit` PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-44.done.md`
+**Checklist:** `docs/agent-checklists/TZD-44.md`
+**Lock:** `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`
+**CHECKPOINT:** WAVE-MCP-AUDIT-P0 (TZD-41→44) DONE; очередь пуста; готово предложить деплой; deploy НЕ.
+
 ## [2026-08-12] — TZD-43 DONE — propose_product_create categoryId + status
 **Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0 #3)
 **Статус:** DONE; commit+push; deploy НЕ
