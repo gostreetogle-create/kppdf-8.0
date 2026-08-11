@@ -1,3 +1,13 @@
+## [2026-08-11] — TZD-42 DONE — confirm-404 root cause + hardening
+**Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0 #2)
+**Статус:** DONE; commit+push; deploy НЕ
+**Что:** Root cause 404 («Шест для лазания») — НЕ журнал: `proposed` не удаляется (ring только applied/undone), expiry → 400, ownership → 403; 404 = невалидный id из-за парсинга §5.2 (исправлен TZD-41). Доказано: 100× propose→confirm без 404, wrong-id → 404 с id в тексте, cross-user/admin-org → 403, double-confirm → 400. MCP: confirm/cancel эхо-тят `proposalId=…` в fail + description; e2e chain-тест propose→confirm; MCP.md troubleshooting.
+**Gates:** backend `pnpm test -- mutation-journal` 26/26 PASS; desktop/mcp `pnpm test` 115/115 PASS; `tsc --noEmit` PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-42.done.md`
+**Checklist:** `docs/agent-checklists/TZD-42.md`
+**Lock:** `.mimocode/locks/TZD-42-mcp-confirm-404.lock`
+**NEXT:** TZD-43 (product categoryId/status).
+
 ## [2026-08-11] — TZD-41 DONE — MCP envelope + outputSchema + list naming canon
 **Исполнитель:** Buffy / freebuff executor (WAVE-MCP-AUDIT-P0)
 **Статус:** DONE; commit+push; deploy НЕ

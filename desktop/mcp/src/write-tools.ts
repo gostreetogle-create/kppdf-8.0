@@ -447,7 +447,10 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     'kppdf_confirm_proposal',
     {
       title: 'Confirm proposal',
-      description: 'Applies proposal via Material API and records journal entry. Response envelope (TZD-41): top-level id/proposalId.',
+      description:
+        'Applies proposal via Material API and records journal entry. Response envelope ' +
+        '(TZD-41): top-level id/proposalId. Use the proposalId returned by the propose tool ' +
+        'verbatim — on failure the message echoes the received proposalId (TZD-42).',
       inputSchema: {
         proposalId: z.string().min(1),
       },
@@ -459,7 +462,13 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
         return toolOkStructured({ ...mutationEnvelope(result), mutation: result });
       } catch (err) {
-        return toolFail('kppdf_confirm_proposal', err);
+        // TZD-42: fail текст обязан эхо-тить полученный proposalId — агент должен
+        // видеть, что confirm звал именно тот id, что вернул propose.
+        const detail = err instanceof Error ? err.message : String(err);
+        return toolFail(
+          'kppdf_confirm_proposal',
+          new Error(`proposalId=${proposalId} → ${detail} (копируйте proposalId из propose-ответа)`),
+        );
       }
     },
   );
@@ -480,7 +489,12 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
         return toolOkStructured(proposeEnvelope(result));
       } catch (err) {
-        return toolFail('kppdf_cancel_proposal', err);
+        // TZD-42: эхо полученного proposalId для диагностики (см. confirm_proposal)
+        const detail = err instanceof Error ? err.message : String(err);
+        return toolFail(
+          'kppdf_cancel_proposal',
+          new Error(`proposalId=${proposalId} → ${detail}`),
+        );
       }
     },
   );

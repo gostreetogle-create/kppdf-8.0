@@ -243,3 +243,89 @@ describe('TZD-41 envelope through registered tool handlers (mock fetch)', () => 
     }
   });
 });
+
+describe('TZD-42 propose→confirm chain + fail echo (mock fetch)', () => {
+  const cfg: McpRuntimeConfig = {
+    apiBaseUrl: 'http://127.0.0.1:3000',
+    apiKey: 'test-pairing-key',
+    host: '127.0.0.1',
+    port: 9743,
+    allowLan: false,
+  };
+
+  function installFetch(
+    handler: (url: string, method: string, body: unknown) => unknown,
+  ): () => void {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      const body = init?.body ? (JSON.parse(String(init.body)) as unknown) : undefined;
+      return new Response(JSON.stringify(handler(url, method, body)), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+    return () => {
+      globalThis.fetch = original;
+    };
+  }
+
+  async function runTool(
+    name: string,
+    args: unknown,
+  ): Promise<{ structuredContent?: Record<string, unknown>; isError?: boolean; content: Array<{ text: string }> }> {
+    const server = createKppdfMcpServer(cfg);
+    const tools = (
+      server as unknown as { _registeredTools: Record<string, { handler: (a: unknown) => Promise<unknown> }> }
+    )._registeredTools;
+    const tool = tools[name];
+    assert.ok(tool, `tool ${name} not registered`);
+    return (await tool.handler(args)) as {
+      structuredContent?: Record<string, unknown>;
+      isError?: boolean;
+      content: Array<{ text: string }>;
+    };
+  }
+
+  it('propose → top-level proposalId → confirm с тем же id (полный цикл, 0 угадываний)', async () => {
+    const urls: string[] = [];
+    const restore = installFetch((url, method, _body) => {
+      urls.push(`${method} ${url}`);
+      if (url.includes('/confirm')) {
+        return { _id: 'mutation-9', status: 'applied' };
+      }
+      return { proposalId: 'prop-chain-42', kind: 'material.create', create: { name: 'Швеллер 120×5' } };
+    });
+    try {
+      const propose = await runTool('kppdf_propose_material_create', { name: 'Швеллер 120×5' });
+      assert.equal(propose.structuredContent?.proposalId, 'prop-chain-42');
+
+      const confirm = await runTool('kppdf_confirm_proposal', {
+        proposalId: propose.structuredContent?.proposalId,
+      });
+      assert.equal(confirm.isError, undefined);
+      assert.equal(confirm.structuredContent?.id, 'mutation-9');
+      assert.ok(
+        urls.some((u) => u.includes('/api/mutation-journal/proposals/prop-chain-42/confirm')),
+        `confirm должен звать ровно proposalId из propose: ${urls.join('; ')}`,
+      );
+    } finally {
+      restore();
+    }
+  });
+
+  it('confirm fail эхо-тит полученный proposalId в тексте ошибки (TZD-42)', async () => {
+    const restore = installFetch(() => {
+      throw new Error('Not Found');
+    });
+    try {
+      const out = await runTool('kppdf_confirm_proposal', { proposalId: 'bad-id-xyz' });
+      assert.equal(out.isError, true);
+      const text = out.content[0].text;
+      assert.match(text, /proposalId=bad-id-xyz/);
+    } finally {
+      restore();
+    }
+  });
+});

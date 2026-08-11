@@ -181,6 +181,30 @@ successor (TZD-41 known_limitation).
 | `kppdf_list_text_blocks` | `kppdf_text_blocks_list` |
 | `kppdf_list_inbox` | `kppdf_inbox_list` |
 
+### Propose→confirm troubleshooting (TZD-42)
+
+Сценарий «propose OK → confirm 404»: аудит 2026-08-11 («Шест для лазания
+ШЛ-300») показал 404, но **root cause — не журнал**: proposed-записи не
+удаляются (ring чистит только applied/undone), expiry даёт 400, чужая
+собственность — 403. 404 возникает только при невалидном/чужом id — в аудите
+это был неверный парсинг вложенного `proposal.proposalId` (исправлено TZD-41:
+top-level `proposalId`).
+
+Диагностика для агента:
+
+1. **Всегда** берите `proposalId` из top-level propose-ответа (TZD-41),
+   без ручного копирования из `result`/`proposal`.
+2. При ошибке `kppdf_confirm_proposal` сообщение эхо-тит полученный
+   `proposalId=…` — сверьте, что это ровно тот id, что вернул propose.
+3. 404 = id не найден/невалиден (не ObjectId или чужая запись).
+4. 400 = proposal уже не `proposed` (applied/cancelled/expired) — повторный
+   confirm того же id даст 400, не 404.
+5. 403 = чужой пользователь/организация (ownership по actorUserId + org).
+6. Регрессия покрыта тестами: 100× propose→confirm подряд без 404
+   (backend `mutation-journal.service.spec.ts`), wrong-id → 404 с id в тексте,
+   cross-user → 403; MCP propose→confirm chain + fail echo
+   (`write-tools.test.ts`).
+
 ## Tools — read (TZD-12)
 
 | Tool | Description |

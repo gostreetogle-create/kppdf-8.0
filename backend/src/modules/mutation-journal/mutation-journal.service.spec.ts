@@ -1,4 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { MutationJournalService } from './mutation-journal.service';
 
 function buildService(opts: {
@@ -581,6 +585,133 @@ describe('MutationJournalService (TZD-13)', () => {
       user.organizationId,
     );
     expect(doc.status).toBe('applied');
+  });
+
+  // ── TZD-42: confirm-404 после propose ──────────────────────────────────────
+  // Root cause аудита §5.3 («Шест для лазания») — НЕ гонка/потеря в журнале:
+  // proposed-записи не удаляются (ring чистит только applied/undone, expiry
+  // даёт 400), владельческая проверка даёт 403, а не 404. 404 возникает только
+  // при невалидном/чужом id — в аудите это был неверный парсинг proposalId
+  // (вложенный proposal.proposalId, см. TZD-41). Тесты ниже фиксируют это.
+
+  it('100× propose→confirm подряд без 404 (TZD-42)', async () => {
+    const store = new Map<string, any>();
+    let seq = 0;
+    const create = jest.fn().mockImplementation(async () => {
+      // 20 hex prefix + 4 digits = 24-char ObjectId
+      const id = `507f1f77bcf86cd79943${String(9000 + seq)}`;
+      seq += 1;
+      const doc: any = {
+        _id: id,
+        status: 'proposed',
+        kind: 'material.create',
+        toolName: 'kppdf_propose_material_create',
+        actorUserId: user.id,
+        organizationId: user.organizationId,
+        entityType: 'Material',
+        payload: { name: `M${seq}`, unit: 'шт' },
+        expiresAt: new Date(Date.now() + 60_000),
+        save: jest.fn().mockResolvedValue(undefined),
+      };
+      store.set(id, doc);
+      return doc;
+    });
+    const findById = jest.fn().mockImplementation((id: string) => ({
+      exec: jest.fn().mockResolvedValue(store.get(id) ?? null),
+    }));
+    const materialsCreate = jest.fn().mockImplementation((p: any) =>
+      Promise.resolve({
+        _id: '507f1f77bcf86cd799439999',
+        name: p.name,
+        toObject: () => ({ _id: '507f1f77bcf86cd799439999', name: p.name }),
+      }),
+    );
+    const { service } = buildService({ create, findById, materialsCreate });
+
+    for (let i = 0; i < 100; i++) {
+      const view = await service.propose(
+        { kind: 'material.create', create: { name: `M${i}` } },
+        user,
+      );
+      expect(view.proposalId).toBeTruthy();
+      const confirmed = await service.confirm(view.proposalId, user);
+      expect(confirmed.status).toBe('applied');
+      expect(confirmed.mutationId).toBe(view.proposalId);
+    }
+    expect(create).toHaveBeenCalledTimes(100);
+    expect(store.size).toBe(100);
+  });
+
+  it('confirm с невалидным id → 404 с id в сообщении (TZD-42)', async () => {
+    const { service } = buildService();
+    await expect(service.confirm('not-an-object-id', user)).rejects.toMatchObject({
+      constructor: NotFoundException,
+      message: expect.stringContaining('not-an-object-id'),
+    });
+  });
+
+  it('confirm отсутствующего (валидного) id → 404 с id в сообщении (TZD-42)', async () => {
+    const { service } = buildService({ findByIdDoc: null });
+    const id = '507f1f77bcf86cd799439999';
+    await expect(service.confirm(id, user)).rejects.toMatchObject({
+      constructor: NotFoundException,
+      message: expect.stringContaining(id),
+    });
+  });
+
+  it('confirm чужим пользователем → 403 Forbidden, НЕ 404 (TZD-42)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'material.create',
+      toolName: 't',
+      actorUserId: '507f1f77bcf86cd7994390FF', // чужой actor
+      organizationId: user.organizationId,
+      entityType: 'Material',
+      payload: { name: 'Oak', unit: 'шт' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service } = buildService({ findByIdDoc: doc });
+    await expect(
+      service.confirm('507f1f77bcf86cd799439033', user),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('confirm admin чужой организации → 403 Forbidden, НЕ 404 (TZD-42)', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439033',
+      status: 'proposed',
+      kind: 'material.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: '507f1f77bcf86cd7994390AA', // чужая организация
+      entityType: 'Material',
+      payload: { name: 'Oak', unit: 'шт' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const admin = { ...user, role: 'admin' };
+    const { service } = buildService({ findByIdDoc: doc });
+    await expect(
+      service.confirm('507f1f77bcf86cd799439033', admin),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('double-confirm (уже applied) → 400, не 404 (TZD-42)', async () => {
+    const { service } = buildService({
+      findByIdDoc: {
+        _id: '507f1f77bcf86cd799439033',
+        status: 'applied',
+        actorUserId: user.id,
+        organizationId: user.organizationId,
+      },
+    });
+    await expect(service.confirm('507f1f77bcf86cd799439033', user)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('enforceRing deletes overflow', async () => {

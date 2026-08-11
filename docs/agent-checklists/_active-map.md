@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T23:55:00Z — TZD-42 DONE (WAVE-MCP-AUDIT-P0 #2)
+- DONE: root cause confirm-404 = неверный id из парсинга §5.2 (TZD-41 fix), журнал sound.
+  Доказано тестами: 100× propose→confirm без 404; wrong-id → 404 с id; cross-user/admin-org
+  → 403; double-confirm → 400. MCP: confirm/cancel эхо-тят proposalId в fail; e2e chain-тест;
+  MCP.md troubleshooting. Backend product-code не менялся (только spec).
+- Gates: backend mutation-journal 26/26 PASS; desktop/mcp 115/115 PASS; tsc PASS.
+- Archive `tasks/_archive/2026-08/TZD-42.done.md`; lock `.mimocode/locks/TZD-42-mcp-confirm-404.lock`;
+  checklist DONE; `_active/` пуст.
+- NEXT: **TZD-43** product categoryId/status. Deploy НЕ.
+
 ## Checkpoint 2026-08-11T23:10:00Z — TZD-41 DONE (WAVE-MCP-AUDIT-P0 #1)
 - DONE: envelope-канон `{ ok, result, id?, proposalId? }` + structuredContent; propose →
   top-level proposalId (фикс §5.2); SoT-create → top-level id; naming canon `kppdf_list_*`
