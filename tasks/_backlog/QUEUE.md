@@ -10,12 +10,11 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | Warm deploy | `deploy/synology/README.md` | OPS-310 + AUTH-302 code green — ждать **«деплой»** (без wipe) |
-| — | AUTH-302 | archive code DONE | на проде заработает после выката (CSP) |
-| — | OPS-310 | archive DONE | gate green |
-| — | KP-COMPLETE | 348 DONE | coding idle |
+| — | Coding queue | — | **idle** (KP-COMPLETE, OPS-310, AUTH-302+JWT hotfix на проде) |
+| — | Perf photos | `perf/WAVE-PERF-PHOTOS.md` | DONE (specs в backlog — история) |
 
-**Канон сейчас:** ждать **«деплой»**. После выката: Basic `kppdf` → `/login` → **admin** (другой пароль из CREDENTIALS). Wipe запрещён без русского подтверждения.
+**Канон сейчас:** нет READY TZ для исполнителя. Новый кусок — только по слову PO (напишите Cursor: «напиши TZ / очередь на …»).  
+Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).
 
 ## Не брать
 

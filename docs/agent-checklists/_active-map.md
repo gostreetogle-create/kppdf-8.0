@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Coding queue idle — no READY TZ for agent
+- KP / OPS-310 / AUTH-302+JWT hotfix on prod; `_active/` empty.
+- Perf photo wave already DONE; leftover specs in `_backlog/perf` are history.
+- NEXT: PO names theme → Cursor writes TZ/QUEUE → then agent gets `PROMPT-RESUME-ANY`.
+- Do NOT paste RESUME-ANY into idle agent expecting product work — will stop at empty READY.
+
 ## Checkpoint 2026-08-11 · Hotfix: JWT via X-Access-Token (Basic Auth coexist)
 - DONE: nginx Basic uses `Authorization`; SPA JWT moved to `X-Access-Token`; Nest accepts both.
 - Redeployed warm `50fe342b`. Smoke: Basic+X-Access-Token `/auth/me` = 200; Bearer-only = nginx 401 (expected).
