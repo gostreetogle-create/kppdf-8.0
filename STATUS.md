@@ -1,11 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
-## [2026-08-11] — TZ-OPS-312 READY: catalog page specs dictionary-labels flush
-**Статус:** READY executor; deploy НЕ
-**Что:** Pre-existing Jest: `products.page.spec` (~21) open `GET /dictionary-labels?scope=productKind`; `module-detail.page.spec` (~3) leftover `flush({})` → `result.data.filter` TypeError. Specs-only fix.
-**TZ:** `tasks/_backlog/ops/TZ-OPS-312-catalog-page-specs-dictionary-labels-flush.md`
-**Prompt:** `tasks/_backlog/ops/PROMPT-OPS-312.md`
-**NEXT:** claim OPS-312; Deploy НЕ.
+## [2026-08-11] — TZ-OPS-312 DONE: catalog page specs dictionary-labels flush
+**Статус:** DONE; specs-only harness fix; deploy НЕ
+**Workspace:** Freebuff worktree landed on `origin/main`; canonical target `D:\kppdf-8.0`
+**Что:** Products and module-detail page specs now flush every pending GET `/dictionary-labels` request with array-shaped data; generic cleanup cannot send `{}` to the dictionary service.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-312.done.md`
+**Checklist:** `docs/agent-checklists/TZ-OPS-312.md`
+**Lock:** `.mimocode/locks/TZ-OPS-312-catalog-specs-dict-flush.lock`
+**Gates:** focused Jest 25/25; frontend app tsc; ESLint; Prettier code style PASS with checkout CRLF override; `git diff --check` PASS.
+**NEXT:** idle; Deploy НЕ.
 
 ## [2026-08-11] — TZ-OPS-311 DONE: shared→pages BOM убран (architecture:check)
 **Статус:** DONE on main (landed); gates green; archive + lock; deploy НЕ

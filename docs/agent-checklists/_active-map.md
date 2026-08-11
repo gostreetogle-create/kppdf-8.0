@@ -1,11 +1,11 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-11 — TZ-OPS-312 READY (catalog page specs dict flush)
-- READY executor: `tasks/_backlog/ops/TZ-OPS-312-catalog-page-specs-dictionary-labels-flush.md`
-- Prompt: `tasks/_backlog/ops/PROMPT-OPS-312.md`
-- Scope: `products.page.spec.ts` + `module-detail.page.spec.ts` only — flush `GET /dictionary-labels` as **array**; stop leftover `flush({})` poison.
-- Evidence: 24 fail / dictionary-labels open request + `result.data.filter` TypeError (pre-existing vs OPS-311).
-- NEXT: claim OPS-312 → green Jest both suites → archive+push origin/main. Deploy НЕ.
+## Checkpoint 2026-08-11 — TZ-OPS-312 DONE (catalog page specs dict flush)
+- DONE: `products.page.spec.ts` + `module-detail.page.spec.ts` flush GET `/dictionary-labels` as **array**; module-detail generic leftover cleanup no longer poisons dictionary responses with `{}`.
+- Gates: focused Jest 25/25; frontend app tsc PASS; ESLint PASS; Prettier code style PASS with checkout CRLF override; `git diff --check` PASS.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-312.done.md`; lock: `.mimocode/locks/TZ-OPS-312-catalog-specs-dict-flush.lock`; checklist DONE; `_active/` cleared.
+- Landed on `origin/main`; deploy НЕ.
+- Known limitation: other page-specs with leftover `flush({})` remain out of scope.
 
 ## Checkpoint 2026-08-11 — TZ-OPS-311 DONE (shared→pages BOM убран)
 - DONE (Buffy/freebuff → landed main): BOM panel + picker → `shared/ui/composition`; quick-create без `pages/*`; module/material edit в панели — lazy dynamic imports; callers (products/modules/proposal rail) обновлены.

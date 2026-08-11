@@ -70,6 +70,14 @@ const PRODUCTS: Product[] = [
 const matchListGet = (r: { url: string; method: string }): boolean =>
   r.url === listUrl && r.method === 'GET';
 
+function flushDictionaryLabels(httpMock: HttpTestingController): void {
+  const requests = httpMock.match(
+    (request) =>
+      request.method === 'GET' && request.urlWithParams.startsWith(`${baseUrl}/dictionary-labels`),
+  );
+  for (const request of requests) request.flush([]);
+}
+
 async function tickMicrotask(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 0));
 }
@@ -177,6 +185,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       page: 1,
       limit: 10,
     });
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
     return fixture;
@@ -460,6 +471,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     });
     await tickMicrotask();
     fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
     // Panel must sit outside the dimmed content column (not under backdrop).
@@ -525,6 +539,9 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     const fixture = TestBed.createComponent(ProductsPage);
     fixture.detectChanges();
     httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
 

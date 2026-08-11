@@ -1,0 +1,11 @@
+# Lock file
+Locked as of 2026-08-11 — TZ-OPS-312: catalog page specs dictionary-labels flush.
+
+Owner: Buffy / buffy-ops-312
+Protected files:
+- frontend/src/app/pages/products/products.page.spec.ts
+- frontend/src/app/pages/modules/module-detail.page.spec.ts
+
+Unlock: only via orchestrator approval (successor TZ-OPS-312).
+Verification: focused Jest 25/25, frontend app tsc PASS, ESLint PASS, Prettier code style PASS with checkout CRLF override.
+Deploy: NOT RUN.

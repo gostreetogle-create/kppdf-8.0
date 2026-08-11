@@ -19,6 +19,14 @@ async function tickMicrotask(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 0));
 }
 
+function flushDictionaryLabels(httpMock: HttpTestingController): void {
+  const requests = httpMock.match(
+    (request) =>
+      request.method === 'GET' && request.urlWithParams.startsWith('/api/dictionary-labels'),
+  );
+  for (const request of requests) request.flush([]);
+}
+
 describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
   let fixture: ComponentFixture<ModuleDetailPage>;
   let httpMock: HttpTestingController;
@@ -111,9 +119,16 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
     for (const req of appearance) req.flush({});
     await tickMicrotask();
     fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
   });
 
   afterEach(() => {
+    flushDictionaryLabels(httpMock);
     const leftover = httpMock.match(() => true);
     for (const req of leftover) req.flush({});
     httpMock.verify();
