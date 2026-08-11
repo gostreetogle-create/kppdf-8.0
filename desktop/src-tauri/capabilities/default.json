@@ -34,6 +34,18 @@
       "allow": [
         {
           "name": "node",
+          "cmd": "C:\\Program Files\\nodejs\\node.exe",
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "node",
+          "cmd": "C:\\Program Files (x86)\\nodejs\\node.exe",
+          "args": true,
+          "sidecar": false
+        },
+        {
+          "name": "node",
           "cmd": "node",
           "args": true,
           "sidecar": false

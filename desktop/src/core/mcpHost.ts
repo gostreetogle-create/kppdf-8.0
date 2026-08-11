@@ -11,8 +11,11 @@
 
 import { Command, type Child } from '@tauri-apps/plugin-shell';
 import { dirname, join, resourceDir } from '@tauri-apps/api/path';
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { exists, readTextFile } from '@tauri-apps/plugin-fs';
 import { DEFAULT_MCP_PORT } from './config';
+
+/** Сколько ждать /healthz после spawn (tsx cold-start на Windows бывает >10с). */
+const HEALTHZ_WAIT_MS = 45_000;
 
 export type McpHostStatus = 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
 
@@ -126,6 +129,44 @@ async function readPackageNameAt(hostDir: string): Promise<string | null> {
   }
 }
 
+/**
+ * GUI/Start Menu на Windows часто даёт урезанный PATH → `node` не находится.
+ * Ищем типичные пути установки Node.
+ */
+export async function resolveNodeExecutable(): Promise<string> {
+  const candidates = [
+    'C:\\Program Files\\nodejs\\node.exe',
+    'C:\\Program Files (x86)\\nodejs\\node.exe',
+  ];
+  for (const p of candidates) {
+    try {
+      if (await exists(p)) return p;
+    } catch {
+      /* continue */
+    }
+  }
+  return 'node';
+}
+
+/** Env для child: не затирать PATH/SystemRoot (иначе tsx/node падают молча). */
+function childEnv(extra: Record<string, string>): Record<string, string> {
+  const pathKey = 'Path';
+  const machine =
+    typeof (globalThis as { process?: { env?: Record<string, string> } }).process?.env?.[pathKey] ===
+    'string'
+      ? (globalThis as { process: { env: Record<string, string> } }).process.env[pathKey]
+      : '';
+  const nodeDir = 'C:\\Program Files\\nodejs';
+  const mergedPath = [nodeDir, machine, 'C:\\Windows\\System32'].filter(Boolean).join(';');
+  return {
+    ...extra,
+    Path: mergedPath,
+    PATH: mergedPath,
+    SYSTEMROOT: 'C:\\Windows',
+    SystemRoot: 'C:\\Windows',
+  };
+}
+
 export class McpHostController {
   private state: McpHostState = {
     status: 'stopped',
@@ -224,10 +265,11 @@ export class McpHostController {
     try {
       const cli = await join(hostDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
       const entry = await join(hostDir, 'src', 'http-server.ts');
-
+      const nodeBin = await resolveNodeExecutable();
+      // Command.create name must match shell scope (`node`); absolute cmd is in capabilities.
       const cmd = Command.create('node', [cli, entry], {
         cwd: hostDir,
-        env: {
+        env: childEnv({
           KPPDF_API_BASE_URL: opts.apiBaseUrl,
           KPPDF_API_KEY: opts.apiKey,
           KPPDF_MCP_PORT: String(opts.port),
@@ -239,7 +281,9 @@ export class McpHostController {
                 KPPDF_HTTP_BASIC_PASS: opts.basicAuth.password ?? '',
               }
             : {}),
-        },
+          // Hint for scopes that resolve `node` via PATH:
+          ...(nodeBin !== 'node' ? { KPPDF_NODE_BIN: nodeBin } : {}),
+        }),
       });
 
       cmd.on('error', (message) => {
@@ -278,7 +322,7 @@ export class McpHostController {
       this.child = child;
       this.setState({ pid: child.pid });
 
-      // Подтверждаем running по /healthz (максимум ~10 c).
+      // Подтверждаем running по /healthz (tsx cold-start может быть долгим).
       const healthy = await this.waitForHealth(opts.port, gen);
       if (gen !== this.generation || !this.expectedRunning) return;
       if (healthy) {
@@ -288,12 +332,16 @@ export class McpHostController {
         // Инвалидируем поколение ДО kill: close-событие от нашего kill
         // не должно перезаписать статус error на stopped.
         this.generation += 1;
+        const tail = this.stderrTail.filter(Boolean).join(' · ').slice(0, 400);
         await this.killChild();
         this.setState({
           status: 'error',
           lastError:
-            `MCP host не ответил на /healthz в течение 10 секунд. ` +
-            `Проверьте, что порт ${opts.port} свободен и Node.js установлен.`,
+            `MCP host не ответил на /healthz за ${Math.round(HEALTHZ_WAIT_MS / 1000)} с ` +
+            `(порт ${opts.port}, каталог «${hostDir}», node «${nodeBin}»). ` +
+            (tail
+              ? `Лог: ${tail}`
+              : 'Проверьте Node.js и что в каталоге есть node_modules/tsx.'),
         });
       }
     } catch (err) {
@@ -369,7 +417,7 @@ export class McpHostController {
   }
 
   private async waitForHealth(port: number, gen: number): Promise<boolean> {
-    const deadline = Date.now() + 10_000;
+    const deadline = Date.now() + HEALTHZ_WAIT_MS;
     while (Date.now() < deadline) {
       if (gen !== this.generation) return false;
       try {
