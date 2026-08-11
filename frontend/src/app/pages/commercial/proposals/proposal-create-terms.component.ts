@@ -153,7 +153,9 @@ const TERM_VARIABLES = [
       }
 
       @if (terms().length === 0) {
-        <p class="terms__empty">Добавьте первое условие или возьмите заготовку из библиотеки.</p>
+        <p class="terms__empty" data-test="kp-terms-empty">
+          Добавьте первое условие или возьмите заготовку из библиотеки.
+        </p>
       }
       <app-pi-button
         type="button"
@@ -161,6 +163,7 @@ const TERM_VARIABLES = [
         size="sm"
         [disabled]="readOnly()"
         data-test="kp-terms-add"
+        ariaLabel="Добавить условие"
         (click)="add()"
         >Добавить условие…</app-pi-button
       >

@@ -39,6 +39,18 @@ describe('ProposalCreateTermsComponent', () => {
     fixture.detectChanges();
   });
 
+  it('shows the Russian empty state and an explicit add-condition CTA', () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-terms-empty"]')?.textContent,
+    ).toContain('Добавьте первое условие');
+    const addButton = fixture.nativeElement.querySelector(
+      '[data-test="kp-terms-add"] button',
+    ) as HTMLButtonElement | null;
+    expect(addButton).toBeTruthy();
+    expect(addButton?.textContent).toContain('Добавить условие');
+    expect(addButton?.getAttribute('aria-label')).toBe('Добавить условие');
+  });
+
   it('adds, reorders, and removes conditions through one output', () => {
     const component = fixture.componentInstance as unknown as {
       add: (text?: string) => void;

@@ -100,7 +100,7 @@ export type ProposalCreateStatus = ProposalStatus;
               data-test="kp-unlock-paid"
               (click)="statusRequest.emit('draft')"
             >
-              Снять «Оплачена»
+              Снять «Принято»
             </app-pi-button>
           } @else if (statusOptions().length > 0) {
             <select

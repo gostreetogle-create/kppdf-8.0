@@ -213,6 +213,18 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   </button>
                 }
                 @if (previewStatus() === 'ready' && !isVersionView()) {
+                  @if (!hasDraftId()) {
+                    <button
+                      type="button"
+                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                      data-test="kp-create-order"
+                      disabled
+                      aria-label="Создать заказ можно после сохранения и принятия КП"
+                      title="Сначала сохраните КП, затем переведите его в статус «Принято»"
+                    >
+                      Создать заказ
+                    </button>
+                  }
                   @if (hasDraftId()) {
                     <button
                       type="button"
@@ -252,24 +264,35 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                         }
                       </div>
                     }
-                    @if (proposalStatus() === 'accepted') {
+                    @if (hasDraftId()) {
                       <button
                         type="button"
                         class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
                         data-test="kp-create-order"
+                        [disabled]="proposalStatus() !== 'accepted' || isVersionView()"
+                        [attr.aria-label]="
+                          proposalStatus() === 'accepted'
+                            ? 'Создать заказ из принятого КП'
+                            : 'Создать заказ можно после принятия КП'
+                        "
+                        [title]="
+                          proposalStatus() === 'accepted'
+                            ? 'Создать заказ из принятого КП'
+                            : 'Сначала переведите КП в статус «Принято»'
+                        "
                         (click)="createOrder()"
                       >
                         Создать заказ
                       </button>
+                      <button
+                        type="button"
+                        class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
+                        data-test="kp-duplicate"
+                        (click)="duplicateCurrent()"
+                      >
+                        Копировать КП
+                      </button>
                     }
-                    <button
-                      type="button"
-                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                      data-test="kp-duplicate"
-                      (click)="duplicateCurrent()"
-                    >
-                      Копировать КП
-                    </button>
                   }
                   <div class="relative ml-auto">
                     <button
@@ -483,6 +506,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   [readOnly]="isReadOnly()"
                   (lineChange)="onCompositionLineChange($event)"
                   (addCustom)="addCustomLine()"
+                  (openProducts)="openProductsTool()"
                   (remove)="removeCompositionLine($event)"
                   (duplicate)="duplicateCompositionLine($event)"
                   (move)="moveCompositionLine($event)"
@@ -1568,6 +1592,12 @@ export class ProposalCreatePage implements OnInit {
     this.rightOpen.set(false);
   }
 
+  protected openProductsTool(): void {
+    if (this.isReadOnly()) return;
+    this.leftTool.set('products');
+    this.rightOpen.set(false);
+  }
+
   protected onInspectorState(state: ProposalCreateInspectorState): void {
     if (this.isReadOnly()) return;
     const nextOrganization = (state.organizationId ?? '').trim();
@@ -1710,7 +1740,14 @@ export class ProposalCreatePage implements OnInit {
   protected onCompositionLineChange(change: ProposalCompositionLineChange): void {
     if (this.isReadOnly()) return;
     this.draftLines.update((rows) =>
-      rows.map((line, index) => (index === change.index ? { ...line, ...change.patch } : line)),
+      rows.map((line, index) => {
+        if (index !== change.index) return line;
+        const patch =
+          line.lineKind === 'custom' && change.patch.productName !== undefined
+            ? { ...change.patch, productName: change.patch.productName.trim() || 'Своя строка' }
+            : change.patch;
+        return { ...line, ...patch };
+      }),
     );
     this.refreshComposition();
   }

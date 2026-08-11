@@ -53,6 +53,16 @@ export interface ProposalCompositionLineChange {
           <span class="text-xs text-muted-foreground"
             >Здесь появятся позиции, количество и итог.</span
           >
+          <app-pi-button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-test="kp-composition-open-products"
+            [disabled]="readOnly()"
+            (click)="openProducts.emit()"
+          >
+            Открыть «Товары»
+          </app-pi-button>
         </div>
       } @else {
         <div class="composition__list" data-test="kp-composition-lines">
@@ -63,7 +73,7 @@ export interface ProposalCompositionLineChange {
                   @if (line.photoUrl) {
                     <img
                       [src]="line.photoUrl"
-                      [alt]="line.productName"
+                      [alt]="line.productName || 'Своя строка'"
                       class="composition__photo"
                     />
                   } @else {
@@ -72,7 +82,10 @@ export interface ProposalCompositionLineChange {
                     >
                   }
                   <div class="composition__name-wrap">
-                    <strong>{{ line.productName }}</strong>
+                    <strong>{{
+                      line.productName ||
+                        (line.lineKind === 'custom' ? 'Своя строка' : 'Без названия')
+                    }}</strong>
                     <span
                       >Арт: {{ line.productSku || '—' }} · База: {{ price(line.unitPrice) }}</span
                     >
@@ -420,6 +433,7 @@ export class ProposalCreateCompositionComponent {
   readonly readOnly = input(false);
   readonly lineChange = output<ProposalCompositionLineChange>();
   readonly addCustom = output<void>();
+  readonly openProducts = output<void>();
   readonly remove = output<number>();
   readonly duplicate = output<number>();
   readonly move = output<{ index: number; direction: -1 | 1 }>();
@@ -467,7 +481,9 @@ export class ProposalCreateCompositionComponent {
   protected nameChanged(index: number, event: Event): void {
     this.lineChange.emit({
       index,
-      patch: { productName: (event.target as HTMLInputElement).value.trim() },
+      patch: {
+        productName: (event.target as HTMLInputElement).value.trim() || 'Своя строка',
+      },
     });
   }
 

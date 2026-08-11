@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11T17:20:00Z · TZ-SALES-352 DONE
+- DONE: Empty «Состав КП» → «Открыть «Товары»», custom blank name → «Своя строка», terms empty → «Добавить условие», status chrome canonical «Принято», visible disabled «Создать заказ» with RU reason.
+- Gates: FE tsc PASS; proposal-create + terms Jest 36/36 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-352.done.md`; lock: `.mimocode/locks/TZ-SALES-352-kp-compose-terms-shame.lock`.
+- HEAD: closeout commit pending; `_active/`: TZ-SALES-352 until commit closeout.
+- NEXT: TZ-SALES-353. Deploy НЕ.
+
 ## Checkpoint 2026-08-11T16:58:00Z · TZ-SALES-351 DONE
 - DONE: витрина Create КП получила RU empty-подсказки для пустого вида/поиска, search сохраняется при смене chip, qty clamp ≥1 с дробными материалами, badge считается из актуального `draftLines`.
 - Gates: FE tsc PASS; proposal-product-rail Jest 12/12 PASS; changed TS Prettier/ESLint PASS; diff-check PASS; DOM self-check PASS.

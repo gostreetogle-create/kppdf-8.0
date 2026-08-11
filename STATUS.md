@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — TZ-SALES-352 DONE: composition/terms/status chrome
+**Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Empty «Состав КП» ведёт в «Товары», пустая «Своя строка» получает русское имя, «Условия» имеют явный «Добавить условие», status chrome использует «Принято», а «Создать заказ» объясняет disabled до принятия.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-352.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-352-kp-compose-terms-shame.lock`
+**Gates:** FE tsc; proposal-create + terms Jest 36/36; TS Prettier/ESLint; diff-check; DOM self-check PASS.
+**NEXT:** TZ-SALES-353; deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-351 DONE: витрина Create КП edge polish
 **Статус:** DONE on main; frontend gates, archive and lock complete; deploy НЕ
 **Что:** Пустые виды/поиск в витрине объясняют следующий шаг по-русски; поиск сохраняется при смене chip; qty ниже 1 нормализуется в 1, дробные значения материалов сохраняются; «В КП» остаётся производным от draftLines.

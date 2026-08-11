@@ -941,6 +941,13 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-composition-panel"]'))).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Добавьте изделия из панели «Товары».');
+    fixture.debugElement
+      .query(By.css('[data-test="kp-composition-open-products"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeTruthy();
+    page.toggleRightPane('composition');
+    fixture.detectChanges();
 
     page.onProductAdd({
       productId: 'prod-1',
@@ -1037,6 +1044,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
     page.addCustomLine();
+    expect(page.draftLines()[0].productName).toBe('');
     page.onCompositionLineChange({
       index: 0,
       patch: {
@@ -1103,9 +1111,31 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('[data-test="kp-download-menu"]'))).toBeTruthy();
+    const createOrder = fixture.debugElement.query(By.css('[data-test="kp-create-order"]'))
+      .nativeElement as HTMLButtonElement;
+    expect(createOrder.disabled).toBe(true);
+    expect(createOrder.title).toContain('Принято');
     expect(fixture.nativeElement.textContent).toContain('PDF');
     expect(fixture.nativeElement.textContent).toContain('Печать');
     expect(fixture.nativeElement.textContent).toContain('Сохранить в архив документов');
+  }));
+
+  it('uses the canonical Принято label in the inspector unlock action', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+      toggleRightPane: (pane: 'params') => void;
+      proposalStatus: { set: (value: 'accepted') => void };
+      autosaveLabel: { set: (value: string) => void };
+    };
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    page.autosaveLabel.set('Сохранено');
+    page.proposalStatus.set('accepted');
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Снять «Принято»');
+    expect(fixture.nativeElement.textContent).not.toContain('Снять «Оплачена»');
   }));
 
   it('persists recipient references and sends them to build', fakeAsync(() => {

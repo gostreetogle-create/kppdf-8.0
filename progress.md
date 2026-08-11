@@ -1,3 +1,12 @@
+## [2026-08-11T17:20:00Z] — TZ-SALES-352 DONE — chrome состава, условий и статуса
+**Исполнитель:** Buffy / buffy-sales352
+**Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
+**Что:** Empty «Состав КП» ведёт в «Товары» и нормализует пустую «Своя строка»; «Условия» имеют явный «Добавить условие»; status chrome использует «Принято», а «Создать заказ» видим и объясняет disabled до принятия.
+**Gates:** FE tsc PASS; proposal-create + terms Jest 36/36 PASS; changed TS Prettier/ESLint PASS; `git diff --check` PASS; DOM self-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-352.done.md`
+**Lock:** `.mimocode/locks/TZ-SALES-352-kp-compose-terms-shame.lock`
+**NEXT:** TZ-SALES-353; deploy НЕ.
+
 ## [2026-08-11T16:58:00Z] — TZ-SALES-351 DONE — витрина Create КП без краевых ловушек
 **Исполнитель:** Buffy / buffy-sales351
 **Статус:** DONE; frontend gates, archive and lock complete; deploy НЕ
