@@ -43,6 +43,8 @@
 
 \* «READY» = можно вести данные **этого** раздела; не значит, что весь ERP готов.
 
+**Способности продукта (included / available / absent / removed):** см. [`CAPABILITY-LEDGER.md`](./CAPABILITY-LEDGER.md) — дополняет эту таблицу, не заменяет.
+
 ---
 
 ## 2. Склад — критерий READY TO USE

@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Org adopt from vibe (docs + arch gate)
+- DONE (Cursor): capability ledger, task modes, `pnpm architecture:check` + baseline (7 keys).
+- READY executor: `tasks/_backlog/ops/TZ-OPS-311-architecture-check-shared-bom.md` (+ `PROMPT-OPS-311.md`).
+- Also READY: WAVE-KP-SHAME-POLISH 350→354 if PO prioritizes KP.
+- Deploy НЕ unless PO «деплой».
+
 ## Checkpoint 2026-08-11 · Warm deploy DONE (99395585 — Desktop Basic Auth coexist)
 - Deploy: WIPE=false OK; Auth login OK; Frontend 200; Desktop installer published to `/downloads/`.
 - Includes: pairing revoke hard-delete + Copy next to Issue; Nest/Desktop X-Access-Token + Basic fields.

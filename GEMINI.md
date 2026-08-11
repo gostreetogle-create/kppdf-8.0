@@ -82,6 +82,10 @@ cd backend && pnpm lint
 
 Перед финализацией проверь diff и исправь critical/important review issues.
 
+Режимы задачи и primary/secondary signal: `docs/AGENT-TASK-MODES.md`.
+Способности продукта: `docs/CAPABILITY-LEDGER.md` (`absent`/`removed` не строить без PO).
+Границы импортов: `pnpm architecture:check` (не раздувай baseline без причины).
+
 ## Архивация
 
 Root task из `tasks/` архивируй в `tasks/_archive/YYYY-MM/<TASK-ID>.done.md`. Для невозможности завершения используй `.blocked.md`, `.failed.md` или `.deferred.md`. Не перезаписывай исторические или superseded-архивы.

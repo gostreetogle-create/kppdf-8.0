@@ -34,6 +34,8 @@
 
 ---
 
+**Обязательно в том же PR:** обновить [`CAPABILITY-LEDGER.md`](./CAPABILITY-LEDGER.md), если добавил/снял продуктовую способность (строка `included`/`available`/`absent`/`removed`).
+
 ## A. Новая страница / route (UI)
 
 - [ ] `frontend/src/app/app.routes.ts` — lazy route + `data.capabilities` / guards по контракту

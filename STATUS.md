@@ -1,5 +1,10 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-11] — Org adopt (vibe): ledger + modes + architecture:check
+**Статус:** docs/tooling READY on main; deploy НЕ
+**Что:** `docs/CAPABILITY-LEDGER.md`, `docs/AGENT-TASK-MODES.md`, `pnpm architecture:check` (+ baseline 7). Executor next: `tasks/_backlog/ops/TZ-OPS-311-architecture-check-shared-bom.md`.
+**NEXT:** OPS-311 (optional) или WAVE-KP-SHAME-POLISH; deploy только по PO.
+
 ## [2026-08-11] — TZ-OPS-310 DONE: server harden (deploy gate green)
 **Статус:** DONE on main; evidence + archive + lock; deploy НЕ
 **Что:** VPN OFF. SUID/SGID inventory VPS+VM; Basic Auth 401/200; htpasswd 640; tunnel+LAN health; UFW 22/80/443. REVIEW: VPS :4200 listen on 0.0.0.0 but UFW closed.

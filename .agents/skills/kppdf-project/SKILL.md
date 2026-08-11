@@ -26,6 +26,8 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
    `docs/AI-AGENT-GUIDE.md`, **`docs/PO-DIARY.md` §1–§4**, `docs/DEVELOPMENT-PATTERNS.md`.
 3. Для TZ-flow прочитать `OrchestratorKit/AGENTS.md` и
    `OrchestratorKit/_templates/TZF-00.txt`.
+3a. Сверить `docs/CAPABILITY-LEDGER.md` и выбрать mode в
+    `docs/AGENT-TASK-MODES.md` (primary vs secondary signal).
 4. Проверить `git status`, worktree, активные TZ, архивы и conflict keys.
 5. **CLAIM:** `tasks/_active/<TASK-ID>.md` + checklist Status CLAIMED + Claim slot
    (`agent_id`, `claimed_at` ISO) по `docs/agent-checklists/_TEMPLATE.md`
@@ -95,6 +97,8 @@ cd frontend && pnpm lint
 cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
 cd backend && pnpm test
 cd backend && pnpm lint
+
+pnpm architecture:check
 ```
 
 Для документной задачи проверь Markdown/diff и зафиксируй, почему кодовые

@@ -28,6 +28,8 @@
 | Домен сущности (схема) | `docs/data-model.md` + **живая schema** в `backend/src/modules/<x>/` (схема побеждает) |
 | UI-страница | `docs/pages/<name>.page.md` |
 | Готовность раздела | `docs/SECTION-READINESS.md` |
+| Способности (included/absent/removed) | `docs/CAPABILITY-LEDGER.md` |
+| Режим задачи / primary signal | `docs/AGENT-TASK-MODES.md` |
 | «Не забыть списки» | `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC) |
 | Очередь агентов / бронь | `docs/agent-checklists/_active-map.md` + `tasks/_active/` |
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
@@ -38,7 +40,9 @@
 
 - Страница/UI менялась → `docs/pages/<name>.page.md` + строка в `docs/pages/PAGE-TZ-INDEX.md`.
 - Новая страница/право/модуль/MCP → FIC §A–E по типу изменения.
+- Новая/снятая способность → `docs/CAPABILITY-LEDGER.md`.
 - Менялся user contour (роли/доступы/раздел) → `docs/SECTION-READINESS.md`.
+- Менялись границы импортов shared↔pages / cross-controller → `pnpm architecture:check`.
 - Всегда: `progress.md` + `## Executor report (auto)` в checklist + Checkpoint в `_active-map`.
 - Чужой WIP / чужие conflict keys — не stage и не коммитить (`git add <свои файлы>` поимённо).
 - Archive только после зелёных gates и (если TZ требует) Cursor/PO PASS.

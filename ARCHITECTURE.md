@@ -64,6 +64,13 @@
 - Auth: JWT (access 15m + refresh 7d), bcryptjs, RBAC
 - Infra: Docker Compose (Mongo), `start.mjs` (cross-platform orchestrator)
 
+## 1a. Границы импортов (gate)
+
+- Канон режимов/capabilities: `docs/AGENT-TASK-MODES.md`, `docs/CAPABILITY-LEDGER.md`.
+- Автопроверка: `pnpm architecture:check` (`scripts/architecture-check.mjs`).
+- Baseline известных нарушений: `scripts/architecture-check.baseline.json` (не раздувать; чинить → `--write-baseline`).
+- Правила v1: `shared/{ui,page,dsl}` ↛ `pages/*`; page A ↛ component page B; module A ↛ controller module B.
+
 ## 2. Конвенции
 
 ### Frontend (Angular 20)

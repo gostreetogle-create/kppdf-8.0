@@ -1,3 +1,10 @@
+## [2026-08-11] — Adopt vibe org: ledger + task modes + architecture:check
+**Исполнитель:** cursor-architect
+**Статус:** docs + tooling on main; product code НЕ
+**Что:** Capability ledger; AGENT-TASK-MODES (primary/secondary); `scripts/architecture-check.mjs` + baseline (7 keys); wire AI-AGENT-GUIDE/GEMINI/PROJECT-MEMORY/FIC/SECTION-READINESS/ARCHITECTURE/skill; backlog TZ-OPS-311 (shared→pages BOM).
+**Gates:** `pnpm architecture:check` PASS
+**NEXT:** claim TZ-OPS-311 когда свободен исполнитель; deploy НЕ.
+
 ## [2026-08-11] — Warm deploy OK — AUTH-302 + KP на прод
 **Исполнитель:** cursor-architect-ops
 **Статус:** warm deploy WIPE=false complete

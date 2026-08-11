@@ -42,6 +42,8 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 1b. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
 1c. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
 1d. docs/AUDIT-METHODOLOGY.md      ← Если АУДИТИШЬ домен / миграцию / чужой diff (не реализация)
+1e. docs/CAPABILITY-LEDGER.md       ← Что продукт умеет / absent / removed (не догонять фичи)
+1f. docs/AGENT-TASK-MODES.md        ← Review/Direct/Investigation/TDD/TZ-exec + primary signal
 2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
 3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
 4. STACK.md                         ← Технологический стек (актуален на 2026-07).
@@ -94,6 +96,8 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 | `tasks/_archive/` | Архив завершённых задач |
 | `docs/DEVELOPMENT-PATTERNS.md` | Паттерны кода |
 | `docs/FEATURE-INTEGRATION-CHECKLIST.md` | **MANDATORY** списки при новой странице/праве/модуле/MCP |
+| `docs/CAPABILITY-LEDGER.md` | Способности продукта: included / available / absent / removed |
+| `docs/AGENT-TASK-MODES.md` | Режимы задачи + primary/secondary + change-surface |
 | `docs/agent-checklists/_TEMPLATE.md` | Шаблон checklist + Claim slot |
 | `docs/agent-checklists/_active-map.md` | Кто сейчас CLAIMED / RESERVED |
 | `docs/audits/2026-08-04-agent-ops-claim-gaps.md` | Аудит дыр claim/closeout |
@@ -108,6 +112,12 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 Перед DONE любой фичи со страницей, правом, модулем или MCP-tool —
 пройти [`FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md).
 Иначе nav / RBAC / диалог ролей / page docs разъедутся.
+
+Перед **новой** способностью — сверь [`CAPABILITY-LEDGER.md`](./CAPABILITY-LEDGER.md):
+`absent` / `removed` = не строить без явного PO. В том же PR обнови строку ledger.
+
+Режим задачи и primary signal: [`AGENT-TASK-MODES.md`](./AGENT-TASK-MODES.md).
+Границы импортов: `pnpm architecture:check` (baseline в `scripts/architecture-check.baseline.json`).
 
 ### 2.1 Standalone components
 
@@ -269,6 +279,14 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 
 ---
 
+## 4a. Режимы и сигналы (кратко)
+
+Полный текст: [`AGENT-TASK-MODES.md`](./AGENT-TASK-MODES.md).
+
+- Выбери mode: Review | Direct | Investigation | TDD-first | TZ-exec.
+- Primary (видимое поведение) обязателен для DONE; secondary (tsc/lint/test/`architecture:check`) не заменяет primary.
+- Capability из ledger `removed`/`absent` не «заодно».
+
 ## 5. 📋 Чек-лист перед сабмитом любой задачи
 
 ```markdown
@@ -285,6 +303,9 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 - [ ] User-visible UI (лейблы, toast, hints, disabled title) — **русский**; без `draft`/`Save` в тексте
 - [ ] Селектор: `app-<name>-page`, класс: `<Name>Page`
 - [ ] Документация страницы в `docs/pages/<name>.page.md`
+- [ ] Capability ledger / FIC обновлены, если новая способность или страница
+- [ ] `pnpm architecture:check` — 0 **новых** нарушений (baseline OK)
+- [ ] Primary signal записан (см. AGENT-TASK-MODES)
 ```
 
 ---
