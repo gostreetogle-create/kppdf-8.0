@@ -32,6 +32,9 @@
 
 По-человечески агенту: *«Дожми Create КП после 348: только стыд на показе, WAVE-KP-SHAME-POLISH, без деплоя.»*
 
+**Перед вставкой промпта (обязательно):** в Cursor откройте папку **`D:\kppdf-8.0`** (File → Open Folder), не worktree под `.freebuff\worktrees\…`.  
+Если агент пишет `HARD GATE WORKSPACE` / путь с `.freebuff` — **закройте тот чат**, откройте новый Agent уже на каноне, вставьте промпт снова. Очередь в git не трогать.
+
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)
 

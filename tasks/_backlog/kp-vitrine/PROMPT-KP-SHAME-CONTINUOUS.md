@@ -1,6 +1,9 @@
 # Промпт — WAVE-KP-SHAME-POLISH (Create КП: стыд на показе)
 
-Скопируй агенту **целиком**. Workspace = `D:\kppdf-8.0` (не freebuff).  
+**Для PO:** сначала File → Open Folder → **`D:\kppdf-8.0`** (не `.freebuff\worktrees\…`).  
+Потом новый Cursor Agent → скопируй блок `text` **целиком**.  
+Если агент стопнул с HARD GATE / freebuff — тот чат мёртв; новый на каноне + тот же блок.
+
 Deploy не запускать. Не ждать «ок / поехали».
 
 ```text

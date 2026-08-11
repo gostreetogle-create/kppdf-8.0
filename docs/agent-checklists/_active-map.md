@@ -19,6 +19,11 @@
 - NEXT: PO **«деплой»** (warm) + Desktop rebuild/publish; then pair with подъезд login/pass (same as browser before /login, not admin).
 - Do NOT download random old Desktop alone — without this code+Basic fields prod pairing still fails.
 
+## Checkpoint 2026-08-11 · Agent STOPPED on freebuff worktree (shame wave intact)
+- Agent correctly HARD-GATE stopped: cwd was `.freebuff/worktrees/1417936b-…`, not `D:\kppdf-8.0`.
+- No claim/code from that chat. Wave READY on canon: WAVE-KP-SHAME-POLISH 350→354.
+- PO: close that chat → Open Folder `D:\kppdf-8.0` → new Cursor Agent → `PROMPT-KP-SHAME-CONTINUOUS.md`.
+
 ## Checkpoint 2026-08-11 · WAVE-KP-SHAME-POLISH READY (350→354)
 - NEXT: claim **TZ-SALES-350** → 351 → 352 → 353 → 354.
 - Wave: `tasks/_backlog/kp-vitrine/WAVE-KP-SHAME-POLISH.md`
