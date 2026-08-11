@@ -4,7 +4,7 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readFile } from '@tauri-apps/plugin-fs';
-  import { apiGet, apiPost, ApiError } from './core/api';
+  import { apiGet, apiPost, ApiError, type ApiClientOptions, type HttpBasicAuth } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import { parsePairing } from './core/pairing';
   import { importerFor, type RawRow } from './importers';
@@ -64,6 +64,8 @@
     '{"apiBaseUrl":"https://app.kppdf.ru","apiKey":"...","username":"...","expiresAt":"..."}';
 
   let pairingJson = $state('');
+  let basicUser = $state('');
+  let basicPass = $state('');
   let errors = $state<string[]>([]);
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
@@ -95,7 +97,8 @@
     uiHint = HINT_IDLE;
   }
   const HINTS = {
-    connect: 'Проверит токен на сервере и сохранит подключение. После этого MCP стартует сам.',
+    connect:
+      'Проверит ключ на сервере и сохранит подключение. Если сайт спрашивает «подъезд» до входа — заполните поля ниже. После этого MCP стартует сам.',
     disconnect: 'Забудет сохранённый токен на этом ПК. Сервер и данные не трогает.',
     startMcp: 'Поднимет локальный MCP для AI. Если порт занят — сам найдёт свободный.',
     stopMcp: 'Остановит локальный MCP. Веб-сервер kppdf и inbox не затрагиваются.',
@@ -148,6 +151,7 @@
       port,
       allowLan,
       inboxDir,
+      basicAuth: cfg.basicAuth,
     });
     // Если порт не менялся — всё равно синхронизируем фактический.
     const st = mcp.getState();
@@ -418,7 +422,7 @@
         return;
       }
       const result = await createImportTaskFromRows(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         { fileName: file.name, rows, inboxPath: inboxDir },
       );
       file.note = `Задача ИИ: ${result.id} · ${result.summary ?? ''} · ${result.status} (0 proposals)`;
@@ -457,7 +461,7 @@
         }
       }
       const result = await proposeMaterialRows(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         file.audit?.rows ?? [],
       );
       file.proposalIds = result.proposalIds;
@@ -486,14 +490,14 @@
     inboxBusy = true;
     try {
       const res = await confirmProposals(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         file.proposalIds,
       );
       // Провалившиеся confirm-запросы оставили proposals в статусе proposed —
       // не даём им висеть до TTL: отменяем (SoT не меняется).
       const pendingIds = res.failed.map((f) => f.id);
       if (pendingIds.length > 0) {
-        void cancelProposals({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, pendingIds);
+        void cancelProposals(apiFrom(cfg), pendingIds);
       }
       const outcome: 'processed' | 'failed' = res.applied > 0 ? 'processed' : 'failed';
       await moveInboxFile(inboxDir, file.name, outcome);
@@ -524,7 +528,7 @@
     }
     inboxBusy = true;
     try {
-      await cancelProposals({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, file.proposalIds);
+      await cancelProposals(apiFrom(cfg), file.proposalIds);
       await moveInboxFile(inboxDir, file.name, 'failed');
       await appendInboxLog(inboxDir, `${file.name} → failed: отменено пользователем (SoT не менялся)`);
       inboxFiles = inboxFiles.filter((f) => f.name !== file.name);
@@ -555,7 +559,7 @@
       return;
     }
     try {
-      profiles = await listImportMappingProfiles({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey });
+      profiles = await listImportMappingProfiles(apiFrom(cfg));
     } catch {
       profiles = [];
     }
@@ -636,7 +640,7 @@
     mappingBusy = true;
     try {
       const created = await createImportMappingProfile(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         { name, columnMap: mappingResult.mapping, targetEntity: 'material', isDefault: false },
       );
       profiles = [created, ...profiles.filter((profile) => profile.id !== created.id)];
@@ -656,7 +660,7 @@
     mappingBusy = true;
     try {
       const updated = await updateImportMappingProfile(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         profile.id,
         { isDefault: true },
       );
@@ -674,7 +678,7 @@
     if (!cfg.apiBaseUrl || !cfg.apiKey) return;
     mappingBusy = true;
     try {
-      await deleteImportMappingProfile({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, profile.id);
+      await deleteImportMappingProfile(apiFrom(cfg), profile.id);
       profiles = profiles.filter((item) => item.id !== profile.id);
       if (selectedProfileId === profile.id) selectedProfileId = '';
       mappingMessage = `Профиль «${profile.name}» удалён.`;
@@ -724,7 +728,7 @@
     mappingBusy = true;
     try {
       const result = await proposeMaterialRows(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         allowed.map((row) => row.values),
       );
       rowProposalIds = result.proposalIds;
@@ -743,7 +747,7 @@
     mappingBusy = true;
     try {
       const result = await confirmProposals(
-        { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+        apiFrom(cfg),
         rowProposalIds,
       );
       rowProposalIds = [];
@@ -759,7 +763,7 @@
     if (!cfg.apiBaseUrl || !cfg.apiKey) return;
     mappingBusy = true;
     try {
-      await cancelProposals({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, rowProposalIds);
+      await cancelProposals(apiFrom(cfg), rowProposalIds);
       rowProposalIds = [];
       mappingMessage = 'Предложения отменены; SoT не изменён.';
     } finally {
@@ -804,9 +808,9 @@
     specificationMessage = 'Готовим предложения и проверяем каталог…';
     try {
       const [productsResponse, materialsResponse, modulesResponse] = await Promise.all([
-        apiGet<{ items?: CatalogRef[] }>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/products?limit=100&search='),
-        apiGet<{ items?: CatalogRef[] }>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/materials?limit=100&search='),
-        apiGet<CatalogRef[]>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, '/api/modules'),
+        apiGet<{ items?: CatalogRef[] }>(apiFrom(cfg), '/api/products?limit=100&search='),
+        apiGet<{ items?: CatalogRef[] }>(apiFrom(cfg), '/api/materials?limit=100&search='),
+        apiGet<CatalogRef[]>(apiFrom(cfg), '/api/modules'),
       ]);
       const byKind = new Map<string, CatalogRef>();
       for (const item of productsResponse.items ?? []) byKind.set(`product:${catalogArticle(item)}`, item);
@@ -825,7 +829,7 @@
         const body = line.kind === 'product'
           ? { name: line.name, sku: line.article, kind: 'good', unit: line.unit }
           : { name: line.name, article: line.article, unit: line.unit, ...(line.kind === 'material' ? { materialKind: 'purchased' } : {}) };
-        const created = await apiPost<CatalogRef>({ baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey }, path, body);
+        const created = await apiPost<CatalogRef>(apiFrom(cfg), path, body);
         const createdId = catalogId(created);
         if (!createdId) throw new Error(`Сервер не вернул id для «${line.article}»`);
         ids.set(key, createdId);
@@ -840,7 +844,7 @@
         if (!parentId || !childId) throw new Error(`Не удалось связать «${line.parentArticle} → ${line.article}»`);
         if (parent?.kind === 'module' && line.kind === 'product') throw new Error('Модуль не может содержать изделие');
         await apiPost(
-          { baseUrl: cfg.apiBaseUrl, apiKey: cfg.apiKey },
+          apiFrom(cfg),
           `/api/${parent?.kind === 'module' ? 'modules' : 'products'}/${encodeURIComponent(parentId)}/composition`,
           { lineType: line.kind, refId: childId, quantity: line.quantity, unit: line.unit, sourceCode: line.article },
         );
@@ -872,6 +876,10 @@
 
     // Восстанавливаем сохранённое подключение (живой ли токен — покажет первый запрос).
     const cfg = await loadConfig();
+    if (cfg.basicAuth?.username) {
+      basicUser = cfg.basicAuth.username;
+      basicPass = cfg.basicAuth.password ?? '';
+    }
     if (cfg.apiKey && cfg.username) {
       connected = { username: cfg.username, apiBaseUrl: cfg.apiBaseUrl };
       pairedApiKey = cfg.apiKey;
@@ -887,6 +895,20 @@
     startInboxWatcher();
   });
 
+  function apiFrom(cfg: AppConfig): ApiClientOptions {
+    return {
+      baseUrl: cfg.apiBaseUrl,
+      apiKey: cfg.apiKey,
+      basicAuth: cfg.basicAuth,
+    };
+  }
+
+  function currentBasicAuth(): HttpBasicAuth | undefined {
+    const username = basicUser.trim();
+    if (!username) return undefined;
+    return { username, password: basicPass };
+  }
+
   async function connect() {
     errors = [];
     connecting = true;
@@ -898,17 +920,26 @@
       }
       const p = result.payload;
       const existing = await loadConfig();
+      const basicAuth = currentBasicAuth() ?? existing.basicAuth;
       const config: AppConfig = {
         apiBaseUrl: p.apiBaseUrl,
         apiKey: p.apiKey,
         username: p.username,
+        basicAuth,
         aiProvider: existing.aiProvider,
         mcp: existing.mcp,
         inbox: existing.inbox,
       };
       // Проверка: токен живой? 401 → «подключение устарело».
-      await apiGet({ baseUrl: p.apiBaseUrl, apiKey: p.apiKey }, '/api/auth/me');
+      await apiGet(
+        { baseUrl: p.apiBaseUrl, apiKey: p.apiKey, basicAuth },
+        '/api/auth/me',
+      );
       await saveConfig(config);
+      if (basicAuth) {
+        basicUser = basicAuth.username;
+        basicPass = basicAuth.password;
+      }
       connected = { username: p.username, apiBaseUrl: p.apiBaseUrl };
       pairedApiKey = p.apiKey;
       pairingJson = '';
@@ -918,13 +949,17 @@
       await loadMappingProfiles();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        errors = ['Подключение устарело — сгенерируйте новый паринг.'];
+        errors = [
+          'Подключение устарело или неверный подъездный пароль.',
+          'Проверьте: 1) новый паринг из сайта; 2) тот же логин/пароль, что браузер спрашивает до /login (не admin).',
+        ];
       } else if (err instanceof ApiError) {
         errors = [`Сервер ответил ошибкой ${err.status} — проверьте URL и доступность.`];
       } else {
         const detail = err instanceof Error ? err.message : String(err);
         errors = [
           'Не удалось подключиться — проверьте URL, сеть и сервер.',
+          'Если сайт требует пароль «подъезда» до страницы входа — введите его в поля ниже и повторите.',
           detail ? `Детали: ${detail}` : '',
         ].filter(Boolean);
       }
@@ -936,7 +971,12 @@
   async function disconnect() {
     await mcp.stop();
     const cfg = await loadConfig();
-    await saveConfig({ ...cfg, apiKey: undefined, username: undefined });
+    await saveConfig({
+      ...cfg,
+      apiKey: undefined,
+      username: undefined,
+      // basicAuth оставляем — удобно переподключить без повторного ввода подъезда
+    });
     connected = null;
     pairedApiKey = undefined;
     profiles = [];
@@ -1094,6 +1134,26 @@
           placeholder={pairingPlaceholder}
           rows="5"
         ></textarea>
+
+        <div class="basic-auth" data-test="desktop-basic-auth">
+          <p class="hint">
+            Если браузер спрашивает логин/пароль <strong>до</strong> страницы входа сайта
+            («подъезд») — введите их здесь. Это не пароль admin.
+          </p>
+          <label class="field">
+            <span>Подъездный логин</span>
+            <input class="input" type="text" bind:value={basicUser} autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Подъездный пароль</span>
+            <input
+              class="input"
+              type="password"
+              bind:value={basicPass}
+              autocomplete="current-password"
+            />
+          </label>
+        </div>
 
         {#if errors.length > 0}
           <ul class="errors" role="alert">
@@ -1883,6 +1943,41 @@
     resize: vertical;
     margin-bottom: 0.75rem;
     font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  }
+
+  .basic-auth {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #d5dde4;
+    border-radius: 8px;
+    background: #f6f8fa;
+  }
+
+  .basic-auth .hint {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #5a6a78;
+    line-height: 1.35;
+  }
+
+  .basic-auth .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.8rem;
+    color: #3a4a58;
+  }
+
+  .basic-auth .input {
+    font: inherit;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #b7c0c8;
+    border-radius: 6px;
+    background: #fff;
+    color: #1c2733;
   }
 
   .errors li + li {

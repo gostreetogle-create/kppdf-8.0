@@ -3,6 +3,7 @@
 | Путь | Статус |
 |------|--------|
 | [`QUEUE.md`](./QUEUE.md) | Что сейчас / куда копировать промпт |
+| [`desktop/`](./desktop/) | TZD-39 Basic Auth coexist · TZD-40 version gate |
 | [`kp-vitrine/`](./kp-vitrine/) | WAVE-KP-COMPLETE (хвост 348) |
 | [`ops/`](./ops/) | TZ-OPS-310 harden before deploy |
 | [`perf/`](./perf/) | WAVE-PERF-PHOTOS |

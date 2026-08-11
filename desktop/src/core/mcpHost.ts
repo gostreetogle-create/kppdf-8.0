@@ -35,6 +35,8 @@ export interface McpStartOptions {
   hostDir?: string;
   /** Каталог inbox агента (TZD-15); передаётся host-процессу как KPPDF_INBOX_DIR. */
   inboxDir?: string;
+  /** Nginx «подъезд» для публичного URL → KPPDF_HTTP_BASIC_*. */
+  basicAuth?: { username: string; password: string };
 }
 
 export const MCP_PORT_MIN = 1024;
@@ -197,6 +199,12 @@ export class McpHostController {
           KPPDF_MCP_PORT: String(opts.port),
           KPPDF_MCP_ALLOW_LAN: opts.allowLan ? '1' : '0',
           ...(opts.inboxDir ? { KPPDF_INBOX_DIR: opts.inboxDir } : {}),
+          ...(opts.basicAuth?.username
+            ? {
+                KPPDF_HTTP_BASIC_USER: opts.basicAuth.username,
+                KPPDF_HTTP_BASIC_PASS: opts.basicAuth.password ?? '',
+              }
+            : {}),
         },
       });
 

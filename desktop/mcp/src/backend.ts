@@ -1,5 +1,8 @@
 /**
- * Backend HTTP helpers using pairing JWT.
+ * Backend HTTP helpers using pairing key + optional nginx Basic Auth.
+ *
+ * Prod (`kppdf-crm.ru`): nginx owns `Authorization` for «подъезд».
+ * Pairing key must go in `X-Access-Token` (same as SPA JWT hotfix).
  */
 
 export class BackendError extends Error {
@@ -10,6 +13,36 @@ export class BackendError extends Error {
     super(message);
     this.name = 'BackendError';
   }
+}
+
+/** Shared with SPA / Desktop (`jwt-access-header.ts` / `api.ts`). */
+export const JWT_ACCESS_HEADER = 'X-Access-Token';
+
+export interface BackendAuth {
+  apiKey: string;
+  basicUser?: string;
+  basicPass?: string;
+}
+
+function authFromEnvOrKey(apiKey: string): BackendAuth {
+  return {
+    apiKey,
+    basicUser: (process.env.KPPDF_HTTP_BASIC_USER ?? '').trim() || undefined,
+    basicPass: process.env.KPPDF_HTTP_BASIC_PASS ?? undefined,
+  };
+}
+
+function buildHeaders(auth: BackendAuth, withJsonBody: boolean): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    [JWT_ACCESS_HEADER]: auth.apiKey,
+  };
+  if (withJsonBody) headers['Content-Type'] = 'application/json';
+  if (auth.basicUser) {
+    const raw = `${auth.basicUser}:${auth.basicPass ?? ''}`;
+    headers['Authorization'] = `Basic ${Buffer.from(raw, 'utf8').toString('base64')}`;
+  }
+  return headers;
 }
 
 async function parseJson(res: Response): Promise<unknown> {
@@ -31,14 +64,10 @@ async function backendRequest(
   body?: unknown,
 ): Promise<unknown> {
   const url = `${apiBaseUrl.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${apiKey}`,
-    Accept: 'application/json',
-  };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const auth = authFromEnvOrKey(apiKey);
   const res = await fetch(url, {
     method,
-    headers,
+    headers: buildHeaders(auth, body !== undefined),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {

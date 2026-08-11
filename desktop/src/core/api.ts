@@ -1,14 +1,23 @@
 /**
  * Тонкий HTTP-клиент к backend kppdf.
  *
- * Только инфраструктура: baseUrl + Authorization Bearer + GET/POST с
- * опциональным Idempotency-Key. Методы — стабы (TODO: реальные вызовы
- * появятся вместе с парингом и импортом).
+ * Auth transport (после Basic Auth на nginx / «подъезд»):
+ * - pairing key → `X-Access-Token` (не Authorization — иначе nginx 401)
+ * - опционально HTTP Basic → `Authorization: Basic …` для публичного URL
+ *
+ * LAN без подъезда: достаточно X-Access-Token (Nest принимает).
  */
+
+export interface HttpBasicAuth {
+  username: string;
+  password: string;
+}
 
 export interface ApiClientOptions {
   baseUrl: string;
   apiKey?: string;
+  /** Подъездный пароль nginx (prod). Не путать с admin login. */
+  basicAuth?: HttpBasicAuth;
 }
 
 export class ApiError extends Error {
@@ -31,12 +40,24 @@ function baseUrlOf(options: ApiClientOptions): string {
   return options.baseUrl.replace(/\/+$/, '');
 }
 
-function headersOf(options: ApiClientOptions): Record<string, string> {
+/** Shared header name with SPA / Nest (`jwt-access-header.ts`). */
+export const JWT_ACCESS_HEADER = 'X-Access-Token';
+
+function encodeBasic(basic: HttpBasicAuth): string {
+  const raw = `${basic.username}:${basic.password ?? ''}`;
+  // ASCII-safe for htpasswd logins; btoa available in Tauri WebView.
+  return btoa(raw);
+}
+
+export function headersOf(options: ApiClientOptions): Record<string, string> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
   if (options.apiKey) {
-    headers['Authorization'] = `Bearer ${options.apiKey}`;
+    headers[JWT_ACCESS_HEADER] = options.apiKey;
+  }
+  if (options.basicAuth?.username) {
+    headers['Authorization'] = `Basic ${encodeBasic(options.basicAuth)}`;
   }
   return headers;
 }

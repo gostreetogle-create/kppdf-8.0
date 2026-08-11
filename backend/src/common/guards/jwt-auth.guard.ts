@@ -15,6 +15,15 @@ import {
   DesktopPairingKeyService,
   isPairingKeyBearer,
 } from '../../modules/desktop/desktop-pairing-key.service';
+import { JWT_ACCESS_HEADER } from '../../modules/auth/jwt-from-request';
+
+function firstHeader(
+  value: string | string[] | undefined,
+): string {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value) && value[0]) return String(value[0]).trim();
+  return '';
+}
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -38,14 +47,24 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     const req = context.switchToHttp().getRequest<{
-      headers: { authorization?: string };
+      headers: Record<string, string | string[] | undefined>;
       user?: { id?: string; role?: string };
     }>();
-    const header = req.headers?.authorization ?? '';
-    const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+    // Prefer X-Access-Token for pairing keys so Authorization can stay
+    // HTTP Basic (nginx «подъезд») — same pattern as SPA JWT hotfix.
+    const xAccess = firstHeader(req.headers?.[JWT_ACCESS_HEADER]);
+    const authHeader = firstHeader(req.headers?.authorization);
+    const bearer = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : '';
+    const pairingToken = isPairingKeyBearer(xAccess)
+      ? xAccess
+      : isPairingKeyBearer(bearer)
+        ? bearer
+        : '';
 
-    if (bearer && isPairingKeyBearer(bearer)) {
-      req.user = await this.pairingKeys.authenticateBearer(bearer);
+    if (pairingToken) {
+      req.user = await this.pairingKeys.authenticateBearer(pairingToken);
     } else {
       const ok = await super.canActivate(context);
       if (!ok) {

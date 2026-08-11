@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-11 · Desktop Failed to fetch = Basic Auth (не «другая версия»)
+- Root cause: nginx Basic consumes `Authorization`; Desktop/MCP still sent `Bearer kppd_…` → 401 HTML / Failed to fetch.
+- CODE: Nest pairing via `X-Access-Token`; Desktop fields «подъезд»; MCP `KPPDF_HTTP_BASIC_*`; revoke hard-delete; Copy next to Issue.
+- Specs: `tasks/_backlog/desktop/TZD-39-…`, `TZD-40-desktop-version-gate.md` (warn update — not implemented yet).
+- NEXT: PO **«деплой»** (warm) + Desktop rebuild/publish; then pair with подъезд login/pass (same as browser before /login, not admin).
+- Do NOT download random old Desktop alone — without this code+Basic fields prod pairing still fails.
+
 ## Checkpoint 2026-08-11 · Coding queue idle — no READY TZ for agent
 - KP / OPS-310 / AUTH-302+JWT hotfix on prod; `_active/` empty.
 - Perf photo wave already DONE; leftover specs in `_backlog/perf` are history.

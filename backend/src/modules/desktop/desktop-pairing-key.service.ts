@@ -116,8 +116,9 @@ export class DesktopPairingKeyService {
       lastUsedAt: string | null;
     }>
   > {
+    // Active keys only — revoked rows are deleted on revoke (PO: не висеть в UI).
     const rows = await this.model
-      .find({ userId: new Types.ObjectId(userId) })
+      .find({ userId: new Types.ObjectId(userId), revokedAt: null })
       .sort({ createdAt: -1 })
       .lean()
       .exec();
@@ -126,7 +127,7 @@ export class DesktopPairingKeyService {
       label: r.label,
       tokenPrefix: r.tokenPrefix,
       expiresAt: r.expiresAt ? new Date(r.expiresAt).toISOString() : null,
-      revokedAt: r.revokedAt ? new Date(r.revokedAt).toISOString() : null,
+      revokedAt: null,
       createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : null,
       lastUsedAt: r.lastUsedAt ? new Date(r.lastUsedAt).toISOString() : null,
     }));
@@ -136,13 +137,11 @@ export class DesktopPairingKeyService {
     if (!Types.ObjectId.isValid(keyId)) {
       throw new NotFoundException('Key not found');
     }
-    const doc = await this.model
-      .findOne({ _id: keyId, userId: new Types.ObjectId(userId) })
+    const res = await this.model
+      .deleteOne({ _id: keyId, userId: new Types.ObjectId(userId) })
       .exec();
-    if (!doc) throw new NotFoundException('Key not found');
-    if (!doc.revokedAt) {
-      doc.revokedAt = new Date();
-      await doc.save();
+    if (!res.deletedCount) {
+      throw new NotFoundException('Key not found');
     }
   }
 

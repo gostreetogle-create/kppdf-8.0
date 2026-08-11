@@ -84,15 +84,37 @@ function openDownload(url: string): void {
           </p>
         }
 
-        <app-pi-button
-          variant="default"
-          type="button"
-          [disabled]="issuing()"
-          (click)="onIssue()"
-          data-test="pairing-issue-button"
-        >
-          {{ issuing() ? 'Выпуск…' : 'Выпустить ключ' }}
-        </app-pi-button>
+        <div class="flex flex-wrap items-center gap-3">
+          <app-pi-button
+            variant="default"
+            type="button"
+            [disabled]="issuing()"
+            (click)="onIssue()"
+            data-test="pairing-issue-button"
+          >
+            {{ issuing() ? 'Выпуск…' : 'Выпустить ключ' }}
+          </app-pi-button>
+          <app-pi-button
+            variant="secondary"
+            type="button"
+            [disabled]="!pairingJson()"
+            (click)="onCopy()"
+            data-test="pairing-copy-button"
+            [attr.aria-label]="copied() ? 'Скопировано' : 'Скопировать пакет в буфер'"
+          >
+            <span class="inline-flex items-center gap-2">
+              <lucide-angular
+                [img]="copied() ? checkIcon : copyIcon"
+                [size]="14"
+                aria-hidden="true"
+              />
+              {{ copied() ? 'Скопировано' : 'Скопировать' }}
+            </span>
+          </app-pi-button>
+          @if (copied()) {
+            <span class="text-xs text-muted-foreground" role="status">✓ в буфере</span>
+          }
+        </div>
 
         @if (pairingJson()) {
           <div class="space-y-2">
@@ -129,25 +151,21 @@ function openDownload(url: string): void {
                       >{{ k.tokenPrefix }}…</span
                     >
                     <span class="block text-xs text-muted-foreground">
-                      @if (k.revokedAt) {
-                        отозван
-                      } @else if (!k.expiresAt) {
+                      @if (!k.expiresAt) {
                         без срока
                       } @else {
                         до {{ formatDate(k.expiresAt) }}
                       }
                     </span>
                   </div>
-                  @if (!k.revokedAt) {
-                    <button
-                      type="button"
-                      class="text-xs text-destructive hover:underline"
-                      (click)="onRevoke(k)"
-                      data-test="pairing-revoke"
-                    >
-                      Отозвать
-                    </button>
-                  }
+                  <button
+                    type="button"
+                    class="text-xs text-destructive hover:underline"
+                    (click)="onRevoke(k)"
+                    data-test="pairing-revoke"
+                  >
+                    Отозвать
+                  </button>
                 </li>
               }
             </ul>
@@ -157,9 +175,6 @@ function openDownload(url: string): void {
 
       <div footer class="flex justify-between items-center w-full gap-3">
         <div class="flex flex-col gap-1 min-w-0">
-          <span class="text-xs text-muted-foreground">
-            {{ copied() ? '✓ Скопировано' : '' }}
-          </span>
           @if (!downloadUrl) {
             <span class="text-xs text-muted-foreground" data-test="pairing-download-hint">
               {{ installerUnavailableHint }}
@@ -176,21 +191,6 @@ function openDownload(url: string): void {
             data-test="pairing-download-button"
           >
             Скачать приложение
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ink pi-focus-ring flex items-center gap-2"
-            [disabled]="!pairingJson()"
-            [attr.aria-label]="copied() ? 'Скопировано' : 'Скопировать в буфер обмена'"
-            (click)="onCopy()"
-            data-test="pairing-copy-button"
-          >
-            <lucide-angular
-              [img]="copied() ? checkIcon : copyIcon"
-              [size]="14"
-              aria-hidden="true"
-            />
-            {{ copied() ? 'Скопировано' : 'Скопировать' }}
           </button>
           <button
             type="button"
@@ -262,7 +262,7 @@ export class PairingDialogComponent implements OnInit {
         this.toast.error(extractErrorMessage(res.error));
         return;
       }
-      this.toast.success('Ключ отозван');
+      this.toast.success('Ключ отозван и удалён из списка');
       this.reloadKeys();
     });
   }

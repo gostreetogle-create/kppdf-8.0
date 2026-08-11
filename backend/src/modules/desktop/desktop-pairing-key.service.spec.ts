@@ -28,15 +28,20 @@ describe('DesktopPairingKeyService (TZD-21)', () => {
       docs.push(doc);
       return doc;
     }),
-    find: jest.fn(() => ({
+    find: jest.fn((q: Record<string, unknown> = {}) => ({
       sort: () => ({
         lean: () => ({
           exec: async () =>
-            docs.map((d) => ({
-              ...d,
-              _id: d.id,
-              createdAt: new Date(),
-            })),
+            docs
+              .filter((d) => {
+                if (q.revokedAt === null && d.revokedAt) return false;
+                return true;
+              })
+              .map((d) => ({
+                ...d,
+                _id: d.id,
+                createdAt: new Date(),
+              })),
         }),
       }),
     })),
@@ -55,6 +60,18 @@ describe('DesktopPairingKeyService (TZD-21)', () => {
       };
       return { exec };
     }),
+    deleteOne: jest.fn((q: Record<string, unknown>) => ({
+      exec: async () => {
+        const idx = docs.findIndex((x) => {
+          if (String(x.id) !== String(q._id) && String(x._id) !== String(q._id)) return false;
+          if (q.userId && String(x.userId) !== String(q.userId)) return false;
+          return true;
+        });
+        if (idx < 0) return { deletedCount: 0 };
+        docs.splice(idx, 1);
+        return { deletedCount: 1 };
+      },
+    })),
     countDocuments: jest.fn(() => ({
       exec: async () =>
         docs.filter((d) => !d.revokedAt && (!d.expiresAt || (d.expiresAt as Date) > new Date()))
@@ -148,9 +165,13 @@ describe('DesktopPairingKeyService (TZD-21)', () => {
       { apiBaseUrl: 'http://127.0.0.1:3000' },
     );
     await service.revoke(USER_ID, a.id);
-    await expect(service.authenticateBearer(a.apiKey)).rejects.toThrow(/revoked/i);
+    await expect(service.authenticateBearer(a.apiKey)).rejects.toThrow(
+      /invalid pairing key|revoked/i,
+    );
     const ub = await service.authenticateBearer(b.apiKey);
     expect(ub.id).toBe(USER_ID);
+    const list = await service.listForUser(USER_ID);
+    expect(list.map((k) => k.id)).toEqual([b.id]);
   });
 
   it('list does not include plaintext secret', async () => {
@@ -162,5 +183,14 @@ describe('DesktopPairingKeyService (TZD-21)', () => {
     expect(list[0]!.label).toBe('Office PC');
     expect(list[0]!.tokenPrefix.startsWith('kppd_')).toBe(true);
     expect(JSON.stringify(list)).not.toContain(issued.apiKey);
+  });
+
+  it('list omits revoked keys after revoke', async () => {
+    const issued = await service.issue(
+      { id: USER_ID, username: 'admin', role: 'admin' },
+      { apiBaseUrl: 'http://127.0.0.1:3000', label: 'Gone' },
+    );
+    await service.revoke(USER_ID, issued.id);
+    expect(await service.listForUser(USER_ID)).toEqual([]);
   });
 });

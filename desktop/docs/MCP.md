@@ -121,7 +121,9 @@ pnpm start
 | Variable | Required | Default | Meaning |
 |----------|----------|---------|---------|
 | `KPPDF_API_BASE_URL` | yes | — | e.g. `http://127.0.0.1:3000` |
-| `KPPDF_API_KEY` | yes | — | pairing key (`kppd_…`) |
+| `KPPDF_API_KEY` | yes | — | pairing key (`kppd_…`) → Nest `X-Access-Token` |
+| `KPPDF_HTTP_BASIC_USER` | no | — | nginx «подъезд» login (prod) |
+| `KPPDF_HTTP_BASIC_PASS` | no | — | nginx «подъезд» password (prod) |
 | `KPPDF_MCP_PORT` | no | `9743` | listen port |
 | `KPPDF_MCP_HOST` | no | `127.0.0.1` | bind address |
 | `KPPDF_MCP_ALLOW_LAN` | no | off | `1`/`true` → may bind `0.0.0.0` |

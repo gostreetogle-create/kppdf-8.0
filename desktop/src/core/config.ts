@@ -38,13 +38,21 @@ export interface InboxConfig {
   dir?: string;
 }
 
+/** HTTP Basic («подъезд») для nginx перед публичным URL. Не admin login. */
+export interface BasicAuthConfig {
+  username: string;
+  password: string;
+}
+
 export interface AppConfig {
   /** Базовый URL backend kppdf (например https://app.kppdf.ru). */
   apiBaseUrl: string;
-  /** Bearer-токен паринга, выданный веб-клиентом. */
+  /** Pairing key (`kppd_…`), выданный веб-клиентом. */
   apiKey?: string;
   /** Имя пользователя, для которого выдан токен. */
   username?: string;
+  /** Подъездный пароль nginx (prod). Пусто на LAN. */
+  basicAuth?: BasicAuthConfig;
   aiProvider: AiProviderConfig;
   /** MCP host: порт + bind (сохраняется между запусками). */
   mcp: McpHostConfig;
@@ -64,8 +72,9 @@ export const DEFAULT_MCP_CONFIG: McpHostConfig = {
  * Версия формата файла конфига; инкремент при несовместимых изменениях.
  * v2 (TZD-14): добавлен блок `mcp` { port, allowLan }.
  * v3 (TZD-15): добавлен блок `inbox` { dir }.
+ * v4: optional `basicAuth` { username, password } for nginx «подъезд».
  */
-export const CONFIG_VERSION = 3;
+export const CONFIG_VERSION = 4;
 
 export const DEFAULT_CONFIG: AppConfig = {
   apiBaseUrl: '',
@@ -130,12 +139,22 @@ function migrateInbox(raw: unknown): InboxConfig {
   return { dir };
 }
 
+function migrateBasicAuth(raw: unknown): BasicAuthConfig | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const b = raw as Partial<BasicAuthConfig>;
+  const username = typeof b.username === 'string' ? b.username.trim() : '';
+  const password = typeof b.password === 'string' ? b.password : '';
+  if (!username) return undefined;
+  return { username, password };
+}
+
 function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
   const cfg: AppConfig = {
     apiBaseUrl:
       typeof parsed.apiBaseUrl === 'string' ? parsed.apiBaseUrl : DEFAULT_CONFIG.apiBaseUrl,
     apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : undefined,
     username: typeof parsed.username === 'string' ? parsed.username : undefined,
+    basicAuth: migrateBasicAuth(parsed.basicAuth),
     aiProvider:
       parsed.aiProvider && typeof parsed.aiProvider === 'object'
         ? parsed.aiProvider
