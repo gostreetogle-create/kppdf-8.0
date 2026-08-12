@@ -103,6 +103,21 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 - Ключевые write/propose/confirm/list/get tools публикуют эту форму через
   `outputSchema` в `tools/list`; текущая схема допускает полный backend result.
 
+### Propose → confirm troubleshooting (TZD-42)
+
+1. Вызов `kppdf_propose_material_create` или `kppdf_propose_product_create` ничего
+   не пишет в каталог. Сохраните **top-level `proposalId`** из его ответа — именно
+   его передавайте в `kppdf_confirm_proposal`.
+2. Не подставляйте `result.id`, `_id`, `mutationId` или текстовый `draft:` id:
+   это не обязательно id строки mutation-journal. После TZD-41 `result.id` для
+   совместимости может дублировать id, но канонический ключ цепочки — `proposalId`.
+3. Если proposal не найден, HTTP 404 и MCP `toolFail` содержат полученный id и
+   подсказку взять точный `proposalId` из ответа `kppdf_propose_*`. Это отличается
+   от истёкшего proposal: TTL — 1 час, expiry возвращает 400.
+4. Если proposal принадлежит другому пользователю, backend сохраняет ownership
+   guard и возвращает 403; повторите цепочку под тем же pairing/JWT, которым
+   выполнялся propose.
+
 ### Canonical list names and one-wave aliases
 
 Новые клиенты используют `kppdf_list_<noun>`:

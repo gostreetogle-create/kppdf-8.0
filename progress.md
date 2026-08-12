@@ -1,3 +1,14 @@
+## [2026-08-12] — TZD-42 DONE — MCP mutation-journal confirm 404 recovery
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP + backend mutation-journal; deploy НЕ
+**Что:** Reproduced a stable propose→confirm path through 100 immediate backend confirms and material/product MCP mock chains. Root cause was consistent with clients passing a nested/derived id instead of TZD-41’s top-level `proposalId`; no delete, overwrite, ownership race, or TTL expiry reproduced. Proposal confirm/cancel 404s now echo the received id with a recovery hint, and MCP confirm repeats it on HTTP 404.
+**Gates:** backend mutation-journal 23/23 PASS; backend tsc PASS; desktop/mcp 100/100 PASS; MCP tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-42.done.md`
+**Checklist:** `docs/agent-checklists/TZD-42.md`
+**Lock:** `.mimocode/locks/TZD-42-mcp-confirm-404.lock`
+**Known limitation:** live replay of «Шест для лазания ШЛ-300» was not run; unit + MCP chain close the investigated hypotheses. No frontend, TZD-43/44/45, production cleanup, or deploy changes.
+**NEXT:** TZD-43 → TZD-44; TZD-45 parked; deploy НЕ.
+
 ## [2026-08-12] — TZD-41 DONE — MCP envelope, outputSchema and canonical list aliases
 **Автор:** Buffy
 **Статус:** DONE; Desktop/MCP contract hardening; deploy НЕ

@@ -13,8 +13,12 @@ import {
   batchItemSchema,
   materialCreateInput,
   buildCompositionLineProposal,
+  confirmProposal,
+  proposeMaterialCreate,
+  proposeProductCreate,
   WRITE_TOOL_NAMES,
 } from './write-tools.js';
+import type { McpRuntimeConfig } from './config.js';
 
 describe('material propose fields (TZD-32)', () => {
   it('zod accepts extended fields', () => {
@@ -101,6 +105,90 @@ describe('material propose fields (TZD-32)', () => {
     assert.throws(() =>
       batchItemSchema.parse({ name: 'X', materialKind: 'nope' }),
     );
+  });
+});
+
+describe('mutation journal propose→confirm chain (TZD-42)', () => {
+  it('uses the returned proposalId for material and product confirmations', async () => {
+    const cfg: McpRuntimeConfig = {
+      apiBaseUrl: 'http://backend.test',
+      apiKey: 'pairing-key',
+      host: '127.0.0.1',
+      port: 9743,
+      allowLan: false,
+    };
+    const originalFetch = globalThis.fetch;
+    const confirmed: string[] = [];
+    let nextId = 0;
+
+    globalThis.fetch = (async (input, init) => {
+      const url = String(input);
+      const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+      if (url.endsWith('/api/mutation-journal/proposals')) {
+        const proposalId = `507f1f77bcf86cd799439${String(nextId++).padStart(3, '0')}`;
+        assert.equal(body.toolName.includes('propose_'), true);
+        return new Response(JSON.stringify({ _id: proposalId, status: 'proposed' }), {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      const match = url.match(/\/proposals\/([^/]+)\/confirm$/);
+      assert.ok(match, `unexpected URL: ${url}`);
+      const proposalId = decodeURIComponent(match[1]);
+      confirmed.push(proposalId);
+      return new Response(JSON.stringify({ _id: proposalId, status: 'applied' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    }) as typeof fetch;
+
+    try {
+      const material = await proposeMaterialCreate(cfg, { name: 'Oak' });
+      const product = await proposeProductCreate(
+        cfg,
+        { name: 'Window', kind: 'good' },
+      );
+      assert.ok('structuredContent' in material);
+      assert.ok('structuredContent' in product);
+      const materialId = material.structuredContent.proposalId;
+      const productId = product.structuredContent.proposalId;
+      assert.equal(typeof materialId, 'string');
+      assert.equal(typeof productId, 'string');
+
+      await confirmProposal(cfg, materialId as string);
+      await confirmProposal(cfg, productId as string);
+      assert.deepEqual(confirmed, [materialId, productId]);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('missing proposal failure echoes the received id and recovery hint', async () => {
+    const cfg: McpRuntimeConfig = {
+      apiBaseUrl: 'http://backend.test',
+      apiKey: 'pairing-key',
+      host: '127.0.0.1',
+      port: 9743,
+      allowLan: false,
+    };
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(JSON.stringify({ message: 'Proposal missing not found' }), {
+        status: 404,
+        headers: { 'content-type': 'application/json' },
+      })) as typeof fetch;
+
+    try {
+      const response = await confirmProposal(cfg, 'wrong-proposal-id');
+      assert.ok('isError' in response);
+      assert.equal(response.isError, true);
+      const text = response.content[0].text;
+      assert.match(text, /wrong-proposal-id/);
+      assert.match(text, /proposalId/);
+      assert.match(text, /kppdf_propose_\*/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
 

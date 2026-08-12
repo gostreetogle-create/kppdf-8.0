@@ -284,7 +284,7 @@ export class MutationJournalService {
   }
 
   async confirm(proposalId: string, user: AuthenticatedUser) {
-    const doc = await this.loadOwned(proposalId, user);
+    const doc = await this.loadOwned(proposalId, user, 'proposal');
     if (doc.status !== 'proposed') {
       throw new BadRequestException(`Proposal ${proposalId} is ${doc.status}, not proposed`);
     }
@@ -402,7 +402,7 @@ export class MutationJournalService {
   }
 
   async cancel(proposalId: string, user: AuthenticatedUser) {
-    const doc = await this.loadOwned(proposalId, user);
+    const doc = await this.loadOwned(proposalId, user, 'proposal');
     if (doc.status !== 'proposed') {
       throw new BadRequestException(`Only proposed can be cancelled (was ${doc.status})`);
     }
@@ -473,10 +473,21 @@ export class MutationJournalService {
     return filter;
   }
 
-  private async loadOwned(id: string, user: AuthenticatedUser): Promise<MutationJournalDocument> {
-    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Mutation ${id} not found`);
+  private async loadOwned(
+    id: string,
+    user: AuthenticatedUser,
+    resource: 'mutation' | 'proposal' = 'mutation',
+  ): Promise<MutationJournalDocument> {
+    const label = resource === 'proposal' ? 'Proposal' : 'Mutation';
+    const hint =
+      resource === 'proposal'
+        ? ' Use the exact proposalId returned by kppdf_propose_* (not result.id or mutationId).'
+        : '';
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`${label} ${id} not found.${hint}`);
+    }
     const doc = await this.model.findById(id).exec();
-    if (!doc) throw new NotFoundException(`Mutation ${id} not found`);
+    if (!doc) throw new NotFoundException(`${label} ${id} not found.${hint}`);
 
     if (user.role !== 'admin') {
       if (String(doc.actorUserId) !== user.id) {

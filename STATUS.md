@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZD-42 DONE: MCP mutation-journal confirm 404 recovery
+**Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal; deploy НЕ
+**Что:** 100 immediate backend confirms and material/product MCP mock chains pass. Audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no journal deletion, overwrite, ownership race, or TTL expiry reproduced. Proposal confirm/cancel 404s now echo the received id and recovery hint; MCP confirm repeats it on HTTP 404.
+**Gates:** backend mutation-journal 23/23 + tsc PASS; desktop/mcp 100/100 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-42.done.md`
+**Checklist:** `docs/agent-checklists/TZD-42.md`
+**Lock:** `.mimocode/locks/TZD-42-mcp-confirm-404.lock`
+**NEXT:** TZD-43 → TZD-44; TZD-45 park; deploy НЕ.
+
 ## [2026-08-12] — TZD-41 DONE: MCP envelope + outputSchema + list aliases
 **Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
 **Что:** Единый success envelope `{ok, result, id?, proposalId?}` с `structuredContent`; `_id`→`id`, proposal id→top-level `proposalId`; key tools публикуют `outputSchema`. Добавлены canonical `kppdf_list_*` и one-wave aliases для doc/import/text lists.

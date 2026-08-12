@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { backendGetJson, backendPostJson } from './backend.js';
+import { BackendError, backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
@@ -27,6 +27,14 @@ export const WRITE_TOOL_NAMES = [
 ] as const;
 
 const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
+export const productCreateInput = {
+  name: z.string().min(1).describe('Product name'),
+  kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
+  unit: z.string().optional().describe('Unit (default шт)'),
+  sku: z.string().optional(),
+  notes: z.string().optional(),
+};
+type ProductCreateInput = z.infer<z.ZodObject<typeof productCreateInput>>;
 const COMPOSITION_PARENT_ENUM = z.enum(['product', 'module']);
 const COMPOSITION_LINE_ENUM = z.enum(['material', 'module', 'product']);
 export const compositionLineInput = {
@@ -114,6 +122,71 @@ export function buildMaterialCreateProposal(args: z.infer<typeof materialCreateI
   };
 }
 
+export async function proposeMaterialCreate(
+  cfg: McpRuntimeConfig,
+  args: z.infer<typeof materialCreateInput>,
+) {
+  try {
+    const result = await backendPostJson(
+      cfg.apiBaseUrl,
+      cfg.apiKey,
+      '/api/mutation-journal/proposals',
+      buildMaterialCreateProposal(args),
+    );
+    return toolOk({ ok: true, proposal: result });
+  } catch (err) {
+    return toolFail('kppdf_propose_material_create', err);
+  }
+}
+
+export async function proposeProductCreate(
+  cfg: McpRuntimeConfig,
+  args: ProductCreateInput,
+) {
+  try {
+    const result = await backendPostJson(
+      cfg.apiBaseUrl,
+      cfg.apiKey,
+      '/api/mutation-journal/proposals',
+      {
+        kind: 'product.create',
+        toolName: 'kppdf_propose_product_create',
+        productCreate: {
+          name: args.name,
+          kind: args.kind,
+          unit: args.unit?.trim() || 'шт',
+          sku: args.sku,
+          notes: args.notes,
+        },
+      },
+    );
+    return toolOk({ ok: true, proposal: result });
+  } catch (err) {
+    return toolFail('kppdf_propose_product_create', err);
+  }
+}
+
+export async function confirmProposal(
+  cfg: McpRuntimeConfig,
+  proposalId: string,
+) {
+  try {
+    const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/confirm`;
+    const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
+    return toolOk({ ok: true, mutation: result });
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) {
+      return toolFail(
+        'kppdf_confirm_proposal',
+        new Error(
+          `Proposal ${proposalId} not found. Use the exact proposalId returned by kppdf_propose_* (received proposalId=${proposalId}).`,
+        ),
+      );
+    }
+    return toolFail('kppdf_confirm_proposal', err);
+  }
+}
+
 export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
     'kppdf_propose_material_create',
@@ -124,19 +197,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         'Creates a proposal only (no SoT write). Confirm with kppdf_confirm_proposal.',
       inputSchema: materialCreateInput,
     },
-    async (args) => {
-      try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          buildMaterialCreateProposal(args),
-        );
-        return toolOk({ ok: true, proposal: result });
-      } catch (err) {
-        return toolFail('kppdf_propose_material_create', err);
-      }
-    },
+    async (args) => proposeMaterialCreate(cfg, args),
   );
 
   server.registerTool(
@@ -268,37 +329,9 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         'TZD-27: creates a product.create PROPOSAL (name + kind required, unit ' +
         'defaults to шт). No SoT write — confirm with kppdf_confirm_proposal. ' +
         'Check kppdf_get_product_where_used / composition before mass updates.',
-      inputSchema: {
-        name: z.string().min(1).describe('Product name'),
-        kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
-        unit: z.string().optional().describe('Unit (default шт)'),
-        sku: z.string().optional(),
-        notes: z.string().optional(),
-      },
+      inputSchema: productCreateInput,
     },
-    async (args) => {
-      try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          {
-            kind: 'product.create',
-            toolName: 'kppdf_propose_product_create',
-            productCreate: {
-              name: args.name,
-              kind: args.kind,
-              unit: args.unit?.trim() || 'шт',
-              sku: args.sku,
-              notes: args.notes,
-            },
-          },
-        );
-        return toolOk({ ok: true, proposal: result });
-      } catch (err) {
-        return toolFail('kppdf_propose_product_create', err);
-      }
-    },
+    async (args) => proposeProductCreate(cfg, args),
   );
 
   server.registerTool(
@@ -438,15 +471,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
         proposalId: z.string().min(1),
       },
     },
-    async ({ proposalId }) => {
-      try {
-        const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/confirm`;
-        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
-        return toolOk({ ok: true, mutation: result });
-      } catch (err) {
-        return toolFail('kppdf_confirm_proposal', err);
-      }
-    },
+    async ({ proposalId }) => confirmProposal(cfg, proposalId),
   );
 
   server.registerTool(
