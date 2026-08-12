@@ -154,7 +154,7 @@ const TERM_VARIABLES = [
 
       @if (terms().length === 0) {
         <p class="terms__empty" data-test="kp-terms-empty">
-          Добавьте первое условие или возьмите заготовку из библиотеки.
+          Добавьте первое условие.
         </p>
       }
       <app-pi-button

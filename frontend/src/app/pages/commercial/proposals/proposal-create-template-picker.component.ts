@@ -41,7 +41,6 @@ import { extractErrorMessage } from '../../../core/silent-http';
 
       @if (selected()) {
         <div class="tpl-picker__meta">
-          <p class="tpl-picker__name m-0" data-test="kp-tpl-picker-name">{{ selected()!.name }}</p>
           <app-pi-button
             type="button"
             variant="outline"
@@ -80,13 +79,8 @@ import { extractErrorMessage } from '../../../core/silent-http';
     .tpl-picker__meta {
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
       gap: 0.5rem;
-    }
-    .tpl-picker__name {
-      font-size: 0.8125rem;
-      font-weight: 600;
-      color: var(--color-ink);
-      line-height: 1.3;
     }
   `,
 })

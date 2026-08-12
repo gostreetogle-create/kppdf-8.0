@@ -1,3 +1,14 @@
+## [2026-08-12] — TZ-SALES-363 DONE — chrome polish панелей Create КП (WAVE-KP-STUDIO-CHROME #1)
+**Автор:** Buffy / freebuff-kppdf-8.0-d8650b12
+**Статус:** DONE; frontend-only (LAYER 2, parallel OK); deploy НЕ
+**Что:** Панели-дети студии Create КП ужаты по Paper & Ink: (1) пустое «Условия» — короткое «Добавьте первое условие.» без повтора кнопки библиотеки; (2) «Шаблон» — убран дубль имени шаблона под селектом (имя и так в trigger); (3) «Получатель» — клиент выбирается searchable `PiOverflowSelect` (334-канон) вместо «поиск + native select»; (4) «Параметры» — три повтора «только в этом КП» сведены к одной подсказке про наценку. Product rail не менялся (шума нет; ширина = 362).
+**Gates:** frontend tsc PASS; proposal-create + terms Jest 38/38 PASS; changed-file ESLint PASS; `git diff --check` PASS; diff не содержит `proposal-create.page.ts`. DOM self-verify PASS на dev :4203 (Условия/Получатель/Шаблон/Параметры вживую, console чист).
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-363.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-363.md`
+**Lock:** `.mimocode/locks/TZ-SALES-363-kp-studio-panels-chrome.lock`
+**Known limit:** Prettier-базлайн репо не чист (warn на untouched файлах); мои правки стилю окружения не противоречат. Live backend-data smoke не требуется (правки UI-копирайта/выбора).
+**NEXT:** TZ-SALES-362 после merge 359 на page.ts; deploy НЕ.
+
 ## [2026-08-12] — TZD-44 DONE — MCP data hygiene
 **Автор:** Buffy
 **Статус:** DONE; Desktop/MCP only; deploy НЕ

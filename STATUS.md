@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZ-SALES-363 DONE: chrome polish панелей Create КП (WAVE-KP-STUDIO-CHROME #1)
+**Статус:** DONE on worktree branch; parallel-OK (LAYER 2); deploy НЕ
+**Что:** Панели-дети студии без дублей: пустое «Условия» не повторяет видимые CTA, имя шаблона под селектом убрано (его показывает trigger), «Клиент» в «Получателе» — снова searchable `PiOverflowSelect` (канон 334) вместо search + native select, в «Параметрах» три «только в этом КП» сведены к одной подсказке про наценку. `proposal-create.page.ts`, composition, table-studio/editor и backend не тронуты.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-363.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-363.md`
+**Lock:** `.mimocode/locks/TZ-SALES-363-kp-studio-panels-chrome.lock`
+**Gates:** FE tsc PASS; proposal-create + terms Jest 38/38 PASS; ESLint/diff-check PASS; DOM self-verify (dev :4203) PASS — Условия/Получатель/Шаблон/Параметры без дублей, console чист.
+**NEXT:** TZ-SALES-362 (тиры S/L + иконка Условий) после merge 359 на page.ts; deploy НЕ.
+
 ## [2026-08-12] — TZD-44 DONE: MCP data hygiene
 **Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
 **Что:** Added read-only duplicate groups for material/product/module/counterparty and filtered `kppdf_cleanup_test_data` with non-empty prefix/regex/id filters, explicit `userOk:true`, dry-run support, and existing Nest soft-delete handlers only.

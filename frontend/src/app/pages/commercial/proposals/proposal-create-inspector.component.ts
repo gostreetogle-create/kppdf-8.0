@@ -218,7 +218,6 @@ export type ProposalCreateStatus = ProposalStatus;
         <section class="inspector__sheet" data-test="kp-insp-sheet-layout">
           <div class="inspector__section-heading">
             <h3>Вид листа</h3>
-            <p>Настройки сохраняются только в этом КП.</p>
           </div>
           <label
             >Строк на 1-й странице
@@ -283,7 +282,6 @@ export type ProposalCreateStatus = ProposalStatus;
         <section class="inspector__section" data-test="kp-insp-discount">
           <div class="inspector__section-heading">
             <h3>Деньги</h3>
-            <p>Скидка действует только в этом КП</p>
           </div>
           <label
             ><span>Тип скидки</span

@@ -11,6 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import {
   Counterparty,
   CounterpartyService,
@@ -29,7 +30,7 @@ export interface ProposalRecipientState {
   selector: 'app-proposal-create-recipient',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonComponent],
+  imports: [FormsModule, ButtonComponent, PiOverflowSelectComponent],
   template: `
     <div class="recipient" data-test="kp-recipient-panel">
       <div class="recipient__heading">
@@ -48,26 +49,17 @@ export interface ProposalRecipientState {
       </div>
       <label>
         <span>Клиент</span>
-        <input
-          class="pi-input w-full"
-          type="search"
-          placeholder="Поиск клиента…"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
+        <app-pi-overflow-select
+          [items]="counterpartyItems()"
+          [value]="selectedCounterpartyId()"
+          (valueChange)="selectCounterparty($event)"
+          searchable="auto"
+          placeholder="— выберите клиента —"
+          ariaLabel="Клиент"
+          dataTest="kp-recipient-client"
+          [disabled]="readOnly()"
         />
       </label>
-      <select
-        class="pi-input w-full"
-        [ngModel]="selectedCounterpartyId()"
-        (ngModelChange)="selectCounterparty($event)"
-        [disabled]="readOnly()"
-        data-test="kp-recipient-client"
-      >
-        <option value="">— выберите клиента —</option>
-        @for (item of filteredCounterparties(); track item._id) {
-          <option [value]="item._id">{{ item.name }} · ИНН {{ item.inn }}</option>
-        }
-      </select>
       @if (selectedCounterparty(); as client) {
         <section class="recipient__card" data-test="kp-recipient-card">
           <strong>{{ client.name }}</strong>
@@ -211,7 +203,6 @@ export class ProposalCreateRecipientComponent {
   protected readonly counterparties = signal<Counterparty[]>([]);
   protected readonly persons = signal<Person[]>([]);
   protected readonly sites = signal<Site[]>([]);
-  protected readonly search = signal('');
   protected readonly quickCreateOpen = signal(false);
   protected readonly error = signal('');
   protected newClientName = '';
@@ -220,12 +211,12 @@ export class ProposalCreateRecipientComponent {
   protected readonly selectedCounterparty = computed(
     () => this.counterparties().find((item) => item._id === this.selectedCounterpartyId()) ?? null,
   );
-  protected readonly filteredCounterparties = computed(() => {
-    const q = this.search().trim().toLowerCase();
-    return q
-      ? this.counterparties().filter((item) => `${item.name} ${item.inn}`.toLowerCase().includes(q))
-      : this.counterparties();
-  });
+  protected readonly counterpartyItems = computed(() =>
+    this.counterparties().map((item) => ({
+      id: item._id,
+      label: `${item.name} · ИНН ${item.inn}`,
+    })),
+  );
   protected readonly availablePersons = computed(() => {
     const personId = this.selectedCounterparty()?.contactPersonId;
     return personId ? this.persons().filter((person) => person._id === personId) : [];
