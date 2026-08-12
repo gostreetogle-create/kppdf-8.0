@@ -32,6 +32,14 @@ export interface DesktopPairingKeyMeta {
   lastUsedAt: string | null;
 }
 
+/** TZD-40: контракт GET /api/desktop/compat (env-driven, public). */
+export interface DesktopCompatInfo {
+  minDesktopVersion: string;
+  recommendedDesktopVersion: string;
+  downloadUrl: string;
+  serverBuildId: string;
+}
+
 /** TZD-21: self-service desktop pairing keys (not session JWT). */
 @Injectable({ providedIn: 'root' })
 export class DesktopPairingService {
@@ -60,5 +68,9 @@ export class DesktopPairingService {
       `${this.baseUrl}/desktop/pairing-keys/${id}/revoke`,
       {},
     );
+  }
+
+  compat(): Observable<SilentResult<DesktopCompatInfo>> {
+    return silentGet<DesktopCompatInfo>(this.http, `${this.baseUrl}/desktop/compat`);
   }
 }

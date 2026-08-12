@@ -4,9 +4,16 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
+  import { open as openExternal } from '@tauri-apps/plugin-shell';
   import { readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, apiPost, ApiError, type ApiClientOptions, type HttpBasicAuth } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
+  import {
+    decideCompat,
+    resolveDownloadUrl,
+    type CompatDecision,
+    type DesktopCompatInfo,
+  } from './core/version-compat';
   import { parsePairing } from './core/pairing';
   import { importerFor, type RawRow } from './importers';
   import { parseExcelWorkbook, type ExcelSheetPreview } from './importers/excel';
@@ -82,6 +89,8 @@
   });
   /** Semver из tauri.conf / Cargo — не хардкод «v0.5». */
   let appVersion = $state('…');
+  /** TZD-40: решение совместимости версий после /api/desktop/compat. */
+  let compat = $state<{ decision: CompatDecision; info: DesktopCompatInfo } | null>(null);
   let mcpPortInput = $state(String(DEFAULT_MCP_PORT));
   let mcpError = $state('');
   let mcpCopied = $state(false);
@@ -862,6 +871,29 @@
     }
   }
 
+  /** TZD-40: /api/desktop/compat → решение (block/warn/ok). Ошибка → fail-open. */
+  async function checkCompat(cfg: AppConfig): Promise<void> {
+    try {
+      const info = await apiGet<DesktopCompatInfo>(apiFrom(cfg), '/api/desktop/compat');
+      compat = { decision: decideCompat(appVersion, info), info };
+    } catch {
+      compat = null;
+    }
+  }
+
+  /** Открыть установщик в браузере по умолчанию (shell:allow-open). */
+  async function openDownloadUrl(): Promise<void> {
+    const info = compat?.info;
+    const base = connected?.apiBaseUrl;
+    if (!info || !base) return;
+    const url = resolveDownloadUrl(info.downloadUrl, base);
+    try {
+      await openExternal(url);
+    } catch {
+      // Браузер недоступен — баннер остаётся, скачать можно с сайта.
+    }
+  }
+
   onMount(async () => {
     try {
       appVersion = await getVersion();
@@ -905,7 +937,10 @@
       mcpPortInput = String(cfg.mcp.port);
       mcp.setPrefs(cfg.mcp.port, cfg.mcp.allowLan);
       // Автостарт MCP host для подключённого (paired) десктопа — без терминала.
-      await startMcp();
+      await checkCompat(cfg);
+      if (compat?.decision !== 'block') {
+        await startMcp();
+      }
     }
 
     // Inbox (TZD-15): подготовка каталога + периодическое сканирование.
@@ -963,8 +998,12 @@
       pairedApiKey = p.apiKey;
       pairingJson = '';
       mcpError = '';
-      // Подключённый (paired) десктоп автоматически поднимает MCP host.
-      await startMcp();
+      // Подключённый (paired) десктоп автоматически поднимает MCP host,
+      // если версия не ниже минимальной (TZD-40).
+      await checkCompat(config);
+      if (compat?.decision !== 'block') {
+        await startMcp();
+      }
       await loadMappingProfiles();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
@@ -1127,6 +1166,23 @@
     {#if activeTab === 'mcp'}
     <article class="card">
       <h2>Подключение</h2>
+
+      {#if compat?.decision === 'block'}
+        <div class="compat-banner compat-banner--block" role="alert" data-test="compat-block">
+          <p class="compat-banner__text">
+            Нужно обновить приложение: ваша версия v{appVersion} устарела — требуется минимум
+            v{compat.info.minDesktopVersion}. MCP не запущен.
+          </p>
+          <button class="btn" type="button" onclick={openDownloadUrl}>Скачать</button>
+        </div>
+      {:else if compat?.decision === 'warn'}
+        <div class="compat-banner compat-banner--warn" role="status" data-test="compat-warn">
+          <p class="compat-banner__text">
+            Рекомендуем обновить приложение до v{compat.info.recommendedDesktopVersion}.
+          </p>
+          <button class="btn" type="button" onclick={openDownloadUrl}>Скачать</button>
+        </div>
+      {/if}
 
       {#if connected}
         <p class="status">
@@ -2001,6 +2057,34 @@
 
   .errors li + li {
     margin-top: 0.25rem;
+  }
+
+  .compat-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .compat-banner__text {
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .compat-banner--block {
+    background: #fdf0ef;
+    border: 1px solid #f2c8c4;
+    color: #a12b23;
+  }
+
+  .compat-banner--warn {
+    background: #fdf6e7;
+    border: 1px solid #ecd9a8;
+    color: #7a5c12;
   }
 
   .status {

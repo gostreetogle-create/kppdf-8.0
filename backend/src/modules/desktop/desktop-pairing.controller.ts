@@ -4,6 +4,8 @@ import {
   CurrentUser,
   AuthenticatedUser,
 } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/public.decorator';
+import { DesktopCompatService } from './desktop-compat.service';
 import {
   DesktopPairingKeyService,
 } from './desktop-pairing-key.service';
@@ -27,7 +29,17 @@ class IssuePairingKeyDto {
 
 @Controller('desktop')
 export class DesktopPairingController {
-  constructor(private readonly keys: DesktopPairingKeyService) {}
+  constructor(
+    private readonly keys: DesktopPairingKeyService,
+    private readonly compat: DesktopCompatService,
+  ) {}
+
+  /** TZD-40: публичный контракт совместимости версий (env-driven, no secrets). */
+  @Public()
+  @Get('compat')
+  compatInfo() {
+    return this.compat.compat();
+  }
 
   @Post('pairing-keys')
   issue(@CurrentUser() user: AuthenticatedUser, @Body() dto: IssuePairingKeyDto) {

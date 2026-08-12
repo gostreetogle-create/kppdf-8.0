@@ -88,8 +88,27 @@ Auth к Nest: `X-Access-Token: kppd_…` **или** legacy `Authorization: Beare
 
 - После revoke/expiry — новый выпуск + повторный paste в Desktop / mcp.json.
 - Desktop auto-refresh ключа — out of scope (successor).
-- Предупреждение «версия Desktop ≠ сайта» — отдельный TZD-40.
+
+## Совместимость версий (TZD-40)
+
+После подключения Desktop читает `GET /api/desktop/compat` (публичный):
+
+```json
+{
+  "minDesktopVersion": "0.5.0",
+  "recommendedDesktopVersion": "0.5.1",
+  "downloadUrl": "/downloads/kppdf-desktop-setup.zip",
+  "serverBuildId": "…"
+}
+```
+
+- версия Desktop < `minDesktopVersion` → красный баннер + MCP не стартует;
+- `min` ≤ версия < `recommended` → жёлтый баннер, MCP можно;
+- ≥ `recommended` → тишина.
+
+Веб-диалог «Подключить десктоп» показывает строку «Актуальная версия Desktop: X (мин. Y)»
+рядом с кнопкой «Скачать приложение».
 
 ---
 
-_Обновлено: 2026-08-11 · Basic Auth coexist + revoke deletes_
+_Обновлено: 2026-08-12 · TZD-40 version gate + Basic Auth coexist + revoke deletes_

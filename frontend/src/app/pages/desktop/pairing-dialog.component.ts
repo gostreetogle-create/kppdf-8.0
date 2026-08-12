@@ -10,6 +10,7 @@ import { DESKTOP_DOWNLOAD_URL } from '../../core/desktop-download-url';
 import { extractErrorMessage } from '../../core/silent-http';
 import {
   DesktopPairingService,
+  type DesktopCompatInfo,
   type DesktopPairingKeyMeta,
   type DesktopPairingTtl,
 } from '../../shared/services/pi-desktop-pairing.service';
@@ -175,6 +176,12 @@ function openDownload(url: string): void {
 
       <div footer class="flex justify-between items-center w-full gap-3">
         <div class="flex flex-col gap-1 min-w-0">
+          @if (compat(); as c) {
+            <span class="text-xs text-muted-foreground" data-test="pairing-compat-hint">
+              Актуальная версия Desktop: {{ c.recommendedDesktopVersion }} (мин.
+              {{ c.minDesktopVersion }})
+            </span>
+          }
           @if (!downloadUrl) {
             <span class="text-xs text-muted-foreground" data-test="pairing-download-hint">
               {{ installerUnavailableHint }}
@@ -222,12 +229,14 @@ export class PairingDialogComponent implements OnInit {
   protected readonly copyError = signal<string | null>(null);
   protected readonly issuing = signal(false);
   protected readonly keys = signal<DesktopPairingKeyMeta[]>([]);
+  protected readonly compat = signal<DesktopCompatInfo | null>(null);
 
   protected ttl: DesktopPairingTtl = '30d';
   protected label = '';
 
   ngOnInit(): void {
     this.reloadKeys();
+    this.reloadCompat();
   }
 
   protected onIssue(): void {
@@ -339,6 +348,12 @@ export class PairingDialogComponent implements OnInit {
   private reloadKeys(): void {
     this.pairingApi.list().subscribe((res) => {
       if (res.ok) this.keys.set(res.data);
+    });
+  }
+
+  private reloadCompat(): void {
+    this.pairingApi.compat().subscribe((res) => {
+      if (res.ok) this.compat.set(res.data);
     });
   }
 }

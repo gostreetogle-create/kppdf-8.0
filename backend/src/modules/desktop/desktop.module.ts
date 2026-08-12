@@ -5,6 +5,7 @@ import {
   DesktopPairingKeySchema,
 } from './desktop-pairing-key.schema';
 import { DesktopPairingKeyService } from './desktop-pairing-key.service';
+import { DesktopCompatService } from './desktop-compat.service';
 import { DesktopPairingController } from './desktop-pairing.controller';
 import { UserModule } from '../user/user.module';
 
@@ -16,7 +17,7 @@ import { UserModule } from '../user/user.module';
     forwardRef(() => UserModule),
   ],
   controllers: [DesktopPairingController],
-  providers: [DesktopPairingKeyService],
+  providers: [DesktopPairingKeyService, DesktopCompatService],
   exports: [DesktopPairingKeyService, MongooseModule],
 })
 export class DesktopModule {}

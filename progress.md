@@ -2369,3 +2369,12 @@ BOM inspector — вклад строки material/module read-only.
 **Lock:** `.mimocode/locks/TZ-DICT-318-ral-auto-prefix.lock`
 **Known limit:** live browser/data smoke не запускался в изолированной сессии; deploy НЕ.
 **NEXT:** claim TZ-MATERIALS-312 строго по очереди.
+
+## [2026-08-12T16:29:00Z] — TZD-40 DONE: Desktop version gate
+**Исполнитель:** Buffy / фоновый desktop исполнитель
+**Статус:** DONE; BE tsc + jest desktop 10/10; FE tsc + jest desktop 12/12; desktop typecheck + svelte-check + mcp:check 110/110; diff-check PASS; deploy НЕ
+**Что:** Публичный GET /api/desktop/compat (env DESKTOP_MIN_VERSION / DESKTOP_RECOMMENDED_VERSION / DESKTOP_DOWNLOAD_URL / APP_VERSION, fail-open). Desktop после /auth/me сверяет свою версию (tauri) с контрактом: ниже min → красный баннер + MCP не стартует, между min и recommended → жёлтый баннер, ≥ recommended → тишина. Веб-диалог паринга показывает «Актуальная версия Desktop: X (мин. Y)». Docs INSTALL/PAIRING + config.env.example.
+**Archive:** tasks/_archive/2026-08/TZD-40.done.md
+**Lock:** .mimocode/locks/TZD-40-desktop-version-gate.lock (local, gitignored)
+**Known limit:** без warm deploy env баннер не появится; старый Desktop без кода баннер не покажет (ручной update).
+**NEXT:** TZD-45 MCP production/supply READ.

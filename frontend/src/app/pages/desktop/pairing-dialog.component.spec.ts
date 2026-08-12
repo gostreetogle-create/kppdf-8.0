@@ -22,6 +22,7 @@ describe('PairingDialogComponent (TZD-21)', () => {
   let issueSpy: jest.Mock;
   let listSpy: jest.Mock;
   let revokeSpy: jest.Mock;
+  let compatSpy: jest.Mock;
   let clipboardWriteTextSpy: jest.Mock;
 
   const pairingPacket = {
@@ -51,6 +52,17 @@ describe('PairingDialogComponent (TZD-21)', () => {
     );
     listSpy = jest.fn().mockReturnValue(of({ ok: true, data: [] }));
     revokeSpy = jest.fn().mockReturnValue(of({ ok: true, data: { ok: true } }));
+    compatSpy = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          minDesktopVersion: '0.1.0',
+          recommendedDesktopVersion: '0.5.1',
+          downloadUrl: DEFAULT_DESKTOP_DOWNLOAD_URL,
+          serverBuildId: 'test',
+        },
+      }),
+    );
 
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText: clipboardWriteTextSpy },
@@ -76,7 +88,7 @@ describe('PairingDialogComponent (TZD-21)', () => {
         },
         {
           provide: DesktopPairingService,
-          useValue: { issue: issueSpy, list: listSpy, revoke: revokeSpy },
+          useValue: { issue: issueSpy, list: listSpy, revoke: revokeSpy, compat: compatSpy },
         },
       ],
     }).compileComponents();
@@ -117,6 +129,15 @@ describe('PairingDialogComponent (TZD-21)', () => {
     expect(clipboardWriteTextSpy).toHaveBeenCalledWith(
       expect.stringContaining('kppd_testsecretvalue0001'),
     );
+  });
+
+  it('shows current desktop version hint when compat available', () => {
+    expect(compatSpy).toHaveBeenCalled();
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="pairing-compat-hint"]',
+    ) as HTMLElement;
+    expect(hint.textContent).toContain('Актуальная версия Desktop: 0.5.1');
+    expect(hint.textContent).toContain('(мин. 0.1.0)');
   });
 
   it('close calls dialog ref', () => {

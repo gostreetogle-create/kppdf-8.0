@@ -29,6 +29,7 @@
       ]
     },
     "shell:allow-kill",
+    "shell:allow-open",
     {
       "identifier": "shell:allow-spawn",
       "allow": [
