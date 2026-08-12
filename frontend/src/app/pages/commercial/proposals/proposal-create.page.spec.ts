@@ -1447,4 +1447,74 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       }),
     );
   }));
+
+  it('печать при готовом превью без фирмы не требует фирму и не форсит сохранение (TZ-SALES-368)', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      requestOutput: (action: 'pdf' | 'print' | 'archive') => void;
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+    };
+    const center = (page as unknown as { templateCenter?: { printPreview: () => void } })
+      .templateCenter;
+    expect(center).toBeDefined();
+    const printSpy = jest.spyOn(center!, 'printPreview');
+
+    // Готовое превью без выбранной фирмы (organizationId пустой).
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    fixture.detectChanges();
+
+    page.requestOutput('print');
+
+    expect(printSpy).toHaveBeenCalled();
+    expect(toastErrorMock).not.toHaveBeenCalled();
+    expect(quotationCreateMock).not.toHaveBeenCalled();
+  }));
+
+  it('печать без превью показывает короткий тост без слова «фирма»', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      requestOutput: (action: 'pdf' | 'print' | 'archive') => void;
+    };
+
+    page.requestOutput('print');
+
+    expect(toastErrorMock).toHaveBeenCalledWith('Превью листа ещё не готово.');
+    expect(toastErrorMock.mock.calls.flat().join(' ')).not.toContain('фирма');
+  });
+
+  it('PDF без черновика и фирмы даёт отдельное сообщение, не общий тост печати', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      requestOutput: (action: 'pdf' | 'print' | 'archive') => void;
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+    };
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    fixture.detectChanges();
+
+    page.requestOutput('pdf');
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Для PDF нужны шаблон, готовое превью и наша фирма.',
+    );
+    expect(toastErrorMock).not.toHaveBeenCalledWith(
+      'Дождитесь готового превью и выберите нашу фирму.',
+    );
+    expect(quotationCreateMock).not.toHaveBeenCalled();
+  }));
+
+  it('Архив без черновика и фирмы даёт отдельное сообщение', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      requestOutput: (action: 'pdf' | 'print' | 'archive') => void;
+      onTemplateChange: (tpl: DocumentTemplate | null) => void;
+    };
+    page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
+    tick(250);
+    fixture.detectChanges();
+
+    page.requestOutput('archive');
+
+    expect(toastErrorMock).toHaveBeenCalledWith(
+      'Для архива нужны шаблон, готовое превью и наша фирма.',
+    );
+    expect(quotationCreateMock).not.toHaveBeenCalled();
+  }));
 });

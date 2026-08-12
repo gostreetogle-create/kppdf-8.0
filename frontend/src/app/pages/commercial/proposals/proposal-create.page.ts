@@ -1023,19 +1023,29 @@ export class ProposalCreatePage implements OnInit {
     if (this.rightOpen() && this.rightPane() === 'output') {
       this.rightOpen.set(false);
     }
-    const run = (): void => {
+    // Печать свободна: не требует выбранную фирму и не форсит сохранение.
+    if (action === 'print') {
+      this.printCurrentPreview();
+      return;
+    }
+    // PDF / архив работают с сохранённой сущностью — нужен draft id.
+    if (this.currentDraftId() || this.readStorage('kp.create.lastDraftId')) {
       if (action === 'pdf') this.downloadPdf();
-      else if (action === 'print') this.printCurrentPreview();
       else this.archiveCurrentQuotation();
-    };
-    if (this.proposalStatus() === 'accepted') {
-      run();
       return;
     }
     if (!this.canSaveDraft()) {
-      this.toast.error('Дождитесь готового превью и выберите нашу фирму.');
+      this.toast.error(
+        action === 'pdf'
+          ? 'Для PDF нужны шаблон, готовое превью и наша фирма.'
+          : 'Для архива нужны шаблон, готовое превью и наша фирма.',
+      );
       return;
     }
+    const run = (): void => {
+      if (action === 'pdf') this.downloadPdf();
+      else this.archiveCurrentQuotation();
+    };
     this.pendingOutput = run;
     this.cancelAutosave();
     this.saveDraft(false);
