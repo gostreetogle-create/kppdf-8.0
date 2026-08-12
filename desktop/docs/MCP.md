@@ -64,7 +64,7 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
   "ok": true,
   "service": "kppdf-desktop-mcp",
   "port": 9743,
-  "toolCount": 81,
+  "toolCount": 93,
   "packageVersion": "0.1.0",
   "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
   "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
@@ -332,6 +332,32 @@ SoT сразу (нет journal) — для demo/ops ок; не «тихо» об
 
 **Известное ограничение:** journal/undo для stock — нет; `POST storage-items`
 404 не чинится в этом TZ (отдельный inventory TZ при нужде).
+
+## Tools — production (TZD-45) — read-only
+
+Маппинг на существующие Nest routes. **Только read**; write / Гант /
+себестоимость — successor после ручного smoke PO.
+
+| Tool | REST |
+|------|------|
+| `kppdf_list_work_types` | `GET /api/work-types` |
+| `kppdf_list_production_orders` | `GET /api/production-orders` |
+| `kppdf_get_production_order` | `GET /api/production-orders/:id` |
+| `kppdf_list_work_orders` | `GET /api/work-orders` |
+| `kppdf_get_work_order` | `GET /api/work-orders/:id` |
+
+## Tools — supply (TZD-45) — read-only
+
+Маппинг на существующие Nest routes. **Только read**; тендеры /
+write-heavy HITL — successor.
+
+| Tool | REST |
+|------|------|
+| `kppdf_list_supply_tasks` | `GET /api/supply-tasks?orderId&status` |
+| `kppdf_list_purchase_requests` | `GET /api/purchase-requests?status` |
+| `kppdf_get_purchase_request` | `GET /api/purchase-requests/:id` |
+| `kppdf_list_purchase_orders` | `GET /api/purchase-orders?supplierId&status` |
+| `kppdf_get_purchase_order` | `GET /api/purchase-orders/:id` |
 
 ## Tools — commercial (TZD-33) — read + draft HITL
 

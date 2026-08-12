@@ -2378,3 +2378,11 @@ BOM inspector — вклад строки material/module read-only.
 **Lock:** .mimocode/locks/TZD-40-desktop-version-gate.lock (local, gitignored)
 **Known limit:** без warm deploy env баннер не появится; старый Desktop без кода баннер не покажет (ручной update).
 **NEXT:** TZD-45 MCP production/supply READ.
+
+## [2026-08-12T16:36:00Z] — TZD-45 DONE: MCP production + supply read-first
+**Исполнитель:** Buffy / фоновый desktop исполнитель
+**Статус:** DONE; desktop/mcp tsc + tests 114/114 PASS; deploy НЕ
+**Что:** read-first MCP: production-tools.ts (work-types / production-orders / work-orders) + supply-tools.ts (supply-tasks / purchase-requests / purchase-orders) — 10 новых GET-tools по живым Nest routes (grep controllers, не invent). Реестр toolCount 83 → 93; MCP.md разделы production/supply.
+**Archive:** tasks/_archive/2026-08/TZD-45.done.md
+**Known limit:** только read; write-heavy HITL / тендеры / себестоимость / Гант — successor после smoke PO.
+**NEXT:** Фоновый агент свободен (40/45 закрыты).

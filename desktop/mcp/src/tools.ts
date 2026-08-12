@@ -39,6 +39,8 @@ import {
   registerReadTools,
 } from './read-tools.js';
 import { registerStockTools, STOCK_TOOL_NAMES } from './stock-tools.js';
+import { PRODUCTION_TOOL_NAMES, registerProductionTools } from './production-tools.js';
+import { SUPPLY_TOOL_NAMES, registerSupplyTools } from './supply-tools.js';
 import { HYGIENE_TOOL_NAMES, registerHygieneTools } from './hygiene-tools.js';
 import { registerWriteTools, WRITE_TOOL_NAMES } from './write-tools.js';
 import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
@@ -62,6 +64,8 @@ export function listRegisteredToolNames(): readonly string[] {
     ...DOC_TOOL_NAMES,
     ...COMMERCIAL_TOOL_NAMES,
     ...STOCK_TOOL_NAMES,
+    ...PRODUCTION_TOOL_NAMES,
+    ...SUPPLY_TOOL_NAMES,
     ...HYGIENE_TOOL_NAMES,
   ];
 }
@@ -166,6 +170,8 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerDomainTools(server, cfg);
   registerCommercialTools(server, cfg);
   registerStockTools(server, cfg);
+  registerProductionTools(server, cfg);
+  registerSupplyTools(server, cfg);
   registerHygieneTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
