@@ -2439,3 +2439,11 @@ BOM inspector — вклад строки material/module read-only.
 **Archive:** tasks/_archive/2026-08/TZD-45.done.md
 **Known limit:** только read; write-heavy HITL / тендеры / себестоимость / Гант — successor после smoke PO.
 **NEXT:** Фоновый агент свободен (40/45 закрыты).
+
+## [2026-08-12T19:20:00Z] — TZ-MIG-301 DONE: КП3 extract + field mapping audit
+**Исполнитель:** Buffy / data migration analyst (read-only к КП3)
+**Статус:** DONE; SSH BatchMode OK; counts 699/23/28; media 690 ≈82MB; git check-ignore дампов OK; deploy НЕ
+**Что:** Выгружен КП3 (Mongo `kp-app` + `/opt/kppdf/media`) → `data/from-kp3/` (raw JSON c `_id` строками, media, photos-index 661, id-map 699/23/28). Аудит `docs/audits/2026-08-12-kp3-to-kp8-field-map.md`: полный field-map с вердиктами. gap-block (3): фото (нет MCP upload), Counterparty.email (нет поля), брендинг КП (нет слота). В SoT КП8 ничего не писал; FE/BE schema не тронуты.
+**Archive:** tasks/_archive/2026-08/TZ-MIG-301.done.md
+**Lock:** .mimocode/locks/TZ-MIG-301-kp3-extract-map.lock (local, gitignored)
+**NEXT:** ждать вердикт PO по gap-списку → MIG-302 (map/rename часть) после OK.

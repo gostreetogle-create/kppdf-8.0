@@ -36,7 +36,7 @@ Loose wording PO → код:
 
 | # | TZ | Суть | Статус |
 |---|-----|------|--------|
-| 1 | [`TZ-MIG-301-kp3-extract-and-map.md`](./TZ-MIG-301-kp3-extract-and-map.md) | SSH→Mongo dump + media pack + field mapping audit | **READY** |
+| 1 | [`TZ-MIG-301-kp3-extract-and-map.md`](./TZ-MIG-301-kp3-extract-and-map.md) | SSH→Mongo dump + media pack + field mapping audit | **DONE** (2026-08-12, audit: `docs/audits/2026-08-12-kp3-to-kp8-field-map.md`) |
 | 2 | [`TZ-MIG-302-kp3-mcp-load.md`](./TZ-MIG-302-kp3-mcp-load.md) | Залив через MCP по принятому mapping | **после PASS 301 + вердикт PO по gaps** |
 
 Промпт на старт: [`PROMPT-KP3-MIG-301.md`](./PROMPT-KP3-MIG-301.md)
