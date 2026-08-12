@@ -15,6 +15,7 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { formatPrice } from '../../../shared/util/format';
 import type { ProposalDraftLine } from './proposal-product-rail.component';
 import type {
+  ProposalTableChrome,
   ProposalTableLayoutColumn,
   ProposalTableTarget,
 } from './proposal-create-inspector.component';
@@ -94,6 +95,32 @@ type ColumnWidths = Record<string, number>;
                 }
               </div>
             }
+          </div>
+
+          <!-- Рамка -->
+          <div class="editor__toolbar-group">
+            <button
+              type="button"
+              class="editor__toolbar-btn"
+              [disabled]="readOnly()"
+              (click)="cycleBorderWeight()"
+              data-test="kp-table-editor-border"
+            >
+              Рамка: {{ borderLabel() }}
+            </button>
+          </div>
+
+          <!-- Шапка -->
+          <div class="editor__toolbar-group">
+            <button
+              type="button"
+              class="editor__toolbar-btn"
+              [disabled]="readOnly()"
+              (click)="toggleHeaderWeight()"
+              data-test="kp-table-editor-header"
+            >
+              Шапка: {{ headerLabel() }}
+            </button>
           </div>
 
           <!-- Spacer -->
@@ -1132,6 +1159,8 @@ export class ProposalCreateTableEditorComponent {
   readonly commercialColumnsRequest = output<void>();
   readonly openTableTemplate = output<void>();
   readonly tableTargetChange = output<string>();
+  readonly chrome = input<ProposalTableChrome>({ borderWeight: 'normal', headerWeight: 'normal' });
+  readonly chromeChange = output<ProposalTableChrome>();
 
   // ── Local state ──
   protected readonly columnsMenuOpen = signal(false);
@@ -1139,6 +1168,16 @@ export class ProposalCreateTableEditorComponent {
   protected readonly columnMenuIndex = signal(-1);
   /** Per-column width overrides in %. */
   protected readonly columnWidths = signal<ColumnWidths>({});
+
+  protected readonly borderLabel = computed(() => {
+    const w = this.chrome().borderWeight ?? 'normal';
+    return ({ thin: 'Тонкая', normal: 'Обычная', thick: 'Жирная' } as const)[w];
+  });
+
+  protected readonly headerLabel = computed(() => {
+    const w = this.chrome().headerWeight ?? 'normal';
+    return w === 'bold' ? 'Жирный' : 'Обычный';
+  });
 
   // ── Icons ──
   protected readonly minusIcon = Minus;
@@ -1260,6 +1299,19 @@ export class ProposalCreateTableEditorComponent {
 
   protected resetWidths(): void {
     this.columnWidths.set({});
+  }
+
+  protected cycleBorderWeight(): void {
+    const order: Array<ProposalTableChrome['borderWeight']> = ['thin', 'normal', 'thick'];
+    const cur = this.chrome().borderWeight ?? 'normal';
+    const next = order[(order.indexOf(cur) + 1) % order.length];
+    this.chromeChange.emit({ ...this.chrome(), borderWeight: next });
+  }
+
+  protected toggleHeaderWeight(): void {
+    const cur = this.chrome().headerWeight ?? 'normal';
+    const next = cur === 'bold' ? 'normal' : 'bold';
+    this.chromeChange.emit({ ...this.chrome(), headerWeight: next });
   }
 
   protected addCommercialColumns(): void {

@@ -853,6 +853,10 @@ export class ProposalCreatePage implements OnInit {
           const payload = {
             previewLines,
             tableLayout,
+            tableChrome: {
+              borderWeight: this.kpTableChrome().borderWeight ?? 'normal',
+              headerWeight: this.kpTableChrome().headerWeight ?? 'normal',
+            },
             sheetLayout: this.sheetLayout() as BuildSheetLayout,
             tableTargetId: this.tableTemplateId() ?? undefined,
             dealTotals: {
