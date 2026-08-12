@@ -1,13 +1,13 @@
 # SESSION QUEUE
 
-## Checkpoint 2026-08-12 · WAVE-KP-TABLE-EDITOR A–D DONE · E VPN
-- DONE: A `0e42d8de` (359–361 merge) · B `7d6db412` (364 chrome) · C `632d3926` (365 DnD) · D `8f8b6d11` · fix `12b4950b`
-- Gates: FE prod build + tsc PASS; proposal-create 41/41; BE quotation 41/41 + table-template 3/3
+## Checkpoint 2026-08-12 · WAVE-KP-TABLE-EDITOR A–E DONE (prod)
+- DONE: A `0e42d8de` · B `7d6db412` · C `632d3926` · D `8f8b6d11` · fix `12b4950b` · checkpoint `3ebe9802`
+- Gates: FE/BE tsc + proposal-create 41/41 + quotation/table-template PASS; warm deploy PASS
 - IN PROGRESS: none
-- NOT DONE: **E warm deploy** — SSH `192.168.1.103` timeout (нужен VPN / LAN)
-- NEXT: после VPN → `.\deploy\synology\deploy.ps1` (без wipe/seed) → health https://kppdf-crm.ru
-- HEAD: `12b4950b` pushed: yes · Deploy: NO (blocked) · Desktop/`ruvector.db` — не коммитить
-- Wave: `WAVE-KP-TABLE-EDITOR-FINISH.md` A–D закрыты
+- NOT DONE: none
+- NEXT: idle · смотреть Create КП: рейл 3 кнопки, Редактор таблицы, chrome, DnD, фото
+- HEAD: `3ebe9802` pushed: yes · Deploy: YES (warm, no wipe) · https://kppdf-crm.ru · health OK
+- Wave: `WAVE-KP-TABLE-EDITOR-FINISH.md` A–E закрыты · Desktop/`ruvector.db` — не коммитить
 
 ## Checkpoint 2026-08-12 · TZ-SALES-363 DONE (WAVE-KP-STUDIO-CHROME #1)
 - DONE: панели-дети студии без дублей — Условия (empty-state короткий), Шаблон (нет дубля имени под селектом), Получатель (клиент → searchable PiOverflowSelect, 334-канон), Параметры (три «только в этом КП» → одна подсказка про наценку). Product rail не тронут (ширина = 362); tableOnly ветка не раздувалась (359).
