@@ -19,11 +19,15 @@
 - NEXT fix: `tasks/_backlog/kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` (не третий print-pipeline; 320 остаётся PARK).
 - Можно параллельно с рефактором КП: CONFLICT ≈ `proposal-create-template-center*` only.
 
-## Checkpoint 2026-08-12 · фон для второго ИИ (Desktop)
-- DONE (prod): WAVE-KP-TABLE-EDITOR A–E
-- Основной поток PO: рефактор Create КП — **не** давать второму агенту `proposal-create*`
-- NEXT фон: `tasks/_backlog/desktop/PROMPT-BACKGROUND-DESKTOP.md` → Desktop WIP → TZD-40 → TZD-45
-- Deploy фон НЕ · Desktop/`ruvector.db` dirty можно закрыть фоном (только desktop/**)
+## Checkpoint 2026-08-12 · Desktop WIP + TZD-40 DONE (фон)
+- DONE: Desktop WIP `d0c6d179` (nodejs scope + getVersion) · TZD-40 version gate `f06cecf1`
+- IN PROGRESS: none
+- NOT DONE: TZD-45 MCP production/supply READ
+- NEXT: TZD-45 (инвентарь живых Nest routes → desktop/mcp read tools, без выдуманных API)
+- HEAD: `f06cecf1` pushed: yes
+- Blockers: none
+- Deploy: NO (фон; баннер версий появится только после warm deploy env)
+- _active/: пусто · не трогал `proposal-create*` / `quotation*` / `ruvector.db`
 
 ## Checkpoint 2026-08-12 · WAVE-KP-TABLE-EDITOR A–E DONE (prod)
 - DONE: A `0e42d8de` · B `7d6db412` · C `632d3926` · D `8f8b6d11` · fix `12b4950b` · checkpoint `3ebe9802`
