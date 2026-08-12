@@ -131,3 +131,8 @@ vendor/
 # Local PO data dumps (never commit)
 tasks/Данные/
 
+
+# Ruflo local secrets and runtime data
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/

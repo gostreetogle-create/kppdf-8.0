@@ -33,13 +33,13 @@
       "identifier": "shell:allow-spawn",
       "allow": [
         {
-          "name": "node",
+          "name": "nodejs",
           "cmd": "C:\\Program Files\\nodejs\\node.exe",
           "args": true,
           "sidecar": false
         },
         {
-          "name": "node",
+          "name": "nodejs",
           "cmd": "C:\\Program Files (x86)\\nodejs\\node.exe",
           "args": true,
           "sidecar": false

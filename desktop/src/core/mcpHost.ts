@@ -11,7 +11,7 @@
 
 import { Command, type Child } from '@tauri-apps/plugin-shell';
 import { dirname, join, resourceDir } from '@tauri-apps/api/path';
-import { exists, readTextFile } from '@tauri-apps/plugin-fs';
+import { readTextFile } from '@tauri-apps/plugin-fs';
 import { DEFAULT_MCP_PORT } from './config';
 
 /** Сколько ждать /healthz после spawn (tsx cold-start на Windows бывает >10с). */
@@ -130,34 +130,18 @@ async function readPackageNameAt(hostDir: string): Promise<string | null> {
 }
 
 /**
- * GUI/Start Menu на Windows часто даёт урезанный PATH → `node` не находится.
- * Ищем типичные пути установки Node.
+ * GUI/Start Menu: `node` из PATH часто недоступен.
+ * Всегда предпочитаем scope-имя `nodejs` → абсолютный node.exe в capabilities.
  */
-export async function resolveNodeExecutable(): Promise<string> {
-  const candidates = [
-    'C:\\Program Files\\nodejs\\node.exe',
-    'C:\\Program Files (x86)\\nodejs\\node.exe',
-  ];
-  for (const p of candidates) {
-    try {
-      if (await exists(p)) return p;
-    } catch {
-      /* continue */
-    }
-  }
-  return 'node';
+export function resolveNodeShellCommand(): 'nodejs' | 'node' {
+  // Не проверяем exists() через fs — Program Files вне fs:scope.
+  return 'nodejs';
 }
 
 /** Env для child: не затирать PATH/SystemRoot (иначе tsx/node падают молча). */
 function childEnv(extra: Record<string, string>): Record<string, string> {
-  const pathKey = 'Path';
-  const machine =
-    typeof (globalThis as { process?: { env?: Record<string, string> } }).process?.env?.[pathKey] ===
-    'string'
-      ? (globalThis as { process: { env: Record<string, string> } }).process.env[pathKey]
-      : '';
   const nodeDir = 'C:\\Program Files\\nodejs';
-  const mergedPath = [nodeDir, machine, 'C:\\Windows\\System32'].filter(Boolean).join(';');
+  const mergedPath = [nodeDir, 'C:\\Windows\\System32', 'C:\\Windows'].join(';');
   return {
     ...extra,
     Path: mergedPath,
@@ -181,6 +165,8 @@ export class McpHostController {
   private generation = 0;
   private healthTimer: ReturnType<typeof setTimeout> | null = null;
   private stderrTail: string[] = [];
+  /** true — в stdout уже был лог «listening/healthz» (обход блокировки fetch 127.0.0.1 из WebView). */
+  private sawListenLog = false;
   private disposed = false;
 
   constructor(private readonly onState: (state: McpHostState) => void) {}
@@ -225,6 +211,7 @@ export class McpHostController {
     const gen = ++this.generation;
     this.expectedRunning = true;
     this.stderrTail = [];
+    this.sawListenLog = false;
     this.setState({
       status: 'starting',
       port: opts.port,
@@ -265,9 +252,9 @@ export class McpHostController {
     try {
       const cli = await join(hostDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
       const entry = await join(hostDir, 'src', 'http-server.ts');
-      const nodeBin = await resolveNodeExecutable();
-      // Command.create name must match shell scope (`node`); absolute cmd is in capabilities.
-      const cmd = Command.create('node', [cli, entry], {
+      const nodeCmd = resolveNodeShellCommand();
+      // Scope `nodejs` → absolute Program Files\nodejs\node.exe (см. capabilities).
+      const cmd = Command.create(nodeCmd, [cli, entry], {
         cwd: hostDir,
         env: childEnv({
           KPPDF_API_BASE_URL: opts.apiBaseUrl,
@@ -281,8 +268,6 @@ export class McpHostController {
                 KPPDF_HTTP_BASIC_PASS: opts.basicAuth.password ?? '',
               }
             : {}),
-          // Hint for scopes that resolve `node` via PATH:
-          ...(nodeBin !== 'node' ? { KPPDF_NODE_BIN: nodeBin } : {}),
         }),
       });
 
@@ -292,11 +277,18 @@ export class McpHostController {
         this.setState({ status: 'error', lastError: this.describeSpawnError(message) });
       });
 
-      cmd.stderr.on('data', (line) => {
-        const text = String(line);
-        this.stderrTail.push(text.trim());
-        if (this.stderrTail.length > 8) this.stderrTail.shift();
-      });
+      const onLogLine = (line: string) => {
+        const text = String(line).trim();
+        if (!text) return;
+        this.stderrTail.push(text);
+        if (this.stderrTail.length > 12) this.stderrTail.shift();
+        // WebView (tauri.localhost) часто не может fetch 127.0.0.1 — считаем ready по логу.
+        if (text.includes('[kppdf-mcp] listening') || text.includes('[kppdf-mcp] healthz')) {
+          this.sawListenLog = true;
+        }
+      };
+      cmd.stdout.on('data', onLogLine);
+      cmd.stderr.on('data', onLogLine);
 
       cmd.on('close', (payload) => {
         if (gen !== this.generation) return;
@@ -315,33 +307,29 @@ export class McpHostController {
 
       const child = await cmd.spawn();
       if (gen !== this.generation) {
-        // За это время вызвали stop() — процесс больше не нужен.
         await child.kill().catch(() => undefined);
         return;
       }
       this.child = child;
       this.setState({ pid: child.pid });
 
-      // Подтверждаем running по /healthz (tsx cold-start может быть долгим).
       const healthy = await this.waitForHealth(opts.port, gen);
       if (gen !== this.generation || !this.expectedRunning) return;
       if (healthy) {
         this.setState({ status: 'running' });
       } else {
         this.expectedRunning = false;
-        // Инвалидируем поколение ДО kill: close-событие от нашего kill
-        // не должно перезаписать статус error на stopped.
         this.generation += 1;
         const tail = this.stderrTail.filter(Boolean).join(' · ').slice(0, 400);
         await this.killChild();
         this.setState({
           status: 'error',
           lastError:
-            `MCP host не ответил на /healthz за ${Math.round(HEALTHZ_WAIT_MS / 1000)} с ` +
-            `(порт ${opts.port}, каталог «${hostDir}», node «${nodeBin}»). ` +
+            `MCP host не поднялся за ${Math.round(HEALTHZ_WAIT_MS / 1000)} с ` +
+            `(порт ${opts.port}, каталог «${hostDir}», shell «${nodeCmd}»). ` +
             (tail
               ? `Лог: ${tail}`
-              : 'Проверьте Node.js и что в каталоге есть node_modules/tsx.'),
+              : 'Нет лога процесса — проверьте Node.js в «C:\\Program Files\\nodejs» и npm install в каталоге MCP.'),
         });
       }
     } catch (err) {
@@ -420,6 +408,7 @@ export class McpHostController {
     const deadline = Date.now() + HEALTHZ_WAIT_MS;
     while (Date.now() < deadline) {
       if (gen !== this.generation) return false;
+      if (this.sawListenLog) return true;
       try {
         const res = await fetch(mcpHealthzUrl(port), { signal: AbortSignal.timeout(800) });
         if (res.ok) {
@@ -427,13 +416,13 @@ export class McpHostController {
           if (body?.ok === true || body === null) return true;
         }
       } catch {
-        // ещё поднимается — пробуем дальше
+        // WebView часто блокирует fetch на 127.0.0.1 — тогда ждём лог listening.
       }
       await new Promise((resolve) => {
-        this.healthTimer = setTimeout(resolve, 500);
+        this.healthTimer = setTimeout(resolve, 400);
       });
     }
-    return false;
+    return this.sawListenLog;
   }
 
   private describeSpawnError(raw: string): string {

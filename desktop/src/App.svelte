@@ -2,6 +2,7 @@
   // v0.2 — «Подключение» (паринг + /auth/me). v0.3 — «Импорт» (excel/csv → таблица).
   import { onMount } from 'svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, apiPost, ApiError, type ApiClientOptions, type HttpBasicAuth } from './core/api';
@@ -79,6 +80,8 @@
     port: DEFAULT_MCP_PORT,
     allowLan: false,
   });
+  /** Semver из tauri.conf / Cargo — не хардкод «v0.5». */
+  let appVersion = $state('…');
   let mcpPortInput = $state(String(DEFAULT_MCP_PORT));
   let mcpError = $state('');
   let mcpCopied = $state(false);
@@ -860,6 +863,11 @@
   }
 
   onMount(async () => {
+    try {
+      appVersion = await getVersion();
+    } catch {
+      appVersion = '0.5.1';
+    }
     mcp = new McpHostController((state) => {
       mcpState = state;
     });
@@ -1716,7 +1724,7 @@
   <div class="shell__hint" role="status" aria-live="polite">{uiHint}</div>
 
   <footer class="shell__footer">
-    <p>v0.5 — паринг, импорт, MCP host (TZD-14) и inbox для агента (TZD-15): файл → аудит → предложение → подтверждение через журнал изменений.</p>
+    <p>v{appVersion} — паринг, импорт, MCP host (TZD-14) и inbox для агента (TZD-15): файл → аудит → предложение → подтверждение через журнал изменений.</p>
   </footer>
 </main>
 

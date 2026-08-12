@@ -63,6 +63,9 @@ importers:
       papaparse:
         specifier: ^5.4.1
         version: 5.5.4
+      tsx:
+        specifier: ^4.23.5
+        version: 4.23.5
       xlsx:
         specifier: ^0.18.5
         version: 0.18.5
@@ -79,9 +82,6 @@ importers:
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2
-      tsx:
-        specifier: ^4.23.5
-        version: 4.23.5
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
