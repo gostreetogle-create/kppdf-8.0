@@ -1,3 +1,12 @@
+## [2026-08-12] — TZ-SALES-368 DONE — Create КП: печать свободная; PDF/Архив отдельно
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** `requestOutput` разведён: Печать сразу зовёт `printCurrentPreview()` (без `canSaveDraft`/save/pendingOutput, пустое превью — короткий тост); PDF/Архив требуют сохранённый draft id (есть id → сразу; нет и можно → save затем; нельзя → свой тост «Для PDF/архива нужны шаблон, готовое превью и наша фирма»). Autosave write-path не тронут.
+**Gates:** FE tsc PASS; proposal-create.page Jest 41/41 PASS (+4 теста); diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-368.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-368.md`
+**Lock:** `.mimocode/locks/TZ-SALES-368-kp-output-gates.lock`
+
 ## [2026-08-12] — TZ-SALES-367 DONE — Create КП: savebar gone, output on rail
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; frontend-only; deploy НЕ

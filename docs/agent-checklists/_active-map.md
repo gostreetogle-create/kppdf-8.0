@@ -1,5 +1,18 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T17:53:31Z · TZ-SALES-368 DONE (печать свободная; PDF/Архив отдельно)
+- DONE: `requestOutput` разведён — print сразу `printCurrentPreview()` без `canSaveDraft`/save/pendingOutput; pdf/archive через draft id → save → отдельный тост «Для PDF/архива нужны шаблон, готовое превью и наша фирма».
+- Gates: FE tsc PASS; proposal-create.page Jest 41/41 PASS (+4 теста вывода); diff-check PASS
+- Archive: `tasks/_archive/2026-08/TZ-SALES-368.done.md`; checklist: `docs/agent-checklists/TZ-SALES-368.md`; lock: `.mimocode/locks/TZ-SALES-368-kp-output-gates.lock`
+- Commit/push: `df4c5560` на `origin/main`; Deploy НЕ
+- IN PROGRESS: none
+- NOT DONE: авто-PDF на Принято/Оплачено (successor, отдельная TZ — не эта)
+- NEXT: idle — ждать PO / следующую TZ; не deploy без команды
+- HEAD: `df4c5560` pushed: yes
+- Blockers: none
+- _active/: empty (не создавался)
+
+
 ## Checkpoint 2026-08-12 · READY WAVE-NAV-RETURN (316→317) — PO блокер
 - Канон: `docs/audits/2026-08-12-nav-return-gutters-canon.md`
 - Wave: `tasks/_backlog/ui/WAVE-NAV-RETURN.md`
