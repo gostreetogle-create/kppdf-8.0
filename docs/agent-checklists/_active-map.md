@@ -1,5 +1,15 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · READY TZD-46 + deploy canon (Desktop ZIP semver; VPN blocks deploy now)
+- PO: скачал с сайта старый Desktop («0.5»), MCP `/healthz` :9743 timeout; в имени ZIP версии нет.
+- Диагноз: в git уже `0.5.1`, на Synology/кнопке — старый unversioned `kppdf-desktop-setup.zip`; warm deploy с новым tauri publish не был.
+- Canon: `docs/audits/2026-08-12-desktop-download-version-naming-canon.md`
+- TZ: `tasks/_backlog/desktop/TZD-46-desktop-zip-versioned-filename.md` · prompt `PROMPT-TZD-46-ZIP-VERSION.md`
+- PDF имена: `TZ-SALES-369-kp-pdf-filename.md` (FE уже КП-{n}; audit остальных путей)
+- Deploy README + `config.env.example` — чеклист следующего warm deploy (tauri build + versioned URL + DESKTOP_* env)
+- NEXT: исполнить TZD-46 в коде **сейчас**; «деплой» — только когда VPN off + слово PO
+- Ban: auto-deploy while VPN; wipe
+
 ## Checkpoint 2026-08-12 · READY WAVE-KP3-DATA-MIGRATE (MIG-301 → 302)
 - Цель PO: выгрузка КП3 (products/kps/counterparties + media) → `data/from-kp3/` → аудит полей → залив через MCP
 - Wave: `tasks/_backlog/migrate-kp3/WAVE-KP3-DATA-MIGRATE.md`

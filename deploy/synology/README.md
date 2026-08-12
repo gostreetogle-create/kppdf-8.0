@@ -149,19 +149,31 @@ python -u deploy/synology/deploy.py --wipe --seed         # чистая БД
 
 ---
 
-## Desktop installer (TZD-16 / TZD-24)
+## Desktop installer (TZD-16 / TZD-24 / TZD-46)
 
 Windows installer is published as **ZIP** (preferred) plus optional `.exe` alongside.
 After `cd desktop && pnpm tauri build`, run `pnpm run publish-installer` (copies
-`.exe` and builds `kppdf-desktop-setup.zip` with a single `kppdf-desktop-setup.exe`
-entry into `frontend/downloads/` and `frontend/browser/downloads/`). Deploy
-`build_frontend` does the same via `zipfile`. Backend mounts that folder at
+`.exe` and builds zip into `frontend/downloads/` and `frontend/browser/downloads/`).
+
+**Имена файлов (канон 2026-08-12):** versioned  
+`kppdf-desktop-setup-v{semver}.zip` (+ alias `kppdf-desktop-setup.zip` на тот же билд).  
+Полный канон + почему на сайте ещё «старое»:  
+`docs/audits/2026-08-12-desktop-download-version-naming-canon.md` · TZ: `tasks/_backlog/desktop/TZD-46-desktop-zip-versioned-filename.md`.
+
+Deploy `build_frontend` делает publish через `zipfile`. Backend mounts that folder at
 `/downloads/` and **never** SPA-falls back those paths. Default pairing button:
-`/downloads/kppdf-desktop-setup.zip`. Set `DESKTOP_DOWNLOAD_URL` in
-`deploy/synology/config.env` (or the process environment); `deploy.py` injects it
-into the SPA. Leave unset for the same-origin default, or set explicitly empty to
-disable the button. Do not commit the `.exe`/`.msi`/`.zip`. MCP host still needs
+versioned URL via compat/`DESKTOP_DOWNLOAD_URL`, alias unversioned для старых закладок.
+Set `DESKTOP_DOWNLOAD_URL` in `deploy/synology/config.env`; `deploy.py` injects it
+into the SPA. Do not commit the `.exe`/`.msi`/`.zip`. MCP host still needs
 Node.js on the client until sidecar bundling lands.
+
+### Обязательно на следующем warm deploy (VPN off + слово PO)
+
+1. TZD-46 в `main` (versioned zip).
+2. На build-ПК: `cd desktop && pnpm tauri build && pnpm run publish-installer`.
+3. `config.env`: `DESKTOP_MIN_VERSION` / `DESKTOP_RECOMMENDED_VERSION` / `DESKTOP_DOWNLOAD_URL=…-v{semver}.zip`.
+4. Warm `deploy.ps1` — если WARN «Desktop installer .exe not found» → для Desktop-потока считать деплой **неполным**.
+5. Smoke: скачанный файл содержит `v{semver}` в имени; футер Desktop = тот же semver.
 
 ## После деплоя — проверка
 
