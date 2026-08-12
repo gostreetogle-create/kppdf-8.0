@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · READY TZ-SALES-368 (печать без гейта фирмы)
+- Канон: `docs/audits/2026-08-12-kp-output-gates-canon.md`
+- TZ + prompt: `TZ-SALES-368-kp-output-gates.md` · `PROMPT-KP-OUTPUT-GATES-368.md`
+- Баг: общий `canSaveDraft` на Печать/PDF/Архив → тост про фирму даже для print
+- NEXT: отдать PROMPT-KP-OUTPUT-GATES-368 idle-агенту; авто-PDF на статусе — later
+
 ## Checkpoint 2026-08-12 · очередь coding IDLE (после 366/367/Desktop)
 - DONE на main: Table Editor A–E (prod earlier) · 366 print · 367 no-savebar · Desktop WIP+40+45
 - HEAD: `3dfb8e92` / feat `41b00c97` · _active/: empty
