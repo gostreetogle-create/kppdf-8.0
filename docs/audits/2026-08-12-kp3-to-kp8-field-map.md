@@ -176,3 +176,15 @@ KP8-only поля без источника (не gaps — просто отсу
 **Pre-step (не gap):** `category` string → `Category` словарь — перед 302 создать/найти Category по name (14 значений + 29 пустых).
 
 **Рекомендация:** MIG-302 можно стартовать сейчас для map/rename части (продукты без фото, контрагенты без email/фото, КП→Quotation целиком по полям §3); фото/email/брендинг — отдельные successor-TZ.
+
+### Вердикт PO (2026-08-12) — **ДА, scoped MIG-302**
+
+| Ось | MIG-302 | Successor |
+|-----|---------|-----------|
+| Products map/rename (без photoIds) | **грузить** | — |
+| Photos / photoIds | **не грузить** (staging остаётся) | [`TZD-47`](../../tasks/_backlog/desktop/TZD-47-mcp-photo-upload.md) → затем [`TZ-MIG-303`](../../tasks/_backlog/migrate-kp3/TZ-MIG-303-attach-kp3-photos.md) |
+| Branding kpPage1/2 / brandingTemplates | **не грузить** | PARK — [`TZ-MIG-305`](../../tasks/_backlog/migrate-kp3/TZ-MIG-305-kp3-branding-park.md) |
+| Counterparties email | **не грузить в 302** | [`TZ-MIG-304`](../../tasks/_backlog/migrate-kp3/TZ-MIG-304-cp-email-via-person.md) |
+
+Целевой SoT для 302 = **тот бэкенд, к которому подключён MCP** (local/dev). Prod Synology — только явное слово PO.
+

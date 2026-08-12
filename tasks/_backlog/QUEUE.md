@@ -8,9 +8,12 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **0 READY** | Desktop ZIP с semver в имени (+ next deploy checklist) | `TZD-46` · `PROMPT-TZD-46-ZIP-VERSION.md` | **код сейчас; деплой later (VPN)** |
-| **0b READY** | Перенос данных КП3→КП8 (extract+map → MCP) | `migrate-kp3/` · MIG-301 → 302 · `PROMPT-KP3-MIG-301.md` | после/рядом |
-| **0c READY** | PDF имя = `КП-{number}.pdf` (audit+fix) | `TZ-SALES-369-kp-pdf-filename.md` | thin |
+| **0 READY** | MIG-302 scoped MCP load (без фото/email/бренд) | `PROMPT-KP3-MIG-302.md` | **PO ДА 2026-08-12** |
+| **0a READY** | Desktop ZIP с semver в имени | `TZD-46` · `PROMPT-TZD-46-ZIP-VERSION.md` | код; деплой later |
+| **0b next** | MCP photo upload → attach KP3 photos | TZD-47 → MIG-303 | после 302 / parallel tool |
+| **0c next** | CP email → Person | MIG-304 | после 302 |
+| — | Branding kpPage | MIG-305 | **PARK** |
+| — | MIG-301 extract+map | archive | **DONE** `e264ff4c` |
 | — | Create КП editor + chrome + print + no-savebar | 359–367 | **DONE** на `main` (`41b00c97`+) |
 | — | Desktop фон (WIP · TZD-40 · TZD-45) | `PROMPT-BACKGROUND-DESKTOP` | **DONE** |
 | — | Навигация return + gutters | WAVE-NAV-RETURN 316→317 | **DONE** |

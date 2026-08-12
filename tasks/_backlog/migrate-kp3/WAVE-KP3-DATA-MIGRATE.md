@@ -36,8 +36,14 @@ Loose wording PO → код:
 
 | # | TZ | Суть | Статус |
 |---|-----|------|--------|
-| 1 | [`TZ-MIG-301-kp3-extract-and-map.md`](./TZ-MIG-301-kp3-extract-and-map.md) | SSH→Mongo dump + media pack + field mapping audit | **DONE** (2026-08-12, audit: `docs/audits/2026-08-12-kp3-to-kp8-field-map.md`) |
-| 2 | [`TZ-MIG-302-kp3-mcp-load.md`](./TZ-MIG-302-kp3-mcp-load.md) | Залив через MCP по принятому mapping | **после PASS 301 + вердикт PO по gaps** |
+| 1 | MIG-301 extract+map | dump + audit | **DONE** `e264ff4c` |
+| 2 | [`TZ-MIG-302`](./TZ-MIG-302-kp3-mcp-load.md) | MCP load scoped (no photo/email/brand) | **READY** — вердикт PO ДА |
+| 3 | [`TZD-47`](../desktop/TZD-47-mcp-photo-upload.md) | MCP photo upload tool | после/рядом 302 |
+| 4 | [`TZ-MIG-303`](./TZ-MIG-303-attach-kp3-photos.md) | bulk attach photos | после TZD-47 |
+| 5 | [`TZ-MIG-304`](./TZ-MIG-304-cp-email-via-person.md) | email → Person | после 302 |
+| — | [`TZ-MIG-305`](./TZ-MIG-305-kp3-branding-park.md) | branding | **PARK** |
+
+Промпт: [`PROMPT-KP3-MIG-302.md`](./PROMPT-KP3-MIG-302.md)
 
 Промпт на старт: [`PROMPT-KP3-MIG-301.md`](./PROMPT-KP3-MIG-301.md)
 
