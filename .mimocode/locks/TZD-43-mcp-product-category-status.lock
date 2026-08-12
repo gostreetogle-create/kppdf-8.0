@@ -1,0 +1,9 @@
+task: TZD-43
+slug: mcp-product-category-status
+status: DONE
+closed_at: 2026-08-12T00:31:42Z
+executor: Buffy
+scope: backend mutation-journal DTO/mapping + desktop/mcp
+commit: pending
+origin_main: pending
+deploy: NO

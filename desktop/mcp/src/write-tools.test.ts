@@ -10,12 +10,14 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   buildMaterialCreateProposal,
+  buildProductCreateProposal,
   batchItemSchema,
   materialCreateInput,
   buildCompositionLineProposal,
   confirmProposal,
   proposeMaterialCreate,
   proposeProductCreate,
+  productCreateSchema,
   WRITE_TOOL_NAMES,
 } from './write-tools.js';
 import type { McpRuntimeConfig } from './config.js';
@@ -104,6 +106,48 @@ describe('material propose fields (TZD-32)', () => {
     assert.equal(item.materialKind, 'fastener');
     assert.throws(() =>
       batchItemSchema.parse({ name: 'X', materialKind: 'nope' }),
+    );
+  });
+});
+
+describe('product propose category/status contract (TZD-43)', () => {
+  it('includes categoryId and status when provided', () => {
+    const body = buildProductCreateProposal(
+      productCreateSchema.parse({
+        name: 'ШЛ-300',
+        kind: 'good',
+        categoryId: '507f1f77bcf86cd799439011',
+        status: 'active',
+      }),
+    );
+
+    assert.deepEqual(body.productCreate, {
+      name: 'ШЛ-300',
+      kind: 'good',
+      unit: 'шт',
+      sku: undefined,
+      notes: undefined,
+      categoryId: '507f1f77bcf86cd799439011',
+      status: 'active',
+    });
+  });
+
+  it('keeps the legacy payload valid without categoryId/status', () => {
+    const body = buildProductCreateProposal(
+      productCreateSchema.parse({ name: 'Oak', kind: 'good' }),
+    );
+
+    assert.equal(body.productCreate.categoryId, undefined);
+    assert.equal(body.productCreate.status, undefined);
+    assert.equal(body.productCreate.unit, 'шт');
+  });
+
+  it('rejects malformed category ids and unknown statuses', () => {
+    assert.throws(() =>
+      productCreateSchema.parse({ name: 'X', kind: 'good', categoryId: 'not-an-id' }),
+    );
+    assert.throws(() =>
+      productCreateSchema.parse({ name: 'X', kind: 'good', status: 'published' }),
     );
   });
 });

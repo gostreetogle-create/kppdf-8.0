@@ -6,6 +6,7 @@ import {
   getProductDomainSchema,
   MATERIAL_KINDS,
   PRODUCT_KINDS,
+  PRODUCT_STATUSES,
 } from './domain-schema.js';
 import { DOMAIN_TOOL_NAMES, validateProduct } from './domain-tools.js';
 import { INBOX_TOOL_NAMES, auditInboxRows } from './inbox-tools.js';
@@ -39,8 +40,11 @@ describe('product domain schema (TZD-27)', () => {
     const schema = getProductDomainSchema();
     assert.equal(schema.entity, 'product');
     assert.deepEqual([...schema.productKinds], [...PRODUCT_KINDS]);
+    assert.deepEqual([...schema.productStatuses], [...PRODUCT_STATUSES]);
     assert.ok(schema.createProposal.required.includes('name'));
     assert.ok(schema.createProposal.required.includes('kind'));
+    assert.ok(schema.createProposal.optional.includes('categoryId'));
+    assert.ok(schema.createProposal.optional.includes('status'));
   });
 });
 
@@ -50,6 +54,30 @@ describe('validateProduct (TZD-27)', () => {
     assert.equal(result.ok, true);
     assert.equal(result.normalized.unit, 'шт');
     assert.ok(result.infos.some((i) => i.code === 'UNIT_DEFAULT'));
+  });
+
+  it('accepts optional categoryId/status and normalizes them', () => {
+    const result = validateProduct({
+      name: 'ШЛ-300',
+      kind: 'good',
+      categoryId: '507f1f77bcf86cd799439011',
+      status: 'active',
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.normalized.categoryId, '507f1f77bcf86cd799439011');
+    assert.equal(result.normalized.status, 'active');
+  });
+
+  it('rejects malformed categoryId/status', () => {
+    const result = validateProduct({
+      name: 'X',
+      kind: 'good',
+      categoryId: 'bad',
+      status: 'published',
+    });
+    assert.equal(result.ok, false);
+    assert.ok(result.errors.some((e) => e.code === 'CATEGORY_ID_INVALID'));
+    assert.ok(result.errors.some((e) => e.code === 'STATUS_INVALID'));
   });
 
   it('missing name / missing or invalid kind → errors', () => {

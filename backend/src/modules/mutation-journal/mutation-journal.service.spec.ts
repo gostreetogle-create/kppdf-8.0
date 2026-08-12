@@ -552,6 +552,42 @@ describe('MutationJournalService (TZD-13)', () => {
     expect(create).toHaveBeenCalled();
   });
 
+  it('propose product.create preserves categoryId and status in the journal payload (TZD-43)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'product.create',
+        toolName: 'kppdf_propose_product_create',
+        entityType: 'Product',
+        payload: {},
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    await service.propose(
+      {
+        kind: 'product.create',
+        productCreate: {
+          name: 'ШЛ-300',
+          kind: 'good',
+          categoryId: '507f1f77bcf86cd799439011',
+          status: 'active',
+        },
+      },
+      user,
+    );
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          categoryId: '507f1f77bcf86cd799439011',
+          status: 'active',
+        }),
+      }),
+    );
+  });
+
   it('propose product.create rejects missing kind (TZD-27)', async () => {
     const { service } = buildService();
     await expect(

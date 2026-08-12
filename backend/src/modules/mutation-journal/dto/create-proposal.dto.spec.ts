@@ -1,6 +1,9 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { ProposeMaterialCreateDto } from './create-proposal.dto';
+import {
+  ProposeMaterialCreateDto,
+  ProposeProductCreateDto,
+} from './create-proposal.dto';
 
 describe('ProposeMaterialCreateDto (TZD-32 whitelist)', () => {
   it('accepts the extended fields pricePerUnit/materialKind/description/dimensions', async () => {
@@ -42,5 +45,32 @@ describe('ProposeMaterialCreateDto (TZD-32 whitelist)', () => {
       }),
     );
     expect(errors).toHaveLength(0);
+  });
+});
+
+describe('ProposeProductCreateDto (TZD-43 category/status)', () => {
+  it('accepts categoryId and the product status whitelist', async () => {
+    const errors = await validate(
+      plainToInstance(ProposeProductCreateDto, {
+        name: 'ШЛ-300',
+        kind: 'good',
+        categoryId: '507f1f77bcf86cd799439011',
+        status: 'active',
+      }),
+    );
+    expect(errors).toHaveLength(0);
+  });
+
+  it('rejects malformed categoryId and unknown status', async () => {
+    const errors = await validate(
+      plainToInstance(ProposeProductCreateDto, {
+        name: 'ШЛ-300',
+        kind: 'good',
+        categoryId: 'bad',
+        status: 'published',
+      }),
+    );
+    const props = errors.map((error) => error.property);
+    expect(props).toEqual(expect.arrayContaining(['categoryId', 'status']));
   });
 });

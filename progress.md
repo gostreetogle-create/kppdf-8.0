@@ -1,3 +1,14 @@
+## [2026-08-12] — TZD-43 DONE — MCP product category/status contract
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP + backend mutation-journal mapping; deploy НЕ
+**Что:** Product proposals now accept optional `categoryId` and backend status whitelist `new|active|archived|draft`; journal payload preserves both through confirm. Product domain schema and `kppdf_validate_product` expose/validate the fields; omitted fields remain backward-compatible.
+**Gates:** desktop/mcp 105/105 PASS; MCP tsc PASS; backend mutation-journal 26/26 PASS; backend tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-43.done.md`
+**Checklist:** `docs/agent-checklists/TZD-43.md`
+**Lock:** `.mimocode/locks/TZD-43-mcp-product-category-status.lock`
+**Known limitation:** no live product create was run; no category API/backfill/frontend/production/deploy changes.
+**NEXT:** TZD-44; TZD-45 parked; deploy НЕ.
+
 ## [2026-08-12] — TZD-42 DONE — MCP mutation-journal confirm 404 recovery
 **Автор:** Buffy
 **Статус:** DONE; Desktop/MCP + backend mutation-journal; deploy НЕ

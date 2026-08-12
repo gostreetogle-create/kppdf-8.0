@@ -27,14 +27,19 @@ export const WRITE_TOOL_NAMES = [
 ] as const;
 
 const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
+const PRODUCT_STATUS_ENUM = z.enum(['new', 'active', 'archived', 'draft']);
+const MONGO_ID = /^[a-f0-9]{24}$/i;
 export const productCreateInput = {
   name: z.string().min(1).describe('Product name'),
   kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
   unit: z.string().optional().describe('Unit (default шт)'),
   sku: z.string().optional(),
   notes: z.string().optional(),
+  categoryId: z.string().regex(MONGO_ID).optional().describe('Product category id'),
+  status: PRODUCT_STATUS_ENUM.optional().describe('new | active | archived | draft'),
 };
-type ProductCreateInput = z.infer<z.ZodObject<typeof productCreateInput>>;
+export const productCreateSchema = z.object(productCreateInput);
+type ProductCreateInput = z.infer<typeof productCreateSchema>;
 const COMPOSITION_PARENT_ENUM = z.enum(['product', 'module']);
 const COMPOSITION_LINE_ENUM = z.enum(['material', 'module', 'product']);
 export const compositionLineInput = {
@@ -139,6 +144,26 @@ export async function proposeMaterialCreate(
   }
 }
 
+export function buildProductCreateProposal(args: ProductCreateInput): {
+  kind: 'product.create';
+  toolName: string;
+  productCreate: Record<string, unknown>;
+} {
+  return {
+    kind: 'product.create',
+    toolName: 'kppdf_propose_product_create',
+    productCreate: {
+      name: args.name,
+      kind: args.kind,
+      unit: args.unit?.trim() || 'шт',
+      sku: args.sku,
+      notes: args.notes,
+      ...(args.categoryId ? { categoryId: args.categoryId } : {}),
+      ...(args.status ? { status: args.status } : {}),
+    },
+  };
+}
+
 export async function proposeProductCreate(
   cfg: McpRuntimeConfig,
   args: ProductCreateInput,
@@ -148,17 +173,7 @@ export async function proposeProductCreate(
       cfg.apiBaseUrl,
       cfg.apiKey,
       '/api/mutation-journal/proposals',
-      {
-        kind: 'product.create',
-        toolName: 'kppdf_propose_product_create',
-        productCreate: {
-          name: args.name,
-          kind: args.kind,
-          unit: args.unit?.trim() || 'шт',
-          sku: args.sku,
-          notes: args.notes,
-        },
-      },
+      buildProductCreateProposal(args),
     );
     return toolOk({ ok: true, proposal: result });
   } catch (err) {
@@ -326,8 +341,8 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
       outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose product create',
       description:
-        'TZD-27: creates a product.create PROPOSAL (name + kind required, unit ' +
-        'defaults to шт). No SoT write — confirm with kppdf_confirm_proposal. ' +
+        'TZD-27/TZD-43: creates a product.create PROPOSAL (name + kind required, unit ' +
+        'defaults to шт; optional categoryId/status mirror the backend DTO). No SoT write — confirm with kppdf_confirm_proposal. ' +
         'Check kppdf_get_product_where_used / composition before mass updates.',
       inputSchema: productCreateInput,
     },

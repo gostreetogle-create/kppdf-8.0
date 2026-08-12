@@ -135,6 +135,8 @@ export class MutationJournalService {
         unit: p.unit?.trim() || 'шт',
         ...(p.sku ? { sku: p.sku } : {}),
         ...(p.notes ? { notes: p.notes } : {}),
+        ...(p.categoryId ? { categoryId: p.categoryId } : {}),
+        ...(p.status ? { status: p.status } : {}),
       };
       const doc = await this.model.create({
         status: 'proposed',

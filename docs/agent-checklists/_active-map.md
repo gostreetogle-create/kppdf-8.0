@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T00:31:42Z · TZD-43 DONE
+- DONE: MCP product proposals accept optional `categoryId` and `status` (`new|active|archived|draft`); backend DTO/journal mapping, product domain schema, and validate_product are synchronized.
+- Gates: desktop/mcp 105/105 + tsc PASS; backend mutation-journal 26/26 + tsc PASS; diff-check PASS; Prettier N/A (binary not installed).
+- Archive: `tasks/_archive/2026-08/TZD-43.done.md`; lock: `.mimocode/locks/TZD-43-mcp-product-category-status.lock`; checklist DONE; `_active/` cleared.
+- Commit/push: pending closeout; deploy НЕ. NEXT: TZD-44; TZD-45 parked.
+
 ## Checkpoint 2026-08-12T03:30:00Z · TZD-42 DONE
 - DONE: backend mutation-journal proposal confirm/cancel 404s now echo the received id and `proposalId` recovery hint; MCP confirm preserves and reports the exact id on HTTP 404.
 - Root cause: audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no delete, overwrite, ownership race, or TTL expiry reproduced.

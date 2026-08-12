@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZD-43 DONE: MCP product category/status contract
+**Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal mapping; deploy НЕ
+**Что:** Product proposals accept optional `categoryId` and status whitelist `new|active|archived|draft`; journal mapping preserves both through confirm. Product domain schema and `kppdf_validate_product` expose/validate the fields; omitted fields remain backward-compatible.
+**Gates:** desktop/mcp 105/105 + tsc PASS; backend mutation-journal 26/26 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-43.done.md`
+**Checklist:** `docs/agent-checklists/TZD-43.md`
+**Lock:** `.mimocode/locks/TZD-43-mcp-product-category-status.lock`
+**NEXT:** TZD-44; TZD-45 park; deploy НЕ.
+
 ## [2026-08-12] — TZD-42 DONE: MCP mutation-journal confirm 404 recovery
 **Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal; deploy НЕ
 **Что:** 100 immediate backend confirms and material/product MCP mock chains pass. Audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no journal deletion, overwrite, ownership race, or TTL expiry reproduced. Proposal confirm/cancel 404s now echo the received id and recovery hint; MCP confirm repeats it on HTTP 404.

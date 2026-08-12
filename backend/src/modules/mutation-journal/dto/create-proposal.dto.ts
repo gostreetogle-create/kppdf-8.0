@@ -110,6 +110,16 @@ export class ProposeProductCreateDto {
   @IsString()
   @Length(0, 512)
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'ID категории изделия (null = без категории)' })
+  @IsOptional()
+  @IsMongoId()
+  categoryId?: string | null;
+
+  @ApiPropertyOptional({ enum: ['new', 'active', 'archived', 'draft'], description: 'Статус изделия' })
+  @IsOptional()
+  @IsIn(['new', 'active', 'archived', 'draft'])
+  status?: 'new' | 'active' | 'archived' | 'draft';
 }
 
 export class ProposeProductUpdateDto {
@@ -139,7 +149,7 @@ export class CreateProposalDto {
   @Type(() => ProposeMaterialUpdateDto)
   update?: ProposeMaterialUpdateDto;
 
-  @ApiPropertyOptional({ description: 'For product.create (TZD-27)' })
+  @ApiPropertyOptional({ description: 'For product.create (TZD-27, TZD-43)' })
   @IsOptional()
   @ValidateNested()
   @Type(() => ProposeProductCreateDto)
