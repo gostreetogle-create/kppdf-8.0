@@ -10,6 +10,14 @@
 
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · PO verdict: MIG-302 scoped YES
+- MIG-301 DONE (`e264ff4c`): gaps = photos / CP.email / branding
+- **PO ДА:** Categories→CP→Products→Quotations через MCP; без photoIds/email/branding; SoT=local MCP
+- Successors: TZD-47 → MIG-303 photos; MIG-304 email→Person; MIG-305 branding PARK
+- Prompt: `tasks/_backlog/migrate-kp3/PROMPT-KP3-MIG-302.md`
+- NEXT: MIG-302 (нужен живой MCP); TZD-46 уже DONE в соседнем checkpoint
+- Ban: gap-block в 302; wipe; prod Synology без слова PO
+
 ## Checkpoint 2026-08-12T22:40:00Z · TZD-46 DONE (desktop zip semver naming + publish canon)
 - DONE: publish-installer.mjs — `kppdf-desktop-setup-v{semver}.exe/.zip` + unversioned aliases (те же байты), semver SoT package.json==tauri.conf.json (FAIL при расхождении), NSIS candidate versioned (legacy fallback WARN); deploy.py publish_desktop_installer зеркало; FE default = alias (вариант A), meta-инжект versioned на деплое; INSTALL/PAIRING канон.
 - Gates: desktop tsc PASS; version-compat tsx 10/10; publish dry FAIL-path (exit 1); publish + deploy.py functional tests PASS; FE tsc PASS; jest pairing+desktop-download-url 14/14; ESLint/Prettier/diff-check PASS.
