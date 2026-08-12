@@ -37,6 +37,13 @@ deploy/kp3-data-copy/kppdf8-kp3-data-copy
 !deploy/kp3-data-copy/CREDENTIALS.example.md
 !deploy/kp3-data-copy/README.md
 
+# KP3 migration staging dumps (JSON + media binaries) — keep local only
+data/from-kp3/raw/
+data/from-kp3/media/
+data/from-kp3/**/*.bson
+data/from-kp3/**/*.json
+!data/from-kp3/README.md
+
 # Deploy build artifacts
 frontend/browser/
 

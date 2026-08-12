@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · READY WAVE-KP3-DATA-MIGRATE (MIG-301 → 302)
+- Цель PO: выгрузка КП3 (products/kps/counterparties + media) → `data/from-kp3/` → аудит полей → залив через MCP
+- Wave: `tasks/_backlog/migrate-kp3/WAVE-KP3-DATA-MIGRATE.md`
+- TZ: `TZ-MIG-301-kp3-extract-and-map.md` (READY) → `TZ-MIG-302-kp3-mcp-load.md` (после PASS + gaps)
+- Prompt: `tasks/_backlog/migrate-kp3/PROMPT-KP3-MIG-301.md`
+- SSH: `root@130.49.129.240` key `kppdf8-kp3-data-copy` · Mongo `kp-app` · counts 699/28/23 · media ~690
+- NEXT: отдать PROMPT-KP3-MIG-301 исполнителю; **не** MIG-302 и не deploy без отчёта gap-block
+- Ban: wipe, direct mongorestore в КП8, schema patches без successor-TZ
+
 ## Checkpoint 2026-08-12T19:10:00Z · WAVE-NAV-RETURN CLOSED (316+317 DONE)
 - DONE: 316 (edit template → /builder/:id + returnUrl, `7ed07c30`) + 317 (gutters ←→ site-wide, AppHistoryStore).
 - Gates: FE tsc PASS; Jest layout+history+picker+builder 57/57 PASS; ESLint/Prettier/diff-check PASS; deploy НЕ.
