@@ -117,6 +117,19 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
                   total: 1,
                 },
               }),
+            findById: () =>
+              of({
+                ok: true,
+                data: {
+                  _id: 'prod-1',
+                  name: 'Стенд',
+                  sku: 'ST-1',
+                  kind: 'product',
+                  unit: 'шт',
+                  listPrice: 5000,
+                  photoIds: [{ _id: 'ph-1', storageUrl: '/uploads/stand-thumb.webp' }],
+                },
+              }),
           },
         },
         {
@@ -266,8 +279,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-toggle-table"]'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeNull();
-    expect(fixture.nativeElement.textContent).toContain('Видна');
-    expect(fixture.nativeElement.textContent).toContain('Открыть шаблон таблицы');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-studio"]'))).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Таблица этого КП');
+    expect(fixture.nativeElement.textContent).toContain('Открыть пресет в Документах');
     expect(
       fixture.debugElement.query(By.css('[data-test="kp-table-left-productName"]')),
     ).toBeTruthy();
@@ -277,8 +291,104 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     page.toggleRightPane('params');
     fixture.detectChanges();
-    expect(fixture.debugElement.query(By.css('[data-test="kp-insp-table"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-studio"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeTruthy();
+  });
+
+  it('keeps right rail order Параметры → Состав → Таблица → Условия', () => {
+    const buttons = fixture.debugElement
+      .query(By.css('[data-test="kp-rail-right"]'))
+      .queryAll(By.css('button'))
+      .map((btn) => btn.attributes['data-test']);
+    expect(buttons).toEqual([
+      'kp-create-toggle-right',
+      'kp-create-toggle-composition',
+      'kp-create-toggle-table',
+      'kp-create-toggle-terms',
+    ]);
+  });
+
+  it('uses flyout S/L tiers and distinct Шаблон vs Условия icons (TZ-SALES-362)', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      fileIcon: unknown;
+      termsIcon: unknown;
+      toggleLeftTool: (tool: 'template' | 'products' | 'recipient') => void;
+      toggleRightPane: (pane: 'params' | 'terms' | 'table' | 'composition') => void;
+    };
+    expect(page.fileIcon).not.toBe(page.termsIcon);
+
+    page.toggleLeftTool('template');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="template"]'))?.attributes[
+        'data-flyout-tier'
+      ],
+    ).toBe('s');
+
+    page.toggleLeftTool('products');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="products"]'))?.attributes[
+        'data-flyout-tier'
+      ],
+    ).toBe('l');
+
+    page.toggleLeftTool('recipient');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="recipient"]'))?.attributes[
+        'data-flyout-tier'
+      ],
+    ).toBe('l');
+
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="params"]'))?.attributes['data-flyout-tier'],
+    ).toBe('s');
+
+    page.toggleRightPane('terms');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="terms"]'))?.attributes['data-flyout-tier'],
+    ).toBe('s');
+
+    page.toggleRightPane('table');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-flyout="table"]'))?.attributes['data-flyout-tier'],
+    ).toBe('l');
+
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-create-toggle-terms"]'))?.attributes[
+        'aria-label'
+      ],
+    ).toBe('Условия');
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-create-toggle-template"]'))?.attributes[
+        'aria-label'
+      ],
+    ).toBe('Шаблон');
+  });
+
+  it('places «Своя строка» in the composition footer and adds a custom line', () => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'composition') => void;
+      addCustomLine: () => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+    page.toggleRightPane('composition');
+    fixture.detectChanges();
+
+    const addBtn = fixture.debugElement.query(By.css('[data-test="kp-add-custom-line"]'));
+    expect(addBtn).toBeTruthy();
+    expect(addBtn.nativeElement.className).toContain('composition__add-row');
+    expect(fixture.nativeElement.textContent).toContain('внизу');
+
+    addBtn.triggerEventHandler('click');
+    fixture.detectChanges();
+    expect(page.draftLines()).toHaveLength(1);
+    expect(page.draftLines()[0].lineKind).toBe('custom');
   });
 
   it('opens the Условия overlay from the right rail without changing the shell', () => {
@@ -383,8 +493,8 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       expect.objectContaining({
         previewLines: [],
         tableLayout: expect.arrayContaining([
-          { key: 'productName', visible: true },
-          { key: 'sum', visible: true },
+          expect.objectContaining({ key: 'productName', visible: true }),
+          expect.objectContaining({ key: 'sum', visible: true }),
         ]),
       }),
     );
@@ -464,8 +574,8 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       expect.objectContaining({
         previewLines: [],
         tableLayout: expect.arrayContaining([
-          { key: 'productName', visible: true },
-          { key: 'sum', visible: true },
+          expect.objectContaining({ key: 'productName', visible: true }),
+          expect.objectContaining({ key: 'sum', visible: true }),
         ]),
       }),
     );
@@ -627,6 +737,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       productId: 'prod-1',
       productName: 'Стенд',
       productSku: 'ST-1',
+      photoUrl: '/uploads/stand-thumb.webp',
       quantity: 2,
       unit: 'шт',
       unitPrice: 5000,
@@ -644,7 +755,14 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           templateId: 'tpl-1',
           html: expect.any(String),
         }),
-        items: [expect.objectContaining({ productId: 'prod-1', quantity: 2, unitPrice: 5000 })],
+        items: [
+          expect.objectContaining({
+            productId: 'prod-1',
+            quantity: 2,
+            unitPrice: 5000,
+            photoUrl: '/uploads/stand-thumb.webp',
+          }),
+        ],
       }),
     );
     expect(
@@ -745,7 +863,14 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           },
           terms: [{ text: 'Оплата: {{total_price}}', sortOrder: 0 }],
           items: [
-            { productId: 'prod-1', productName: 'Стенд', quantity: 3, unit: 'шт', unitPrice: 5000 },
+            {
+              productId: 'prod-1',
+              productName: 'Стенд',
+              quantity: 3,
+              unit: 'шт',
+              unitPrice: 5000,
+              photoUrl: '/uploads/stand-thumb.webp',
+            },
           ],
         },
       }),
@@ -773,6 +898,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         quantity: 3,
         unit: 'шт',
         unitPrice: 5000,
+        photoUrl: '/uploads/stand-thumb.webp',
       },
     ]);
     expect(localStorage.getItem('kp.create.lastTemplateId')).toBe('tpl-1');
@@ -820,6 +946,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         quantity: 4,
         unit: 'шт',
         unitPrice: 5000,
+        photoUrl: '/uploads/stand-thumb.webp',
       },
     ]);
   }));
@@ -897,9 +1024,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       'tpl-1',
       expect.objectContaining({
         tableLayout: expect.arrayContaining([
-          { key: 'quantity', visible: true },
-          { key: 'unitPrice', visible: true },
-          { key: 'sum', visible: true },
+          expect.objectContaining({ key: 'quantity', visible: true }),
+          expect.objectContaining({ key: 'unitPrice', visible: true }),
+          expect.objectContaining({ key: 'sum', visible: true }),
         ]),
       }),
     );

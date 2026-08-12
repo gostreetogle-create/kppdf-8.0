@@ -39,6 +39,7 @@ export class QuotationItemDto {
   productName?: string;
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsString() productSku?: string;
+  @IsOptional() @IsString() photoUrl?: string;
   @IsOptional() @IsString() sourceItemId?: string;
 
   @IsNumber()

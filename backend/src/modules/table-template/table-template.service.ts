@@ -14,6 +14,7 @@ import { UpdateTableTemplateDto } from './dto/update-table-template.dto';
 export interface TablePreviewLayoutColumn {
   key: string;
   visible?: boolean;
+  widthPercent?: number;
 }
 
 export interface TableDealTotals {
@@ -29,6 +30,11 @@ export interface TablePhotoOptions {
   photoScalePercent?: number;
   photoCropYPercent?: number;
   showPhotoColumn?: boolean;
+}
+
+export interface TablePreviewChrome {
+  borderWeight?: 'thin' | 'normal' | 'thick';
+  headerWeight?: 'normal' | 'bold';
 }
 
 /**
@@ -161,6 +167,7 @@ export class TableTemplateService implements OnModuleInit {
     layout?: TablePreviewLayoutColumn[],
     dealTotals?: TableDealTotals,
     photoOptions?: TablePhotoOptions,
+    chrome?: TablePreviewChrome,
   ): Promise<string> {
     const doc = await this.findById(id);
     const cols = this.resolvePreviewColumns(
@@ -172,12 +179,26 @@ export class TableTemplateService implements OnModuleInit {
       return '<p class="pi-empty-state">Нет описанных колонок.</p>';
     }
 
+    const widthByKey = this.resolveWidthPercents(cols, layout);
+    const borderPx =
+      chrome?.borderWeight === 'thin'
+        ? '0.5px'
+        : chrome?.borderWeight === 'thick'
+          ? '2px'
+          : '1px';
+    const headerWeight = chrome?.headerWeight === 'bold' ? '700' : '600';
+    const colgroup = cols
+      .map(
+        (c) =>
+          `<col style="width:${widthByKey.get(c.key) ?? Math.round(100 / cols.length)}%" />`,
+      )
+      .join('');
     const headHtml = cols
       .map(
         (c) =>
           `<th scope="col" style="text-align:${c.align ?? 'left'};width:${
-            c.width ?? 100
-          }px">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
+            widthByKey.get(c.key) ?? Math.round(100 / cols.length)
+          }%;font-weight:${headerWeight};border:${borderPx} solid #ccc">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
       )
       .join('');
     // A caller-supplied array is request-scoped preview data. An explicit empty
@@ -186,10 +207,14 @@ export class TableTemplateService implements OnModuleInit {
     const rows = previewRows ?? doc.sampleRows ?? [];
     if (rows.length === 0) {
       const blankCells = cols
-        .map((c) => `<td style="text-align:${c.align ?? 'left'}"></td>`)
+        .map(
+          (c) =>
+            `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc"></td>`,
+        )
         .join('');
       const tableHtml =
-        '<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6">' +
+        `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
+        `<colgroup>${colgroup}</colgroup>` +
         `<thead><tr>${headHtml}</tr></thead>` +
         `<tbody><tr>${blankCells}</tr></tbody>` +
         '</table>';
@@ -207,7 +232,7 @@ export class TableTemplateService implements OnModuleInit {
               c.format,
               photoOptions,
             );
-            return `<td style="text-align:${c.align ?? 'left'}">${formatted}</td>`;
+            return `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc">${formatted}</td>`;
           })
           .join('');
         return `<tr>${cells}</tr>`;
@@ -215,7 +240,8 @@ export class TableTemplateService implements OnModuleInit {
       .join('');
 
     const tableHtml =
-      '<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6">' +
+      `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
+      `<colgroup>${colgroup}</colgroup>` +
       `<thead><tr>${headHtml}</tr></thead>` +
       `<tbody>${bodyHtml}</tbody>` +
       '</table>';
@@ -223,6 +249,38 @@ export class TableTemplateService implements OnModuleInit {
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
+
+  private resolveWidthPercents(
+    cols: TableTemplateDocument['columns'],
+    layout?: TablePreviewLayoutColumn[],
+  ): Map<string, number> {
+    const fromLayout = new Map<string, number>();
+    for (const entry of layout ?? []) {
+      if (
+        typeof entry.widthPercent === 'number' &&
+        Number.isFinite(entry.widthPercent) &&
+        entry.widthPercent > 0
+      ) {
+        fromLayout.set(
+          entry.key,
+          Math.min(80, Math.max(5, Math.round(entry.widthPercent))),
+        );
+      }
+    }
+    const equal = cols.length > 0 ? Math.round(100 / cols.length) : 100;
+    const result = new Map<string, number>();
+    let assigned = 0;
+    cols.forEach((col, index) => {
+      const value = fromLayout.get(col.key) ?? equal;
+      if (index === cols.length - 1) {
+        result.set(col.key, Math.max(5, 100 - assigned));
+      } else {
+        result.set(col.key, value);
+        assigned += value;
+      }
+    });
+    return result;
+  }
 
   private resolvePreviewColumns(
     columns: TableTemplateDocument['columns'],
@@ -390,9 +448,15 @@ export class TableTemplateService implements OnModuleInit {
   }
 
   private isPhotoColumn(key: string): boolean {
-    return ['photo', 'image', 'рисунок', 'photourl'].includes(
-      key.trim().toLowerCase(),
-    );
+    return [
+      'photo',
+      'image',
+      'рисунок',
+      'photourl',
+      'photoid',
+      'photo_id',
+      'фото',
+    ].includes(key.trim().toLowerCase());
   }
 
   private formatImageCell(

@@ -43,7 +43,7 @@ const TERM_VARIABLES = [
       <div class="terms__heading">
         <div>
           <h3>Условия</h3>
-          <p>Только для этого КП</p>
+          <p>Текст только в этом КП</p>
         </div>
         <app-pi-button
           type="button"

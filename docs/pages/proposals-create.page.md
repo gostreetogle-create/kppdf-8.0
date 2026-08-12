@@ -8,7 +8,7 @@
 ## Зафиксировано (не менять без PO)
 
 - Центр = только A4; flyout **overlay** (grid rails|center|rails fixed)
-- Left rail: **Шаблон** + **Товары** + **Получатель**; Right: **Состав** + **Параметры** + **Таблица** + **Условия** (взаимоисключающие overlay-инструменты, TZ-SALES-340/332/343/344)
+- Left rail: **Шаблон** + **Товары** + **Получатель**; Right: **Параметры** → **Состав** → **Таблица** → **Условия** (взаимоисключающие overlay-инструменты; порядок рейла TZ-SALES-356)
 - 340: «Состав КП» показывает добавленные строки, позволяет менять количество/цену/единицу, дублировать, удалять и менять порядок; повторное добавление изделия увеличивает его количество. Изменения используют тот же build/autosave путь, что и лист.
 - 342: в «Состав КП» можно добавить «Своя строка» без карточки каталога; для позиции доступны название, описание, ед. изм., скидка и флаг «Не входит в стоимость». Скидка уменьшает сумму строки, опциональные позиции остаются на листе и выводятся отдельной строкой под итогом; старые каталожные строки читаются без миграции.
 - 346: «Вид листа» хранится в КП (`rowsFirstPage`, `rowsNextPage`, `photoScalePercent`, `photoCropYPercent`, `showPhotoColumn`). Build режет позиции на A4-листы, повторяет шапку и фон, выводит итог/условия только на последнем листе, а `pageNumbering` добавляет «Страница N из M». Центр показывает вертикальную ленту sandboxed iframe-листов; один лист по-прежнему без внутренних скроллов.
@@ -20,7 +20,9 @@
 - 344/352: правый рейл «Условия» редактирует только экземпляр текущего КП: пустое состояние прямо ведёт к «Добавить условие» или библиотеке, строки можно удалить и переставить ↑/↓, библиотечный `TextBlock` добавляется без выхода из студии, а токены вставляются в позицию курсора. Условия сохраняются в `Quotation.terms`, восстанавливаются после F5 и попадают в HTML/PDF; неизвестные токены остаются текстом.
 - 352: пустой «Состав КП» даёт явную кнопку «Открыть «Товары»»; «Своя строка» и поле «Название» остаются русскими, без молчаливой пустой панели.
 - **355:** «Состав КП» — wide overlay (`min(50vw, 52rem)`), **таблица** строк (не куча карточек); qty/цена/скидка/опц здесь; A4 только превью; карандаш открывает FullEditor изделия/модуля/материала без ухода со студии. Аудит: [`2026-08-11-kp-composition-table-audit.md`](../audits/2026-08-11-kp-composition-table-audit.md).
+- **356–358 (WAVE-KP-TABLE-STUDIO):** «Своя строка» — full-width footer состава; рейл Параметры→Состав→Таблица→Условия. Кнопка «Таблица» = **KP Table Studio** (~A4 width): chrome рамки/шапки, width% колонок, живая HTML-таблица позиций этого КП (qty/цена пишут в тот же `draftLines`). Build применяет width/chrome на A4. Shared TableTemplate не пишется. Vision: [`2026-08-11-kp-table-studio-vision.md`](../audits/2026-08-11-kp-table-studio-vision.md).
 - **363 (chrome):** панели-дети студии ужаты по Paper & Ink — без дублей подсказок: имя шаблона под селектом убрано (его и так показывает trigger), пустое «Условия» не повторяет видимые CTA, в «Параметрах» три повтора «только в этом КП» сведены к одной подсказке про наценку, а «Клиент» в «Получателе» снова выбирается через searchable `PiOverflowSelect` (канон 334), а не search + native select.
+- **362 (WAVE-KP-STUDIO-CHROME):** flyout тиры **S** (`--kp-flyout-s` ≈20rem: Шаблон/Параметры/Условия) и **L** (`--kp-flyout-l` =794px: Товары/Состав/Таблица/Получатель); иконка Условий = `ScrollText`, не дубль `FileText` шаблона. Аудит: [`2026-08-12-kp-studio-flyout-chrome-audit.md`](../audits/2026-08-12-kp-studio-flyout-chrome-audit.md).
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory до Save; Save создаёт/обновляет draft Quotation с items, templateId и non-null templateSnapshot, а `kp.create.lastDraftId`/`lastTemplateId` используются только для resume
@@ -32,7 +34,8 @@
 - 336/352: статус `accepted` показывается как «Принято»; он блокирует товары, количество, шаблон, параметры и таблицу. Снятие статуса возвращает редактирование; при открытии принятого КП A4 использует сохранённый `templateSnapshot`, а «Копировать» создаёт новый draft в студии.
 - Empty table-template with declared columns renders a blank skeleton (`thead` + one empty row), not a plain empty-state paragraph (324).
 - 325: preview request carries `previewLines`; the assigned `settings.kpLineItems`/`role: line-items` table is filled by canonical `column.key` aliases. Without an explicit target, exactly one live table is eligible; snapshots and other live tables stay untouched.
-- 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and «Видна/Скрыта» rebuild the A4 table; the shared TableTemplate is never patched. «Открыть шаблон таблицы» uses the existing Documents tables route.
+- 330/332: the right-flyout «Таблица» is a copy-on-write `kpTableLayout` for this КП, synced from the selected template's actual live line-items table columns: ←/→ and visibility rebuild the A4 table; the shared TableTemplate is never patched. «Открыть пресет в Документах» uses the existing Documents tables route.
+- **357/358:** Table Studio adds instance `widthPercent` + `tableChrome` (border/header weight); build HTML reflects them on the live line-items table.
 - 331: «Наценка %» changes only request `previewLines.unitPrice` (rounded to kopecks, clamped −100…1000); the catalog is never updated. «НДС %» defaults to **20** and is whole-deal, with prices treated as VAT-inclusive: footer VAT is extracted as `sum × vat / (100 + vat)`; VAT 0 hides the VAT row. No «Скидка» column.
 
 ## Center preview (TZ-SALES-319)

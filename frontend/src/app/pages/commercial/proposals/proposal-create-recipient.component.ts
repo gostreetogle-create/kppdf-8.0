@@ -36,7 +36,7 @@ export interface ProposalRecipientState {
       <div class="recipient__heading">
         <div>
           <h3>Получатель</h3>
-          <p>Клиент и реквизиты на бланке КП</p>
+          <p>Клиент, контакт и объект на бланке</p>
         </div>
         <app-pi-button
           type="button"

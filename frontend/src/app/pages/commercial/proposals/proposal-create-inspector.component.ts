@@ -32,6 +32,14 @@ export interface ProposalTableLayoutColumn {
   key: string;
   label: string;
   visible: boolean;
+  /** Copy-on-write width for this КП instance (~sum of visible ≈ 100). */
+  widthPercent?: number;
+}
+
+/** Instance-only table chrome (not shared TableTemplate). */
+export interface ProposalTableChrome {
+  borderWeight?: 'thin' | 'normal' | 'thick';
+  headerWeight?: 'normal' | 'bold';
 }
 
 export interface ProposalTableTarget {
@@ -202,7 +210,7 @@ export type ProposalCreateStatus = ProposalStatus;
           />
         </app-pi-form-field>
 
-        <p class="inspector__markup-hint">Меняет цены только в этом КП; каталог не трогаем.</p>
+        <p class="inspector__markup-hint">Только в этом КП; каталог не меняем.</p>
 
         <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
           <app-pi-input

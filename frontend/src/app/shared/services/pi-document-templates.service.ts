@@ -89,6 +89,12 @@ export interface BuildPreviewLine {
 export interface BuildTableLayoutColumn {
   key: string;
   visible?: boolean;
+  widthPercent?: number;
+}
+
+export interface BuildTableChrome {
+  borderWeight?: 'thin' | 'normal' | 'thick';
+  headerWeight?: 'normal' | 'bold';
 }
 
 export interface BuildSheetLayout {
@@ -117,6 +123,7 @@ export interface BuildDealTotals {
 export interface BuildDocumentRequest {
   previewLines?: BuildPreviewLine[];
   tableLayout?: BuildTableLayoutColumn[];
+  tableChrome?: BuildTableChrome;
   sheetLayout?: BuildSheetLayout;
   terms?: BuildTerm[];
   /** Request-only selected live table-template target for multi-table documents. */

@@ -19,6 +19,7 @@ import {
   FileText,
   LucideAngularModule,
   Package,
+  ScrollText,
   SlidersHorizontal,
   TableProperties,
   ListTree,
@@ -70,9 +71,11 @@ import {
   type ProposalCreateInspectorState,
   type ProposalCreateStatus,
   type ProposalSheetLayoutState,
+  type ProposalTableChrome,
   type ProposalTableLayoutColumn,
   type ProposalTableTarget,
 } from './proposal-create-inspector.component';
+import { ProposalCreateTableStudioComponent } from './proposal-create-table-studio.component';
 import {
   ProposalCreateTemplateCenterComponent,
   type KpTemplatePreviewStatus,
@@ -98,13 +101,18 @@ const DEFAULT_KP_SHEET_LAYOUT: ProposalSheetLayoutState = {
 };
 
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
-  { key: 'index', label: '№', visible: true },
-  { key: 'productName', label: 'Наименование', visible: true },
-  { key: 'quantity', label: 'Кол-во', visible: true },
-  { key: 'unit', label: 'Ед.', visible: true },
-  { key: 'unitPrice', label: 'Цена', visible: true },
-  { key: 'sum', label: 'Сумма', visible: true },
+  { key: 'index', label: '№', visible: true, widthPercent: 6 },
+  { key: 'productName', label: 'Наименование', visible: true, widthPercent: 40 },
+  { key: 'quantity', label: 'Кол-во', visible: true, widthPercent: 12 },
+  { key: 'unit', label: 'Ед.', visible: true, widthPercent: 8 },
+  { key: 'unitPrice', label: 'Цена', visible: true, widthPercent: 16 },
+  { key: 'sum', label: 'Сумма', visible: true, widthPercent: 18 },
 ];
+
+const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
+  borderWeight: 'normal',
+  headerWeight: 'normal',
+};
 
 /**
  * Create-KP focus shell (TZ-SALES-317) + template build preview (TZ-SALES-319).
@@ -122,6 +130,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
     ProposalProductRailComponent,
     ProposalCreateCompositionComponent,
     ProposalCreateInspectorComponent,
+    ProposalCreateTableStudioComponent,
     ProposalCreateTemplateCenterComponent,
     ProposalCreateTemplatePickerComponent,
     ProposalCreateRecipientComponent,
@@ -377,6 +386,19 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             <button
               type="button"
               class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'params'"
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'params'"
+              aria-controls="kp-flyout-params"
+              aria-label="Параметры"
+              title="Параметры"
+              data-test="kp-create-toggle-right"
+              (click)="toggleRightPane('params')"
+            >
+              <lucide-angular [img]="slidersIcon" [size]="18" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
               [class.kp-create-studio__rail-btn--active]="
                 rightOpen() && rightPane() === 'composition'
               "
@@ -388,19 +410,6 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               (click)="toggleRightPane('composition')"
             >
               <lucide-angular [img]="compositionIcon" [size]="18" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              class="kp-create-studio__rail-btn pi-focus-ring"
-              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'params'"
-              [attr.aria-expanded]="rightOpen() && rightPane() === 'params'"
-              aria-controls="kp-flyout-params"
-              aria-label="Параметры"
-              title="Параметры"
-              data-test="kp-create-toggle-right"
-              (click)="toggleRightPane('params')"
-            >
-              <lucide-angular [img]="slidersIcon" [size]="18" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -436,6 +445,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               class="kp-create-studio__flyout kp-create-studio__flyout--left"
               data-test="kp-create-left"
               data-flyout="template"
+              data-flyout-tier="s"
               aria-label="Шаблон КП"
               #leftFlyout
             >
@@ -452,6 +462,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               class="kp-create-studio__flyout kp-create-studio__flyout--left"
               data-test="kp-create-products"
               data-flyout="products"
+              data-flyout-tier="l"
               aria-label="Товары"
               #productsFlyout
             >
@@ -470,6 +481,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
               class="kp-create-studio__flyout kp-create-studio__flyout--left"
               data-test="kp-create-recipient"
               data-flyout="recipient"
+              data-flyout-tier="l"
               aria-label="Получатель"
               #recipientFlyout
             >
@@ -497,6 +509,9 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
             <aside
               class="kp-create-studio__flyout kp-create-studio__flyout--right"
               [attr.data-flyout]="rightPane()"
+              [attr.data-flyout-tier]="
+                rightPane() === 'composition' || rightPane() === 'table' ? 'l' : 's'
+              "
               [attr.id]="
                 rightPane() === 'composition'
                   ? 'kp-flyout-composition'
@@ -531,6 +546,21 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                   (move)="moveCompositionLine($event)"
                   (editLine)="editCompositionLine($event)"
                 />
+              } @else if (rightPane() === 'table') {
+                <app-proposal-create-table-studio
+                  [lines]="draftLines()"
+                  [tableLayout]="kpTableLayout()"
+                  [chrome]="kpTableChrome()"
+                  [tableTemplateId]="tableTemplateId()"
+                  [tableTargets]="tableTargets()"
+                  [selectedTableTargetId]="selectedTableTargetId()"
+                  [readOnly]="isReadOnly()"
+                  (tableLayoutChange)="onTableLayoutChange($event)"
+                  (chromeChange)="onTableChromeChange($event)"
+                  (commercialColumnsRequest)="addCommercialColumns()"
+                  (tableTargetChange)="onTableTargetChange($event)"
+                  (lineChange)="onCompositionLineChange($event)"
+                />
               } @else if (rightPane() === 'terms') {
                 <app-proposal-create-terms
                   [terms]="terms()"
@@ -541,7 +571,7 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
                 <app-proposal-create-inspector
                   [draftLines]="draftLines()"
                   [tableLayout]="kpTableLayout()"
-                  [tableOnly]="rightPane() === 'table'"
+                  [tableOnly]="false"
                   [tableTemplateId]="tableTemplateId()"
                   [tableTargets]="tableTargets()"
                   [selectedTableTargetId]="selectedTableTargetId()"
@@ -603,7 +633,10 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
       min-height: 0;
       overflow: hidden;
       --kp-rail: 3rem;
-      --kp-flyout-w: min(20rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
+      /* WAVE-KP-STUDIO-CHROME / TZ-SALES-362: S = form/pick, L = vitrine/table. */
+      --kp-flyout-s: min(20rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
+      --kp-flyout-l: min(794px, calc(100% - (var(--kp-rail) * 2) - 1rem));
+      --kp-flyout-w: var(--kp-flyout-s);
     }
 
     .kp-create-studio__backdrop {
@@ -697,13 +730,11 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
       min-height: 0;
     }
 
-    .kp-create-studio__flyout[data-flyout='products'] {
-      width: min(58rem, calc(100% - (var(--kp-rail) * 2) - 1rem));
-    }
-
-    /* TZ-SALES-355: Состав ≈ половина экрана, табличный стиль (не 20rem-куча карточек). */
-    .kp-create-studio__flyout[data-flyout='composition'] {
-      width: min(50vw, 52rem);
+    .kp-create-studio__flyout[data-flyout='products'],
+    .kp-create-studio__flyout[data-flyout='recipient'],
+    .kp-create-studio__flyout[data-flyout='composition'],
+    .kp-create-studio__flyout[data-flyout='table'] {
+      width: var(--kp-flyout-l);
       max-width: calc(100% - (var(--kp-rail) * 2) - 1rem);
       padding: 0.55rem 0.65rem;
     }
@@ -714,10 +745,6 @@ const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
 
     .kp-create-studio__flyout--right {
       right: var(--kp-rail);
-    }
-
-    .kp-create-studio__flyout[data-flyout='products'] {
-      padding: 0.5rem;
     }
   `,
 })
@@ -753,7 +780,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly recipientIcon = ContactRound;
   protected readonly slidersIcon = SlidersHorizontal;
   protected readonly tableIcon = TableProperties;
-  protected readonly termsIcon = FileText;
+  protected readonly termsIcon = ScrollText;
   protected readonly compositionIcon = ListTree;
 
   protected readonly isWide = signal(true);
@@ -787,6 +814,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly kpTableLayout = signal<ProposalTableLayoutColumn[]>(
     DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })),
   );
+  protected readonly kpTableChrome = signal<ProposalTableChrome>({ ...DEFAULT_KP_TABLE_CHROME });
   protected readonly sheetLayout = signal<ProposalSheetLayoutState>({ ...DEFAULT_KP_SHEET_LAYOUT });
   protected readonly previewPageCount = computed(() => Math.max(1, this.previewPages().length));
   protected readonly compositionTotal = computed(() => this.calculateDealTotal());
@@ -852,11 +880,20 @@ export class ProposalCreatePage implements OnInit {
             ...(line.isOptional ? { isOptional: true } : {}),
           }));
           const tableLayout: BuildTableLayoutColumn[] = this.kpTableLayout().map(
-            ({ key, visible }) => ({ key, visible }),
+            ({ key, visible, widthPercent }) => ({
+              key,
+              visible,
+              ...(typeof widthPercent === 'number' ? { widthPercent } : {}),
+            }),
           );
+          const chrome = this.kpTableChrome();
           const payload = {
             previewLines,
             tableLayout,
+            tableChrome: {
+              borderWeight: chrome.borderWeight ?? 'normal',
+              headerWeight: chrome.headerWeight ?? 'normal',
+            },
             sheetLayout: this.sheetLayout() as BuildSheetLayout,
             tableTargetId: this.tableTemplateId() ?? undefined,
             dealTotals: {
@@ -991,6 +1028,7 @@ export class ProposalCreatePage implements OnInit {
     this.selectedTableTargetId.set(null);
     this.tableTargetLayouts.set({});
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
+    this.kpTableChrome.set({ ...DEFAULT_KP_TABLE_CHROME });
     this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT });
     if (tpl) {
       this.previewStatus.set('loading');
@@ -1061,6 +1099,7 @@ export class ProposalCreatePage implements OnInit {
         productName: line.productName,
         ...(line.description ? { description: line.description } : {}),
         productSku: line.productSku,
+        ...(line.photoUrl ? { photoUrl: line.photoUrl } : {}),
         quantity: line.quantity,
         unit: line.unit,
         unitPrice: line.unitPrice,
@@ -1073,7 +1112,12 @@ export class ProposalCreatePage implements OnInit {
       templateSnapshot: {
         templateId: template._id,
         html,
-        tableLayout: this.kpTableLayout().map(({ key, visible }) => ({ key, visible })),
+        tableLayout: this.kpTableLayout().map(({ key, visible, widthPercent }) => ({
+          key,
+          visible,
+          ...(typeof widthPercent === 'number' ? { widthPercent } : {}),
+        })),
+        tableChrome: { ...this.kpTableChrome() },
         sheetLayout: this.sheetLayout(),
         builtAt: new Date().toISOString(),
       },
@@ -1297,9 +1341,11 @@ export class ProposalCreatePage implements OnInit {
           unitPrice: item.unitPrice,
           ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
           ...(item.isOptional ? { isOptional: true } : {}),
+          ...(item.photoUrl ? { photoUrl: item.photoUrl } : {}),
         };
       }),
     );
+    this.enrichMissingLinePhotos();
     if (templateId) {
       this.templatesSvc.findById(templateId).subscribe((res) => {
         if (!res.ok) return;
@@ -1313,10 +1359,60 @@ export class ProposalCreatePage implements OnInit {
         }
         this.onTemplateChange(res.data);
         this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, ...(draft.sheetLayout ?? {}) });
+        this.pendingTableStudioSnapshot = draft.templateSnapshot ?? null;
         this.rebuildPreview$.next();
       });
     } else {
       this.resumeLastTemplate();
+    }
+  }
+
+  /** Resume layout/chrome after table targets sync (avoids race with DEFAULT layout). */
+  private pendingTableStudioSnapshot: Record<string, unknown> | null = null;
+
+  /** Restore instance table layout/chrome from the last saved snapshot (F5 resume). */
+  private applyTableStudioSnapshot(snapshot: Record<string, unknown> | undefined): void {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    const layout = snapshot['tableLayout'];
+    if (Array.isArray(layout) && layout.length > 0) {
+      const columns = layout
+        .map((entry) => {
+          if (!entry || typeof entry !== 'object') return null;
+          const row = entry as Record<string, unknown>;
+          const key = typeof row['key'] === 'string' ? row['key'] : '';
+          if (!key) return null;
+          const label =
+            typeof row['label'] === 'string' && row['label'].trim() ? row['label'] : key;
+          const visible = row['visible'] !== false;
+          const widthRaw = row['widthPercent'];
+          const widthPercent =
+            typeof widthRaw === 'number' && Number.isFinite(widthRaw)
+              ? Math.min(80, Math.max(5, Math.round(widthRaw)))
+              : undefined;
+          return {
+            key,
+            label,
+            visible,
+            ...(widthPercent !== undefined ? { widthPercent } : {}),
+          } satisfies ProposalTableLayoutColumn;
+        })
+        .filter((column): column is ProposalTableLayoutColumn => column !== null);
+      if (columns.length > 0) this.kpTableLayout.set(columns);
+    }
+    const chrome = snapshot['tableChrome'];
+    if (chrome && typeof chrome === 'object') {
+      const row = chrome as Record<string, unknown>;
+      const borderWeight =
+        row['borderWeight'] === 'thin' ||
+        row['borderWeight'] === 'normal' ||
+        row['borderWeight'] === 'thick'
+          ? row['borderWeight']
+          : DEFAULT_KP_TABLE_CHROME.borderWeight;
+      const headerWeight =
+        row['headerWeight'] === 'normal' || row['headerWeight'] === 'bold'
+          ? row['headerWeight']
+          : DEFAULT_KP_TABLE_CHROME.headerWeight;
+      this.kpTableChrome.set({ borderWeight, headerWeight });
     }
   }
 
@@ -1576,6 +1672,11 @@ export class ProposalCreatePage implements OnInit {
         const defaultTarget = targets.find((target) => target.explicit) ?? targets[0] ?? null;
         this.selectedTableTargetId.set(defaultTarget?.id ?? null);
         this.applyTableTarget(defaultTarget?.id ?? null);
+        if (this.pendingTableStudioSnapshot) {
+          this.applyTableStudioSnapshot(this.pendingTableStudioSnapshot);
+          this.pendingTableStudioSnapshot = null;
+          if (this.selectedTemplate()?._id) this.rebuildPreview$.next();
+        }
       });
   }
 
@@ -1609,6 +1710,15 @@ export class ProposalCreatePage implements OnInit {
   protected onTableLayoutChange(layout: ProposalTableLayoutColumn[]): void {
     if (this.isReadOnly()) return;
     this.kpTableLayout.set(layout.map((column) => ({ ...column })));
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
+      this.scheduleAutosave();
+    }
+  }
+
+  protected onTableChromeChange(chrome: ProposalTableChrome): void {
+    if (this.isReadOnly()) return;
+    this.kpTableChrome.set({ ...chrome });
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();
@@ -1949,6 +2059,47 @@ export class ProposalCreatePage implements OnInit {
       }
     }
     return undefined;
+  }
+
+  /** Old drafts without photoUrl: pull thumbs from catalog so A4 photo column fills. */
+  private enrichMissingLinePhotos(): void {
+    const lines = this.draftLines();
+    const missing = lines
+      .map((line, index) => ({ line, index }))
+      .filter(
+        ({ line }) =>
+          !line.photoUrl &&
+          (line.lineKind ?? 'catalog') === 'catalog' &&
+          !!line.productId &&
+          !line.productId.startsWith('custom-'),
+      );
+    if (missing.length === 0) return;
+
+    forkJoin(
+      missing.map(({ line, index }) =>
+        this.productsSvc.findById(line.productId).pipe(
+          map((res) => ({
+            index,
+            photoUrl: res.ok ? this.mainPhotoUrlFromProduct(res.data) : undefined,
+          })),
+          catchError(() => of({ index, photoUrl: undefined as string | undefined })),
+        ),
+      ),
+    )
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((results) => {
+        let changed = false;
+        this.draftLines.update((rows) => {
+          const next = [...rows];
+          for (const { index, photoUrl } of results) {
+            if (!photoUrl || !next[index] || next[index].photoUrl) continue;
+            next[index] = { ...next[index], photoUrl };
+            changed = true;
+          }
+          return next;
+        });
+        if (changed && this.selectedTemplate()?._id) this.rebuildPreview$.next();
+      });
   }
 
   private refreshComposition(): void {

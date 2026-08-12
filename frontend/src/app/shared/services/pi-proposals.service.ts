@@ -37,6 +37,8 @@ export interface ProposalItem {
   productName?: string;
   description?: string;
   productSku?: string;
+  /** Snapshot for A4 photo column; persisted with the КП item. */
+  photoUrl?: string;
   quantity: number;
   unit?: string;
   unitPrice: number;

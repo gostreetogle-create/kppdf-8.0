@@ -28,7 +28,10 @@ import { extractErrorMessage } from '../../../core/silent-http';
   imports: [ButtonComponent, PiOverflowSelectComponent],
   template: `
     <div class="tpl-picker" data-test="kp-tpl-picker">
-      <p class="tpl-picker__label eyebrow m-0">Шаблон КП</p>
+      <div class="tpl-picker__heading">
+        <h3>Шаблон</h3>
+        <p>Бланк этого КП</p>
+      </div>
       <app-pi-overflow-select
         [items]="templateItems()"
         [value]="selectedId()"
@@ -71,9 +74,20 @@ import { extractErrorMessage } from '../../../core/silent-http';
       margin-bottom: 0.75rem;
       border-bottom: 1px solid var(--color-rule);
     }
-    .tpl-picker__label {
-      font-size: 0.6875rem;
-      letter-spacing: 0.02em;
+    .tpl-picker__heading {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+    .tpl-picker__heading h3,
+    .tpl-picker__heading p {
+      margin: 0;
+    }
+    .tpl-picker__heading h3 {
+      font-size: 0.9rem;
+    }
+    .tpl-picker__heading p {
+      font-size: 0.75rem;
       color: var(--color-muted-foreground, #6b7280);
     }
     .tpl-picker__meta {

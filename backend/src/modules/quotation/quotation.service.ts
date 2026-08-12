@@ -399,6 +399,7 @@ export class QuotationService {
       productName: item.productName,
       description: item.description,
       productSku: item.productSku,
+      ...(item.photoUrl ? { photoUrl: item.photoUrl } : {}),
       sourceItemId: item.sourceItemId,
       quantity: item.quantity,
       unit: item.unit,
@@ -422,6 +423,7 @@ export class QuotationService {
     productName?: string;
     description?: string;
     productSku?: string;
+    photoUrl?: string;
     sourceItemId?: string;
     quantity: number;
     unit?: string;
@@ -463,6 +465,7 @@ export class QuotationService {
       productName: item.productName,
       description: item.description,
       productSku: item.productSku,
+      ...(item.photoUrl?.trim() ? { photoUrl: item.photoUrl.trim() } : {}),
       sourceItemId: item.sourceItemId,
       quantity: item.quantity,
       unit: item.unit,

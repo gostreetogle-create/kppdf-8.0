@@ -666,6 +666,7 @@ export class DocumentTemplateService {
             dto.tableLayout,
             isLastPage ? dto.dealTotals : undefined,
             dto.sheetLayout,
+            dto.tableChrome,
           );
           return settings?.role === 'terms' && termsHtml
             ? this.cloneResolvedBlock(rendered, { content: termsHtml })
@@ -809,7 +810,7 @@ export class DocumentTemplateService {
     block: TemplateBlockDocument,
     previewLines?: BuildPreviewLineDto[],
     isLineItemsTarget = false,
-    tableLayout?: { key: string; visible?: boolean }[],
+    tableLayout?: { key: string; visible?: boolean; widthPercent?: number }[],
     dealTotals?: {
       vatPercent: number;
       discountType?: 'none' | 'percent' | 'amount';
@@ -820,6 +821,7 @@ export class DocumentTemplateService {
       deliveryDays?: number;
     },
     sheetLayout?: BuildDocumentDto['sheetLayout'],
+    tableChrome?: BuildDocumentDto['tableChrome'],
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -876,6 +878,7 @@ export class DocumentTemplateService {
         isLineItemsTarget ? tableLayout : undefined,
         totals,
         isLineItemsTarget ? sheetLayout : undefined,
+        isLineItemsTarget ? tableChrome : undefined,
       );
       return this.cloneResolvedBlock(block, { content: html });
     } catch {
@@ -935,7 +938,7 @@ export class DocumentTemplateService {
   private async mapPreviewLines(
     tableTemplateId: string,
     lines: BuildPreviewLineDto[],
-    tableLayout?: { key: string; visible?: boolean }[],
+    tableLayout?: { key: string; visible?: boolean; widthPercent?: number }[],
   ): Promise<unknown[][]> {
     const table = await this.tableTemplateService.findById(tableTemplateId);
     const persistedColumns = table.columns ?? [];
@@ -1022,7 +1025,11 @@ export class DocumentTemplateService {
         (1 - Math.min(100, Math.max(0, line.discountPercent ?? 0)) / 100)
       );
     }
-    if (['photo', 'image', 'рисунок', 'photourl'].includes(normalized)) {
+    if (
+      ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'].includes(
+        normalized,
+      )
+    ) {
       return line.photoUrl ? { kind: 'image', url: line.photoUrl } : '';
     }
     if (['productsku', 'sku', 'article', 'артикул'].includes(normalized)) {

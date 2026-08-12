@@ -153,6 +153,31 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       expect(created.items[0].productId).toBeInstanceOf(Types.ObjectId);
     });
 
+    it('stores photoUrl snapshot for A4 line-items photo column', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+
+      const dto = validCreateDto({
+        items: [
+          {
+            productId: new Types.ObjectId().toString(),
+            productName: 'Стенд',
+            productSku: 'ST-1',
+            photoUrl: '/uploads/stand-thumb.webp',
+            quantity: 1,
+            unit: 'шт',
+            unitPrice: 100,
+          },
+        ],
+      });
+      await service.create(dto as never);
+
+      expect(model.create.mock.calls[0][0].items[0]).toMatchObject({
+        photoUrl: '/uploads/stand-thumb.webp',
+        productName: 'Стенд',
+      });
+    });
+
     it('NO-MUTATION-ON-CATALOG-CHANGE: create does NOT look up the product (no $lookup / no populate at write time)', async () => {
       const { service, model } = createService();
       model.create.mockResolvedValue(quotationDoc({}));

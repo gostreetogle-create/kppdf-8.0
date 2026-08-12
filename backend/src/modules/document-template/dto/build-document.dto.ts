@@ -71,6 +71,22 @@ export class BuildTableLayoutColumnDto {
   @IsOptional()
   @IsBoolean()
   visible?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(5)
+  @Max(80)
+  widthPercent?: number;
+}
+
+export class BuildTableChromeDto {
+  @IsOptional()
+  @IsIn(['thin', 'normal', 'thick'])
+  borderWeight?: 'thin' | 'normal' | 'thick';
+
+  @IsOptional()
+  @IsIn(['normal', 'bold'])
+  headerWeight?: 'normal' | 'bold';
 }
 
 /**
@@ -124,6 +140,12 @@ export class BuildDocumentDto {
   @ValidateNested({ each: true })
   @Type(() => BuildTableLayoutColumnDto)
   tableLayout?: BuildTableLayoutColumnDto[];
+
+  /** Request-only border/header chrome for the live КП line-items table. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BuildTableChromeDto)
+  tableChrome?: BuildTableChromeDto;
 
   @IsOptional()
   @IsArray()

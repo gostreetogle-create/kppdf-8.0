@@ -559,14 +559,14 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   protected emptyHint(): string {
     const filtered = this.query().trim() || this.categoryId();
-    if (filtered) return 'Ничего не найдено. Измените поиск или выберите другой вид каталога.';
+    if (filtered) return 'Ничего не найдено — смените поиск или вид каталога.';
     switch (this.railKind()) {
       case 'module':
-        return 'Модулей пока нет. Выберите «Изделия» или «Материалы» либо создайте модуль здесь.';
+        return 'Модулей пока нет. Смените chip или создайте модуль здесь.';
       case 'material':
-        return 'Материалов пока нет. Выберите «Изделия» или «Модули» либо создайте материал здесь.';
+        return 'Материалов пока нет. Смените chip или создайте материал здесь.';
       default:
-        return 'Изделий пока нет. Выберите «Модули» или «Материалы» либо создайте изделие здесь.';
+        return 'Изделий пока нет. Смените chip или создайте изделие здесь.';
     }
   }
 

@@ -53,6 +53,38 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     ]);
 
     expect(html).not.toContain('<img');
-    expect(html).toContain('<td style="text-align:left"></td>');
+    expect(html).toContain('border:1px solid #ccc');
+  });
+
+  it('applies request-only widthPercent and border/header chrome', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'productName', label: 'Наименование', type: 'text', align: 'left' },
+            { key: 'quantity', label: 'Кол-во', type: 'number', align: 'right' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const html = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд', 2]],
+      [
+        { key: 'productName', visible: true, widthPercent: 70 },
+        { key: 'quantity', visible: true, widthPercent: 30 },
+      ],
+      undefined,
+      undefined,
+      { borderWeight: 'thick', headerWeight: 'bold' },
+    );
+
+    expect(html).toContain('width:70%');
+    expect(html).toContain('border:2px solid #ccc');
+    expect(html).toContain('font-weight:700');
+    expect(html).toContain('<colgroup>');
   });
 });

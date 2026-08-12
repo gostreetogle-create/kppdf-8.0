@@ -36,27 +36,15 @@ export interface ProposalCompositionLineChange {
             Количество, цена и сумма — здесь. Лист A4 только показывает результат.
           </p>
         </div>
-        <div class="composition__header-actions">
-          <app-pi-button
-            type="button"
-            variant="outline"
-            size="sm"
-            [disabled]="readOnly()"
-            (click)="addCustom.emit()"
-            data-test="kp-add-custom-line"
-          >
-            Своя строка
-          </app-pi-button>
-          <span class="composition__total" data-test="kp-composition-total">{{
-            price(total())
-          }}</span>
-        </div>
+        <span class="composition__total" data-test="kp-composition-total">{{
+          price(total())
+        }}</span>
       </header>
 
       @if (lines().length === 0) {
         <div class="composition__empty" data-test="kp-composition-empty">
           <p>Добавьте изделия из панели «Товары».</p>
-          <p>Или нажмите «Своя строка» для услуги, доставки или монтажа.</p>
+          <p>Или нажмите «Своя строка» внизу для услуги, доставки или монтажа.</p>
           <app-pi-button
             type="button"
             variant="outline"
@@ -295,6 +283,17 @@ export interface ProposalCompositionLineChange {
           </table>
         </div>
       }
+
+      <button
+        type="button"
+        class="composition__add-row"
+        data-test="kp-add-custom-line"
+        [disabled]="readOnly()"
+        (click)="addCustom.emit()"
+      >
+        <span class="composition__add-row-ghost" aria-hidden="true">+ новая позиция</span>
+        <span class="composition__add-row-label">Своя строка</span>
+      </button>
     </section>
   `,
   styles: `
@@ -336,6 +335,41 @@ export interface ProposalCompositionLineChange {
       display: flex;
       align-items: center;
       gap: 0.55rem;
+    }
+    .composition__add-row {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+      width: 100%;
+      min-height: 2.75rem;
+      margin: 0;
+      padding: 0.55rem 0.75rem;
+      border: 1px dashed var(--color-rule);
+      background: color-mix(in oklch, var(--color-paper, #fff) 88%, transparent);
+      color: var(--color-ink);
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .composition__add-row:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .composition__add-row:hover:not(:disabled) {
+      border-color: var(--color-ink);
+      background: color-mix(in oklch, var(--color-paper, #fff) 96%, transparent);
+    }
+    .composition__add-row-ghost {
+      color: var(--color-muted);
+      font-size: 0.65rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .composition__add-row-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
     }
     .composition__total {
       color: var(--color-ink);
