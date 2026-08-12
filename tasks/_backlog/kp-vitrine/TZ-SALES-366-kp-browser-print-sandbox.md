@@ -106,16 +106,14 @@ cd frontend && pnpm exec jest --testPathPattern="proposal-create-template-center
 HANDOFF (копировать исполнителю)
 ═══════════════════════════════════════════════════════════════
 
+Полный промпт: `tasks/_backlog/kp-vitrine/PROMPT-KP-PRINT-366.md`
+
 ```text
 CLAIM первым (до кода):
 node OrchestratorKit/team-room/cli.mjs join
 node OrchestratorKit/team-room/cli.mjs inbox
-# claim TZ-SALES-366 по правилам AGENTS.md / checklist
 
-Читай: GEMINI.md · kppdf-executor-continuous · OrchestratorKit/AGENTS.md
-TZ: tasks/_backlog/kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md
-PO: docs/PO-DIARY.md §1–§4
-
+Читай PROMPT-KP-PRINT-366.md (блок «Промпт») целиком + этот TZ.
 Дочини браузерную «Печать» без ослабления A4-превью и без нового серверного print.
 PDF/Архив не трогай. 320 не unpark. Deploy НЕ. Commit+push после DONE.
 ```
