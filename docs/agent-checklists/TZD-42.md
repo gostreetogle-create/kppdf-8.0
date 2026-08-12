@@ -1,7 +1,7 @@
 # TZD-42 checklist
 
 > Status: **DONE**
-> Marker: `tasks/_active/TZD-42.md`
+> Marker: removed after archive
 > Commit/push: **required by continuous executor; deploy NO**
 
 ## Claim slot
@@ -81,5 +81,5 @@ proposal confirm/cancel 404s name the received id and tell the caller to reuse t
 
 - [x] archive + lock + progress + status synchronization
 - [x] remove `_active/TZD-42.md` after archive
-- [ ] commit and push `main`
+- [x] commit and push `main` — `d78c0f41` on `origin/main`
 - closed_at: 2026-08-12T03:30:00Z

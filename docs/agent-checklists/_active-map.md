@@ -5,7 +5,7 @@
 - Root cause: audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no delete, overwrite, ownership race, or TTL expiry reproduced.
 - Gates: backend mutation-journal 23/23 + tsc PASS; desktop/mcp 100/100 + tsc PASS; diff-check PASS; Prettier N/A (binary not installed).
 - Archive: `tasks/_archive/2026-08/TZD-42.done.md`; lock: `.mimocode/locks/TZD-42-mcp-confirm-404.lock`; checklist DONE; `_active/` cleared.
-- Commit/push: pending closeout; deploy НЕ. NEXT: TZD-43 → TZD-44; TZD-45 parked.
+- Commit/push: `d78c0f41` on `origin/main`; deploy НЕ. NEXT: TZD-43 → TZD-44; TZD-45 parked.
 
 ## Checkpoint 2026-08-12T00:13:21Z → TZD-41 DONE
 - DONE: shared MCP envelope/structured content, `_id`→`id`, top-level proposal ids, conflict-key outputSchema, canonical list aliases, MCP.md/FIC docs.
