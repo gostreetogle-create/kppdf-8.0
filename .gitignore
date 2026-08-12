@@ -28,6 +28,15 @@ jwt.refresh
 deploy/synology/config.env
 deploy/synology/CREDENTIALS.md
 
+# KP3 ? KP8 data-copy SSH secrets (private key NEVER in git)
+deploy/kp3-data-copy/CREDENTIALS.md
+deploy/kp3-data-copy/*.pem
+deploy/kp3-data-copy/id_*
+deploy/kp3-data-copy/kppdf8-kp3-data-copy
+!deploy/kp3-data-copy/kppdf8-kp3-data-copy.pub
+!deploy/kp3-data-copy/CREDENTIALS.example.md
+!deploy/kp3-data-copy/README.md
+
 # Deploy build artifacts
 frontend/browser/
 

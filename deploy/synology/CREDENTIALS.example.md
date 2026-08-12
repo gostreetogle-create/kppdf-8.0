@@ -78,6 +78,9 @@ sudo docker ps
 | kppdf-3.0 | `WebstormProjects/kppdf-3.0/deploy/synology/config.env` |
 | kppdf-4.0 | `WebstormProjects/kppdf-4.0/deploy/config.env` |
 
+> **SSH на сервер КП3 для перелива данных** — отдельный ключ, не этот контур:  
+> `deploy/kp3-data-copy/` + канон `docs/ops/kp3-data-copy-access.md` (ключ `kppdf8-kp3-data-copy`).
+
 ---
 
 ## Заметки после успешного деплоя
