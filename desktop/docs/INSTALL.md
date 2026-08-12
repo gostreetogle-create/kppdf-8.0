@@ -7,16 +7,20 @@
 
 ## Что ставить клиенту
 
+> **Канон имён (TZD-46):** версия видна в имени файла — `kppdf-desktop-setup-v{semver}.zip`;
+> unversioned `kppdf-desktop-setup.zip` — это **alias** (копия тех же байт) для старых закладок.
+> Полный канон: `docs/audits/2026-08-12-desktop-download-version-naming-canon.md`.
+
 | Артефакт | Путь после сборки |
 |----------|-------------------|
-| NSIS setup (основной) | `desktop/src-tauri/target/release/bundle/nsis/KPPDF Desktop_0.1.0_x64-setup.exe` |
+| NSIS setup (основной) | `desktop/src-tauri/target/release/bundle/nsis/KPPDF Desktop_{semver}_x64-setup.exe` (semver из `package.json`/`tauri.conf.json`) |
 | Копия для раздачи / ручной выдачи | `desktop/dist-installers/kppdf-desktop-setup.exe` (gitignored) |
-| Staging для сайта (кнопка «Скачать») | `frontend/downloads/kppdf-desktop-setup.zip` (+ `.exe` рядом) → `/downloads/…` |
+| Staging для сайта (кнопка «Скачать») | `frontend/downloads/kppdf-desktop-setup-v{semver}.zip` (+ `-v{semver}.exe` рядом, + unversioned aliases) → `/downloads/…` |
 | MSI (доп.) | `desktop/src-tauri/target/release/bundle/msi/*.msi` |
 
-Бинарники **не** коммитить. На сайте кнопка открывает  
-`/downloads/kppdf-desktop-setup.zip` (same-origin; внутри ZIP — `kppdf-desktop-setup.exe`)
-или `DESKTOP_DOWNLOAD_URL`.
+Бинарники **не** коммитить. На сайте кнопка открывает versioned URL
+`/downloads/kppdf-desktop-setup-v{semver}.zip` (same-origin; внутри ZIP — `kppdf-desktop-setup-v{semver}.exe`)
+через `DESKTOP_DOWNLOAD_URL` / compat `downloadUrl`; alias `/downloads/kppdf-desktop-setup.zip` — тот же билд для старых ссылок.
 
 После `pnpm tauri build` опубликовать файл для веба:
 
@@ -25,9 +29,10 @@ cd desktop
 pnpm run publish-installer
 ```
 
-Это копирует setup **и ZIP** в `frontend/downloads/` и в `frontend/browser/downloads/`
+Это копирует versioned setup **и ZIP** (`kppdf-desktop-setup-v{semver}.exe/.zip`)
+плюс unversioned aliases в `frontend/downloads/` и в `frontend/browser/downloads/`
 (если browser уже собран). `deploy/synology/deploy.py` при FE build тоже
-подкладывает installer + zip в `frontend/browser/downloads/`.
+подкладывает installer + zip в `frontend/browser/downloads/` по той же схеме имён.
 
 Сборка desktop:
 

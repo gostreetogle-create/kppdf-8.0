@@ -1,3 +1,14 @@
+## [2026-08-12] — TZD-46 DONE — Desktop ZIP semver в имени файла + publish canon
+**Исполнитель:** freebuff/tzd-46 (agent-158a657202)
+**Статус:** DONE; desktop publish + deploy scripts + FE URL + docs; deploy НЕ
+**Что:** publish-installer.mjs: Semver SoT = `desktop/package.json` (assert == `tauri.conf.json`, FAIL при расхождении); публикует `kppdf-desktop-setup-v{semver}.exe/.zip` (внутри ZIP — versioned exe) + unversioned aliases `kppdf-desktop-setup.exe/.zip` (копия тех же байт); NSIS candidate `KPPDF Desktop_{semver}_x64-setup.exe` вместо хардкода `0.1.0` (legacy = fallback WARN); финальный лог — versioned URL. deploy.py `publish_desktop_installer` — зеркало схемы (semver из package.json на build-машине, versioned + alias в `frontend/browser/downloads/`, WARN про versioned zip). FE `DEFAULT_DESKTOP_DOWNLOAD_URL` остаётся alias (вариант A канона) + доккоммент про meta-инжект versioned; pairing показывает semver из compat. INSTALL.md/PAIRING.md — канон имён; deploy README + config.env.example уже в base (b91de8df).
+**Gates:** desktop tsc PASS; version-compat tsx 10/10 PASS (tsx — канон TZD-40; `node --test` не резолвит extensionless ESM); publish dry без exe → FAIL c message (exit 1); publish functional (fake exe: 4 файла в обоих каталогах, arcname versioned) PASS; deploy.py publish functional (python tmp root, alias zip byte-identical) PASS; FE tsc PASS; jest pairing+desktop-download-url 14/14 PASS; ESLint/Prettier/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZD-46.done.md`
+**Checklist:** `docs/agent-checklists/TZD-46.md`
+**Lock:** `.mimocode/locks/TZD-46-desktop-zip-versioned-filename.lock`
+**Known limit:** live Synology обновится только на следующем warm deploy (tauri build + publish-installer на build-машине, VPN off + слово PO); локальный тест — фейковый exe (убрано).
+**NEXT:** idle desktop/backend фон; «деплой» — только по слову PO. Не выдумывать TZ.
+
 ## [2026-08-12] — TZ-UX-317 DONE — системные ← → в полях app shell (WAVE-NAV-RETURN #2)
 **Исполнитель:** freebuff/wave-nav-return (agent-158a657202)
 **Статус:** DONE; frontend-only; deploy НЕ

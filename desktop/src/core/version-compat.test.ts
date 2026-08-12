@@ -67,4 +67,14 @@ describe('resolveDownloadUrl (TZD-40)', () => {
   it('невалидная база → возвращает путь как есть', () => {
     assert.equal(resolveDownloadUrl('/a.zip', 'not-a-base'), '/a.zip');
   });
+
+  it('versioned путь (канон TZD-46) резолвится от apiBaseUrl', () => {
+    assert.equal(
+      resolveDownloadUrl(
+        '/downloads/kppdf-desktop-setup-v0.5.1.zip',
+        'https://kppdf-crm.ru',
+      ),
+      'https://kppdf-crm.ru/downloads/kppdf-desktop-setup-v0.5.1.zip',
+    );
+  });
 });

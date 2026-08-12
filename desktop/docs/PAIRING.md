@@ -97,10 +97,14 @@ Auth к Nest: `X-Access-Token: kppd_…` **или** legacy `Authorization: Beare
 {
   "minDesktopVersion": "0.5.0",
   "recommendedDesktopVersion": "0.5.1",
-  "downloadUrl": "/downloads/kppdf-desktop-setup.zip",
+  "downloadUrl": "/downloads/kppdf-desktop-setup-v0.5.1.zip",
   "serverBuildId": "…"
 }
 ```
+
+`downloadUrl` — **versioned** (канон TZD-46): имя файла содержит `v{semver}` и по нему
+видно, какая сборка скачана. Unversioned `/downloads/kppdf-desktop-setup.zip` —
+alias того же билда для старых закладок.
 
 - версия Desktop < `minDesktopVersion` → красный баннер + MCP не стартует;
 - `min` ≤ версия < `recommended` → жёлтый баннер, MCP можно;

@@ -378,12 +378,50 @@ def build_frontend(project_root):
 
 
 def publish_desktop_installer(project_root, frontend_dir):
-    """Copy setup.exe + ZIP into frontend/browser/downloads/ for Nest /downloads/."""
+    """Copy setup.exe + ZIP (versioned + aliases) into frontend/browser/downloads/.
+
+    Canon TZD-46: desktop-download-version-naming-canon.md — versioned
+    `kppdf-desktop-setup-v{semver}.zip` is the canonical file; unversioned
+    aliases are byte copies of the same build for old bookmarks.
+    """
     import zipfile
+
+    # Semver SoT: desktop/package.json on the build machine (mirrors publish-installer.mjs).
+    semver = None
+    pkg_path = project_root / "desktop" / "package.json"
+    if pkg_path.is_file():
+        try:
+            semver = str(json.loads(pkg_path.read_text(encoding="utf-8")).get("version", "") or "")
+        except Exception as e:
+            warn("Cannot read desktop/package.json version (" + str(e) + ")")
+    if not semver or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", semver):
+        warn(
+            "Desktop semver not resolvable from desktop/package.json ("
+            + repr(semver)
+            + ") — publishing unversioned aliases only"
+        )
+        semver = None
+
+    versioned_exe = "kppdf-desktop-setup-v" + semver + ".exe" if semver else None
+    versioned_zip = "kppdf-desktop-setup-v" + semver + ".zip" if semver else None
 
     candidates = [
         project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe",
         project_root / "desktop" / "dist-installers" / "kppdf-desktop-setup.exe",
+    ]
+    if semver:
+        candidates.append(
+            project_root
+            / "desktop"
+            / "src-tauri"
+            / "target"
+            / "release"
+            / "bundle"
+            / "nsis"
+            / ("KPPDF Desktop_" + semver + "_x64-setup.exe"),
+        )
+    # Legacy hardcoded path — fallback WARN only (canon: do not rely on it).
+    candidates.append(
         project_root
         / "desktop"
         / "src-tauri"
@@ -392,7 +430,7 @@ def publish_desktop_installer(project_root, frontend_dir):
         / "bundle"
         / "nsis"
         / "KPPDF Desktop_0.1.0_x64-setup.exe",
-    ]
+    )
     src = next((p for p in candidates if p.is_file()), None)
     downloads = frontend_dir / "downloads"
     downloads.mkdir(parents=True, exist_ok=True)
@@ -401,10 +439,18 @@ def publish_desktop_installer(project_root, frontend_dir):
     if src is None:
         warn(
             "Desktop installer .exe not found — "
-            "pair dialog /downloads/kppdf-desktop-setup.zip will 404 until you run "
-            "`cd desktop && pnpm tauri build && pnpm run publish-installer`"
+            "pair dialog download will 404 until you run "
+            "`cd desktop && pnpm tauri build && pnpm run publish-installer` "
+            "(canon: versioned kppdf-desktop-setup-v{semver}.zip + aliases)"
         )
         return
+    if semver and src == candidates[-1]:
+        warn(
+            "Using legacy NSIS 0.1.0 path as fallback — expected versioned "
+            + "\"KPPDF Desktop_"
+            + semver
+            + "_x64-setup.exe\". Rebuild with tauri build before deploy."
+        )
     shutil.copy2(src, dest_exe)
     with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(dest_exe, arcname="kppdf-desktop-setup.exe")
@@ -418,6 +464,32 @@ def publish_desktop_installer(project_root, frontend_dir):
         + str(dest_zip.stat().st_size)
         + " bytes)"
     )
+    if semver:
+        dest_exe_ver = downloads / versioned_exe
+        dest_zip_ver = downloads / versioned_zip
+        shutil.copy2(dest_exe, dest_exe_ver)
+        with zipfile.ZipFile(dest_zip_ver, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.write(dest_exe_ver, arcname=versioned_exe)
+        shutil.copy2(dest_zip_ver, dest_zip)  # alias = same bytes as versioned zip
+        ok(
+            "Desktop installer versioned -> frontend/browser/downloads/"
+            + versioned_exe
+            + " ("
+            + str(dest_exe_ver.stat().st_size)
+            + " bytes)"
+        )
+        ok(
+            "Desktop installer versioned ZIP -> frontend/browser/downloads/"
+            + versioned_zip
+            + " ("
+            + str(dest_zip_ver.stat().st_size)
+            + " bytes; alias .zip = same bytes)"
+        )
+    else:
+        warn(
+            "Versioned zip not published (semver unknown) — set DESKTOP_DOWNLOAD_URL="
+            + "...-v{semver}.zip in config.env only after versioned publish"
+        )
 
 
 # -- Archive creation ---------------------------------------------------

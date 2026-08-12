@@ -1,6 +1,14 @@
 import { InjectionToken } from '@angular/core';
 
-/** Same-origin installer path used when deployment does not configure a URL. */
+/**
+ * Same-origin installer path used when deployment does not configure a URL.
+ *
+ * Canon (TZD-46): the versioned file `kppdf-desktop-setup-v{semver}.zip` is the
+ * canonical artifact; this unversioned alias is a stable fallback for old
+ * bookmarks and for deployments without a meta override. Deployments SHOULD
+ * inject the versioned URL via the `kppdf-desktop-download-url` meta tag
+ * (`DESKTOP_DOWNLOAD_URL` in deploy config).
+ */
 export const DEFAULT_DESKTOP_DOWNLOAD_URL = '/downloads/kppdf-desktop-setup.zip';
 
 /** Meta tag written by `frontend/src/index.html` / `deploy.py` (CSP-safe; no inline script). */

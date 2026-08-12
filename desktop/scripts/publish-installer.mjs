@@ -1,11 +1,15 @@
 /**
- * Publish kppdf-desktop-setup.exe (+ ZIP) into frontend download staging
- * and live browser tree.
+ * Publish kppdf-desktop-setup-v{semver}.exe (+ ZIP) into frontend download staging
+ * and live browser tree, plus stable unversioned aliases.
  *
  * Usage (from desktop/): pnpm run publish-installer
  *
- * ZIP contains a single entry `kppdf-desktop-setup.exe` (no wrapper folder).
- * Default web button → `/downloads/kppdf-desktop-setup.zip` (TZD-24).
+ * Canon (TZD-46): docs/audits/2026-08-12-desktop-download-version-naming-canon.md
+ * - Semver SoT: desktop/package.json, asserted equal to tauri.conf.json (FAIL otherwise).
+ * - Versioned artifacts:  kppdf-desktop-setup-v{semver}.exe / .zip
+ *   ZIP contains a single entry `kppdf-desktop-setup-v{semver}.exe` (no wrapper folder).
+ * - Stable aliases (same bytes): kppdf-desktop-setup.exe / .zip — old bookmarks keep working.
+ * - Web button → versioned URL (via DESKTOP_DOWNLOAD_URL meta / compat API); alias for legacy links.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -18,8 +22,49 @@ const repoRoot = join(desktopRoot, '..');
 const EXE_NAME = 'kppdf-desktop-setup.exe';
 const ZIP_NAME = 'kppdf-desktop-setup.zip';
 
+/** Sanitized semver `major.minor.patch` (canon TZD-46). */
+const SEMVER_RE = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+
+/**
+ * Semver SoT: desktop/package.json, asserted equal to tauri.conf.json.
+ * Mismatch = FAIL publish with an explicit error (version drift is a packaging bug).
+ */
+function readSemver() {
+  const pkg = JSON.parse(readFileSync(join(desktopRoot, 'package.json'), 'utf8'));
+  const tauri = JSON.parse(readFileSync(join(desktopRoot, 'src-tauri', 'tauri.conf.json'), 'utf8'));
+  const fromPkg = String(pkg.version ?? '');
+  const fromTauri = String(tauri.version ?? '');
+  if (!SEMVER_RE.test(fromPkg)) {
+    console.error(`[publish-installer] FAIL: desktop/package.json version "${fromPkg}" is not major.minor.patch`);
+    process.exit(1);
+  }
+  if (fromPkg !== fromTauri) {
+    console.error(
+      `[publish-installer] FAIL: version mismatch — desktop/package.json = ${fromPkg}, ` +
+        `src-tauri/tauri.conf.json = ${fromTauri}. Keep both in sync before publishing (canon TZD-46).`,
+    );
+    process.exit(1);
+  }
+  return fromPkg;
+}
+
+const SEMVER = readSemver();
+const V_TAG = `v${SEMVER}`;
+const EXE_VERSIONED = `kppdf-desktop-setup-${V_TAG}.exe`;
+const ZIP_VERSIONED = `kppdf-desktop-setup-${V_TAG}.zip`;
+
 const candidates = [
   join(desktopRoot, 'dist-installers', EXE_NAME),
+  join(
+    desktopRoot,
+    'src-tauri',
+    'target',
+    'release',
+    'bundle',
+    'nsis',
+    `KPPDF Desktop_${SEMVER}_x64-setup.exe`,
+  ),
+  // Legacy hardcoded path — keep as fallback WARN only (canon: do not rely on it).
   join(
     desktopRoot,
     'src-tauri',
@@ -34,10 +79,16 @@ const candidates = [
 const src = candidates.find((p) => existsSync(p));
 if (!src) {
   console.error(
-    'No setup.exe found. Run: cd desktop && pnpm tauri build\nExpected:',
+    `No setup.exe found for ${SEMVER}. Run: cd desktop && pnpm tauri build\nExpected:`,
     candidates.join('\n  '),
   );
   process.exit(1);
+}
+if (src === candidates[2]) {
+  console.warn(
+    `[publish-installer] WARN: using legacy NSIS 0.1.0 path as fallback — expected versioned ` +
+      `"KPPDF Desktop_${SEMVER}_x64-setup.exe". Rebuild with tauri build to publish the real semver.`,
+  );
 }
 
 /**
@@ -107,14 +158,21 @@ const downloadRoots = [
 
 for (const dir of downloadRoots) {
   mkdirSync(dir, { recursive: true });
+  const exeVerDest = join(dir, EXE_VERSIONED);
+  const zipVerDest = join(dir, ZIP_VERSIONED);
   const exeDest = join(dir, EXE_NAME);
   const zipDest = join(dir, ZIP_NAME);
+  copyFileSync(src, exeVerDest);
   copyFileSync(src, exeDest);
-  writeSingleFileZip(exeDest, zipDest, EXE_NAME);
-  console.log('OK', exeDest, `(${statSync(exeDest).size} bytes)`);
-  console.log('OK', zipDest, `(${statSync(zipDest).size} bytes)`);
+  writeSingleFileZip(exeVerDest, zipVerDest, EXE_VERSIONED);
+  copyFileSync(zipVerDest, zipDest); // alias = same bytes
+  console.log('OK', exeVerDest, `(${statSync(exeVerDest).size} bytes)`);
+  console.log('OK', zipVerDest, `(${statSync(zipVerDest).size} bytes)`);
+  console.log('alias', exeDest, `(same bytes as ${EXE_VERSIONED})`);
+  console.log('alias', zipDest, `(same bytes as ${ZIP_VERSIONED})`);
 }
 
 console.log(
-  'Web button → /downloads/kppdf-desktop-setup.zip (Nest serves frontend/browser or staging downloads; .exe still published alongside)',
+  `Published ${V_TAG}. Versioned URL → /downloads/${ZIP_VERSIONED} ` +
+    `(Nest serves frontend/browser or staging downloads; alias /downloads/${ZIP_NAME} = same bytes; .exe published alongside).`,
 );

@@ -32,6 +32,31 @@ describe('PairingDialogComponent (TZD-21)', () => {
     expiresAt: '2026-12-31T23:59:59.000Z',
   };
 
+  async function setupModule(desktopUrl: string): Promise<void> {
+    await TestBed.configureTestingModule({
+      imports: [PairingDialogComponent],
+      providers: [
+        {
+          provide: PI_DIALOG_DATA,
+          useValue: { apiBaseUrl: 'http://127.0.0.1:3000', username: 'admin' },
+        },
+        { provide: DESKTOP_DOWNLOAD_URL, useValue: desktopUrl },
+        {
+          provide: PI_DIALOG_REF,
+          useValue: { close: refCloseSpy, closed: signal(undefined) },
+        },
+        {
+          provide: PiToastService,
+          useValue: { success: toastSuccessSpy, error: toastErrorSpy },
+        },
+        {
+          provide: DesktopPairingService,
+          useValue: { issue: issueSpy, list: listSpy, revoke: revokeSpy, compat: compatSpy },
+        },
+      ],
+    }).compileComponents();
+  }
+
   beforeEach(async () => {
     refCloseSpy = jest.fn();
     toastSuccessSpy = jest.fn();
@@ -58,7 +83,8 @@ describe('PairingDialogComponent (TZD-21)', () => {
         data: {
           minDesktopVersion: '0.1.0',
           recommendedDesktopVersion: '0.5.1',
-          downloadUrl: DEFAULT_DESKTOP_DOWNLOAD_URL,
+          // Canon TZD-46: versioned URL (alias stays as fallback).
+          downloadUrl: '/downloads/kppdf-desktop-setup-v0.5.1.zip',
           serverBuildId: 'test',
         },
       }),
@@ -70,28 +96,7 @@ describe('PairingDialogComponent (TZD-21)', () => {
       configurable: true,
     });
 
-    await TestBed.configureTestingModule({
-      imports: [PairingDialogComponent],
-      providers: [
-        {
-          provide: PI_DIALOG_DATA,
-          useValue: { apiBaseUrl: 'http://127.0.0.1:3000', username: 'admin' },
-        },
-        { provide: DESKTOP_DOWNLOAD_URL, useValue: DEFAULT_DESKTOP_DOWNLOAD_URL },
-        {
-          provide: PI_DIALOG_REF,
-          useValue: { close: refCloseSpy, closed: signal(undefined) },
-        },
-        {
-          provide: PiToastService,
-          useValue: { success: toastSuccessSpy, error: toastErrorSpy },
-        },
-        {
-          provide: DesktopPairingService,
-          useValue: { issue: issueSpy, list: listSpy, revoke: revokeSpy, compat: compatSpy },
-        },
-      ],
-    }).compileComponents();
+    await setupModule(DEFAULT_DESKTOP_DOWNLOAD_URL);
 
     fixture = TestBed.createComponent(PairingDialogComponent);
     fixture.detectChanges();
@@ -138,6 +143,32 @@ describe('PairingDialogComponent (TZD-21)', () => {
     ) as HTMLElement;
     expect(hint.textContent).toContain('Актуальная версия Desktop: 0.5.1');
     expect(hint.textContent).toContain('(мин. 0.1.0)');
+  });
+
+  it('download button uses the configured URL (unversioned alias by default) (TZD-46)', () => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    fixture.nativeElement.querySelector('[data-test="pairing-download-button"]').click();
+    expect(openSpy).toHaveBeenCalledWith(
+      DEFAULT_DESKTOP_DOWNLOAD_URL,
+      '_blank',
+      'noopener,noreferrer',
+    );
+    openSpy.mockRestore();
+  });
+
+  it('download button opens the versioned URL when deploy injects it via token (TZD-46)', async () => {
+    TestBed.resetTestingModule();
+    await setupModule('/downloads/kppdf-desktop-setup-v0.5.1.zip');
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    fixture.nativeElement.querySelector('[data-test="pairing-download-button"]').click();
+    expect(openSpy).toHaveBeenCalledWith(
+      '/downloads/kppdf-desktop-setup-v0.5.1.zip',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    openSpy.mockRestore();
   });
 
   it('close calls dialog ref', () => {

@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T22:40:00Z · TZD-46 DONE (desktop zip semver naming + publish canon)
+- DONE: publish-installer.mjs — `kppdf-desktop-setup-v{semver}.exe/.zip` + unversioned aliases (те же байты), semver SoT package.json==tauri.conf.json (FAIL при расхождении), NSIS candidate versioned (legacy fallback WARN); deploy.py publish_desktop_installer зеркало; FE default = alias (вариант A), meta-инжект versioned на деплое; INSTALL/PAIRING канон.
+- Gates: desktop tsc PASS; version-compat tsx 10/10; publish dry FAIL-path (exit 1); publish + deploy.py functional tests PASS; FE tsc PASS; jest pairing+desktop-download-url 14/14; ESLint/Prettier/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZD-46.done.md`; lock: `.mimocode/locks/TZD-46-desktop-zip-versioned-filename.lock`; checklist DONE; `_active/` очищен (TZ-MIG-301 остаётся чужой — не трогал).
+- Commit/push: PENDING (closeout commit на origin/main). Deploy НЕ.
+- NEXT: следующий warm deploy (VPN off + слово PO) — tauri build + publish-installer + `DESKTOP_*` env; по канону README § Desktop.
+
+## Checkpoint 2026-08-12 · READY TZD-46 + deploy canon (Desktop ZIP semver; VPN blocks deploy now)
+
 ## Checkpoint 2026-08-12 · READY TZD-46 + deploy canon (Desktop ZIP semver; VPN blocks deploy now)
 - PO: скачал с сайта старый Desktop («0.5»), MCP `/healthz` :9743 timeout; в имени ZIP версии нет.
 - Диагноз: в git уже `0.5.1`, на Synology/кнопке — старый unversioned `kppdf-desktop-setup.zip`; warm deploy с новым tauri publish не был.
