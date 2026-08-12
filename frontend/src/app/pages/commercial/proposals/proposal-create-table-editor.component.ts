@@ -327,7 +327,16 @@ type ColumnWidths = Record<string, number>;
                   [attr.data-test]="'kp-table-editor-line-' + index"
                 >
                   <!-- Left gutter -->
-                  <td class="editor__col-move">
+                  <td
+                    class="editor__col-move"
+                    [class.editor__col-move--drag-over]="dragOverIndex() === index"
+                    [class.editor__col-move--dragging]="dragIndex() === index"
+                    [draggable]="!readOnly()"
+                    (dragstart)="onDragStart($event, index)"
+                    (dragover)="onDragOver($event, index)"
+                    (dragleave)="onDragLeave()"
+                    (drop)="onDrop($event, index)"
+                  >
                     <div class="editor__move">
                       <button
                         type="button"
@@ -934,6 +943,14 @@ type ColumnWidths = Record<string, number>;
 
     /* ── Column widths ── */
     .editor__col-move {
+      cursor: grab;
+    }
+    .editor__col-move--dragging {
+      opacity: 0.4;
+    }
+    .editor__col-move--drag-over {
+      border-top: 2px solid var(--color-accent, gold);
+    }
       width: 1.75rem;
     }
     .editor__col-num {
@@ -1169,6 +1186,10 @@ export class ProposalCreateTableEditorComponent {
   /** Per-column width overrides in %. */
   protected readonly columnWidths = signal<ColumnWidths>({});
 
+  /** Drag-and-drop row reordering. */
+  protected readonly dragIndex = signal(-1);
+  protected readonly dragOverIndex = signal(-1);
+
   protected readonly borderLabel = computed(() => {
     const w = this.chrome().borderWeight ?? 'normal';
     return ({ thin: 'Тонкая', normal: 'Обычная', thick: 'Жирная' } as const)[w];
@@ -1278,6 +1299,39 @@ export class ProposalCreateTableEditorComponent {
   protected hideColumn(key: string): void {
     const layout = this.tableLayout().map((c) => (c.key === key ? { ...c, visible: false } : c));
     this.tableLayoutChange.emit(layout);
+  }
+
+  // ── Drag-and-drop ──
+
+  protected onDragStart(event: DragEvent, index: number): void {
+    if (this.readOnly()) return;
+    this.dragIndex.set(index);
+    event.dataTransfer!.effectAllowed = 'move';
+    event.dataTransfer!.setData('text/plain', String(index));
+  }
+
+  protected onDragOver(event: DragEvent, index: number): void {
+    if (this.readOnly() || this.dragIndex() < 0) return;
+    event.preventDefault();
+    event.dataTransfer!.dropEffect = 'move';
+    this.dragOverIndex.set(index);
+  }
+
+  protected onDragLeave(): void {
+    this.dragOverIndex.set(-1);
+  }
+
+  protected onDrop(event: DragEvent, targetIndex: number): void {
+    event.preventDefault();
+    const fromIndex = this.dragIndex();
+    this.dragIndex.set(-1);
+    this.dragOverIndex.set(-1);
+    if (this.readOnly() || fromIndex < 0 || fromIndex === targetIndex) return;
+    const direction = fromIndex < targetIndex ? 1 : -1;
+    const steps = Math.abs(targetIndex - fromIndex);
+    for (let i = 0; i < steps; i++) {
+      this.move.emit({ index: fromIndex, direction });
+    }
   }
 
   protected moveLayoutColumn(key: string, direction: -1 | 1): void {
