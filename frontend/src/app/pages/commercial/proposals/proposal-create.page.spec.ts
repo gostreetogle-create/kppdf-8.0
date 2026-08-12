@@ -270,7 +270,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeNull();
   });
 
-  it('opens a separate Table rail pane with the polished column controls', () => {
+  it('opens the unified Редактор таблицы pane with 3-button right rail', () => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       toggleRightPane: (pane: 'params' | 'table') => void;
     };
@@ -279,30 +279,25 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-toggle-table"]'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeNull();
-    expect(fixture.debugElement.query(By.css('[data-test="kp-table-studio"]'))).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Таблица этого КП');
-    expect(fixture.nativeElement.textContent).toContain('Открыть пресет в Документах');
-    expect(
-      fixture.debugElement.query(By.css('[data-test="kp-table-left-productName"]')),
-    ).toBeTruthy();
-    expect(
-      fixture.debugElement.query(By.css('[data-test="kp-table-right-productName"]')),
-    ).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor"]'))).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Редактор таблицы');
+    expect(fixture.nativeElement.textContent).toContain('+ Своя строка');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor"]'))).toBeTruthy();
 
     page.toggleRightPane('params');
     fixture.detectChanges();
-    expect(fixture.debugElement.query(By.css('[data-test="kp-table-studio"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeTruthy();
   });
 
-  it('keeps right rail order Параметры → Состав → Таблица → Условия', () => {
+  it('keeps right rail order Параметры → Редактор таблицы → Условия', () => {
     const buttons = fixture.debugElement
       .query(By.css('[data-test="kp-rail-right"]'))
       .queryAll(By.css('button'))
       .map((btn) => btn.attributes['data-test']);
     expect(buttons).toEqual([
       'kp-create-toggle-right',
-      'kp-create-toggle-composition',
+
       'kp-create-toggle-table',
       'kp-create-toggle-terms',
     ]);
@@ -313,7 +308,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       fileIcon: unknown;
       termsIcon: unknown;
       toggleLeftTool: (tool: 'template' | 'products' | 'recipient') => void;
-      toggleRightPane: (pane: 'params' | 'terms' | 'table' | 'composition') => void;
+      toggleRightPane: (pane: 'params' | 'terms' | 'table') => void;
     };
     expect(page.fileIcon).not.toBe(page.termsIcon);
 
@@ -371,19 +366,18 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     ).toBe('Шаблон');
   });
 
-  it('places «Своя строка» in the composition footer and adds a custom line', () => {
+  it('places «Своя строка» in the table editor footer and adds a custom line', () => {
     const page = fixture.componentInstance as ProposalCreatePage & {
-      toggleRightPane: (pane: 'composition') => void;
+      toggleRightPane: (pane: 'table') => void;
       addCustomLine: () => void;
       draftLines: () => ProposalDraftLine[];
     };
-    page.toggleRightPane('composition');
+    page.toggleRightPane('table');
     fixture.detectChanges();
 
-    const addBtn = fixture.debugElement.query(By.css('[data-test="kp-add-custom-line"]'));
+    const addBtn = fixture.debugElement.query(By.css('[data-test="kp-table-editor-add-custom"]'));
     expect(addBtn).toBeTruthy();
-    expect(addBtn.nativeElement.className).toContain('composition__add-row');
-    expect(fixture.nativeElement.textContent).toContain('внизу');
+    expect(fixture.nativeElement.textContent).toContain('Своя строка');
 
     addBtn.triggerEventHandler('click');
     fixture.detectChanges();
@@ -922,7 +916,14 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
           organizationId: 'org-1',
           templateId: 'tpl-1',
           items: [
-            { productId: 'prod-1', productName: 'Стенд', quantity: 4, unit: 'шт', unitPrice: 5000 },
+            {
+              productId: 'prod-1',
+              productName: 'Стенд',
+              quantity: 4,
+              unit: 'шт',
+              unitPrice: 5000,
+              photoUrl: '/uploads/stand-thumb.webp',
+            },
           ],
         },
       }),
@@ -1120,9 +1121,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
   }));
 
-  it('opens the Состав panel and edits one shared draft write path', fakeAsync(() => {
+  it('opens the Редактор таблицы panel and edits one shared draft write path', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
-      toggleRightPane: (pane: 'composition') => void;
+      toggleRightPane: (pane: 'table') => void;
       onProductAdd: (line: ProposalDraftLine) => void;
       onCompositionLineChange: (change: {
         index: number;
@@ -1134,16 +1135,16 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       draftLines: () => ProposalDraftLine[];
     };
 
-    page.toggleRightPane('composition');
+    page.toggleRightPane('table');
     fixture.detectChanges();
-    expect(fixture.debugElement.query(By.css('[data-test="kp-composition-panel"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor"]'))).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Добавьте изделия из панели «Товары».');
     fixture.debugElement
-      .query(By.css('[data-test="kp-composition-open-products"]'))
+      .query(By.css('[data-test="kp-table-editor-open-products"]'))
       .triggerEventHandler('click');
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-create-products"]'))).toBeTruthy();
-    page.toggleRightPane('composition');
+    page.toggleRightPane('table');
     fixture.detectChanges();
 
     page.onProductAdd({
@@ -1172,7 +1173,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     page.removeCompositionLine(1);
     expect(page.draftLines()).toHaveLength(1);
     fixture.detectChanges();
-    expect(fixture.debugElement.query(By.css('[data-test="kp-composition-line-0"]'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor-line-0"]'))).toBeTruthy();
   }));
 
   it('adds module/material lines by refId and merges quantity on repeat', () => {

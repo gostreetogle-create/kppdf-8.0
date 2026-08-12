@@ -1,7 +1,10 @@
 {
-  "generatedAt": "2026-08-11T16:35:10.876Z",
+  "generatedAt": "2026-08-12T03:20:04.894Z",
   "fileCount": 914,
   "keys": [
+    "frontend/src/app/pages/commercial/proposals/proposal-create.page.ts:37:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/proposal-create.page.ts:38:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/proposal-create.page.ts:39:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:22:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:23:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:24:fe-page-cross-component"

@@ -30,7 +30,6 @@ export class QuotationItem {
   @Prop()
   productSku?: string;
 
-  /** Snapshot URL for A4 line-items photo column (KP preview/PDF). */
   @Prop()
   photoUrl?: string;
 
