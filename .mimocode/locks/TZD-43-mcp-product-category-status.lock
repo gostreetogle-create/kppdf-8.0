@@ -4,6 +4,6 @@ status: DONE
 closed_at: 2026-08-12T00:31:42Z
 executor: Buffy
 scope: backend mutation-journal DTO/mapping + desktop/mcp
-commit: pending
-origin_main: pending
+commit: fbd6ba04
+origin_main: fbd6ba04
 deploy: NO

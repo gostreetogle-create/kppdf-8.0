@@ -1,7 +1,7 @@
 # TZD-43 checklist
 
 > Status: **DONE**
-> Marker: `tasks/_active/TZD-43.md`
+> Marker: removed after archive
 > Commit/push: **required by continuous executor; deploy NO**
 
 ## Claim slot
@@ -80,5 +80,5 @@ Mongo-id/status shape in MCP, and leaves the omitted-field path unchanged.
 
 - [x] archive + lock + progress + status synchronization
 - [x] remove `_active/TZD-43.md` after archive
-- [ ] commit and push `main`
+- [x] commit and push `main` — `fbd6ba04` on `origin/main`
 - closed_at: 2026-08-12T00:31:42Z
