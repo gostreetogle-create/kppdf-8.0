@@ -1,0 +1,7 @@
+TASK: TZ-UX-317-app-history-gutters
+STATUS: DONE
+OUTCOME: DONE
+CLOSED_AT: 2026-08-12
+CLOSED_BY: agent-158a657202
+SHA: (fill after push)
+SCOPE: app-layout.component.ts/.spec.ts; app-history.store.ts/.spec.ts; page-chrome.md; audit nav-return-gutters-canon.md

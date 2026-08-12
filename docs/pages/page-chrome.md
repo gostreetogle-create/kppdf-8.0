@@ -66,7 +66,25 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - Label кнопки: «← Назад» при известном referrer, иначе «← К каталогу / модулям / материалам».
 - Прямой заход по закладке (нет previous) → всегда fallback на список.
 - Helper: `frontend/src/app/shared/navigation/catalog-return.util.ts` (`CatalogReturnStore`).
-- **PENDING TZ-UX-316/317 (WAVE-NAV-RETURN):** deep-link edit + `returnUrl`; системные ←→ в **gutters** app shell (поля слева/справа от колонки). Старый запрет «глобальных ←→ нет» **отменяется** PO 2026-08-12 — канон: `docs/audits/2026-08-12-nav-return-gutters-canon.md`. После 317 этот абзац заменить фактом реализации.
+
+## Системные ← → в полях (TZ-UX-317, канон 2026-08-12)
+
+Глобальные **←** / **→** в **gutters** app shell (поля слева/справа от max-width
+колонки `pi-page-frame`) — на всём сайте, **не** дубль жёлтого меню и **не**
+крошки (крошки = структура IA, не история). Старый запрет «глобальных ←→ нет»
+**отменён** PO — канон: `docs/audits/2026-08-12-nav-return-gutters-canon.md`.
+
+| Механизм | Роль |
+|----------|------|
+| Глобальные ← → (`data-test="app-nav-back" \| "app-nav-forward"`) | **Браузерная история** через `Location.back()/forward()` |
+| `AppHistoryStore` (`shared/navigation/app-history.store.ts`) | Same-app URL-стек из Router events: imperative навигации пушат, `popstate` двигает индекс, `replaceUrl`-тики (например `?categoryId` в builder) не растят стек |
+| Кнопка без истории | **disabled** (deep-link / заход после логина) — не прыгает молча на fallback раздела |
+| `returnUrl` (TZ-UX-316) | Приоритетнее истории для локального «←» в builder (Create КП → `/builder/:id` → «← К созданию КП») |
+
+- Кнопки видны только на широких экранах (min-width 1680px — когда есть реальное
+  поле ≥ ~76px); на узких — скрыты, чтобы не наезжать на studio rails / palette / A4.
+- `/login` никогда не подставляется предыдущим URL — глобальный ← не выкидывает на вход.
+- `AppHistoryStore` аддитивен к `CatalogReturnStore` (API не менялся).
 
 ## См. также
 

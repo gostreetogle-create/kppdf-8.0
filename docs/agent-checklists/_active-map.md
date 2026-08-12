@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T19:10:00Z · WAVE-NAV-RETURN CLOSED (316+317 DONE)
+- DONE: 316 (edit template → /builder/:id + returnUrl, `7ed07c30`) + 317 (gutters ←→ site-wide, AppHistoryStore).
+- Gates: FE tsc PASS; Jest layout+history+picker+builder 57/57 PASS; ESLint/Prettier/diff-check PASS; deploy НЕ.
+- Archives: `tasks/_archive/2026-08/TZ-UX-316.done.md` + `TZ-UX-317.done.md`; locks: `TZ-UX-316-template-edit-return.lock` + `TZ-UX-317-app-history-gutters.lock`; checklists DONE; `_active/` пуст.
+- IN PROGRESS: none · NOT DONE: none (авто-redirect после save — out of scope волны).
+- NEXT: idle — готово предложить деплой (warm), ждать слово PO; не выдумывать TZ.
+- HEAD: 7ed07c30 pushed · Blockers: none
+
 ## Checkpoint 2026-08-12T18:35:00Z · TZ-UX-316 DONE (WAVE-NAV-RETURN #1)
 - DONE: Create «Редактировать шаблон» → `/doc-constructor/builder/:id` + `?returnUrl` (не список templates); builder «←» чтит returnUrl («← К созданию КП») или smart-back на Шаблоны. `proposal-create.page.ts` не тронут (368 DONE в canonical).
 - Gates: FE tsc PASS; Jest picker+builder.page 31/31 PASS; ESLint/Prettier/diff-check PASS.

@@ -26,3 +26,16 @@
 
 - Крошки = структура IA, **не** history.  
 - Studio Create КП rails (Шаблон/Товары/…) = инструменты страницы, **не** системный history chrome.
+
+---
+
+## Реализовано (TZ-UX-316 + TZ-UX-317, 2026-08-12)
+
+- **316:** Create «Редактировать шаблон» → `/doc-constructor/builder/:id` + `?returnUrl`
+  (текущий Create path); builder «←» чтит `returnUrl` («← К созданию КП»), иначе
+  `CatalogReturnStore.navigateBackOr('/doc-constructor/templates')` («← Шаблоны»).
+- **317:** глобальные ← → в gutters app shell (`data-test="app-nav-back|app-nav-forward"`,
+  видны ≥1680px, иначе скрыты) на стеке `AppHistoryStore` (Router events, `Location.back/forward`,
+  `replaceUrl`-тики не растят стек, `/login` не подставляется предыдущим URL).
+- Таблица «Как пользоваться сейчас» выше отражает состояние до 316/317 — теперь
+  пункты «БАГ»/«Нет» реализованы, см. `docs/pages/page-chrome.md` §Системные ← →.

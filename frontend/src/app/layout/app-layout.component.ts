@@ -24,7 +24,10 @@ import {
   PenLine,
   ShoppingCart,
   Truck,
+  ArrowLeft,
+  ArrowRight,
 } from 'lucide-angular';
+import { AppHistoryStore } from '../shared/navigation/app-history.store';
 
 /**
  * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
@@ -446,12 +449,95 @@ export function matchActiveCategoryId(
           </footer>
         }
       </div>
+
+      <!--
+        TZ-UX-317: системные ← → в полях (gutters) app shell — только когда
+        широкая колонка контента не заполняет экран (min-width 1680px: поле
+        ≥ ~76px, кнопка 36px + отступ не налезает на max-width контент и не
+        перекрывает studio rails / builder palette). ← = browser history back,
+        → = forward; без same-app истории кнопки disabled (не прыгают на
+        fallback раздела).
+      -->
+      <button
+        type="button"
+        class="app-nav-gutter app-nav-gutter--back pi-focus-ring"
+        data-test="app-nav-back"
+        [disabled]="!appHistory.canGoBack()"
+        [attr.aria-disabled]="appHistory.canGoBack() ? null : 'true'"
+        (click)="appHistory.back()"
+        aria-label="Назад"
+        title="Назад"
+      >
+        <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        class="app-nav-gutter app-nav-gutter--forward pi-focus-ring"
+        data-test="app-nav-forward"
+        [disabled]="!appHistory.canGoForward()"
+        [attr.aria-disabled]="appHistory.canGoForward() ? null : 'true'"
+        (click)="appHistory.forward()"
+        aria-label="Вперёд"
+        title="Вперёд"
+      >
+        <lucide-angular [img]="forwardIcon" [size]="13" aria-hidden="true" />
+      </button>
     </div>
+  `,
+  styles: `
+    .app-nav-gutter {
+      /* В полях — вне max-width колонки (pi-page-frame 1400px + паддинги). */
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 20; /* под шапкой (z-30) и под CDK-оверлеями; выше контента */
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      background: var(--color-paper-raised);
+      color: var(--color-ink);
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background-color 120ms ease;
+    }
+
+    .app-nav-gutter--back {
+      left: 14px;
+    }
+
+    .app-nav-gutter--forward {
+      right: 14px;
+    }
+
+    .app-nav-gutter:hover:not(:disabled) {
+      background: var(--color-paper-2);
+    }
+
+    .app-nav-gutter:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    /* Поля появляются только на широких экранах: при viewport ≥1680px
+       gutter = (vw − 1400 − 2×64) / 2 ≥ 76px — кнопка целиком в поле. */
+    @media (min-width: 1680px) {
+      .app-nav-gutter {
+        display: inline-flex;
+      }
+    }
   `,
 })
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly monitorIcon = Monitor;
+  // TZ-UX-317 — системные ← → в полях.
+  protected readonly backIcon = ArrowLeft;
+  protected readonly forwardIcon = ArrowRight;
+  protected readonly appHistory = inject(AppHistoryStore);
 
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);

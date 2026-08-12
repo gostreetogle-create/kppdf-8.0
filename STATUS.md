@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZ-UX-317 DONE: системные ← → в полях app shell
+**Статус:** DONE on worktree branch; frontend-only; deploy НЕ
+**Что:** Глобальные ← (`app-nav-back`) / → (`app-nav-forward`) в gutters app shell (видны ≥1680px в полях вне max-width колонки; disabled без same-app истории). Новый `AppHistoryStore` — URL-стек на Router events + `Location.back()/forward()`; replaceUrl-тики не растят стек; `/login` не предыдущий URL. page-chrome.md: запрет «глобальных ←→ нет» заменён каноном.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-317.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-317.md`
+**Lock:** `.mimocode/locks/TZ-UX-317-app-history-gutters.lock`
+**Gates:** FE tsc PASS; layout + history + picker + builder Jest 57/57 PASS; ESLint/Prettier/diff-check PASS.
+**NEXT:** WAVE-NAV-RETURN closed — idle, готово предложить деплой; deploy НЕ.
+
 ## [2026-08-12] — TZ-UX-316 DONE: «Редактировать шаблон» → /builder/:id + returnUrl
 **Статус:** DONE on worktree branch; frontend-only; deploy НЕ
 **Что:** Create КП «Редактировать шаблон» открывает живой конструктор `/doc-constructor/builder/:id` (не список `/templates?templateId=`) с `?returnUrl` = текущий Create path. Builder «←» чтит `returnUrl` (label «← К созданию КП»), иначе smart-back `CatalogReturnStore` → `/doc-constructor/templates` (label «← Шаблоны»).

@@ -1,3 +1,14 @@
+## [2026-08-12] — TZ-UX-317 DONE — системные ← → в полях app shell (WAVE-NAV-RETURN #2)
+**Исполнитель:** freebuff/wave-nav-return (agent-158a657202)
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** Новый `AppHistoryStore` (site-wide SPA history): стек same-app URL из Router events, `popstate` двигает индекс, replaceUrl-тики не растят стек, `/login` не предыдущий URL, `Location.back()/forward()` — реальная браузерная история. В `app-layout` gutters-кнопки ← (`data-test="app-nav-back"`) / → (`app-nav-forward"`) — position:fixed в полях вне max-width колонки, видны ≥1680px (поле ≥76px, не наезжают на studio rails/palette/A4), disabled + aria-disabled без истории. page-chrome.md: запрет «глобальных ←→ нет» заменён каноном gutters + приоритет returnUrl vs history.
+**Gates:** FE tsc PASS (0 errors); Jest app-layout 4/4 + app-history.store 6/6 + nav-order/catalog-return (общий прогон с picker+builder 57/57) PASS; ESLint/Prettier/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-317.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-317.md`
+**Lock:** `.mimocode/locks/TZ-UX-317-app-history-gutters.lock`
+**Known limit:** live visual smoke gutters — вручную после деплоя; порог вхождения 1680px по геометрии полей.
+**NEXT:** WAVE-NAV-RETURN closed — idle, готово предложить деплой; deploy НЕ.
+
 ## [2026-08-12] — TZ-UX-316 DONE — «Редактировать шаблон» → /builder/:id + returnUrl (WAVE-NAV-RETURN #1)
 **Исполнитель:** freebuff/wave-nav-return (agent-158a657202)
 **Статус:** DONE; frontend-only; deploy НЕ
