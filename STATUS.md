@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZ-SALES-366 DONE: браузерная «Печать» КП вне sandbox-превью
+**Статус:** DONE on worktree branch; frontend-only; deploy НЕ
+**Что:** `printPreview()` больше не зовёт `print()` внутри sandboxed A4 iframe (`Ignored call to 'print()'`): тот же build HTML всех листов печатается во временном невидимом родительском iframe (`kp-temp-print-frame`, модалки разрешены, srcdoc до вставки, печать по load, кадр убирается по afterprint/таймауту). Добавлен печатный CSS (`print-color-adjust:exact` — паритет с PDF `printBackground`, page-break между листами). Превью-лента осталась `sandbox="allow-same-origin"` без allow-scripts; `#previewFrame` viewChild удалён; `proposal-create.page.ts` не тронут; PDF/Архив/puppeteer/Desktop не тронуты; 320 PARK.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-366.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-366.md`
+**Lock:** `.mimocode/locks/TZ-SALES-366-kp-browser-print-sandbox.lock`
+**Gates:** FE tsc PASS (0 errors); proposal-create-template-center + proposal-create.page Jest 42/42 PASS (новый template-center spec 5/5); changed ESLint/Prettier/diff-check PASS; `git diff` без page.ts / quotation-output* / puppeteer / Desktop.
+**NEXT:** TZ-SALES-362 (тиры S/L + иконка Условий) после merge 359 на page.ts; deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-363 DONE: chrome polish панелей Create КП (WAVE-KP-STUDIO-CHROME #1)
 **Статус:** DONE on worktree branch; parallel-OK (LAYER 2); deploy НЕ
 **Что:** Панели-дети студии без дублей: пустое «Условия» не повторяет видимые CTA, имя шаблона под селектом убрано (его показывает trigger), «Клиент» в «Получателе» — снова searchable `PiOverflowSelect` (канон 334) вместо search + native select, в «Параметрах» три «только в этом КП» сведены к одной подсказке про наценку. `proposal-create.page.ts`, composition, table-studio/editor и backend не тронуты.

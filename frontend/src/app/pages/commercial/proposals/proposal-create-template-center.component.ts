@@ -10,7 +10,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import type { SafeHtml } from '@angular/platform-browser';
+import { SecurityContext } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 
@@ -19,6 +20,8 @@ export type KpTemplatePreviewStatus = 'idle' | 'loading' | 'ready' | 'error';
 const KP_A4_WIDTH_PX = 794;
 const KP_A4_HEIGHT_PX = 1123;
 const KP_SCALE_SAFETY_INSET_PX = 2;
+/** Как долго держать временный кадр печати, если диалог не прислал afterprint. */
+const KP_PRINT_FRAME_KEEP_MS = 60_000;
 
 export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number): number {
   if (sheetWidth <= 0 || sheetHeight <= 0) return 0;
@@ -71,7 +74,6 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
                   data-test="kp-tpl-html-preview"
                   title="Превью листа КП"
                   sandbox="allow-same-origin"
-                  #previewFrame
                   [srcdoc]="page"
                   [style.pointer-events]="'none'"
                   [style.transform]="'translateX(-50%) scale(' + previewScale() + ')'"
@@ -166,8 +168,8 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
 })
 export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
   private readonly destroyRef = inject(DestroyRef);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly sheet = viewChild<ElementRef<HTMLElement>>('sheet');
-  private readonly previewFrame = viewChild<ElementRef<HTMLIFrameElement>>('previewFrame');
 
   readonly selected = input<DocumentTemplate | null>(null);
   readonly previewHtml = input<SafeHtml | null>(null);
@@ -176,10 +178,89 @@ export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
   readonly requestPick = output<void>();
   protected readonly previewScale = signal(1);
 
+  /**
+   * Печать КП (TZ-SALES-366): системный диалог вызывается НЕ из sandbox-превью
+   * (там Chrome игнорирует print() без allow-modals), а во временном
+   * родительском iframe печати, куда кладётся тот же build HTML всех листов.
+   * Пустое/loading превью молча выходим — toast уже показан на page.
+   */
   printPreview(): void {
-    const frame = this.previewFrame()?.nativeElement;
-    frame?.contentWindow?.focus();
-    frame?.contentWindow?.print();
+    const html = this.collectPrintHtml();
+    if (!html) return;
+    this.openTempPrintFrame(html);
+  }
+
+  /** Возвращает полный build HTML (все листы .doc-page) + печатный CSS или null. */
+  protected collectPrintHtml(): string | null {
+    const safe = this.previewHtml();
+    if (!safe) return null;
+    const raw = this.sanitizer.sanitize(SecurityContext.HTML, safe);
+    if (!raw || !raw.trim()) return null;
+    return this.injectPrintCss(raw);
+  }
+
+  /**
+   * build HTML уже несёт все листы и @page A4 с page-break; добавляем только
+   * печать фона «как на экране» (паритет с PDF, где puppeteer printBackground)
+   * и явный разрыв между листами на случай, если бланк собран без него.
+   */
+  private injectPrintCss(html: string): string {
+    const printCss =
+      '<style>@media print{html,body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}.doc-page{page-break-after:always}.doc-page:last-child{page-break-after:auto}}</style>';
+    if (html.includes('</head>')) {
+      return html.replace('</head>', `${printCss}</head>`);
+    }
+    return `<!DOCTYPE html><html><head>${printCss}</head><body>${html}</body></html>`;
+  }
+
+  /**
+   * Временный невидимый родительский iframe печати (не sandboxed, в отличие от
+   * ленты превью) — иначе print() игнорируется. Печатаем после load(srcdoc),
+   * убираем кадр после закрытия диалога или по таймауту (Safari).
+   */
+  protected openTempPrintFrame(html: string): void {
+    const frame = document.createElement('iframe');
+    frame.setAttribute('data-test', 'kp-temp-print-frame');
+    frame.setAttribute('aria-hidden', 'true');
+    frame.style.position = 'fixed';
+    frame.style.right = '0';
+    frame.style.bottom = '0';
+    frame.style.width = '0';
+    frame.style.height = '0';
+    frame.style.border = '0';
+    frame.style.visibility = 'hidden';
+    frame.style.pointerEvents = 'none';
+
+    const cleanup = (): void => {
+      if (frame.isConnected) frame.remove();
+    };
+
+    // srcdoc задаём до вставки, чтобы первым документом кадра был сам бланк,
+    // а не about:blank (иначе первый load может прийти пустым и съесть once).
+    frame.srcdoc = html;
+    frame.addEventListener(
+      'load',
+      () => {
+        if (frame.contentWindow?.location?.href !== 'about:srcdoc') return;
+        this.requestPrint(frame, cleanup);
+      },
+      { once: true },
+    );
+    document.body.appendChild(frame);
+    window.setTimeout(cleanup, KP_PRINT_FRAME_KEEP_MS);
+  }
+
+  private requestPrint(frame: HTMLIFrameElement, cleanup: () => void): void {
+    const win = frame.contentWindow;
+    if (!win) {
+      cleanup();
+      return;
+    }
+    win.addEventListener?.('afterprint', cleanup);
+    win.focus?.();
+    win.print?.();
+    // Chrome блокирует до закрытия диалога; Safari возвращается сразу — таймаут-страховка.
+    window.setTimeout(cleanup, KP_PRINT_FRAME_KEEP_MS);
   }
 
   ngAfterViewInit(): void {

@@ -1,3 +1,14 @@
+## [2026-08-12] — TZ-SALES-366 DONE — браузерная «Печать» КП вне sandbox-превью
+**Исполнитель:** kppdf-8.0/freebuff (agent-adeea875e2)
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** «Скачать ▾ → Печать» больше не зовёт `print()` внутри sandboxed A4 iframe (`Ignored call to 'print()'`): `printPreview()` собирает тот же build HTML всех листов (`previewHtml` — полный документ с `.doc-page` и `@page A4`) и печатает его во временном невидимом родительском iframe (`data-test="kp-temp-print-frame"`, без sandbox — модалки разрешены; srcdoc задаётся до вставки, печать по load с guard `about:srcdoc`, кадр убирается по `afterprint`/таймауту). В head добавляется печатный CSS (`print-color-adjust:exact` — фон «как на экране», паритет с PDF `printBackground`; явный page-break между листами). Превью-лента осталась `sandbox="allow-same-origin"` без scripts; убран ненужный `#previewFrame` viewChild. `proposal-create.page.ts` не тронут; PDF/Архив/puppeteer/Desktop не тронуты; 320 остаётся PARK.
+**Gates:** FE tsc PASS (exit 0, 0 diagnostics); focused Jest proposal-create-template-center + proposal-create.page 42/42 PASS (новый spec template-center 5/5: sandbox без allow-scripts, print path, temp frame всех листов, пустое превью без кадра); changed ESLint/Prettier/diff-check PASS; `git diff` без page.ts / PDF / puppeteer / Desktop.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-366.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-366.md`
+**Lock:** `.mimocode/locks/TZ-SALES-366-kp-browser-print-sandbox.lock`
+**Known limit:** нативный диалог печати в headless-сессии не открыть — print-путь покрыт Jest; live smoke «Все КП → ?action=print» — вручную после деплоя.
+**NEXT:** TZ-SALES-362 (тиры S/L + иконка Условий) после merge 359 на page.ts; deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-363 DONE — chrome polish панелей Create КП (WAVE-KP-STUDIO-CHROME #1)
 **Автор:** Buffy / freebuff-kppdf-8.0-d8650b12
 **Статус:** DONE; frontend-only (LAYER 2, parallel OK); deploy НЕ

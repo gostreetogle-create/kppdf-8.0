@@ -7,6 +7,13 @@
 - Идея «страница просмотра готового КП» — позже, не блокирует 367.
 - NEXT: отдать PROMPT-KP-NO-SAVEBAR-367 исполнителю (366 может идти параллельно на template-center).
 
+## Checkpoint 2026-08-12T10:10:00Z · TZ-SALES-366 DONE (браузерная «Печать» КП)
+- DONE: «Скачать ▾ → Печать» больше не зовёт print() внутри sandbox-превью (было `Ignored call to 'print()'`): `printPreview()` собирает тот же build HTML всех листов и печатает его во временном невидимом родительском iframe (`kp-temp-print-frame`, модалки разрешены, srcdoc до вставки, печать по load, кадр убирается по afterprint/таймауту). Превью-лента осталась `sandbox="allow-same-origin"` без allow-scripts; `#previewFrame` viewChild удалён; `proposal-create.page.ts` не тронут.
+- Gates: FE tsc PASS (0 errors); focused Jest proposal-create-template-center + proposal-create.page 42/42 PASS; changed ESLint/Prettier/diff-check PASS; `git diff` без page.ts / PDF / puppeteer / Desktop.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-366.done.md`; lock: `.mimocode/locks/TZ-SALES-366-kp-browser-print-sandbox.lock`; checklist DONE; `_active/` cleared.
+- Commit/push: `9de6602a` на `origin/main` (ff от 588e7489). Deploy НЕ. 320 остаётся PARK.
+- NEXT: TZ-SALES-362 (тиры S/L + иконка Условий) после merge 359 на page.ts; проверить `_active/` + STATUS перед стартом.
+
 ## Checkpoint 2026-08-12 · печать: правда + TZ-366
 - PDF (сервер puppeteer) + Архив = DONE (345). Браузерная «Печать» = сломана sandbox (`allow-modals` / ViewChild 1-й iframe).
 - NEXT fix: `tasks/_backlog/kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` (не третий print-pipeline; 320 остаётся PARK).
