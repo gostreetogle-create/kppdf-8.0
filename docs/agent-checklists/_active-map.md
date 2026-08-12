@@ -10,6 +10,14 @@
 
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · PLAN clean Synology + KP3 MCP load (ждёт wipe-фразу)
+- PO хочет: стереть тестовые данные на Synology → деплой актуального кода (TZD-46) → скачать Desktop → MCP → MIG-302 на **чистый** prod
+- Runbook: `docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md`
+- **Стоп по DANGEROUS-OPS:** нужны VPN off + бэкап + точная фраза «да, разрешаю wipe после бэкапа»
+- Порядок: backup → wipe+seed deploy → smoke ZIP v{semver} → pair Desktop → MIG-302 scoped
+- NEXT: ждать фразы PO; не жать wipe / deploy.ps1 -Wipe до разрешения
+- Ban: wipe без бэкапа; MIG-302 на prod до чистого деплоя; photo load в этом прогоне
+
 ## Checkpoint 2026-08-12 · PO verdict: MIG-302 scoped YES
 - MIG-301 DONE (`e264ff4c`): gaps = photos / CP.email / branding
 - **PO ДА:** Categories→CP→Products→Quotations через MCP; без photoIds/email/branding; SoT=local MCP
