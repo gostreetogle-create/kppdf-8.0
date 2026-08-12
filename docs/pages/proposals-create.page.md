@@ -27,6 +27,7 @@
 - **365 (DnD строк):** drag строк за левый жёлоб; ↑↓ сохранены; один write-path порядка; read-only off.
 - **363 (chrome):** панели-дети студии ужаты по Paper & Ink — без дублей подсказок: имя шаблона под селектом убрано (его и так показывает trigger), пустое «Условия» не повторяет видимые CTA, в «Параметрах» три повтора «только в этом КП» сведены к одной подсказке про наценку, а «Клиент» в «Получателе» снова выбирается через searchable `PiOverflowSelect` (канон 334), а не search + native select.
 - **362 (WAVE-KP-STUDIO-CHROME):** flyout тиры **S** (`--kp-flyout-s` ≈20rem: Шаблон/Параметры/Условия/Вывод) и **L** (`--kp-flyout-l` =794px: Товары/Редактор таблицы/Получатель); иконка Условий = `ScrollText`, не дубль `FileText` шаблона. Аудит: [`2026-08-12-kp-studio-flyout-chrome-audit.md`](../audits/2026-08-12-kp-studio-flyout-chrome-audit.md).
+- **316 (WAVE-NAV-RETURN):** «Редактировать шаблон» открывает **живой конструктор** `/doc-constructor/builder/:id` (не список `/templates?templateId=` — query там не читался) с `?returnUrl` = текущий Create path (вкл. query id черновика); «←» в конструкторе возвращает в Create. Канон: [`2026-08-12-nav-return-gutters-canon.md`](../audits/2026-08-12-nav-return-gutters-canon.md).
 - Под chips нет ghost tools-strip; `flushBody` — студия вплотную к жёлтым chips
 - CTA «Добавить шаблон»; pick закрывает панель шаблона
 - `draftLines` in-memory до Save; Save создаёт/обновляет draft Quotation с items, templateId и non-null templateSnapshot, а `kp.create.lastDraftId`/`lastTemplateId` используются только для resume

@@ -141,11 +141,19 @@ export class ProposalCreateTemplatePickerComponent implements OnInit {
     this.applyId(id, true);
   }
 
+  /**
+   * TZ-UX-316: «Редактировать шаблон» ведёт в живой редактор
+   * `/doc-constructor/builder/:id`, а не на список `/templates?templateId=`
+   * (query там никто не открывает). `returnUrl` = текущий Create path
+   * (с query id черновика, если есть) — builder вернёт сюда по «←».
+   */
   protected openBuilder(): void {
     const id = this.selectedId();
     if (!id) return;
-    void this.router.navigate(['/doc-constructor/templates'], {
-      queryParams: { templateId: id, source: 'quotation-create' },
+    const current = this.router.url;
+    const returnUrl = current && current.startsWith('/') ? current : '/proposals/create';
+    void this.router.navigate(['/doc-constructor/builder', id], {
+      queryParams: { returnUrl },
     });
   }
 

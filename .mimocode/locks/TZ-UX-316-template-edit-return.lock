@@ -1,0 +1,7 @@
+TASK: TZ-UX-316-template-edit-return
+STATUS: DONE
+OUTCOME: DONE
+CLOSED_AT: 2026-08-12
+CLOSED_BY: agent-158a657202
+SHA: (fill after push)
+SCOPE: proposal-create-template-picker.component.ts/.spec.ts; builder.page.ts/.spec.ts; proposals-create.page.md; builder.page.md

@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZ-UX-316 DONE: «Редактировать шаблон» → /builder/:id + returnUrl
+**Статус:** DONE on worktree branch; frontend-only; deploy НЕ
+**Что:** Create КП «Редактировать шаблон» открывает живой конструктор `/doc-constructor/builder/:id` (не список `/templates?templateId=`) с `?returnUrl` = текущий Create path. Builder «←» чтит `returnUrl` (label «← К созданию КП»), иначе smart-back `CatalogReturnStore` → `/doc-constructor/templates` (label «← Шаблоны»).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-316.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-316.md`
+**Lock:** `.mimocode/locks/TZ-UX-316-template-edit-return.lock`
+**Gates:** FE tsc PASS; picker + builder.page Jest 31/31 PASS; ESLint/Prettier/diff-check PASS.
+**NEXT:** TZ-UX-317 (gutters ←→); deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-367 DONE: Create КП без savebar; вывод на rail
 **Статус:** DONE; frontend-only; deploy НЕ
 **Что:** Убран `kp-save-bar` над A4; lifecycle UI только на `/proposals`; rail «Вывод» → Печать·PDF·Архив; autosave без полосы. Spec §0 LOCK v2.2.

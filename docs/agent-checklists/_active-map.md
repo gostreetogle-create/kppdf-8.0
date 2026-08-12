@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T18:35:00Z · TZ-UX-316 DONE (WAVE-NAV-RETURN #1)
+- DONE: Create «Редактировать шаблон» → `/doc-constructor/builder/:id` + `?returnUrl` (не список templates); builder «←» чтит returnUrl («← К созданию КП») или smart-back на Шаблоны. `proposal-create.page.ts` не тронут (368 DONE в canonical).
+- Gates: FE tsc PASS; Jest picker+builder.page 31/31 PASS; ESLint/Prettier/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-UX-316.done.md`; lock: `.mimocode/locks/TZ-UX-316-template-edit-return.lock`; checklist DONE; `_active/TZ-UX-316.md` removed.
+- Commit/push: ff9d5579 (rebase на aec26e4b). Deploy НЕ.
+- NEXT: TZ-UX-317 (системные ←→ в gutters app shell; page-chrome.md канон).
+
 ## Checkpoint 2026-08-12T17:53:31Z · TZ-SALES-368 DONE (печать свободная; PDF/Архив отдельно)
 - DONE: `requestOutput` разведён — print сразу `printCurrentPreview()` без `canSaveDraft`/save/pendingOutput; pdf/archive через draft id → save → отдельный тост «Для PDF/архива нужны шаблон, готовое превью и наша фирма».
 - Gates: FE tsc PASS; proposal-create.page Jest 41/41 PASS (+4 теста вывода); diff-check PASS
@@ -11,7 +18,6 @@
 - HEAD: `df4c5560` pushed: yes
 - Blockers: none
 - _active/: empty (не создавался)
-
 
 ## Checkpoint 2026-08-12 · READY WAVE-NAV-RETURN (316→317) — PO блокер
 - Канон: `docs/audits/2026-08-12-nav-return-gutters-canon.md`

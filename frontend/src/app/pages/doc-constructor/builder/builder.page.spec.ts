@@ -17,6 +17,7 @@ import { BuilderTextFilterService } from './builder-text-filter.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { API_BASE_URL } from '../../../core/api.tokens';
+import { CatalogReturnStore } from '../../../shared/navigation/catalog-return.util';
 
 /**
  * ParamMap-shaped fake — Angular's `paramMap` is an Observable of
@@ -57,6 +58,10 @@ describe('BuilderPage', () => {
   // Эти тесты остаются — они о pure editor-функциональности.
 
   const navigate = jest.fn();
+  const navigateByUrl = jest.fn().mockResolvedValue(true);
+  // TZ-UX-316: builder back без returnUrl делегирует CatalogReturnStore
+  // (реальный store требует Router.events/Location — в этом suite не нужен).
+  const catalogNavigateBackOr = jest.fn();
   const toastSuccess = jest.fn();
   const toastError = jest.fn();
   const templatesSvcUpdate = jest
@@ -115,7 +120,11 @@ describe('BuilderPage', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: ActivatedRoute, useValue: fakeActivatedRoute },
-        { provide: Router, useValue: { navigate } },
+        { provide: Router, useValue: { navigate, navigateByUrl } },
+        {
+          provide: CatalogReturnStore,
+          useValue: { navigateBackOr: catalogNavigateBackOr },
+        },
         {
           provide: TemplateBlocksService,
           useValue: {
@@ -258,12 +267,66 @@ describe('BuilderPage', () => {
     expect(tableReqs).toHaveLength(0);
   });
 
-  it('TZ-DOC-335: goToTemplates navigates to templates registry', async () => {
+  it('TZ-DOC-335: goToTemplates without returnUrl falls back to CatalogReturnStore → templates', async () => {
     const fixture = TestBed.createComponent(BuilderPage);
-    const router = TestBed.inject(Router);
-    const navigate = jest.spyOn(router, 'navigate').mockResolvedValue(true);
     (fixture.componentInstance as unknown as { goToTemplates: () => void }).goToTemplates();
-    expect(navigate).toHaveBeenCalledWith(['/doc-constructor/templates']);
+    expect(catalogNavigateBackOr).toHaveBeenCalledWith('/doc-constructor/templates');
+    expect(navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  // ═══ TZ-UX-316: explicit ?returnUrl deep-link return (Create КП) ═══
+
+  it('TZ-UX-316: goToTemplates honors same-origin ?returnUrl', async () => {
+    queryParamSubject.next(makeParamMap({ returnUrl: '/proposals/create' }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+
+    (fixture.componentInstance as unknown as { goToTemplates: () => void }).goToTemplates();
+    expect(navigateByUrl).toHaveBeenCalledWith('/proposals/create');
+    expect(catalogNavigateBackOr).not.toHaveBeenCalled();
+  });
+
+  it('TZ-UX-316: back label becomes «← К созданию КП» when returnUrl is present', async () => {
+    queryParamSubject.next(makeParamMap({ returnUrl: '/proposals/create?id=draft-1' }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      backButtonLabel: () => string;
+      backButtonTitle: () => string;
+    };
+    expect(comp.backButtonLabel()).toBe('← К созданию КП');
+    expect(comp.backButtonTitle()).toBe('Вернуться к созданию КП');
+    const btn: HTMLButtonElement | null = fixture.nativeElement.querySelector(
+      '[data-test="builder-back-templates"]',
+    );
+    expect(btn).toBeTruthy();
+    expect(btn.textContent?.trim()).toContain('К созданию КП');
+    expect(btn.getAttribute('aria-label')).toBe('Вернуться к созданию КП');
+  });
+
+  it('TZ-UX-316: back label stays «← Шаблоны» without returnUrl', async () => {
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      backButtonLabel: () => string;
+    };
+    expect(comp.backButtonLabel()).toBe('← Шаблоны');
+  });
+
+  it('TZ-UX-316: rejects unsafe returnUrl (scheme / protocol-relative)', async () => {
+    queryParamSubject.next(makeParamMap({ returnUrl: 'javascript:alert(1)' }));
+    const fixture = TestBed.createComponent(BuilderPage);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      returnUrl: () => string | null;
+      backButtonLabel: () => string;
+    };
+    expect(comp.returnUrl()).toBeNull();
+    expect(comp.backButtonLabel()).toBe('← Шаблоны');
+
+    queryParamSubject.next(makeParamMap({ returnUrl: '//evil.example/x' }));
+    fixture.detectChanges();
+    expect(comp.returnUrl()).toBeNull();
   });
 
   // ────────────────────────────────────────────────────────────────────

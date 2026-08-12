@@ -41,6 +41,7 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../../shared/ui/dialog/pi-alert-dialog.component';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
+import { CatalogReturnStore } from '../../../shared/navigation/catalog-return.util';
 import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -102,10 +103,10 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
           class="builder-back pi-focus-ring"
           (click)="goToTemplates()"
           data-test="builder-back-templates"
-          title="К списку шаблонов"
-          aria-label="К списку шаблонов"
+          [attr.title]="backButtonTitle()"
+          [attr.aria-label]="backButtonTitle()"
         >
-          ← Шаблоны
+          {{ backButtonLabel() }}
         </button>
         <span class="text-xs text-muted-foreground">{{ headerSubtitle() }}</span>
         @if (templateId()) {
@@ -421,6 +422,7 @@ export class BuilderPage {
   // DI
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly catalogReturn = inject(CatalogReturnStore);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
@@ -561,6 +563,19 @@ export class BuilderPage {
     });
   });
 
+  // TZ-UX-316 — explicit deep-link return: «Редактировать шаблон» из Create КП
+  // приходит с ?returnUrl=/proposals/create[?id=…]. Кнопка «←» чтит его;
+  // без returnUrl — смарт-возврат CatalogReturnStore с fallback на Шаблоны.
+  protected readonly returnUrl = signal<string | null>(null);
+
+  protected readonly backButtonLabel = computed<string>(() =>
+    this.returnUrl() ? '← К созданию КП' : '← Шаблоны',
+  );
+
+  protected readonly backButtonTitle = computed<string>(() =>
+    this.returnUrl() ? 'Вернуться к созданию КП' : 'К списку шаблонов',
+  );
+
   protected readonly headerSubtitle = computed<string>(() => {
     const id = this.templateId();
     if (!id) return 'Загрузка шаблона…';
@@ -570,8 +585,14 @@ export class BuilderPage {
     return `${label} · ${count} ${pluralBlocks(count)}`;
   });
 
+  /** TZ-UX-316: явный same-origin returnUrl → туда; иначе smart-back с fallback. */
   protected goToTemplates(): void {
-    void this.router.navigate(['/doc-constructor/templates']);
+    const target = this.returnUrl();
+    if (target) {
+      void this.router.navigateByUrl(target);
+      return;
+    }
+    this.catalogReturn.navigateBackOr('/doc-constructor/templates');
   }
 
   /**
@@ -669,6 +690,10 @@ export class BuilderPage {
       } else {
         this.sourceContext.set(null);
       }
+
+      // TZ-UX-316: ?returnUrl — same-origin deep-link return target (Create КП).
+      const rawReturn = qp.get('returnUrl');
+      this.returnUrl.set(isSafeReturnUrl(rawReturn) ? rawReturn : null);
     });
 
     // TZ-DOC-318 step b (write side): whenever the shared filter signal
@@ -1759,4 +1784,17 @@ function saveSnapSettings(settings: SnapSettings): void {
   } catch {
     // localStorage may be unavailable (private browsing, quota exceeded)
   }
+}
+
+// ═══ TZ-UX-316: returnUrl guard ═══
+
+/**
+ * Accept only same-origin absolute paths as `returnUrl` — never `//host`,
+ * never a scheme (javascript:/http:/…). Query/hash are allowed.
+ */
+function isSafeReturnUrl(value: string | null | undefined): value is string {
+  if (!value) return false;
+  if (!value.startsWith('/')) return false;
+  if (value.startsWith('//')) return false;
+  return !/^[a-z][a-z0-9+.-]*:/i.test(value);
 }

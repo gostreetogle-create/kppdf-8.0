@@ -1,3 +1,14 @@
+## [2026-08-12] — TZ-UX-316 DONE — «Редактировать шаблон» → /builder/:id + returnUrl (WAVE-NAV-RETURN #1)
+**Исполнитель:** freebuff/wave-nav-return (agent-158a657202)
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** Из Create «Редактировать шаблон» открывает живой конструктор `/doc-constructor/builder/:id` (не список `/templates?templateId=` — query там не читался) с `?returnUrl` = текущий Create path (вкл. query id черновика). Builder «←»: валидный same-origin `returnUrl` → туда (label «← К созданию КП»); иначе `CatalogReturnStore.navigateBackOr('/doc-constructor/templates')` (label «← Шаблоны»). Валидация returnUrl: absolute same-origin path, без `//host` и схем.
+**Gates:** FE tsc PASS (0 errors); Jest picker 2/2 + builder.page 29/29 = 31/31 PASS; ESLint/Prettier/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-316.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-316.md`
+**Lock:** `.mimocode/locks/TZ-UX-316-template-edit-return.lock`
+**Known limit:** `proposal-create.page.ts` не тронут (TZ-SALES-368 WIP в canonical); gutter-канон — в 317.
+**NEXT:** TZ-UX-317 (системные ←→ в gutters app shell); deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-368 DONE — Create КП: печать свободная; PDF/Архив отдельно
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; frontend-only; deploy НЕ

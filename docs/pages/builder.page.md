@@ -25,6 +25,7 @@ App layout: **denseMain** — без `pt-page-y` и без site footer (flush п
 | `source` | `string` | Источник контекста (order/quotation/contract/invoice) |
 | `sourceId` | `string` | ID источника |
 | `category` | `string` (ObjectId) | Фильтр «Текстов» по `TextBlockCategory._id` в tool-pane picker и в inline toolbar dropdown (TZ-DOC-317). `null`/отсутствие = «Все». Двусторонняя синхронизация с `BuilderTextFilterService.categoryId` через `effect()` + `Router.navigate({ queryParamsHandling: 'merge', replaceUrl: true })` — refresh страницы сохраняет выбор. При смене `:id` шаблона фильтр сбрасывается на «Все». |
+| `returnUrl` | `string` (same-origin path) | Куда «←» возвращает из конструктора (TZ-UX-316). Из Create КП приходит `/proposals/create[?id=…]`. Валидируется: только absolute same-origin path (без `//host` и схем). Без него — smart-back через `CatalogReturnStore` с fallback на `/doc-constructor/templates`. |
 
 ## Layout
 
@@ -348,6 +349,7 @@ patchBlockSettings(blockId, { settings })
 
 | Кнопка | Действие |
 |--------|----------|
+| «← …» (в тулбаре) | TZ-UX-316: label «← К созданию КП» при валидном `?returnUrl` (переход туда), иначе «← Шаблоны» (`CatalogReturnStore.navigateBackOr('/doc-constructor/templates')`) |
 | «Тексты» | Dropdown со списком текстовых блоков (`/api/text-blocks`) |
 | «Таблицы» | Dropdown со списком шаблонов таблиц (`/api/table-templates`) |
 | «Фото» | File input → `onPhotoFileSelected()` → создаёт image-блок с `overlay: true` |
