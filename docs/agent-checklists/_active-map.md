@@ -2,9 +2,10 @@
 
 ## Checkpoint 2026-08-12 — READY: WAVE-KP-TABLE-EDITOR (359→360→361)
 - Канон: `docs/audits/2026-08-12-kp-table-editor-unified-canon.md`; волна: `tasks/_backlog/kp-vitrine/WAVE-KP-TABLE-EDITOR.md`.
-- 359 merge UI (один «Редактор таблицы», рейл из трёх кнопок) → 360 настройка колонки в её шапке → 361 фото на бланке.
-- Пре-условие 359: правки 356–358 закоммичены (сейчас часть лежит в рабочем дереве).
-- Prompt-источник спент: `PROMPT-KP-TABLE-EDITOR-UNIFIED.md`.
+- Continuous: `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-EDITOR.md` — **ШАГ 0 commit WIP студии** → 359 → 360 → 361.
+- 359 merge UI (один «Редактор таблицы», рейл из трёх кнопок) → 360 шапка-колонки → 361 фото.
+- Пре-условие: 356–358 + photoUrl закоммитить до 359. «Сумма» без колонки бланка → зона «только в КП».
+- Prompt-дизайн спент: `PROMPT-KP-TABLE-EDITOR-UNIFIED.md`.
 - Deploy НЕ until PO.
 
 ## Checkpoint 2026-08-11 — WAVE-KP-TABLE-STUDIO (356→358)
