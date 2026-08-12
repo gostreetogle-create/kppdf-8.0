@@ -1,3 +1,13 @@
+## Checkpoint 2026-08-12T19:20:00Z · TZ-MIG-301 DONE (WAVE-KP3-DATA-MIGRATE #1)
+- DONE: выгрузка КП3 read-only → `data/from-kp3/` (products 699 / counterparties 23 / kps 28 + media 690 ≈82MB) + id-map + photos-index (661) + manifest. Аудит `docs/audits/2026-08-12-kp3-to-kp8-field-map.md`.
+- gap-block (3): фото (MCP upload tool отсутствует) · Counterparty.email (нет поля) · брендинг КП (нет слота). Pre-step: category string→Category словарь.
+- Gates: SSH BatchMode OK; counts совпали; media 690≈remote; git check-ignore дампов OK; diff-check PASS; deploy НЕ.
+- Archive: `tasks/_archive/2026-08/TZ-MIG-301.done.md`; lock `TZ-MIG-301-kp3-extract-map.lock`; checklist DONE; `_active/TZ-MIG-301.md` removed.
+- IN PROGRESS: none · NOT DONE: MIG-302 (ждёт вердикт PO по gap-списку).
+- NEXT: Ask PO — можно ли стартовать MIG-302 для map/rename части (фото/email/брендинг — successor-TZ).
+- HEAD: e264ff4c pushed: yes · Blockers: none · Deploy: НЕ
+- _active/: empty
+
 # SESSION QUEUE
 
 ## Checkpoint 2026-08-12T22:40:00Z · TZD-46 DONE (desktop zip semver naming + publish canon)
