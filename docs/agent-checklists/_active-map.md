@@ -10,6 +10,14 @@
 
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · WIPE+SEED deploy DONE — ждать Desktop/MCP → MIG-302
+- Backup: `/var/lib/kppdf80/backups/mongo-2026-08-12_1943` (+ uploads)
+- Wipe+Seed: PASS (health/auth/FE); DB fresh: products0/cp0/quot0/users1
+- Desktop: `/downloads/kppdf-desktop-setup-v0.5.1.zip` public 200 (Basic Auth)
+- Runbook: `docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md`
+- NEXT PO: скачать ZIP v0.5.1 → pair Desktop → «лей MIG-302 на prod»
+- Ban: повторный wipe; MIG-302 без MCP ping; photo в этом прогоне
+
 ## Checkpoint 2026-08-12 · PLAN clean Synology + KP3 MCP load (ждёт wipe-фразу)
 - PO хочет: стереть тестовые данные на Synology → деплой актуального кода (TZD-46) → скачать Desktop → MCP → MIG-302 на **чистый** prod
 - Runbook: `docs/ops/RUNBOOK-CLEAN-SYNLOGY-KP3-LOAD.md`
