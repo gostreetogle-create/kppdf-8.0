@@ -181,10 +181,12 @@ KP8-only поля без источника (не gaps — просто отсу
 
 | Ось | MIG-302 | Successor |
 |-----|---------|-----------|
+| Categories pre-step (14 имён) | **создать/найти до products** | — |
+| Counterparties map/rename (без email/photo; skip `isOurCompany`) | **грузить** | email → [`TZ-MIG-304`](../../tasks/_backlog/migrate-kp3/TZ-MIG-304-cp-email-via-person.md) |
 | Products map/rename (без photoIds) | **грузить** | — |
-| Photos / photoIds | **не грузить** (staging остаётся) | [`TZD-47`](../../tasks/_backlog/desktop/TZD-47-mcp-photo-upload.md) → затем [`TZ-MIG-303`](../../tasks/_backlog/migrate-kp3/TZ-MIG-303-attach-kp3-photos.md) |
+| KPs → Quotation (+ items по tool surface) | **грузить** | — |
+| Photos / photoIds | **не грузить** (staging остаётся) | [`TZD-47`](../../tasks/_backlog/desktop/TZD-47-mcp-photo-upload.md) → [`TZ-MIG-303`](../../tasks/_backlog/migrate-kp3/TZ-MIG-303-attach-kp3-photos.md) |
 | Branding kpPage1/2 / brandingTemplates | **не грузить** | PARK — [`TZ-MIG-305`](../../tasks/_backlog/migrate-kp3/TZ-MIG-305-kp3-branding-park.md) |
-| Counterparties email | **не грузить в 302** | [`TZ-MIG-304`](../../tasks/_backlog/migrate-kp3/TZ-MIG-304-cp-email-via-person.md) |
 
 Целевой SoT для 302 = **тот бэкенд, к которому подключён MCP** (local/dev). Prod Synology — только явное слово PO.
 
