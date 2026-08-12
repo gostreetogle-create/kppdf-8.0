@@ -270,7 +270,7 @@ type ColumnWidths = Record<string, number>;
                         <button
                           type="button"
                           class="editor__col-menu-item"
-                          [disabled]="readOnly() || firstVisibleIndex(col.key) === 0"
+                          [disabled]="readOnly() || firstVisibleIndex(col.key)"
                           (click)="moveLayoutColumn(col.key, -1); columnMenuIndex.set(-1)"
                           [attr.data-test]="'kp-table-editor-col-left-' + col.key"
                         >
@@ -944,14 +944,13 @@ type ColumnWidths = Record<string, number>;
     /* ── Column widths ── */
     .editor__col-move {
       cursor: grab;
+      width: 1.75rem;
     }
     .editor__col-move--dragging {
       opacity: 0.4;
     }
     .editor__col-move--drag-over {
       border-top: 2px solid var(--color-accent, gold);
-    }
-      width: 1.75rem;
     }
     .editor__col-num {
       width: 1.75rem;
