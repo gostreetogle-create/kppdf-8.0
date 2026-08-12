@@ -19,7 +19,7 @@ import {
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 export const COMMERCIAL_TOOL_NAMES = [
   'kppdf_list_counterparties',
@@ -263,6 +263,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_counterparties',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List counterparties (clients)',
       description:
         'TZD-33: GET /api/counterparties — page/limit/search; slim fields ' +
@@ -283,6 +284,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_get_counterparty',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get counterparty',
       description: 'TZD-33: GET /api/counterparties/:id — slim fields. Read-only.',
       inputSchema: { id: z.string().min(1).describe('Counterparty id') },
@@ -301,6 +303,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_persons',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List persons',
       description: 'TZD-33: GET /api/persons — page/limit/search; slim fields. Read-only.',
       inputSchema: pageLimitSearch,
@@ -319,6 +322,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_sites',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List sites',
       description:
         'TZD-33: GET /api/sites?counterpartyId= — sites of a client ' +
@@ -341,6 +345,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_quotations',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List quotations (КП)',
       description:
         'TZD-33: GET /api/quotations — optional counterpartyId/status filters; ' +
@@ -364,6 +369,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_get_quotation',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get quotation (КП)',
       description:
         'TZD-33: GET /api/quotations/:id — slim fields, БЕЗ HTML snapshot. Read-only.',
@@ -383,6 +389,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_orders',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List orders',
       description:
         'TZD-33: GET /api/orders — optional counterpartyId/status filters; slim fields. Read-only.',
@@ -405,6 +412,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_get_order',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get order',
       description: 'TZD-33: GET /api/orders/:id — slim fields. Read-only.',
       inputSchema: { id: z.string().min(1).describe('Order id') },
@@ -423,6 +431,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_list_contracts',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List contracts',
       description:
         'TZD-33: GET /api/contracts — optional counterpartyId/status filters; slim fields. Read-only.',
@@ -447,6 +456,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_counterparty_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create counterparty (client)',
       description:
         'TZD-33: POST /api/counterparties — пишет SoT СРАЗУ (нет journal-undo). ' +
@@ -476,6 +486,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_site_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create site',
       description:
         'TZD-33: POST /api/sites { counterpartyId, name, address } — пишет SoT сразу. ' +
@@ -499,6 +510,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_quotation_create_draft',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create quotation draft (КП)',
       description:
         'TZD-33: POST /api/quotations с ПРИНУДИТЕЛЬНЫМ status=draft (нельзя создать ' +
@@ -524,6 +536,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_order_create_draft',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create order draft',
       description:
         'TZD-33: POST /api/orders с ПРИНУДИТЕЛЬНЫМ status=draft. ' +
@@ -550,6 +563,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_quotation_set_status',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Set quotation status (gated)',
       description:
         'TZD-33: PATCH /api/quotations/:id { status } — только whitelist ' +
@@ -576,6 +590,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_quotation_convert_to_order',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Convert quotation to order (gated)',
       description:
         'TZD-33: POST /api/quotations/:id/convert-to-order. ТРЕБУЕТ userOk:true.',
@@ -605,6 +620,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_quotation_convert_to_contract',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Convert quotation to contract (gated)',
       description:
         'TZD-33: POST /api/quotations/:id/convert-to-contract. ТРЕБУЕТ userOk:true.',
@@ -632,6 +648,7 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
   server.registerTool(
     'kppdf_order_ship',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Ship order (gated)',
       description:
         'TZD-33: POST /api/orders/:id/ship { recipient?, address?, warehouseId?, ' +

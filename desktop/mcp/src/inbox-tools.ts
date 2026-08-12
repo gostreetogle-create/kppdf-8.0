@@ -22,7 +22,7 @@ import {
   type MaterialRow,
   type RawRow,
 } from './inbox.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 import {
   createBackendValidateDeps,
   validateMaterial,
@@ -184,6 +184,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_inbox_list',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List inbox files',
       description:
         'Lists files in the desktop inbox dir (KPPDF_INBOX_DIR). Excludes processed/failed subfolders.',
@@ -209,6 +210,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_inbox_classify_columns',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Classify inbox columns ready/unfit',
       description:
         'TZD-26: classifies column headers against the material canon ' +
@@ -265,6 +267,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_inbox_audit_file',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Audit inbox file (validate only)',
       description:
         'Parses an inbox file and dry-runs material validation per mappable row. ' +
@@ -287,6 +290,7 @@ export function registerInboxTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_inbox_propose_file',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose or validate file rows as material.create',
       description:
         'Parses an inbox file (xlsx/csv/tsv/txt), maps rows to material columns. ' +

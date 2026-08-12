@@ -64,7 +64,7 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
   "ok": true,
   "service": "kppdf-desktop-mcp",
   "port": 9743,
-  "toolCount": 51,
+  "toolCount": 81,
   "packageVersion": "0.1.0",
   "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
   "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
@@ -77,6 +77,51 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 
 Инструмент `kppdf_ping` должен вернуть профиль `/api/auth/me`.
 
+## Response envelope (TZD-41)
+
+Каждый успешный вызов MCP возвращает один машиночитаемый envelope и тот же
+объект в `structuredContent`:
+
+```json
+{
+  "ok": true,
+  "result": { "_id": "...", "id": "..." },
+  "id": "...",
+  "proposalId": "..."
+}
+```
+
+- `result` — полный ответ backend/tool; старые именованные поля (`proposal`,
+  `mutation`, `task`, `todo`, `category`, `module`) временно дублируются для
+  совместимости.
+- Для любого `kppdf_propose_*` идентификатор предложения находится в
+  **top-level `proposalId`**; для batch это первый id, остальные остаются в
+  `result.proposalIds`.
+- Для SoT-create (`counterparty`, `site`, `module` и commercial drafts) id
+  нормализуется из backend `_id` в **top-level `id`** и дублируется как
+  `result.id`.
+- Ключевые write/propose/confirm/list/get tools публикуют эту форму через
+  `outputSchema` в `tools/list`; текущая схема допускает полный backend result.
+
+### Canonical list names and one-wave aliases
+
+Новые клиенты используют `kppdf_list_<noun>`:
+
+| Canonical | Deprecated alias |
+|---|---|
+| `kppdf_list_doc_types` | `kppdf_doc_types_list` |
+| `kppdf_list_doc_template_categories` | `kppdf_doc_template_categories_list` |
+| `kppdf_list_doc_templates` | `kppdf_doc_templates_list` |
+| `kppdf_list_import_tasks` | `kppdf_import_task_list` |
+| `kppdf_list_import_todos` | `kppdf_import_todo_list` |
+| `kppdf_list_text_block_categories` | `kppdf_text_block_categories_list` |
+| `kppdf_list_text_blocks` | `kppdf_text_blocks_list` |
+
+Старые имена не удалены в этой волне: они вызывают тот же handler и останутся
+на одну волну для миграции клиентов. `kppdf_list_materials`,
+`kppdf_list_products`, `kppdf_list_categories`, `kppdf_list_counterparties` и
+остальные уже соответствуют канону.
+
 ### После `git pull` → Restart MCP (TZD-31)
 
 MCP host стартует из каталога пакета `desktop/mcp` в рабочей копии. После
@@ -86,7 +131,7 @@ tools — **обязательно перезапустите MCP**:
 1. В Desktop: карточка «MCP — локальный доступ для AI» → **«Перезапустить»**
    (или «Остановить» → «Запустить»).
 2. Проверка: `GET http://127.0.0.1:<порт>/healthz` → `toolCount` ≥ 40
-   (актуально 51) и в `toolsSample` видны `kppdf_list_categories` +
+   (актуально 81) и в `toolsSample` видны `kppdf_list_categories` +
    `kppdf_propose_product_create`.
 3. Cursor / LM Studio: **Reload MCP** (сервер `kppdf`) — клиент кэширует tools/list.
 
@@ -220,15 +265,15 @@ Order / коммерческое КП kinds — не этот TZ.
 
 | Tool | REST |
 |------|------|
-| `kppdf_doc_types_list` | `GET /api/doc-types` |
-| `kppdf_doc_template_categories_list` | `GET /api/document-template-categories` |
-| `kppdf_doc_templates_list` | `GET /api/document-templates` |
+| `kppdf_list_doc_types` (alias `kppdf_doc_types_list`) | `GET /api/doc-types` |
+| `kppdf_list_doc_template_categories` (alias `kppdf_doc_template_categories_list`) | `GET /api/document-template-categories` |
+| `kppdf_list_doc_templates` (alias `kppdf_doc_templates_list`) | `GET /api/document-templates` |
 | `kppdf_doc_template_create_draft` | `POST /api/document-templates` с `isActive=false`, `isDefault=false`, `notes` = `[AI-DRAFT] …` |
 
 ### Doc-draft protocol (TZD-28)
 
-1. Нужен печатный тип без шаблона → `kppdf_doc_templates_list` (нет?)
-   + `kppdf_doc_types_list` (есть такой тип?)
+1. Нужен печатный тип без шаблона → `kppdf_list_doc_templates` (нет?)
+   + `kppdf_list_doc_types` (есть такой тип?)
 2. `kppdf_doc_template_create_draft` → id черновика.
 3. Id → `kppdf_import_todo_create` (TZD-29): «Доделать шаблон {name}»
    + `href /doc-constructor/...` → менеджер доводит в вебе.
@@ -244,7 +289,7 @@ Order / коммерческое КП kinds — не этот TZ.
 | Tool | REST |
 |------|------|
 | `kppdf_import_todo_create` | `POST /api/import-todos` (title, body?, href?, importTaskId?, templateId?) |
-| `kppdf_import_todo_list` | `GET /api/import-todos?status=open|done` |
+| `kppdf_list_import_todos` (alias `kppdf_import_todo_list`) | `GET /api/import-todos?status=open|done` |
 | `kppdf_import_todo_set_status` | `PATCH /api/import-todos/:id { status }` |
 
 ### Todo protocol (TZD-29)
@@ -354,7 +399,7 @@ Expert path `kppdf_inbox_propose_file` remains (proposals without DB matching).
 
 | Tool | Effect |
 |------|--------|
-| `kppdf_import_task_list` | `GET /api/import-tasks` — summary + rowCount (no full rows dump) |
+| `kppdf_list_import_tasks` (alias `kppdf_import_task_list`) | `GET /api/import-tasks` — summary + rowCount (no full rows dump) |
 | `kppdf_import_task_get` | `GET /api/import-tasks/:id` — full rows |
 | `kppdf_import_task_create` | `POST /api/import-tasks` → status `ready_for_ai`; **0** journal proposals |
 | `kppdf_import_task_set_status` | `PATCH /api/import-tasks/:id/status` (whitelist; no matching logic) |
@@ -420,7 +465,7 @@ Inbox-папка настраивается в десктоп-приложени
 ## Follow-ups
 
 - **TZD-29** ✅ DONE (2026-08-08, wave #7 — волна завершена) — import todos: BE `import-todo` module (POST/GET/PATCH, admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; todo protocol выше; FE тонкая `/import-todos` страница.
-- **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: `kppdf_doc_types_list` / `kppdf_doc_template_categories_list` / `kppdf_doc_templates_list` / `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
+- **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: canonical `kppdf_list_doc_types` / `kppdf_list_doc_template_categories` / `kppdf_list_doc_templates` plus one-wave aliases and `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
 - **TZD-38** ✅ DONE (2026-08-10, Excel Studio wave #3) — hierarchical specification preview and conflict gate; explicit confirm creates missing catalog entities and writes Product/Module composition through existing REST endpoints; MCP draft/confirm tools; flat TZD-37 path unchanged. TZD-35 PARK closed.
 - **TZD-27** ✅ DONE (2026-08-08, wave #5) — journal `product.create`/`product.update` (propose→confirm→undo зеркально material; org scope); MCP `kppdf_propose_product_create`/`_update` + `kppdf_validate_product` + domain schema product; `aiReport.rows[].entity` ветка в `apply_plan` (тот же batch).
 - **TZD-19** ✅ DONE (2026-08-08, wave #4) — graph: 5 composition/where_used read tools + `kppdf_run_integrity_suite` (soft smoke, read-only) + `kppdf_list_modules`; graph protocol перед product.update / mass material.update.

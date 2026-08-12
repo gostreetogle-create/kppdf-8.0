@@ -1,5 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZD-41 DONE: MCP envelope + outputSchema + list aliases
+**Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
+**Что:** Единый success envelope `{ok, result, id?, proposalId?}` с `structuredContent`; `_id`→`id`, proposal id→top-level `proposalId`; key tools публикуют `outputSchema`. Добавлены canonical `kppdf_list_*` и one-wave aliases для doc/import/text lists.
+**Gates:** MCP test 98/98 PASS; MCP tsc PASS; tools/list smoke 81 tools with outputSchema PASS; `git diff --check` PASS. Desktop/MCP Prettier/ESLint не настроены.
+**Archive:** `tasks/_archive/2026-08/TZD-41.done.md`
+**Lock:** `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`
+**NEXT:** TZD-42 → TZD-43 → TZD-44; TZD-45 park; deploy НЕ.
+
+
+
 ## [2026-08-11] — TZ-OPS-312 DONE: catalog page specs dictionary-labels flush
 **Статус:** DONE; specs-only harness fix; deploy НЕ
 **Workspace:** Freebuff worktree landed on `origin/main`; canonical target `D:\kppdf-8.0`

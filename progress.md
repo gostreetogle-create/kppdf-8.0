@@ -1,3 +1,14 @@
+## [2026-08-12] — TZD-41 DONE — MCP envelope, outputSchema and canonical list aliases
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP contract hardening; deploy НЕ
+**Что:** Общий success envelope `{ok,result,id?,proposalId?}` теперь отдаётся и через `structuredContent`; `_id` нормализуется в `id`, proposal ids — в top-level `proposalId`. Добавлены `outputSchema` на TZD-41 tool surface и канонические `kppdf_list_*` с one-wave aliases для doc/import/text list tools.
+**Gates:** `cd desktop/mcp && pnpm test` 98/98 PASS; `pnpm exec tsc --noEmit` PASS; tools/list smoke 81 tools/outputSchema PASS; `git diff --check` PASS. Prettier/ESLint для desktop/mcp не настроены (N/A).
+**Archive:** `tasks/_archive/2026-08/TZD-41.done.md`
+**Checklist:** `docs/agent-checklists/TZD-41.md`
+**Lock:** `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`
+**Known limitation:** domain/validate registrations remain outside this conflict-key schema sweep; TZD-42 → TZD-43 → TZD-44 next, TZD-45 parked.
+**NEXT:** TZD-42; deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-355 DONE — Состав КП: wide table + edit in place
 **Автор:** Cursor
 **Статус:** DONE (код); deploy позже

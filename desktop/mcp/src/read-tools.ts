@@ -7,7 +7,13 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { slimProduct, slimProductList, toolFail, toolOk } from './tool-result.js';
+import {
+  TOOL_OUTPUT_SCHEMA,
+  slimProduct,
+  slimProductList,
+  toolFail,
+  toolOk,
+} from './tool-result.js';
 
 const pageLimitSearch = {
   page: z.number().int().min(1).optional().describe('Page number (default backend)'),
@@ -176,6 +182,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_list_materials',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List materials',
       description: 'GET /api/materials — paginated materials (org-scoped by JWT). Read-only.',
       inputSchema: pageLimitSearch,
@@ -194,6 +201,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_material',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get material',
       description: 'GET /api/materials/:id — single material. Read-only.',
       inputSchema: {
@@ -214,6 +222,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_list_products',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List products',
       description: 'GET /api/products — paginated products, minimal fields. Read-only.',
       inputSchema: pageLimitSearch,
@@ -232,6 +241,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_product',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get product',
       description: 'GET /api/products/:id — minimal product fields. Read-only.',
       inputSchema: {
@@ -252,6 +262,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_list_modules',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List modules',
       description: 'GET /api/modules — paginated modules (slim). Read-only. Supporting tool for graph (TZD-19).',
       inputSchema: pageLimitSearch,
@@ -270,6 +281,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_product_composition',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get product composition (BOM)',
       description:
         'TZD-19: GET /api/products/:id/composition — product BOM tree. ' +
@@ -292,6 +304,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_product_where_used',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get product where-used',
       description:
         'TZD-19: GET /api/products/:id/where-used — which parents include this product. Read-only.',
@@ -313,6 +326,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_material_where_used',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get material where-used',
       description:
         'TZD-19: GET /api/materials/:id/where-used — modules/products that use this material. ' +
@@ -335,6 +349,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_module_composition',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get module composition (BOM)',
       description:
         'TZD-19: GET /api/modules/:id/composition — module BOM (materials + child modules). Read-only.',
@@ -356,6 +371,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_get_module_where_used',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get module where-used',
       description:
         'TZD-19: GET /api/modules/:id/where-used — parents that include this module. Read-only.',
@@ -377,6 +393,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_run_integrity_suite',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Run graph integrity suite (read-only)',
       description:
         'TZD-19: smoke composition/where_used on sample ids from products/materials/modules. ' +
@@ -404,6 +421,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_list_storage_items',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List storage items',
       description:
         'GET /api/storage-items — stock rows; optional warehouseId filter. Read-only.',
@@ -431,6 +449,7 @@ export function registerReadTools(server: McpServer, cfg: McpRuntimeConfig): voi
   server.registerTool(
     'kppdf_list_warehouses',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List warehouses',
       description: 'GET /api/warehouses — workshop warehouses. Read-only.',
     },

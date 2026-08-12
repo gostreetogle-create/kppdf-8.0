@@ -11,7 +11,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
 import { withQuery } from './query.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 export const STOCK_TOOL_NAMES = [
   'kppdf_list_stock_movements',
@@ -75,6 +75,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_list_stock_movements',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List stock movements',
       description:
         'TZD-34: GET /api/stock-movements — optional warehouseId/materialId/' +
@@ -105,6 +106,7 @@ export function registerStockTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_stock_movement_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create stock movement',
       description:
         'TZD-34: POST /api/stock-movements — приход/расход/перевод/корректировка. ' +

@@ -26,9 +26,19 @@ const cfg: McpRuntimeConfig = {
 };
 
 describe('MCP tool registry (TZD-31)', () => {
-  it('registry count >= 40 (fact: 51 incl. kppdf_ping)', () => {
+  it('registry count matches all current tools (81 incl. aliases and kppdf_ping)', () => {
     const names = listRegisteredToolNames();
-    assert.ok(names.length >= 40, `toolCount ${names.length} ниже порога 40`);
+    assert.equal(names.length, 81);
+    for (const name of [
+      'kppdf_list_doc_types',
+      'kppdf_doc_types_list',
+      'kppdf_list_import_tasks',
+      'kppdf_import_task_list',
+      'kppdf_list_text_block_categories',
+      'kppdf_text_block_categories_list',
+    ]) {
+      assert.ok(names.includes(name), `${name} missing`);
+    }
   });
 
   it('registry includes TZD-17..30 key tools', () => {

@@ -40,7 +40,7 @@ import {
 } from './read-tools.js';
 import { registerStockTools, STOCK_TOOL_NAMES } from './stock-tools.js';
 import { registerWriteTools, WRITE_TOOL_NAMES } from './write-tools.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 /**
  * Полный реестр имён tools: единственный источник для /healthz toolCount,
@@ -128,6 +128,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   server.registerTool(
     'kppdf_ping',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Ping KPPDF backend',
       description:
         'Checks pairing JWT against GET /api/auth/me (fallback /api/health). Read-only.',

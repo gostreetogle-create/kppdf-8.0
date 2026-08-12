@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T00:13:21Z → TZD-41 DONE
+- DONE: shared MCP envelope/structured content, `_id`→`id`, top-level proposal ids, conflict-key outputSchema, canonical list aliases, MCP.md/FIC docs.
+- Gates: `cd desktop/mcp && pnpm test` 98/98 PASS; `pnpm exec tsc --noEmit` PASS; tools/list smoke 81 tools/outputSchema PASS; `git diff --check` PASS.
+- Archive: `tasks/_archive/2026-08/TZD-41.done.md`; lock: `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`.
+- NOT DONE: domain-tools outputSchema standardization deferred; TZD-42/43/44 remain queue; TZD-45 parked.
+- NEXT: TZD-42. `_active/`: TZD-41 removed after archive. Deploy НЕ.
+
+
 ## Checkpoint 2026-08-11 — TZ-SALES-355 DONE (Состав КП → wide table)
 - DONE: composition flyout `min(50vw,52rem)` + table rows; pencil → FullEditor in-studio; A4 remains preview-only.
 - Gates: FE tsc PASS; proposal-create Jest 34/34 PASS.

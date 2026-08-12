@@ -13,10 +13,11 @@ import {
   backendPostJson,
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 export const IMPORT_TODO_TOOL_NAMES = [
   'kppdf_import_todo_create',
+  'kppdf_list_import_todos',
   'kppdf_import_todo_list',
   'kppdf_import_todo_set_status',
 ] as const;
@@ -28,6 +29,7 @@ export function registerImportTodoTools(
   server.registerTool(
     'kppdf_import_todo_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create import todo for manager',
       description:
         'TZD-29: creates a manager todo (POST /api/import-todos). ' +
@@ -62,35 +64,36 @@ export function registerImportTodoTools(
     },
   );
 
-  server.registerTool(
-    'kppdf_import_todo_list',
-    {
-      title: 'List import todos',
-      description:
-        'TZD-29: GET /api/import-todos?status= — open/done manager todos. Read-only.',
-      inputSchema: {
-        status: z
-          .enum(['open', 'done'])
-          .optional()
-          .describe('Filter by status (default: all)'),
-      },
+  const importTodoListOptions = {
+    outputSchema: TOOL_OUTPUT_SCHEMA,
+    title: 'List import todos',
+    description:
+      'TZD-29: GET /api/import-todos?status= — open/done manager todos. Read-only.',
+    inputSchema: {
+      status: z
+        .enum(['open', 'done'])
+        .optional()
+        .describe('Filter by status (default: all)'),
     },
-    async ({ status }) => {
-      try {
-        const path = status
-          ? `/api/import-todos?status=${status}`
-          : '/api/import-todos';
-        const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, path, result });
-      } catch (err) {
-        return toolFail('kppdf_import_todo_list', err);
-      }
-    },
-  );
+  };
+  const listImportTodos = async ({ status }: { status?: 'open' | 'done' }) => {
+    try {
+      const path = status
+        ? `/api/import-todos?status=${status}`
+        : '/api/import-todos';
+      const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
+      return toolOk({ ok: true, path, result });
+    } catch (err) {
+      return toolFail('kppdf_list_import_todos', err);
+    }
+  };
+  server.registerTool('kppdf_list_import_todos', importTodoListOptions, listImportTodos);
+  server.registerTool('kppdf_import_todo_list', importTodoListOptions, listImportTodos);
 
   server.registerTool(
     'kppdf_import_todo_set_status',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Set import todo status',
       description:
         'TZD-29: PATCH /api/import-todos/:id { status } — mark done/open. ' +

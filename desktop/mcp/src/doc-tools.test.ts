@@ -3,10 +3,13 @@ import { describe, it } from 'node:test';
 import { DOC_TOOL_NAMES } from './doc-tools.js';
 
 describe('doc tools (TZD-28)', () => {
-  it('registers four tool names', () => {
+  it('registers canonical list names and deprecated aliases', () => {
     assert.deepEqual([...DOC_TOOL_NAMES], [
+      'kppdf_list_doc_types',
       'kppdf_doc_types_list',
+      'kppdf_list_doc_template_categories',
       'kppdf_doc_template_categories_list',
+      'kppdf_list_doc_templates',
       'kppdf_doc_templates_list',
       'kppdf_doc_template_create_draft',
     ]);
