@@ -83,3 +83,16 @@ MIG-302 **не** грузит: photoIds, CP.email, branding. Successors: TZD-47 
 | MIG-301 dump+map | DONE `e264ff4c` |
 | MIG-302 scoped | READY (ждёт wipe+MCP prod) |
 | Фото | НЕ в этом прогоне |
+
+## Выполнено 2026-08-12 (после «да, разрешаю wipe после бэкапа»)
+
+| Шаг | Факт |
+|-----|------|
+| Бэкап | `/var/lib/kppdf80/backups/mongo-2026-08-12_1943` (+ `uploads-2026-08-12_1943`) |
+| Wipe+Seed | `deploy.ps1 -Wipe -Seed` OK — health/auth/FE PASS |
+| SoT после wipe | products=0, counterparties=0, quotations=0, users=1 (admin seed) |
+| Desktop ZIP | `https://kppdf-crm.ru/downloads/kppdf-desktop-setup-v0.5.1.zip` (200 + Basic Auth) |
+| Alias | `/downloads/kppdf-desktop-setup.zip` = те же байты |
+| Примечание | exe билд от 2026-08-11, упакован как v0.5.1 (TZD-46 naming); полный `tauri build` — при необходимости отдельно |
+
+**NEXT PO:** Basic Auth → сайт → скачать ZIP с `v0.5.1` в имени → установить → pair → MCP ping → сказать «лей MIG-302 на prod».
