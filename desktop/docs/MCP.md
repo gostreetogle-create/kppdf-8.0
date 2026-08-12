@@ -387,6 +387,25 @@ BE-волна): reads везде; writes — только **draft** (или crea
 **Известное ограничение:** нет journal undo для КП/заказа — менеджер правит в
 вебе; Composition BOM write — TZD-35 (park); stock write — TZD-34.
 
+## Tools — data hygiene (TZD-44)
+
+`kppdf_find_duplicates` is read-only and scans one entity at a time:
+`material | product | module | counterparty`. It groups normalized names and
+SKU/article; counterparties also support INN. The response contains duplicate
+criteria, normalized value, and candidate ids.
+
+`kppdf_cleanup_test_data` is a narrow soft-cleanup tool, not a tenant wipe:
+
+1. Always start with `dryRun: true` and exactly one filter: `namePrefix`,
+   `nameRegex`, or `ids[]` (maximum 100 ids).
+2. The call requires explicit `userOk: true`; without it MCP returns `toolFail`
+   before any candidate lookup or mutation.
+3. Only `material`, `product`, and `counterparty` are cleanup targets. The tool
+   calls existing backend DELETE handlers, which perform soft-delete/reference
+   guards; it never drops collections or hard-deletes records.
+4. Production cleanup is **not** performed by this executor. A PO must explicitly
+   say `да, чисти Тест*` before any live cleanup; use this tool first as dry-run.
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:

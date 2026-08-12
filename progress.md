@@ -1,3 +1,14 @@
+## [2026-08-12] — TZD-44 DONE — MCP data hygiene
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP only; deploy НЕ
+**Что:** Added read-only duplicate grouping for material/product/module/counterparty and gated `kppdf_cleanup_test_data` with exactly one non-empty prefix/regex/id filter, explicit `userOk:true`, dry-run mode, and existing Nest DELETE soft-delete guards only. No hard delete, wipe, or production cleanup.
+**Gates:** desktop/mcp 110/110 PASS; MCP tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-44.done.md`
+**Checklist:** `docs/agent-checklists/TZD-44.md`
+**Lock:** `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`
+**Known limitation:** production cleanup waits for explicit PO «да, чисти Тест*»; TZD-45 remains parked.
+**NEXT:** MCP audit queue complete; deploy НЕ.
+
 ## [2026-08-12] — TZD-43 DONE — MCP product category/status contract
 **Автор:** Buffy
 **Статус:** DONE; Desktop/MCP + backend mutation-journal mapping; deploy НЕ

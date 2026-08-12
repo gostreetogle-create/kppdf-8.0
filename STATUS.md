@@ -1,5 +1,15 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZD-44 DONE: MCP data hygiene
+**Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
+**Что:** Added read-only duplicate groups for material/product/module/counterparty and filtered `kppdf_cleanup_test_data` with non-empty prefix/regex/id filters, explicit `userOk:true`, dry-run support, and existing Nest soft-delete handlers only.
+**Safety:** No hard delete, tenant wipe, or production cleanup. PO must explicitly say «да, чисти Тест*» before any live operation; TZD-45 remains parked.
+**Gates:** desktop/mcp 110/110 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-44.done.md`
+**Checklist:** `docs/agent-checklists/TZD-44.md`
+**Lock:** `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`
+**NEXT:** MCP audit queue complete; TZD-45 park; deploy НЕ.
+
 ## [2026-08-12] — TZD-43 DONE: MCP product category/status contract
 **Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal mapping; deploy НЕ
 **Что:** Product proposals accept optional `categoryId` and status whitelist `new|active|archived|draft`; journal mapping preserves both through confirm. Product domain schema and `kppdf_validate_product` expose/validate the fields; omitted fields remain backward-compatible.
