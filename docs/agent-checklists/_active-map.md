@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 — READY: WAVE-KP-TABLE-EDITOR (359→360→361)
+- Канон: `docs/audits/2026-08-12-kp-table-editor-unified-canon.md`; волна: `tasks/_backlog/kp-vitrine/WAVE-KP-TABLE-EDITOR.md`.
+- 359 merge UI (один «Редактор таблицы», рейл из трёх кнопок) → 360 настройка колонки в её шапке → 361 фото на бланке.
+- Пре-условие 359: правки 356–358 закоммичены (сейчас часть лежит в рабочем дереве).
+- Prompt-источник спент: `PROMPT-KP-TABLE-EDITOR-UNIFIED.md`.
+- Deploy НЕ until PO.
+
+## Checkpoint 2026-08-11 — WAVE-KP-TABLE-STUDIO (356→358)
+- DONE: footer «Своя строка»; rail Параметры→Состав→Таблица→Условия; KP Table Studio (~A4); build widthPercent + border/header chrome.
+- Vision: `docs/audits/2026-08-11-kp-table-studio-vision.md`; prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-STUDIO.md`.
+- Deploy НЕ until PO. NEXT: PO смотрит студию без деплоя.
+
 ## Checkpoint 2026-08-11 — TZ-SALES-355 DONE (Состав КП → wide table)
 - DONE: composition flyout `min(50vw,52rem)` + table rows; pencil → FullEditor in-studio; A4 remains preview-only.
 - Gates: FE tsc PASS; proposal-create Jest 34/34 PASS.
