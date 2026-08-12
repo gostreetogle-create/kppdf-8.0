@@ -13,10 +13,11 @@
 ## 0. FROZEN — что нельзя «улучшать» молча
 
 1. **A4 center** — главная площадь; open меню **не** меняет ширину/высоту листа (только overlay).
-2. Left rail: **две** иконки — Шаблон · Товары. Right: **две** взаимоисключающие иконки — Параметры · Таблица (TZ-SALES-332); обе остаются overlay и не меняют A4 geometry.
+2. Left rail: Шаблон · Товары · Получатель. Right: Параметры · Редактор таблицы · Условия (+ **Вывод** после TZ-SALES-367); overlay, не меняют A4 geometry.
 3. Нет page H1 / zone-titles / dropdown шаблона над листом.
 4. Под жёлтыми chips **нет** пустой tools-полосы; studio `flushBody` вплотную к chips.
-5. Любой откат к docked 3-колонкам / «одна кнопка → две панели» — **regression**.
+5. **Нет** горизонтальной savebar/toolbar **над** A4 в center (статус / версии / заказ / копировать / «Сохранено» / Скачать-полоса). Lifecycle — на `/proposals`. Вывод (Печать·PDF·Архив) — только icon-rail overlay. Канон: [`2026-08-12-kp-create-no-savebar-canon.md`](../audits/2026-08-12-kp-create-no-savebar-canon.md).
+6. Любой откат к docked 3-колонкам / «одна кнопка → две панели» / возврат savebar над листом — **regression**.
 
 ---
 

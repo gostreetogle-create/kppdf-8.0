@@ -9,11 +9,12 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **PO / основной** | Create КП refactor | `proposal-create*` | идёт у PO — **не параллелить** второй агент сюда |
-| **Фон (idle AI)** | Desktop WIP → TZD-40 → TZD-45 | `desktop/PROMPT-BACKGROUND-DESKTOP.md` | READY — disjoint от КП |
-| **Параллель ОК** | Браузерная Печать (sandbox) | `kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` | READY — в основном `template-center` (не page.ts) |
-| — | KP Table Editor finish | `WAVE-KP-TABLE-EDITOR-FINISH.md` A→E | **DONE на prod** |
-| — | Печать семьи бланков | `tasks/_park/TZ-SALES-320-…` | PARK — после «КП на 100%» |
+| **PO / основной** | Create КП refactor | `proposal-create*` | идёт у PO — согласовать claim |
+| **Сейчас READY** | Убрать savebar над A4 | `TZ-SALES-367` + `PROMPT-KP-NO-SAVEBAR-367.md` | A4 кверху; вывод в рейл; lifecycle → Все КП |
+| **Параллель** | Браузерная Печать | `TZ-SALES-366` + `PROMPT-KP-PRINT-366.md` | template-center only |
+| **Фон** | Desktop WIP → TZD-40 → TZD-45 | `PROMPT-BACKGROUND-DESKTOP.md` | disjoint |
+| — | Просмотр готового КП | (successor, ещё нет TZ) | PARK идея — после 367 |
+| — | Печать семьи бланков | `_park/TZ-SALES-320-…` | PARK |
 
 **Канон сейчас:** основной чат = рефактор КП; второй ИИ = только Desktop/MCP по `PROMPT-BACKGROUND-DESKTOP.md`.  
 Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).  

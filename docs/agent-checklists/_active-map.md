@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · savebar над A4 — убрать (PO PASS visual)
+- Канон: `docs/audits/2026-08-12-kp-create-no-savebar-canon.md`
+- TZ: `TZ-SALES-367-kp-create-no-savebar.md` · Prompt: `PROMPT-KP-NO-SAVEBAR-367.md`
+- Lifecycle (статус/версии/заказ/копировать) → только Все КП; Вывод → rail; A4 кверху.
+- Идея «страница просмотра готового КП» — позже, не блокирует 367.
+- NEXT: отдать PROMPT-KP-NO-SAVEBAR-367 исполнителю (366 может идти параллельно на template-center).
+
 ## Checkpoint 2026-08-12 · печать: правда + TZ-366
 - PDF (сервер puppeteer) + Архив = DONE (345). Браузерная «Печать» = сломана sandbox (`allow-modals` / ViewChild 1-й iframe).
 - NEXT fix: `tasks/_backlog/kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` (не третий print-pipeline; 320 остаётся PARK).
