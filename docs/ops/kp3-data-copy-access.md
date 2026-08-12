@@ -2,7 +2,8 @@
 
 > Обновлено: 2026-08-12.  
 > Цель: помнить **какой ключ к какому сайту**, как его добавить в панель хостинга и как зайти.  
-> Секреты (хост/логин после заполнения) — в gitignored `deploy/kp3-data-copy/CREDENTIALS.md`.
+> Секреты (расширенные заметки) — в gitignored `deploy/kp3-data-copy/CREDENTIALS.md`.  
+> **Статус:** вход с Windows по ключу `kppdf8-kp3-data-copy` на `root@130.49.129.240` — **OK** (2026-08-12).
 
 ## 1. Что это за ключ
 
@@ -62,37 +63,35 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMrBni4KzNldqi6pgDkQoAQd+WqQTYK71lf/lq3w94hT
 type $env:USERPROFILE\.ssh\kppdf8-kp3-data-copy.pub | ssh USER@HOST "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
-## 3. Заполнить реквизиты сервера у себя в репо
+## 3. Локальная запись реквизитов
 
 ```powershell
 copy deploy\kp3-data-copy\CREDENTIALS.example.md deploy\kp3-data-copy\CREDENTIALS.md
 ```
 
-В `CREDENTIALS.md` внеси из панели хостинга:
+Заполненный эталон уже есть локально (gitignore). Канон доступа: этот файл + `deploy/kp3-data-copy/README.md`.
 
-- хост (IP или hostname для SSH),
-- порт (часто 22),
-- пользователь SSH,
-- домен сайта КП3,
-- по возможности путь к приложению / тип БД.
-
-Канон путей: `deploy/kp3-data-copy/README.md`.
-
-## 4. Проверка входа с Windows
+## 4. Проверка входа с Windows (канон)
 
 ```powershell
-ssh -i $env:USERPROFILE\.ssh\kppdf8-kp3-data-copy -p 22 USER@HOST
+ssh -i $env:USERPROFILE\.ssh\kppdf8-kp3-data-copy -o IdentitiesOnly=yes root@130.49.129.240
 ```
 
-Успех = shell без запроса пароля (или только passphrase, если позже поставишь).  
-Fingerprint ключа: `SHA256:t1v4jLJxWMuqGo7HLE7PehiR/NfjYsyHVl64Fjzdwzc`.
+| | |
+|--|--|
+| Хост | `130.49.129.240` (`go.tiit`) |
+| User | `root` |
+| Порт | `22` |
+| Приложение | `/opt/kppdf` |
+| Mongo | `127.0.0.1:27017` |
+| Fingerprint ключа | `SHA256:t1v4jLJxWMuqGo7HLE7PehiR/NfjYsyHVl64Fjzdwzc` |
 
 Опционально `~/.ssh/config`:
 
 ```
 Host kp3-data-copy
-  HostName REPLACE_HOST
-  User REPLACE_USER
+  HostName 130.49.129.240
+  User root
   Port 22
   IdentityFile ~/.ssh/kppdf8-kp3-data-copy
   IdentitiesOnly yes
@@ -100,10 +99,9 @@ Host kp3-data-copy
 
 Потом: `ssh kp3-data-copy`.
 
-## 5. Дальше (не сейчас)
+## 5. Дальше
 
-Когда SSH стабильно открывается — отдельная задача/TZ на **перелив данных** (что копируем: Mongo, файлы, шаблоны…).  
-Сейчас scope только: ключ + память в документации + вход.
+SSH готов. Следующий шаг по желанию PO — TZ на **перелив данных** из `/opt/kppdf` + Mongo → КП8 (что именно копируем: коллекции, media, шаблоны…).
 
 ## 6. Связанные файлы
 

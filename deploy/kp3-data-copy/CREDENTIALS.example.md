@@ -34,29 +34,28 @@ copy deploy\kp3-data-copy\CREDENTIALS.example.md deploy\kp3-data-copy\CREDENTIAL
 
 ---
 
-## Сервер КП3 (заполнить после панели хостинга)
+## Сервер КП3 (после успешного входа — скопировать в CREDENTIALS.md)
 
-| Поле | Значение |
+| Поле | Значение (эталон, проверено 2026-08-12) |
 |------|----------|
-| Провайдер / панель | _например Beget / Timeweb / …_ |
-| Хост (SSH) | `_hostname или IP_` |
-| Порт | `22` (или другой из панели) |
-| Пользователь | `_user из панели_` |
-| Домен сайта КП3 | `_https://…_` |
-| Путь на диске (если известен) | `_/home/.../kppdf-3.0_` |
-| БД (тип / имя) | `_Mongo / MySQL / …_` |
+| Провайдер / панель | Timeweb Cloud |
+| Хост (SSH) | `130.49.129.240` |
+| Hostname | `go.tiit` |
+| Порт | `22` |
+| Пользователь | `root` |
+| Путь на диске | `/opt/kppdf` |
+| БД | MongoDB `127.0.0.1:27017` |
+| App | Node `*:3000`, nginx `80`/`443` |
+
+> Реальные пароли БД / домен / URL — только в gitignored `CREDENTIALS.md`, если появятся.
 
 ---
 
 ## Команда проверки
 
-После заполнения хоста/юзера и добавления **публичного** ключа в панель «SSH ключи»:
-
 ```powershell
-ssh -i $env:USERPROFILE\.ssh\kppdf8-kp3-data-copy -p 22 USER@HOST "uname -a && pwd && ls"
+ssh -i $env:USERPROFILE\.ssh\kppdf8-kp3-data-copy -o IdentitiesOnly=yes -o BatchMode=yes root@130.49.129.240 "uname -a && ls /opt/kppdf"
 ```
-
-Подставь `USER`, `HOST`, порт из таблицы выше.
 
 ---
 
