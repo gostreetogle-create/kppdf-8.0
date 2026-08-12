@@ -4,11 +4,11 @@
 - DONE: убран `kp-save-bar` над A4; lifecycle UI только на Все КП; rail «Вывод» → Печать·PDF·Архив; autosave без полосы
 - Gates: FE tsc PASS; proposal-create.page Jest 37/37 PASS
 - Archive: `tasks/_archive/2026-08/TZ-SALES-367.done.md`; lock: `.mimocode/locks/TZ-SALES-367-kp-create-no-savebar.lock`
-- Commit/push: (this closeout); Deploy НЕ
+- Commit/push: `41b00c97` на `origin/main`; Deploy НЕ
 - IN PROGRESS: none
 - NOT DONE: none (очередь 367 закрыта; 320 PARK)
 - NEXT: idle — ждать PO / следующую TZ; не unpark 320; не деплой без команды
-- HEAD: (после push)
+- HEAD: `41b00c97` pushed: yes
 - Blockers: none
 - _active/: cleared
 
