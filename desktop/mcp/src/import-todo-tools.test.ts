@@ -3,9 +3,10 @@ import { describe, it } from 'node:test';
 import { IMPORT_TODO_TOOL_NAMES } from './import-todo-tools.js';
 
 describe('import-todo tools (TZD-29)', () => {
-  it('registers three tool names', () => {
+  it('registers canonical list name and deprecated alias', () => {
     assert.deepEqual([...IMPORT_TODO_TOOL_NAMES], [
       'kppdf_import_todo_create',
+      'kppdf_list_import_todos',
       'kppdf_import_todo_list',
       'kppdf_import_todo_set_status',
     ]);

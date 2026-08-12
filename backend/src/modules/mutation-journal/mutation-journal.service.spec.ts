@@ -1,4 +1,8 @@
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { MutationJournalService } from './mutation-journal.service';
 
 function buildService(opts: {
@@ -280,6 +284,73 @@ describe('MutationJournalService (TZD-13)', () => {
     );
   });
 
+  it('confirm missing proposal returns 404 text with the received proposalId and recovery hint', async () => {
+    const { service } = buildService({ findByIdDoc: null });
+
+    const error = await service.confirm('507f1f77bcf86cd799439099', user).catch((err) => err);
+
+    expect(error).toBeInstanceOf(NotFoundException);
+    expect(error.message).toContain('507f1f77bcf86cd799439099');
+    expect(error.message).toContain('proposalId');
+    expect(error.message).toContain('kppdf_propose_*');
+  });
+
+  it('confirm rejects a proposal owned by another user with 403', async () => {
+    const { service } = buildService({
+      findByIdDoc: {
+        _id: '507f1f77bcf86cd799439099',
+        status: 'proposed',
+        actorUserId: '507f1f77bcf86cd799439088',
+        organizationId: user.organizationId,
+      },
+    });
+
+    await expect(service.confirm('507f1f77bcf86cd799439099', user)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('confirm 100 proposals immediately after propose without a 404 regression', async () => {
+    const makeDoc = (id: string) => ({
+      _id: id,
+      status: 'proposed',
+      kind: 'material.create',
+      toolName: 'kppdf_propose_material_create',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Material',
+      payload: { name: `Material ${id}`, unit: 'шт' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save: jest.fn().mockResolvedValue(undefined),
+    });
+    const findById = jest.fn().mockImplementation((id: string) => ({
+      exec: jest.fn().mockResolvedValue(makeDoc(id)),
+    }));
+    const { service, materials } = buildService({
+      findById,
+      materialsCreate: jest.fn().mockImplementation((payload: { name: string }) =>
+        Promise.resolve({
+          _id: '507f1f77bcf86cd799439044',
+          name: payload.name,
+          toObject: () => ({ _id: '507f1f77bcf86cd799439044', name: payload.name }),
+        }),
+      ),
+    });
+
+    const ids = Array.from({ length: 100 }, (_, index) =>
+      `507f1f77bcf86cd7994390${String(index).padStart(2, '0')}`,
+    );
+    for (const id of ids) {
+      await expect(service.confirm(id, user)).resolves.toMatchObject({
+        mutationId: id,
+        status: 'applied',
+      });
+    }
+
+    expect(findById).toHaveBeenCalledTimes(100);
+    expect(materials.create).toHaveBeenCalledTimes(100);
+  });
+
   it('proposeBatch 50 items → 50 ids, no SoT writes (TZD-18)', async () => {
     const { service, materials, create } = buildService({
       create: jest.fn().mockImplementation((_payload: any) =>
@@ -479,6 +550,42 @@ describe('MutationJournalService (TZD-13)', () => {
     expect(view.status).toBe('proposed');
     expect(products.create).not.toHaveBeenCalled(); // не ProductService.create до confirm
     expect(create).toHaveBeenCalled();
+  });
+
+  it('propose product.create preserves categoryId and status in the journal payload (TZD-43)', async () => {
+    const { service, create } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439033',
+        status: 'proposed',
+        kind: 'product.create',
+        toolName: 'kppdf_propose_product_create',
+        entityType: 'Product',
+        payload: {},
+        expiresAt: new Date(Date.now() + 60_000),
+      }),
+    });
+
+    await service.propose(
+      {
+        kind: 'product.create',
+        productCreate: {
+          name: 'ШЛ-300',
+          kind: 'good',
+          categoryId: '507f1f77bcf86cd799439011',
+          status: 'active',
+        },
+      },
+      user,
+    );
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          categoryId: '507f1f77bcf86cd799439011',
+          status: 'active',
+        }),
+      }),
+    );
   });
 
   it('propose product.create rejects missing kind (TZD-27)', async () => {

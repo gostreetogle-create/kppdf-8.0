@@ -15,9 +15,10 @@ import {
   backendPostJson,
 } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 export const IMPORT_TASK_TOOL_NAMES = [
+  'kppdf_list_import_tasks',
   'kppdf_import_task_list',
   'kppdf_import_task_get',
   'kppdf_import_task_create',
@@ -344,38 +345,43 @@ export function registerImportTaskTools(
   server: McpServer,
   cfg: McpRuntimeConfig,
 ): void {
-  server.registerTool(
-    'kppdf_import_task_list',
-    {
-      title: 'List import tasks',
-      description:
-        'Lists ImportTask containers (AI assembly point). Returns summary/rowCount ' +
-        'without full rows. Does not write SoT or create proposals. Matching → TZD-23.',
-      inputSchema: {
-        status: STATUS_ENUM.optional().describe('Filter by status'),
-        limit: z.number().int().min(1).max(100).optional(),
-        page: z.number().int().min(1).optional(),
-      },
+  const importTaskListOptions = {
+    outputSchema: TOOL_OUTPUT_SCHEMA,
+    title: 'List import tasks',
+    description:
+      'Lists ImportTask containers (AI assembly point). Returns summary/rowCount ' +
+      'without full rows. Does not write SoT or create proposals. Matching → TZD-23.',
+    inputSchema: {
+      status: STATUS_ENUM.optional().describe('Filter by status'),
+      limit: z.number().int().min(1).max(100).optional(),
+      page: z.number().int().min(1).optional(),
     },
-    async (args) => {
-      try {
-        const q = new URLSearchParams();
-        if (args.status) q.set('status', args.status);
-        if (args.limit) q.set('limit', String(args.limit));
-        if (args.page) q.set('page', String(args.page));
-        const qs = q.toString();
-        const path = `/api/import-tasks${qs ? `?${qs}` : ''}`;
-        const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
-        return toolOk({ ok: true, ...((result as object) ?? {}) });
-      } catch (err) {
-        return toolFail('kppdf_import_task_list', err);
-      }
-    },
-  );
+  };
+  const listImportTasks = async (args: {
+    status?: z.infer<typeof STATUS_ENUM>;
+    limit?: number;
+    page?: number;
+  }) => {
+    try {
+      const q = new URLSearchParams();
+      if (args.status) q.set('status', args.status);
+      if (args.limit) q.set('limit', String(args.limit));
+      if (args.page) q.set('page', String(args.page));
+      const qs = q.toString();
+      const path = `/api/import-tasks${qs ? `?${qs}` : ''}`;
+      const result = await backendGetJson(cfg.apiBaseUrl, cfg.apiKey, path);
+      return toolOk({ ok: true, ...((result as object) ?? {}) });
+    } catch (err) {
+      return toolFail('kppdf_list_import_tasks', err);
+    }
+  };
+  server.registerTool('kppdf_list_import_tasks', importTaskListOptions, listImportTasks);
+  server.registerTool('kppdf_import_task_list', importTaskListOptions, listImportTasks);
 
   server.registerTool(
     'kppdf_import_task_get',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Get import task',
       description:
         'Fetches one ImportTask including full rows. Read-only vs SoT. ' +
@@ -401,6 +407,7 @@ export function registerImportTaskTools(
   server.registerTool(
     'kppdf_import_task_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create import task',
       description:
         'Creates ImportTask with status ready_for_ai from source + rows (1..500). ' +
@@ -442,6 +449,7 @@ export function registerImportTaskTools(
   server.registerTool(
     'kppdf_import_task_set_status',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Set import task status',
       description:
         'PATCH ImportTask status (whitelist). No matching / no auto-propose. ' +
@@ -473,6 +481,7 @@ export function registerImportTaskTools(
   server.registerTool(
     'kppdf_import_task_set_report',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Set AI matching report (→ awaiting_user)',
       description:
         'TZD-23: persists the AI matching plan (counts + per-row decisions) ' +
@@ -542,6 +551,7 @@ export function registerImportTaskTools(
   server.registerTool(
     'kppdf_import_task_apply_plan',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Apply AI plan → proposes (HITL ok required)',
       description:
         'TZD-23: only when status=awaiting_user AND userOk=true. ' +
@@ -568,6 +578,7 @@ export function registerImportTaskTools(
   server.registerTool(
     'kppdf_import_task_reshape',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Reshape import task rows (AI-safe)',
       description:
         'TZD-26: replaces ImportTask rows (+ optional columnMap/reshapeNote) — ' +

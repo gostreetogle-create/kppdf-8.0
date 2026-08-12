@@ -1,0 +1,9 @@
+task: TZD-42
+slug: mcp-confirm-404
+status: DONE
+closed_at: 2026-08-12T03:30:00Z
+executor: Buffy
+scope: backend mutation-journal + desktop/mcp
+commit: d78c0f41
+origin_main: d78c0f41
+deploy: NO

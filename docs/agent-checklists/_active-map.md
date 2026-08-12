@@ -12,6 +12,33 @@
 - Vision: `docs/audits/2026-08-11-kp-table-studio-vision.md`; prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-STUDIO.md`.
 - Deploy НЕ until PO. NEXT: PO смотрит студию без деплоя.
 
+## Checkpoint 2026-08-12T00:36:35Z · TZD-44 DONE
+- DONE: MCP read-only duplicate groups for material/product/module/counterparty plus gated filtered soft cleanup for material/product/counterparty.
+- Safety: exactly one non-empty `namePrefix`/`nameRegex`/`ids[]` filter, `userOk:true`, `dryRun:true` is mutation-free; existing Nest DELETE handlers only; no production cleanup or wipe.
+- Gates: desktop/mcp 110/110 + tsc PASS; diff-check PASS; Prettier N/A (binary not installed).
+- Archive: `tasks/_archive/2026-08/TZD-44.done.md`; lock: `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`; checklist DONE; `_active/` cleared.
+- NEXT: TZD-45 remains parked; MCP audit queue complete; deploy НЕ. Production cleanup waits for explicit PO «да, чисти Тест*».
+
+## Checkpoint 2026-08-12T00:31:42Z · TZD-43 DONE
+- DONE: MCP product proposals accept optional `categoryId` and `status` (`new|active|archived|draft`); backend DTO/journal mapping, product domain schema, and validate_product are synchronized.
+- Gates: desktop/mcp 105/105 + tsc PASS; backend mutation-journal 26/26 + tsc PASS; diff-check PASS; Prettier N/A (binary not installed).
+- Archive: `tasks/_archive/2026-08/TZD-43.done.md`; lock: `.mimocode/locks/TZD-43-mcp-product-category-status.lock`; checklist DONE; `_active/` cleared.
+- Commit/push: `fbd6ba04` on `origin/main`; deploy НЕ. NEXT: TZD-44; TZD-45 parked.
+
+## Checkpoint 2026-08-12T03:30:00Z · TZD-42 DONE
+- DONE: backend mutation-journal proposal confirm/cancel 404s now echo the received id and `proposalId` recovery hint; MCP confirm preserves and reports the exact id on HTTP 404.
+- Root cause: audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no delete, overwrite, ownership race, or TTL expiry reproduced.
+- Gates: backend mutation-journal 23/23 + tsc PASS; desktop/mcp 100/100 + tsc PASS; diff-check PASS; Prettier N/A (binary not installed).
+- Archive: `tasks/_archive/2026-08/TZD-42.done.md`; lock: `.mimocode/locks/TZD-42-mcp-confirm-404.lock`; checklist DONE; `_active/` cleared.
+- Commit/push: `d78c0f41` on `origin/main`; deploy НЕ. NEXT: TZD-43 → TZD-44; TZD-45 parked.
+
+## Checkpoint 2026-08-12T00:13:21Z → TZD-41 DONE
+- DONE: shared MCP envelope/structured content, `_id`→`id`, top-level proposal ids, conflict-key outputSchema, canonical list aliases, MCP.md/FIC docs.
+- Gates: `cd desktop/mcp && pnpm test` 98/98 PASS; `pnpm exec tsc --noEmit` PASS; tools/list smoke 81 tools/outputSchema PASS; `git diff --check` PASS.
+- Archive: `tasks/_archive/2026-08/TZD-41.done.md`; lock: `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`.
+- NOT DONE: domain-tools outputSchema standardization deferred; TZD-42/43/44 remain queue; TZD-45 parked.
+- NEXT: TZD-42. `_active/`: TZD-41 removed after archive. Deploy НЕ.
+
 ## Checkpoint 2026-08-11 — TZ-SALES-355 DONE (Состав КП → wide table)
 - DONE: composition flyout `min(50vw,52rem)` + table rows; pencil → FullEditor in-studio; A4 remains preview-only.
 - Gates: FE tsc PASS; proposal-create Jest 34/34 PASS.

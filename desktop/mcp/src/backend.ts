@@ -105,3 +105,11 @@ export async function backendPatchJson(
 ): Promise<unknown> {
   return backendRequest(apiBaseUrl, apiKey, 'PATCH', path, body);
 }
+
+export async function backendDeleteJson(
+  apiBaseUrl: string,
+  apiKey: string,
+  path: string,
+): Promise<unknown> {
+  return backendRequest(apiBaseUrl, apiKey, 'DELETE', path);
+}

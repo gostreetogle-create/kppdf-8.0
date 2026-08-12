@@ -4,9 +4,9 @@
 
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { backendGetJson, backendPostJson } from './backend.js';
+import { BackendError, backendGetJson, backendPostJson } from './backend.js';
 import type { McpRuntimeConfig } from './config.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 export const WRITE_TOOL_NAMES = [
   'kppdf_propose_material_create',
@@ -27,6 +27,19 @@ export const WRITE_TOOL_NAMES = [
 ] as const;
 
 const PRODUCT_KINDS_ENUM = z.enum(['good', 'service', 'work']);
+const PRODUCT_STATUS_ENUM = z.enum(['new', 'active', 'archived', 'draft']);
+const MONGO_ID = /^[a-f0-9]{24}$/i;
+export const productCreateInput = {
+  name: z.string().min(1).describe('Product name'),
+  kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
+  unit: z.string().optional().describe('Unit (default шт)'),
+  sku: z.string().optional(),
+  notes: z.string().optional(),
+  categoryId: z.string().regex(MONGO_ID).optional().describe('Product category id'),
+  status: PRODUCT_STATUS_ENUM.optional().describe('new | active | archived | draft'),
+};
+export const productCreateSchema = z.object(productCreateInput);
+type ProductCreateInput = z.infer<typeof productCreateSchema>;
 const COMPOSITION_PARENT_ENUM = z.enum(['product', 'module']);
 const COMPOSITION_LINE_ENUM = z.enum(['material', 'module', 'product']);
 export const compositionLineInput = {
@@ -114,33 +127,98 @@ export function buildMaterialCreateProposal(args: z.infer<typeof materialCreateI
   };
 }
 
+export async function proposeMaterialCreate(
+  cfg: McpRuntimeConfig,
+  args: z.infer<typeof materialCreateInput>,
+) {
+  try {
+    const result = await backendPostJson(
+      cfg.apiBaseUrl,
+      cfg.apiKey,
+      '/api/mutation-journal/proposals',
+      buildMaterialCreateProposal(args),
+    );
+    return toolOk({ ok: true, proposal: result });
+  } catch (err) {
+    return toolFail('kppdf_propose_material_create', err);
+  }
+}
+
+export function buildProductCreateProposal(args: ProductCreateInput): {
+  kind: 'product.create';
+  toolName: string;
+  productCreate: Record<string, unknown>;
+} {
+  return {
+    kind: 'product.create',
+    toolName: 'kppdf_propose_product_create',
+    productCreate: {
+      name: args.name,
+      kind: args.kind,
+      unit: args.unit?.trim() || 'шт',
+      sku: args.sku,
+      notes: args.notes,
+      ...(args.categoryId ? { categoryId: args.categoryId } : {}),
+      ...(args.status ? { status: args.status } : {}),
+    },
+  };
+}
+
+export async function proposeProductCreate(
+  cfg: McpRuntimeConfig,
+  args: ProductCreateInput,
+) {
+  try {
+    const result = await backendPostJson(
+      cfg.apiBaseUrl,
+      cfg.apiKey,
+      '/api/mutation-journal/proposals',
+      buildProductCreateProposal(args),
+    );
+    return toolOk({ ok: true, proposal: result });
+  } catch (err) {
+    return toolFail('kppdf_propose_product_create', err);
+  }
+}
+
+export async function confirmProposal(
+  cfg: McpRuntimeConfig,
+  proposalId: string,
+) {
+  try {
+    const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/confirm`;
+    const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
+    return toolOk({ ok: true, mutation: result });
+  } catch (err) {
+    if (err instanceof BackendError && err.status === 404) {
+      return toolFail(
+        'kppdf_confirm_proposal',
+        new Error(
+          `Proposal ${proposalId} not found. Use the exact proposalId returned by kppdf_propose_* (received proposalId=${proposalId}).`,
+        ),
+      );
+    }
+    return toolFail('kppdf_confirm_proposal', err);
+  }
+}
+
 export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): void {
   server.registerTool(
     'kppdf_propose_material_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose material create',
       description:
         'Creates a proposal only (no SoT write). Confirm with kppdf_confirm_proposal.',
       inputSchema: materialCreateInput,
     },
-    async (args) => {
-      try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          buildMaterialCreateProposal(args),
-        );
-        return toolOk({ ok: true, proposal: result });
-      } catch (err) {
-        return toolFail('kppdf_propose_material_create', err);
-      }
-    },
+    async (args) => proposeMaterialCreate(cfg, args),
   );
 
   server.registerTool(
     'kppdf_propose_material_update',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose material update',
       description:
         'Proposes a PATCH; stores before snapshot. Confirm with kppdf_confirm_proposal.',
@@ -171,6 +249,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_propose_material_batch',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose material create (batch)',
       description:
         'TZD-18: creates material.create PROPOSALS for many rows in one backend call ' +
@@ -206,6 +285,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_confirm_batch',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Confirm proposals (batch)',
       description:
         'TZD-18: applies many proposals via the journal (POST confirm-batch). ' +
@@ -232,6 +312,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_cancel_batch',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Cancel proposals (batch)',
       description:
         'TZD-18: cancels many pending proposals in one backend call. No SoT change.',
@@ -257,47 +338,21 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_propose_product_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose product create',
       description:
-        'TZD-27: creates a product.create PROPOSAL (name + kind required, unit ' +
-        'defaults to шт). No SoT write — confirm with kppdf_confirm_proposal. ' +
+        'TZD-27/TZD-43: creates a product.create PROPOSAL (name + kind required, unit ' +
+        'defaults to шт; optional categoryId/status mirror the backend DTO). No SoT write — confirm with kppdf_confirm_proposal. ' +
         'Check kppdf_get_product_where_used / composition before mass updates.',
-      inputSchema: {
-        name: z.string().min(1).describe('Product name'),
-        kind: PRODUCT_KINDS_ENUM.describe('good | service | work'),
-        unit: z.string().optional().describe('Unit (default шт)'),
-        sku: z.string().optional(),
-        notes: z.string().optional(),
-      },
+      inputSchema: productCreateInput,
     },
-    async (args) => {
-      try {
-        const result = await backendPostJson(
-          cfg.apiBaseUrl,
-          cfg.apiKey,
-          '/api/mutation-journal/proposals',
-          {
-            kind: 'product.create',
-            toolName: 'kppdf_propose_product_create',
-            productCreate: {
-              name: args.name,
-              kind: args.kind,
-              unit: args.unit?.trim() || 'шт',
-              sku: args.sku,
-              notes: args.notes,
-            },
-          },
-        );
-        return toolOk({ ok: true, proposal: result });
-      } catch (err) {
-        return toolFail('kppdf_propose_product_create', err);
-      }
-    },
+    async (args) => proposeProductCreate(cfg, args),
   );
 
   server.registerTool(
     'kppdf_propose_product_update',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose product update',
       description:
         'TZD-27: proposes a PATCH on a product passport; stores before snapshot. ' +
@@ -330,6 +385,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_propose_module_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose module create',
       description:
         'Creates a human-reviewable module draft. No request is sent and no SoT write occurs until the confirm tool receives userOk=true.',
@@ -341,6 +397,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     async ({ name, article }) =>
       toolOk({
         ok: true,
+        proposalId: `draft:module.create:${name.trim()}:${article.trim()}`,
         proposal: { kind: 'module.create', create: { name: name.trim(), article: article.trim() } },
         note: 'Draft only — ask the user to confirm before calling kppdf_confirm_module_create.',
       }),
@@ -349,6 +406,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_confirm_module_create',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Confirm module create',
       description: 'Creates a module only after explicit userOk=true.',
       inputSchema: {
@@ -374,6 +432,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_propose_composition_line',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Propose composition line',
       description:
         'Builds a composition-line draft for HITL review. It does not call the backend or write SoT.',
@@ -382,6 +441,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
     async (args) =>
       toolOk({
         ok: true,
+        proposalId: `draft:composition.add:${args.parentId}:${args.lineType}:${args.refId}`,
         proposal: buildCompositionLineProposal(args),
         note: 'Draft only — call kppdf_confirm_composition_line after the user approves this exact line.',
       }),
@@ -390,6 +450,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_confirm_composition_line',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Confirm composition line',
       description: 'Writes one approved line through the existing Product/Module composition REST endpoint.',
       inputSchema: { ...compositionLineInput, userOk: z.boolean().describe('Human approval — must be true') },
@@ -418,26 +479,20 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_confirm_proposal',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Confirm proposal',
       description: 'Applies proposal via Material API and records journal entry.',
       inputSchema: {
         proposalId: z.string().min(1),
       },
     },
-    async ({ proposalId }) => {
-      try {
-        const path = `/api/mutation-journal/proposals/${encodeURIComponent(proposalId)}/confirm`;
-        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, path, {});
-        return toolOk({ ok: true, mutation: result });
-      } catch (err) {
-        return toolFail('kppdf_confirm_proposal', err);
-      }
-    },
+    async ({ proposalId }) => confirmProposal(cfg, proposalId),
   );
 
   server.registerTool(
     'kppdf_cancel_proposal',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Cancel proposal',
       description: 'Cancels a pending proposal without mutating SoT.',
       inputSchema: {
@@ -458,6 +513,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_undo_mutation',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Undo mutation',
       description:
         'Reverts an applied journal entry (or last applied if mutationId omitted). Ring buffer limited.',
@@ -484,6 +540,7 @@ export function registerWriteTools(server: McpServer, cfg: McpRuntimeConfig): vo
   server.registerTool(
     'kppdf_list_mutations',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'List mutations',
       description: 'Recent applied/undone journal entries (ring).',
       inputSchema: {

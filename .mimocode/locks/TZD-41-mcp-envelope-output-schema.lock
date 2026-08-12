@@ -1,0 +1,12 @@
+task: TZD-41
+status: DONE
+closed_at: 2026-08-12
+closed_by: Buffy
+commit_required: true
+deploy: NO
+verification:
+  tests: 98/98 PASS
+  typecheck: PASS
+  tools_list_smoke: 81 tools; outputSchema PASS
+  diff_check: PASS
+known_limitation: domain-tools outputSchema standardization deferred; TZD-42/43/44 remain queue

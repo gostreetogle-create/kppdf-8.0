@@ -1,5 +1,43 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZD-44 DONE: MCP data hygiene
+**Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
+**Что:** Added read-only duplicate groups for material/product/module/counterparty and filtered `kppdf_cleanup_test_data` with non-empty prefix/regex/id filters, explicit `userOk:true`, dry-run support, and existing Nest soft-delete handlers only.
+**Safety:** No hard delete, tenant wipe, or production cleanup. PO must explicitly say «да, чисти Тест*» before any live operation; TZD-45 remains parked.
+**Gates:** desktop/mcp 110/110 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-44.done.md`
+**Checklist:** `docs/agent-checklists/TZD-44.md`
+**Lock:** `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`
+**NEXT:** MCP audit queue complete; TZD-45 park; deploy НЕ.
+
+## [2026-08-12] — TZD-43 DONE: MCP product category/status contract
+**Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal mapping; deploy НЕ
+**Что:** Product proposals accept optional `categoryId` and status whitelist `new|active|archived|draft`; journal mapping preserves both through confirm. Product domain schema and `kppdf_validate_product` expose/validate the fields; omitted fields remain backward-compatible.
+**Gates:** desktop/mcp 105/105 + tsc PASS; backend mutation-journal 26/26 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-43.done.md`
+**Checklist:** `docs/agent-checklists/TZD-43.md`
+**Lock:** `.mimocode/locks/TZD-43-mcp-product-category-status.lock`
+**NEXT:** TZD-44; TZD-45 park; deploy НЕ.
+
+## [2026-08-12] — TZD-42 DONE: MCP mutation-journal confirm 404 recovery
+**Статус:** DONE on current main candidate; Desktop/MCP + backend mutation-journal; deploy НЕ
+**Что:** 100 immediate backend confirms and material/product MCP mock chains pass. Audit 404 matched a client using a nested/derived id before TZD-41 top-level `proposalId`; no journal deletion, overwrite, ownership race, or TTL expiry reproduced. Proposal confirm/cancel 404s now echo the received id and recovery hint; MCP confirm repeats it on HTTP 404.
+**Gates:** backend mutation-journal 23/23 + tsc PASS; desktop/mcp 100/100 + tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-42.done.md`
+**Checklist:** `docs/agent-checklists/TZD-42.md`
+**Lock:** `.mimocode/locks/TZD-42-mcp-confirm-404.lock`
+**NEXT:** TZD-43 → TZD-44; TZD-45 park; deploy НЕ.
+
+## [2026-08-12] — TZD-41 DONE: MCP envelope + outputSchema + list aliases
+**Статус:** DONE on current main candidate; Desktop/MCP only; deploy НЕ
+**Что:** Единый success envelope `{ok, result, id?, proposalId?}` с `structuredContent`; `_id`→`id`, proposal id→top-level `proposalId`; key tools публикуют `outputSchema`. Добавлены canonical `kppdf_list_*` и one-wave aliases для doc/import/text lists.
+**Gates:** MCP test 98/98 PASS; MCP tsc PASS; tools/list smoke 81 tools with outputSchema PASS; `git diff --check` PASS. Desktop/MCP Prettier/ESLint не настроены.
+**Archive:** `tasks/_archive/2026-08/TZD-41.done.md`
+**Lock:** `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`
+**NEXT:** TZD-42 → TZD-43 → TZD-44; TZD-45 park; deploy НЕ.
+
+
+
 ## [2026-08-11] — TZ-OPS-312 DONE: catalog page specs dictionary-labels flush
 **Статус:** DONE; specs-only harness fix; deploy НЕ
 **Workspace:** Freebuff worktree landed on `origin/main`; canonical target `D:\kppdf-8.0`

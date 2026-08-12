@@ -39,8 +39,9 @@ import {
   registerReadTools,
 } from './read-tools.js';
 import { registerStockTools, STOCK_TOOL_NAMES } from './stock-tools.js';
+import { HYGIENE_TOOL_NAMES, registerHygieneTools } from './hygiene-tools.js';
 import { registerWriteTools, WRITE_TOOL_NAMES } from './write-tools.js';
-import { toolFail, toolOk } from './tool-result.js';
+import { TOOL_OUTPUT_SCHEMA, toolFail, toolOk } from './tool-result.js';
 
 /**
  * Полный реестр имён tools: единственный источник для /healthz toolCount,
@@ -61,6 +62,7 @@ export function listRegisteredToolNames(): readonly string[] {
     ...DOC_TOOL_NAMES,
     ...COMMERCIAL_TOOL_NAMES,
     ...STOCK_TOOL_NAMES,
+    ...HYGIENE_TOOL_NAMES,
   ];
 }
 
@@ -128,6 +130,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   server.registerTool(
     'kppdf_ping',
     {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Ping KPPDF backend',
       description:
         'Checks pairing JWT against GET /api/auth/me (fallback /api/health). Read-only.',
@@ -163,6 +166,7 @@ export function createKppdfMcpServer(cfg: McpRuntimeConfig): McpServer {
   registerDomainTools(server, cfg);
   registerCommercialTools(server, cfg);
   registerStockTools(server, cfg);
+  registerHygieneTools(server, cfg);
   registerInboxTools(server, cfg);
   registerImportTaskTools(server, cfg);
   registerImportTodoTools(server, cfg);

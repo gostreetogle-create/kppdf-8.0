@@ -1,0 +1,11 @@
+# TZD-44 lock
+
+task: TZD-44
+slug: mcp-data-hygiene
+status: DONE
+closed_at: 2026-08-12T00:36:35Z
+executor: Buffy
+scope: desktop/mcp data hygiene; no production cleanup; no deploy
+archive: tasks/_archive/2026-08/TZD-44.done.md
+checklist: docs/agent-checklists/TZD-44.md
+verification: desktop/mcp 110 tests + tsc + diff-check PASS

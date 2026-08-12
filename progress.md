@@ -1,3 +1,47 @@
+## [2026-08-12] — TZD-44 DONE — MCP data hygiene
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP only; deploy НЕ
+**Что:** Added read-only duplicate grouping for material/product/module/counterparty and gated `kppdf_cleanup_test_data` with exactly one non-empty prefix/regex/id filter, explicit `userOk:true`, dry-run mode, and existing Nest DELETE soft-delete guards only. No hard delete, wipe, or production cleanup.
+**Gates:** desktop/mcp 110/110 PASS; MCP tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-44.done.md`
+**Checklist:** `docs/agent-checklists/TZD-44.md`
+**Lock:** `.mimocode/locks/TZD-44-mcp-data-hygiene.lock`
+**Known limitation:** production cleanup waits for explicit PO «да, чисти Тест*»; TZD-45 remains parked.
+**NEXT:** MCP audit queue complete; deploy НЕ.
+
+## [2026-08-12] — TZD-43 DONE — MCP product category/status contract
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP + backend mutation-journal mapping; deploy НЕ
+**Что:** Product proposals now accept optional `categoryId` and backend status whitelist `new|active|archived|draft`; journal payload preserves both through confirm. Product domain schema and `kppdf_validate_product` expose/validate the fields; omitted fields remain backward-compatible.
+**Gates:** desktop/mcp 105/105 PASS; MCP tsc PASS; backend mutation-journal 26/26 PASS; backend tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-43.done.md`
+**Checklist:** `docs/agent-checklists/TZD-43.md`
+**Lock:** `.mimocode/locks/TZD-43-mcp-product-category-status.lock`
+**Known limitation:** no live product create was run; no category API/backfill/frontend/production/deploy changes.
+**NEXT:** TZD-44; TZD-45 parked; deploy НЕ.
+
+## [2026-08-12] — TZD-42 DONE — MCP mutation-journal confirm 404 recovery
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP + backend mutation-journal; deploy НЕ
+**Что:** Reproduced a stable propose→confirm path through 100 immediate backend confirms and material/product MCP mock chains. Root cause was consistent with clients passing a nested/derived id instead of TZD-41’s top-level `proposalId`; no delete, overwrite, ownership race, or TTL expiry reproduced. Proposal confirm/cancel 404s now echo the received id with a recovery hint, and MCP confirm repeats it on HTTP 404.
+**Gates:** backend mutation-journal 23/23 PASS; backend tsc PASS; desktop/mcp 100/100 PASS; MCP tsc PASS; `git diff --check` PASS. Prettier N/A: no binary installed in backend or desktop/mcp.
+**Archive:** `tasks/_archive/2026-08/TZD-42.done.md`
+**Checklist:** `docs/agent-checklists/TZD-42.md`
+**Lock:** `.mimocode/locks/TZD-42-mcp-confirm-404.lock`
+**Known limitation:** live replay of «Шест для лазания ШЛ-300» was not run; unit + MCP chain close the investigated hypotheses. No frontend, TZD-43/44/45, production cleanup, or deploy changes.
+**NEXT:** TZD-43 → TZD-44; TZD-45 parked; deploy НЕ.
+
+## [2026-08-12] — TZD-41 DONE — MCP envelope, outputSchema and canonical list aliases
+**Автор:** Buffy
+**Статус:** DONE; Desktop/MCP contract hardening; deploy НЕ
+**Что:** Общий success envelope `{ok,result,id?,proposalId?}` теперь отдаётся и через `structuredContent`; `_id` нормализуется в `id`, proposal ids — в top-level `proposalId`. Добавлены `outputSchema` на TZD-41 tool surface и канонические `kppdf_list_*` с one-wave aliases для doc/import/text list tools.
+**Gates:** `cd desktop/mcp && pnpm test` 98/98 PASS; `pnpm exec tsc --noEmit` PASS; tools/list smoke 81 tools/outputSchema PASS; `git diff --check` PASS. Prettier/ESLint для desktop/mcp не настроены (N/A).
+**Archive:** `tasks/_archive/2026-08/TZD-41.done.md`
+**Checklist:** `docs/agent-checklists/TZD-41.md`
+**Lock:** `.mimocode/locks/TZD-41-mcp-envelope-output-schema.lock`
+**Known limitation:** domain/validate registrations remain outside this conflict-key schema sweep; TZD-42 → TZD-43 → TZD-44 next, TZD-45 parked.
+**NEXT:** TZD-42; deploy НЕ.
+
 ## [2026-08-11] — TZ-SALES-355 DONE — Состав КП: wide table + edit in place
 **Автор:** Cursor
 **Статус:** DONE (код); deploy позже

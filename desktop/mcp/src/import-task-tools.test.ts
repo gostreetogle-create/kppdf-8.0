@@ -8,8 +8,9 @@ import {
 } from './import-task-tools.js';
 
 describe('import-task tools (TZD-22 + TZD-23)', () => {
-  it('registers seven tool names', () => {
+  it('registers canonical list name and deprecated alias', () => {
     assert.deepEqual([...IMPORT_TASK_TOOL_NAMES], [
+      'kppdf_list_import_tasks',
       'kppdf_import_task_list',
       'kppdf_import_task_get',
       'kppdf_import_task_create',

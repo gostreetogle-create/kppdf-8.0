@@ -12,6 +12,7 @@ import {
   getMaterialDomainSchema,
   getProductDomainSchema,
   isProductKind,
+  PRODUCT_STATUSES,
 } from './domain-schema.js';
 import { withQuery } from './query.js';
 import { toolFail, toolOk } from './tool-result.js';
@@ -37,6 +38,8 @@ export interface ValidateProductResult {
     name?: string;
     kind?: string;
     unit: string;
+    categoryId?: string;
+    status?: string;
   };
 }
 
@@ -48,6 +51,8 @@ export function validateProduct(args: {
   name?: string;
   kind?: string;
   unit?: string;
+  categoryId?: string;
+  status?: string;
 }): ValidateProductResult {
   const errors: ValidateProductResult['errors'] = [];
   const infos: ValidateProductResult['infos'] = [];
@@ -61,6 +66,14 @@ export function validateProduct(args: {
     errors.push({ code: 'KIND_REQUIRED', message: 'kind is required (good|service|work)' });
   } else if (!isProductKind(kind)) {
     errors.push({ code: 'KIND_INVALID', message: `kind must be one of good|service|work (got «${kind}»)` });
+  }
+  const categoryId = args.categoryId?.trim();
+  if (categoryId && !/^[a-f0-9]{24}$/i.test(categoryId)) {
+    errors.push({ code: 'CATEGORY_ID_INVALID', message: 'categoryId must be a Mongo id' });
+  }
+  const status = args.status?.trim();
+  if (status && !(PRODUCT_STATUSES as readonly string[]).includes(status)) {
+    errors.push({ code: 'STATUS_INVALID', message: `status must be one of ${PRODUCT_STATUSES.join('|')} (got «${status}»)` });
   }
   let unit = args.unit?.trim() ?? '';
   if (!unit) {
@@ -76,6 +89,8 @@ export function validateProduct(args: {
       ...(name ? { name } : {}),
       ...(kind ? { kind } : {}),
       unit,
+      ...(categoryId ? { categoryId } : {}),
+      ...(status ? { status } : {}),
     },
   };
 }
@@ -147,13 +162,15 @@ export function registerDomainTools(server: McpServer, cfg: McpRuntimeConfig): v
     {
       title: 'Validate product passport (dry-run)',
       description:
-        'TZD-27: passport-only checks — name and kind (good|service|work) required, ' +
-        'unit default шт. Does NOT validate BOM and does NOT write SoT. ' +
+        'TZD-27/TZD-43: passport-only checks — name and kind (good|service|work) required, ' +
+        'unit default шт; optional categoryId/status are validated against the product DTO. Does NOT validate BOM and does NOT write SoT. ' +
         'Use before kppdf_propose_product_create.',
       inputSchema: {
         name: z.string().optional().describe('Product name (required for ok:true)'),
         kind: z.enum(['good', 'service', 'work']).optional(),
         unit: z.string().optional().describe('Unit; empty → default шт (info)'),
+        categoryId: z.string().optional().describe('Optional product category Mongo id'),
+        status: z.enum(['new', 'active', 'archived', 'draft']).optional(),
       },
     },
     async (args) => {

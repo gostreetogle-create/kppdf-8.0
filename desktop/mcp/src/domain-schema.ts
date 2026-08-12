@@ -72,13 +72,16 @@ export function isMaterialKind(value: string): value is MaterialKind {
 
 /** Canon sync: backend Product.kind enum (good | service | work). */
 export const PRODUCT_KINDS = ['good', 'service', 'work'] as const;
+export const PRODUCT_STATUSES = ['new', 'active', 'archived', 'draft'] as const;
 
 export type ProductKind = (typeof PRODUCT_KINDS)[number];
+export type ProductStatus = (typeof PRODUCT_STATUSES)[number];
 
 export interface ProductDomainSchema {
   version: string;
   entity: 'product';
   productKinds: readonly string[];
+  productStatuses: readonly string[];
   createProposal: {
     required: readonly string[];
     optional: readonly string[];
@@ -94,14 +97,17 @@ export function getProductDomainSchema(): ProductDomainSchema {
     version: 'tzd-27',
     entity: 'product',
     productKinds: [...PRODUCT_KINDS],
+    productStatuses: [...PRODUCT_STATUSES],
     createProposal: {
       required: ['name', 'kind'],
-      optional: ['unit', 'sku', 'notes'],
+      optional: ['unit', 'sku', 'notes', 'categoryId', 'status'],
     },
     rules: {
       en: [
         'name and kind (good|service|work) are required.',
         'unit is a free string; empty unit defaults to шт on propose.',
+        'categoryId is optional; when supplied it must be a Product category Mongo id.',
+        'status is optional and limited to new|active|archived|draft; omitted status uses the backend default new.',
         'Passport only — BOM/composition is NOT written via import in this wave (use web BomPanel).',
         'Before product.update: run kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
         'Propose creates a mutation-journal proposal only — not a SoT write. Confirm separately.',
@@ -109,6 +115,8 @@ export function getProductDomainSchema(): ProductDomainSchema {
       ru: [
         'name и kind (good|service|work) обязательны.',
         'unit — произвольная строка; пустой unit → шт при propose.',
+        'categoryId необязателен; при передаче это Mongo id категории изделия.',
+        'status необязателен: только new|active|archived|draft; без него backend использует new.',
         'Только паспорт — BOM/состав через импорт в этой волне НЕ пишется (reuse web BomPanel).',
         'Перед product.update: kppdf_get_product_composition / kppdf_get_product_where_used (TZD-19).',
         'Propose создаёт только proposal в журнале — не запись в SoT. Confirm отдельно.',
