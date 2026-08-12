@@ -1,5 +1,17 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12T16:55:00Z · TZ-SALES-367 DONE (savebar gone, output on rail)
+- DONE: убран `kp-save-bar` над A4; lifecycle UI только на Все КП; rail «Вывод» → Печать·PDF·Архив; autosave без полосы
+- Gates: FE tsc PASS; proposal-create.page Jest 37/37 PASS
+- Archive: `tasks/_archive/2026-08/TZ-SALES-367.done.md`; lock: `.mimocode/locks/TZ-SALES-367-kp-create-no-savebar.lock`
+- Commit/push: (this closeout); Deploy НЕ
+- IN PROGRESS: none
+- NOT DONE: none (очередь 367 закрыта; 320 PARK)
+- NEXT: idle — ждать PO / следующую TZ; не unpark 320; не деплой без команды
+- HEAD: (после push)
+- Blockers: none
+- _active/: cleared
+
 ## Checkpoint 2026-08-12 · savebar над A4 — убрать (PO PASS visual)
 - Канон: `docs/audits/2026-08-12-kp-create-no-savebar-canon.md`
 - TZ: `TZ-SALES-367-kp-create-no-savebar.md` · Prompt: `PROMPT-KP-NO-SAVEBAR-367.md`

@@ -290,7 +290,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-insp-markup"]'))).toBeTruthy();
   });
 
-  it('keeps right rail order Параметры → Редактор таблицы → Условия', () => {
+  it('keeps right rail order Параметры → Редактор таблицы → Условия → Вывод', () => {
     const buttons = fixture.debugElement
       .query(By.css('[data-test="kp-rail-right"]'))
       .queryAll(By.css('button'))
@@ -300,6 +300,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
 
       'kp-create-toggle-table',
       'kp-create-toggle-terms',
+      'kp-create-toggle-output',
     ]);
   });
 
@@ -500,20 +501,16 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       `${window.location.origin}/uploads/bg.png`,
     );
     expect(frame.styles['transform']).toContain('scale(');
-    expect(fixture.debugElement.query(By.css('[data-test="kp-page-count"]'))).toBeTruthy();
-    expect(
-      fixture.debugElement.query(By.css('[data-test="kp-page-count"]')).nativeElement.textContent,
-    ).toContain('Страница 1');
-    expect(
-      fixture.debugElement.query(By.css('[data-test="kp-page-count"]')).nativeElement.textContent,
-    ).not.toContain('из 1');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-save-bar"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-page-count"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-page-1"]'))).toBeTruthy();
     expect(getComputedStyle(frame.nativeElement).pointerEvents).toBe('none');
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-name"]'))).toBeNull();
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-draft-lines"]'))).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('упрощённое');
   }));
 
-  it('shows a clear page count for a multi-page build', fakeAsync(() => {
+  it('shows per-page labels in the center for a multi-page build (no savebar count)', fakeAsync(() => {
     buildMock.mockReturnValueOnce(
       of({
         ok: true,
@@ -530,7 +527,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     tick(250);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Страница 1 из 2');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-save-bar"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-page-count"]'))).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Страница 1 из 2');
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-page-1"]'))).toBeTruthy();
     expect(fixture.debugElement.query(By.css('[data-test="kp-tpl-page-2"]'))).toBeTruthy();
   }));
@@ -1295,27 +1294,40 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(quotationCreateMock.mock.calls[0][0].items[0].productId).toBeUndefined();
   }));
 
-  it('shows the three Russian output actions in one download menu', fakeAsync(() => {
+  it('has no savebar over A4 and exposes output on the right rail (TZ-SALES-367)', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;
-      toggleDownloadMenu: () => void;
+      toggleRightPane: (pane: 'output') => void;
       autosaveLabel: { set: (value: string) => void };
     };
 
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
     tick(250);
     page.autosaveLabel.set('Сохранено');
-    page.toggleDownloadMenu();
     fixture.detectChanges();
 
-    expect(fixture.debugElement.query(By.css('[data-test="kp-download-menu"]'))).toBeTruthy();
-    const createOrder = fixture.debugElement.query(By.css('[data-test="kp-create-order"]'))
-      .nativeElement as HTMLButtonElement;
-    expect(createOrder.disabled).toBe(true);
-    expect(createOrder.title).toContain('Принято');
-    expect(fixture.nativeElement.textContent).toContain('PDF');
-    expect(fixture.nativeElement.textContent).toContain('Печать');
-    expect(fixture.nativeElement.textContent).toContain('Сохранить в архив документов');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-save-bar"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-autosave-status"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-studio-status"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-order"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-save-version"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-duplicate"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-download-menu"]'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('[data-test="kp-create-center"]'))).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-create-toggle-output"]')),
+    ).toBeTruthy();
+
+    page.toggleRightPane('output');
+    fixture.detectChanges();
+
+    const output = fixture.debugElement.query(By.css('[data-test="kp-create-output"]'));
+    expect(output).toBeTruthy();
+    const labels = output
+      .queryAll(By.css('button'))
+      .map((btn) => (btn.nativeElement as HTMLButtonElement).textContent?.trim());
+    expect(labels).toEqual(['Печать', 'PDF', 'Сохранить в архив документов']);
+    expect(fixture.nativeElement.textContent).not.toContain('Сохранено');
   }));
 
   it('uses the canonical Принято label in the inspector unlock action', fakeAsync(() => {

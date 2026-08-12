@@ -1,5 +1,14 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-12] — TZ-SALES-367 DONE: Create КП без savebar; вывод на rail
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** Убран `kp-save-bar` над A4; lifecycle UI только на `/proposals`; rail «Вывод» → Печать·PDF·Архив; autosave без полосы. Spec §0 LOCK v2.2.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-367.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-367.md`
+**Lock:** `.mimocode/locks/TZ-SALES-367-kp-create-no-savebar.lock`
+**Gates:** FE tsc PASS; proposal-create.page Jest 37/37 PASS.
+**NEXT:** idle; deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-366 DONE: браузерная «Печать» КП вне sandbox-превью
 **Статус:** DONE on worktree branch; frontend-only; deploy НЕ
 **Что:** `printPreview()` больше не зовёт `print()` внутри sandboxed A4 iframe (`Ignored call to 'print()'`): тот же build HTML всех листов печатается во временном невидимом родительском iframe (`kp-temp-print-frame`, модалки разрешены, srcdoc до вставки, печать по load, кадр убирается по afterprint/таймауту). Добавлен печатный CSS (`print-color-adjust:exact` — паритет с PDF `printBackground`, page-break между листами). Превью-лента осталась `sandbox="allow-same-origin"` без allow-scripts; `#previewFrame` viewChild удалён; `proposal-create.page.ts` не тронут; PDF/Архив/puppeteer/Desktop не тронуты; 320 PARK.

@@ -1,3 +1,14 @@
+## [2026-08-12] — TZ-SALES-367 DONE — Create КП: savebar gone, output on rail
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; frontend-only; deploy НЕ
+**Что:** Удалена полоса над A4 (`kp-save-bar`: Сохранено/статус/версии/заказ/копировать/Скачать). A4 сразу под chips. Вывод — правый rail «Вывод» → Печать · PDF · Архив. Autosave без видимой полосы. Lifecycle — на Все КП.
+**Gates:** FE tsc PASS; proposal-create.page Jest 37/37 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-367.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-367.md`
+**Lock:** `.mimocode/locks/TZ-SALES-367-kp-create-no-savebar.lock`
+**Known limit:** отдельной страницы просмотра готового КП нет (park).
+**NEXT:** idle; deploy НЕ.
+
 ## [2026-08-12] — TZ-SALES-366 DONE — браузерная «Печать» КП вне sandbox-превью
 **Исполнитель:** kppdf-8.0/freebuff (agent-adeea875e2)
 **Статус:** DONE; frontend-only; deploy НЕ

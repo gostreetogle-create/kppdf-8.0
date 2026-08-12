@@ -3,20 +3,20 @@
 **Route:** `/proposals/create`  
 **Chrome:** `PiGroupWorkspace` — Сделки TOC **КП** + жёлтые **Создать КП** | **Все КП** (SALES-310)  
 **Канон потока:** D13 / D21 в [`sales-to-shop-flow-canon.md`](../audits/2026-08-08-sales-to-shop-flow-canon.md)  
-**Обновлено:** 2026-08-09 · **v2.1 overlay RMK**  
+**Обновлено:** 2026-08-12 · **v2.2 no-savebar LOCK (TZ-SALES-367)**  
 **LOCK (PO PASS visual):** каркас ниже **не ломать** без нового TZ + явного PO.  
 **Утверждение:** SoT раскладки; v1 always-on columns и docked-resize — superseded.  
-**Аудит:** [`2026-08-09-kp-create-studio-layout-audit.md`](../audits/2026-08-09-kp-create-studio-layout-audit.md) · [`overlay-correction`](../audits/2026-08-09-kp-create-studio-overlay-correction.md)
+**Аудит:** [`2026-08-09-kp-create-studio-layout-audit.md`](../audits/2026-08-09-kp-create-studio-layout-audit.md) · [`overlay-correction`](../audits/2026-08-09-kp-create-studio-overlay-correction.md) · [`no-savebar`](../audits/2026-08-12-kp-create-no-savebar-canon.md)
 
 ---
 
 ## 0. FROZEN — что нельзя «улучшать» молча
 
 1. **A4 center** — главная площадь; open меню **не** меняет ширину/высоту листа (только overlay).
-2. Left rail: Шаблон · Товары · Получатель. Right: Параметры · Редактор таблицы · Условия (+ **Вывод** после TZ-SALES-367); overlay, не меняют A4 geometry.
+2. Left rail: Шаблон · Товары · Получатель. Right: Параметры · Редактор таблицы · Условия · **Вывод**; overlay, не меняют A4 geometry.
 3. Нет page H1 / zone-titles / dropdown шаблона над листом.
 4. Под жёлтыми chips **нет** пустой tools-полосы; studio `flushBody` вплотную к chips.
-5. **Нет** горизонтальной savebar/toolbar **над** A4 в center (статус / версии / заказ / копировать / «Сохранено» / Скачать-полоса). Lifecycle — на `/proposals`. Вывод (Печать·PDF·Архив) — только icon-rail overlay. Канон: [`2026-08-12-kp-create-no-savebar-canon.md`](../audits/2026-08-12-kp-create-no-savebar-canon.md).
+5. **Нет** горизонтальной savebar/toolbar **над** A4 в center (статус / версии / заказ / копировать / «Сохранено» / Скачать-полоса). Lifecycle — только на `/proposals`. Вывод (Печать · PDF · Архив) — **только** icon-rail overlay (`kp-create-toggle-output`). Канон: [`2026-08-12-kp-create-no-savebar-canon.md`](../audits/2026-08-12-kp-create-no-savebar-canon.md).
 6. Любой откат к docked 3-колонкам / «одна кнопка → две панели» / возврат savebar над листом — **regression**.
 
 ---
@@ -62,7 +62,7 @@
 |------|----------|----------|------------|
 | **Left rail** | 2 icon-btn **~44–52px** (Шаблон · Товары) | template overlay ≤~20rem; products overlay **36–40rem** поверх center | Пикер шаблона **или** список изделий |
 | **Center** | всегда fixed width между rails | — | Лист A4; **не сжимается** при open |
-| **Right** | icon-rail, **default collapsed** | overlay ← от рейла | Параметры **или** Таблица |
+| **Right** | icon-rail, **default collapsed** | overlay ← от рейла | Параметры · Таблица · Условия · **Вывод** |
 
 ### Правила места
 

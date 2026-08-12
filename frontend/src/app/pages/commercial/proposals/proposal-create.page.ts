@@ -1,4 +1,4 @@
-import {
+﻿import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   ContactRound,
   FileText,
+  Printer,
   ScrollText,
   LucideAngularModule,
   Package,
@@ -88,7 +89,7 @@ import { ProposalCreateTermsComponent, type ProposalTerm } from './proposal-crea
 /** Which left tool flyout is open (mutually exclusive). */
 type LeftTool = 'template' | 'products' | 'recipient' | null;
 
-type RightPane = 'params' | 'table' | 'terms';
+type RightPane = 'params' | 'table' | 'terms' | 'output';
 
 const DEFAULT_KP_SHEET_LAYOUT: ProposalSheetLayoutState = {
   rowsFirstPage: 0,
@@ -195,175 +196,6 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
             data-test="kp-create-center"
             aria-label="Превью КП"
           >
-            @if (selectedTemplate()) {
-              <div class="kp-create-studio__savebar" data-test="kp-save-bar">
-                @if (autosaveLabel()) {
-                  <span class="text-[11px] text-muted-foreground" data-test="kp-autosave-status">
-                    {{ autosaveLabel() }}
-                  </span>
-                }
-                @if (previewStatus() === 'ready') {
-                  <span class="text-[11px] text-muted-foreground" data-test="kp-page-count">
-                    Страница 1{{ previewPageCount() > 1 ? ' из ' + previewPageCount() : '' }}
-                  </span>
-                }
-                <span
-                  class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]"
-                  data-test="kp-studio-status"
-                >
-                  {{ statusLabel() }}
-                </span>
-                @if (!isVersionView() && !isReadOnly() && nextStatusOptions().length) {
-                  <select
-                    class="pi-input w-auto text-xs"
-                    [value]="proposalStatus()"
-                    data-test="kp-top-status-select"
-                    (change)="onTopStatusChange($event)"
-                  >
-                    <option [value]="proposalStatus()">Изменить статус…</option>
-                    @for (option of nextStatusOptions(); track option) {
-                      <option [value]="option">{{ statusLabel(option) }}</option>
-                    }
-                  </select>
-                }
-                @if (isVersionView()) {
-                  <button
-                    type="button"
-                    class="text-xs underline pi-focus-ring"
-                    data-test="kp-version-return"
-                    (click)="returnToCurrentVersion()"
-                  >
-                    Вернуться к текущему
-                  </button>
-                }
-                @if (previewStatus() === 'ready' && !isVersionView()) {
-                  @if (!hasDraftId()) {
-                    <button
-                      type="button"
-                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                      data-test="kp-create-order"
-                      disabled
-                      aria-label="Создать заказ можно после сохранения и принятия КП"
-                      title="Сначала сохраните КП, затем переведите его в статус «Принято»"
-                    >
-                      Создать заказ
-                    </button>
-                  }
-                  @if (hasDraftId()) {
-                    <button
-                      type="button"
-                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                      data-test="kp-save-version"
-                      [disabled]="isReadOnly()"
-                      (click)="saveVersion()"
-                    >
-                      Сохранить версию
-                    </button>
-                    <button
-                      type="button"
-                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                      data-test="kp-toggle-versions"
-                      (click)="toggleVersionMenu()"
-                    >
-                      Версии ({{ versionSummaries().length }}) ▾
-                    </button>
-                    @if (versionMenuOpen()) {
-                      <div
-                        class="absolute right-0 top-full z-40 mt-1 min-w-[18rem] border hairline rounded-sm bg-paper p-2 shadow-lg"
-                        data-test="kp-version-menu"
-                      >
-                        @for (version of versionSummaries(); track version.version) {
-                          <button
-                            type="button"
-                            class="block w-full text-left px-2 py-1 text-xs hover:bg-paper-2"
-                            (click)="openVersion(version.version)"
-                          >
-                            v{{ version.version }} · {{ formatVersionDate(version.frozenAt) }}
-                          </button>
-                        }
-                        @if (!versionSummaries().length) {
-                          <span class="block px-2 py-1 text-xs text-muted-foreground"
-                            >Версий пока нет</span
-                          >
-                        }
-                      </div>
-                    }
-                    @if (hasDraftId()) {
-                      <button
-                        type="button"
-                        class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                        data-test="kp-create-order"
-                        [disabled]="proposalStatus() !== 'accepted' || isVersionView()"
-                        [attr.aria-label]="
-                          proposalStatus() === 'accepted'
-                            ? 'Создать заказ из принятого КП'
-                            : 'Создать заказ можно после принятия КП'
-                        "
-                        [title]="
-                          proposalStatus() === 'accepted'
-                            ? 'Создать заказ из принятого КП'
-                            : 'Сначала переведите КП в статус «Принято»'
-                        "
-                        (click)="createOrder()"
-                      >
-                        Создать заказ
-                      </button>
-                      <button
-                        type="button"
-                        class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                        data-test="kp-duplicate"
-                        (click)="duplicateCurrent()"
-                      >
-                        Копировать КП
-                      </button>
-                    }
-                  }
-                  <div class="relative ml-auto">
-                    <button
-                      type="button"
-                      class="pi-icon-btn gap-1 px-2 w-auto text-xs pi-focus-ring"
-                      data-test="kp-download-menu"
-                      aria-haspopup="menu"
-                      [attr.aria-expanded]="downloadMenuOpen()"
-                      (click)="toggleDownloadMenu()"
-                    >
-                      Скачать ▾
-                    </button>
-                    @if (downloadMenuOpen()) {
-                      <div
-                        class="absolute right-0 top-full z-40 mt-1 min-w-[14rem] border hairline rounded-sm bg-paper p-1 shadow-lg"
-                        role="menu"
-                      >
-                        <button
-                          type="button"
-                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
-                          role="menuitem"
-                          (click)="requestOutput('pdf')"
-                        >
-                          PDF
-                        </button>
-                        <button
-                          type="button"
-                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
-                          role="menuitem"
-                          (click)="requestOutput('print')"
-                        >
-                          Печать
-                        </button>
-                        <button
-                          type="button"
-                          class="block w-full text-left px-3 py-2 text-xs hover:bg-paper-2"
-                          role="menuitem"
-                          (click)="requestOutput('archive')"
-                        >
-                          Сохранить в архив документов
-                        </button>
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            }
             <app-proposal-create-template-center
               #templateCenter
               [selected]="selectedTemplate()"
@@ -418,6 +250,19 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
               (click)="toggleRightPane('terms')"
             >
               <lucide-angular [img]="termsIcon" [size]="18" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              class="kp-create-studio__rail-btn pi-focus-ring"
+              [class.kp-create-studio__rail-btn--active]="rightOpen() && rightPane() === 'output'"
+              [attr.aria-expanded]="rightOpen() && rightPane() === 'output'"
+              aria-controls="kp-flyout-output"
+              aria-label="Вывод"
+              title="Вывод"
+              data-test="kp-create-toggle-output"
+              (click)="toggleRightPane('output')"
+            >
+              <lucide-angular [img]="outputIcon" [size]="18" aria-hidden="true" />
             </button>
           </nav>
 
@@ -497,7 +342,9 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   ? 'kp-flyout-table'
                   : rightPane() === 'terms'
                     ? 'kp-flyout-terms'
-                    : 'kp-flyout-params'
+                    : rightPane() === 'output'
+                      ? 'kp-flyout-output'
+                      : 'kp-flyout-params'
               "
               data-test="kp-create-right"
               [attr.aria-label]="
@@ -505,7 +352,9 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   ? 'Редактор таблицы'
                   : rightPane() === 'terms'
                     ? 'Условия'
-                    : 'Параметры'
+                    : rightPane() === 'output'
+                      ? 'Вывод'
+                      : 'Параметры'
               "
               #rightFlyout
             >
@@ -535,6 +384,34 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   [readOnly]="isReadOnly()"
                   (termsChange)="onTermsChange($event)"
                 />
+              } @else if (rightPane() === 'output') {
+                <div class="kp-create-output" data-test="kp-create-output">
+                  <p class="kp-create-output__title">Вывод</p>
+                  <button
+                    type="button"
+                    class="kp-create-output__btn pi-focus-ring"
+                    data-test="kp-output-print"
+                    (click)="requestOutput('print')"
+                  >
+                    Печать
+                  </button>
+                  <button
+                    type="button"
+                    class="kp-create-output__btn pi-focus-ring"
+                    data-test="kp-output-pdf"
+                    (click)="requestOutput('pdf')"
+                  >
+                    PDF
+                  </button>
+                  <button
+                    type="button"
+                    class="kp-create-output__btn pi-focus-ring"
+                    data-test="kp-output-archive"
+                    (click)="requestOutput('archive')"
+                  >
+                    Сохранить в архив документов
+                  </button>
+                </div>
               } @else if (rightPane() === 'params') {
                 <app-proposal-create-inspector
                   [draftLines]="draftLines()"
@@ -668,15 +545,6 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
       padding: 0.5rem;
     }
 
-    .kp-create-studio__savebar {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      flex: 0 0 auto;
-      min-height: 2.5rem;
-      padding: 0 0.25rem 0.4rem;
-    }
-
     .kp-create-studio__flyout {
       position: absolute;
       top: 0.5rem;
@@ -715,6 +583,36 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
     .kp-create-studio__flyout[data-flyout='products'] {
       padding: 0.5rem;
     }
+
+    .kp-create-output {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .kp-create-output__title {
+      margin: 0 0 0.35rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-ink);
+    }
+
+    .kp-create-output__btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 0.65rem;
+      border: 1px solid var(--color-rule);
+      border-radius: 0.25rem;
+      background: var(--color-paper, #fff);
+      font-size: 0.8125rem;
+      color: var(--color-ink);
+      cursor: pointer;
+    }
+
+    .kp-create-output__btn:hover {
+      background: color-mix(in oklch, var(--color-paper-2, #f5f5f5) 100%, transparent);
+    }
   `,
 })
 export class ProposalCreatePage implements OnInit {
@@ -750,6 +648,7 @@ export class ProposalCreatePage implements OnInit {
   protected readonly slidersIcon = SlidersHorizontal;
   protected readonly tableIcon = TableProperties;
   protected readonly termsIcon = ScrollText;
+  protected readonly outputIcon = Printer;
 
   protected readonly isWide = signal(true);
   protected readonly leftTool = signal<LeftTool>(null);
@@ -784,14 +683,12 @@ export class ProposalCreatePage implements OnInit {
   );
   protected readonly sheetLayout = signal<ProposalSheetLayoutState>({ ...DEFAULT_KP_SHEET_LAYOUT });
   protected readonly kpTableChrome = signal<ProposalTableChrome>({ ...DEFAULT_KP_TABLE_CHROME });
-  protected readonly previewPageCount = computed(() => Math.max(1, this.previewPages().length));
   protected readonly compositionTotal = computed(() => this.calculateDealTotal());
   protected readonly tableTemplateId = signal<string | null>(null);
   protected readonly tableTargets = signal<ProposalTableTarget[]>([]);
   protected readonly selectedTableTargetId = signal<string | null>(null);
   private readonly tableTargetLayouts = signal<Record<string, ProposalTableLayoutColumn[]>>({});
   protected readonly autosaveLabel = signal('');
-  protected readonly downloadMenuOpen = signal(false);
   protected readonly proposalStatus = signal<ProposalCreateStatus>('draft');
   protected readonly versionMenuOpen = signal(false);
   protected readonly versionSummaries = signal<ProposalVersionSummary[]>([]);
@@ -1122,12 +1019,10 @@ export class ProposalCreatePage implements OnInit {
     output?.();
   }
 
-  protected toggleDownloadMenu(): void {
-    this.downloadMenuOpen.update((open) => !open);
-  }
-
   protected requestOutput(action: 'pdf' | 'print' | 'archive'): void {
-    this.downloadMenuOpen.set(false);
+    if (this.rightOpen() && this.rightPane() === 'output') {
+      this.rightOpen.set(false);
+    }
     const run = (): void => {
       if (action === 'pdf') this.downloadPdf();
       else if (action === 'print') this.printCurrentPreview();
