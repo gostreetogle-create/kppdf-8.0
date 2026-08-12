@@ -49,5 +49,6 @@
    `DESKTOP_DOWNLOAD_URL=/downloads/kppdf-desktop-setup-v{semver}.zip` (или absolute https).
 5. Smoke: открыть URL ZIP → имя файла в браузере содержит `v0.5.1` (или актуальный); футер Desktop после установки = тот же semver; `/api/desktop/compat` отдаёт тот же downloadUrl.
 6. **Не** считать деплой «FE-only ok», если installer WARN «exe not found» — для Desktop-потока это FAIL по смыслу PO.
+7. **Имя ZIP ≠ билд:** перед publish обязателен свежий `pnpm tauri build` для текущего semver. Переименовать старый exe в `…-v0.5.1.zip` **запрещено** (урок 2026-08-12: PO ставил «0.5.1», футер оставался v0.5, MCP мёртв).
 
 См. executable: `tasks/_backlog/desktop/TZD-46-desktop-zip-versioned-filename.md`.

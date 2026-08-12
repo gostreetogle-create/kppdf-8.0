@@ -96,3 +96,13 @@ MIG-302 **не** грузит: photoIds, CP.email, branding. Successors: TZD-47 
 | Примечание | exe билд от 2026-08-11, упакован как v0.5.1 (TZD-46 naming); полный `tauri build` — при необходимости отдельно |
 
 **NEXT PO:** Basic Auth → сайт → скачать ZIP с `v0.5.1` в имени → установить → pair → MCP ping → сказать «лей MIG-302 на prod».
+
+### Урок 2026-08-12 23:05 — имя ZIP ≠ содержимое
+
+Первый wipe-deploy опубликовал `…-v0.5.1.zip`, но внутри был **старый** exe от 11.08 (хардкод/сборка до `d0c6d179`: MCP nodejs + `getVersion()` + semver 0.5.1).  
+PO видел в футере **v0.5**, MCP не поднимался — установка прошла, но «новая» версия была переименованным старым файлом.
+
+**Исправлено:** полный `pnpm tauri build` → NSIS `KPPDF Desktop_0.5.1_x64-setup.exe` → publish-installer → **warm** deploy (без wipe).  
+В `kppdf-desktop.exe` теперь есть строки `0.5.1` (31×). Канон: **не** публиковать versioned ZIP без свежего `tauri build` того же semver.
+
+PO: скачать ZIP **ещё раз** (размер ~2.84 MB, дата сегодня), закрыть Desktop, переустановить. В футере должно быть **v0.5.1**.
