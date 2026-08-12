@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · READY WAVE-NAV-RETURN (316→317) — PO блокер
+- Канон: `docs/audits/2026-08-12-nav-return-gutters-canon.md`
+- Wave: `tasks/_backlog/ui/WAVE-NAV-RETURN.md`
+- TZ: `TZ-UX-316-template-edit-return.md` → `TZ-UX-317-app-history-gutters.md`
+- Prompt: `tasks/_backlog/ui/PROMPT-NAV-RETURN.md`
+- Баг: Create «Редактировать шаблон» → список `/templates?templateId=` вместо `/builder/:id`
+- Север: returnUrl после edit; системные ←→ в gutters app shell (page-chrome отменяет «нет by design»)
+- NEXT: отдать PROMPT-NAV-RETURN idle-агенту **раньше** продолжения смотра КП; 368 можно после/рядом
+
 ## Checkpoint 2026-08-12 · READY TZ-SALES-368 (печать без гейта фирмы)
 - Канон: `docs/audits/2026-08-12-kp-output-gates-canon.md`
 - TZ + prompt: `TZ-SALES-368-kp-output-gates.md` · `PROMPT-KP-OUTPUT-GATES-368.md`

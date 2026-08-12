@@ -10,8 +10,9 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity свойства шаблона (name/category/page/orient) |
-| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity 2026-08-08 |
+| `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
+| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
+| `(app shell)` | page-chrome.md | **UX-317 READY** системные ←→ в gutters |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`) |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
@@ -49,7 +50,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–365 DONE prod; **366** print sandbox; **367** READY no-savebar; **320** PARK; view-ready КП — идея позже |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK; view-ready — идея |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
