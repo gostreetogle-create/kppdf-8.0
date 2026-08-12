@@ -1,5 +1,13 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 — READY: WAVE-KP-STUDIO-CHROME (parallel)
+- Audit: `docs/audits/2026-08-12-kp-studio-flyout-chrome-audit.md`
+- Wave: `tasks/_backlog/kp-vitrine/WAVE-KP-STUDIO-CHROME.md`
+- Prompt: `tasks/_backlog/kp-vitrine/PROMPT-KP-STUDIO-CHROME.md`
+- **363 NOW** (terms/recipient/picker/inspector/product-rail) — без `proposal-create.page.ts`
+- **362 AFTER 359** — тиры S/L + иконка Условий ≠ Шаблон
+- Disjoint from WAVE-KP-TABLE-EDITOR. Deploy НЕ.
+
 ## Checkpoint 2026-08-12 — READY: WAVE-KP-TABLE-EDITOR (359→360→361)
 - Канон: `docs/audits/2026-08-12-kp-table-editor-unified-canon.md`; волна: `tasks/_backlog/kp-vitrine/WAVE-KP-TABLE-EDITOR.md`.
 - Continuous: `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-EDITOR.md` — **ШАГ 0 commit WIP студии** → 359 → 360 → 361.
