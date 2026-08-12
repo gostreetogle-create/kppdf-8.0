@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · TZ-SALES-363 DONE (WAVE-KP-STUDIO-CHROME #1)
+- DONE: панели-дети студии без дублей — Условия (empty-state короткий), Шаблон (нет дубля имени под селектом), Получатель (клиент → searchable PiOverflowSelect, 334-канон), Параметры (три «только в этом КП» → одна подсказка про наценку). Product rail не тронут (ширина = 362); tableOnly ветка не раздувалась (359).
+- Gates: FE tsc PASS; proposal-create + terms Jest 38/38 PASS; ESLint/diff-check PASS; DOM self-verify dev :4203 PASS; `git diff` без `proposal-create.page.ts`.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-363.done.md`; lock: `.mimocode/locks/TZ-SALES-363-kp-studio-panels-chrome.lock`; checklist DONE; `_active/` cleared.
+- Commit/push: `d0aa6d52` on `origin/main` (fast-forward 6bba389b..d0aa6d52). Deploy НЕ.
+- NEXT: **362** тиры S/L + иконка Условий — только когда page.ts свободен (359 merge). Проверить `_active/` + STATUS перед стартом 362.
+
 ## Checkpoint 2026-08-12 — READY: WAVE-KP-STUDIO-CHROME (parallel)
 - Audit: `docs/audits/2026-08-12-kp-studio-flyout-chrome-audit.md`
 - Wave: `tasks/_backlog/kp-vitrine/WAVE-KP-STUDIO-CHROME.md`
