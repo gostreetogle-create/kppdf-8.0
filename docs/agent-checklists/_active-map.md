@@ -1,5 +1,12 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · очередь coding IDLE (после 366/367/Desktop)
+- DONE на main: Table Editor A–E (prod earlier) · 366 print · 367 no-savebar · Desktop WIP+40+45
+- HEAD: `3dfb8e92` / feat `41b00c97` · _active/: empty
+- NOT DONE product READY: **нет** (320 PARK; view-ready КП — только идея)
+- NEXT PO: локальный PASS Create КП → слово «деплой» (warm) · или «напиши TZ просмотра готового КП»
+- Idle AI: не выдумывать фичи; ждать TZ/deploy от Cursor/PO
+
 ## Checkpoint 2026-08-12T16:55:00Z · TZ-SALES-367 DONE (savebar gone, output on rail)
 - DONE: убран `kp-save-bar` над A4; lifecycle UI только на Все КП; rail «Вывод» → Печать·PDF·Архив; autosave без полосы
 - Gates: FE tsc PASS; proposal-create.page Jest 37/37 PASS

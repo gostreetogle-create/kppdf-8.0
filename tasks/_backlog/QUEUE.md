@@ -2,28 +2,25 @@
 
 **Шпаргалка PO:** [`docs/PO-AGENT-FLOW.md`](../../docs/PO-AGENT-FLOW.md)
 
-**Обрыв / новый чат исполнителя:** [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)  
-**Или эта волна целиком:** [`kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md`](./kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md)
+**Обрыв / новый чат:** [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)
 
 ## Живые потоки
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **PO / основной** | Create КП refactor | `proposal-create*` | идёт у PO — согласовать claim |
-| **Сейчас READY** | Убрать savebar над A4 | `TZ-SALES-367` + `PROMPT-KP-NO-SAVEBAR-367.md` | A4 кверху; вывод в рейл; lifecycle → Все КП |
-| **Параллель** | Браузерная Печать | `TZ-SALES-366` + `PROMPT-KP-PRINT-366.md` | template-center only |
-| **Фон** | Desktop WIP → TZD-40 → TZD-45 | `PROMPT-BACKGROUND-DESKTOP.md` | disjoint |
-| — | Просмотр готового КП | (successor, ещё нет TZ) | PARK идея — после 367 |
-| — | Печать семьи бланков | `_park/TZ-SALES-320-…` | PARK |
+| — | Create КП editor + chrome + print + no-savebar | 359–367 | **DONE** на `main` (`41b00c97`+) |
+| — | Desktop фон (WIP · TZD-40 · TZD-45) | `PROMPT-BACKGROUND-DESKTOP` | **DONE** |
+| **PO** | Локальная проверка Create КП (A4 без savebar, Вывод) | — | сейчас |
+| **NEXT после PASS PO** | Warm deploy (366+367+desktop gate на прод) | `deploy/synology/deploy.ps1` | ждать слово «деплой» |
+| **Готово к TZ** | Просмотр готового КП (read-only) | идея PO — TZ ещё нет | Cursor пишет TZ по команде |
+| — | Печать семьи бланков | `_park/TZ-SALES-320` | PARK |
+| — | Coding READY queue | — | **пуста** |
 
-**Канон сейчас:** основной чат = рефактор КП; второй ИИ = только Desktop/MCP по `PROMPT-BACKGROUND-DESKTOP.md`.  
-Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).  
-Deploy — только по слову PO (не фон).
+**Канон:** не выдумывать z-series / склад без PO. Idle-агенту без новой TZ — только smoke/docs или ждать.  
+Wipe запрещён без русского подтверждения. Deploy — только по слову PO.
 
 ## Не брать
 
-- `_archive/` / `_park/` без явной команды PO  
-- Параллель на `proposal-create*` / `proposals.page*` / `quotation*` / KP build templates  
+- `_archive/` / `_park/` без команды PO  
+- Параллель на `proposal-create*` пока PO проверяет локально (если даёте код — согласовать)  
 - wipe / auto-deploy / `ruvector.db`
-
-Закрытые волны: `tasks/_archive/2026-08/waves-done/`, `…/prompts-spent/`.
