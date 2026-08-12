@@ -9,21 +9,19 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | KP Table Editor → prod | `kp-vitrine/WAVE-KP-TABLE-EDITOR-FINISH.md` · **A→E** | READY — unattended: `PROMPT-KP-TABLE-EDITOR-UNATTENDED.md` |
-| — | KP Table Editor (359→361) | `WAVE-KP-TABLE-EDITOR.md` | код в worktree; land = ступень A finish-волны |
-| — | KP Studio Chrome | `WAVE-KP-STUDIO-CHROME.md` | 363 DONE; 362 на main с Table Studio |
-| — | KP shame polish | `WAVE-KP-SHAME-POLISH.md` · 350→354 | DONE (история) |
-| — | KP-COMPLETE | 340…348 | DONE (на проде) |
-| — | OPS-310 / AUTH | archive | DONE (на проде) |
+| **PO / основной** | Create КП refactor | `proposal-create*` | идёт у PO — **не параллелить** второй агент сюда |
+| **Фон (idle AI)** | Desktop WIP → TZD-40 → TZD-45 | `desktop/PROMPT-BACKGROUND-DESKTOP.md` | READY — disjoint от КП |
+| — | KP Table Editor finish | `WAVE-KP-TABLE-EDITOR-FINISH.md` A→E | **DONE на prod** (`b92ecb57`+) |
+| — | KP Studio Chrome / Shame / Complete | archive | DONE |
 
-**Канон сейчас:** дожать единый «Редактор таблицы» на main + chrome + DnD + warm deploy.  
+**Канон сейчас:** основной чат = рефактор КП; второй ИИ = только Desktop/MCP по `PROMPT-BACKGROUND-DESKTOP.md`.  
 Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).  
-Unattended-промпт **авторизует** только warm deploy без wipe.
+Deploy — только по слову PO (не фон).
 
 ## Не брать
 
 - `_archive/` / `_park/` без явной команды PO  
-- Параллель на `proposal-create*` / `proposals.page*` внутри 350–354  
-- wipe / auto-deploy
+- Параллель на `proposal-create*` / `proposals.page*` / `quotation*` / KP build templates  
+- wipe / auto-deploy / `ruvector.db`
 
 Закрытые волны: `tasks/_archive/2026-08/waves-done/`, `…/prompts-spent/`.

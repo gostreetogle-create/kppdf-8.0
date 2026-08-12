@@ -1,5 +1,11 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · фон для второго ИИ (Desktop)
+- DONE (prod): WAVE-KP-TABLE-EDITOR A–E
+- Основной поток PO: рефактор Create КП — **не** давать второму агенту `proposal-create*`
+- NEXT фон: `tasks/_backlog/desktop/PROMPT-BACKGROUND-DESKTOP.md` → Desktop WIP → TZD-40 → TZD-45
+- Deploy фон НЕ · Desktop/`ruvector.db` dirty можно закрыть фоном (только desktop/**)
+
 ## Checkpoint 2026-08-12 · WAVE-KP-TABLE-EDITOR A–E DONE (prod)
 - DONE: A `0e42d8de` · B `7d6db412` · C `632d3926` · D `8f8b6d11` · fix `12b4950b` · checkpoint `3ebe9802`
 - Gates: FE/BE tsc + proposal-create 41/41 + quotation/table-template PASS; warm deploy PASS
