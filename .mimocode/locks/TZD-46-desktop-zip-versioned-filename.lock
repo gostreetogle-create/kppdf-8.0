@@ -5,5 +5,5 @@ task: TZD-46
 claimed_by: agent-158a657202 (freebuff/tzd-46)
 claimed_at: 2026-08-12T22:20:00Z
 closed_at: 2026-08-12
-commit: PENDING (заполняется при closeout commit)
+commit: 8e2db314
 outcome: DONE
