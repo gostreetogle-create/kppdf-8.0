@@ -292,16 +292,30 @@ export class McpHostController {
 
       cmd.on('close', (payload) => {
         if (gen !== this.generation) return;
+        const code = payload.code ?? null;
+        // False positive (Windows / tauri-plugin-shell): tracked handle closes with
+        // code 0 after host already logged listening/healthz, while node keeps
+        // serving on the port. Do NOT flip UI to error — PO saw exactly this.
+        if (this.expectedRunning && this.sawListenLog && (code === 0 || code === null)) {
+          this.child = null;
+          this.setState({
+            status: 'running',
+            lastError: undefined,
+            // pid may still be valid even if Child handle is gone
+            pid: this.state.pid,
+          });
+          return;
+        }
         const crashed = this.expectedRunning;
         this.expectedRunning = false;
         this.child = null;
         if (crashed) {
           this.setState({
             status: 'error',
-            lastError: this.describeExit(payload.code, this.stderrTail),
+            lastError: this.describeExit(code, this.stderrTail),
           });
         } else {
-          this.setState({ status: 'stopped' });
+          this.setState({ status: 'stopped', pid: undefined });
         }
       });
 
@@ -435,8 +449,12 @@ export class McpHostController {
 
   private describeExit(code: number | null, stderrTail: string[]): string {
     const tail = stderrTail.join(' ');
+    // Code 0 + empty tail: soft wording (real crash usually has non-zero or logs).
+    if (code === 0 && !tail) {
+      return 'MCP host закрыл процесс с кодом 0 (возможно ложный сигнал оболочки). Нажмите «Запустить» ещё раз.';
+    }
     if (tail) {
-      return `MCP host завершился с ошибкой${code !== null ? ` (код ${code})` : ''}: ${tail.slice(0, 300)}`;
+      return `MCP host завершился${code !== null ? ` (код ${code})` : ''}: ${tail.slice(0, 300)}`;
     }
     return `MCP host завершился неожиданно${code !== null ? ` (код ${code})` : ''}.`;
   }
