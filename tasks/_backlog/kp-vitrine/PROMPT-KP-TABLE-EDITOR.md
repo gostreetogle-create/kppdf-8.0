@@ -1,6 +1,11 @@
 # PROMPT — WAVE-KP-TABLE-EDITOR (исполнитель continuous)
 
-Скопируй блок ниже агенту-исполнителю (Gemini / Buffy / local).  
+> **УСТАРЕЛ для текущего состояния репо.**  
+> PO отсутствует / дожать до прода →  
+> **`PROMPT-KP-TABLE-EDITOR-UNATTENDED.md`** + `WAVE-KP-TABLE-EDITOR-FINISH.md`  
+> (land с worktree → 364 chrome → 365 DnD → warm deploy; гигиена контекста).
+
+Скопируй блок ниже только если осознанно гоняешь старую очередь 0→359→361 без finish/deploy.  
 Один непрерывный прогон: **сначала коммит WIP студии**, потом **359 → 360 → 361**.  
 Deploy — **только** если PO явно скажет «деплой».
 

@@ -1,5 +1,14 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · UNATTENDED READY (Table Editor → prod)
+- DONE: Table Studio + photoUrl + flyout S/L на `origin/main` (`67da760f`); 363 panels DONE.
+- IN PROGRESS: none
+- NOT DONE: land 359–361 с worktree `aecefc4d…` → TZ-364 Рамка/Шапка → TZ-365 DnD → warm deploy
+- NEXT: вставить `tasks/_backlog/kp-vitrine/PROMPT-KP-TABLE-EDITOR-UNATTENDED.md` исполнителю
+- Wave: `WAVE-KP-TABLE-EDITOR-FINISH.md` (A→E). Deploy в конце промпта **авторизован** (без wipe).
+- Blockers: none · Desktop/`ruvector.db` dirty — не коммитить
+- HEAD: 67da760f pushed: yes · _active/: проверить перед claim
+
 ## Checkpoint 2026-08-12 · TZ-SALES-363 DONE (WAVE-KP-STUDIO-CHROME #1)
 - DONE: панели-дети студии без дублей — Условия (empty-state короткий), Шаблон (нет дубля имени под селектом), Получатель (клиент → searchable PiOverflowSelect, 334-канон), Параметры (три «только в этом КП» → одна подсказка про наценку). Product rail не тронут (ширина = 362); tableOnly ветка не раздувалась (359).
 - Gates: FE tsc PASS; proposal-create + terms Jest 38/38 PASS; ESLint/diff-check PASS; DOM self-verify dev :4203 PASS; `git diff` без `proposal-create.page.ts`.

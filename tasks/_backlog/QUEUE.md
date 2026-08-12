@@ -9,13 +9,16 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **1** | KP shame polish | `kp-vitrine/WAVE-KP-SHAME-POLISH.md` · **350→354** | READY — Cursor Agent + `PROMPT-KP-SHAME-CONTINUOUS` |
+| **1** | KP Table Editor → prod | `kp-vitrine/WAVE-KP-TABLE-EDITOR-FINISH.md` · **A→E** | READY — unattended: `PROMPT-KP-TABLE-EDITOR-UNATTENDED.md` |
+| — | KP Table Editor (359→361) | `WAVE-KP-TABLE-EDITOR.md` | код в worktree; land = ступень A finish-волны |
+| — | KP Studio Chrome | `WAVE-KP-STUDIO-CHROME.md` | 363 DONE; 362 на main с Table Studio |
+| — | KP shame polish | `WAVE-KP-SHAME-POLISH.md` · 350→354 | DONE (история) |
 | — | KP-COMPLETE | 340…348 | DONE (на проде) |
 | — | OPS-310 / AUTH | archive | DONE (на проде) |
-| — | Perf photos | `perf/` | DONE (история) |
 
-**Канон сейчас:** стыд Create КП на показе — без новых фич, без деплоя.  
-Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).
+**Канон сейчас:** дожать единый «Редактор таблицы» на main + chrome + DnD + warm deploy.  
+Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).  
+Unattended-промпт **авторизует** только warm deploy без wipe.
 
 ## Не брать
 
