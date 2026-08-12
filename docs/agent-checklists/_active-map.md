@@ -1,5 +1,10 @@
 # SESSION QUEUE
 
+## Checkpoint 2026-08-12 · печать: правда + TZ-366
+- PDF (сервер puppeteer) + Архив = DONE (345). Браузерная «Печать» = сломана sandbox (`allow-modals` / ViewChild 1-й iframe).
+- NEXT fix: `tasks/_backlog/kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` (не третий print-pipeline; 320 остаётся PARK).
+- Можно параллельно с рефактором КП: CONFLICT ≈ `proposal-create-template-center*` only.
+
 ## Checkpoint 2026-08-12 · фон для второго ИИ (Desktop)
 - DONE (prod): WAVE-KP-TABLE-EDITOR A–E
 - Основной поток PO: рефактор Create КП — **не** давать второму агенту `proposal-create*`

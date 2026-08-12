@@ -11,8 +11,9 @@
 |---------|--------|-----|--------|
 | **PO / основной** | Create КП refactor | `proposal-create*` | идёт у PO — **не параллелить** второй агент сюда |
 | **Фон (idle AI)** | Desktop WIP → TZD-40 → TZD-45 | `desktop/PROMPT-BACKGROUND-DESKTOP.md` | READY — disjoint от КП |
-| — | KP Table Editor finish | `WAVE-KP-TABLE-EDITOR-FINISH.md` A→E | **DONE на prod** (`b92ecb57`+) |
-| — | KP Studio Chrome / Shame / Complete | archive | DONE |
+| **Параллель ОК** | Браузерная Печать (sandbox) | `kp-vitrine/TZ-SALES-366-kp-browser-print-sandbox.md` | READY — в основном `template-center` (не page.ts) |
+| — | KP Table Editor finish | `WAVE-KP-TABLE-EDITOR-FINISH.md` A→E | **DONE на prod** |
+| — | Печать семьи бланков | `tasks/_park/TZ-SALES-320-…` | PARK — после «КП на 100%» |
 
 **Канон сейчас:** основной чат = рефактор КП; второй ИИ = только Desktop/MCP по `PROMPT-BACKGROUND-DESKTOP.md`.  
 Wipe запрещён без русского подтверждения (`docs/ops/DANGEROUS-OPS.md`).  
