@@ -37,5 +37,5 @@
 
 ## Executor report (auto)
 
-- Prep: см. `docs/ops/home-host-access.md` §4.1 (nginx auth_request политика + rollback) и `deploy/synology/DEPLOY.md` §12 (rollout/rollback runbook).
+- Prep: см. `docs/ops/home-host-access.md` §4.1 (nginx auth_request политика + rollback) и `deploy/synology/DEPLOY.md` §15b (rollout/rollback runbook).
 - Deploy НЕ выполнялся.
