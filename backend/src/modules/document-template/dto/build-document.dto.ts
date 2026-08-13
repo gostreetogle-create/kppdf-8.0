@@ -14,6 +14,33 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+/** Request-only visual overrides for one KP blank row (TZ-SALES-370). */
+export class BuildRowPresentationDto {
+  @IsOptional()
+  @IsIn(['auto', 'compact', 'large'])
+  density?: 'auto' | 'compact' | 'large';
+
+  @IsOptional()
+  @IsIn(['normal', 'accent'])
+  emphasis?: 'normal' | 'accent';
+
+  @IsOptional()
+  @IsBoolean()
+  separatorBefore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pageBreakBefore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showDescription?: boolean;
+
+  @IsOptional()
+  @IsIn(['inherit', 'contain', 'cover'])
+  photoFit?: 'inherit' | 'contain' | 'cover';
+}
+
 export class BuildPreviewLineDto {
   @IsOptional()
   @IsIn(['catalog', 'custom', 'module', 'material'])
@@ -55,6 +82,11 @@ export class BuildPreviewLineDto {
   @IsOptional()
   @IsBoolean()
   isOptional?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BuildRowPresentationDto)
+  rowPresentation?: BuildRowPresentationDto;
 }
 
 export class BuildTermDto {

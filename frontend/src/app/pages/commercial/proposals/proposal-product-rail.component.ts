@@ -54,6 +54,18 @@ export interface ProposalDraftLine {
   unitPrice: number;
   discountPercent?: number;
   isOptional?: boolean;
+  /** Visual-only blank settings (TZ-SALES-370). */
+  rowPresentation?: ProposalRowPresentation;
+}
+
+/** Per-line visual snapshot for KP blank. Defaults applied at render. */
+export interface ProposalRowPresentation {
+  density?: 'auto' | 'compact' | 'large';
+  emphasis?: 'normal' | 'accent';
+  separatorBefore?: boolean;
+  pageBreakBefore?: boolean;
+  showDescription?: boolean;
+  photoFit?: 'inherit' | 'contain' | 'cover';
 }
 
 type RailKind = 'catalog' | 'module' | 'material';

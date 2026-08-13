@@ -1,0 +1,15 @@
+task: TZ-SALES-370
+status: DONE
+closed_at: 2026-08-13
+implementation_sha: c08f13735acf956133a16d886e70857e31a1fd91
+integration_sha: e993e0dfc56dd9d5915f22748af2603e6b66c3bd
+protected_files:
+  - frontend/src/app/pages/commercial/proposals/proposal-create-table-editor.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-create.page.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts
+  - backend/src/modules/quotation/quotation.schema.ts
+  - backend/src/modules/quotation/quotation.service.ts
+  - backend/src/modules/generated-document/quotation-output.service.ts
+  - backend/src/modules/table-template/table-template.service.ts
+review: Cursor visual PASS; A4 fixture limitation delegated to TZ-SALES-371
+production: not executed

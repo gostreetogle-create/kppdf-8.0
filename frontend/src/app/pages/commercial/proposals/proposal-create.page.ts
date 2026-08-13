@@ -743,6 +743,7 @@ export class ProposalCreatePage implements OnInit {
               ? { discountPercent: Math.min(100, Math.max(0, line.discountPercent)) }
               : {}),
             ...(line.isOptional ? { isOptional: true } : {}),
+            ...(line.rowPresentation ? { rowPresentation: { ...line.rowPresentation } } : {}),
           }));
           const tableLayout: BuildTableLayoutColumn[] = this.kpTableLayout().map(
             ({ key, visible }) => ({ key, visible }),
@@ -966,6 +967,7 @@ export class ProposalCreatePage implements OnInit {
         markupPercent: this.clampMarkup(this.orgMarkupPercent()),
         discountPercent: Math.min(100, Math.max(0, line.discountPercent ?? 0)),
         isOptional: line.isOptional === true,
+        ...(line.rowPresentation ? { rowPresentation: { ...line.rowPresentation } } : {}),
         sortOrder: index,
       })),
       templateId: template._id,
@@ -1205,6 +1207,7 @@ export class ProposalCreatePage implements OnInit {
           ...(item.photoUrl ? { photoUrl: item.photoUrl } : {}),
           ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
           ...(item.isOptional ? { isOptional: true } : {}),
+          ...(item.rowPresentation ? { rowPresentation: { ...item.rowPresentation } } : {}),
         };
       }),
     );

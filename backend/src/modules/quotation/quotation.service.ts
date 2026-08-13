@@ -392,6 +392,7 @@ export class QuotationService {
 
   private cloneItem(item: QuotationItem): QuotationItem {
     const refId = this.asObjectId(item.refId);
+    const rowPresentation = this.normalizeRowPresentation(item.rowPresentation);
     return {
       lineKind: item.lineKind ?? (item.productId ? 'catalog' : 'custom'),
       ...(item.productId ? { productId: item.productId } : {}),
@@ -407,6 +408,7 @@ export class QuotationService {
       markupPercent: item.markupPercent,
       discountPercent: item.discountPercent ?? 0,
       isOptional: item.isOptional ?? false,
+      ...(rowPresentation ? { rowPresentation } : {}),
       total: item.total,
       sortOrder: item.sortOrder,
     } as QuotationItem;
@@ -414,6 +416,45 @@ export class QuotationService {
 
   private cloneItems(items: QuotationItem[]): QuotationItem[] {
     return (items ?? []).map((item) => this.cloneItem(item));
+  }
+
+  /**
+   * Persist only non-default visual settings. Missing/partial → backward defaults
+   * at read/render time. Returns undefined when everything is default.
+   */
+  private normalizeRowPresentation(
+    value?: {
+      density?: 'auto' | 'compact' | 'large';
+      emphasis?: 'normal' | 'accent';
+      separatorBefore?: boolean;
+      pageBreakBefore?: boolean;
+      showDescription?: boolean;
+      photoFit?: 'inherit' | 'contain' | 'cover';
+    } | null,
+  ): QuotationItem['rowPresentation'] | undefined {
+    if (!value || typeof value !== 'object') return undefined;
+    const density = value.density ?? 'auto';
+    const emphasis = value.emphasis ?? 'normal';
+    const separatorBefore = value.separatorBefore === true;
+    const pageBreakBefore = value.pageBreakBefore === true;
+    const showDescription = value.showDescription !== false;
+    const photoFit = value.photoFit ?? 'inherit';
+    const isDefault =
+      density === 'auto' &&
+      emphasis === 'normal' &&
+      !separatorBefore &&
+      !pageBreakBefore &&
+      showDescription &&
+      photoFit === 'inherit';
+    if (isDefault) return undefined;
+    return {
+      density,
+      emphasis,
+      separatorBefore,
+      pageBreakBefore,
+      showDescription,
+      photoFit,
+    };
   }
 
   private toQuotationItem(item: {
@@ -431,6 +472,7 @@ export class QuotationService {
     markupPercent?: number;
     discountPercent?: number;
     isOptional?: boolean;
+    rowPresentation?: QuotationItem['rowPresentation'];
     sortOrder?: number;
   }): QuotationItem {
     const lineKind = item.lineKind ?? 'catalog';
@@ -456,6 +498,7 @@ export class QuotationService {
     );
     const gross = (item.quantity ?? 0) * (item.unitPrice ?? 0);
     const total = Math.round(gross * (1 - discountPercent / 100) * 100) / 100;
+    const rowPresentation = this.normalizeRowPresentation(item.rowPresentation);
     return {
       lineKind,
       ...(item.productId
@@ -473,6 +516,7 @@ export class QuotationService {
       markupPercent: item.markupPercent ?? 0,
       discountPercent,
       isOptional: item.isOptional ?? false,
+      ...(rowPresentation ? { rowPresentation } : {}),
       total,
       sortOrder: item.sortOrder ?? 0,
     } as QuotationItem;

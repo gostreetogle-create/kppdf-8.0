@@ -45,6 +45,15 @@ export interface ProposalItem {
   markupPercent?: number;
   discountPercent?: number;
   isOptional?: boolean;
+  /** Visual-only blank settings (TZ-SALES-370). */
+  rowPresentation?: {
+    density?: 'auto' | 'compact' | 'large';
+    emphasis?: 'normal' | 'accent';
+    separatorBefore?: boolean;
+    pageBreakBefore?: boolean;
+    showDescription?: boolean;
+    photoFit?: 'inherit' | 'contain' | 'cover';
+  };
   total?: number;
   sortOrder?: number;
 }
