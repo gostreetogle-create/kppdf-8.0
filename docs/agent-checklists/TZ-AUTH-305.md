@@ -1,50 +1,41 @@
 # TZ-AUTH-305 checklist
 
-> Status: **RESERVED**
+> Status: **IN PROGRESS — PREP ONLY** (deploy blocked)
 > Marker: `tasks/_active/TZ-AUTH-305.md`
-> Commit/push: **NO** unless PO says so
+> Commit/push: **NO deploy**; prep-docs commit allowed
 
 ## Claim slot
 
-- agent_id:
-- claimed_at:
+- agent_id: Buffy (prep) — rollout executor TBD (needs SSH + PO)
+- claimed_at: 2026-08-13T22:15:00Z
 - workspace: D:\kppdf-8.0
-- team_room_claim:
+- team_room_claim: no (room task registry stale)
 
-## Preflight
+## Plan (prep only — «до команды»)
 
-- [ ] TZ-AUTH-303 + TZ-AUTH-304 DONE и browser PASS
-- [ ] Получена явная команда PO `деплой` перед production-действиями
-- [ ] Текущий nginx config сохранён; rollback Basic подготовлен
-- [ ] Wipe/data migration запрещены
+1. Описать целевую nginx-политику `auth_request` + rollback (Шаг 1 из TZ).
+2. Проверить, что `auth_request` путь только через `internal` location; `/api` без Basic/HTML challenge.
+3. Зафиксировать честно: device barrier закрывает UI/login, API остаётся сетево достижимым (JWT/pairing).
+4. Заполнить checklist до состояния «готово к деплою», НЕ переключая nginx.
 
-## Acceptance
+## Acceptance (для актуального переключения — НЕ выполнено, ждёт PO)
 
-- [ ] Basic popup отсутствует после cutover
-- [ ] UI/login закрыты device grant
-- [ ] Enrollment доступен без Basic
-- [ ] Regular pre-role/F5/revoke + second owner-device smoke PASS
-- [ ] JWT/`kppd_`/OPTIONS API regression PASS
-- [ ] Rollback Basic проверен
+- [ ] Основной UI без Basic popup.
+- [ ] Неизвестный браузер не видит `/login` и ERP.
+- [ ] Одноразовая ссылка подключает компьютер без Basic и без app-пароля.
+- [ ] Устройство помнится 365 дней; отдельный revoke.
+- [ ] `/api` без Basic/auth_request redirect; JWT/`kppd_` работают.
+- [ ] Rollback возвращает Basic без wipe и без отката БД.
+- [ ] `nginx -t` PASS · preflight.ps1 PASS · incognito+active+revoked smoke PASS · Desktop/MCP smoke PASS · evidence без secret.
+- [ ] Cursor/PO PASS.
 
-## Integrity slot
+## BLOCKERS (стоп, не деплой)
 
-- [ ] Тип: ops + auth perimeter
-- [ ] FIC §A–Е N/A с причиной
-- [ ] Page docs проверены
-- [ ] Evidence очищен от секретов
-
-## Gates
-
-- [ ] nginx -t
-- [ ] preflight.ps1
-- [ ] incognito + active + revoked browser smoke
-- [ ] Desktop/MCP smoke
-
-## Review handoff
-
-- [ ] READY FOR REVIEW; Cursor/PO PASS до archive
+- PO не сказал явно «деплой» в текущем чате.
+- Нет Cursor/PO browser PASS по новому flow (A–E smoke).
+- Переключение требует SSH на VPS `193.222.62.240` (секреты в gitignored `CREDENTIALS.md`).
 
 ## Executor report (auto)
 
-_(исполнитель заполняет ≤15 строк перед archive)_
+- Prep: см. `docs/ops/home-host-access.md` §4.1 (nginx auth_request политика + rollback) и `deploy/synology/DEPLOY.md` §12 (rollout/rollback runbook).
+- Deploy НЕ выполнялся.

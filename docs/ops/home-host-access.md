@@ -133,6 +133,92 @@ KPPDF — индивидуальный проект для обучения, э�
 Не использовать: организация/корпоратив/сотрудники; «несанкционированный доступ запрещён»; угрозы, штрафы, РКН.  
 Помнить: текст = этикетка, не compliance.
 
+### 4.1 Целевая nginx-политика TZ-AUTH-305 — `auth_request` вместо Basic (PREP, не применено)
+
+> **Статус:** подготовка к деплою. НЕ применено на проде — ждёт явного слова PO
+> `деплой` и Cursor/PO browser PASS по потоку TZ-AUTH-303/304. Rollback-план ниже
+> фиксируется ДО переключения, чтобы откат был одной операцией без wipe.
+
+#### Целевая политика (Шаг 1 из TZ-AUTH-305)
+
+1. UI `/` и SPA-роуты проверяются через nginx `auth_request` по browser device cookie
+   `__Host-kppdf-device` (Secure + HttpOnly + SameSite=Lax, Path=/ — выдаёт
+   TZ-AUTH-303 при потреблении invite).
+2. Subrequest location помечен `internal` и проксируется в cookie-check
+   `GET /api/device/auth-check` (TZ-AUTH-303 boolean gate, без персональных данных,
+   200/401). Снаружи он недоступен напрямую — только как auth_request.
+3. Public enrollment surface допускает только необходимое:
+   - GET shell `/enroll/*` (SPA-страница, GET не consume invite);
+   - POST API `device/enroll` / `device/status` / `device/session` (cookie-only);
+   - необходимые статические assets (main-бандлы, шрифты, robots.txt при желании).
+4. `/api` **не** получает Basic и **не** получает интерактивный browser challenge
+   (`auth_request` без `auth_basic`). JWT (`X-Access-Token`) и Desktop `kppd_`
+   остаются источником API auth; OPTIONS/CORS не получают redirect/Basic.
+5. Честная фиксация: device barrier закрывает UI и `/login`; `/api` остаётся сетево
+   достижимым, но защищён JWT/pairing. Это не VPN-only и не IP-allowlist (см. §3).
+
+#### Ориентировочный nginx-скелет (документация, не применять без `nginx -t`)
+
+```nginx
+# в server { ... 443 ... } конфига kppdf-proxy
+
+# 1) cookie-check только изнутри
+location = /internal/device-check {
+    internal;
+    proxy_pass http://127.0.0.1:4200/api/device/auth-check;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    # пробрасываем cookie устройства в subrequest
+    proxy_set_header Cookie $http_cookie;
+}
+
+# 2) публичная enrollment-поверхность — без auth_request
+location /enroll/ {
+    # отдать SPA index (или статику) без barrier; GET не consume
+    try_files $uri /index.html;
+}
+location = /api/device/enroll   { proxy_pass http://127.0.0.1:4200; }
+location = /api/device/status   { proxy_pass http://127.0.0.1:4200; }
+location = /api/device/session  { proxy_pass http://127.0.0.1:4200; }
+
+# 3) основной UI — за device cookie
+location / {
+    auth_request /internal/device-check;
+    proxy_pass http://127.0.0.1:4200;
+}
+
+# 4) /api — БЕЗ auth_request и БЕЗ auth_basic (JWT/pairing сами закрывают)
+location /api/ {
+    auth_basic off;
+    auth_request off;
+    proxy_pass http://127.0.0.1:4200;
+}
+```
+
+#### Rollback (одна операция, без БД и без wipe)
+
+- Хранить предыдущий рабочий конфиг (с `auth_basic`) как
+  `/etc/nginx/sites-available/kppdf-proxy.bak-auth-basic` ДО переключения.
+- Откат: `cp kppdf-proxy.bak-auth-basic kppdf-proxy && nginx -t && systemctl reload nginx`.
+- Никаких изменений Mongo/data, никаких откатов backend, Desktop или кода — только nginx.
+
+#### Когда переключать (Шаг 2/3 — НЕ сейчас)
+
+1. Только после явного слова PO `деплой`.
+2. Снять Basic с enrollment route первым и подтвердить активацию тестового invite.
+3. Включить `auth_request` на UI; проверить active/revoked и owner-device link.
+4. Только после PASS убрать Basic с основного UI.
+5. Не трогать VM `:3000`, SSH reverse tunnel, DNS, TLS.
+
+#### Smoke (для фактического переключения)
+
+- без cookie `/` и `/login` не открывают ERP;
+- invite GET не consume; regular link + имя → immediate scoped entry;
+- owner-only link → второй браузер того же owner (второй owner не создаётся);
+- F5/закрытие браузера → automatic entry; revoke → доступ гаснет ≤5 мин;
+- expired invite/grant закрыты; Desktop/MCP `kppd_` и JWT API работают;
+- OPTIONS/CORS без redirect/Basic; `nginx -t` + reload без downtime.
+
 ## 5. Фактический мост kppdf-8.0 (канон из deploy)
 
 Source of truth: [`deploy/synology/DEPLOY.md`](../../deploy/synology/DEPLOY.md).
