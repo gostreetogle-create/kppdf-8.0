@@ -1,0 +1,16 @@
+task: TZ-CATALOG-371
+status: DONE
+closed_at: 2026-08-13
+implementation_sha: bd23a4d10273c8a412c9d665d1f3f59200163ac8
+protected_files:
+  - backend/src/modules/product/product.controller.ts
+  - backend/src/modules/product/product.service.ts
+  - backend/src/modules/product/product.service.spec.ts
+  - backend/src/modules/product/dto/duplicate-product.dto.ts
+  - backend/src/modules/product/dto/update-product.dto.ts
+  - frontend/src/app/shared/services/products.service.ts
+  - frontend/src/app/shared/services/products.service.spec.ts
+  - docs/pages/products.page.md
+security: organization scope, DTO whitelist, bounded SKU retry, expectedVersion 409
+review: security/diff review PASS
+production: not executed

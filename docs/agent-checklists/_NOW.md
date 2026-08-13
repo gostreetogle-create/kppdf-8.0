@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-13T23:35:00+03:00
-main_head: `f49a3d00`
+updated_at: 2026-08-13T23:55:00+03:00
+main_head: `bd23a4d1`
 
 ## ACTIVE
 
@@ -22,14 +22,14 @@ main_head: `f49a3d00`
   - rollout требует SSH/VPS и evidence без secrets.
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
-### TZ-CATALOG-371 — CLAIMED / IN PROGRESS
+### TZ-CATALOG-371 — DONE / LANDED
 
-- Marker: `tasks/_active/TZ-CATALOG-371.md`
 - Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
-- Owner: Buffy / predeploy executor
-- State: duplicate API + expectedVersion + typed FE client in progress.
-- Team Room: task not registered; claim attempted and recorded.
-- Conflict keys: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
+- Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
+- State: duplicate API, expectedVersion and typed FE client DONE; archive/lock closeout in progress.
+- Team Room: task not registered; claim attempt recorded in checklist.
+- Active marker removed after closeout; deploy НЕ.
+- Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
 
 ### TZ-SALES-370 — DONE / LANDED
 
@@ -41,8 +41,7 @@ main_head: `f49a3d00`
 
 ## READY / ORDER
 
-1. CATALOG-371 — CLAIMED / IN PROGRESS; closeout before SALES-371.
-2. SALES-371 photo output — after CATALOG-371 DONE in main.
+1. SALES-371 photo output — READY to claim after CATALOG-371 closeout in main.
 3. SALES-372 snapshot edit/catalog resolution — after SALES-370 + SALES-371 + CATALOG-371 DONE in main.
 4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.

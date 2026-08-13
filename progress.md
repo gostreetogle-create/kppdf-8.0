@@ -15,6 +15,17 @@
 **Main SHA:** `f49a3d0037174b9e8dc39d8df7c904172912c69f`
 **Known limit:** реальный A4/photo parity закрывается в TZ-SALES-371; data dependency TZD-47 → MIG-303.
 
+## [2026-08-13] — TZ-CATALOG-371 DONE — безопасная копия изделия
+**Исполнитель:** Buffy / predeploy executor
+**Статус:** DONE; backend + typed frontend client; deploy НЕ
+**Что:** `POST /api/products/:id/duplicate` с organization-scoped source filter, whitelist overrides `name/description/unit/sku`, copiedFromProductId, независимым composition/EAV copy, shared photo/module refs и defaults `stockQty=0`, `status=draft`, `isSystem=false`. Добавлен bounded unique-SKU retry и русский 409 для explicit collision. Product update получил optional `expectedVersion` → 409 без stale overwrite.
+**Gates:** backend tsc PASS; ProductService 16/16; frontend tsc PASS; ProductsService 2/2; changed-file ESLint PASS; architecture:check PASS; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-371.done.md`
+**Checklist:** `docs/agent-checklists/TZ-CATALOG-371.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-371-product-duplicate-api.lock`
+**Implementation SHA:** `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
+**Known limit:** UI copy/rebind action belongs to TZ-SALES-372; photo binaries intentionally remain shared refs; TZ-SALES-371 validates real photo output.
+
 
 ## [2026-08-13] — TZ-AUTH-304 DONE — вход по приглашению (UI)
 **Исполнитель:** agent-3e757640b7 (coding agent) + Buffy (closeout/sessionKind-контракт)

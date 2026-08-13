@@ -1,8 +1,9 @@
 # Checklist TZ-CATALOG-371 — Безопасная копия изделия
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-CATALOG-371.md`
-> Commit/push: canonical `main`; deploy запрещён
+> Status: **DONE**
+> Marker: archived as `tasks/_archive/2026-08/TZ-CATALOG-371.done.md`
+> Commit/push: canonical `main`; implementation pushed; deploy НЕ
+> Implementation SHA: `bd23a4d10273c8a412c9d665d1f3f59200163ac8` (full)
 
 ## Claim slot
 
@@ -52,6 +53,6 @@
 
 ## Closeout
 
-- [ ] archive + lock + progress + remove active marker
-- [ ] commit/push SHA recorded
-- [ ] no deploy
+- [x] archive + lock + progress + remove active marker
+- [x] commit/push SHA recorded: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
+- [x] no deploy
