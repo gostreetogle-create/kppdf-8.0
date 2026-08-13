@@ -1,9 +1,11 @@
 # Checklist TZ-SALES-370 — Настройки вида строки КП
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-SALES-370.md`
-> Commit/push: isolated branch `feature/TZ-SALES-370` only; no main/deploy
-> Stop: **не** archive до Cursor/PO visual PASS
+> Status: **DONE**
+> Marker: archived as `tasks/_archive/2026-08/TZ-SALES-370.done.md`
+> Commit/push: isolated branch `feature/TZ-SALES-370`; merged to main by policy; no deploy
+> Review: Cursor visual PASS (2026-08-13); A4 live evidence provisional per TZ-SALES-371 dependency
+> Implementation SHA: `c08f13735acf956133a16d886e70857e31a1fd91` (full)
+> Integration SHA: `cfcb5e70231de9aacfd3d66c39520d3fbeed2e34` (full)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -17,8 +19,8 @@
 - [x] Get-Location + git rev-parse → worktree `D:\kppdf-8.0\.worktrees\TZ-SALES-370`, branch `feature/TZ-SALES-370`
 - [x] `_active-map.md` + main `_active/`: AUTH-303 на main; conflict keys SALES-370 не пересекаются с AUTH
 - [x] TZ / checklist скопированы в worktree
-- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS → READY FOR REVIEW
-- [x] `tasks/_active/TZ-SALES-370.md` на месте
+- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS → DONE
+- [x] `tasks/_active/TZ-SALES-370.md` на месте до closeout; marker removed after archive
 - [x] Team Room join/inbox/status OK; claim failed (task not registered)
 
 ## Product contract
@@ -52,7 +54,7 @@
 
 - [x] Light / dark / narrow (+ DOM): `docs/agent-checklists/evidence/TZ-SALES-370/`
 - [x] A4 live sheet: blocked in this DB (templates picker empty); PDF/print HTML covered by `table-template.service.spec`
-- [ ] PO/Cursor review: **pending visual PASS**
+- [x] PO/Cursor review: **PASS** (light/dark/narrow visual review 2026-08-13; A4 live template fixture gap accepted as provisional and delegated to TZ-SALES-371)
 
 ## Gates
 
@@ -61,7 +63,7 @@
 - [x] backend tsc — PASS
 - [x] quotation **35** / table-template **4** / quotation-output **3** jest — PASS
 - [x] architecture:check — PASS
-- [x] git diff --check — PASS
+- [x] git diff --check — PASS (also rerun after origin/main integration)
 
 ## Integrity slot (до READY / archive)
 
@@ -69,13 +71,17 @@
 - [x] FIC: self-check OK (commerce stays inline; width in header; no TableTemplate write; enums only)
 - [x] page.md update: `docs/pages/proposals-create.page.md` (+370 note)
 - [x] Чужой AUTH WIP не в коммите
+- [x] Канон: `docs/DOCS-INTEGRITY.md`
 
 ## Review handoff
 
-- [x] READY FOR REVIEW после gates + browser evidence
-- [x] **Не** archive до Cursor/PO visual PASS
+- [x] READY FOR REVIEW after gates + browser evidence
+- [x] Cursor visual verdict PASS; A4 limitation explicitly handed to TZ-SALES-371
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress
-- closed_at: _
+- [x] archive + lock + progress + active marker removed
+- closed_at: 2026-08-13
+- archive: `tasks/_archive/2026-08/TZ-SALES-370.done.md`
+- lock: `.mimocode/locks/TZ-SALES-370-kp-row-layout-drawer.lock`
+- closeout owner: Buffy
