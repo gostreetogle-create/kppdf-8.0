@@ -81,15 +81,34 @@ IP allowlist — только запасной костыль, не страте
 
 **Факт по репо:** мост = **VPS `193.222.62.240` + nginx + SSH reverse tunnel** → VM `192.168.1.103` (не Cloudflare Tunnel). См. §5–§6.
 
+### Вердикт PO 2026-08-13 — один метод внешнего замка
+
+**Нужно:** раздать «ключ» ~10 людям → один раз в браузере → дальше без подъезда Basic → внутри ERP обычный login + роли.
+
+| Кандидат | Вердикт |
+|----------|---------|
+| SSH-ключ в браузер | **Нет** — SSH ≠ HTTP |
+| htaccess / HTTP Basic | **Снять с UI**, когда будет замена — попапы портят UX; ломал Desktop `Authorization` |
+| **Клиентский сертификат (mTLS) на VPS nginx** | **Выбран сейчас** — «выдал `.p12` → поставил раз → браузер сам предъявляет» |
+| Tailscale | Цель «сайт не публичный»; это устройство в сети, не ключ в браузере — этап 2 |
+| Cloudflare Access | Только если переедем на CF Tunnel |
+
+**Слои после перехода:** (1) mTLS на nginx VPS без Basic на `/` · (2) `/api/` без Basic, Nest JWT/Desktop · (3) app-login + роли внутри.
+
+Выдача: PKCS#12 (+ PIN импорта) на человека/устройство; ушёл сотрудник → отзыв в CA. Новый браузер/телефон → импорт снова.
+
+### Что уже сделано / очередь
+
 1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401 на HTML/UI.
    **Уточнение 2026-08-11:** `location /api/` — `auth_basic off` (Nest JWT/pairing сам закрывает API; иначе Desktop/Tauri ловит `Failed to fetch` из‑за CORS/Basic). OPTIONS тоже без Basic (preflight). UI `/` по-прежнему за подъездом.
 2. **Сделано 2026-08-11 (TZ-OPS-310):** SUID/SGID inventory VPS+VM, порты, UFW, tunnel, htpasswd 640 — evidence `docs/ops/server-harden-evidence.md`, archive `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
    Gate деплоя: `deploy/synology/preflight.ps1` требует этот archive. Warm deploy только по слову PO **«деплой»**.
    Spec (история): `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
-3. **Дальше по желанию:** Tailscale на VM/Synology (чеклист §7).
+3. **NEXT (доступ):** mTLS на VPS nginx + снятие Basic с UI + инструкция импорта `.p12` — по слову PO («делай доступ» / отдельный TZ).
 4. App-login (`authGuard`) — второй слой (роли ERP), не единственный.
 5. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».
 6. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
+7. Tailscale (§7) — этап «совсем не публичный»; не путать с ключом в браузере.
 
 
 ### Текст на временной заглушке / notice (канон)
