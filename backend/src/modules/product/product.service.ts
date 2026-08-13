@@ -6,6 +6,7 @@ import { Category, CategoryDocument } from '../category/category.schema';
 import { InjectModel as InjectCategoryModel } from '@nestjs/mongoose';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { DuplicateProductDto } from './dto/duplicate-product.dto';
 import { Product, ProductDocument } from './product.schema';
 import { ProductModule as ProductModuleEntity, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
@@ -70,7 +71,7 @@ export class ProductService {
 
   async update(id: string, dto: UpdateProductDto, organizationId?: string | null): Promise<ProductDocument> {
     const doc = await this.findActive(id, organizationId);
-    const { attributes, ...rest } = dto;
+    const { attributes, expectedVersion, ...rest } = dto;
     if (dto.sku !== undefined) rest.sku = this.normalizeRequiredCode(dto.sku, 'Артикул изделия');
 
     // findOneAndUpdate — не doc.save(): массив photoIds + legacy optimisticLockPlugin
@@ -88,7 +89,12 @@ export class ProductService {
     try {
       const updated = await this.model
         .findOneAndUpdate(
-          { _id: doc._id, deletedAt: null, ...this.organizationFilter(organizationId) },
+          {
+            _id: doc._id,
+            deletedAt: null,
+            ...this.organizationFilter(organizationId),
+            ...(expectedVersion === undefined ? {} : { __v: expectedVersion }),
+          },
           { $set, $inc: { __v: 1 } },
           { new: true, runValidators: true },
         )
@@ -115,6 +121,73 @@ export class ProductService {
       await this.eav.resolveAttributes('Product', saved._id, attributes, catId);
     }
     return saved;
+  }
+
+  async duplicate(id: string, overrides: DuplicateProductDto = {}, organizationId?: string | null): Promise<ProductDocument> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Product ${id} not found`);
+    const source = await this.model
+      .findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.duplicateOrganizationFilter(organizationId) })
+      .exec();
+    if (!source) throw new NotFoundException(`Product ${id} not found`);
+
+    const sourceName = source.name?.trim() || source.sku;
+    const name = overrides.name?.trim() || (await this.nextDuplicateName(sourceName, organizationId));
+    const explicitSku = overrides.sku?.trim();
+    let sku = explicitSku || (await this.nextDuplicateSku(source.sku, organizationId));
+    const sourceCategoryId = source.categoryId
+      ? new Types.ObjectId(String(source.categoryId))
+      : undefined;
+    const payload: Record<string, unknown> = {
+      name,
+      sku,
+      kind: source.kind,
+      unit: overrides.unit?.trim() || source.unit,
+      categoryId: sourceCategoryId,
+      subcategory: source.subcategory,
+      listPrice: source.listPrice,
+      basePrice: source.basePrice,
+      costPrice: source.costPrice,
+      defaultMarkupPercent: source.defaultMarkupPercent,
+      description: overrides.description ?? source.description,
+      notes: source.notes,
+      photoIds: [...(source.photoIds ?? [])],
+      dimensions: source.dimensions ? { ...source.dimensions } : undefined,
+      weightKg: source.weightKg,
+      ralCode: source.ralCode,
+      hasPassport: source.hasPassport,
+      hasDrawing: source.hasDrawing,
+      purpose: source.purpose,
+      installation: source.installation,
+      productModuleIds: [...(source.productModuleIds ?? [])],
+      composition: this.cloneComposition(source.composition),
+      copiedFromProductId: source._id,
+      stockQty: 0,
+      status: 'draft',
+      isActive: true,
+      isSystem: false,
+      ...(source.organizationId ? { organizationId: source.organizationId } : {}),
+    };
+
+    let created: ProductDocument | undefined;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        created = await this.model.create(payload);
+        break;
+      } catch (err) {
+        if ((err as { code?: number })?.code !== 11000 || explicitSku || attempt === 3) {
+          this.rethrowDuplicateSku(err);
+        }
+        sku = await this.nextDuplicateSku(source.sku, organizationId, attempt + 2);
+        payload.sku = sku;
+      }
+    }
+    if (!created) throw new ConflictException('Не удалось создать копию изделия');
+
+    const attributes = await this.eav.loadAttributes('Product', source._id);
+    if (Object.keys(attributes).length > 0) {
+      await this.eav.resolveAttributes('Product', created._id, attributes, sourceCategoryId);
+    }
+    return created;
   }
 
   async getTree(id: string, maxDepth = 8, organizationId?: string | null) { await this.findActive(id, organizationId); return this.catalogGraph.getTree('product', id, maxDepth); }
@@ -164,7 +237,52 @@ export class ProductService {
     throw err;
   }
   private organizationFilter(organizationId?: string | null): Record<string, unknown> { if (!organizationId) return {}; if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope'); const id = new Types.ObjectId(organizationId); return { $or: [{ organizationId: id }, { organizationId: null }, { organizationId: { $exists: false } }] }; }
+  private duplicateOrganizationFilter(organizationId?: string | null): Record<string, unknown> {
+    if (organizationId) {
+      if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope');
+      return { organizationId: new Types.ObjectId(organizationId) };
+    }
+    return { $or: [{ organizationId: null }, { organizationId: { $exists: false } }] };
+  }
   private organizationWrite(organizationId?: string | null): Record<string, unknown> { if (!organizationId) return {}; if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope'); return { organizationId: new Types.ObjectId(organizationId) }; }
   private versionedCompositionFilter(doc: ProductDocument): Record<string, unknown> { return { _id: doc._id, $or: [{ __v: doc.__v ?? 0 }, { __v: { $exists: false } }] }; }
   private plainCompositionLine(line: CompositionLineDocumentShape): CompositionLineDocumentShape { return { _id: line._id, lineType: line.lineType, refId: line.refId, quantity: Number(line.quantity), sortOrder: Number(line.sortOrder ?? 0), unit: line.unit, overrideDimensions: line.overrideDimensions, isPurchased: line.isPurchased, sourcePosition: line.sourcePosition, sourceCode: line.sourceCode, notes: line.notes }; }
+  private cloneComposition(lines: Product['composition']): CompositionLineDocumentShape[] {
+    return (lines ?? []).map((line) => {
+      const candidate = line as CompositionLineDocumentShape & {
+        toObject?: () => CompositionLineDocumentShape;
+      };
+      const plain = candidate.toObject ? candidate.toObject() : candidate;
+      const { _id: _sourceLineId, ...copy } = plain;
+      void _sourceLineId;
+      return copy as CompositionLineDocumentShape;
+    });
+  }
+  private async nextDuplicateName(sourceName: string, organizationId?: string | null): Promise<string> {
+    const base = sourceName.replace(/\s— копия(?: \d+)?$/u, '').trim();
+    const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rows = await this.model.find({
+      deletedAt: null,
+      ...this.duplicateOrganizationFilter(organizationId),
+      name: new RegExp(`^${escaped} — копия(?: \\d+)?$`, 'u'),
+    }).select('name').lean().exec();
+    const used = new Set(rows.map((row) => String(row.name ?? '')));
+    const first = `${base} — копия`;
+    if (!used.has(first)) return first;
+    let suffix = 2;
+    while (used.has(`${base} — копия ${suffix}`)) suffix += 1;
+    return `${base} — копия ${suffix}`;
+  }
+  private async nextDuplicateSku(sourceSku: string, organizationId?: string | null, startAt = 1): Promise<string> {
+    const escaped = sourceSku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rows = await this.model.find({
+      deletedAt: null,
+      ...this.duplicateOrganizationFilter(organizationId),
+      sku: new RegExp(`^${escaped}-COPY-\\d+$`, 'i'),
+    }).select('sku').lean().exec();
+    const used = new Set(rows.map((row) => String(row.sku ?? '').toUpperCase()));
+    let suffix = Math.max(1, startAt);
+    while (used.has(`${sourceSku}-COPY-${suffix}`.toUpperCase())) suffix += 1;
+    return `${sourceSku}-COPY-${suffix}`;
+  }
 }

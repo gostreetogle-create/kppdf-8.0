@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-13T22:40:00+03:00
-main_head: `f1ead23e`
+updated_at: 2026-08-13T23:35:00+03:00
+main_head: `f49a3d00`
 
 ## ACTIVE
 
@@ -22,24 +22,30 @@ main_head: `f1ead23e`
   - rollout требует SSH/VPS и evidence без secrets.
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
-### TZ-SALES-370 — ISOLATED COMMIT, NOT IN MAIN
+### TZ-CATALOG-371 — CLAIMED / IN PROGRESS
 
-- Worktree: `.worktrees/TZ-SALES-370`
+- Marker: `tasks/_active/TZ-CATALOG-371.md`
+- Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
+- Owner: Buffy / predeploy executor
+- State: duplicate API + expectedVersion + typed FE client in progress.
+- Team Room: task not registered; claim attempted and recorded.
+- Conflict keys: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
+
+### TZ-SALES-370 — DONE / LANDED
+
 - Branch: `feature/TZ-SALES-370`
-- HEAD: `c08f1373` (`feat(sales): add KP row layout drawer`)
-- State: worktree clean; Cursor visual/code audit = conditional PASS.
-- Before main: update from main, rerun focused gates, archive/lock/progress,
-  remove active marker; live A4 evidence is delegated to SALES-371.
-- Conflict keys: `proposal-create*`, quotation output/schema/dto, page docs.
+- Implementation: `c08f1373`; closeout: `d1e97c1c`; main: `f49a3d00` (full SHAs in archive/checklist)
+- State: Cursor visual PASS; A4 fixture limitation delegated to SALES-371.
+- Archive/lock/checklist landed; active marker removed; deploy НЕ.
+- Conflict keys released: `proposal-create*`, quotation output/schema/dto, page docs.
 
 ## READY / ORDER
 
-1. AUTH-305 rollout — только после явного `деплой`.
-2. AUTH-307 cleanup — только после PASS cutover/rollback evidence.
-3. Review/merge SALES-370; пока не merged, не брать SALES-371/372.
-4. SALES-371 photo output — после merged SALES-370.
-5. CATALOG-371 product duplicate API — отдельная capability, брать при свободном втором слоте.
-6. SALES-372 snapshot edit/catalog resolution — после SALES-370/371 + CATALOG-371.
+1. CATALOG-371 — CLAIMED / IN PROGRESS; closeout before SALES-371.
+2. SALES-371 photo output — after CATALOG-371 DONE in main.
+3. SALES-372 snapshot edit/catalog resolution — after SALES-370 + SALES-371 + CATALOG-371 DONE in main.
+4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
@@ -53,7 +59,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 ## GLOBAL BLOCKERS / BANS
 
 - Wave AUTH = 3/5, не DONE.
-- SALES-371 / CATALOG-371 / SALES-372 = spec-only, executor ещё не запускался.
+- SALES-371 / SALES-372 remain queued; CATALOG-371 is claimed and in progress.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.

@@ -22,6 +22,13 @@ export interface ProductDimensions {
   unit?: string;
 }
 
+export interface ProductDuplicateOverrides {
+  name?: string;
+  description?: string;
+  unit?: string;
+  sku?: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -64,6 +71,10 @@ export interface Product {
   attributes?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
+  /** Mongoose optimistic version; returned for conflict-safe explicit sync. */
+  __v?: number;
+  version?: number;
+  copiedFromProductId?: string;
 }
 
 export interface ProductsListResponse {
@@ -118,8 +129,18 @@ export class ProductsService {
     return silentPost<Product>(this.http, `${this.baseUrl}/products`, payload);
   }
 
-  update(id: string, payload: Partial<Product>): Observable<SilentResult<Product>> {
+  update(
+    id: string,
+    payload: Partial<Product> & { expectedVersion?: number },
+  ): Observable<SilentResult<Product>> {
     return silentPatch<Product>(this.http, `${this.baseUrl}/products/${id}`, payload);
+  }
+
+  duplicate(
+    id: string,
+    overrides: ProductDuplicateOverrides = {},
+  ): Observable<SilentResult<Product>> {
+    return silentPost<Product>(this.http, `${this.baseUrl}/products/${id}/duplicate`, overrides);
   }
 
   remove(id: string): Observable<SilentResult<void>> {

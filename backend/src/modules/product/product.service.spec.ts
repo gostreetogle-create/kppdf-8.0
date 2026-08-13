@@ -142,6 +142,134 @@ describe('TZ-CATALOG-339 — product.update photoIds via findOneAndUpdate', () =
   });
 });
 
+describe('TZ-CATALOG-371 — Product duplicate API', () => {
+  function buildDuplicateService(model: Record<string, unknown>, eav: Record<string, unknown>) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      eav as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  function queryChain<T>(value: T) {
+    return {
+      select: jest.fn(() => ({ lean: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(value) })) })),
+    };
+  }
+
+  it('duplicates a scoped Product with independent composition and copied EAV refs', async () => {
+    const sourceId = new Types.ObjectId();
+    const createdId = new Types.ObjectId();
+    const organizationId = new Types.ObjectId().toString();
+    const photoId = new Types.ObjectId();
+    const source = {
+      _id: sourceId,
+      name: 'Стол',
+      sku: 'TABLE-1',
+      kind: 'good',
+      unit: 'шт',
+      categoryId: new Types.ObjectId(),
+      listPrice: 100,
+      basePrice: 80,
+      costPrice: 50,
+      defaultMarkupPercent: 30,
+      description: 'Исходное описание',
+      notes: 'Заметка',
+      photoIds: [photoId],
+      dimensions: { length: 10, unit: 'см' },
+      productModuleIds: [new Types.ObjectId()],
+      composition: [{ _id: new Types.ObjectId(), lineType: 'material', refId: new Types.ObjectId(), quantity: 2, sortOrder: 0, unitPriceOverride: 77 }],
+      organizationId: new Types.ObjectId(organizationId),
+      isActive: true,
+    };
+    const created = { ...source, _id: createdId, sku: 'TABLE-1-COPY-1', name: 'Стол — копия', copiedFromProductId: sourceId };
+    const model = {
+      findOne: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(source) })),
+      find: jest.fn(() => queryChain([])),
+      create: jest.fn().mockResolvedValue(created),
+    };
+    const eav = {
+      loadAttributes: jest.fn().mockResolvedValue({ Цвет: 'Белый' }),
+      resolveAttributes: jest.fn().mockResolvedValue({}),
+    };
+    const service = buildDuplicateService(model, eav);
+
+    const result = await service.duplicate(sourceId.toString(), { description: 'Описание копии' }, organizationId);
+
+    expect(result).toBe(created);
+    expect(model.findOne).toHaveBeenCalledWith(expect.objectContaining({
+      _id: sourceId,
+      organizationId: new Types.ObjectId(organizationId),
+      deletedAt: null,
+    }));
+    const payload = (model.create as jest.Mock).mock.calls[0][0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      name: 'Стол — копия',
+      sku: 'TABLE-1-COPY-1',
+      description: 'Описание копии',
+      stockQty: 0,
+      status: 'draft',
+      isActive: true,
+      isSystem: false,
+      copiedFromProductId: sourceId,
+    });
+    expect(payload.photoIds).toEqual([photoId]);
+    expect(payload.productModuleIds).not.toBe(source.productModuleIds);
+    expect(payload.composition).not.toBe(source.composition);
+    expect((payload.composition as Array<{ unitPriceOverride?: number }>)[0]?.unitPriceOverride).toBe(77);
+    expect(eav.resolveAttributes).toHaveBeenCalledWith('Product', createdId, { Цвет: 'Белый' }, source.categoryId);
+  });
+
+  it('turns an explicitly occupied SKU into a 409 without retrying another SKU', async () => {
+    const sourceId = new Types.ObjectId();
+    const source = { _id: sourceId, name: 'Стол', sku: 'TABLE-1', kind: 'good', unit: 'шт', photoIds: [], productModuleIds: [], composition: [] };
+    const model = {
+      findOne: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(source) })),
+      find: jest.fn(() => queryChain([])),
+      create: jest.fn().mockRejectedValue({ code: 11000 }),
+    };
+    const service = buildDuplicateService(model, { loadAttributes: jest.fn().mockResolvedValue({}) });
+
+    await expect(service.duplicate(sourceId.toString(), { sku: 'TAKEN' })).rejects.toMatchObject({ constructor: ConflictException });
+    expect(model.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not disclose a source from another organization', async () => {
+    const sourceId = new Types.ObjectId();
+    const model = {
+      findOne: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(null) })),
+      find: jest.fn(() => queryChain([])),
+      create: jest.fn(),
+    };
+    const service = buildDuplicateService(model, { loadAttributes: jest.fn() });
+
+    await expect(service.duplicate(sourceId.toString(), {}, new Types.ObjectId().toString())).rejects.toMatchObject({ constructor: expect.any(Function) });
+    expect(model.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('TZ-CATALOG-371 — expectedVersion update', () => {
+  it('filters by expectedVersion and returns 409 without mutation on stale source', async () => {
+    const id = new Types.ObjectId();
+    const execFind = jest.fn().mockResolvedValue({ _id: id, __v: 3, photoIds: [] });
+    const execUpdate = jest.fn().mockResolvedValue(null);
+    const model = {
+      findOne: jest.fn(() => ({ exec: execFind })),
+      findOneAndUpdate: jest.fn(() => ({ exec: execUpdate })),
+    };
+    const service = new ProductService(model as never, {} as never, {} as never, {} as never, {} as never, {} as never, {} as never, {} as never);
+
+    await expect(service.update(id.toString(), { description: 'stale', expectedVersion: 2 } as never)).rejects.toMatchObject({ constructor: ConflictException });
+    expect((model.findOneAndUpdate as jest.Mock).mock.calls[0][0]).toEqual(expect.objectContaining({ __v: 2 }));
+    expect(execUpdate).toHaveBeenCalled();
+  });
+});
+
 describe('TZ-CATALOG-305 — child Product independence', () => {
   it('composition ref does not mutate child listPrice', () => {
     const childProduct = { _id: new Types.ObjectId(), name: 'Child', listPrice: 500, basePrice: 300 };

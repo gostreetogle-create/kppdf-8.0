@@ -21,6 +21,7 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/products` | Список (page/limit/search/sortBy/sortOrder) |
+| POST | `/api/products/:id/duplicate` | Безопасная копия изделия в scope организации; optional overrides: name/description/unit/sku (TZ-CATALOG-371) |
 | GET | `/api/products/:id/composition` | Состав (dual-read: composition, иначе legacy productModuleIds) |
 | POST | `/api/products/:id/composition` | Добавить/upsert линию состава (TZ-CATALOG-302/317) |
 | PATCH | `/api/products/:id/composition/:lineId` | Обновить линию (quantity и др.) |
@@ -39,6 +40,12 @@
 
 `sku` — обязательный артикул изделия, уникальный внутри организации; пустые и пробельные значения отклоняются до сохранения, а конфликт возвращается как HTTP 409 с сообщением «Артикул уже используется». `name` необязательно: список и detail показывают `sku` как fallback, если название пустое. Старые строки без артикула остаются читаемыми и требуют backfill перед редактированием с изменением `sku`.
 
+## Safe product duplicate (TZ-CATALOG-371)
+
+`POST /api/products/:id/duplicate` выполняется внутри scope текущей организации и возвращает новый `Product` с `copiedFromProductId`, новым collision-safe SKU и независимыми embedded composition/EAV values. Фото, category и module refs остаются ссылками на существующие сущности; binary assets не копируются. По умолчанию копия получает имя `<имя> — копия`, `stockQty=0`, `status=draft`, `isActive=true`, `isSystem=false`. Явно занятый SKU даёт HTTP 409; archived/deleted/cross-organization source не раскрывается.
+
+`PATCH /api/products/:id` принимает необязательный `expectedVersion`; при stale `__v` возвращается HTTP 409 без записи. Старые callers без этого поля сохраняют прежний контракт. UI не меняет Product на blur: этот typed client предназначен для явных решений snapshot workflow TZ-SALES-372.
+
 ## Dialogs
 
 | Компонент | Режим | Данные |
@@ -51,7 +58,7 @@
 
 | Сервис | Методы |
 |--------|--------|
-| `ProductsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `ProductsService` | `list(params)`, `findById(id)`, `create(payload)`, `update(id, payload)`, `duplicate(id, overrides?)`, `remove(id)` |
 | `ProductModulesService` | `getProductComposition(id)`, `addProductCompositionLine(id, dto)`, `updateProductCompositionLine(id, lineId, dto)`, `removeProductCompositionLine(id, lineId)` (composition CRUD) |
 | `ProductModulesService` (deprecated) | `attachToProduct` / `detachFromProduct` — бросают ошибку (TZ-CATALOG-317) |
 

@@ -1,6 +1,21 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-13] — TZ-SALES-370 DONE — настройки вида строки КП
+**Исполнитель:** Buffy (closeout) / isolated `feature/TZ-SALES-370`
+**Статус:** DONE; frontend + backend; deploy НЕ
+**Что:** Row-level drawer с типизированным `rowPresentation` для density, accent, separator, page-break, description visibility и photo fit. Настройки сохраняются в строке КП, применяются в live table/HTML/PDF path и сохраняют коммерческие поля видимыми; backward defaults и enum validation защищают старые КП.
+**Gates:** frontend tsc PASS; proposal-create Jest 42/42; backend tsc PASS; quotation 35/35, table-template 4/4, quotation-output 3/3; architecture:check PASS; git diff --check PASS до и после интеграции origin/main.
+**Review:** Cursor visual PASS 2026-08-13 для light/dark/narrow; live A4 template fixture пуст, provisional evidence принята и передана TZ-SALES-371.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-370.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-370.md`
+**Lock:** `.mimocode/locks/TZ-SALES-370-kp-row-layout-drawer.lock`
+**Implementation SHA:** `c08f13735acf956133a16d886e70857e31a1fd91`
+**Closeout SHA:** `d1e97c1c` on `origin/feature/TZ-SALES-370`
+**Main SHA:** `f49a3d0037174b9e8dc39d8df7c904172912c69f`
+**Known limit:** реальный A4/photo parity закрывается в TZ-SALES-371; data dependency TZD-47 → MIG-303.
+
+
 ## [2026-08-13] — TZ-AUTH-304 DONE — вход по приглашению (UI)
 **Исполнитель:** agent-3e757640b7 (coding agent) + Buffy (closeout/sessionKind-контракт)
 **Статус:** DONE; frontend; deploy НЕ
