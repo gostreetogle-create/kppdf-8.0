@@ -1,5 +1,8 @@
 # STATUS — KPPDF ERP Project Status
 
+> **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
+> `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
+
 ## [2026-08-12] — TZD-46 DONE: Desktop ZIP semver в имени файла (+ deploy publish)
 **Статус:** DONE; desktop publish + deploy scripts + FE URL + docs; deploy НЕ
 **Что:** publish-installer.mjs публикует `kppdf-desktop-setup-v{semver}.zip/.exe` (semver из package.json, assert == tauri.conf.json, FAIL при расхождении) + unversioned aliases тех же байт; NSIS `0.1.0` хардкод убран (candidate versioned, legacy = fallback WARN). deploy.py `publish_desktop_installer` зеркалит схему. FE default остаётся alias (вариант A), деплой инжектит versioned через meta `DESKTOP_DOWNLOAD_URL`; pairing показывает semver. INSTALL/PAIRING — канон имён.

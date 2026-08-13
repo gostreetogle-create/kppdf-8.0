@@ -9,7 +9,7 @@ Owner один и скрыт, но может создать короткую с
 ## Канон
 
 - `docs/ops/home-host-access.md` §4
-- `docs/PO-DIARY.md` §1–§4
+- `docs/PO-CANON.md`
 - Desktop `kppd_` не менять
 - IP binding / mTLS / Cloudflare / Tailscale вне этой волны
 - password login owner сохраняется как break-glass
@@ -42,9 +42,10 @@ Owner один и скрыт, но может создать короткую с
 
 ## Continuous / resume
 
-- После каждой TZ: gates → review → archive/lock/progress → commit+push → checkpoint → следующая.
+- После каждой TZ: gates → review → archive/lock/progress → commit+push → `_NOW` → следующая.
 - Для большого зелёного подэтапа: отдельный mid-commit+push и запись в checklist.
-- При обрыве новый агент читает `origin/main`, верх `_active-map`, `tasks/_active/<ID>.md` и checklist; продолжает с первого незакрытого пункта, не начинает заново.
+- При обрыве новый агент читает `origin/main`, `_NOW.md`,
+  `tasks/_active/<ID>.md` и checklist; продолжает с первого незакрытого пункта.
 - Один и тот же handoff: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 - Не коммитить `ruvector.db`, `__pycache__` или чужой WIP.
 

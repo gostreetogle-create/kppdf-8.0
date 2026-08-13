@@ -8,7 +8,8 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
-| **0 ACCESS READY** | Вход по именованному компьютеру без пароля | `WAVE-AUTH-DEVICE-ACCESS.md` · `PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md` · 306→303→304→305→307 | **PO ДА 2026-08-13**; deploy только отдельно |
+| **0 ACCESS PREP** | Вход по именованному компьютеру без пароля | `WAVE-AUTH-DEVICE-ACCESS.md` · `PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md` · 306→303→304→305→307 | **3/5**; 305 требует deploy+smoke, 307 после cutover |
+| **0 PREDEPLOY** | КП: row drawer → real photo → safe copy/edit | `tasks/PROMPT-PREDEPLOY-FINISH.md` · 370 → CATALOG-371 + 371 → 372 | 370 branch READY FOR CLOSEOUT; остальные spec-only |
 | **0 READY** | MIG-302 scoped MCP load (без фото/email/бренд) | `PROMPT-KP3-MIG-302.md` | **PO ДА 2026-08-12** |
 | **0a READY** | Desktop ZIP с semver в имени | `TZD-46` · `PROMPT-TZD-46-ZIP-VERSION.md` | код; деплой later |
 | **0b next** | MCP photo upload → attach KP3 photos | TZD-47 → MIG-303 | после 302 / parallel tool |
@@ -25,7 +26,7 @@
 | — | 320 пачка бланков | `_park` | PARK |
 | **НАПОМИНАНИЕ** | **Паспорта изделий** в Сделках (после Заказов): аудит Google Sheets → таблица на сайте → импорт + связь с Product | `sales/WAVE-PRODUCT-PASSPORTS.md` | **PARK** до ссылки PO на таблицу |
 
-**Канон:** idle — **TZD-46** (PO боль «скачал 0.5 / нет версии в zip»), иначе MIG-301, иначе 369.  
+**Канон текущего состояния:** `docs/agent-checklists/_NOW.md`.
 На вопрос «что осталось / завтра» — не забывать **паспорта изделий** (`WAVE-PRODUCT-PASSPORTS`).  
 Wipe запрещён без русского подтверждения. Deploy — только по слову PO **и** VPN off.
 

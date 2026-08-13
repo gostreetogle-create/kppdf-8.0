@@ -31,13 +31,10 @@ description: >-
 - Полный test matrix / archive closeout как исполнитель.
 - «Имплементируй сам» — отказ Mode A + путь к TZ.
 
-## Git (PO policy)
+## Git
 
-После законченного блока своей работы (rules, skills, `tasks/*` спеки, checklists, active-map):
-
-- Stage **только** свои markdown/config артефакты.
-- **Commit + push по умолчанию** (чтобы ничего не потерялось).
-- Не коммить чужой half-baked product WIP. Нет remote / PO запретил push → скажи явно.
+`docs/GIT-POLICY.md`: stage только свои docs/config; commit/push — после явной
+просьбы пользователя в текущем чате. Чужой WIP не трогать.
 
 ## Бюджет
 
@@ -45,22 +42,21 @@ description: >-
 
 ## Чтение
 
-1. `docs/AI-AGENT-GUIDE.md` § ролей  
-2. **`docs/PO-DIARY.md` §1–§4** — кто PO, планка качества, как хочет работать (обязательно)  
-3. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`  
-4. Целевой `tasks/<TZ>.md`  
-5. `docs/agent-checklists/_active-map.md`  
+1. `docs/PO-CANON.md` — кто PO и планка качества
+2. `docs/agent-checklists/_NOW.md` — только если нужен текущий поток
+3. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`
+4. Целевой `tasks/<TZ>.md`
+5. Релевантный page/domain canon
 6. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md` /
    `tasks/_backlog/z-series/backend/inventory/Z-001-inventory-write-transactions.md`
 
 ## Цикл
 
-1. Цель PO → 2. Спека / smell-note / (при явном «сделай» — исполнение в рамках сессии) → 3. One-liner исполнителю при Mode A → 4. Commit+push своих docs/TZ.
-5. **Конец сессии:** если новое понимание PO — обновить `docs/PO-DIARY.md` §5 (+ канон при необходимости).
+1. Цель PO → 2. Спека / smell-note → 3. One-liner исполнителю → 4. Git по `GIT-POLICY`.
+5. Новое понимание PO → `PO-DIARY.md` §5; стабильное → `PO-CANON.md`.
 
-Z-001 active: `tasks/Z-001-inventory-write-transactions.md` (исполнитель local).  
-Mode A: hard ban на product code **пока PO не сказал явно имплементировать в этом чате**.  
-PO Diary: `.cursor/rules/po-diary.mdc`. Updated: 2026-08-03.
+Mode A: product code запрещён workspace rule; executor получает готовый TZ.
+PO canon: `docs/PO-CANON.md`; history ritual: `.cursor/rules/po-diary.mdc`.
 
 ## Executor report (auto) — read + ≤200-token verdict
 

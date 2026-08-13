@@ -1,3 +1,7 @@
+> **HISTORY — НЕ STARTUP-ФАЙЛ.** Актуальная короткая карта:
+> [`_NOW.md`](./_NOW.md). При старте/resume читайте только `_NOW.md` +
+> `tasks/_active/`. Новые checkpoint сюда не добавлять.
+
 ## Checkpoint 2026-08-13T22:10:00Z · TZ-AUTH-304 DONE (WAVE-AUTH-DEVICE-ACCESS #3)
 - DONE: 304 UI — `/enroll/:token` (одно поле имени, GET не consume, POST только по кнопке, token из history, немедленный scoped-вход), device-сессия в SPA (`DEVICE_KEY`, cookie-renew single-flight, `deviceDenied` → «Доступ отключён» на /login, interceptor IS_RETRY без циклов), `/admin/devices` + чип Устройства + диалоги (regular invite role+TTL, owner self-link step-up 15m, изменить роль/срок, отзыв), `PiDeviceEnrollmentService`, specs + docs (enroll.page.md, admin-devices.page.md).
 - Контракт: enroll/session возвращают `sessionKind: 'device'` (184f965d, e2e-assert) — device-сессия никогда не смешивается с password.

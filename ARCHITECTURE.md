@@ -1,6 +1,8 @@
 # Architecture — kppdf-8.0
 
 > Корневой архитектурный документ.
+> **Не читать целиком при startup.** Сначала `docs/PROJECT-MEMORY.md` и
+> `docs/DOMAIN-MAP.md`, затем только релевантную секцию/модуль.
 
 **Быстрая карта доменов:** `docs/DOMAIN-MAP.md` (домен → BE module → FE route → page.md → SoT docs).
 

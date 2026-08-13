@@ -1,6 +1,6 @@
 # Вечный resume — любой обрыв исполнителя
 
-**Для PO:** исполнитель = **Cursor Agent или Freebuff**.  
+**Для PO:** исполнитель = **Cursor Agent**.
 Вставьте блок `text` ниже **целиком**. Не дописывайте историю вечера. Состояние — из git / `origin/main`.
 
 Тот же промпт = старт волны, если `_active/` пуст, но в QUEUE/WAVE ещё есть READY.
@@ -12,23 +12,22 @@
 ```text
 Ты — непрерывный исполнитель kppdf-8.0.
 Цель правды: origin/main.
-Skills: .agents/skills/kppdf-executor-continuous/SKILL.md + GEMINI.md + OrchestratorKit/AGENTS.md
-PO-канон: docs/PO-DIARY.md §1–§4
-Карта: docs/agent-checklists/_active-map.md · tasks/_backlog/QUEUE.md · docs/PO-AGENT-FLOW.md
+Skills: .agents/skills/kppdf-executor-loop/SKILL.md + GEMINI.md
+PO-канон: docs/PO-CANON.md
+Карта: docs/agent-checklists/_NOW.md · tasks/_backlog/QUEUE.md
 Этот промпт: tasks/PROMPT-RESUME-ANY.md
 
 ════════════════════════════════════════════════════════
-WORKSPACE GATE (Freebuff OK)
+WORKSPACE GATE
 ════════════════════════════════════════════════════════
 Сразу: Get-Location · git rev-parse --show-toplevel · git branch --show-current
 
 Разрешено:
-  A) D:\kppdf-8.0 на main
-  B) .freebuff/worktrees/... (tools часто привязаны сюда — это нормально)
+  A) continuous: D:\kppdf-8.0 на main
+  B) explicit Cursor Isolated: .worktrees/<TASK-ID>, своя ветка
 
-При B: пиши в worktree; перед DONE каждой TZ доставь коммит на origin/main
-(push ветки + merge/ff в main + push, или эквивалент). Без SHA на origin/main — не «закрыта».
-СТОП только если нельзя ни править worktree, ни доставить на origin/main.
+.freebuff/worktrees запрещён. При B не мержи main сам: commit/push task branch,
+report SHA, дождись review/merge. Git policy: docs/GIT-POLICY.md.
 
 ════════════════════════════════════════════════════════
 ГЛАВНОЕ
@@ -39,7 +38,7 @@ WORKSPACE GATE (Freebuff OK)
 4) deploy.ps1 / wipe / desktop ZIP — только если PO явно сказал в ЭТОМ чате.
    «деплой» = только warm update (WIPE=false), данные не трогать.
    Wipe — СТОП + спроси PO по-русски по docs/ops/DANGEROUS-OPS.md.
-5) После каждой закрытой TZ: archive + lock + commit + push на origin/main → Checkpoint → next.
+5) После каждой закрытой TZ: archive + lock + commit + push по GIT-POLICY → _NOW → next.
 6) Крупная TZ: mid-commit+push зелёного куска.
 7) Чужой dirty WIP не затирай.
 
@@ -47,13 +46,13 @@ WORKSPACE GATE (Freebuff OK)
 СТАРТ
 ════════════════════════════════════════════════════════
 git fetch origin
-Если канон D:\kppdf-8.0: git checkout main && git pull --ff-only
-Если freebuff worktree: работай здесь; базу держи от origin/main.
+Если main: git checkout main && git pull --ff-only.
+Если explicit Isolated: проверь task branch и merge-base origin/main.
 
-Прочитай верх docs/agent-checklists/_active-map.md (1–3 Checkpoint).
+Прочитай docs/agent-checklists/_NOW.md.
 Осмотри tasks/_active/ :
   A) Есть TZ — CLAIM, доделай.
-  B) Пусто — NEXT из Checkpoint / QUEUE / WAVE (сейчас: WAVE-KP-SHAME-POLISH 350→354).
+  B) Пусто — NEXT из _NOW / QUEUE / подтверждённой WAVE.
   C) Чужой claim на те же CONFLICT KEYS — СТОП, одна фраза PO.
 
 Team Room join/inbox если доступен (не блокер).
@@ -63,15 +62,15 @@ Team Room join/inbox если доступен (не блокер).
 ЦИКЛ
 ════════════════════════════════════════════════════════
 CLAIM → код → gates → self-verify → archive+lock → remove _active →
-commit+push(→origin/main) → Checkpoint → NEXT.
+commit+push по docs/GIT-POLICY.md → обновить _NOW → NEXT.
 
 BAN: секреты nginx в git; shell 317 rewrite; почта клиенту вне TZ; «улучшить заодно».
 
-Лимит шагов: commit+push зелёного куска + Checkpoint; resume = этот же промпт.
+Лимит шагов: commit+push зелёного куска + `_NOW`; resume = этот же промпт.
 
 ════════════════════════════════════════════════════════
 СТОП
 ════════════════════════════════════════════════════════
-Очередь READY пуста → Checkpoint idle → «готово предложить деплой»
+Очередь READY пуста → `_NOW` idle → «готово предложить деплой»
 → НЕ запускай deploy.ps1 без явной команды PO.
 ```

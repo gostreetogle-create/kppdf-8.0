@@ -1,8 +1,14 @@
 # GEMINI.md — рабочий контракт Gemini для kppdf-8.0
 
-Ты работаешь в корне репозитория `kppdf-8.0`. Этот файл является главным проектным контекстом Gemini. Перед началом прочитай `README.md`, `ARCHITECTURE.md`, `STACK.md`, `docs/AI-AGENT-GUIDE.md`, **`docs/PO-DIARY.md` (§1–§4 — кто PO и планка качества)**, **`docs/PROJECT-MEMORY.md` (тонкий склад: где правда, что не потерять — после PO-DIARY, затем релевантные page.md)**, `docs/DEVELOPMENT-PATTERNS.md`, `progress.md`, релевантные `docs/pages/*.page.md`, а для TZ-flow — `OrchestratorKit/AGENTS.md` и `OrchestratorKit/_templates/TZF-00.txt`.
+Ты работаешь в репозитории `kppdf-8.0`. Минимальный startup:
+`docs/PROJECT-MEMORY.md` → `docs/PO-CANON.md` →
+`docs/agent-checklists/_NOW.md` + `tasks/_active/` → собственные TZ/checklist →
+релевантный `page.md`/domain doc. `ARCHITECTURE.md`, `progress.md`, root `STATUS.md`
+и `_active-map.md` — история/справочники, не читать целиком. `OrchestratorKit/AGENTS.md`
+и `TZF-00.txt` читать только для kit-задачи `OrchestratorKit/TZ-NN.txt`.
 
-Если сессия дала новое понимание владельца продукта — обнови `docs/PO-DIARY.md` §5 (коротко, без стенограммы).
+Если сессия дала новое понимание владельца — обнови `docs/PO-DIARY.md` §5;
+стабильный принцип также обновляет `docs/PO-CANON.md`.
 
 ## Роль и Definition of Done
 
@@ -54,13 +60,13 @@ git worktree list --porcelain
    - В checklist: Status = `CLAIMED / IN PROGRESS`.
    - Заполни **Claim slot**: `agent_id`, `claimed_at` (ISO-8601), `workspace: D:\kppdf-8.0`,
      `team_room_claim: yes|no|unavailable`.
-   - Прочитай `docs/agent-checklists/_active-map.md` + весь `tasks/_active/` —
+   - Прочитай `docs/agent-checklists/_NOW.md` + весь `tasks/_active/` —
      если те же conflict keys уже CLAIMED другим — **СТОП**, не правь.
    - Team Room: `claim <TASK-ID>` best-effort; отсутствие CLI ≠ пропуск Claim slot.
    - Без заполненного Claim slot **запрещено** писать product-код.
 6. Проверь, что другой агент не изменяет те же файлы. Общие конфликтные файлы: `progress.md`, `ARCHITECTURE.md`, root `STATUS.md`, `OrchestratorKit/STATUS.md`, `frontend/src/app/core/*`, `frontend/src/app/shared/*` и builder-файлы.
 
-Доска: `docs/agent-checklists/_active-map.md`. Review inbox волны (если есть) —
+Доска: `docs/agent-checklists/_NOW.md`. Review inbox волны (если есть) —
 `CATALOG-WAVE1-REVIEW.md` / `DICT-WAVE1-REVIEW.md`. Архив **только после**
 Cursor/PO Verdict PASS, если TZ это требует.
 
@@ -110,6 +116,8 @@ verification:
 После архивации обнови `progress.md`, `ARCHITECTURE.md` только при реальном архитектурном изменении, правильный `STATUS.md`, создай lock только для DONE, удали task и проверь root-синхронизацию, orphan-файлы и новые дубликаты архивов. Для kit-задач выполни `bash OrchestratorKit/verify-status.sh`.
 
 Не смешивай контуры: root `tasks/` архивируется в `tasks/_archive/`, а задачи OrchestratorKit следуют `OrchestratorKit/AGENTS.md` и его `_active/_archive`.
+
+Git/commit/push: `docs/GIT-POLICY.md`.
 
 ## Финальный отчёт
 

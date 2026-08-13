@@ -8,7 +8,7 @@
 
 > Status: **RESERVED** | **CLAIMED / IN PROGRESS** | **READY FOR REVIEW** | **DONE**
 > Marker: `tasks/_active/<TASK-ID>.md` (должен существовать, пока не archive)
-> Commit/push: **NO** unless PO says so
+> Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -20,7 +20,7 @@
 ## Preflight
 
 - [ ] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
-- [ ] Прочитал `_active-map.md` + `tasks/_active/` — нет чужого CLAIM на те же keys
+- [ ] Прочитал `_NOW.md` + `tasks/_active/` — нет чужого CLAIM на те же keys
 - [ ] TZ / канон / deps прочитаны
 - [ ] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
 - [ ] `tasks/_active/<TASK-ID>.md` на месте

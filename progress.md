@@ -1,3 +1,6 @@
+> **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
+> Текущая работа: `docs/agent-checklists/_NOW.md`.
+
 ## [2026-08-13] — TZ-AUTH-304 DONE — вход по приглашению (UI)
 **Исполнитель:** agent-3e757640b7 (coding agent) + Buffy (closeout/sessionKind-контракт)
 **Статус:** DONE; frontend; deploy НЕ
