@@ -1,3 +1,11 @@
+## Checkpoint 2026-08-13 · READY passwordless вход по именованному компьютеру
+- Финальный UX PO: админ заранее выбирает роль → одноразовая ссылка → только имя компьютера → immediate scoped-вход без пароля; device TTL default 365d.
+- Owner один и скрыт, но может owner-only ссылкой подключить рабочий ПК к тому же User; ordinary admin этого контура не видит.
+- READY order: `TZ-AUTH-306` owner invariant → `303` backend → `304` UI → `305` nginx rollout → `307` evidence-based cleanup. Basic/старый код не удалять до PASS нового пути.
+- Production только по слову PO `деплой`; после каждой зелёной TZ archive+commit+push, крупный этап — checkpoint/mid-commit для resume.
+- Canon: `docs/ops/home-host-access.md` §4. Checklists: `docs/agent-checklists/TZ-AUTH-303..307.md`.
+- `_active/`: empty at authoring; Desktop `kppd_`, IP binding, mTLS/Tailscale — вне scope.
+
 ## Checkpoint 2026-08-12T19:20:00Z · TZ-MIG-301 DONE (WAVE-KP3-DATA-MIGRATE #1)
 - DONE: выгрузка КП3 read-only → `data/from-kp3/` (products 699 / counterparties 23 / kps 28 + media 690 ≈82MB) + id-map + photos-index (661) + manifest. Аудит `docs/audits/2026-08-12-kp3-to-kp8-field-map.md`.
 - gap-block (3): фото (MCP upload tool отсутствует) · Counterparty.email (нет поля) · брендинг КП (нет слота). Pre-step: category string→Category словарь.

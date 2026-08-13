@@ -23,6 +23,7 @@
 ## Сейчас в `_backlog/` (ожидаемо тонко)
 
 - `QUEUE.md` — карта  
+- В корне `tasks/`: **TZ-AUTH-306→303→304→305→307 READY** — owner invariant, вход по именованному компьютеру, безопасный cutover и cleanup; wave/prompt в `_backlog/WAVE-AUTH-DEVICE-ACCESS.md`.
 - `kp-vitrine/` — **WAVE-KP-SHAME-POLISH** (350→354) + spent COMPLETE specs; continuous `PROMPT-KP-SHAME-CONTINUOUS.md`  
 - `ops/` — OPS-310 / AUTH-302 (DONE, specs may remain as history)  
 - `perf/` — WAVE-PERF-PHOTOS DONE (история)

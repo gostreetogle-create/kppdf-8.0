@@ -81,8 +81,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
+| `/admin/devices` | admin-devices.page.md | **TZ-AUTH-306→303→304 READY** pre-role invite / owner-device link / revoke |
+| `/enroll/:token` | enroll.page.md | **TZ-AUTH-303→304 READY** passwordless named-computer enrollment |
 | `/admin` stub | — | optional redirect (P2, not tasked) |
-| `/login` | login.page.md | TZ-AUTH-301 (personal learning/test notice) |
+| `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305→307** device cutover + cleanup |
 
 ## Cross-cutting UX batch (this sweep)
 

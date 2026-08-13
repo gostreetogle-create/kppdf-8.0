@@ -8,6 +8,7 @@
 
 | Порядок | Поток | Где | Статус |
 |---------|--------|-----|--------|
+| **0 ACCESS READY** | Вход по именованному компьютеру без пароля | `WAVE-AUTH-DEVICE-ACCESS.md` · `PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md` · 306→303→304→305→307 | **PO ДА 2026-08-13**; deploy только отдельно |
 | **0 READY** | MIG-302 scoped MCP load (без фото/email/бренд) | `PROMPT-KP3-MIG-302.md` | **PO ДА 2026-08-12** |
 | **0a READY** | Desktop ZIP с semver в имени | `TZD-46` · `PROMPT-TZD-46-ZIP-VERSION.md` | код; деплой later |
 | **0b next** | MCP photo upload → attach KP3 photos | TZD-47 → MIG-303 | после 302 / parallel tool |
