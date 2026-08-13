@@ -46,6 +46,12 @@ export interface ConsumedDevice {
   role: string;
   expiresAt: Date;
   isOwner: boolean;
+  /**
+   * TZ-AUTH-303/304 — explicit session marker so the SPA never mixes a
+   * device session (cookie-renew) with a password session (refresh-token
+   * renew). Always 'device' for enroll/session responses.
+   */
+  sessionKind: 'device';
 }
 
 export interface DeviceStatus {
@@ -318,6 +324,7 @@ export class DeviceEnrollmentService {
           role: effectiveRole,
           expiresAt,
           isOwner: isOwnerDevice,
+          sessionKind: 'device',
         };
       });
 

@@ -72,6 +72,9 @@ export class DeviceEnrollmentController {
       role: result.role,
       expiresAt: result.expiresAt.toISOString(),
       isOwner: result.isOwner,
+      // TZ-AUTH-304: explicit device-session marker — never mixed with a
+      // password session in the SPA (cookie-renew vs refresh-token renew).
+      sessionKind: result.sessionKind,
     };
   }
 
@@ -81,7 +84,7 @@ export class DeviceEnrollmentController {
   async session(@Req() req: Request) {
     const secret = readCookie(req, this.cookieName);
     const access = await this.service.sessionFromCookie(secret);
-    return { access };
+    return { access, sessionKind: 'device' as const };
   }
 
   @Public()

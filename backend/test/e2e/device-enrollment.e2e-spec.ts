@@ -82,6 +82,7 @@ describe('Device enrollment (e2e) — TZ-AUTH-303', () => {
     expect(consume.body.role).toBe('manager'); // role came from the invite
     expect(consume.body.isOwner).toBe(false);
     expect(consume.body.access).toBeDefined();
+    expect(consume.body.sessionKind).toBe('device');
     expect(jwtTtl(consume.body.access)).toBeLessThanOrEqual(300);
 
     const cookie = extractCookie(consume);
@@ -97,7 +98,15 @@ describe('Device enrollment (e2e) — TZ-AUTH-303', () => {
       .get('/api/device/session')
       .set('Cookie', `${DEVICE_COOKIE}=${cookie}`);
     expect(session.status).toBe(200);
+    expect(session.body.sessionKind).toBe('device');
     expect(jwtTtl(session.body.access)).toBeLessThanOrEqual(300);
+
+    // Password login is NOT a device session — it must not carry the marker.
+    const login = await request(app.getHttpServer())
+      .post('/api/auth/login')
+      .send({ username: TEST_ADMIN_USERNAME, password: TEST_ADMIN_PASSWORD });
+    expect(login.status).toBe(200);
+    expect(login.body.sessionKind).toBeUndefined();
 
     const asBearer = await request(app.getHttpServer())
       .get('/api/auth/me')
