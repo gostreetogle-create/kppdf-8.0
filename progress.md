@@ -1,3 +1,14 @@
+## [2026-08-13] — TZ-AUTH-306 DONE — единственный скрытый владелец (hidden owner invariant)
+**Исполнитель:** agent-3e757640b7 (coding agent)
+**Статус:** DONE; backend + frontend; deploy НЕ
+**Что:** `user.schema.ts` — `isOwner` (default false) + partial unique index `partialFilterExpression { isOwner:true }` (БД-gate «не более одного true»). `admin.seed.ts` — idempotent fail-closed `backfillOwner()`: owner = точный активный bootstrap admin по `ADMIN_USERNAME`; 0/неактивный/несовпадающий/>1 owner → startup error, никогда не создаёт второго owner, без wipe/reseed. `jwt.strategy.ts` гидрирует `isOwner` из БД (не из JWT). Owner bypass в Roles/PermissionsGuard без owner-only permission key. `owner-only.guard.ts` (403 OWNER_ONLY) на roles-admin + permissions-admin; `owner-target.guard.ts` на users-admin mutators (non-owner → owner 404; owner self delete/deactivate/demote 403 OWNER_SELF_PROTECTED; grant/revoke admin power 403 OWNER_ONLY). users-admin list/count/search/getById скрывают owner для non-owner; create role=admin 403. FE: `isOwner` computed, `ownerOnlyRouteGuard` на /admin/roles, скрытие self-destructive действий owner-строки.
+**Gates:** backend tsc PASS; frontend tsc PASS; backend tests 99/99 (owner-target/owner-only/roles.guard/permissions.guard/auth.service/users-admin/roles-admin/last-admin); e2e owner-invariant 8/8 + auth 6/6; frontend jest 27/27; eslint PASS (pre-existing warnings вне scope); architecture:check 1 pre-existing; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-306.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-306.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-306-hidden-owner-invariant.lock`
+**Known limit:** ordinary admin всё ещё может выдать `permissions: ['*']` (pre-existing wildcard break-glass RBAC-CONTRACT §4/§9.3) — вне scope 306.
+**NEXT:** TZ-AUTH-303 (backend regular invite + owner-device self-link + BrowserDeviceGrant + 365d cookie + JWT ≤5m). Deploy НЕ.
+
 ## [2026-08-12] — TZD-46 DONE — Desktop ZIP semver в имени файла + publish canon
 **Исполнитель:** freebuff/tzd-46 (agent-158a657202)
 **Статус:** DONE; desktop publish + deploy scripts + FE URL + docs; deploy НЕ

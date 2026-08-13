@@ -169,6 +169,24 @@ describe('PermissionsGuard (TZ-255 ladder)', () => {
     });
   });
 
+  describe('TZ-AUTH-306 — owner bypass', () => {
+    it('allows the single hidden owner regardless of role/permissions', () => {
+      const guard = makeGuard(['user:admin']);
+      const ctx = makeContext({
+        user: user({ role: 'user', permissions: [], isOwner: true }),
+      });
+      expect(guard.canActivate(ctx)).toBe(true);
+    });
+
+    it('does NOT bypass for isOwner: false (ordinary admin still needs perms)', () => {
+      const guard = makeGuard(['material:write']);
+      const ctx = makeContext({
+        user: user({ role: 'user', permissions: [], isOwner: false }),
+      });
+      expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
+    });
+  });
+
   describe('null/undefined defensive handling', () => {
     it('treats null permissions array as empty', () => {
       const guard = makeGuard(['material:write']);

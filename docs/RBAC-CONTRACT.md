@@ -121,6 +121,28 @@ Invariants enforced by `lastAdminInvariant()` (a pure helper at
 HTTP surface. Until that TZ lands, the `RoleService.remove()` already
 refuses `isSystem` deletes (TZ-91 baseline).
 
+## 5b. Single hidden owner invariant (TZ-AUTH-306)
+
+The system has **exactly one** hidden owner. It is NOT a role and NOT a
+permission checkbox — it is the immutable `User.isOwner` flag.
+
+| Fact | Value |
+|------|-------|
+| Field | `User.isOwner` (default `false`) |
+| DB invariant | partial unique index on `{ isOwner: 1 }` with `partialFilterExpression: { isOwner: true }` → at most one `true` |
+| Pinning | idempotent bootstrap backfill binds it to the exact `ADMIN_USERNAME` active bootstrap admin; 0 matches / mismatch / >1 owner → **fail-closed startup error** |
+| Exposure | never in `CreateUserDto` / `UpdateUserDto` / `RegisterDto`; global `whitelist+forbidNonWhitelisted` rejects unknown fields |
+| Guards | owner bypasses `RolesGuard` / `PermissionsGuard` / page ACL (always full access) without an owner-only role name |
+| Visibility | owner is **hidden** from non-owner `list`/`count`/`search`/`getById` (404 for direct id) |
+| Mutation | non-owner cannot PATCH/delete/deactivate/reset-password/demote the owner (404); owner cannot self-delete/deactivate/demote (403 `OWNER_SELF_PROTECTED`) |
+| Owner-only surfaces | role CRUD + permissions/pages matrix (`OwnerOnlyGuard`, 403 `OWNER_ONLY`); grant/revoke of admin power (`OwnerTargetGuard`) |
+| Break-glass | owner password login is preserved |
+
+Owner-only pages are stripped from `/auth/me` `pages[]` for non-owners
+(`admin-roles`), so the role editor never renders for ordinary admins and
+no role can grant it. `isOwner` is hydrated server-side by `JwtStrategy`
+from the DB — it is never trusted from a JWT claim.
+
 ## 6. OWNERSHIP_BY_ENTITY matrix
 
 Each entity is either **user-owned** (a row is conceptually owned by its

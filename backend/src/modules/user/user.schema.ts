@@ -47,6 +47,30 @@ export class User {
 
   @Prop()
   fullName?: string;
+
+  /**
+   * TZ-AUTH-306 — immutable system ownership marker, NOT a role and NOT a
+   * permission checkbox. Exactly one User may have `isOwner: true`; it is
+   * the single hidden bootstrap owner. The partial unique index below
+   * enforces the "at most one true" invariant at the database level, and
+   * `OwnerBackfill` (admin.seed.ts) pins that single owner to the exact
+   * `ADMIN_USERNAME` bootstrap admin at startup. Never exposed in create /
+   * update DTOs, so it cannot be granted via role name or mass assignment.
+   */
+  @Prop({ default: false })
+  isOwner!: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+/**
+ * TZ-AUTH-306 — partial unique index: only documents where `isOwner: true`
+ * are indexed, and only one such document may exist. Documents with
+ * `isOwner: false`/absent are not indexed at all (no uniqueness constraint
+ * between ordinary users). This is the DB-level "exactly one owner" gate;
+ * the bootstrap backfill plus `OwnerTargetGuard` enforce it at the app layer.
+ */
+UserSchema.index(
+  { isOwner: 1 },
+  { unique: true, partialFilterExpression: { isOwner: true } },
+);

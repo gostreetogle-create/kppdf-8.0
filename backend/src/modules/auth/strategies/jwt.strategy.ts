@@ -46,6 +46,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       role: user.role,
       permissions: user.permissions ?? [],
       organizationId: user.organizationId?.toString() ?? null,
+      // TZ-AUTH-306: owner flag hydrated from DB (not trusted from the JWT
+      // claim) so guards can grant owner-only bypass without a second query.
+      isOwner: user.isOwner === true,
     };
   }
 }

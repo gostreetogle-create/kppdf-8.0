@@ -8,6 +8,8 @@ export interface AuthenticatedUser {
   version?: number;
   /** TZ-238 */
   organizationId?: string | null;
+  /** TZ-AUTH-306: single hidden owner marker (server-hydrated). */
+  isOwner?: boolean;
 }
 
 /**

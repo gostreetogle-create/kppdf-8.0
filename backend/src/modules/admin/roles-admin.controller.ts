@@ -19,6 +19,7 @@ import { Model } from 'mongoose';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { SystemRoleGuard } from '../../common/guards/system-role.guard';
+import { OwnerOnlyGuard } from '../../common/guards/owner-only.guard';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Role, RoleDocument } from '../role/role.schema';
 import { RoleService } from '../role/role.service';
@@ -51,8 +52,14 @@ import { toClientRole } from './dto/mapper';
  * PermissionsGuard → RolesGuard) plus per-method `@UseGuards` where
  * invariants apply. Every mutator emits an audit log via
  * `@AuditAction` (see contract block at end of file).
+ *
+ * TZ-AUTH-306 — the whole role editor (role CRUD) is owner-only: the
+ * class-level `OwnerOnlyGuard` refuses ordinary admins with a single safe
+ * 403 `OWNER_ONLY` (no owner-only permission key is enumerable in the
+ * catalog). The role editor is not a grantable capability.
  */
 @Controller('admin/roles')
+@UseGuards(OwnerOnlyGuard)
 export class RolesAdminController {
   constructor(
     @InjectModel(Role.name)

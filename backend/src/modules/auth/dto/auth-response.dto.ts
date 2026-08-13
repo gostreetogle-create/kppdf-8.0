@@ -29,6 +29,13 @@ export interface AuthUserPayload {
   organizationId?: string | null;
   /** TZ-ACCESS-301: page ACL — visible nav pages from role. */
   pages?: string[];
+  /**
+   * TZ-AUTH-306 — `true` only for the single hidden owner; `false` for
+   * everyone else. Owner-only pages (e.g. `admin-roles`) are already
+   * stripped from `pages` for non-owners, so the flag only drives
+   * owner-only UI (e.g. «Добавить мой компьютер» in TZ-AUTH-304).
+   */
+  isOwner?: boolean;
 }
 
 export interface AuthResponse {

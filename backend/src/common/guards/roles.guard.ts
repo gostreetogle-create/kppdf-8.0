@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import type { AuthenticatedUserLike } from '../contracts/rbac-contract';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -22,7 +23,17 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const req = context.switchToHttp().getRequest<{ user?: { role: string } }>();
+    const req = context.switchToHttp().getRequest<{
+      user?: AuthenticatedUserLike;
+    }>();
+
+    // TZ-AUTH-306 — the single hidden owner always passes role gates
+    // without enumerating an owner-only role name. `isOwner` is
+    // server-hydrated (JwtStrategy) and can never be spoofed via JWT.
+    if (req.user?.isOwner === true) {
+      return true;
+    }
+
     const userRole = req.user?.role;
 
     if (!userRole || !requiredRoles.includes(userRole)) {

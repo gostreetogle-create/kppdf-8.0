@@ -441,4 +441,74 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       expect(me.pages).toEqual([]);
     });
   });
+
+  describe('getMe() — owner surface (TZ-AUTH-306)', () => {
+    function buildGetMeSvc(userDoc: Record<string, unknown>, rolePages: string[]) {
+      const users = new FakeUserService();
+      users.findById = async () => userDoc as never;
+      const jwt = { signAsync: async () => 'mock-token' } as unknown as JwtService;
+      const config = {
+        get: () => undefined,
+      } as unknown as ConfigService;
+      const softlock = new LoginSoftlockService();
+      softlock.__resetForTests();
+      const rolesMock = {
+        findByName: jest.fn().mockResolvedValue({ name: 'admin', pages: rolePages }),
+      };
+      return new AuthService(
+        users as unknown as UserService,
+        jwt,
+        config,
+        softlock,
+        rolesMock as any,
+      );
+    }
+
+    it('exposes isOwner: true only for the owner and keeps admin-roles page', async () => {
+      const svc = buildGetMeSvc(
+        {
+          id: 'u-owner',
+          username: 'admin',
+          email: 'admin@kppdf.local',
+          displayName: 'Owner',
+          role: 'admin',
+          permissions: [],
+          isActive: true,
+          refreshTokenVersion: 0,
+          phone: null,
+          fullName: null,
+          organizationId: null,
+          isOwner: true,
+        },
+        ['admin-users', 'admin-roles', 'products'],
+      );
+      const me = await svc.getMe('u-owner');
+      expect(me.isOwner).toBe(true);
+      expect(me.pages).toEqual(['admin-users', 'admin-roles', 'products']);
+    });
+
+    it('reports isOwner: false and strips the owner-only admin-roles page for non-owners', async () => {
+      const svc = buildGetMeSvc(
+        {
+          id: 'u-admin',
+          username: 'admin2',
+          email: 'admin2@kppdf.local',
+          displayName: 'Ordinary admin',
+          role: 'admin',
+          permissions: [],
+          isActive: true,
+          refreshTokenVersion: 0,
+          phone: null,
+          fullName: null,
+          organizationId: null,
+          isOwner: false,
+        },
+        ['admin-users', 'admin-roles', 'products'],
+      );
+      const me = await svc.getMe('u-admin');
+      expect(me.isOwner).toBe(false);
+      expect(me.pages).toEqual(['admin-users', 'products']);
+      expect(me.pages).not.toContain('admin-roles');
+    });
+  });
 });

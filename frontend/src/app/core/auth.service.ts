@@ -18,6 +18,8 @@ export interface AuthUser {
   organizationId?: string | null;
   /** TZ-ACCESS-301: page ACL from role — delivered by /auth/me. */
   pages?: string[];
+  /** TZ-AUTH-306: `true` only for the single hidden owner. */
+  isOwner?: boolean;
 }
 
 interface LoginResponse {
@@ -51,6 +53,13 @@ export class AuthService {
   readonly user = signal<AuthUser | null>(null);
   /** Session alive if we have access OR a refresh token to renew it. */
   readonly isAuthenticated = computed(() => !!this.accessToken() || !!this.refreshToken());
+
+  /**
+   * TZ-AUTH-306 — `true` only for the single hidden owner. Drives
+   * owner-only UI (role editor, «Добавить мой компьютер» in TZ-AUTH-304).
+   * Backend returns `isOwner` only to the owner; everyone else gets `false`.
+   */
+  readonly isOwner = computed(() => this.user()?.isOwner === true);
 
   /**
    * Single-flight: while a refresh is in progress, every concurrent caller

@@ -1,7 +1,8 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { PAGE_KEYS, PERMISSIONS } from '../../common/seed/permissions.constants';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { OwnerOnlyGuard } from '../../common/guards/owner-only.guard';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 
 /**
@@ -20,11 +21,14 @@ import { AuditAction } from '../../common/interceptors/audit.interceptor';
  *   { sections: [...], pages: string[] }
  *
  * Gated by the global guard stack: JwtAuthGuard → PermissionsGuard
- * (`role:write`) → RolesGuard (`admin`). The full catalogue is a
+ * (`role:write`) → RolesGuard (`admin`) AND the class-level
+ * `OwnerOnlyGuard` (TZ-AUTH-306): the permissions/pages matrix editor is
+ * owner-only and never a grantable capability. The full catalogue is a
  * sensitive read and explicitly emits `admin.permissions.catalog` audit
  * entries; ordinary GET handlers remain unaudited.
  */
 @Controller('admin/permissions')
+@UseGuards(OwnerOnlyGuard)
 export class PermissionsAdminController {
   @Get()
   @Permissions('role:write')

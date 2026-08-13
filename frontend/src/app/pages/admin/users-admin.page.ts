@@ -13,6 +13,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { AuthService } from '../../core/auth.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import {
   extractErrorMessage,
@@ -126,7 +127,7 @@ const PAGE_SIZE = 10;
                 <span aria-hidden="true">⚿</span>
               </button>
             }
-            @if (caps.hasAny(['user:write'])) {
+            @if (caps.hasAny(['user:write']) && !isSelfOwner(u)) {
               <button
                 type="button"
                 class="pi-icon-btn pi-focus-ring"
@@ -144,7 +145,7 @@ const PAGE_SIZE = 10;
             <app-pi-row-actions
               [row]="u"
               [showEdit]="caps.hasAny(['user:write'])"
-              [showDelete]="caps.hasAny(['user:admin'])"
+              [showDelete]="caps.hasAny(['user:admin']) && !isSelfOwner(u)"
               [loading]="loadingRowId() === u.id"
               editLabel="Редактировать"
               dataTestEdit="users-admin-edit"
@@ -171,6 +172,7 @@ export class UsersAdminPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   protected readonly caps = inject(CapabilitiesService);
+  private readonly auth = inject(AuthService);
 
   readonly users = signal<ClientUser[]>([]);
   readonly loading = signal(true);
@@ -230,6 +232,16 @@ export class UsersAdminPage implements OnInit {
     this.searchQuery.set(value);
     this.page.set(1);
     this.refresh();
+  }
+
+  /**
+   * TZ-AUTH-306 — the owner's own row: destructive actions (deactivate /
+   * delete) are hidden. The owner may still reset their own password
+   * (break-glass) and edit name/email; server-side `OWNER_SELF_PROTECTED`
+   * additionally refuses self-demotion via a direct API call.
+   */
+  protected isSelfOwner(u: ClientUser): boolean {
+    return this.auth.isOwner() && u.id === this.auth.user()?.id;
   }
 
   protected onPageChange(nextPage: number): void {
@@ -390,11 +402,15 @@ export class UsersAdminPage implements OnInit {
       }
       if (res.error.status === 403) {
         const body = res.error.error as { code?: string } | null;
-        this.toast.error(
-          body?.code === 'LAST_ADMIN_INVARIANT'
-            ? 'Нельзя удалить/понизить последнего админа'
-            : extractErrorMessage(res.error),
-        );
+        if (body?.code === 'LAST_ADMIN_INVARIANT') {
+          this.toast.error('Нельзя удалить/понизить последнего админа');
+        } else if (body?.code === 'OWNER_SELF_PROTECTED') {
+          this.toast.error('Нельзя удалить, отключить или понизить владельца');
+        } else if (body?.code === 'OWNER_ONLY') {
+          this.toast.error('Это действие доступно только владельцу системы');
+        } else {
+          this.toast.error(extractErrorMessage(res.error));
+        }
         return;
       }
       this.toast.error(extractErrorMessage(res.error));

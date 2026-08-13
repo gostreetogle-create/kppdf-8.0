@@ -39,6 +39,14 @@ const GENERIC_BAD_CREDENTIALS_MESSAGE = 'Неверный логин или па
  */
 const DUMMY_BCRYPT_HASH = bcrypt.hashSync('__not_a_real_password__', 10);
 
+/**
+ * TZ-AUTH-306 — owner-only page keys. These pages are reachable only by the
+ * single hidden owner; they are stripped from `pages` for non-owners so the
+ * nav/chip/page-ACL never renders them. Role CRUD + permissions matrix are
+ * the owner-only surface; no role ever grants `admin-roles`.
+ */
+const OWNER_ONLY_PAGE_KEYS = new Set<string>(['admin-roles']);
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -268,6 +276,13 @@ export class AuthService {
   }
 
   private toAuthUser(user: UserDocument, pages: string[] = []): AuthUserPayload {
+    const isOwner = user.isOwner === true;
+    // TZ-AUTH-306 — owner-only pages are stripped for everyone but the
+    // owner, so the role editor surface is hidden from ordinary admins via
+    // the existing page-ACL nav/chip filter (no owner-only flag in the role).
+    const visiblePages = isOwner
+      ? pages
+      : pages.filter((p) => !OWNER_ONLY_PAGE_KEYS.has(p));
     return {
       id: user.id,
       username: user.username,
@@ -276,13 +291,15 @@ export class AuthService {
       role: user.role,
       permissions: user.permissions ?? [],
       // TZ-ACCESS-301: page ACL delivered via /auth/me.
-      pages,
+      pages: visiblePages,
       // TZ-92.1: optional fields preserved from UserDocument. Null is the
       // pre-TZ-92.1 default for users created before phone/fullName fields
       // were added to RegisterDto.
       phone: user.phone ?? null,
       fullName: user.fullName ?? null,
       organizationId: user.organizationId?.toString() ?? null,
+      // TZ-AUTH-306: exposed only to the owner; false for everyone else.
+      isOwner,
     };
   }
 }

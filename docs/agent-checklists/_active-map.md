@@ -1,3 +1,11 @@
+## Checkpoint 2026-08-13T21:15:00Z · TZ-AUTH-306 DONE (WAVE-AUTH-DEVICE-ACCESS #1)
+- DONE: 306 hidden owner invariant — `isOwner` + partial unique index; idempotent fail-closed backfill (owner = точный active `ADMIN_USERNAME`, иначе startup error, без wipe); owner bypass в Roles/PermissionsGuard (server-hydrated, не из JWT); `OwnerOnlyGuard` (roles+permissions admin), `OwnerTargetGuard` (users-admin mutators); owner скрыт из list/count/search/getById (404); admin-power grant/revoke owner-only; owner self delete/deactivate/demote blocked; FE `isOwner` + ownerOnlyRouteGuard + hide self-destructive. Password login owner = break-glass сохранён.
+- Gates: BE tsc PASS · FE tsc PASS · BE tests 99/99 · e2e owner-invariant 8/8 + auth 6/6 · FE jest 27/27 · eslint/arch/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-306.done.md`; lock `.mimocode/locks/TZ-AUTH-306-hidden-owner-invariant.lock`; checklist DONE; `_active/TZ-AUTH-306.md` removed.
+- IN PROGRESS: none · NEXT: TZ-AUTH-303 (backend device enrollment: regular invite + owner self-link + BrowserDeviceGrant + 365d cookie + JWT ≤5m).
+- HEAD: 2c8185af pushed: yes · Blockers: none · Deploy: НЕ
+- `_active/`: empty
+
 ## Checkpoint 2026-08-13 · READY passwordless вход по именованному компьютеру
 - Финальный UX PO: админ заранее выбирает роль → одноразовая ссылка → только имя компьютера → immediate scoped-вход без пароля; device TTL default 365d.
 - Owner один и скрыт, но может owner-only ссылкой подключить рабочий ПК к тому же User; ordinary admin этого контура не видит.

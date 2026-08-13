@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -15,11 +17,16 @@ import { CreateUserDto } from '../user/dto/create-user.dto';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import { LastAdminGuard } from '../../common/guards/last-admin.guard';
+import { OwnerTargetGuard } from '../../common/guards/owner-target.guard';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Permissions } from '../../common/decorators/permissions.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  AuthenticatedUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
 import { User, UserDocument } from '../user/user.schema';
 import { Role, RoleDocument } from '../role/role.schema';
 import { toClientUser } from './dto/mapper';
@@ -90,9 +97,16 @@ export class UsersAdminController {
     @Query('offset') offset?: string,
     @Query('search') search?: string,
     @Query('role') role?: string,
+    @CurrentUser() actor?: AuthenticatedUser,
   ): Promise<AdminListResponse<ReturnType<typeof toClientUser>>> {
     const query = normalizeAdminListQuery({ page, limit, offset, search, role });
     const filter: Record<string, unknown> = {};
+    // TZ-AUTH-306 — the hidden owner never appears in a non-owner's list
+    // (nor count, nor search): enumerating the owner is denied at the
+    // source, before pagination/search runs.
+    if (actor?.isOwner !== true) {
+      filter.isOwner = { $ne: true };
+    }
     if (query.role) filter.role = query.role;
     if (query.search) {
       const pattern = new RegExp(escapeRegex(query.search), 'i');
@@ -120,7 +134,18 @@ export class UsersAdminController {
   @Permissions('user:admin')
   @Roles('admin')
   @AuditAction({ action: 'admin.user.created', entityType: 'User' })
-  async create(@Body() dto: CreateUserDto): Promise<ReturnType<typeof toClientUser>> {
+  async create(
+    @Body() dto: CreateUserDto,
+    @CurrentUser() actor?: AuthenticatedUser,
+  ): Promise<ReturnType<typeof toClientUser>> {
+    // TZ-AUTH-306 — granting administrator power is owner-only. Ordinary
+    // admins may create regular (non-admin) users but never promote to admin.
+    if (dto.role === 'admin' && actor?.isOwner !== true) {
+      throw new ForbiddenException({
+        code: 'OWNER_ONLY',
+        message: 'Only the system owner can create administrator accounts',
+      });
+    }
     const doc = await this.userService.create(dto);
     return toClientUser(doc as unknown as Record<string, unknown>);
   }
@@ -128,7 +153,7 @@ export class UsersAdminController {
   @Patch(':id')
   @Permissions('user:admin')
   @Roles('admin')
-  @UseGuards(LastAdminGuard)
+  @UseGuards(OwnerTargetGuard, LastAdminGuard)
   @AuditAction({ action: 'admin.user.updated', entityType: 'User', idParam: 'id' })
   async update(
     @Param('id') id: string,
@@ -141,6 +166,7 @@ export class UsersAdminController {
   @Post(':id/activate')
   @Permissions('user:admin')
   @Roles('admin')
+  @UseGuards(OwnerTargetGuard)
   @AuditAction({ action: 'admin.user.activated', entityType: 'User', idParam: 'id' })
   async activate(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
     const doc = await this.userService.update(id, { isActive: true });
@@ -150,7 +176,7 @@ export class UsersAdminController {
   @Post(':id/deactivate')
   @Permissions('user:admin')
   @Roles('admin')
-  @UseGuards(LastAdminGuard)
+  @UseGuards(OwnerTargetGuard, LastAdminGuard)
   @AuditAction({ action: 'admin.user.deactivated', entityType: 'User', idParam: 'id' })
   async deactivate(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
     const doc = await this.userService.update(id, { isActive: false });
@@ -160,7 +186,7 @@ export class UsersAdminController {
   @Delete(':id')
   @Permissions('user:admin')
   @Roles('admin')
-  @UseGuards(LastAdminGuard)
+  @UseGuards(OwnerTargetGuard, LastAdminGuard)
   @AuditAction({ action: 'admin.user.deleted', entityType: 'User', idParam: 'id' })
   async remove(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
     const doc = await this.userService.remove(id);
@@ -180,7 +206,7 @@ export class UsersAdminController {
   @Post(':id/reset-password')
   @Permissions('user:admin')
   @Roles('admin')
-  @UseGuards(LastAdminGuard)
+  @UseGuards(OwnerTargetGuard, LastAdminGuard)
   @AuditAction({ action: 'admin.user.password-changed', entityType: 'User', idParam: 'id' })
   async resetPassword(
     @Param('id') id: string,
@@ -204,11 +230,18 @@ export class UsersAdminController {
   @Get(':id')
   @Permissions('user:read')
   @Roles('admin')
-  async getById(@Param('id') id: string): Promise<ReturnType<typeof toClientUser>> {
+  async getById(
+    @Param('id') id: string,
+    @CurrentUser() actor?: AuthenticatedUser,
+  ): Promise<ReturnType<typeof toClientUser>> {
     const doc = await this.userModel.findById(id).lean().exec();
     if (!doc) {
-      // 404 is implicit; Nest's default exception filter handles.
-      throw new Error(`User ${id} not found`);
+      throw new NotFoundException(`User ${id} not found`);
+    }
+    // TZ-AUTH-306 — the owner is invisible to non-owners: a 404 (not 403)
+    // so the hidden owner cannot be fingerprinted by a direct GET.
+    if (doc.isOwner === true && actor?.isOwner !== true) {
+      throw new NotFoundException(`User ${id} not found`);
     }
     return toClientUser(doc as Record<string, unknown>);
   }

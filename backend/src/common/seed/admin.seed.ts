@@ -4,9 +4,12 @@ import {
   OnApplicationBootstrap,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { RoleService } from '../../modules/role/role.service';
 import { UserService } from '../../modules/user/user.service';
 import { PermissionsService } from '../../modules/permissions/permissions.service';
+import { User, UserDocument } from '../../modules/user/user.schema';
 
 /** TZ-ACCESS-301: page ACL ? default pages per system role. */
 const ADMIN_PAGES = [
@@ -108,11 +111,14 @@ export class AdminSeed implements OnApplicationBootstrap {
     private readonly users: UserService,
     private readonly permissions: PermissionsService,
     private readonly config: ConfigService,
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
     await this.seedRoles();
     await this.seedAdmin();
+    await this.backfillOwner();
   }
 
   private async seedRoles(): Promise<void> {
@@ -176,6 +182,80 @@ export class AdminSeed implements OnApplicationBootstrap {
         );
       }
     }
+  }
+
+  /**
+   * TZ-AUTH-306 — pin the single hidden owner to the exact bootstrap admin.
+   *
+   * Idempotent backfill, run AFTER `seedAdmin()` on every boot. Rules:
+   *   - Look up the exact configured `ADMIN_USERNAME` (case-insensitive).
+   *   - Require an existing ACTIVE bootstrap admin; 0 matches → fail closed.
+   *   - If exactly one owner already exists it MUST match the configured
+   *     username, otherwise fail closed (no silent "first admin wins").
+   *   - More than one owner → fail closed (defensive; DB partial unique
+   *     index makes this impossible in practice).
+   *   - Never creates a second owner over an existing one.
+   *
+   * Fail-closed means throwing here halts application bootstrap — the
+   * process refuses to serve with an ambiguous/unpinned owner rather than
+   * guessing. `wipe`/`reseed` are NEVER performed by this backfill.
+   */
+  private async backfillOwner(): Promise<void> {
+    const configured = (
+      this.config.get<string>('admin.username') ?? 'admin'
+    )
+      .trim()
+      .toLowerCase();
+    if (!configured) {
+      throw new Error(
+        '[OWNER-BACKFILL] ADMIN_USERNAME is empty — cannot pin the bootstrap owner. Startup halted (fail-closed).',
+      );
+    }
+
+    const bootstrapAdmin = await this.users.findByUsername(configured);
+    if (!bootstrapAdmin) {
+      throw new Error(
+        `[OWNER-BACKFILL] No user matches ADMIN_USERNAME="${configured}". ` +
+          `Owner backfill requires an existing bootstrap admin — startup halted (fail-closed).`,
+      );
+    }
+    if (!bootstrapAdmin.isActive) {
+      throw new Error(
+        `[OWNER-BACKFILL] ADMIN_USERNAME="${configured}" exists but is inactive. ` +
+          `The owner must be an active bootstrap admin — startup halted (fail-closed).`,
+      );
+    }
+
+    const owners = await this.userModel.find({ isOwner: true }).exec();
+    if (owners.length === 0) {
+      await this.userModel
+        .updateOne({ _id: bootstrapAdmin._id }, { $set: { isOwner: true } })
+        .exec();
+      this.logger.log(
+        `[OWNER-BACKFILL] Owner pinned to bootstrap admin "${bootstrapAdmin.username}".`,
+      );
+      return;
+    }
+
+    if (owners.length === 1) {
+      const existingUsername = (owners[0]?.username ?? '')
+        .trim()
+        .toLowerCase();
+      if (existingUsername !== configured) {
+        throw new Error(
+          `[OWNER-BACKFILL] Existing owner "${owners[0]?.username}" does not match ` +
+            `ADMIN_USERNAME="${configured}". Ambiguous owner — startup halted (fail-closed).`,
+        );
+      }
+      this.logger.debug(
+        `[OWNER-BACKFILL] Owner already pinned to "${owners[0]?.username}" — idempotent no-op.`,
+      );
+      return;
+    }
+
+    throw new Error(
+      '[OWNER-BACKFILL] More than one owner detected — startup halted (fail-closed).',
+    );
   }
 
   private async seedAdmin(): Promise<void> {

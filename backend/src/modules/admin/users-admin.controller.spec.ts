@@ -1,7 +1,9 @@
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { UsersAdminController } from './users-admin.controller';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
 import type { UserService } from '../user/user.service';
+import type { AuthenticatedUser } from '../../common/decorators/current-user.decorator';
 
 /**
  * TZ-257.A.1 §3 — UsersAdminController unit spec.
@@ -187,6 +189,66 @@ describe('UsersAdminController (TZ-257.A.1)', () => {
         page: 3,
         limit: 1,
       });
+    });
+  });
+
+  describe('TZ-AUTH-306 — owner hiding + admin-grant escalation', () => {
+    function queryChain(docs: unknown[]) {
+      return {
+        skip: () => ({
+          limit: () => ({
+            sort: () => ({ lean: () => ({ exec: () => Promise.resolve(docs) }) }),
+          }),
+        }),
+      };
+    }
+
+    it('hides the owner from a non-owner list (filter isOwner: {$ne: true})', async () => {
+      const find = jest.fn().mockReturnValue(queryChain([]));
+      const countDocuments = jest.fn().mockReturnValue({ exec: () => Promise.resolve(0) });
+      const { controller } = buildController({ find, countDocuments });
+      const actor: AuthenticatedUser = { id: 'a', username: 'a', role: 'admin', isOwner: false };
+      await controller.list(undefined, undefined, undefined, undefined, undefined, actor);
+      expect(find).toHaveBeenCalledWith(expect.objectContaining({ isOwner: { $ne: true } }));
+      expect(countDocuments).toHaveBeenCalledWith(expect.objectContaining({ isOwner: { $ne: true } }));
+    });
+
+    it('does NOT hide the owner from the owner themselves', async () => {
+      const find = jest.fn().mockReturnValue(queryChain([]));
+      const countDocuments = jest.fn().mockReturnValue({ exec: () => Promise.resolve(0) });
+      const { controller } = buildController({ find, countDocuments });
+      const owner: AuthenticatedUser = { id: 'o', username: 'admin', role: 'admin', isOwner: true };
+      await controller.list(undefined, undefined, undefined, undefined, undefined, owner);
+      expect(find).toHaveBeenCalledWith(expect.not.objectContaining({ isOwner: expect.anything() }));
+    });
+
+    it('refuses a non-owner creating an admin account (OWNER_ONLY)', async () => {
+      const { controller } = buildController({});
+      const actor: AuthenticatedUser = { id: 'a', username: 'a', role: 'admin' };
+      const dto = { username: 'bob', password: 'secret12', role: 'admin' } as any;
+      await expect(controller.create(dto, actor)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(controller.create(dto, actor)).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'OWNER_ONLY' }),
+      });
+    });
+
+    it('allows the owner to create an admin account', async () => {
+      const create = jest.fn().mockResolvedValue(clientUserDoc({ role: 'admin' }));
+      const { controller } = buildController({ create });
+      const owner: AuthenticatedUser = { id: 'o', username: 'admin', role: 'admin', isOwner: true };
+      const dto = { username: 'bob', password: 'secret12', role: 'admin' } as any;
+      await controller.create(dto, owner);
+      expect(create).toHaveBeenCalled();
+    });
+
+    it('returns 404 (not 403) when a non-owner reads the owner by id', async () => {
+      const { controller } = buildController({
+        findById: jest.fn().mockReturnValue({
+          lean: () => ({ exec: () => Promise.resolve(clientUserDoc({ isOwner: true })) }),
+        }),
+      });
+      const actor: AuthenticatedUser = { id: 'a', username: 'a', role: 'admin' };
+      await expect(controller.getById('owner-id', actor)).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

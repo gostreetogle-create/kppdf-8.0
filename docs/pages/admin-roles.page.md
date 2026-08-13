@@ -15,9 +15,18 @@ Group Chip TOC: Пользователи | Роли (`ADMIN_TOC_CHIPS`), акт�
 
 ## Capabilities gate
 
-- Route `canMatch: capabilityRouteGuard`, `capabilities: ['role:read']`,
-  `systemRoles: ['admin']`.
+- Route `canMatch: capabilityRouteGuard` + **owner-only** (`ownerOnlyRouteGuard`),
+  `capabilities: ['role:read']`, `systemRoles: ['admin']` (TZ-AUTH-306).
 - Кнопки в UI: create/edit — `role:write`, delete — `role:admin`.
+
+## Владелец (TZ-AUTH-306)
+
+- Редактор ролей и матрица permissions/pages — **только владелец**: весь
+  `/api/admin/roles` и `/api/admin/permissions` закрыты `OwnerOnlyGuard`
+  (403 `OWNER_ONLY`); FE-маршрут `/admin/roles` — `ownerOnlyRouteGuard`.
+- Обычный админ не видит чип/страницу «Роли»: `admin-roles` вырезается из
+  `pages[]` на `/auth/me` для не-владельцев.
+- Роли `superadmin` не существует; владелец не выдаётся ролью/галочкой.
 
 ## API endpoints
 

@@ -79,6 +79,13 @@ export class PermissionsGuard implements CanActivate {
       throw new UnauthorizedException('Authentication required for permission check');
     }
 
+    // TZ-AUTH-306 — the single hidden owner always holds full access without
+    // an owner-only permission key existing in the catalog. `isOwner` is
+    // server-hydrated (JwtStrategy), never accepted from a JWT claim.
+    if (user.isOwner === true) {
+      return true;
+    }
+
     // Step 3: compute effective permissions via TZ-254 algorithm.
     const userPerms = user.permissions ?? [];
     const effective = effectivePermissions(

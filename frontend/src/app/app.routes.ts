@@ -22,6 +22,18 @@ export const adminOnlyRouteGuard: CanMatchFn = () => {
 };
 
 /**
+ * TZ-AUTH-306 — owner-only route gate (UX mirror of the backend
+ * `OwnerOnlyGuard`). Used on `/admin/roles`: an ordinary admin is bounced
+ * to `/forbidden` rather than seeing the role editor. The backend still
+ * enforces the same rule server-side.
+ */
+export const ownerOnlyRouteGuard: CanMatchFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  return auth.isOwner() ? true : router.parseUrl('/forbidden');
+};
+
+/**
  * KPPDF site routing.
  *
  * Layouts:
@@ -466,7 +478,8 @@ export const routes: Routes = [
       },
       {
         path: 'admin/roles',
-        canMatch: [capabilityRouteGuard],
+        // TZ-AUTH-306 — owner-only surface (backend OwnerOnlyGuard mirror).
+        canMatch: [capabilityRouteGuard, ownerOnlyRouteGuard],
         data: {
           pageKey: 'admin-roles',
           capabilities: ['role:read'],
