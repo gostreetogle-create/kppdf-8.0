@@ -10,7 +10,7 @@ workspace: D:\kppdf-8.0
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-AUTH-304.md)
   - frontend tsc (tsconfig.app.json --noEmit): PASS
-  - auth.service 19/19 · auth.interceptor 12/12 · enroll 6/6 · devices-admin 6/6 · login.page 4/4 · permission-labels PASS
+  - auth.service 24/24 · auth.interceptor 13/13 · enroll 6/6 · devices-admin 6/6 · login.page 4/4 · permission-labels PASS
   - eslint (изменённые/новые файлы): PASS · git diff --check: PASS
   - backend: контракт enroll/session → sessionKind:'device' (184f965d, e2e PASS)
   - checklist: docs/agent-checklists/TZ-AUTH-304.md (DONE)
@@ -59,8 +59,9 @@ device-сессию с password-сессией.
 
 **Тесты + docs:** enroll 6/6 (GET не consume, POST один раз, 409/410/5xx,
 applyDeviceAccess+replaceUrl), devices-admin 6/6 (list, RU-статусы, owner-only
-кнопка, error), auth.service 19/19, auth.interceptor 12/12 (device-renew +
-IS_RETRY), login.page 4/4, ADMIN_TOC_CHIPS обновлён (devices|users|roles);
+кнопка, error), auth.service 24/24, auth.interceptor 13/13 (device-renew +
+IS_RETRY + recursion-guard на /device/session), login.page 4/4, ADMIN_TOC_CHIPS
+обновлён (devices|users|roles);
 `docs/pages/enroll.page.md`, `docs/pages/admin-devices.page.md`, PAGE-TZ-INDEX
 уже ссылается на обе.
 

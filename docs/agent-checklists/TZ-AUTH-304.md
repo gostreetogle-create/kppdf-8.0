@@ -40,8 +40,8 @@
 ## Gates
 
 - [x] `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` PASS
-- [x] `cd frontend && pnpm test -- auth.service --runInBand` PASS (19/19)
-- [x] `cd frontend && pnpm test -- auth.interceptor --runInBand` PASS (12/12, включая device-renew)
+- [x] `cd frontend && pnpm test -- auth.service --runInBand` PASS (24/24)
+- [x] `cd frontend && pnpm test -- auth.interceptor --runInBand` PASS (13/13, включая device-renew + recursion-guard)
 - [x] `cd frontend && pnpm test -- enroll --runInBand` PASS (6/6)
 - [x] `cd frontend && pnpm test -- devices-admin --runInBand` PASS (6/6)
 - [x] login.page spec 4/4 · permission-labels (ADMIN_TOC_CHIPS обновлён на devices|users|roles) PASS
