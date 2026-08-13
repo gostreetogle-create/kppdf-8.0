@@ -1,3 +1,14 @@
+## [2026-08-13] — TZ-AUTH-303 DONE — вход по приглашению (backend)
+**Исполнитель:** agent-3e757640b7 (coding agent)
+**Статус:** DONE; backend-only; deploy НЕ
+**Что:** Новый модуль `backend/src/modules/device-enrollment/` — `DeviceInvite` (regular с preselected активной role / owner-device с immutable ownerUserId, SHA-256 hash + display prefix, TTL 1/3/7d default 3d) и `BrowserDeviceGrant` (browser-only credential, SHA-256 hash, `deviceName` не-unique, 365d default). Атомарное одноразовое погашение в Mongo-транзакции: regular → `User(accountType=device)` с random невыдаваемым паролем и ровно выбранной ролью; owner-device → grant на существующего единственного owner (15m, password step-up). Cookie `__Host-kppdf-device` (Secure+HttpOnly+SameSite=Lax, Path=/, без Domain); cookie-only `GET /device/session` выдаёт access JWT ≤5m без refresh; `GET /device/status`, `GET /device/auth-check` (nginx boolean gate без персональных данных). Admin `user:admin`: invites CRUD + devices list/PATCH/revoke; owner-only `POST /admin/devices/owner-invite` + `GET /admin/devices/owner`. Инварианты: role только из invite; admin-power (invite admin / PATCH в/из admin) — owner-only (403, без мутации User); reset-password для device → 409; audit без plaintext. `accountType` добавлен в `User`; Desktop/nginx не тронуты.
+**Gates:** backend tsc PASS; device-enrollment 20/20; auth.service 15/15; desktop-pairing-key 7/7; enrollment e2e 8/8 + auth 6/6 + owner-invariant 8/8; eslint/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-303.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-303.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-303-device-enrollment-backend.lock`
+**Known limit:** до 304 нет UI `/enroll` + `/admin/devices`; nginx Basic до 305; `__Host-` cookie требует HTTPS (dev через proxy).
+**NEXT:** TZ-AUTH-304 (UI `/enroll/:token` + `/admin/devices`). Deploy НЕ.
+
 ## [2026-08-13] — TZ-AUTH-306 DONE — единственный скрытый владелец (hidden owner invariant)
 **Исполнитель:** agent-3e757640b7 (coding agent)
 **Статус:** DONE; backend + frontend; deploy НЕ

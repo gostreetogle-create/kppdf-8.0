@@ -22,4 +22,15 @@ export const envValidationSchema = Joi.object({
 
   ADMIN_USERNAME: Joi.string().default('admin'),
   ADMIN_PASSWORD: Joi.string().min(8).required(),
+
+  // TZ-AUTH-303 — device enrollment TTLs / secret entropy (defaults are the
+  // wave canon: invite 3d, owner-device invite 15m, grant 365d, device JWT 5m).
+  DEVICE_INVITE_TTL_DAYS: Joi.number().integer().min(1).max(7).default(3),
+  DEVICE_OWNER_INVITE_TTL_MINUTES: Joi.number().integer().min(1).max(60).default(15),
+  DEVICE_GRANT_TTL_DAYS: Joi.number().integer().min(1).max(3650).default(365),
+  DEVICE_JWT_TTL_SECONDS: Joi.number().integer().min(30).max(300).default(300),
+  DEVICE_INVITE_SECRET_BYTES: Joi.number().integer().min(24).max(64).default(32),
+  DEVICE_GRANT_SECRET_BYTES: Joi.number().integer().min(24).max(64).default(32),
+  DEVICE_COOKIE_NAME: Joi.string().pattern(/^__Host-/).default('__Host-kppdf-device'),
+  DEVICE_ENROLL_BASE_URL: Joi.string().uri().default('http://localhost:4200'),
 });

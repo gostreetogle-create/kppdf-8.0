@@ -27,6 +27,16 @@ export interface AppConfig {
     username: string;
     password: string;
   };
+  device: {
+    inviteTtlDays: number;
+    ownerInviteTtlMinutes: number;
+    grantTtlDays: number;
+    deviceJwtTtlSeconds: number;
+    inviteSecretBytes: number;
+    grantSecretBytes: number;
+    cookieName: string;
+    enrollBaseUrl: string;
+  };
 }
 
 export default (): AppConfig => ({
@@ -57,5 +67,28 @@ export default (): AppConfig => ({
   admin: {
     username: process.env.ADMIN_USERNAME ?? DEFAULT_ADMIN_USERNAME,
     password: process.env.ADMIN_PASSWORD ?? DEFAULT_ADMIN_PASSWORD,
+  },
+  device: {
+    inviteTtlDays: parseInt(process.env.DEVICE_INVITE_TTL_DAYS ?? '3', 10),
+    ownerInviteTtlMinutes: parseInt(
+      process.env.DEVICE_OWNER_INVITE_TTL_MINUTES ?? '15',
+      10,
+    ),
+    grantTtlDays: parseInt(process.env.DEVICE_GRANT_TTL_DAYS ?? '365', 10),
+    deviceJwtTtlSeconds: parseInt(
+      process.env.DEVICE_JWT_TTL_SECONDS ?? '300',
+      10,
+    ),
+    inviteSecretBytes: parseInt(
+      process.env.DEVICE_INVITE_SECRET_BYTES ?? '32',
+      10,
+    ),
+    grantSecretBytes: parseInt(
+      process.env.DEVICE_GRANT_SECRET_BYTES ?? '32',
+      10,
+    ),
+    cookieName: process.env.DEVICE_COOKIE_NAME ?? '__Host-kppdf-device',
+    enrollBaseUrl:
+      process.env.DEVICE_ENROLL_BASE_URL ?? 'http://localhost:4200',
   },
 });

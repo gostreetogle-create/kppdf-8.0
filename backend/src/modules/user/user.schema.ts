@@ -59,6 +59,16 @@ export class User {
    */
   @Prop({ default: false })
   isOwner!: boolean;
+
+  /**
+   * TZ-AUTH-303 — distinguishes human accounts (`person`, the default and
+   * pre-existing behaviour) from device accounts (`device`, created by a
+   * regular invite activation). Device accounts have no user password and
+   * never log in with username/password — access flows through a
+   * `BrowserDeviceGrant` cookie. Password reset for `device` is rejected.
+   */
+  @Prop({ default: 'person', index: true })
+  accountType!: 'person' | 'device';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

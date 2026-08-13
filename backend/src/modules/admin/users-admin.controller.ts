@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Delete,
   ForbiddenException,
@@ -212,6 +213,14 @@ export class UsersAdminController {
     @Param('id') id: string,
     @Body() dto: AdminResetPasswordDto,
   ): Promise<ReturnType<typeof toClientUser>> {
+    // TZ-AUTH-303 — device accounts have no user password; reject with a
+    // clear 409 so the admin UI can surface the right explanation.
+    const target = await this.userModel.findById(id).lean().exec();
+    if (target?.accountType === 'device') {
+      throw new ConflictException(
+        'У устройства нет пользовательского пароля — доступ через cookie',
+      );
+    }
     const doc = await this.userService.adminResetPassword(id, dto.newPassword);
     return toClientUser(doc as unknown as Record<string, unknown>);
   }
