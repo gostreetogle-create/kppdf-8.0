@@ -39,6 +39,16 @@ import { InputComponent } from '../../shared/ui/input/input.component';
           Введите учётные данные для входа в систему.
         </p>
 
+        @if (auth.deviceDenied(); as denied) {
+          <aside
+            class="text-sm text-destructive border-l-2 border-destructive pl-3 mb-6"
+            role="alert"
+            data-test="device-denied-notice"
+          >
+            {{ denied }}
+          </aside>
+        }
+
         <aside
           class="text-sm text-muted-foreground border-l-2 border-sunrise-warm pl-3 mb-8"
           data-test="personal-project-notice"
@@ -126,7 +136,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
   `,
 })
 export class LoginPage {
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
   protected readonly logInIcon = LogIn;

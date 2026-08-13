@@ -80,6 +80,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   //     the interceptor would cause an infinite loop.
   const skipToken = /\/auth\/(login|register|refresh)\b/.test(req.url);
   const skipRefresh = /\/auth\/(login|register|refresh|me)\b/.test(req.url);
+  // TZ-AUTH-304 — the cookie-only device endpoints ARE the renew path.
+  // A 401 from them means the grant cookie is gone/revoked and must be
+  // handled by AuthService.renewDevice()'s own catchError (→ deviceDenied),
+  // never by re-entering renewDevice() (that would recurse infinitely).
+  const skipRenew = /\/device\/(status|session|consume)\b/.test(req.url);
 
   const access = auth.accessToken();
   // Attach the access token to every request except the three
@@ -124,11 +129,37 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       // Skip refresh for /auth/{login,register,refresh,me}.
       if (skipRefresh) return throwError(() => error);
 
+      // Skip renew for the cookie-only device endpoints — see skipRenew.
+      if (skipRenew) return throwError(() => error);
+
       // Already retried once after a successful refresh → give up.
       if (req.context.get(IS_RETRY)) return throwError(() => error);
 
-      // No refresh token: nothing to do, propagate 401.
-      if (!auth.refreshToken()) return throwError(() => error);
+      // No refresh token.
+      if (!auth.refreshToken()) {
+        // TZ-AUTH-304 — device sessions renew through the grant cookie
+        // (single-flight), never through /auth/refresh.
+        if (auth.isDeviceSession()) {
+          return from(auth.renewDevice()).pipe(
+            switchMap((newAccess) =>
+              next(
+                req.clone({
+                  setHeaders: { [JWT_ACCESS_HEADER]: newAccess },
+                  context: req.context.set(IS_RETRY, true),
+                }),
+              ),
+            ),
+            catchError(() => {
+              if (!auth.accessToken() && !router.url.startsWith('/login')) {
+                void router.navigate(['/login']);
+              }
+              return throwError(() => error);
+            }),
+          );
+        }
+        // Nothing to renew with: propagate 401.
+        return throwError(() => error);
+      }
 
       // Single-flight: auth.refresh() returns the same Promise for any
       // concurrent callers, so N parallel 401s trigger exactly one

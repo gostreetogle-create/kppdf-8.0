@@ -60,6 +60,13 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
     title: 'KPPDF — Вход',
   },
+  // TZ-AUTH-304 — публичная активация устройства по одноразовой ссылке.
+  // Вне app-shell; GET не активирует invite (только кнопка шлёт POST).
+  {
+    path: 'enroll/:token',
+    loadComponent: () => import('./pages/enroll/enroll.page').then((m) => m.EnrollPage),
+    title: 'KPPDF — Подключение компьютера',
+  },
   // TZ-256 §ШАГ 4 — single forbidden state. Reached from:
   //  - capabilityRouteGuard when `data.capabilities` gating fails (no leak)
   //  - auth.interceptor when backend returns 403 (capability missing)
@@ -460,6 +467,20 @@ export const routes: Routes = [
       // capability-gated AND role-gated server-side. The frontend
       // route gate mirrors this for UX (hidden from non-admin users
       // per TZ-256 §ШАГ 3 nav filter).
+      {
+        path: 'admin/devices',
+        canMatch: [capabilityRouteGuard],
+        data: {
+          // pageKey reused from admin-users: the devices page is part of the
+          // same admin page-ACL surface (no new backend PAGE_KEY in 304).
+          pageKey: 'admin-users',
+          capabilities: ['user:admin'],
+          systemRoles: ['admin'],
+        },
+        loadComponent: () =>
+          import('./pages/admin/devices-admin.page').then((m) => m.DevicesAdminPage),
+        title: 'KPPDF — Устройства',
+      },
       {
         path: 'admin/users',
         canMatch: [capabilityRouteGuard],

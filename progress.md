@@ -1,3 +1,14 @@
+## [2026-08-13] — TZ-AUTH-304 DONE — вход по приглашению (UI)
+**Исполнитель:** agent-3e757640b7 (coding agent) + Buffy (closeout/sessionKind-контракт)
+**Статус:** DONE; frontend; deploy НЕ
+**Что:** Публичная активация `/enroll/:token` (одно поле «Как назвать этот компьютер?», GET не consume, POST только по кнопке; после успеха `applyDeviceAccess` — только короткий access JWT без refresh — + `ensureUser()` + `navigateByUrl('/', { replaceUrl: true })`). Device-сессия в SPA: `DEVICE_KEY` (localStorage), `renewDevice` (single-flight cookie-renew), `bootstrapDevice` (status→session→me), `deviceDenied` («Доступ этого компьютера отключён. Обратитесь к администратору.») на `/login`; interceptor 401 → cookie-renew + один retry (IS_RETRY), без циклов; password-поток не затронут. Админ-страница `/admin/devices`: чип «Устройства» (sibling Пользователи|Роли), таблица (имя/состояние «Работает|Отключён»/роль/срок/последний вход), «Создать ссылку» (роль обязательна + срок 1/3/7 + доступ 30/90/365 → URL + Копировать), owner-only «Добавить мой компьютер» (step-up пароль, 15m, без роли), «Изменить роль»/«Изменить срок»/«Отключить» (с подтверждением); `PiDeviceEnrollmentService` — typed клиент.
+**Gates:** FE tsc PASS; auth.service 19/19; auth.interceptor 12/12; enroll 6/6; devices-admin 6/6; login.page 4/4; permission-labels PASS; eslint/diff-check PASS. Backend-контракт: enroll/session → `sessionKind: 'device'` (184f965d, e2e PASS).
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-304.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-304.md`
+**Lock:** `tasks/_backlog/TZ-AUTH-304-device-enrollment-ui.lock`
+**Known limit:** nginx Basic до TZ-AUTH-305; `__Host-` cookie требует HTTPS; смена роли устройства — при следующем renew (≤5m). Pre-existing (не регрессия): FormProfilesService › isLocked падает на main (TZ-DICT-315).
+**NEXT:** TZ-AUTH-305 (nginx auth_request + rollback; до включения auth_request зарегистрировать owner-браузер — C1-поправка). Deploy НЕ.
+
 ## [2026-08-13] — TZ-AUTH-303 DONE — вход по приглашению (backend)
 **Исполнитель:** agent-3e757640b7 (coding agent)
 **Статус:** DONE; backend-only; deploy НЕ

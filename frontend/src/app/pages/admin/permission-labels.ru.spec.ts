@@ -35,9 +35,10 @@ describe('permission-labels.ru helpers', () => {
 });
 
 describe('ADMIN_TOC_CHIPS', () => {
-  it('exposes Users and Roles peers for Group Chip TOC', () => {
-    expect(ADMIN_TOC_CHIPS.map((c) => c.id)).toEqual(['users', 'roles']);
+  it('exposes Devices, Users and Roles peers for Group Chip TOC (TZ-AUTH-304)', () => {
+    expect(ADMIN_TOC_CHIPS.map((c) => c.id)).toEqual(['devices', 'users', 'roles']);
     expect(ADMIN_TOC_CHIPS.find((c) => c.id === 'roles')?.route).toBe('/admin/roles');
     expect(ADMIN_TOC_CHIPS.find((c) => c.id === 'users')?.route).toBe('/admin/users');
+    expect(ADMIN_TOC_CHIPS.find((c) => c.id === 'devices')?.route).toBe('/admin/devices');
   });
 });
