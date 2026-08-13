@@ -334,6 +334,56 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       expect(created.items[1].isOptional).toBe(true);
     });
 
+    it('persists non-default rowPresentation and drops pure defaults', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+
+      await service.create(
+        validCreateDto({
+          items: [
+            {
+              productId: new Types.ObjectId().toString(),
+              quantity: 1,
+              unitPrice: 100,
+              rowPresentation: {
+                density: 'large',
+                emphasis: 'accent',
+                separatorBefore: true,
+                pageBreakBefore: true,
+                showDescription: false,
+                photoFit: 'contain',
+              },
+            },
+            {
+              lineKind: 'custom',
+              productName: 'Обычная',
+              quantity: 1,
+              unitPrice: 50,
+              rowPresentation: {
+                density: 'auto',
+                emphasis: 'normal',
+                separatorBefore: false,
+                pageBreakBefore: false,
+                showDescription: true,
+                photoFit: 'inherit',
+              },
+            },
+          ],
+        }) as never,
+      );
+
+      const created = model.create.mock.calls[0][0];
+      expect(created.items[0].rowPresentation).toEqual({
+        density: 'large',
+        emphasis: 'accent',
+        separatorBefore: true,
+        pageBreakBefore: true,
+        showDescription: false,
+        photoFit: 'contain',
+      });
+      expect(created.items[1].rowPresentation).toBeUndefined();
+    });
+
     it('rejects a catalog line without a product', async () => {
       const { service, model } = createService();
       await expect(

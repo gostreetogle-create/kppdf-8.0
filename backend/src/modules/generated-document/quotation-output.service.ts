@@ -162,9 +162,13 @@ export class QuotationOutputService {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         ...(item.productSku ? { productSku: item.productSku } : {}),
+        ...(item.photoUrl ? { photoUrl: item.photoUrl } : {}),
         ...(item.unit ? { unit: item.unit } : {}),
         ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
         ...(item.isOptional ? { isOptional: true } : {}),
+        ...(item.rowPresentation
+          ? { rowPresentation: { ...item.rowPresentation } }
+          : {}),
       })),
       ...(Array.isArray(tableLayout) ? { tableLayout } : {}),
       ...(typeof tableTargetId === 'string' ? { tableTargetId } : {}),

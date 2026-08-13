@@ -1175,6 +1175,166 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor-line-0"]'))).toBeTruthy();
   }));
 
+  it('opens one row drawer, persists presentation, keeps commerce cells, and shows indicator', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'table') => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      moveCompositionLine: (change: { index: number; direction: -1 | 1 }) => void;
+      removeCompositionLine: (index: number) => void;
+      draftLines: () => ProposalDraftLine[];
+      proposalStatus: { set: (status: string) => void };
+    };
+
+    page.toggleRightPane('table');
+    fixture.detectChanges();
+
+    for (let i = 0; i < 4; i++) {
+      page.onProductAdd({
+        productId: `prod-${i}`,
+        productName: `Позиция ${i + 1}`,
+        productSku: `SKU-${i}`,
+        photoUrl: i === 1 ? '/uploads/p.webp' : undefined,
+        quantity: 1,
+        unit: 'шт',
+        unitPrice: 1000 + i,
+        discountPercent: i === 1 ? 5 : 0,
+        description: `Описание ${i + 1}`,
+      });
+    }
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor-line-1"]'))).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-discount-1"]')),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-optional-1"]')),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-price-1"]')),
+    ).toBeTruthy();
+
+    const openSecond = fixture.debugElement.query(
+      By.css('[data-test="kp-table-editor-row-settings-1"]'),
+    );
+    expect(openSecond).toBeTruthy();
+    expect(openSecond.attributes['aria-expanded']).toBe('false');
+    openSecond.triggerEventHandler('click');
+    fixture.detectChanges();
+
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-row-drawer-1"]')),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-row-drawer-0"]')),
+    ).toBeNull();
+    expect(openSecond.attributes['aria-expanded']).toBe('true');
+
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-density-large"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-emphasis-accent"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-separator"]'))
+      .triggerEventHandler('change', { target: { checked: true } });
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-pagebreak"]'))
+      .triggerEventHandler('change', { target: { checked: true } });
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-show-description"]'))
+      .triggerEventHandler('change', { target: { checked: false } });
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-row-photo-contain"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+
+    expect(page.draftLines()[1].rowPresentation).toEqual(
+      expect.objectContaining({
+        density: 'large',
+        emphasis: 'accent',
+        separatorBefore: true,
+        pageBreakBefore: true,
+        showDescription: false,
+        photoFit: 'contain',
+      }),
+    );
+
+    // Commerce still visible while drawer open.
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-discount-1"]')),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-price-1"]')),
+    ).toBeTruthy();
+
+    // One-at-a-time: opening another closes the first.
+    fixture.debugElement
+      .query(By.css('[data-test="kp-table-editor-row-settings-2"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-row-drawer-1"]')),
+    ).toBeNull();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-row-drawer-2"]')),
+    ).toBeTruthy();
+
+    // Close drawer — indicator remains for custom row.
+    fixture.debugElement
+      .query(By.css('[data-test="kp-table-editor-row-settings-2"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-table-editor-row-drawer-2"]')),
+    ).toBeNull();
+    expect(
+      fixture.debugElement.query(
+        By.css(
+          '[data-test="kp-table-editor-row-settings-1"] [data-test="kp-table-editor-row-indicator"]',
+        ),
+      ),
+    ).toBeTruthy();
+    expect(
+      fixture.debugElement.query(
+        By.css(
+          '[data-test="kp-table-editor-row-settings-0"] [data-test="kp-table-editor-row-indicator"]',
+        ),
+      ),
+    ).toBeNull();
+
+    // Reorder keeps presentation on the same product line.
+    page.moveCompositionLine({ index: 1, direction: -1 });
+    fixture.detectChanges();
+    expect(page.draftLines()[0].productName).toBe('Позиция 2');
+    expect(page.draftLines()[0].rowPresentation?.density).toBe('large');
+    expect(page.draftLines()[1].rowPresentation).toBeUndefined();
+
+    // Read-only: drawer opens for view, controls disabled.
+    page.proposalStatus.set('accepted');
+    fixture.detectChanges();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-table-editor-row-settings-0"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    const densityBtn = fixture.debugElement.query(By.css('[data-test="kp-row-density-compact"]'));
+    expect(densityBtn).toBeTruthy();
+    expect(densityBtn.nativeElement.disabled).toBe(true);
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-row-separator"]')).nativeElement.disabled,
+    ).toBe(true);
+  }));
+
   it('adds module/material lines by refId and merges quantity on repeat', () => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onProductAdd: (line: ProposalDraftLine) => void;

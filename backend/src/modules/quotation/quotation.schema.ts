@@ -1,6 +1,33 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
+/** Per-line visual snapshot for KP blank (TZ-SALES-370). Not a shared TableTemplate. */
+@Schema({ _id: false })
+export class QuotationRowPresentation {
+  @Prop({ enum: ['auto', 'compact', 'large'], default: 'auto' })
+  density?: 'auto' | 'compact' | 'large';
+
+  @Prop({ enum: ['normal', 'accent'], default: 'normal' })
+  emphasis?: 'normal' | 'accent';
+
+  @Prop({ default: false })
+  separatorBefore?: boolean;
+
+  @Prop({ default: false })
+  pageBreakBefore?: boolean;
+
+  /** When false, description stays stored but is hidden on the blank. Default true. */
+  @Prop({ default: true })
+  showDescription?: boolean;
+
+  @Prop({ enum: ['inherit', 'contain', 'cover'], default: 'inherit' })
+  photoFit?: 'inherit' | 'contain' | 'cover';
+}
+
+const QuotationRowPresentationSchema = SchemaFactory.createForClass(
+  QuotationRowPresentation,
+);
+
 @Schema({ _id: false })
 export class QuotationItem {
   /** catalog=Product FK; custom=no FK; module/material=refId → ProductModule/Material. */
@@ -53,6 +80,10 @@ export class QuotationItem {
 
   @Prop({ default: false })
   isOptional!: boolean;
+
+  /** Visual-only row settings for live table / print / PDF. */
+  @Prop({ type: QuotationRowPresentationSchema })
+  rowPresentation?: QuotationRowPresentation;
 
   @Prop({ required: true, default: 0 })
   total!: number;

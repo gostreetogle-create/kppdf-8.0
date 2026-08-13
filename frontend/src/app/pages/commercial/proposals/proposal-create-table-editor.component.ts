@@ -13,7 +13,7 @@ import {
 } from 'lucide-angular';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { formatPrice } from '../../../shared/util/format';
-import type { ProposalDraftLine } from './proposal-product-rail.component';
+import type { ProposalDraftLine, ProposalRowPresentation } from './proposal-product-rail.component';
 import type {
   ProposalTableChrome,
   ProposalTableLayoutColumn,
@@ -24,6 +24,15 @@ export interface ProposalCompositionLineChange {
   index: number;
   patch: Partial<ProposalDraftLine>;
 }
+
+const DEFAULT_ROW_PRESENTATION: Required<ProposalRowPresentation> = {
+  density: 'auto',
+  emphasis: 'normal',
+  separatorBefore: false,
+  pageBreakBefore: false,
+  showDescription: true,
+  photoFit: 'inherit',
+};
 
 /** Width hint stored per column key (%). */
 type ColumnWidths = Record<string, number>;
@@ -324,6 +333,10 @@ type ColumnWidths = Record<string, number>;
                 <tr
                   class="editor__row"
                   [class.editor__row--optional]="line.isOptional === true"
+                  [class.editor__row--accent]="resolvedPresentation(line).emphasis === 'accent'"
+                  [class.editor__row--compact]="resolvedPresentation(line).density === 'compact'"
+                  [class.editor__row--large]="resolvedPresentation(line).density === 'large'"
+                  [class.editor__row--separator]="resolvedPresentation(line).separatorBefore"
                   [attr.data-test]="'kp-table-editor-line-' + index"
                 >
                   <!-- Left gutter -->
@@ -342,7 +355,7 @@ type ColumnWidths = Record<string, number>;
                         type="button"
                         class="editor__icon-btn"
                         [disabled]="readOnly() || index === 0"
-                        (click)="move.emit({ index, direction: -1 })"
+                        (click)="moveRow(index, -1)"
                         [attr.aria-label]="'Поднять строку: ' + line.productName"
                         title="Выше"
                       >
@@ -352,7 +365,7 @@ type ColumnWidths = Record<string, number>;
                         type="button"
                         class="editor__icon-btn"
                         [disabled]="readOnly() || index === lines().length - 1"
-                        (click)="move.emit({ index, direction: 1 })"
+                        (click)="moveRow(index, 1)"
                         [attr.aria-label]="'Опустить строку: ' + line.productName"
                         title="Ниже"
                       >
@@ -370,7 +383,17 @@ type ColumnWidths = Record<string, number>;
                         @case ('productName') {
                           <div class="editor__name-cell">
                             @if (line.photoUrl) {
-                              <img [src]="line.photoUrl" [alt]="" class="editor__photo" />
+                              <img
+                                [src]="line.photoUrl"
+                                [alt]=""
+                                class="editor__photo"
+                                [class.editor__photo--contain]="
+                                  resolvedPresentation(line).photoFit === 'contain'
+                                "
+                                [class.editor__photo--cover]="
+                                  resolvedPresentation(line).photoFit === 'cover'
+                                "
+                              />
                             } @else {
                               <span class="editor__photo editor__photo--empty" aria-hidden="true"
                                 >□</span
@@ -402,7 +425,11 @@ type ColumnWidths = Record<string, number>;
                                 [disabled]="readOnly()"
                                 (change)="descriptionChanged(index, $event)"
                                 [attr.data-test]="'kp-table-editor-description-' + index"
-                                placeholder="Описание"
+                                [placeholder]="
+                                  resolvedPresentation(line).showDescription
+                                    ? 'Описание'
+                                    : 'Описание (скрыто на бланке)'
+                                "
                                 aria-label="Описание строки"
                               />
                             </div>
@@ -481,7 +508,17 @@ type ColumnWidths = Record<string, number>;
                         }
                         @case ('photo') {
                           @if (line.photoUrl) {
-                            <img [src]="line.photoUrl" [alt]="" class="editor__photo-cell" />
+                            <img
+                              [src]="line.photoUrl"
+                              [alt]=""
+                              class="editor__photo-cell"
+                              [class.editor__photo-cell--contain]="
+                                resolvedPresentation(line).photoFit === 'contain'
+                              "
+                              [class.editor__photo-cell--cover]="
+                                resolvedPresentation(line).photoFit === 'cover'
+                              "
+                            />
                           } @else {
                             <span
                               class="editor__photo-cell editor__photo-cell--empty"
@@ -528,6 +565,32 @@ type ColumnWidths = Record<string, number>;
                   <!-- Right gutter -->
                   <td class="editor__col-act">
                     <div class="editor__actions">
+                      <button
+                        type="button"
+                        class="editor__icon-btn"
+                        [class.editor__icon-btn--active]="openRowIndex() === index"
+                        [class.editor__icon-btn--custom]="hasCustomPresentation(line)"
+                        (click)="toggleRowDrawer(index)"
+                        [attr.aria-label]="'Настройки строки: ' + line.productName"
+                        [attr.aria-expanded]="openRowIndex() === index"
+                        [attr.aria-controls]="'kp-row-drawer-' + index"
+                        title="Настройки строки"
+                        [attr.data-test]="'kp-table-editor-row-settings-' + index"
+                      >
+                        <lucide-angular
+                          [img]="openRowIndex() === index ? upIcon : downIcon"
+                          [size]="14"
+                          aria-hidden="true"
+                        />
+                        @if (hasCustomPresentation(line)) {
+                          <span
+                            class="editor__row-indicator"
+                            [attr.title]="presentationTooltip(line)"
+                            [attr.aria-label]="presentationTooltip(line)"
+                            data-test="kp-table-editor-row-indicator"
+                          ></span>
+                        }
+                      </button>
                       @if (canEditCatalog(line)) {
                         <button
                           type="button"
@@ -545,7 +608,7 @@ type ColumnWidths = Record<string, number>;
                         type="button"
                         class="editor__icon-btn editor__icon-btn--danger"
                         [disabled]="readOnly()"
-                        (click)="remove.emit(index)"
+                        (click)="onRemoveRow(index)"
                         [attr.aria-label]="'Удалить строку: ' + line.productName"
                         title="Убрать из КП"
                         [attr.data-test]="'kp-table-editor-remove-' + index"
@@ -555,6 +618,122 @@ type ColumnWidths = Record<string, number>;
                     </div>
                   </td>
                 </tr>
+
+                @if (openRowIndex() === index) {
+                  <tr
+                    class="editor__row-drawer"
+                    [attr.id]="'kp-row-drawer-' + index"
+                    [attr.data-test]="'kp-table-editor-row-drawer-' + index"
+                  >
+                    <td [attr.colspan]="drawerColspan()">
+                      <div
+                        class="editor__drawer"
+                        role="region"
+                        [attr.aria-label]="'Настройки вида строки ' + (index + 1)"
+                      >
+                        <div class="editor__drawer-section">
+                          <p class="editor__drawer-title">Вид строки</p>
+                          <div class="editor__drawer-group" role="group" aria-label="Высота строки">
+                            <span class="editor__drawer-label">Высота</span>
+                            <div class="editor__seg">
+                              @for (opt of densityOptions; track opt.value) {
+                                <button
+                                  type="button"
+                                  class="editor__seg-btn"
+                                  [class.editor__seg-btn--on]="
+                                    resolvedPresentation(line).density === opt.value
+                                  "
+                                  [disabled]="readOnly()"
+                                  (click)="setPresentation(index, { density: opt.value })"
+                                  [attr.data-test]="'kp-row-density-' + opt.value"
+                                >
+                                  {{ opt.label }}
+                                </button>
+                              }
+                            </div>
+                          </div>
+                          <div class="editor__drawer-group" role="group" aria-label="Выделение">
+                            <span class="editor__drawer-label">Выделение</span>
+                            <div class="editor__seg">
+                              @for (opt of emphasisOptions; track opt.value) {
+                                <button
+                                  type="button"
+                                  class="editor__seg-btn"
+                                  [class.editor__seg-btn--on]="
+                                    resolvedPresentation(line).emphasis === opt.value
+                                  "
+                                  [disabled]="readOnly()"
+                                  (click)="setPresentation(index, { emphasis: opt.value })"
+                                  [attr.data-test]="'kp-row-emphasis-' + opt.value"
+                                >
+                                  {{ opt.label }}
+                                </button>
+                              }
+                            </div>
+                          </div>
+                          <label class="editor__drawer-check">
+                            <input
+                              type="checkbox"
+                              [checked]="resolvedPresentation(line).separatorBefore"
+                              [disabled]="readOnly()"
+                              (change)="onSeparatorToggle(index, $event)"
+                              data-test="kp-row-separator"
+                            />
+                            Разделитель сверху
+                          </label>
+                        </div>
+
+                        <div class="editor__drawer-section">
+                          <p class="editor__drawer-title">Печать</p>
+                          <label class="editor__drawer-check">
+                            <input
+                              type="checkbox"
+                              [checked]="resolvedPresentation(line).pageBreakBefore"
+                              [disabled]="readOnly()"
+                              (change)="onPageBreakToggle(index, $event)"
+                              data-test="kp-row-pagebreak"
+                            />
+                            С новой страницы
+                          </label>
+                          <label class="editor__drawer-check">
+                            <input
+                              type="checkbox"
+                              [checked]="resolvedPresentation(line).showDescription"
+                              [disabled]="readOnly()"
+                              (change)="onShowDescriptionToggle(index, $event)"
+                              data-test="kp-row-show-description"
+                            />
+                            Показывать описание на бланке
+                          </label>
+                        </div>
+
+                        @if (line.photoUrl) {
+                          <div class="editor__drawer-section">
+                            <p class="editor__drawer-title">Фото</p>
+                            <div class="editor__drawer-group" role="group" aria-label="Режим фото">
+                              <div class="editor__seg">
+                                @for (opt of photoFitOptions; track opt.value) {
+                                  <button
+                                    type="button"
+                                    class="editor__seg-btn"
+                                    [class.editor__seg-btn--on]="
+                                      resolvedPresentation(line).photoFit === opt.value
+                                    "
+                                    [disabled]="readOnly()"
+                                    (click)="setPresentation(index, { photoFit: opt.value })"
+                                    [attr.data-test]="'kp-row-photo-' + opt.value"
+                                  >
+                                    {{ opt.label }}
+                                  </button>
+                                }
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      </div>
+                    </td>
+                  </tr>
+                }
               }
             </tbody>
           </table>
@@ -941,6 +1120,99 @@ type ColumnWidths = Record<string, number>;
       background: color-mix(in oklch, var(--color-muted) 7%, transparent);
     }
 
+    .editor__row--accent {
+      background: color-mix(in oklch, var(--color-ink) 6%, var(--color-paper, #fff));
+    }
+
+    .editor__row--compact td {
+      padding-block: 0.12rem;
+    }
+
+    .editor__row--large td {
+      padding-block: 0.55rem;
+    }
+
+    .editor__row--separator td {
+      border-top: 2px solid var(--color-ink);
+    }
+
+    .editor__row-drawer td {
+      padding: 0;
+      border-bottom: 1px solid var(--color-rule);
+      background: color-mix(in oklch, var(--color-muted) 6%, var(--color-paper, #fff));
+    }
+
+    .editor__drawer {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+      gap: 0.65rem 1rem;
+      padding: 0.55rem 0.65rem 0.65rem;
+    }
+
+    .editor__drawer-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .editor__drawer-title {
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .editor__drawer-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .editor__drawer-label {
+      color: var(--color-ink);
+      font-size: 0.72rem;
+    }
+
+    .editor__drawer-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin: 0;
+      color: var(--color-ink);
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+
+    .editor__seg {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.15rem;
+    }
+
+    .editor__seg-btn {
+      padding: 0.18rem 0.4rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      color: var(--color-ink);
+      font-size: 0.68rem;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .editor__seg-btn--on {
+      border-color: var(--color-ink);
+      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper, #fff));
+      font-weight: 600;
+    }
+
+    .editor__seg-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     /* ── Column widths ── */
     .editor__col-move {
       cursor: grab;
@@ -978,7 +1250,7 @@ type ColumnWidths = Record<string, number>;
       background: color-mix(in oklch, var(--color-muted) 5%, transparent);
     }
     .editor__col-act {
-      width: 3.75rem;
+      width: 5.25rem;
     }
 
     /* ── Buttons ── */
@@ -997,17 +1269,49 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__icon-btn {
+      position: relative;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.35rem;
-      height: 1.35rem;
+      width: 1.45rem;
+      height: 1.45rem;
       padding: 0;
       border: 1px solid var(--color-rule);
       background: transparent;
       color: var(--color-ink);
       cursor: pointer;
       border-radius: 2px;
+    }
+
+    .editor__icon-btn:focus-visible {
+      outline: 2px solid var(--color-accent, #c9a227);
+      outline-offset: 1px;
+    }
+
+    .editor__icon-btn--active {
+      border-color: var(--color-ink);
+      background: color-mix(in oklch, var(--color-ink) 8%, transparent);
+    }
+
+    .editor__row-indicator {
+      position: absolute;
+      top: 0.1rem;
+      right: 0.1rem;
+      width: 0.35rem;
+      height: 0.35rem;
+      border-radius: 999px;
+      background: var(--color-accent, #c9a227);
+      pointer-events: none;
+    }
+
+    .editor__photo--contain,
+    .editor__photo-cell--contain {
+      object-fit: contain;
+    }
+
+    .editor__photo--cover,
+    .editor__photo-cell--cover {
+      object-fit: cover;
     }
 
     .editor__icon-btn:disabled {
@@ -1188,6 +1492,25 @@ export class ProposalCreateTableEditorComponent {
   /** Drag-and-drop row reordering. */
   protected readonly dragIndex = signal(-1);
   protected readonly dragOverIndex = signal(-1);
+  /** At most one open row drawer. */
+  protected readonly openRowIndex = signal(-1);
+
+  protected readonly densityOptions = [
+    { value: 'auto' as const, label: 'Авто' },
+    { value: 'compact' as const, label: 'Компактная' },
+    { value: 'large' as const, label: 'Крупная' },
+  ];
+  protected readonly emphasisOptions = [
+    { value: 'normal' as const, label: 'Обычная' },
+    { value: 'accent' as const, label: 'Акцент' },
+  ];
+  protected readonly photoFitOptions = [
+    { value: 'inherit' as const, label: 'Как в таблице' },
+    { value: 'contain' as const, label: 'Вписать' },
+    { value: 'cover' as const, label: 'Обрезать' },
+  ];
+
+  protected readonly drawerColspan = computed(() => this.visibleLayoutColumns().length + 5);
 
   protected readonly borderLabel = computed(() => {
     const w = this.chrome().borderWeight ?? 'normal';
@@ -1326,6 +1649,7 @@ export class ProposalCreateTableEditorComponent {
     this.dragIndex.set(-1);
     this.dragOverIndex.set(-1);
     if (this.readOnly() || fromIndex < 0 || fromIndex === targetIndex) return;
+    this.openRowIndex.set(-1);
     const direction = fromIndex < targetIndex ? 1 : -1;
     const steps = Math.abs(targetIndex - fromIndex);
     for (let i = 0; i < steps; i++) {
@@ -1454,6 +1778,104 @@ export class ProposalCreateTableEditorComponent {
     this.lineChange.emit({
       index,
       patch: { isOptional: (event.target as HTMLInputElement).checked },
+    });
+  }
+
+  // ── Row presentation drawer (TZ-SALES-370) ──
+
+  protected resolvedPresentation(line: ProposalDraftLine): Required<ProposalRowPresentation> {
+    const raw = line.rowPresentation ?? {};
+    return {
+      density: raw.density ?? DEFAULT_ROW_PRESENTATION.density,
+      emphasis: raw.emphasis ?? DEFAULT_ROW_PRESENTATION.emphasis,
+      separatorBefore: raw.separatorBefore === true,
+      pageBreakBefore: raw.pageBreakBefore === true,
+      showDescription: raw.showDescription !== false,
+      photoFit: raw.photoFit ?? DEFAULT_ROW_PRESENTATION.photoFit,
+    };
+  }
+
+  protected hasCustomPresentation(line: ProposalDraftLine): boolean {
+    const p = this.resolvedPresentation(line);
+    return (
+      p.density !== 'auto' ||
+      p.emphasis !== 'normal' ||
+      p.separatorBefore ||
+      p.pageBreakBefore ||
+      !p.showDescription ||
+      p.photoFit !== 'inherit'
+    );
+  }
+
+  protected presentationTooltip(line: ProposalDraftLine): string {
+    const p = this.resolvedPresentation(line);
+    const parts: string[] = [];
+    if (p.density !== 'auto') {
+      parts.push(p.density === 'compact' ? 'компактная высота' : 'крупная высота');
+    }
+    if (p.emphasis === 'accent') parts.push('акцент');
+    if (p.separatorBefore) parts.push('разделитель сверху');
+    if (p.pageBreakBefore) parts.push('с новой страницы');
+    if (!p.showDescription) parts.push('без описания на бланке');
+    if (p.photoFit === 'contain') parts.push('фото: вписать');
+    if (p.photoFit === 'cover') parts.push('фото: обрезать');
+    return parts.length ? `Особые настройки: ${parts.join(', ')}` : '';
+  }
+
+  protected toggleRowDrawer(index: number): void {
+    this.openRowIndex.update((current) => (current === index ? -1 : index));
+  }
+
+  protected onRemoveRow(index: number): void {
+    const open = this.openRowIndex();
+    if (open === index) this.openRowIndex.set(-1);
+    else if (open > index) this.openRowIndex.set(open - 1);
+    this.remove.emit(index);
+  }
+
+  protected moveRow(index: number, direction: -1 | 1): void {
+    const open = this.openRowIndex();
+    const target = index + direction;
+    if (open === index) this.openRowIndex.set(target);
+    else if (open === target) this.openRowIndex.set(index);
+    this.move.emit({ index, direction });
+  }
+
+  protected setPresentation(index: number, patch: Partial<ProposalRowPresentation>): void {
+    if (this.readOnly()) return;
+    const line = this.lines()[index];
+    if (!line) return;
+    const next = { ...this.resolvedPresentation(line), ...patch };
+    const isDefault =
+      next.density === 'auto' &&
+      next.emphasis === 'normal' &&
+      !next.separatorBefore &&
+      !next.pageBreakBefore &&
+      next.showDescription &&
+      next.photoFit === 'inherit';
+    this.lineChange.emit({
+      index,
+      patch: {
+        rowPresentation: isDefault ? undefined : next,
+      },
+    });
+  }
+
+  protected onSeparatorToggle(index: number, event: Event): void {
+    this.setPresentation(index, {
+      separatorBefore: (event.target as HTMLInputElement).checked,
+    });
+  }
+
+  protected onPageBreakToggle(index: number, event: Event): void {
+    this.setPresentation(index, {
+      pageBreakBefore: (event.target as HTMLInputElement).checked,
+    });
+  }
+
+  protected onShowDescriptionToggle(index: number, event: Event): void {
+    this.setPresentation(index, {
+      showDescription: (event.target as HTMLInputElement).checked,
     });
   }
 }

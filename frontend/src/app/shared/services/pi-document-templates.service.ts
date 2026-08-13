@@ -84,6 +84,14 @@ export interface BuildPreviewLine {
   unit?: string;
   discountPercent?: number;
   isOptional?: boolean;
+  rowPresentation?: {
+    density?: 'auto' | 'compact' | 'large';
+    emphasis?: 'normal' | 'accent';
+    separatorBefore?: boolean;
+    pageBreakBefore?: boolean;
+    showDescription?: boolean;
+    photoFit?: 'inherit' | 'contain' | 'cover';
+  };
 }
 
 export interface BuildTableLayoutColumn {

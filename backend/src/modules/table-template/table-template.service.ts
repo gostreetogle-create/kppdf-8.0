@@ -37,6 +37,16 @@ export interface TablePreviewChrome {
   headerWeight?: 'normal' | 'bold';
 }
 
+/** Per-row visual snapshot for KP blank (TZ-SALES-370). Enums only — never raw CSS. */
+export interface TableRowPresentation {
+  density?: 'auto' | 'compact' | 'large';
+  emphasis?: 'normal' | 'accent';
+  separatorBefore?: boolean;
+  pageBreakBefore?: boolean;
+  showDescription?: boolean;
+  photoFit?: 'inherit' | 'contain' | 'cover';
+}
+
 /**
  * TZ-86 Phase A.2 — TableTemplateService extended.
  *
@@ -168,6 +178,7 @@ export class TableTemplateService implements OnModuleInit {
     dealTotals?: TableDealTotals,
     photoOptions?: TablePhotoOptions,
     chrome?: TablePreviewChrome,
+    rowPresentations?: TableRowPresentation[],
   ): Promise<string> {
     const doc = await this.findById(id);
     const cols = this.resolvePreviewColumns(
@@ -222,7 +233,10 @@ export class TableTemplateService implements OnModuleInit {
     }
 
     const bodyHtml = rows
-      .map((row) => {
+      .map((row, rowIndex) => {
+        const presentation = this.resolveRowPresentation(
+          rowPresentations?.[rowIndex],
+        );
         const cells = cols
           .map((c, idx) => {
             const cell = Array.isArray(row) ? row[idx] : undefined;
@@ -231,11 +245,38 @@ export class TableTemplateService implements OnModuleInit {
               c.type,
               c.format,
               photoOptions,
+              presentation,
             );
-            return `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc">${formatted}</td>`;
+            const pad =
+              presentation.density === 'compact'
+                ? '2px 4px'
+                : presentation.density === 'large'
+                  ? '10px 8px'
+                  : '6px';
+            const minH =
+              presentation.density === 'compact'
+                ? 'min-height:1.4em;'
+                : presentation.density === 'large'
+                  ? 'min-height:2.6em;'
+                  : '';
+            const topBorder =
+              presentation.separatorBefore === true
+                ? `border-top:2px solid #333;`
+                : `border-top:${borderPx} solid #ccc;`;
+            return `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc;${topBorder}padding:${pad};${minH}">${formatted}</td>`;
           })
           .join('');
-        return `<tr>${cells}</tr>`;
+        const trStyles: string[] = [];
+        if (presentation.emphasis === 'accent') {
+          trStyles.push('background:#f3f3f0');
+        }
+        if (presentation.pageBreakBefore === true && rowIndex > 0) {
+          trStyles.push('page-break-before:always');
+          trStyles.push('break-before:page');
+        }
+        const trAttr =
+          trStyles.length > 0 ? ` style="${trStyles.join(';')}"` : '';
+        return `<tr${trAttr}>${cells}</tr>`;
       })
       .join('');
 
@@ -371,6 +412,7 @@ export class TableTemplateService implements OnModuleInit {
     type: string,
     format?: string,
     photoOptions?: TablePhotoOptions,
+    rowPresentation?: TableRowPresentation,
   ): string {
     if (value === null || value === undefined || value === '') {
       return '';
@@ -383,6 +425,7 @@ export class TableTemplateService implements OnModuleInit {
       return this.formatImageCell(
         (value as { url?: unknown }).url,
         photoOptions,
+        rowPresentation?.photoFit,
       );
     }
     if (
@@ -396,9 +439,11 @@ export class TableTemplateService implements OnModuleInit {
         optional?: boolean;
       };
       const title = this.escapeHtml(String(line.title ?? ''));
-      const description = line.description
-        ? `<div style="font-size:0.85em;color:#666">${this.escapeHtml(String(line.description))}</div>`
-        : '';
+      const showDescription = rowPresentation?.showDescription !== false;
+      const description =
+        showDescription && line.description
+          ? `<div style="font-size:0.85em;color:#666">${this.escapeHtml(String(line.description))}</div>`
+          : '';
       const optional = line.optional
         ? ' <span style="font-size:0.8em;color:#666">(не входит в стоимость)</span>'
         : '';
@@ -459,9 +504,33 @@ export class TableTemplateService implements OnModuleInit {
     ].includes(key.trim().toLowerCase());
   }
 
+  private resolveRowPresentation(
+    value?: TableRowPresentation | null,
+  ): Required<
+    Pick<
+      TableRowPresentation,
+      | 'density'
+      | 'emphasis'
+      | 'separatorBefore'
+      | 'pageBreakBefore'
+      | 'showDescription'
+      | 'photoFit'
+    >
+  > {
+    return {
+      density: value?.density ?? 'auto',
+      emphasis: value?.emphasis ?? 'normal',
+      separatorBefore: value?.separatorBefore === true,
+      pageBreakBefore: value?.pageBreakBefore === true,
+      showDescription: value?.showDescription !== false,
+      photoFit: value?.photoFit ?? 'inherit',
+    };
+  }
+
   private formatImageCell(
     value: unknown,
     photoOptions?: TablePhotoOptions,
+    photoFit?: TableRowPresentation['photoFit'],
   ): string {
     if (typeof value !== 'string' || !value) return '';
     const url = value.trim();
@@ -470,8 +539,11 @@ export class TableTemplateService implements OnModuleInit {
       /^\/(?!\/)/.test(url) ||
       /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url);
     if (!allowed) return '';
+    const fit =
+      photoFit === 'contain' || photoFit === 'cover' ? photoFit : null;
     if (!photoOptions) {
-      return `<img src="${this.escapeHtml(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:contain" />`;
+      const objectFit = fit ?? 'contain';
+      return `<img src="${this.escapeHtml(url)}" alt="" style="max-width:72px;max-height:48px;object-fit:${objectFit}" />`;
     }
     const scale = Math.min(
       400,
@@ -483,7 +555,8 @@ export class TableTemplateService implements OnModuleInit {
     );
     const width = Math.min(240, Math.max(10, (72 * scale) / 100));
     const height = Math.min(120, Math.max(10, (48 * scale) / 100));
-    return `<img src="${this.escapeHtml(url)}" alt="" style="width:${width}px;height:${height}px;max-width:100%;object-fit:cover;object-position:center ${cropY}%" />`;
+    const objectFit = fit ?? 'cover';
+    return `<img src="${this.escapeHtml(url)}" alt="" style="width:${width}px;height:${height}px;max-width:100%;object-fit:${objectFit};object-position:center ${cropY}%" />`;
   }
 
   /** Minimal HTML escaper; output rendered as `[innerHTML]` on consumer side. */

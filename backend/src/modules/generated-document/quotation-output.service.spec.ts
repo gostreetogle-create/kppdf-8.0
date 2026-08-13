@@ -138,27 +138,79 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
     );
   });
 
-  it('maps a missing Chrome engine to the Russian 503 fallback', async () => {
+  it('forwards item rowPresentation and photoUrl into rebuild payload', async () => {
     process.env.PUPPETEER_EXECUTABLE_PATH = 'chrome-for-test';
-    jest
-      .spyOn(puppeteer, 'launch')
-      .mockRejectedValue(new Error('missing browser'));
+    const page = {
+      setContent: jest.fn().mockResolvedValue(undefined),
+      pdf: jest.fn().mockResolvedValue(new Uint8Array([37, 80, 68, 70])),
+      close: jest.fn().mockResolvedValue(undefined),
+    };
+    const browser = {
+      newPage: jest.fn().mockResolvedValue(page),
+      close: jest.fn().mockResolvedValue(undefined),
+    };
+    jest.spyOn(puppeteer, 'launch').mockResolvedValue(browser as never);
+    const base = quotationFixture() as Record<string, unknown>;
+    const fixture = {
+      ...base,
+      items: [
+        {
+          productName: 'Стенд',
+          productSku: 'ST-1',
+          quantity: 2,
+          unit: 'шт',
+          unitPrice: 5000,
+          photoUrl: '/uploads/stand.webp',
+          rowPresentation: {
+            density: 'large',
+            emphasis: 'accent',
+            showDescription: false,
+            photoFit: 'contain',
+          },
+        },
+      ],
+      templateSnapshot: {
+        templateId: templateId.toString(),
+        tableLayout: [{ key: 'sum', visible: true }],
+      },
+    };
+    const build = jest.fn().mockResolvedValue('<html>КП row</html>');
+    const findById = jest.fn().mockResolvedValue({
+      _id: templateId,
+      organizationId,
+    });
     const model = {
       findById: jest.fn(() => ({
-        exec: jest.fn().mockResolvedValue(quotationFixture()),
+        exec: jest.fn().mockResolvedValue(fixture),
       })),
     };
     const service = new QuotationOutputService(
       model as never,
-      { findById: jest.fn(), build: jest.fn() } as never,
+      {
+        findById,
+        build,
+        assertBuildSourcesInOrganization: jest.fn().mockResolvedValue(undefined),
+      } as never,
       { archiveRendered: jest.fn() } as never,
     );
 
-    await expect(service.renderPdf(quotationId.toString())).rejects.toEqual(
+    await service.renderPdf(quotationId.toString(), {
+      organizationId: organizationId.toString(),
+    });
+
+    expect(build).toHaveBeenCalledWith(
+      templateId.toString(),
       expect.objectContaining({
-        constructor: ServiceUnavailableException,
-        message: 'Сервис печати недоступен, используйте Печать в браузере.',
-        status: 503,
+        previewLines: [
+          expect.objectContaining({
+            productName: 'Стенд',
+            photoUrl: '/uploads/stand.webp',
+            rowPresentation: expect.objectContaining({
+              density: 'large',
+              photoFit: 'contain',
+            }),
+          }),
+        ],
       }),
     );
   });

@@ -879,6 +879,9 @@ export class DocumentTemplateService {
         totals,
         isLineItemsTarget ? sheetLayout : undefined,
         isLineItemsTarget ? tableChrome : undefined,
+        isLineItemsTarget
+          ? previewLines.map((line) => line.rowPresentation ?? {})
+          : undefined,
       );
       return this.cloneResolvedBlock(block, { content: html });
     } catch {

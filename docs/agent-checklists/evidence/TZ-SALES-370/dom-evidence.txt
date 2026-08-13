@@ -1,0 +1,12 @@
+﻿TZ-SALES-370 browser DOM evidence
+url: http://localhost:4200/proposals/create?new=1
+openDrawer: kp-table-editor-row-drawer-1
+openLineClass: editor__row editor__row--accent editor__row--large
+indicator on: kp-table-editor-line-1
+editorScroll: clientWidth=772 scrollWidth=772 hasHScroll=false
+drawer controls: Высота Авто/Компактная/Крупная; Выделение Обычная/Акцент; Разделитель сверху; С новой страницы; Показывать описание на бланке
+commerce still in main row: price/sum/discount/optional/unit present (name/qty data-test may differ)
+screenshots: light-drawer-row2.png, dark-drawer-row2.png
+
+narrow@1024: editor cw=sw, hasHScroll=false, drawer=kp-table-editor-row-drawer-1, line keeps accent+large
+A4 live browser: blocked — document templates picker empty in this worktree DB; PDF/print HTML covered by table-template.service.spec (rowPresentation).

@@ -15,6 +15,33 @@ import {
 } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
+/** Whitelisted visual snapshot for one KP line (TZ-SALES-370). */
+export class QuotationRowPresentationDto {
+  @IsOptional()
+  @IsIn(['auto', 'compact', 'large'])
+  density?: 'auto' | 'compact' | 'large';
+
+  @IsOptional()
+  @IsIn(['normal', 'accent'])
+  emphasis?: 'normal' | 'accent';
+
+  @IsOptional()
+  @IsBoolean()
+  separatorBefore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  pageBreakBefore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  showDescription?: boolean;
+
+  @IsOptional()
+  @IsIn(['inherit', 'contain', 'cover'])
+  photoFit?: 'inherit' | 'contain' | 'cover';
+}
+
 export class QuotationItemDto {
   @IsOptional()
   @IsIn(['catalog', 'custom', 'module', 'material'])
@@ -54,6 +81,10 @@ export class QuotationItemDto {
   @IsOptional() @IsNumber() @Min(0) markupPercent?: number;
   @IsOptional() @IsNumber() @Min(0) @Max(100) discountPercent?: number;
   @IsOptional() @IsBoolean() isOptional?: boolean;
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => QuotationRowPresentationDto)
+  rowPresentation?: QuotationRowPresentationDto;
   @IsOptional() @IsNumber() @Min(0) sortOrder?: number;
 }
 
