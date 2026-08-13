@@ -535,6 +535,91 @@ describe('AuthService', () => {
     });
   });
 
+  // ─── TZ-AUTH-304 device flow ────────────────────────────────────
+
+  describe('device flow (TZ-AUTH-304)', () => {
+    const DEVICE_KEY = 'kppdf.device';
+    const statusUrl = `${baseUrl}/device/status`;
+    const sessionUrl = `${baseUrl}/device/session`;
+
+    it('applyDeviceAccess stores access + device flag, clears refresh', () => {
+      const service = makeServiceWithoutTokens();
+      service.applyDeviceAccess('device-access');
+      expect(service.accessToken()).toBe('device-access');
+      expect(service.refreshToken()).toBeNull();
+      expect(localStorage.getItem(ACCESS_KEY)).toBe('device-access');
+      expect(localStorage.getItem(REFRESH_KEY)).toBeNull();
+      expect(localStorage.getItem(DEVICE_KEY)).toBe('1');
+      expect(service.isDeviceSession()).toBe(true);
+    });
+
+    it('bootstrap restores an active device session from the cookie', async () => {
+      const service = makeServiceWithoutTokens();
+      localStorage.setItem(DEVICE_KEY, '1');
+
+      const promise = service.bootstrap();
+
+      // 1. status → active
+      httpMock.expectOne(statusUrl).flush({ status: 'active' });
+      await tick();
+      // 2. session → access
+      httpMock.expectOne(sessionUrl).flush({ access: 'device-access' });
+      await tick();
+      // 3. /auth/me → user
+      httpMock.expectOne(meUrl).flush(fakeUser);
+      await promise;
+
+      expect(service.accessToken()).toBe('device-access');
+      expect(service.refreshToken()).toBeNull();
+      expect(service.user()).toEqual(fakeUser);
+      expect(service.deviceDenied()).toBeNull();
+      expectNoConsoleError();
+    });
+
+    it('bootstrap sets deviceDenied when the device cookie is revoked', async () => {
+      const service = makeServiceWithoutTokens();
+      localStorage.setItem(DEVICE_KEY, '1');
+
+      const promise = service.bootstrap();
+      httpMock.expectOne(statusUrl).flush({ status: 'revoked' });
+      await promise;
+
+      expect(service.deviceDenied()).toContain('отключён');
+      httpMock.expectNone(sessionUrl);
+      expectNoConsoleError();
+    });
+
+    it('renewDevice issues a fresh access from the cookie (single-flight)', async () => {
+      const service = makeServiceWithTokens('access-1', null);
+      service.applyDeviceAccess('access-1');
+
+      const p1 = service.renewDevice();
+      const p2 = service.renewDevice();
+      httpMock.expectOne(sessionUrl).flush({ access: 'access-2' });
+
+      const [a1, a2] = await Promise.all([p1, p2]);
+      expect(a1).toBe('access-2');
+      expect(a2).toBe('access-2');
+      expect(service.accessToken()).toBe('access-2');
+      expectNoConsoleError();
+    });
+
+    it('renewDevice clears state and sets deviceDenied on 401', async () => {
+      const service = makeServiceWithTokens('access-1', null);
+      service.applyDeviceAccess('access-1');
+
+      const promise = service.renewDevice();
+      httpMock.expectOne(sessionUrl).flush('Unauthorized', {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+      await expect(promise).rejects.toMatchObject({ status: 401 });
+      expect(service.accessToken()).toBeNull();
+      expect(service.deviceDenied()).toContain('отключён');
+      expectNoConsoleError();
+    });
+  });
+
   // ─── contract guarantees ─────────────────────────────────────────
 
   describe('RxJS console-error suppression contract', () => {

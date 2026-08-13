@@ -90,6 +90,7 @@ import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.
 import { PermissionsGuard } from './common/guards/permissions.guard';
 import { PermissionsBootModule } from './common/middleware/permissions-boot-validator.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { DeviceEnrollmentModule } from './modules/device-enrollment/device-enrollment.module';
 import { IdempotencyModule } from './common/idempotency/idempotency-storage.module';
 import { IdempotencyMiddleware } from './common/idempotency/idempotency.middleware';
 import { AttributeDefinitionModule } from './modules/attribute-definition/attribute-definition.module';
@@ -260,6 +261,7 @@ import { RequestMethod } from '@nestjs/common';
     TerminusModule,
     PermissionsBootModule, // TZ-255: registers PermissionsBootValidator for OnApplicationBootstrap catalog scan
     AdminModule,            // TZ-257: /api/admin/users + /api/admin/roles (read-only slice)
+    DeviceEnrollmentModule, // TZ-AUTH-303: /api/device/* + /api/admin/devices/*
     IdempotencyModule,      // TZ-247.A: registers IdempotencyStorageService + IdempotencyMiddleware
   ],
   controllers: [HealthController],

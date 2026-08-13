@@ -143,6 +143,36 @@ Owner-only pages are stripped from `/auth/me` `pages[]` for non-owners
 no role can grant it. `isOwner` is hydrated server-side by `JwtStrategy`
 from the DB — it is never trusted from a JWT claim.
 
+## 5c. Device credential model (TZ-AUTH-303)
+
+The device (a named browser/PC) is a first-class access subject. Two
+separate entities back it — **never** mix invite secrets with device
+credentials:
+
+| Entity | Purpose | Storage | Lifetime |
+|--------|---------|---------|----------|
+| `DeviceInvite` | one-time, admin-issued; `regular` carries a preselected ACTIVE `role`, `owner-device` carries an immutable `ownerUserId` | SHA-256 hash + display prefix only | 1/3/7 days (default 3d); owner-device 15m |
+| `BrowserDeviceGrant` | browser-only credential bound to a `userId` | SHA-256 hash only | 365d default, per-invite overridable |
+
+Hard rules:
+
+- The grant secret is delivered in a `__Host-` cookie (`Secure + HttpOnly +
+  SameSite=Lax`, `Path=/`, no `Domain`). It is **never** accepted as
+  `Authorization: Bearer`, `X-Access-Token`, JWT, or a Desktop `kppd_` key.
+- The cookie-only session endpoint issues a normal access JWT capped at 5m
+  and issues **no refresh token**; renewal always re-checks the grant. So
+  revoke / role-change / device-User deactivation takes effect within 5m.
+- Regular activation creates a `User(accountType: 'device')` with a random,
+  never-issued password hash and exactly the invite's role — the role is
+  **never** accepted from the public client. Owner-device activation binds
+  to the existing single owner and never creates a second owner.
+- Admin power stays owner-only: ordinary admins cannot mint an `admin`-role
+  invite nor PATCH a device to/from the `admin` role.
+- `passwordHash` is required for device Users too; admin password reset for
+  `accountType: 'device'` is rejected (409).
+- Device credentials never appear in audit/access messages (only hashes,
+  device names, and grant ids).
+
 ## 6. OWNERSHIP_BY_ENTITY matrix
 
 Each entity is either **user-owned** (a row is conceptually owned by its

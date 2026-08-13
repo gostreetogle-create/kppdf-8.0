@@ -1,3 +1,25 @@
+> **HISTORY — НЕ STARTUP-ФАЙЛ.** Актуальная короткая карта:
+> [`_NOW.md`](./_NOW.md). При старте/resume читайте только `_NOW.md` +
+> `tasks/_active/`. Новые checkpoint сюда не добавлять.
+
+## Checkpoint 2026-08-13T22:10:00Z · TZ-AUTH-304 DONE (WAVE-AUTH-DEVICE-ACCESS #3)
+- DONE: 304 UI — `/enroll/:token` (одно поле имени, GET не consume, POST только по кнопке, token из history, немедленный scoped-вход), device-сессия в SPA (`DEVICE_KEY`, cookie-renew single-flight, `deviceDenied` → «Доступ отключён» на /login, interceptor IS_RETRY без циклов), `/admin/devices` + чип Устройства + диалоги (regular invite role+TTL, owner self-link step-up 15m, изменить роль/срок, отзыв), `PiDeviceEnrollmentService`, specs + docs (enroll.page.md, admin-devices.page.md).
+- Контракт: enroll/session возвращают `sessionKind: 'device'` (184f965d, e2e-assert) — device-сессия никогда не смешивается с password.
+- Gates: FE tsc PASS · auth.service 24/24 · auth.interceptor 13/13 · enroll 6/6 · devices-admin 6/6 · login.page 4/4 · permission-labels PASS · eslint/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-304.done.md`; lock `.mimocode/locks/TZ-AUTH-304-device-enrollment-ui.lock`; checklist DONE; `_active/TZ-AUTH-304.md` removed.
+- Pre-existing (не регрессия): FormProfilesService › isLocked падает на main (TZ-DICT-315).
+- IN PROGRESS: none · NEXT: TZ-AUTH-305 (nginx auth_request + rollback), только после явной команды PO `деплой`; до включения auth_request зарегистрировать owner-браузер (C1).
+- HEAD: `42a139ea` pushed · Blocker: ожидание команды PO `деплой` · Wave status: 3/5, **не DONE**
+- `_active/`: empty
+
+## Checkpoint 2026-08-13T21:40:00Z · TZ-AUTH-303 DONE (WAVE-AUTH-DEVICE-ACCESS #2)
+- DONE: 303 backend device enrollment — модуль `device-enrollment` (DeviceInvite + BrowserDeviceGrant, SHA-256 только hash), атомарное одноразовое погашение в Mongo-tx, `__Host-` cookie (Secure+HttpOnly+SameSite=Lax), cookie-only session JWT ≤5m без refresh, admin invites/devices CRUD, owner-device self-link (15m + password step-up), `accountType: device` на User, reset-password device → 409, admin-power owner-only (403 без мутации). Desktop/nginx не тронуты.
+- Gates: backend tsc PASS · device-enrollment 20/20 · auth.service 15/15 · desktop-pairing-key 7/7 · enrollment e2e 8/8 + auth 6/6 + owner-invariant 8/8 · eslint/diff-check PASS.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-303.done.md`; lock `.mimocode/locks/TZ-AUTH-303-device-enrollment-backend.lock`; checklist DONE; `_active/TZ-AUTH-303.md` removed.
+- IN PROGRESS: none · NEXT: TZ-AUTH-304 (UI `/enroll/:token` + `/admin/devices`).
+- HEAD: 7cec75b6 pushed: yes · Blockers: none · Deploy: НЕ
+- `_active/`: empty
+
 ## Checkpoint 2026-08-13T21:15:00Z · TZ-AUTH-306 DONE (WAVE-AUTH-DEVICE-ACCESS #1)
 - DONE: 306 hidden owner invariant — `isOwner` + partial unique index; idempotent fail-closed backfill (owner = точный active `ADMIN_USERNAME`, иначе startup error, без wipe); owner bypass в Roles/PermissionsGuard (server-hydrated, не из JWT); `OwnerOnlyGuard` (roles+permissions admin), `OwnerTargetGuard` (users-admin mutators); owner скрыт из list/count/search/getById (404); admin-power grant/revoke owner-only; owner self delete/deactivate/demote blocked; FE `isOwner` + ownerOnlyRouteGuard + hide self-destructive. Password login owner = break-glass сохранён.
 - Gates: BE tsc PASS · FE tsc PASS · BE tests 99/99 · e2e owner-invariant 8/8 + auth 6/6 · FE jest 27/27 · eslint/arch/diff-check PASS.

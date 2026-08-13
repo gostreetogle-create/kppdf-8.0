@@ -375,6 +375,45 @@ certbot renew --dry-run
 
 ---
 
+## 15b. TZ-AUTH-305 — `auth_request` вместо Basic (PREP, НЕ применено)
+
+> **Статус:** только документация/план. Переключение — строго после явного слова PO
+> `деплой` и Cursor/PO browser PASS по потоку TZ-AUTH-303/304. Полная политика и
+> nginx-скелет: `docs/ops/home-host-access.md` §4.1.
+
+### Rollout (когда PO скажет «деплой»)
+
+1. На VPS сохранить текущий рабочий конфиг как бэкап:
+   ```bash
+   cp /etc/nginx/sites-available/kppdf-proxy /etc/nginx/sites-available/kppdf-proxy.bak-auth-basic
+   ```
+2. Добавить `internal` location `/internal/device-check` → `proxy_pass` на
+   `http://127.0.0.1:4200/api/device/auth-check` (проброс `Cookie`).
+3. Снять Basic с enrollment route (`/enroll/` + POST `device/enroll|status|session`)
+   и подтвердить активацию тестового invite.
+4. Включить `auth_request /internal/device-check` на UI `/`; проверить active/revoked
+   и owner-device link.
+5. Только после PASS убрать `auth_basic` с основного UI. `/api/` — всегда без
+   `auth_basic` и без `auth_request` (JWT/`kppd_` сами закрывают API).
+6. `nginx -t && systemctl reload nginx` после каждой правки.
+
+### Rollback (одна операция, без БД и без wipe)
+
+```bash
+cp /etc/nginx/sites-available/kppdf-proxy.bak-auth-basic /etc/nginx/sites-available/kppdf-proxy
+nginx -t && systemctl reload nginx
+```
+
+Никаких изменений Mongo/data, backend, Desktop или кода — только nginx.
+
+### Запрещено
+
+- Не трогать VM `:3000`, SSH reverse tunnel, DNS, TLS.
+- Не включать `auth_request`/Basic на `/api` (сломает JWT, Desktop `kppd_`, CORS preflight).
+- Не менять `deploy.ps1`/`deploy.py`/`preflight.ps1` под переключение — это ручной ops-шаг на VPS nginx, не часть app-деплоя.
+
+---
+
 ## 15. История
 
 | Дата | Событие |

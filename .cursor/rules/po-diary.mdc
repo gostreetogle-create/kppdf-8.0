@@ -5,13 +5,12 @@ alwaysApply: true
 
 # PO Diary (обязательно)
 
-Source of truth for **who the product owner is** and **what quality bar he wants**:
-
-→ **`docs/PO-DIARY.md`**
+Stable source of truth: **`docs/PO-CANON.md`**.
+Session history: **`docs/PO-DIARY.md` §5**.
 
 ## Start of session
 
-Before proposing UX or priorities, read `docs/PO-DIARY.md` §1–§4 (canon).  
+Before proposing UX or priorities, read `docs/PO-CANON.md`.
 Do not make PO re-explain character, demo pride, or “how I want it”.
 
 ## End of session
@@ -19,7 +18,7 @@ Do not make PO re-explain character, demo pride, or “how I want it”.
 If this chat produced a **new** insight about PO (taste, refusal, quality bar, working style):
 
 1. Append a dated entry at the top of §5 in `docs/PO-DIARY.md` (3–7 bullets, no transcript).
-2. If it is stable, also update §1–§4 (keep canon short).
+2. If it is stable, also update `docs/PO-CANON.md` (keep ≤80 lines).
 3. Never log secrets/passwords.
 
 Skip the update when nothing new about PO was learned.

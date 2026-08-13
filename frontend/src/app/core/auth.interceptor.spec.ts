@@ -52,6 +52,8 @@ describe('authInterceptor', () => {
     accessToken: jest.Mock;
     refreshToken: jest.Mock;
     refresh: jest.Mock;
+    isDeviceSession: jest.Mock;
+    renewDevice: jest.Mock;
   };
 
   const meUrl = '/api/auth/me';
@@ -59,6 +61,7 @@ describe('authInterceptor', () => {
   const registerUrl = '/api/auth/register';
   const refreshUrl = '/api/auth/refresh';
   const materialsUrl = '/api/materials';
+  const deviceSessionUrl = '/api/device/session';
 
   /**
    * Yield to the event loop so async chains (e.g. the interceptor's
@@ -77,6 +80,8 @@ describe('authInterceptor', () => {
       accessToken: jest.fn(),
       refreshToken: jest.fn(),
       refresh: jest.fn(),
+      isDeviceSession: jest.fn(() => false),
+      renewDevice: jest.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -294,6 +299,64 @@ describe('authInterceptor', () => {
       // endpoint for no reason.
       expect(mockAuth.refresh).not.toHaveBeenCalled();
       expect(error?.status).toBe(500);
+    });
+
+    it('TZ-AUTH-304: 401 on /device/session does NOT re-enter renewDevice (recursion guard)', async () => {
+      mockAuth.accessToken.mockReturnValue('access-1');
+      mockAuth.refreshToken.mockReturnValue(null);
+      mockAuth.isDeviceSession.mockReturnValue(true);
+      mockAuth.renewDevice.mockResolvedValue('access-2');
+
+      let error: HttpErrorResponse | undefined;
+      httpClient.get(deviceSessionUrl).subscribe({
+        error: (e) => {
+          error = e;
+        },
+      });
+      httpMock.expectOne(deviceSessionUrl).flush('Unauthorized', {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+
+      await tick();
+
+      // /device/session is itself the renew endpoint — its 401 must
+      // propagate to AuthService.renewDevice()'s catchError (→
+      // deviceDenied), NOT trigger another renewDevice() call (which
+      // would recurse infinitely through the same in-flight Promise).
+      expect(mockAuth.renewDevice).not.toHaveBeenCalled();
+      expect(error?.status).toBe(401);
+    });
+
+    it('TZ-AUTH-304: 401 with device session (no refresh) → renewDevice + retry', async () => {
+      mockAuth.accessToken.mockReturnValue('access-1');
+      mockAuth.refreshToken.mockReturnValue(null);
+      mockAuth.isDeviceSession.mockReturnValue(true);
+      mockAuth.renewDevice.mockResolvedValue('access-2');
+
+      let response: unknown;
+      httpClient.get(materialsUrl).subscribe({
+        next: (r) => {
+          response = r;
+        },
+      });
+
+      httpMock.expectOne(materialsUrl).flush('Unauthorized', {
+        status: 401,
+        statusText: 'Unauthorized',
+      });
+
+      expect(mockAuth.renewDevice).toHaveBeenCalledTimes(1);
+      expect(mockAuth.refresh).not.toHaveBeenCalled();
+
+      await tick();
+
+      const retryReq = httpMock.expectOne(materialsUrl);
+      expect(retryReq.request.headers.get('X-Access-Token')).toBe('access-2');
+      retryReq.flush([{ id: '1' }]);
+
+      await tick();
+      expect(response).toEqual([{ id: '1' }]);
     });
 
     it('does NOT trigger a second refresh if the retry ALSO returns 401 (IS_RETRY loop guard)', async () => {

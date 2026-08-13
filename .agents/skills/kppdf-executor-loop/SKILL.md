@@ -8,9 +8,10 @@ description: >-
 
 # kppdf executor loop (Buffy / Gemini)
 
-Корень работы: **`D:\kppdf-8.0`** (не freebuff worktree). Если путь недоступен — стоп и скажи PO.
+Continuous: **`D:\kppdf-8.0`/main**. Explicit Cursor Isolated:
+`.worktrees/<TASK-ID>`/task branch. `.freebuff/worktrees` запрещён.
 
-Прочитай также: `GEMINI.md`, `docs/PO-DIARY.md` §1–§4, этот skill.
+Прочитай: `GEMINI.md`, `docs/PO-CANON.md`, `_NOW.md`, свой TZ/checklist.
 
 ## Главное правило PO (2026-08-05)
 
@@ -23,8 +24,8 @@ description: >-
 2. код  
 3. gates (tsc/tests по зоне)  
 4. archive + lock  
-5. **commit + push** на `main`  
-6. следующий TZ из очереди / `_active-map.md`  
+5. **commit + push** на целевую ветку по `docs/GIT-POLICY.md`
+6. следующий TZ из `_NOW.md` / очереди
 7. пока очередь не пуста — **не спрашивай разрешения**
 
 Стоп **только** на реальном выборе PO (архитектура, wipe, prod secrets, «делать ли 304», конфликт данных).  
@@ -36,7 +37,7 @@ Wipe/удаление данных: вопрос PO **по-русски** + бэ
 
 Сделай:
 
-1. Checkpoint в `docs/agent-checklists/_active-map.md`: DONE / NOT DONE / NEXT / HEAD.  
+1. Обнови существующие секции `docs/agent-checklists/_NOW.md`: DONE / NEXT / HEAD.
 2. Короткий отчёт PO: «очередь пуста, архивы чистые, HEAD …, **готово предложить деплой**».  
 3. **Остановись.** Жди новую TZ-очередь **или** явную команду деплоя.
 
@@ -61,20 +62,10 @@ Wipe/удаление данных: вопрос PO **по-русски** + бэ
 3. отчёт PASS/FAIL + URL  
 4. если SSH/`192.168.1.103` недоступен — **один** факт в checkpoint (SSH FAIL), **не** крути цикл «скажи поехали»; можно ретраить когда сеть жива или спросить «VM сейчас в LAN?»
 
-## Checkpoint (обязательно)
+## Live state (обязательно)
 
-Каждые ~5–7 минут **или** после каждого закрытого TZ — обнови **один** нижний блок в `_active-map.md` (не плоди копии без смены статуса):
-
-```text
-## Checkpoint <ISO>
-- DONE: …
-- IN PROGRESS: …
-- NOT DONE: …
-- NEXT: …
-- HEAD: …
-- _active/: …
-- Blockers: none | …
-```
+После изменения статуса или закрытия TZ обнови `_NOW.md` **in-place**.
+Не добавляй checkpoint в `_active-map.md`: это история.
 
 Сессия может оборваться — правда в файле, не в чате.
 
@@ -82,13 +73,12 @@ Wipe/удаление данных: вопрос PO **по-русски** + бэ
 
 - Не коммить `deploy/synology/__pycache__/`, `tasks/Данные/`  
 - Не `-Wipe` без отдельного явного PO  
-- Не начинать **TZ-UI-TABLE-304** без явного PO (склад)  
 - Не ждать магических слов mid-queue  
 - Не автодеплоить потому что «очередь пуста»
 
 ## Старт сессии
 
-1. `git status` / `git log -1` / прочитай `_active-map.md`  
-2. Запиши Checkpoint №1  
-3. Если в `_active/` или в map есть READY TZ — бери следующий  
+1. `git status` / `git log -1` / прочитай `_NOW.md`
+2. Сверь `tasks/_active/` и conflict keys
+3. Если в `_active/` или `_NOW` есть READY TZ — бери следующий
 4. Если очередь пуста и PO **не** просил деплой — отчёт «готово предложить деплой» и idle

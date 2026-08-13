@@ -1,3 +1,28 @@
+> **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
+> Текущая работа: `docs/agent-checklists/_NOW.md`.
+
+## [2026-08-13] — TZ-AUTH-304 DONE — вход по приглашению (UI)
+**Исполнитель:** agent-3e757640b7 (coding agent) + Buffy (closeout/sessionKind-контракт)
+**Статус:** DONE; frontend; deploy НЕ
+**Что:** Публичная активация `/enroll/:token` (одно поле «Как назвать этот компьютер?», GET не consume, POST только по кнопке; после успеха `applyDeviceAccess` — только короткий access JWT без refresh — + `ensureUser()` + `navigateByUrl('/', { replaceUrl: true })`). Device-сессия в SPA: `DEVICE_KEY` (localStorage), `renewDevice` (single-flight cookie-renew), `bootstrapDevice` (status→session→me), `deviceDenied` («Доступ этого компьютера отключён. Обратитесь к администратору.») на `/login`; interceptor 401 → cookie-renew + один retry (IS_RETRY), без циклов; password-поток не затронут. Админ-страница `/admin/devices`: чип «Устройства» (sibling Пользователи|Роли), таблица (имя/состояние «Работает|Отключён»/роль/срок/последний вход), «Создать ссылку» (роль обязательна + срок 1/3/7 + доступ 30/90/365 → URL + Копировать), owner-only «Добавить мой компьютер» (step-up пароль, 15m, без роли), «Изменить роль»/«Изменить срок»/«Отключить» (с подтверждением); `PiDeviceEnrollmentService` — typed клиент.
+**Gates:** FE tsc PASS; auth.service 24/24; auth.interceptor 13/13 (device-renew + recursion-guard); enroll 6/6; devices-admin 6/6; login.page 4/4; permission-labels PASS; eslint/diff-check PASS. Backend-контракт: enroll/session → `sessionKind: 'device'` (184f965d, e2e PASS).
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-304.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-304.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-304-device-enrollment-ui.lock`
+**Known limit:** nginx Basic до TZ-AUTH-305; `__Host-` cookie требует HTTPS; смена роли устройства — при следующем renew (≤5m). Pre-existing (не регрессия): FormProfilesService › isLocked падает на main (TZ-DICT-315).
+**NEXT:** READY FOR DEPLOY — TZ-AUTH-305 (nginx auth_request + rollback) только после явной команды PO `деплой`; до включения auth_request зарегистрировать owner-браузер (C1). Волна 3/5, не DONE; TZ-AUTH-307 только после PASS cutover.
+
+## [2026-08-13] — TZ-AUTH-303 DONE — вход по приглашению (backend)
+**Исполнитель:** agent-3e757640b7 (coding agent)
+**Статус:** DONE; backend-only; deploy НЕ
+**Что:** Новый модуль `backend/src/modules/device-enrollment/` — `DeviceInvite` (regular с preselected активной role / owner-device с immutable ownerUserId, SHA-256 hash + display prefix, TTL 1/3/7d default 3d) и `BrowserDeviceGrant` (browser-only credential, SHA-256 hash, `deviceName` не-unique, 365d default). Атомарное одноразовое погашение в Mongo-транзакции: regular → `User(accountType=device)` с random невыдаваемым паролем и ровно выбранной ролью; owner-device → grant на существующего единственного owner (15m, password step-up). Cookie `__Host-kppdf-device` (Secure+HttpOnly+SameSite=Lax, Path=/, без Domain); cookie-only `GET /device/session` выдаёт access JWT ≤5m без refresh; `GET /device/status`, `GET /device/auth-check` (nginx boolean gate без персональных данных). Admin `user:admin`: invites CRUD + devices list/PATCH/revoke; owner-only `POST /admin/devices/owner-invite` + `GET /admin/devices/owner`. Инварианты: role только из invite; admin-power (invite admin / PATCH в/из admin) — owner-only (403, без мутации User); reset-password для device → 409; audit без plaintext. `accountType` добавлен в `User`; Desktop/nginx не тронуты.
+**Gates:** backend tsc PASS; device-enrollment 20/20; auth.service 15/15; desktop-pairing-key 7/7; enrollment e2e 8/8 + auth 6/6 + owner-invariant 8/8; eslint/diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-303.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-303.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-303-device-enrollment-backend.lock`
+**Known limit:** до 304 нет UI `/enroll` + `/admin/devices`; nginx Basic до 305; `__Host-` cookie требует HTTPS (dev через proxy).
+**NEXT:** TZ-AUTH-304 (UI `/enroll/:token` + `/admin/devices`). Deploy НЕ.
+
 ## [2026-08-13] — TZ-AUTH-306 DONE — единственный скрытый владелец (hidden owner invariant)
 **Исполнитель:** agent-3e757640b7 (coding agent)
 **Статус:** DONE; backend + frontend; deploy НЕ

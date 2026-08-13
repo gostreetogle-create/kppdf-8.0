@@ -1,6 +1,8 @@
 # Architecture — kppdf-8.0
 
 > Корневой архитектурный документ.
+> **Не читать целиком при startup.** Сначала `docs/PROJECT-MEMORY.md` и
+> `docs/DOMAIN-MAP.md`, затем только релевантную секцию/модуль.
 
 **Быстрая карта доменов:** `docs/DOMAIN-MAP.md` (домен → BE module → FE route → page.md → SoT docs).
 
@@ -453,6 +455,15 @@ migration; no mega-collection; legacy Proposal/Quotation merge untouched.
 - **Seed (OnApplicationBootstrap):**
   - PermissionsService — bulk upsert 30+ permission keys
   - AdminSeed — 3 system roles (admin/manager/user), default admin user с предупреждением
+
+## Device enrollment (TZ-AUTH-303)
+- **Модель:** устройство (именованный браузер/ПК) — субъект доступа. Две раздельные сущности:
+  `DeviceInvite` (одноразовый, SHA-256 hash + display prefix; `regular` с preselected активной `role`, `owner-device` с immutable `ownerUserId`) и `BrowserDeviceGrant` (browser-only credential, SHA-256 hash, `deviceName`, `status`, `expiresAt`, `userId`, `inviteKind`).
+- **Креденшал:** grant-secret — только в `__Host-` cookie (`Secure+HttpOnly+SameSite=Lax`, `Path=/`, без `Domain`), default 365d. Никогда не принимается как `Authorization: Bearer`, `X-Access-Token`, JWT или Desktop `kppd_`.
+- **Эндпоинты (public, cookie-only):** `POST /device/enroll` (одноразовое атомарное погашение invite в Mongo-транзакции → создаёт `User(accountType=device)` с random невыдаваемым password и ровно выбранной ролью, либо для `owner-device` привязывает grant к существующему единственному owner), `GET /device/session` (выдаёт access JWT ≤5m без refresh), `GET /device/status` (active|revoked|expired + имя), `GET /device/auth-check` (boolean gate для nginx auth_request, без персональных данных).
+- **Эндпоинты (admin, `user:admin`):** `POST /admin/devices/invites` (regular invite только после выбора активной роли), `GET/POST invites`, `GET /admin/devices`, `PATCH /admin/devices/:id` (role/name/ttl), `POST /admin/devices/:id/revoke`. Owner-only: `POST /admin/devices/owner-invite` (15m TTL + password step-up) и `GET /admin/devices/owner` — обычный admin их не видит/не перечисляет (404/403).
+- **Инварианты:** role берётся ТОЛЬКО из invite (публичный клиент её не подменяет); admin-power grant/revoke — owner-only (нельзя выдать `admin`-invite или PATCH в/из `admin` обычному admin); reset-password для `accountType: device` → 409; revoke/role-change/деактивация User действуют ≤5m.
+- **TTL (config):** invite 3d (1/3/7), owner-device 15m, grant 365d, device JWT 5m; secret entropy ≥192 bit. Audit: issue/consume/revoke/role-change — без plaintext secrets.
 
 ## Deploy / Synology prod (TZ-DEPLOY-301)
 - **Canon domain:** `https://kppdf-crm.ru` via `CORS_ORIGIN` (alias `CORS_ORIGINS`).

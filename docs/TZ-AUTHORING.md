@@ -121,7 +121,7 @@
 | `tasks/_backlog/` | Park / initiative |
 | `tasks/_archive/YYYY-MM/*.done.md` | Только после Executor report |
 
-Индекс потоков: `docs/agent-checklists/_active-map.md`.  
+Текущие потоки: `docs/agent-checklists/_NOW.md`; `_active-map.md` — история.
 Gate деплоя: `tasks/TZ-DEPLOY-301-prep-first-deploy.md` (не смешивать с domain TZ).
 
 ---

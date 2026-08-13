@@ -1,7 +1,7 @@
 # AI Agent Guide — kppdf-8.0
 
-> **Единый онбординг для ИИ-агентов.** Читай этот файл ПЕРВЫМ при входе в проект.
-> Этот документ — твой компас: он говорит что делать, как делать, и что НЕ делать.
+> Справочник паттернов, **не startup-файл**. Минимальный порядок чтения задан в
+> `GEMINI.md` и `docs/PROJECT-MEMORY.md`; здесь открывай только релевантную секцию.
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Роль | Кто | Делает | Не делает |
 |------|-----|--------|-----------|
-| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, планы, executable TZ, UX/business smell → TZ, review текстом; **commit+push своих docs/TZ по умолчанию** | Код продукта, длинные build/test, archive closeout как исполнитель |
+| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, планы, executable TZ, UX/business smell → TZ, review текстом; git по `docs/GIT-POLICY.md` | Код продукта, длинные build/test, archive closeout как исполнитель |
 | **Исполнитель** | Gemini / локальные агенты | Код по TZ, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO |
 | **Локальный draft (LIMITED_HELPER)** | LM Studio Qwen via `pnpm lmstudio` | Черновики мелкого кода / объяснения сниппетов | Security review, TZ, archive, deploy, Layer-3 alone |
 | **Оркестрация** | OrchestratorKit | STATUS, `_active`/`_archive`, verify-status | Бизнес-логика ERP |
@@ -20,37 +20,31 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 
 **Cursor как будущий пользователь ERP:** при чтении кода/потоков замечай неудобные шаги, дубли меню/полей/сущностей, нелогичные статусы и противоречия домена — оформляй в TZ, не молчи. Сверяй с планом PO в **`docs/PO-DIARY.md`**.
 
-**Git:** Cursor коммитит и пушит только свои артефакты (rules, skills, `tasks` спеки, checklists). Чужой half-baked `*.ts` не трогать.
+**Git:** единый канон `docs/GIT-POLICY.md`; чужой half-baked WIP не трогать.
 
 Контракты:
 
 - Cursor: `.cursor/rules/cursor-architect.mdc`, `.cursor/rules/po-diary.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**, **`docs/PO-DIARY.md`**
-- Исполнитель: корневой `GEMINI.md`, `.agents/skills/kppdf-project/SKILL.md`, при kit-flow — `OrchestratorKit/AGENTS.md`
+- Исполнитель: `GEMINI.md`, `.agents/skills/kppdf-executor-loop/SKILL.md`;
+  при kit `TZ-NN.txt` — `OrchestratorKit/AGENTS.md`
 
 Если ты Cursor и тебя просят имплементировать — отказ по Mode A + путь/черновик TZ для локального агента.
 
 ### 1.1 Кто ты (исполнитель)
 
-Ты — ИИ-агент-**исполнитель**, который пишет и редактирует код для **kppdf-8.0**, ERP-системы для управления производством, складом, заказами и документами. Ты работаешь в `D:\kppdf-8.0` на ветке `main`. НИКОГДА не работай в `.freebuff/worktrees/*` — это песочницы Freebuff с устаревшим base (см. `docs/how-to-connect-ai.md`).
+Ты — ИИ-агент-**исполнитель** kppdf-8.0. Workspace-контракт:
+`docs/how-to-connect-ai.md`; `.freebuff/worktrees` запрещён, explicit Cursor
+Isolated `.worktrees/<TASK-ID>` допустим.
 
 ### 1.2 Порядок чтения при входе в проект
 
 ```
-0. docs/how-to-connect-ai.md       ← ПЕРВЫМ: рабочая папка main, запрет .freebuff/worktrees, ритуал старта
-1. docs/AI-AGENT-GUIDE.md          ← Ты здесь. Обязательные паттерны, запреты, ритуалы.
-1a. docs/PROJECT-MEMORY.md         ← Тонкий склад: где правда, что не потерять (читать до ARCHITECTURE)
-1b. docs/PO-DIARY.md               ← Кто PO, планка качества, как хочет работать (канон §1–§4)
-1c. docs/TZ-AUTHORING.md           ← Если ПИШЕШЬ или правишь TZ (канон имён, unique, preflight)
-1d. docs/AUDIT-METHODOLOGY.md      ← Если АУДИТИШЬ домен / миграцию / чужой diff (не реализация)
-1e. docs/CAPABILITY-LEDGER.md       ← Что продукт умеет / absent / removed (не догонять фичи)
-1f. docs/AGENT-TASK-MODES.md        ← Review/Direct/Investigation/TDD/TZ-exec + primary signal
-2. ARCHITECTURE.md                  ← Полная архитектура: схема, конвенции, зоны ответственности.
-3. docs/DEVELOPMENT-PATTERNS.md     ← Конкретные код-паттерны: SilentResult, defineEntity, SubmitGuard.
-4. STACK.md                         ← Технологический стек (актуален на 2026-07).
-5. docs/paper-and-ink.md            ← Дизайн-система: OKLCH, hairline, focus-ring, WCAG.
-6. docs/data-model.md               ← Модель данных (89 сущностей, 11 доменов).
-7. docs/pages/README.md             ← Какие страницы есть, их статус.
-8. docs/pages/<name>.page.md        ← Документация конкретной страницы (если работаешь с ней).
+0. docs/how-to-connect-ai.md
+1. GEMINI.md + docs/PROJECT-MEMORY.md
+2. docs/PO-CANON.md
+3. docs/agent-checklists/_NOW.md + tasks/_active/
+4. собственные TZ/checklist
+5. релевантный page/domain doc; остальные справочники — только по необходимости
 ```
 
 **PO Diary:** после сессии, где появилось новое понимание владельца (вкус, отказ, «как хочу»),
@@ -66,11 +60,11 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 
 До **любой** правки product-кода:
 
-1. Workspace = `D:\kppdf-8.0` (не `.freebuff/worktrees`).
+1. Workspace соответствует `docs/how-to-connect-ai.md`.
 2. TZ в `tasks/_active/<TASK-ID>.md`.
 3. Checklist по `docs/agent-checklists/_TEMPLATE.md`:
    Status `CLAIMED / IN PROGRESS` + **Claim slot** (`agent_id`, `claimed_at` ISO, workspace).
-4. Сверь `_active-map.md` и чужие `_active` conflict keys → конфликт = STOP.
+4. Сверь `_NOW.md` и чужие `_active` conflict keys → конфликт = STOP.
 5. Team Room `claim` — best-effort; **не** замена Claim slot в checklist.
 6. READY FOR REVIEW → ждать Cursor/PO PASS → только потом archive/lock.
 
@@ -99,7 +93,7 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 | `docs/CAPABILITY-LEDGER.md` | Способности продукта: included / available / absent / removed |
 | `docs/AGENT-TASK-MODES.md` | Режимы задачи + primary/secondary + change-surface |
 | `docs/agent-checklists/_TEMPLATE.md` | Шаблон checklist + Claim slot |
-| `docs/agent-checklists/_active-map.md` | Кто сейчас CLAIMED / RESERVED |
+| `docs/agent-checklists/_NOW.md` | Кто сейчас CLAIMED / READY / BLOCKED |
 | `docs/audits/2026-08-04-agent-ops-claim-gaps.md` | Аудит дыр claim/closeout |
 | `OrchestratorKit/` | Система оркестрации задач (не трогать без TZ) |
 

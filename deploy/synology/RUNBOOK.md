@@ -149,6 +149,13 @@ cd /opt/kppdf-8.0 && sudo bash backup.sh
 
 ---
 
+## TZ-AUTH-305 — auth_request вместо Basic (PREP, НЕ применено)
+
+- Полная политика + nginx-скелет: [`docs/ops/home-host-access.md`](../../docs/ops/home-host-access.md) §4.1.
+- Rollout/rollback runbook: [`DEPLOY.md`](./DEPLOY.md) §15b.
+- Переключение — только по явному слову PO `деплой` и после Cursor/PO browser PASS.
+- Rollback: `cp kppdf-proxy.bak-auth-basic kppdf-proxy && nginx -t && systemctl reload nginx` (без БД/wipe).
+
 ## Источники
 
 - [`README.md`](./README.md) — one-command

@@ -17,7 +17,15 @@ describe('LoginPage', () => {
     await TestBed.configureTestingModule({
       imports: [LoginPage],
       providers: [
-        { provide: AuthService, useValue: { login: authLogin } },
+        {
+          provide: AuthService,
+          useValue: {
+            login: authLogin,
+            // TZ-AUTH-304 — LoginPage shows the revoked-device notice
+            // via auth.deviceDenied() in the template.
+            deviceDenied: () => null,
+          },
+        },
         { provide: Router, useValue: { navigateByUrl: routerNavigateByUrl } },
       ],
     }).compileComponents();

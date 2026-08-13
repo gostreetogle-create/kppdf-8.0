@@ -1,7 +1,8 @@
 # STATUS — kppdf-8.0
 
-> 📊 **Single-source-of-truth** о состоянии тех-заданий в этом проекте.
-> Откройте этот файл **первым делом** — он сразу показывает картину.
+> **KIT-ONLY.** Source of truth только для `OrchestratorKit/TZ-NN.txt`.
+> Для root `tasks/TZ-*.md` не читать: актуальное состояние находится в
+> `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
 ---
 

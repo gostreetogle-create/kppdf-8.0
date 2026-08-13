@@ -13,7 +13,7 @@ description: >-
 
 | Агент | Контракт | Режим |
 |---|---|---|
-| **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; **commit+push своих docs**; **не** код продукта |
+| **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; git по `docs/GIT-POLICY.md`; **не** код продукта |
 | **Gemini / локальные** | корневой `GEMINI.md` + этот skill + **`kppdf-executor-loop`** | Executor: код, gates, archive, continuous queue; deploy only on explicit PO |
 | **LM Studio (Qwen local)** | `docs/agents/LM-STUDIO-AGENT.md` + `scripts/lmstudio-agent/run.mjs` | Draft helper only; **LIMITED_HELPER** — не archive/deploy/security review alone |
 
@@ -22,10 +22,10 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 ## Обязательный порядок (исполнитель)
 
 1. Прочитать `GEMINI.md`.
-2. Прочитать `README.md`, `ARCHITECTURE.md`, `STACK.md`,
-   `docs/AI-AGENT-GUIDE.md`, **`docs/PO-DIARY.md` §1–§4**, `docs/DEVELOPMENT-PATTERNS.md`.
-3. Для TZ-flow прочитать `OrchestratorKit/AGENTS.md` и
-   `OrchestratorKit/_templates/TZF-00.txt`.
+2. Прочитать `docs/PROJECT-MEMORY.md`, `docs/PO-CANON.md`, `_NOW.md`,
+   собственные TZ/checklist и релевантный page/domain doc.
+3. `OrchestratorKit/AGENTS.md` + `TZF-00.txt` читать только для kit
+   `OrchestratorKit/TZ-NN.txt`, не для root `tasks/TZ-*.md`.
 3a. Сверить `docs/CAPABILITY-LEDGER.md` и выбрать mode в
     `docs/AGENT-TASK-MODES.md` (primary vs secondary signal).
 4. Проверить `git status`, worktree, активные TZ, архивы и conflict keys.
@@ -37,8 +37,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 8. Проверить typecheck, tests, lint, а для UI — browser/DOM-сценарий.
 9. Провести review diff.
 10. Архивировать только после прохождения gates **и** Cursor/PO PASS (если TZ требует).
-11. Если сессия дала **новое** понимание PO (вкус, отказ, планка показа) —
-    обновить `docs/PO-DIARY.md` §5 (и канон §1–§4 при стабильном инсайте).
+11. Новое понимание PO → `PO-DIARY.md` §5; стабильный принцип → `PO-CANON.md`.
 
 `TZ-232.A`, `TZ-232.N` и `TZ-232.B` не реализуй повторно без доказанного
 дефекта. Wave A не означает завершение родительского `TZ-232`.
@@ -50,7 +49,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 - UI: Paper & Ink, OKLCH, hairline borders, `pi-focus-ring`, WCAG.
 - Package manager: только `pnpm`.
 - Не добавляй `any`, raw `HttpClient` в компоненты, секреты или неподтверждённые зависимости.
-- Не выполняй production-действия, destructive-команды, `git push` или `git commit` без явного запроса владельца.
+- Git/commit/push — только по `docs/GIT-POLICY.md`; deploy/wipe имеют отдельные gates.
 
 ## Skill routing
 

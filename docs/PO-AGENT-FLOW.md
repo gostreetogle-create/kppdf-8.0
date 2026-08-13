@@ -11,24 +11,24 @@
 | **Cursor · архитектор** (этот тип чата) | TZ, очередь, resume-промпт, «что дальше» | Не обязан кодить всю волну сам |
 | **Cursor · Agent / исполнитель** | Код по TZ до archive+push | Не выдумывает фичи вне очереди |
 
-**Исполнитель:** Cursor Agent **или Freebuff** — как удобнее PO.  
-Правда только на **`origin/main`**. Worktree `.freebuff\…` можно для кода, но DONE = SHA уже на main.
+**Исполнитель:** Cursor Agent. Continuous работает в main; explicit Isolated —
+в `.worktrees/<TASK-ID>` на task branch. `.freebuff/worktrees` не использовать.
 
 Состояние правды — **в git**, не в чате:  
-`docs/agent-checklists/_active-map.md` · `tasks/_active/` · `tasks/_archive/2026-08/`.
+`docs/agent-checklists/_NOW.md` · `tasks/_active/` · `tasks/_archive/2026-08/`.
 
 ---
 
 ## Что копировать агенту (всего 3 кнопки)
 
-### 1) Старт / продолжение любой волны (Cursor Agent или Freebuff)
+### 1) Старт / продолжение любой волны (Cursor Agent)
 Файл для стыда КП сейчас:  
 [`tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md`](../tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md)  
-→ вставьте блок `text` **целиком** в Freebuff / Cursor Agent.
+→ вставьте блок `text` **целиком** в Cursor Agent.
 
-По-человечески: *«Дожми Create КП после 348: только стыд на показе, WAVE-KP-SHAME-POLISH, без деплоя. Можно freebuff worktree — но каждый TZ дотащи до origin/main.»*
+По-человечески: *«Дожми подтверждённую волну без деплоя; состояние возьми из `_NOW.md` и git.»*
 
-Универсальный resume (любая волна): [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md) — тоже разрешает freebuff при доставке на main.
+Универсальный resume: [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md).
 
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)
@@ -64,7 +64,7 @@
 | «maximum number of responses» / лимит шагов | Новый чат + **PROMPT-RESUME-ANY** (не разбор полётов) |
 | Просит Admin / `net stop Amnezia…` | Это выключить VPN для LAN. Approve только если VPN сейчас не нужен |
 | Пишет длинный отчёт по-английски | Не переводите мне всё. Спросите Cursor: «сверь git и скажи одну фразу / resume» |
-| Очередь КП (346→348) | **Не** параллельте второй продукт на `proposal-create*` |
+| Активный `proposal-create*` | **Не** параллельте второй продукт на тех же conflict keys |
 | OPS-310 | Можно параллельно с КП, если VPN OFF |
 
 ---
@@ -80,9 +80,4 @@
 
 ## Сейчас (ориентир)
 
-Смотрите верх `_active-map.md`. На момент введения этой шпаргалки типичный хвост:
-
-- KP-COMPLETE: … → **346** → 347 → 348  
-- OPS-310: gate перед деплоем (если ещё нет `TZ-OPS-310.done.md`)
-
-Точная правда — всегда верхний Checkpoint в `_active-map.md` после `git pull`.
+Точная правда — `docs/agent-checklists/_NOW.md` + `tasks/_active/` после `git pull`.
