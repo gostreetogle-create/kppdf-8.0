@@ -5,9 +5,9 @@
 **Gates:** FE tsc PASS; auth.service 24/24; auth.interceptor 13/13 (device-renew + recursion-guard); enroll 6/6; devices-admin 6/6; login.page 4/4; permission-labels PASS; eslint/diff-check PASS. Backend-контракт: enroll/session → `sessionKind: 'device'` (184f965d, e2e PASS).
 **Archive:** `tasks/_archive/2026-08/TZ-AUTH-304.done.md`
 **Checklist:** `docs/agent-checklists/TZ-AUTH-304.md`
-**Lock:** `tasks/_backlog/TZ-AUTH-304-device-enrollment-ui.lock`
+**Lock:** `.mimocode/locks/TZ-AUTH-304-device-enrollment-ui.lock`
 **Known limit:** nginx Basic до TZ-AUTH-305; `__Host-` cookie требует HTTPS; смена роли устройства — при следующем renew (≤5m). Pre-existing (не регрессия): FormProfilesService › isLocked падает на main (TZ-DICT-315).
-**NEXT:** TZ-AUTH-305 (nginx auth_request + rollback; до включения auth_request зарегистрировать owner-браузер — C1-поправка). Deploy НЕ.
+**NEXT:** READY FOR DEPLOY — TZ-AUTH-305 (nginx auth_request + rollback) только после явной команды PO `деплой`; до включения auth_request зарегистрировать owner-браузер (C1). Волна 3/5, не DONE; TZ-AUTH-307 только после PASS cutover.
 
 ## [2026-08-13] — TZ-AUTH-303 DONE — вход по приглашению (backend)
 **Исполнитель:** agent-3e757640b7 (coding agent)

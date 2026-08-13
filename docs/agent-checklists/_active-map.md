@@ -2,7 +2,7 @@
 - DONE: 304 UI — `/enroll/:token` (одно поле имени, GET не consume, POST только по кнопке, token из history, немедленный scoped-вход), device-сессия в SPA (`DEVICE_KEY`, cookie-renew single-flight, `deviceDenied` → «Доступ отключён» на /login, interceptor IS_RETRY без циклов), `/admin/devices` + чип Устройства + диалоги (regular invite role+TTL, owner self-link step-up 15m, изменить роль/срок, отзыв), `PiDeviceEnrollmentService`, specs + docs (enroll.page.md, admin-devices.page.md).
 - Контракт: enroll/session возвращают `sessionKind: 'device'` (184f965d, e2e-assert) — device-сессия никогда не смешивается с password.
 - Gates: FE tsc PASS · auth.service 24/24 · auth.interceptor 13/13 · enroll 6/6 · devices-admin 6/6 · login.page 4/4 · permission-labels PASS · eslint/diff-check PASS.
-- Archive: `tasks/_archive/2026-08/TZ-AUTH-304.done.md`; lock `tasks/_backlog/TZ-AUTH-304-device-enrollment-ui.lock`; checklist DONE; `_active/TZ-AUTH-304.md` removed.
+- Archive: `tasks/_archive/2026-08/TZ-AUTH-304.done.md`; lock `.mimocode/locks/TZ-AUTH-304-device-enrollment-ui.lock`; checklist DONE; `_active/TZ-AUTH-304.md` removed.
 - Pre-existing (не регрессия): FormProfilesService › isLocked падает на main (TZ-DICT-315).
 - IN PROGRESS: none · NEXT: TZ-AUTH-305 (nginx auth_request + rollback), только после явной команды PO `деплой`; до включения auth_request зарегистрировать owner-браузер (C1).
 - HEAD: `42a139ea` pushed · Blocker: ожидание команды PO `деплой` · Wave status: 3/5, **не DONE**
