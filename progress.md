@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-14] — TZ-SALES-372 DONE — snapshot edit и решение каталога
+**Исполнитель:** Buffy / predeploy executor
+**Статус:** DONE; frontend + backend contract; deploy НЕ
+**Что:** Identity-поля source-linked Product редактируются только в snapshot КП; metadata `catalogDirtyFields/catalogDecision/catalogSourceVersion` переживает save/hydrate/F5. При выходе из таблицы открывается multi-row review с тремя per-row решениями; КП-only безопасен, source update ограничен dirty identity fields + `expectedVersion`, copy-after-edit делает duplicate/rebind, явная копия строки вставляется ниже, а обычный duplicate строки сохраняет тот же Product. Коммерческие qty/price/discount/optional/row presentation не sync в Product.
+**Gates:** FE tsc PASS; proposal-create Jest 45/45; BE tsc PASS; quotation.service 36/36; Product duplicate/expectedVersion contract covered by CATALOG-371; changed ESLint PASS; architecture:check PASS; git diff --check PASS; local shell smoke HTTP 200; controlled snapshot/review/copy evidence PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-372.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-372.md`
+**Lock:** `.mimocode/locks/TZ-SALES-372-kp-line-snapshot-edit-and-catalog-resolution.lock`
+**Implementation SHA:** `cbf2e2fe14dc674e688623b332299e85a1c66146`
+**Closeout SHA:** `728ebf2c`
+**Known limit:** module/material source-sync and inline media upload вне v1; KP3 photo population remains `TZD-47 → TZ-MIG-303`; production/deploy/SSH/nginx/migration/wipe не выполнялись.
+
 ## [2026-08-14] — TZ-SALES-371 DONE — реальное фото изделия в КП
 **Исполнитель:** Buffy / predeploy executor
 **Статус:** DONE; frontend + backend output; deploy НЕ

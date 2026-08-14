@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-14T06:10:00+03:00
-main_head: `cbf2e2fe`
+updated_at: 2026-08-14T06:20:00+03:00
+main_head: `728ebf2c`
 
 ## ACTIVE
 
@@ -31,15 +31,14 @@ main_head: `cbf2e2fe`
 - Active marker removed after closeout; deploy НЕ.
 - Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
 
-### TZ-SALES-372 — CLAIMED / IN PROGRESS
+### TZ-SALES-372 — DONE / LANDED
 
-- Marker: `tasks/_active/TZ-SALES-372.md`
 - Checklist: `docs/agent-checklists/TZ-SALES-372.md`
-- Owner: Buffy / predeploy executor; claimed after SALES-371 closeout landed.
-- State: snapshot-first identity edit and explicit catalog resolution workflow in verification.
+- Implementation: `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout: `728ebf2c`
+- State: snapshot-first identity edits, multi-row review, КП-only/update/copy decisions, expectedVersion conflict handling and row copy/rebind DONE.
+- Archive/lock/checklist landed; active marker removed; deploy НЕ.
 - Team Room: task not registered; claim attempt recorded in checklist.
-- Conflict keys: proposal-create page/table editor/product rail/spec + quotation schema/dto/service/spec + page doc.
-- Deploy НЕ; Product source updates are explicit only and conflict-safe.
+- Conflict keys released: proposal-create page/table editor/product rail/spec + quotation schema/dto/service/spec + page doc.
 
 ### TZ-SALES-370 — DONE / LANDED
 
@@ -52,7 +51,7 @@ main_head: `cbf2e2fe`
 ## READY / ORDER
 
 1. SALES-371 photo output — DONE / landed; archive and lock recorded.
-3. SALES-372 snapshot edit/catalog resolution — CLAIMED / IN PROGRESS; dependencies are DONE in main.
+3. SALES-372 snapshot edit/catalog resolution — DONE / landed; archive and lock recorded.
 4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
@@ -68,7 +67,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 ## GLOBAL BLOCKERS / BANS
 
 - Wave AUTH = 3/5, не DONE.
-- SALES-371 is DONE / landed; SALES-372 is the active next queue item; CATALOG-371 is DONE / landed.
+- SALES-371 and SALES-372 are DONE / landed; CATALOG-371 is DONE / landed.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.
