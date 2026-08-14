@@ -1,6 +1,17 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-14] — TZ-SALES-371 DONE — реальное фото изделия в КП
+**Исполнитель:** Buffy / predeploy executor
+**Статус:** DONE; frontend + backend output; deploy НЕ
+**Что:** Реальный populated `Product.photoIds` thumb/medium теперь переносится в line snapshot вместе с description; видимая фото-колонка имеет единые FE/BE aliases и request-scoped layout controls; saved quotation rebuild сохраняет `photoUrl` и `sheetLayout`; PDF применяет allowlisted own asset resolver, base href и bounded image wait; отсутствующее/запрещённое фото даёт нейтральное `Нет фото`. Inline catalog identity edits остаются snapshot metadata для SALES-372 и не мутируют Product.
+**Gates:** FE tsc PASS; proposal-create Jest 45/45; BE tsc PASS; quotation/table-template/quotation-output 44/44; document-template assets 5/5; changed ESLint без ошибок; architecture:check PASS; git diff --check PASS; controlled real-photo/no-photo fixture path PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-371.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-371.md`
+**Lock:** `.mimocode/locks/TZ-SALES-371-kp-real-product-photo-output.lock`
+**Implementation SHA:** `cbf2e2fe14dc674e688623b332299e85a1c66146`
+**Known limit:** KP3 фото остаются зависимостью `TZD-47 → TZ-MIG-303`; deploy, SSH, nginx, migration и wipe не выполнялись.
+
 ## [2026-08-13] — TZ-SALES-370 DONE — настройки вида строки КП
 **Исполнитель:** Buffy (closeout) / isolated `feature/TZ-SALES-370`
 **Статус:** DONE; frontend + backend; deploy НЕ

@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-13T23:55:00+03:00
-main_head: `bd23a4d1`
+updated_at: 2026-08-14T06:00:00+03:00
+main_head: `cbf2e2fe`
 
 ## ACTIVE
 
@@ -26,7 +26,7 @@ main_head: `bd23a4d1`
 
 - Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
 - Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
-- State: duplicate API, expectedVersion and typed FE client DONE; archive/lock closeout in progress.
+- State: duplicate API, expectedVersion and typed FE client DONE; archive/lock/checklist landed.
 - Team Room: task not registered; claim attempt recorded in checklist.
 - Active marker removed after closeout; deploy НЕ.
 - Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
@@ -41,8 +41,8 @@ main_head: `bd23a4d1`
 
 ## READY / ORDER
 
-1. SALES-371 photo output — READY to claim after CATALOG-371 closeout in main.
-3. SALES-372 snapshot edit/catalog resolution — after SALES-370 + SALES-371 + CATALOG-371 DONE in main.
+1. SALES-371 photo output — DONE / landed; archive and lock recorded.
+3. SALES-372 snapshot edit/catalog resolution — READY to claim; all dependencies are DONE in main.
 4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
@@ -58,7 +58,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 ## GLOBAL BLOCKERS / BANS
 
 - Wave AUTH = 3/5, не DONE.
-- SALES-371 / SALES-372 remain queued; CATALOG-371 is claimed and in progress.
+- SALES-371 is DONE / landed; SALES-372 is the active next queue item; CATALOG-371 is DONE / landed.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.
