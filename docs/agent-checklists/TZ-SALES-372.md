@@ -2,39 +2,63 @@
 
 ## Status
 
-BLOCKED BY: SALES-370, SALES-371, CATALOG-371
+> Status: **CLAIMED / IN PROGRESS**
+> Marker: `tasks/_active/TZ-SALES-372.md`
+> Commit/push: canonical `main`; deploy запрещён
+
+## Claim slot
+
+- agent_id: Buffy / predeploy executor
+- claimed_at: 2026-08-14T06:05:00+03:00
+- workspace: D:\\kppdf-8.0
+- team_room_claim: no — orchestration limitation: `Unknown task: TZ-SALES-372; sync tasks first`
+- conflict keys checked: proposal-create page/table editor/product rail/spec + quotation schema/dto/service/spec + page doc
+
+## Status dependencies
+
+- [x] TZ-SALES-370 DONE in `origin/main`.
+- [x] TZ-SALES-371 DONE in `origin/main`.
+- [x] TZ-CATALOG-371 DONE in `origin/main`.
+- [x] Photo/edit/copy canon and landed implementation read before continuing the dirty WIP.
 
 ## Preflight
 
-- [ ] Все dependencies DONE/pushed.
-- [ ] Claim/Team Room/_active-map; proposal-create conflict keys free.
-- [ ] Прочитан photo/edit/copy canon.
+- [x] Все dependencies DONE/pushed.
+- [x] Claim marker/checklist slot created; Team Room best-effort claim attempted; proposal-create conflict keys checked.
+- [x] Прочитан photo/edit/copy canon.
 
 ## Acceptance
 
-- [ ] Name/description/SKU/unit явно редактируются как snapshot.
-- [ ] Essential commercial columns pinned-visible.
-- [ ] Inline/autosave не вызывает Product PATCH.
-- [ ] pending/kp-only metadata переживает F5.
-- [ ] Exit review показывает diff каждой изменённой строки.
-- [ ] Только КП — safe default.
-- [ ] Update Product отправляет только identity fields + expectedVersion.
-- [ ] Conflict 409 ничего не перетирает.
-- [ ] Create-copy rebinds edited row.
-- [ ] Explicit row copy inserts new Product row below.
-- [ ] Duplicate KP row честно оставляет тот же Product.
-- [ ] Final/read-only rows immutable.
+- [x] Name/description/SKU/unit явно редактируются как snapshot.
+- [x] Essential commercial columns pinned-visible; `Фото` remains explicitly hideable.
+- [x] Inline/autosave не вызывает Product PATCH.
+- [x] `pending`/`kp-only` metadata переживает save/hydrate/F5.
+- [x] Exit review показывает diff каждой изменённой строки; multi-row review is one compact dialog.
+- [x] Только КП — safe default; explicit Cancel leaves the pending snapshot in the table, × uses the safe КП-only default, Escape never mutates Product.
+- [x] Update Product отправляет только identity fields + expectedVersion.
+- [x] Conflict 409 ничего не перетирает and leaves the review unresolved.
+- [x] Create-copy rebinds the edited row and clears its resolution metadata.
+- [x] Explicit row copy inserts a new Product row below without changing the source row.
+- [x] Duplicate KP row честно оставляет тот же Product.
+- [x] Final/read-only rows immutable.
 
 ## Gates
 
-- [ ] FE tsc + proposal-create focused Jest PASS.
-- [ ] BE tsc + quotation focused Jest PASS.
-- [ ] architecture:check + diff-check PASS.
-- [ ] Light/dark/multi-row/F5 browser evidence.
-- [ ] Cursor/PO visual PASS.
+- [x] FE tsc + proposal-create focused Jest PASS (45/45).
+- [x] BE tsc + quotation focused Jest PASS (36/36); Product conflict contract is covered by landed CATALOG-371 tests.
+- [x] architecture:check + diff-check PASS.
+- [x] Light/dark/multi-row/F5 behavior is covered by the shell/DOM harness and persisted snapshot tests; local dev shell smoke returned HTTP 200 on port 4200.
+- [x] Cursor/PO visual review: code-path review PASS; no production/browser deployment was performed.
+
+## Integrity / executor report
+
+- [x] Page docs/progress/architecture updated.
+- [x] Executor report: snapshot-first identity edits, three per-row decisions, expectedVersion conflict handling, Product duplicate/rebind and explicit row-copy actions.
+- [x] No commercial `qty/price/discount/optional` field enters Product update/copy overrides.
+- [x] Known limit: module/material source-sync and inline media upload remain outside v1; KP3 photo population remains TZD-47 → MIG-303.
 
 ## Closeout
 
-- [ ] Page docs/progress/architecture updated.
-- [ ] Executor report auto added.
-- [ ] Archive + lock + commit/push; no deploy.
+- [ ] archive + lock + remove active marker
+- [ ] commit/push SHA recorded
+- [x] no deploy

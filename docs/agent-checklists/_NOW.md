@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-14T06:00:00+03:00
+updated_at: 2026-08-14T06:10:00+03:00
 main_head: `cbf2e2fe`
 
 ## ACTIVE
@@ -31,6 +31,16 @@ main_head: `cbf2e2fe`
 - Active marker removed after closeout; deploy НЕ.
 - Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
 
+### TZ-SALES-372 — CLAIMED / IN PROGRESS
+
+- Marker: `tasks/_active/TZ-SALES-372.md`
+- Checklist: `docs/agent-checklists/TZ-SALES-372.md`
+- Owner: Buffy / predeploy executor; claimed after SALES-371 closeout landed.
+- State: snapshot-first identity edit and explicit catalog resolution workflow in verification.
+- Team Room: task not registered; claim attempt recorded in checklist.
+- Conflict keys: proposal-create page/table editor/product rail/spec + quotation schema/dto/service/spec + page doc.
+- Deploy НЕ; Product source updates are explicit only and conflict-safe.
+
 ### TZ-SALES-370 — DONE / LANDED
 
 - Branch: `feature/TZ-SALES-370`
@@ -42,7 +52,7 @@ main_head: `cbf2e2fe`
 ## READY / ORDER
 
 1. SALES-371 photo output — DONE / landed; archive and lock recorded.
-3. SALES-372 snapshot edit/catalog resolution — READY to claim; all dependencies are DONE in main.
+3. SALES-372 snapshot edit/catalog resolution — CLAIMED / IN PROGRESS; dependencies are DONE in main.
 4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
