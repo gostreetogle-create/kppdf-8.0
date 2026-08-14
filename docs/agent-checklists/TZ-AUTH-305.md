@@ -1,6 +1,6 @@
 # TZ-AUTH-305 checklist
 
-> Status: **IN PROGRESS — PREP ONLY** (deploy blocked)
+> Status: **IN PROGRESS — WARM APP DEPLOY PASS; BASIC REMAINS**
 > Marker: `tasks/_active/TZ-AUTH-305.md`
 > Commit/push: **NO deploy**; prep-docs commit allowed
 
@@ -38,4 +38,7 @@
 ## Executor report (auto)
 
 - Prep: см. `docs/ops/home-host-access.md` §4.1 (nginx auth_request политика + rollback) и `deploy/synology/DEPLOY.md` §15b (rollout/rollback runbook).
-- Deploy НЕ выполнялся.
+- Warm deploy 2026-08-14: `origin/main` `940b4f8519c50da7232d41556635f950ddd86965`,
+  `WIPE=false`, Angular build/upload/Docker/backend/auth/frontend smoke PASS.
+- Production data preserved in `/var/lib/kppdf80`; Basic Auth remains enabled.
+- Pending: manual browser flow A–E, owner device registration, then staged nginx cutover.
