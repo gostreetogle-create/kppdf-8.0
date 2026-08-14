@@ -13,6 +13,7 @@ import { ProposalProductRailComponent } from './proposal-product-rail.component'
 const product: Product = {
   _id: 'product-1',
   name: 'Стенд ресепшн',
+  description: 'Реальное описание изделия',
   sku: 'ST-001',
   kind: 'good',
   unit: 'шт',
@@ -169,6 +170,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
       lineKind: 'catalog',
       productId: 'product-1',
       productName: 'Стенд ресепшн',
+      description: 'Реальное описание изделия',
       productSku: 'ST-001',
       quantity: 3,
       unit: 'шт',

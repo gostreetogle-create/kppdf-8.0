@@ -249,6 +249,48 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).toContain('Позиция 30');
   });
 
+  it('maps a persisted product photo into the live table image cell and keeps empty photos neutral', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'photo', label: 'Фото', type: 'text', align: 'center' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) => {
+        const cell = rows[0]?.[0] as { kind?: string; url?: string } | undefined;
+        return cell?.kind === 'image' && cell.url
+          ? `<img src="${cell.url}" alt="" />`
+          : '<span class="pi-photo-empty">Нет фото</span>';
+      }),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+        },
+      ],
+    });
+
+    const withPhoto = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: [
+        { productName: 'Стенд', quantity: 1, unitPrice: 100, photoUrl: '/uploads/stand.webp' },
+      ],
+      tableLayout: [{ key: 'photo', visible: true }],
+      sheetLayout: { showPhotoColumn: true },
+    });
+    expect(withPhoto).toContain('<img src="/uploads/stand.webp" alt="" />');
+
+    const withoutPhoto = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: [{ productName: 'Без фото', quantity: 1, unitPrice: 100 }],
+      tableLayout: [{ key: 'photo', visible: true }],
+      sheetLayout: { showPhotoColumn: true },
+    });
+    expect(withoutPhoto).toContain('Нет фото');
+    expect(withoutPhoto).not.toContain('<img');
+  });
+
   it('renders КП terms with values and preserves unknown variables', async () => {
     const service = makeService({
       organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },

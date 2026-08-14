@@ -43,10 +43,36 @@ export class QuotationOutputService {
     let page: Page | undefined;
     try {
       page = await browser.newPage();
-      await page.setContent(rendered.html, {
+      await page.setContent(this.withPdfBaseHref(rendered.html), {
         waitUntil: 'load',
         timeout: 15_000,
       });
+      const evaluate = (page as unknown as {
+        evaluate?: (pageFunction: () => Promise<void>) => Promise<void>;
+      }).evaluate;
+      if (typeof evaluate === 'function') {
+        await evaluate.call(page, async () => {
+          const images = Array.from(document.images);
+          await Promise.all(
+            images.map(
+              (image) =>
+                image.complete
+                  ? Promise.resolve()
+                  : new Promise<void>((resolve) => {
+                      const timer = window.setTimeout(resolve, 3_000);
+                      image.addEventListener('load', () => {
+                        window.clearTimeout(timer);
+                        resolve();
+                      }, { once: true });
+                      image.addEventListener('error', () => {
+                        window.clearTimeout(timer);
+                        resolve();
+                      }, { once: true });
+                    }),
+            ),
+          );
+        });
+      }
       const buffer = Buffer.from(
         await page.pdf({
           format: this.pageFormat(rendered.html),
@@ -154,6 +180,7 @@ export class QuotationOutputService {
   ): BuildDocumentDto {
     const tableLayout = snapshot?.['tableLayout'];
     const tableTargetId = snapshot?.['tableTargetId'];
+    const sheetLayout = snapshot?.['sheetLayout'];
     return {
       previewLines: (quotation.items ?? []).map((item) => ({
         ...(item.lineKind === 'custom' ? { lineKind: 'custom' as const } : {}),
@@ -172,6 +199,9 @@ export class QuotationOutputService {
       })),
       ...(Array.isArray(tableLayout) ? { tableLayout } : {}),
       ...(typeof tableTargetId === 'string' ? { tableTargetId } : {}),
+      ...(sheetLayout && typeof sheetLayout === 'object'
+        ? { sheetLayout: sheetLayout as BuildDocumentDto['sheetLayout'] }
+        : {}),
       terms: (quotation.terms ?? []).map((term, sortOrder) => ({
         text: term.text,
         sortOrder: term.sortOrder ?? sortOrder,
@@ -228,6 +258,22 @@ export class QuotationOutputService {
         );
       });
     return this.browserPromise;
+  }
+
+  private withPdfBaseHref(html: string): string {
+    if (/<base\s/i.test(html)) return html;
+    const configured = process.env.KPPDF_PUBLIC_ORIGIN ?? process.env.PUBLIC_BASE_URL ?? 'http://127.0.0.1:3000';
+    let origin = 'http://127.0.0.1:3000';
+    try {
+      origin = new URL(configured).origin;
+    } catch {
+      // Keep the local backend default; invalid configuration must not create a raw URL.
+    }
+    const baseTag = `<base href="${origin}/">`;
+    if (/<head[^>]*>/i.test(html)) {
+      return html.replace(/<head[^>]*>/i, (open) => `${open}${baseTag}`);
+    }
+    return `<!DOCTYPE html><html><head>${baseTag}</head><body>${html}</body></html>`;
   }
 
   private executablePath(): string | undefined {

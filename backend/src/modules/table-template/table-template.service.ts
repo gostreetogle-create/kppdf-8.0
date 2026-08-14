@@ -360,6 +360,7 @@ export class TableTemplateService implements OnModuleInit {
       unit: ['unit', 'ед', 'ед.изм'],
       unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
       sum: ['sum', 'total', 'amount', 'сумма'],
+      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
     };
     const match = Object.entries(aliases).find(([, values]) =>
       values.includes(normalized),
@@ -368,6 +369,15 @@ export class TableTemplateService implements OnModuleInit {
     const defaults = KP_LINE_ITEM_COLUMNS.find(
       (column) => column.key === match[0],
     );
+    if (match[0] === 'photo') {
+      return {
+        key: 'photo',
+        label: 'Фото',
+        type: 'text',
+        width: 100,
+        align: 'center',
+      } as TableTemplateDocument['columns'][number];
+    }
     return defaults
       ? ({ ...defaults } as TableTemplateDocument['columns'][number])
       : null;
@@ -532,13 +542,11 @@ export class TableTemplateService implements OnModuleInit {
     photoOptions?: TablePhotoOptions,
     photoFit?: TableRowPresentation['photoFit'],
   ): string {
-    if (typeof value !== 'string' || !value) return '';
-    const url = value.trim();
-    const allowed =
-      /^https?:\/\//i.test(url) ||
-      /^\/(?!\/)/.test(url) ||
-      /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url);
-    if (!allowed) return '';
+    if (typeof value !== 'string' || !value) {
+      return '<span class="pi-photo-empty">Нет фото</span>';
+    }
+    const url = this.resolvePhotoUrl(value.trim());
+    if (!url) return '<span class="pi-photo-empty">Нет фото</span>';
     const fit =
       photoFit === 'contain' || photoFit === 'cover' ? photoFit : null;
     if (!photoOptions) {
@@ -557,6 +565,27 @@ export class TableTemplateService implements OnModuleInit {
     const height = Math.min(120, Math.max(10, (48 * scale) / 100));
     const objectFit = fit ?? 'cover';
     return `<img src="${this.escapeHtml(url)}" alt="" style="width:${width}px;height:${height}px;max-width:100%;object-fit:${objectFit};object-position:center ${cropY}%" />`;
+  }
+
+  private resolvePhotoUrl(value: string): string | null {
+    if (/^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(value)) {
+      return value;
+    }
+    if (/^\/uploads\/(?!\/|\.\.?\/)/.test(value) && !value.includes('..\\') && !value.includes('/../') && !/[?\s]/.test(value)) {
+      return value;
+    }
+    try {
+      const parsed = new URL(value);
+      const configured = process.env.KPPDF_PUBLIC_ORIGIN ?? process.env.PUBLIC_BASE_URL ?? 'http://127.0.0.1:3000';
+      const configuredOrigin = new URL(configured).origin;
+      const loopbackOrigin = configuredOrigin.replace('127.0.0.1', 'localhost');
+      if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+      if (![configuredOrigin, loopbackOrigin].includes(parsed.origin)) return null;
+      if (!parsed.pathname.startsWith('/uploads/') || parsed.search || parsed.hash) return null;
+      return parsed.toString();
+    } catch {
+      return null;
+    }
   }
 
   /** Minimal HTML escaper; output rendered as `[innerHTML]` on consumer side. */

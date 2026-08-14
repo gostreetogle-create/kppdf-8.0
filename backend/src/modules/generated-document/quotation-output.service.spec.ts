@@ -1,4 +1,3 @@
-import { ServiceUnavailableException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import puppeteer from 'puppeteer-core';
 import { QuotationOutputService } from './quotation-output.service';
@@ -172,6 +171,7 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
       templateSnapshot: {
         templateId: templateId.toString(),
         tableLayout: [{ key: 'sum', visible: true }],
+        sheetLayout: { photoScalePercent: 140, photoCropYPercent: 12, showPhotoColumn: true },
       },
     };
     const build = jest.fn().mockResolvedValue('<html>КП row</html>');
@@ -211,6 +211,11 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
             }),
           }),
         ],
+        sheetLayout: expect.objectContaining({
+          photoScalePercent: 140,
+          photoCropYPercent: 12,
+          showPhotoColumn: true,
+        }),
       }),
     );
   });

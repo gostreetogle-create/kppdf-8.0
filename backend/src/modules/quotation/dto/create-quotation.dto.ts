@@ -68,6 +68,12 @@ export class QuotationItemDto {
   @IsOptional() @IsString() productSku?: string;
   @IsOptional() @IsString() photoUrl?: string;
   @IsOptional() @IsString() sourceItemId?: string;
+  @IsOptional()
+  @IsArray()
+  @IsIn(['productName', 'description', 'productSku', 'unit'], { each: true })
+  catalogDirtyFields?: Array<'productName' | 'description' | 'productSku' | 'unit'>;
+  @IsOptional() @IsIn(['pending', 'kp-only']) catalogDecision?: 'pending' | 'kp-only';
+  @IsOptional() @IsNumber() @Min(0) catalogSourceVersion?: number;
 
   @IsNumber()
   @Min(0)

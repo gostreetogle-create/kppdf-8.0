@@ -402,6 +402,13 @@ export class QuotationService {
       productSku: item.productSku,
       photoUrl: item.photoUrl,
       sourceItemId: item.sourceItemId,
+      ...(item.catalogDirtyFields?.length
+        ? { catalogDirtyFields: [...item.catalogDirtyFields] }
+        : {}),
+      ...(item.catalogDecision ? { catalogDecision: item.catalogDecision } : {}),
+      ...(item.catalogSourceVersion !== undefined
+        ? { catalogSourceVersion: item.catalogSourceVersion }
+        : {}),
       quantity: item.quantity,
       unit: item.unit,
       unitPrice: item.unitPrice,
@@ -466,6 +473,9 @@ export class QuotationService {
     productSku?: string;
     photoUrl?: string;
     sourceItemId?: string;
+    catalogDirtyFields?: Array<'productName' | 'description' | 'productSku' | 'unit'>;
+    catalogDecision?: 'pending' | 'kp-only';
+    catalogSourceVersion?: number;
     quantity: number;
     unit?: string;
     unitPrice: number;
@@ -499,6 +509,12 @@ export class QuotationService {
     const gross = (item.quantity ?? 0) * (item.unitPrice ?? 0);
     const total = Math.round(gross * (1 - discountPercent / 100) * 100) / 100;
     const rowPresentation = this.normalizeRowPresentation(item.rowPresentation);
+    const catalogDirtyFields =
+      lineKind === 'catalog'
+        ? [...new Set(item.catalogDirtyFields ?? [])]
+        : [];
+    const catalogDecision =
+      lineKind === 'catalog' ? item.catalogDecision : undefined;
     return {
       lineKind,
       ...(item.productId
@@ -510,6 +526,11 @@ export class QuotationService {
       productSku: item.productSku,
       photoUrl: item.photoUrl,
       sourceItemId: item.sourceItemId,
+      ...(catalogDirtyFields.length ? { catalogDirtyFields } : {}),
+      ...(catalogDecision ? { catalogDecision } : {}),
+      ...(item.catalogSourceVersion !== undefined && lineKind === 'catalog'
+        ? { catalogSourceVersion: item.catalogSourceVersion }
+        : {}),
       quantity: item.quantity,
       unit: item.unit,
       unitPrice: item.unitPrice,

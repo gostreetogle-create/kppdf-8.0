@@ -384,6 +384,41 @@ describe('QuotationService — SALES-301 (КП thin UI)', () => {
       expect(created.items[1].rowPresentation).toBeUndefined();
     });
 
+    it('persists snapshot catalog resolution metadata without commercial fields', async () => {
+      const { service, model } = createService();
+      model.create.mockResolvedValue(quotationDoc({}));
+      const productId = new Types.ObjectId().toString();
+
+      await service.create(
+        validCreateDto({
+          items: [
+            {
+              productId,
+              productName: 'Изменено в КП',
+              description: 'Только снимок',
+              productSku: 'SKU-EDIT',
+              quantity: 4,
+              unit: 'шт',
+              unitPrice: 999,
+              discountPercent: 12,
+              catalogDirtyFields: ['productName', 'description', 'productSku'],
+              catalogDecision: 'pending',
+              catalogSourceVersion: 7,
+            },
+          ],
+        }) as never,
+      );
+
+      expect(model.create.mock.calls[0][0].items[0]).toMatchObject({
+        catalogDirtyFields: ['productName', 'description', 'productSku'],
+        catalogDecision: 'pending',
+        catalogSourceVersion: 7,
+        quantity: 4,
+        unitPrice: 999,
+        discountPercent: 12,
+      });
+    });
+
     it('rejects a catalog line without a product', async () => {
       const { service, model } = createService();
       await expect(

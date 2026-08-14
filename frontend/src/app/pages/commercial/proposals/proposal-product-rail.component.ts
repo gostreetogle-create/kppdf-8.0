@@ -38,6 +38,9 @@ import { formatPrice } from '../../../shared/util/format';
 
 export type ProposalLineKind = 'catalog' | 'custom' | 'module' | 'material';
 
+export type CatalogDirtyField = 'productName' | 'description' | 'productSku' | 'unit';
+export type CatalogDecision = 'pending' | 'kp-only';
+
 export interface ProposalDraftLine {
   /** Catalog = Product FK; module/material = refId; custom has no catalog FK. */
   lineKind?: ProposalLineKind;
@@ -49,6 +52,10 @@ export interface ProposalDraftLine {
   description?: string;
   productSku?: string;
   photoUrl?: string;
+  /** Snapshot-only catalog identity edits; never inferred from commercial fields. */
+  catalogDirtyFields?: CatalogDirtyField[];
+  catalogDecision?: CatalogDecision;
+  catalogSourceVersion?: number;
   quantity: number;
   unit?: string;
   unitPrice: number;
@@ -73,6 +80,7 @@ type RailKind = 'catalog' | 'module' | 'material';
 interface RailCard {
   id: string;
   name: string;
+  description?: string;
   sku?: string;
   unit?: string;
   unitPrice: number;
@@ -571,10 +579,10 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   protected emptyHint(): string {
     const filtered = this.query().trim() || this.categoryId();
-    if (filtered) return 'Ничего не найдено — смените поиск или вид каталога.';
+    if (filtered) return 'Измените поиск или выберите другой вид каталога.';
     switch (this.railKind()) {
       case 'module':
-        return 'Модулей пока нет. Смените chip или создайте модуль здесь.';
+        return 'Выберите «Изделия» или «Материалы» — или создайте модуль здесь.';
       case 'material':
         return 'Материалов пока нет. Смените chip или создайте материал здесь.';
       default:
@@ -660,8 +668,12 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
       productId: card.id,
       ...(card.kind !== 'catalog' ? { refId: card.id } : {}),
       productName: card.name,
+      description: card.description,
       productSku: card.sku,
       photoUrl: card.photoUrl || undefined,
+      ...(card.kind === 'catalog'
+        ? { catalogSourceVersion: this.productVersion(card.raw as Product) }
+        : {}),
       quantity,
       unit: card.unit,
       unitPrice: card.unitPrice,
@@ -835,6 +847,7 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
     return {
       id: product._id,
       name: product.name,
+      description: product.description,
       sku: product.sku,
       unit: product.unit,
       unitPrice: product.listPrice ?? 0,
@@ -869,6 +882,14 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
       kind: 'material',
       raw: material,
     };
+  }
+
+  private productVersion(product: Product): number | undefined {
+    return typeof product.__v === 'number'
+      ? product.__v
+      : typeof product.version === 'number'
+        ? product.version
+        : undefined;
   }
 
   private mainPhotoOf(product: Product): Photo | null {

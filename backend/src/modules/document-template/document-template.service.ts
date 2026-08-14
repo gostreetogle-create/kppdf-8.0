@@ -845,8 +845,12 @@ export class DocumentTemplateService {
         return this.cloneResolvedBlock(block, { content: html });
       }
 
+      const effectiveTableLayout = tableLayout?.filter(
+        (entry) =>
+          sheetLayout?.showPhotoColumn !== false || !this.isPhotoColumn(entry.key),
+      );
       const rows = isLineItemsTarget
-        ? await this.mapPreviewLines(tableTemplateId, previewLines, tableLayout)
+        ? await this.mapPreviewLines(tableTemplateId, previewLines, effectiveTableLayout, sheetLayout)
         : [];
       const lineAmount = (line: BuildPreviewLineDto): number =>
         line.quantity *
@@ -875,7 +879,7 @@ export class DocumentTemplateService {
       const html = await this.tableTemplateService.preview(
         tableTemplateId,
         rows,
-        isLineItemsTarget ? tableLayout : undefined,
+        isLineItemsTarget ? effectiveTableLayout : undefined,
         totals,
         isLineItemsTarget ? sheetLayout : undefined,
         isLineItemsTarget ? tableChrome : undefined,
@@ -942,9 +946,13 @@ export class DocumentTemplateService {
     tableTemplateId: string,
     lines: BuildPreviewLineDto[],
     tableLayout?: { key: string; visible?: boolean; widthPercent?: number }[],
+    sheetLayout?: BuildDocumentDto['sheetLayout'],
   ): Promise<unknown[][]> {
     const table = await this.tableTemplateService.findById(tableTemplateId);
-    const persistedColumns = table.columns ?? [];
+    const persistedColumns = (table.columns ?? []).filter(
+      (column) =>
+        sheetLayout?.showPhotoColumn !== false || !this.isPhotoColumn(column.key),
+    );
     const layoutColumns = tableLayout
       ? tableLayout
           .filter((entry) => entry.visible !== false)
@@ -966,6 +974,12 @@ export class DocumentTemplateService {
   }
 
   /** Request-only columns merged by Create КП; the shared TableTemplate is unchanged. */
+  private isPhotoColumn(key: string): boolean {
+    return ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'].includes(
+      key.trim().toLowerCase(),
+    );
+  }
+
   private syntheticKpColumn(
     key: string,
   ): NonNullable<TableTemplateDocument['columns']>[number] | null {
@@ -977,6 +991,7 @@ export class DocumentTemplateService {
       unit: ['unit', 'ед', 'ед.изм'],
       unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
       sum: ['sum', 'total', 'amount', 'сумма'],
+      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
     };
     const match = Object.entries(aliases).find(([, values]) =>
       values.includes(normalized),
@@ -985,6 +1000,15 @@ export class DocumentTemplateService {
     const defaults = KP_LINE_ITEM_COLUMNS.find(
       (column) => column.key === match[0],
     );
+    if (match[0] === 'photo') {
+      return {
+        key: 'photo',
+        label: 'Фото',
+        type: 'text',
+        width: 100,
+        align: 'center',
+      } as NonNullable<TableTemplateDocument['columns']>[number];
+    }
     return defaults
       ? ({ ...defaults } as NonNullable<
           TableTemplateDocument['columns']
@@ -1033,7 +1057,7 @@ export class DocumentTemplateService {
         normalized,
       )
     ) {
-      return line.photoUrl ? { kind: 'image', url: line.photoUrl } : '';
+      return { kind: 'image', url: line.photoUrl ?? '' };
     }
     if (['productsku', 'sku', 'article', 'артикул'].includes(normalized)) {
       return line.productSku ?? '';

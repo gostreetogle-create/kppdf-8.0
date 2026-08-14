@@ -25,6 +25,9 @@ export interface ProposalCompositionLineChange {
   patch: Partial<ProposalDraftLine>;
 }
 
+export type ProposalRowAction =
+  'open-card' | 'duplicate-kp' | 'create-product-copy' | 'update-product';
+
 const DEFAULT_ROW_PRESENTATION: Required<ProposalRowPresentation> = {
   density: 'auto',
   emphasis: 'normal',
@@ -95,7 +98,9 @@ type ColumnWidths = Record<string, number>;
                       type="checkbox"
                       [checked]="col.visible"
                       [disabled]="
-                        readOnly() || (col.visible && visibleLayoutColumns().length === 1)
+                        readOnly() ||
+                        isEssentialColumn(col.key) ||
+                        (col.visible && visibleLayoutColumns().length === 1)
                       "
                       (change)="toggleColumnVisibility(col.key)"
                     />
@@ -310,7 +315,11 @@ type ColumnWidths = Record<string, number>;
                         <button
                           type="button"
                           class="editor__col-menu-item"
-                          [disabled]="readOnly() || visibleLayoutColumns().length === 1"
+                          [disabled]="
+                            readOnly() ||
+                            isEssentialColumn(col.key) ||
+                            visibleLayoutColumns().length === 1
+                          "
                           (click)="hideColumn(col.key); columnMenuIndex.set(-1)"
                           [attr.data-test]="'kp-table-editor-col-hide-' + col.key"
                         >
@@ -396,11 +405,11 @@ type ColumnWidths = Record<string, number>;
                               />
                             } @else {
                               <span class="editor__photo editor__photo--empty" aria-hidden="true"
-                                >□</span
+                                >Нет фото</span
                               >
                             }
                             <div class="editor__name-body">
-                              @if (line.lineKind === 'custom') {
+                              @if (line.lineKind === 'custom' || canEditCatalog(line)) {
                                 <input
                                   class="editor__field"
                                   type="text"
@@ -408,15 +417,37 @@ type ColumnWidths = Record<string, number>;
                                   [disabled]="readOnly()"
                                   (change)="nameChanged(index, $event)"
                                   [attr.data-test]="'kp-table-editor-name-' + index"
-                                  aria-label="Название своей строки"
+                                  [attr.aria-label]="
+                                    line.lineKind === 'custom'
+                                      ? 'Название своей строки'
+                                      : 'Наименование изделия в КП'
+                                  "
                                 />
                               } @else {
                                 <strong class="editor__name">{{
                                   line.productName || 'Без названия'
                                 }}</strong>
-                                @if (line.productSku) {
-                                  <span class="editor__sku">{{ line.productSku }}</span>
-                                }
+                              }
+                              @if (canEditCatalog(line)) {
+                                <input
+                                  class="editor__field editor__field--muted"
+                                  type="text"
+                                  [value]="line.productSku || ''"
+                                  [disabled]="readOnly()"
+                                  (change)="skuChanged(index, $event)"
+                                  [attr.data-test]="'kp-table-editor-sku-' + index"
+                                  aria-label="Артикул изделия в КП"
+                                  placeholder="Артикул"
+                                />
+                              } @else if (line.productSku) {
+                                <span class="editor__sku">{{ line.productSku }}</span>
+                              }
+                              @if (line.catalogDirtyFields?.length) {
+                                <span class="editor__catalog-badge">
+                                  {{
+                                    line.catalogDecision === 'kp-only' ? 'Только в КП' : 'Изменено'
+                                  }}
+                                </span>
                               }
                               <input
                                 class="editor__field editor__field--muted"
@@ -522,8 +553,8 @@ type ColumnWidths = Record<string, number>;
                           } @else {
                             <span
                               class="editor__photo-cell editor__photo-cell--empty"
-                              aria-hidden="true"
-                              >□</span
+                              aria-label="Нет фото"
+                              >Нет фото</span
                             >
                           }
                         }
@@ -597,12 +628,50 @@ type ColumnWidths = Record<string, number>;
                           class="editor__icon-btn"
                           [disabled]="readOnly()"
                           (click)="editLine.emit(index)"
-                          [attr.aria-label]="'Редактировать: ' + line.productName"
-                          title="Карточка каталога"
+                          [attr.aria-label]="'Открыть карточку изделия: ' + line.productName"
+                          title="Открыть карточку изделия"
                           [attr.data-test]="'kp-table-editor-edit-' + index"
                         >
                           <lucide-angular [img]="pencilIcon" [size]="14" aria-hidden="true" />
                         </button>
+                        <button
+                          type="button"
+                          class="editor__icon-btn"
+                          [disabled]="readOnly()"
+                          (click)="toggleRowMenu(index)"
+                          [attr.aria-expanded]="rowMenuIndex() === index"
+                          [attr.aria-label]="'Действия строки: ' + line.productName"
+                          title="Действия строки"
+                          [attr.data-test]="'kp-table-editor-row-actions-' + index"
+                        >
+                          <lucide-angular [img]="moreIcon" [size]="14" aria-hidden="true" />
+                        </button>
+                        @if (rowMenuIndex() === index) {
+                          <div
+                            class="editor__row-menu"
+                            [attr.data-test]="'kp-table-editor-row-menu-' + index"
+                          >
+                            <button type="button" (click)="emitRowAction(index, 'duplicate-kp')">
+                              Дублировать строку КП
+                            </button>
+                            @if (line.lineKind === 'catalog') {
+                              <button
+                                type="button"
+                                (click)="emitRowAction(index, 'create-product-copy')"
+                              >
+                                Создать копию изделия
+                              </button>
+                              @if (line.catalogDirtyFields?.length) {
+                                <button
+                                  type="button"
+                                  (click)="emitRowAction(index, 'update-product')"
+                                >
+                                  Обновить изделие из строки
+                                </button>
+                              }
+                            }
+                          </div>
+                        }
                       }
                       <button
                         type="button"
@@ -1260,6 +1329,34 @@ type ColumnWidths = Record<string, number>;
       flex-direction: column;
       align-items: center;
       gap: 0.1rem;
+      position: relative;
+    }
+
+    .editor__row-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.15rem);
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      min-width: 12rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      box-shadow: var(--shadow-raised, 0 4px 12px oklch(0.2 0.02 260 / 0.1));
+    }
+
+    .editor__row-menu button {
+      padding: 0.3rem 0.45rem;
+      border: 0;
+      background: transparent;
+      color: var(--color-ink);
+      text-align: left;
+      font-size: 0.68rem;
+      cursor: pointer;
+    }
+
+    .editor__row-menu button:hover {
+      background: color-mix(in oklch, var(--color-gold) 12%, transparent);
     }
 
     .editor__actions {
@@ -1391,6 +1488,16 @@ type ColumnWidths = Record<string, number>;
       line-height: 1.2;
     }
 
+    .editor__catalog-badge {
+      display: inline-block;
+      width: fit-content;
+      padding: 0.08rem 0.25rem;
+      border: 1px solid var(--color-rule);
+      color: var(--color-muted);
+      font-size: 0.58rem;
+      line-height: 1.2;
+    }
+
     .editor__cell-value {
       color: var(--color-muted);
       font-size: 0.7rem;
@@ -1475,6 +1582,7 @@ export class ProposalCreateTableEditorComponent {
   readonly remove = output<number>();
   readonly move = output<{ index: number; direction: -1 | 1 }>();
   readonly editLine = output<number>();
+  readonly rowAction = output<{ index: number; action: ProposalRowAction }>();
   readonly tableLayoutChange = output<ProposalTableLayoutColumn[]>();
   readonly commercialColumnsRequest = output<void>();
   readonly openTableTemplate = output<void>();
@@ -1494,6 +1602,7 @@ export class ProposalCreateTableEditorComponent {
   protected readonly dragOverIndex = signal(-1);
   /** At most one open row drawer. */
   protected readonly openRowIndex = signal(-1);
+  protected readonly rowMenuIndex = signal(-1);
 
   protected readonly densityOptions = [
     { value: 'auto' as const, label: 'Авто' },
@@ -1535,11 +1644,25 @@ export class ProposalCreateTableEditorComponent {
   protected readonly xIcon = X;
 
   // ── Visible / hidden columns ──
+  private readonly essentialColumnKeys = new Set([
+    'productName',
+    'quantity',
+    'unit',
+    'unitPrice',
+    'sum',
+  ]);
+
+  protected isEssentialColumn(key: string): boolean {
+    return this.essentialColumnKeys.has(key);
+  }
+
   protected readonly visibleLayoutColumns = computed(() =>
-    this.tableLayout().filter((c) => c.visible),
+    this.tableLayout().filter((c) => c.visible || this.isEssentialColumn(c.key)),
   );
 
-  protected readonly hiddenColumns = computed(() => this.tableLayout().filter((c) => !c.visible));
+  protected readonly hiddenColumns = computed(() =>
+    this.tableLayout().filter((c) => !c.visible && !this.isEssentialColumn(c.key)),
+  );
 
   // ── Normalised width (shares remaining space among columns without explicit %) ──
   protected columnWidthPercent(key: string): number {
@@ -1746,6 +1869,13 @@ export class ProposalCreateTableEditorComponent {
     });
   }
 
+  protected skuChanged(index: number, event: Event): void {
+    this.lineChange.emit({
+      index,
+      patch: { productSku: (event.target as HTMLInputElement).value.trim() || undefined },
+    });
+  }
+
   protected descriptionChanged(index: number, event: Event): void {
     this.lineChange.emit({
       index,
@@ -1824,6 +1954,16 @@ export class ProposalCreateTableEditorComponent {
 
   protected toggleRowDrawer(index: number): void {
     this.openRowIndex.update((current) => (current === index ? -1 : index));
+    this.rowMenuIndex.set(-1);
+  }
+
+  protected toggleRowMenu(index: number): void {
+    this.rowMenuIndex.update((current) => (current === index ? -1 : index));
+  }
+
+  protected emitRowAction(index: number, action: ProposalRowAction): void {
+    this.rowMenuIndex.set(-1);
+    this.rowAction.emit({ index, action });
   }
 
   protected onRemoveRow(index: number): void {

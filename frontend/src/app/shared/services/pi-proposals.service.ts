@@ -13,6 +13,8 @@ import {
 export type ProposalStatus = 'draft' | 'sent' | 'accepted' | 'rejected' | 'converted' | 'cancelled';
 
 export type DiscountType = 'none' | 'percent' | 'amount';
+export type ProposalCatalogDirtyField = 'productName' | 'description' | 'productSku' | 'unit';
+export type ProposalCatalogDecision = 'pending' | 'kp-only';
 
 export interface ProposalTerm {
   text: string;
@@ -39,6 +41,9 @@ export interface ProposalItem {
   productSku?: string;
   /** Snapshot for A4 photo column; persisted with the КП item. */
   photoUrl?: string;
+  catalogDirtyFields?: ProposalCatalogDirtyField[];
+  catalogDecision?: ProposalCatalogDecision;
+  catalogSourceVersion?: number;
   quantity: number;
   unit?: string;
   unitPrice: number;

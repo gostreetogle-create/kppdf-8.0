@@ -63,6 +63,16 @@ export class QuotationItem {
   @Prop()
   sourceItemId?: string;
 
+  /** Snapshot-first catalog edit intent; commercial fields never enter this metadata. */
+  @Prop({ type: [String], enum: ['productName', 'description', 'productSku', 'unit'] })
+  catalogDirtyFields?: Array<'productName' | 'description' | 'productSku' | 'unit'>;
+
+  @Prop({ enum: ['pending', 'kp-only'] })
+  catalogDecision?: 'pending' | 'kp-only';
+
+  @Prop({ min: 0 })
+  catalogSourceVersion?: number;
+
   @Prop({ required: true, default: 0 })
   quantity!: number;
 

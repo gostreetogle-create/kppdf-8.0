@@ -33,6 +33,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
   const quotationCreateMock = jest.fn();
   const quotationUpdateMock = jest.fn();
   const quotationFindMock = jest.fn();
+  const productFindByIdMock = jest.fn();
+  const productUpdateMock = jest.fn();
+  const productDuplicateMock = jest.fn();
   const toastSuccessMock = jest.fn();
   const toastErrorMock = jest.fn();
 
@@ -44,6 +47,36 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     quotationCreateMock.mockReset();
     quotationUpdateMock.mockReset();
     quotationFindMock.mockReset();
+    productFindByIdMock.mockReset();
+    productUpdateMock.mockReset();
+    productDuplicateMock.mockReset();
+    productFindByIdMock.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'prod-1',
+          name: 'Стенд',
+          sku: 'ST-1',
+          kind: 'good',
+          unit: 'шт',
+          listPrice: 5000,
+          __v: 3,
+          photoIds: [{ _id: 'ph-1', storageUrl: '/uploads/stand-thumb.webp' }],
+        },
+      }),
+    );
+    productUpdateMock.mockReturnValue(
+      of({
+        ok: true,
+        data: { _id: 'prod-1', name: 'Стенд edited', sku: 'ST-1', unit: 'шт', __v: 4 },
+      }),
+    );
+    productDuplicateMock.mockReturnValue(
+      of({
+        ok: true,
+        data: { _id: 'prod-copy', name: 'Стенд copy', sku: 'ST-1-COPY-1', unit: 'шт', __v: 1 },
+      }),
+    );
     toastSuccessMock.mockReset();
     toastErrorMock.mockReset();
     quotationCreateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1' } }));
@@ -117,19 +150,9 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
                   total: 1,
                 },
               }),
-            findById: () =>
-              of({
-                ok: true,
-                data: {
-                  _id: 'prod-1',
-                  name: 'Стенд',
-                  sku: 'ST-1',
-                  kind: 'product',
-                  unit: 'шт',
-                  listPrice: 5000,
-                  photoIds: [{ _id: 'ph-1', storageUrl: '/uploads/stand-thumb.webp' }],
-                },
-              }),
+            findById: productFindByIdMock,
+            update: productUpdateMock,
+            duplicate: productDuplicateMock,
           },
         },
         {
@@ -612,7 +635,8 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       expect.objectContaining({
         tableLayout: [
           { key: 'sum', visible: true },
-          { key: 'productName', visible: false },
+          { key: 'productName', visible: true },
+          { key: 'photo', visible: true },
         ],
       }),
     );
@@ -702,12 +726,18 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     fixture.detectChanges();
 
     expect(page.selectedTableTargetId()).toBe('table-1');
-    expect(page.kpTableLayout()).toEqual([{ key: 'sku', label: 'Артикул', visible: true }]);
+    expect(page.kpTableLayout()).toEqual([
+      { key: 'sku', label: 'Артикул', visible: true },
+      { key: 'photo', label: 'Фото', visible: true },
+    ]);
     expect(buildMock).toHaveBeenLastCalledWith(
       'tpl-1',
       expect.objectContaining({
         tableTargetId: 'table-1',
-        tableLayout: [{ key: 'sku', visible: true }],
+        tableLayout: [
+          { key: 'sku', visible: true },
+          { key: 'photo', visible: true },
+        ],
       }),
     );
   }));
@@ -1173,6 +1203,131 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(page.draftLines()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.debugElement.query(By.css('[data-test="kp-table-editor-line-0"]'))).toBeTruthy();
+  }));
+
+  it('edits catalog identity as a КП snapshot and never calls Product on inline change', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      description: 'Старое описание',
+      catalogSourceVersion: 3,
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    page.onCompositionLineChange({
+      index: 0,
+      patch: {
+        productName: 'Стенд новый',
+        description: 'Текст КП',
+        productSku: 'ST-2',
+        unitPrice: 1,
+      },
+    });
+    expect(page.draftLines()[0]).toEqual(
+      expect.objectContaining({
+        productName: 'Стенд новый',
+        catalogDirtyFields: ['productName', 'description', 'productSku'],
+        catalogDecision: 'pending',
+      }),
+    );
+    expect(productUpdateMock).not.toHaveBeenCalled();
+    expect(productDuplicateMock).not.toHaveBeenCalled();
+  }));
+
+  it('reviews pending rows with a safe КП-only default and conflict-safe source actions', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'table' | 'params') => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      resolveCatalogRow: (index: number, decision: 'kp-only' | 'update' | 'copy') => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+    page.toggleRightPane('table');
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд новый',
+      productSku: 'ST-2',
+      catalogSourceVersion: 3,
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    page.onCompositionLineChange({ index: 0, patch: { productName: 'Стенд из КП' } });
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+    expect(
+      fixture.debugElement.query(By.css('[data-test="kp-catalog-review-row-0"]')),
+    ).toBeTruthy();
+    fixture.debugElement
+      .query(By.css('[data-test="kp-catalog-review-kp-only-0"]'))
+      .triggerEventHandler('click');
+    fixture.detectChanges();
+    expect(page.draftLines()[0].catalogDecision).toBe('kp-only');
+    expect(fixture.debugElement.query(By.css('[data-test="kp-catalog-review-row-0"]'))).toBeNull();
+    expect(productUpdateMock).not.toHaveBeenCalled();
+
+    page.onCompositionLineChange({ index: 0, patch: { productName: 'Стенд для source' } });
+    page.resolveCatalogRow(0, 'update');
+    expect(productUpdateMock).toHaveBeenCalledWith('prod-1', {
+      name: 'Стенд для source',
+      expectedVersion: 3,
+    });
+    expect(productUpdateMock.mock.calls[0][1]).not.toHaveProperty('unitPrice');
+  }));
+
+  it('copies an edited Product into a new row and keeps KP row duplication on the same source', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      duplicateProductForLine: (index: number) => void;
+      onRowAction: (event: { index: number; action: 'duplicate-kp' }) => void;
+      draftLines: () => ProposalDraftLine[];
+    };
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд',
+      productSku: 'ST-1',
+      description: 'Описание в КП',
+      quantity: 3,
+      unit: 'шт',
+      unitPrice: 9000,
+      discountPercent: 15,
+      isOptional: true,
+      catalogSourceVersion: 3,
+    });
+    page.onCompositionLineChange({ index: 0, patch: { productName: 'Стенд — новая версия' } });
+    page.duplicateProductForLine(0);
+
+    expect(productDuplicateMock).toHaveBeenCalledWith('prod-1', {
+      name: 'Стенд — новая версия',
+      description: 'Описание в КП',
+      unit: 'шт',
+      sku: 'ST-1',
+    });
+    expect(productDuplicateMock.mock.calls[0][1]).not.toHaveProperty('unitPrice');
+    expect(page.draftLines()).toHaveLength(2);
+    expect(page.draftLines()[0].productId).toBe('prod-1');
+    expect(page.draftLines()[1]).toEqual(expect.objectContaining({ productId: 'prod-copy' }));
+
+    page.onRowAction({ index: 0, action: 'duplicate-kp' });
+    expect(page.draftLines()).toHaveLength(3);
+    expect(page.draftLines()[1].productId).toBe('prod-1');
   }));
 
   it('opens one row drawer, persists presentation, keeps commerce cells, and shows indicator', fakeAsync(() => {

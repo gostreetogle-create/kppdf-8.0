@@ -61,10 +61,15 @@ import {
 import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
-import { ProposalDraftLine, ProposalProductRailComponent } from './proposal-product-rail.component';
+import {
+  CatalogDirtyField,
+  ProposalDraftLine,
+  ProposalProductRailComponent,
+} from './proposal-product-rail.component';
 import {
   ProposalCreateTableEditorComponent,
   type ProposalCompositionLineChange,
+  type ProposalRowAction,
 } from './proposal-create-table-editor.component';
 import {
   ProposalCreateInspectorComponent,
@@ -102,6 +107,7 @@ const DEFAULT_KP_SHEET_LAYOUT: ProposalSheetLayoutState = {
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
   { key: 'index', label: '№', visible: true },
   { key: 'productName', label: 'Наименование', visible: true },
+  { key: 'photo', label: 'Фото', visible: true },
   { key: 'quantity', label: 'Кол-во', visible: true },
   { key: 'unit', label: 'Ед.', visible: true },
   { key: 'unitPrice', label: 'Цена', visible: true },
@@ -373,6 +379,7 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   (remove)="removeCompositionLine($event)"
                   (move)="moveCompositionLine($event)"
                   (editLine)="editCompositionLine($event)"
+                  (rowAction)="onRowAction($event)"
                   (tableLayoutChange)="onTableLayoutChange($event)"
                   (commercialColumnsRequest)="addCommercialColumns()"
                   (openTableTemplate)="openTableTemplatePreset()"
@@ -449,6 +456,78 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
         </div>
       </div>
     </app-pi-group-workspace>
+
+    @if (catalogReviewOpen()) {
+      <div
+        class="kp-catalog-review"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="kp-catalog-review-title"
+      >
+        <div class="kp-catalog-review__card">
+          <div class="kp-catalog-review__header">
+            <div>
+              <p class="eyebrow m-0">Каталог</p>
+              <h2 id="kp-catalog-review-title">Изменения в строках КП</h2>
+              <p>Изменения уже сохранены в этом КП. Что сделать с карточками изделий?</p>
+            </div>
+            <button
+              type="button"
+              class="kp-catalog-review__close"
+              (click)="dismissCatalogReview()"
+              aria-label="Закрыть"
+            >
+              ×
+            </button>
+          </div>
+          <div class="kp-catalog-review__rows">
+            @for (entry of catalogReviewRows(); track entry.index) {
+              <article
+                class="kp-catalog-review__row"
+                [attr.data-test]="'kp-catalog-review-row-' + entry.index"
+              >
+                <div class="kp-catalog-review__row-copy">
+                  <strong>{{ entry.line.productName || 'Без названия' }}</strong>
+                  <span>{{ entry.line.catalogDirtyFields?.join(', ') }}</span>
+                  <small>{{ catalogDiffText(entry) }}</small>
+                </div>
+                <div class="kp-catalog-review__actions">
+                  <button
+                    type="button"
+                    [attr.data-test]="'kp-catalog-review-kp-only-' + entry.index"
+                    (click)="resolveCatalogRow(entry.index, 'kp-only')"
+                  >
+                    Только в КП
+                  </button>
+                  <button
+                    type="button"
+                    [attr.data-test]="'kp-catalog-review-update-' + entry.index"
+                    (click)="resolveCatalogRow(entry.index, 'update')"
+                  >
+                    Обновить изделие
+                  </button>
+                  <button
+                    type="button"
+                    [attr.data-test]="'kp-catalog-review-copy-' + entry.index"
+                    (click)="resolveCatalogRow(entry.index, 'copy')"
+                  >
+                    Создать копию
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+          @if (catalogReviewError()) {
+            <p class="kp-catalog-review__error" role="alert">{{ catalogReviewError() }}</p>
+          }
+          <div class="kp-catalog-review__footer">
+            <button type="button" class="kp-catalog-review__cancel" (click)="cancelCatalogReview()">
+              Отмена
+            </button>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: `
     :host {
@@ -613,6 +692,116 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
     .kp-create-output__btn:hover {
       background: color-mix(in oklch, var(--color-paper-2, #f5f5f5) 100%, transparent);
     }
+
+    .kp-catalog-review {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 1rem;
+      background: oklch(0.12 0.02 260 / 0.42);
+    }
+
+    .kp-catalog-review__card {
+      width: min(48rem, 100%);
+      max-height: min(90vh, 42rem);
+      overflow: auto;
+      padding: 1rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      color: var(--color-ink);
+      box-shadow: var(--shadow-raised, 0 12px 36px oklch(0.2 0.02 260 / 0.18));
+    }
+
+    .kp-catalog-review__header,
+    .kp-catalog-review__row,
+    .kp-catalog-review__footer {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .kp-catalog-review__header {
+      align-items: flex-start;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--color-rule);
+      padding-bottom: 0.65rem;
+    }
+
+    .kp-catalog-review__header h2 {
+      margin: 0.15rem 0;
+      font-family: var(--font-display, Georgia, serif);
+      font-size: 1.25rem;
+    }
+
+    .kp-catalog-review__header p:last-child,
+    .kp-catalog-review__row-copy span,
+    .kp-catalog-review__row-copy small {
+      display: block;
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 0.75rem;
+    }
+
+    .kp-catalog-review__close {
+      border: 0;
+      background: transparent;
+      color: var(--color-muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+
+    .kp-catalog-review__rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      padding: 0.75rem 0;
+    }
+
+    .kp-catalog-review__row {
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem;
+      border: 1px solid var(--color-rule);
+    }
+
+    .kp-catalog-review__row-copy {
+      min-width: 0;
+    }
+
+    .kp-catalog-review__actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.3rem;
+    }
+
+    .kp-catalog-review__actions button,
+    .kp-catalog-review__cancel {
+      padding: 0.35rem 0.5rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      color: var(--color-ink);
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+
+    .kp-catalog-review__actions button:hover,
+    .kp-catalog-review__cancel:hover {
+      background: color-mix(in oklch, var(--color-gold) 14%, transparent);
+    }
+
+    .kp-catalog-review__error {
+      margin: 0 0 0.5rem;
+      color: var(--color-danger, #9f1239);
+      font-size: 0.78rem;
+    }
+
+    .kp-catalog-review__footer {
+      justify-content: flex-end;
+      border-top: 1px solid var(--color-rule);
+      padding-top: 0.65rem;
+    }
   `,
 })
 export class ProposalCreatePage implements OnInit {
@@ -707,6 +896,24 @@ export class ProposalCreatePage implements OnInit {
   private autosaveToastShown = false;
   private pendingOutput: (() => void) | null = null;
   private pendingRoutePrint = false;
+  private pendingTableExit: (() => void) | null = null;
+  protected readonly catalogReviewOpen = signal(false);
+  protected readonly catalogReviewError = signal('');
+  protected readonly catalogReviewSources = signal<Record<string, Product | null>>({});
+  protected readonly catalogReviewRows = computed(() =>
+    this.draftLines()
+      .map((line, index) => ({ line, index }))
+      .filter(
+        ({ line }) =>
+          (line.lineKind ?? 'catalog') === 'catalog' &&
+          (line.catalogDirtyFields?.length ?? 0) > 0 &&
+          line.catalogDecision !== 'kp-only',
+      )
+      .map((entry) => ({
+        ...entry,
+        source: this.catalogReviewSources()[entry.line.productId] ?? null,
+      })),
+  );
 
   private readonly rebuildPreview$ = new Subject<void>();
   private mediaQuery: MediaQueryList | null = null;
@@ -847,6 +1054,8 @@ export class ProposalCreatePage implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
+    // Keep the review open on Escape; no Product mutation may happen implicitly.
+    if (this.catalogReviewOpen()) return;
     this.closeFlyouts();
   }
 
@@ -961,6 +1170,13 @@ export class ProposalCreatePage implements OnInit {
         ...(line.description ? { description: line.description } : {}),
         productSku: line.productSku,
         ...(line.photoUrl ? { photoUrl: line.photoUrl } : {}),
+        ...(line.catalogDirtyFields?.length
+          ? { catalogDirtyFields: [...line.catalogDirtyFields] }
+          : {}),
+        ...(line.catalogDecision ? { catalogDecision: line.catalogDecision } : {}),
+        ...(line.catalogSourceVersion !== undefined
+          ? { catalogSourceVersion: line.catalogSourceVersion }
+          : {}),
         quantity: line.quantity,
         unit: line.unit,
         unitPrice: line.unitPrice,
@@ -1205,6 +1421,13 @@ export class ProposalCreatePage implements OnInit {
           unit: item.unit,
           unitPrice: item.unitPrice,
           ...(item.photoUrl ? { photoUrl: item.photoUrl } : {}),
+          ...(item.catalogDirtyFields?.length
+            ? { catalogDirtyFields: [...item.catalogDirtyFields] }
+            : {}),
+          ...(item.catalogDecision ? { catalogDecision: item.catalogDecision } : {}),
+          ...(item.catalogSourceVersion !== undefined
+            ? { catalogSourceVersion: item.catalogSourceVersion }
+            : {}),
           ...(item.discountPercent ? { discountPercent: item.discountPercent } : {}),
           ...(item.isOptional ? { isOptional: true } : {}),
           ...(item.rowPresentation ? { rowPresentation: { ...item.rowPresentation } } : {}),
@@ -1494,7 +1717,7 @@ export class ProposalCreatePage implements OnInit {
     const target = this.tableTargets().find((entry) => entry.id === targetId);
     this.tableTemplateId.set(target?.templateId ?? null);
     const layout = targetId ? this.tableTargetLayouts()[targetId] : undefined;
-    if (layout?.length) this.kpTableLayout.set(layout.map((column) => ({ ...column })));
+    if (layout?.length) this.kpTableLayout.set(this.ensureEssentialColumns(layout));
     else this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
@@ -1519,11 +1742,23 @@ export class ProposalCreatePage implements OnInit {
 
   protected onTableLayoutChange(layout: ProposalTableLayoutColumn[]): void {
     if (this.isReadOnly()) return;
-    this.kpTableLayout.set(layout.map((column) => ({ ...column })));
+    this.kpTableLayout.set(this.ensureEssentialColumns(layout));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();
     }
+  }
+
+  private ensureEssentialColumns(layout: ProposalTableLayoutColumn[]): ProposalTableLayoutColumn[] {
+    const next = layout.map((column) =>
+      ['productName', 'quantity', 'unit', 'unitPrice', 'sum'].includes(column.key)
+        ? { ...column, visible: true }
+        : { ...column },
+    );
+    if (!next.some((candidate) => candidate.key === 'photo')) {
+      next.splice(Math.min(2, next.length), 0, { key: 'photo', label: 'Фото', visible: true });
+    }
+    return next;
   }
 
   protected onTableChromeChange(chrome: ProposalTableChrome): void {
@@ -1622,24 +1857,36 @@ export class ProposalCreatePage implements OnInit {
 
   protected toggleLeftTool(tool: Exclude<LeftTool, null>): void {
     if (this.isReadOnly()) return;
-    const next = this.leftTool() === tool ? null : tool;
-    this.leftTool.set(next);
-    if (next === 'products' || next === 'recipient') this.rightOpen.set(false);
-    if (next && !this.isWide()) this.rightOpen.set(false);
+    const apply = (): void => {
+      const next = this.leftTool() === tool ? null : tool;
+      this.leftTool.set(next);
+      if (next === 'products' || next === 'recipient') this.rightOpen.set(false);
+      if (next && !this.isWide()) this.rightOpen.set(false);
+    };
+    this.requestTableExit(apply);
   }
 
   protected toggleRightPane(pane: RightPane): void {
     const isSamePane = this.rightOpen() && this.rightPane() === pane;
-    this.rightPane.set(pane);
-    this.rightOpen.set(!isSamePane);
-    if (
-      !isSamePane &&
-      (pane === 'table' || pane === 'terms') &&
-      (this.leftTool() === 'products' || this.leftTool() === 'recipient')
-    ) {
-      this.leftTool.set(null);
+    const apply = (): void => {
+      this.rightPane.set(pane);
+      this.rightOpen.set(!isSamePane);
+      if (
+        !isSamePane &&
+        (pane === 'table' || pane === 'terms') &&
+        (this.leftTool() === 'products' || this.leftTool() === 'recipient')
+      ) {
+        this.leftTool.set(null);
+      }
+      if (!isSamePane && !this.isWide()) this.leftTool.set(null);
+    };
+    if (this.rightOpen() && this.rightPane() === 'table' && pane !== 'table') {
+      this.requestTableExit(apply);
+    } else if (isSamePane && pane === 'table') {
+      this.requestTableExit(apply);
+    } else {
+      apply();
     }
-    if (!isSamePane && !this.isWide()) this.leftTool.set(null);
   }
 
   protected toggleRight(): void {
@@ -1711,23 +1958,63 @@ export class ProposalCreatePage implements OnInit {
 
   protected onCompositionLineChange(change: ProposalCompositionLineChange): void {
     if (this.isReadOnly()) return;
+    const line = this.draftLines()[change.index];
+    if (!line) return;
+    const patch =
+      line.lineKind === 'custom' && change.patch.productName !== undefined
+        ? { ...change.patch, productName: change.patch.productName.trim() || 'Своя строка' }
+        : change.patch;
+    this.applySnapshotLinePatch(change.index, patch);
+    this.refreshComposition();
+  }
+
+  private applySnapshotLinePatch(index: number, patch: Partial<ProposalDraftLine>): void {
     this.draftLines.update((rows) =>
-      rows.map((line, index) => {
-        if (index !== change.index) return line;
-        const patch =
-          line.lineKind === 'custom' && change.patch.productName !== undefined
-            ? { ...change.patch, productName: change.patch.productName.trim() || 'Своя строка' }
-            : change.patch;
-        return { ...line, ...patch };
+      rows.map((line, rowIndex) => {
+        if (rowIndex !== index) return line;
+        const kind = line.lineKind ?? 'catalog';
+        if (kind !== 'catalog') return { ...line, ...patch };
+        const identityFields: CatalogDirtyField[] = [
+          'productName',
+          'description',
+          'productSku',
+          'unit',
+        ];
+        const changed = identityFields.filter((field) => field in patch);
+        const dirty = Array.from(new Set([...(line.catalogDirtyFields ?? []), ...changed]));
+        return {
+          ...line,
+          ...patch,
+          ...(dirty.length
+            ? { catalogDirtyFields: dirty, catalogDecision: 'pending' as const }
+            : {}),
+        };
       }),
     );
-    this.refreshComposition();
   }
 
   protected removeCompositionLine(index: number): void {
     if (this.isReadOnly()) return;
     this.draftLines.update((rows) => rows.filter((_, rowIndex) => rowIndex !== index));
     this.refreshComposition();
+  }
+
+  protected onRowAction(event: { index: number; action: ProposalRowAction }): void {
+    if (this.isReadOnly()) return;
+    switch (event.action) {
+      case 'open-card':
+        this.editCompositionLine(event.index);
+        break;
+      case 'duplicate-kp':
+        this.duplicateCompositionLine(event.index);
+        break;
+      case 'create-product-copy':
+        this.duplicateProductForLine(event.index);
+        break;
+      case 'update-product':
+        this.openCatalogReview(event.index);
+        break;
+    }
   }
 
   protected duplicateCompositionLine(index: number): void {
@@ -1751,6 +2038,220 @@ export class ProposalCreatePage implements OnInit {
       return next;
     });
     this.refreshComposition();
+  }
+
+  private requestTableExit(action: () => void): void {
+    if (this.rightOpen() && this.rightPane() === 'table' && this.catalogReviewRows().length > 0) {
+      this.pendingTableExit = action;
+      this.openCatalogReview();
+      return;
+    }
+    action();
+  }
+
+  private openCatalogReview(index?: number): void {
+    const rows = this.catalogReviewRows();
+    if (rows.length === 0) return;
+    this.catalogReviewError.set('');
+    this.catalogReviewOpen.set(true);
+    for (const entry of rows) {
+      if (index !== undefined && entry.index !== index) continue;
+      const id = entry.line.productId;
+      if (this.catalogReviewSources()[id] !== undefined) continue;
+      this.productsSvc
+        .findById(id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          this.catalogReviewSources.update((sources) => ({
+            ...sources,
+            [id]: res.ok ? res.data : null,
+          }));
+        });
+    }
+  }
+
+  protected cancelCatalogReview(): void {
+    // «Отмена» returns to the table without choosing a Product action.
+    // The snapshot remains pending and can be reviewed again later.
+    this.catalogReviewOpen.set(false);
+    this.pendingTableExit = null;
+  }
+
+  protected dismissCatalogReview(): void {
+    // Closing with × is the explicitly safe default: КП-only, never Product PATCH.
+    const pending = this.catalogReviewRows();
+    if (pending.length > 0) {
+      const pendingIndexes = new Set(pending.map((entry) => entry.index));
+      this.draftLines.update((rows) =>
+        rows.map((line, rowIndex) =>
+          pendingIndexes.has(rowIndex) ? { ...line, catalogDecision: 'kp-only' as const } : line,
+        ),
+      );
+      this.refreshComposition();
+    }
+    this.finishCatalogReview();
+  }
+
+  protected catalogDiffText(entry: { line: ProposalDraftLine; source: Product | null }): string {
+    const labels: Record<CatalogDirtyField, string> = {
+      productName: 'Наименование',
+      description: 'Описание',
+      productSku: 'Артикул',
+      unit: 'Ед.',
+    };
+    return (entry.line.catalogDirtyFields ?? [])
+      .map((field) => {
+        const sourceValue =
+          field === 'productName'
+            ? entry.source?.name
+            : field === 'description'
+              ? entry.source?.description
+              : field === 'productSku'
+                ? entry.source?.sku
+                : entry.source?.unit;
+        const snapshotValue =
+          field === 'productName'
+            ? entry.line.productName
+            : field === 'description'
+              ? entry.line.description
+              : field === 'productSku'
+                ? entry.line.productSku
+                : entry.line.unit;
+        return `${labels[field]}: ${sourceValue || '—'} → ${snapshotValue || '—'}`;
+      })
+      .join(' · ');
+  }
+
+  protected resolveCatalogRow(index: number, decision: 'kp-only' | 'update' | 'copy'): void {
+    const line = this.draftLines()[index];
+    if (!line || (line.lineKind ?? 'catalog') !== 'catalog') return;
+    if (decision === 'kp-only') {
+      this.draftLines.update((rows) =>
+        rows.map((row, rowIndex) =>
+          rowIndex === index ? { ...row, catalogDecision: 'kp-only' as const } : row,
+        ),
+      );
+      this.refreshComposition();
+      if (this.catalogReviewRows().length === 0) this.finishCatalogReview();
+      return;
+    }
+    const source = this.catalogReviewSources()[line.productId];
+    if (!source) {
+      this.catalogReviewError.set('Не удалось прочитать текущую карточку изделия.');
+      return;
+    }
+    const dirty = new Set(line.catalogDirtyFields ?? []);
+    const overrides = {
+      ...(dirty.has('productName') ? { name: line.productName } : {}),
+      ...(dirty.has('description') ? { description: line.description ?? '' } : {}),
+      ...(dirty.has('productSku') && line.productSku ? { sku: line.productSku } : {}),
+      ...(dirty.has('unit') && line.unit ? { unit: line.unit } : {}),
+    };
+    const expectedVersion = line.catalogSourceVersion ?? source.__v ?? source.version;
+    if (decision === 'copy') {
+      this.productsSvc.duplicate(line.productId, overrides).subscribe((res) => {
+        if (!res.ok) {
+          this.catalogReviewError.set(extractErrorMessage(res.error));
+          return;
+        }
+        this.rebindCopiedProduct(index, res.data);
+        this.finishCatalogReviewIfDone();
+      });
+      return;
+    }
+    const updatePayload: Partial<Product> & { expectedVersion?: number } = {
+      ...overrides,
+      ...(expectedVersion !== undefined ? { expectedVersion } : {}),
+    };
+    this.productsSvc.update(line.productId, updatePayload).subscribe((res) => {
+      if (!res.ok) {
+        this.catalogReviewError.set(
+          res.error.status === 409
+            ? 'Карточка изделия изменилась. Перечитайте её, оставьте правку только в КП или создайте копию.'
+            : extractErrorMessage(res.error),
+        );
+        return;
+      }
+      this.draftLines.update((rows) =>
+        rows.map((row, rowIndex) =>
+          rowIndex === index
+            ? {
+                ...row,
+                catalogDirtyFields: undefined,
+                catalogDecision: undefined,
+                catalogSourceVersion: res.data.__v ?? res.data.version,
+              }
+            : row,
+        ),
+      );
+      this.refreshComposition();
+      this.finishCatalogReviewIfDone();
+    });
+  }
+
+  private rebindCopiedProduct(index: number, product: Product): void {
+    this.draftLines.update((rows) =>
+      rows.map((row, rowIndex) =>
+        rowIndex === index
+          ? {
+              ...row,
+              productId: product._id,
+              productName: product.name ?? row.productName,
+              productSku: product.sku,
+              unit: product.unit ?? row.unit,
+              catalogDirtyFields: undefined,
+              catalogDecision: undefined,
+              catalogSourceVersion: product.__v ?? product.version,
+            }
+          : row,
+      ),
+    );
+    this.refreshComposition();
+  }
+
+  private finishCatalogReviewIfDone(): void {
+    if (this.catalogReviewRows().length === 0) this.finishCatalogReview();
+  }
+
+  private finishCatalogReview(): void {
+    this.catalogReviewOpen.set(false);
+    const leave = this.pendingTableExit;
+    this.pendingTableExit = null;
+    leave?.();
+  }
+
+  protected duplicateProductForLine(index: number): void {
+    const line = this.draftLines()[index];
+    if (!line || (line.lineKind ?? 'catalog') !== 'catalog') return;
+    const overrides = {
+      name: line.productName,
+      description: line.description ?? '',
+      ...(line.unit ? { unit: line.unit } : {}),
+      ...(line.productSku ? { sku: line.productSku } : {}),
+    };
+    this.productsSvc.duplicate(line.productId, overrides).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      const copy: ProposalDraftLine = {
+        ...line,
+        productId: res.data._id,
+        productName: res.data.name ?? line.productName,
+        productSku: res.data.sku,
+        unit: res.data.unit ?? line.unit,
+        catalogDirtyFields: undefined,
+        catalogDecision: undefined,
+        catalogSourceVersion: res.data.__v ?? res.data.version,
+      };
+      this.draftLines.update((rows) => [
+        ...rows.slice(0, index + 1),
+        copy,
+        ...rows.slice(index + 1),
+      ]);
+      this.refreshComposition();
+      this.toast.success('Копия изделия добавлена строкой ниже');
+    });
   }
 
   /** TZ-SALES-355: FullEditor from composition without leaving studio. */
@@ -1782,21 +2283,9 @@ export class ProposalCreatePage implements OnInit {
             width: 'lg',
           });
           onDialogCloseOnce(ref, this.injector, () => {
-            this.productsSvc
-              .findById(id)
-              .pipe(takeUntilDestroyed(this.destroyRef))
-              .subscribe((fresh) => {
-                if (!fresh.ok) return;
-                const product = fresh.data;
-                this.applyCatalogEditToLine(index, {
-                  productName: product.name ?? line.productName,
-                  productSku: product.sku,
-                  unit: product.unit ?? line.unit,
-                  unitPrice:
-                    typeof product.listPrice === 'number' ? product.listPrice : line.unitPrice,
-                  photoUrl: this.mainPhotoUrlFromProduct(product) ?? line.photoUrl,
-                });
-              });
+            this.toast.warning(
+              'Карточка закрыта. Правки строки КП остаются снимком до явного решения.',
+            );
           });
         });
       return;
@@ -1893,6 +2382,11 @@ export class ProposalCreatePage implements OnInit {
         aliases: ['productname', 'name', 'title', 'product', 'наименование'],
       },
       {
+        key: 'photo',
+        label: 'Фото',
+        aliases: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
+      },
+      {
         key: 'quantity',
         label: 'Кол-во',
         aliases: ['quantity', 'qty', 'count', 'кол-во', 'количество'],
@@ -1941,8 +2435,10 @@ export class ProposalCreatePage implements OnInit {
   }
 
   protected closeFlyouts(): void {
-    this.leftTool.set(null);
-    this.rightOpen.set(false);
+    this.requestTableExit(() => {
+      this.leftTool.set(null);
+      this.rightOpen.set(false);
+    });
   }
 
   private calculateDealTotal(): number {

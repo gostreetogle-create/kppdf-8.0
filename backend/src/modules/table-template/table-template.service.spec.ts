@@ -1,6 +1,5 @@
 import type { Model } from 'mongoose';
 import {
-  TableTemplate,
   type TableTemplateDocument,
 } from './table-template.schema';
 import { TableTemplateService } from './table-template.service';
@@ -53,7 +52,38 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     ]);
 
     expect(html).not.toContain('<img');
+    expect(html).toContain('Нет фото');
     expect(html).toContain('border:1px solid #ccc');
+  });
+
+  it('hides the photo column without shifting the remaining row cells', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'photo', label: 'Фото', type: 'text', align: 'left' },
+            { key: 'productName', label: 'Наименование', type: 'text', align: 'left' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const html = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд']],
+      [
+        { key: 'photo', visible: true },
+        { key: 'productName', visible: true },
+      ],
+      undefined,
+      { showPhotoColumn: false },
+    );
+
+    expect(html).not.toContain('<th scope="col" style="text-align:left;width:50%;font-weight:600;border:1px solid #ccc">Фото</th>');
+    expect(html).toContain('>Стенд</td>');
+    expect(html).not.toContain('<img');
   });
 
   it('applies request-only widthPercent and border/header chrome', async () => {
