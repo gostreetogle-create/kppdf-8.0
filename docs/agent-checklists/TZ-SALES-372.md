@@ -5,7 +5,7 @@
 > Status: **DONE**
 > Marker: archived as `tasks/_archive/2026-08/TZ-SALES-372.done.md`
 > Commit/push: canonical `main`; deploy НЕ
-> Implementation SHA: `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout SHA: `728ebf2c`
+> Implementation SHA: `cbf2e2fe14dc674e688623b332299e85a1c66146`; implementation/claim SHA: `728ebf2c6f9f545944e1fe0b047f0d96ef6e8300`; closeout SHA: `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
 
 ## Claim slot
 
@@ -61,5 +61,5 @@
 ## Closeout
 
 - [x] archive + lock + remove active marker
-- [x] commit/push SHA recorded: implementation `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout `728ebf2c`
+- [x] commit/push SHA recorded: implementation `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
 - [x] no deploy

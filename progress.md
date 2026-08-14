@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-372.md`
 **Lock:** `.mimocode/locks/TZ-SALES-372-kp-line-snapshot-edit-and-catalog-resolution.lock`
 **Implementation SHA:** `cbf2e2fe14dc674e688623b332299e85a1c66146`
-**Closeout SHA:** `728ebf2c`
+**Closeout SHA:** `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
 **Known limit:** module/material source-sync and inline media upload вне v1; KP3 photo population remains `TZD-47 → TZ-MIG-303`; production/deploy/SSH/nginx/migration/wipe не выполнялись.
 
 ## [2026-08-14] — TZ-SALES-371 DONE — реальное фото изделия в КП

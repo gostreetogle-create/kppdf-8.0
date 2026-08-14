@@ -3,6 +3,7 @@
 > Status: **DONE**
 > Marker: archived as `tasks/_archive/2026-08/TZ-SALES-371.done.md`
 > Implementation SHA: `cbf2e2fe14dc674e688623b332299e85a1c66146` (full)
+> Closeout SHA: `0e39d981bfae0d94621035754eec8428e3cd8211` (full)
 > Marker: `tasks/_active/TZ-SALES-371.md`
 > Commit/push: canonical `main`; deploy запрещён
 
@@ -54,5 +55,5 @@
 ## Closeout
 
 - [x] archive + lock + progress + remove active marker
-- [x] commit/push SHA recorded: `cbf2e2fe14dc674e688623b332299e85a1c66146`
+- [x] commit/push SHA recorded: implementation `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout `0e39d981bfae0d94621035754eec8428e3cd8211`
 - [x] no deploy

@@ -8,6 +8,7 @@ closed_at: 2026-08-14
 closed_by: Buffy (predeploy executor)
 workspace: D:\\kppdf-8.0
 implementation_sha: cbf2e2fe14dc674e688623b332299e85a1c66146
+closeout_sha: 0e39d981bfae0d94621035754eec8428e3cd8211
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-SALES-371.md)
   - frontend tsc: PASS

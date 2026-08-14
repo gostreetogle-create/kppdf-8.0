@@ -5,6 +5,8 @@
 > Commit/push: isolated branch `feature/TZ-SALES-370`; merged to main by policy; no deploy
 > Review: Cursor visual PASS (2026-08-13); A4 live evidence provisional per TZ-SALES-371 dependency
 > Implementation SHA: `c08f13735acf956133a16d886e70857e31a1fd91` (full)
+> Closeout SHA: `d1e97c1c3f3b848f9dbe5d524f40a0c6fa5caeac` (full)
+> Main integration SHA: `f49a3d0037174b9e8dc39d8df7c904172912c69f` (full)
 > Integration SHA: `cfcb5e70231de9aacfd3d66c39520d3fbeed2e34` (full)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)

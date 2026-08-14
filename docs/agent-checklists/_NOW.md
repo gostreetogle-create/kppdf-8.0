@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-14T06:20:00+03:00
-main_head: `728ebf2c`
+updated_at: 2026-08-14T06:30:00+03:00
+main_head: `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
 
 ## ACTIVE
 
@@ -25,7 +25,7 @@ main_head: `728ebf2c`
 ### TZ-CATALOG-371 — DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
-- Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
+- Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`; closeout: `fc065b7ee345cd0939cf67a698d044a4f997c874`
 - State: duplicate API, expectedVersion and typed FE client DONE; archive/lock/checklist landed.
 - Team Room: task not registered; claim attempt recorded in checklist.
 - Active marker removed after closeout; deploy НЕ.
@@ -34,7 +34,7 @@ main_head: `728ebf2c`
 ### TZ-SALES-372 — DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-SALES-372.md`
-- Implementation: `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout: `728ebf2c`
+- Implementation: `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout: `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
 - State: snapshot-first identity edits, multi-row review, КП-only/update/copy decisions, expectedVersion conflict handling and row copy/rebind DONE.
 - Archive/lock/checklist landed; active marker removed; deploy НЕ.
 - Team Room: task not registered; claim attempt recorded in checklist.
@@ -43,7 +43,7 @@ main_head: `728ebf2c`
 ### TZ-SALES-370 — DONE / LANDED
 
 - Branch: `feature/TZ-SALES-370`
-- Implementation: `c08f1373`; closeout: `d1e97c1c`; main: `f49a3d00` (full SHAs in archive/checklist)
+- Implementation: `c08f13735acf956133a16d886e70857e31a1fd91`; closeout: `d1e97c1c3f3b848f9dbe5d524f40a0c6fa5caeac`; main: `f49a3d0037174b9e8dc39d8df7c904172912c69f`
 - State: Cursor visual PASS; A4 fixture limitation delegated to SALES-371.
 - Archive/lock/checklist landed; active marker removed; deploy НЕ.
 - Conflict keys released: `proposal-create*`, quotation output/schema/dto, page docs.

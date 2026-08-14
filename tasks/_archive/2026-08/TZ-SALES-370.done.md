@@ -9,6 +9,7 @@ closed_by: Buffy (closeout)
 workspace: D:\kppdf-8.0\.worktrees\TZ-SALES-370
 implementation_sha: c08f13735acf956133a16d886e70857e31a1fd91
 integration_sha: e993e0dfc56dd9d5915f22748af2603e6b66c3bd
+closeout_sha: d1e97c1c3f3b848f9dbe5d524f40a0c6fa5caeac
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-SALES-370.md)
   - frontend tsc: PASS

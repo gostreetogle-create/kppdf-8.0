@@ -4,6 +4,7 @@
 > Marker: archived as `tasks/_archive/2026-08/TZ-CATALOG-371.done.md`
 > Commit/push: canonical `main`; implementation pushed; deploy НЕ
 > Implementation SHA: `bd23a4d10273c8a412c9d665d1f3f59200163ac8` (full)
+> Closeout SHA: `fc065b7ee345cd0939cf67a698d044a4f997c874` (full)
 
 ## Claim slot
 
