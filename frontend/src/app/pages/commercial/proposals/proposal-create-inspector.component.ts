@@ -8,6 +8,7 @@ import {
   input,
   output,
   signal,
+  untracked,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -690,22 +691,112 @@ export class ProposalCreateInspectorComponent implements OnInit {
   });
   protected readonly error = signal<string | null>(null);
 
+  private lastSyncedInitialState: ProposalCreateInspectorState | null = null;
+
   private readonly syncInitialState = effect(() => {
-    this.organizationId.set(this.initialOrganizationId());
-    this.orgMarkupPercent.set(this.initialOrgMarkupPercent());
-    this.dealVatPercent.set(this.initialDealVatPercent());
-    this.number.set(this.initialNumber());
-    this.title.set(this.initialTitle());
-    this.date.set(this.initialDate());
-    this.validUntil.set(this.initialValidUntil());
-    this.discountType.set(this.initialDiscountType());
-    this.discountPercent.set(this.initialDiscountPercent());
-    this.discountAmount.set(this.initialDiscountAmount());
-    this.prepaymentPercent.set(this.initialPrepaymentPercent());
-    this.productionDays.set(this.initialProductionDays());
-    this.deliveryDays.set(this.initialDeliveryDays());
-    this.sheetLayout.set(this.initialSheetLayout());
+    const next = {
+      organizationId: this.initialOrganizationId(),
+      orgMarkupPercent: this.initialOrgMarkupPercent(),
+      dealVatPercent: this.initialDealVatPercent(),
+      number: this.initialNumber(),
+      title: this.initialTitle(),
+      date: this.initialDate(),
+      validUntil: this.initialValidUntil(),
+      discountType: this.initialDiscountType(),
+      discountPercent: this.initialDiscountPercent(),
+      discountAmount: this.initialDiscountAmount(),
+      prepaymentPercent: this.initialPrepaymentPercent(),
+      productionDays: this.initialProductionDays(),
+      deliveryDays: this.initialDeliveryDays(),
+      sheetLayout: this.initialSheetLayout(),
+    };
+
+    untracked(() => {
+      const previous = this.lastSyncedInitialState;
+      this.organizationId.set(
+        previous === null || Object.is(this.organizationId(), previous.organizationId)
+          ? next.organizationId
+          : this.organizationId(),
+      );
+      this.orgMarkupPercent.set(
+        previous === null || Object.is(this.orgMarkupPercent(), previous.orgMarkupPercent)
+          ? next.orgMarkupPercent
+          : this.orgMarkupPercent(),
+      );
+      this.dealVatPercent.set(
+        previous === null || Object.is(this.dealVatPercent(), previous.dealVatPercent)
+          ? next.dealVatPercent
+          : this.dealVatPercent(),
+      );
+      this.number.set(
+        previous === null || Object.is(this.number(), previous.number)
+          ? next.number
+          : this.number(),
+      );
+      this.title.set(
+        previous === null || Object.is(this.title(), previous.title) ? next.title : this.title(),
+      );
+      this.date.set(
+        previous === null || Object.is(this.date(), previous.date) ? next.date : this.date(),
+      );
+      this.validUntil.set(
+        previous === null || Object.is(this.validUntil(), previous.validUntil)
+          ? next.validUntil
+          : this.validUntil(),
+      );
+      this.discountType.set(
+        previous === null || Object.is(this.discountType(), previous.discountType)
+          ? next.discountType
+          : this.discountType(),
+      );
+      this.discountPercent.set(
+        previous === null || Object.is(this.discountPercent(), previous.discountPercent)
+          ? next.discountPercent
+          : this.discountPercent(),
+      );
+      this.discountAmount.set(
+        previous === null || Object.is(this.discountAmount(), previous.discountAmount)
+          ? next.discountAmount
+          : this.discountAmount(),
+      );
+      this.prepaymentPercent.set(
+        previous === null || Object.is(this.prepaymentPercent(), previous.prepaymentPercent)
+          ? next.prepaymentPercent
+          : this.prepaymentPercent(),
+      );
+      this.productionDays.set(
+        previous === null || Object.is(this.productionDays(), previous.productionDays)
+          ? next.productionDays
+          : this.productionDays(),
+      );
+      this.deliveryDays.set(
+        previous === null || Object.is(this.deliveryDays(), previous.deliveryDays)
+          ? next.deliveryDays
+          : this.deliveryDays(),
+      );
+      const currentSheetLayout = this.sheetLayout();
+      this.sheetLayout.set(
+        previous === null || this.areSheetLayoutsEqual(currentSheetLayout, previous.sheetLayout)
+          ? next.sheetLayout
+          : currentSheetLayout,
+      );
+      this.lastSyncedInitialState = next;
+    });
   });
+
+  private areSheetLayoutsEqual(
+    current: ProposalSheetLayoutState,
+    previous: ProposalSheetLayoutState | undefined,
+  ): boolean {
+    return (
+      previous !== undefined &&
+      current.rowsFirstPage === previous.rowsFirstPage &&
+      current.rowsNextPage === previous.rowsNextPage &&
+      current.photoScalePercent === previous.photoScalePercent &&
+      current.photoCropYPercent === previous.photoCropYPercent &&
+      current.showPhotoColumn === previous.showPhotoColumn
+    );
+  }
 
   protected readonly organizationItems = computed(() =>
     this.organizations().map((o) => ({
