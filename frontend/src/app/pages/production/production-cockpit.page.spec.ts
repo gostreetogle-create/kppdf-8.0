@@ -303,7 +303,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(orderIds.has('o2')).toBe(true);
   });
 
-  it('TZ-PRODUCTION-318: card sheet nearly full width + viewport max-height', () => {
+  it('TZ-PRODUCTION-318/319: card sheet nearly full width + taller viewport max-height', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
       toggleRightTool: (tool: 'card' | 'scale') => void;
@@ -321,9 +321,71 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     );
     expect(source).toContain('left: 0.5rem');
     expect(source).toContain('right: 0.5rem');
-    expect(source).toContain('max-height: min(52vh, calc(100% - 1rem))');
+    expect(source).toContain('max-height: min(72vh, calc(100% - 0.75rem))');
+    expect(source).not.toContain('max-height: min(52vh, calc(100% - 1rem))');
     expect(source).not.toContain('width: min(60rem');
     expect(source).not.toContain('height: min(42vh, 22rem)');
+  });
+
+  it('TZ-PRODUCTION-319: summary label toggles card open/close; expand state kept', async () => {
+    facade.loadOrders.mockImplementation(async () => [
+      { _id: 'o1', number: 'ORD-1', status: 'confirmed', items: [] },
+    ]);
+    facade.loadBarsForOrders.mockImplementation(async () => [
+      {
+        id: 'o1:0:p1:m1:wt1:1',
+        orderId: 'o1',
+        orderNumber: 'ORD-1',
+        orderStatus: 'confirmed',
+        orderItemIndex: 0,
+        productId: 'p1',
+        productName: 'A',
+        moduleId: 'm1',
+        moduleName: 'M',
+        workTypeId: 'wt1',
+        workTypeName: 'Сварка',
+        occurrence: 1,
+        quantity: 1,
+        quantityLabel: null,
+        days: 2,
+        noTerm: false,
+        startDate: '2026-08-01',
+        endDate: '2026-08-02',
+        usedFallbackToday: false,
+        workerLabel: '—',
+      },
+    ]);
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const page = fixture.componentInstance as unknown as {
+      onOrderLabelClick: (id: string) => Promise<void>;
+      onToggleExpand: (id: string) => void;
+      inspectorOpen: () => boolean;
+      rightTool: () => string | null;
+    };
+    const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
+
+    page.onToggleExpand('o1');
+    expect(ctx.isOrderExpanded('o1')).toBe(true);
+    expect(page.inspectorOpen()).toBe(false);
+
+    await page.onOrderLabelClick('o1');
+    fixture.detectChanges();
+    expect(ctx.selectedOrderId()).toBe('o1');
+    expect(page.inspectorOpen()).toBe(true);
+    expect(page.rightTool()).toBe('card');
+    expect(ctx.isOrderExpanded('o1')).toBe(true);
+
+    await page.onOrderLabelClick('o1');
+    fixture.detectChanges();
+    expect(page.inspectorOpen()).toBe(false);
+    expect(page.rightTool()).toBeNull();
+    expect(ctx.selectedOrderId()).toBe('o1');
+    expect(ctx.isOrderExpanded('o1')).toBe(true);
   });
 
   it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {
@@ -355,6 +417,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
     expect(source).toContain('production-studio-sheet-card');
-    expect(source).toContain('max-height: min(52vh, calc(100% - 1rem))');
+    expect(source).toContain('max-height: min(72vh, calc(100% - 0.75rem))');
   });
 });

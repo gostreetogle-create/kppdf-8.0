@@ -9,8 +9,9 @@
 | 3 | `TZ-PRODUCTION-316-gantt-bar-start-offset` | DONE | per-bar move / parallel via start offsets |
 | 4 | `TZ-PRODUCTION-317-gantt-expand-keep-orders` | DONE | select ≠ filter; expand in-place; deep-link/reload keep multi-order |
 | 5 | `TZ-PRODUCTION-318-card-sheet-viewport` | DONE | full-width sheet; composition expands up (fixed popover) |
+| 6 | `TZ-PRODUCTION-319-gantt-card-interaction` | DONE | card only from order label; toggle; taller sheet |
 
-**Wave status:** DONE 2026-08-15 (314–318).
+**Wave status:** 314–319 **DONE** (wave closed).
 
 **SoT intent:** summary span = min(start)…max(end) children; detail resize = days override (309/311); summary body-drag = plannedDate (312); detail body-drag = start offset (316).
 

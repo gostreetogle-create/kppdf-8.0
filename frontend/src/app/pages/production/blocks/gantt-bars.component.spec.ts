@@ -122,10 +122,45 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.detectChanges();
     const toggles: string[] = [];
+    const labels: string[] = [];
     fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    fixture.componentInstance.orderLabelClick.subscribe((id) => labels.push(id));
     const btn = fixture.nativeElement.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement;
     btn.click();
     expect(toggles).toEqual(['o1']);
+    expect(labels).toEqual([]);
+  });
+
+  it('TZ-PRODUCTION-319: summary label emits orderLabelClick; child and timeline do not', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const clicks: string[] = [];
+    const toggles: string[] = [];
+    fixture.componentInstance.orderLabelClick.subscribe((id) => clicks.push(id));
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+
+    const summaryLabel = fixture.nativeElement.querySelector(
+      '[data-test="gantt-label-summary:o1"] button.flex-1',
+    ) as HTMLElement;
+    summaryLabel.click();
+    expect(clicks).toEqual(['o1']);
+
+    const childLabel = fixture.nativeElement.querySelector(
+      '[data-test="gantt-label-o1:0:p1:m1:wt1:1"] button.flex-1',
+    ) as HTMLElement;
+    childLabel.click();
+    expect(clicks).toEqual(['o1']);
+
+    const timelineRow = fixture.nativeElement.querySelector(
+      '[data-test="gantt-row-summary:o1"]',
+    ) as HTMLElement;
+    timelineRow.click();
+    expect(clicks).toEqual(['o1']);
+    expect(toggles).toEqual([]);
   });
 
   it('renders legend and a summary with required range', () => {

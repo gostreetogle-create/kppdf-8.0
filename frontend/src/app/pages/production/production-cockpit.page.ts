@@ -113,7 +113,7 @@ const CHROME_OWNER = 'production-cockpit';
               [readOnly]="readOnly()"
               [canEdit]="canEditCatalog()"
               [expandedOrderIds]="ctx.expandedOrderIds()"
-              (selectOrder)="onSelect($event)"
+              (orderLabelClick)="onOrderLabelClick($event)"
               (toggleExpand)="onToggleExpand($event)"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
@@ -310,7 +310,7 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
       }
-      /* TZ-PRODUCTION-315/318 — Карточка as bottom sheet under Gantt (not right flyout). */
+      /* TZ-PRODUCTION-315/318/319 — Карточка as bottom sheet under Gantt (not right flyout). */
       .production-studio-sheet {
         position: absolute;
         z-index: 20;
@@ -327,8 +327,8 @@ const CHROME_OWNER = 'production-cockpit';
         top: auto;
         width: auto;
         height: auto;
-        /* Stay fully in studio viewport; body scrolls inside inspector. */
-        max-height: min(52vh, calc(100% - 1rem));
+        /* TZ-PRODUCTION-319 — ~2× taller sheet; body scrolls if still longer. */
+        max-height: min(72vh, calc(100% - 0.75rem));
         overflow: hidden;
         padding: 0;
         display: flex;
@@ -352,7 +352,7 @@ const CHROME_OWNER = 'production-cockpit';
           left: 0.5rem;
           right: 0.5rem;
           width: auto;
-          max-height: min(48vh, calc(100% - 1rem));
+          max-height: min(68vh, calc(100% - 0.75rem));
         }
       }
     `,
@@ -427,18 +427,30 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   protected onMainClick(): void {
-    if (this.inspectorOpen()) this.closeInspector();
+    if (this.inspectorOpen() || this.rightTool() === 'card') this.closeInspector();
   }
 
   protected onToggleExpand(orderId: string): void {
     this.ctx.toggleOrderExpanded(orderId);
   }
 
+  /**
+   * TZ-PRODUCTION-319 — left summary order label: toggle card.
+   * Same order already open → close; else open + select + expand.
+   */
+  protected async onOrderLabelClick(id: string): Promise<void> {
+    if (this.inspectorOpen() && this.rightTool() === 'card' && this.ctx.selectedOrderId() === id) {
+      this.closeInspector();
+      return;
+    }
+    await this.onSelect(id);
+  }
+
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
     this.ctx.setOrderExpanded(id, true);
+    this.leftTool.set(null);
     this.inspectorOpen.set(true);
-    this.closeFlyouts();
     this.rightTool.set('card');
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
@@ -450,13 +462,15 @@ export class ProductionCockpitPage implements OnInit {
   protected async onSelectAll(): Promise<void> {
     this.ctx.selectOrder(null);
     this.inspectorOpen.set(false);
-    this.closeFlyouts();
+    this.leftTool.set(null);
+    this.rightTool.set(null);
     this.readOnly.set(false);
     await this.applyFilteredActive();
   }
 
   protected closeInspector(): void {
     this.inspectorOpen.set(false);
+    if (this.rightTool() === 'card') this.rightTool.set(null);
   }
 
   protected toggleLeftTool(tool: Exclude<ProductionLeftTool, null>, event?: Event): void {
@@ -471,16 +485,24 @@ export class ProductionCockpitPage implements OnInit {
     const next = this.rightTool() === tool ? null : tool;
     this.rightTool.set(next);
     this.leftTool.set(null);
+    if (tool === 'card' && next === null) this.inspectorOpen.set(false);
   }
 
+  /** Chrome «Карточка» — toggle if an order is selected. */
   protected openCardTool(event?: Event): void {
     this.rememberToolButton(event);
-    this.inspectorOpen.set(Boolean(this.ctx.selectedOrderId()));
+    if (this.rightTool() === 'card' && this.inspectorOpen()) {
+      this.closeInspector();
+      return;
+    }
+    const hasOrder = Boolean(this.ctx.selectedOrderId());
+    this.inspectorOpen.set(hasOrder);
     this.rightTool.set('card');
     this.leftTool.set(null);
   }
 
   protected closeFlyouts(): void {
+    if (this.rightTool() === 'card') this.inspectorOpen.set(false);
     this.leftTool.set(null);
     this.rightTool.set(null);
     this.lastToolButton?.focus();
@@ -489,7 +511,11 @@ export class ProductionCockpitPage implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
-    if (this.leftTool() || this.rightTool()) this.closeFlyouts();
+    if (this.leftTool() || this.rightTool()) {
+      this.closeFlyouts();
+      return;
+    }
+    if (this.inspectorOpen()) this.closeInspector();
   }
 
   private rememberToolButton(event?: Event): void {

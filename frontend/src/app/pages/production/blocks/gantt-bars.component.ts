@@ -196,7 +196,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 <button
                   type="button"
                   class="flex-1 min-w-0 h-full px-1 flex items-center gap-1.5 text-left pi-focus-ring rounded-sm"
-                  (click)="selectOrder.emit(row.bar.orderId)"
+                  (click)="onLabelClick($event, row)"
                   [attr.title]="labelTitle(row.bar)"
                   [attr.aria-label]="labelTitle(row.bar)"
                 >
@@ -269,11 +269,10 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
             @for (row of rows(); track row.bar.id) {
               <div
-                class="relative gantt-row-h border-b hairline cursor-pointer"
+                class="relative gantt-row-h border-b hairline"
                 [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
-                (click)="onRowClick(row.bar.orderId)"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -380,7 +379,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       >
         Красная линия = сегодня · сводная полоса = срок заказа · ▸ развернуть состав · цвет = вид
         работ · правый край состава = дни оценки · тело сводной = начало заказа · тело состава =
-        сдвиг вида · клик = карточка
+        сдвиг вида · подпись заказа слева = карточка
       </div>
     </div>
   `,
@@ -408,7 +407,11 @@ export class GanttBarsComponent {
   readonly today = input(formatDateOnly(new Date()));
   /** TZ-PRODUCTION-314 — which orders show work-type children. */
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
-  readonly selectOrder = output<string>();
+  /**
+   * TZ-PRODUCTION-319 — left summary order label only (toggle card in parent).
+   * Child labels and timeline bars do not emit this.
+   */
+  readonly orderLabelClick = output<string>();
   readonly toggleExpand = output<string>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
@@ -439,9 +442,6 @@ export class GanttBarsComponent {
     previewDeltaDays: number;
     pointerId: number;
   } | null>(null);
-
-  /** Suppress row click after a real move/resize gesture. */
-  private suppressNextRowClick = false;
 
   protected readonly totalDays = computed(() =>
     Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
@@ -603,13 +603,15 @@ export class GanttBarsComponent {
     this.toggleExpand.emit(orderId);
   }
 
-  protected onRowClick(orderId: string): void {
-    if (this.resizeSession() || this.moveSession()) return;
-    if (this.suppressNextRowClick) {
-      this.suppressNextRowClick = false;
-      return;
-    }
-    this.selectOrder.emit(orderId);
+  /** Summary left label → card toggle; child work-type label → no card. */
+  protected onLabelClick(
+    event: Event,
+    row: { isSummary: boolean; bar: { orderId: string } },
+  ): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (!row.isSummary) return;
+    this.orderLabelClick.emit(row.bar.orderId);
   }
 
   protected onMovePointerDown(event: PointerEvent, bar: GanttBar): void {
@@ -712,7 +714,6 @@ export class GanttBarsComponent {
     if (!commit) return;
     const deltaDays = session.previewDeltaDays;
     if (deltaDays === 0) return;
-    this.suppressNextRowClick = true;
     if (session.mode === 'plannedDate') {
       this.plannedDateMoveCommit.emit({
         orderId: session.orderId,
@@ -744,7 +745,6 @@ export class GanttBarsComponent {
     if (!commit) return;
     const days = Math.max(1, session.previewDays);
     if (days === session.baseDays) return;
-    this.suppressNextRowClick = true;
     this.estimateDaysCommit.emit({
       orderId: session.bar.orderId,
       orderItemIndex: session.bar.orderItemIndex,

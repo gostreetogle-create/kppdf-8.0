@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-319 DONE — Gantt card IA + taller sheet
+**Исполнитель:** executor-composer
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed 314–319; deploy НЕ
+**Что:** карточка только с левой подписи summary (toggle) / chrome; child/chevron/timeline ≠ card; sheet `min(72vh, …)`.
+**Gates:** FE tsc PASS; FE jest cockpit|gantt-bars **31 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-319.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-319-gantt-card-interaction.lock`
+**Dep:** 318
+
 ## [2026-08-15] — TZ-PRODUCTION-318 DONE — card sheet viewport + upward composition
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed; deploy НЕ
