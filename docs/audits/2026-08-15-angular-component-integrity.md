@@ -1,6 +1,6 @@
 # Angular component integrity — canonical audit
 
-> Status: **STAGE 2 - Lane A child batches DONE; final umbrella gates pending**
+> Status: **STAGE 2 - Lane A child batches DONE; final closeout pending Cursor/PO review**
 > Parent TZ: `TZ-FRONTEND-301`  
 > Remediation TZ: `TZ-FRONTEND-302`  
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
@@ -20,7 +20,7 @@
 | B-PHOTO | B | **DONE** | `8b2f0fc7285c244fdc669b4da4d936ce64470dee` |
 | B-COMPOSITION / B-GROUP-ACL / P3 | B | **STOP / BACKLOG** | not started (correct) |
 
-Lane B Stage 2 ready batches and Lane A A3-A6 child batches are complete. Lane B remains **STOP** while Lane A runs umbrella final gates; do not start successors without new Cursor assignment.
+Lane B Stage 2 ready batches and Lane A A3-A6 child batches are complete. Lane B remains **STOP** while Lane A awaits Cursor/PO closeout; do not start successors without new Cursor assignment.
 
 ## Amendment 2026-08-15b — A3 page-local mutation service (Cursor decision)
 
@@ -284,7 +284,7 @@ Lane B evidence: **145/149** suites PASS on `feature/TZ-FRONTEND-302-B`. Lane A 
 
 1. Lane A: A3 -> A4 -> A5 -> A6 DONE (serial KP sequence)
 2. Lane B: idle (ready batches done)
-3. Lane A umbrella: run full tsc/lint/Jest, document known Jest debt, finalize audit verdicts and archive only after Cursor/PO review
+3. Lane A umbrella: final technical gates and audit verdicts are recorded; archive only after Cursor/PO review
 4. Successors only with new TZ numbers after PASS umbrella
 
 ## Conflict-key matrix (remaining)
