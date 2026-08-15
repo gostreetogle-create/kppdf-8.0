@@ -1,0 +1,6 @@
+task_id: TZ-FRONTEND-302
+slug: angular-integrity-remediation-wave
+outcome: DONE
+ready: yes_with_known_jest_debt
+closed_at: 2026-08-15T06:35:00Z
+deploy: no
