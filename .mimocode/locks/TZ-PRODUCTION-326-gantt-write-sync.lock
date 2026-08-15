@@ -1,0 +1,8 @@
+LOCK_MARKER
+TZ: TZ-PRODUCTION-326
+status: DONE
+closed_at: 2026-08-15
+closed_by: Buffy
+archive: tasks/_archive/2026-08/TZ-PRODUCTION-326.done.md
+verification: frontend tsc PASS; targeted Jest 46/46 PASS; lint PASS with existing warnings; BE ISO source verify PASS
+scope: plannedDate role alignment, summary drag, Save→reload bars, no new endpoint

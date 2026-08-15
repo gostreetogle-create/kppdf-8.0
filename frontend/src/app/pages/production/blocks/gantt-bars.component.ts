@@ -378,6 +378,12 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     >
                       Сохранить заказ
                     </button>
+                    <span
+                      class="text-[10px] text-muted-foreground shrink-0"
+                      data-test="gantt-order-meta-sync-hint"
+                    >
+                      После сохранения Гант обновится
+                    </span>
                   } @else {
                     <p class="text-[10px] text-muted-foreground shrink-0">
                       Правка заказа — роли admin / manager
@@ -990,7 +996,8 @@ export class GanttBarsComponent implements AfterViewInit {
    * Summary → plannedDate; child work bar → start offset (316).
    */
   protected canMoveBar(bar: GanttBar): boolean {
-    if (!this.canEdit() || this.readOnly()) return false;
+    const mayMove = isSummaryBar(bar) ? this.canEditOrder() : this.canEdit();
+    if (!mayMove || this.readOnly()) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
     return true;
   }

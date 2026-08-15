@@ -63,6 +63,7 @@ flyouts: overlay; center width unchanged
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
 - **TZ-PRODUCTION-315:** Карточка = bottom sheet под Гантом — **снято 322** (meta в каскаде списка).
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
+- **TZ-PRODUCTION-326 write-path:** meta Save и summary drag `plannedDate` используют `canEditOrder` (admin|manager) и после успешного PATCH перезагружают orders/bars; child resize и start-offset, а также WorkType.days используют `production:write`. «Сохранить заказ» — обязательный commit; после него Гант обновляется.
 - Ссылка «Открыть в списке заказов» в order-meta ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
 ### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
@@ -84,6 +85,18 @@ flyouts: overlay; center width unchanged
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
 | `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316) |
+
+### Write-path matrix (TZ-PRODUCTION-326)
+
+| Действие | FE gate | API path | После успеха |
+|----------|---------|----------|-------------|
+| Meta: priority + plannedDate → «Сохранить заказ» | `canEditOrder` (admin\|manager) | `PATCH /orders/:id` | `reloadOrdersKeepingSelection()` → bars rebuild |
+| Summary body-drag plannedDate | `canEditOrder` (admin\|manager) | `PATCH /orders/:id` | `reloadOrdersKeepingSelection()` → summary moves |
+| Child resize estimate days | `production:write` | `PATCH /orders/:id/estimate-days` | reload + rebuild |
+| Child drag start offset | `production:write` | `PATCH /orders/:id/estimate-start` | reload + rebuild |
+| Catalog WorkType.days | `production:write` | existing WorkTypes update | clear cache + reload |
+
+BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new endpoint in this TZ.
 
 ### State (signals)
 

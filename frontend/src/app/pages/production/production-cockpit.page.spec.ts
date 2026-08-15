@@ -504,6 +504,24 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     });
   });
 
+  it('TZ-PRODUCTION-326: planned-date drag uses order role gate and reloads bars', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    const ordersApi = TestBed.inject(OrdersService) as unknown as { update: jest.Mock };
+    const page = fixture.componentInstance as unknown as {
+      onPlannedDateMoveCommit: (event: { orderId: string; deltaDays: number }) => Promise<void>;
+    };
+    const loadCallsBefore = facade.loadOrders.mock.calls.length;
+
+    await page.onPlannedDateMoveCommit({ orderId: 'o1', deltaDays: 1 });
+
+    expect(ordersApi.update).toHaveBeenCalledWith(
+      'o1',
+      expect.objectContaining({ plannedDate: expect.any(String) }),
+    );
+    expect(facade.loadOrders.mock.calls.length).toBeGreaterThan(loadCallsBefore);
+  });
+
   it('TZ-UX-323: flyouts anchor at studio edges (no 48px rail inset)', () => {
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'production-cockpit.page.ts'),

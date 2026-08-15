@@ -451,12 +451,33 @@ describe('GanttBarsComponent', () => {
     ]);
   });
 
+  it('uses canEditOrder for summary planned-date drag but catalog write for child drag', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', false);
+    fixture.componentRef.setInput('canEditOrder', true);
+    fixture.detectChanges();
+
+    const summary = fixture.componentInstance['rows']()[0]!.bar;
+    expect(fixture.componentInstance.canMoveBar(summary)).toBe(true);
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(false);
+
+    fixture.componentRef.setInput('canEditOrder', false);
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.canMoveBar(summary)).toBe(false);
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(true);
+  });
+
   it('emits plannedDateMoveCommit on summary body drag only', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('canEditOrder', true);
     fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
 

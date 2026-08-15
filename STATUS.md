@@ -17,6 +17,13 @@
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-325-orders-rail-counterparties.lock`
 **Gates:** FE tsc PASS; FE jest orders-rail + model + cockpit **33 PASS**; lint PASS with existing warnings.
 
+## [2026-08-15] — TZ-PRODUCTION-326 DONE: plannedDate write-path sync
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 326 closed; deploy НЕ
+**Что:** plannedDate meta/drag roles aligned to admin|manager; successful PATCH reloads bars; BE ISO path verified, no new endpoint.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-326.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-326-gantt-write-sync.lock`
+**Gates:** FE tsc PASS; FE jest Gantt + cockpit **46 PASS**; lint PASS with existing warnings.
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE: one Gantt meta + full-width cascade panels
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
 **Что:** order-meta только под summary (`row.isSummary`); meta + work-detail — одна широкая полоса (`gantt-cascade-panel` full-bleed из sticky label, spacer на timeline).

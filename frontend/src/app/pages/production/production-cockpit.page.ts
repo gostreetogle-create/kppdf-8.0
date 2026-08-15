@@ -621,7 +621,7 @@ export class ProductionCockpitPage implements OnInit {
 
   /** TZ-PRODUCTION-312 — body-drag → plannedDate (whole order chain; durations unchanged). */
   protected async onPlannedDateMoveCommit(ev: GanttPlannedDateMoveCommit): Promise<void> {
-    if (!this.canEditCatalog()) return;
+    if (!this.canEditOrder()) return;
     const deltaDays = Math.trunc(ev.deltaDays);
     if (deltaDays === 0) return;
     const order = this.orders().find((o) => o._id === ev.orderId);

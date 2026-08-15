@@ -16,6 +16,15 @@
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-325-orders-rail-counterparties.lock`
 **Dep:** 324
 
+## [2026-08-15] — TZ-PRODUCTION-326 DONE — plannedDate write-path sync
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 326 closed; deploy НЕ
+**Что:** summary drag and meta Save use canEditOrder (admin|manager); child resize/start-offset/catalog remain production:write; successful plannedDate update reloads orders/bars; existing ISO API verified.
+**Gates:** FE tsc PASS; FE jest Gantt + cockpit **46 PASS**; frontend lint PASS (18 existing architecture warnings); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-326.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-326-gantt-write-sync.lock`
+**Dep:** 325
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE — one Gantt meta + full-width cascade panels
 **Исполнитель:** executor-grok-4.6
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
