@@ -8,7 +8,7 @@ closed_at: 2026-08-15T11:25:00Z
 closed_by: Buffy (closeout)
 workspace: D:\kppdf-8.0
 implementation_sha: 528e3cf9fb21eb283b076893e627097a3736ffea
-closeout_sha: TBD
+closeout_sha: cafd3acf
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-CATALOG-373.md)
   - frontend tsc (tsconfig.app.json): PASS

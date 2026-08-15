@@ -30,7 +30,7 @@ main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
 - Archive: `tasks/_archive/2026-08/TZ-CATALOG-373.done.md`
 - Lock: `.mimocode/locks/TZ-CATALOG-373-materials-list-vitrine-parity.lock`
 - Implementation: `528e3cf9fb21eb283b076893e627097a3736ffea`
-- Closeout: TBD
+- Closeout: `cafd3acf`
 - State: Cursor PASS; materials list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
 - vs CATALOG-372: parallel OK (modules untouched).
 

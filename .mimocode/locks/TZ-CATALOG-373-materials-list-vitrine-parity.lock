@@ -2,7 +2,7 @@ task: TZ-CATALOG-373
 status: DONE
 closed_at: 2026-08-15T11:25:00Z
 implementation_sha: 528e3cf9fb21eb283b076893e627097a3736ffea
-closeout_sha: TBD
+closeout_sha: cafd3acf
 protected_files:
   - frontend/src/app/pages/materials/materials.page.ts
   - frontend/src/app/pages/materials/materials.page-373.spec.ts
