@@ -43,13 +43,13 @@
 
 - [x] Canonical audit created.
 - [x] Executor report ≤15 lines (below).
-- [ ] Cursor/PO PASS.
-- [ ] Archive/lock/progress after PASS; deploy НЕ.
-- Stage 2 (`TZ-FRONTEND-302`) blocked until PASS.
+- [x] Cursor/PO PASS (Stage 2).
+- [x] A1 shared-API amendment published (Lane A owns pi-users/pi-roles for A1 only).
+- [ ] Archive/lock/progress after all Stage 2 batches; deploy НЕ.
 
 ## Executor report (auto)
 
 - Lane A pages + Lane B platform merged by SHA.
-- Ready: A1–A6, B-TOOLING, B-PHOTO, B-ENTITY-SPEC.
+- Ready: A1–A6 (A1 amended: +pi-users/pi-roles serial), B-TOOLING, B-PHOTO, B-ENTITY-SPEC.
 - Backlog STOP: composition successor, group ACL successor, P3 churn.
-- Product code: unchanged. Deploy: НЕ.
+- Product code: unchanged in this docs amendment. Deploy: НЕ.

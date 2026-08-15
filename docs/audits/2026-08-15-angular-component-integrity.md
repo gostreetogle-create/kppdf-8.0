@@ -1,10 +1,31 @@
 # Angular component integrity — canonical audit
 
-> Status: **READY FOR CURSOR/PO PASS** (Stage 1 complete; Stage 2 blocked)  
+> Status: **PASS + A1 SCOPE AMENDMENT** (Stage 2 in progress)  
 > Parent TZ: `TZ-FRONTEND-301`  
-> Remediation TZ (after PASS): `TZ-FRONTEND-302`  
+> Remediation TZ: `TZ-FRONTEND-302`  
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
 > Product code in Stage 1: **unchanged**
+
+## Amendment 2026-08-15 — A1 shared API ownership (Cursor decision)
+
+**Decision: expand A1 serial scope. Owner = Lane A for this batch only.**
+
+Evidence from Lane A STOP (`e8251e997e2ca0aec03876852c06814c808e4db5`):
+`PiUsersService` / `PiRolesService` expose only `list()`. Admin pages already call
+`silentPost` / `silentPatch` / `silentDelete` on `/admin/users` and `/admin/roles`.
+Removing raw `HttpClient` from pages requires moving those **existing** calls into the
+services — not inventing new backend contracts.
+
+| Rule | Value |
+|------|-------|
+| Shared API owner for A1 | **Lane A** (serial hot-file claim) |
+| Lane B | Must not edit `pi-users.service*` / `pi-roles.service*` while A1 claimed |
+| Allowed change | Move current page HTTP verbs/URLs/payloads into service methods; pages call service only |
+| Forbidden | New endpoints, RBAC changes, UI copy/flow changes, architecture baseline expansion |
+| After A1 DONE | Release shared service keys; Lane B may proceed with unrelated B batches |
+
+See updated **A1** keys below. A2–A6 unchanged except A2 may reuse users-list from
+`PiUsersService` only if already present after A1 (still no inventing unrelated APIs).
 
 ## Sources (immutable imports)
 
@@ -106,21 +127,34 @@ Hot serial files (`app.routes.ts`, `app.config.ts`, global styles, shared API se
 
 ### Ready — Lane A
 
-#### A1 — Admin raw HTTP · P1 · `lane: A`
+#### A1 — Admin raw HTTP · P1 · `lane: A` · **SERIAL shared API (amended)**
 
-- Keys:  
+- Exact conflict keys (≤8):  
   `frontend/src/app/pages/admin/users-admin.page.ts`  
   `frontend/src/app/pages/admin/roles-admin.page.ts`  
-  (+ matching `*.spec.ts` only if present; use existing `PiUsersService` / `PiRolesService` methods — **do not** invent shared API surface that B also owns)
-- Tests / browser: admin create + reset-password; light/dark; dialog keyboard
-- Parallel OK with: B-TOOLING, B-ENTITY-SPEC, B-PHOTO
+  `frontend/src/app/pages/admin/users-admin.page.spec.ts` (if present)  
+  `frontend/src/app/pages/admin/roles-admin.page.spec.ts` (if present)  
+  `frontend/src/app/shared/services/pi-users.service.ts`  
+  `frontend/src/app/shared/services/pi-roles.service.ts`  
+  `frontend/src/app/shared/services/pi-users.service.spec.ts` (create/extend as needed)  
+  `frontend/src/app/shared/services/pi-roles.service.spec.ts` (create/extend as needed)
+- Owner: **Lane A** until A1 archive; claim these shared keys in child marker before edit
+- Method surface (behavior-preserving move from pages):  
+  Users: create, update/patch, activate, deactivate, delete, resetPassword  
+  Roles: create, update/patch, delete  
+  Same URLs/bodies as current page `silentPost`/`silentPatch`/`silentDelete`
+- Tests: existing admin 27 specs + service specs for new methods; characterization of create/reset-password
+- Browser: admin create + reset-password; light/dark; dialog keyboard
+- Parallel OK with: B-TOOLING, B-ENTITY-SPEC (not with any batch touching these two services)
+- Parallel with B-PHOTO: OK (disjoint keys)
 
 #### A2 — Order form raw HTTP · P1 · `lane: A`
 
 - Keys:  
   `frontend/src/app/pages/orders/order-form-dialog.component.ts`  
   `frontend/src/app/pages/orders/order-form-dialog.component.spec.ts`
-- Constraint: if a **new** shared users-list service method is required → **STOP** and serialize with Lane B; prefer existing service API
+- Constraint: owner-user lookup — prefer existing shared service after A1 if a suitable
+  list method already exists; if still need a **new** shared method beyond A1 surface → STOP for new amendment. Do not expand A2 keys to `pi-users` while A1 holds them.
 - Browser: order dialog lookups; submit pending guard
 
 #### A3 — Import-todos HttpClient · P1 · `lane: A`
@@ -203,11 +237,13 @@ Hot serial files (`app.routes.ts`, `app.config.ts`, global styles, shared API se
 
 ## Conflict-key matrix (ready batches)
 
-No two ready batches share an exact product file. Only serialization rules:
+No two ready batches share an exact product file. Serialization rules:
 
+- **A1** owns `pi-users.service*` + `pi-roles.service*` until A1 DONE (serial shared API)
 - A4 ↔ A5 ↔ A6 via optional `proposal-create.page.ts`
-- A2 ↔ any new shared users service method (avoid; else STOP)
+- A2 must not claim `pi-users.service*` while A1 is active
 - B-TOOLING is serial relative to other ESLint/architecture tooling edits
+- B-PHOTO / B-ENTITY-SPEC remain disjoint from A1
 
 Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) are **Lane A–owned** during remediation. Lane B must not edit this file.
 
@@ -216,10 +252,11 @@ Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) are **Lane A–owned** 
 - [x] Both lane reports imported by full SHA  
 - [x] Findings deduped; batches assigned `lane: A|B`  
 - [x] Exact conflict keys non-overlapping for ready batches  
-- [ ] **Cursor/PO PASS** on this canonical audit  
-- [ ] Then claim `TZ-FRONTEND-302` child markers per batch  
+- [x] **Cursor/PO PASS** on canonical audit (Stage 2 authorized)  
+- [x] **A1 scope amendment** — shared mutation move owned by Lane A (this document)  
+- [ ] Child batches land with gates + SHAs; umbrella closeout after both lanes  
 
-**STOP Stage 2 until PASS.** Deploy: **НЕ**.
+Deploy: **НЕ**.
 
 ## Counts (canonical)
 
@@ -230,7 +267,8 @@ Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) are **Lane A–owned** 
 | P2 | **5** | none (KEEP/BACKLOG) |
 | P3 | **4** (deduped) | none |
 
-## Review request
+## Review / resume
 
-PO/Cursor: reply **`PASS canonical`** or list blocking corrections.  
-After PASS, Lane A and Lane B may start only the ready batches above under `TZ-FRONTEND-302`.
+- Canonical PASS already granted; A1 amendment is the active unblock.
+- Lane A: resume A1 with expanded keys, then A2→A6 per order.
+- Lane B: continue B-TOOLING / B-ENTITY-SPEC / B-PHOTO; do not touch `pi-users`/`pi-roles` until A1 releases them.
