@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-334 DONE — Workers list limit 100 (no 400)
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** cockpit `getWorkersByWorkType` → `workersApi.list({ limit: 100, isActive: true })`; BE `@Max(100)`; spec asserts limit 100.
+**Gates:** FE tsc PASS; FE Jest production-read.facade.spec **2 PASS**; lint owned files PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-334.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-334-workers-list-limit.lock`
+**Dep:** none
+
 ## [2026-08-15] — TZ-PRODUCTION-333 DONE — Optimistic Gantt drag, no full reload
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

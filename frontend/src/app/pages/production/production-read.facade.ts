@@ -370,7 +370,7 @@ export class ProductionReadFacade {
     if (this.workersInflight) return this.workersInflight;
 
     this.workersInflight = (async () => {
-      const res = await firstValueFrom(this.workersApi.list({ limit: 200, isActive: true }));
+      const res = await firstValueFrom(this.workersApi.list({ limit: 100, isActive: true }));
       const map = new Map<string, string[]>();
       if (res.ok) {
         for (const person of res.data?.items ?? []) {

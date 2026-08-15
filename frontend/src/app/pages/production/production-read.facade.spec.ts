@@ -133,7 +133,7 @@ describe('ProductionReadFacade', () => {
             ],
             total: 1,
             page: 1,
-            limit: 200,
+            limit: 100,
           },
         }),
       ),
@@ -167,5 +167,6 @@ describe('ProductionReadFacade', () => {
     expect(modulesApi.findById).toHaveBeenCalledTimes(1);
     expect(workTypesApi.list).toHaveBeenCalledTimes(1);
     expect(workersApi.list).toHaveBeenCalledTimes(1);
+    expect(workersApi.list).toHaveBeenCalledWith({ limit: 100, isActive: true });
   });
 });

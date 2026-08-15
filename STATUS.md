@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-334 DONE: Workers list limit 100 (no 400)
+**Статус:** DONE; deploy НЕ
+**Что:** `getWorkersByWorkType` uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 on cockpit load.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-334.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-334-workers-list-limit.lock`
+**Gates:** FE tsc PASS; Jest production-read.facade.spec 2 PASS; lint owned files PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-333 DONE: Optimistic Gantt drag, no full reload
 **Статус:** DONE; deploy НЕ
 **Что:** three drag paths silent PATCH + local bars; revert + error toast on fail; meta/catalog still reload.

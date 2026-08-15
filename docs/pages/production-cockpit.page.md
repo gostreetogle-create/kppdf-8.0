@@ -47,6 +47,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | GET | `/api/products/:id` | Изделие + composition (dual-read) |
 | GET | `/api/modules/:id` | Модуль + workTypes |
 | GET | `/api/work-types` | Справочник дней (`days`) |
+| GET | `/api/workers?limit=100&isActive=true` | Лейблы людей по workType (TZ-334; BE `@Max(100)`, не 200) |
 
 ### Blocks
 
@@ -173,6 +174,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-331** | DONE: plan fields (`plannedDate`/`priority`) editable through ready; composition frozen; missing `siteId` healed from Counterparty sites |
 | **TZ-PRODUCTION-332** | DONE: Day zoom ticks = `DD.MM` + RU weekday (ПН…ВС); scale + «Заказ» headers `h-10`; Month ticks unchanged |
 | **TZ-PRODUCTION-333** | DONE: Gantt drag/resize commit = optimistic local bars + silent PATCH; revert + error toast on fail; no success toast / full reload |
+| **TZ-PRODUCTION-334** | DONE: workers list for Gantt labels uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
