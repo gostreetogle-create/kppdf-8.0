@@ -12,6 +12,10 @@ import { of } from 'rxjs';
 
 import { MaterialDetailPage } from './material-detail.page';
 import { API_BASE_URL } from '../../core/api.tokens';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 
 const API = '/api';
 
@@ -83,6 +87,10 @@ function configure(id: string) {
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: API_BASE_URL, useValue: API },
+      {
+        provide: PiDictionaryLabelsService,
+        useValue: { active: () => of(dictionaryLabelOptions('materialKind')) },
+      },
       { provide: ActivatedRoute, useValue: activatedRouteStub(id) },
     ],
   });

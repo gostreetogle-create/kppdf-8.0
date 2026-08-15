@@ -63,10 +63,11 @@ describe('FormProfilesService (TZ-DICT-315)', () => {
   });
 
   it('isLocked respects LockedRequired for product and module', () => {
-    expect(service.isLocked('product', 'name')).toBe(true);
-    expect(service.isLocked('product', 'sku')).toBe(false);
+    expect(service.isLocked('product', 'name')).toBe(false);
+    expect(service.isLocked('product', 'kind')).toBe(true);
+    expect(service.isLocked('product', 'sku')).toBe(true);
     expect(service.isLocked('module', 'name')).toBe(true);
-    expect(service.isLocked('module', 'article')).toBe(false);
+    expect(service.isLocked('module', 'article')).toBe(true);
   });
 
   it('labelRu returns RU labels from allowlist', () => {
