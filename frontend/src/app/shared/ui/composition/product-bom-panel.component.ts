@@ -52,6 +52,12 @@ interface LineCostHint {
   formula: string;
   error?: string;
 }
+
+export type ProductBomEditRequest = {
+  id: string;
+  kind: 'product' | 'module' | 'material';
+};
+
 @Component({
   selector: 'app-product-bom-panel',
   standalone: true,
@@ -314,6 +320,10 @@ export class ProductBomPanelComponent {
   readonly productId = input.required<string>();
   /** TZ-CATALOG-336: product | module root for shared BOM panel. */
   readonly rootKind = input<'product' | 'module'>('product');
+  /** Temporary migration switch; callers own form opening after the B-boundary lands. */
+  readonly editInParent = input(false);
+  /** Parent-owned form orchestration intent; no page component is imported here. */
+  readonly editRequested = output<ProductBomEditRequest>();
   /** Emits after successful add/remove/qty mutate (not on select). DETAIL-302 auto-recalc listens. */
   readonly changed = output<void>();
 
@@ -562,7 +572,12 @@ export class ProductBomPanelComponent {
 
   protected openEditSelected(): void {
     const sel = this.selected();
-    if (!sel || !this.canEditSelected(sel.node) || this.editLoading()) return;
+    if (!sel || !this.canEditSelected(sel.node)) return;
+    if (this.editInParent()) {
+      this.editRequested.emit({ id: sel.node._id, kind: sel.node.kind });
+      return;
+    }
+    if (this.editLoading()) return;
     const id = sel.node._id;
     const kind = sel.node.kind;
     this.editLoading.set(true);
