@@ -46,6 +46,6 @@
 
 ## Executor report
 
-- **feat SHA:** _(see git log after push)_
+- **feat SHA:** `21f32f11317d79d25e05b651f320579e407d3bf3`
 - **READY FOR REVIEW:** yes (archive blocked until Cursor PASS)
 - **Deploy:** NO
