@@ -3,6 +3,7 @@
 > Status: **READY FOR REVIEW**
 > Prep: shipping stub contract + reservation SoT note written 2026-08-15
 > Commit/push: по `docs/GIT-POLICY.md`
+> closeout_sha: cd0cd867
 
 ## Claim slot (заполнить при старте FE)
 
