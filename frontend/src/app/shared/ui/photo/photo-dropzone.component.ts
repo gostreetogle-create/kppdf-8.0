@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import type { Photo } from '../../services/photos.service';
 import { ButtonComponent } from '../button/button.component';
 
@@ -31,13 +39,17 @@ import { ButtonComponent } from '../button/button.component';
         (click)="openPicker(fileInput)"
         (keydown.enter)="openPicker(fileInput)"
         (keydown.space)="openPicker(fileInput); $event.preventDefault()"
+        (mouseenter)="onMouseEnter()"
+        (mouseleave)="onMouseLeave()"
+        (focusin)="onFocusIn()"
+        (focusout)="onFocusOut()"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave()"
         (drop)="onDrop($event)"
         data-test="photo-drop-target"
       >
-        <span class="text-xs text-muted-foreground">
-          {{ uploading() ? 'Идёт загрузка…' : 'Перетащите фото сюда или выберите файл' }}
+        <span class="text-xs text-muted-foreground" data-test="photo-drop-hint">
+          {{ uploading() ? 'Идёт загрузка…' : 'Файл с диска · перетащить · Ctrl+V' }}
         </span>
         <input
           #fileInput
@@ -117,6 +129,9 @@ export class PiPhotoDropzoneComponent {
   readonly deleteRequest = output<string>();
 
   protected readonly dragActive = signal(false);
+  private readonly hovered = signal(false);
+  private readonly focused = signal(false);
+  private readonly interactionActive = computed(() => this.hovered() || this.focused());
 
   protected readonly statusLabel = computed(() => {
     const pct = this.progressPercent();
@@ -133,6 +148,31 @@ export class PiPhotoDropzoneComponent {
     const input = event.target as HTMLInputElement;
     this.uploadRequest.emit(Array.from(input.files ?? []));
     input.value = '';
+  }
+
+  protected onMouseEnter(): void {
+    this.hovered.set(true);
+  }
+
+  protected onMouseLeave(): void {
+    this.hovered.set(false);
+  }
+
+  protected onFocusIn(): void {
+    this.focused.set(true);
+  }
+
+  protected onFocusOut(): void {
+    this.focused.set(false);
+  }
+
+  @HostListener('document:paste', ['$event'])
+  protected onDocumentPaste(event: ClipboardEvent): void {
+    if (!this.interactionActive() || this.uploading()) return;
+    const files = imageFilesFromClipboard(event.clipboardData);
+    if (files.length === 0) return;
+    event.preventDefault();
+    this.uploadRequest.emit(files);
   }
 
   protected onDragOver(event: DragEvent): void {
@@ -157,4 +197,13 @@ export class PiPhotoDropzoneComponent {
     if (this.uploading()) return;
     this.deleteRequest.emit(id);
   }
+}
+
+function imageFilesFromClipboard(data: DataTransfer | null): File[] {
+  const fromItems = Array.from(data?.items ?? [])
+    .filter((item) => item.kind === 'file' && item.type.startsWith('image/'))
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => file !== null);
+  if (fromItems.length > 0) return fromItems;
+  return Array.from(data?.files ?? []).filter((file) => file.type.startsWith('image/'));
 }

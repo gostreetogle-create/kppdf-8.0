@@ -48,6 +48,64 @@ describe('PiPhotoDropzoneComponent', () => {
     expect(uploadRequest).toHaveBeenCalledWith([file]);
   });
 
+  it('renders the RU hint for all three upload methods', async () => {
+    const { fixture } = await setup();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="photo-drop-hint"]')?.textContent,
+    ).toContain('Файл с диска · перетащить · Ctrl+V');
+  });
+
+  it('emits pasted image files when the zone is hovered or focused', async () => {
+    const { fixture, component } = await setup();
+    const uploadRequest = jest.fn();
+    component.uploadRequest.subscribe(uploadRequest);
+    const file = new File(['image'], 'pasted.png', { type: 'image/png' });
+    const target = fixture.nativeElement.querySelector(
+      '[data-test="photo-drop-target"]',
+    ) as HTMLElement;
+    const paste = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(paste, 'clipboardData', {
+      value: {
+        items: [
+          {
+            kind: 'file',
+            type: 'image/png',
+            getAsFile: () => file,
+          },
+        ],
+        files: [],
+      },
+    });
+
+    target.dispatchEvent(new Event('mouseenter', { bubbles: true }));
+    target.dispatchEvent(paste);
+    fixture.detectChanges();
+
+    expect(uploadRequest).toHaveBeenCalledWith([file]);
+    expect(paste.defaultPrevented).toBe(true);
+  });
+
+  it('ignores pasted text and non-image clipboard files', async () => {
+    const { fixture, component } = await setup();
+    const uploadRequest = jest.fn();
+    component.uploadRequest.subscribe(uploadRequest);
+    const textPaste = new Event('paste', { bubbles: true, cancelable: true });
+    Object.defineProperty(textPaste, 'clipboardData', {
+      value: {
+        items: [{ kind: 'string', type: 'text/plain', getAsFile: () => null }],
+        files: [],
+      },
+    });
+    const target = fixture.nativeElement.querySelector(
+      '[data-test="photo-drop-target"]',
+    ) as HTMLElement;
+    target.dispatchEvent(new Event('focusin', { bubbles: true }));
+    target.dispatchEvent(textPaste);
+
+    expect(uploadRequest).not.toHaveBeenCalled();
+    expect(textPaste.defaultPrevented).toBe(false);
+  });
+
   it('emits deleteRequest with the photo id on remove (API stays parent-owned)', async () => {
     const { fixture, component } = await setup();
     const deleteRequest = jest.fn();
@@ -68,6 +126,9 @@ describe('PiPhotoDropzoneComponent', () => {
     const { fixture } = await setup();
     expect(fixture.nativeElement.querySelector('[role="status"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="photo-upload-progress"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="photo-drop-hint"]')?.textContent,
+    ).toContain('Файл с диска · перетащить · Ctrl+V');
 
     fixture.componentRef.setInput('uploading', true);
     fixture.detectChanges();
@@ -114,6 +175,16 @@ describe('PiPhotoDropzoneComponent', () => {
     const drop = new Event('drop', { bubbles: true, cancelable: true });
     Object.defineProperty(drop, 'dataTransfer', { value: { files: [file] } });
     target.dispatchEvent(drop);
+    const paste = new Event('paste', { bubbles: true, cancelable: true });
+    const pastedFile = new File(['image'], 'pasted.jpg', { type: 'image/jpeg' });
+    Object.defineProperty(paste, 'clipboardData', {
+      value: {
+        items: [{ kind: 'file', type: 'image/jpeg', getAsFile: () => pastedFile }],
+        files: [],
+      },
+    });
+    target.dispatchEvent(new Event('focusin', { bubbles: true }));
+    target.dispatchEvent(paste);
     fixture.detectChanges();
 
     expect(uploadRequest).not.toHaveBeenCalled();

@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-UI-PHOTO-342 DONE — shared photo dropzone paste + RU hint
+**Исполнитель:** Buffy
+**Статус:** DONE; deploy НЕ
+**Что:** dropzone принимает изображения из Ctrl+V при hover/focus, игнорирует текст/не-image clipboard, сохраняет upload/delete ownership у parent; hint унифицирован как «Файл с диска · перетащить · Ctrl+V».
+**Gates:** FE tsc PASS; Jest dropzone + QuickCreate + product/material forms 4 suites / 91 tests PASS; lint PASS с 18 существующими архитектурными предупреждениями; owned Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-PHOTO-342.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-PHOTO-342-photo-dropzone-paste.lock`
+**Dep:** TZ-CATALOG-340
+
 ## [2026-08-16] — TZ-CATALOG-340 DONE — Composition picker «Создать» → QuickCreate
 **Исполнитель:** Buffy
 **Статус:** DONE; deploy НЕ
