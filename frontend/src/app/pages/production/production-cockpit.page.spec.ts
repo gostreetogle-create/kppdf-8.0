@@ -12,6 +12,7 @@ import { AuthService } from '../../core/auth.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
+import { ProductionScaleControlsComponent } from './blocks/production-scale-controls.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import { OrdersService } from '../orders/orders.service';
 import type { Order } from '../orders/orders.service';
@@ -86,6 +87,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
             PiGroupWorkspaceComponent,
             LucideAngularModule,
             OrdersRailComponent,
+            ProductionScaleControlsComponent,
             GanttBarsComponent,
           ],
           providers: [

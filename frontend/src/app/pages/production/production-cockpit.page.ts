@@ -14,6 +14,7 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
+import { ProductionScaleControlsComponent } from './blocks/production-scale-controls.component';
 import {
   GanttBarsComponent,
   type GanttCatalogDaysRequest,
@@ -79,6 +80,7 @@ const CHROME_OWNER = 'production-cockpit';
     PiGroupWorkspaceComponent,
     LucideAngularModule,
     OrdersRailComponent,
+    ProductionScaleControlsComponent,
     GanttBarsComponent,
   ],
   template: `
@@ -204,35 +206,11 @@ const CHROME_OWNER = 'production-cockpit';
               data-test="production-flyout-scale"
               aria-label="Масштаб"
             >
-              <p class="eyebrow m-0">Масштаб</p>
-              <div class="flex flex-col gap-1 mt-2">
-                <button
-                  type="button"
-                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
-                  [class.pi-btn-ink]="ctx.zoom() === 'day'"
-                  data-test="gantt-zoom-day"
-                  (click)="ctx.setZoom('day')"
-                >
-                  День
-                </button>
-                <button
-                  type="button"
-                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
-                  [class.pi-btn-ink]="ctx.zoom() === 'week'"
-                  data-test="gantt-zoom-week"
-                  (click)="ctx.setZoom('week')"
-                >
-                  Неделя
-                </button>
-                <button
-                  type="button"
-                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
-                  data-test="gantt-fit"
-                  (click)="onFitHorizon()"
-                >
-                  Вместить сроки
-                </button>
-              </div>
+              <app-production-scale-controls
+                [zoom]="ctx.zoom()"
+                (zoomChange)="ctx.setZoom($event)"
+                (fit)="onFitHorizon()"
+              />
             </aside>
           }
         </div>

@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-327 DONE — cockpit smart/dumb light refactor
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 327 closed; deploy НЕ
+**Что:** Smart/dumb inventory recorded; ProductionCockpitPage/Facade/Context remain orchestration/read/state boundaries; Gantt and Orders rail stayed behavior-sensitive; one focused dumb `ProductionScaleControlsComponent` extracted with input/output-only zoom/fit events; no UX/API rewrite.
+**Gates:** FE tsc PASS; FE Jest production **6 suites / 70 tests PASS**; frontend lint PASS (18 existing architecture warnings); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-327.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-327-cockpit-smart-dumb.lock`
+**Dep:** 326 (`23f0740f`)
+
 ## [2026-08-15] — TZ-PRODUCTION-324 DONE — Gantt fit-width / «Сегодня»
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 324 closed; deploy НЕ

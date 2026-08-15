@@ -52,6 +52,11 @@ flyouts: overlay; center width unchanged
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / приоритет / даты / «Все активные» |
 | gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px); order-meta + work-detail cascade |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
+| scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit controls; emits `zoomChange` + `fit` |
+
+### Smart / dumb boundary (TZ-PRODUCTION-327)
+
+`ProductionCockpitPage` remains the smart shell: it owns reads, PATCH orchestration, chrome registration, filters, and range fitting. `ProductionReadFacade` owns read/cache/composition mapping; `ProductionCockpitContext` owns local UI signals. Gantt and Orders rail remain behavior-sensitive presentational blocks, while the scale flyout buttons are isolated as `ProductionScaleControlsComponent` with input/output-only state and events. No UX/API rewrite or fact-production model is introduced.
 
 ### Inspector UX (follow-up 2026-08-06 evening)
 

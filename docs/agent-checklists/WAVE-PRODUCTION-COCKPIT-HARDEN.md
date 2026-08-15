@@ -3,26 +3,26 @@
 > **Resume SoT.** При любом старте/обрыве: читай этот файл первым.
 > Отмечай `[x]` только после archive + gates. Обновляй live slot каждый шаг.
 
-updated_at: 2026-08-15T22:55:00+03:00
+updated_at: 2026-08-15T23:25:00+03:00
 agent: Buffy
-score_now: 93
+score_now: 96
 target_score: 98
 blocked: none
-last_phase: 326 — DONE / archived
-last_tz: TZ-PRODUCTION-326
-last_action: archive + lock created; root/active TZ-326 removed; docs/status synced
-next_action: targeted commit + push TZ-326, then claim TZ-PRODUCTION-327
+last_phase: 327 — DONE / archived
+last_tz: TZ-PRODUCTION-327
+last_action: gates PASS; archive + lock created; active/root TZ-327 removed; docs synced
+next_action: targeted commit + push TZ-327, then claim TZ-PRODUCTION-328
 
 ## Live resume
 
 ```
-last_phase: 326 — DONE / archived
-last_tz: TZ-PRODUCTION-326
-last_action: archive + lock created; root/active TZ-326 removed; docs/status synced
+last_phase: 327 — DONE / archived
+last_tz: TZ-PRODUCTION-327
+last_action: gates PASS; archive + lock created; active/root TZ-327 removed; docs synced
 blocked: none
-score_now: 93
-next_action: targeted commit + push TZ-326, then claim TZ-PRODUCTION-327
-updated_at: 2026-08-15T22:55:00+03:00
+score_now: 96
+next_action: targeted commit + push TZ-327, then claim TZ-PRODUCTION-328
+updated_at: 2026-08-15T23:25:00+03:00
 agent: Buffy
 ```
 
@@ -32,7 +32,7 @@ agent: Buffy
 - [x] **324** Zoom fit / Вместить сроки / Сегодня scroll — archive DONE
 - [x] **325** Orders rail: no pips + заказчики filter — archive DONE
 - [x] **326** Write-path sync (plannedDate roles/reload) — archive DONE
-- [ ] **327** Smart/dumb light refactor — archive DONE
+- [x] **327** Smart/dumb light refactor — archive DONE
 - [ ] **328** Page docs + SoT closeout — archive DONE
 - [ ] **WAVE DONE** score_now ≥ 98; _NOW: queue empty, propose deploy (do not deploy)
 

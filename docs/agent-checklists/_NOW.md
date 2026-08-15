@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T22:55:00+03:00
+updated_at: 2026-08-15T23:25:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-PRODUCTION-326 archived; next claim is TZ-PRODUCTION-327)_
+_(empty — TZ-PRODUCTION-327 archived; next claim is TZ-PRODUCTION-328)_
 
 ## NEXT (PO paste prompt)
 
@@ -28,6 +28,10 @@ Queue: **324 → 325 → 326 → 327 → 328** (serial)
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-327 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-327.done.md`; one dumb scale-controls extract; 70 production tests PASS.
 
 ### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
 
@@ -69,5 +73,5 @@ Queue: **324 → 325 → 326 → 327 → 328** (serial)
 
 ## HEAD / queue
 
-- Queue: **327 next**; claim only after 326 targeted commit + push.
+- Queue: **328 next**; claim only after 327 targeted commit + push.
 - Deploy app: НЕ — не автодеплой

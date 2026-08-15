@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-327 DONE: cockpit smart/dumb light refactor
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 327 closed; deploy НЕ
+**Что:** Smart/dumb inventory recorded; one focused dumb `ProductionScaleControlsComponent` extracted for RU zoom/fit controls; page keeps orchestration and existing 324–326 behavior remains intact.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-327.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-327-cockpit-smart-dumb.lock`
+**Gates:** FE tsc PASS; FE Jest production **6 suites / 70 tests PASS**; lint PASS with 18 existing architecture warnings; targeted Prettier PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-324 DONE: Gantt fit-width / «Сегодня»
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 324 closed; deploy НЕ
 **Что:** Неделя fit-width от ResizeObserver timeline; «Вместить сроки» = padded range текущих баров + Неделя + scroll start; «Сегодня» = range + scroll marker.
