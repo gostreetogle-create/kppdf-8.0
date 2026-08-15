@@ -1,9 +1,10 @@
 # TZ-ORDERS-HUB-304 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Prep: shipping stub contract + reservation SoT note written 2026-08-15
 > Commit/push: по `docs/GIT-POLICY.md`
-> closeout_sha: cd0cd867
+> implementation_sha: cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1
+> closeout_sha: (set after closeout commit)
 
 ## Claim slot (заполнить при старте FE)
 
@@ -33,4 +34,22 @@
 ## Review handoff
 
 - [x] CLAIM после HUB-303 DONE on main
-- [ ] Archive + lock after green gates (PO authorized self-close ≥98)
+- [x] Cursor Verdict: **PASS** (2026-08-15) — readiness/warehouse/shipping stub + reservations read OK
+- [x] Archive + lock after closeout
+
+## Executor report (auto)
+
+- outcome: DONE
+- quality_score: 98
+- implementation_sha: cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1
+- gates:
+  - `pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS
+  - `pnpm exec jest --config jest.config.js --runInBand --testPathPattern="orders.page|pi-reservations"` — PASS (19/19)
+- delivered:
+  - Expand «Готовность» 0 HTTP (X/Y + lines; link `/orders/:id`; no ready toggle)
+  - `pi-reservations.service.ts` read-only `list(orderNumber?)` → `GET /api/reservations?orderId=`
+  - Expand «Склад» lazy by Order.number; active/total; empty/error; stale guard
+  - Expand «Отгрузка» stub → `/shipping`; no GET /shipments
+  - Budget: supply(1)+reservations(1) ≤4 on expand
+- deploy: NOT EXECUTED
+- foreign_WIP: left untouched (UX-321/AUTH/products/layout)

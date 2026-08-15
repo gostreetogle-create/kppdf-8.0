@@ -1,0 +1,19 @@
+task: TZ-ORDERS-HUB-304
+status: DONE
+closed_at: 2026-08-15T14:45:00Z
+implementation_sha: cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1
+closeout_sha: PENDING
+protected_files:
+  - frontend/src/app/pages/orders/orders.page.ts
+  - frontend/src/app/pages/orders/orders.page.spec.ts
+  - frontend/src/app/shared/services/pi-reservations.service.ts
+  - frontend/src/app/shared/services/pi-reservations.service.spec.ts
+  - docs/pages/orders.page.md
+  - docs/pages/shipping.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/agent-checklists/TZ-ORDERS-HUB-304.md
+  - tasks/TZ-ORDERS-HUB-304-readiness-warehouse-shipping.md
+behavior: orders expand readiness (0 HTTP) + warehouse reservations by Order.number (1 HTTP) + shipping stub link; read-only ReservationsService; ≤4 HTTP expand (supply+reservations)
+cursor_verdict: PASS
+quality_score: 98
+production: not executed

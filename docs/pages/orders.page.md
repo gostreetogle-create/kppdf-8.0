@@ -13,7 +13,7 @@
 
 - `q` — deep-link поиска по номеру заказа (используется из production cockpit).
 
-## Order lifecycle hub expand (HUB-302 + HUB-303)
+## Order lifecycle hub expand (HUB-302 + HUB-303 + HUB-304)
 
 Read-only expand на списке `/orders`:
 
@@ -24,12 +24,13 @@ Read-only expand на списке `/orders`:
 | **Снабжение (HUB-303)** | 1 | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
 | **Производство (HUB-303)** | 0 | «Оценка в цехе» + `/production?orderId=` |
 | **Документы (HUB-303)** | 0 | `/doc-constructor/templates?source=order&sourceId=` |
-| **Готовность (HUB-304)** | 0 | `X из Y` + линии ready/не ready; link `/orders/:id`; toggle ready только на detail |
-| **Склад (HUB-304)** | 1 | lazy `GET /api/reservations?orderId=<Order.number>` → active/total; empty «Нет броней»; error inline; link `/storage-items` |
+| **Готовность (HUB-304)** | 0 | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели |
+| **Склад (HUB-304)** | 1 | lazy `GET /api/reservations?orderId=<Order.number>` (**номер**, не `_id`, не `reservationIds[]`) → active/total; empty «Нет броней»; error inline; link `/storage-items` |
 | **Отгрузка (HUB-304)** | 0 | stub copy + link `/shipping`; **не** `GET /shipments` |
 
-- Stale: ответ supply/reservations игнорируется если `expandedId` уже другой.
-- Write из expand запрещён. Budget ≤4 HTTP (supply + reservations = 2 в этой волне).
+- Stale: ответы supply/reservations игнорируются если `expandedId` уже другой.
+- Write из expand запрещён. Budget ≤4 HTTP (supply=1 + reservations=1).
+- Service: `ReservationsService` (`pi-reservations.service.ts`) — read-only `list(orderNumber?)`.
 
 ## Workspace chrome
 
@@ -156,7 +157,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY |
 | **TZ-ORDERS-HUB-302** | Колонки + read-only expand «Сделка/Состав» — DONE |
 | **TZ-ORDERS-HUB-303** | Expand Снабжение/Производство/Документы + `/supply?orderId=` + `/production?orderId=` — DONE |
-| **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — READY FOR REVIEW |
+| **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — DONE |
 
 ## Особенности
 

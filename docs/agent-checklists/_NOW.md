@@ -5,8 +5,8 @@
 >
 > ????????? ???????????? ?????? in-place. ????? ?????: 120 ?????.
 
-updated_at: 2026-08-15T14:35:00Z
-main_head: `1bf471ce`
+updated_at: 2026-08-15T14:45:00Z
+main_head: `76fc511889f2863e8b3955b83f4e1624f3433f42`
 
 ## ACTIVE
 
@@ -23,6 +23,15 @@ main_head: `1bf471ce`
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-ORDERS-HUB-304 ? DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-ORDERS-HUB-304.md`
+- Archive: `tasks/_archive/2026-08/TZ-ORDERS-HUB-304.done.md`
+- Lock: `.mimocode/locks/TZ-ORDERS-HUB-304-readiness-warehouse-shipping.lock`
+- Implementation: `cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1`
+- State: Cursor PASS 98/100; readiness/warehouse/shipping expand + pi-reservations read-only; deploy NO.
+- Next: queue empty for orders-hub wave (AUTH-305 prep only).
 
 ### TZ-UX-321 ? DONE / LANDED
 

@@ -18,12 +18,21 @@ Group Chip: `LOGISTICS_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `shipping`).
 - Дашборд-панель `data-test="shipping-stub"` `role="status"`: бейдж «скоро» +
   текст-заглушка (полный поток — отдельная TZ). Никаких данных/API/dialogs.
 
+## Hub expand (HUB-304)
+
+From `/orders` expand «Отгрузка»:
+
+- Copy: «Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.»
+- Link → `/shipping`
+- **Не** вызывать `GET /shipments`, не показывать counts из заказов.
+
 ## TZ reference
 
 | TZ | Что сделано |
 |----|------------|
 | TZ-NAV-301 | Stub-страница (поток L→R в меню цельный) |
 | TZ-UX-309 | PiGroupWorkspace chrome (логистика chips) |
+| **TZ-ORDERS-HUB-304** | Hub expand stub link → `/shipping` (0 HTTP) |
 
 ## Особенности
 
@@ -33,4 +42,4 @@ Group Chip: `LOGISTICS_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `shipping`).
 
 ---
 
-_Создано: 2026-08-09. Последнее обновление: 2026-08-09._
+_Создано: 2026-08-09. Последнее обновление: 2026-08-15 (HUB-304)._
