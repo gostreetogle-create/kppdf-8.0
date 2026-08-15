@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-FRONTEND-305 DONE: dashboard dialog boundary
+**Статус:** DONE; scoped score 100/100; deploy НЕ
+**Что:** DashboardPage больше не импортирует page-компоненты заказов/изделий; существующие lazy dialog paths вынесены в `DashboardDialogService`. Канбан, PATCH/ship/item-status/readiness и payloads не менялись.
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-305.done.md`
+**Lock:** `.mimocode/locks/TZ-FRONTEND-305-dashboard-dialog-boundary.lock`
+**Gates:** FE tsc PASS; dashboard + coordinator Jest 2 suites / 7 tests PASS; ESLint/Prettier PASS; `pnpm architecture:check` PASS (948 files; baseline 6). Deploy отложен до завтра.
+
+
 ## [2026-08-16] — TZ-FRONTEND-304 DONE: composition dialog boundary
 **Статус:** DONE; scoped score 100/100; deploy НЕ
 **Что:** существующие lazy-диалоги изделия/модуля/материала вынесены из `shared/ui/composition/**` в `ProductCompositionDialogService`; дерево, cost hints, add/change/remove write-path и UX не менялись. Остаточное владение composition API панелью явно оставлено отдельному successor.

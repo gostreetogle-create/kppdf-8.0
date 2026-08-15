@@ -5,17 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T01:28:00+03:00
+updated_at: 2026-08-16T01:32:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
-_(empty — TZ-FRONTEND-304 implementation and closeout evidence complete; archive/lock prepared; no deploy)_
+_(empty — TZ-FRONTEND-305 dashboard boundary complete; architecture gate green; no deploy)_
+
 
 
 ## NEXT (PO paste prompt)
 
-- **Next action:** choose AUTH-307/cutover only with explicit «деплой» + browser smoke, or claim the next non-deploy diploma successor. Do not deploy automatically.
+- **Next action:** STOP for today. Tomorrow: explicit «деплой» then browser/auth smoke; do not deploy automatically.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -118,5 +119,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty for Buffy**; remaining backlog/park intentional; deploy НЕ — не автодеплой.
+- Queue: **empty for today**; AUTH-307 remains deploy/smoke gated; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой

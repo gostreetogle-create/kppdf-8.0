@@ -17,14 +17,14 @@ import {
 import { LucideAngularModule, Pencil } from 'lucide-angular';
 import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { Order, OrdersService } from '../orders/orders.service';
-import { OrderFormDialogComponent } from '../orders/order-form-dialog.component';
+import { DashboardDialogService } from '../../shared/services/dashboard-dialog.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { extractErrorMessage } from '../../core/silent-http';
-import { ProductFormDialogComponent } from '../products/product-form-dialog.component';
+
 import { DatePipe } from '@angular/common';
 
 @Component({
@@ -179,6 +179,7 @@ export class DashboardPage {
   protected readonly PencilIcon = Pencil;
 
   private readonly service = inject(OrdersService);
+  private readonly dashboardDialogs = inject(DashboardDialogService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
@@ -324,24 +325,12 @@ export class DashboardPage {
     this.expandedOrderId = this.expandedOrderId === orderId ? null : orderId;
   }
 
-  protected editOrder(order: Order) {
-    const ref = this.dialog.open(OrderFormDialogComponent, {
-      data: order,
-      width: 'lg',
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.listRes.reload();
-    });
+  protected editOrder(order: Order): void {
+    this.dashboardDialogs.openOrderEdit(order, this.injector, () => this.listRes.reload());
   }
 
-  protected editProduct(productId: string) {
-    const ref = this.dialog.open(ProductFormDialogComponent, {
-      data: { id: productId },
-      width: 'lg',
-    });
-    onDialogCloseOnce(ref, this.injector, () => {
-      this.listRes.reload();
-    });
+  protected editProduct(productId: string): void {
+    this.dashboardDialogs.openProductEdit(productId, this.injector, () => this.listRes.reload());
   }
 
   protected changeItemStatus(orderId: string, itemIndex: number, event: Event) {

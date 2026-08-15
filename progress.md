@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-FRONTEND-305 DONE — dashboard dialog boundary
+**Исполнитель:** Buffy
+**Статус:** DONE; scoped score 100/100; deploy НЕ
+**Что:** DashboardPage больше не импортирует sibling page dialogs; `DashboardDialogService` сохраняет lazy Order/Product dialog payloads и reload-after-close. Канбан write-path и UX не менялись.
+**Gates:** FE tsc PASS; dashboard + coordinator Jest 2 suites / 7 tests PASS; ESLint/Prettier/diff-check PASS; architecture:check PASS (948 files; baseline 6).
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-305.done.md`
+**Lock:** `.mimocode/locks/TZ-FRONTEND-305-dashboard-dialog-boundary.lock`
+**Score:** TZ scoped acceptance 100/100; deploy отложен до завтра.
+
 ## [2026-08-16] — TZ-FRONTEND-304 DONE — composition dialog boundary
 **Исполнитель:** Buffy
 **Статус:** DONE; scoped score 100/100; deploy НЕ
