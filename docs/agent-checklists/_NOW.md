@@ -5,21 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T14:50:00Z
+updated_at: 2026-08-15T14:55:00Z
 main_head: `fade51c9`
 
 ## ACTIVE
-
-### TZ-UX-321-FIX — READY FOR REVIEW
-
-- Marker: `tasks/_active/TZ-UX-321-FIX.md`
-- Spec: `tasks/TZ-UX-321-fix-rail-anchor-and-right-rail.md`
-- Checklist: `docs/agent-checklists/TZ-UX-321-FIX.md`
-- Audit: `docs/audits/2026-08-15-ux321-rail-regression.md`
-- Owner: Cursor Product Executor
-- State: frame-relative left/right rails; geometry smoke PASS 98; **не archive** до Cursor PASS.
-- Evidence: `reports/TZ-UX-321-FIX-chrome-rail-geometry.json` (left=frame.left=255; right=frame.right=1655 @1920).
-- Conflict keys: app-layout + styles.css + smoke/report + checklist (foreign WIP untouched).
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -34,6 +23,14 @@ main_head: `fade51c9`
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-UX-321-FIX — DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-UX-321-FIX.md`
+- Archive: `tasks/_archive/2026-08/TZ-UX-321-FIX.done.md`
+- Lock: `.mimocode/locks/TZ-UX-321-FIX-frame-relative-rails.lock`
+- Implementation: `fade51c910b7610ec9ef43834728afd8a6922518`
+- State: Cursor PASS **98/100**; frame-relative ←/→ rails; geometry 255/1655 @1920; deploy НЕ.
 
 ### TZ-ORDERS-HUB-304 — DONE / LANDED
 
@@ -69,11 +66,11 @@ main_head: `fade51c9`
 - Checklist: `docs/agent-checklists/TZ-ORDERS-HUB-301.md`
 - State: контракт хаба зафиксирован; wave 302–304 выполнена.
 
-### TZ-UX-321 — DONE / LANDED (superseded geometry by FIX)
+### TZ-UX-321 — DONE / LANDED (geometry superseded by FIX)
 
 - Checklist: `docs/agent-checklists/TZ-UX-321.md`
 - Archive: `tasks/_archive/2026-08/TZ-UX-321.done.md`
-- Note: premature closeout; repair = **TZ-UX-321-FIX** (READY FOR REVIEW).
+- Note: premature closeout; repaired by **TZ-UX-321-FIX**.
 
 ### TZ-CATALOG-372 / 373 — DONE / LANDED
 
@@ -86,11 +83,10 @@ main_head: `fade51c9`
 
 ## NEXT
 
-1. Cursor Verdict PASS на TZ-UX-321-FIX → archive + lock.
-2. AUTH-305 — только после явного `деплой` + browser PASS.
-3. TZ-UX-322 page-tools — только после FIX landed.
+1. AUTH-305 — только после явного `деплой` + browser PASS.
+2. TZ-UX-322 page-tools — backlog/ready when PO asks (rails FIX landed).
 
 ## HEAD / queue
 
-- Active: TZ-UX-321-FIX READY FOR REVIEW; AUTH-305 prep only.
+- Active product CLAIM: нет (только AUTH-305 prep).
 - Deploy: НЕ.
