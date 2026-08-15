@@ -258,6 +258,9 @@ interface ClientPreviewModel {
                 >
                   + Добавить столбец
                 </button>
+              </div>
+              <span class="ttd-toolbar-sep" aria-hidden="true"></span>
+              <div class="ttd-toolbar-group">
                 <button
                   type="button"
                   class="ttd-link"
@@ -267,11 +270,6 @@ interface ClientPreviewModel {
                   Колонки как в КП
                 </button>
               </div>
-              <p class="ttd-column-help text-muted-foreground" data-test="add-column-help">
-                Название — заголовок на бланке; ключ — техническое имя (для КП: productName,
-                quantity, …); тип — как показывать значение. Свой ключ = колонка без автоподстановки
-                из каталога.
-              </p>
               @if (presetConfirm()) {
                 <div class="ttd-preset-confirm" role="alert" data-test="kp-preset-confirm">
                   <span
@@ -618,14 +616,6 @@ interface ClientPreviewModel {
         display: flex;
         align-items: center;
         gap: 4px;
-      }
-      .ttd-column-help {
-        flex: 1 1 220px;
-        margin: 0;
-        max-width: 42rem;
-        font-size: 11px;
-        line-height: 1.35;
-        color: var(--color-muted);
       }
       .ttd-preset-confirm {
         display: inline-flex;

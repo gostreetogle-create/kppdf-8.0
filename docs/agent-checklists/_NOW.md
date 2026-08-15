@@ -5,10 +5,21 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T05:49:50Z
+updated_at: 2026-08-15T06:08:00Z
 main_head: `6f6b8c00`
 
 ## ACTIVE
+
+### TZ-DOC-TABLES-310 — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-DOC-TABLES-310.md`
+- Spec: `tasks/TZ-DOC-TABLES-310-remove-help-separate-buttons.md`
+- Checklist: `docs/agent-checklists/TZ-DOC-TABLES-310.md`
+- Owner: Buffy (Cursor Agent)
+- claimed_at: 2026-08-15T06:04:09Z
+- State: help removed; buttons separated via toolbar-sep; 309 taller+RU kept; gates PASS; awaiting Cursor PASS (no archive yet); deploy НЕ.
+- Conflict keys: `table-template-dialog.component.ts|spec.ts` + `tables.page.md` + `PAGE-TZ-INDEX.md`.
+- Conflict vs AUTH-305: OK (deploy-only keys).
 
 ### TZ-AUTH-305 — PREP ONLY
 

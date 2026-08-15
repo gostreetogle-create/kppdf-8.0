@@ -363,6 +363,18 @@ describe('TableTemplateFormDialogComponent', () => {
       expect(dialog.columnsArray.length).toBe(6);
     });
 
+    it('keeps add-column and KP-preset as separate toolbar actions without on-page help', async () => {
+      const fixture = await createFixture(null);
+      fixture.detectChanges();
+      const root = fixture.nativeElement as HTMLElement;
+
+      expect(root.querySelector('[data-test="add-column-button"]')).toBeTruthy();
+      expect(root.querySelector('[data-test="apply-kp-preset"]')).toBeTruthy();
+      expect(root.querySelector('[data-test="add-column-help"]')).toBeNull();
+      expect(root.querySelector('.ttd-column-help')).toBeNull();
+      expect(root.querySelector('.ttd-toolbar > .ttd-toolbar-sep')).toBeTruthy();
+    });
+
     it('renders a preview skeleton row when columns have no sample rows', async () => {
       const fixture = await createFixture(
         stubTableTemplate({
