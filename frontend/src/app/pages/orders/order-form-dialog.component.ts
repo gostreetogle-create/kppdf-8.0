@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   FormArray,
   FormControl,
@@ -17,13 +16,13 @@ import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { API_BASE_URL } from '../../core/api.tokens';
-import { extractErrorMessage, silentGet } from '../../core/silent-http';
+import { extractErrorMessage } from '../../core/silent-http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Product, ProductsService } from '../../shared/services/products.service';
 import { Site, SiteService } from '../../shared/services/pi-site.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import { Users } from '../users/users.entity';
 
 type Result = Order | null | undefined;
 
@@ -392,8 +391,7 @@ export class OrderFormDialogComponent {
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly siteService = inject(SiteService);
   private readonly productsService = inject(ProductsService);
-  private readonly http = inject(HttpClient);
-  private readonly baseUrl = inject(API_BASE_URL);
+  private readonly usersService = Users.inject();
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly data = inject<Order | null>(PI_DIALOG_DATA);
@@ -468,18 +466,12 @@ export class OrderFormDialogComponent {
         this.products.set([]);
       }
     });
-    const params = new HttpParams().set('limit', '100');
-    silentGet<{ items: OwnerUserOption[] } | OwnerUserOption[]>(
-      this.http,
-      `${this.baseUrl}/users`,
-      { params },
-    ).subscribe((res) => {
+    this.usersService.list({ page: 1, limit: 100 }).subscribe((res) => {
       if (!res.ok) {
         this.users.set([]);
         return;
       }
-      const data = res.data;
-      this.users.set(Array.isArray(data) ? data : (data.items ?? []));
+      this.users.set(res.data.items);
     });
   }
 

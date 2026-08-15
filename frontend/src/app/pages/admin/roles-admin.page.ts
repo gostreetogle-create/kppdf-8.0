@@ -9,17 +9,9 @@ import {
   signal,
   OnInit,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL } from '../../core/api.tokens';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
-import {
-  extractErrorMessage,
-  silentDelete,
-  silentPatch,
-  silentPost,
-  type SilentResult,
-} from '../../core/silent-http';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ADMIN_ENTITY_SECTION_CHIPS, ADMIN_TOC_CHIPS } from './admin-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -159,9 +151,7 @@ export class RolesAdminPage implements OnInit {
   protected readonly chips = ADMIN_ENTITY_SECTION_CHIPS;
   protected readonly copy = ROLE_FORM_COPY;
 
-  private readonly http = inject(HttpClient);
   private readonly rolesService = inject(PiRolesService);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -312,16 +302,12 @@ export class RolesAdminPage implements OnInit {
     });
     onDialogCloseOnce(ref, this.injector, (ok) => {
       if (!ok) return;
-      this.silentRun(
-        silentDelete<{ success: true }>(this.http, `${this.baseUrl}/admin/roles/${r.id}`),
-        'Роль удалена',
-        r.id,
-      );
+      this.silentRun(this.rolesService.remove(r.id), 'Роль удалена', r.id);
     });
   }
 
   private createRole(result: RoleFormResult): Observable<SilentResult<ClientRole>> {
-    return silentPost<ClientRole>(this.http, `${this.baseUrl}/admin/roles`, result);
+    return this.rolesService.create(result);
   }
 
   private updateRole(id: string, result: RoleFormResult): Observable<SilentResult<ClientRole>> {
@@ -331,7 +317,7 @@ export class RolesAdminPage implements OnInit {
       permissions: result.permissions,
       pages: result.pages,
     };
-    return silentPatch<ClientRole>(this.http, `${this.baseUrl}/admin/roles/${id}`, payload);
+    return this.rolesService.update(id, payload);
   }
 
   private silentRun(

@@ -42,4 +42,49 @@ describe('PiRolesService (TZ-278)', () => {
     expect(request.request.params.get('limit')).toBe('50');
     request.flush({ items: [], total: 0, page: 1, limit: 50 });
   });
+
+  it('preserves create and update URLs and payloads', () => {
+    service
+      .create({
+        name: 'manager',
+        label: 'Manager',
+        permissions: ['role:read'],
+        pages: ['products'],
+      })
+      .subscribe();
+    const create = httpMock.expectOne('/api/admin/roles');
+    expect(create.request.method).toBe('POST');
+    expect(create.request.body).toEqual({
+      name: 'manager',
+      label: 'Manager',
+      permissions: ['role:read'],
+      pages: ['products'],
+    });
+    create.flush({ id: 'r1' });
+
+    service
+      .update('r1', {
+        label: 'Updated manager',
+        description: 'Updated',
+        permissions: ['role:read', 'role:write'],
+        pages: ['products'],
+      })
+      .subscribe();
+    const update = httpMock.expectOne('/api/admin/roles/r1');
+    expect(update.request.method).toBe('PATCH');
+    expect(update.request.body).toEqual({
+      label: 'Updated manager',
+      description: 'Updated',
+      permissions: ['role:read', 'role:write'],
+      pages: ['products'],
+    });
+    update.flush({ id: 'r1' });
+  });
+
+  it('preserves delete endpoint', () => {
+    service.remove('r1').subscribe();
+    const remove = httpMock.expectOne('/api/admin/roles/r1');
+    expect(remove.request.method).toBe('DELETE');
+    remove.flush({ success: true });
+  });
 });

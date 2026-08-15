@@ -5,10 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:35:00Z
-main_head: `8d4b5616`
+updated_at: 2026-08-15T09:45:00+03:00
+main_head: _(pending push — integrity merge)_
 
 ## ACTIVE
+
+### TZ-FRONTEND-301 / 302 — DONE (Cursor PASS, merging to main)
+
+- Canonical: `docs/audits/2026-08-15-angular-component-integrity.md`
+- Archives: `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`, `TZ-FRONTEND-302.done.md`
+- State: ANGULAR INTEGRITY READY yes (known Jest debt 13); deploy НЕ.
+- Successors: composition / group-ACL / Jest debt = new TZ only.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -30,42 +37,34 @@ main_head: `8d4b5616`
 - Implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
 - Closeout: `8d4b5616bc435d6e302491d09c99a809d6749a1f`
 - State: Cursor PASS; archive/lock/checklist landed; active marker removed; deploy НЕ.
-- Conflict keys released: proposal-create* + sheetLayout FE/BE + table-template preview + page docs.
 
 ### TZ-CATALOG-371 — DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
 - Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
-- State: duplicate API, expectedVersion and typed FE client DONE; archive/lock/checklist landed.
-- Team Room: task not registered; claim attempt recorded in checklist.
-- Active marker removed after closeout; deploy НЕ.
-- Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
+- State: DONE; deploy НЕ.
 
 ### TZ-SALES-370 — DONE / LANDED
 
 - Branch: `feature/TZ-SALES-370`
-- Implementation: `c08f1373`; closeout: `d1e97c1c`; main: `f49a3d00` (full SHAs in archive/checklist)
-- State: Cursor visual PASS; A4 fixture limitation delegated to SALES-371.
-- Archive/lock/checklist landed; active marker removed; deploy НЕ.
-- Conflict keys released: `proposal-create*`, quotation output/schema/dto, page docs.
+- Implementation: `c08f1373`; closeout: `d1e97c1c`; main: `f49a3d00`
+- State: Cursor visual PASS; deploy НЕ.
 
 ## READY / ORDER
 
 1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+3. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 
 ## LAST DONE
 
+- FRONTEND-301/302 Angular integrity — DONE; Cursor PASS; merging to main.
 - SALES-373 KP table font size on A4 — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
-- DOC-TABLES-310 remove help + separate toolbar buttons — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
-- DOC-TABLES-309 tables dialog copy + taller fields — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
-- UX-318 KP columns checkbox menu stay-open — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
-- AUTH-306 hidden owner — DONE/pushed.
-- AUTH-303 device enrollment backend + `sessionKind=device` — DONE/pushed.
-- AUTH-304 device enrollment UI — DONE/pushed; closeout lock corrected.
+- DOC-TABLES-310 / 309 / UX-318 — DONE; Cursor PASS; deploy НЕ.
+- AUTH-306 / 303 / 304 — DONE/pushed.
 
 ## GLOBAL BLOCKERS / BANS
 

@@ -1204,17 +1204,18 @@ export class ProposalCreatePage implements OnInit {
     const persist = (id: string | null) =>
       id ? this.proposalsSvc.update(id, payload) : this.proposalsSvc.create(payload);
 
-    persist(draftId).subscribe((res) => {
-      if (!res.ok && draftId && (res.error.status === 404 || res.error.status === 400)) {
-        // Soft-deleted / stale local pointer — start a fresh draft once.
-        this.removeStorage('kp.create.lastDraftId');
-        this.proposalsSvc
-          .create(payload)
-          .subscribe((retry) => this.finishSave(retry, template._id, autosave));
-        return;
-      }
-      this.finishSave(res, template._id, autosave);
-    });
+    persist(draftId)
+      .pipe(
+        switchMap((res) => {
+          if (!res.ok && draftId && (res.error.status === 404 || res.error.status === 400)) {
+            // Soft-deleted / stale local pointer — start a fresh draft once.
+            this.removeStorage('kp.create.lastDraftId');
+            return this.proposalsSvc.create(payload);
+          }
+          return of(res);
+        }),
+      )
+      .subscribe((res) => this.finishSave(res, template._id, autosave));
   }
 
   private finishSave(res: SilentResult<Proposal>, templateId: string, autosave: boolean): void {

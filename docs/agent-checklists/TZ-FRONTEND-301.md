@@ -1,36 +1,23 @@
 # TZ-FRONTEND-301 checklist
 
-> Status: READY
-> Product code: forbidden (audit only)
-> Lane: A coordinator — pages/** + canonical merge
+> Status: **DONE**
+> Cursor PASS: 2026-08-15
+> Product code in Stage 1: forbidden (audit only)
+> Deploy: НЕ
 
-## Claim
+## Claim / Stage 1
 
-- [ ] Workspace/branch/HEAD recorded.
-- [ ] Claim slot + active marker before audit.
-- [ ] `_NOW` and active conflict keys checked.
-
-## Baseline
-
-- [ ] Frontend tsc/lint recorded.
-- [ ] Custom ESLint rule specs recorded.
-- [ ] Architecture-check recorded.
-
-## Audit integrity
-
-- [ ] All frontend source zones inventoried.
-- [ ] Lane A pages report pushed.
-- [ ] Lane B platform report imported by full SHA.
-- [ ] Findings manually verified; false positives separated.
-- [ ] P0/P1/P2/P3 severity applied.
-- [ ] Container/presentational candidates have `extract|keep` rationale.
-- [ ] Every remediation batch has exact files, tests and browser scenario.
-- [ ] Every batch assigned `lane: A|B`; no overlapping conflict keys.
-- [ ] No Angular 22-only API/new dependency recommended.
+- [x] Lane A pages report + Lane B platform report by full SHA.
+- [x] Canonical audit published and amended (A1/A3).
+- [x] Cursor/PO PASS on canonical; Stage 2 authorized.
 
 ## Closeout
 
-- [ ] Audit report created.
-- [ ] Executor report ≤15 lines.
-- [ ] Cursor/PO PASS.
-- [ ] Archive/lock/progress/commit/push; deploy НЕ.
+- [x] Stage 2 ready batches completed under TZ-FRONTEND-302.
+- [x] Canonical audit final verdict READY yes (known Jest debt).
+- [x] Archive + lock; deploy НЕ.
+
+## Archives
+
+- `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`
+- `tasks/_archive/2026-08/TZ-FRONTEND-302.done.md`
