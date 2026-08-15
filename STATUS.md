@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-UI-PHOTO-343 DONE: catalog photo-entry sweep
+**Статус:** DONE; WAVE-COMPOSE-CREATE-PHOTO complete; deploy НЕ
+**Что:** product/material primary photo controls use `app-pi-photo-dropzone`; module form/detail/QC and QuickCreate verified; catalog photo entry points now support file + drag-and-drop + Ctrl+V. Module detail URL is collapsed secondary; organization/document-constructor uploaders remain intentional non-catalog workflows.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-PHOTO-343.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-PHOTO-343-photo-sweep.lock`
+**Gates:** FE tsc PASS; Jest 5 suites / 96 tests PASS; lint PASS с 18 existing warnings; owned Prettier PASS; diff-check PASS. Docs Prettier reports existing markdown drift; no broad reformat.
+
 ## [2026-08-16] — TZ-MODULES-341 DONE: module photo upload form/detail/QC
 **Статус:** DONE; deploy НЕ
 **Что:** form и QuickCreate L используют dropzone/PhotosService и ProductModulePhotosService `photoId`; detail делает файл primary, URL оставлен collapsed secondary; один link write path.

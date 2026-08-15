@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-UI-PHOTO-343 DONE — catalog photo-entry sweep
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-COMPOSE-CREATE-PHOTO complete; deploy НЕ
+**Что:** product/material primary photo controls migrated to `app-pi-photo-dropzone`; module form/detail and QuickCreate paths verified; catalog primary photo entries now share file + drag-and-drop + Ctrl+V. Module detail URL remains collapsed secondary; organization/document-constructor asset uploaders documented as intentional non-catalog workflows.
+**Gates:** FE tsc PASS; Jest product/material/dropzone 3 suites / 77 tests PASS; module-detail + QuickCreate 2 suites / 19 tests PASS; lint PASS с 18 существующими архитектурными предупреждениями; owned Prettier PASS; diff-check PASS. Docs Prettier reports existing markdown drift; broad reformat not applied.
+**Archive:** `tasks/_archive/2026-08/TZ-UI-PHOTO-343.done.md`
+**Lock:** `.mimocode/locks/TZ-UI-PHOTO-343-photo-sweep.lock`
+**Score:** WAVE 4/4; all phases archived; next action STOP.
+
 ## [2026-08-16] — TZ-MODULES-341 DONE — module photo upload form/detail/QC
 **Исполнитель:** Buffy
 **Статус:** DONE; deploy НЕ

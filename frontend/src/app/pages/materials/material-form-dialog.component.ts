@@ -40,6 +40,7 @@ import { Organization, OrganizationsService } from '../../shared/services/organi
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
 import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
@@ -119,6 +120,7 @@ interface DimensionFormGroup extends FormGroup {
     TextareaComponent,
     PiFormSectionComponent,
     PiOverflowSelectComponent,
+    PiPhotoDropzoneComponent,
   ],
   template: `
     <app-pi-dialog
@@ -363,59 +365,17 @@ interface DimensionFormGroup extends FormGroup {
 
             <!-- ─── Photos ─── -->
             <div>
-              <div class="flex items-baseline justify-between mb-form-row">
+              <div class="mb-form-row">
                 <p class="eyebrow">Фото</p>
-                <label
-                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper-2 hover:bg-paper transition-colors"
-                  [class.cursor-pointer]="!uploading()"
-                  [class.cursor-wait]="uploading()"
-                  [class.opacity-60]="uploading()"
-                  [class.pointer-events-none]="uploading()"
-                  [attr.aria-busy]="uploading() ? 'true' : null"
-                >
-                  <span>+ Загрузить</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    class="sr-only"
-                    data-test="photo-input"
-                    [disabled]="uploading()"
-                    (change)="onPhotoSelect($event)"
-                  />
-                </label>
               </div>
-
-              @if (uploading()) {
-                <div
-                  class="space-y-1.5 hairline rounded-sm bg-paper-2 p-2 mb-form-row"
-                  data-test="photo-upload-progress"
-                >
-                  <p class="text-sm text-ink m-0" role="status">
-                    {{
-                      uploadProgress() === null
-                        ? 'Загрузка фото…'
-                        : 'Загрузка фото… ' + uploadProgress() + '%'
-                    }}
-                  </p>
-                  <div
-                    class="w-full h-2 rounded-sm bg-rule/40 overflow-hidden"
-                    role="progressbar"
-                    [attr.aria-valuemin]="0"
-                    [attr.aria-valuemax]="100"
-                    [attr.aria-valuenow]="uploadProgress() === null ? null : uploadProgress()"
-                    [attr.aria-valuetext]="uploadProgress() === null ? 'Загрузка' : null"
-                    aria-label="Загрузка фото"
-                  >
-                    <div
-                      class="h-full bg-ink motion-reduce:transition-none transition-all duration-300"
-                      [class.animate-pulse]="uploadProgress() === null"
-                      [style.width.%]="uploadProgress() === null ? 50 : uploadProgress()"
-                    ></div>
-                  </div>
-                </div>
-              }
-              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <app-pi-photo-dropzone
+                [photos]="photos()"
+                [uploading]="uploading()"
+                [progressPercent]="uploadProgress()"
+                (uploadRequest)="onPhotoUpload($event)"
+                (deleteRequest)="removePhoto($event)"
+              />
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                 @for (p of photos(); track p._id; let i = $index) {
                   <div
                     class="relative hairline rounded-sm overflow-hidden bg-paper-2"
@@ -835,7 +795,10 @@ export class MaterialFormDialogComponent implements OnDestroy {
 
   onPhotoSelect(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const files = Array.from(input.files ?? []);
+    this.onPhotoUpload(Array.from(input.files ?? []));
+  }
+
+  onPhotoUpload(files: File[]): void {
     if (files.length === 0) return;
     this.uploading.set(true);
     this.uploadProgress.set(null);
@@ -860,7 +823,6 @@ export class MaterialFormDialogComponent implements OnDestroy {
       }
       this.uploading.set(false);
       this.uploadProgress.set(null);
-      input.value = '';
       if (failed.length > 0) {
         this.toast.error(
           `Не удалось загрузить: ${failed.join(', ')} (загружено ${uploaded.length})`,
