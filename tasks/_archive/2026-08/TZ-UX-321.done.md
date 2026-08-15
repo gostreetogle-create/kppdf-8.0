@@ -8,8 +8,7 @@ closed_at: 2026-08-15T14:35:00Z
 closed_by: Buffy (kppdf-8.0)
 workspace: D:\kppdf-8.0
 implementation_sha: 21f32f11317d79d25e05b651f320579e407d3bf3
-merge_sha: 85dbcc57cb2174fa750c27b425e6319baba8b30a
-source_branch: feature/TZ-UX-321-universal-chrome-rail
+closeout_sha: 099de456d9127c91acabb313e3937d3f57fbc4d7
 landed_via: merge --no-ff onto origin/main
 verification:
   - acceptance criteria: PASS

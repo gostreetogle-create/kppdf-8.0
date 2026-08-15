@@ -8,6 +8,7 @@
 **Lock:** `.mimocode/locks/TZ-UX-321-universal-left-chrome-rail.lock`
 **Implementation SHA:** `21f32f11317d79d25e05b651f320579e407d3bf3`
 **Merge SHA:** `85dbcc57cb2174fa750c27b425e6319baba8b30a`
+**Closeout SHA:** `099de456d9127c91acabb313e3937d3f57fbc4d7`
 **Successor:** TZ-UX-322 page-tools projection into rail.
 
 ## [2026-08-15] — TZ-ORDERS-HUB-303 DONE — supply / production / docs expand
