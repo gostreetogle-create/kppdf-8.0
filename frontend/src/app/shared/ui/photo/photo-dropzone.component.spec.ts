@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { of } from 'rxjs';
-import { PiToastService } from '../toast';
-import { PhotosService, type Photo } from '../../services/photos.service';
+import type { Photo } from '../../services/photos.service';
 import { PiPhotoDropzoneComponent } from './photo-dropzone.component';
 
 describe('PiPhotoDropzoneComponent', () => {
@@ -12,19 +10,8 @@ describe('PiPhotoDropzoneComponent', () => {
     originalFilename: 'front.jpg',
   };
 
-  let upload: jest.Mock;
-  let remove: jest.Mock;
-
   async function setup() {
-    upload = jest.fn().mockReturnValue(of({ ok: true, data: photo }));
-    remove = jest.fn().mockReturnValue(of({ ok: true, data: undefined }));
-
-    await TestBed.configureTestingModule({
-      providers: [
-        { provide: PhotosService, useValue: { upload, remove } },
-        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
-      ],
-    })
+    await TestBed.configureTestingModule({})
       .overrideComponent(PiPhotoDropzoneComponent, {
         set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
       })
@@ -37,12 +24,14 @@ describe('PiPhotoDropzoneComponent', () => {
 
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('uploads dropped files, emits previews, and reports upload state', async () => {
+  it('is presentational: renders input photos and emits uploadRequest instead of calling the API', async () => {
     const { fixture, component } = await setup();
-    const photosChange = jest.fn();
-    const uploadStateChange = jest.fn();
-    component.photosChange.subscribe(photosChange);
-    component.uploadStateChange.subscribe(uploadStateChange);
+    const uploadRequest = jest.fn();
+    component.uploadRequest.subscribe(uploadRequest);
+
+    fixture.componentRef.setInput('photos', [photo]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="photo-preview-0"]')).not.toBeNull();
 
     const file = new File(['image'], 'front.jpg', { type: 'image/jpeg' });
     const target = fixture.nativeElement.querySelector(
@@ -56,16 +45,14 @@ describe('PiPhotoDropzoneComponent', () => {
     target.dispatchEvent(drop);
     fixture.detectChanges();
 
-    expect(upload).toHaveBeenCalledWith(file);
-    expect(photosChange).toHaveBeenCalledWith([photo]);
-    expect(uploadStateChange).toHaveBeenNthCalledWith(1, true);
-    expect(uploadStateChange).toHaveBeenLastCalledWith(false);
-    expect(fixture.nativeElement.querySelector('[data-test="photo-preview-0"]')).not.toBeNull();
+    expect(uploadRequest).toHaveBeenCalledWith([file]);
   });
 
-  it('removes a preview and calls the shared photo delete service', async () => {
-    const { fixture } = await setup();
-    fixture.componentRef.setInput('initialPhotos', [photo]);
+  it('emits deleteRequest with the photo id on remove (API stays parent-owned)', async () => {
+    const { fixture, component } = await setup();
+    const deleteRequest = jest.fn();
+    component.deleteRequest.subscribe(deleteRequest);
+    fixture.componentRef.setInput('photos', [photo]);
     fixture.detectChanges();
 
     const removeButton = fixture.nativeElement.querySelector(
@@ -74,7 +61,24 @@ describe('PiPhotoDropzoneComponent', () => {
     removeButton.click();
     fixture.detectChanges();
 
-    expect(remove).toHaveBeenCalledWith('p1');
-    expect(fixture.nativeElement.querySelector('[data-test="photo-preview-0"]')).toBeNull();
+    expect(deleteRequest).toHaveBeenCalledWith('p1');
+  });
+
+  it('renders uploading status and error message from inputs', async () => {
+    const { fixture } = await setup();
+    expect(fixture.nativeElement.querySelector('[role="status"]')).toBeNull();
+
+    fixture.componentRef.setInput('uploading', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
+      'Загрузка фото',
+    );
+
+    fixture.componentRef.setInput('uploading', false);
+    fixture.componentRef.setInput('errorMessage', 'Не удалось загрузить: front.jpg');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Не удалось загрузить',
+    );
   });
 });
