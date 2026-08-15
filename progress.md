@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-SALES-376 DONE — geometry-aware KP page split
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; full-stack document split + Create КП copy; deploy НЕ
+**Что:** `estimateAutoRowCapacity` по `layout.height` блока таблицы; `splitPreviewLines` capacity + `pageBreakBefore`; clip overflow на build CSS; last-page totals = full KP lines; RU hint «0 — автоматически по рамке…».
+**Gates:** BE tsc PASS; document-template 67 tests; FE tsc PASS; proposal-create 61 tests; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-376.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-376.md`
+**Lock:** `.mimocode/locks/TZ-SALES-376-geometry-aware-page-split.lock`
+**Implementation SHA:** `7a619e4c95ceebc64aef45a42e47208437a46516`
+**Closeout SHA:** `81509f56`
+**Known limit:** auto capacity — estimate not pixel-perfect; continuation/per-page templates = TZ-SALES-377 PARK backlog.
+
 ## [2026-08-15] — TZ-FRONTEND-303 DONE — Jest baseline debt
 **Исполнитель:** Buffy / isolated `feature/TZ-FRONTEND-303`
 **Статус:** DONE; frontend test-only; deploy НЕ

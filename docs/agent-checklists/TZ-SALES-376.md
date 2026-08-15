@@ -1,6 +1,6 @@
 # TZ-SALES-376 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-SALES-376.md`
 > Commit/push: по `docs/GIT-POLICY.md`
 
@@ -62,6 +62,6 @@ cd frontend && pnpm test -- proposal-create                  → PASS (61)
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T07:30:00Z

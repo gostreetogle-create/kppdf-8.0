@@ -6,17 +6,9 @@
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-15T07:30:00Z
-main_head: _(verify `git rev-parse HEAD`)_
+main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
 
 ## ACTIVE
-
-### TZ-SALES-376 — READY FOR REVIEW (Buffy)
-
-- Spec: `tasks/TZ-SALES-376-kp-geometry-aware-page-split.md`
-- Checklist: `docs/agent-checklists/TZ-SALES-376.md`
-- Marker: `tasks/_active/TZ-SALES-376.md`
-- State: geometry-aware split + pageBreakBefore + clip + full totals + RU hint; gates PASS; **не archive** до Cursor PASS.
-- vs AUTH-305: OK. Deploy НЕ.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -31,6 +23,16 @@ main_head: _(verify `git rev-parse HEAD`)_
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-SALES-376 — DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-SALES-376.md`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-376.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-376-geometry-aware-page-split.lock`
+- Implementation: `7a619e4c95ceebc64aef45a42e47208437a46516`
+- Closeout: `c761a004`
+- State: Cursor PASS; geometry-aware split + pageBreakBefore + clip + full totals + RU hint; archive/lock/checklist DONE; active marker removed; deploy НЕ.
+- Successor park: **TZ-SALES-377** (continuation background) — backlog only, не брать.
 
 ### TZ-FRONTEND-303 — DONE / PUSHED
 
@@ -107,6 +109,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- SALES-376 geometry-aware KP page split — DONE; Cursor PASS; archive/lock landed; deploy НЕ; SALES-377 still PARK in backlog.
 - SALES-375 remove products rail draft-lines — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - SALES-374 KP table editor chrome — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - UX-319 products expanded row ink frame — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
@@ -120,6 +123,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 - Wave AUTH = 3/5, не DONE.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
+- **TZ-SALES-377** (continuation background table) — PARK in `tasks/_backlog/`; не claim до PO.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.
 - Параллель только при непересекающихся conflict keys; максимум 1–2 product streams.
 
