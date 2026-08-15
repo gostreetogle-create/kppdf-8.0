@@ -1,10 +1,38 @@
 # Angular component integrity — canonical audit
 
-> Status: **PASS + A1 SCOPE AMENDMENT** (Stage 2 in progress)  
+> Status: **STAGE 2 — Lane B DONE; Lane A in progress (A3 amended)**  
 > Parent TZ: `TZ-FRONTEND-301`  
 > Remediation TZ: `TZ-FRONTEND-302`  
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
-> Product code in Stage 1: **unchanged**
+
+## Stage 2 progress board
+
+| Batch | Lane | Status | Full SHA |
+|-------|------|--------|----------|
+| A1 admin HTTP→services | A | **DONE** | impl `91ef835a6eeef561c39e4684b02ed31120785669` · docs `0817d68a02979ac33080db5767b86f13036d817f` |
+| A2 order dialog users | A | **DONE** | impl `003da5f033de5b5895b80d6d291cc13ecb4d8c8a` · closeout `40768423d391cb98dbe66cce9a75aee7f338fd8d` |
+| A3 import-todos HTTP | A | **UNBLOCKED** (amendment below) | blocker `30291b7e710cf2610c702e03a59db55c4dd63092` |
+| A4–A6 KP P0 | A | queued | — |
+| B-TOOLING | B | **DONE** | `c58a7da2ca4a373815cdb700fd1eb85c7e5821da` |
+| B-ENTITY-SPEC | B | **DONE** | `6e5a2da3606e08010f44d50d6a33dab1040c711f` |
+| B-PHOTO | B | **DONE** | `8b2f0fc7285c244fdc669b4da4d936ce64470dee` |
+| B-COMPOSITION / B-GROUP-ACL / P3 | B | **STOP / BACKLOG** | not started (correct) |
+
+Lane B Stage 2 ready batches complete. Lane B **STOP** until Lane A finishes A3–A6 + umbrella final gates. Do not start successors without new Cursor assignment.
+
+## Amendment 2026-08-15b — A3 page-local mutation service (Cursor decision)
+
+**Decision: expand A3 with a co-located page service — not `shared/services`.**
+
+Stop evidence `30291b7e…`: GET already uses `httpResource`; `markDone()` needs PATCH ownership; no existing shared service.
+
+| Rule | Value |
+|------|-------|
+| Owner | **Lane A** |
+| New file allowed | `frontend/src/app/pages/import-todos/import-todos.service.ts` (+ optional `.spec.ts`) |
+| Exact keys | page + new service (+ specs) — still ≤8 |
+| Change | Move existing `silentPatch` URL/body into service; page drops `HttpClient` |
+| Forbidden | New endpoints; shared/services expansion; UI/filter behavior change |
 
 ## Amendment 2026-08-15 — A1 shared API ownership (Cursor decision)
 
@@ -157,12 +185,17 @@ Hot serial files (`app.routes.ts`, `app.config.ts`, global styles, shared API se
   list method already exists; if still need a **new** shared method beyond A1 surface → STOP for new amendment. Do not expand A2 keys to `pi-users` while A1 holds them.
 - Browser: order dialog lookups; submit pending guard
 
-#### A3 — Import-todos HttpClient · P1 · `lane: A`
+#### A3 — Import-todos HttpClient · P1 · `lane: A` · **amended page-local service**
 
-- Keys:  
+- Exact conflict keys:  
   `frontend/src/app/pages/import-todos/import-todos.page.ts`  
-  (+ spec if any)
-- Browser: load/error/empty
+  `frontend/src/app/pages/import-todos/import-todos.service.ts` (**new**, page-local)  
+  `frontend/src/app/pages/import-todos/import-todos.service.spec.ts` (optional but preferred)  
+  `frontend/src/app/pages/import-todos/import-todos.page.spec.ts` (if present)
+- Move only existing `silentPatch` markDone into service; keep `httpResource` GET on page **or** also move GET into service if cleaner — same URL `/import-todos`
+- Do **not** add files under `shared/services/**`
+- Browser: load/error/empty + mark done toast/reload
+- Parallel OK with finished B batches (no key overlap)
 
 #### A4 — KP autosave nested subscribe · P0 · `lane: A`
 
@@ -221,54 +254,65 @@ Hot serial files (`app.routes.ts`, `app.config.ts`, global styles, shared API se
 
 ### Explicitly NOT ready (STOP / BACKLOG)
 
-| Batch | Why |
-|-------|-----|
-| A7 block-renderer | Unproven; needs characterization |
-| B-COMPOSITION-SUCCESSOR | Cross page domains + shared callers >8 files |
-| B-GROUP-ACL-SUCCESSOR | 30+ callers; permission UX choice |
-| P3-only (standalone / shadow / Forbidden OnPush) | No style-only churn this wave |
+| Batch | Why | Next planning note |
+|-------|-----|--------------------|
+| A7 block-renderer | Unproven; needs characterization | After A4–A6 only if P0 proven |
+| B-COMPOSITION-SUCCESSOR | Cross page domains + shared callers >8 files | **Serial successor TZ** after umbrella: single owner picks container host (likely products/modules facade) + presentational tree; exact caller list from platform audit |
+| B-GROUP-ACL-SUCCESSOR | 30+ callers; permission UX choice | **Serial successor TZ**: either required `visiblePages` input from each page container **or** one neutral nav/ACL view-model — PO must pick; not an integrity-wave batch |
+| P3-only (standalone / shadow / Forbidden OnPush) | No style-only churn this wave | Touch-only when file already open |
 
-## Recommended Stage 2 start order (after PASS)
+## Full Jest gate debt (umbrella)
 
-1. **Parallel wave 1:** Lane A=`A1` · Lane B=`B-TOOLING` (or `B-ENTITY-SPEC`)
-2. **Parallel wave 2:** Lane A=`A2` then `A3` · Lane B=`B-PHOTO` then remaining tooling
-3. **Serial Lane A P0:** `A4` → `A5` → `A6` (page-file serialization)
-4. Successors only after new PO/Cursor assignment
+Lane B evidence: **145/149** suites PASS on `feature/TZ-FRONTEND-302-B`. Same **13** failing tests reproduce on clean canonical `405cb71d` scratch:
 
-## Conflict-key matrix (ready batches)
+| Fail suite (baseline) | Owner for successor |
+|-----------------------|---------------------|
+| `materials.page` / `material-detail.page` / `materials.page-316` | **Lane A** pages (or separate materials TZ) |
+| `form-profiles.service` | shared service — **serial** small TZ after umbrella (not B-PHOTO scope) |
 
-No two ready batches share an exact product file. Serialization rules:
+**Umbrella policy:** do **not** block Lane B acceptance on these. Final `ANGULAR INTEGRITY READY` may be **yes with known baseline debt** listed above, unless PO orders a fix-wave before archive. Do not expand architecture baseline to hide them.
 
-- **A1** owns `pi-users.service*` + `pi-roles.service*` until A1 DONE (serial shared API)
+## Lane B acceptance (Cursor)
+
+- B-TOOLING / B-ENTITY-SPEC / B-PHOTO: **accepted** at SHAs above.
+- Documented deviation (revive `ClassDeclaration` token in oninit rule): **accepted** — was dead rule; severity/config unchanged; new page warnings are Lane A inventory debt, not B scope.
+- Lane B must stay idle on product keys; umbrella closeout is Lane A after A3–A6.
+
+## Recommended Stage 2 remaining order
+
+1. Lane A: **A3** (amended) → **A4 → A5 → A6** (serial on KP page file)
+2. Lane B: **idle** (ready batches done)
+3. Lane A umbrella: merge/rebase both feature branches, full tsc/lint, document Jest debt, update audit verdicts, archive 301/302
+4. Successors only with new TZ numbers after PASS umbrella
+
+## Conflict-key matrix (remaining)
+
+- A3 keys page-local only (no shared/services)
 - A4 ↔ A5 ↔ A6 via optional `proposal-create.page.ts`
-- A2 must not claim `pi-users.service*` while A1 is active
-- B-TOOLING is serial relative to other ESLint/architecture tooling edits
-- B-PHOTO / B-ENTITY-SPEC remain disjoint from A1
+- B ready keys released (DONE); do not re-open without regression
+- Composition / Group ACL still STOP
 
-Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) are **Lane A–owned** during remediation. Lane B must not edit this file.
+Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) remain **Lane A–owned**.
 
-## Stage 1 closeout / Stage 2 gate
+## Stage gates
 
-- [x] Both lane reports imported by full SHA  
-- [x] Findings deduped; batches assigned `lane: A|B`  
-- [x] Exact conflict keys non-overlapping for ready batches  
-- [x] **Cursor/PO PASS** on canonical audit (Stage 2 authorized)  
-- [x] **A1 scope amendment** — shared mutation move owned by Lane A (this document)  
-- [ ] Child batches land with gates + SHAs; umbrella closeout after both lanes  
+- [x] Canonical PASS + A1/A3 amendments  
+- [x] Lane B ready batches DONE + SHAs recorded  
+- [ ] Lane A A3–A6 DONE  
+- [ ] Umbrella final gates + audit SHA updates  
+- [ ] Archive children + umbrella; deploy **НЕ**  
 
-Deploy: **НЕ**.
+## Counts (canonical — unchanged finding set)
 
-## Counts (canonical)
-
-| Severity | Count | FIX NOW ready batches |
-|----------|------:|----------------------|
-| P0 | **3** | A4, A5, A6 |
-| P1 | **9** (5 FIX NOW groups + 4 BACKLOG) | A1–A3, B-TOOLING, B-PHOTO, B-ENTITY-SPEC |
-| P2 | **5** | none (KEEP/BACKLOG) |
-| P3 | **4** (deduped) | none |
+| Severity | Count | FIX NOW ready/done |
+|----------|------:|-------------------|
+| P0 | **3** | A4–A6 queued |
+| P1 | **9** | A1–A2 DONE; A3 unblocked; B three DONE; 4 BACKLOG |
+| P2 | **5** | KEEP/BACKLOG |
+| P3 | **4** | none |
 
 ## Review / resume
 
-- Canonical PASS already granted; A1 amendment is the active unblock.
-- Lane A: resume A1 with expanded keys, then A2→A6 per order.
-- Lane B: continue B-TOOLING / B-ENTITY-SPEC / B-PHOTO; do not touch `pi-users`/`pi-roles` until A1 releases them.
+- Lane B: **STOP** — SHAs published; wait umbrella.
+- Lane A: resume **A3** with page-local service amendment, then A4–A6.
+- Successors (composition / group ACL / Jest debt): separate planning after umbrella — not this wave.
