@@ -1,4 +1,14 @@
-## [2026-08-15] — TZ-AUTH-308 DONE — Device-only admin UX
+## [2026-08-15] — TZ-UX-324 DONE — chrome history ↔ page-tools gap
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; spacer ~1 btn + muted page-tool; deploy НЕ
+**Что:** `chrome-rail-tools-gap` только при tools; `app-chrome-page-tool` paper-2/rule vs raised history; page-chrome docs; Jest gap AC.
+**Gates:** FE tsc PASS; Jest app-layout 7/7 PASS; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-324.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-324.md`
+**Lock:** `.mimocode/locks/TZ-UX-324-chrome-history-page-tools-gap.lock`
+**known_limitation:** flyout registration / PiChromeToolsService API не трогали.
+
+
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; people UI via Devices; users redirect; register 410; login KEEP; deploy НЕТ
 **Итог:** Nav/TOC → Устройства|Роли; `/admin`+`/admin/users` → devices; `POST /api/auth/register` Gone; BE `/api/admin/users` KEEP.

@@ -435,6 +435,7 @@ export function matchActiveCategoryId(
           TZ-UX-321-FIX: two transparent chrome rails anchored to .pi-page-frame
           (position:relative). ← left rail, → right rail. Visible ≥1680px only.
           TZ-UX-322: page tools under history via PiChromeToolsService.
+          TZ-UX-324: ~1-button spacer + muted page-tool visual vs history.
         -->
         <aside
           class="app-chrome-rail app-chrome-rail-left"
@@ -454,10 +455,17 @@ export function matchActiveCategoryId(
           >
             <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
           </button>
+          @if (chromeTools.leftTools().length > 0) {
+            <div
+              class="app-chrome-rail-tools-gap"
+              data-test="chrome-rail-tools-gap"
+              aria-hidden="true"
+            ></div>
+          }
           @for (tool of chromeTools.leftTools(); track tool.id) {
             <button
               type="button"
-              class="app-nav-rail-button pi-focus-ring"
+              class="app-nav-rail-button app-chrome-page-tool pi-focus-ring"
               [class.is-active]="!!tool.active"
               [attr.data-test]="'chrome-tool-' + tool.id"
               [attr.aria-label]="tool.ariaLabel"
@@ -488,10 +496,17 @@ export function matchActiveCategoryId(
           >
             <lucide-angular [img]="forwardIcon" [size]="13" aria-hidden="true" />
           </button>
+          @if (chromeTools.rightTools().length > 0) {
+            <div
+              class="app-chrome-rail-tools-gap"
+              data-test="chrome-rail-tools-gap"
+              aria-hidden="true"
+            ></div>
+          }
           @for (tool of chromeTools.rightTools(); track tool.id) {
             <button
               type="button"
-              class="app-nav-rail-button pi-focus-ring"
+              class="app-nav-rail-button app-chrome-page-tool pi-focus-ring"
               [class.is-active]="!!tool.active"
               [attr.data-test]="'chrome-tool-' + tool.id"
               [attr.aria-label]="tool.ariaLabel"
@@ -563,7 +578,9 @@ export function matchActiveCategoryId(
       border: 1px solid var(--color-rule-strong);
       border-radius: var(--radius-sm);
       cursor: pointer;
-      transition: background-color 120ms ease;
+      transition:
+        background-color 120ms ease,
+        border-color 120ms ease;
     }
     .app-nav-rail-button:hover:not(:disabled),
     .app-nav-rail-button.is-active {
@@ -572,6 +589,27 @@ export function matchActiveCategoryId(
     .app-nav-rail-button:disabled {
       opacity: 0.35;
       cursor: default;
+    }
+    /* TZ-UX-324: visual skip ≈ one 32px button between history and page tools. */
+    .app-chrome-rail-tools-gap {
+      flex: 0 0 32px;
+      width: 32px;
+      height: 32px;
+      margin: 0;
+      padding: 0;
+      border: none;
+      background: transparent;
+      pointer-events: none;
+    }
+    /* Page tools: muted vs raised history (global ≠ page). */
+    .app-chrome-page-tool {
+      background: var(--color-paper-2);
+      border-color: var(--color-rule);
+    }
+    .app-chrome-page-tool:hover:not(:disabled),
+    .app-chrome-page-tool.is-active {
+      background: var(--color-paper-3);
+      border-color: var(--color-rule-strong);
     }
     @media (min-width: 1680px) {
       .app-chrome-rail {

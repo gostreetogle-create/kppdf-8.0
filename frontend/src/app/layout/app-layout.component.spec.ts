@@ -13,7 +13,7 @@ import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../shared/ui/toast/pi-toast.service';
 import { API_BASE_URL } from '../core/api.tokens';
 
-describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 chrome rails)', () => {
+describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 chrome rails)', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
   let chromeTools: PiChromeToolsService;
 
@@ -192,6 +192,9 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 chrome rails
     expect(ordersBtn!.getAttribute('aria-label')).toBe('Заказы');
     expect(cardBtn!.getAttribute('aria-expanded')).toBe('true');
     expect(cardBtn!.classList.contains('is-active')).toBe(true);
+    expect(ordersBtn!.classList.contains('app-chrome-page-tool')).toBe(true);
+    expect(cardBtn!.classList.contains('app-chrome-page-tool')).toBe(true);
+    expect(backBtn()!.classList.contains('app-chrome-page-tool')).toBe(false);
 
     // History arrows remain.
     expect(backBtn()).toBeTruthy();
@@ -209,5 +212,65 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 chrome rails
     expect(fixture.nativeElement.querySelector('[data-test="chrome-tool-card"]')).toBeNull();
     expect(backBtn()).toBeTruthy();
     expect(forwardBtn()).toBeTruthy();
+  });
+
+  it('TZ-UX-324: spacer appears only when tools exist on that side', () => {
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-test="chrome-rail-tools-gap"]').length,
+    ).toBe(0);
+
+    chromeTools.setTools('spec-owner', [
+      {
+        id: 'orders',
+        side: 'left',
+        ariaLabel: 'Заказы',
+        title: 'Заказы',
+        icon: List,
+        onClick: jest.fn(),
+        order: 1,
+      },
+    ]);
+    fixture.detectChanges();
+
+    const gapsAfterLeft = fixture.nativeElement.querySelectorAll(
+      '[data-test="chrome-rail-tools-gap"]',
+    ) as NodeListOf<HTMLElement>;
+    expect(gapsAfterLeft.length).toBe(1);
+    expect(leftRail()!.contains(gapsAfterLeft[0]!)).toBe(true);
+    expect(gapsAfterLeft[0]!.getAttribute('aria-hidden')).toBe('true');
+    expect(rightRail()!.querySelector('[data-test="chrome-rail-tools-gap"]')).toBeNull();
+
+    chromeTools.setTools('spec-owner', [
+      {
+        id: 'orders',
+        side: 'left',
+        ariaLabel: 'Заказы',
+        title: 'Заказы',
+        icon: List,
+        onClick: jest.fn(),
+        order: 1,
+      },
+      {
+        id: 'card',
+        side: 'right',
+        ariaLabel: 'Карточка',
+        title: 'Карточка',
+        icon: Filter,
+        onClick: jest.fn(),
+        order: 1,
+      },
+    ]);
+    fixture.detectChanges();
+
+    const gapsBoth = fixture.nativeElement.querySelectorAll('[data-test="chrome-rail-tools-gap"]');
+    expect(gapsBoth.length).toBe(2);
+    expect(leftRail()!.querySelector('[data-test="chrome-rail-tools-gap"]')).toBeTruthy();
+    expect(rightRail()!.querySelector('[data-test="chrome-rail-tools-gap"]')).toBeTruthy();
+
+    chromeTools.clear('spec-owner');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-test="chrome-rail-tools-gap"]').length,
+    ).toBe(0);
   });
 });
