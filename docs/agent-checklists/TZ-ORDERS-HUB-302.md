@@ -29,6 +29,8 @@
 - [x] Keyboard and aria behavior
 - [x] `/proposals` route in order detail
 - [x] No supply/production/shipping/backend writes
+- [x] PO visual lock: pale yellow tray, light paper groups, four lifecycle groups, top-aligned content
+- [x] No duplicated «Сделка» block; «Состав заказа» is an inline accordion that pushes content down
 
 ## Integrity
 
@@ -45,6 +47,7 @@
 ## Quality score
 
 - self_score: 98
+- visual_lock: PO-approved 2026-08-15; preserve unless a new visual PASS explicitly supersedes it
 - reviewer_score: 98 (Cursor architect functional PASS 98/100; PO authorized formal archive)
 
 ## Review handoff

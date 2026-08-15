@@ -320,229 +320,290 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
             <ng-template #expandedTpl let-row>
               @if (expandedId() === row._id) {
                 <div
-                  class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-gold-soft)]"
+                  class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-sunrise-soft)]"
                   data-test="expanded-content"
                   role="region"
                   [attr.aria-label]="'Сводка заказа: ' + row.number"
                 >
-                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <section class="min-w-0" data-test="order-deal-block">
-                      <p class="eyebrow m-0 mb-1">Сделка</p>
-                      <p class="text-sm m-0 text-ink">
-                        {{ counterpartyNameOf(row) || 'Заказчик не указан' }}
-                        <span class="text-muted-foreground">
-                          · {{ siteLabel(row.siteId) || 'Объект не указан' }}</span
-                        >
-                      </p>
-                      <p class="text-xs text-muted-foreground m-0 mt-1">
-                        КП: {{ proposalLabelOf(row) }}
-                        @if (row.contractId) {
-                          <span> · Договор: есть</span>
-                        }
-                      </p>
-                      <div class="flex flex-wrap gap-3 mt-2 text-xs">
-                        @if (proposalIdOf(row)) {
-                          <a
-                            routerLink="/proposals"
-                            class="underline underline-offset-2 hover:text-sunrise-warm"
-                            (click)="$event.stopPropagation()"
-                            >Открыть КП</a
-                          >
-                        }
-                        @if (row.contractId) {
-                          <a
-                            routerLink="/contracts"
-                            class="underline underline-offset-2 hover:text-sunrise-warm"
-                            (click)="$event.stopPropagation()"
-                            >Открыть договоры</a
-                          >
-                        }
-                      </div>
-                    </section>
-
-                    <section class="min-w-0" data-test="order-composition-block">
-                      <div class="flex items-baseline justify-between gap-2">
-                        <p class="eyebrow m-0">Состав</p>
-                        <a
-                          [routerLink]="['/orders', row._id]"
-                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                          (click)="$event.stopPropagation()"
-                          >Открыть заказ</a
-                        >
-                      </div>
-                      @if ((row.items?.length ?? 0) === 0) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">В заказе нет изделий.</p>
-                      } @else {
-                        <ul class="m-0 mt-1 pl-4 space-y-0.5 text-sm">
-                          @for (item of row.items; track $index) {
-                            <li>
-                              {{
-                                item.productName || 'Изделие ' + item.productId.slice(0, 8) + '…'
-                              }}
-                              · {{ item.quantity }}{{ item.unit ? ' ' + item.unit : '' }}
-                            </li>
-                          }
-                        </ul>
-                      }
-                    </section>
-
-                    <section class="min-w-0" data-test="order-supply-block">
-                      <div class="flex items-baseline justify-between gap-2">
-                        <p class="eyebrow m-0">Снабжение</p>
-                        <a
-                          routerLink="/supply"
-                          [queryParams]="{ orderId: row._id }"
-                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                          data-test="order-supply-link"
-                          (click)="$event.stopPropagation()"
-                          >Открыть снабжение</a
-                        >
-                      </div>
-                      @if (supplyExpandLoading() && supplyExpandOrderId() === row._id) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                      } @else if (supplyExpandError() && supplyExpandOrderId() === row._id) {
-                        <p
-                          class="text-xs text-destructive m-0 mt-1"
-                          role="alert"
-                          data-test="order-supply-error"
-                        >
-                          {{ supplyExpandError() }}
-                        </p>
-                      } @else if (
-                        supplyExpandOrderId() === row._id && supplyExpandCounters().total === 0
-                      ) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">Нет задач снабжения</p>
-                      } @else if (supplyExpandOrderId() === row._id) {
-                        <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
-                          Черновик {{ supplyExpandCounters().draft }} · Подтверждено
-                          {{ supplyExpandCounters().confirmed }} · Заказано
-                          {{ supplyExpandCounters().ordered }} · Получено
-                          {{ supplyExpandCounters().received }}
-                          <span class="text-muted-foreground"
-                            >· всего {{ supplyExpandCounters().total }}</span
-                          >
-                        </p>
-                      }
-                    </section>
-
-                    <section class="min-w-0" data-test="order-production-block">
-                      <p class="eyebrow m-0 mb-1">Производство</p>
-                      <p class="text-sm m-0">Оценка в цехе</p>
-                      <a
-                        routerLink="/production"
-                        [queryParams]="{ orderId: row._id }"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                        data-test="order-production-link"
-                        (click)="$event.stopPropagation()"
-                        >Открыть производство</a
+                  <div class="space-y-4" data-test="order-lifecycle-groups">
+                    <section
+                      class="rounded-sm border hairline border-ink/10 bg-paper-raised/85 p-3"
+                      data-test="order-group-order"
+                    >
+                      <div
+                        class="flex items-baseline gap-2 border-b hairline border-ink/5 pb-2 mb-3"
                       >
-                    </section>
-
-                    <section class="min-w-0" data-test="order-documents-block">
-                      <p class="eyebrow m-0 mb-1">Документы</p>
-                      <a
-                        routerLink="/doc-constructor/templates"
-                        [queryParams]="{ source: 'order', sourceId: row._id }"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                        data-test="order-documents-link"
-                        (click)="$event.stopPropagation()"
-                        >Шаблоны документов</a
-                      >
-                    </section>
-
-                    <section class="min-w-0" data-test="order-readiness-block">
-                      <div class="flex items-baseline justify-between gap-2">
-                        <p class="eyebrow m-0">Готовность</p>
-                        <a
-                          [routerLink]="['/orders', row._id]"
-                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                          data-test="order-readiness-link"
-                          (click)="$event.stopPropagation()"
-                          >Открыть заказ</a
-                        >
+                        <p class="eyebrow m-0">Заказ</p>
+                        <span class="text-xs text-muted-foreground">основной состав</span>
                       </div>
-                      <p class="text-sm m-0 mt-1" data-test="order-readiness-summary">
-                        {{ readinessLabel(row) }}
-                      </p>
-                      @if ((row.items?.length ?? 0) === 0) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">
-                          Нет линий для готовности.
-                        </p>
-                      } @else {
-                        <ul
-                          class="m-0 mt-1 pl-4 space-y-0.5 text-sm"
-                          data-test="order-readiness-lines"
+                      <section
+                        class="min-w-0 flex flex-col gap-1"
+                        data-test="order-composition-block"
+                      >
+                        <button
+                          type="button"
+                          class="flex items-center justify-between gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm"
+                          [attr.aria-expanded]="compositionExpandedId() === row._id"
+                          [attr.aria-controls]="'order-composition-' + row._id"
+                          (click)="toggleComposition(row._id); $event.stopPropagation()"
+                          data-test="order-composition-toggle"
                         >
-                          @for (item of row.items; track $index) {
-                            <li>
-                              {{
-                                item.productName || 'Изделие ' + item.productId.slice(0, 8) + '…'
-                              }}
+                          <span class="font-medium">Состав заказа</span>
+                          <span class="text-xs text-muted-foreground">
+                            {{ row.items?.length ?? 0 }}
+                            {{ itemCountLabel(row.items?.length ?? 0) }}
+                            <span aria-hidden="true">
                               ·
-                              <span
-                                [class.text-muted-foreground]="item.readyForWork !== true"
-                                [attr.data-test]="
-                                  item.readyForWork === true
-                                    ? 'order-readiness-ready'
-                                    : 'order-readiness-not-ready'
-                                "
-                              >
-                                {{ item.readyForWork === true ? 'готово' : 'не готово' }}
-                              </span>
-                            </li>
-                          }
-                        </ul>
-                      }
+                              {{
+                                compositionExpandedId() === row._id ? 'свернуть' : 'раскрыть'
+                              }}</span
+                            >
+                          </span>
+                        </button>
+                        @if (compositionExpandedId() === row._id) {
+                          <div
+                            class="border-t hairline border-ink/5 pt-3 mt-1"
+                            [id]="'order-composition-' + row._id"
+                            data-test="order-composition-panel"
+                          >
+                            @if ((row.items?.length ?? 0) === 0) {
+                              <p class="text-xs text-muted-foreground m-0">В заказе нет изделий.</p>
+                            } @else {
+                              <ul class="m-0 pl-4 space-y-1 text-sm leading-relaxed">
+                                @for (item of row.items; track $index) {
+                                  <li>
+                                    {{
+                                      item.productName ||
+                                        'Изделие ' + item.productId.slice(0, 8) + '…'
+                                    }}
+                                    · {{ item.quantity }}{{ item.unit ? ' ' + item.unit : '' }}
+                                  </li>
+                                }
+                              </ul>
+                            }
+                            <a
+                              [routerLink]="['/orders', row._id]"
+                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-3 inline-block"
+                              (click)="$event.stopPropagation()"
+                              >Открыть карточку заказа</a
+                            >
+                          </div>
+                        }
+                      </section>
                     </section>
 
-                    <section class="min-w-0" data-test="order-warehouse-block">
-                      <div class="flex items-baseline justify-between gap-2">
-                        <p class="eyebrow m-0">Склад</p>
-                        <a
-                          routerLink="/storage-items"
-                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                          data-test="order-warehouse-link"
-                          (click)="$event.stopPropagation()"
-                          >Склад</a
+                    <section
+                      class="rounded-sm border hairline border-ink/10 bg-paper-raised/85 p-3"
+                      data-test="order-group-execution"
+                    >
+                      <div
+                        class="flex items-baseline gap-2 border-b hairline border-ink/5 pb-2 mb-3"
+                      >
+                        <p class="eyebrow m-0">Исполнение</p>
+                        <span class="text-xs text-muted-foreground">цех и готовность</span>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+                        <section class="min-w-0 flex flex-col gap-1" data-test="order-supply-block">
+                          <div class="flex items-baseline gap-3 flex-wrap">
+                            <p class="eyebrow m-0">Снабжение</p>
+                            <a
+                              routerLink="/supply"
+                              [queryParams]="{ orderId: row._id }"
+                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                              data-test="order-supply-link"
+                              (click)="$event.stopPropagation()"
+                              >Открыть снабжение</a
+                            >
+                          </div>
+                          @if (supplyExpandLoading() && supplyExpandOrderId() === row._id) {
+                            <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                          } @else if (supplyExpandError() && supplyExpandOrderId() === row._id) {
+                            <p
+                              class="text-xs text-destructive m-0 mt-1"
+                              role="alert"
+                              data-test="order-supply-error"
+                            >
+                              {{ supplyExpandError() }}
+                            </p>
+                          } @else if (
+                            supplyExpandOrderId() === row._id && supplyExpandCounters().total === 0
+                          ) {
+                            <p class="text-xs text-muted-foreground m-0 mt-1">
+                              Нет задач снабжения
+                            </p>
+                          } @else if (supplyExpandOrderId() === row._id) {
+                            <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
+                              Черновик {{ supplyExpandCounters().draft }} · Подтверждено
+                              {{ supplyExpandCounters().confirmed }} · Заказано
+                              {{ supplyExpandCounters().ordered }} · Получено
+                              {{ supplyExpandCounters().received }}
+                              <span class="text-muted-foreground"
+                                >· всего {{ supplyExpandCounters().total }}</span
+                              >
+                            </p>
+                          }
+                        </section>
+
+                        <section
+                          class="min-w-0 flex flex-col gap-1"
+                          data-test="order-production-block"
+                        >
+                          <p class="eyebrow m-0 mb-1">Производство</p>
+                          <p class="text-sm m-0">Оценка в цехе</p>
+                          <a
+                            routerLink="/production"
+                            [queryParams]="{ orderId: row._id }"
+                            class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
+                            data-test="order-production-link"
+                            (click)="$event.stopPropagation()"
+                            >Открыть производство</a
+                          >
+                        </section>
+
+                        <section
+                          class="min-w-0 flex flex-col gap-1"
+                          data-test="order-readiness-block"
+                        >
+                          <div class="flex items-baseline gap-3 flex-wrap">
+                            <p class="eyebrow m-0">Готовность</p>
+                            <a
+                              [routerLink]="['/orders', row._id]"
+                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                              data-test="order-readiness-link"
+                              (click)="$event.stopPropagation()"
+                              >Открыть заказ</a
+                            >
+                          </div>
+                          <p class="text-sm m-0 mt-1" data-test="order-readiness-summary">
+                            {{ readinessLabel(row) }}
+                          </p>
+                          @if ((row.items?.length ?? 0) === 0) {
+                            <p class="text-xs text-muted-foreground m-0 mt-1">
+                              Нет линий для готовности.
+                            </p>
+                          } @else {
+                            <ul
+                              class="m-0 mt-1 pl-4 space-y-0.5 text-sm"
+                              data-test="order-readiness-lines"
+                            >
+                              @for (item of row.items; track $index) {
+                                <li>
+                                  {{
+                                    item.productName ||
+                                      'Изделие ' + item.productId.slice(0, 8) + '…'
+                                  }}
+                                  ·
+                                  <span
+                                    [class.text-muted-foreground]="item.readyForWork !== true"
+                                    [attr.data-test]="
+                                      item.readyForWork === true
+                                        ? 'order-readiness-ready'
+                                        : 'order-readiness-not-ready'
+                                    "
+                                  >
+                                    {{ item.readyForWork === true ? 'готово' : 'не готово' }}
+                                  </span>
+                                </li>
+                              }
+                            </ul>
+                          }
+                        </section>
+                      </div>
+                    </section>
+
+                    <section
+                      class="rounded-sm border hairline border-ink/10 bg-paper-raised/85 p-3"
+                      data-test="order-group-logistics"
+                    >
+                      <div
+                        class="flex items-baseline gap-2 border-b hairline border-ink/5 pb-2 mb-3"
+                      >
+                        <p class="eyebrow m-0">Логистика</p>
+                        <span class="text-xs text-muted-foreground">склад и отгрузка</span>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                        <section
+                          class="min-w-0 flex flex-col gap-1"
+                          data-test="order-warehouse-block"
+                        >
+                          <div class="flex items-baseline gap-3 flex-wrap">
+                            <p class="eyebrow m-0">Склад</p>
+                            <a
+                              routerLink="/storage-items"
+                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                              data-test="order-warehouse-link"
+                              (click)="$event.stopPropagation()"
+                              >Склад</a
+                            >
+                          </div>
+                          @if (
+                            reservationExpandLoading() && reservationExpandOrderId() === row._id
+                          ) {
+                            <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                          } @else if (
+                            reservationExpandError() && reservationExpandOrderId() === row._id
+                          ) {
+                            <p
+                              class="text-xs text-destructive m-0 mt-1"
+                              role="alert"
+                              data-test="order-warehouse-error"
+                            >
+                              {{ reservationExpandError() }}
+                            </p>
+                          } @else if (
+                            reservationExpandOrderId() === row._id &&
+                            reservationExpandCounters().total === 0
+                          ) {
+                            <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
+                          } @else if (reservationExpandOrderId() === row._id) {
+                            <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
+                              Активных {{ reservationExpandCounters().active }} · всего
+                              {{ reservationExpandCounters().total }}
+                            </p>
+                          }
+                        </section>
+
+                        <section
+                          class="min-w-0 flex flex-col gap-1"
+                          data-test="order-shipping-block"
+                        >
+                          <p class="eyebrow m-0 mb-1">Отгрузка</p>
+                          <p class="text-sm m-0" data-test="order-shipping-stub">
+                            Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
+                          </p>
+                          <a
+                            routerLink="/shipping"
+                            class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
+                            data-test="order-shipping-link"
+                            (click)="$event.stopPropagation()"
+                            >Открыть раздел „Отгрузка“</a
+                          >
+                        </section>
+                      </div>
+                    </section>
+
+                    <section
+                      class="rounded-sm border hairline border-ink/10 bg-paper-raised/85 p-3"
+                      data-test="order-group-documents"
+                    >
+                      <div
+                        class="flex items-baseline gap-2 border-b hairline border-ink/5 pb-2 mb-3"
+                      >
+                        <p class="eyebrow m-0">Документы</p>
+                        <span class="text-xs text-muted-foreground"
+                          >печатные материалы и шаблоны</span
                         >
                       </div>
-                      @if (reservationExpandLoading() && reservationExpandOrderId() === row._id) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                      } @else if (
-                        reservationExpandError() && reservationExpandOrderId() === row._id
-                      ) {
-                        <p
-                          class="text-xs text-destructive m-0 mt-1"
-                          role="alert"
-                          data-test="order-warehouse-error"
+                      <div class="text-sm">
+                        <a
+                          routerLink="/doc-constructor/templates"
+                          [queryParams]="{ source: 'order', sourceId: row._id }"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                          data-test="order-documents-link"
+                          (click)="$event.stopPropagation()"
+                          >Шаблоны документов</a
                         >
-                          {{ reservationExpandError() }}
-                        </p>
-                      } @else if (
-                        reservationExpandOrderId() === row._id &&
-                        reservationExpandCounters().total === 0
-                      ) {
-                        <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
-                      } @else if (reservationExpandOrderId() === row._id) {
-                        <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
-                          Активных {{ reservationExpandCounters().active }} · всего
-                          {{ reservationExpandCounters().total }}
-                        </p>
-                      }
-                    </section>
-
-                    <section class="min-w-0" data-test="order-shipping-block">
-                      <p class="eyebrow m-0 mb-1">Отгрузка</p>
-                      <p class="text-sm m-0" data-test="order-shipping-stub">
-                        Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
-                      </p>
-                      <a
-                        routerLink="/shipping"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                        data-test="order-shipping-link"
-                        (click)="$event.stopPropagation()"
-                        >Открыть раздел „Отгрузка“</a
-                      >
+                      </div>
                     </section>
                   </div>
                 </div>
@@ -849,6 +910,16 @@ export class OrdersPage implements OnInit {
     return `${ready} из ${items.length}`;
   }
 
+  protected itemCountLabel(count: number): string {
+    return pluralize(count, ['позиция', 'позиции', 'позиций']);
+  }
+
+  protected readonly compositionExpandedId = signal<string | null>(null);
+
+  protected toggleComposition(orderId: string): void {
+    this.compositionExpandedId.update((current) => (current === orderId ? null : orderId));
+  }
+
   protected readonly expandedId = signal<string | null>(null);
   protected readonly isExpandedRow = (row: Order): boolean => this.expandedId() === row._id;
   protected readonly expandedRowLabel = (row: Order): string => `Сводка заказа: ${row.number}`;
@@ -883,6 +954,7 @@ export class OrdersPage implements OnInit {
 
   private resetExpansion(): void {
     this.expandedId.set(null);
+    this.compositionExpandedId.set(null);
     this.clearSupplyExpand();
     this.clearReservationExpand();
   }

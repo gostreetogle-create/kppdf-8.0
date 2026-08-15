@@ -270,7 +270,7 @@ describe('OrdersPage', () => {
     );
   });
 
-  it('HUB-302 renders read-only Deal/Composition expand and supports keyboard toggle', async () => {
+  it('HUB-302 renders a concise order summary and expandable composition', async () => {
     const fixture = TestBed.createComponent(OrdersPage);
     fixture.detectChanges();
     httpMock.expectOne(matchListGet).flush([
@@ -300,11 +300,26 @@ describe('OrdersPage', () => {
     fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeFalsy();
     expect(
       fixture.nativeElement.querySelector('[data-test="order-composition-block"]'),
     ).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('ООО Заказчик');
+    const compositionToggle = fixture.nativeElement.querySelector(
+      '[data-test="order-composition-toggle"]',
+    ) as HTMLButtonElement;
+    expect(compositionToggle.getAttribute('aria-expanded')).toBe('false');
+    compositionToggle.click();
+    fixture.detectChanges();
+    expect(compositionToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-composition-panel"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-execution"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-logistics"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-documents"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).not.toContain('Сделка');
+    expect(fixture.nativeElement.textContent).toContain('Состав заказа');
     expect(fixture.nativeElement.textContent).toContain('Изделие');
     expect(dialogSpy.open).not.toHaveBeenCalled();
 
@@ -391,7 +406,7 @@ describe('OrdersPage', () => {
     fixture.detectChanges();
     expect(comp.supplyExpandError()).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-supply-error"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
   });
 
   it('HUB-302 toggles one read-only expansion and does not call write services', async () => {
@@ -538,7 +553,7 @@ describe('OrdersPage', () => {
     fixture.detectChanges();
     expect(comp.reservationExpandError()).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-error"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
   });
 
   it('HUB-304 renders shipping stub with link to /shipping and no shipment API', async () => {
