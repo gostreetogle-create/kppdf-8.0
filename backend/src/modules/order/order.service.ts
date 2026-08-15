@@ -82,6 +82,7 @@ export class OrderService {
           : i.readyForWork
             ? previousItems[index]?.readyByUserId
             : undefined,
+      status: previousItems[index]?.status ?? 'pending',
     }));
   }
 
@@ -260,6 +261,23 @@ export class OrderService {
     line.readyForWork = readyForWork;
     line.readyAt = readyForWork ? new Date() : undefined;
     line.readyByUserId = readyForWork ? new Types.ObjectId(userId) : undefined;
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /** TZ-DASHBOARD-400: изменение статуса отдельной позиции заказа */
+  async setItemStatus(
+    id: string,
+    itemId: string,
+    status: 'pending' | 'in_production' | 'ready' | 'shipped',
+  ): Promise<OrderDocument> {
+    const doc = await this.findByIdRaw(id);
+    const index = Number(itemId);
+    if (!Number.isInteger(index) || index < 0 || index >= doc.items.length) {
+      throw new NotFoundException(`Order line ${itemId} not found`);
+    }
+    const line = doc.items[index];
+    line.status = status;
     await doc.save();
     return this.findById(id);
   }

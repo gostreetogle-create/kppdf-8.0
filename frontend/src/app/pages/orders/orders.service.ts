@@ -30,6 +30,8 @@ export interface OrderItem {
   readyForWork?: boolean;
   readyAt?: string;
   readyByUserId?: string | { _id: string; displayName?: string; username?: string };
+  /** TZ-DASHBOARD-400: статус позиции заказа для Канбана */
+  status?: 'pending' | 'in_production' | 'ready' | 'shipped';
 }
 
 /** TZ-ORDERS-306: populated КП заказа (настоящее или заглушка). */
@@ -155,6 +157,17 @@ export class OrdersService {
   ): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/items/${lineIndex}/ready`, {
       readyForWork,
+    });
+  }
+
+  /** TZ-DASHBOARD-400: изменение статуса отдельной позиции заказа */
+  setItemStatus(
+    id: string,
+    lineIndex: string,
+    status: 'pending' | 'in_production' | 'ready' | 'shipped',
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/items/${lineIndex}/status`, {
+      status,
     });
   }
 

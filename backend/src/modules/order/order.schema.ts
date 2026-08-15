@@ -41,6 +41,13 @@ export class OrderItem {
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   readyByUserId?: Types.ObjectId;
+
+  /** TZ-DASHBOARD-400: статус позиции заказа для Канбана */
+  @Prop({
+    enum: ['pending', 'in_production', 'ready', 'shipped'],
+    default: 'pending',
+  })
+  status!: 'pending' | 'in_production' | 'ready' | 'shipped';
 }
 
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);

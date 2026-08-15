@@ -98,6 +98,20 @@ export class OrderController {
     return this.service.setLineReady(id, lineIndex, dto.readyForWork, user.id);
   }
 
+  @Patch(':id/items/:lineIndex/status')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'line_status', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({ summary: 'Change status of a specific order item' })
+  @ApiResponse({ status: 200, description: 'Item status updated' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  setItemStatus(
+    @Param('id') id: string,
+    @Param('lineIndex') lineIndex: string,
+    @Body() body: { status: 'pending' | 'in_production' | 'ready' | 'shipped' },
+  ) {
+    return this.service.setItemStatus(id, lineIndex, body.status);
+  }
+
   @Patch(':id/estimate-days')
   @Permissions('production:write')
   @AuditAction({ action: 'estimate_days', entityType: 'Order', idParam: 'id' })

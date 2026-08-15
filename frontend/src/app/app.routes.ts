@@ -87,7 +87,15 @@ export const routes: Routes = [
     canMatch: [authGuard],
     loadComponent: () => import('./layout/app-layout.component').then((m) => m.AppLayoutComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'materials' },
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      {
+        path: 'dashboard',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'orders' },
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
+        title: 'KPPDF — Дашборд',
+      },
       {
         path: 'materials',
         canMatch: [capabilityRouteGuard],
