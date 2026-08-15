@@ -22,7 +22,7 @@
 **Checklist:** `docs/agent-checklists/TZ-CATALOG-373.md`
 **Lock:** `.mimocode/locks/TZ-CATALOG-373-materials-list-vitrine-parity.lock`
 **Implementation SHA:** `528e3cf9fb21eb283b076893e627097a3736ffea`
-**Closeout SHA:** TBD
+**Closeout SHA:** `cafd3acf`
 **Known limit:** rail sort N/A (backend no sortBy).
 
 ## [2026-08-15] — TZ-UX-320 DONE / LANDED — ←→ из края окна в поля у колонки контента

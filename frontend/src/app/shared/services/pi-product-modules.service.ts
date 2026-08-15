@@ -84,6 +84,14 @@ export interface ProductModule {
   workTypes: WorkTypeInModule[];
   materials: MaterialInModule[];
   /**
+   * TZ-CATALOG-372: id of the main catalog photo (mirrors
+   * `backend/.../product-module.schema.ts`). List endpoint returns the id
+   * (no populate) — resolved via PhotosService lookup, materials pattern.
+   */
+  mainPhotoId?: string;
+  /** TZ-CATALOG-372: all attached photo ids (schema mirror). */
+  photoIds?: string[];
+  /**
    * Канонический состав модуля (TZ-CATALOG-302/317). Dual-read: непустой
    * `composition` имеет приоритет над legacy `materials[]` (зеркало backend).
    */
