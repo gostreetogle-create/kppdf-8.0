@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T16:20:00Z
+updated_at: 2026-08-15T16:40:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — WAVE-PRODUCTION-GANTT-TREE sequential; 314 closing)_
+_(empty — claiming 316 next)_
 
 ## Queue hygiene (not live)
 
@@ -22,6 +22,11 @@ _(empty — WAVE-PRODUCTION-GANTT-TREE sequential; 314 closing)_
 
 ## DONE / LANDED (recent)
 
+### TZ-PRODUCTION-315 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-315.done.md`
+- Карточка bottom sheet under Gantt
+
 ### TZ-PRODUCTION-314 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-314.done.md`
@@ -30,42 +35,24 @@ _(empty — WAVE-PRODUCTION-GANTT-TREE sequential; 314 closing)_
 ### TZ-PRODUCTION-312 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-312.done.md`
-- Body-drag → plannedDate (whole chain)
 
 ### TZ-PRODUCTION-313 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-313.done.md`
-- Card flyout compact (no gutter)
 
 ### TZ-PRODUCTION-311 — DONE 2026-08-15
 
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-311.done.md`
-- Right-edge estimate resize → order `estimate-days` override
-
-### TZ-PRODUCTION-309 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-309.done.md`
-
-### TZ-UX-324 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-UX-324.done.md`
-
-### TZ-AUTH-308 — DONE (see progress)
-
 ### TZ-AUTH-305 — DONE / CUTOVER 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-AUTH-305.done.md`
 
 ### WAVE-UX-CHROME-GANTT-TOOLS — DONE (100)
 
 ## NEXT
 
-1. **WAVE-PRODUCTION-GANTT-TREE** — 315 bottom card → 316 start offsets
+1. **WAVE-PRODUCTION-GANTT-TREE** — 316 start offsets (last)
 2. AUTH-307 park — только после PO
 3. App warm deploy — только по «деплой»
-4. Chrome page-tools migrate wave — по PO
 
 ## HEAD / queue
 
-- Executor: WAVE-PRODUCTION-GANTT-TREE (314 DONE → 315 → 316)
+- Executor: WAVE-PRODUCTION-GANTT-TREE (314+315 DONE → 316)
 - Deploy app: НЕ — после волны готово предложить деплой

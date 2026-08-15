@@ -52,7 +52,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
 ];
 
 /**
- * Right-hand order inspector for Production Cockpit.
+ * Order inspector for Production Cockpit (TZ-PRODUCTION-315 — bottom sheet).
  */
 @Component({
   selector: 'app-order-inspector',
@@ -61,7 +61,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
   imports: [ButtonComponent, RouterLink],
   template: `
     <aside
-      class="flex flex-col h-full min-h-0 w-full min-w-0 shrink-0 border-l hairline bg-paper"
+      class="flex flex-col h-full min-h-0 w-full min-w-0 shrink-0 bg-paper"
       data-test="order-inspector"
       aria-label="Карточка заказа на Ганте"
       (click)="$event.stopPropagation()"
@@ -96,8 +96,11 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
         </button>
       </header>
 
-      <div class="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-4 text-sm">
-        <section class="space-y-2" data-test="inspector-meta">
+      <div
+        class="flex-1 min-h-0 overflow-y-auto px-3 py-3 text-sm
+               md:grid md:grid-cols-[minmax(12rem,16rem)_minmax(0,1fr)] md:gap-4 md:items-start"
+      >
+        <section class="space-y-2 mb-4 md:mb-0" data-test="inspector-meta">
           <label class="block text-xs text-muted-foreground">
             Приоритет заказа
             <select

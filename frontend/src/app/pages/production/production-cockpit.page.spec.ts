@@ -229,6 +229,22 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(page.rightTool()).toBeNull();
   });
 
+  it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const page = fixture.componentInstance as unknown as {
+      toggleRightTool: (tool: 'card' | 'scale') => void;
+    };
+    page.toggleRightTool('card');
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector(
+      '[data-test="production-flyout-card"]',
+    ) as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.classList.contains('production-studio-sheet-card')).toBe(true);
+    expect(card.classList.contains('production-studio-flyout-right')).toBe(false);
+    expect(card.classList.contains('production-studio-flyout-card')).toBe(false);
+  });
+
   it('TZ-UX-323: flyouts anchor at studio edges (no 48px rail inset)', () => {
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'production-cockpit.page.ts'),
@@ -241,5 +257,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('right: 48px');
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
+    expect(source).toContain('production-studio-sheet-card');
   });
 });

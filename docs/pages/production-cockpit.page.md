@@ -59,7 +59,7 @@ flyouts: overlay; center width unchanged
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
-- **TZ-PRODUCTION-313:** Карточка flyout `min(22rem)` + inspector `w-full` (без gutter от старых 28rem vs 20/22rem).
+- **TZ-PRODUCTION-315:** Карточка = bottom sheet под Гантом (`min(42vh, 22rem)`); right card flyout убран; Заказы/Фильтры left; Масштаб right.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
 - Ссылка «Открыть заказ» в inspector ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
@@ -107,8 +107,9 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-309** | DONE: order estimate days + WorkType mutate `production:write` |
 | **TZ-PRODUCTION-311** | DONE: Gantt right-edge resize → order override only (cascade within order) |
 | **TZ-PRODUCTION-312** | DONE: summary/body plannedDate move |
-| **TZ-PRODUCTION-313** | DONE: card flyout compact |
+| **TZ-PRODUCTION-313** | DONE: card flyout compact (dock superseded by 315) |
 | **TZ-PRODUCTION-314** | DONE: order summary row + expand composition |
+| **TZ-PRODUCTION-315** | DONE: Карточка bottom sheet under Gantt |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -116,7 +117,6 @@ flyouts: overlay; center width unchanged
 | **TZ-UX-322** | DONE: `PiChromeToolsService` + app-layout render |
 | **TZ-UX-323** | DONE: Gantt tools → chrome rails; local 48px rails removed |
 | TZ-PRODUCTION-308…310 | **BLOCKED BY WAVE-PRODUCTION-STUDIO-CHROME**; не запускать поверх docked layout |
-| TZ-PRODUCTION-315 | READY: card bottom sheet |
 | TZ-PRODUCTION-316 | READY after 314: per-bar start offsets |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
 

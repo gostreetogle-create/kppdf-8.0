@@ -1,3 +1,13 @@
+## [2026-08-15] — TZ-PRODUCTION-315 DONE — Карточка bottom sheet
+**Исполнитель:** gemini-executor-gantt-tree
+**Статус:** DONE; deploy НЕ
+**Что:** Карточка = bottom sheet под Гантом (min(42vh,22rem)); right card flyout убран; inspector horizontal-friendly; chrome «Карточка» toggle сохранён.
+**Gates:** FE tsc PASS; FE jest production-cockpit **7 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-315.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-315-card-bottom-sheet.lock`
+**Wave:** WAVE-PRODUCTION-GANTT-TREE → next 316
+**Dep:** 314 @ e5089da631e01ee78569252c7f7a11b4b0a6264e
+
 ## [2026-08-15] — TZ-PRODUCTION-314 DONE — Gantt order summary + expand
 **Исполнитель:** gemini-executor-gantt-tree
 **Статус:** DONE; child plannedDate drag off until 316; deploy НЕ

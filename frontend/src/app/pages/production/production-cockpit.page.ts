@@ -182,7 +182,7 @@ const CHROME_OWNER = 'production-cockpit';
           @if (rightTool() === 'card') {
             <aside
               id="production-flyout-card"
-              class="production-studio-flyout production-studio-flyout-right production-studio-flyout-card"
+              class="production-studio-sheet production-studio-sheet-card"
               data-test="production-flyout-card"
               aria-label="Карточка"
             >
@@ -283,7 +283,7 @@ const CHROME_OWNER = 'production-cockpit';
         z-index: 10;
         border: 0;
         padding: 0;
-        background: transparent;
+        background: oklch(0.25 0.02 260 / 0.08);
         cursor: default;
       }
       .production-studio-flyout {
@@ -308,9 +308,27 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
       }
-      .production-studio-flyout-card {
-        /* Match inspector content (~22rem); avoid empty gutter vs old min(28rem) */
-        width: min(22rem, calc(100% - 1rem));
+      /* TZ-PRODUCTION-315 — Карточка as bottom sheet under Gantt (not right flyout). */
+      .production-studio-sheet {
+        position: absolute;
+        z-index: 20;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: color-mix(in oklch, var(--color-paper, #fff) 98%, transparent);
+        box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
+      }
+      .production-studio-sheet-card {
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 0.5rem;
+        top: auto;
+        width: min(60rem, calc(100% - 1rem));
+        height: min(42vh, 22rem);
+        max-height: min(42vh, 22rem);
+        overflow: hidden;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
       }
       .production-scale-flyout {
         width: 12rem;
@@ -325,6 +343,11 @@ const CHROME_OWNER = 'production-cockpit';
         }
         .production-studio-flyout-right {
           right: 0.5rem;
+        }
+        .production-studio-sheet-card {
+          width: calc(100% - 1rem);
+          height: min(48vh, 22rem);
+          max-height: min(48vh, 22rem);
         }
       }
     `,
