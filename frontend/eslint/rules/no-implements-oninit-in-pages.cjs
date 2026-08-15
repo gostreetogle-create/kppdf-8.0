@@ -62,7 +62,9 @@ module.exports = {
     }
 
     return {
-      TSClassDeclaration(node) {
+      // typescript-eslint v8 emits ESTree `ClassDeclaration` (legacy
+      // `TSClassDeclaration` no longer exists in the AST).
+      ClassDeclaration(node) {
         if (!node.implements || node.implements.length === 0) return;
         for (const impl of node.implements) {
           if (

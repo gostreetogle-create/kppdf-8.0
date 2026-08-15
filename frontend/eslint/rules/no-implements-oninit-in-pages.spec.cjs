@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * @jest-environment node
  *
@@ -7,6 +5,8 @@
  *
  * Uses ESLint `Linter` directly (no `@typescript-eslint/rule-tester` dependency).
  */
+
+'use strict';
 
 const { Linter } = require('eslint');
 const parser = require('@typescript-eslint/parser');
@@ -16,7 +16,7 @@ const rule = require('./no-implements-oninit-in-pages.cjs');
 const linter = new Linter();
 
 const baseConfig = {
-  files: ['**/*'],
+  files: ['**/*.ts'],
   languageOptions: {
     parser,
     parserOptions: {
@@ -34,10 +34,12 @@ const baseConfig = {
   },
 };
 
-const PAGE_FILE = '/repo/frontend/src/app/pages/foo/foo.page.ts';
-const DIALOG_FILE = '/repo/frontend/src/app/pages/foo/foo-dialog.component.ts';
-const SHARED_FILE =
-  '/repo/frontend/src/app/shared/ui/pi-table/pi-table.component.ts';
+// Fixture filenames are relative to the frontend cwd (ESLint flat-config
+// `files` patterns are matched against paths relative to the config base
+// path; absolute /repo/... paths fall outside it and never match).
+const PAGE_FILE = 'src/app/pages/foo/foo.page.ts';
+const DIALOG_FILE = 'src/app/pages/foo/foo-dialog.component.ts';
+const SHARED_FILE = 'src/app/shared/ui/pi-table/pi-table.component.ts';
 
 describe('no-implements-oninit-in-pages', () => {
   it('passes when page has no lifecycle interface', () => {
