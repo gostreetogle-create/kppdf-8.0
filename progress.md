@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-SALES-374 DONE — KP table editor chrome + dual fonts + drawer-actions
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend + thin BE sheetLayout; deploy НЕ
+**Что:** Create КП table editor: Lucide icon chrome (Рамка/Шапка); `tableHeaderFontSize` + `tableFontSize`; row gutter chevron-only; drawer «Действия» с RU labels; expand ink frame + sibling dim; preset→шаблон copy.
+**Gates:** FE/BE tsc PASS; proposal-create 61 tests; table-template.service 7 tests; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-374.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-374.md`
+**Lock:** `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
+**Implementation SHA:** `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
+**Closeout SHA:** `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+**Known limit:** drawer density/accent seg-buttons text-only; no per-column font.
+
 ## [2026-08-15] — TZ-UX-319 DONE — products expanded row ink frame
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend UI chrome; deploy НЕ

@@ -1,7 +1,7 @@
 # TZ-SALES-374 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-SALES-374.md`
+> Status: **DONE**
+> Marker: _(removed — archived)_
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 > ready_for_review_at: 2026-08-15T10:10:00Z
 
@@ -55,10 +55,22 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict: **PASS** (2026-08-15)
+  - Cross-check `9b50bc9e`: Lucide Square/Bold; dual `tableHeaderFontSize`/`tableFontSize`; gutter chevron-only; drawer «Действия»; expand frame CSS; preset→шаблон.
+  - Browser Create КП: toolbar Рамка/Шапка + два шрифта; drawer «Действия» / «Убрать из КП» after expand.
+  - Gates credible; integrity page.md + PAGE-TZ-INDEX OK.
+- [x] Archive/closeout — Buffy after this PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T07:00:00Z
+
+## Executor report (closeout)
+
+- implementation: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
+- archive: `tasks/_archive/2026-08/TZ-SALES-374.done.md`
+- lock: `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
+- closeout: `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+- cursor_verdict: PASS

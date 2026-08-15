@@ -5,21 +5,33 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T10:12:00Z
+updated_at: 2026-08-15T07:00:00Z
 main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 
 ## ACTIVE
 
-### TZ-SALES-374 — READY FOR REVIEW
+### TZ-AUTH-305 — PREP ONLY
 
-- Marker: `tasks/_active/TZ-SALES-374.md`
-- Spec: `tasks/_active/TZ-SALES-374.md`
+- Marker: `tasks/_active/TZ-AUTH-305.md`
+- Checklist: `docs/agent-checklists/TZ-AUTH-305.md`
+- Owner: Buffy prep; rollout executor TBD
+- State: nginx policy/runbook prep допустим; переключение запрещено.
+- Blockers:
+  - PO ещё не дал явную команду `деплой`;
+  - нужен Cursor/PO browser PASS;
+  - rollout требует SSH/VPS и evidence без secrets.
+- Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
+
+## DONE / LANDED (recent)
+
+### TZ-SALES-374 — DONE / LANDED
+
 - Checklist: `docs/agent-checklists/TZ-SALES-374.md`
-- PO note: `docs/agent-checklists/PO-KP-TABLE-EDITOR-CHROME-2026-08-15.md`
-- Owner: Buffy (Cursor Agent); claimed_at: 2026-08-15T09:54:59Z
-- Workspace: `D:\kppdf-8.0`
-- Gates: FE/BE tsc PASS; proposal-create 61 PASS; table-template.service 7 PASS
-- State: READY FOR REVIEW; archive after Cursor PASS; deploy НЕ.
+- Archive: `tasks/_archive/2026-08/TZ-SALES-374.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
+- Implementation: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
+- Closeout: `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+- State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-UX-319 — DONE / LANDED
 
@@ -37,18 +49,6 @@ main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 - Archives: `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`, `TZ-FRONTEND-302.done.md`
 - State: ANGULAR INTEGRITY READY yes (known Jest debt 13); landed on `origin/main`; deploy НЕ.
 - Successors: composition / group-ACL / Jest debt = new TZ only.
-
-### TZ-AUTH-305 — PREP ONLY
-
-- Marker: `tasks/_active/TZ-AUTH-305.md`
-- Checklist: `docs/agent-checklists/TZ-AUTH-305.md`
-- Owner: Buffy prep; rollout executor TBD
-- State: nginx policy/runbook prep допустим; переключение запрещено.
-- Blockers:
-  - PO ещё не дал явную команду `деплой`;
-  - нужен Cursor/PO browser PASS;
-  - rollout требует SSH/VPS и evidence без secrets.
-- Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ### TZ-SALES-373 — DONE / LANDED
 
@@ -73,16 +73,16 @@ main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 
 ## READY / ORDER
 
-1. **SALES-374** — ACTIVE (Buffy claimed); see ACTIVE above.
-2. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-3. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-4. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
+1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+3. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 
 ## LAST DONE
 
+- SALES-374 KP table editor chrome — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - UX-319 products expanded row ink frame — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - FRONTEND-301/302 Angular integrity — DONE; Cursor PASS; merging to main.
 - SALES-373 KP table font size on A4 — DONE; Cursor PASS; archive/lock landed; deploy НЕ.

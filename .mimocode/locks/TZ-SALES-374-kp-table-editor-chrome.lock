@@ -1,0 +1,11 @@
+task: TZ-SALES-374
+status: DONE
+closed_at: 2026-08-15T07:00:00Z
+implementation_sha: 9b50bc9ec044216817fd0928c8fd3d29cb3f52e6
+closeout_sha: 2678cefc8e2a923380186f97a1aa94e05b13ae3b
+protected_files:
+  - frontend/src/app/pages/commercial/proposals/proposal-create-table-editor.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.ts
+behavior: Lucide icon chrome (border/header); sheetLayout.tableHeaderFontSize + tableFontSize; row gutter chevron-only; drawer «Действия»; expand ink frame + sibling dim
+cursor_verdict: PASS
+production: not executed
