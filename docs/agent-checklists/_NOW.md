@@ -5,20 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:16:00Z
+updated_at: 2026-08-15T07:13:00Z
 main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 
 ## ACTIVE
-
-### TZ-SALES-375 — READY FOR REVIEW (Buffy)
-
-- Spec: `tasks/TZ-SALES-375-remove-products-rail-draft-lines.md`
-- Checklist: `docs/agent-checklists/TZ-SALES-375.md`
-- Marker: `tasks/_active/TZ-SALES-375.md`
-- State: «Позиции КП» list removed from products flyout; qty via table editor + card «В КП».
-- Implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
-- Gates: tsc PASS · rail 11/11 · create 61/61
-- Archive: **blocked** until Cursor PASS. Deploy НЕ.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -33,6 +23,15 @@ main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-SALES-375 — DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-SALES-375.md`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-375.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
+- Implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
+- Closeout: PENDING
+- State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-SALES-374 — DONE / LANDED
 
@@ -92,6 +91,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- SALES-375 remove products rail draft-lines — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - SALES-374 KP table editor chrome — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - UX-319 products expanded row ink frame — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - FRONTEND-301/302 Angular integrity — DONE; Cursor PASS; merging to main.

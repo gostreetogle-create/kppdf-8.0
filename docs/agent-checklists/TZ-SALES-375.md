@@ -1,6 +1,6 @@
 # TZ-SALES-375 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-SALES-375.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
@@ -55,10 +55,22 @@ cd frontend && pnpm test -- proposal-create                  → 61/61 PASS
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict: **PASS** (2026-08-15)
+  - Cross-check `d75e1f08`: removed `kp-rail-draft-lines`; kept `draftLines`/`inKpQty`; dead `quantityChange`/`onQuantityChange` gone.
+  - Browser: Товары → cards under filters; after Add → «Ещё +1», no «Позиции КП» list.
+  - Gates: tsc + rail 11 + create 61 PASS.
+- [x] Archive/closeout — Buffy after this PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T07:13:00Z
+
+## Executor report (closeout)
+
+- implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
+- archive: `tasks/_archive/2026-08/TZ-SALES-375.done.md`
+- lock: `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
+- closeout: PENDING
+- cursor_verdict: PASS

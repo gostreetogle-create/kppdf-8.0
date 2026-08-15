@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-SALES-375 DONE — remove products rail draft-lines list
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend UI; deploy НЕ
+**Что:** Create КП products flyout: removed «Позиции КП» / `kp-rail-draft-lines` block; cards under filters; kept `draftLines` for «В КП»/«Ещё +N»; dead `quantityChange`/`onQuantityChange` removed; qty via table editor.
+**Gates:** FE tsc PASS; proposal-product-rail 11 tests; proposal-create 61 tests; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-375.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-375.md`
+**Lock:** `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
+**Implementation SHA:** `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
+**Closeout SHA:** PENDING
+**Known limit:** custom lines without catalog card visible only in table editor (by design).
+
 ## [2026-08-15] — TZ-SALES-374 DONE — KP table editor chrome + dual fonts + drawer-actions
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend + thin BE sheetLayout; deploy НЕ
