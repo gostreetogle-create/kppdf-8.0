@@ -3,11 +3,11 @@
 ## Live resume
 - last_phase: 340 — closeout
 - last_tz: TZ-CATALOG-340
-- last_action: archive + lock created; `_active` and root TZ removed; targeted files ready to commit
+- last_action: TZ-340 committed as `af61dda0` and pushed to `origin/main`; archive+lock verified
 - blocked: none
 - score_now: 1/4
 - next_action: claim TZ-UI-PHOTO-342
-- updated_at: 2026-08-16T00:08:16+03:00
+- updated_at: 2026-08-16T00:09:53+03:00
 - agent: Buffy
 
 ## Phases

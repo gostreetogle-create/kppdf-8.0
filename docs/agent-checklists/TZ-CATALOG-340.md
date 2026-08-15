@@ -25,7 +25,7 @@ Status: **DONE**
 - [x] Product, module, and material/detail paths covered by specs
 - [x] No BOM write API change
 - [x] frontend tsc + targeted Jest + lint/format gates
-- [x] Integrity slot, executor report, archive, lock, MASTER [x]
+- [x] Integrity slot, executor report, archive, lock, MASTER [x]; commit/push `af61dda0`
 
 ## Gates (fact)
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS (exit 0)
