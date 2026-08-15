@@ -6,7 +6,7 @@
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-15T14:50:00Z
-main_head: _(set after UX-321-FIX push)_
+main_head: `fade51c9`
 
 ## ACTIVE
 
