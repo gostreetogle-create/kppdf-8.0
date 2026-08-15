@@ -8,7 +8,9 @@ import {
   signal,
 } from '@angular/core';
 import {
+  buildGanttTreeBars,
   formatDateOnly,
+  isSummaryBar,
   ORDER_STATUS_LABELS,
   workTypeOklch,
   type GanttBar,
@@ -89,6 +91,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         <span class="opacity-70" data-test="gantt-zoom-hint">
           масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }}
         </span>
+        <span class="opacity-70" data-test="gantt-expand-hint"
+          >Разверните заказ, чтобы править виды работ</span
+        >
         @if (usedTodayFallback()) {
           <span class="text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
             >Дата начала не задана — показано от сегодня</span
@@ -142,48 +147,78 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
       <div class="flex-1 min-h-0 overflow-auto">
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
-          <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
+          <div class="sticky left-0 z-[2] w-52 shrink-0 border-r hairline bg-paper">
             <div
               class="h-7 border-b hairline px-2 flex items-end pb-1 text-[11px] text-muted-foreground"
+              data-test="gantt-label-header"
             >
-              Заказ · работа
+              {{ anyExpanded() ? 'Заказ · работа' : 'Заказ' }}
             </div>
             @for (row of rows(); track row.bar.id) {
-              <button
-                type="button"
-                class="gantt-row-h w-full px-2 text-left pi-focus-ring border-b hairline
-                       flex items-center gap-1.5 min-w-0 overflow-hidden hover:bg-paper-2"
+              <div
+                class="gantt-row-h w-full px-1 text-left border-b hairline
+                       flex items-center gap-0.5 min-w-0 overflow-hidden hover:bg-paper-2"
                 [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
-                (click)="selectOrder.emit(row.bar.orderId)"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
-                [attr.title]="labelTitle(row.bar)"
-                [attr.aria-label]="labelTitle(row.bar)"
               >
-                <span
-                  class="w-1.5 h-1.5 rounded-full shrink-0"
-                  [style.background]="statusPip(row.bar.orderStatus)"
-                  aria-hidden="true"
-                ></span>
-                <span
-                  class="w-1.5 h-5 rounded-sm shrink-0"
-                  [style.background]="
-                    row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
-                  "
-                  [class.border]="row.bar.noTerm"
-                  [class.border-dashed]="row.bar.noTerm"
-                  aria-hidden="true"
-                ></span>
-                <span class="min-w-0 flex-1 truncate text-xs leading-none">
-                  <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
-                  <span class="text-muted-foreground"> · {{ row.bar.workTypeName }}</span>
-                  @if (row.bar.quantityLabel) {
-                    <span class="font-mono text-muted-foreground">
-                      {{ row.bar.quantityLabel }}</span
-                    >
+                @if (row.isSummary) {
+                  <button
+                    type="button"
+                    class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-sm
+                           text-muted-foreground hover:text-ink pi-focus-ring"
+                    [attr.data-test]="'gantt-expand-' + row.bar.orderId"
+                    [attr.aria-expanded]="row.expanded"
+                    [attr.aria-label]="
+                      (row.expanded ? 'Свернуть состав заказа ' : 'Развернуть состав заказа ') +
+                      row.bar.orderNumber
+                    "
+                    (click)="onToggleExpand($event, row.bar.orderId)"
+                  >
+                    <span aria-hidden="true" class="text-[10px] font-mono">{{
+                      row.expanded ? '▾' : '▸'
+                    }}</span>
+                  </button>
+                } @else {
+                  <span class="w-6 shrink-0" aria-hidden="true"></span>
+                }
+                <button
+                  type="button"
+                  class="flex-1 min-w-0 h-full px-1 flex items-center gap-1.5 text-left pi-focus-ring rounded-sm"
+                  (click)="selectOrder.emit(row.bar.orderId)"
+                  [attr.title]="labelTitle(row.bar)"
+                  [attr.aria-label]="labelTitle(row.bar)"
+                >
+                  <span
+                    class="w-1.5 h-1.5 rounded-full shrink-0"
+                    [style.background]="statusPip(row.bar.orderStatus)"
+                    aria-hidden="true"
+                  ></span>
+                  @if (!row.isSummary) {
+                    <span
+                      class="w-1.5 h-5 rounded-sm shrink-0"
+                      [style.background]="
+                        row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
+                      "
+                      [class.border]="row.bar.noTerm"
+                      [class.border-dashed]="row.bar.noTerm"
+                      aria-hidden="true"
+                    ></span>
                   }
-                </span>
-              </button>
+                  <span class="min-w-0 flex-1 truncate text-xs leading-none">
+                    @if (row.isSummary) {
+                      <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
+                    } @else {
+                      <span class="text-muted-foreground pl-1">{{ row.bar.workTypeName }}</span>
+                      @if (row.bar.quantityLabel) {
+                        <span class="font-mono text-muted-foreground">
+                          {{ row.bar.quantityLabel }}</span
+                        >
+                      }
+                    }
+                  </span>
+                </button>
+              </div>
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
@@ -237,18 +272,16 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 }
                 <div
                   class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90 group/bar"
-                  [class.border]="row.bar.noTerm"
+                  [class.border]="row.bar.noTerm || row.isSummary"
                   [class.border-dashed]="row.bar.noTerm"
-                  [class.border-muted-foreground]="row.bar.noTerm"
+                  [class.border-muted-foreground]="row.bar.noTerm || row.isSummary"
                   [class.ring-1]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
                   [class.ring-ink]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
                   [class.cursor-grab]="canMoveBar(row.bar) && !isMovingOrder(row.bar.orderId)"
                   [class.cursor-grabbing]="isMovingOrder(row.bar.orderId)"
                   [style.left.px]="displayLeftPx(row)"
                   [style.width.px]="displayWidthPx(row)"
-                  [style.background]="
-                    row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
-                  "
+                  [style.background]="barFill(row)"
                   [style.backgroundImage]="
                     row.bar.noTerm
                       ? 'repeating-linear-gradient(135deg, transparent, transparent 4px, oklch(0.7 0.02 250 / 0.35) 4px, oklch(0.7 0.02 250 / 0.35) 8px)'
@@ -256,7 +289,13 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   "
                   [attr.title]="barTitle(row.bar)"
                   [attr.aria-label]="barAriaLabel(row.bar)"
-                  [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
+                  [attr.data-test]="
+                    row.isSummary
+                      ? 'gantt-bar-summary'
+                      : row.bar.noTerm
+                        ? 'gantt-bar-no-term'
+                        : 'gantt-bar'
+                  "
                   (pointerdown)="onMovePointerDown($event, row.bar)"
                 >
                   @if (!row.bar.noTerm) {
@@ -314,8 +353,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · цвет полосы/метки = вид работ · штриховка = без срока · ×N =
-        количество · правый край = дни оценки · тело полосы = сдвиг начала заказа · клик = карточка
+        Красная линия = сегодня · сводная полоса = срок заказа · ▸ развернуть состав · цвет = вид
+        работ · правый край состава = дни оценки · тело сводной = сдвиг начала заказа · клик =
+        карточка
       </div>
     </div>
   `,
@@ -330,6 +370,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   `,
 })
 export class GanttBarsComponent {
+  /** Work-type bars from buildGanttBars (not pre-built summaries). */
   readonly bars = input.required<GanttBar[]>();
   readonly rangeStart = input.required<string>();
   readonly rangeEnd = input.required<string>();
@@ -340,10 +381,13 @@ export class GanttBarsComponent {
   /** production:write (or equivalent) — required for resize handles. */
   readonly canEdit = input(false);
   readonly today = input(formatDateOnly(new Date()));
+  /** TZ-PRODUCTION-314 — which orders show work-type children. */
+  readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
   readonly selectOrder = output<string>();
+  readonly toggleExpand = output<string>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
-  /** Body-drag → parent PATCHes order plannedDate (whole chain). */
+  /** Body-drag on summary → parent PATCHes order plannedDate (whole chain). */
   readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
@@ -387,9 +431,16 @@ export class GanttBarsComponent {
     return out;
   });
 
+  protected readonly treeBars = computed(() =>
+    buildGanttTreeBars(this.bars(), this.expandedOrderIds()),
+  );
+
+  protected readonly anyExpanded = computed(() => this.expandedOrderIds().size > 0);
+
   protected readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();
     for (const b of this.bars()) {
+      if (isSummaryBar(b) || b.workTypeId === '__summary__') continue;
       if (seen.has(b.workTypeId)) continue;
       seen.set(b.workTypeId, {
         id: b.workTypeId,
@@ -425,17 +476,15 @@ export class GanttBarsComponent {
     const start = this.rangeStart();
     const total = this.totalDays();
     const px = this.pxPerDay();
-    const sorted = [...this.bars()].sort((a, b) => {
-      const o = a.orderNumber.localeCompare(b.orderNumber);
-      if (o !== 0) return o;
-      return a.startDate.localeCompare(b.startDate);
-    });
+    const expanded = this.expandedOrderIds();
+    const sorted = this.treeBars();
     return sorted.map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
       const span = bar.noTerm
         ? Math.max(1, Math.round(total * 0.04))
         : Math.max(1, dayDiff(bar.startDate, bar.endDate) + 1);
       const prev = idx > 0 ? sorted[idx - 1] : null;
+      const isSummary = isSummaryBar(bar);
       return {
         bar,
         alt: idx % 2 === 1,
@@ -443,6 +492,8 @@ export class GanttBarsComponent {
         leftPx: left * px,
         widthPx: Math.max(px * 0.5, span * px),
         baseSpanDays: span,
+        isSummary,
+        expanded: expanded.has(bar.orderId),
       };
     });
   });
@@ -452,15 +503,21 @@ export class GanttBarsComponent {
     return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
   });
 
+  /** Child work bars only — summary has no right-resize (duration derived). */
   protected canResizeBar(bar: GanttBar): boolean {
+    if (isSummaryBar(bar)) return false;
     if (!this.canEdit() || this.readOnly()) return false;
     if (bar.noTerm || bar.days == null || bar.days < 1) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
     return true;
   }
 
-  /** Body-drag allowed even for noTerm — moves order plannedDate, not duration. */
+  /**
+   * TZ-PRODUCTION-314: body-drag plannedDate only on summary.
+   * Child body-drag stays off until TZ-PRODUCTION-316 (start offsets).
+   */
   protected canMoveBar(bar: GanttBar): boolean {
+    if (!isSummaryBar(bar)) return false;
     if (!this.canEdit() || this.readOnly()) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
     return true;
@@ -494,6 +551,18 @@ export class GanttBarsComponent {
       return row.leftPx + session.previewDeltaDays * this.pxPerDay();
     }
     return row.leftPx;
+  }
+
+  protected barFill(row: { bar: GanttBar; isSummary: boolean }): string {
+    if (row.bar.noTerm) return 'transparent';
+    if (row.isSummary) return 'oklch(0.88 0.01 250)';
+    return this.fill(row.bar.workTypeId, row.bar.accentHue);
+  }
+
+  protected onToggleExpand(event: Event, orderId: string): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.toggleExpand.emit(orderId);
   }
 
   protected onRowClick(orderId: string): void {
@@ -661,6 +730,11 @@ export class GanttBarsComponent {
 
   /** Full detail for tooltip / a11y — visible label stays one line. */
   protected labelTitle(b: GanttBar): string {
+    if (isSummaryBar(b)) {
+      return [b.orderNumber, this.statusLabel(b.orderStatus), `${b.startDate}→${b.endDate}`]
+        .filter(Boolean)
+        .join(' · ');
+    }
     const parts = [
       b.orderNumber,
       this.statusLabel(b.orderStatus),
@@ -676,6 +750,7 @@ export class GanttBarsComponent {
   protected barTitle(b: GanttBar): string {
     const head = this.labelTitle(b);
     if (b.noTerm) return `${head} — без срока`;
+    if (isSummaryBar(b)) return `${head} · сводно ${b.days}д`.trim();
     return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д`.trim();
   }
 

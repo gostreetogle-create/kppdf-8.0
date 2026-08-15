@@ -111,7 +111,9 @@ const CHROME_OWNER = 'production-cockpit';
               [usedTodayFallback]="usedTodayFallback()"
               [readOnly]="readOnly()"
               [canEdit]="canEditCatalog()"
+              [expandedOrderIds]="ctx.expandedOrderIds()"
               (selectOrder)="onSelect($event)"
+              (toggleExpand)="onToggleExpand($event)"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
             />
@@ -398,6 +400,10 @@ export class ProductionCockpitPage implements OnInit {
 
   protected onMainClick(): void {
     if (this.inspectorOpen()) this.closeInspector();
+  }
+
+  protected onToggleExpand(orderId: string): void {
+    this.ctx.toggleOrderExpanded(orderId);
   }
 
   protected async onSelect(id: string): Promise<void> {

@@ -6,8 +6,9 @@
 **Source:** `docs/audits/2026-08-15-production-studio-plan-review.md`  
 **Wave (studio chrome):** `tasks/_backlog/WAVE-PRODUCTION-STUDIO-CHROME.md`  
 **Wave (chrome tools):** `tasks/_backlog/WAVE-UX-CHROME-GANTT-TOOLS.md`  
+**Wave (gantt tree):** `tasks/_backlog/WAVE-PRODUCTION-GANTT-TREE.md`  
 **Master checklist:** `docs/agent-checklists/WAVE-UX-CHROME-GANTT-TOOLS.md`  
-**Current implementation:** Gantt tools projected into app-chrome-rail (TZ-UX-322/323); local `production-studio-rail` removed.
+**Current implementation:** Gantt tools projected into app-chrome-rail (TZ-UX-322/323); local `production-studio-rail` removed. Default Gantt = **order summary bars** with ▸ expand to work-type composition (TZ-PRODUCTION-314).
 
 ## 0. Product boundary
 
@@ -137,6 +138,13 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 - Focus-visible is present in light and dark themes.
 - A selected order, active filter and zoom state are not conveyed by color alone.
 - Existing listbox/tree/Gantt semantics remain valid; this shell does not redefine them.
+
+### Tree (TZ-PRODUCTION-314)
+
+- Default: one **summary** bar per order (span = min child start … max child end).
+- ▸ / Expand on the label row reveals work-type child bars; collapse hides them.
+- `ProductionCockpitContext.expandedOrderIds` is session-scoped (F5 reset OK).
+- Summary body-drag = plannedDate; child right-resize = estimate-days; child body-drag plannedDate off until 316.
 
 ## 8. Geometry gate
 

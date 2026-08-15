@@ -2,9 +2,13 @@ import {
   ACTIVE_COMMERCIAL_ORDER_STATUSES,
   ORDER_STATUS_LABELS,
   buildGanttBars,
+  buildGanttTreeBars,
+  buildOrderSummaryBar,
+  calendarSpanDays,
   filterOrdersForRail,
   normalizeWorkTypeDays,
   resolveVisualAnchor,
+  type GanttBar,
   type OrderEstimateInput,
 } from './gantt-bar.model';
 import type { OrderStatus } from '../orders/orders.service';
@@ -233,6 +237,107 @@ describe('gantt-bar.model', () => {
       selectedOrderId: null,
     });
     expect(search.map((o) => o._id)).toEqual(['3']);
+  });
+
+  it('builds order summary span as min start … max end (not sum of days)', () => {
+    const children: GanttBar[] = [
+      {
+        id: 'o1:0:p1:m1:wt1:1',
+        orderId: 'o1',
+        orderNumber: 'ORD-1',
+        orderStatus: 'confirmed',
+        orderItemIndex: 0,
+        productId: 'p1',
+        productName: 'Стол',
+        moduleId: 'm1',
+        moduleName: 'Каркас',
+        workTypeId: 'wt1',
+        workTypeName: 'Сварка',
+        occurrence: 1,
+        quantity: 1,
+        quantityLabel: null,
+        days: 2,
+        noTerm: false,
+        startDate: '2026-08-01',
+        endDate: '2026-08-02',
+        usedFallbackToday: false,
+        workerLabel: '—',
+      },
+      {
+        id: 'o1:0:p1:m1:wt2:2',
+        orderId: 'o1',
+        orderNumber: 'ORD-1',
+        orderStatus: 'confirmed',
+        orderItemIndex: 0,
+        productId: 'p1',
+        productName: 'Стол',
+        moduleId: 'm1',
+        moduleName: 'Каркас',
+        workTypeId: 'wt2',
+        workTypeName: 'Покраска',
+        occurrence: 2,
+        quantity: 1,
+        quantityLabel: null,
+        days: 3,
+        noTerm: false,
+        startDate: '2026-08-03',
+        endDate: '2026-08-05',
+        usedFallbackToday: false,
+        workerLabel: '—',
+      },
+    ];
+    expect(calendarSpanDays('2026-08-01', '2026-08-05')).toBe(5);
+    const summary = buildOrderSummaryBar(children);
+    expect(summary).toEqual(
+      expect.objectContaining({
+        kind: 'summary',
+        orderId: 'o1',
+        startDate: '2026-08-01',
+        endDate: '2026-08-05',
+        days: 5,
+        noTerm: false,
+        id: 'summary:o1',
+      }),
+    );
+  });
+
+  it('tree bars: collapsed = one summary per order; expand shows children', () => {
+    const input: OrderEstimateInput = {
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p1',
+          productName: 'Стол',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'm1',
+              moduleName: 'Каркас',
+              sortOrder: 0,
+              workTypes: [
+                { workTypeId: 'wt-weld', workTypeName: 'Сварка', days: 2, sortOrder: 0 },
+                { workTypeId: 'wt-paint', workTypeName: 'Покраска', days: 3, sortOrder: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const work = buildGanttBars(input, new Date(2026, 7, 6));
+    const collapsed = buildGanttTreeBars(work, new Set());
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0]!.kind).toBe('summary');
+    expect(collapsed[0]!.days).toBe(5);
+
+    const expanded = buildGanttTreeBars(work, new Set(['o1']));
+    expect(expanded).toHaveLength(3);
+    expect(expanded[0]!.kind).toBe('summary');
+    expect(expanded[1]!.workTypeName).toBe('Сварка');
+    expect(expanded[2]!.workTypeName).toBe('Покраска');
   });
 
   it('rail filter supports priority and date range on plannedDate', () => {

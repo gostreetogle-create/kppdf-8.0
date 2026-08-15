@@ -1,3 +1,14 @@
+## [2026-08-15] — TZ-PRODUCTION-314 DONE — Gantt order summary + expand
+**Исполнитель:** gemini-executor-gantt-tree
+**Статус:** DONE; child plannedDate drag off until 316; deploy НЕ
+**Что:** default = 1 сводная полоса/заказ (min…max); ▸ expand → виды работ; summary body-drag = plannedDate; child resize = days; `ctx.expandedOrderIds`.
+**Gates:** FE tsc PASS; FE jest gantt-bar|gantt-bars|cockpit **36 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-314.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-314.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-314-gantt-order-expand.lock`
+**Wave:** WAVE-PRODUCTION-GANTT-TREE → next 315
+**known_limitation:** children still sequential until 316; card still right until 315.
+
 ## [2026-08-15] — TZ-PRODUCTION-312 DONE — Gantt body-drag → plannedDate
 **Исполнитель:** gemini-executor-312
 **Статус:** DONE; left-edge OUT; deploy НЕ

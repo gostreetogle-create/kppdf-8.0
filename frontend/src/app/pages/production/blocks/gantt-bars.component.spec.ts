@@ -31,13 +31,73 @@ describe('GanttBarsComponent', () => {
     workerLabel: '—',
   };
 
+  const samplePaint: GanttBar = {
+    ...sample,
+    id: 'o1:0:p1:m1:wt2:2',
+    workTypeId: 'wt2',
+    workTypeName: 'Покраска',
+    occurrence: 2,
+    days: 3,
+    startDate: '2026-08-03',
+    endDate: '2026-08-05',
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [GanttBarsComponent],
     });
   });
 
-  it('renders legend and a bar with required range', () => {
+  it('collapsed default shows one summary bar per order', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(1);
+    expect(el.querySelector('[data-test="gantt-bar"]')).toBeFalsy();
+    expect(el.textContent).toContain('ORD-1');
+    // Work-type names appear in legend, but not as child label rows when collapsed.
+    expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeFalsy();
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent?.trim()).toBe('Заказ');
+  });
+
+  it('expand shows work-type children; collapse hides them', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(1);
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    expect(el.textContent).toContain('Сварка');
+    expect(el.textContent).toContain('Покраска');
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent?.trim()).toBe(
+      'Заказ · работа',
+    );
+
+    fixture.componentRef.setInput('expandedOrderIds', new Set());
+    fixture.detectChanges();
+    expect(el.querySelector('[data-test="gantt-bar"]')).toBeFalsy();
+  });
+
+  it('emits toggleExpand from chevron', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const toggles: string[] = [];
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    const btn = fixture.nativeElement.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement;
+    btn.click();
+    expect(toggles).toEqual(['o1']);
+  });
+
+  it('renders legend and a summary with required range', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -46,22 +106,26 @@ describe('GanttBarsComponent', () => {
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('План-оценка');
     expect(el.querySelector('[data-test="gantt-legend"]')).toBeTruthy();
-    expect(el.querySelector('[data-test="gantt-bar"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-bar-summary"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-expand-hint"]')?.textContent).toContain(
+      'Разверните заказ',
+    );
   });
 
-  it('shows compact label (order · work type) and keeps detail in title', () => {
+  it('shows work-type detail in title when expanded', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('ORD-1');
     expect(el.textContent).toContain('Сварка');
-    // Product / module stay out of the dense row — available via title + inspector
     const label = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
-    expect(label?.getAttribute('title')).toContain('Стол');
-    expect(label?.getAttribute('title')).toContain('Каркас');
+    expect(label?.getAttribute('title') ?? label?.textContent).toBeTruthy();
+    const titleBtn = label?.querySelector('button[title]') as HTMLElement | null;
+    expect(titleBtn?.getAttribute('title')).toContain('Стол');
     expect(el.querySelector('[data-test="gantt-worktype-legend"]')?.textContent).toContain(
       'Сварка',
     );
@@ -74,8 +138,8 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    const label = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
-    const row = el.querySelector('[data-test="gantt-row-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    const label = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const row = el.querySelector('[data-test="gantt-row-summary:o1"]') as HTMLElement;
     expect(label.classList.contains('gantt-row-h')).toBe(true);
     expect(row.classList.contains('gantt-row-h')).toBe(true);
     expect(getComputedStyle(label).height).toBe(getComputedStyle(row).height);
@@ -119,19 +183,24 @@ describe('GanttBarsComponent', () => {
     );
   });
 
-  it('shows right-edge resize handle when editable', () => {
+  it('shows right-edge resize handle on child when expanded and editable', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('readOnly', false);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     const handle = fixture.nativeElement.querySelector(
       '[data-test="gantt-resize-handle-o1:0:p1:m1:wt1:1"]',
     );
     expect(handle).toBeTruthy();
     expect(handle.getAttribute('aria-label')).toContain('Изменить длительность');
+    // Summary has no resize
+    expect(
+      fixture.nativeElement.querySelector('[data-test="gantt-resize-handle-summary:o1"]'),
+    ).toBeFalsy();
   });
 
   it('hides resize handle for noTerm bars', () => {
@@ -147,6 +216,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('[data-test="gantt-bar-no-term"]')).toBeTruthy();
@@ -159,6 +229,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('readOnly', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
   });
@@ -170,16 +241,18 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
   });
 
-  it('emits estimateDaysCommit on pointer resize commit', () => {
+  it('emits estimateDaysCommit on pointer resize commit (child)', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
 
     const commits: unknown[] = [];
@@ -189,8 +262,7 @@ describe('GanttBarsComponent', () => {
       '[data-test="gantt-resize-handle-o1:0:p1:m1:wt1:1"]',
     ) as HTMLElement;
     const rows = fixture.componentInstance['rows']();
-    const row = rows[0]!;
-    // jsdom lacks PointerEvent — drive the public handlers directly.
+    const childRow = rows.find((r: { bar: GanttBar }) => r.bar.id === sample.id)!;
     fixture.componentInstance.onResizePointerDown(
       {
         pointerId: 1,
@@ -201,7 +273,7 @@ describe('GanttBarsComponent', () => {
           setPointerCapture: () => undefined,
         },
       } as unknown as PointerEvent,
-      row,
+      childRow,
     );
     fixture.componentInstance.onDocumentPointerMove({
       pointerId: 1,
@@ -224,18 +296,37 @@ describe('GanttBarsComponent', () => {
     ]);
   });
 
-  it('emits plannedDateMoveCommit on body drag (not resize)', () => {
+  it('emits plannedDateMoveCommit on summary body drag only', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
 
     const moves: unknown[] = [];
     const resizes: unknown[] = [];
     fixture.componentInstance.plannedDateMoveCommit.subscribe((v) => moves.push(v));
     fixture.componentInstance.estimateDaysCommit.subscribe((v) => resizes.push(v));
+
+    const summary = fixture.componentInstance['rows']().find(
+      (r: { isSummary: boolean }) => r.isSummary,
+    )!.bar;
+
+    // Child body-drag must NOT move plannedDate (314 lock).
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(false);
+    fixture.componentInstance.onMovePointerDown(
+      {
+        pointerId: 8,
+        clientX: 50,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined,
+        currentTarget: { setPointerCapture: () => undefined },
+      } as unknown as PointerEvent,
+      sample,
+    );
+    expect(moves).toEqual([]);
 
     fixture.componentInstance.onMovePointerDown(
       {
@@ -245,7 +336,7 @@ describe('GanttBarsComponent', () => {
         stopPropagation: () => undefined,
         currentTarget: { setPointerCapture: () => undefined },
       } as unknown as PointerEvent,
-      sample,
+      summary,
     );
     fixture.componentInstance.onDocumentPointerMove({
       pointerId: 7,
@@ -266,12 +357,14 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
 
     const moves: unknown[] = [];
     fixture.componentInstance.plannedDateMoveCommit.subscribe((v) => moves.push(v));
 
     const rows = fixture.componentInstance['rows']();
+    const childRow = rows.find((r: { bar: GanttBar }) => r.bar.id === sample.id)!;
     fixture.componentInstance.onResizePointerDown(
       {
         pointerId: 2,
@@ -280,7 +373,7 @@ describe('GanttBarsComponent', () => {
         stopPropagation: () => undefined,
         currentTarget: { setPointerCapture: () => undefined },
       } as unknown as PointerEvent,
-      rows[0]!,
+      childRow,
     );
     fixture.componentInstance.onDocumentPointerMove({
       pointerId: 2,
@@ -294,7 +387,7 @@ describe('GanttBarsComponent', () => {
     expect(moves).toEqual([]);
   });
 
-  it('disallows body-drag when readOnly or shipped', () => {
+  it('disallows summary body-drag when readOnly or shipped', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -302,13 +395,15 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('readOnly', true);
     fixture.detectChanges();
-    expect(fixture.componentInstance.canMoveBar(sample)).toBe(false);
+    const summary = fixture.componentInstance['rows']()[0]!.bar;
+    expect(fixture.componentInstance.canMoveBar(summary)).toBe(false);
 
     const shipped: GanttBar = { ...sample, orderStatus: 'shipped' };
     fixture.componentRef.setInput('readOnly', false);
     fixture.componentRef.setInput('bars', [shipped]);
     fixture.detectChanges();
-    expect(fixture.componentInstance.canMoveBar(shipped)).toBe(false);
+    const shippedSummary = fixture.componentInstance['rows']()[0]!.bar;
+    expect(fixture.componentInstance.canMoveBar(shippedSummary)).toBe(false);
   });
 });
 

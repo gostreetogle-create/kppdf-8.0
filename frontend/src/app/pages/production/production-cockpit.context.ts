@@ -23,8 +23,36 @@ export class ProductionCockpitContext {
   /** Collapsed rail = icon strip for more calendar width. */
   readonly railCollapsed = signal(false);
 
+  /**
+   * TZ-PRODUCTION-314 — expanded Gantt order ids (session; F5 resets).
+   * Survives filter toggles within the SPA session.
+   */
+  readonly expandedOrderIds = signal<ReadonlySet<string>>(new Set());
+
   selectOrder(id: string | null): void {
     this.selectedOrderId.set(id);
+  }
+
+  isOrderExpanded(orderId: string): boolean {
+    return this.expandedOrderIds().has(orderId);
+  }
+
+  toggleOrderExpanded(orderId: string): void {
+    this.expandedOrderIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  }
+
+  setOrderExpanded(orderId: string, expanded: boolean): void {
+    this.expandedOrderIds.update((prev) => {
+      const next = new Set(prev);
+      if (expanded) next.add(orderId);
+      else next.delete(orderId);
+      return next;
+    });
   }
 
   setSearch(value: string): void {

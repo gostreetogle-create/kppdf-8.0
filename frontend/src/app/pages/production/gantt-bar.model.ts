@@ -187,6 +187,8 @@ export function resolveEstimateDays(
   return normalizeWorkTypeDays(catalogDays);
 }
 
+export type GanttBarKind = 'work' | 'summary';
+
 export interface GanttBar {
   id: string;
   orderId: string;
@@ -210,6 +212,129 @@ export interface GanttBar {
   usedFallbackToday: boolean;
   workerLabel: string;
   accentHue?: number | null;
+  /** TZ-PRODUCTION-314 — summary row vs work-type child. Default work. */
+  kind?: GanttBarKind;
+}
+
+export function isSummaryBar(bar: GanttBar): boolean {
+  return bar.kind === 'summary';
+}
+
+export function isWorkBar(bar: GanttBar): boolean {
+  return bar.kind !== 'summary';
+}
+
+/**
+ * Span days inclusive (end − start + 1). Returns null when dates invalid.
+ */
+export function calendarSpanDays(startDate: string, endDate: string): number | null {
+  const a = parseDateOnly(startDate);
+  const b = parseDateOnly(endDate);
+  if (!a || !b) return null;
+  const ms = startOfLocalDay(b).getTime() - startOfLocalDay(a).getTime();
+  const days = Math.round(ms / 86400000) + 1;
+  return days >= 1 ? days : null;
+}
+
+/**
+ * Group work-type bars by orderId (stable order of first appearance).
+ */
+export function groupBarsByOrder(bars: readonly GanttBar[]): Array<{
+  orderId: string;
+  children: GanttBar[];
+}> {
+  const map = new Map<string, GanttBar[]>();
+  const order: string[] = [];
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    const list = map.get(bar.orderId);
+    if (!list) {
+      map.set(bar.orderId, [bar]);
+      order.push(bar.orderId);
+    } else {
+      list.push(bar);
+    }
+  }
+  return order.map((orderId) => ({ orderId, children: map.get(orderId)! }));
+}
+
+/**
+ * One summary bar for an order: span = min(child.start) … max(child.end).
+ * Duration label = calendar span days (not sum of child days).
+ */
+export function buildOrderSummaryBar(children: readonly GanttBar[]): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  let minStart = first.startDate;
+  let maxEnd = first.endDate;
+  let usedFallbackToday = first.usedFallbackToday;
+  let allNoTerm = true;
+  for (const c of children) {
+    if (c.startDate < minStart) minStart = c.startDate;
+    if (c.endDate > maxEnd) maxEnd = c.endDate;
+    usedFallbackToday = usedFallbackToday || c.usedFallbackToday;
+    if (!c.noTerm) allNoTerm = false;
+  }
+  const span = calendarSpanDays(minStart, maxEnd);
+  const noTerm = allNoTerm || span == null;
+  return {
+    id: `summary:${first.orderId}`,
+    orderId: first.orderId,
+    orderNumber: first.orderNumber,
+    orderStatus: first.orderStatus,
+    orderItemIndex: -1,
+    productId: '',
+    productName: '',
+    moduleId: '',
+    moduleName: '',
+    workTypeId: '__summary__',
+    workTypeName: 'Сводно',
+    occurrence: 0,
+    quantity: 1,
+    quantityLabel: null,
+    days: noTerm ? null : span,
+    noTerm,
+    startDate: minStart,
+    endDate: maxEnd,
+    usedFallbackToday,
+    workerLabel: '—',
+    accentHue: null,
+    kind: 'summary',
+  };
+}
+
+/**
+ * Collapsed tree: one summary per order.
+ * Expanded orderIds also append work-type children under their summary.
+ */
+export function buildGanttTreeBars(
+  workBars: readonly GanttBar[],
+  expandedOrderIds: ReadonlySet<string>,
+): GanttBar[] {
+  const groups = groupBarsByOrder(workBars);
+  // Keep groups sorted by orderNumber for stable rail.
+  const sorted = [...groups].sort((a, b) => {
+    const an = a.children[0]?.orderNumber ?? a.orderId;
+    const bn = b.children[0]?.orderNumber ?? b.orderId;
+    return an.localeCompare(bn);
+  });
+  const out: GanttBar[] = [];
+  for (const g of sorted) {
+    const summary = buildOrderSummaryBar(g.children);
+    if (!summary) continue;
+    out.push(summary);
+    if (expandedOrderIds.has(g.orderId)) {
+      const kids = [...g.children].sort((a, b) => {
+        const s = a.startDate.localeCompare(b.startDate);
+        if (s !== 0) return s;
+        return a.occurrence - b.occurrence;
+      });
+      for (const kid of kids) {
+        out.push({ ...kid, kind: kid.kind ?? 'work' });
+      }
+    }
+  }
+  return out;
 }
 
 function sortByOrderThenIndex<T extends { sortOrder: number }>(

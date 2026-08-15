@@ -90,8 +90,9 @@ flyouts: overlay; center width unchanged
 
 - Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
 - Order-level override: `Order.estimateDayOverrides` via `PATCH /orders/:id/estimate-days` (`production:write`); inspector default writes override; catalog «для всех» remains explicit confirm.
-- **TZ-PRODUCTION-311:** правый край полосы (не noTerm / не readOnly) → snap к календарным дням → тот же PATCH override → rebuild bars (cascade внутри заказа). Левый край — OUT.
-- **TZ-PRODUCTION-312:** тело полосы (не resize handle) → snap ±N дней → `PATCH /orders/:id` `plannedDate` = oldAnchor + delta; длительности без изменений; Escape cancel.
+- **TZ-PRODUCTION-311:** правый край полосы состава (не noTerm / не readOnly) → snap к календарным дням → PATCH override → rebuild. Левый край — OUT.
+- **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы заказа → snap ±N дней → `PATCH plannedDate`; у child body-drag plannedDate **выключен** до 316.
+- **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ (min…max children); ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -105,6 +106,9 @@ flyouts: overlay; center width unchanged
 | TZ-PRODUCTION-302 | WorkType.days |
 | **TZ-PRODUCTION-309** | DONE: order estimate days + WorkType mutate `production:write` |
 | **TZ-PRODUCTION-311** | DONE: Gantt right-edge resize → order override only (cascade within order) |
+| **TZ-PRODUCTION-312** | DONE: summary/body plannedDate move |
+| **TZ-PRODUCTION-313** | DONE: card flyout compact |
+| **TZ-PRODUCTION-314** | DONE: order summary row + expand composition |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -112,6 +116,8 @@ flyouts: overlay; center width unchanged
 | **TZ-UX-322** | DONE: `PiChromeToolsService` + app-layout render |
 | **TZ-UX-323** | DONE: Gantt tools → chrome rails; local 48px rails removed |
 | TZ-PRODUCTION-308…310 | **BLOCKED BY WAVE-PRODUCTION-STUDIO-CHROME**; не запускать поверх docked layout |
+| TZ-PRODUCTION-315 | READY: card bottom sheet |
+| TZ-PRODUCTION-316 | READY after 314: per-bar start offsets |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
 
 ### Studio wave readiness
