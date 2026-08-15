@@ -2,7 +2,7 @@ task: TZ-SALES-378
 status: DONE
 closed_at: 2026-08-15T07:39:00Z
 implementation_sha: b20944637d62bafe614bc808505137334e6c6e49
-closeout_sha: c4972eab
+closeout_sha: ed57baff
 protected_files:
   - backend/src/modules/document-template/document-template.service.ts
   - backend/src/modules/document-template/document-template.assets.spec.ts

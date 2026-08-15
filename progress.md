@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-378.md`
 **Lock:** `.mimocode/locks/TZ-SALES-378-multipage-bg-full-next.lock`
 **Implementation SHA:** `b20944637d62bafe614bc808505137334e6c6e49`
-**Closeout SHA:** `c4972eab`
+**Closeout SHA:** `ed57baff`
 **Known limit:** strip decorations / continuationMode = TZ-SALES-377 PARK backlog.
 
 ## [2026-08-15] — TZ-SALES-376 DONE — geometry-aware KP page split

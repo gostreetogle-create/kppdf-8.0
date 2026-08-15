@@ -30,7 +30,7 @@ main_head: `b20944637d62bafe614bc808505137334e6c6e49`
 - Archive: `tasks/_archive/2026-08/TZ-SALES-378.done.md`
 - Lock: `.mimocode/locks/TZ-SALES-378-multipage-bg-full-next.lock`
 - Implementation: `b20944637d62bafe614bc808505137334e6c6e49`
-- Closeout: `c4972eab`
+- Closeout: `ed57baff`
 - State: Cursor PASS; multipage bg CSS hoisted; full next-page capacity + table remap; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 - Successor park: **TZ-SALES-377** (continuation background) — backlog only, не брать.
 
