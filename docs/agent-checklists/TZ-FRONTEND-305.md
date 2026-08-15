@@ -60,4 +60,4 @@ write-path logic. No UX or payload rewrite.
 
 - [x] archive + lock + progress + delete `_active`
 - [x] status DONE; closed_at 2026-08-16T01:32:00+03:00
-- implementation commit: pending until final staging
+- implementation commit: `2f8d291d`

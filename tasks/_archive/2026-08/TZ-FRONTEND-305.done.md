@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-16T01:32:00+03:00
 closed_by: Buffy
-implementation_commit: pending
+implementation_commit: `2f8d291d`
 TZ: TZ-FRONTEND-305
 SCORE: 100/100 scoped acceptance
 
@@ -25,7 +25,7 @@ SCORE: 100/100 scoped acceptance
 - Changed-file ESLint: PASS.
 - Changed-file Prettier: PASS.
 - `pnpm architecture:check`: PASS — 948 files; baseline 6; no new violations.
-- `git diff --check`: pending final staged verification.
+- `git diff --check`: PASS in staged closeout.
 - Browser smoke: NOT RUN; deploy intentionally deferred until tomorrow.
 - Bans: PASS — no deploy, wipe, data staging or production operation.
 
