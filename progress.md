@@ -1,5 +1,29 @@
+## [2026-08-15] — TZ-ORDERS-HUB-302 DONE — orders expand columns + Deal/Composition
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend orders list; deploy НЕ
+**Что:** Колонки без total; X/Y readiness; read-only expand Сделка/Состав (UX-319 chrome); /proposals route fix. Cherry-pick `9d1a0aac` → `71446d6b` onto origin/main; app-layout from `657b0182` omitted (UX-320 LANDED).
+**Gates:** FE tsc PASS; orders.page Jest 11/11 PASS; Cursor functional PASS 98/100.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-HUB-302.done.md`
+**Checklist:** `docs/agent-checklists/TZ-ORDERS-HUB-302.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-HUB-302-orders-expand-columns.lock`
+**Implementation SHA:** `71446d6bfb37434913450449678ce4b78e26be37`
+**Closeout SHA:** `a1da7a2bcb2092983d831d143b2bd54101f6c458`
+**Successor:** TZ-ORDERS-HUB-303 unblocked → READY.
+
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
+
+## [2026-08-15] — TZ-CATALOG-373 DONE — materials list vitrine parity
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend /materials; deploy НЕ
+**Что:** list↔grid toggle, filters-rail (canon products), `PiShowcaseCard` grid, `pi-materials-view-mode` persistence; materials.page-373.spec (12 tests).
+**Gates:** FE tsc (tsconfig.app.json) PASS; materials.page Jest 3 suites / 18 tests PASS; Cursor PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-373.done.md`
+**Checklist:** `docs/agent-checklists/TZ-CATALOG-373.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-373-materials-list-vitrine-parity.lock`
+**Implementation SHA:** `528e3cf9fb21eb283b076893e627097a3736ffea`
+**Closeout SHA:** TBD
+**Known limit:** rail sort N/A (backend no sortBy).
 
 ## [2026-08-15] — TZ-UX-320 DONE / LANDED — ←→ из края окна в поля у колонки контента
 **Исполнитель:** Buffy (impl) + Cursor land (cherry-pick onto main)
