@@ -17,6 +17,7 @@ main_head: `55dac38afb9e533d1ad28793a1edbae3181482cc`
 - Lock: `.mimocode/locks/TZ-UX-319-products-expanded-row-frame.lock`
 - Spec: `tasks/TZ-UX-319-products-expanded-row-frame.md`
 - Implementation: `55dac38afb9e533d1ad28793a1edbae3181482cc`
+- Closeout: `bf30c9acc0898ab645004ec48448b26d0bd13269`
 - State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-FRONTEND-301 / 302 — DONE / LANDED

@@ -10,6 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-UX-319.md`
 **Lock:** `.mimocode/locks/TZ-UX-319-products-expanded-row-frame.lock`
 **Implementation SHA:** `55dac38afb9e533d1ad28793a1edbae3181482cc`
+**Closeout SHA:** `bf30c9acc0898ab645004ec48448b26d0bd13269`
 **Known limit:** рамка = две границы `<tr>` (не wrapper div); другие `expandedRow` страницы получают тот же chrome.
 
 ## [2026-08-15] — TZ-FRONTEND-301/302 DONE — Angular component integrity
