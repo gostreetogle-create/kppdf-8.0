@@ -1,0 +1,21 @@
+task: TZ-SALES-373
+status: DONE
+closed_at: 2026-08-15T06:35:00Z
+implementation_sha: 60fad54a7c0dbf1bcb574c977f1e63061ed6adf3
+closeout_sha: 8d4b5616bc435d6e302491d09c99a809d6749a1f
+protected_files:
+  - frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-create-table-editor.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-create.page.ts
+  - frontend/src/app/shared/services/pi-proposals.service.ts
+  - frontend/src/app/shared/services/pi-document-templates.service.ts
+  - backend/src/modules/quotation/quotation.schema.ts
+  - backend/src/modules/quotation/dto/create-quotation.dto.ts
+  - backend/src/modules/quotation/quotation.service.ts
+  - backend/src/modules/document-template/dto/build-document.dto.ts
+  - backend/src/modules/table-template/table-template.service.ts
+  - docs/pages/proposals-create.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+behavior: sheetLayout.tableFontSize default 12 clamp 8-20; Вид листа + table editor toolbar sync; A4 preview HTML font-size on table
+cursor_verdict: PASS
+production: not executed

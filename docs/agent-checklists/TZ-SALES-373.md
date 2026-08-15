@@ -88,5 +88,5 @@ cd backend && pnpm test -- table-template.service            → PASS (6 tests, 
 - ready: yes
 - archive: `tasks/_archive/2026-08/TZ-SALES-373.done.md`
 - lock: `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
-- closeout: PENDING
+- closeout: `8d4b5616bc435d6e302491d09c99a809d6749a1f`
 - cursor_verdict: PASS

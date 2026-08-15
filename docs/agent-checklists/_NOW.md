@@ -6,7 +6,7 @@
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-15T06:35:00Z
-main_head: `60fad54a`
+main_head: `8d4b5616`
 
 ## ACTIVE
 
@@ -28,6 +28,7 @@ main_head: `60fad54a`
 - Archive: `tasks/_archive/2026-08/TZ-SALES-373.done.md`
 - Lock: `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
 - Implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
+- Closeout: `8d4b5616bc435d6e302491d09c99a809d6749a1f`
 - State: Cursor PASS; archive/lock/checklist landed; active marker removed; deploy НЕ.
 - Conflict keys released: proposal-create* + sheetLayout FE/BE + table-template preview + page docs.
 

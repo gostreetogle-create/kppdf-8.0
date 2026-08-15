@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-373.md`
 **Lock:** `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
 **Implementation SHA:** `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
-**Closeout SHA:** `PENDING`
+**Closeout SHA:** `8d4b5616bc435d6e302491d09c99a809d6749a1f`
 **Known limit:** no per-column/per-cell font; long descriptions still multi-page.
 
 ## [2026-08-15] — TZ-DOC-TABLES-310 DONE — remove help + separate toolbar buttons
