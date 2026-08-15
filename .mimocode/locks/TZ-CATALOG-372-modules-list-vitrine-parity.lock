@@ -2,7 +2,7 @@ task: TZ-CATALOG-372
 status: DONE
 closed_at: 2026-08-15T11:30:00Z
 implementation_sha: 3b460f4517cfae01b40722c9b4229ba7717e6552
-closeout_sha: 1ba6382ef4647e860653bac92e24fe0b227ffb9b
+closeout_sha: a03500d7d4199e41972e7d3063b06b17096d0368
 protected_files:
   - frontend/src/app/pages/modules/modules.page.ts
   - frontend/src/app/pages/modules/modules.page.spec.ts

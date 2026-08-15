@@ -8,7 +8,7 @@ closed_at: 2026-08-15T11:30:00Z
 closed_by: Buffy (closeout)
 workspace: D:\kppdf-8.0
 implementation_sha: 3b460f4517cfae01b40722c9b4229ba7717e6552
-closeout_sha: 1ba6382ef4647e860653bac92e24fe0b227ffb9b
+closeout_sha: a03500d7d4199e41972e7d3063b06b17096d0368
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-CATALOG-372.md)
   - frontend tsc: PASS

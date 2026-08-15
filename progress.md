@@ -7,7 +7,7 @@
 **Checklist:** `docs/agent-checklists/TZ-CATALOG-372.md`
 **Lock:** `.mimocode/locks/TZ-CATALOG-372-modules-list-vitrine-parity.lock`
 **Implementation SHA:** `3b460f4517cfae01b40722c9b4229ba7717e6552`
-**Closeout SHA:** `1ba6382ef4647e860653bac92e24fe0b227ffb9b`
+**Closeout SHA:** `a03500d7d4199e41972e7d3063b06b17096d0368`
 **Known limit:** server envelope `/modules` — successor.
 
 ## [2026-08-15] — TZ-ORDERS-HUB-302 DONE — orders expand columns + Deal/Composition
