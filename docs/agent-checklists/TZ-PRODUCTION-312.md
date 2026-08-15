@@ -43,7 +43,7 @@
 - Feature: body-drag → plannedDate; 311 resize intact
 - Archive: tasks/_archive/2026-08/TZ-PRODUCTION-312.done.md
 - Lock: .mimocode/locks/TZ-PRODUCTION-312-gantt-body-drag-planned-date.lock
-- Commit SHA: _(filled after commit)_
+- Commit SHA: 469ee1a5903e7b49f637e567cd2d0a886009f8cd
 - Team Room: unavailable
 - Out: left-edge, per-bar lag, 304–307
 - Gates: FE tsc PASS; jest 31 PASS
