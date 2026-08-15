@@ -3,6 +3,7 @@ import {
   GanttBarsComponent,
   GANTT_PX_PER_DAY,
   snapEstimateDaysFromDelta,
+  snapMoveDeltaDays,
 } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
 
@@ -222,6 +223,93 @@ describe('GanttBarsComponent', () => {
       },
     ]);
   });
+
+  it('emits plannedDateMoveCommit on body drag (not resize)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+
+    const moves: unknown[] = [];
+    const resizes: unknown[] = [];
+    fixture.componentInstance.plannedDateMoveCommit.subscribe((v) => moves.push(v));
+    fixture.componentInstance.estimateDaysCommit.subscribe((v) => resizes.push(v));
+
+    fixture.componentInstance.onMovePointerDown(
+      {
+        pointerId: 7,
+        clientX: 50,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined,
+        currentTarget: { setPointerCapture: () => undefined },
+      } as unknown as PointerEvent,
+      sample,
+    );
+    fixture.componentInstance.onDocumentPointerMove({
+      pointerId: 7,
+      clientX: 50 + GANTT_PX_PER_DAY.day * 3,
+    } as PointerEvent);
+    fixture.componentInstance.onDocumentPointerUp({
+      pointerId: 7,
+      clientX: 50 + GANTT_PX_PER_DAY.day * 3,
+    } as PointerEvent);
+
+    expect(moves).toEqual([{ orderId: 'o1', deltaDays: 3 }]);
+    expect(resizes).toEqual([]);
+  });
+
+  it('does not emit move when starting on resize handle path', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+
+    const moves: unknown[] = [];
+    fixture.componentInstance.plannedDateMoveCommit.subscribe((v) => moves.push(v));
+
+    const rows = fixture.componentInstance['rows']();
+    fixture.componentInstance.onResizePointerDown(
+      {
+        pointerId: 2,
+        clientX: 100,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined,
+        currentTarget: { setPointerCapture: () => undefined },
+      } as unknown as PointerEvent,
+      rows[0]!,
+    );
+    fixture.componentInstance.onDocumentPointerMove({
+      pointerId: 2,
+      clientX: 100 + GANTT_PX_PER_DAY.day,
+    } as PointerEvent);
+    fixture.componentInstance.onDocumentPointerUp({
+      pointerId: 2,
+      clientX: 100 + GANTT_PX_PER_DAY.day,
+    } as PointerEvent);
+
+    expect(moves).toEqual([]);
+  });
+
+  it('disallows body-drag when readOnly or shipped', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(false);
+
+    const shipped: GanttBar = { ...sample, orderStatus: 'shipped' };
+    fixture.componentRef.setInput('readOnly', false);
+    fixture.componentRef.setInput('bars', [shipped]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.canMoveBar(shipped)).toBe(false);
+  });
 });
 
 describe('snapEstimateDaysFromDelta', () => {
@@ -231,5 +319,14 @@ describe('snapEstimateDaysFromDelta', () => {
     expect(snapEstimateDaysFromDelta(2, -1000, 36)).toBe(1);
     expect(snapEstimateDaysFromDelta(5, 18, 36)).toBe(6); // half day rounds up via Math.round
     expect(snapEstimateDaysFromDelta(5, 17, 36)).toBe(5);
+  });
+});
+
+describe('snapMoveDeltaDays', () => {
+  it('snaps body-drag px to signed calendar days', () => {
+    expect(snapMoveDeltaDays(36, 36)).toBe(1);
+    expect(snapMoveDeltaDays(-72, 36)).toBe(-2);
+    expect(snapMoveDeltaDays(17, 36)).toBe(0);
+    expect(snapMoveDeltaDays(18, 36)).toBe(1);
   });
 });

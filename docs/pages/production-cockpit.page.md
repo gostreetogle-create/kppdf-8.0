@@ -90,7 +90,8 @@ flyouts: overlay; center width unchanged
 
 - Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
 - Order-level override: `Order.estimateDayOverrides` via `PATCH /orders/:id/estimate-days` (`production:write`); inspector default writes override; catalog «для всех» remains explicit confirm.
-- **TZ-PRODUCTION-311:** правый край полосы (не noTerm / не readOnly) → snap к календарным дням → тот же PATCH override → rebuild bars (cascade внутри заказа). Левый край / drag тела / plannedDate с полосы — OUT.
+- **TZ-PRODUCTION-311:** правый край полосы (не noTerm / не readOnly) → snap к календарным дням → тот же PATCH override → rebuild bars (cascade внутри заказа). Левый край — OUT.
+- **TZ-PRODUCTION-312:** тело полосы (не resize handle) → snap ±N дней → `PATCH /orders/:id` `plannedDate` = oldAnchor + delta; длительности без изменений; Escape cancel.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 

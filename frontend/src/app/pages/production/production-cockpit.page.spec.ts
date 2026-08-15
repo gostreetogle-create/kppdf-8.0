@@ -67,6 +67,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
           provide: OrdersService,
           useValue: {
             patchEstimateDays: jest.fn(() => of({ ok: true, data: orders[0] })),
+            update: jest.fn(() => of({ ok: true, data: orders[0] })),
           },
         },
         {

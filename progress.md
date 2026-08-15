@@ -1,3 +1,14 @@
+## [2026-08-15] — TZ-PRODUCTION-312 DONE — Gantt body-drag → plannedDate
+**Исполнитель:** gemini-executor-312
+**Статус:** DONE; left-edge OUT; deploy НЕ
+**Что:** body-drag полосы (не resize handle) → snap ±Nд → PATCH plannedDate (oldAnchor+delta); цепочка едет, days без изменений; Escape cancel; readOnly/shipped+ без drag; 311 resize сохранён.
+**Gates:** FE tsc PASS; FE jest production-cockpit|gantt-bar 31 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-312.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-312.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-312-gantt-body-drag-planned-date.lock`
+**known_limitation:** нет независимого lag одной средней полосы.
+**Dep:** TZ-PRODUCTION-313 @ 4cd045c66c88b7a37208a4dfcf8ffd71864d5e73; 311 @ 85329247650db938cb80039b458c3e05cb363a7a
+
 ## [2026-08-15] — TZ-PRODUCTION-313 DONE — Карточка flyout compact (no gutter)
 **Исполнитель:** gemini-executor-313
 **Статус:** DONE; deploy НЕ

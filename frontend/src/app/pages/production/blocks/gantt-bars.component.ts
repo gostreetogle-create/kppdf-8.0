@@ -34,6 +34,12 @@ export interface GanttEstimateDaysCommit {
   days: number;
 }
 
+/** Payload for body-drag → order plannedDate shift (whole chain). */
+export interface GanttPlannedDateMoveCommit {
+  orderId: string;
+  deltaDays: number;
+}
+
 /**
  * Snap right-edge resize delta to calendar days (≥1).
  * Pure helper — unit-tested independently of DOM.
@@ -47,6 +53,15 @@ export function snapEstimateDaysFromDelta(
   if (!Number.isFinite(pxPerDay) || pxPerDay <= 0) return Math.max(1, base);
   const deltaDays = Math.round(deltaPx / pxPerDay);
   return Math.max(1, base + deltaDays);
+}
+
+/**
+ * Snap body-drag px delta to calendar days (may be negative / zero).
+ */
+export function snapMoveDeltaDays(deltaPx: number, pxPerDay: number): number {
+  if (!Number.isFinite(pxPerDay) || pxPerDay <= 0) return 0;
+  if (!Number.isFinite(deltaPx)) return 0;
+  return Math.round(deltaPx / pxPerDay);
 }
 
 function isBarEstimateReadOnly(status: OrderStatus): boolean {
@@ -225,9 +240,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   [class.border]="row.bar.noTerm"
                   [class.border-dashed]="row.bar.noTerm"
                   [class.border-muted-foreground]="row.bar.noTerm"
-                  [class.ring-1]="isResizingBar(row.bar.id)"
-                  [class.ring-ink]="isResizingBar(row.bar.id)"
-                  [style.left.px]="row.leftPx"
+                  [class.ring-1]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
+                  [class.ring-ink]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
+                  [class.cursor-grab]="canMoveBar(row.bar) && !isMovingOrder(row.bar.orderId)"
+                  [class.cursor-grabbing]="isMovingOrder(row.bar.orderId)"
+                  [style.left.px]="displayLeftPx(row)"
                   [style.width.px]="displayWidthPx(row)"
                   [style.background]="
                     row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
@@ -238,8 +255,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       : null
                   "
                   [attr.title]="barTitle(row.bar)"
-                  [attr.aria-label]="barTitle(row.bar)"
+                  [attr.aria-label]="barAriaLabel(row.bar)"
                   [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
+                  (pointerdown)="onMovePointerDown($event, row.bar)"
                 >
                   @if (!row.bar.noTerm) {
                     <span class="truncate" data-test="gantt-bar-days-label"
@@ -297,7 +315,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         data-test="gantt-legend"
       >
         Красная линия = сегодня · цвет полосы/метки = вид работ · штриховка = без срока · ×N =
-        количество · правый край полосы = дни оценки (этот заказ) · клик открывает карточку
+        количество · правый край = дни оценки · тело полосы = сдвиг начала заказа · клик = карточка
       </div>
     </div>
   `,
@@ -325,6 +343,8 @@ export class GanttBarsComponent {
   readonly selectOrder = output<string>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
+  /** Body-drag → parent PATCHes order plannedDate (whole chain). */
+  readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
 
@@ -337,6 +357,17 @@ export class GanttBarsComponent {
     previewDays: number;
     pointerId: number;
   } | null>(null);
+
+  /** Live body-drag plannedDate preview (null = idle). */
+  private readonly moveSession = signal<{
+    orderId: string;
+    startClientX: number;
+    previewDeltaDays: number;
+    pointerId: number;
+  } | null>(null);
+
+  /** Suppress row click after a real move/resize gesture. */
+  private suppressNextRowClick = false;
 
   protected readonly totalDays = computed(() =>
     Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
@@ -428,8 +459,19 @@ export class GanttBarsComponent {
     return true;
   }
 
+  /** Body-drag allowed even for noTerm — moves order plannedDate, not duration. */
+  protected canMoveBar(bar: GanttBar): boolean {
+    if (!this.canEdit() || this.readOnly()) return false;
+    if (isBarEstimateReadOnly(bar.orderStatus)) return false;
+    return true;
+  }
+
   protected isResizingBar(barId: string): boolean {
     return this.resizeSession()?.barId === barId;
+  }
+
+  protected isMovingOrder(orderId: string): boolean {
+    return this.moveSession()?.orderId === orderId;
   }
 
   protected displayDays(row: { bar: GanttBar; baseSpanDays: number }): number {
@@ -446,9 +488,37 @@ export class GanttBarsComponent {
     return row.widthPx;
   }
 
+  protected displayLeftPx(row: { bar: GanttBar; leftPx: number }): number {
+    const session = this.moveSession();
+    if (session && session.orderId === row.bar.orderId) {
+      return row.leftPx + session.previewDeltaDays * this.pxPerDay();
+    }
+    return row.leftPx;
+  }
+
   protected onRowClick(orderId: string): void {
-    if (this.resizeSession()) return;
+    if (this.resizeSession() || this.moveSession()) return;
+    if (this.suppressNextRowClick) {
+      this.suppressNextRowClick = false;
+      return;
+    }
     this.selectOrder.emit(orderId);
+  }
+
+  protected onMovePointerDown(event: PointerEvent, bar: GanttBar): void {
+    if (!this.canMoveBar(bar)) return;
+    // Resize handle owns its pointerdown (stopPropagation); body starts move.
+    if (this.resizeSession()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.currentTarget as HTMLElement;
+    target.setPointerCapture?.(event.pointerId);
+    this.moveSession.set({
+      orderId: bar.orderId,
+      startClientX: event.clientX,
+      previewDeltaDays: 0,
+      pointerId: event.pointerId,
+    });
   }
 
   protected onResizePointerDown(
@@ -458,6 +528,7 @@ export class GanttBarsComponent {
     if (!this.canResizeBar(row.bar)) return;
     event.preventDefault();
     event.stopPropagation();
+    this.moveSession.set(null);
     const baseDays = Math.max(1, row.bar.days ?? row.baseSpanDays);
     const target = event.currentTarget as HTMLElement;
     target.setPointerCapture(event.pointerId);
@@ -473,6 +544,16 @@ export class GanttBarsComponent {
 
   @HostListener('document:pointermove', ['$event'])
   protected onDocumentPointerMove(event: PointerEvent): void {
+    const move = this.moveSession();
+    if (move && event.pointerId === move.pointerId) {
+      const previewDeltaDays = snapMoveDeltaDays(
+        event.clientX - move.startClientX,
+        this.pxPerDay(),
+      );
+      if (previewDeltaDays === move.previewDeltaDays) return;
+      this.moveSession.set({ ...move, previewDeltaDays });
+      return;
+    }
     const session = this.resizeSession();
     if (!session || event.pointerId !== session.pointerId) return;
     const deltaPx = event.clientX - session.startClientX;
@@ -484,6 +565,11 @@ export class GanttBarsComponent {
   @HostListener('document:pointerup', ['$event'])
   @HostListener('document:pointercancel', ['$event'])
   protected onDocumentPointerUp(event: PointerEvent): void {
+    const move = this.moveSession();
+    if (move && event.pointerId === move.pointerId) {
+      this.finishMove(move, /*commit*/ true);
+      return;
+    }
     const session = this.resizeSession();
     if (!session || event.pointerId !== session.pointerId) return;
     this.finishResize(session, /*commit*/ true);
@@ -491,9 +577,33 @@ export class GanttBarsComponent {
 
   @HostListener('document:keydown.escape')
   protected onEscapeCancel(): void {
+    const move = this.moveSession();
+    if (move) {
+      this.finishMove(move, /*commit*/ false);
+      return;
+    }
     const session = this.resizeSession();
     if (!session) return;
     this.finishResize(session, /*commit*/ false);
+  }
+
+  private finishMove(
+    session: {
+      orderId: string;
+      previewDeltaDays: number;
+      pointerId: number;
+    },
+    commit: boolean,
+  ): void {
+    this.moveSession.set(null);
+    if (!commit) return;
+    const deltaDays = session.previewDeltaDays;
+    if (deltaDays === 0) return;
+    this.suppressNextRowClick = true;
+    this.plannedDateMoveCommit.emit({
+      orderId: session.orderId,
+      deltaDays,
+    });
   }
 
   private finishResize(
@@ -510,6 +620,7 @@ export class GanttBarsComponent {
     if (!commit) return;
     const days = Math.max(1, session.previewDays);
     if (days === session.baseDays) return;
+    this.suppressNextRowClick = true;
     this.estimateDaysCommit.emit({
       orderId: session.bar.orderId,
       orderItemIndex: session.bar.orderItemIndex,
@@ -566,6 +677,12 @@ export class GanttBarsComponent {
     const head = this.labelTitle(b);
     if (b.noTerm) return `${head} — без срока`;
     return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д`.trim();
+  }
+
+  protected barAriaLabel(b: GanttBar): string {
+    const base = this.barTitle(b);
+    if (!this.canMoveBar(b)) return base;
+    return `${base} · Сдвинуть начало заказа`;
   }
 }
 

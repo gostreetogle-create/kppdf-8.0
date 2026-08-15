@@ -41,7 +41,7 @@
 - Feature: flyout-card min(22rem) + inspector w-full
 - Archive: tasks/_archive/2026-08/TZ-PRODUCTION-313.done.md
 - Lock: .mimocode/locks/TZ-PRODUCTION-313-card-flyout-compact.lock
-- Commit SHA: _(filled after commit)_
+- Commit SHA: 4cd045c66c88b7a37208a4dfcf8ffd71864d5e73
 - Team Room: unavailable
 - Out: gantt drag/resize, chrome, backend
 - Gates: FE tsc PASS; jest 27 PASS

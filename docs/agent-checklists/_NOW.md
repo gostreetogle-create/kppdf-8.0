@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T15:50:00Z
+updated_at: 2026-08-15T16:05:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-- **TZ-PRODUCTION-312** — next (body-drag → plannedDate); after 313 closeout
+_(empty — no live `_active/` markers on main)_
 
 ## Queue hygiene (not live)
 
@@ -21,6 +21,11 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-312 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-312.done.md`
+- Body-drag → plannedDate (whole chain)
 
 ### TZ-PRODUCTION-313 — DONE 2026-08-15
 
@@ -50,12 +55,12 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## NEXT
 
-1. TZ-PRODUCTION-312 body-drag plannedDate (in queue)
-2. AUTH-307 park — только после PO
-3. App warm deploy — только по «деплой»
-4. Chrome page-tools migrate wave — по PO
+1. AUTH-307 park — только после PO
+2. App warm deploy — только по «деплой»
+3. Chrome page-tools migrate wave — по PO
+4. Gantt left-edge — только после PO
 
 ## HEAD / queue
 
-- After 313: claim 312
-- Deploy app: НЕ
+- Queue empty for executor claim (WAVE-PRODUCTION-GANTT-RESIZE P0–P2 closed)
+- Deploy app: НЕ — готово предложить деплой

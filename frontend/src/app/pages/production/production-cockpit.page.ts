@@ -14,12 +14,21 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
-import { GanttBarsComponent, type GanttEstimateDaysCommit } from './blocks/gantt-bars.component';
+import {
+  GanttBarsComponent,
+  type GanttEstimateDaysCommit,
+  type GanttPlannedDateMoveCommit,
+} from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
-import { filterOrdersForRail, formatDateOnly, type GanttBar } from './gantt-bar.model';
+import {
+  filterOrdersForRail,
+  formatDateOnly,
+  resolveVisualAnchor,
+  type GanttBar,
+} from './gantt-bar.model';
 import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -104,6 +113,7 @@ const CHROME_OWNER = 'production-cockpit';
               [canEdit]="canEditCatalog()"
               (selectOrder)="onSelect($event)"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
+              (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
             />
           </main>
 
@@ -553,6 +563,29 @@ export class ProductionCockpitPage implements OnInit {
       return;
     }
     this.toast.success('Дни оценки обновлены для этого заказа');
+    await this.reloadOrdersKeepingSelection();
+  }
+
+  /** TZ-PRODUCTION-312 — body-drag → plannedDate (whole order chain; durations unchanged). */
+  protected async onPlannedDateMoveCommit(ev: GanttPlannedDateMoveCommit): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const deltaDays = Math.trunc(ev.deltaDays);
+    if (deltaDays === 0) return;
+    const order = this.orders().find((o) => o._id === ev.orderId);
+    if (!order) return;
+    if (isReadOnlyEstimateStatus(order.status)) return;
+    const { anchor } = resolveVisualAnchor(order, new Date());
+    const newDateOnly = addDays(formatDateOnly(anchor), deltaDays);
+    const res = await firstValueFrom(
+      this.ordersApi.update(ev.orderId, {
+        plannedDate: new Date(newDateOnly + 'T12:00:00').toISOString(),
+      }),
+    );
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      return;
+    }
+    this.toast.success('Начало заказа сдвинуто');
     await this.reloadOrdersKeepingSelection();
   }
 
