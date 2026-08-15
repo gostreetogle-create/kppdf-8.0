@@ -61,4 +61,3 @@
 - [x] Status = DONE
 - closed_at: 2026-08-15T11:25:00Z
 - implementation_sha: `528e3cf9fb21eb283b076893e627097a3736ffea`
-- closeout_sha: `cafd3acf`
