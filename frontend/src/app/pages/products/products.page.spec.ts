@@ -200,7 +200,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 10,
+      limit: 15,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -460,7 +460,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         r.url === listUrl && r.method === 'GET' && r.params.get('categoryId') === 'cat-trainers',
     );
     expect(req.request.params.get('categoryId')).toBe('cat-trainers');
-    req.flush({ items: [PRODUCTS[0]], total: 1, page: 1, limit: 10 });
+    req.flush({ items: [PRODUCTS[0]], total: 1, page: 1, limit: 15 });
     await tickMicrotask();
     fixture.detectChanges();
     flushDictionaryLabels(httpMock);
@@ -518,7 +518,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 10,
+      limit: 15,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -589,7 +589,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
   it('grid empty state renders when no products', async () => {
     const fixture = TestBed.createComponent(ProductsPage);
     fixture.detectChanges();
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 15 });
     await tickMicrotask();
     fixture.detectChanges();
     flushDictionaryLabels(httpMock);

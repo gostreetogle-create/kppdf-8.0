@@ -56,7 +56,7 @@ import {
 } from '../../shared/services/pi-dictionary-labels.service';
 
 /** Server-side pagination page size for /products endpoint. */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 
 /** Backend accepts only these sortBy values (see ProductsListParams). */
 type SortKey = 'name' | 'listPrice';
@@ -447,7 +447,9 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                       data-test="pager-prev"
                       >Назад</app-pi-button
                     >
-                    <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
+                    <span class="text-xs tabular-nums" data-test="pager-page"
+                      >Стр. {{ page() }} из {{ totalPages() }}</span
+                    >
                     <app-pi-button
                       variant="ghost"
                       size="sm"
