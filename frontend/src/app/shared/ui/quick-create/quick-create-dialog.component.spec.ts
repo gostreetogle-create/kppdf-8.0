@@ -31,7 +31,6 @@ import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 import { ProductBomPanelComponent } from '../composition/product-bom-panel.component';
-import type { Photo } from '../../services/photos.service';
 
 describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
   const success = jest.fn();
@@ -396,10 +395,30 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     c.onSizeChange('L');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).not.toBeNull();
-    const photos: Photo[] = [
-      { _id: 'photo-1', storageUrl: '/uploads/photo-1.jpg', originalFilename: 'front.jpg' },
-    ];
-    c.onPhotosChange(photos);
+
+    // B-PHOTO: upload/delete/error are container-owned — the dropzone only
+    // reports intent, and the container calls PhotosService itself.
+    const photosService = TestBed.inject(PhotosService) as { upload: jest.Mock };
+    photosService.upload.mockReturnValue(
+      of(
+        ok({
+          _id: 'photo-1',
+          storageUrl: '/uploads/photo-1.jpg',
+          originalFilename: 'front.jpg',
+        }),
+      ),
+    );
+
+    const file = new File(['image'], 'front.jpg', { type: 'image/jpeg' });
+    const target = fixture.nativeElement.querySelector(
+      '[data-test="photo-drop-target"]',
+    ) as HTMLElement;
+    const drop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: [file] } });
+    target.dispatchEvent(drop);
+    fixture.detectChanges();
+
+    expect(photosService.upload).toHaveBeenCalledWith(file);
     c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: 'ST-002' });
     c.onSubmit();
     expect(products.create).toHaveBeenCalledWith(

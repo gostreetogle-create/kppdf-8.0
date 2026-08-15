@@ -15,6 +15,7 @@ import {
   Validators,
   type ValidatorFn,
 } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../dialog/pi-dialog.component';
 import { ButtonComponent } from '../button/button.component';
 import { FormFieldComponent } from '../form-field/form-field.component';
@@ -430,10 +431,11 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
               <app-pi-form-section title="Дополнительно" headingId="qc-sec-photo" tone="neutral">
                 <p class="eyebrow">Фото</p>
                 <app-pi-photo-dropzone
-                  [initialPhotos]="photos()"
-                  (photosChange)="onPhotosChange($event)"
-                  (uploadedPhotoIdsChange)="onUploadedPhotoIdsChange($event)"
-                  (uploadStateChange)="onPhotoUploadState($event)"
+                  [photos]="photos()"
+                  [uploading]="photosUploading()"
+                  [errorMessage]="photoErrorMessage()"
+                  (uploadRequest)="onUploadRequest($event)"
+                  (deleteRequest)="onDeleteRequest($event)"
                 />
               </app-pi-form-section>
             }
@@ -520,6 +522,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly photos = signal<Photo[]>([]);
   protected readonly uploadedPhotoIds = signal<string[]>([]);
   protected readonly photosUploading = signal(false);
+  protected readonly photoErrorMessage = signal<string | null>(null);
   protected readonly createdProduct = signal<Product | null>(null);
   /** TZ-UX-FORM-306: module L stays open with BomPanel after create. */
   protected readonly createdModule = signal<ProductModule | null>(null);
@@ -689,21 +692,41 @@ export class QuickCreateDialogComponent implements OnDestroy {
     });
   }
 
-  protected onPhotosChange(photos: Photo[]): void {
-    this.photos.set(photos);
+  protected onUploadRequest(files: File[]): void {
+    if (files.length === 0) return;
+    this.photosUploading.set(true);
+    this.photoErrorMessage.set(null);
+    forkJoin(files.map((file) => this.photosService.upload(file))).subscribe((results) => {
+      const uploaded: Photo[] = [];
+      const failed: string[] = [];
+      results.forEach((result, index) => {
+        if (result.ok) uploaded.push(result.data);
+        else failed.push(files[index].name);
+      });
+      if (uploaded.length > 0) {
+        this.photos.update((prev) => [...prev, ...uploaded]);
+        this.uploadedPhotoIds.update((ids) => [...ids, ...uploaded.map((photo) => photo._id)]);
+      }
+      this.photosUploading.set(false);
+      if (failed.length > 0) {
+        const message = `Не удалось загрузить: ${failed.join(', ')}`;
+        this.photoErrorMessage.set(message);
+        this.toast.error(message);
+      }
+    });
   }
 
-  protected onUploadedPhotoIdsChange(ids: string[]): void {
-    this.uploadedPhotoIds.set(ids);
+  protected onDeleteRequest(id: string): void {
+    this.photos.update((prev) => prev.filter((photo) => photo._id !== id));
+    this.uploadedPhotoIds.update((ids) => ids.filter((photoId) => photoId !== id));
+    this.photosService.remove(id).subscribe((result) => {
+      if (!result.ok) this.toast.error(extractErrorMessage(result.error));
+    });
   }
 
   ngOnDestroy(): void {
     if (this.submitted) return;
     this.uploadedPhotoIds().forEach((id) => this.photosService.remove(id).subscribe());
-  }
-
-  protected onPhotoUploadState(uploading: boolean): void {
-    this.photosUploading.set(uploading);
   }
 
   @HostListener('document:keydown', ['$event'])

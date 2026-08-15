@@ -5,7 +5,24 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 import { defineEntity, paramsToHttpParams } from './entity-service';
-import { Users, type User } from '../../../pages/users/users.entity';
+
+/**
+ * Local fixture entity — the shared DSL spec must stay page-neutral and must
+ * not import a page-domain model (`pages/users`). Mirrors the users entity
+ * contract (`endpoint: '/users'`, `idKey: '_id'`) so the typed CRUD
+ * assertions below remain identical to the real page usage.
+ */
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+}
+
+const Users = defineEntity<User>({
+  endpoint: '/users',
+  idKey: '_id',
+});
 
 /**
  * Tests live under jest workers where `beforeEach` is NOT an Angular

@@ -1,19 +1,15 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import { forkJoin } from 'rxjs';
-import { PhotosService, type Photo } from '../../services/photos.service';
-import { PiToastService } from '../toast';
-import { extractErrorMessage } from '../../../core/silent-http';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import type { Photo } from '../../services/photos.service';
 import { ButtonComponent } from '../button/button.component';
 
-/** Shared upload/preview strip for product photo-capable form dialogs. */
+/**
+ * Shared upload/preview strip for product photo-capable form dialogs.
+ *
+ * Presentational: receives the current photo list, uploading flag and error
+ * message as inputs and reports user intent (files to upload / photo to
+ * delete) through outputs. All API calls and write state are owned by the
+ * parent container (QuickCreateDialogComponent) — B-PHOTO.
+ */
 @Component({
   selector: 'app-pi-photo-dropzone',
   standalone: true,
@@ -83,30 +79,17 @@ import { ButtonComponent } from '../button/button.component';
   `,
 })
 export class PiPhotoDropzoneComponent {
-  readonly initialPhotos = input<Photo[]>([]);
-  readonly photosChange = output<Photo[]>();
-  readonly uploadedPhotoIdsChange = output<string[]>();
-  readonly uploadStateChange = output<boolean>();
+  readonly photos = input<Photo[]>([]);
+  readonly uploading = input(false);
+  readonly errorMessage = input<string | null>(null);
+  readonly uploadRequest = output<File[]>();
+  readonly deleteRequest = output<string>();
 
-  protected readonly photos = signal<Photo[]>([]);
-  protected readonly uploading = signal(false);
   protected readonly dragActive = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-  private readonly uploadedPhotoIds = signal<string[]>([]);
-
-  private readonly photosService = inject(PhotosService);
-  private readonly toast = inject(PiToastService);
-
-  constructor() {
-    effect(() => {
-      const initial = this.initialPhotos();
-      this.photos.set(initial);
-    });
-  }
 
   protected onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.uploadFiles(Array.from(input.files ?? []));
+    this.uploadRequest.emit(Array.from(input.files ?? []));
     input.value = '';
   }
 
@@ -122,46 +105,11 @@ export class PiPhotoDropzoneComponent {
   protected onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragActive.set(false);
-    this.uploadFiles(Array.from(event.dataTransfer?.files ?? []));
+    this.uploadRequest.emit(Array.from(event.dataTransfer?.files ?? []));
   }
 
   protected remove(id: string, event: Event): void {
     event.stopPropagation();
-    const next = this.photos().filter((photo) => photo._id !== id);
-    this.photos.set(next);
-    this.photosChange.emit(next);
-    this.uploadedPhotoIds.update((ids) => ids.filter((photoId) => photoId !== id));
-    this.uploadedPhotoIdsChange.emit(this.uploadedPhotoIds());
-    this.photosService.remove(id).subscribe((result) => {
-      if (!result.ok) this.toast.error(extractErrorMessage(result.error));
-    });
-  }
-
-  private uploadFiles(files: File[]): void {
-    if (files.length === 0) return;
-    this.uploading.set(true);
-    this.uploadStateChange.emit(true);
-    this.errorMessage.set(null);
-    forkJoin(files.map((file) => this.photosService.upload(file))).subscribe((results) => {
-      const uploaded: Photo[] = [];
-      const failed: string[] = [];
-      results.forEach((result, index) => {
-        if (result.ok) uploaded.push(result.data);
-        else failed.push(files[index].name);
-      });
-      if (uploaded.length > 0) {
-        const next = [...this.photos(), ...uploaded];
-        this.photos.set(next);
-        this.photosChange.emit(next);
-        this.uploadedPhotoIds.update((ids) => [...ids, ...uploaded.map((photo) => photo._id)]);
-        this.uploadedPhotoIdsChange.emit(this.uploadedPhotoIds());
-      }
-      this.uploading.set(false);
-      this.uploadStateChange.emit(false);
-      if (failed.length > 0) {
-        this.errorMessage.set(`Не удалось загрузить: ${failed.join(', ')}`);
-        this.toast.error(this.errorMessage() ?? 'Не удалось загрузить фото');
-      }
-    });
+    this.deleteRequest.emit(id);
   }
 }

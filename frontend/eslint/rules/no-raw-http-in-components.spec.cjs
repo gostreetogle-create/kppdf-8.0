@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * @jest-environment node
  *
@@ -10,6 +8,8 @@
  * необязательные зависимости").
  */
 
+'use strict';
+
 const { Linter } = require('eslint');
 const parser = require('@typescript-eslint/parser');
 
@@ -18,7 +18,7 @@ const rule = require('./no-raw-http-in-components.cjs');
 const linter = new Linter();
 
 const baseConfig = {
-  files: ['**/*'],
+  files: ['**/*.ts'],
   languageOptions: {
     parser,
     parserOptions: {
@@ -36,9 +36,12 @@ const baseConfig = {
   },
 };
 
-const PAGE_FILE = '/repo/frontend/src/app/pages/foo/foo.page.ts';
-const COMPONENT_FILE = '/repo/frontend/src/app/shared/ui/foo/foo.component.ts';
-const SERVICE_FILE = '/repo/frontend/src/app/services/foo.service.ts';
+// Fixture filenames are relative to the frontend cwd (ESLint flat-config
+// `files` patterns are matched against paths relative to the config base
+// path; absolute /repo/... paths fall outside it and never match).
+const PAGE_FILE = 'src/app/pages/foo/foo.page.ts';
+const COMPONENT_FILE = 'src/app/shared/ui/foo/foo.component.ts';
+const SERVICE_FILE = 'src/app/services/foo.service.ts';
 
 describe('no-raw-http-in-components', () => {
   it('passes when no HttpClient import or usage in *.page.ts', () => {
