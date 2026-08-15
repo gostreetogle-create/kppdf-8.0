@@ -59,6 +59,7 @@ flyouts: overlay; center width unchanged
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
+- **TZ-PRODUCTION-313:** Карточка flyout `min(22rem)` + inspector `w-full` (без gutter от старых 28rem vs 20/22rem).
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
 - Ссылка «Открыть заказ» в inspector ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 

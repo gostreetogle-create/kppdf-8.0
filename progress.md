@@ -1,3 +1,13 @@
+## [2026-08-15] — TZ-PRODUCTION-313 DONE — Карточка flyout compact (no gutter)
+**Исполнитель:** gemini-executor-313
+**Статус:** DONE; deploy НЕ
+**Что:** flyout-card `min(22rem)` + order-inspector `w-full` — убран пустой gutter (было 28rem vs 20/22rem).
+**Gates:** FE tsc PASS; FE jest production-cockpit|gantt-bar 27 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-313.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-313.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-313-card-flyout-compact.lock`
+**Successor:** TZ-PRODUCTION-312 (body-drag plannedDate).
+
 ## [2026-08-15] — TZ-PRODUCTION-311 DONE — Gantt right-edge estimate resize
 **Исполнитель:** cursor-executor-311
 **Статус:** DONE; left/move OUT; WorkType catalog from handles НЕТ; deploy НЕ

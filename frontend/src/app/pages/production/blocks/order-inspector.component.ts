@@ -61,7 +61,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
   imports: [ButtonComponent, RouterLink],
   template: `
     <aside
-      class="flex flex-col h-full min-h-0 w-[20rem] xl:w-[22rem] shrink-0 border-l hairline bg-paper"
+      class="flex flex-col h-full min-h-0 w-full min-w-0 shrink-0 border-l hairline bg-paper"
       data-test="order-inspector"
       aria-label="Карточка заказа на Ганте"
       (click)="$event.stopPropagation()"

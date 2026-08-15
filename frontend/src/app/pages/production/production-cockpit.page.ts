@@ -297,7 +297,8 @@ const CHROME_OWNER = 'production-cockpit';
         width: min(20rem, calc(100% - 1rem));
       }
       .production-studio-flyout-card {
-        width: min(28rem, calc(100% - 1rem));
+        /* Match inspector content (~22rem); avoid empty gutter vs old min(28rem) */
+        width: min(22rem, calc(100% - 1rem));
       }
       .production-scale-flyout {
         width: 12rem;
