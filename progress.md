@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-374.md`
 **Lock:** `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
 **Implementation SHA:** `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
-**Closeout SHA:** `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+**Closeout SHA:** `1b813260c4ba01f6f60f6e438770b20fb21874a9`
 **Known limit:** drawer density/accent seg-buttons text-only; no per-column font.
 
 ## [2026-08-15] — TZ-UX-319 DONE — products expanded row ink frame

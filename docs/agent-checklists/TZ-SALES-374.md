@@ -72,5 +72,5 @@
 - implementation: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 - archive: `tasks/_archive/2026-08/TZ-SALES-374.done.md`
 - lock: `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
-- closeout: `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+- closeout: `1b813260c4ba01f6f60f6e438770b20fb21874a9`
 - cursor_verdict: PASS

@@ -30,7 +30,7 @@ main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 - Archive: `tasks/_archive/2026-08/TZ-SALES-374.done.md`
 - Lock: `.mimocode/locks/TZ-SALES-374-kp-table-editor-chrome.lock`
 - Implementation: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
-- Closeout: `2678cefc8e2a923380186f97a1aa94e05b13ae3b`
+- Closeout: `1b813260c4ba01f6f60f6e438770b20fb21874a9`
 - State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-UX-319 — DONE / LANDED
