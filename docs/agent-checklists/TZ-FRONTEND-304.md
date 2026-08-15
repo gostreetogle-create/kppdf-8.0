@@ -1,6 +1,7 @@
 # TZ-FRONTEND-304 checklist
 
-> Status: **READY**
+> Status: **BACKLOG** (READY, not claimed; not PO-critical)
+> Spec: `tasks/_backlog/TZ-FRONTEND-304-composition-container-boundary.md`
 > Goal: аккуратно разделить контейнер и UI блока «состав изделия» (BOM)
 > Speed: не важна; важны characterization и отсутствие регрессий
 > Deploy: НЕ

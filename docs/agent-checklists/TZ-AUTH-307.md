@@ -1,8 +1,9 @@
 # TZ-AUTH-307 checklist
 
-> Status: **RESERVED**
-> Marker: `tasks/_active/TZ-AUTH-307.md`
-> Commit/push: **YES after green gates**
+> Status: **PARKED** / blocked on TZ-AUTH-305 cutover + PO
+> Spec: `tasks/_park/TZ-AUTH-307-auth-cutover-cleanup.md`
+> Marker: нет в `_active` (не live queue)
+> Commit/push: только после 305 DONE + PO unblock
 
 ## Claim slot
 
