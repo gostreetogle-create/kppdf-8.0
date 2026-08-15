@@ -1070,7 +1070,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     const page = fixture.componentInstance as ProposalCreatePage & {
       onTemplateChange: (tpl: DocumentTemplate | null) => void;
       onProductAdd: (line: ProposalDraftLine) => void;
-      onQuantityChange: (change: { index: number; quantity: number }) => void;
+      onCompositionLineChange: (change: { index: number; patch: { quantity: number } }) => void;
     };
 
     page.onTemplateChange({ _id: 'tpl-1', name: 'КП' } as DocumentTemplate);
@@ -1086,7 +1086,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     });
     tick(250);
     buildMock.mockClear();
-    page.onQuantityChange({ index: 0, quantity: 3 });
+    page.onCompositionLineChange({ index: 0, patch: { quantity: 3 } });
     tick(250);
 
     expect(buildMock).toHaveBeenLastCalledWith(

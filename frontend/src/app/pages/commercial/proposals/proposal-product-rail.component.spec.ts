@@ -34,7 +34,6 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
   let materialsListMock: jest.Mock;
   let openMock: jest.Mock;
   const added = jest.fn();
-  let quantityChanges: Array<{ index: number; quantity: number }>;
 
   beforeEach(async () => {
     listMock = jest.fn().mockReturnValue(
@@ -129,9 +128,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProposalProductRailComponent);
-    quantityChanges = [];
     fixture.componentInstance.productAdd.subscribe(added);
-    fixture.componentInstance.quantityChange.subscribe((change) => quantityChanges.push(change));
     fixture.detectChanges();
   });
 
@@ -250,7 +247,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     expect(empty?.textContent).toContain('Измените поиск или выберите другой вид каталога');
   }));
 
-  it('clamps draft-line quantity input to a minimum of one', () => {
+  it('shows В КП badge from draftLines without draft-lines list (TZ-SALES-375)', () => {
     fixture.componentRef.setInput('draftLines', [
       {
         lineKind: 'catalog',
@@ -261,25 +258,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
       },
     ]);
     fixture.detectChanges();
-    const quantityInput = fixture.nativeElement.querySelector(
-      '[data-test="kp-line-quantity-0"]',
-    ) as HTMLInputElement;
-    quantityInput.value = '-4';
-    quantityInput.dispatchEvent(new Event('change'));
-    expect(quantityChanges).toEqual([{ index: 0, quantity: 1 }]);
-  });
-
-  it('shows В КП badge from draftLines and switches add label', () => {
-    fixture.componentRef.setInput('draftLines', [
-      {
-        lineKind: 'catalog',
-        productId: 'product-1',
-        productName: 'Стенд ресепшн',
-        quantity: 2,
-        unitPrice: 12500,
-      },
-    ]);
-    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-rail-draft-lines"]')).toBeNull();
     expect(
       fixture.nativeElement.querySelector('[data-test="kp-rail-in-kp-product-1"]').textContent,
     ).toContain('В КП: 2');

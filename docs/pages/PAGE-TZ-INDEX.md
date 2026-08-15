@@ -50,7 +50,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–373 DONE**; **374** chrome/icons+dual font+row drawer READY FOR REVIEW; **UX-318** columns checkbox menu stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK; view-ready — идея |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–374 DONE**; **375** remove products-rail «Позиции КП» list; **UX-318** columns checkbox menu stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK; view-ready — идея |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 

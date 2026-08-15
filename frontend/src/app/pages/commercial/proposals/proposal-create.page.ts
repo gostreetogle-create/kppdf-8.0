@@ -305,7 +305,6 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                 [draftLines]="draftLines()"
                 [readOnly]="isReadOnly()"
                 (productAdd)="onProductAdd($event)"
-                (quantityChange)="onQuantityChange($event)"
               />
             </aside>
           }
@@ -1974,15 +1973,6 @@ export class ProposalCreatePage implements OnInit {
         isOptional: false,
       },
     ]);
-    this.refreshComposition();
-  }
-
-  protected onQuantityChange(change: { index: number; quantity: number }): void {
-    if (this.isReadOnly()) return;
-    const quantity = Number.isFinite(change.quantity) && change.quantity >= 1 ? change.quantity : 1;
-    this.draftLines.update((rows) =>
-      rows.map((line, index) => (index === change.index ? { ...line, quantity } : line)),
-    );
     this.refreshComposition();
   }
 

@@ -5,10 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:00:00Z
-main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
+updated_at: 2026-08-15T07:15:00Z
+main_head: `9b678931` (pre-375; verify after push)
 
 ## ACTIVE
+
+### TZ-SALES-375 — READY FOR REVIEW (Buffy)
+
+- Spec: `tasks/TZ-SALES-375-remove-products-rail-draft-lines.md`
+- Checklist: `docs/agent-checklists/TZ-SALES-375.md`
+- Marker: `tasks/_active/TZ-SALES-375.md`
+- State: «Позиции КП» list removed from products flyout; qty via table editor + card «В КП».
+- Implementation: _(pending commit SHA)_
+- Gates: tsc PASS · rail 11/11 · create 61/61
+- Archive: **blocked** until Cursor PASS. Deploy НЕ.
 
 ### TZ-AUTH-305 — PREP ONLY
 

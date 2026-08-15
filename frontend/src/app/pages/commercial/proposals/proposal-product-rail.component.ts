@@ -193,28 +193,6 @@ const PAGE_SIZE = 12;
         }
       </div>
 
-      @if (draftLines().length > 0) {
-        <section class="rail__draft-lines" data-test="kp-rail-draft-lines">
-          <p class="eyebrow m-0">Позиции КП</p>
-          @for (line of draftLines(); track lineTrack(line, $index); let index = $index) {
-            <label class="rail__draft-line">
-              <span class="rail__draft-line-name">{{ line.productName }}</span>
-              <input
-                class="pi-input rail__quantity"
-                type="number"
-                min="1"
-                step="any"
-                [value]="line.quantity"
-                [disabled]="readOnly()"
-                [attr.data-test]="'kp-line-quantity-' + index"
-                (change)="onQuantityChange(index, $event)"
-                [attr.aria-label]="'Количество: ' + line.productName"
-              />
-            </label>
-          }
-        </section>
-      }
-
       @if (loading()) {
         <p class="rail__state" data-test="kp-rail-loading">Загрузка…</p>
       } @else if (error()) {
@@ -378,32 +356,6 @@ const PAGE_SIZE = 12;
       gap: 0.35rem;
     }
 
-    .rail__draft-lines {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-      padding: 0.55rem;
-      border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
-    }
-
-    .rail__draft-line {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-      min-width: 0;
-    }
-
-    .rail__draft-line-name {
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 0.75rem;
-    }
-
-    .rail__quantity,
     .rail__add-qty-input {
       width: 4.5rem;
       flex: 0 0 4.5rem;
@@ -517,7 +469,6 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly productAdd = output<ProposalDraftLine>();
-  readonly quantityChange = output<{ index: number; quantity: number }>();
   readonly draftLines = input<ProposalDraftLine[]>([]);
   readonly readOnly = input(false);
 
@@ -556,10 +507,6 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
-  }
-
-  protected lineTrack(line: ProposalDraftLine, index: number): string {
-    return `${line.lineKind ?? 'catalog'}:${line.refId ?? line.productId}:${index}`;
   }
 
   protected searchPlaceholder(): string {
@@ -678,13 +625,6 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
       unit: card.unit,
       unitPrice: card.unitPrice,
     });
-  }
-
-  protected onQuantityChange(index: number, event: Event): void {
-    if (this.readOnly()) return;
-    const raw = Number((event.target as HTMLInputElement).value);
-    const quantity = Number.isFinite(raw) && raw >= 1 ? raw : 1;
-    this.quantityChange.emit({ index, quantity });
   }
 
   protected openCreate(): void {
