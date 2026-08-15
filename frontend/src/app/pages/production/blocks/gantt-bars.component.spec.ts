@@ -84,6 +84,37 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-bar"]')).toBeFalsy();
   });
 
+  it('TZ-PRODUCTION-317: expand inserts children under summary; peer orders remain and shift down', () => {
+    const peer: GanttBar = {
+      ...sample,
+      id: 'o2:0:p1:m1:wt1:1',
+      orderId: 'o2',
+      orderNumber: 'ORD-2',
+    };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint, peer]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(2);
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(0);
+
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(2);
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    const labels = Array.from(el.querySelectorAll('[data-test^="gantt-label-"]')).map((n) =>
+      (n as HTMLElement).getAttribute('data-test'),
+    );
+    const iSum1 = labels.indexOf('gantt-label-summary:o1');
+    const iChild = labels.indexOf('gantt-label-o1:0:p1:m1:wt1:1');
+    const iSum2 = labels.indexOf('gantt-label-summary:o2');
+    expect(iSum1).toBeGreaterThanOrEqual(0);
+    expect(iChild).toBeGreaterThan(iSum1);
+    expect(iSum2).toBeGreaterThan(iChild);
+  });
+
   it('emits toggleExpand from chevron', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);

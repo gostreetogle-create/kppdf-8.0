@@ -54,8 +54,13 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
 
   beforeEach(async () => {
     queryParamSubject.next({ get: () => null });
-    facade.loadOrders.mockClear();
-    facade.loadBarsForOrders.mockClear();
+    facade.loadOrders.mockReset();
+    facade.loadOrders.mockImplementation(async () => orders);
+    facade.loadBarsForOrders.mockReset();
+    facade.loadBarsForOrders.mockImplementation(async () => []);
+    facade.getWorkerLabelsMap.mockClear();
+    facade.getOrderThumbMap.mockClear();
+    facade.clearCaches.mockClear();
     await TestBed.configureTestingModule({
       imports: [ProductionCockpitPage],
       providers: [
@@ -228,6 +233,74 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     page.closeFlyouts();
     expect(page.leftTool()).toBeNull();
     expect(page.rightTool()).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-317: select keeps multi-order bars and expands that order', async () => {
+    const barO1 = {
+      id: 'o1:0:p1:m1:wt1:1',
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      orderStatus: 'confirmed',
+      orderItemIndex: 0,
+      productId: 'p1',
+      productName: 'A',
+      moduleId: 'm1',
+      moduleName: 'M',
+      workTypeId: 'wt1',
+      workTypeName: 'Сварка',
+      occurrence: 1,
+      quantity: 1,
+      quantityLabel: null,
+      days: 2,
+      noTerm: false,
+      startDate: '2026-08-01',
+      endDate: '2026-08-02',
+      usedFallbackToday: false,
+      workerLabel: '—',
+    };
+    const barO2 = {
+      ...barO1,
+      id: 'o2:0:p1:m1:wt1:1',
+      orderId: 'o2',
+      orderNumber: 'ORD-2',
+      orderStatus: 'confirmed',
+    };
+    const multiOrders: Order[] = [
+      { _id: 'o1', number: 'ORD-1', status: 'confirmed', items: [] },
+      { _id: 'o2', number: 'ORD-2', status: 'confirmed', items: [] },
+    ];
+    facade.loadOrders.mockImplementation(async () => multiOrders);
+    facade.loadBarsForOrders.mockImplementation(async (target: Order[]) => {
+      const ids = new Set(target.map((o) => o._id));
+      return [barO1, barO2].filter((b) => ids.has(b.orderId));
+    });
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(facade.loadBarsForOrders).toHaveBeenCalled();
+    const lastBefore = facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[];
+    expect(lastBefore.map((o) => o._id).sort()).toEqual(['o1', 'o2']);
+
+    const page = fixture.componentInstance as unknown as {
+      onSelect: (id: string) => Promise<void>;
+      bars: () => Array<{ orderId: string }>;
+    };
+    const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
+
+    await page.onSelect('o1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(ctx.selectedOrderId()).toBe('o1');
+    expect(ctx.isOrderExpanded('o1')).toBe(true);
+    const lastAfter = facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[];
+    expect(lastAfter.map((o) => o._id).sort()).toEqual(['o1', 'o2']);
+    const orderIds = new Set(page.bars().map((b) => b.orderId));
+    expect(orderIds.has('o1')).toBe(true);
+    expect(orderIds.has('o2')).toBe(true);
   });
 
   it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {

@@ -433,13 +433,15 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
+    this.ctx.setOrderExpanded(id, true);
     this.inspectorOpen.set(true);
     this.closeFlyouts();
     this.rightTool.set('card');
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
     this.readOnly.set(isReadOnlyEstimateStatus(order.status));
-    await this.applyBars([order]);
+    // TZ-PRODUCTION-317: selection ≠ filter — keep multi-order filtered bars.
+    await this.applyFilteredActive();
   }
 
   protected async onSelectAll(): Promise<void> {
@@ -569,7 +571,6 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   protected async onFiltersChanged(): Promise<void> {
-    if (this.ctx.selectedOrderId()) return;
     await this.applyFilteredActive();
   }
 
@@ -654,7 +655,6 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onResetFilters(): Promise<void> {
     this.ctx.resetFilters();
-    if (this.ctx.selectedOrderId()) return;
     await this.applyFilteredActive();
   }
 
@@ -669,14 +669,6 @@ export class ProductionCockpitPage implements OnInit {
 
   /** Re-fit timeline to current bars (same logic as after load). */
   protected async onFitHorizon(): Promise<void> {
-    const id = this.ctx.selectedOrderId();
-    if (id) {
-      const order = this.orders().find((o) => o._id === id);
-      if (order) {
-        await this.applyBars([order]);
-        return;
-      }
-    }
     await this.applyFilteredActive();
   }
 
@@ -718,10 +710,13 @@ export class ProductionCockpitPage implements OnInit {
       const order = list.find((o) => o._id === id);
       if (order) {
         this.readOnly.set(isReadOnlyEstimateStatus(order.status));
-        await this.applyBars([order]);
-        return;
+      } else {
+        this.ctx.selectOrder(null);
+        this.inspectorOpen.set(false);
+        this.readOnly.set(false);
       }
     }
+    // TZ-PRODUCTION-317: never collapse Gantt to the selected order alone.
     await this.applyFilteredActive();
   }
 

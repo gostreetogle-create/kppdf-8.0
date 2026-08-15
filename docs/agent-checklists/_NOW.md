@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T17:10:00Z
+updated_at: 2026-08-15T16:45:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty)_
+- **TZ-PRODUCTION-318** READY — card sheet viewport (claim next)
 
 ## Queue hygiene (not live)
 
@@ -22,9 +22,13 @@ _(empty)_
 
 ## DONE / LANDED (recent)
 
-### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
+### TZ-PRODUCTION-317 — DONE 2026-08-15
 
-- 314 summary+expand · 315 bottom card · 316 start offsets
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-317.done.md`
+
+### WAVE-PRODUCTION-GANTT-TREE — in progress (318 next)
+
+- 314 summary+expand · 315 bottom card · 316 start offsets · 317 keep orders
 
 ### TZ-PRODUCTION-316 — DONE 2026-08-15
 

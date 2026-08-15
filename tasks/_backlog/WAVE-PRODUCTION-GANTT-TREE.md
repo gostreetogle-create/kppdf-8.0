@@ -7,6 +7,8 @@
 | 1 | `TZ-PRODUCTION-314-gantt-order-expand` | DONE | collapsed = 1 summary bar / order; expand = work-type rows |
 | 2 | `TZ-PRODUCTION-315-card-bottom-sheet` | DONE | Карточка dock снизу, не справа |
 | 3 | `TZ-PRODUCTION-316-gantt-bar-start-offset` | DONE | per-bar move / parallel via start offsets |
+| 4 | `TZ-PRODUCTION-317-gantt-expand-keep-orders` | DONE | select ≠ filter; expand in-place; deep-link/reload keep multi-order |
+| 5 | `TZ-PRODUCTION-318-card-sheet-viewport` | READY | full-width sheet; composition expands up |
 
 **SoT intent:** summary span = min(start)…max(end) children; detail resize = days override (309/311); summary body-drag = plannedDate (312); detail body-drag = start offset (316).
 

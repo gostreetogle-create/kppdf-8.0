@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-317 DONE — Gantt select keeps multi-order
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; deploy НЕ
+**Что:** select/deep-link/reload больше не зовут `applyBars([order])`; `applyFilteredActive()` + `setOrderExpanded`; дети под сводкой, peer-заказы остаются.
+**Gates:** FE tsc PASS; FE jest cockpit|gantt-bars **28 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-317.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-317-gantt-expand-keep-orders.lock`
+**Wave:** WAVE-PRODUCTION-GANTT-TREE → next 318
+
 ## [2026-08-15] — TZ-PRODUCTION-316 DONE — per-bar start offsets (parallel)
 **Исполнитель:** gemini-executor-gantt-tree
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed; deploy НЕ
