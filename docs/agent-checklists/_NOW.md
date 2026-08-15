@@ -5,23 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:50:00Z
+updated_at: 2026-08-15T06:35:00Z
 main_head: `60fad54a`
 
 ## ACTIVE
-
-### TZ-SALES-373 — READY FOR REVIEW
-
-- Marker: `tasks/_active/TZ-SALES-373.md`
-- Task: `tasks/TZ-SALES-373-kp-table-font-size.md`
-- Checklist: `docs/agent-checklists/TZ-SALES-373.md`
-- Owner: Buffy (Cursor Agent)
-- claimed_at: 2026-08-15T06:29:48Z
-- workspace: D:\kppdf-8.0
-- Implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
-- State: READY FOR REVIEW — `sheetLayout.tableFontSize` (default 12, clamp 8–20); gates PASS; **no archive until Cursor PASS**
-- Conflict vs AUTH-305: OK (AUTH-305 = deploy only)
-- Deploy/wipe: НЕ
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -34,6 +21,15 @@ main_head: `60fad54a`
   - нужен Cursor/PO browser PASS;
   - rollout требует SSH/VPS и evidence без secrets.
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
+
+### TZ-SALES-373 — DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-SALES-373.md`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-373.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
+- Implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
+- State: Cursor PASS; archive/lock/checklist landed; active marker removed; deploy НЕ.
+- Conflict keys released: proposal-create* + sheetLayout FE/BE + table-template preview + page docs.
 
 ### TZ-CATALOG-371 — DONE / LANDED
 
@@ -54,15 +50,15 @@ main_head: `60fad54a`
 
 ## READY / ORDER
 
-1. **SALES-373** (READY FOR REVIEW above) — await Cursor PASS → then archive; deploy НЕ.
-2. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-3. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 
 ## LAST DONE
 
+- SALES-373 KP table font size on A4 — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - DOC-TABLES-310 remove help + separate toolbar buttons — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - DOC-TABLES-309 tables dialog copy + taller fields — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - UX-318 KP columns checkbox menu stay-open — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
@@ -73,7 +69,6 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 ## GLOBAL BLOCKERS / BANS
 
 - Wave AUTH = 3/5, не DONE.
-- SALES-371 / SALES-372 remain queued; CATALOG-371 is claimed and in progress.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.

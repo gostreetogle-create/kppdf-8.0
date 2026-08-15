@@ -1,7 +1,7 @@
 # TZ-SALES-373 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-SALES-373.md`
+> Status: **DONE**
+> Marker: _(removed — archived)_
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -67,11 +67,17 @@ cd backend && pnpm test -- table-template.service            → PASS (6 tests, 
 - [x] READY FOR REVIEW
 - [x] **Не** archive до Cursor Verdict PASS
 
+## Cursor verdict (2026-08-15)
+
+- Verdict: **PASS**
+- Cross-check: `60fad54a` — `tableFontSize` FE/BE + preview HTML; browser: «Шрифт таблицы» in Вид листа + table editor toolbar
+- Next: Buffy closeout
+
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T06:35:00Z
 
 ## Executor report (auto)
 
@@ -80,4 +86,7 @@ cd backend && pnpm test -- table-template.service            → PASS (6 tests, 
 - gates: all PASS
 - implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
 - ready: yes
-- archive: blocked until Cursor PASS
+- archive: `tasks/_archive/2026-08/TZ-SALES-373.done.md`
+- lock: `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
+- closeout: PENDING
+- cursor_verdict: PASS

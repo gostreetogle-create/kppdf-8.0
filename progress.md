@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-SALES-373 DONE — KP table font size on A4 sheet
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend + backend sheetLayout; deploy НЕ
+**Что:** `sheetLayout.tableFontSize` (default 12, clamp 8–20) в Create КП: «Шрифт таблицы» в Вид листа + «Шрифт» в тулбаре редактора; live table + A4 preview HTML `font-size`; старые КП без поля → 12.
+**Gates:** FE/BE tsc PASS; proposal-create 56 tests; table-template.service 6 tests; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-373.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-373.md`
+**Lock:** `.mimocode/locks/TZ-SALES-373-kp-table-font-size.lock`
+**Implementation SHA:** `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
+**Closeout SHA:** `PENDING`
+**Known limit:** no per-column/per-cell font; long descriptions still multi-page.
+
 ## [2026-08-15] — TZ-DOC-TABLES-310 DONE — remove help + separate toolbar buttons
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend UI; deploy НЕ
