@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:15:00Z
-main_head: `9b678931` (pre-375; verify after push)
+updated_at: 2026-08-15T07:16:00Z
+main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 
 ## ACTIVE
 
@@ -16,7 +16,7 @@ main_head: `9b678931` (pre-375; verify after push)
 - Checklist: `docs/agent-checklists/TZ-SALES-375.md`
 - Marker: `tasks/_active/TZ-SALES-375.md`
 - State: «Позиции КП» list removed from products flyout; qty via table editor + card «В КП».
-- Implementation: _(pending commit SHA)_
+- Implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
 - Gates: tsc PASS · rail 11/11 · create 61/61
 - Archive: **blocked** until Cursor PASS. Deploy НЕ.
 
