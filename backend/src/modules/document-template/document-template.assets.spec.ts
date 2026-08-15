@@ -314,4 +314,170 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).toContain('{{unknown_token}}');
     expect(html).not.toContain('undefined');
   });
+
+  it('splits more pages for a short table frame when rowsFirst/Next are 0 (TZ-SALES-376)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) =>
+        `<table><tbody>${rows.map((row) => `<tr><td>${String((row[0] as { title?: unknown })?.title ?? row[0])}</td></tr>`).join('')}</tbody></table>`,
+      ),
+    };
+    const lines = Array.from({ length: 24 }, (_, index) => ({
+      productName: `Позиция ${index + 1}`,
+      quantity: 1,
+      unitPrice: 100,
+    }));
+    const shortFrameBlocks = [
+      {
+        _id: 'table-block',
+        type: 'table',
+        settings: { tableTemplateId: 'table-1', kpLineItems: true },
+        layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.15, zIndex: 1, rotation: 0 },
+      },
+    ];
+    const tallFrameBlocks = [
+      {
+        ...shortFrameBlocks[0],
+        layout: { page: 1, x: 0.08, y: 0.1, width: 0.84, height: 0.75, zIndex: 1, rotation: 0 },
+      },
+    ];
+
+    const shortService = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: shortFrameBlocks,
+    });
+    const tallService = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: tallFrameBlocks,
+    });
+
+    const shortHtml = await shortService.build(TEMPLATE_ID.toString(), {
+      previewLines: lines,
+      sheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+    });
+    const tallHtml = await tallService.build(TEMPLATE_ID.toString(), {
+      previewLines: lines,
+      sheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+    });
+
+    const shortPages = (shortHtml.match(/class="doc-page"/g) ?? []).length;
+    const tallPages = (tallHtml.match(/class="doc-page"/g) ?? []).length;
+    expect(shortPages).toBeGreaterThan(tallPages);
+    expect(shortPages).toBeGreaterThanOrEqual(2);
+  });
+
+  it('honors pageBreakBefore as a hard page cut (TZ-SALES-376)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) =>
+        `<table><tbody>${rows.map((row) => `<tr><td>${String((row[0] as { title?: unknown })?.title ?? row[0])}</td></tr>`).join('')}</tbody></table>`,
+      ),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+          layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.75, zIndex: 1, rotation: 0 },
+        },
+      ],
+    });
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: [
+        { productName: 'A', quantity: 1, unitPrice: 100 },
+        { productName: 'B', quantity: 1, unitPrice: 100 },
+        { productName: 'C', quantity: 1, unitPrice: 100, rowPresentation: { pageBreakBefore: true } },
+        { productName: 'D', quantity: 1, unitPrice: 100 },
+      ],
+      sheetLayout: { rowsFirstPage: 10, rowsNextPage: 10 },
+    });
+
+    expect((html.match(/class="doc-page"/g) ?? []).length).toBe(2);
+    const pageBodies = html.split('class="doc-page"').slice(1);
+    expect(pageBodies[0]).toContain('>A<');
+    expect(pageBodies[0]).toContain('>B<');
+    expect(pageBodies[0]).not.toContain('>C<');
+    expect(pageBodies[1]).toContain('>C<');
+  });
+
+  it('renders last-page deal totals from the full KP, not the page slice (TZ-SALES-376)', async () => {
+    let capturedTotals: { total?: number } | undefined;
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn(
+        (
+          _id: string,
+          rows: unknown[][],
+          _layout: unknown,
+          totals?: { total: number },
+        ) => {
+          if (totals) capturedTotals = totals;
+          return `<table><tbody>${rows.length} rows</tbody></table>${totals ? `<div class="pi-deal-totals">${totals.total}</div>` : ''}`;
+        },
+      ),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+        },
+      ],
+    });
+
+    await service.build(TEMPLATE_ID.toString(), {
+      previewLines: [
+        { productName: 'A', quantity: 1, unitPrice: 100 },
+        { productName: 'B', quantity: 2, unitPrice: 50 },
+        { productName: 'C', quantity: 1, unitPrice: 200 },
+      ],
+      sheetLayout: { rowsFirstPage: 1, rowsNextPage: 1 },
+      dealTotals: { vatPercent: 20 },
+    });
+
+    expect(capturedTotals?.total).toBe(400);
+  });
+
+  it('clips positioned table blocks in build HTML (TZ-SALES-376)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn(() => '<table><tbody><tr><td>x</td></tr></tbody></table>'),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+          layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.3, zIndex: 1, rotation: 0 },
+        },
+      ],
+    });
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: [{ productName: 'A', quantity: 1, unitPrice: 100 }],
+    });
+
+    expect(html).toContain('block--positioned block--table');
+    expect(html).toContain('.block--positioned.block--table { overflow: hidden; }');
+  });
 });

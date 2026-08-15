@@ -256,6 +256,9 @@ export type ProposalCreateStatus = ProposalStatus;
               (change)="onSheetNumberChange('rowsNextPage', $event)"
             />
           </label>
+          <p class="inspector__hint" data-test="kp-sheet-rows-auto-hint">
+            0 — автоматически по рамке таблицы в шаблоне
+          </p>
           <label
             >Размер фото %
             <input

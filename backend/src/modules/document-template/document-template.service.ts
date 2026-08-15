@@ -103,6 +103,13 @@ function escapeHtmlValue(value: string): string {
  */
 @Injectable()
 export class DocumentTemplateService {
+  /** A4 portrait content box (matches proposal-create-template-center). */
+  private static readonly KP_A4_HEIGHT_PX = 1123;
+  private static readonly DOC_CONTENT_PADDING_PX = 40;
+  /** Fallback when line-items block has no layout.height (TZ-SALES-376). */
+  private static readonly DEFAULT_ROWS_FIRST = 20;
+  private static readonly DEFAULT_ROWS_NEXT = 25;
+
   constructor(
     @InjectModel(DocumentTemplate.name)
     private readonly model: Model<DocumentTemplateDocument>,
@@ -647,7 +654,12 @@ export class DocumentTemplateService {
       blocks,
       dto.tableTargetId,
     );
-    const pages = this.splitPreviewLines(dto.previewLines, dto.sheetLayout);
+    const pages = this.splitPreviewLines(
+      dto.previewLines,
+      dto.sheetLayout,
+      blocks,
+      lineItemsTargetIds,
+    );
     const pageBlocks: TemplateBlockDocument[][] = [];
 
     for (let pageIndex = 0; pageIndex < pages.length; pageIndex += 1) {
@@ -667,6 +679,11 @@ export class DocumentTemplateService {
             isLastPage ? dto.dealTotals : undefined,
             dto.sheetLayout,
             dto.tableChrome,
+            isLastPage &&
+            lineItemsTargetIds.has(String(b._id)) &&
+            dto.previewLines !== undefined
+              ? dto.previewLines
+              : undefined,
           );
           return settings?.role === 'terms' && termsHtml
             ? this.cloneResolvedBlock(rendered, { content: termsHtml })
@@ -695,23 +712,118 @@ export class DocumentTemplateService {
   private splitPreviewLines(
     lines: BuildPreviewLineDto[] | undefined,
     layout: BuildDocumentDto['sheetLayout'],
+    blocks: TemplateBlockDocument[],
+    lineItemsTargetIds: Set<string>,
   ): BuildPreviewLineDto[][] {
     if (lines === undefined) return [[]];
     if (lines.length === 0) return [[]];
-    const first =
+    const firstCapacity =
       layout?.rowsFirstPage && layout.rowsFirstPage > 0
         ? layout.rowsFirstPage
-        : 20;
-    const next =
+        : this.estimateAutoRowCapacity(
+            blocks,
+            lineItemsTargetIds,
+            layout,
+            true,
+          );
+    const nextCapacity =
       layout?.rowsNextPage && layout.rowsNextPage > 0
         ? layout.rowsNextPage
-        : 25;
-    const result: BuildPreviewLineDto[][] = [];
-    result.push(lines.slice(0, first));
-    for (let offset = first; offset < lines.length; offset += next) {
-      result.push(lines.slice(offset, offset + next));
+        : this.estimateAutoRowCapacity(
+            blocks,
+            lineItemsTargetIds,
+            layout,
+            false,
+          );
+
+    const result: BuildPreviewLineDto[][] = [[]];
+    let pageIndex = 0;
+    let rowsOnPage = 0;
+    let capacity = firstCapacity;
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const breakBefore =
+        line.rowPresentation?.pageBreakBefore === true && index > 0;
+
+      if (breakBefore && rowsOnPage > 0) {
+        result.push([]);
+        pageIndex += 1;
+        rowsOnPage = 0;
+        capacity = nextCapacity;
+      } else if (rowsOnPage >= capacity && rowsOnPage > 0) {
+        result.push([]);
+        pageIndex += 1;
+        rowsOnPage = 0;
+        capacity = nextCapacity;
+      }
+
+      if (!result[pageIndex]) result[pageIndex] = [];
+      result[pageIndex].push(line);
+      rowsOnPage += 1;
     }
+
     return result;
+  }
+
+  /**
+   * TZ-SALES-376 — estimate rows that fit the template table frame when
+   * rowsFirstPage/rowsNextPage = 0. Uses block layout.height fraction of A4
+   * content area minus thead, with font/photo/density heuristics.
+   */
+  private estimateAutoRowCapacity(
+    blocks: TemplateBlockDocument[],
+    lineItemsTargetIds: Set<string>,
+    sheetLayout: BuildDocumentDto['sheetLayout'] | undefined,
+    isFirstPage: boolean,
+  ): number {
+    const targetBlock = blocks.find((block) =>
+      lineItemsTargetIds.has(String(block._id)),
+    );
+    const layoutHeight = targetBlock?.layout?.height;
+    if (
+      !targetBlock ||
+      layoutHeight === undefined ||
+      !(layoutHeight > 0)
+    ) {
+      return isFirstPage
+        ? DocumentTemplateService.DEFAULT_ROWS_FIRST
+        : DocumentTemplateService.DEFAULT_ROWS_NEXT;
+    }
+
+    const pageContentHeightPx =
+      DocumentTemplateService.KP_A4_HEIGHT_PX -
+      DocumentTemplateService.DOC_CONTENT_PADDING_PX;
+    const slotHeightPx = pageContentHeightPx * layoutHeight;
+
+    const headerFontPx = this.clampTableFontPx(
+      sheetLayout?.tableHeaderFontSize,
+      12,
+    );
+    const bodyFontPx = this.clampTableFontPx(sheetLayout?.tableFontSize, 12);
+    const theadHeightPx = headerFontPx + 16 + 2;
+
+    const showPhoto = sheetLayout?.showPhotoColumn !== false;
+    const photoScale = Math.min(
+      400,
+      Math.max(10, sheetLayout?.photoScalePercent ?? 100),
+    );
+    const photoCellPx = showPhoto
+      ? Math.min(120, Math.max(10, (48 * photoScale) / 100))
+      : 0;
+
+    const baseRowPx = bodyFontPx * 1.5 + 12;
+    const rowHeightPx = Math.max(baseRowPx, photoCellPx + 8);
+
+    const usablePx = Math.max(0, slotHeightPx - theadHeightPx);
+    const capacity = Math.floor(usablePx / rowHeightPx);
+
+    return Math.min(200, Math.max(1, capacity));
+  }
+
+  private clampTableFontPx(value: unknown, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+    return Math.min(20, Math.max(8, Math.round(value)));
   }
 
   private renderHtmlPages(
@@ -822,6 +934,7 @@ export class DocumentTemplateService {
     },
     sheetLayout?: BuildDocumentDto['sheetLayout'],
     tableChrome?: BuildDocumentDto['tableChrome'],
+    allPreviewLinesForTotals?: BuildPreviewLineDto[],
   ): Promise<TemplateBlockDocument> {
     if (block.type !== 'table') return block;
     const source = block.source;
@@ -856,13 +969,14 @@ export class DocumentTemplateService {
         line.quantity *
         line.unitPrice *
         (1 - Math.min(100, Math.max(0, line.discountPercent ?? 0)) / 100);
+      const totalsSource = allPreviewLinesForTotals ?? previewLines;
       const baseTotal = isLineItemsTarget
-        ? previewLines
+        ? (totalsSource ?? [])
             .filter((line) => line.isOptional !== true)
             .reduce((sum, line) => sum + lineAmount(line), 0)
         : 0;
       const additionalTotal = isLineItemsTarget
-        ? previewLines
+        ? (totalsSource ?? [])
             .filter((line) => line.isOptional === true)
             .reduce((sum, line) => sum + lineAmount(line), 0)
         : 0;
@@ -1628,6 +1742,7 @@ export class DocumentTemplateService {
         .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
         .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
         .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
+        .block--positioned.block--table { overflow: hidden; }
         table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
         .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
@@ -1704,8 +1819,12 @@ export class DocumentTemplateService {
               : `<em>Подпись: ___________________</em><br>${content}`;
             return `<div class="${blockClass}"${styleAttr}>${signature}</div>`;
           }
-          case 'table':
-            return `<div class="${blockClass}"${styleAttr}>${literalContent || '<p>Нет данных</p>'}</div>`;
+          case 'table': {
+            const tableClass = layoutStyle
+              ? 'block block--positioned block--table'
+              : 'block block--table';
+            return `<div class="${tableClass}"${styleAttr}>${literalContent || '<p>Нет данных</p>'}</div>`;
+          }
           default:
             return `<div class="${blockClass}"${styleAttr}>${content}</div>`;
         }

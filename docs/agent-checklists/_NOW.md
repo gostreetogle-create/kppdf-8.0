@@ -5,10 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:13:00Z
-main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
+updated_at: 2026-08-15T07:30:00Z
+main_head: _(verify `git rev-parse HEAD`)_
 
 ## ACTIVE
+
+### TZ-SALES-376 — READY FOR REVIEW (Buffy)
+
+- Spec: `tasks/TZ-SALES-376-kp-geometry-aware-page-split.md`
+- Checklist: `docs/agent-checklists/TZ-SALES-376.md`
+- Marker: `tasks/_active/TZ-SALES-376.md`
+- State: geometry-aware split + pageBreakBefore + clip + full totals + RU hint; gates PASS; **не archive** до Cursor PASS.
+- vs AUTH-305: OK. Deploy НЕ.
 
 ### TZ-AUTH-305 — PREP ONLY
 
