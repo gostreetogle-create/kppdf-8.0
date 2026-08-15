@@ -1,0 +1,4 @@
+TZ-UX-322 chrome page-tools API DONE
+lock: PiChromeToolsService + app-layout left/right tool render under history
+closed: 2026-08-15
+wave: WAVE-UX-CHROME-GANTT-TOOLS
