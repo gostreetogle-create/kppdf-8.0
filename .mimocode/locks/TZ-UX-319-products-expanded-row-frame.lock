@@ -1,0 +1,13 @@
+task: TZ-UX-319
+status: DONE
+closed_at: 2026-08-15T06:47:00Z
+implementation_sha: 55dac38afb9e533d1ad28793a1edbae3181482cc
+protected_files:
+  - frontend/src/app/shared/ui/pi-table.component.ts
+  - frontend/src/app/shared/ui/pi-table.component.spec.ts
+  - frontend/src/app/pages/products/products.page.spec.ts
+  - docs/pages/products.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+behavior: pi-table-row--open + ink ~1.5px frame on open+expanded-row pair; sibling data-rows opacity 0.5 while one open
+cursor_verdict: PASS
+production: not executed

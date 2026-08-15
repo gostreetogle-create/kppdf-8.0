@@ -5,21 +5,19 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:50:00Z
-main_head: `94a3e4cc599ee30d08e42812162b6fe72caae4be`
+updated_at: 2026-08-15T06:47:00Z
+main_head: `55dac38afb9e533d1ad28793a1edbae3181482cc`
 
 ## ACTIVE
 
-### TZ-UX-319 — READY FOR REVIEW
+### TZ-UX-319 — DONE / LANDED
 
-- Marker: `tasks/_active/TZ-UX-319.md`
 - Checklist: `docs/agent-checklists/TZ-UX-319.md`
+- Archive: `tasks/_archive/2026-08/TZ-UX-319.done.md`
+- Lock: `.mimocode/locks/TZ-UX-319-products-expanded-row-frame.lock`
 - Spec: `tasks/TZ-UX-319-products-expanded-row-frame.md`
-- Owner: Buffy (Cursor Agent)
-- claimed_at: 2026-08-15T06:43:27Z
-- State: pi-table expanded chrome DONE; gates PASS; READY FOR REVIEW; deploy НЕ; archive after Cursor PASS.
-- Conflict keys: `pi-table.component.ts|spec` · `products.page.spec.ts` · `products.page.md` · `PAGE-TZ-INDEX.md`.
-- Parallel-safe vs AUTH-305.
+- Implementation: `55dac38afb9e533d1ad28793a1edbae3181482cc`
+- State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-FRONTEND-301 / 302 — DONE / LANDED
 
@@ -72,6 +70,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- UX-319 products expanded row ink frame — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - FRONTEND-301/302 Angular integrity — DONE; Cursor PASS; merging to main.
 - SALES-373 KP table font size on A4 — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - DOC-TABLES-310 / 309 / UX-318 — DONE; Cursor PASS; deploy НЕ.
