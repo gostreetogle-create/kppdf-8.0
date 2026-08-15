@@ -89,6 +89,7 @@ Isolated `.worktrees/<TASK-ID>` допустим.
 | `tasks/` | TZ-задачи (активные) |
 | `tasks/_archive/` | Архив завершённых задач |
 | `docs/DEVELOPMENT-PATTERNS.md` | Паттерны кода |
+| `docs/ANGULAR-GUIDE.md` | Angular 20: component/state/container boundaries и gates |
 | `docs/FEATURE-INTEGRATION-CHECKLIST.md` | **MANDATORY** списки при новой странице/праве/модуле/MCP |
 | `docs/CAPABILITY-LEDGER.md` | Способности продукта: included / available / absent / removed |
 | `docs/AGENT-TASK-MODES.md` | Режимы задачи + primary/secondary + change-surface |
@@ -117,7 +118,7 @@ Isolated `.worktrees/<TASK-ID>` допустим.
 
 ```typescript
 @Component({
-  standalone: true,                    // ОБЯЗАТЕЛЬНО
+  // Angular 20: standalone is default; не дублировать standalone: true
   changeDetection: ChangeDetectionStrategy.OnPush,  // ОБЯЗАТЕЛЬНО
   imports: [...],                       // явный imports (НЕ NgModule)
 })
@@ -287,12 +288,12 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 - [ ] `cd frontend && npx tsc --noEmit` — 0 ошибок
 - [ ] `cd frontend && pnpm exec ng build --configuration=development` — 0 ошибок (template typecheck, tsc не ловит)
 - [ ] `cd backend && npx tsc --noEmit` — 0 ошибок
-- [ ] Новые компоненты: `standalone: true`, `OnPush`
+- [ ] Новые компоненты: standalone default (без `standalone: true`), explicit `OnPush`
 - [ ] Inputs через `input<T>()` / `input.required<T>()`
 - [ ] DI через `inject()` (не constructor)
 - [ ] Control flow: `@if` / `@for` / `@switch`
 - [ ] HTTP через `silentGet/Post/Patch/Delete` + `.subscribe((res) => { if(res.ok) ... })`
-- [ ] Никаких `any`, `OnInit`/`OnDestroy`, `box-shadow`, `#[hex]`, `bg-white`
+- [ ] Никаких новых `any`; lifecycle только по реальной integration-причине с cleanup
 - [ ] Никаких Vector DB / semantic search (TZ-105.1)
 - [ ] User-visible UI (лейблы, toast, hints, disabled title) — **русский**; без `draft`/`Save` в тексте
 - [ ] Селектор: `app-<name>-page`, класс: `<Name>Page`

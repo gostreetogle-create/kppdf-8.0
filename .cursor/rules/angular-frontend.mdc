@@ -1,0 +1,27 @@
+---
+description: Angular 20 component, state, boundary and testing rules for kppdf frontend
+globs: frontend/src/**/*.{ts,html,scss,css}
+alwaysApply: false
+---
+
+# Angular frontend
+
+Read `docs/ANGULAR-GUIDE.md` before changing frontend code.
+
+- Project is Angular 20.3: standalone is default; keep explicit
+  `ChangeDetectionStrategy.OnPush`; do not introduce Angular 22-only APIs.
+- Page/container owns route, permissions, API orchestration and page state.
+- Presentational component uses `input()`/`output()`/`model()`, owns only local UI
+  state, and does not inject domain API services, Router or product store.
+- Split only at a real responsibility/state/test boundary. File size triggers review,
+  never mechanical extraction or forwarding wrappers.
+- Signals for synchronous local state; `computed()` for derived state; `effect()` only
+  for side effects. RxJS remains for HTTP/async composition with bounded teardown.
+- Raw `HttpClient` in components, mutable inputs, nested subscriptions, new `any`,
+  `NgModule`, `ngClass/ngStyle`, `*ngIf/*ngFor`, and cross-page imports are forbidden.
+- Typed Reactive Forms remain canon; do not add Signal Forms or new dependencies.
+- Preserve SilentResult services, Paper & Ink tokens, keyboard/focus and light/dark.
+- Refactor in small behavior-preserving batches. Add characterization tests before
+  changing ambiguous legacy behavior.
+- Required gates: frontend tsc, focused Jest, changed-file ESLint,
+  `pnpm architecture:check`, `git diff --check`, and browser smoke for UI paths.

@@ -1,6 +1,8 @@
 # Development Patterns — kppdf-8.0
 
 > **Единый справочник паттернов реализации.** Этот документ содержит конкретные код-паттерны, утилиты и конвенции, которые используются при написании нового кода. Читать ПЕРЕД началом работы над любой задачей.
+>
+> Angular component/state/container boundaries: [`ANGULAR-GUIDE.md`](./ANGULAR-GUIDE.md).
 
 ---
 
@@ -343,7 +345,6 @@ type Result = MyEntity | null | undefined;
 
 @Component({
   selector: 'app-my-entity-form-dialog',
-  standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, PiDialogComponent, ButtonComponent, FormFieldComponent, InputComponent],
   template: `
@@ -1126,17 +1127,17 @@ paramsToHttpParams({
 
 - [ ] `cd frontend && pnpm exec tsc --noEmit` — exit 0
 - [ ] `cd backend && pnpm exec tsc --noEmit` — exit 0
-- [ ] Все компоненты: `standalone: true`, `ChangeDetectionStrategy.OnPush`
+- [ ] Angular 20 standalone default (без `standalone: true`), explicit `ChangeDetectionStrategy.OnPush`
 - [ ] Inputs через `input<T>()` / `input.required<T>()` (НЕ `@Input()`)
 - [ ] CRUD-сервисы через `defineEntity` (НЕ ручной service class если подходит стандартный CRUD)
 - [ ] SubmitGuard для форм с мутациями (НЕ прямой subscribe на create/update/delete без guard)
 - [ ] httpResource для списков (НЕ ручной subscribe на GET-запросы)
 - [ ] DI через `inject()` (НЕ constructor injection)
 - [ ] Control flow: `@if` / `@for` / `@switch` (НЕ `*ngIf` / `*ngFor`)
-- [ ] State: `signal()` / `computed()` / `effect()` (НЕ manual subscriptions)
+- [ ] State: Signals для sync UI, RxJS для async; derived → `computed`, subscriptions bounded/teardown
 - [ ] HTTP-запросы через `silentGet/Post/Patch/Delete` (НЕ `this.http.*` напрямую)
 - [ ] Обработка ответов через `res.ok` / `res.error` (НЕ `subscribe({ next, error })`)
-- [ ] Никаких `any`, `OnInit`/`OnDestroy` (кроме `ngOnInit` для init-логики)
+- [ ] Никаких новых `any`; lifecycle только по integration-причине, cleanup через `DestroyRef`
 - [ ] Никаких `box-shadow`, `drop-shadow`, `#[hex]`, `bg-white`, `border-dashed`
 - [ ] Границы: `hairline` / `hairline-b/r/l/t` (1px, цвет через оверрайды)
 - [ ] Focus-ring: `pi-focus-ring` (НЕ `focus-visible:ring-2 ring-ink...`)

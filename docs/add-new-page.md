@@ -4,6 +4,7 @@
 > **Обязательно вместе с этим:** полный чеклист внедрения  
 > [`FEATURE-INTEGRATION-CHECKLIST.md`](./FEATURE-INTEGRATION-CHECKLIST.md)  
 > (PAGE_KEYS, seed pages, capabilities, page.md, RU labels прав если нужны).
+> Angular component/state/boundary canon: [`ANGULAR-GUIDE.md`](./ANGULAR-GUIDE.md).
 
 ## Шаг 1: создать файл
 
@@ -73,10 +74,12 @@ pnpm dev
 
 ## Чек-лист Paper & Ink compliance
 
-- [ ] `standalone: true`, `changeDetection: ChangeDetectionStrategy.OnPush`
+- [ ] Standalone by Angular 20 default (не писать `standalone: true`);
+      `changeDetection: ChangeDetectionStrategy.OnPush`
 - [ ] Создать `docs/pages/<name>.page.md` — скопировать шаблон из `docs/pages/_template.md` и заполнить
 - [ ] Все inputs через `input<T>()` / `input.required<T>()` (НЕ `@Input()` decorator)
-- [ ] Никаких `any`, `OnInit`, `OnDestroy` — только `effect()`, `computed()`, `afterNextRender()`
+- [ ] Никаких новых `any`; lifecycle только для реального Angular integration,
+      cleanup через `DestroyRef` / `takeUntilDestroyed`
 - [ ] Никаких `box-shadow`, `drop-shadow`, `#[hex]`, `bg-white`, `border-dashed`
 - [ ] Используй `<app-pi-page-chrome>` (крошки + компактный H1) на ERP; kit — `<app-pi-page-header size="display">` (см. `docs/pages/page-chrome.md`)
 - [ ] Используй `<pi-section>` для смысловых блоков (не для пустых «простыней»)
@@ -134,7 +137,8 @@ pnpm dev
 ## Что НЕ нужно делать
 
 - ❌ Создавать `*.module.ts` — Angular 20 standalone-only.
-- ❌ Подписываться на observables вручную — используй `signal()` / `effect()`.
+- ❌ Неограниченные/nested subscriptions. Template: `async`/`toSignal`; imperative
+  boundary: bounded completion + `takeUntilDestroyed`.
 - ❌ Использовать `*ngIf` / `*ngFor` — Angular 20 control flow: `@if` / `@for`.
 - ❌ Писать `border hairline border-rule` — используй просто `hairline`.
 - ❌ Хардкодить `focus-visible:ring-2 ring-ink...` — используй `pi-focus-ring`.

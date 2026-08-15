@@ -36,7 +36,10 @@
 - Package manager: только `pnpm`.
 - Tests: Jest; UI verification: Playwright, если сервер доступен.
 
-Frontend: standalone components, `OnPush`, `inject()`, signals, `@if/@for/@switch`; не добавляй raw `HttpClient` в компоненты, `any`, `box-shadow`, запрещённые UI-паттерны и неподтверждённые зависимости.
+Frontend: канон `docs/ANGULAR-GUIDE.md`: Angular 20 standalone, explicit `OnPush`,
+`inject()`, Signals + RxJS по границе, container/presentational split только по
+ответственности; не добавляй raw `HttpClient` в компоненты, `any`, `box-shadow`,
+запрещённые UI-паттерны и неподтверждённые зависимости.
 
 Backend: Module → Controller → Service → Schema, DTO validation, JwtAuthGuard/RolesGuard, audit/user context, soft delete, ObjectId validation и Mongo transactions через Replica Set. Не раскрывай секреты.
 
