@@ -1,4 +1,4 @@
-﻿# TZ-ORDERS-HUB-304 DONE вЂ” readiness + warehouse + shipping stub
+﻿# TZ-ORDERS-HUB-304 DONE — readiness + warehouse + shipping stub
 
 ```
 ARCHIVE_MARKER
@@ -9,6 +9,7 @@ closed_by: Buffy (Cursor Product Executor)
 workspace: D:\kppdf-8.0
 implementation_sha: cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1
 closeout_sha: d08f61f4f2126228d8ae6384b48e052c78cfc200
+sync_sha: bb247f833fb3d24dcedae8baa84b5934142c54a0
 verification:
   - acceptance criteria: PASS
   - quality score: 98
@@ -31,14 +32,14 @@ protected:
 
 ## Delivered
 
-- Orders expand В«Р“РѕС‚РѕРІРЅРѕСЃС‚СЊВ»: X/Y + line ready flags; link `/orders/:id`; no toggle/write.
-- Thin read-only `ReservationsService.list(orderNumber?)` в†’ `GET /api/reservations?orderId=<Order.number>`.
-- Expand В«РЎРєР»Р°РґВ»: lazy by business number; active/total; empty В«РќРµС‚ Р±СЂРѕРЅРµР№В»; error inline; `/storage-items` link; stale ignore.
-- Expand В«РћС‚РіСЂСѓР·РєР°В»: stub copy + `/shipping`; no shipments GET.
+- Orders expand «Готовность»: X/Y + line ready flags; link `/orders/:id`; no toggle/write.
+- Thin read-only `ReservationsService.list(orderNumber?)` → `GET /api/reservations?orderId=<Order.number>`.
+- Expand «Склад»: lazy by business number; active/total; empty «Нет броней»; error inline; `/storage-items` link; stale ignore.
+- Expand «Отгрузка»: stub copy + `/shipping`; no shipments GET.
 - Specs flush supply + reservations on expand; HUB-304 coverage.
 - Page docs + PAGE-TZ-INDEX updated.
 
-## РќР•
+## НЕ
 
 - HUB-303 supply/production/docs behavior removed or changed beyond additive blocks
 - Reservation write/create/confirm/delete/release
