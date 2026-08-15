@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T05:47:52Z
-main_head: `dba9fe09`
+updated_at: 2026-08-15T05:55:00Z
+main_head: `2cc0383d`
 
 ## ACTIVE
 
@@ -17,6 +17,7 @@ main_head: `dba9fe09`
 - Checklist: `docs/agent-checklists/TZ-DOC-TABLES-309.md`
 - Owner: Buffy (Cursor Agent)
 - claimed_at: 2026-08-15T05:47:52Z
+- Implementation: `2cc0383d8afd824cff447b92ad7d06c26ceda2b0`
 - State: READY FOR REVIEW — gates PASS; archive after Cursor/PO PASS; deploy НЕ.
 - Conflict keys: `table-template-dialog.component.ts` · `.spec.ts` · `docs/pages/tables.page.md` · `PAGE-TZ-INDEX.md`.
 - Parallel-safe vs AUTH-305 (deploy keys only).

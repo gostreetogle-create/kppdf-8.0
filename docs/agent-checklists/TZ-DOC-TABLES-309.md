@@ -53,7 +53,8 @@ cd frontend && pnpm test -- table-template-dialog.component.spec
 - Conflict disclosure: параллельно AUTH-305 (deploy keys only) — пересечения нет.
 - known_limitation: fontSize колонок не добавляли (нет schema) → 310 только по PO «да».
 - Archive: **не** до Cursor/PO PASS; `_active` marker остаётся.
-- Commit SHAs: _(заполняется после push)_
+- Commit SHAs:
+  - implementation+docs: `2cc0383d8afd824cff447b92ad7d06c26ceda2b0` (origin/main)
 
 ## Review handoff
 
