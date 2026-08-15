@@ -1,63 +1,55 @@
 # TZ-FRONTEND-301 checklist
 
-> Status: **READY FOR REVIEW** (Lane A Stage 1 — pages report)
+> Status: **READY FOR REVIEW** (canonical audit published — await Cursor/PO PASS)
 > Product code: forbidden (audit only)
-> Lane: A coordinator — pages/** + canonical merge (canonical blocked on Lane B)
+> Lane: A coordinator — pages/** + canonical merge
 > Marker: `tasks/_active/TZ-FRONTEND-301.md`
 
-## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+## Claim slot
 
 - agent_id: cursor-lane-a / agent-a67af91333
 - claimed_at: 2026-08-15T05:20:00Z
 - workspace: D:\kppdf-8.0\.worktrees\TZ-FRONTEND-301-A
 - branch: feature/TZ-FRONTEND-301-A
 - head_at_claim: 816689ed6c5895c0e165231ed14904d446acfb91
-- team_room_claim: unavailable — `claim TZ-FRONTEND-301` → Unknown task (sync tasks first); Stage 1 best-effort join OK as agent-a67af91333; root marker `tasks/_active/TZ-FRONTEND-301.md` is canonical claim
+- team_room_claim: unavailable for formal claim (Unknown task); join + send OK
 
 ## Claim
 
 - [x] Workspace/branch/HEAD recorded.
 - [x] Claim slot + active marker before audit.
 - [x] `_NOW` and active conflict keys checked.
-  - Dirty main AUTH-305 WIP not in this worktree; no key overlap with Lane A docs.
-  - Lane B checklist/report not edited.
 
 ## Baseline
 
-- [x] Frontend tsc/lint recorded. — tsc PASS; lint PASS (4 raw-HTTP warnings).
-- [x] Custom ESLint rule specs recorded. — FAIL under Jest+ESLint10 Linter API; live eslint enforces rules. Not fixed in 301.
-- [x] Architecture-check recorded. — PASS (936 files; baseline 6).
+- [x] Frontend tsc/lint recorded.
+- [x] Custom ESLint rule specs recorded (FAIL → B-TOOLING).
+- [x] Architecture-check recorded.
 
 ## Audit integrity
 
-- [x] All frontend source zones inventoried. *(Lane A: pages/** — 32 domains / 98 components)*
-- [x] Lane A pages report pushed. — `docs/audits/2026-08-15-angular-component-integrity-pages.md`
-- [ ] Lane B platform report imported by full SHA. *(blocked until Lane B READY)*
-- [x] Findings manually verified; false positives separated.
-- [x] P0/P1/P2/P3 severity applied. — P0:3 · P1:4 groups · P2:4 · P3:2
+- [x] Lane A pages inventory complete.
+- [x] Lane A pages report pushed — SHA `95106d7890dfd1b012d5ac1cf4e9dff8a3d4ecef`
+- [x] Lane B platform report imported by full SHA — `7682389a551a35d1831c0dacb41dfe76089445c7`
+- [x] Findings manually verified; false positives separated; deduped in canonical.
+- [x] P0/P1/P2/P3 severity applied (canonical: P0=3, P1=9, P2=5, P3=4).
 - [x] Container/presentational candidates have `extract|keep` rationale.
-- [x] Every remediation batch has exact files, tests and browser scenario. — BATCH-A1…A6 (+ A7 backlog)
-- [ ] Every batch assigned `lane: A|B`; no overlapping conflict keys. *(canonical only — after B)*
+- [x] Every remediation batch has exact files, tests and browser scenario.
+- [x] Every ready batch assigned `lane: A|B`; no overlapping exact conflict keys.
 - [x] No Angular 22-only API/new dependency recommended.
+- [x] Canonical audit: `docs/audits/2026-08-15-angular-component-integrity.md`
 
 ## Closeout
 
-- [x] Lane A audit report created.
-- [x] Executor report ≤15 lines (in pages report §8).
-- [ ] Cursor/PO PASS (Lane A Stage 1).
-- [ ] Canonical audit after Lane B SHA.
-- [ ] Archive/lock/progress; deploy НЕ.
+- [x] Canonical audit created.
+- [x] Executor report ≤15 lines (below).
+- [ ] Cursor/PO PASS.
+- [ ] Archive/lock/progress after PASS; deploy НЕ.
+- Stage 2 (`TZ-FRONTEND-302`) blocked until PASS.
 
-## Gates (факт)
+## Executor report (auto)
 
-```
-pnpm --dir frontend typecheck     → PASS 0
-pnpm --dir frontend lint          → PASS 0 (4 warnings no-raw-http-in-components)
-pnpm architecture:check           → PASS
-jest eslint/rules/*.spec.cjs      → FAIL (ESLint 10 Linter config API; pre-existing vs live lint)
-```
-
-## Review handoff
-
-- STOP 1: `ANGULAR AUDIT LANE A READY`
-- Next: wait Lane B platform report full SHA → canonical merge by Lane A → PO PASS → Stage 2 TZ-FRONTEND-302
+- Lane A pages + Lane B platform merged by SHA.
+- Ready: A1–A6, B-TOOLING, B-PHOTO, B-ENTITY-SPEC.
+- Backlog STOP: composition successor, group ACL successor, P3 churn.
+- Product code: unchanged. Deploy: НЕ.
