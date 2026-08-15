@@ -31,7 +31,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
 | `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; parked **308/309/310**; drawings **DRAWINGS-301**; 304–307 plug-ins later; **ORDERS-HUB-303** `?orderId=` contract (FE after HUB-302) |
-| `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=` from inspector; **ORDERS-HUB-301** contract DONE/READY; **HUB-302 READY FOR REVIEW** columns + Deal/Composition expand; HUB-303/304 queued |
+| `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=` from inspector; **ORDERS-HUB-301** contract DONE; **HUB-302 DONE** columns + Deal/Composition expand; HUB-303/304 next |
 
 **Catalog audits / backlog:**  
 [`2026-08-15-order-lifecycle-hub.md`](../audits/2026-08-15-order-lifecycle-hub.md) ·  

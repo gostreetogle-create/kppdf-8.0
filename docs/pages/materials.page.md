@@ -21,6 +21,33 @@
 
 Нет — всё состояние через сигналы.
 
+## TZ-CATALOG-373 — витрина: list↔grid + filters-rail (канон products)
+
+Паритет chrome с `/products` (эталон `products.page.ts`, TZ-PRODUCTS-305):
+
+- **View toggle** (toolbar, после «Обновить»): кнопки `data-test="view-list-button"` /
+  `data-test="view-grid-button"` (`lucide` List / LayoutGrid), `viewMode` signal,
+  персистентность в `localStorage['pi-materials-view-mode']` (try/catch, F5 сохраняет вид).
+- **Filters rail**: узкая полоска `w-12` + оверлей-панель (`filters-rail-panel`), backdrop
+  (`filters-backdrop`, `z-20`) не перекрывает рейл (`z-40`); клик внутри панели не закрывает
+  (`pointerdown/click stopPropagation`). 1:1 канон оверлея products.
+- **Rail панель**: «Тип» (`rail-kind`, **тот же `kindFilterSig`, что у toolbar-селекта** →
+  `?materialKind=`, TZ-CATALOG-316 не регрессирует) + «Сбросить» (`clearFilters`:
+  kind=null + поиск='' + page=1).
+- **Grid**: `app-pi-showcase-card size="md"`, сетка `1/2/3` (`data-test="materials-grid"`),
+  карточки-ссылки на `/materials/:id` (`showcase-cell-{{id}}`); media из `mainPhotoUrl`,
+  eyebrow = kind-label (иначе артикул), description = габариты (иначе поставщик),
+  footer = `formatPrice(pricePerUnit)` + «за <ед.>» + ед.; pager (`grid-pager`)
+  при `total > pageSize`.
+- **List**: текущий `pi-table` без регресса (kind filter / фото / stock link сохранены).
+
+known_limitation (TZ-CATALOG-373):
+
+- Сортировка в rail **не** добавлена: backend `GET /materials` не принимает
+  `sortBy`/`sortOrder` (всегда `sort({name: 1})`, см. `MaterialService.findAll`),
+  поэтому client-sort текущей page slice не фейкается. Rail = «Тип» + «Сбросить».
+- Сужение колонок таблицы «как у products» — successor (не этот TZ).
+
 ## API endpoints
 
 | Метод | Endpoint | Назначение |
@@ -131,6 +158,7 @@ Legacy-строки без артикула остаются читаемыми 
 
 | TZ | Что сделано |
 |----|------------|
+| **TZ-CATALOG-373** | **Витрина-паритет products**: view toggle list↔grid + `pi-materials-view-mode` (F5), filters-rail (Тип из того же signal + Сбросить), grid `PiShowcaseCard` с pager; rail sort — known_limitation (backend без sortBy) |
 | TZ-104.3 | Миграция на pi-table + lookup tables |
 | TZ-104.4.2 | Typed TemplateRef (устранён `any`) |
 | TZ-117 | httpResource миграция + unit test precedent |
@@ -176,4 +204,4 @@ Audit: `@AuditAction({ action: 'duplicate', entityType: 'Material', idParam: 'id
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-10 (TZ-MATERIALS-312: supplier empty/error/loading states и desktop half-width «Габариты»; TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-15 (TZ-CATALOG-373: view toggle list↔grid + `pi-materials-view-mode`, filters-rail, grid-витрина `PiShowcaseCard`; TZ-MATERIALS-312: supplier empty/error/loading states и desktop half-width «Габариты»; TZ-PHOTO-302: list/grid URL через `photoListUrl`, thumb для каталогов с fallback на original; TZ-CATALOG-316 → FE §301: kind/weightKg/assortment/standardRef/materialGrade, колонка «Тип», toolbar-фильтр)._

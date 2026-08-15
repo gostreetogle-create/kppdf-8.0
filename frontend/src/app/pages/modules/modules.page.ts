@@ -11,7 +11,8 @@ import {
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
@@ -24,11 +25,15 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
+import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
 import {
   ProductModule,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos.service';
+import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
+import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import {
   QuickCreateDialogComponent,
@@ -49,6 +54,9 @@ type SortKey = 'name' | 'article' | null;
 
 /** Client-side pagination page size for /modules flat-array endpoint. */
 const PAGE_SIZE = 10;
+
+/** TZ-CATALOG-372 — client-side «Состав» filter (dual-read composition/lines). */
+type CompositionFilter = 'all' | 'with-materials' | 'empty';
 
 /**
  * Compare two values per the sign direction. Mirrors `compareValues`
@@ -100,67 +108,54 @@ function moduleDimensions(row: ProductModule): string {
 }
 
 /**
+ * TZ-CATALOG-372: material count of a module via dual-read
+ * (composition material-lines have priority over legacy `materials[]`),
+ * same semantics as the table column formatter.
+ */
+function moduleMaterialCount(row: ProductModule): number {
+  const lines = (row.composition ?? []).filter((l) => l.lineType === 'material');
+  return lines.length > 0 ? lines.length : (row.materials?.length ?? 0);
+}
+
+function moduleHasMaterials(row: ProductModule): boolean {
+  return moduleMaterialCount(row) > 0;
+}
+
+/**
  * Полная документация страницы: docs/pages/modules.page.md
  *
  * TZ-104.3 batch-2-B-flat.2 — ModulesPage migrated to <app-pi-table>,
  * with TZ-104.4.2 typed TemplateRef propagation.
  *
- * Second B-flat page (after contracts); validates Pattern B-flat's
- * cross-type stability: the same pattern works for Contract (8 columns,
- * dual lookups) and for ProductModule (5 columns, no lookups, with a
- * row-click navigation handler). The pattern survives the
- * Contract↔ProductModule type permutations because both interfaces
- * carry `_id: string` (MongoDB convention) — which is exactly the
- * pi-table keyOf() JSON.stringify-fallback footgun guard.
+ * TZ-CATALOG-372 — витрина как у Продукции (эталон products.page.ts):
+ *   - Фото-колонка (PhotosService lookup + photoListUrl, materials-паттерн)
+ *     и имя-ссылка на `/modules/:id`;
+ *   - Toolbar: поиск · «Состав» · «+ Создать» · «Обновить» · list↔grid toggle
+ *     · счётчик; view mode живёт в localStorage `pi-modules-view-mode`;
+ *   - Filters rail (канон оверлея products): узкая полоска + панель поверх
+ *     колонки контента, backdrop только на контенте; Состав · Сортировка
+ *     (name↑↓ / article↑↓) · Сбросить · Закрыть;
+ *   - Grid: `PiShowcaseCard` md в сетке 1/2/3, клик → `/modules/:id`,
+ *     pager при total > PAGE_SIZE; себест. — hint «см. карточку» (TZ-COST-303,
+ *     без N+1 cost-preview).
  *
  * Backend response caveat: flat array (no envelope). Pagination TODO
  * at backend. Sort + filter + slice are page-owned.
  *
- * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'name'"`
- * + `[initialSortDir]="'asc'"` per spec §1.12.1 (alphabetical by
- * module name, ascending). The page's internal `sortKeySig/sortDirSig`
- * are seeded to MATCH pi-table's post-ngOnInit state so the
- * mirror-event handler stays in lockstep from the very first click.
- *
- * SortKey union: `'name' | 'article'` (intentionally narrow — see
- * file-top SortKey JSDoc for the why). Matches pre-migration UX.
- *
- * Row-click handler preserved from the pre-migration source: clicking
- * any cell OUTSIDE the trailing action column navigates to
- * `/modules/:id` for the detail page. pi-table's trailing action
- * `<td>` stops `$event.stopPropagation()` automatically (per
- * pi-table JSDoc on `[rowActions]`) so action clicks don't bubble.
- *
- * BUG fixes vs the pre-migration source (mirror of contracts recipe):
- *  1. `sortedRows` was previously bound via an INLINE `computed()`
- *     with sortKey/sortDir signals and `visible()` reads. The
- *     migrated version follows the canonical Pattern B reactive
- *     computed chain (`data() → filteredRows() → sortedRows() →
- *     paginatedRows()`) reading ALL upstream signals so any change
- *     cascades.
- *  2. Pre-migration had a page-level `searchQuery` signal AND an
- *     inline `visible()` computed that filtered inside the same
- *     chain. Replaced with `createSearchState` + a single reactive
- *     `filteredRows` computed reading `debouncedSearch`.
- *  3. SortKey typing `'name' | 'article' | null` lets `null` carry
- *     pi-table's "third-click-past-desc clears sort" state cleanly.
- *
- * Dead imports pruned: FormsModule (was unused even pre-migration —
- * `<input>` used `[value]`/`(input)`, not `ngModel`), PiEmptyStateComponent
- * (replaced by pi-table's native `[emptyMessage]` + `[loading]` states —
- * pi-table renders its own empty-state row + skeleton overlay).
- *
- * Standalone + OnPush + signal-based. No `modules.page.spec.ts` exists
- * for v1; acceptance is visual smoke + ng build (recipe §7 Rule 4).
+ * Standalone + OnPush + signal-based.
  */
 @Component({
   selector: 'app-modules-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    LucideAngularModule,
+    RouterLink,
     PiGroupWorkspaceComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    PiShowcaseCardComponent,
+    PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
   template: `
@@ -177,13 +172,63 @@ function moduleDimensions(row: ProductModule): string {
           data-test="search-input"
           class="pi-input w-72"
         />
+        <!-- TZ-CATALOG-372: client-side «Состав» filter (dual-read) -->
+        <select
+          id="modules-composition-filter"
+          name="modules-composition-filter"
+          [value]="compositionFilter()"
+          (change)="onCompositionFilterChange($event)"
+          aria-label="Фильтр по составу"
+          data-test="composition-filter"
+          class="pi-input w-40"
+        >
+          <option value="all">Все</option>
+          <option value="with-materials">С материалами</option>
+          <option value="empty">Пустые</option>
+        </select>
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
           + Создать
         </app-pi-button>
-        <span class="flex-1"></span>
-        <span class="text-xs text-muted-foreground"
-          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
+        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+        </app-pi-button>
+        <div
+          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+          role="group"
+          aria-label="Вид каталога"
+          data-test="view-toggle"
         >
+          <button
+            type="button"
+            (click)="setViewMode('list')"
+            [attr.aria-pressed]="viewMode() === 'list'"
+            [class]="
+              viewMode() === 'list'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать списком"
+            data-test="view-list-button"
+          >
+            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            (click)="setViewMode('grid')"
+            [attr.aria-pressed]="viewMode() === 'grid'"
+            [class]="
+              viewMode() === 'grid'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать карточками"
+            data-test="view-grid-button"
+          >
+            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+          </button>
+        </div>
+        <span class="flex-1"></span>
+        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
       </div>
 
       @if (error()) {
@@ -195,59 +240,265 @@ function moduleDimensions(row: ProductModule): string {
         </div>
       }
 
-      <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-        ← Таблица широкая — прокручивайте горизонтально →
-      </p>
-      <app-pi-table
-        [data]="paginatedRows()"
-        [columns]="cols"
-        [loading]="loading()"
-        [total]="total()"
-        [page]="page()"
-        [pageSize]="pageSize"
-        [emptyMessage]="emptyMessage()"
-        [ariaLabel]="'Список модулей'"
-        [cellTemplates]="cellTemplates"
-        [rowActions]="rowActionsTplBinding"
-        [localSort]="false"
-        [initialSortKey]="'name'"
-        [initialSortDir]="'asc'"
-        (pageChange)="onPageChange($event)"
-        (sortChange)="onSortChange($event)"
-        (rowClick)="onRowClick($event)"
-      >
-        <ng-template #nameTpl let-row>
-          <app-catalog-kind-marker kind="module">{{ row.name }}</app-catalog-kind-marker>
-        </ng-template>
+      <div class="relative flex gap-3 items-start" data-test="modules-layout">
+        <!-- Узкая полоска + панель ВЫШЕ затемнения (z-40); канон оверлея products (TZ-CATALOG-372). -->
+        <aside
+          class="relative z-40 shrink-0 w-12"
+          data-test="filters-rail"
+          [attr.aria-expanded]="filtersOpen()"
+        >
+          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
+            <button
+              type="button"
+              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+              (click)="toggleFiltersRail()"
+              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+              data-test="filters-rail-toggle"
+            >
+              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
+            </button>
+          </div>
 
-        <!-- TZ-COST-303: no batch cost-preview → hint to detail (302 has preview). -->
-        <ng-template #costTpl>
-          <span
-            class="text-muted-foreground text-xs whitespace-nowrap"
-            title="Расчёт себестоимости на карточке модуля"
-            data-test="module-list-cost-hint"
-            >см. карточку</span
+          @if (filtersOpen()) {
+            <div
+              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+              data-test="filters-rail-panel"
+              role="dialog"
+              aria-label="Фильтры каталога"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="text-sm font-medium text-ink">Фильтры</div>
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                  (click)="closeFilters()"
+                  aria-label="Закрыть"
+                  data-test="filters-panel-close"
+                >
+                  Закрыть
+                </button>
+              </div>
+              <div class="flex flex-col gap-3">
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-composition"
+                  >Состав</label
+                >
+                <select
+                  id="rail-composition"
+                  class="pi-input w-full text-sm"
+                  [value]="compositionFilter()"
+                  (change)="onCompositionFilterChange($event)"
+                  data-test="rail-composition"
+                >
+                  <option value="all">Все</option>
+                  <option value="with-materials">С материалами</option>
+                  <option value="empty">Пустые</option>
+                </select>
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-sort"
+                  >Сортировка</label
+                >
+                <select
+                  id="rail-sort"
+                  class="pi-input w-full text-sm"
+                  [value]="sortSelectValue()"
+                  (change)="onRailSortChange($event)"
+                  data-test="rail-sort"
+                >
+                  <option value="name:asc">Название ↑</option>
+                  <option value="name:desc">Название ↓</option>
+                  <option value="article:asc">Артикул ↑</option>
+                  <option value="article:desc">Артикул ↓</option>
+                </select>
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                  (click)="clearFilters()"
+                  data-test="clear-filters"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </div>
+          }
+        </aside>
+
+        <div class="relative min-w-0 flex-1">
+          @if (filtersOpen()) {
+            <button
+              type="button"
+              class="absolute inset-0 z-20 border-0 cursor-default bg-ink/20 dark:bg-ink/40"
+              aria-label="Закрыть фильтры"
+              data-test="filters-backdrop"
+              (pointerdown)="closeFilters()"
+              (click)="closeFilters()"
+            ></button>
+          }
+
+          <div class="relative z-0">
+            @if (viewMode() === 'grid') {
+              @if (loading()) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
+                  Загрузка…
+                </p>
+              } @else if (data().length === 0) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                  {{ emptyMessage() }}
+                </p>
+              } @else {
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
+                  data-test="modules-grid"
+                >
+                  @for (row of data(); track row._id) {
+                    <a
+                      [routerLink]="['/modules', row._id]"
+                      class="block min-w-0 h-full"
+                      [attr.aria-label]="'Открыть ' + row.name"
+                      [attr.data-test]="'showcase-cell-' + row._id"
+                    >
+                      <app-pi-showcase-card
+                        class="h-full"
+                        size="md"
+                        [title]="row.name"
+                        [description]="gridDescription(row)"
+                        [eyebrow]="gridEyebrow(row)"
+                        [mediaUrl]="mainPhotoUrl(row)"
+                        [interactive]="true"
+                        [arrow]="false"
+                      >
+                        <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
+                          <span class="text-xs text-muted-foreground" data-test="showcase-cost"
+                            >Себест. см. карточку</span
+                          >
+                        </span>
+                      </app-pi-showcase-card>
+                    </a>
+                  }
+                </div>
+                @if (total() > pageSize) {
+                  <div
+                    class="mt-4 flex items-center justify-end gap-2"
+                    data-test="grid-pager"
+                    role="navigation"
+                    aria-label="Страницы каталога"
+                  >
+                    <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
+                      {{ pageRangeLabel() }}
+                    </span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() <= 1"
+                      (click)="onPageChange(page() - 1)"
+                      data-test="pager-prev"
+                      >Назад</app-pi-button
+                    >
+                    <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() >= totalPages()"
+                      (click)="onPageChange(page() + 1)"
+                      data-test="pager-next"
+                      >Далее</app-pi-button
+                    >
+                  </div>
+                }
+              }
+            } @else {
+              <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+                ← Таблица широкая — прокручивайте горизонтально →
+              </p>
+              <app-pi-table
+                [data]="paginatedRows()"
+                [columns]="cols"
+                [loading]="loading()"
+                [total]="total()"
+                [page]="page()"
+                [pageSize]="pageSize"
+                [emptyMessage]="emptyMessage()"
+                [ariaLabel]="'Список модулей'"
+                [cellTemplates]="cellTemplates"
+                [rowActions]="rowActionsTplBinding"
+                [localSort]="false"
+                [initialSortKey]="'name'"
+                [initialSortDir]="'asc'"
+                (pageChange)="onPageChange($event)"
+                (sortChange)="onSortChange($event)"
+                (rowClick)="onRowClick($event)"
+              ></app-pi-table>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- TZ-CATALOG-372: templates OUTSIDE the @if/@else block — static
+           ViewChild refs must resolve before the first CD (products-канон). -->
+      <ng-template #photoTpl let-row>
+        <div
+          class="flex items-center justify-center w-[5.5rem] h-[5.5rem] mx-auto"
+          data-test="module-photo-cell"
+        >
+          @if (mainPhotoOf(row); as mp) {
+            <img
+              [src]="mainPhotoUrl(row)"
+              [alt]="mp.originalFilename || row.name"
+              class="block w-[5.5rem] h-[5.5rem] object-cover hairline rounded-sm"
+              loading="lazy"
+              data-test="module-photo"
+            />
+          } @else {
+            <app-pi-empty-tile [sizePx]="88" />
+          }
+        </div>
+      </ng-template>
+
+      <ng-template #nameTpl let-row>
+        <app-catalog-kind-marker kind="module">
+          <a
+            [routerLink]="['/modules', row._id]"
+            (click)="$event.stopPropagation()"
+            class="text-ink hover:text-sunrise-warm hover:underline"
+            [attr.aria-label]="'Открыть ' + row.name"
+            data-test="open-row-link"
+            >{{ row.name }}</a
           >
-        </ng-template>
+        </app-catalog-kind-marker>
+      </ng-template>
 
-        <!-- ───── Row actions cluster ───── -->
-        <ng-template #rowActionsTpl let-row>
-          <app-pi-row-actions
-            [row]="row"
-            [editLabel]="'Редактировать ' + row.name"
-            [deleteLabel]="'Удалить ' + row.name"
-            [dataTestEdit]="'edit-button-' + row._id"
-            [dataTestDelete]="'delete-button-' + row._id"
-            (edit)="openEdit($event)"
-            (delete)="onDelete($event)"
-          />
-        </ng-template>
-      </app-pi-table>
+      <!-- TZ-COST-303: no batch cost-preview → hint to detail (302 has preview). -->
+      <ng-template #costTpl>
+        <span
+          class="text-muted-foreground text-xs whitespace-nowrap"
+          title="Расчёт себестоимости на карточке модуля"
+          data-test="module-list-cost-hint"
+          >см. карточку</span
+        >
+      </ng-template>
+
+      <!-- ───── Row actions cluster ───── -->
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
     </app-pi-group-workspace>
   `,
 })
 export class ModulesPage implements OnInit {
   constructor() {
+    this.photosLookup.load();
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
   protected readonly chips = CATALOG_SECTION_CHIPS;
@@ -258,9 +509,35 @@ export class ModulesPage implements OnInit {
   private readonly router = inject(Router);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly photosService = inject(PhotosService);
+
+  protected readonly RefreshIcon = RefreshCw;
+  protected readonly ListIcon = List;
+  protected readonly GridIcon = LayoutGrid;
+  protected readonly FilterIcon = Filter;
 
   /** Exposed to template via `[pageSize]="pageSize"`. */
   protected readonly pageSize = PAGE_SIZE;
+
+  /**
+   * TZ-CATALOG-372: list↔grid view mode, persisted in localStorage
+   * (`pi-modules-view-mode`) — паттерн products.
+   */
+  protected readonly viewMode = signal<ModulesViewMode>(loadModulesViewMode());
+  protected readonly filtersOpen = signal(false);
+
+  protected setViewMode(mode: ModulesViewMode): void {
+    this.viewMode.set(mode);
+    saveModulesViewMode(mode);
+  }
+
+  protected toggleFiltersRail(): void {
+    this.filtersOpen.update((v) => !v);
+  }
+
+  protected closeFilters(): void {
+    this.filtersOpen.set(false);
+  }
 
   /**
    * Page-owned sort signals. Seeded to MATCH pi-table's internal
@@ -274,9 +551,18 @@ export class ModulesPage implements OnInit {
   private readonly pageSig = signal<number>(1);
   protected readonly page = this.pageSig.asReadonly();
 
+  /**
+   * TZ-CATALOG-372: client-side «Состав» filter. Toolbar select and
+   * rail select share this signal (как статус/категория у products).
+   */
+  private readonly compositionFilterSig = signal<CompositionFilter>('all');
+  protected readonly compositionFilter = this.compositionFilterSig.asReadonly();
+
   /** Single debounced search state — owns its own `searchQuery` signal. */
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
+
+  private readonly photosLookup = createLookupTable<Photo>(this.photosService.list());
 
   protected readonly listRes = httpResource<ProductModule[]>(() => ({
     url: `${this.baseUrl}/modules`,
@@ -291,19 +577,23 @@ export class ModulesPage implements OnInit {
   });
 
   /**
-   * Client-side filter across `name` + `article` (verified by
-   * pre-migration UX surface: the search input placeholder reads
-   * "Поиск по названию или артикулу"). Reactive computed reading
-   * `data()` and `debouncedSearch()` so both filter-set and
-   * search-text changes trigger re-compute.
+   * Client-side filter across `name` + `article` and the
+   * TZ-CATALOG-372 «Состав» filter (dual-read composition/lines).
+   * Reactive computed reading `data()` + `debouncedSearch()` +
+   * `compositionFilterSig()`.
    */
   protected readonly filteredRows = computed<ProductModule[]>(() => {
     const rows = this.data();
     const q = this.search.debouncedSearch().trim().toLowerCase();
-    if (!q) return rows.slice();
+    const cf = this.compositionFilterSig();
     return rows.filter((m) => {
-      const hay = [m.name, m.article ?? ''].filter(Boolean).join(' ').toLowerCase();
-      return hay.includes(q);
+      if (cf === 'with-materials' && !moduleHasMaterials(m)) return false;
+      if (cf === 'empty' && moduleHasMaterials(m)) return false;
+      if (q) {
+        const hay = [m.name, m.article ?? ''].filter(Boolean).join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
     });
   });
 
@@ -329,6 +619,7 @@ export class ModulesPage implements OnInit {
    * Prev/Next accordingly.
    */
   protected readonly total = computed<number>(() => this.sortedRows().length);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
 
   /**
    * Page slice of the sorted+filtered list.
@@ -341,35 +632,20 @@ export class ModulesPage implements OnInit {
     return all.slice(start, start + PAGE_SIZE);
   });
 
-  /** Modal toolbar count: visible rows after filtering (not the page slice). */
-  protected readonly visibleCount = computed<number>(() => this.sortedRows().length);
-
   protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
+    this.searchQuery() || this.compositionFilter() !== 'all'
       ? 'Ничего не найдено.'
       : 'Нет модулей. Нажмите «Создать», чтобы добавить первый.',
   );
 
   // ─── Column definitions ────────────────────────────────────────────
   /**
-   * Column-set mirroring the pre-migration source's 5 user-visible
-   * columns + the trailing actions slot (auto-injected by
-   * `[rowActions]`):
-   *   - `name`     sortable + sticky-left (acts as ID column for tablet UX)
-   *   - `article`  sortable + monospace (catalog SKU style)
-   *   - `dimensions`  muted, custom `moduleDimensions()` formatter
-   *   - `materials`    count, derived .length (DISPLAY ONLY, not sortable)
-   *   - `workTypes`    count, derived .length (DISPLAY ONLY, not sortable)
-   *
-   * Sortable count is intentionally 2 (`name` + `article`), matching
-   * pre-migration. The Материалов / Работ columns are display-only
-   * because pi-table's ColumnDef.key is `keyof T & string` — a virtual
-   * `_materialsCount` is type-system-forbidden. Users wanting sort
-   * by count can use `sortOrder` (sortOrder?: number is on the type).
-   * Not exposing sortOrder here matches current pre-migration UX
-   * (no sortOrder header was clickable in the source).
+   * TZ-CATALOG-372: `photoIds` (Фото) первая; `name` — sticky-left с
+   * именем-ссылкой; остальные колонки как раньше. `weight` — display-only
+   * hint «см. карточку» (TZ-COST-303, без N+1 cost-preview).
    */
   protected readonly cols: ColumnDef<ProductModule>[] = [
+    { key: 'photoIds', label: 'Фото', width: '104px', align: 'center' },
     {
       key: 'name',
       label: 'Название',
@@ -395,10 +671,7 @@ export class ModulesPage implements OnInit {
       cellClass: 'text-muted-foreground',
       // Dual-read (TZ-CATALOG-317): непустой composition (material-линии)
       // имеет приоритет над legacy materials[].
-      format: (r) => {
-        const lines = (r.composition ?? []).filter((l) => l.lineType === 'material');
-        return String(lines.length > 0 ? lines.length : (r.materials?.length ?? 0));
-      },
+      format: (r) => String(moduleMaterialCount(r)),
     },
     {
       key: 'workTypes',
@@ -406,11 +679,6 @@ export class ModulesPage implements OnInit {
       cellClass: 'text-muted-foreground',
       format: (r) => String(r.workTypes?.length ?? 0),
     },
-    /**
-     * TZ-COST-303 P0: batch cost-preview endpoint отсутствует → не N+1.
-     * Ключ `weight` не показан в списке; колонка — display-only hint.
-     * Полный rollup: карточка модуля (GET …/cost-preview, TZ-COST-302).
-     */
     {
       key: 'weight',
       label: 'Себест.',
@@ -421,13 +689,8 @@ export class ModulesPage implements OnInit {
   ];
 
   // ─── Template refs (resolved at view init, static:true → BEFORE ngOnInit) ──
-  /**
-   * TZ-104.4.2: strongly typed `TemplateRef<{ $implicit: ProductModule }>`.
-   * Pre-TZ-104.4.2 these were `TemplateRef<any>`. There is NO
-   * `cellTemplates` content for modules (no rich cell content
-   * needed beyond row-actions), but we still type the field for
-   * parity with the contracts pattern — `{}` initial assignment.
-   */
+  @ViewChild('photoTpl', { static: true })
+  private readonly photoTplRef!: TemplateRef<{ $implicit: ProductModule }>;
   @ViewChild('nameTpl', { static: true })
   private readonly nameTplRef!: TemplateRef<{ $implicit: ProductModule }>;
   @ViewChild('costTpl', { static: true })
@@ -444,13 +707,56 @@ export class ModulesPage implements OnInit {
     // Build cell-templates map + row-actions binding AFTER static
     // @ViewChild fields resolve. Avoids TemplateRef<C> invariance
     // trap and Angular's signal-binding name-collision.
-    this.cellTemplates = { name: this.nameTplRef, weight: this.costTplRef };
+    this.cellTemplates = {
+      photoIds: this.photoTplRef,
+      name: this.nameTplRef,
+      weight: this.costTplRef,
+    };
     this.rowActionsTplBinding = this.rowActionsTplRef;
+  }
+
+  // ─── Cell template helpers (TZ-CATALOG-372) ────────────────────────
+  /**
+   * Main/first photo by id via PhotosService lookup (materials-паттерн).
+   * List endpoint не populate Photo — id достаточно для lookup.
+   */
+  protected mainPhotoOf(row: ProductModule): Photo | null {
+    const id = row.mainPhotoId ?? row.photoIds?.[0];
+    return id ? (this.photosLookup.byId()[id] ?? null) : null;
+  }
+
+  protected mainPhotoUrl(row: ProductModule): string {
+    const photo = this.mainPhotoOf(row);
+    return photo ? photoListUrl(photo, Object.values(this.photosLookup.byId())) : '';
+  }
+
+  protected gridEyebrow(row: ProductModule): string {
+    return row.article || 'Модуль';
+  }
+
+  protected gridDescription(row: ProductModule): string {
+    const dims = moduleDimensions(row);
+    if (dims) return dims;
+    return `${moduleMaterialCount(row)} мат. · ${row.workTypes?.length ?? 0} раб.`;
   }
 
   // ─── Event handlers ───────────────────────────────────────────────
   protected totalLabel(n: number): string {
     return pluralize(n, ['модуль', 'модуля', 'модулей']);
+  }
+
+  protected sortSelectValue(): string {
+    const k = this.sortKeySig() ?? 'name';
+    const d = this.sortDirSig() ?? 'asc';
+    return `${k}:${d}`;
+  }
+
+  protected pageRangeLabel(): string {
+    const t = this.total();
+    if (t === 0) return '0';
+    const start = (this.page() - 1) * PAGE_SIZE + 1;
+    const end = Math.min(this.page() * PAGE_SIZE, t);
+    return `${start}–${end} из ${t}`;
   }
 
   protected onSearchInput(event: Event): void {
@@ -461,23 +767,36 @@ export class ModulesPage implements OnInit {
     this.pageSig.set(1);
   }
 
+  protected onCompositionFilterChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value as CompositionFilter;
+    this.compositionFilterSig.set(v === 'with-materials' || v === 'empty' ? v : 'all');
+    if (this.pageSig() !== 1) this.pageSig.set(1);
+  }
+
+  protected onRailSortChange(event: Event): void {
+    const v = (event.target as HTMLSelectElement).value;
+    const [key, dir] = v.split(':') as [Exclude<SortKey, null>, 'asc' | 'desc'];
+    this.sortKeySig.set(key);
+    this.sortDirSig.set(dir);
+    this.pageSig.set(1);
+  }
+
+  protected clearFilters(): void {
+    this.compositionFilterSig.set('all');
+    this.search.searchQuery.set('');
+    this.search.debouncedSearch.set('');
+    this.pageSig.set(1);
+  }
+
   protected onPageChange(p: number): void {
-    this.pageSig.set(p);
+    this.pageSig.set(Math.min(Math.max(1, p), this.totalPages()));
   }
 
   /**
    * Page-owned sort handler. `[localSort]="false"` keeps pi-table
    * from re-sorting the visible page slice, and this handler simply
    * MIRRORS pi-table's sortChange emit into the page's sort
-   * signals. The mirror-event pattern (vs re-derive) keeps the
-   * cycles in lockstep regardless of starting-state divergence;
-   * see `docs/pi-table-migration-recipe.md` §8 R-5.
-   *
-   * pi-table's emit contract: `{key, dir: SortDirection}` where
-   * dir ∈ {'asc' | 'desc' | null}. When `dir === null`, pi-table
-   * has cleared its key (third click past desc). Page mirrors by
-   * clearing sortKeySig and keeping sortDirSig at 'asc' as a
-   * no-visual-effect placeholder.
+   * signals.
    */
   protected onSortChange(event: { key: string; dir: SortDirection }): void {
     const dir = event.dir;
@@ -498,7 +817,7 @@ export class ModulesPage implements OnInit {
    * `/modules/:id` for the detailed product module page. Trailing
    * action `<td>` is wrapped by pi-table with `$event.stopPropagation()`
    * (per pi-table JSDoc on `[rowActions]`), so action clicks don't
-   * bubble. This is the canonical R-8 footgun prevention.
+   * bubble.
    */
   protected onRowClick(row: ProductModule): void {
     this.router.navigate(['/modules', row._id]);
@@ -550,6 +869,33 @@ export class ModulesPage implements OnInit {
   }
 
   private refreshOnDialogClose<TResult>(ref: DialogRef<TResult>): void {
-    onDialogCloseOnce(ref, this.injector, () => this.listRes.reload());
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.photosLookup.load();
+      this.listRes.reload();
+    });
+  }
+}
+
+// ─── View-mode persistence (TZ-CATALOG-372, паттерн products) ───
+const MODULES_VIEW_MODE_KEY = 'pi-modules-view-mode';
+
+type ModulesViewMode = 'list' | 'grid';
+
+const DEFAULT_VIEW_MODE: ModulesViewMode = 'list';
+
+function loadModulesViewMode(): ModulesViewMode {
+  try {
+    const raw = localStorage.getItem(MODULES_VIEW_MODE_KEY);
+    return raw === 'grid' ? 'grid' : 'list';
+  } catch {
+    return DEFAULT_VIEW_MODE;
+  }
+}
+
+function saveModulesViewMode(mode: ModulesViewMode): void {
+  try {
+    localStorage.setItem(MODULES_VIEW_MODE_KEY, mode);
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
   }
 }
