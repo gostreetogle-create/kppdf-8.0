@@ -10,7 +10,7 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-SWEEP-401 DONE; Cursor Verdict PASS; archive pending commit/push)_
+_(empty — TZ-SWEEP-401 DONE; Cursor Verdict PASS; archive and follow-up spec pushed)_
 
 
 ## NEXT (PO paste prompt)

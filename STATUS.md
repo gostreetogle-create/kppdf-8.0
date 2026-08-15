@@ -5,7 +5,7 @@
 **Что:** backend order FSM защищает shipped/delivered/cancelled PATCH без мутаций и переводит заказ через ship() с items shipped; Kanban использует optimistic PATCH/rollback, подтверждение ship и item.status readiness; форма и chip «Комбайн» → `/dashboard` синхронизированы.
 **Archive:** `tasks/_archive/2026-08/TZ-SWEEP-401.done.md`
 **Lock:** `.mimocode/locks/TZ-SWEEP-401-kanban-order-write-path.lock`
-**Gates:** BE tsc + order.service 42/42 + ESLint PASS; FE tsc + focused 26/26 + adjacent 62/62 + ESLint/Prettier/diff-check PASS; Cursor independent review 8/8 PASS.
+**Gates:** BE tsc + order.service 42/42 + ESLint PASS; FE tsc + focused 26/26 + follow-up dashboard spec 5/5 (`7f81c949`) + adjacent 62/62 + ESLint/Prettier/diff-check PASS; Cursor independent review 8/8 PASS.
 
 ## [2026-08-16] — TZ-UI-PHOTO-343 DONE: catalog photo-entry sweep
 **Статус:** DONE; WAVE-COMPOSE-CREATE-PHOTO complete; deploy НЕ

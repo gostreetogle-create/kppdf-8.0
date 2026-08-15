@@ -23,10 +23,11 @@
 - Backend ESLint — PASS
 - Frontend TypeScript — PASS
 - Focused frontend Jest — **26/26 PASS**
+- Follow-up `dashboard.page.spec.ts` — **5/5 PASS** (`7f81c949`)
 - Adjacent frontend Jest — **62/62 PASS**
 - Frontend ESLint, Prettier, `git diff --check` — PASS
 - Cursor independent review — **8/8 acceptance points PASS; no blockers**
 
 ## Closeout separation
 
-The closeout stages only TZ-SWEEP-401 code, its checklist, status/progress resume, archive, and lock. Concurrent `data/*`, PO-DIARY, architect-owned dashboard/audit/task support files, and other WIP remain untouched.
+The closeout stages only TZ-SWEEP-401 code, its checklist, status/progress resume, archive, and lock. The follow-up owned dashboard spec was added in `7f81c949` and verified separately. Concurrent `data/*`, PO-DIARY, architect-owned dashboard/audit/task support files, and other WIP remain untouched.

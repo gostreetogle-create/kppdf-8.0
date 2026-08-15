@@ -57,6 +57,7 @@
 - `cd backend && pnpm exec eslint order.service.ts order.service.spec.ts` → **PASS**
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` → **PASS**
 - `cd frontend && pnpm exec jest --testPathPattern "dashboard.page|orders.service.spec|order-form-dialog" --no-coverage` → **PASS** (37/37)
+- Follow-up `cd frontend && pnpm exec jest src/app/pages/dashboard/dashboard.page.spec.ts --runInBand` → **PASS** (5/5; commit `7f81c949`)
 - дополнительно: deals-group-chips + app-layout.nav-order → **PASS**; app-layout / orders.page /
   order-detail / production-cockpit 62/62 → **PASS**
 - changed-file ESLint (FE) → **PASS**; Prettier --check → **PASS**; `git diff --check` → **PASS**
