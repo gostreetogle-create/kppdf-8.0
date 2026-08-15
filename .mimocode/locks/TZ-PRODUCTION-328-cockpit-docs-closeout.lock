@@ -1,0 +1,9 @@
+LOCK
+TZ: TZ-PRODUCTION-328
+WAVE: WAVE-PRODUCTION-COCKPIT-HARDEN
+STATUS: DONE
+CLOSED_AT: 2026-08-15
+CLOSED_BY: Buffy
+COMMIT: pending targeted commit
+SCORE: 98/100 estimate studio
+NEXT: STOP; propose deploy only on explicit PO command; do not deploy

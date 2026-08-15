@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-328 DONE: production cockpit docs closeout
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN complete; deploy НЕ
+**Что:** page.md и production-gantt-studio-spec.md синхронизированы как SoT: chrome, cascade без нижней Карточки, Заказы/Заказчики, write-path, zoom/fit/today, roles и fact-production OUT; final score 98/100.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-328.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-328-cockpit-docs-closeout.lock`
+**Gates:** docs review/diff-check PASS; prior FE tsc PASS; production Jest 6 suites / 70 tests PASS; lint PASS with 18 existing warnings; targeted Prettier PASS; root markdown Prettier unavailable.
+
 ## [2026-08-15] — TZ-PRODUCTION-327 DONE: cockpit smart/dumb light refactor
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 327 closed; deploy НЕ
 **Что:** Smart/dumb inventory recorded; one focused dumb `ProductionScaleControlsComponent` extracted for RU zoom/fit controls; page keeps orchestration and existing 324–326 behavior remains intact.

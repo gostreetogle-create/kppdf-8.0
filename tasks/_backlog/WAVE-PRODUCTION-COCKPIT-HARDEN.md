@@ -12,7 +12,7 @@
 | 2 | `TZ-PRODUCTION-325-orders-rail-counterparties` | DONE | kill pips; заказчики filter |
 | 3 | `TZ-PRODUCTION-326-gantt-write-sync` | DONE | plannedDate/roles/reload integrity |
 | 4 | `TZ-PRODUCTION-327-cockpit-smart-dumb` | DONE | inventory + one dumb scale-controls extract; 70 production tests PASS |
-| 5 | `TZ-PRODUCTION-328-cockpit-docs-closeout` | READY | page.md + SoT + score 98–99 |
+| 5 | `TZ-PRODUCTION-328-cockpit-docs-closeout` | DONE | page/spec SoT synced; final estimate-studio score 98/100; no deploy |
 
 **Order:** strict serial 324→328. No deploy/wipe.
 

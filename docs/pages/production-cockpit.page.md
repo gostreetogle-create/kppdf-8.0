@@ -17,6 +17,9 @@ flyouts: overlay; center width unchanged
 
 **WAVE-PRODUCTION-GANTT-CASCADE (DONE):** **321** detail под видом работ; **322** meta под summary + kill bottom sheet; **323** один meta + full-width панели.
 
+**CLOSEOUT:** `WAVE-PRODUCTION-COCKPIT-HARDEN` 324–328 DONE; estimate-studio score **98/100**; fact production remains OUT.
+Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md) · `tasks/_archive/2026-08/TZ-PRODUCTION-328.done.md`.
+
 Локальные `production-studio-rail` удалены. Consumer API: TZ-UX-322.
 
 ### Route
@@ -36,7 +39,7 @@ flyouts: overlay; center width unchanged
 
 Ручной select в rail URL не обязан обновлять.
 
-### API endpoints (read-only facade)
+### Read path / existing API contracts
 
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
@@ -66,7 +69,7 @@ flyouts: overlay; center width unchanged
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
-- **TZ-PRODUCTION-315:** Карточка = bottom sheet под Гантом — **снято 322** (meta в каскаде списка).
+- **No bottom card:** the old `Карточка` bottom sheet and chrome action were removed in TZ-322; order meta lives only as one cascade strip under the summary row. The cascade is the canonical interaction surface for status/priority/plannedDate and work-detail; do not restore a bottom overlay.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
 - **TZ-PRODUCTION-326 write-path:** meta Save и summary drag `plannedDate` используют `canEditOrder` (admin|manager) и после успешного PATCH перезагружают orders/bars; child resize и start-offset, а также WorkType.days используют `production:write`. «Сохранить заказ» — обязательный commit; после него Гант обновляется.
 - Ссылка «Открыть в списке заказов» в order-meta ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
@@ -85,11 +88,13 @@ flyouts: overlay; center width unchanged
 
 ### Services / context
 
-| Сервис | Методы |
-|--------|--------|
-| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters |
-| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
-| `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316) |
+| Сервис | Методы / boundary |
+|--------|-------------------|
+| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters; local UI state |
+| `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap; read/cache/composition mapping, no fact-production SoT |
+| `ProductionCockpitPage` | `onRefresh`, `onToday`, `onFitHorizon`, order-meta/estimate commits; smart shell: chrome, filters, PATCH orchestration, range + reload |
+| `ProductionScaleControlsComponent` | `zoom` input; `zoomChange` / `fit` outputs; dumb RU controls only |
+| `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316); existing API paths |
 
 ### Write-path matrix (TZ-PRODUCTION-326)
 
@@ -122,9 +127,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
-- **TZ-PRODUCTION-318→:** Карточка sheet **на ширину студии** (`left/right` inset, raised `bottom`), absolute без transform; состав изделия — **inline** expand (+ → модули → дни).
-- **TZ-PRODUCTION-319:** карточка **только** с левой подписи summary-заказа (toggle) или chrome «Карточка»; child / ▸ / полоса timeline **не** открывают.
-- **TZ-PRODUCTION-320:** ▸/▾ = **только** expand/collapse состава на Ганте; номер заказа = **только** toggle нижней карточки (superseded: 322 → meta strip).
+- **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
+
 - **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает.
 - **TZ-PRODUCTION-322:** номер заказа → order-meta strip под summary (статус, приоритет, план. дата, Сохранить, ссылка `/orders`); chrome «Карточка» и bottom sheet **удалены**. `gantt-order-active` = открытый meta.
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
@@ -148,17 +152,21 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-312** | DONE: summary/body plannedDate move |
 | **TZ-PRODUCTION-313** | DONE: card flyout compact (dock superseded by 315) |
 | **TZ-PRODUCTION-314** | DONE: order summary row + expand composition |
-| **TZ-PRODUCTION-315** | DONE: Карточка bottom sheet under Gantt |
+| **TZ-PRODUCTION-315** | DONE historically: Карточка bottom sheet; superseded and removed by TZ-322 |
 | **TZ-PRODUCTION-316** | DONE: per-bar start offsets (parallel) |
 | **TZ-PRODUCTION-317** | DONE: select keeps multi-order bars; expand in-place |
 | **TZ-PRODUCTION-318** | DONE: sheet full-width + viewport; composition expands up |
-| **TZ-PRODUCTION-319** | DONE: card only from order label (toggle); taller sheet |
-| **TZ-PRODUCTION-320** | DONE: ▸ = tree only; order name = card only (no cross-coupling) |
+| **TZ-PRODUCTION-319** | DONE historically: card interaction; superseded by the meta strip in TZ-322 |
+| **TZ-PRODUCTION-320** | DONE historically: ▸ = tree only; order label interaction superseded by the meta strip in TZ-322 |
 | **TZ-PRODUCTION-321** | DONE: work-type click → inline detail (люди / дни / catalog) |
 | **TZ-PRODUCTION-322** | DONE: order-meta under summary; kill sheet + chrome «Карточка» |
 | **TZ-PRODUCTION-323** | DONE: one meta under summary; full-width cascade panels |
 | **TZ-PRODUCTION-324** | DONE: week fit-width; «Вместить сроки» range fit; «Сегодня» marker scroll |
 | **TZ-PRODUCTION-325** | DONE: Orders rail без status-pips; Заказчики → filter rail + Gantt; date filters verified |
+| **TZ-PRODUCTION-326** | DONE: plannedDate meta/summary writes use `canEditOrder`; successful writes reload orders/bars |
+| **TZ-PRODUCTION-327** | DONE: smart/dumb inventory; one dumb scale-controls extract; no UX/API rewrite |
+| **TZ-PRODUCTION-328** | docs closeout: this page and the frozen Gantt spec are the SoT |
+
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -170,10 +178,10 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 
 ### Studio wave readiness
 
-- Статус: **STUDIO ESTIMATE PASS**; chrome tools wave DONE (322/323).
+- Статус: **STUDIO ESTIMATE PASS**; harden 324–327 landed; docs closeout 328.
 - B/C/D DONE + UX-323: section chrome, full-width Gantt, tools in app chrome, hard filter split.
 - `/work-types` reads as Цех via `Гант` / `Виды работ` chips; CRUD не переписывался.
-- Факт производства, drag, writes и `ProductionSchedule` остаются out.
+- Estimate writes (plannedDate, estimate-day/start, WorkType.days) are explicit existing paths; **fact production, shop-floor status, assignment, ProductionSchedule, ProductionOrder and OrderTask remain OUT**.
 
 ### Known limitations
 
@@ -183,6 +191,24 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Browser smoke зависит от живого API/Mongo.
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
 - Product/module deep-links из старого inspector — backlog; sheet не восстанавливать.
+
+### Final interaction contract (TZ-PRODUCTION-328)
+
+| Действие | Результат |
+|----------|-----------|
+| **Заказы** | Поиск по номеру; выбор/мета заказа; `Все активные` сохраняет многозаказные полосы Ганта |
+| **Заказчики** | Секция Counterparty, включая `Без заказчика`; клик фильтрует rail и Гант; повторный клик/`Все заказчики` сбрасывает |
+| **Фильтры** | Активность, приоритет, плановая дата `С`/`По` и сброс применяются к rail и тому же набору заказов Ганта |
+| **Сегодня** | Включает today в диапазон и прокручивает timeline к красному маркеру Сегодня |
+| **Масштаб → День** | Фиксированная читаемая плотность `36px/день` |
+| **Масштаб → Неделя** | Fit-плотность `max(12, floor(width timeline / число дней))` |
+| **Вместить сроки** | Берёт min/max текущих полос с запасом в день, включает Неделю и скроллит к началу; это не no-op |
+| **Подпись заказа** | Переключает одну meta-полосу summary: статус, приоритет, plannedDate, Save, `/orders?q=<номер>` |
+| **Тело summary-полосы** | Сдвиг plannedDate; `canEditOrder` (admin/manager); успешный PATCH перезагружает orders/bars |
+| **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
+| **Resize / тело вида работ** | Existing estimate-days / estimate-start под `production:write`; только estimate |
+
+All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Заказчики`, `Фильтры`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Неделя`, `Вместить сроки`.
 
 ### Zoom
 

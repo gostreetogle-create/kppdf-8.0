@@ -8,26 +8,28 @@
 **Wave (chrome tools):** `tasks/_backlog/WAVE-UX-CHROME-GANTT-TOOLS.md`  
 **Wave (gantt tree):** `tasks/_backlog/WAVE-PRODUCTION-GANTT-TREE.md`  
 **Master checklist:** `docs/agent-checklists/WAVE-UX-CHROME-GANTT-TOOLS.md`  
-**Current implementation:** Gantt tools projected into app-chrome-rail (TZ-UX-322/323); local `production-studio-rail` removed. Default Gantt = **order summary bars** with ▸ expand to work-type composition (TZ-PRODUCTION-314).
+**Current implementation:** Gantt tools projected into app-chrome-rail (TZ-UX-322/323); local `production-studio-rail` removed. TZ-PRODUCTION-324…328 harden is landed at **STUDIO ESTIMATE PASS 98/100**. Default Gantt = **order summary bars** with ▸ expand to work-type composition (TZ-PRODUCTION-314); no bottom `Карточка` surface.
 
 ## 0. Product boundary
 
 `/production` is a **plan-estimate studio**. It calculates a calendar estimate from the existing `WorkType.days` path and is not the fact-production register.
 
+This spec does not authorize fact shop-floor scheduling, check-in, assignment writes, auto-chain, or a new production SoT. The landed estimate-studio contract may use the existing explicit paths for plannedDate/priority, estimate-day/start overrides, and `WorkType.days`; these remain plan-estimate writes, not production facts.
+
 This spec does not authorize:
 
-- drag-reschedule, check-in, assignment writes or auto-chain;
-- `ProductionSchedule`, `ProductionOrder`, `OrderTask` or a new production SoT;
+- `ProductionSchedule`, `ProductionOrder`, `OrderTask` or any fact-production register;
 - a new backend endpoint or estimate formula;
-- order-level days writes (future separate wave);
-- changing `WorkType.days`, `ProductionReadFacade`, `ProductionCockpitContext` or `gantt-bar.model`.
+- weekend/calendar production rules or shop-floor status;
+- restoring a bottom-card/`Карточка` overlay;
+- changing the existing `ProductionReadFacade`, `ProductionCockpitContext` or Gantt tree semantics beyond the documented 324–327 behavior.
 
 ## FROZEN — shell contract
 
 ```text
 app-chrome-rail-left:  ← + page tools (Заказы · Фильтры · Обновить)
 main: Gantt full width (no local 48px columns)
-app-chrome-rail-right: → + page tools (Карточка · Сегодня · Масштаб)
+app-chrome-rail-right: → + page tools (Сегодня · Масштаб)
 flyouts: overlay on production-studio-body; center width unchanged
 PiGroupWorkspace (Цех: Гант | Виды работ)   ← только section chrome
 └─ production-studio-body (relative; overflow:hidden; single column)
@@ -62,7 +64,7 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 |---|---|---|---|
 | App chrome left | ≥1680 | ← + Заказы · Фильтры · Обновить | `PiChromeToolsService` + existing orders/filters/refresh |
 | Center | always visible | Gantt timeline only | existing bars/facade |
-| App chrome right | ≥1680 | → + Карточка · Сегодня · Масштаб | chrome tools + inspector / today / zoom |
+| App chrome right | ≥1680 | → + Сегодня · Масштаб | chrome tools + today / zoom |
 | Flyout | closed | overlay for one selected tool | local shell state only |
 
 ### Flyout semantics
@@ -70,9 +72,10 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 - `Заказы`: только список заказов, поиск по заказам, выбор заказа и `Все активные`/select-all.
 - `Фильтры`: только `active-only`, приоритет, даты и `Сброс фильтров`.
 - `Обновить`: preserves existing reload behavior; no new persistence.
-- `Карточка`: existing selected-order inspector; closing it does not clear selected order.
-- `Сегодня`: existing range adjustment/scroll-to-today behavior; no calendar model.
-- `Масштаб`: День, Неделя, Весь горизонт; existing zoom/fit behavior only.
+- `Сегодня`: ensures today is inside the current range and scrolls to the red marker; no calendar model.
+- `Масштаб`: День, Неделя, **Вместить сроки**; week fit-density and padded bar range are existing estimate-studio behavior.
+- Order label: opens one summary meta strip (status/priority/plannedDate/save/link); it is not a bottom card.
+- Child label/▸: opens one inline work-detail cascade row (people/days/override/catalog).
 
 ## 3. UI ↔ code dictionary
 
@@ -81,9 +84,9 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 | Заказы | `OrdersRailComponent`, `selectedOrderId`, `search` (поиск по заказам) |
 | Фильтры | `activeOnly` / `priorityFilter` / `dateFrom`/`dateTo`, `resetFilters()` |
 | Обновить | existing `ProductionCockpitPage.onRefresh()` |
-| Карточка | `OrderInspectorComponent`, selected order; read-only rules unchanged |
-| Сегодня | existing `onToday()` / future viewport scroll only if separately approved |
-| Масштаб | `ctx.zoom`, existing day/week/fit actions |
+| Meta заказа | summary cascade strip; status/priority/plannedDate/save/link; `canEditOrder` |
+| Сегодня | existing `onToday()` range adjustment + viewport scroll to marker |
+| Масштаб | `ctx.zoom`; День/Неделя/Вместить сроки controls |
 | `/production?orderId=` | existing initial selection contract |
 | unknown `orderId` | existing RU hint + safe fallback to active orders |
 
@@ -122,10 +125,10 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 | active-only / priority / dates | Left → Фильтры | те же context signals |
 | `Обновить` | Left → Обновить | same reload/read behavior |
 | `Сброс фильтров` | Left → Фильтры | calls existing reset; no separate rail button |
-| right inspector | Right → Карточка | same selected order and read-only policy |
-| `Сегодня` | Right → Сегодня | same range behavior; no new calendar SoT |
-| `День` / `Неделя` | Right → Масштаб | same zoom signal |
-| `Весь горизонт` | Right → Масштаб | same fit behavior |
+| order meta | Gantt summary cascade | status/priority/plannedDate; no bottom sheet |
+| `Сегодня` | Right → Сегодня | range + marker scroll; no new calendar SoT |
+| `День` / `Неделя` | Right → Масштаб | same zoom signal and fit-density |
+| `Вместить сроки` | Right → Масштаб | padded bar range + Неделя + scroll start |
 | group chips | `PiGroupWorkspace` section chrome | same `/production` ↔ `/work-types` navigation |
 
 ## 7. Accessibility contract
@@ -175,20 +178,28 @@ The following must remain 1:1 through B/C:
 ## 10. Explicit out of wave
 
 - Waves 304–307: stuck/check-in/auto-chain plug-ins;
-- Wave 309 writes: capability and order-level days;
-- drag/resize/reschedule;
+- fact shop-floor scheduling, check-in, assignment, auto-chain, or status writes;
 - weekend shading without a production calendar SoT;
 - shared `StudioRail` primitive;
 - new BE summary/estimate API;
-- any change to estimate math or WorkType model.
+- any change to estimate math or WorkType model;
+- restoring the removed bottom `Карточка` sheet or chrome action.
 
 Parked 308–310 are blocked by the new studio wave and must not be launched on top of the old docked layout. 309 remains a separate future write wave.
 
-## 11. Success
+## 11. Current harden contract (TZ-PRODUCTION-324…328)
 
-Wave A success means the **contract** is reviewable and consistent, not that product code is migrated.
+- **324:** Day = 36px/day; Week = `max(12, floor(timelineWidth / dayCount))`; **Вместить сроки** uses padded current-bar range, switches to Week, and scrolls to start; **Сегодня** includes today and scrolls to the marker.
+- **325:** Заказы has no status pips; Заказчики aggregates Counterparty/`Без заказчика`; search switches order number/name; date filters feed rail and Gantt.
+- **326:** Meta Save and summary plannedDate drag use `canEditOrder` (admin/manager) and reload orders/bars after success; child estimate-day/start and catalog days keep `production:write`; existing `PATCH /orders/:id` only.
+- **327:** page/facade/context remain smart boundaries; Gantt/Orders rail stay behavior-sensitive presentational blocks; scale controls are a dumb input/output component.
+- **328:** this spec and `docs/pages/production-cockpit.page.md` are the SoT; no bottom card and fact production remains OUT.
 
-After B/C/D implementation, PO success target is **98–99/100 for estimate-only studio chrome**:
+## 12. Success
+
+Wave success means the **contract** is reviewable and consistent, not that product code is migrated.
+
+The PO target is **98–99/100 for estimate-only studio chrome**:
 
 - Gantt is the visual center;
 - rails and flyouts are predictable and do not steal center width;

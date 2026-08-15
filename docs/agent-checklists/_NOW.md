@@ -5,19 +5,19 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T23:25:00+03:00
+updated_at: 2026-08-15T23:55:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-PRODUCTION-327 archived; next claim is TZ-PRODUCTION-328)_
+_(empty — WAVE-PRODUCTION-COCKPIT-HARDEN complete; queue empty)_
 
 ## NEXT (PO paste prompt)
 
 **WAVE-PRODUCTION-COCKPIT-HARDEN** → 98–99  
 Prompt: `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`  
 Master: `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-HARDEN.md`  
-Queue: **324 → 325 → 326 → 327 → 328** (serial)
+Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO command (do not deploy).
 
 ## Queue hygiene (not live)
 
@@ -28,6 +28,10 @@ Queue: **324 → 325 → 326 → 327 → 328** (serial)
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-328 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-328.done.md`; page/spec SoT synced; final estimate-studio score 98/100.
 
 ### TZ-PRODUCTION-327 — DONE 2026-08-15
 
@@ -73,5 +77,5 @@ Queue: **324 → 325 → 326 → 327 → 328** (serial)
 
 ## HEAD / queue
 
-- Queue: **328 next**; claim only after 327 targeted commit + push.
+- Queue: **empty**; WAVE DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
 - Deploy app: НЕ — не автодеплой

@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-328 DONE — production cockpit docs closeout
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN complete; deploy НЕ
+**Что:** production-cockpit.page.md rewritten as page SoT; production-gantt-studio-spec synchronized to no-bottom-card cascade and current zoom/filters/write paths; final audit scoreboard and indexes closed; estimate studio **STUDIO ESTIMATE PASS 98/100**; fact production OUT.
+**Gates:** docs review/diff-check PASS; prior FE tsc PASS; production Jest **6 suites / 70 tests PASS**; lint PASS (18 existing architecture warnings); targeted Prettier PASS; root markdown Prettier unavailable.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-328.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-328-cockpit-docs-closeout.lock`
+**Dep:** 327 (`038b18da`)
+
 ## [2026-08-15] — TZ-PRODUCTION-327 DONE — cockpit smart/dumb light refactor
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 327 closed; deploy НЕ
