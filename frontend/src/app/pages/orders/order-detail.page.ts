@@ -2,19 +2,21 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { map, of, switchMap } from 'rxjs';
 import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import {
   CompositionTreeComponent,
   type CompositionTreeExpandEvent,
   type CompositionTreeSelectEvent,
+  type CompositionTreeEditEvent,
 } from '../../shared/ui/composition/composition-tree.component';
 import {
   CompositionTreeNode,
@@ -22,10 +24,23 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { formatDate } from '../../shared/util/format';
-import { Order, OrderItem, OrdersService } from './orders.service';
+import { Order, OrdersService } from './orders.service';
 import { SupplyTaskService } from '../../shared/services/pi-supply.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
+import { ProductsService } from '../../shared/services/products.service';
+import { MaterialsService } from '../../shared/services/materials.service';
+import {
+  loadOrderCompositionForest,
+  ORDER_TREE_INITIAL_DEPTH,
+  ORDER_TREE_MAX_DEPTH,
+} from './order-composition-forest';
+import {
+  isEmptyCatalogBranch,
+  openCatalogEditFromTree,
+  type CatalogCompositionEditDeps,
+} from './open-catalog-composition-edit';
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',
@@ -36,9 +51,6 @@ const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   delivered: 'Доставлен',
   cancelled: 'Отменён',
 };
-
-const MAX_TREE_DEPTH = 8;
-const INITIAL_TREE_DEPTH = 2;
 
 type PopulatedRef = string | { _id: string; name?: string; address?: string };
 type PopulatedOwner =
@@ -90,11 +102,7 @@ type PopulatedOwner =
             Заказ №{{ o.number }}
           </h1>
         </div>
-        <app-pi-fact-stack
-          title="Паспорт заказа"
-          headingId="order-facts"
-          dataTest="order-detail-facts"
-        >
+        <app-pi-fact-stack title="Заказ" headingId="order-facts" dataTest="order-detail-facts">
           <app-pi-fact-card label="Номер" [value]="'№' + o.number" [mono]="true" />
           <app-pi-fact-card label="Клиент" [value]="partyLine() ?? '—'" />
           <app-pi-fact-card label="Объект" [value]="siteLine() ?? '—'" />
@@ -183,7 +191,12 @@ type PopulatedOwner =
 
       <section class="space-y-3" data-test="order-composition">
         <div class="flex items-baseline justify-between gap-3">
-          <h2 class="font-display text-base text-ink m-0">Состав</h2>
+          <div>
+            <h2 class="font-display text-base text-ink m-0">Состав</h2>
+            <p class="text-[11px] text-muted-foreground m-0 mt-0.5">
+              Кликни строку — выбрать и раскрыть · карандаш — изменить в каталоге
+            </p>
+          </div>
           <a routerLink="/orders" class="text-xs text-muted-foreground hover:text-ink underline"
             >← Список</a
           >
@@ -204,9 +217,11 @@ type PopulatedOwner =
               <app-composition-tree
                 [root]="root"
                 [selectedId]="selectedId()"
+                [showEdit]="true"
                 ariaLabel="Состав изделия в заказе"
                 (expandedChange)="onExpand($event)"
                 (selectedChange)="onSelect($event)"
+                (editClick)="onEdit($event)"
               />
             }
           </div>
@@ -223,6 +238,10 @@ export class OrderDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly orders = inject(OrdersService);
   private readonly catalog = inject(ProductModulesService);
+  private readonly products = inject(ProductsService);
+  private readonly materials = inject(MaterialsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
   private readonly supply = inject(SupplyTaskService, { optional: true });
   private readonly toast = inject(PiToastService, { optional: true });
   private readonly destroyRef = inject(DestroyRef);
@@ -232,9 +251,10 @@ export class OrderDetailPage {
   protected readonly lineRoots = signal<CompositionTreeNode[]>([]);
   protected readonly treeLoading = signal(false);
   protected readonly selectedId = signal<string | null>(null);
-  private readonly requestedDepth = signal(INITIAL_TREE_DEPTH);
+  private readonly requestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
   private loadSeq = 0;
   protected readonly readyBusy = signal<number | null>(null);
+  private readonly catalogEditBusy = signal(false);
 
   protected readonly hasLines = computed(() => (this.order()?.items?.length ?? 0) > 0);
   protected readonly confirmedSupply = signal(false);
@@ -312,7 +332,7 @@ export class OrderDetailPage {
           this.order.set(null);
           this.lineRoots.set([]);
           this.selectedId.set(null);
-          this.requestedDepth.set(INITIAL_TREE_DEPTH);
+          this.requestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
           if (!id) {
             this.loadError.set('Не указан идентификатор заказа.');
             return of(null);
@@ -439,6 +459,14 @@ export class OrderDetailPage {
 
   protected onSelect(ev: CompositionTreeSelectEvent): void {
     this.selectedId.set(ev.node._id);
+    if (isEmptyCatalogBranch(ev.node)) {
+      openCatalogEditFromTree(this.catalogEditDeps(), ev);
+    }
+  }
+
+  protected onEdit(ev: CompositionTreeEditEvent): void {
+    this.selectedId.set(ev.node._id);
+    openCatalogEditFromTree(this.catalogEditDeps(), ev);
   }
 
   protected trackRoot(index: number, root: CompositionTreeNode): string {
@@ -449,11 +477,28 @@ export class OrderDetailPage {
     if (!ev.expanded) return;
     const depth = this.depthOf(ev.node);
     if (depth < 0) return;
-    const need = Math.min(depth + 2, MAX_TREE_DEPTH);
+    const need = Math.min(depth + 2, ORDER_TREE_MAX_DEPTH);
     if (need <= this.requestedDepth()) return;
     this.requestedDepth.set(need);
     const o = this.order();
     if (o) this.reloadForest(o);
+  }
+
+  private catalogEditDeps(): CatalogCompositionEditDeps {
+    return {
+      dialog: this.dialog,
+      products: this.products,
+      modules: this.catalog,
+      materials: this.materials,
+      toast: this.toast,
+      injector: this.injector,
+      destroyRef: this.destroyRef,
+      busy: this.catalogEditBusy,
+      onSaved: () => {
+        const o = this.order();
+        if (o) this.reloadForest(o);
+      },
+    };
   }
 
   private reloadForest(order: Order): void {
@@ -467,54 +512,11 @@ export class OrderDetailPage {
     const depth = this.requestedDepth();
     this.treeLoading.set(true);
 
-    const loads = items.map((item, index) => this.loadLineRoot(item, index, depth));
-    forkJoin(loads).subscribe((roots) => {
+    loadOrderCompositionForest(this.catalog, items, depth).subscribe((roots) => {
       if (seq !== this.loadSeq) return;
       this.treeLoading.set(false);
       this.lineRoots.set(roots);
     });
-  }
-
-  private loadLineRoot(item: OrderItem, index: number, depth: number) {
-    const productId = (item.productId ?? '').trim();
-    const snapshotName = (item.productName ?? '').trim();
-    const qty = item.quantity > 0 ? item.quantity : 1;
-    const fallbackId = `line:${index}:${productId || 'missing'}`;
-
-    if (!productId) {
-      return of({
-        _id: fallbackId,
-        name: snapshotName || 'Изделие без ссылки на каталог',
-        kind: 'product' as const,
-        quantity: qty,
-        unit: item.unit,
-        children: [] as CompositionTreeNode[],
-      });
-    }
-
-    return this.catalog.getProductTree(productId, depth).pipe(
-      map((res) => {
-        if (!res.ok) {
-          return {
-            _id: productId,
-            name: snapshotName
-              ? `${snapshotName} — не найдено в каталоге`
-              : 'Изделие не найдено в каталоге',
-            kind: 'product' as const,
-            quantity: qty,
-            unit: item.unit,
-            children: [] as CompositionTreeNode[],
-          };
-        }
-        const tree = res.data;
-        return {
-          ...tree,
-          name: snapshotName || tree.name,
-          quantity: qty,
-          unit: item.unit ?? tree.unit,
-        };
-      }),
-    );
   }
 
   private depthOf(

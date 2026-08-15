@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { LucideAngularModule, Image as ImageIcon } from 'lucide-angular';
+import { LucideAngularModule, Image as ImageIcon, Pencil } from 'lucide-angular';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { catalogKindBorder, catalogKindOklch } from '../catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
@@ -21,6 +21,8 @@ export type CompositionTreeSelectEvent = {
   parent: CompositionTreeNode | null;
   depth: number;
 };
+
+export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
 
 /**
  * Composition tree — canon: docs/pages/ui-composition-tree.md
@@ -156,6 +158,17 @@ export type CompositionTreeSelectEvent = {
           @if (depth > 5) {
             <span class="text-xs text-sunrise-warm shrink-0" role="note">глуб.</span>
           }
+          @if (showEdit()) {
+            <button
+              type="button"
+              class="shrink-0 w-7 h-7 inline-flex items-center justify-center rounded-sm text-muted-foreground hover:text-ink pi-focus-ring"
+              data-test="composition-tree-edit"
+              [attr.aria-label]="'Изменить «' + node.name + '» в каталоге'"
+              (click)="onEditClick($event, node, parent, depth)"
+            >
+              <lucide-icon [img]="PencilIconSvg" [size]="14" aria-hidden="true" />
+            </button>
+          }
         </div>
         @if (isExpanded(node) && node.children.length > 0) {
           <div
@@ -187,10 +200,14 @@ export class CompositionTreeComponent {
   readonly root = input<CompositionTreeNode | null>(null);
   readonly ariaLabel = input('Дерево состава');
   readonly selectedId = input<string | null>(null);
+  /** TZ-ORDERS-337: per-row catalog pencil. Order hosts keep true; BOM may hide. */
+  readonly showEdit = input(true);
   readonly expandedChange = output<CompositionTreeExpandEvent>();
   readonly selectedChange = output<CompositionTreeSelectEvent>();
+  readonly editClick = output<CompositionTreeEditEvent>();
 
   protected readonly ImageIconSvg = ImageIcon;
+  protected readonly PencilIconSvg = Pencil;
 
   private readonly expanded = signal(new Set<string>());
   private lastRootId: string | null = null;
@@ -265,6 +282,17 @@ export class CompositionTreeComponent {
 
   protected onRowMouseDown(event: MouseEvent): void {
     event.preventDefault();
+  }
+
+  protected onEditClick(
+    event: MouseEvent,
+    node: CompositionTreeNode,
+    parent: CompositionTreeNode | null,
+    depth: number,
+  ): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.editClick.emit({ node, parent, depth });
   }
 
   protected onRowClick(

@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-ORDERS-337 DONE: Composition-tree pencil + list forest
+**Статус:** DONE; deploy НЕ
+**Что:** карандаш состава; leaf click → каталог; list expand = composition-tree; title «Заказ».
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-337.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-337-order-composition-edit.lock`
+**Gates:** FE tsc PASS; Jest 48 PASS; lint owned files PASS.
+
 ## [2026-08-15] — TZ-ORDERS-336 DONE: Order form productId + default Site + freeze
 **Статус:** DONE; deploy НЕ
 **Что:** Save пишет productId; ensure-default Site; freeze UX/payload; date input + line ship default.

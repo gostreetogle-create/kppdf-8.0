@@ -7,6 +7,10 @@ import { BehaviorSubject, of } from 'rxjs';
 import { OrdersPage } from './orders.page';
 import { OrdersService, Order } from './orders.service';
 import { CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
+import { ProductsService } from '../../shared/services/products.service';
+import { MaterialsService } from '../../shared/services/materials.service';
+import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -16,6 +20,7 @@ describe('OrdersPage', () => {
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/orders`;
   const dialogSpy = { open: jest.fn().mockReturnValue({}) };
+  const getProductTree = jest.fn();
   const queryParamSubject = new BehaviorSubject<{ get: (key: string) => string | null }>({
     get: () => null,
   });
@@ -73,6 +78,35 @@ describe('OrdersPage', () => {
 
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    getProductTree.mockReset();
+    getProductTree.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'p1',
+          name: 'Изделие',
+          kind: 'product',
+          quantity: 2,
+          children: [
+            {
+              _id: 'm1',
+              name: 'Каркас',
+              kind: 'module',
+              quantity: 1,
+              children: [
+                {
+                  _id: 'mat1',
+                  name: 'Труба',
+                  kind: 'material',
+                  quantity: 1,
+                  children: [],
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    );
     queryParamSubject.next({ get: () => null });
     await TestBed.configureTestingModule({
       providers: [
@@ -97,6 +131,16 @@ describe('OrdersPage', () => {
         },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        {
+          provide: ProductModulesService,
+          useValue: { getProductTree, findById: () => of({ ok: false }) },
+        },
+        { provide: ProductsService, useValue: { findById: () => of({ ok: false }) } },
+        { provide: MaterialsService, useValue: { findById: () => of({ ok: false }) } },
+        {
+          provide: CatalogAppearanceService,
+          useValue: { load: () => of(null), palette: () => undefined },
+        },
       ],
     }).compileComponents();
 
@@ -320,7 +364,17 @@ describe('OrdersPage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="order-group-documents"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).not.toContain('Сделка');
     expect(fixture.nativeElement.textContent).toContain('Состав заказа');
-    expect(fixture.nativeElement.textContent).toContain('Изделие');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-composition-tree"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('изд');
+    expect(fixture.nativeElement.textContent).toContain('мод');
+    expect(fixture.nativeElement.textContent).toContain('мат');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-composition-panel"] ul'),
+    ).toBeFalsy();
+    expect(getProductTree).toHaveBeenCalledWith('p1', 2);
     expect(dialogSpy.open).not.toHaveBeenCalled();
 
     row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));

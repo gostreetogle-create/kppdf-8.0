@@ -18,9 +18,11 @@
 Тот же каскад (изделие→изделие→модуль→деталь, card-within-card + rail)
 — **образец** для других вложенностей. Первый foreseen consumer:
 
-- **Заказ:** chrome «Заказ №…» вместо «Состав»; корни = изделия заказа;
-  внутри — live BOM каталога (`getProductTree`). Статусы на узлах — later.
-  TZ: `tasks/_archive/2026-08/TZ-ORDERS-302.done.md` (DONE).
+- **Заказ:** chrome «Заказ №…»; корни = изделия заказа;
+  внутри — live BOM каталога (`getProductTree`). Карандаш / пустой лист —
+  правка **карточки каталога**, не snapshot заказа. Список `/orders` expand
+  «Состав заказа» — тот же `app-composition-tree`. Статусы на узлах — later.
+  TZ: `tasks/_archive/2026-08/TZ-ORDERS-302.done.md` · **TZ-ORDERS-337**.
   Страница: `frontend/src/app/pages/orders/order-detail.page.ts` · `/orders/:id`.
 - Pattern lock: [`../audits/2026-08-08-composition-cascade-pattern-lock.md`](../audits/2026-08-08-composition-cascade-pattern-lock.md)
 - Скрин-эталон (dark): [`assets/composition-tree-cascade-dark-2026-08-08.png`](./assets/composition-tree-cascade-dark-2026-08-08.png)
@@ -51,6 +53,13 @@
     Строка: `min-h-11`, плотные `px-1.5 py-1 gap-1` (ближе к краям).
 12. **Type scale (TZ-UI-TYPE-302):** kind badge / «глуб.» — `eyebrow` / `text-xs`
     (не `text-[10px]`); имя `text-sm`; qty `text-xs`.
+13. **Карандаш (TZ-ORDERS-337):** справа на каждой строке кнопка
+    `data-test="composition-tree-edit"` (`showEdit`, по умолчанию true).
+    `stopPropagation` — не сворачивает ветку. Хост слушает `editClick`
+    `{ node, parent, depth }` и открывает **каталожный** диалог изделия/модуля/материала
+    (как BOM `bom-edit`). Пустой product/module (нет ›): клик по строке тоже
+    открывает редактор, чтобы добавить состав. Материал — только карандаш / выбор.
+    Live BOM каталога, не копия состава заказа.
 
 ## Запрещено
 
@@ -90,4 +99,4 @@ Kind по-прежнему только бейдж + left rail. Строки —
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-08 (333/334 · Orders · dark 335 · UX-311/312 thumb density)._
+_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-ORDERS-337 pencil + order forest)._

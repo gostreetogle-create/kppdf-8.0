@@ -311,4 +311,47 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     ) as HTMLElement;
     expect(nameEl.classList.contains('line-clamp-2')).toBe(true);
   });
+
+  it('TZ-ORDERS-337: pencil on each row emits editClick without collapsing', () => {
+    fixture.componentRef.setInput('root', tree);
+    fixture.componentRef.setInput('selectedId', 'm1');
+    fixture.detectChanges();
+
+    const moduleRow = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    moduleRow.click();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-nest"]',
+      ),
+    ).toBeTruthy();
+
+    const edits: Array<{ id: string }> = [];
+    fixture.componentInstance.editClick.subscribe((e) => edits.push({ id: e.node._id }));
+
+    const pencil = moduleRow.querySelector(
+      '[data-test="composition-tree-edit"]',
+    ) as HTMLButtonElement;
+    expect(pencil).toBeTruthy();
+    expect(pencil.getAttribute('aria-label')).toContain('Модуль A');
+    pencil.click();
+    fixture.detectChanges();
+
+    expect(edits).toEqual([{ id: 'm1' }]);
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-nest"]',
+      ),
+    ).toBeTruthy();
+  });
+
+  it('TZ-ORDERS-337: showEdit=false hides pencils', () => {
+    fixture.componentRef.setInput('root', tree);
+    fixture.componentRef.setInput('showEdit', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="composition-tree-edit"]')).toBeNull();
+  });
 });

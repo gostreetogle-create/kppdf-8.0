@@ -114,6 +114,7 @@ interface LineCostHint {
             [selectedId]="selectedNodeId()"
             (expandedChange)="onExpand($event)"
             (selectedChange)="onSelect($event)"
+            (editClick)="onEditFromTree($event)"
           />
         </div>
       </div>
@@ -397,6 +398,11 @@ export class ProductBomPanelComponent {
     if (event.node.kind === 'module') this.ensureModuleLines(event.node._id);
     if (event.parent?.kind === 'module') this.ensureModuleLines(event.parent._id);
     this.refreshLineCost(event);
+  }
+
+  protected onEditFromTree(event: CompositionTreeSelectEvent): void {
+    this.selected.set(event);
+    this.openEditSelected();
   }
 
   protected onExpand(event: { node: CompositionTreeNode; expanded: boolean }): void {

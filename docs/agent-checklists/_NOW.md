@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T23:40:00+03:00
+updated_at: 2026-08-16T00:05:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-ORDERS-336 DONE)_
+_(empty — TZ-ORDERS-337 DONE)_
 
 ## NEXT (PO paste prompt)
 
-_(empty — 336 DONE; queue empty)_
+_(empty — 337 DONE; queue empty)_
 
-_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**)_
+_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
 ## Queue hygiene (not live)
 
@@ -27,6 +27,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-15] — TZ-ORDERS-337 DONE — Composition-tree pencil + list forest
+
+- Archive: `tasks/_archive/2026-08/TZ-ORDERS-337.done.md`; pencil on tree rows; list expand = live catalog forest; «Паспорт»→«Заказ».
 
 ## [2026-08-15] — TZ-ORDERS-336 DONE — Order form productId + default Site + freeze
 
@@ -113,5 +117,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty**; TZ-ORDERS-336 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **empty**; TZ-ORDERS-337 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
 - Deploy app: НЕ — не автодеплой

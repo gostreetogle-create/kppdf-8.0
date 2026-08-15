@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-ORDERS-337 DONE — Composition-tree pencil + list forest
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** карандаш на строках состава; лист изделия/модуля открывает каталог; expand списка = `app-composition-tree`; «Паспорт заказа» → «Заказ».
+**Gates:** FE tsc PASS; Jest composition-tree + order-detail + orders.page + forest + bom-panel **48 PASS**; lint owned files PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-337.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-337-order-composition-edit.lock`
+**Dep:** TZ-ORDERS-336
+
 ## [2026-08-15] — TZ-ORDERS-336 DONE — Order form productId + default Site + freeze
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

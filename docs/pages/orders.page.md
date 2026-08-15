@@ -19,7 +19,7 @@ Read-only expand на списке `/orders`:
 
 | Блок                       | HTTP | Содержание                                                                                                                                                               |
 | -------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Состав заказа**          | 0    | группа «Заказ»; accordion inline; link «Открыть карточку заказа» → `/orders/:id`; без дубля заказчик/КП/объект (они в строке таблицы)                                    |
+| **Состав заказа**          | 1/line | группа «Заказ»; accordion; **`app-composition-tree`** forest (`GET /products/:id/tree`); карандаш → каталог; link «Открыть карточку заказа» → `/orders/:id`; без дубля заказчик/КП/объект |
 | **Снабжение (HUB-303)**    | 1    | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
 | **Производство (HUB-303)** | 0    | «Оценка в цехе» + `/production?orderId=`                                                                                                                                 |
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
@@ -28,7 +28,8 @@ Read-only expand на списке `/orders`:
 | **Отгрузка (HUB-304)**     | 0    | stub copy + link `/shipping`; **не** `GET /shipments`                                                                                                                    |
 
 - Stale: ответы supply/reservations игнорируются если `expandedId` уже другой.
-- Write из expand запрещён. Budget ≤4 HTTP (supply=1 + reservations=1).
+- Write **заказа** из expand запрещён (линии/ready/заказчик). Карандаш состава пишет в **каталог** (live BOM), не в snapshot `Order.items`.
+- Budget: supply=1 + reservations=1 + composition tree per line when accordion open.
 - Service: `ReservationsService` (`pi-reservations.service.ts`) — read-only `list(orderNumber?)`.
 
 ### Визуальная иерархия expand
@@ -91,15 +92,17 @@ Read-only expand на списке `/orders`:
 | `search`     | `SearchState`                                       | Debounced поиск (300ms)                   |
 | `listRes`    | `HttpResource<Order[]>`                             | GET /api/orders                           |
 
-## Карточка `/orders/:id` (TZ-ORDERS-302 + 303)
+## Карточка `/orders/:id` (TZ-ORDERS-302 + 303 + 337)
 
-- Chrome: «Заказ №…» (`PiPageChrome` + H1).
+- Chrome: «Заказ №…» (`PiPageChrome` + H1). FactStack title **«Заказ»** (не «Паспорт заказа»).
 - Meta под заголовком: **Заказчик** (name) + **Объект** (site name/address), если populate есть.
 - Блок «Позиции»: простые строки — имя изделия · Ответственный · Отгрузка (без цен).
 - Корни дерева = линии заказа (`productId`, qty, snapshot name); expand = live composition каталога.
+- Карандаш на каждой строке → Product/Module/Material form dialog (как BOM `bom-edit`). Пустой product/module (нет ›): клик открывает тот же редактор.
+- Hint под «Состав»: «Кликни строку — выбрать и раскрыть · карандаш — изменить в каталоге».
 - Empty: «В заказе нет изделий»; 404 каталога — warn на узле, без падения.
 - **Не** показывать unitPrice / прайс КП в дереве (rails D4).
-- Компонент: `order-detail.page.ts` + reuse `app-composition-tree` (не форк).
+- Компонент: `order-detail.page.ts` + reuse `app-composition-tree` (не форк). Helper: `order-composition-forest.ts`.
 
 ## КП-заглушка для прямого заказа (TZ-ORDERS-306)
 
@@ -153,12 +156,12 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 Канон: [`docs/audits/2026-08-15-order-lifecycle-hub.md`](../audits/2026-08-15-order-lifecycle-hub.md).
 
-- Expand на списке (паттерн products / UX-319): read-only блоки Состав заказа (inline accordion) · Готовность · Снабжение · Производство · Склад · Отгрузка (stub) · Документы. Коммерческие сведения уже видны в строке заказа и не дублируются отдельным блоком «Сделка».
+- Expand на списке (паттерн products / UX-319): «Состав заказа» = тот же `app-composition-tree` (live `getProductTree`) · Готовность · Снабжение · Производство · Склад · Отгрузка (stub) · Документы. Коммерческие сведения уже видны в строке заказа и не дублируются отдельным блоком «Сделка».
 - Data **Variant A**: lazy; ≤4 HTTP reads; склад = `GET /api/reservations?orderId=<Order.number>`; снабжение = `GET /api/supply-tasks?orderId=<Order._id>`.
 - Документы: `/doc-constructor/templates?source=order&sourceId=` (не builder без id).
 - Производство (HUB-303): `/production?orderId=<id>` — route contract в TZ-301.
 - КП-ссылки: только `/proposals` (не `/commercial/proposals`).
-- Write в панели запрещён.
+- Write **полей заказа** в панели запрещён; правка состава = каталог (337).
 
 ## TZ reference
 
@@ -170,6 +173,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | TZ-ORDERS-302         | Detail + live composition-tree                                                               |
 | TZ-ORDERS-303         | siteId + quick-create + line owner/shipDate                                                  |
 | **TZ-ORDERS-336**     | productId на Save; ensure-default Site; freeze UX; date input + ship default                 |
+| **TZ-ORDERS-337**     | Карандаш состава + list expand = composition-tree; «Паспорт»→«Заказ»                         |
 | TZ-ORDERS-306         | КП-заглушка из прямого заказа (`POST /orders/:id/stub-proposal`)                             |
 | **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY                                               |
 | **TZ-ORDERS-HUB-302** | Колонки + expand «Состав заказа» (accordion; без «Сделка») — DONE                            |
@@ -185,4 +189,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-15 (TZ-ORDERS-336)._
+_Обновлено: 2026-08-15 (TZ-ORDERS-337)._

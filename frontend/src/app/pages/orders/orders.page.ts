@@ -18,6 +18,28 @@ import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.
 import { DEALS_TOC_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
+import {
+  CompositionTreeComponent,
+  type CompositionTreeExpandEvent,
+  type CompositionTreeSelectEvent,
+  type CompositionTreeEditEvent,
+} from '../../shared/ui/composition/composition-tree.component';
+import {
+  CompositionTreeNode,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
+import { ProductsService } from '../../shared/services/products.service';
+import { MaterialsService } from '../../shared/services/materials.service';
+import {
+  loadOrderCompositionForest,
+  ORDER_TREE_INITIAL_DEPTH,
+  ORDER_TREE_MAX_DEPTH,
+} from './order-composition-forest';
+import {
+  isEmptyCatalogBranch,
+  openCatalogEditFromTree,
+  type CatalogCompositionEditDeps,
+} from './open-catalog-composition-edit';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -203,6 +225,7 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    CompositionTreeComponent,
   ],
   template: `
     <app-pi-group-workspace [toc]="dealsToc" tocActiveId="orders" [chips]="emptyChips" activeId="">
@@ -345,7 +368,7 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
                           class="flex items-center justify-between gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm"
                           [attr.aria-expanded]="compositionExpandedId() === row._id"
                           [attr.aria-controls]="'order-composition-' + row._id"
-                          (click)="toggleComposition(row._id); $event.stopPropagation()"
+                          (click)="toggleComposition(row); $event.stopPropagation()"
                           data-test="order-composition-toggle"
                         >
                           <span class="font-medium">Состав заказа</span>
@@ -368,18 +391,35 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
                           >
                             @if ((row.items?.length ?? 0) === 0) {
                               <p class="text-xs text-muted-foreground m-0">В заказе нет изделий.</p>
-                            } @else {
-                              <ul class="m-0 pl-4 space-y-1 text-sm leading-relaxed">
-                                @for (item of row.items; track $index) {
-                                  <li>
-                                    {{
-                                      item.productName ||
-                                        'Изделие ' + item.productId.slice(0, 8) + '…'
-                                    }}
-                                    · {{ item.quantity }}{{ item.unit ? ' ' + item.unit : '' }}
-                                  </li>
+                            } @else if (
+                              compositionForestLoading() && compositionForestOrderId() === row._id
+                            ) {
+                              <p
+                                class="text-sm text-muted-foreground py-3 m-0"
+                                data-test="order-composition-loading"
+                              >
+                                Загрузка состава…
+                              </p>
+                            } @else if (compositionForestOrderId() === row._id) {
+                              <div
+                                class="space-y-3 p-2 hairline rounded-sm bg-paper"
+                                data-test="order-composition-tree"
+                              >
+                                @for (
+                                  root of compositionForest();
+                                  track trackCompositionRoot($index, root)
+                                ) {
+                                  <app-composition-tree
+                                    [root]="root"
+                                    [selectedId]="compositionSelectedId()"
+                                    [showEdit]="true"
+                                    ariaLabel="Состав изделия в заказе"
+                                    (expandedChange)="onCompositionExpand($event)"
+                                    (selectedChange)="onCompositionSelect($event)"
+                                    (editClick)="onCompositionEdit($event)"
+                                  />
                                 }
-                              </ul>
+                              </div>
                             }
                             <a
                               [routerLink]="['/orders', row._id]"
@@ -632,6 +672,9 @@ export class OrdersPage implements OnInit {
   }
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
+  private readonly catalog = inject(ProductModulesService);
+  private readonly products = inject(ProductsService);
+  private readonly materials = inject(MaterialsService);
   private readonly supply = inject(SupplyTaskService);
   private readonly reservations = inject(ReservationsService);
   private readonly dialog = inject(PiDialogService);
@@ -915,9 +958,122 @@ export class OrdersPage implements OnInit {
   }
 
   protected readonly compositionExpandedId = signal<string | null>(null);
+  protected readonly compositionForest = signal<CompositionTreeNode[]>([]);
+  protected readonly compositionForestLoading = signal(false);
+  protected readonly compositionForestOrderId = signal<string | null>(null);
+  protected readonly compositionSelectedId = signal<string | null>(null);
+  private readonly compositionRequestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
+  private compositionLoadSeq = 0;
+  private readonly catalogEditBusy = signal(false);
+  private compositionExpandRow: Order | null = null;
 
-  protected toggleComposition(orderId: string): void {
-    this.compositionExpandedId.update((current) => (current === orderId ? null : orderId));
+  protected toggleComposition(row: Order): void {
+    const closing = this.compositionExpandedId() === row._id;
+    this.compositionExpandedId.set(closing ? null : row._id);
+    if (closing) {
+      this.clearCompositionForest();
+      return;
+    }
+    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
+    this.loadCompositionForest(row);
+  }
+
+  protected trackCompositionRoot(index: number, root: CompositionTreeNode): string {
+    return `${index}:${root._id}`;
+  }
+
+  protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
+    this.compositionSelectedId.set(ev.node._id);
+    if (isEmptyCatalogBranch(ev.node)) {
+      openCatalogEditFromTree(this.catalogEditDeps(), ev);
+    }
+  }
+
+  protected onCompositionEdit(ev: CompositionTreeEditEvent): void {
+    this.compositionSelectedId.set(ev.node._id);
+    openCatalogEditFromTree(this.catalogEditDeps(), ev);
+  }
+
+  protected onCompositionExpand(ev: CompositionTreeExpandEvent): void {
+    if (!ev.expanded) return;
+    const row = this.compositionExpandRow;
+    if (!row) return;
+    const depth = this.depthOfComposition(ev.node);
+    if (depth < 0) return;
+    const need = Math.min(depth + 2, ORDER_TREE_MAX_DEPTH);
+    if (need <= this.compositionRequestedDepth()) return;
+    this.compositionRequestedDepth.set(need);
+    this.loadCompositionForest(row);
+  }
+
+  private catalogEditDeps(): CatalogCompositionEditDeps {
+    return {
+      dialog: this.dialog,
+      products: this.products,
+      modules: this.catalog,
+      materials: this.materials,
+      toast: this.toast,
+      injector: this.injector,
+      destroyRef: this.destroyRef,
+      busy: this.catalogEditBusy,
+      onSaved: () => {
+        const row = this.compositionExpandRow;
+        if (row) this.loadCompositionForest(row);
+      },
+    };
+  }
+
+  private loadCompositionForest(row: Order): void {
+    this.compositionExpandRow = row;
+    this.compositionForestOrderId.set(row._id);
+    const items = row.items ?? [];
+    if (items.length === 0) {
+      this.compositionForest.set([]);
+      this.compositionForestLoading.set(false);
+      return;
+    }
+    const seq = ++this.compositionLoadSeq;
+    this.compositionForestLoading.set(true);
+    loadOrderCompositionForest(this.catalog, items, this.compositionRequestedDepth()).subscribe(
+      (roots) => {
+        if (seq !== this.compositionLoadSeq) return;
+        this.compositionForestLoading.set(false);
+        this.compositionForest.set(roots);
+      },
+    );
+  }
+
+  private clearCompositionForest(): void {
+    this.compositionExpandRow = null;
+    this.compositionForestOrderId.set(null);
+    this.compositionForest.set([]);
+    this.compositionForestLoading.set(false);
+    this.compositionSelectedId.set(null);
+    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
+  }
+
+  private depthOfComposition(
+    target: CompositionTreeNode,
+    roots: CompositionTreeNode[] = this.compositionForest(),
+  ): number {
+    for (const root of roots) {
+      const found = this.depthInComposition(target, root, 0);
+      if (found !== -1) return found;
+    }
+    return -1;
+  }
+
+  private depthInComposition(
+    target: CompositionTreeNode,
+    node: CompositionTreeNode,
+    depth: number,
+  ): number {
+    if (node._id === target._id) return depth;
+    for (const child of node.children) {
+      const found = this.depthInComposition(target, child, depth + 1);
+      if (found !== -1) return found;
+    }
+    return -1;
   }
 
   protected readonly expandedId = signal<string | null>(null);
@@ -955,6 +1111,7 @@ export class OrdersPage implements OnInit {
   private resetExpansion(): void {
     this.expandedId.set(null);
     this.compositionExpandedId.set(null);
+    this.clearCompositionForest();
     this.clearSupplyExpand();
     this.clearReservationExpand();
   }

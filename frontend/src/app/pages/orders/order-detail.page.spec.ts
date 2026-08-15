@@ -11,6 +11,9 @@ import {
   CompositionTreeNode,
   ProductModulesService,
 } from '../../shared/services/pi-product-modules.service';
+import { ProductsService } from '../../shared/services/products.service';
+import { MaterialsService } from '../../shared/services/materials.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 
 describe('OrderDetailPage (TZ-ORDERS-302)', () => {
@@ -61,14 +64,25 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
   const findById = jest.fn();
   const getProductTree = jest.fn();
   const createStubProposal = jest.fn();
+  const productsFindById = jest.fn();
+  const modulesFindById = jest.fn();
+  const materialsFindById = jest.fn();
 
   beforeEach(async () => {
     paramMap$.next(convertToParamMap({ id: 'ord-1' }));
     findById.mockReset();
     getProductTree.mockReset();
     createStubProposal.mockReset();
+    productsFindById.mockReset();
+    modulesFindById.mockReset();
+    materialsFindById.mockReset();
     findById.mockReturnValue(of({ ok: true, data: order }));
     getProductTree.mockReturnValue(of({ ok: true, data: productTree }));
+    productsFindById.mockReturnValue(of({ ok: true, data: { _id: 'prod-1', name: 'Стеллаж А' } }));
+    modulesFindById.mockReturnValue(of({ ok: true, data: { _id: 'mod-1', name: 'Каркас' } }));
+    materialsFindById.mockReturnValue(
+      of({ ok: true, data: { _id: 'mat-1', name: 'Труба 40×40' } }),
+    );
     createStubProposal.mockReturnValue(
       of({
         ok: true,
@@ -87,7 +101,10 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
         { provide: API_BASE_URL, useValue: '/api' },
         { provide: ActivatedRoute, useValue: { paramMap: paramMap$.asObservable() } },
         { provide: OrdersService, useValue: { findById, createStubProposal } },
-        { provide: ProductModulesService, useValue: { getProductTree } },
+        { provide: ProductModulesService, useValue: { getProductTree, findById: modulesFindById } },
+        { provide: ProductsService, useValue: { findById: productsFindById } },
+        { provide: MaterialsService, useValue: { findById: materialsFindById } },
+        { provide: PiDialogService, useValue: { open: jest.fn().mockReturnValue({}) } },
       ],
     })
       .overrideComponent(OrderDetailPage, {
@@ -101,7 +118,8 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     expect(source).toContain('PiFactCardComponent');
     expect(source).toContain('PiFactStackComponent');
     expect(source).toContain('order-detail-facts');
-    expect(source).toContain('Паспорт заказа');
+    expect(source).toContain('title="Заказ"');
+    expect(source).not.toContain('Паспорт заказа');
     expect(source).toContain('o.number');
   });
 
@@ -198,5 +216,89 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     const roots = fixture.componentInstance['lineRoots']();
     expect(roots[0].name).toContain('не найдено в каталоге');
     expect(roots[0].children).toEqual([]);
+  });
+
+  describe('TZ-ORDERS-337 catalog edit', () => {
+    async function renderLeafProduct() {
+      getProductTree.mockReturnValue(
+        of({
+          ok: true,
+          data: { ...productTree, children: [] as CompositionTreeNode[] },
+        }),
+      );
+      const fixture = TestBed.createComponent(OrderDetailPage);
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    it('opens product editor when a leaf product row is clicked', async () => {
+      const fixture = await renderLeafProduct();
+      const cmp = fixture.componentInstance as unknown as {
+        onSelect: (ev: {
+          node: CompositionTreeNode;
+          parent: CompositionTreeNode | null;
+          depth: number;
+        }) => void;
+      };
+      const leaf = { ...productTree, children: [] as CompositionTreeNode[] };
+      cmp.onSelect({ node: leaf, parent: null, depth: 0 });
+      expect(productsFindById).toHaveBeenCalledWith('prod-1');
+    });
+
+    it('opens product editor from the pencil on a leaf product', async () => {
+      const fixture = await renderLeafProduct();
+      const cmp = fixture.componentInstance as unknown as {
+        onEdit: (ev: {
+          node: CompositionTreeNode;
+          parent: CompositionTreeNode | null;
+          depth: number;
+        }) => void;
+      };
+      const leaf = { ...productTree, children: [] as CompositionTreeNode[] };
+      cmp.onEdit({ node: leaf, parent: null, depth: 0 });
+      expect(productsFindById).toHaveBeenCalledWith('prod-1');
+    });
+
+    it('pencil on a module loads the module from catalog', async () => {
+      const fixture = TestBed.createComponent(OrderDetailPage);
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+      const cmp = fixture.componentInstance as unknown as {
+        onEdit: (ev: {
+          node: CompositionTreeNode;
+          parent: CompositionTreeNode | null;
+          depth: number;
+        }) => void;
+      };
+      cmp.onEdit({
+        node: productTree.children[0]!,
+        parent: productTree,
+        depth: 1,
+      });
+      expect(modulesFindById).toHaveBeenCalledWith('mod-1');
+    });
+
+    it('pencil on a material loads the material from catalog', async () => {
+      const fixture = TestBed.createComponent(OrderDetailPage);
+      fixture.detectChanges();
+      await Promise.resolve();
+      fixture.detectChanges();
+      const cmp = fixture.componentInstance as unknown as {
+        onEdit: (ev: {
+          node: CompositionTreeNode;
+          parent: CompositionTreeNode | null;
+          depth: number;
+        }) => void;
+      };
+      cmp.onEdit({
+        node: productTree.children[0]!.children[0]!,
+        parent: productTree.children[0]!,
+        depth: 2,
+      });
+      expect(materialsFindById).toHaveBeenCalledWith('mat-1');
+    });
   });
 });
