@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-DOC-TABLES-310 DONE — remove help + separate toolbar buttons
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend UI; deploy НЕ
+**Что:** Диалог таблиц `/doc-constructor/tables`: убран on-page `ttd-column-help`; «+ Добавить столбец» и «Колонки как в КП» разведены через toolbar-sep; taller+RU из 309 сохранены; fontSize не тронут.
+**Gates:** frontend tsc PASS; table-template-dialog.component.spec 46/46; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-310.done.md`
+**Checklist:** `docs/agent-checklists/TZ-DOC-TABLES-310.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-310-remove-help-separate-buttons.lock`
+**Implementation SHA:** `44435acd272d684f2437e75ce3801021e25df187`
+**Docs SHA:** `e67a831703d2f721f8858a59afb934cb7829baae`
+**Known limit:** fontSize колонок — только после явного PO «да».
+
 ## [2026-08-15] — TZ-DOC-TABLES-309 DONE — tables dialog copy + taller fields
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend UI; deploy НЕ

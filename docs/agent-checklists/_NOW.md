@@ -5,21 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:10:00Z
-main_head: `44435acd`
+updated_at: 2026-08-15T06:15:00Z
+main_head: `e67a8317` (pre-closeout; bump after closeout commit)
 
 ## ACTIVE
-
-### TZ-DOC-TABLES-310 — READY FOR REVIEW
-
-- Marker: `tasks/_active/TZ-DOC-TABLES-310.md`
-- Spec: `tasks/TZ-DOC-TABLES-310-remove-help-separate-buttons.md`
-- Checklist: `docs/agent-checklists/TZ-DOC-TABLES-310.md`
-- Owner: Buffy (Cursor Agent)
-- claimed_at: 2026-08-15T06:04:09Z
-- State: help removed; buttons separated via toolbar-sep; 309 taller+RU kept; gates PASS; awaiting Cursor PASS (no archive yet); deploy НЕ.
-- Conflict keys: `table-template-dialog.component.ts|spec.ts` + `tables.page.md` + `PAGE-TZ-INDEX.md`.
-- Conflict vs AUTH-305: OK (deploy-only keys).
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -54,13 +43,14 @@ main_head: `44435acd`
 
 1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-3. (opt) DOC-TABLES-310 table column fontSize — only after explicit PO «да».
+3. (opt) table column fontSize — only after explicit PO «да» (не DOC-TABLES-310; 310 closed).
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 
 ## LAST DONE
 
+- DOC-TABLES-310 remove help + separate toolbar buttons — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - DOC-TABLES-309 tables dialog copy + taller fields — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - UX-318 KP columns checkbox menu stay-open — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - AUTH-306 hidden owner — DONE/pushed.

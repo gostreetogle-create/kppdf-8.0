@@ -1,8 +1,9 @@
 # TZ-DOC-TABLES-310 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-DOC-TABLES-310.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-DOC-TABLES-310.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
+> closed_at: 2026-08-15T06:15:00Z
 > READY FOR REVIEW: 2026-08-15T06:08:00Z
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -63,8 +64,14 @@ cd frontend && pnpm test -- table-template-dialog.component.spec
 - [x] READY FOR REVIEW
 - [x] **Не** archive до Cursor Verdict PASS
 
+## Cursor verdict (2026-08-15)
+
+- Verdict: **PASS**
+- Cross-check: `44435acd` — help removed; toolbar sep between add-column and KP columns; gates reported PASS
+- Next: Buffy closeout
+
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T06:15:00Z

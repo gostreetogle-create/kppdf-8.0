@@ -1,0 +1,13 @@
+task: TZ-DOC-TABLES-310
+status: DONE
+closed_at: 2026-08-15T06:15:00Z
+implementation_sha: 44435acd272d684f2437e75ce3801021e25df187
+docs_sha: e67a831703d2f721f8858a59afb934cb7829baae
+protected_files:
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts
+  - docs/pages/tables.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+behavior: no on-page column help; add-column and KP columns buttons separated by toolbar-sep; 309 taller+RU kept
+cursor_verdict: PASS
+production: not executed
