@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-376.md`
 **Lock:** `.mimocode/locks/TZ-SALES-376-geometry-aware-page-split.lock`
 **Implementation SHA:** `7a619e4c95ceebc64aef45a42e47208437a46516`
-**Closeout SHA:** `81509f56`
+**Closeout SHA:** `c761a004`
 **Known limit:** auto capacity — estimate not pixel-perfect; continuation/per-page templates = TZ-SALES-377 PARK backlog.
 
 ## [2026-08-15] — TZ-FRONTEND-303 DONE — Jest baseline debt
