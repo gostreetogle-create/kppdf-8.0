@@ -10,7 +10,11 @@
 
 ## Query params
 
-Нет (фильтр статуса в сигнале страницы).
+| Параметр | Тип | Назначение |
+|----------|-----|-----------|
+| `orderId` | `string` (Order._id) | **HUB-303:** фильтр списка через `GET /api/supply-tasks?orderId=`; chip «Фильтр: заказ …» + сброс (navigate clear `orderId`) |
+
+Фильтр статуса — в сигнале страницы (не query).
 
 ## API endpoints
 
@@ -28,8 +32,17 @@
 
 - Таблица: позиция, заказ (ссылка на `/orders/:id`), qty, статус, дата confirm, действия
 - «+ Задача» — inline form (заказ + название + qty)
+- Chip при `?orderId=`: «Фильтр: заказ {номер|id}» + «Сбросить»
 - Empty: «Нет задач снабжения. Создайте первую — «+ Задача».»
 - Не stub NAV-301
+
+## TZ reference
+
+| TZ | Что сделано |
+|----|------------|
+| TZ-SUPPLY-301 | Live registry + confirm/ordered/received |
+| TZ-SUPPLY-302 | BOM explode → draft tasks |
+| **TZ-ORDERS-HUB-303** | Query `orderId` filter + deep-link from orders expand |
 
 ## Канон
 

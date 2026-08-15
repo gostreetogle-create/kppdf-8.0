@@ -13,6 +13,21 @@
 
 - `q` — deep-link поиска по номеру заказа (используется из production cockpit).
 
+## Order lifecycle hub expand (HUB-302 + HUB-303)
+
+Read-only expand на списке `/orders`:
+
+| Блок | HTTP | Содержание |
+|------|------|------------|
+| Сделка | 0 | заказчик · объект · КП · договор; ссылки `/proposals`, `/contracts` |
+| Состав | 0 | линии; ссылка `/orders/:id` |
+| **Снабжение (HUB-303)** | 1 | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
+| **Производство (HUB-303)** | 0 | «Оценка в цехе» + `/production?orderId=` |
+| **Документы (HUB-303)** | 0 | `/doc-constructor/templates?source=order&sourceId=` |
+
+- Stale: ответ supply игнорируется если `expandedId` уже другой.
+- Write из expand запрещён. Budget ≤4 HTTP (supply = 1 в этой волне).
+- HUB-304: Готовность / Склад / Отгрузка.
 
 ## Workspace chrome
 
@@ -137,7 +152,9 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | TZ-ORDERS-303 | siteId + quick-create + line owner/shipDate |
 | TZ-ORDERS-306 | КП-заглушка из прямого заказа (`POST /orders/:id/stub-proposal`) |
 | **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY |
-| **TZ-ORDERS-HUB-302** | Колонки + read-only expand «Сделка/Состав» — READY FOR REVIEW |
+| **TZ-ORDERS-HUB-302** | Колонки + read-only expand «Сделка/Состав» — DONE |
+| **TZ-ORDERS-HUB-303** | Expand Снабжение/Производство/Документы + `/supply?orderId=` + `/production?orderId=` — DONE |
+| **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — next |
 
 ## Особенности
 

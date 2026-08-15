@@ -31,7 +31,7 @@
 
 ## Integrity
 
-- [x] page docs prep (pre-FE); PAGE-TZ-INDEX hub refs
+- [x] page docs prep; PAGE-TZ-INDEX hub refs
 - [x] foreign WIP excluded (layout/products/AUTH not staged)
 
 ## Gates
@@ -53,7 +53,7 @@
 ## Executor report (auto)
 
 - status: READY FOR REVIEW
-- feat_sha: _(after push)_
+- feat_sha: 9eed2860ddadbc4b1daf8d8176dd7345784f3faf
 - gates: tsc PASS; jest orders 13/13 + supply 2/2 + production-cockpit 2/2 = 17/17 PASS
 - scope: orders expand supply/production/docs blocks; supply `?orderId=` filter chip; production `?orderId=` deep-link + unknown hint; focused specs
 - excluded: HUB-304 reservations/shipping; BE; deploy; foreign layout/CATALOG WIP

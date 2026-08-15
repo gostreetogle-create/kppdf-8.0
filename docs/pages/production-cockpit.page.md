@@ -14,9 +14,10 @@
 
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
-| `q` | `string` | Deep-link из инспектора: открывает `/orders?q=<номер>` и применяет номер к поиску списка заказов |
+| `orderId` | `string` (sales Order._id) | **HUB-303:** после загрузки orders → `ctx.selectOrder(id)` через существующий onSelect; unknown id — RU hint + fallback «все активные» |
+| `q` | `string` | Deep-link из инспектора: открывает `/orders?q=<номер>` (сам `/production` `q` не читает) |
 
-`q` относится к переходу из inspector в `/orders`; сам `/production` его не читает.
+Ручной select в rail URL не обязан обновлять.
 
 ### API endpoints (read-only facade)
 
@@ -81,6 +82,7 @@
 |----|------------|
 | TZ-PRODUCTION-303 | Shell + rail + gantt + PAGE_KEYS + director read Roles |
 | TZ-PRODUCTION-303.1 | Closeout: inspector `/orders?q=` deep-link + Gantt hotfix documentation |
+| **TZ-ORDERS-HUB-303** | Deep-link `/production?orderId=` → selectOrder; unknown id safe + RU hint |
 | TZ-PRODUCTION-302 | WorkType.days |
 | TZ-PRODUCTION-308…310 | backlog polish / safe edit / a11y (см. audit response) |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
