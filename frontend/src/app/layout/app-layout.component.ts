@@ -431,12 +431,11 @@ export function matchActiveCategoryId(
         </header>
 
         <!--
-          TZ-UX-321: universal left chrome rail — ←→ stacked inside the panel,
-          aligned with the KPPDF brand vertical (pi-page-frame content start).
-          Visible only when gutters exist (min-width 1680px).
+          TZ-UX-321-FIX: two transparent chrome rails anchored to .pi-page-frame
+          (position:relative). ← left rail, → right rail. Visible ≥1680px only.
         -->
         <aside
-          class="app-chrome-rail-left"
+          class="app-chrome-rail app-chrome-rail-left"
           data-test="app-chrome-rail-left"
           aria-label="Левая панель навигации приложения"
           aria-orientation="vertical"
@@ -453,6 +452,13 @@ export function matchActiveCategoryId(
           >
             <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
           </button>
+        </aside>
+        <aside
+          class="app-chrome-rail app-chrome-rail-right"
+          data-test="app-chrome-rail-right"
+          aria-label="Правая панель навигации приложения"
+          aria-orientation="vertical"
+        >
           <button
             type="button"
             class="app-nav-rail-button pi-focus-ring"
@@ -489,11 +495,10 @@ export function matchActiveCategoryId(
     </div>
   `,
   styles: `
-    /* TZ-UX-321: narrow universal left chrome rail under the header. */
-    .app-chrome-rail-left {
+    /* TZ-UX-321-FIX: frame-relative transparent chrome rails (no border/bg/shadow). */
+    .app-chrome-rail {
       position: absolute;
-      top: var(--header-h);
-      bottom: 0;
+      inset-block: var(--header-h) 0;
       z-index: 20;
       display: none;
       box-sizing: border-box;
@@ -502,18 +507,16 @@ export function matchActiveCategoryId(
       gap: 8px;
       width: 64px;
       padding-top: 16px;
-      /* Match pi-page-frame content-start = brand vertical (KPPDF). */
-      left: var(--space-page-x);
+      margin: 0;
+      border: none;
+      background: transparent;
+      box-shadow: none;
     }
-    @media (min-width: 640px) {
-      .app-chrome-rail-left {
-        left: 40px;
-      }
+    .app-chrome-rail-left {
+      left: 0;
     }
-    @media (min-width: 1024px) {
-      .app-chrome-rail-left {
-        left: 64px;
-      }
+    .app-chrome-rail-right {
+      right: 0;
     }
     .app-nav-rail-button {
       display: inline-flex;
@@ -538,7 +541,7 @@ export function matchActiveCategoryId(
       cursor: default;
     }
     @media (min-width: 1680px) {
-      .app-chrome-rail-left {
+      .app-chrome-rail {
         display: flex;
       }
     }

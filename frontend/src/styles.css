@@ -342,6 +342,8 @@
  * ============================================================================= */
 @layer components {
   .pi-page-frame {
+    /* TZ-UX-321-FIX: positioned parent for absolute chrome rails. */
+    position: relative;
     width: 100%;
     max-width: var(--screen-max);
     margin-inline: auto;

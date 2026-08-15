@@ -11,7 +11,7 @@ import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../shared/ui/toast/pi-toast.service';
 import { API_BASE_URL } from '../core/api.tokens';
 
-describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
+describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX chrome rails)', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
 
   const back = jest.fn();
@@ -70,6 +70,8 @@ describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
     fixture.nativeElement.querySelector('[data-test="app-nav-forward"]');
   const leftRail = (): HTMLElement | null =>
     fixture.nativeElement.querySelector('[data-test="app-chrome-rail-left"]');
+  const rightRail = (): HTMLElement | null =>
+    fixture.nativeElement.querySelector('[data-test="app-chrome-rail-right"]');
 
   it('TZ-UX-317: renders both gutter buttons with the canonical data-test', () => {
     expect(backBtn()).toBeTruthy();
@@ -107,21 +109,30 @@ describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
     forwardBtn()!.click();
     expect(forward).not.toHaveBeenCalled();
   });
-  it('TZ-UX-321: universal left chrome rail owns both history controls', () => {
+
+  it('TZ-UX-321-FIX: left rail owns back; right rail owns forward; no app-nav-gutter', () => {
     expect(leftRail()).toBeTruthy();
+    expect(rightRail()).toBeTruthy();
     expect(leftRail()!.contains(backBtn()!)).toBe(true);
-    expect(leftRail()!.contains(forwardBtn()!)).toBe(true);
-    expect(fixture.nativeElement.querySelector('[data-test="app-chrome-rail-right"]')).toBeNull();
+    expect(rightRail()!.contains(forwardBtn()!)).toBe(true);
+    expect(leftRail()!.contains(forwardBtn()!)).toBe(false);
+    expect(rightRail()!.contains(backBtn()!)).toBe(false);
 
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'app-layout.component.ts'),
       'utf8',
     );
     expect(source).toContain('data-test="app-chrome-rail-left"');
+    expect(source).toContain('data-test="app-chrome-rail-right"');
     expect(source).toContain('app-chrome-rail-left');
+    expect(source).toContain('app-chrome-rail-right');
     expect(source).toContain('width: 64px');
+    expect(source).toContain('left: 0');
+    expect(source).toContain('right: 0');
     expect(source).not.toContain('position: fixed');
     expect(source).not.toContain('app-nav-gutter');
+    expect(source).not.toContain('left: 64px');
+    expect(source).not.toContain('right: 64px');
     expect(source).not.toContain('left: 14px');
     expect(source).not.toContain('right: 14px');
     expect(source).toContain('@media (min-width: 1680px)');

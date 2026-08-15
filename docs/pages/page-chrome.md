@@ -84,11 +84,13 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - Кнопки видны только на широких экранах (min-width 1680px — когда есть реальное
   поле ≥ ~140px); на узких — скрыты, чтобы не наезжать на studio rails / palette / A4.
 - **Позиция / chrome:** PO 2026-08-15 — не пиксельный сдвиг fixed-кнопок.
-  Канон: **левая универсальная chrome-панель** (`app-chrome-rail-left`, ширина
-  ≈56–72px / 1.5–2 см) на вертикали начала бренда «KPPDF», под шапкой; ←→
-  живут **внутри** панели. **TZ-UX-321 LANDED** (2026-08-15). TZ-UX-320
-  (`left/right: 64px` floating) — interim superseded. Page-tools (фильтр и т.п.)
-  → successor TZ-UX-322.
+  Канон: **две прозрачные chrome-панели** (`app-chrome-rail-left` /
+  `app-chrome-rail-right`, ширина 64px) якорятся к `.pi-page-frame`
+  (`position: relative`; rails `left:0` / `right:0`, `inset-block: var(--header-h) 0`).
+  ← только в left, → только в right. **TZ-UX-321-FIX READY FOR REVIEW**
+  (2026-08-15) — repair после premature closeout UX-321 (один left rail +
+  `left:64px` без relative parent). TZ-UX-320 floating superseded.
+  Page-tools (фильтр и т.п.) → successor TZ-UX-322 (не смешивать).
 - `/login` никогда не подставляется предыдущим URL — глобальный ← не выкидывает на вход.
 - `AppHistoryStore` аддитивен к `CatalogReturnStore` (API не менялся).
 
@@ -99,4 +101,4 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-UX-321)._
+_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-UX-321-FIX)._

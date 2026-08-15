@@ -1,0 +1,228 @@
+{
+  "task": "TZ-UX-321-FIX",
+  "url": "http://127.0.0.1:4221/modules",
+  "seededUser": "admin",
+  "screenshot": "D:\\kppdf-8.0\\reports\\TZ-UX-321-FIX-chrome-rail-smoke-1920.png",
+  "wide1920": {
+    "ok": true,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "framePosition": "relative",
+    "frame": {
+      "left": 255,
+      "right": 1655,
+      "width": 1400,
+      "top": 0
+    },
+    "leftRail": {
+      "left": 255,
+      "right": 319,
+      "width": 64,
+      "display": "flex",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": true,
+      "ownsForward": false
+    },
+    "rightRail": {
+      "left": 1591,
+      "right": 1655,
+      "width": 64,
+      "display": "flex",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": false,
+      "ownsForward": true
+    }
+  },
+  "mid1440": {
+    "ok": true,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "framePosition": "relative",
+    "frame": {
+      "left": 15,
+      "right": 1415,
+      "width": 1400,
+      "top": 0
+    },
+    "leftRail": {
+      "left": 0,
+      "right": 0,
+      "width": 0,
+      "display": "none",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": true,
+      "ownsForward": false
+    },
+    "rightRail": {
+      "left": 0,
+      "right": 0,
+      "width": 0,
+      "display": "none",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": false,
+      "ownsForward": true
+    }
+  },
+  "narrow1280": {
+    "ok": true,
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "framePosition": "relative",
+    "frame": {
+      "left": 0,
+      "right": 1270,
+      "width": 1270,
+      "top": 0
+    },
+    "leftRail": {
+      "left": 0,
+      "right": 0,
+      "width": 0,
+      "display": "none",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": true,
+      "ownsForward": false
+    },
+    "rightRail": {
+      "left": 0,
+      "right": 0,
+      "width": 0,
+      "display": "none",
+      "position": "absolute",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "0px/0px",
+      "boxShadow": "none",
+      "ownsBack": false,
+      "ownsForward": true
+    }
+  },
+  "checks": [
+    {
+      "name": "frame_relative",
+      "pass": true,
+      "detail": "relative"
+    },
+    {
+      "name": "left_rail_at_frame_left",
+      "pass": true,
+      "detail": {
+        "leftRailLeft": 255,
+        "frameLeft": 255
+      }
+    },
+    {
+      "name": "right_rail_at_frame_right",
+      "pass": true,
+      "detail": {
+        "rightRailRight": 1655,
+        "frameRight": 1655
+      }
+    },
+    {
+      "name": "left_rail_width_64",
+      "pass": true,
+      "detail": 64
+    },
+    {
+      "name": "right_rail_width_64",
+      "pass": true,
+      "detail": 64
+    },
+    {
+      "name": "not_viewport_plus_64",
+      "pass": true,
+      "detail": {
+        "leftRailLeft": 255,
+        "accidental": 64
+      }
+    },
+    {
+      "name": "left_owns_back_only",
+      "pass": true,
+      "detail": {
+        "left": 255,
+        "right": 319,
+        "width": 64,
+        "display": "flex",
+        "position": "absolute",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px/0px",
+        "boxShadow": "none",
+        "ownsBack": true,
+        "ownsForward": false
+      }
+    },
+    {
+      "name": "right_owns_forward_only",
+      "pass": true,
+      "detail": {
+        "left": 1591,
+        "right": 1655,
+        "width": 64,
+        "display": "flex",
+        "position": "absolute",
+        "background": "rgba(0, 0, 0, 0)",
+        "border": "0px/0px",
+        "boxShadow": "none",
+        "ownsBack": false,
+        "ownsForward": true
+      }
+    },
+    {
+      "name": "wide_display_flex",
+      "pass": true,
+      "detail": {
+        "left": "flex",
+        "right": "flex"
+      }
+    },
+    {
+      "name": "rails_no_shadow",
+      "pass": true,
+      "detail": {
+        "leftShadow": "none",
+        "rightShadow": "none"
+      }
+    },
+    {
+      "name": "mid_1440_hidden",
+      "pass": true,
+      "detail": {
+        "left": "none",
+        "right": "none"
+      }
+    },
+    {
+      "name": "narrow_1280_hidden",
+      "pass": true,
+      "detail": {
+        "left": "none",
+        "right": "none"
+      }
+    }
+  ],
+  "pass": true,
+  "selfScore": 98,
+  "note": "Geometry evidence: rails match .pi-page-frame edges at 1920; hidden below 1680."
+}

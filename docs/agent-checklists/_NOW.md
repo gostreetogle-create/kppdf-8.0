@@ -5,10 +5,21 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T14:55:00Z
-main_head: `fa254c4b`
+updated_at: 2026-08-15T14:50:00Z
+main_head: _(set after UX-321-FIX push)_
 
 ## ACTIVE
+
+### TZ-UX-321-FIX — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-UX-321-FIX.md`
+- Spec: `tasks/TZ-UX-321-fix-rail-anchor-and-right-rail.md`
+- Checklist: `docs/agent-checklists/TZ-UX-321-FIX.md`
+- Audit: `docs/audits/2026-08-15-ux321-rail-regression.md`
+- Owner: Cursor Product Executor
+- State: frame-relative left/right rails; geometry smoke PASS 98; **не archive** до Cursor PASS.
+- Evidence: `reports/TZ-UX-321-FIX-chrome-rail-geometry.json` (left=frame.left=255; right=frame.right=1655 @1920).
+- Conflict keys: app-layout + styles.css + smoke/report + checklist (foreign WIP untouched).
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -58,11 +69,11 @@ main_head: `fa254c4b`
 - Checklist: `docs/agent-checklists/TZ-ORDERS-HUB-301.md`
 - State: контракт хаба зафиксирован; wave 302–304 выполнена.
 
-### TZ-UX-321 — DONE / LANDED
+### TZ-UX-321 — DONE / LANDED (superseded geometry by FIX)
 
 - Checklist: `docs/agent-checklists/TZ-UX-321.md`
 - Archive: `tasks/_archive/2026-08/TZ-UX-321.done.md`
-- См. git log / archive для SHA.
+- Note: premature closeout; repair = **TZ-UX-321-FIX** (READY FOR REVIEW).
 
 ### TZ-CATALOG-372 / 373 — DONE / LANDED
 
@@ -75,12 +86,11 @@ main_head: `fa254c4b`
 
 ## NEXT
 
-1. AUTH-305 — только после явного `деплой` + browser PASS.
-2. Очередь ORDERS-HUB пуста (305 BE summary — optional, по evidence N+1).
-3. Визуальный smoke `/orders` expand (PO/browser) — желателен, не блокер archive.
+1. Cursor Verdict PASS на TZ-UX-321-FIX → archive + lock.
+2. AUTH-305 — только после явного `деплой` + browser PASS.
+3. TZ-UX-322 page-tools — только после FIX landed.
 
 ## HEAD / queue
 
-- ORDERS-HUB wave **complete** (301–304).
-- Active product CLAIM: нет (только AUTH-305 prep).
-- Deploy: НЕ предлагать автоматом; ждать явную команду PO.
+- Active: TZ-UX-321-FIX READY FOR REVIEW; AUTH-305 prep only.
+- Deploy: НЕ.
