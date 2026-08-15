@@ -30,7 +30,7 @@ main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
 - Archive: `tasks/_archive/2026-08/TZ-SALES-376.done.md`
 - Lock: `.mimocode/locks/TZ-SALES-376-geometry-aware-page-split.lock`
 - Implementation: `7a619e4c95ceebc64aef45a42e47208437a46516`
-- Closeout: `8272e8b4`
+- Closeout: `764aded5`
 - State: Cursor PASS; geometry-aware split + pageBreakBefore + clip + full totals + RU hint; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 - Successor park: **TZ-SALES-377** (continuation background) — backlog only, не брать.
 
