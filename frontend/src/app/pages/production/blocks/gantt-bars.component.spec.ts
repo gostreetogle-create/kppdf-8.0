@@ -842,7 +842,7 @@ describe('GanttBarsComponent', () => {
     ]);
   });
 
-  it('TZ-PRODUCTION-322: order-meta strip under summary; save emits PATCH payload', () => {
+  it('TZ-PRODUCTION-335: order-meta auto-saves on change; no obsolete hint', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -862,7 +862,12 @@ describe('GanttBarsComponent', () => {
     const timeline = el.querySelector('[data-test="gantt-order-meta-timeline-o1"]') as HTMLElement;
     expect(strip).toBeTruthy();
     expect(timeline).toBeTruthy();
-    expect(strip.textContent).toContain('Статус: Подтверждён');
+    expect(strip.textContent).toContain('Статус заказа: Подтверждён');
+    expect(strip.textContent).toContain('Важность');
+    expect(strip.textContent).toContain('Начало плана');
+    expect(strip.textContent).not.toContain('После сохранения Гант обновится');
+    expect(el.querySelector('[data-test="gantt-order-meta-save"]')).toBeNull();
+    expect(el.querySelector('[data-test="gantt-order-meta-sync-hint"]')).toBeNull();
     expect(el.querySelector('[data-test="gantt-order-meta-priority"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-order-meta-planned"]')).toBeTruthy();
     expect(
@@ -878,9 +883,6 @@ describe('GanttBarsComponent', () => {
     priority.value = 'urgent';
     priority.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    const save = el.querySelector('[data-test="gantt-order-meta-save"]') as HTMLButtonElement;
-    expect(save.disabled).toBe(false);
-    save.click();
     expect(commits).toEqual([{ orderId: 'o1', priority: 'urgent', plannedDate: '2026-08-01' }]);
 
     fixture.componentRef.setInput('orderMeta', null);

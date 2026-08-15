@@ -370,16 +370,17 @@ export function buildGanttTreeBars(
   expandedOrderIds: ReadonlySet<string>,
 ): GanttBar[] {
   const groups = groupBarsByOrder(workBars);
-  // Keep groups sorted by orderNumber for stable rail.
-  const sorted = [...groups].sort((a, b) => {
-    const an = a.children[0]?.orderNumber ?? a.orderId;
-    const bn = b.children[0]?.orderNumber ?? b.orderId;
-    return an.localeCompare(bn);
-  });
+  // Earlier summary startDate on top; tie-break orderNumber (not priority).
+  const ranked = groups
+    .map((g) => ({ g, summary: buildOrderSummaryBar(g.children) }))
+    .filter((row): row is { g: (typeof groups)[number]; summary: GanttBar } => row.summary != null)
+    .sort((a, b) => {
+      const byStart = a.summary.startDate.localeCompare(b.summary.startDate);
+      if (byStart !== 0) return byStart;
+      return a.summary.orderNumber.localeCompare(b.summary.orderNumber);
+    });
   const out: GanttBar[] = [];
-  for (const g of sorted) {
-    const summary = buildOrderSummaryBar(g.children);
-    if (!summary) continue;
+  for (const { g, summary } of ranked) {
     out.push(summary);
     if (expandedOrderIds.has(g.orderId)) {
       const kids = [...g.children].sort((a, b) => {
@@ -620,6 +621,46 @@ export function applyOptimisticPlannedDateShift<
   return { bars: nextBars, orders: nextOrders };
 }
 
+export function applyOptimisticOrderMeta<
+  TOrder extends {
+    _id: string;
+    plannedDate?: string | null;
+    date?: string | null;
+    priority?: string;
+  },
+>(
+  bars: readonly GanttBar[],
+  orders: readonly TOrder[],
+  orderId: string,
+  commit: { priority: string; plannedDate: string },
+): { bars: GanttBar[]; orders: TOrder[] } {
+  const order = orders.find((row) => row._id === orderId);
+  let nextBars = bars.map((bar) => ({ ...bar }));
+  let nextOrders = orders.map((row) => ({ ...row }));
+  if (order) {
+    const nextDate = parseDateOnly(commit.plannedDate);
+    if (nextDate) {
+      const { anchor } = resolveVisualAnchor(order);
+      const delta = Math.round(
+        (startOfLocalDay(nextDate).getTime() - startOfLocalDay(anchor).getTime()) / 86400000,
+      );
+      if (delta !== 0) {
+        const shifted = applyOptimisticPlannedDateShift(nextBars, nextOrders, orderId, delta);
+        nextBars = shifted.bars;
+        nextOrders = shifted.orders;
+      } else {
+        nextOrders = nextOrders.map((row) =>
+          row._id === orderId ? { ...row, plannedDate: formatDateOnly(nextDate) } : row,
+        );
+      }
+    }
+  }
+  nextOrders = nextOrders.map((row) =>
+    row._id === orderId ? { ...row, priority: commit.priority } : row,
+  );
+  return { bars: nextBars, orders: nextOrders };
+}
+
 export interface OptimisticStartOffsetCommit {
   orderId: string;
   orderItemIndex: number;
@@ -731,6 +772,21 @@ export function workTypeWash(workTypeId: string, hueOverride?: number | null): s
 export const ESTIMATE_OVERRIDE_HINT_RU =
   'По умолчанию — только этот заказ (override). Цвет = вид работ.';
 
+/** Rail + Gantt: earlier plannedDate??date first; missing dates last; tie-break number. */
+export function compareOrdersByPlanStart(
+  a: { number?: string; plannedDate?: string | null; date?: string | null },
+  b: { number?: string; plannedDate?: string | null; date?: string | null },
+): number {
+  const as = (a.plannedDate || a.date || '').slice(0, 10);
+  const bs = (b.plannedDate || b.date || '').slice(0, 10);
+  if (as !== bs) {
+    if (!as) return 1;
+    if (!bs) return -1;
+    return as.localeCompare(bs);
+  }
+  return (a.number ?? '').localeCompare(b.number ?? '');
+}
+
 export function filterOrdersForRail<
   T extends {
     status: OrderStatus;
@@ -760,7 +816,7 @@ export function filterOrdersForRail<
   const priority = opts.priority && opts.priority !== 'all' ? opts.priority : null;
   const from = opts.dateFrom || null;
   const to = opts.dateTo || null;
-  return orders.filter((o) => {
+  const filtered = orders.filter((o) => {
     if (opts.selectedOrderId && o._id === opts.selectedOrderId) return true;
     if (opts.activeOnly) {
       if (!isActiveCommercialOrderStatus(o.status)) return false;
@@ -785,4 +841,5 @@ export function filterOrdersForRail<
       : `${o._id} ${o.number ?? ''}`.toLowerCase();
     return hay.includes(q);
   });
+  return [...filtered].sort(compareOrdersByPlanStart);
 }

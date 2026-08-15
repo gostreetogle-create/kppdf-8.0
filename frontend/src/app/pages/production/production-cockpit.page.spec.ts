@@ -562,19 +562,46 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(ctx.orderMetaOpen()).toBe(false);
   });
 
-  it('TZ-PRODUCTION-322: order-meta save PATCHes order priority and plannedDate', async () => {
+  it('TZ-PRODUCTION-335: order-meta commit is silent optimistic PATCH without reload', async () => {
     const ordersApi = TestBed.inject(OrdersService) as unknown as {
       update: jest.Mock;
     };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      success: jest.Mock;
+      error: jest.Mock;
+    };
     const fixture = TestBed.createComponent(ProductionCockpitPage);
-    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
-    const page = fixture.componentInstance as unknown as {
+    await waitUntilBootstrapped(fixture);
+    const page = fixture.componentInstance as unknown as DragPage & {
       onOrderMetaCommit: (ev: {
         orderId: string;
         priority: string;
         plannedDate: string;
       }) => Promise<void>;
     };
+    page.orders.set([
+      {
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'confirmed',
+        plannedDate: '2026-08-10',
+        priority: 'normal',
+      },
+    ]);
+    page.bars.set([sampleWorkBar()]);
+    const barCallsBefore = facade.loadBarsForOrders.mock.calls.length;
+    ordersApi.update.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'o1',
+          number: 'ORD-1',
+          status: 'confirmed',
+          plannedDate: '2026-08-20',
+          priority: 'urgent',
+        },
+      }),
+    );
     await page.onOrderMetaCommit({
       orderId: 'o1',
       priority: 'urgent',
@@ -584,6 +611,10 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
       priority: 'urgent',
       plannedDate: new Date('2026-08-20T12:00:00').toISOString(),
     });
+    expect(page.orders()[0]!.priority).toBe('urgent');
+    expect(page.bars()[0]!.startDate).toBe('2026-08-20');
+    expect(facade.loadBarsForOrders.mock.calls.length).toBe(barCallsBefore);
+    expect(toast.success).not.toHaveBeenCalled();
   });
 
   async function waitUntilBootstrapped(

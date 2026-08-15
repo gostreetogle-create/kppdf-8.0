@@ -392,17 +392,17 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     class="text-[10px] text-muted-foreground shrink-0"
                     data-test="gantt-order-meta-status"
                   >
-                    Статус: {{ statusLabel(meta.status) }}
+                    Статус заказа: {{ statusLabel(meta.status) }}
                   </div>
                   <label class="flex items-center gap-1.5 text-[11px] shrink-0">
-                    <span class="text-muted-foreground shrink-0">Приоритет</span>
+                    <span class="text-muted-foreground shrink-0">Важность</span>
                     <select
                       class="pi-input !py-0.5 !text-xs w-28"
                       [value]="priorityDraft()"
                       [disabled]="!canEditOrder()"
                       (change)="onMetaPriority($event)"
                       data-test="gantt-order-meta-priority"
-                      [attr.aria-label]="'Приоритет заказа ' + meta.number"
+                      [attr.aria-label]="'Важность заказа ' + meta.number"
                     >
                       @for (p of metaPriorities; track p.value) {
                         <option [value]="p.value">{{ p.label }}</option>
@@ -410,7 +410,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     </select>
                   </label>
                   <label class="flex items-center gap-1.5 text-[11px] shrink-0">
-                    <span class="text-muted-foreground shrink-0">План. дата</span>
+                    <span class="text-muted-foreground shrink-0">Начало плана</span>
                     <input
                       type="date"
                       class="pi-input !py-0.5 !text-xs"
@@ -418,26 +418,10 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       [disabled]="!canEditOrder()"
                       (change)="onMetaPlanned($event)"
                       data-test="gantt-order-meta-planned"
-                      [attr.aria-label]="'План. дата заказа ' + meta.number"
+                      [attr.aria-label]="'Начало плана заказа ' + meta.number"
                     />
                   </label>
-                  @if (canEditOrder()) {
-                    <button
-                      type="button"
-                      class="pi-btn pi-focus-ring !text-[11px] !py-0.5 !px-2 shrink-0"
-                      [disabled]="!metaDirty()"
-                      (click)="onMetaSave($event)"
-                      data-test="gantt-order-meta-save"
-                    >
-                      Сохранить заказ
-                    </button>
-                    <span
-                      class="text-[10px] text-muted-foreground shrink-0"
-                      data-test="gantt-order-meta-sync-hint"
-                    >
-                      После сохранения Гант обновится
-                    </span>
-                  } @else {
+                  @if (!canEditOrder()) {
                     <p class="text-[10px] text-muted-foreground shrink-0">
                       Правка заказа — роли admin / manager
                     </p>
@@ -838,7 +822,7 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
   /** Child body-drag → parent PATCHes estimate-start offset. */
   readonly startOffsetCommit = output<GanttStartOffsetCommit>();
-  /** Order-meta save → parent PATCHes orders/:id (priority + plannedDate). */
+  /** Order-meta change → parent PATCHes orders/:id (priority + plannedDate), silent. */
   readonly orderMetaCommit = output<GanttOrderMetaCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
@@ -850,12 +834,6 @@ export class GanttBarsComponent implements AfterViewInit {
   protected readonly metaPriorities = ORDER_META_PRIORITIES;
   protected readonly priorityDraft = signal<OrderPriority>('normal');
   protected readonly plannedDraft = signal('');
-
-  protected readonly metaDirty = computed(() => {
-    const m = this.orderMeta();
-    if (!m) return false;
-    return this.priorityDraft() !== m.priority || this.plannedDraft() !== m.plannedDate;
-  });
 
   constructor() {
     effect(() => {
@@ -1236,21 +1214,27 @@ export class GanttBarsComponent implements AfterViewInit {
   }
 
   protected onMetaPriority(ev: Event): void {
-    this.priorityDraft.set((ev.target as HTMLSelectElement).value as OrderPriority);
+    ev.stopPropagation();
+    const value = (ev.target as HTMLSelectElement).value as OrderPriority;
+    this.priorityDraft.set(value);
+    this.emitMetaIfChanged({ priority: value, plannedDate: this.plannedDraft() });
   }
 
   protected onMetaPlanned(ev: Event): void {
-    this.plannedDraft.set((ev.target as HTMLInputElement).value);
+    ev.stopPropagation();
+    const value = (ev.target as HTMLInputElement).value;
+    this.plannedDraft.set(value);
+    this.emitMetaIfChanged({ priority: this.priorityDraft(), plannedDate: value });
   }
 
-  protected onMetaSave(ev: Event): void {
-    ev.stopPropagation();
+  private emitMetaIfChanged(next: { priority: OrderPriority; plannedDate: string }): void {
     const m = this.orderMeta();
-    if (!m || !this.canEditOrder() || !this.metaDirty()) return;
+    if (!m || !this.canEditOrder()) return;
+    if (next.priority === m.priority && next.plannedDate === m.plannedDate) return;
     this.orderMetaCommit.emit({
       orderId: m.orderId,
-      priority: this.priorityDraft(),
-      plannedDate: this.plannedDraft(),
+      priority: next.priority,
+      plannedDate: next.plannedDate,
     });
   }
 

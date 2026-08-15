@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-335 DONE: Gantt sort by start + clean order-meta
+**Статус:** DONE; deploy НЕ
+**Что:** Gantt/rail sort by summary startDate; meta RU labels + auto-save silent optimistic; no obsolete hint/Save.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-335.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-335-gantt-sort-meta-clean.lock`
+**Gates:** FE tsc PASS; Jest 85 PASS (gantt-bar.model + gantt-bars + production-cockpit + orders-rail); lint owned files PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-334 DONE: Workers list limit 100 (no 400)
 **Статус:** DONE; deploy НЕ
 **Что:** `getWorkersByWorkType` uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 on cockpit load.

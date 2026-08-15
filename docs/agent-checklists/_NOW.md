@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T22:58:00+03:00
+updated_at: 2026-08-15T23:20:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-PRODUCTION-334 DONE)_
+_(empty — TZ-PRODUCTION-335 DONE)_
 
 ## NEXT (PO paste prompt)
 
-_(empty — 334 DONE)_
+_(empty — 335 DONE)_
 
-_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332 day weekday ticks DONE; 333 optimistic drag DONE; 334 workers limit 100 DONE)_
+_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332 day weekday ticks DONE; 333 optimistic drag DONE; 334 workers limit 100 DONE; 335 Gantt start-sort + meta auto-save DONE)_
 
 ## Queue hygiene (not live)
 
@@ -27,6 +27,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-335 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-335.done.md`; Gantt/rail sort by startDate; meta auto-save.
 
 ### TZ-PRODUCTION-334 — DONE 2026-08-15
 
@@ -105,5 +109,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332
 
 ## HEAD / queue
 
-- Queue: **empty**; TZ-PRODUCTION-334 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **empty**; TZ-PRODUCTION-335 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
 - Deploy app: НЕ — не автодеплой

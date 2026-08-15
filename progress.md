@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-335 DONE — Gantt sort by start + clean order-meta
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** Гант/rail — раньше startDate выше (tie orderNumber); meta: Статус заказа / Важность / Начало плана; auto-save silent optimistic; убраны hint и кнопка Сохранить.
+**Gates:** FE tsc PASS; FE Jest gantt-bar.model + gantt-bars + production-cockpit + orders-rail **85 PASS**; lint owned files PASS (pre-existing OnInit warning).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-335.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-335-gantt-sort-meta-clean.lock`
+**Dep:** 333
+
 ## [2026-08-15] — TZ-PRODUCTION-334 DONE — Workers list limit 100 (no 400)
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

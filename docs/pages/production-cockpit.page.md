@@ -72,9 +72,10 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
 - **No bottom card:** the old `Карточка` bottom sheet and chrome action were removed in TZ-322; order meta lives only as one cascade strip under the summary row. The cascade is the canonical interaction surface for status/priority/plannedDate and work-detail; do not restore a bottom overlay.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
-- **TZ-PRODUCTION-326 write-path:** meta Save uses `canEditOrder` (admin|manager) and after successful PATCH reloads orders/bars. Summary drag `plannedDate`, child resize and start-offset use optimistic local bars + silent PATCH (TZ-PRODUCTION-333); WorkType.days catalog still reloads. «Сохранить заказ» — обязательный commit; после него Гант обновляется.
+- **TZ-PRODUCTION-326 / 335 write-path:** meta `Важность` + `Начало плана` auto-save on change (`canEditOrder` admin|manager); optimistic local bars + silent PATCH like 333 (no success toast, no full reload; fail → revert + error). Summary drag `plannedDate`, child resize and start-offset same silent path. WorkType.days catalog still reloads. No «Сохранить заказ» button.
 - **TZ-PRODUCTION-331:** план-поля (`plannedDate`, `priority`) редактируются до статуса **Готов** / **В производстве**; состав/заметки/контрагент на этих статусах заморожены. `shipped`/`delivered`/`cancelled` — hard read-only. Legacy-заказ без `siteId` перед save лечится первой площадкой контрагента (иначе RU 400).
 - Ссылка «Открыть в списке заказов» в order-meta ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
+- **TZ-PRODUCTION-335 sort:** вертикальный порядок Ганта (и rail) = summary `startDate` по возрастанию (раньше выше), tie-break `orderNumber`. **Не** сортировать по важности/`priority`. После optimistic drag plannedDate строки переставляются без reload.
 
 ### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
 
@@ -99,11 +100,11 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | `ProductionScaleControlsComponent` | `zoom` input; `zoomChange` / `fit` outputs; dumb RU controls only |
 | `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316); existing API paths |
 
-### Write-path matrix (TZ-PRODUCTION-326 / 333)
+### Write-path matrix (TZ-PRODUCTION-326 / 333 / 335)
 
 | Действие | FE gate | API path | После успеха |
 |----------|---------|----------|-------------|
-| Meta: priority + plannedDate → «Сохранить заказ» | `canEditOrder` (admin\|manager) | `PATCH /orders/:id` | `reloadOrdersKeepingSelection()` → bars rebuild |
+| Meta: Важность + Начало плана (auto-save) | `canEditOrder` (admin\|manager) | `PATCH /orders/:id` | optimistic local bars; no full reload |
 | Summary body-drag plannedDate | `canEditOrder` (admin\|manager) | `PATCH /orders/:id` | optimistic local bars; no full reload |
 | Child resize estimate days | `production:write` | `PATCH /orders/:id/estimate-days` | optimistic local bars; no full reload |
 | Child drag start offset | `production:write` | `PATCH /orders/:id/estimate-start` | optimistic local bars; no full reload |
@@ -133,7 +134,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
 
 - **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает.
-- **TZ-PRODUCTION-322:** номер заказа → order-meta strip под summary (статус, приоритет, план. дата, Сохранить, ссылка `/orders`); chrome «Карточка» и bottom sheet **удалены**. `gantt-order-active` = открытый meta.
+- **TZ-PRODUCTION-322:** номер заказа → order-meta strip под summary (статус заказа, важность, начало плана, ссылка `/orders`); chrome «Карточка» и bottom sheet **удалены**. `gantt-order-active` = открытый meta.
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
@@ -175,6 +176,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-332** | DONE: Day zoom ticks = `DD.MM` + RU weekday (ПН…ВС); scale + «Заказ» headers `h-10`; Month ticks unchanged |
 | **TZ-PRODUCTION-333** | DONE: Gantt drag/resize commit = optimistic local bars + silent PATCH; revert + error toast on fail; no success toast / full reload |
 | **TZ-PRODUCTION-334** | DONE: workers list for Gantt labels uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 |
+| **TZ-PRODUCTION-335** | DONE: Gantt/rail sort by summary startDate (tie orderNumber); meta labels Статус заказа / Важность / Начало плана; auto-save silent optimistic; no obsolete sync hint |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -201,7 +203,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
 - Product/module deep-links из старого inspector — backlog; sheet не восстанавливать.
 - Zoom Месяц: нет полосы дней недели под именем месяца — successor только по запросу PO.
-- **TZ-PRODUCTION-333:** meta «Сохранить заказ» и catalog WorkType.days по-прежнему toast + full reload; второй drag того же заказа, пока PATCH в полёте, игнорируется.
+- **TZ-PRODUCTION-333/335:** catalog WorkType.days по-прежнему toast + full reload; второй write того же заказа, пока PATCH в полёте, игнорируется.
+- Plan-vs-fact: после «выполнено» предлагать обновить норматив `WorkType.days` — **parked** (fact production OUT). См. `tasks/_backlog/PARK-plan-vs-fact-days.md`.
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 
@@ -213,7 +216,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **Масштаб → День** | Фиксированная читаемая плотность `36px/день`; тик = `DD.MM` + ПН…ВС; шапка шкалы и «Заказ» `h-10` |
 | **Масштаб → Месяц** | Fit-плотность `max(12, floor(width timeline / число дней))`; тики RU месяцев |
 | **Вместить сроки** | Берёт min/max текущих полос с запасом в день, включает Месяц и скроллит к началу; это не no-op |
-| **Подпись заказа** | Переключает одну meta-полосу summary: статус, приоритет, plannedDate, Save, `/orders?q=<номер>` |
+| **Подпись заказа** | Переключает одну meta-полосу summary: Статус заказа, Важность, Начало плана (auto-save), `/orders?q=<номер>` |
 | **Тело summary-полосы** | Сдвиг plannedDate; `canEditOrder` (admin/manager); silent PATCH, полоса остаётся на месте; ошибка → revert + toast |
 | **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
 | **Resize / тело вида работ** | estimate-days / estimate-start под `production:write`; optimistic local bars; silent PATCH |

@@ -355,6 +355,85 @@ describe('gantt-bar.model', () => {
     expect(expanded[2]!.workTypeName).toBe('Покраска');
   });
 
+  function treeOrderInput(
+    orderId: string,
+    orderNumber: string,
+    plannedDate: string,
+  ): OrderEstimateInput {
+    return {
+      orderId,
+      orderNumber,
+      status: 'confirmed',
+      plannedDate,
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p1',
+          productName: 'Стол',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'm1',
+              moduleName: 'Каркас',
+              sortOrder: 0,
+              workTypes: [{ workTypeId: 'wt1', workTypeName: 'Сварка', days: 2, sortOrder: 0 }],
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  it('TZ-PRODUCTION-335: tree groups sort by summary startDate then orderNumber', () => {
+    const later = buildGanttBars(
+      treeOrderInput('o-late', 'DEMO-001', '2026-08-10'),
+      new Date(2026, 7, 6),
+    );
+    const earlier = buildGanttBars(
+      treeOrderInput('o-early', 'DEMO-002', '2026-08-05'),
+      new Date(2026, 7, 6),
+    );
+    const tree = buildGanttTreeBars([...later, ...earlier], new Set());
+    expect(tree.map((b) => b.orderId)).toEqual(['o-early', 'o-late']);
+  });
+
+  it('TZ-PRODUCTION-335: plannedDate shift that crosses another order reorders vertically', async () => {
+    const { applyOptimisticPlannedDateShift } = await import('./gantt-bar.model');
+    const later = buildGanttBars(
+      treeOrderInput('o-late', 'DEMO-001', '2026-08-10'),
+      new Date(2026, 7, 6),
+    );
+    const earlier = buildGanttBars(
+      treeOrderInput('o-early', 'DEMO-002', '2026-08-05'),
+      new Date(2026, 7, 6),
+    );
+    const work = [...later, ...earlier];
+    expect(buildGanttTreeBars(work, new Set()).map((b) => b.orderId)).toEqual([
+      'o-early',
+      'o-late',
+    ]);
+    const { bars } = applyOptimisticPlannedDateShift(
+      work,
+      [
+        { _id: 'o-late', plannedDate: '2026-08-10' },
+        { _id: 'o-early', plannedDate: '2026-08-05' },
+      ],
+      'o-late',
+      -6,
+    );
+    expect(buildGanttTreeBars(bars, new Set()).map((b) => b.orderId)).toEqual([
+      'o-late',
+      'o-early',
+    ]);
+  });
+
+  it('TZ-PRODUCTION-335: equal startDate tie-breaks by orderNumber', () => {
+    const a = buildGanttBars(treeOrderInput('o2', 'DEMO-002', '2026-08-05'), new Date(2026, 7, 6));
+    const b = buildGanttBars(treeOrderInput('o1', 'DEMO-001', '2026-08-05'), new Date(2026, 7, 6));
+    const tree = buildGanttTreeBars([...a, ...b], new Set());
+    expect(tree.map((row) => row.orderNumber)).toEqual(['DEMO-001', 'DEMO-002']);
+  });
+
   it('applies start offsets in parallel without advancing sequential cursor', () => {
     const input: OrderEstimateInput = {
       orderId: 'o1',
@@ -463,6 +542,29 @@ describe('gantt-bar.model', () => {
       },
     );
     expect(withoutCounterparty.map((o) => o._id)).toEqual(['1']);
+  });
+
+  it('TZ-PRODUCTION-335: rail filter sorts by plan start then number', () => {
+    const orders = [
+      {
+        _id: 'late',
+        number: 'DEMO-001',
+        status: 'confirmed' as const,
+        plannedDate: '2026-08-10',
+      },
+      {
+        _id: 'early',
+        number: 'DEMO-002',
+        status: 'confirmed' as const,
+        plannedDate: '2026-08-05',
+      },
+    ];
+    const out = filterOrdersForRail(orders, {
+      activeOnly: true,
+      search: '',
+      selectedOrderId: null,
+    });
+    expect(out.map((o) => o._id)).toEqual(['early', 'late']);
   });
 
   describe('TZ-PRODUCTION-333 optimistic helpers', () => {
@@ -589,6 +691,20 @@ describe('gantt-bar.model', () => {
       expect(orders[0]!.estimateStartOffsets).toEqual([
         { orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', offsetDays: 3 },
       ]);
+    });
+
+    it('applyOptimisticOrderMeta updates priority and shifts bars by plannedDate', async () => {
+      const { applyOptimisticOrderMeta } = await import('./gantt-bar.model');
+      const { bars, orders } = applyOptimisticOrderMeta(
+        [workBar()],
+        [{ _id: 'o1', plannedDate: '2026-08-10', priority: 'normal' }],
+        'o1',
+        { priority: 'urgent', plannedDate: '2026-08-12' },
+      );
+      expect(orders[0]!.priority).toBe('urgent');
+      expect(orders[0]!.plannedDate).toBe('2026-08-12');
+      expect(bars[0]!.startDate).toBe('2026-08-12');
+      expect(bars[0]!.endDate).toBe('2026-08-14');
     });
   });
 });

@@ -30,6 +30,7 @@ import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import {
   applyOptimisticEstimateDays,
+  applyOptimisticOrderMeta,
   applyOptimisticPlannedDateShift,
   applyOptimisticStartOffset,
   cloneGanttState,
@@ -548,24 +549,26 @@ export class ProductionCockpitPage implements OnInit {
     await this.applyFilteredActive();
   }
 
-  /** TZ-PRODUCTION-322 — order-meta save → PATCH orders/:id (priority + plannedDate). */
+  /** TZ-PRODUCTION-335 — order-meta auto-save: optimistic local bars + silent PATCH. */
   protected async onOrderMetaCommit(ev: GanttOrderMetaCommit): Promise<void> {
     if (!this.canEditOrder()) return;
     const current = this.orders().find((o) => o._id === ev.orderId);
-    if (current && isHardFrozenOrderStatus(current.status)) return;
+    if (!current) return;
+    if (isHardFrozenOrderStatus(current.status)) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticOrderMeta(this.bars(), this.orders(), ev.orderId, ev);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
     const planned = ev.plannedDate.trim();
-    const res = await firstValueFrom(
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
       this.ordersApi.update(ev.orderId, {
         priority: ev.priority,
         plannedDate: planned ? new Date(planned + 'T12:00:00').toISOString() : undefined,
       }),
     );
-    if (!res.ok) {
-      this.toast.error(shopOrderWriteError(res.error));
-      return;
-    }
-    this.toast.success('Заказ обновлён');
-    await this.reloadOrdersKeepingSelection();
   }
 
   /** TZ-PRODUCTION-311/333 — right-edge resize → order override; optimistic local bars. */
