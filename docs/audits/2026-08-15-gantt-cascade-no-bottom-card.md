@@ -46,6 +46,7 @@ PATCH уже есть: `orders/:id`, `…/estimate-days`, `…/estimate-start`, 
 |----|--------|
 | **321** | DONE 2026-08-15 — work-detail row; days + catalog; `gantt-work-detail-open` |
 | **322** | DONE 2026-08-15 — order-meta under summary; kill sheet + chrome card; retarget label/select |
+| **323** | DONE 2026-08-15 — one meta under summary; full-width cascade panels |
 
 Wave: `tasks/_backlog/WAVE-PRODUCTION-GANTT-CASCADE.md`
 

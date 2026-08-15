@@ -1,3 +1,13 @@
+## [2026-08-15] — TZ-PRODUCTION-323 DONE — one Gantt meta + full-width cascade panels
+**Исполнитель:** executor-grok-4.6
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
+**Что:** meta только под summary (не на child); order-meta и work-detail — непрерывная полоса label+timeline (`gantt-cascade-panel` 100cqw + minWidth board, spacer на календаре); поля в один ряд.
+**Gates:** FE tsc PASS; FE jest gantt-bars + production-cockpit **41 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-323.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-323-gantt-cascade-fullwidth.lock`
+**Dep:** 322
+**known_limitations:** новые поля в широкой панели — не в этом TZ.
+
 ## [2026-08-15] — TZ-PRODUCTION-322 DONE — Gantt order-meta + kill bottom card
 **Исполнитель:** executor-grok-4.6
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321+322); deploy НЕ

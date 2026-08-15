@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-323 DONE: one Gantt meta + full-width cascade panels
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
+**Что:** order-meta только под summary (`row.isSummary`); meta + work-detail — одна широкая полоса (`gantt-cascade-panel` full-bleed из sticky label, spacer на timeline).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-323.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-323-gantt-cascade-fullwidth.lock`
+**Gates:** FE tsc PASS; FE jest gantt-bars + cockpit **41 PASS**.
+
 ## [2026-08-15] — TZ-UX-320 DONE / LANDED: ←→ в поля у колонки контента (не у края окна)
 **Статус:** DONE / LANDED on main; frontend-only; deploy НЕ
 **Что:** Кнопки ← → больше не прижаты к краям окна (14px): стоят в вертикальных полях слева/справа от max-width колонки на линии бокового отступа шапки (left/right 64px). Порог видимости ≥1680px, disabled/aria/data-test, `AppHistoryStore` — без изменений.

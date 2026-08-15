@@ -31,11 +31,14 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 /** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
 export const GANTT_ROW_PX = 44;
 
-/** Taller row for inline work-type detail (people / days / hint / catalog). */
-export const GANTT_DETAIL_ROW_PX = 120;
+/** Dense inline work-type detail (people / days / hint / catalog) — one horizontal row. */
+export const GANTT_DETAIL_ROW_PX = 56;
 
-/** Dense order-meta strip under summary (status / priority / plannedDate). */
-export const GANTT_META_ROW_PX = 148;
+/** Dense order-meta strip under summary (status / priority / plannedDate) — one horizontal row. */
+export const GANTT_META_ROW_PX = 56;
+
+/** Label column width (Tailwind `w-52` = 13rem @ 16px). */
+export const GANTT_LABEL_COL_PX = 208;
 
 const ORDER_META_PRIORITIES: { value: OrderPriority; label: string }[] = [
   { value: 'low', label: 'Низкий' },
@@ -197,9 +200,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         </div>
       }
 
-      <div class="flex-1 min-h-0 overflow-auto">
+      <div class="flex-1 min-h-0 overflow-auto gantt-scroll">
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
-          <div class="sticky left-0 z-[2] w-52 shrink-0 border-r hairline bg-paper">
+          <div
+            class="sticky left-0 z-[3] w-52 shrink-0 border-r hairline bg-paper overflow-visible"
+          >
             <div
               class="h-7 border-b hairline flex items-end text-[11px] text-muted-foreground"
               data-test="gantt-label-header"
@@ -296,22 +301,23 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   </span>
                 </button>
               </div>
-              @if (orderMetaFor(row.bar.orderId); as meta) {
+              @if (row.isSummary && orderMetaFor(row.bar.orderId); as meta) {
                 <div
-                  class="gantt-row-h-meta border-b hairline px-2 py-1.5 flex flex-col justify-center gap-1 min-w-0 overflow-hidden"
+                  class="gantt-row-h-meta gantt-cascade-panel border-b hairline px-3 py-1.5 flex flex-nowrap items-center gap-x-4 min-w-0"
+                  [style.minWidth.px]="timelineMinWidth()"
                   [attr.data-test]="'gantt-order-meta-' + row.bar.orderId"
                   (click)="$event.stopPropagation()"
                 >
                   <div
-                    class="text-[10px] text-muted-foreground truncate"
+                    class="text-[10px] text-muted-foreground shrink-0"
                     data-test="gantt-order-meta-status"
                   >
                     Статус: {{ statusLabel(meta.status) }}
                   </div>
-                  <label class="flex items-center gap-1.5 text-[11px]">
+                  <label class="flex items-center gap-1.5 text-[11px] shrink-0">
                     <span class="text-muted-foreground shrink-0">Приоритет</span>
                     <select
-                      class="pi-input !py-0.5 !text-xs min-w-0 flex-1"
+                      class="pi-input !py-0.5 !text-xs w-28"
                       [value]="priorityDraft()"
                       [disabled]="!canEditOrder()"
                       (change)="onMetaPriority($event)"
@@ -323,11 +329,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       }
                     </select>
                   </label>
-                  <label class="flex items-center gap-1.5 text-[11px]">
+                  <label class="flex items-center gap-1.5 text-[11px] shrink-0">
                     <span class="text-muted-foreground shrink-0">План. дата</span>
                     <input
                       type="date"
-                      class="pi-input !py-0.5 !text-xs min-w-0 flex-1"
+                      class="pi-input !py-0.5 !text-xs"
                       [value]="plannedDraft()"
                       [disabled]="!canEditOrder()"
                       (change)="onMetaPlanned($event)"
@@ -338,7 +344,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   @if (canEditOrder()) {
                     <button
                       type="button"
-                      class="pi-btn pi-focus-ring !text-[11px] !py-0.5 !px-2 self-start"
+                      class="pi-btn pi-focus-ring !text-[11px] !py-0.5 !px-2 shrink-0"
                       [disabled]="!metaDirty()"
                       (click)="onMetaSave($event)"
                       data-test="gantt-order-meta-save"
@@ -346,12 +352,12 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       Сохранить заказ
                     </button>
                   } @else {
-                    <p class="text-[10px] text-muted-foreground leading-tight">
+                    <p class="text-[10px] text-muted-foreground shrink-0">
                       Правка заказа — роли admin / manager
                     </p>
                   }
                   <a
-                    class="text-[10px] underline-offset-2 hover:underline text-ink"
+                    class="text-[10px] underline-offset-2 hover:underline text-ink shrink-0"
                     [routerLink]="['/orders']"
                     [queryParams]="{ q: meta.number }"
                     data-test="gantt-order-meta-open-order"
@@ -361,18 +367,19 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               }
               @if (isWorkDetailOpen(row.bar.id)) {
                 <div
-                  class="gantt-row-h-detail border-b hairline px-2 py-1.5 flex flex-col justify-center gap-0.5 min-w-0 overflow-hidden"
+                  class="gantt-row-h-detail gantt-cascade-panel border-b hairline px-3 py-1.5 flex flex-nowrap items-center gap-x-4 min-w-0"
+                  [style.minWidth.px]="timelineMinWidth()"
                   [style.background]="workDetailWash(row.bar)"
                   [attr.data-test]="'gantt-work-detail-' + row.bar.id"
                   (click)="$event.stopPropagation()"
                 >
                   <div
-                    class="text-[10px] text-muted-foreground truncate"
+                    class="text-[10px] text-muted-foreground shrink-0"
                     [attr.data-test]="'gantt-work-detail-people-' + row.bar.id"
                   >
                     Люди: {{ row.bar.workerLabel }}
                   </div>
-                  <label class="flex items-center gap-1.5 text-[11px]">
+                  <label class="flex items-center gap-1.5 text-[11px] shrink-0">
                     <span class="text-muted-foreground shrink-0">Дни</span>
                     <input
                       type="number"
@@ -386,13 +393,15 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       [attr.aria-label]="'Дни оценки «' + row.bar.workTypeName + '»'"
                     />
                   </label>
-                  <p class="text-[10px] text-muted-foreground/80 leading-tight">
+                  <p
+                    class="text-[10px] text-muted-foreground/80 leading-tight truncate min-w-0 flex-1"
+                  >
                     {{ overrideHint }}
                   </p>
                   @if (canEdit()) {
                     <button
                       type="button"
-                      class="text-[10px] underline-offset-2 hover:underline text-ink text-left pi-focus-ring disabled:opacity-50"
+                      class="text-[10px] underline-offset-2 hover:underline text-ink shrink-0 pi-focus-ring disabled:opacity-50"
                       [disabled]="readOnly()"
                       (click)="onCatalogDaysClick(row.bar, $event)"
                       [attr.data-test]="'gantt-work-detail-catalog-' + row.bar.id"
@@ -538,17 +547,16 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   }
                 </div>
               </div>
-              @if (isOrderMetaOpen(row.bar.orderId)) {
+              @if (row.isSummary && isOrderMetaOpen(row.bar.orderId)) {
                 <div
-                  class="relative gantt-row-h-meta border-b hairline bg-paper-2/40"
+                  class="relative gantt-row-h-meta gantt-cascade-spacer border-b hairline"
                   [attr.data-test]="'gantt-order-meta-timeline-' + row.bar.orderId"
                   aria-hidden="true"
                 ></div>
               }
               @if (isWorkDetailOpen(row.bar.id)) {
                 <div
-                  class="relative gantt-row-h-detail border-b hairline"
-                  [style.background]="workDetailWash(row.bar)"
+                  class="relative gantt-row-h-detail gantt-cascade-spacer border-b hairline"
                   [attr.data-test]="'gantt-work-detail-timeline-' + row.bar.id"
                   aria-hidden="true"
                 ></div>
@@ -594,6 +602,26 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-row-h-meta {
       height: ${GANTT_META_ROW_PX}px;
       box-sizing: border-box;
+    }
+    .gantt-scroll {
+      container-type: inline-size;
+      container-name: gantt-scroll;
+    }
+    /* Full-bleed cascade panel: lives in sticky label column, spans label+timeline. */
+    .gantt-cascade-panel {
+      position: relative;
+      z-index: 4;
+      box-sizing: border-box;
+      width: 100cqw;
+      background: oklch(0.97 0.008 95);
+    }
+    :host-context(.dark) .gantt-cascade-panel,
+    :host-context([data-theme='dark']) .gantt-cascade-panel {
+      background: oklch(0.27 0.02 260);
+    }
+    .gantt-cascade-spacer {
+      pointer-events: none;
+      background: transparent;
     }
     .gantt-expand-col {
       width: 1.875rem; /* 30px — dedicated expand column */

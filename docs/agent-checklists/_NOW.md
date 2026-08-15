@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T17:50:00Z
+updated_at: 2026-08-15T18:00:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
@@ -25,6 +25,10 @@ _(empty)_
 ### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
 
 - 314–320: expand · bottom card · offsets · keep orders · sheet viewport · card IA · **split expand vs card**
+
+### TZ-PRODUCTION-323 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-323.done.md`
 
 ### TZ-PRODUCTION-322 — DONE 2026-08-15
 
@@ -58,5 +62,5 @@ _(empty)_
 
 ## HEAD / queue
 
-- Queue: **empty** after WAVE-PRODUCTION-GANTT-CASCADE (321+322). Готово предложить деплой.
+- Queue: **empty** after WAVE-PRODUCTION-GANTT-CASCADE (321–323). Готово предложить деплой.
 - Deploy app: НЕ — не автодеплой

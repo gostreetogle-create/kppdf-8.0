@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
   GanttBarsComponent,
+  GANTT_LABEL_COL_PX,
   GANTT_PX_PER_DAY,
   snapEstimateDaysFromDelta,
   snapMoveDeltaDays,
@@ -775,6 +776,72 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('orderMeta', null);
     fixture.detectChanges();
     expect(el.querySelector('[data-test="gantt-order-meta-o1"]')).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-323: order-meta renders once under summary when children expanded', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('highlightOrderId', 'o1');
+    fixture.componentRef.setInput('orderMeta', {
+      orderId: 'o1',
+      number: 'ORD-1',
+      status: 'confirmed',
+      priority: 'normal',
+      plannedDate: '2026-08-01',
+    });
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.querySelectorAll('[data-test="gantt-order-meta-o1"]').length).toBe(1);
+    expect(el.querySelectorAll('[data-test="gantt-order-meta-timeline-o1"]').length).toBe(1);
+    const labels = Array.from(el.querySelectorAll('[data-test^="gantt-label-"]'));
+    const iSum = labels.findIndex((n) => n.getAttribute('data-test') === 'gantt-label-summary:o1');
+    const iChild = labels.findIndex(
+      (n) => n.getAttribute('data-test') === 'gantt-label-o1:0:p1:m1:wt1:1',
+    );
+    const meta = el.querySelector('[data-test="gantt-order-meta-o1"]') as HTMLElement;
+    const summary = labels[iSum] as HTMLElement;
+    const child = labels[iChild] as HTMLElement;
+    expect(iSum).toBeGreaterThanOrEqual(0);
+    expect(iChild).toBeGreaterThan(iSum);
+    expect(summary.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(meta.compareDocumentPosition(child) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('TZ-PRODUCTION-323: cascade panels span label + timeline (full-width)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedWorkBarId', sample.id);
+    fixture.componentRef.setInput('orderMeta', {
+      orderId: 'o1',
+      number: 'ORD-1',
+      status: 'confirmed',
+      priority: 'normal',
+      plannedDate: '2026-08-01',
+    });
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const meta = el.querySelector('[data-test="gantt-order-meta-o1"]') as HTMLElement;
+    const detail = el.querySelector(`[data-test="gantt-work-detail-${sample.id}"]`) as HTMLElement;
+    const metaTl = el.querySelector('[data-test="gantt-order-meta-timeline-o1"]') as HTMLElement;
+    const detailTl = el.querySelector(
+      `[data-test="gantt-work-detail-timeline-${sample.id}"]`,
+    ) as HTMLElement;
+    const boardMin = fixture.componentInstance['timelineMinWidth']();
+    expect(meta.classList.contains('gantt-cascade-panel')).toBe(true);
+    expect(detail.classList.contains('gantt-cascade-panel')).toBe(true);
+    expect(metaTl.classList.contains('gantt-cascade-spacer')).toBe(true);
+    expect(detailTl.classList.contains('gantt-cascade-spacer')).toBe(true);
+    expect(boardMin).toBeGreaterThan(GANTT_LABEL_COL_PX);
+    expect(Number.parseFloat(meta.style.minWidth)).toBe(boardMin);
+    expect(Number.parseFloat(detail.style.minWidth)).toBe(boardMin);
+    expect(getComputedStyle(meta).height).toBe(getComputedStyle(metaTl).height);
+    expect(getComputedStyle(detail).height).toBe(getComputedStyle(detailTl).height);
   });
 });
 
