@@ -1,3 +1,15 @@
+## [2026-08-15] — TZ-CATALOG-372 DONE — modules list vitrine parity
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend /modules vitrine; deploy НЕ
+**Что:** Photo column + name link; toolbar Состав/Обновить/list↔grid; filters-rail overlay; PiShowcaseCard md grid; `pi-modules-view-mode`; composition client filter; ProductModule photoIds types.
+**Gates:** FE tsc PASS; modules.page Jest 17/17; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-372.done.md`
+**Checklist:** `docs/agent-checklists/TZ-CATALOG-372.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-372-modules-list-vitrine-parity.lock`
+**Implementation SHA:** `3b460f4517cfae01b40722c9b4229ba7717e6552`
+**Closeout SHA:** `1ba6382ef4647e860653bac92e24fe0b227ffb9b`
+**Known limit:** server envelope `/modules` — successor.
+
 ## [2026-08-15] — TZ-ORDERS-HUB-302 DONE — orders expand columns + Deal/Composition
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend orders list; deploy НЕ

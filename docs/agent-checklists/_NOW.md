@@ -5,8 +5,8 @@
 >
 > ????????? ???????????? ?????? in-place. ????? ?????: 120 ?????.
 
-updated_at: 2026-08-15T11:25:00Z
-main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
+updated_at: 2026-08-15T11:30:00Z
+main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 
 ## ACTIVE
 
@@ -24,6 +24,16 @@ main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
 
 ## DONE / LANDED (recent)
 
+### TZ-CATALOG-372 ? DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-CATALOG-372.md`
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-372.done.md`
+- Lock: `.mimocode/locks/TZ-CATALOG-372-modules-list-vitrine-parity.lock`
+- Implementation: `3b460f4517cfae01b40722c9b4229ba7717e6552`
+- Closeout: `1ba6382e`
+- State: Cursor PASS; modules list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
+- vs CATALOG-373: parallel wave complete (materials landed `528e3cf9`).
+
 ### TZ-CATALOG-373 ? DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-CATALOG-373.md`
@@ -32,7 +42,7 @@ main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
 - Implementation: `528e3cf9fb21eb283b076893e627097a3736ffea`
 - Closeout: `cafd3acf`
 - State: Cursor PASS; materials list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
-- vs CATALOG-372: parallel OK (modules untouched).
+- vs CATALOG-372: modules landed `3b460f45` (same vitrine wave).
 
 ### TZ-ORDERS-HUB-302 ? DONE / LANDED
 
