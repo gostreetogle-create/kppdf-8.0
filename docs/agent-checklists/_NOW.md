@@ -5,8 +5,8 @@
 >
 > ????????? ???????????? ?????? in-place. ????? ?????: 120 ?????.
 
-updated_at: 2026-08-15T11:30:00Z
-main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
+updated_at: 2026-08-15T11:40:00Z
+main_head: `9eed2860ddadbc4b1daf8d8176dd7345784f3faf`
 
 ## ACTIVE
 
@@ -15,14 +15,24 @@ main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 - Marker: `tasks/_active/TZ-AUTH-305.md`
 - Checklist: `docs/agent-checklists/TZ-AUTH-305.md`
 - Owner: Buffy prep; rollout executor TBD
-- State: nginx policy/runbook prep ????????; ???????????? ?????????.
+- State: nginx policy/runbook prep; rollout blocked.
 - Blockers:
-  - PO ??? ?? ??? ????? ??????? `??????`;
-  - ????? Cursor/PO browser PASS;
-  - rollout ??????? SSH/VPS ? evidence ??? secrets.
+  - PO explicit deploy command required;
+  - need Cursor/PO browser PASS;
+  - rollout needs SSH/VPS evidence without secrets.
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-ORDERS-HUB-303 ? DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-ORDERS-HUB-303.md`
+- Archive: `tasks/_archive/2026-08/TZ-ORDERS-HUB-303.done.md`
+- Lock: `.mimocode/locks/TZ-ORDERS-HUB-303-supply-production-docs.lock`
+- Implementation: `9eed2860ddadbc4b1daf8d8176dd7345784f3faf`
+- Docs: `00603a36d5650ff3800b9c8f63b31d1a19f744ac`
+- State: Cursor PASS 98/100; supply/production/docs expand + orderId deep-links; deploy NO.
+- Next: **TZ-ORDERS-HUB-304** readiness/warehouse/shipping.
 
 ### TZ-CATALOG-372 ? DONE / LANDED
 
@@ -31,7 +41,7 @@ main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 - Lock: `.mimocode/locks/TZ-CATALOG-372-modules-list-vitrine-parity.lock`
 - Implementation: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 - Closeout: `a03500d7`
-- State: Cursor PASS; modules list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
+- State: Cursor PASS; modules list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy NO.
 - vs CATALOG-373: parallel wave complete (materials landed `528e3cf9`).
 
 ### TZ-CATALOG-373 ? DONE / LANDED
@@ -41,7 +51,7 @@ main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 - Lock: `.mimocode/locks/TZ-CATALOG-373-materials-list-vitrine-parity.lock`
 - Implementation: `528e3cf9fb21eb283b076893e627097a3736ffea`
 - Closeout: `cafd3acf`
-- State: Cursor PASS; materials list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
+- State: Cursor PASS; materials list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy NO.
 - vs CATALOG-372: modules landed `3b460f45` (same vitrine wave).
 
 ### TZ-ORDERS-HUB-302 ? DONE / LANDED
@@ -51,8 +61,8 @@ main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 - Lock: `.mimocode/locks/TZ-ORDERS-HUB-302-orders-expand-columns.lock`
 - Implementation: `71446d6bfb37434913450449678ce4b78e26be37`
 - Closeout: `a1da7a2b` (fix foreign WIP); sync `20f0db7e`
-- State: Cursor functional PASS 98/100; layout hunks dropped (UX-320 LANDED); deploy ??.
-- Next: **TZ-ORDERS-HUB-303 READY** (supply/production/docs expand).
+- State: Cursor functional PASS 98/100; layout hunks dropped (UX-320 LANDED); deploy NO.
+- Successor: HUB-303 DONE.
 
 ### TZ-UX-320 ? DONE / LANDED
 
@@ -148,8 +158,8 @@ main_head: `3b460f4517cfae01b40722c9b4229ba7717e6552`
 
 ## READY / ORDER
 
-1. **TZ-ORDERS-HUB-303** ? READY (unblocked by HUB-302)
-2. AUTH-305 rollout ? only after explicit `??????`; outside this predeploy finish.
+1. **TZ-ORDERS-HUB-304** ? next (readiness/warehouse/shipping; after HUB-303)
+2. AUTH-305 rollout ? only after explicit deploy command; outside this predeploy finish.
 3. AUTH-307 cleanup ? only after PASS cutover/rollback evidence.
 4. Successors (new TZ only): composition boundary, group ACL; Jest materials/form-profiles debt is closed by TZ-FRONTEND-303.
 
@@ -158,15 +168,16 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
-- ORDERS-HUB-302 orders expand + Deal/Composition ? DONE; Cursor PASS 98/100; HUB-303 unblocked; deploy ??.
-- SALES-378 multipage bg + full next pages ? DONE; Cursor PASS; archive/lock landed; deploy ??; SALES-377 still PARK in backlog.
-- SALES-376 geometry-aware KP page split ? DONE; Cursor PASS; archive/lock landed; deploy ??; SALES-377 still PARK in backlog.
-- SALES-375 remove products rail draft-lines ? DONE; Cursor PASS; archive/lock landed; deploy ??.
-- SALES-374 KP table editor chrome ? DONE; Cursor PASS; archive/lock landed; deploy ??.
-- UX-319 products expanded row ink frame ? DONE; Cursor PASS; archive/lock landed; deploy ??.
+- ORDERS-HUB-303 supply/production/docs expand ? DONE; Cursor PASS 98/100; deploy NO.
+- ORDERS-HUB-302 orders expand + Deal/Composition ? DONE; Cursor PASS 98/100; deploy NO.
+- SALES-378 multipage bg + full next pages ? DONE; Cursor PASS; archive/lock landed; deploy NO; SALES-377 still PARK in backlog.
+- SALES-376 geometry-aware KP page split ? DONE; Cursor PASS; archive/lock landed; deploy NO; SALES-377 still PARK in backlog.
+- SALES-375 remove products rail draft-lines ? DONE; Cursor PASS; archive/lock landed; deploy NO.
+- SALES-374 KP table editor chrome ? DONE; Cursor PASS; archive/lock landed; deploy NO.
+- UX-319 products expanded row ink frame ? DONE; Cursor PASS; archive/lock landed; deploy NO.
 - FRONTEND-301/302 Angular integrity ? DONE; Cursor PASS; merging to main.
-- SALES-373 KP table font size on A4 ? DONE; Cursor PASS; archive/lock landed; deploy ??.
-- DOC-TABLES-310 / 309 / UX-318 ? DONE; Cursor PASS; deploy ??.
+- SALES-373 KP table font size on A4 ? DONE; Cursor PASS; archive/lock landed; deploy NO.
+- DOC-TABLES-310 / 309 / UX-318 ? DONE; Cursor PASS; deploy NO.
 - AUTH-306 / 303 / 304 ? DONE/pushed.
 
 ## GLOBAL BLOCKERS / BANS

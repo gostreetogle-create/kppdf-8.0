@@ -1,3 +1,15 @@
+## [2026-08-15] — TZ-ORDERS-HUB-303 DONE — supply / production / docs expand
+**Исполнитель:** Buffy (impl + closeout)
+**Статус:** DONE; frontend orders expand + supply/production deep-links; deploy НЕ
+**Что:** Lazy supply counters в expand; блоки Производство/Документы; `/supply?orderId=` chip; `/production?orderId=` selectOrder + unknown hint.
+**Gates:** FE tsc PASS; Jest orders|supply|production-cockpit 17/17 PASS; quality 98.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-HUB-303.done.md`
+**Checklist:** `docs/agent-checklists/TZ-ORDERS-HUB-303.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-HUB-303-supply-production-docs.lock`
+**Implementation SHA:** `9eed2860ddadbc4b1daf8d8176dd7345784f3faf`
+**Docs SHA:** `00603a36d5650ff3800b9c8f63b31d1a19f744ac`
+**Successor:** TZ-ORDERS-HUB-304 readiness/warehouse/shipping.
+
 ## [2026-08-15] — TZ-CATALOG-372 DONE — modules list vitrine parity
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend /modules vitrine; deploy НЕ

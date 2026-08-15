@@ -1,0 +1,23 @@
+task: TZ-ORDERS-HUB-303
+status: DONE
+closed_at: 2026-08-15T11:40:00Z
+implementation_sha: 9eed2860ddadbc4b1daf8d8176dd7345784f3faf
+docs_sha: 00603a36d5650ff3800b9c8f63b31d1a19f744ac
+closeout_sha: pending
+protected_files:
+  - frontend/src/app/pages/orders/orders.page.ts
+  - frontend/src/app/pages/orders/orders.page.spec.ts
+  - frontend/src/app/pages/supply/supply.page.ts
+  - frontend/src/app/pages/supply/supply.page.spec.ts
+  - frontend/src/app/pages/production/production-cockpit.page.ts
+  - frontend/src/app/pages/production/production-cockpit.page.spec.ts
+  - docs/pages/orders.page.md
+  - docs/pages/supply.page.md
+  - docs/pages/production-cockpit.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/agent-checklists/TZ-ORDERS-HUB-303.md
+  - tasks/TZ-ORDERS-HUB-303-supply-production-docs.md
+behavior: orders expand supply counters + production/docs links; /supply?orderId= filter chip; /production?orderId= selectOrder with unknown-id RU hint; ≤4 HTTP expand (supply=1)
+cursor_verdict: PASS
+quality_score: 98
+production: not executed
