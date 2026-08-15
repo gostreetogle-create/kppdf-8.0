@@ -75,10 +75,27 @@ export interface Order {
   priority?: OrderPriority;
   shipmentIds?: string[];
   reservationIds?: string[];
+  /** TZ-PRODUCTION-309: order-level Gantt days (catalog WorkType.days is fallback). */
+  estimateDayOverrides?: EstimateDayOverride[];
   /** UI-only virtual column key; readiness is calculated from items[].readyForWork. */
   readyForWork?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface EstimateDayOverride {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  days: number;
+}
+
+export interface PatchEstimateDaysPayload {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  /** Positive days upsert; null clears override. */
+  days: number | null;
 }
 
 /**
@@ -126,6 +143,14 @@ export class OrdersService {
 
   update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}`, payload);
+  }
+
+  /** TZ-PRODUCTION-309 — order-level estimate days (not WorkType catalog). */
+  patchEstimateDays(
+    id: string,
+    payload: PatchEstimateDaysPayload,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-days`, payload);
   }
 
   /**

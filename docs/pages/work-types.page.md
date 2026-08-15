@@ -1,8 +1,12 @@
 # Страница: Виды работ (WorkTypesPage)
 
-**Краткое описание:** Каталог видов работ (сварка, покраска, сборка…) с нормативами
+**Раздел:** **Цех** · sibling `/production` (Гант). Это не страница «Каталог» и не Справочники; виды работ — рабочий справочник производственного планирования и себестоимости.
+
+**Краткое описание:** Виды работ (сварка, покраска, сборка…) с нормативами
 часов, **обязательной** ставкой ₽/час и привязкой к рабочему центру / Ганту.
-Раздел остаётся в **Каталоге** (не Справочники) — канон cost-аудита 2026-08-08.
+В Wave A меняется только IA-документация; CRUD и product-код не меняются.
+
+**Studio chrome SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md). `/production` и `/work-types` должны читаться как единый раздел «Цех».
 
 ## Route
 
@@ -19,9 +23,9 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/work-types` | Список (flat array) |
-| POST | `/api/work-types` | Создание (`hourlyRate` обязателен, ≥ 0) |
-| PATCH | `/api/work-types/:id` | Обновление (`hourlyRate` обязателен в теле) |
-| DELETE | `/api/work-types/:id` | Удаление (soft delete) |
+| POST | `/api/work-types` | Создание (`hourlyRate` обязателен, ≥ 0); **auth:** `production:write` |
+| PATCH | `/api/work-types/:id` | Обновление (`hourlyRate` обязателен в теле); **auth:** `production:write` |
+| DELETE | `/api/work-types/:id` | Удаление (soft delete); **auth:** `production:write` |
 
 ## Dialogs
 
@@ -63,7 +67,8 @@
 | TZ-83 | Первая реализация |
 | TZ-PRODUCTION-302 | Поле `days` (календарные дни) — schema/DTO/service + FE-диалог + колонка «Дней»; >0 или null (stuck path) |
 | — | `accentHue` для цвета на Ганте; фикс Save вне form (2026-08-07) |
-| TZ-COST-301 | `hourlyRate` required BE+FE; backfill 0; колонка «₽/час»; Виды работ остаются в Каталоге |
+| TZ-COST-301 | `hourlyRate` required BE+FE; backfill 0; колонка «₽/час»; Виды работ принадлежат разделу **Цех** |
+| **TZ-PRODUCTION-STUDIO-A** | Wave A docs-only: IA `Цех`, studio chrome SoT; CRUD не меняется |
 
 ---
 

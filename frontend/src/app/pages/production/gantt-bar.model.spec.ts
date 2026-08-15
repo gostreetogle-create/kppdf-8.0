@@ -127,6 +127,52 @@ describe('gantt-bar.model', () => {
     expect(bars[0].workerLabel).toBe('—');
   });
 
+  it('applies order-level estimateDayOverrides without changing other work types', () => {
+    const input: OrderEstimateInput = {
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      estimateDayOverrides: [{ orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt-weld', days: 5 }],
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p1',
+          productName: 'Стол',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'm1',
+              moduleName: 'Каркас',
+              sortOrder: 0,
+              workTypes: [
+                {
+                  workTypeId: 'wt-weld',
+                  workTypeName: 'Сварка',
+                  days: 2,
+                  sortOrder: 0,
+                },
+                {
+                  workTypeId: 'wt-paint',
+                  workTypeName: 'Покраска',
+                  days: 3,
+                  sortOrder: 1,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const bars = buildGanttBars(input, new Date(2026, 7, 6));
+    expect(bars[0].days).toBe(5);
+    expect(bars[0].startDate).toBe('2026-08-01');
+    expect(bars[0].endDate).toBe('2026-08-05');
+    expect(bars[1].days).toBe(3);
+    expect(bars[1].startDate).toBe('2026-08-06');
+  });
+
   it('renders no-term bar without advancing cursor incorrectly for zero days', () => {
     const input: OrderEstimateInput = {
       orderId: 'o2',

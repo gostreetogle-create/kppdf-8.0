@@ -22,6 +22,7 @@ import {
   type OrderEstimateInput,
   type DirectModuleRef,
   type ModuleWorkTypeRef,
+  type EstimateDayOverrideRef,
 } from './gantt-bar.model';
 
 export interface ProductionReadState {
@@ -358,6 +359,7 @@ export class ProductionReadFacade {
       plannedDate: order.plannedDate,
       date: order.date,
       items: estimateItems,
+      estimateDayOverrides: normalizeEstimateDayOverrides(order.estimateDayOverrides),
     };
   }
 
@@ -395,4 +397,26 @@ function applyWorkerLabels(bars: GanttBar[], workersByWt: Map<string, string[]>)
     ...b,
     workerLabel: (workersByWt.get(b.workTypeId) ?? []).join(', ') || '—',
   }));
+}
+
+function normalizeEstimateDayOverrides(
+  rows: Order['estimateDayOverrides'] | null | undefined,
+): EstimateDayOverrideRef[] {
+  if (!rows?.length) return [];
+  const out: EstimateDayOverrideRef[] = [];
+  for (const row of rows) {
+    const moduleId = refId(row.moduleId as string | { _id?: string });
+    const workTypeId = refId(row.workTypeId as string | { _id?: string });
+    if (!moduleId || !workTypeId) continue;
+    if (!Number.isInteger(row.orderItemIndex) || row.orderItemIndex < 0) continue;
+    const days = typeof row.days === 'number' ? row.days : Number(row.days);
+    if (!Number.isFinite(days) || days < 1) continue;
+    out.push({
+      orderItemIndex: row.orderItemIndex,
+      moduleId,
+      workTypeId,
+      days: Math.floor(days),
+    });
+  }
+  return out;
 }

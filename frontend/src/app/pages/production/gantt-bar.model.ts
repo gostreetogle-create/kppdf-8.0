@@ -131,6 +131,60 @@ export interface OrderEstimateInput {
   plannedDate?: string | null;
   date?: string | null;
   items: OrderItemEstimateInput[];
+  /** TZ-PRODUCTION-309 — order-level days; applied in buildGanttBars. */
+  estimateDayOverrides?: EstimateDayOverrideRef[];
+}
+
+/** TZ-PRODUCTION-309 composite key for order-level duration. */
+export interface EstimateDayOverrideRef {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  days: number;
+}
+
+export function estimateOverrideKey(
+  orderItemIndex: number,
+  moduleId: string,
+  workTypeId: string,
+): string {
+  return `${orderItemIndex}|${moduleId}|${workTypeId}`;
+}
+
+/** Map overrides for O(1) lookup; invalid/empty rows skipped. */
+export function indexEstimateDayOverrides(
+  overrides: EstimateDayOverrideRef[] | null | undefined,
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of overrides ?? []) {
+    if (
+      !Number.isInteger(row.orderItemIndex) ||
+      row.orderItemIndex < 0 ||
+      !row.moduleId ||
+      !row.workTypeId
+    ) {
+      continue;
+    }
+    const days = normalizeWorkTypeDays(row.days);
+    if (days == null) continue;
+    map.set(estimateOverrideKey(row.orderItemIndex, row.moduleId, row.workTypeId), days);
+  }
+  return map;
+}
+
+/**
+ * Resolve days for a bar: order override wins, else catalog WorkType.days.
+ */
+export function resolveEstimateDays(
+  orderItemIndex: number,
+  moduleId: string,
+  workTypeId: string,
+  catalogDays: number | null | undefined,
+  overrideIndex: Map<string, number>,
+): number | null {
+  const hit = overrideIndex.get(estimateOverrideKey(orderItemIndex, moduleId, workTypeId));
+  if (hit != null) return hit;
+  return normalizeWorkTypeDays(catalogDays);
 }
 
 export interface GanttBar {
@@ -171,6 +225,7 @@ function sortByOrderThenIndex<T extends { sortOrder: number }>(
 
 export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date()): GanttBar[] {
   const { anchor, usedFallbackToday } = resolveVisualAnchor(order, today);
+  const overrideIndex = indexEstimateDayOverrides(order.estimateDayOverrides);
   const bars: GanttBar[] = [];
   let cursor = startOfLocalDay(anchor);
   let occurrence = 0;
@@ -187,7 +242,13 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
 
       for (const wt of workTypes) {
         occurrence += 1;
-        const days = normalizeWorkTypeDays(wt.days);
+        const days = resolveEstimateDays(
+          item.orderItemIndex,
+          mod.moduleId,
+          wt.workTypeId,
+          wt.days,
+          overrideIndex,
+        );
         const noTerm = days == null;
         const start = startOfLocalDay(cursor);
         const end = noTerm ? start : addCalendarDays(start, days - 1);

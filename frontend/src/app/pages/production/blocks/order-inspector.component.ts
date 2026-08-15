@@ -18,6 +18,9 @@ import { extractErrorMessage } from '../../../core/silent-http';
 import { ProductionReadFacade } from '../production-read.facade';
 import {
   ORDER_STATUS_LABELS,
+  estimateOverrideKey,
+  resolveEstimateDays,
+  indexEstimateDayOverrides,
   workTypeOklch,
   workTypeWash,
   type OrderEstimateInput,
@@ -262,16 +265,47 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
                                       min="1"
                                       step="1"
                                       class="pi-input !py-0.5 !text-xs w-16"
-                                      [value]="daysDraft(wt.workTypeId, wt.days)"
+                                      [value]="
+                                        daysDraft(
+                                          item.orderItemIndex,
+                                          mod.moduleId,
+                                          wt.workTypeId,
+                                          wt.days
+                                        )
+                                      "
                                       [disabled]="!canEditCatalog() || daysSaving()"
-                                      (change)="onDaysChange(wt.workTypeId, $event)"
+                                      (change)="
+                                        onOrderDaysChange(
+                                          item.orderItemIndex,
+                                          mod.moduleId,
+                                          wt.workTypeId,
+                                          $event
+                                        )
+                                      "
                                       [attr.data-test]="'inspector-days-' + wt.workTypeId"
                                     />
                                   </label>
                                   <p class="text-[10px] text-muted-foreground/80 pl-5">
-                                    Цвет = вид работ (как полоска на Ганте). Дни — справочник, на
-                                    все заказы с этим видом.
+                                    По умолчанию — только этот заказ (override). Цвет = вид работ.
                                   </p>
+                                  @if (canEditCatalog()) {
+                                    <button
+                                      type="button"
+                                      class="text-[10px] underline-offset-2 hover:underline text-ink pl-5 pi-focus-ring disabled:opacity-50"
+                                      [disabled]="daysSaving()"
+                                      (click)="
+                                        onCatalogDaysChange(
+                                          item.orderItemIndex,
+                                          mod.moduleId,
+                                          wt.workTypeId,
+                                          wt.days
+                                        )
+                                      "
+                                      [attr.data-test]="'inspector-catalog-days-' + wt.workTypeId"
+                                    >
+                                      Изменить в справочнике (все заказы)
+                                    </button>
+                                  }
                                 </li>
                               } @empty {
                                 <li class="pl-8 py-2 text-[11px] text-muted-foreground">
@@ -301,7 +335,7 @@ export class OrderInspectorComponent {
   readonly estimateReadOnly = input(false);
   /** Mirror BE @Roles(admin|manager) for order PATCH. */
   readonly canEditOrder = input(false);
-  /** Catalog WorkType.days — typically admin/manager. */
+  /** Catalog WorkType.days — production:write (admin * / seeded manager). */
   readonly canEditCatalog = input(false);
   readonly workerLabels = input<ReadonlyMap<string, string>>(new Map());
   readonly closed = output<void>();
@@ -359,10 +393,23 @@ export class OrderInspectorComponent {
     return workTypeOklch(workTypeId, 0.12, 0.72, hue);
   }
 
-  protected daysDraft(workTypeId: string, days: number | null | undefined): number | string {
-    const ov = this.daysOverrides()[workTypeId];
-    if (ov != null) return ov;
-    return days ?? '';
+  protected daysDraft(
+    orderItemIndex: number,
+    moduleId: string,
+    workTypeId: string,
+    catalogDays: number | null | undefined,
+  ): number | string {
+    const key = estimateOverrideKey(orderItemIndex, moduleId, workTypeId);
+    const local = this.daysOverrides()[key];
+    if (local != null) return local;
+    const fromTree = resolveEstimateDays(
+      orderItemIndex,
+      moduleId,
+      workTypeId,
+      catalogDays,
+      indexEstimateDayOverrides(this.tree()?.estimateDayOverrides),
+    );
+    return fromTree ?? '';
   }
 
   protected toggle(key: string): void {
@@ -399,40 +446,95 @@ export class OrderInspectorComponent {
     this.changed.emit();
   }
 
-  protected async onDaysChange(workTypeId: string, ev: Event): Promise<void> {
+  /** Default path: order-level override (this order only). No confirm. */
+  protected async onOrderDaysChange(
+    orderItemIndex: number,
+    moduleId: string,
+    workTypeId: string,
+    ev: Event,
+  ): Promise<void> {
     if (!this.canEditCatalog()) return;
     const inputEl = ev.target as HTMLInputElement;
-    const raw = inputEl.value;
-    const days = Math.floor(Number(raw));
-    const previous = this.daysDraft(workTypeId, this.findTreeDays(workTypeId));
+    const days = Math.floor(Number(inputEl.value));
+    const previous = this.daysDraft(
+      orderItemIndex,
+      moduleId,
+      workTypeId,
+      this.findTreeDays(workTypeId),
+    );
     if (!Number.isFinite(days) || days < 1) {
       this.toast.error('Дни: целое число ≥ 1');
       inputEl.value = String(previous);
+      return;
+    }
+    const key = estimateOverrideKey(orderItemIndex, moduleId, workTypeId);
+    this.daysOverrides.update((m) => ({ ...m, [key]: days }));
+    this.daysSaving.set(true);
+    const res = await firstValueFrom(
+      this.ordersApi.patchEstimateDays(this.order()._id, {
+        orderItemIndex,
+        moduleId,
+        workTypeId,
+        days,
+      }),
+    );
+    this.daysSaving.set(false);
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      this.daysOverrides.update((m) => {
+        const next = { ...m };
+        if (typeof previous === 'number') next[key] = previous;
+        else delete next[key];
+        return next;
+      });
+      inputEl.value = String(previous);
+      return;
+    }
+    this.toast.success('Дни оценки обновлены для этого заказа');
+    this.facade.clearCaches();
+    await this.reloadTree(res.data ?? this.order());
+    this.changed.emit();
+  }
+
+  /** Explicit catalog path: confirm «для всех» + WorkType PATCH. */
+  protected async onCatalogDaysChange(
+    orderItemIndex: number,
+    moduleId: string,
+    workTypeId: string,
+    catalogDays: number | null | undefined,
+  ): Promise<void> {
+    if (!this.canEditCatalog() || this.daysSaving()) return;
+    const current = this.daysDraft(orderItemIndex, moduleId, workTypeId, catalogDays);
+    const raw = window.prompt(
+      'Новый норматив дней вида работ в справочнике (для ВСЕХ заказов):',
+      String(current || ''),
+    );
+    if (raw == null) return;
+    const days = Math.floor(Number(raw));
+    if (!Number.isFinite(days) || days < 1) {
+      this.toast.error('Дни: целое число ≥ 1');
       return;
     }
     const ok = window.confirm(
       'Изменить норматив вида работ (дни) для ВСЕХ заказов с этим видом?\n\n' +
         'Это правка справочника WorkType, не только текущего заказа.',
     );
-    if (!ok) {
-      inputEl.value = String(previous);
-      return;
-    }
-    this.daysOverrides.update((m) => ({ ...m, [workTypeId]: days }));
+    if (!ok) return;
+
+    const key = estimateOverrideKey(orderItemIndex, moduleId, workTypeId);
     this.daysSaving.set(true);
     const res = await firstValueFrom(this.workTypesApi.update(workTypeId, { days }));
     this.daysSaving.set(false);
     if (!res.ok) {
       this.toast.error(extractErrorMessage(res.error));
-      this.daysOverrides.update((m) => {
-        const next = { ...m };
-        if (typeof previous === 'number') next[workTypeId] = previous;
-        else delete next[workTypeId];
-        return next;
-      });
-      inputEl.value = String(previous);
       return;
     }
+    // Catalog changed — clear local draft for this key so tree shows catalog.
+    this.daysOverrides.update((m) => {
+      const next = { ...m };
+      delete next[key];
+      return next;
+    });
     this.toast.success('Норматив дней вида работ обновлён (глобально)');
     this.facade.clearCaches();
     await this.reloadTree(this.order());

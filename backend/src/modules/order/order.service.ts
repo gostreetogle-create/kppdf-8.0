@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
-import { Order, OrderDocument, OrderItem } from './order.schema';
+import { EstimateDayOverride, Order, OrderDocument, OrderItem } from './order.schema';
 import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { CounterService } from '../counter/counter.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
@@ -243,6 +244,59 @@ export class OrderService {
     line.readyForWork = readyForWork;
     line.readyAt = readyForWork ? new Date() : undefined;
     line.readyByUserId = readyForWork ? new Types.ObjectId(userId) : undefined;
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /**
+   * TZ-PRODUCTION-309 — upsert or clear order-level estimate days.
+   * Composite key: (orderItemIndex, moduleId, workTypeId).
+   * `days: null` removes the override (catalog WorkType.days applies).
+   */
+  async patchEstimateDays(id: string, dto: PatchEstimateDaysDto): Promise<OrderDocument> {
+    const doc = await this.findByIdRaw(id);
+    if (!Types.ObjectId.isValid(dto.moduleId) || !Types.ObjectId.isValid(dto.workTypeId)) {
+      throw new BadRequestException('moduleId and workTypeId must be valid ObjectIds');
+    }
+    if (!Number.isInteger(dto.orderItemIndex) || dto.orderItemIndex < 0) {
+      throw new BadRequestException('orderItemIndex must be an integer ≥ 0');
+    }
+    if (dto.orderItemIndex >= doc.items.length) {
+      throw new NotFoundException(`Order line ${dto.orderItemIndex} not found`);
+    }
+
+    const moduleId = new Types.ObjectId(dto.moduleId);
+    const workTypeId = new Types.ObjectId(dto.workTypeId);
+    const overrides: EstimateDayOverride[] = [...(doc.estimateDayOverrides ?? [])];
+    const matchIndex = overrides.findIndex(
+      (row) =>
+        row.orderItemIndex === dto.orderItemIndex &&
+        row.moduleId.equals(moduleId) &&
+        row.workTypeId.equals(workTypeId),
+    );
+
+    if (dto.days === null) {
+      if (matchIndex >= 0) {
+        overrides.splice(matchIndex, 1);
+      }
+    } else {
+      if (!Number.isInteger(dto.days) || dto.days < 1) {
+        throw new BadRequestException('days must be an integer ≥ 1, or null to clear');
+      }
+      const next: EstimateDayOverride = {
+        orderItemIndex: dto.orderItemIndex,
+        moduleId,
+        workTypeId,
+        days: dto.days,
+      };
+      if (matchIndex >= 0) {
+        overrides[matchIndex] = next;
+      } else {
+        overrides.push(next);
+      }
+    }
+
+    doc.estimateDayOverrides = overrides;
     await doc.save();
     return this.findById(id);
   }

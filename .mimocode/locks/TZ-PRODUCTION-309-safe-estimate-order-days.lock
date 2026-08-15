@@ -1,0 +1,6 @@
+TZ-PRODUCTION-309
+safe-estimate-order-days
+LOCKED: 2026-08-15
+AGENT: agent-3e757640b7
+ZONE: Order.estimateDayOverrides + PATCH estimate-days; WorkType mutate production:write; production gantt estimate override path
+PROTECTS: order-level days SoT for Gantt; catalog WorkType.days unchanged by default inspector edit

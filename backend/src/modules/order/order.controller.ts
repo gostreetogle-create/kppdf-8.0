@@ -11,11 +11,13 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-user.decorator';
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
+import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
@@ -93,6 +95,23 @@ export class OrderController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.service.setLineReady(id, lineIndex, dto.readyForWork, user.id);
+  }
+
+  @Patch(':id/estimate-days')
+  @Permissions('production:write')
+  @AuditAction({ action: 'estimate_days', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({
+    summary: 'Upsert or clear order-level estimate days override (Gantt)',
+    description:
+      'Composite key (orderItemIndex, moduleId, workTypeId). days: null removes override. ' +
+      'Does not mutate WorkType catalog. Requires production:write (admin * passes).',
+  })
+  @ApiResponse({ status: 200, description: 'Order with updated estimateDayOverrides' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden — missing production:write' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  patchEstimateDays(@Param('id') id: string, @Body() dto: PatchEstimateDaysDto) {
+    return this.service.patchEstimateDays(id, dto);
   }
 
   @Patch(':id')

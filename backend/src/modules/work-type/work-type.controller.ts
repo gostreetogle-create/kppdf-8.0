@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Delete, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { Permissions } from '../../common/decorators/permissions.decorator';
 import { WorkTypeService } from './work-type.service';
 import { CreateWorkTypeDto } from './dto/create-work-type.dto';
 import { UpdateWorkTypeDto } from './dto/update-work-type.dto';
@@ -30,18 +31,19 @@ export class WorkTypeController {
   @Roles('admin', 'manager', 'user')
   findOne(@Param('id') id: string) { return this.service.findById(id); }
 
+  /** TZ-PRODUCTION-309: mutate requires production:write (not Roles ∧ Permissions). Admin * passes. */
   @Post()
-  @Roles('admin', 'manager')
+  @Permissions('production:write')
   @AuditAction({ action: 'create', entityType: 'WorkType' })
   create(@Body() dto: CreateWorkTypeDto) { return this.service.create(dto); }
 
   @Patch(':id')
-  @Roles('admin', 'manager')
+  @Permissions('production:write')
   @AuditAction({ action: 'update', entityType: 'WorkType', idParam: 'id' })
   update(@Param('id') id: string, @Body() dto: UpdateWorkTypeDto) { return this.service.update(id, dto); }
 
   @Delete(':id')
-  @Roles('admin', 'manager')
+  @Permissions('production:write')
   @AuditAction({ action: 'archive', entityType: 'WorkType', idParam: 'id' })
   @ApiOperation({ summary: 'Archive a work type without hard delete' })
   @ApiResponse({ status: 409, description: 'Work type is referenced by history' })

@@ -28,9 +28,9 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **UX-DIALOG-306** picker qty |
 | `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **UX-325** P0 chrome migrate → **UX-327** backlog |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
-| `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only |
+| `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only; **PRODUCTION-309** mutate → `production:write` |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
-| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; **STUDIO-A** spec; **STUDIO-B/C/D** + `PROMPT-PRODUCTION-STUDIO-CONTINUOUS` → 98–99; parked **308/309/310 BLOCKED**; drawings **DRAWINGS-301**; 304–307 later; **ORDERS-HUB-303 DONE** `?orderId=` |
+| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; **STUDIO-A–D** chrome PASS; **WAVE-PRODUCTION-GANTT-RESIZE**: **309 DONE** (order days + production:write), **311** READY after 309 (right-edge resize); parked **308/310**; drawings **DRAWINGS-301**; 304–307 later; **ORDERS-HUB-303 DONE** `?orderId=` |
 | `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=`; **ORDERS-HUB-301** DONE; **HUB-302 DONE**; **HUB-303 DONE** supply/production/docs expand; **HUB-304 DONE** readiness/warehouse/shipping stub |
 
 **Catalog audits / backlog:**  

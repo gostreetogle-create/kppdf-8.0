@@ -351,10 +351,8 @@ export class ProductionCockpitPage implements OnInit {
     return role === 'admin' || role === 'manager';
   });
 
-  /** Catalog WorkType.days — production:write or admin/manager role (BE Roles). */
-  protected readonly canEditCatalog = computed(
-    () => this.canEditOrder() || this.caps.hasAny(['production:write']),
-  );
+  /** Catalog / order estimate days — production:write (admin * passes). */
+  protected readonly canEditCatalog = computed(() => this.caps.hasAny(['production:write']));
 
   protected readonly inspectorOrder = computed(() => {
     if (!this.inspectorOpen()) return null;

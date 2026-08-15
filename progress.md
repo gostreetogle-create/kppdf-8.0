@@ -1,3 +1,14 @@
+## [2026-08-15] — TZ-PRODUCTION-309 DONE — order-level estimate days + production:write
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; drag UI НЕ (311); deploy НЕ
+**Что:** `estimateDayOverrides` + PATCH `/orders/:id/estimate-days`; WorkType mutate → `production:write`; FE override в Gantt + inspector; catalog confirm «для всех» сохранён.
+**Gates:** BE tsc PASS; BE jest order 25 PASS; FE tsc PASS; FE jest gantt-bar|production-read 17 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-309.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-309.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-309-safe-estimate-order-days.lock`
+**known_limitation:** existing manager roles in DB may need re-seed for `production:write`; N+1 estimate facade; drag = 311.
+**Successor:** TZ-PRODUCTION-311 (right-edge resize).
+
 ## [2026-08-15] — TZ-UX-324 DONE — chrome history ↔ page-tools gap
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; spacer ~1 btn + muted page-tool; deploy НЕ

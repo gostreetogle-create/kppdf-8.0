@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   { key: 'material:read', section: 'material', action: 'read', description: 'View materials' },
   { key: 'material:write', section: 'material', action: 'write', description: 'Manage materials' },
   { key: 'production:read', section: 'production', action: 'read', description: 'View production orders' },
+  /** TZ-PRODUCTION-309: also gates WorkType mutate + PATCH /orders/:id/estimate-days (not Roles-only). */
   { key: 'production:write', section: 'production', action: 'write', description: 'Create/edit production orders' },
   { key: 'production:admin', section: 'production', action: 'admin', description: 'Close orders / manage workers' },
   { key: 'warehouse:read', section: 'warehouse', action: 'read', description: 'View stock' },

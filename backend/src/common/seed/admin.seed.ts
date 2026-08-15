@@ -50,9 +50,12 @@ const MANAGER_PAGES = [
   'import-todos',
 ] as const;
 
-/** TZ-PRODUCTION-303 lock J � cockpit FE capability gate for director/manager. */
+/** TZ-PRODUCTION-303 lock J — cockpit FE capability gate for director/manager.
+ * TZ-PRODUCTION-309: manager also gets production:write so WorkType mutate +
+ * order estimate-days (Permissions-only routes) stay usable for managers.
+ */
 const DIRECTOR_PERMISSIONS = ['production:read'] as const;
-const MANAGER_PERMISSIONS = ['production:read'] as const;
+const MANAGER_PERMISSIONS = ['production:read', 'production:write'] as const;
 
 const WORKER_PAGES = [
   'doc-texts',

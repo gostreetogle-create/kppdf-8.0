@@ -45,6 +45,28 @@ export class OrderItem {
 
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
 
+/**
+ * TZ-PRODUCTION-309 — per-order Gantt duration override (not WorkType catalog).
+ * Composite key: (orderItemIndex, moduleId, workTypeId).
+ */
+@Schema({ _id: false })
+export class EstimateDayOverride {
+  @Prop({ required: true, min: 0 })
+  orderItemIndex!: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
+  moduleId!: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'WorkType', required: true })
+  workTypeId!: Types.ObjectId;
+
+  /** Calendar days ≥ 1 for this order line / module / work type. */
+  @Prop({ required: true, min: 1 })
+  days!: number;
+}
+
+const EstimateDayOverrideSchema = SchemaFactory.createForClass(EstimateDayOverride);
+
 export type OrderStatus = 'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type OrderDocument = HydratedDocument<Order>;
@@ -114,6 +136,10 @@ export class Order {
 
   @Prop({ type: [Types.ObjectId], ref: 'Reservation', default: [] })
   reservationIds!: Types.ObjectId[];
+
+  /** TZ-PRODUCTION-309: order-level estimate days (Gantt); catalog WorkType.days is fallback. */
+  @Prop({ type: [EstimateDayOverrideSchema], default: [] })
+  estimateDayOverrides!: EstimateDayOverride[];
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

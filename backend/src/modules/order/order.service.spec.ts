@@ -36,6 +36,12 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     notes: undefined,
     priority: 'normal',
     materialsSource: 'own' as 'own' | 'customer',
+    estimateDayOverrides: [] as Array<{
+      orderItemIndex: number;
+      moduleId: Types.ObjectId;
+      workTypeId: Types.ObjectId;
+      days: number;
+    }>,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -455,6 +461,114 @@ describe('OrderService — TZ-ORDERS-301', () => {
         NotFoundException,
       );
       expect(quotationModel.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('patchEstimateDays (TZ-PRODUCTION-309)', () => {
+    const MODULE = new Types.ObjectId();
+    const WORK_TYPE = new Types.ObjectId();
+
+    function orderWithItem(overrides: Record<string, unknown> = {}) {
+      return orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            unitPrice: 0,
+            total: 0,
+          },
+        ],
+        estimateDayOverrides: [],
+        ...overrides,
+      });
+    }
+
+    it('upserts an override by composite key', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateDays(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        days: 5,
+      });
+
+      expect(doc.estimateDayOverrides).toHaveLength(1);
+      expect(doc.estimateDayOverrides[0]).toEqual(
+        expect.objectContaining({
+          orderItemIndex: 0,
+          days: 5,
+        }),
+      );
+      expect(doc.estimateDayOverrides[0].moduleId.equals(MODULE)).toBe(true);
+      expect(doc.estimateDayOverrides[0].workTypeId.equals(WORK_TYPE)).toBe(true);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('updates existing override on same composite key', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({
+        estimateDayOverrides: [
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE,
+            workTypeId: WORK_TYPE,
+            days: 3,
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateDays(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        days: 7,
+      });
+
+      expect(doc.estimateDayOverrides).toHaveLength(1);
+      expect(doc.estimateDayOverrides[0].days).toBe(7);
+    });
+
+    it('clears override when days is null', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({
+        estimateDayOverrides: [
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE,
+            workTypeId: WORK_TYPE,
+            days: 3,
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateDays(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        days: null,
+      });
+
+      expect(doc.estimateDayOverrides).toHaveLength(0);
+    });
+
+    it('rejects unknown order line index', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateDays(doc._id.toString(), {
+          orderItemIndex: 9,
+          moduleId: MODULE.toString(),
+          workTypeId: WORK_TYPE.toString(),
+          days: 2,
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

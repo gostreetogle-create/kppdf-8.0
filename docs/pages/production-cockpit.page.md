@@ -88,6 +88,7 @@ flyouts: overlay; center width unchanged
 ### Business locks (A–J)
 
 - Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
+- Order-level override: `Order.estimateDayOverrides` via `PATCH /orders/:id/estimate-days` (`production:write`); inspector default writes override; catalog «для всех» remains explicit confirm.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -99,6 +100,7 @@ flyouts: overlay; center width unchanged
 | TZ-PRODUCTION-303.1 | Closeout: inspector `/orders?q=` deep-link + Gantt hotfix documentation |
 | **TZ-ORDERS-HUB-303** | Deep-link `/production?orderId=` → selectOrder; unknown id safe + RU hint |
 | TZ-PRODUCTION-302 | WorkType.days |
+| **TZ-PRODUCTION-309** | DONE: order estimate days + WorkType mutate `production:write` |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -117,9 +119,11 @@ flyouts: overlay; center width unchanged
 
 ### Known limitations
 
-- Полная keyboard-семантика grid и BE-контракт `production:write` на WorkTypes — в 308–309.
-- Нет drag-reschedule / assign writes / ProductionSchedule SoT.
+- Полная keyboard-семантика grid — 310+.
+- Drag-resize UI — TZ-PRODUCTION-311 (после 309 SoT).
+- Нет assign writes / ProductionSchedule SoT.
 - Browser smoke зависит от живого API/Mongo.
+- Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
 
 ### Zoom
 
