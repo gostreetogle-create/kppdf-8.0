@@ -42,6 +42,31 @@ describe('OrdersPage', () => {
   const matchListGet = (r: { url: string; method: string }): boolean =>
     r.url === listUrl && r.method === 'GET';
 
+  const matchSupplyExpand =
+    (orderMongoId: string) =>
+    (r: { url: string; method: string; params: { get: (k: string) => string | null } }): boolean =>
+      r.method === 'GET' &&
+      r.url === `${baseUrl}/supply-tasks` &&
+      r.params.get('orderId') === orderMongoId;
+
+  const matchReservationExpand =
+    (orderNumber: string) =>
+    (r: { url: string; method: string; params: { get: (k: string) => string | null } }): boolean =>
+      r.method === 'GET' &&
+      r.url === `${baseUrl}/reservations` &&
+      r.params.get('orderId') === orderNumber;
+
+  async function flushExpandLoads(
+    http: HttpTestingController,
+    order: Pick<Order, '_id' | 'number'>,
+    supply: unknown[] = [],
+    reservations: unknown[] = [],
+  ): Promise<void> {
+    http.expectOne(matchSupplyExpand(order._id)).flush(supply);
+    http.expectOne(matchReservationExpand(order.number)).flush(reservations);
+    await tickMicrotask();
+  }
+
   async function tickMicrotask(): Promise<void> {
     await new Promise<void>((r) => setTimeout(r, 0));
   }
@@ -271,15 +296,7 @@ describe('OrdersPage', () => {
 
     row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
-    httpMock
-      .expectOne(
-        (r) =>
-          r.method === 'GET' &&
-          r.url === `${baseUrl}/supply-tasks` &&
-          r.params.get('orderId') === 'o1',
-      )
-      .flush([]);
-    await tickMicrotask();
+    await flushExpandLoads(httpMock, { _id: 'o1', number: 'ORD-001' });
     fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
@@ -307,18 +324,14 @@ describe('OrdersPage', () => {
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
 
-    const supplyReq = httpMock.expectOne(
-      (r) =>
-        r.method === 'GET' &&
-        r.url === `${baseUrl}/supply-tasks` &&
-        r.params.get('orderId') === 'o1',
-    );
+    const supplyReq = httpMock.expectOne(matchSupplyExpand('o1'));
     supplyReq.flush([
       { _id: 't1', orderId: 'o1', qty: 1, status: 'draft' },
       { _id: 't2', orderId: 'o1', qty: 2, status: 'confirmed' },
       { _id: 't3', orderId: 'o1', qty: 1, status: 'ordered' },
       { _id: 't4', orderId: 'o1', qty: 3, status: 'received' },
     ]);
+    httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     fixture.detectChanges();
 
@@ -361,7 +374,8 @@ describe('OrdersPage', () => {
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
 
-    httpMock.expectOne((r) => r.url === `${baseUrl}/supply-tasks` && r.method === 'GET').flush([]);
+    httpMock.expectOne(matchSupplyExpand('o1')).flush([]);
+    httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Нет задач снабжения');
@@ -370,9 +384,8 @@ describe('OrdersPage', () => {
     fixture.detectChanges();
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
-    httpMock
-      .expectOne((r) => r.url === `${baseUrl}/supply-tasks` && r.method === 'GET')
-      .flush('fail', { status: 500, statusText: 'Error' });
+    httpMock.expectOne(matchSupplyExpand('o1')).flush('fail', { status: 500, statusText: 'Error' });
+    httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     await tickMicrotask();
     fixture.detectChanges();
@@ -402,19 +415,153 @@ describe('OrdersPage', () => {
     };
 
     comp.onRowClick(row);
-    httpMock
-      .expectOne(
-        (r) =>
-          r.method === 'GET' &&
-          r.url === `${baseUrl}/supply-tasks` &&
-          r.params.get('orderId') === 'o1',
-      )
-      .flush([]);
-    await tickMicrotask();
+    await flushExpandLoads(httpMock, row);
     expect(comp.expandedId()).toBe('o1');
     expect(comp.proposalLabelOf(row)).toBe('№QTN-1 · заглушка');
     comp.onRowClick(row);
     expect(comp.expandedId()).toBeNull();
     expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('HUB-304 renders readiness block without extra HTTP and links to order detail', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([
+      {
+        ...fakeOrders[0],
+        items: [
+          { productId: 'p1', productName: 'Дверь', quantity: 1, unitPrice: 0, readyForWork: true },
+          { productId: 'p2', productName: 'Рама', quantity: 1, unitPrice: 0 },
+        ],
+      },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onRowClick: (row: Order) => void };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    httpMock.expectOne(matchSupplyExpand('o1')).flush([]);
+    httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="order-readiness-block"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-readiness-summary"]')?.textContent,
+    ).toContain('1 из 2');
+    expect(fixture.nativeElement.querySelector('[data-test="order-readiness-ready"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-readiness-not-ready"]'),
+    ).toBeTruthy();
+    const readinessLink = fixture.nativeElement.querySelector(
+      '[data-test="order-readiness-link"]',
+    ) as HTMLAnchorElement;
+    expect(readinessLink.getAttribute('href')).toContain('/orders/o1');
+  });
+
+  it('HUB-304 lazy-loads reservations by Order.number and shows active/total counters', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onRowClick: (row: Order) => void };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+
+    httpMock.expectOne(matchSupplyExpand('o1')).flush([]);
+    const reservationsReq = httpMock.expectOne(matchReservationExpand('ORD-001'));
+    expect(reservationsReq.request.params.get('orderId')).toBe('ORD-001');
+    reservationsReq.flush([
+      {
+        _id: 'r1',
+        orderId: 'ORD-001',
+        productId: 'p1',
+        warehouseId: 'w1',
+        qty: 2,
+        status: 'active',
+      },
+      {
+        _id: 'r2',
+        orderId: 'ORD-001',
+        productId: 'p2',
+        warehouseId: 'w1',
+        qty: 1,
+        status: 'released',
+      },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-block"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-warehouse-counters"]')?.textContent,
+    ).toContain('Активных 1');
+    expect(fixture.nativeElement.textContent).toContain('всего 2');
+    const warehouseLink = fixture.nativeElement.querySelector(
+      '[data-test="order-warehouse-link"]',
+    ) as HTMLAnchorElement;
+    expect(warehouseLink.getAttribute('href')).toContain('/storage-items');
+  });
+
+  it('HUB-304 shows empty warehouse state and isolates reservation errors', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onRowClick: (row: Order) => void;
+      reservationExpandError: () => string | null;
+    };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    httpMock.expectOne(matchSupplyExpand('o1')).flush([]);
+    httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Нет броней');
+
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    httpMock.expectOne(matchSupplyExpand('o1')).flush([]);
+    httpMock
+      .expectOne(matchReservationExpand('ORD-001'))
+      .flush('fail', { status: 500, statusText: 'Error' });
+    await tickMicrotask();
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(comp.reservationExpandError()).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-error"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
+  });
+
+  it('HUB-304 renders shipping stub with link to /shipping and no shipment API', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onRowClick: (row: Order) => void };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    await flushExpandLoads(httpMock, fakeOrders[0]!);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="order-shipping-block"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-shipping-stub"]')?.textContent,
+    ).toContain('Отгрузка пока не ведётся');
+    const shippingLink = fixture.nativeElement.querySelector(
+      '[data-test="order-shipping-link"]',
+    ) as HTMLAnchorElement;
+    expect(shippingLink.getAttribute('href')).toContain('/shipping');
+    httpMock.expectNone((r) => r.url.includes('/shipments'));
   });
 });

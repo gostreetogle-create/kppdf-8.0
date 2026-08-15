@@ -31,7 +31,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
 | `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; parked **308/309/310**; drawings **DRAWINGS-301**; 304–307 plug-ins later; **ORDERS-HUB-303 READY FOR REVIEW** `?orderId=` |
-| `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=`; **ORDERS-HUB-301** DONE; **HUB-302 DONE**; **HUB-303 READY FOR REVIEW** supply/production/docs expand; HUB-304 next |
+| `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=`; **ORDERS-HUB-301** DONE; **HUB-302 DONE**; **HUB-303 DONE** supply/production/docs expand; **HUB-304 READY FOR REVIEW** readiness/warehouse/shipping stub |
 
 **Catalog audits / backlog:**  
 [`2026-08-15-order-lifecycle-hub.md`](../audits/2026-08-15-order-lifecycle-hub.md) ·  
@@ -48,7 +48,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
-| `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 READY FOR REVIEW** supply `?orderId=`; **HUB-304** shipping stub-from-hub |
+| `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 DONE** supply `?orderId=`; **HUB-304 READY FOR REVIEW** hub shipping stub link |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |

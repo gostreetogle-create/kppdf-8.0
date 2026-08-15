@@ -24,10 +24,12 @@ Read-only expand на списке `/orders`:
 | **Снабжение (HUB-303)** | 1 | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
 | **Производство (HUB-303)** | 0 | «Оценка в цехе» + `/production?orderId=` |
 | **Документы (HUB-303)** | 0 | `/doc-constructor/templates?source=order&sourceId=` |
+| **Готовность (HUB-304)** | 0 | `X из Y` + линии ready/не ready; link `/orders/:id`; toggle ready только на detail |
+| **Склад (HUB-304)** | 1 | lazy `GET /api/reservations?orderId=<Order.number>` → active/total; empty «Нет броней»; error inline; link `/storage-items` |
+| **Отгрузка (HUB-304)** | 0 | stub copy + link `/shipping`; **не** `GET /shipments` |
 
-- Stale: ответ supply игнорируется если `expandedId` уже другой.
-- Write из expand запрещён. Budget ≤4 HTTP (supply = 1 в этой волне).
-- HUB-304: Готовность / Склад / Отгрузка.
+- Stale: ответ supply/reservations игнорируется если `expandedId` уже другой.
+- Write из expand запрещён. Budget ≤4 HTTP (supply + reservations = 2 в этой волне).
 
 ## Workspace chrome
 
@@ -154,7 +156,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY |
 | **TZ-ORDERS-HUB-302** | Колонки + read-only expand «Сделка/Состав» — DONE |
 | **TZ-ORDERS-HUB-303** | Expand Снабжение/Производство/Документы + `/supply?orderId=` + `/production?orderId=` — DONE |
-| **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — next |
+| **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — READY FOR REVIEW |
 
 ## Особенности
 
@@ -165,4 +167,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-15 (TZ-ORDERS-HUB-302)._
+_Обновлено: 2026-08-15 (TZ-ORDERS-HUB-304)._

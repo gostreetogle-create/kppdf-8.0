@@ -36,10 +36,13 @@ import {
   SupplyTaskService,
   type SupplyTaskStatus,
 } from '../../shared/services/pi-supply.service';
+import { Reservation, ReservationsService } from '../../shared/services/pi-reservations.service';
 
 type SortKey = 'number' | 'date' | 'status';
 
 type SupplyExpandCounters = Record<SupplyTaskStatus, number> & { total: number };
+
+type ReservationExpandCounters = { active: number; total: number };
 
 const EMPTY_SUPPLY_COUNTERS: SupplyExpandCounters = {
   draft: 0,
@@ -48,6 +51,8 @@ const EMPTY_SUPPLY_COUNTERS: SupplyExpandCounters = {
   received: 0,
   total: 0,
 };
+
+const EMPTY_RESERVATION_COUNTERS: ReservationExpandCounters = { active: 0, total: 0 };
 
 /** Client-side pagination page size for /orders flat-array endpoint. */
 const PAGE_SIZE = 10;
@@ -444,6 +449,101 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
                         >Шаблоны документов</a
                       >
                     </section>
+
+                    <section class="min-w-0" data-test="order-readiness-block">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <p class="eyebrow m-0">Готовность</p>
+                        <a
+                          [routerLink]="['/orders', row._id]"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                          data-test="order-readiness-link"
+                          (click)="$event.stopPropagation()"
+                          >Открыть заказ</a
+                        >
+                      </div>
+                      <p class="text-sm m-0 mt-1" data-test="order-readiness-summary">
+                        {{ readinessLabel(row) }}
+                      </p>
+                      @if ((row.items?.length ?? 0) === 0) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">
+                          Нет линий для готовности.
+                        </p>
+                      } @else {
+                        <ul
+                          class="m-0 mt-1 pl-4 space-y-0.5 text-sm"
+                          data-test="order-readiness-lines"
+                        >
+                          @for (item of row.items; track $index) {
+                            <li>
+                              {{
+                                item.productName || 'Изделие ' + item.productId.slice(0, 8) + '…'
+                              }}
+                              ·
+                              <span
+                                [class.text-muted-foreground]="item.readyForWork !== true"
+                                [attr.data-test]="
+                                  item.readyForWork === true
+                                    ? 'order-readiness-ready'
+                                    : 'order-readiness-not-ready'
+                                "
+                              >
+                                {{ item.readyForWork === true ? 'готово' : 'не готово' }}
+                              </span>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </section>
+
+                    <section class="min-w-0" data-test="order-warehouse-block">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <p class="eyebrow m-0">Склад</p>
+                        <a
+                          routerLink="/storage-items"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                          data-test="order-warehouse-link"
+                          (click)="$event.stopPropagation()"
+                          >Склад</a
+                        >
+                      </div>
+                      @if (reservationExpandLoading() && reservationExpandOrderId() === row._id) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                      } @else if (
+                        reservationExpandError() && reservationExpandOrderId() === row._id
+                      ) {
+                        <p
+                          class="text-xs text-destructive m-0 mt-1"
+                          role="alert"
+                          data-test="order-warehouse-error"
+                        >
+                          {{ reservationExpandError() }}
+                        </p>
+                      } @else if (
+                        reservationExpandOrderId() === row._id &&
+                        reservationExpandCounters().total === 0
+                      ) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
+                      } @else if (reservationExpandOrderId() === row._id) {
+                        <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
+                          Активных {{ reservationExpandCounters().active }} · всего
+                          {{ reservationExpandCounters().total }}
+                        </p>
+                      }
+                    </section>
+
+                    <section class="min-w-0" data-test="order-shipping-block">
+                      <p class="eyebrow m-0 mb-1">Отгрузка</p>
+                      <p class="text-sm m-0" data-test="order-shipping-stub">
+                        Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
+                      </p>
+                      <a
+                        routerLink="/shipping"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
+                        data-test="order-shipping-link"
+                        (click)="$event.stopPropagation()"
+                        >Открыть раздел „Отгрузка“</a
+                      >
+                    </section>
                   </div>
                 </div>
               }
@@ -472,6 +572,7 @@ export class OrdersPage implements OnInit {
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly supply = inject(SupplyTaskService);
+  private readonly reservations = inject(ReservationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -760,19 +861,30 @@ export class OrdersPage implements OnInit {
     ...EMPTY_SUPPLY_COUNTERS,
   });
 
+  /** HUB-304: lazy reservations by Order.number for the expanded row. */
+  protected readonly reservationExpandOrderId = signal<string | null>(null);
+  protected readonly reservationExpandLoading = signal(false);
+  protected readonly reservationExpandError = signal<string | null>(null);
+  protected readonly reservationExpandCounters = signal<ReservationExpandCounters>({
+    ...EMPTY_RESERVATION_COUNTERS,
+  });
+
   protected onRowClick(row: Order): void {
     const closing = this.expandedId() === row._id;
     this.expandedId.update((current) => (current === row._id ? null : row._id));
     if (closing) {
       this.clearSupplyExpand();
+      this.clearReservationExpand();
       return;
     }
     this.loadSupplyExpand(row._id);
+    this.loadReservationExpand(row._id, row.number);
   }
 
   private resetExpansion(): void {
     this.expandedId.set(null);
     this.clearSupplyExpand();
+    this.clearReservationExpand();
   }
 
   private clearSupplyExpand(): void {
@@ -780,6 +892,13 @@ export class OrdersPage implements OnInit {
     this.supplyExpandLoading.set(false);
     this.supplyExpandError.set(null);
     this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+  }
+
+  private clearReservationExpand(): void {
+    this.reservationExpandOrderId.set(null);
+    this.reservationExpandLoading.set(false);
+    this.reservationExpandError.set(null);
+    this.reservationExpandCounters.set({ ...EMPTY_RESERVATION_COUNTERS });
   }
 
   private loadSupplyExpand(orderId: string): void {
@@ -801,6 +920,26 @@ export class OrdersPage implements OnInit {
     });
   }
 
+  /** Query by business number (`Order.number`), never `reservationIds[]`. */
+  private loadReservationExpand(orderMongoId: string, orderNumber: string): void {
+    this.reservationExpandOrderId.set(orderMongoId);
+    this.reservationExpandLoading.set(true);
+    this.reservationExpandError.set(null);
+    this.reservationExpandCounters.set({ ...EMPTY_RESERVATION_COUNTERS });
+    this.reservations.list(orderNumber).subscribe((res) => {
+      if (this.expandedId() !== orderMongoId) return;
+      this.reservationExpandLoading.set(false);
+      if (!res.ok) {
+        this.reservationExpandError.set(
+          extractErrorMessage(res.error) || 'Не удалось загрузить брони',
+        );
+        this.reservationExpandCounters.set({ ...EMPTY_RESERVATION_COUNTERS });
+        return;
+      }
+      this.reservationExpandCounters.set(this.countReservations(res.data ?? []));
+    });
+  }
+
   private countSupplyStatuses(tasks: SupplyTask[]): SupplyExpandCounters {
     const counters: SupplyExpandCounters = { ...EMPTY_SUPPLY_COUNTERS };
     for (const task of tasks) {
@@ -808,6 +947,14 @@ export class OrdersPage implements OnInit {
       counters.total += 1;
     }
     return counters;
+  }
+
+  private countReservations(list: Reservation[]): ReservationExpandCounters {
+    let active = 0;
+    for (const r of list) {
+      if (r.status === 'active') active += 1;
+    }
+    return { active, total: list.length };
   }
 
   // ─── Event handlers ───────────────────────────────────────────────
