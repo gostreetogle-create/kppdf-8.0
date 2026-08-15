@@ -1,0 +1,14 @@
+task: TZ-SALES-378
+status: DONE
+closed_at: 2026-08-15T07:39:00Z
+implementation_sha: b20944637d62bafe614bc808505137334e6c6e49
+closeout_sha: c4972eab
+protected_files:
+  - backend/src/modules/document-template/document-template.service.ts
+  - backend/src/modules/document-template/document-template.assets.spec.ts
+  - docs/pages/proposals-create.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/audits/2026-08-15-kp-multipage-table-overflow-audit.md
+behavior: multipage outer head hoists buildDocumentContentStyles (.doc-bg preserved); .doc-page position relative; auto next-page capacity from full sheet not short frame; remapContinuationTableBlock y0/h1 on page 2+
+cursor_verdict: PASS
+production: not executed

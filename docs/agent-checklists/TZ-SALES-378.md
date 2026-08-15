@@ -1,7 +1,7 @@
 # TZ-SALES-378 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-SALES-378.md`
+> Status: **DONE**
+> Archive: `tasks/_archive/2026-08/TZ-SALES-378.done.md`
 
 ## Claim slot
 
@@ -37,10 +37,12 @@
 ## Gates / Executor report / Review
 
 - [x] READY FOR REVIEW
-- [x] **Не** archive до Cursor PASS
+- [x] Cursor Verdict: **PASS** (2026-08-15)
+  - Cross-check `b2094463`: `buildDocumentContentStyles` in multipage head; `.doc-page{position:relative}`; next `layoutHeight=1`; `remapContinuationTableBlock` y0/h1; specs 70.
+- [x] Archive/closeout — Buffy after PASS
 
 ## Closeout
 
-- [ ] archive + lock + progress + `_active` removed
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + `_active` removed
+- [x] Status = DONE
+- closed_at: 2026-08-15T07:39:00Z

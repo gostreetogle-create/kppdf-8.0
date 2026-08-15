@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:30:00Z
-main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
+updated_at: 2026-08-15T07:39:00Z
+main_head: `b20944637d62bafe614bc808505137334e6c6e49`
 
 ## ACTIVE
 
@@ -23,6 +23,16 @@ main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-SALES-378 — DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-SALES-378.md`
+- Archive: `tasks/_archive/2026-08/TZ-SALES-378.done.md`
+- Lock: `.mimocode/locks/TZ-SALES-378-multipage-bg-full-next.lock`
+- Implementation: `b20944637d62bafe614bc808505137334e6c6e49`
+- Closeout: `c4972eab`
+- State: Cursor PASS; multipage bg CSS hoisted; full next-page capacity + table remap; archive/lock/checklist DONE; active marker removed; deploy НЕ.
+- Successor park: **TZ-SALES-377** (continuation background) — backlog only, не брать.
 
 ### TZ-SALES-376 — DONE / LANDED
 
@@ -109,6 +119,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- SALES-378 multipage bg + full next pages — DONE; Cursor PASS; archive/lock landed; deploy НЕ; SALES-377 still PARK in backlog.
 - SALES-376 geometry-aware KP page split — DONE; Cursor PASS; archive/lock landed; deploy НЕ; SALES-377 still PARK in backlog.
 - SALES-375 remove products rail draft-lines — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - SALES-374 KP table editor chrome — DONE; Cursor PASS; archive/lock landed; deploy НЕ.

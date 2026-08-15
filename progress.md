@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-SALES-378 DONE — multipage bg CSS + full next-page table
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; backend document build; deploy НЕ
+**Что:** Hoist `buildDocumentContentStyles` into multipage outer head (`.doc-bg` preserved); `.doc-page { position: relative }`; auto next-page capacity from full A4 sheet; `remapContinuationTableBlock` y0/h1 on page 2+.
+**Gates:** BE tsc PASS; document-template 70 tests; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-SALES-378.done.md`
+**Checklist:** `docs/agent-checklists/TZ-SALES-378.md`
+**Lock:** `.mimocode/locks/TZ-SALES-378-multipage-bg-full-next.lock`
+**Implementation SHA:** `b20944637d62bafe614bc808505137334e6c6e49`
+**Closeout SHA:** `c4972eab`
+**Known limit:** strip decorations / continuationMode = TZ-SALES-377 PARK backlog.
+
 ## [2026-08-15] — TZ-SALES-376 DONE — geometry-aware KP page split
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; full-stack document split + Create КП copy; deploy НЕ
