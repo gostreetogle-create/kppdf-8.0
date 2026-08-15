@@ -13,7 +13,8 @@
 - [x] architecture:check PASS: 936 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated admin create/reset-password, light/dark, dialog keyboard unavailable in this headless worktree; covered by existing component specs and service HTTP characterization.
-- [ ] Commit and pushed SHA recorded.
+- [x] Implementation commit: `91ef835a`.
+- [ ] Push SHA: pending.
 
 ## Implementation evidence
 
