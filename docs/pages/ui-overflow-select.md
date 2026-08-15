@@ -59,6 +59,15 @@
 
 Компонент: `frontend/src/app/shared/ui/overflow-select/pi-overflow-select.component.ts`
 
+## Checkbox / multi-toggle menus (канон UX-318)
+
+Любой выпадающий список с **чекбоксами / multi-toggle** (не только
+`PiOverflowSelect`): открыл → ставишь/снимаешь галочки → панель **остаётся
+открытой**. Закрытие только: клик вне панели, Escape, повторный клик по
+триггеру. **Запрещено:** `mouseleave` close и close-on-each-toggle для
+checkbox-меню. Single-select / action-меню (один пункт = действие) по-прежнему
+может закрываться сразу после выбора.
+
 ## Multi-select mode
 
 `app-pi-overflow-select` supports `[multiple]="true"` with `selectedValues` / `selectedValuesChange` for a checkbox-like multi-choice panel. The overlay stays open while items are toggled, displays optional item `meta`, keeps the same `max-h-[min(70vh,28rem)]` panel, and applies the existing `searchable="auto"` threshold. Use this for multiple source fields inside dialogs; do not replace it with native `<select multiple>` or a 100px scroll box.

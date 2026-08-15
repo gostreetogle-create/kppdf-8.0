@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  computed,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   LucideAngularModule,
   ChevronDown,
@@ -87,11 +95,7 @@ type ColumnWidths = Record<string, number>;
               <lucide-angular [img]="chevronDownIcon" [size]="12" aria-hidden="true" />
             </button>
             @if (columnsMenuOpen()) {
-              <div
-                class="editor__dropdown"
-                data-test="kp-table-editor-columns-dropdown"
-                (mouseleave)="columnsMenuOpen.set(false)"
-              >
+              <div class="editor__dropdown" data-test="kp-table-editor-columns-dropdown">
                 @for (col of tableLayout(); track col.key) {
                   <label class="editor__dropdown-item">
                     <input
@@ -1734,7 +1738,31 @@ export class ProposalCreateTableEditorComponent {
       c.key === key ? { ...c, visible: !c.visible } : c,
     );
     this.tableLayoutChange.emit(layout);
-    this.columnsMenuOpen.set(false);
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  protected onDocumentPointerDown(event: PointerEvent): void {
+    if (!this.columnsMenuOpen() && !this.moreMenuOpen() && this.columnMenuIndex() < 0) {
+      return;
+    }
+    const t = event.target;
+    if (!(t instanceof Element)) return;
+    if (
+      t.closest('[data-test="kp-table-editor-columns-dropdown"]') ||
+      t.closest('[data-test="kp-table-editor-columns-toggle"]') ||
+      t.closest('[data-test="kp-table-editor-more-dropdown"]') ||
+      t.closest('[data-test="kp-table-editor-more-toggle"]')
+    ) {
+      return;
+    }
+    this.closeMenus();
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onDocumentEscape(): void {
+    if (this.columnsMenuOpen() || this.moreMenuOpen() || this.columnMenuIndex() >= 0) {
+      this.closeMenus();
+    }
   }
 
   protected showColumn(key: string): void {

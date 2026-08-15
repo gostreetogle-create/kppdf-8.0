@@ -5,10 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-14T06:40:00+03:00
-main_head: `7cc685eb4841a41fbbfe3ef7f9cdb8061aa3e018`
+updated_at: 2026-08-15T05:28:31Z
+main_head: `fc065b7e`
 
 ## ACTIVE
+
+### TZ-UX-318 — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-UX-318.md`
+- Checklist: `docs/agent-checklists/TZ-UX-318.md`
+- Spec: `tasks/TZ-UX-318-kp-columns-checkbox-menu-stay-open.md`
+- Owner: Buffy (Cursor Agent); claimed_at: 2026-08-15T05:28:31Z
+- State: stay-open implemented; tsc PASS; awaiting Cursor/PO review (не archive).
+- Team Room: claim unavailable (unknown task).
+- Conflict keys: `proposal-create-table-editor.component.ts`, `docs/pages/ui-overflow-select.md`, `docs/pages/proposals-create.page.md`, `docs/pages/PAGE-TZ-INDEX.md`.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -25,35 +35,24 @@ main_head: `7cc685eb4841a41fbbfe3ef7f9cdb8061aa3e018`
 ### TZ-CATALOG-371 — DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-CATALOG-371.md`
-- Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`; closeout: `fc065b7ee345cd0939cf67a698d044a4f997c874`
+- Implementation: `bd23a4d10273c8a412c9d665d1f3f59200163ac8`
 - State: duplicate API, expectedVersion and typed FE client DONE; archive/lock/checklist landed.
 - Team Room: task not registered; claim attempt recorded in checklist.
 - Active marker removed after closeout; deploy НЕ.
 - Conflict keys released: Product service/controller/DTO/spec + ProductsService/spec + products page doc.
 
-### TZ-SALES-372 — DONE / LANDED
-
-- Checklist: `docs/agent-checklists/TZ-SALES-372.md`
-- Implementation: `cbf2e2fe14dc674e688623b332299e85a1c66146`; closeout: `f182460503fc5f88e63af5ec7fe52e1afe8b8e07`
-- State: snapshot-first identity edits, multi-row review, КП-only/update/copy decisions, expectedVersion conflict handling and row copy/rebind DONE.
-- Archive/lock/checklist landed; active marker removed; deploy НЕ.
-- Team Room: task not registered; claim attempt recorded in checklist.
-- Conflict keys released: proposal-create page/table editor/product rail/spec + quotation schema/dto/service/spec + page doc.
-
 ### TZ-SALES-370 — DONE / LANDED
 
 - Branch: `feature/TZ-SALES-370`
-- Implementation: `c08f13735acf956133a16d886e70857e31a1fd91`; closeout: `d1e97c1c3f3b848f9dbe5d524f40a0c6fa5caeac`; main: `f49a3d0037174b9e8dc39d8df7c904172912c69f`
+- Implementation: `c08f1373`; closeout: `d1e97c1c`; main: `f49a3d00` (full SHAs in archive/checklist)
 - State: Cursor visual PASS; A4 fixture limitation delegated to SALES-371.
 - Archive/lock/checklist landed; active marker removed; deploy НЕ.
 - Conflict keys released: `proposal-create*`, quotation output/schema/dto, page docs.
 
 ## READY / ORDER
 
-1. SALES-371 photo output — DONE / landed; archive and lock recorded.
-3. SALES-372 snapshot edit/catalog resolution — DONE / landed; archive and lock recorded.
-4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
@@ -67,7 +66,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 ## GLOBAL BLOCKERS / BANS
 
 - Wave AUTH = 3/5, не DONE.
-- SALES-371 and SALES-372 are DONE / landed; CATALOG-371 is DONE / landed.
+- SALES-371 / SALES-372 remain queued; CATALOG-371 is claimed and in progress.
 - Deploy/wipe не выполнять без явной команды PO; wipe требует отдельного подтверждения.
 - Не брать PARKED задачи и не создавать roadmap самовольно.
 - Trust claims only from root `tasks/_active/`; игнорировать markers во вложенных worktree.
