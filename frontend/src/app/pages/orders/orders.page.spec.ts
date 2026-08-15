@@ -1,8 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 
 import { OrdersPage } from './orders.page';
@@ -54,6 +53,7 @@ describe('OrdersPage', () => {
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
+        provideRouter([{ path: 'orders/:id', children: [] }]),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: ActivatedRoute, useValue: { queryParamMap: queryParamSubject.asObservable() } },
         {
@@ -73,11 +73,7 @@ describe('OrdersPage', () => {
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       ],
-    })
-      .overrideComponent(OrdersPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
@@ -197,5 +193,124 @@ describe('OrdersPage', () => {
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
     expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('HUB-302 defines operational columns without commercial total', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      cols: { key: string; label: string }[];
+    };
+    expect(comp.cols.map((col) => col.key)).toEqual([
+      'number',
+      'date',
+      'counterpartyId',
+      'siteId',
+      'status',
+      'priority',
+      'items',
+      'quotationId',
+      'readyForWork',
+    ]);
+    expect(comp.cols.map((col) => col.label)).not.toContain('Сумма');
+  });
+
+  it('HUB-302 calculates X/Y readiness and honest empty state', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      readinessLabel: (row: Order) => string;
+    };
+    expect(
+      comp.readinessLabel({
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'draft',
+        items: [
+          { productId: 'p1', quantity: 1, unitPrice: 0, readyForWork: true },
+          { productId: 'p2', quantity: 1, unitPrice: 0 },
+        ],
+      }),
+    ).toBe('1 из 2');
+    expect(comp.readinessLabel({ _id: 'o2', number: 'ORD-2', status: 'draft', items: [] })).toBe(
+      '—',
+    );
+  });
+
+  it('HUB-302 renders read-only Deal/Composition expand and supports keyboard toggle', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([
+      {
+        ...fakeOrders[0],
+        counterpartyId: { _id: 'cp1', name: 'ООО Заказчик' },
+        siteId: { _id: 'site1', name: 'Цех', address: 'ул. Мира, 1' },
+        quotationId: { _id: 'q1', number: 'QTN-1', isStub: true },
+        items: [{ productId: 'p1', productName: 'Изделие', quantity: 2, unitPrice: 0 }],
+      },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const row = fixture.nativeElement.querySelector('[data-test="table-row-o1"]') as HTMLElement;
+    expect(row).toBeTruthy();
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+
+    const link = fixture.nativeElement.querySelector('[data-test="order-link-o1"]') as HTMLElement;
+    link.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeFalsy();
+
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-composition-block"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('ООО Заказчик');
+    expect(fixture.nativeElement.textContent).toContain('Изделие');
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+
+    row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    fixture.detectChanges();
+    expect(row.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('HUB-302 toggles one read-only expansion and does not call write services', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      expandedId: () => string | null;
+      onRowClick: (row: Order) => void;
+      proposalLabelOf: (row: Order) => string;
+    };
+    const row: Order = {
+      _id: 'o1',
+      number: 'ORD-1',
+      status: 'draft',
+      quotationId: { _id: 'q1', number: 'QTN-1', isStub: true },
+      items: [{ productId: 'p1', productName: 'Изделие', quantity: 2, unitPrice: 0 }],
+    };
+
+    comp.onRowClick(row);
+    expect(comp.expandedId()).toBe('o1');
+    expect(comp.proposalLabelOf(row)).toBe('№QTN-1 · заглушка');
+    comp.onRowClick(row);
+    expect(comp.expandedId()).toBeNull();
+    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 });

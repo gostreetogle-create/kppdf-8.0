@@ -11,7 +11,8 @@
 
 ## Query params
 
-Нет — всё состояние через сигналы.
+- `q` — deep-link поиска по номеру заказа (используется из production cockpit).
+
 
 ## Workspace chrome
 
@@ -103,9 +104,27 @@
 listRes → data → filteredRows → sortedRows → paginatedRows
 ```
 
-## Column definitions (7 колонок)
+## Column definitions
 
-`number` (sticky, link → `/orders/:id`) → `date` → `counterpartyId` → `status` → `priority` → `items` → `total`
+**Текущий UI (до HUB-302):**  
+`number` → `date` → `counterpartyId` → `status` → `priority` → `items` → `total`
+
+**Целевой контракт TZ-ORDERS-HUB-301+ (реализует HUB-302):**  
+`Номер · Дата · Заказчик · Объект · Статус · Приоритет · Позиций · КП · Готовность`  
+- колонка **Сумма (`total`) удаляется** (заказ цеха ≠ прайс КП);  
+- **Готовность** = `X из Y` по `items[].readyForWork` only;  
+- дата отгрузки — не колонка списка.
+
+## Order lifecycle hub (TZ-ORDERS-HUB-301+)
+
+Канон: [`docs/audits/2026-08-15-order-lifecycle-hub.md`](../audits/2026-08-15-order-lifecycle-hub.md).
+
+- Expand на списке (паттерн products / UX-319): read-only блоки Сделка · Состав (линии) · Готовность · Снабжение · Производство · Склад · Отгрузка (stub) · Документы.
+- Data **Variant A**: lazy; ≤4 HTTP reads; склад = `GET /api/reservations?orderId=<Order.number>`; снабжение = `GET /api/supply-tasks?orderId=<Order._id>`.
+- Документы: `/doc-constructor/templates?source=order&sourceId=` (не builder без id).
+- Производство (HUB-303): `/production?orderId=<id>` — route contract в TZ-301.
+- КП-ссылки: только `/proposals` (не `/commercial/proposals`).
+- Write в панели запрещён.
 
 ## TZ reference
 
@@ -117,14 +136,16 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | TZ-ORDERS-302 | Detail + live composition-tree |
 | TZ-ORDERS-303 | siteId + quick-create + line owner/shipDate |
 | TZ-ORDERS-306 | КП-заглушка из прямого заказа (`POST /orders/:id/stub-proposal`) |
+| **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY |
+| **TZ-ORDERS-HUB-302** | Колонки + read-only expand «Сделка/Состав» — READY FOR REVIEW |
 
 ## Особенности
 
 - **Client-side pagination** — backend возвращает flat array
 - **Status lifecycle:** draft→confirmed→in_production→ready→shipped→delivered→cancelled
-- **Document action:** `onCreateDocument()` → `/doc-constructor/builder?source=order&sourceId=:id`
+- **Document action (факт кода):** → `/doc-constructor/templates?source=order&sourceId=:id` (page.md ранее ошибочно указывал builder без id)
 - **known_limitation (302):** правка каталога после заказа меняет то, что видит цех на detail — осознанно (D1); заморозка BOM = later SPEC
 
 ---
 
-_Обновлено: 2026-08-08 (TZ-ORDERS-306)._
+_Обновлено: 2026-08-15 (TZ-ORDERS-HUB-302)._

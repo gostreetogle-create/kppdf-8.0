@@ -25,14 +25,14 @@ import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
-import { pluralize, formatDate, formatPrice } from '../../shared/util/format';
+import { pluralize, formatDate } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
 
-type SortKey = 'number' | 'date' | 'total' | 'status';
+type SortKey = 'number' | 'date' | 'status';
 
 /** Client-side pagination page size for /orders flat-array endpoint. */
 const PAGE_SIZE = 10;
@@ -83,8 +83,6 @@ function accessorFor(key: SortKey): (row: Order) => unknown {
       return (r) => STATUS_CYCLE_INDEX[r.status] ?? -1;
     case 'date':
       return (r) => (r.date ? Date.parse(r.date) : null);
-    case 'total':
-      return (r) => r.total;
     case 'number':
       return (r) => r.number;
   }
@@ -117,6 +115,13 @@ function counterpartyIdOf(row: Order): string {
   return row.counterpartyId._id ?? '';
 }
 
+type PopulatedOrderRef = string | { _id: string; name?: string; address?: string };
+
+function refId(value: PopulatedOrderRef | null | undefined): string {
+  if (!value) return '';
+  return typeof value === 'string' ? value : value._id;
+}
+
 /**
  * Полная документация страницы: docs/pages/orders.page.md
  *
@@ -133,7 +138,7 @@ function counterpartyIdOf(row: Order): string {
  *    `paginatedRows` is the page slice of that.
  *  - Sort is page-owned via custom accessors (different keys have
  *    different natural sorts — `status` cycle index, `date`
- *    chronological, `total` numeric, `number` locale).
+ *    chronological, `number` locale).
  *
  * TZ-104.4.2 page-loaded default sort: `[initialSortKey]="'date'"`
  * + `[initialSortDir]="'desc'"` so users see "newest orders first"
@@ -235,6 +240,10 @@ function counterpartyIdOf(row: Order): string {
             [initialSortDir]="'desc'"
             (pageChange)="onPageChange($event)"
             (sortChange)="onSortChange($event)"
+            (rowClick)="onRowClick($event)"
+            [expandedRow]="expandedTpl"
+            [expandedRowWhen]="isExpandedRow"
+            [expandedRowLabel]="expandedRowLabel"
           >
             <!-- ───── Number → detail ───── -->
             <ng-template #numberTpl let-row>
@@ -242,6 +251,7 @@ function counterpartyIdOf(row: Order): string {
                 class="text-ink hover:text-sunrise-warm underline-offset-2 hover:underline font-mono"
                 [routerLink]="['/orders', row._id]"
                 [attr.data-test]="'order-link-' + row._id"
+                (click)="$event.stopPropagation()"
                 >{{ row.number }}</a
               >
             </ng-template>
@@ -249,6 +259,26 @@ function counterpartyIdOf(row: Order): string {
             <!-- ───── Counterparty lookup cell ───── -->
             <ng-template #counterpartyTpl let-row>
               {{ counterpartyNameOf(row) ?? '—' }}
+            </ng-template>
+
+            <!-- ───── Site / proposal cells ───── -->
+            <ng-template #siteTpl let-row>
+              {{ siteLabel(row.siteId) || '—' }}
+            </ng-template>
+
+            <ng-template #proposalTpl let-row>
+              @if (proposalIdOf(row)) {
+                <a
+                  routerLink="/proposals"
+                  class="text-ink hover:text-sunrise-warm hover:underline"
+                  (click)="$event.stopPropagation()"
+                  [attr.data-test]="'proposal-link-' + row._id"
+                >
+                  {{ proposalLabelOf(row) }}
+                </a>
+              } @else {
+                <span>{{ proposalLabelOf(row) }}</span>
+              }
             </ng-template>
 
             <!-- ───── Row actions cluster ───── -->
@@ -265,6 +295,79 @@ function counterpartyIdOf(row: Order): string {
                 (edit)="openEdit($event)"
                 (delete)="onDelete($event)"
               />
+            </ng-template>
+
+            <ng-template #expandedTpl let-row>
+              @if (expandedId() === row._id) {
+                <div
+                  class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-gold-soft)]"
+                  data-test="expanded-content"
+                  role="region"
+                  [attr.aria-label]="'Сводка заказа: ' + row.number"
+                >
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <section class="min-w-0" data-test="order-deal-block">
+                      <p class="eyebrow m-0 mb-1">Сделка</p>
+                      <p class="text-sm m-0 text-ink">
+                        {{ counterpartyNameOf(row) || 'Заказчик не указан' }}
+                        <span class="text-muted-foreground">
+                          · {{ siteLabel(row.siteId) || 'Объект не указан' }}</span
+                        >
+                      </p>
+                      <p class="text-xs text-muted-foreground m-0 mt-1">
+                        КП: {{ proposalLabelOf(row) }}
+                        @if (row.contractId) {
+                          <span> · Договор: есть</span>
+                        }
+                      </p>
+                      <div class="flex flex-wrap gap-3 mt-2 text-xs">
+                        @if (proposalIdOf(row)) {
+                          <a
+                            routerLink="/proposals"
+                            class="underline underline-offset-2 hover:text-sunrise-warm"
+                            (click)="$event.stopPropagation()"
+                            >Открыть КП</a
+                          >
+                        }
+                        @if (row.contractId) {
+                          <a
+                            routerLink="/contracts"
+                            class="underline underline-offset-2 hover:text-sunrise-warm"
+                            (click)="$event.stopPropagation()"
+                            >Открыть договоры</a
+                          >
+                        }
+                      </div>
+                    </section>
+
+                    <section class="min-w-0" data-test="order-composition-block">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <p class="eyebrow m-0">Состав</p>
+                        <a
+                          [routerLink]="['/orders', row._id]"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                          (click)="$event.stopPropagation()"
+                          >Открыть заказ</a
+                        >
+                      </div>
+                      @if ((row.items?.length ?? 0) === 0) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">В заказе нет изделий.</p>
+                      } @else {
+                        <ul class="m-0 mt-1 pl-4 space-y-0.5 text-sm">
+                          @for (item of row.items; track $index) {
+                            <li>
+                              {{
+                                item.productName || 'Изделие ' + item.productId.slice(0, 8) + '…'
+                              }}
+                              · {{ item.quantity }}{{ item.unit ? ' ' + item.unit : '' }}
+                            </li>
+                          }
+                        </ul>
+                      }
+                    </section>
+                  </div>
+                </div>
+              }
             </ng-template>
           </app-pi-table>
         </div>
@@ -283,6 +386,7 @@ export class OrdersPage implements OnInit {
       this.search.searchQuery.set(query);
       this.search.debouncedSearch.set(query.trim());
       this.pageSig.set(1);
+      this.resetExpansion();
     });
     this.destroyRef.onDestroy(() => this.search.destroy());
   }
@@ -373,7 +477,7 @@ export class OrdersPage implements OnInit {
    * `filteredRows()` AND `sortKey/sortDir` — fixes the
    * `sort.sorted(this.filteredRows(), ...)` snapshot bug. Uses
    * custom accessor per key (status cycle index, date
-   * chronological, total numeric, number locale).
+   * chronological, number locale).
    */
   protected readonly sortedRows = computed<Order[]>(() => {
     const rows = this.filteredRows();
@@ -425,7 +529,8 @@ export class OrdersPage implements OnInit {
    * - `counterpartyId` is a `cellTemplate` (lookup helper)
    * - `status` sorts via custom `STATUS_CYCLE_INDEX` accessor and
    *   falls through to `ORDER_STATUS_LABELS` format string
-   * - `total` is numeric with `formatPrice` and right-aligned
+   * - `siteId` and `quotationId` use typed cell templates
+   * - `readyForWork` is shown as an X/Y operational readiness aggregate
    */
   protected readonly cols: ColumnDef<Order>[] = [
     {
@@ -443,8 +548,13 @@ export class OrdersPage implements OnInit {
     },
     {
       key: 'counterpartyId',
-      label: 'Контрагент',
+      label: 'Заказчик',
       width: '180px',
+    },
+    {
+      key: 'siteId',
+      label: 'Объект',
+      width: '190px',
     },
     {
       key: 'status',
@@ -466,13 +576,15 @@ export class OrdersPage implements OnInit {
       format: (r) => String(r.items?.length ?? 0),
     },
     {
-      key: 'total',
-      label: 'Сумма',
-      sortable: true,
-      numeric: true,
-      align: 'right',
-      width: '128px',
-      format: (r) => (r.total == null ? '—' : formatPrice(r.total)),
+      key: 'quotationId',
+      label: 'КП',
+      width: '150px',
+    },
+    {
+      key: 'readyForWork',
+      label: 'Готовность',
+      width: '112px',
+      format: (r) => this.readinessLabel(r),
     },
   ];
 
@@ -483,6 +595,10 @@ export class OrdersPage implements OnInit {
   private readonly numberTplRef!: TemplateRef<{ $implicit: Order }>;
   @ViewChild('counterpartyTpl', { static: true })
   private readonly counterpartyTplRef!: TemplateRef<{ $implicit: Order }>;
+  @ViewChild('siteTpl', { static: true })
+  private readonly siteTplRef!: TemplateRef<{ $implicit: Order }>;
+  @ViewChild('proposalTpl', { static: true })
+  private readonly proposalTplRef!: TemplateRef<{ $implicit: Order }>;
   @ViewChild('rowActionsTpl', { static: true })
   private readonly rowActionsTplRef!: TemplateRef<{ $implicit: Order }>;
 
@@ -498,6 +614,8 @@ export class OrdersPage implements OnInit {
     this.cellTemplates = {
       number: this.numberTplRef,
       counterpartyId: this.counterpartyTplRef,
+      siteId: this.siteTplRef,
+      quotationId: this.proposalTplRef,
     };
     this.rowActionsTplBinding = this.rowActionsTplRef;
   }
@@ -507,6 +625,10 @@ export class OrdersPage implements OnInit {
    * TZ-104.4.2: `row: Order` (was `unknown` + `as Order` cast).
    */
   protected counterpartyNameOf(row: Order): string | null {
+    const value = row.counterpartyId;
+    if (value && typeof value !== 'string') {
+      return value.name?.trim() || null;
+    }
     const id = counterpartyIdOf(row);
     if (!id) return null;
     return (
@@ -516,8 +638,46 @@ export class OrdersPage implements OnInit {
     );
   }
 
+  protected siteLabel(value: PopulatedOrderRef | null | undefined): string {
+    if (!value) return '';
+    if (typeof value === 'string') return value;
+    return [value.name, value.address].filter(Boolean).join(' · ');
+  }
+
   protected totalLabel(n: number): string {
     return pluralize(n, ['заказ', 'заказа', 'заказов']);
+  }
+
+  protected proposalIdOf(row: Order): string {
+    return refId(row.quotationId as PopulatedOrderRef | null | undefined);
+  }
+
+  protected proposalLabelOf(row: Order): string {
+    const proposal = row.quotationId;
+    if (!proposal) return 'Прямой';
+    if (typeof proposal === 'string') return 'КП';
+    const number = (proposal.number ?? '').trim();
+    const base = number ? `№${number}` : 'КП';
+    return proposal.isStub ? `${base} · заглушка` : base;
+  }
+
+  protected readinessLabel(row: Order): string {
+    const items = row.items ?? [];
+    if (items.length === 0) return '—';
+    const ready = items.filter((item) => item.readyForWork === true).length;
+    return `${ready} из ${items.length}`;
+  }
+
+  protected readonly expandedId = signal<string | null>(null);
+  protected readonly isExpandedRow = (row: Order): boolean => this.expandedId() === row._id;
+  protected readonly expandedRowLabel = (row: Order): string => `Сводка заказа: ${row.number}`;
+
+  protected onRowClick(row: Order): void {
+    this.expandedId.update((current) => (current === row._id ? null : row._id));
+  }
+
+  private resetExpansion(): void {
+    this.expandedId.set(null);
   }
 
   // ─── Event handlers ───────────────────────────────────────────────
@@ -526,10 +686,12 @@ export class OrdersPage implements OnInit {
     // Reset to first page when the filter set changes so users don't
     // land on an out-of-range page of a (possibly empty) filter set.
     this.pageSig.set(1);
+    this.resetExpansion();
   }
 
   protected onPageChange(p: number): void {
     this.pageSig.set(p);
+    this.resetExpansion();
   }
 
   /**
@@ -563,6 +725,7 @@ export class OrdersPage implements OnInit {
     // Reset to first page on every sort change so users see the
     // first rows of the freshly ordered set.
     this.pageSig.set(1);
+    this.resetExpansion();
   }
 
   protected openCreate(): void {

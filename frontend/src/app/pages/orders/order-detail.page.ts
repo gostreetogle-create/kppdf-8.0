@@ -108,7 +108,7 @@ type PopulatedOwner =
             <span actions>
               @if (proposalId()) {
                 <a
-                  [routerLink]="['/commercial/proposals']"
+                  routerLink="/proposals"
                   class="text-xs underline underline-offset-2 hover:text-ink"
                   data-test="order-proposal-link"
                 >

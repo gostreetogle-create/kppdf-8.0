@@ -75,6 +75,8 @@ export interface Order {
   priority?: OrderPriority;
   shipmentIds?: string[];
   reservationIds?: string[];
+  /** UI-only virtual column key; readiness is calculated from items[].readyForWork. */
+  readyForWork?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
