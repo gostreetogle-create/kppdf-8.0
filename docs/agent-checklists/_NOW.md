@@ -5,16 +5,16 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T09:45:00+03:00
-main_head: _(pending push — integrity merge)_
+updated_at: 2026-08-15T09:50:00+03:00
+main_head: `94a3e4cc599ee30d08e42812162b6fe72caae4be`
 
 ## ACTIVE
 
-### TZ-FRONTEND-301 / 302 — DONE (Cursor PASS, merging to main)
+### TZ-FRONTEND-301 / 302 — DONE / LANDED
 
 - Canonical: `docs/audits/2026-08-15-angular-component-integrity.md`
 - Archives: `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`, `TZ-FRONTEND-302.done.md`
-- State: ANGULAR INTEGRITY READY yes (known Jest debt 13); deploy НЕ.
+- State: ANGULAR INTEGRITY READY yes (known Jest debt 13); landed on `origin/main`; deploy НЕ.
 - Successors: composition / group-ACL / Jest debt = new TZ only.
 
 ### TZ-AUTH-305 — PREP ONLY
