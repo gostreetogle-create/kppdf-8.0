@@ -24,6 +24,7 @@ import {
   indexEstimateDayOverrides,
   workTypeOklch,
   workTypeWash,
+  ESTIMATE_OVERRIDE_HINT_RU,
   type OrderEstimateInput,
 } from '../gantt-bar.model';
 import type { OrderStatus } from '../../orders/orders.service';
@@ -320,7 +321,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
                                     />
                                   </label>
                                   <p class="text-[10px] text-muted-foreground/80 pl-5">
-                                    По умолчанию — только этот заказ (override). Цвет = вид работ.
+                                    {{ overrideHint }}
                                   </p>
                                   @if (canEditCatalog()) {
                                     <button
@@ -402,6 +403,7 @@ export class OrderInspectorComponent {
   private readonly toast = inject(PiToastService);
 
   protected readonly priorities = PRIORITIES;
+  protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
   protected readonly tree = signal<OrderEstimateInput | null>(null);
   protected readonly loadingTree = signal(false);
   /** TZ-PRODUCTION-318 — one product popover at a time (opens upward). */
@@ -631,21 +633,13 @@ export class OrderInspectorComponent {
   ): Promise<void> {
     if (!this.canEditCatalog() || this.daysSaving()) return;
     const current = this.daysDraft(orderItemIndex, moduleId, workTypeId, catalogDays);
-    const raw = window.prompt(
-      'Новый норматив дней вида работ в справочнике (для ВСЕХ заказов):',
-      String(current || ''),
-    );
-    if (raw == null) return;
-    const days = Math.floor(Number(raw));
-    if (!Number.isFinite(days) || days < 1) {
+    const prompted = promptCatalogDaysChange(current);
+    if (prompted === 'cancel') return;
+    if (prompted === 'invalid') {
       this.toast.error('Дни: целое число ≥ 1');
       return;
     }
-    const ok = window.confirm(
-      'Изменить норматив вида работ (дни) для ВСЕХ заказов с этим видом?\n\n' +
-        'Это правка справочника WorkType, не только текущего заказа.',
-    );
-    if (!ok) return;
+    const days = prompted;
 
     const key = estimateOverrideKey(orderItemIndex, moduleId, workTypeId);
     this.daysSaving.set(true);
@@ -698,4 +692,22 @@ function toDateInput(value: string | undefined | null): string {
   if (!value) return '';
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
+export const CATALOG_DAYS_PROMPT_RU =
+  'Новый норматив дней вида работ в справочнике (для ВСЕХ заказов):';
+
+export const CATALOG_DAYS_CONFIRM_RU =
+  'Изменить норматив вида работ (дни) для ВСЕХ заказов с этим видом?\n\n' +
+  'Это правка справочника WorkType, не только текущего заказа.';
+
+export type CatalogDaysPromptResult = number | 'cancel' | 'invalid';
+
+/** Shared prompt+confirm for WorkType catalog days (inspector + Gantt work-detail). */
+export function promptCatalogDaysChange(current: number | string): CatalogDaysPromptResult {
+  const raw = window.prompt(CATALOG_DAYS_PROMPT_RU, String(current || ''));
+  if (raw == null) return 'cancel';
+  const days = Math.floor(Number(raw));
+  if (!Number.isFinite(days) || days < 1) return 'invalid';
+  return window.confirm(CATALOG_DAYS_CONFIRM_RU) ? days : 'cancel';
 }

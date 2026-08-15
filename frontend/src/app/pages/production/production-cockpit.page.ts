@@ -16,11 +16,15 @@ import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import {
   GanttBarsComponent,
+  type GanttCatalogDaysRequest,
   type GanttEstimateDaysCommit,
   type GanttPlannedDateMoveCommit,
   type GanttStartOffsetCommit,
 } from './blocks/gantt-bars.component';
-import { OrderInspectorComponent } from './blocks/order-inspector.component';
+import {
+  OrderInspectorComponent,
+  promptCatalogDaysChange,
+} from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
@@ -31,6 +35,7 @@ import {
   type GanttBar,
 } from './gantt-bar.model';
 import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
+import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
@@ -113,10 +118,14 @@ const CHROME_OWNER = 'production-cockpit';
               [readOnly]="readOnly()"
               [canEdit]="canEditCatalog()"
               [expandedOrderIds]="ctx.expandedOrderIds()"
+              [expandedWorkBarId]="ctx.expandedWorkBarId()"
+              [highlightOrderId]="cardHighlightOrderId()"
               (orderLabelClick)="onOrderLabelClick($event)"
               (toggleExpand)="onToggleExpand($event)"
+              (toggleWorkDetail)="onToggleWorkDetail($event)"
               (dismissCanvas)="onDismissCanvas()"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
+              (catalogDaysRequest)="onCatalogDaysRequest($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
               (startOffsetCommit)="onStartOffsetCommit($event)"
             />
@@ -286,7 +295,7 @@ const CHROME_OWNER = 'production-cockpit';
         z-index: 10;
         border: 0;
         padding: 0;
-        background: oklch(0.25 0.02 260 / 0.08);
+        background: oklch(0.22 0.02 260 / 0.18);
         cursor: default;
       }
       .production-studio-flyout {
@@ -311,10 +320,10 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
       }
-      /* TZ-PRODUCTION-315/318/319 — Карточка as bottom sheet under Gantt (not right flyout). */
+      /* Карточка: full studio width, raised so Save stays on-screen; no transform (popovers). */
       .production-studio-sheet {
         position: absolute;
-        z-index: 20;
+        z-index: 40;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         background: color-mix(in oklch, var(--color-paper, #fff) 98%, transparent);
@@ -324,12 +333,12 @@ const CHROME_OWNER = 'production-cockpit';
         left: 0.5rem;
         right: 0.5rem;
         transform: none;
-        bottom: 0.5rem;
+        bottom: 1.75rem;
         top: auto;
         width: auto;
+        max-width: none;
         height: auto;
-        /* TZ-PRODUCTION-319 — ~2× taller sheet; body scrolls if still longer. */
-        max-height: min(72vh, calc(100% - 0.75rem));
+        max-height: calc(100% - 3rem);
         overflow: hidden;
         padding: 0;
         display: flex;
@@ -350,10 +359,10 @@ const CHROME_OWNER = 'production-cockpit';
           right: 0.5rem;
         }
         .production-studio-sheet-card {
-          left: 0.5rem;
-          right: 0.5rem;
-          width: auto;
-          max-height: min(68vh, calc(100% - 0.75rem));
+          left: 0.35rem;
+          right: 0.35rem;
+          bottom: 1.5rem;
+          max-height: calc(100% - 2.75rem);
         }
       }
     `,
@@ -372,6 +381,7 @@ export class ProductionCockpitPage implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
   private readonly ordersApi = inject(OrdersService);
+  private readonly workTypesApi = inject(WorkTypesService);
   private readonly toast = inject(PiToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -409,6 +419,12 @@ export class ProductionCockpitPage implements OnInit {
     return this.orders().find((o) => o._id === id) ?? null;
   });
 
+  /** When bottom card is open — highlight that order on the Gantt. */
+  protected readonly cardHighlightOrderId = computed(() => {
+    if (!this.inspectorOpen() || this.rightTool() !== 'card') return null;
+    return this.ctx.selectedOrderId();
+  });
+
   constructor() {
     effect(() => {
       // Track active flyout state for chrome button .is-active / aria-expanded.
@@ -439,6 +455,10 @@ export class ProductionCockpitPage implements OnInit {
 
   protected onToggleExpand(orderId: string): void {
     this.ctx.toggleOrderExpanded(orderId);
+  }
+
+  protected onToggleWorkDetail(barId: string): void {
+    this.ctx.toggleWorkDetail(barId);
   }
 
   /**
@@ -521,6 +541,7 @@ export class ProductionCockpitPage implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
+    this.ctx.clearWorkDetail();
     if (this.leftTool() || this.rightTool()) {
       this.closeFlyouts();
       return;
@@ -634,6 +655,25 @@ export class ProductionCockpitPage implements OnInit {
       return;
     }
     this.toast.success('Дни оценки обновлены для этого заказа');
+    await this.reloadOrdersKeepingSelection();
+  }
+
+  /** TZ-PRODUCTION-321 — work-detail catalog button → WorkType.days (confirm in helper). */
+  protected async onCatalogDaysRequest(ev: GanttCatalogDaysRequest): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const prompted = promptCatalogDaysChange(ev.currentDays);
+    if (prompted === 'cancel') return;
+    if (prompted === 'invalid') {
+      this.toast.error('Дни: целое число ≥ 1');
+      return;
+    }
+    const res = await firstValueFrom(this.workTypesApi.update(ev.workTypeId, { days: prompted }));
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      return;
+    }
+    this.toast.success('Норматив дней вида работ обновлён (глобально)');
+    this.facade.clearCaches();
     await this.reloadOrdersKeepingSelection();
   }
 

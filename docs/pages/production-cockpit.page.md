@@ -4,16 +4,18 @@
 
 **Краткое описание:** `/production` — студия план-оценки Ганта по `WorkType.days`. Shell: `PiGroupWorkspace` → full-width `production-studio-body` + overlay flyouts; page tools в **app-chrome-rail** (`PiChromeToolsService`). Не факт цеха; без ProductionOrder/OrderTask.
 
-**SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md) · аудит [`2026-08-15-production-studio-plan-review.md`](../audits/2026-08-15-production-studio-plan-review.md)
+**SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md) · аудит [`2026-08-15-production-studio-plan-review.md`](../audits/2026-08-15-production-studio-plan-review.md) · cascade [`2026-08-15-gantt-cascade-no-bottom-card.md`](../audits/2026-08-15-gantt-cascade-no-bottom-card.md)
 
 ### Studio chrome (TZ-UX-323 live)
 
 ```text
 app-chrome-rail-left:  ← + Заказы · Фильтры · Обновить
 main: Gantt full width (no local 48px columns)
-app-chrome-rail-right: → + Карточка · Сегодня · Масштаб
+app-chrome-rail-right: → + Карточка · Сегодня · Масштаб   ← «Карточка» уходит в TZ-322
 flyouts: overlay; center width unchanged
 ```
+
+**WAVE-PRODUCTION-GANTT-CASCADE (in flight):** **321 DONE** — detail под видом работ; **322** = meta под summary + kill bottom sheet.
 
 Локальные `production-studio-rail` удалены. Consumer API: TZ-UX-322.
 
@@ -95,10 +97,14 @@ flyouts: overlay; center width unchanged
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
-- **TZ-PRODUCTION-318:** Карточка sheet почти на всю ширину студии; `max-height` в viewport + scroll; состав изделия/модуля — upward fixed popover.
-- **TZ-PRODUCTION-319:** карточка **только** с левой подписи summary-заказа (toggle) или chrome «Карточка»; child / ▸ / полоса timeline **не** открывают; sheet `max-height: min(72vh, …)`.
+- **TZ-PRODUCTION-318→:** Карточка sheet **на ширину студии** (`left/right` inset, raised `bottom`), absolute без transform; состав изделия — **inline** expand (+ → модули → дни).
+- **TZ-PRODUCTION-319:** карточка **только** с левой подписи summary-заказа (toggle) или chrome «Карточка»; child / ▸ / полоса timeline **не** открывают.
 - **TZ-PRODUCTION-320:** ▸/▾ = **только** expand/collapse состава на Ганте; номер заказа = **только** toggle нижней карточки; зоны разделены колонкой + hairline; без cross-coupling.
-- **Dismiss:** клик по пустой сетке / Esc / × — свернуть все деревья + закрыть карточку (как раньше).
+- **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает. Нижняя Карточка ещё жива (322).
+- **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
+- **Card open highlight:** открытая карточка → `gantt-order-active` (светлее + inset рамка).
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` (wash + left accent); при открытой карточке active имеет приоритет.
+- **Dismiss:** клик по пустой сетке / Esc / × — свернуть work-detail + деревья + закрыть карточку.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -121,6 +127,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-318** | DONE: sheet full-width + viewport; composition expands up |
 | **TZ-PRODUCTION-319** | DONE: card only from order label (toggle); taller sheet |
 | **TZ-PRODUCTION-320** | DONE: ▸ = tree only; order name = card only (no cross-coupling) |
+| **TZ-PRODUCTION-321** | DONE: work-type click → inline detail (люди / дни / catalog) |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |

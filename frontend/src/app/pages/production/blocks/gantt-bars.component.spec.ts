@@ -143,8 +143,10 @@ describe('GanttBarsComponent', () => {
     fixture.detectChanges();
     const clicks: string[] = [];
     const toggles: string[] = [];
+    const workDetails: string[] = [];
     fixture.componentInstance.orderLabelClick.subscribe((id) => clicks.push(id));
     fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    fixture.componentInstance.toggleWorkDetail.subscribe((id) => workDetails.push(id));
 
     const summaryLabel = fixture.nativeElement.querySelector(
       '[data-test="gantt-label-summary:o1"] button.flex-1',
@@ -157,6 +159,7 @@ describe('GanttBarsComponent', () => {
     ) as HTMLElement;
     childLabel.click();
     expect(clicks).toEqual(['o1']);
+    expect(workDetails).toEqual(['o1:0:p1:m1:wt1:1']);
 
     const timelineRow = fixture.nativeElement.querySelector(
       '[data-test="gantt-row-summary:o1"]',
@@ -178,10 +181,14 @@ describe('GanttBarsComponent', () => {
       '[data-test="gantt-label-summary:o1"] button.flex-1',
     ) as HTMLElement;
     expect(expand.classList.contains('gantt-expand-col')).toBe(true);
-    expect(expand.classList.contains('border-r')).toBe(true);
+    expect(expand.classList.contains('gantt-expand-btn')).toBe(true);
+    expect(expand.classList.contains('border-r')).toBe(false); // vertical split via CSS only
     expect(expand.getAttribute('aria-label')).toContain('состав на Ганте');
     expect(labelBtn.getAttribute('aria-label')).toContain('Карточка заказа');
     expect(labelBtn.getAttribute('title')).toContain('Карточка заказа');
+    const header = el.querySelector('[data-test="gantt-label-header"]') as HTMLElement;
+    expect(header.textContent).toContain('Заказ');
+    expect(header.textContent).not.toMatch(/[▸▾]/);
 
     const clicks: string[] = [];
     const toggles: string[] = [];
@@ -222,7 +229,7 @@ describe('GanttBarsComponent', () => {
     expect(el.textContent).toContain('Сварка');
     const label = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
     expect(label?.getAttribute('title') ?? label?.textContent).toBeTruthy();
-    const titleBtn = label?.querySelector('button[title]') as HTMLElement | null;
+    const titleBtn = label?.querySelector('button.gantt-label-btn') as HTMLElement | null;
     expect(titleBtn?.getAttribute('title')).toContain('Стол');
     expect(el.querySelector('[data-test="gantt-worktype-legend"]')?.textContent).toContain(
       'Сварка',
@@ -241,6 +248,46 @@ describe('GanttBarsComponent', () => {
     expect(label.classList.contains('gantt-row-h')).toBe(true);
     expect(row.classList.contains('gantt-row-h')).toBe(true);
     expect(getComputedStyle(label).height).toBe(getComputedStyle(row).height);
+  });
+
+  it('highlightOrderId marks active order rows (card open)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('highlightOrderId', 'o1');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const label = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const row = el.querySelector('[data-test="gantt-row-summary:o1"]') as HTMLElement;
+    expect(label.classList.contains('gantt-order-active')).toBe(true);
+    expect(row.classList.contains('gantt-order-active')).toBe(true);
+    expect(label.getAttribute('data-active-order')).toBe('true');
+    expect(row.getAttribute('data-active-order')).toBe('true');
+    fixture.componentRef.setInput('highlightOrderId', null);
+    fixture.detectChanges();
+    expect(label.classList.contains('gantt-order-active')).toBe(false);
+    expect(row.getAttribute('data-active-order')).toBeNull();
+  });
+
+  it('expandedOrderIds marks tree-expanded order rows (▸ open)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const label = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const row = el.querySelector('[data-test="gantt-row-summary:o1"]') as HTMLElement;
+    expect(label.classList.contains('gantt-order-expanded')).toBe(true);
+    expect(row.classList.contains('gantt-order-expanded')).toBe(true);
+    expect(label.getAttribute('data-expanded-order')).toBe('true');
+    /* Card-active wins over tree-expanded styling. */
+    fixture.componentRef.setInput('highlightOrderId', 'o1');
+    fixture.detectChanges();
+    expect(label.classList.contains('gantt-order-active')).toBe(true);
+    expect(label.classList.contains('gantt-order-expanded')).toBe(false);
   });
 
   it('keeps calendar scale visible when no bars', () => {
@@ -557,6 +604,129 @@ describe('GanttBarsComponent', () => {
     fixture.detectChanges();
     const shippedSummary = fixture.componentInstance['rows']()[0]!.bar;
     expect(fixture.componentInstance.canMoveBar(shippedSummary)).toBe(false);
+  });
+
+  it('TZ-PRODUCTION-321: child label opens work-detail with people and days', () => {
+    const withPeople: GanttBar = { ...sample, workerLabel: 'Иванов' };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [withPeople, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const emitted: string[] = [];
+    fixture.componentInstance.toggleWorkDetail.subscribe((id) => emitted.push(id));
+
+    const childLabel = el.querySelector(
+      '[data-test="gantt-label-o1:0:p1:m1:wt1:1"] button.flex-1',
+    ) as HTMLElement;
+    childLabel.click();
+    expect(emitted).toEqual(['o1:0:p1:m1:wt1:1']);
+
+    fixture.componentRef.setInput('expandedWorkBarId', 'o1:0:p1:m1:wt1:1');
+    fixture.detectChanges();
+    const detail = el.querySelector(
+      '[data-test="gantt-work-detail-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    const timeline = el.querySelector(
+      '[data-test="gantt-work-detail-timeline-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    const days = el.querySelector(
+      '[data-test="gantt-work-detail-days-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLInputElement;
+    const people = el.querySelector(
+      '[data-test="gantt-work-detail-people-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    const childRow = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(detail).toBeTruthy();
+    expect(timeline).toBeTruthy();
+    expect(detail.textContent).toContain('только этот заказ');
+    expect(people.textContent).toContain('Люди: Иванов');
+    expect(days.value).toBe('2');
+    expect(childRow.classList.contains('gantt-work-detail-open')).toBe(true);
+    expect(childRow.getAttribute('data-work-detail-open')).toBe('true');
+    expect(getComputedStyle(detail).height).toBe(getComputedStyle(timeline).height);
+    expect(
+      el.querySelector('[data-test="gantt-work-detail-catalog-o1:0:p1:m1:wt1:1"]'),
+    ).toBeTruthy();
+  });
+
+  it('TZ-PRODUCTION-321: child ▸ toggles; second child closes first; catalog hidden without write', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('canEdit', false);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const emitted: string[] = [];
+    fixture.componentInstance.toggleWorkDetail.subscribe((id) => emitted.push(id));
+
+    const chevron = el.querySelector(
+      '[data-test="gantt-work-expand-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    chevron.click();
+    expect(emitted).toEqual(['o1:0:p1:m1:wt1:1']);
+
+    fixture.componentRef.setInput('expandedWorkBarId', sample.id);
+    fixture.detectChanges();
+    expect(el.querySelector(`[data-test="gantt-work-detail-${sample.id}"]`)).toBeTruthy();
+    expect(el.querySelector(`[data-test="gantt-work-detail-catalog-${sample.id}"]`)).toBeNull();
+
+    const paintLabel = el.querySelector(
+      `[data-test="gantt-label-${samplePaint.id}"] button.flex-1`,
+    ) as HTMLElement;
+    paintLabel.click();
+    expect(emitted).toEqual([sample.id, samplePaint.id]);
+
+    fixture.componentRef.setInput('expandedWorkBarId', samplePaint.id);
+    fixture.detectChanges();
+    expect(el.querySelector(`[data-test="gantt-work-detail-${sample.id}"]`)).toBeNull();
+    expect(el.querySelector(`[data-test="gantt-work-detail-${samplePaint.id}"]`)).toBeTruthy();
+
+    paintLabel.click();
+    expect(emitted.at(-1)).toBe(samplePaint.id);
+    fixture.componentRef.setInput('expandedWorkBarId', null);
+    fixture.detectChanges();
+    expect(el.querySelector(`[data-test="gantt-work-detail-${samplePaint.id}"]`)).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-321: timeline bar click does not open work-detail; days input uses resize path', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedWorkBarId', sample.id);
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const details: string[] = [];
+    const commits: unknown[] = [];
+    fixture.componentInstance.toggleWorkDetail.subscribe((id) => details.push(id));
+    fixture.componentInstance.estimateDaysCommit.subscribe((v) => commits.push(v));
+
+    const bar = el.querySelector('[data-test="gantt-bar"]') as HTMLElement;
+    bar.click();
+    expect(details).toEqual([]);
+
+    const days = el.querySelector(
+      `[data-test="gantt-work-detail-days-${sample.id}"]`,
+    ) as HTMLInputElement;
+    days.value = '5';
+    days.dispatchEvent(new Event('change'));
+    expect(commits).toEqual([
+      {
+        orderId: 'o1',
+        orderItemIndex: 0,
+        moduleId: 'm1',
+        workTypeId: 'wt1',
+        days: 5,
+      },
+    ]);
   });
 });
 

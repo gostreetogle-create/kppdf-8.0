@@ -1,5 +1,6 @@
 import {
   ACTIVE_COMMERCIAL_ORDER_STATUSES,
+  ESTIMATE_OVERRIDE_HINT_RU,
   ORDER_STATUS_LABELS,
   buildGanttBars,
   buildGanttTreeBars,
@@ -21,6 +22,10 @@ describe('gantt-bar.model', () => {
       'in_production',
       'ready',
     ]);
+  });
+
+  it('exposes shared estimate override hint for Gantt work-detail and inspector', () => {
+    expect(ESTIMATE_OVERRIDE_HINT_RU).toContain('только этот заказ');
   });
 
   it('labels all seven real Order statuses', () => {

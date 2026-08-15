@@ -15,6 +15,7 @@ import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import { OrdersService } from '../orders/orders.service';
 import type { Order } from '../orders/orders.service';
+import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { of } from 'rxjs';
 
@@ -74,6 +75,12 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
             patchEstimateDays: jest.fn(() => of({ ok: true, data: orders[0] })),
             patchEstimateStart: jest.fn(() => of({ ok: true, data: orders[0] })),
             update: jest.fn(() => of({ ok: true, data: orders[0] })),
+          },
+        },
+        {
+          provide: WorkTypesService,
+          useValue: {
+            update: jest.fn(() => of({ ok: true, data: { _id: 'wt1', days: 4 } })),
           },
         },
         {
@@ -303,7 +310,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(orderIds.has('o2')).toBe(true);
   });
 
-  it('TZ-PRODUCTION-318/319: card sheet nearly full width + taller viewport max-height', () => {
+  it('card sheet fits studio edges: full width, raised, no transform clip', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
       toggleRightTool: (tool: 'card' | 'scale') => void;
@@ -321,9 +328,11 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     );
     expect(source).toContain('left: 0.5rem');
     expect(source).toContain('right: 0.5rem');
-    expect(source).toContain('max-height: min(72vh, calc(100% - 0.75rem))');
-    expect(source).not.toContain('max-height: min(52vh, calc(100% - 1rem))');
-    expect(source).not.toContain('width: min(60rem');
+    expect(source).toContain('bottom: 1.75rem');
+    expect(source).toContain('max-height: calc(100% - 3rem)');
+    expect(source).toContain('transform: none');
+    expect(source).not.toContain('width: min(42rem');
+    expect(source).not.toContain('max-height: calc(100dvh - 5.5rem)');
     expect(source).not.toContain('height: min(42vh, 22rem)');
   });
 
@@ -405,6 +414,25 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(page.inspectorOpen()).toBe(false);
   });
 
+  it('TZ-PRODUCTION-321: dismiss and Esc clear work-detail', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    const page = fixture.componentInstance as unknown as {
+      onDismissCanvas: () => void;
+      onEscape: () => void;
+    };
+    const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
+
+    ctx.toggleWorkDetail('o1:0:p1:m1:wt1:1');
+    expect(ctx.expandedWorkBarId()).toBe('o1:0:p1:m1:wt1:1');
+    page.onDismissCanvas();
+    expect(ctx.expandedWorkBarId()).toBeNull();
+
+    ctx.toggleWorkDetail('o1:0:p1:m1:wt1:1');
+    page.onEscape();
+    expect(ctx.expandedWorkBarId()).toBeNull();
+  });
+
   it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
@@ -434,6 +462,8 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
     expect(source).toContain('production-studio-sheet-card');
-    expect(source).toContain('max-height: min(72vh, calc(100% - 0.75rem))');
+    expect(source).toContain('left: 0.5rem');
+    expect(source).toContain('right: 0.5rem');
+    expect(source).toContain('bottom: 1.75rem');
   });
 });

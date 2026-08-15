@@ -511,6 +511,10 @@ export function workTypeWash(workTypeId: string, hueOverride?: number | null): s
   return workTypeOklch(workTypeId, 0.06, 0.94, hueOverride);
 }
 
+/** Shared RU hint: order-level days override (inspector WT leaf + Gantt work-detail). */
+export const ESTIMATE_OVERRIDE_HINT_RU =
+  'По умолчанию — только этот заказ (override). Цвет = вид работ.';
+
 export function filterOrdersForRail<
   T extends {
     status: OrderStatus;

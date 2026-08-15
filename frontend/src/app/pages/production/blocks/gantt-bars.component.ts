@@ -9,10 +9,12 @@ import {
 } from '@angular/core';
 import {
   buildGanttTreeBars,
+  ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
   isSummaryBar,
   ORDER_STATUS_LABELS,
   workTypeOklch,
+  workTypeWash,
   type GanttBar,
 } from '../gantt-bar.model';
 import type { OrderStatus } from '../../orders/orders.service';
@@ -26,6 +28,9 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
 /** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
 export const GANTT_ROW_PX = 44;
+
+/** Taller row for inline work-type detail (people / days / hint / catalog). */
+export const GANTT_DETAIL_ROW_PX = 120;
 
 /** Payload for order-level estimate days PATCH (never WorkType catalog). */
 export interface GanttEstimateDaysCommit {
@@ -51,6 +56,12 @@ export interface GanttStartOffsetCommit {
   /** Bar startDate before drag (YYYY-MM-DD). */
   startDate: string;
   deltaDays: number;
+}
+
+/** Catalog days request from work-detail — parent prompts + PATCHes WorkType. */
+export interface GanttCatalogDaysRequest {
+  workTypeId: string;
+  currentDays: number;
 }
 
 /**
@@ -163,12 +174,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               class="h-7 border-b hairline flex items-end text-[11px] text-muted-foreground"
               data-test="gantt-label-header"
             >
-              <span
-                class="gantt-expand-col shrink-0 border-r hairline flex items-end justify-center pb-1"
-                aria-hidden="true"
-                >▸</span
-              >
-              <span class="flex-1 min-w-0 px-2 pb-1 truncate">{{
+              <span class="gantt-expand-col shrink-0" aria-hidden="true"></span>
+              <span class="flex-1 min-w-0 px-2 pb-1 truncate border-l hairline">{{
                 anyExpanded() ? 'Заказ · работа' : 'Заказ'
               }}</span>
             </div>
@@ -176,47 +183,63 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               <div
                 class="gantt-row-h w-full text-left border-b hairline
                        flex items-stretch min-w-0 overflow-hidden"
-                [class.bg-paper-2]="row.alt"
+                [class.bg-paper-2]="row.alt && !isOrderEmphasized(row.bar.orderId)"
                 [class.border-t-2]="row.orderBoundary"
+                [class.gantt-work-detail-open]="isWorkDetailOpen(row.bar.id)"
+                [class.gantt-order-active]="
+                  isHighlightedOrder(row.bar.orderId) && !isWorkDetailOpen(row.bar.id)
+                "
+                [class.gantt-order-expanded]="
+                  isTreeExpandedOrder(row.bar.orderId) &&
+                  !isHighlightedOrder(row.bar.orderId) &&
+                  !isWorkDetailOpen(row.bar.id)
+                "
                 [attr.data-test]="'gantt-label-' + row.bar.id"
+                [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
               >
                 @if (row.isSummary) {
                   <button
                     type="button"
-                    class="gantt-expand-col shrink-0 border-r hairline inline-flex items-center justify-center
-                           text-muted-foreground hover:text-ink hover:bg-paper-2/80 pi-focus-ring"
+                    class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
+                           text-muted-foreground hover:text-ink hover:bg-paper-2/60"
                     [attr.data-test]="'gantt-expand-' + row.bar.orderId"
                     [attr.aria-expanded]="row.expanded"
                     [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
                     [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
                     (click)="onToggleExpand($event, row.bar.orderId)"
                   >
-                    <span aria-hidden="true" class="text-[10px] font-mono">{{
+                    <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
                       row.expanded ? '▾' : '▸'
                     }}</span>
                   </button>
                 } @else {
-                  <span
-                    class="gantt-expand-col shrink-0 border-r hairline"
-                    aria-hidden="true"
-                  ></span>
+                  <button
+                    type="button"
+                    class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
+                           text-muted-foreground hover:text-ink hover:bg-paper-2/60"
+                    [attr.data-test]="'gantt-work-expand-' + row.bar.id"
+                    [attr.aria-expanded]="isWorkDetailOpen(row.bar.id)"
+                    [attr.title]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
+                    [attr.aria-label]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
+                    (click)="onChildWorkToggle($event, row.bar.id)"
+                  >
+                    <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
+                      isWorkDetailOpen(row.bar.id) ? '▾' : '▸'
+                    }}</span>
+                  </button>
                 }
                 <button
                   type="button"
-                  class="flex-1 min-w-0 h-full px-1.5 flex items-center gap-1.5 text-left
-                         pi-focus-ring hover:bg-paper-2"
-                  [class.rounded-none]="row.isSummary"
+                  class="gantt-label-btn flex-1 min-w-0 h-full px-1.5 flex items-center gap-1.5 text-left
+                         hover:bg-paper-2"
                   (click)="onLabelClick($event, row)"
                   [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
                   [attr.aria-label]="
                     row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
                   "
                 >
-                  <span
-                    class="w-1.5 h-1.5 rounded-full shrink-0"
-                    [style.background]="statusPip(row.bar.orderStatus)"
-                    aria-hidden="true"
-                  ></span>
                   @if (!row.isSummary) {
                     <span
                       class="w-1.5 h-5 rounded-sm shrink-0"
@@ -225,6 +248,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       "
                       [class.border]="row.bar.noTerm"
                       [class.border-dashed]="row.bar.noTerm"
+                      [attr.title]="row.bar.workTypeName"
                       aria-hidden="true"
                     ></span>
                   }
@@ -242,6 +266,49 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   </span>
                 </button>
               </div>
+              @if (isWorkDetailOpen(row.bar.id)) {
+                <div
+                  class="gantt-row-h-detail border-b hairline px-2 py-1.5 flex flex-col justify-center gap-0.5 min-w-0 overflow-hidden"
+                  [style.background]="workDetailWash(row.bar)"
+                  [attr.data-test]="'gantt-work-detail-' + row.bar.id"
+                  (click)="$event.stopPropagation()"
+                >
+                  <div
+                    class="text-[10px] text-muted-foreground truncate"
+                    [attr.data-test]="'gantt-work-detail-people-' + row.bar.id"
+                  >
+                    Люди: {{ row.bar.workerLabel }}
+                  </div>
+                  <label class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-muted-foreground shrink-0">Дни</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      class="pi-input !py-0.5 !text-xs w-14"
+                      [value]="row.bar.days ?? ''"
+                      [disabled]="!canEdit() || readOnly()"
+                      (change)="onWorkDaysChange(row.bar, $event)"
+                      [attr.data-test]="'gantt-work-detail-days-' + row.bar.id"
+                      [attr.aria-label]="'Дни оценки «' + row.bar.workTypeName + '»'"
+                    />
+                  </label>
+                  <p class="text-[10px] text-muted-foreground/80 leading-tight">
+                    {{ overrideHint }}
+                  </p>
+                  @if (canEdit()) {
+                    <button
+                      type="button"
+                      class="text-[10px] underline-offset-2 hover:underline text-ink text-left pi-focus-ring disabled:opacity-50"
+                      [disabled]="readOnly()"
+                      (click)="onCatalogDaysClick(row.bar, $event)"
+                      [attr.data-test]="'gantt-work-detail-catalog-' + row.bar.id"
+                    >
+                      Изменить в справочнике
+                    </button>
+                  }
+                </div>
+              }
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
@@ -282,9 +349,21 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             @for (row of rows(); track row.bar.id) {
               <div
                 class="relative gantt-row-h border-b hairline"
-                [class.bg-paper-2]="row.alt"
+                [class.bg-paper-2]="row.alt && !isOrderEmphasized(row.bar.orderId)"
                 [class.border-t-2]="row.orderBoundary"
+                [class.gantt-work-detail-open]="isWorkDetailOpen(row.bar.id)"
+                [class.gantt-order-active]="
+                  isHighlightedOrder(row.bar.orderId) && !isWorkDetailOpen(row.bar.id)
+                "
+                [class.gantt-order-expanded]="
+                  isTreeExpandedOrder(row.bar.orderId) &&
+                  !isHighlightedOrder(row.bar.orderId) &&
+                  !isWorkDetailOpen(row.bar.id)
+                "
                 [attr.data-test]="'gantt-row-' + row.bar.id"
+                [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -366,6 +445,14 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   }
                 </div>
               </div>
+              @if (isWorkDetailOpen(row.bar.id)) {
+                <div
+                  class="relative gantt-row-h-detail border-b hairline"
+                  [style.background]="workDetailWash(row.bar)"
+                  [attr.data-test]="'gantt-work-detail-timeline-' + row.bar.id"
+                  aria-hidden="true"
+                ></div>
+              }
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
@@ -389,9 +476,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = состав на Ганте · номер заказа
-        = карточка · цвет = вид работ · правый край состава = дни оценки · тело сводной = начало
-        заказа · тело состава = сдвиг вида
+        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = состав на Ганте · клик вида
+        работ = дни и люди · номер заказа = карточка · цвет = вид работ · правый край состава = дни
+        оценки · тело сводной = начало заказа · тело состава = сдвиг вида
       </div>
     </div>
   `,
@@ -400,9 +487,83 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       height: ${GANTT_ROW_PX}px;
       box-sizing: border-box;
     }
+    .gantt-row-h-detail {
+      height: ${GANTT_DETAIL_ROW_PX}px;
+      box-sizing: border-box;
+    }
     .gantt-expand-col {
       width: 1.875rem; /* 30px — dedicated expand column */
       box-sizing: border-box;
+    }
+    /* One row frame: only vertical split after ▸ — no boxed button chrome. */
+    .gantt-expand-btn {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-right: 1px solid var(--color-rule, oklch(0.88 0.01 95));
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .gantt-expand-btn:focus {
+      outline: none;
+    }
+    .gantt-expand-btn:focus-visible {
+      background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
+      color: var(--color-ink, inherit);
+    }
+    .gantt-label-btn {
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .gantt-label-btn:focus {
+      outline: none;
+    }
+    .gantt-label-btn:focus-visible {
+      background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
+    }
+    /* Active order while bottom card is open — lighter + bold frame. */
+    .gantt-order-active {
+      background: oklch(0.995 0.008 95) !important;
+      box-shadow: inset 0 0 0 2px oklch(0.45 0.04 85);
+      position: relative;
+      z-index: 1;
+    }
+    /* Tree expanded via ▸ — distinct wash + left accent (weaker than card-active). */
+    .gantt-order-expanded {
+      background: oklch(0.97 0.012 95) !important;
+      box-shadow: inset 3px 0 0 oklch(0.5 0.05 85);
+      position: relative;
+      z-index: 1;
+    }
+    :host-context(.dark) .gantt-order-active,
+    :host-context([data-theme='dark']) .gantt-order-active {
+      background: oklch(0.28 0.02 260) !important;
+      box-shadow: inset 0 0 0 2px oklch(0.78 0.06 85);
+    }
+    :host-context(.dark) .gantt-order-expanded,
+    :host-context([data-theme='dark']) .gantt-order-expanded {
+      background: oklch(0.26 0.02 260) !important;
+      box-shadow: inset 3px 0 0 oklch(0.72 0.06 85);
+    }
+    /* Work-type detail open — distinct from card-active / tree-expanded. */
+    .gantt-work-detail-open {
+      background: oklch(0.96 0.035 85) !important;
+      box-shadow: inset 3px 0 0 oklch(0.62 0.12 85);
+      position: relative;
+      z-index: 2;
+    }
+    :host-context(.dark) .gantt-work-detail-open,
+    :host-context([data-theme='dark']) .gantt-work-detail-open {
+      background: oklch(0.3 0.04 85) !important;
+      box-shadow: inset 3px 0 0 oklch(0.72 0.1 85);
     }
     .gantt-resize-handle {
       touch-action: none;
@@ -423,6 +584,10 @@ export class GanttBarsComponent {
   readonly today = input(formatDateOnly(new Date()));
   /** TZ-PRODUCTION-314 — which orders show work-type children. */
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
+  /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
+  readonly expandedWorkBarId = input<string | null>(null);
+  /** Order id with open bottom card — highlight label + timeline rows. */
+  readonly highlightOrderId = input<string | null>(null);
   /**
    * TZ-PRODUCTION-319 — left summary order label only (toggle card in parent).
    * Child labels and timeline bars do not emit this.
@@ -431,6 +596,10 @@ export class GanttBarsComponent {
   /** Empty canvas / non-control click → parent collapses trees + may close card. */
   readonly dismissCanvas = output<void>();
   readonly toggleExpand = output<string>();
+  /** Child work-type label / ▸ → parent toggles work-detail for this bar.id. */
+  readonly toggleWorkDetail = output<string>();
+  /** Catalog button in work-detail → parent prompts + PATCHes WorkType.days. */
+  readonly catalogDaysRequest = output<GanttCatalogDaysRequest>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
   /** Body-drag on summary → parent PATCHes order plannedDate (whole chain). */
@@ -439,6 +608,7 @@ export class GanttBarsComponent {
   readonly startOffsetCommit = output<GanttStartOffsetCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
+  protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
 
   /** Live right-edge resize preview (null = idle). */
   private readonly resizeSession = signal<{
@@ -621,6 +791,29 @@ export class GanttBarsComponent {
     this.toggleExpand.emit(orderId);
   }
 
+  protected onChildWorkToggle(event: Event, barId: string): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.toggleWorkDetail.emit(barId);
+  }
+
+  protected isWorkDetailOpen(barId: string): boolean {
+    return this.expandedWorkBarId() === barId;
+  }
+
+  protected isHighlightedOrder(orderId: string): boolean {
+    const id = this.highlightOrderId();
+    return Boolean(id && id === orderId);
+  }
+
+  protected isTreeExpandedOrder(orderId: string): boolean {
+    return this.expandedOrderIds().has(orderId);
+  }
+
+  protected isOrderEmphasized(orderId: string): boolean {
+    return this.isHighlightedOrder(orderId) || this.isTreeExpandedOrder(orderId);
+  }
+
   /**
    * Empty Gantt chrome/grid (not labels, bars, handles) → dismiss expand trees.
    * stopPropagation so studio main does not double-handle inconsistently.
@@ -634,6 +827,8 @@ export class GanttBarsComponent {
         [
           '[data-test^="gantt-label-"]',
           '[data-test^="gantt-expand-"]',
+          '[data-test^="gantt-work-expand-"]',
+          '[data-test^="gantt-work-detail"]',
           '[data-test^="gantt-bar"]',
           '[data-test^="gantt-row-"]',
           '[data-test^="gantt-resize"]',
@@ -650,15 +845,55 @@ export class GanttBarsComponent {
     this.dismissCanvas.emit();
   }
 
-  /** Summary left label → card toggle; child work-type label → no card. */
+  /** Summary left label → card toggle; child work-type label → work-detail. */
   protected onLabelClick(
     event: Event,
-    row: { isSummary: boolean; bar: { orderId: string } },
+    row: { isSummary: boolean; bar: { orderId: string; id: string } },
   ): void {
     event.stopPropagation();
     event.preventDefault();
-    if (!row.isSummary) return;
-    this.orderLabelClick.emit(row.bar.orderId);
+    if (row.isSummary) {
+      this.orderLabelClick.emit(row.bar.orderId);
+      return;
+    }
+    this.toggleWorkDetail.emit(row.bar.id);
+  }
+
+  protected workDetailTitle(bar: GanttBar, open: boolean): string {
+    return open
+      ? `Скрыть дни и людей · ${bar.workTypeName}`
+      : `Показать дни и людей · ${bar.workTypeName}`;
+  }
+
+  protected workDetailWash(bar: GanttBar): string {
+    return workTypeWash(bar.workTypeId, bar.accentHue);
+  }
+
+  protected onWorkDaysChange(bar: GanttBar, ev: Event): void {
+    if (!this.canEdit() || this.readOnly()) return;
+    const inputEl = ev.target as HTMLInputElement;
+    const days = Math.floor(Number(inputEl.value));
+    if (!Number.isFinite(days) || days < 1) {
+      inputEl.value = String(bar.days ?? 1);
+      return;
+    }
+    if (days === bar.days) return;
+    this.estimateDaysCommit.emit({
+      orderId: bar.orderId,
+      orderItemIndex: bar.orderItemIndex,
+      moduleId: bar.moduleId,
+      workTypeId: bar.workTypeId,
+      days,
+    });
+  }
+
+  protected onCatalogDaysClick(bar: GanttBar, ev: Event): void {
+    ev.stopPropagation();
+    if (!this.canEdit() || this.readOnly()) return;
+    this.catalogDaysRequest.emit({
+      workTypeId: bar.workTypeId,
+      currentDays: bar.days ?? 1,
+    });
   }
 
   protected onMovePointerDown(event: PointerEvent, bar: GanttBar): void {

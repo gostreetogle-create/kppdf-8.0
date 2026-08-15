@@ -29,6 +29,11 @@ export class ProductionCockpitContext {
    */
   readonly expandedOrderIds = signal<ReadonlySet<string>>(new Set());
 
+  /**
+   * TZ-PRODUCTION-321 — one open work-type detail bar id (session; not in URL).
+   */
+  readonly expandedWorkBarId = signal<string | null>(null);
+
   selectOrder(id: string | null): void {
     this.selectedOrderId.set(id);
   }
@@ -40,19 +45,48 @@ export class ProductionCockpitContext {
   toggleOrderExpanded(orderId: string): void {
     this.expandedOrderIds.update((prev) => {
       const next = new Set(prev);
-      if (next.has(orderId)) next.delete(orderId);
-      else next.add(orderId);
+      if (next.has(orderId)) {
+        next.delete(orderId);
+        const workId = this.expandedWorkBarId();
+        if (workId && workId.startsWith(`${orderId}:`)) {
+          this.expandedWorkBarId.set(null);
+        }
+      } else {
+        next.add(orderId);
+      }
       return next;
     });
+  }
+
+  toggleWorkDetail(barId: string): void {
+    this.expandedWorkBarId.update((cur) => (cur === barId ? null : barId));
+  }
+
+  clearWorkDetail(): void {
+    if (this.expandedWorkBarId() == null) return;
+    this.expandedWorkBarId.set(null);
   }
 
   setOrderExpanded(orderId: string, expanded: boolean): void {
     this.expandedOrderIds.update((prev) => {
       const next = new Set(prev);
       if (expanded) next.add(orderId);
-      else next.delete(orderId);
+      else {
+        next.delete(orderId);
+        const workId = this.expandedWorkBarId();
+        if (workId && workId.startsWith(`${orderId}:`)) {
+          this.expandedWorkBarId.set(null);
+        }
+      }
       return next;
     });
+  }
+
+  /** Collapse all Gantt order trees + work-detail (backdrop / empty canvas). */
+  clearExpandedOrders(): void {
+    if (this.expandedOrderIds().size === 0 && this.expandedWorkBarId() == null) return;
+    this.expandedOrderIds.set(new Set());
+    this.expandedWorkBarId.set(null);
   }
 
   setSearch(value: string): void {

@@ -1,4 +1,13 @@
-## [2026-08-15] — TZ-PRODUCTION-320 DONE — split ▸ tree vs order-name card
+## [2026-08-15] — TZ-PRODUCTION-321 DONE — Gantt work-detail cascade
+**Исполнитель:** executor-grok-4.6
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE 321 closed; 322 next; deploy НЕ
+**Что:** клик вида работ (лейбл/▸) → inline detail под строкой (люди, дни PATCH estimate-days, catalog confirm); один detail; Esc/dismiss; highlight `gantt-work-detail-open`. Нижняя Карточка жива (322).
+**Gates:** FE tsc PASS; FE jest gantt-bars|cockpit|model **52 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-321.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-321-gantt-work-detail-cascade.lock`
+**Dep:** 320
+
+
 **Исполнитель:** executor-composer
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed 314–320; deploy НЕ
 **Что:** ▸ = только дерево Ганта; номер заказа = только карточка; убран setOrderExpanded из onSelect/label; visual expand-col + a11y.
