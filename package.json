@@ -52,8 +52,5 @@
   "devDependencies": {
     "husky": "^9.1.7",
     "lint-staged": "^17.1.0"
-  },
-  "dependencies": {
-    "@kodadev/koda-cli": "^1.0.1"
   }
 }
