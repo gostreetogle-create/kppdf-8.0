@@ -56,8 +56,10 @@ export interface ProposalSheetLayoutState {
   photoScalePercent: number;
   photoCropYPercent: number;
   showPhotoColumn: boolean;
-  /** KP table font size in px (default 12, clamp 8–20). */
+  /** KP table body font size in px (default 12, clamp 8–20). */
   tableFontSize: number;
+  /** KP table header font size in px (default 12, clamp 8–20). */
+  tableHeaderFontSize: number;
 }
 
 export interface ProposalCreateInspectorState {
@@ -288,6 +290,18 @@ export type ProposalCreateStatus = ProposalStatus;
             />
             Колонка фото
           </label>
+          <app-pi-form-field label="Шрифт шапки" htmlFor="kp-sheet-table-font-header">
+            <app-pi-overflow-select
+              [items]="tableFontSizeItems"
+              [value]="tableHeaderFontSizeValue()"
+              (valueChange)="onTableHeaderFontSizeChange($event)"
+              [searchable]="false"
+              placeholder="12"
+              ariaLabel="Шрифт шапки таблицы"
+              dataTest="kp-sheet-table-font-header"
+              [disabled]="readOnly()"
+            />
+          </app-pi-form-field>
           <app-pi-form-field label="Шрифт таблицы" htmlFor="kp-sheet-table-font">
             <app-pi-overflow-select
               [items]="tableFontSizeItems"
@@ -295,7 +309,7 @@ export type ProposalCreateStatus = ProposalStatus;
               (valueChange)="onTableFontSizeChange($event)"
               [searchable]="false"
               placeholder="12"
-              ariaLabel="Шрифт таблицы"
+              ariaLabel="Шрифт тела таблицы"
               dataTest="kp-sheet-table-font"
               [disabled]="readOnly()"
             />
@@ -680,6 +694,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
     photoCropYPercent: 0,
     showPhotoColumn: true,
     tableFontSize: 12,
+    tableHeaderFontSize: 12,
   });
   readonly readOnly = input(false);
   readonly status = input<ProposalCreateStatus>('draft');
@@ -712,6 +727,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
     photoCropYPercent: 0,
     showPhotoColumn: true,
     tableFontSize: 12,
+    tableHeaderFontSize: 12,
   });
   protected readonly error = signal<string | null>(null);
 
@@ -723,6 +739,10 @@ export class ProposalCreateInspectorComponent implements OnInit {
 
   protected readonly tableFontSizeValue = computed(() =>
     String(this.sheetLayout().tableFontSize ?? 12),
+  );
+
+  protected readonly tableHeaderFontSizeValue = computed(() =>
+    String(this.sheetLayout().tableHeaderFontSize ?? 12),
   );
 
   private lastSyncedInitialState: ProposalCreateInspectorState | null = null;
@@ -829,7 +849,8 @@ export class ProposalCreateInspectorComponent implements OnInit {
       current.photoScalePercent === previous.photoScalePercent &&
       current.photoCropYPercent === previous.photoCropYPercent &&
       current.showPhotoColumn === previous.showPhotoColumn &&
-      current.tableFontSize === previous.tableFontSize
+      current.tableFontSize === previous.tableFontSize &&
+      current.tableHeaderFontSize === previous.tableHeaderFontSize
     );
   }
 
@@ -975,6 +996,14 @@ export class ProposalCreateInspectorComponent implements OnInit {
     const n = Number(raw);
     const value = Number.isFinite(n) ? Math.min(20, Math.max(8, Math.round(n))) : 12;
     this.sheetLayout.update((current) => ({ ...current, tableFontSize: value }));
+    this.emitState();
+  }
+
+  protected onTableHeaderFontSizeChange(raw: string): void {
+    if (this.readOnly()) return;
+    const n = Number(raw);
+    const value = Number.isFinite(n) ? Math.min(20, Math.max(8, Math.round(n))) : 12;
+    this.sheetLayout.update((current) => ({ ...current, tableHeaderFontSize: value }));
     this.emitState();
   }
 

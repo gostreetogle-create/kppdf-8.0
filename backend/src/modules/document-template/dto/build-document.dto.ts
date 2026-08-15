@@ -143,6 +143,7 @@ export class BuildSheetLayoutDto {
   @IsOptional() @IsInt() @Min(0) @Max(100) photoCropYPercent?: number;
   @IsOptional() @IsBoolean() showPhotoColumn?: boolean;
   @IsOptional() @IsInt() @Min(8) @Max(20) tableFontSize?: number;
+  @IsOptional() @IsInt() @Min(8) @Max(20) tableHeaderFontSize?: number;
 }
 
 export class BuildDealTotalsDto {

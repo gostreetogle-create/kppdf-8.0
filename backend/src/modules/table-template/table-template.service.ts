@@ -30,8 +30,10 @@ export interface TablePhotoOptions {
   photoScalePercent?: number;
   photoCropYPercent?: number;
   showPhotoColumn?: boolean;
-  /** KP table font size in px (default 12, clamp 8–20). */
+  /** KP table body font size in px (default 12, clamp 8–20). */
   tableFontSize?: number;
+  /** KP table header font size in px (default 12, clamp 8–20). */
+  tableHeaderFontSize?: number;
 }
 
 export interface TablePreviewChrome {
@@ -201,6 +203,7 @@ export class TableTemplateService implements OnModuleInit {
           : '1px';
     const headerWeight = chrome?.headerWeight === 'bold' ? '700' : '600';
     const tableFontPx = this.resolveTableFontSize(photoOptions);
+    const headerFontPx = this.resolveTableHeaderFontSize(photoOptions);
     const colgroup = cols
       .map(
         (c) =>
@@ -212,7 +215,7 @@ export class TableTemplateService implements OnModuleInit {
         (c) =>
           `<th scope="col" style="text-align:${c.align ?? 'left'};width:${
             widthByKey.get(c.key) ?? Math.round(100 / cols.length)
-          }%;font-weight:${headerWeight};border:${borderPx} solid #ccc">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
+          }%;font-size:${headerFontPx}px;font-weight:${headerWeight};border:${borderPx} solid #ccc">${this.escapeHtml(c.label ?? c.key ?? '')}</th>`,
       )
       .join('');
     // A caller-supplied array is request-scoped preview data. An explicit empty
@@ -223,11 +226,11 @@ export class TableTemplateService implements OnModuleInit {
       const blankCells = cols
         .map(
           (c) =>
-            `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc"></td>`,
+            `<td style="text-align:${c.align ?? 'left'};font-size:${tableFontPx}px;border:${borderPx} solid #ccc"></td>`,
         )
         .join('');
       const tableHtml =
-        `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%;font-size:${tableFontPx}px">` +
+        `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
         `<colgroup>${colgroup}</colgroup>` +
         `<thead><tr>${headHtml}</tr></thead>` +
         `<tbody><tr>${blankCells}</tr></tbody>` +
@@ -266,7 +269,7 @@ export class TableTemplateService implements OnModuleInit {
               presentation.separatorBefore === true
                 ? `border-top:2px solid #333;`
                 : `border-top:${borderPx} solid #ccc;`;
-            return `<td style="text-align:${c.align ?? 'left'};border:${borderPx} solid #ccc;${topBorder}padding:${pad};${minH}">${formatted}</td>`;
+            return `<td style="text-align:${c.align ?? 'left'};font-size:${tableFontPx}px;border:${borderPx} solid #ccc;${topBorder}padding:${pad};${minH}">${formatted}</td>`;
           })
           .join('');
         const trStyles: string[] = [];
@@ -284,7 +287,7 @@ export class TableTemplateService implements OnModuleInit {
       .join('');
 
     const tableHtml =
-      `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%;font-size:${tableFontPx}px">` +
+      `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
       `<colgroup>${colgroup}</colgroup>` +
       `<thead><tr>${headHtml}</tr></thead>` +
       `<tbody>${bodyHtml}</tbody>` +
@@ -294,9 +297,16 @@ export class TableTemplateService implements OnModuleInit {
 
   // ── helpers ──────────────────────────────────────────────────────────────
 
-  /** KP sheetLayout.tableFontSize — default 12, clamp 8–20 (TZ-SALES-373). */
+  /** KP sheetLayout.tableFontSize — body; default 12, clamp 8–20 (TZ-SALES-373). */
   private resolveTableFontSize(photoOptions?: TablePhotoOptions): number {
     const raw = photoOptions?.tableFontSize;
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) return 12;
+    return Math.min(20, Math.max(8, Math.round(raw)));
+  }
+
+  /** KP sheetLayout.tableHeaderFontSize — th; default 12, clamp 8–20 (TZ-SALES-374). */
+  private resolveTableHeaderFontSize(photoOptions?: TablePhotoOptions): number {
+    const raw = photoOptions?.tableHeaderFontSize;
     if (typeof raw !== 'number' || !Number.isFinite(raw)) return 12;
     return Math.min(20, Math.max(8, Math.round(raw)));
   }

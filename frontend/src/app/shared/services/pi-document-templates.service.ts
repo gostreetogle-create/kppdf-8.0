@@ -111,8 +111,10 @@ export interface BuildSheetLayout {
   photoScalePercent?: number;
   photoCropYPercent?: number;
   showPhotoColumn?: boolean;
-  /** KP table font size in px (default 12, clamp 8–20). */
+  /** KP table body font size in px (default 12, clamp 8–20). */
   tableFontSize?: number;
+  /** KP table header font size in px (default 12, clamp 8–20). */
+  tableHeaderFontSize?: number;
 }
 
 export interface BuildTerm {

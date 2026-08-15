@@ -5,10 +5,21 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:47:00Z
+updated_at: 2026-08-15T09:54:59Z
 main_head: `55dac38afb9e533d1ad28793a1edbae3181482cc`
 
 ## ACTIVE
+
+### TZ-SALES-374 — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-SALES-374.md`
+- Spec: `tasks/_active/TZ-SALES-374.md`
+- Checklist: `docs/agent-checklists/TZ-SALES-374.md`
+- PO note: `docs/agent-checklists/PO-KP-TABLE-EDITOR-CHROME-2026-08-15.md`
+- Owner: Buffy (Cursor Agent); claimed_at: 2026-08-15T09:54:59Z
+- Workspace: `D:\kppdf-8.0`
+- Gates: FE/BE tsc PASS; proposal-create 61 PASS; table-template.service 7 PASS
+- State: READY FOR REVIEW; archive after Cursor PASS; deploy НЕ.
 
 ### TZ-UX-319 — DONE / LANDED
 
@@ -62,9 +73,10 @@ main_head: `55dac38afb9e533d1ad28793a1edbae3181482cc`
 
 ## READY / ORDER
 
-1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-3. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
+1. **SALES-374** — ACTIVE (Buffy claimed); see ACTIVE above.
+2. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+3. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+4. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.

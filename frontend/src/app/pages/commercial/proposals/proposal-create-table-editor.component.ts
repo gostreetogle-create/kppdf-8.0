@@ -9,14 +9,18 @@ import {
 } from '@angular/core';
 import {
   LucideAngularModule,
+  Bold,
   ChevronDown,
   ChevronUp,
   EyeOff,
+  Heading,
   Minus,
   MoreHorizontal,
   Pencil,
   Plus,
+  Square,
   Trash2,
+  Type,
   X,
 } from 'lucide-angular';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
@@ -52,7 +56,7 @@ type ColumnWidths = Record<string, number>;
 /**
  * TZ-SALES-359 + 360 — unified table editor.
  *
- * Toolbar: Колонки ▾ · «⋯ Ещё» (Добавить поля КП / Открыть пресет / Сбросить ширины)
+ * Toolbar: Колонки ▾ · «⋯ Ещё» (Добавить поля КП / Открыть шаблон / Сбросить ширины)
  * Column header: caret → Левее · Правее · Ширина % · Скрыть
  * Hidden columns: «Скрыто:» chip strip
  * Widths normalised to 100% for visible columns.
@@ -116,42 +120,78 @@ type ColumnWidths = Record<string, number>;
             }
           </div>
 
-          <!-- Рамка -->
+          <!-- Рамка (icon cycle) -->
           <div class="editor__toolbar-group">
             <button
               type="button"
-              class="editor__toolbar-btn"
+              class="editor__toolbar-btn editor__toolbar-btn--icon"
+              [class.editor__toolbar-btn--active]="(chrome().borderWeight ?? 'normal') !== 'thin'"
               [disabled]="readOnly()"
               (click)="cycleBorderWeight()"
+              [attr.title]="'Рамка: ' + borderLabel()"
+              [attr.aria-label]="'Рамка: ' + borderLabel()"
               data-test="kp-table-editor-border"
             >
-              Рамка: {{ borderLabel() }}
+              <lucide-angular
+                [img]="borderIcon"
+                [size]="14"
+                [strokeWidth]="borderStrokeWidth()"
+                aria-hidden="true"
+              />
             </button>
           </div>
 
-          <!-- Шапка -->
+          <!-- Шапка (bold toggle) -->
           <div class="editor__toolbar-group">
             <button
               type="button"
-              class="editor__toolbar-btn"
+              class="editor__toolbar-btn editor__toolbar-btn--icon"
+              [class.editor__toolbar-btn--active]="(chrome().headerWeight ?? 'normal') === 'bold'"
               [disabled]="readOnly()"
               (click)="toggleHeaderWeight()"
+              [attr.title]="'Шапка: ' + headerLabel()"
+              [attr.aria-label]="'Шапка: ' + headerLabel()"
               data-test="kp-table-editor-header"
             >
-              Шапка: {{ headerLabel() }}
+              <lucide-angular [img]="headerIcon" [size]="14" aria-hidden="true" />
             </button>
           </div>
 
-          <!-- Шрифт (sheetLayout.tableFontSize) -->
+          <!-- Шрифт шапки -->
           <div class="editor__toolbar-group editor__toolbar-group--font">
-            <span class="editor__font-label">Шрифт</span>
+            <lucide-angular
+              class="editor__font-icon"
+              [img]="headingIcon"
+              [size]="12"
+              aria-hidden="true"
+            />
+            <app-pi-overflow-select
+              [items]="tableFontSizeItems"
+              [value]="tableHeaderFontSizeValue()"
+              (valueChange)="onTableHeaderFontSizeChange($event)"
+              [searchable]="false"
+              placeholder="12"
+              ariaLabel="Шрифт шапки таблицы"
+              dataTest="kp-table-editor-font-header"
+              [disabled]="readOnly()"
+            />
+          </div>
+
+          <!-- Шрифт тела -->
+          <div class="editor__toolbar-group editor__toolbar-group--font">
+            <lucide-angular
+              class="editor__font-icon"
+              [img]="typeIcon"
+              [size]="12"
+              aria-hidden="true"
+            />
             <app-pi-overflow-select
               [items]="tableFontSizeItems"
               [value]="tableFontSizeValue()"
               (valueChange)="onTableFontSizeChange($event)"
               [searchable]="false"
               placeholder="12"
-              ariaLabel="Шрифт таблицы"
+              ariaLabel="Шрифт тела таблицы"
               dataTest="kp-table-editor-font"
               [disabled]="readOnly()"
             />
@@ -195,7 +235,7 @@ type ColumnWidths = Record<string, number>;
                   (click)="openTableTemplate.emit(); moreMenuOpen.set(false)"
                   data-test="kp-table-editor-open-template"
                 >
-                  Открыть пресет в Документах
+                  Открыть шаблон в Документах
                 </button>
                 <button
                   type="button"
@@ -260,7 +300,7 @@ type ColumnWidths = Record<string, number>;
 
         <!-- Lines table -->
         <div class="editor__table-wrap" data-test="kp-table-editor-lines" (scroll)="closeMenus()">
-          <table class="editor__table" [style.font-size.px]="tableFontSize()">
+          <table class="editor__table">
             <colgroup>
               <col class="editor__col-move" />
               <col class="editor__col-num" />
@@ -274,7 +314,7 @@ type ColumnWidths = Record<string, number>;
               <col class="editor__col-opt" />
               <col class="editor__col-act" />
             </colgroup>
-            <thead>
+            <thead [style.font-size.px]="tableHeaderFontSize()">
               <tr>
                 <th class="editor__col-move" scope="col">
                   <span class="sr-only">Порядок</span>
@@ -357,10 +397,11 @@ type ColumnWidths = Record<string, number>;
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody [style.font-size.px]="tableFontSize()">
               @for (line of lines(); track line.productId + '-' + $index; let index = $index) {
                 <tr
                   class="editor__row"
+                  [class.editor__row--open]="openRowIndex() === index"
                   [class.editor__row--optional]="line.isOptional === true"
                   [class.editor__row--accent]="resolvedPresentation(line).emphasis === 'accent'"
                   [class.editor__row--compact]="resolvedPresentation(line).density === 'compact'"
@@ -613,7 +654,7 @@ type ColumnWidths = Record<string, number>;
                     </label>
                   </td>
 
-                  <!-- Right gutter -->
+                  <!-- Right gutter: chevron only (TZ-SALES-374) -->
                   <td class="editor__col-act">
                     <div class="editor__actions">
                       <button
@@ -642,75 +683,13 @@ type ColumnWidths = Record<string, number>;
                           ></span>
                         }
                       </button>
-                      @if (canEditCatalog(line)) {
-                        <button
-                          type="button"
-                          class="editor__icon-btn"
-                          [disabled]="readOnly()"
-                          (click)="editLine.emit(index)"
-                          [attr.aria-label]="'Открыть карточку изделия: ' + line.productName"
-                          title="Открыть карточку изделия"
-                          [attr.data-test]="'kp-table-editor-edit-' + index"
-                        >
-                          <lucide-angular [img]="pencilIcon" [size]="14" aria-hidden="true" />
-                        </button>
-                        <button
-                          type="button"
-                          class="editor__icon-btn"
-                          [disabled]="readOnly()"
-                          (click)="toggleRowMenu(index)"
-                          [attr.aria-expanded]="rowMenuIndex() === index"
-                          [attr.aria-label]="'Действия строки: ' + line.productName"
-                          title="Действия строки"
-                          [attr.data-test]="'kp-table-editor-row-actions-' + index"
-                        >
-                          <lucide-angular [img]="moreIcon" [size]="14" aria-hidden="true" />
-                        </button>
-                        @if (rowMenuIndex() === index) {
-                          <div
-                            class="editor__row-menu"
-                            [attr.data-test]="'kp-table-editor-row-menu-' + index"
-                          >
-                            <button type="button" (click)="emitRowAction(index, 'duplicate-kp')">
-                              Дублировать строку КП
-                            </button>
-                            @if (line.lineKind === 'catalog') {
-                              <button
-                                type="button"
-                                (click)="emitRowAction(index, 'create-product-copy')"
-                              >
-                                Создать копию изделия
-                              </button>
-                              @if (line.catalogDirtyFields?.length) {
-                                <button
-                                  type="button"
-                                  (click)="emitRowAction(index, 'update-product')"
-                                >
-                                  Обновить изделие из строки
-                                </button>
-                              }
-                            }
-                          </div>
-                        }
-                      }
-                      <button
-                        type="button"
-                        class="editor__icon-btn editor__icon-btn--danger"
-                        [disabled]="readOnly()"
-                        (click)="onRemoveRow(index)"
-                        [attr.aria-label]="'Удалить строку: ' + line.productName"
-                        title="Убрать из КП"
-                        [attr.data-test]="'kp-table-editor-remove-' + index"
-                      >
-                        <lucide-angular [img]="trashIcon" [size]="14" aria-hidden="true" />
-                      </button>
                     </div>
                   </td>
                 </tr>
 
                 @if (openRowIndex() === index) {
                   <tr
-                    class="editor__row-drawer"
+                    class="editor__row-drawer editor__row-drawer--open"
                     [attr.id]="'kp-row-drawer-' + index"
                     [attr.data-test]="'kp-table-editor-row-drawer-' + index"
                   >
@@ -720,6 +699,65 @@ type ColumnWidths = Record<string, number>;
                         role="region"
                         [attr.aria-label]="'Настройки вида строки ' + (index + 1)"
                       >
+                        <div class="editor__drawer-section" data-test="kp-row-drawer-actions">
+                          <p class="editor__drawer-title">Действия</p>
+                          <div class="editor__drawer-actions">
+                            @if (canEditCatalog(line)) {
+                              <button
+                                type="button"
+                                class="editor__drawer-action"
+                                [disabled]="readOnly()"
+                                (click)="editLine.emit(index)"
+                                [attr.data-test]="'kp-table-editor-edit-' + index"
+                              >
+                                <lucide-angular [img]="pencilIcon" [size]="14" aria-hidden="true" />
+                                Открыть карточку изделия
+                              </button>
+                              <button
+                                type="button"
+                                class="editor__drawer-action"
+                                [disabled]="readOnly()"
+                                (click)="emitRowAction(index, 'duplicate-kp')"
+                                [attr.data-test]="'kp-row-drawer-duplicate-kp-' + index"
+                              >
+                                Дублировать строку КП
+                              </button>
+                              @if (line.lineKind === 'catalog') {
+                                <button
+                                  type="button"
+                                  class="editor__drawer-action"
+                                  [disabled]="readOnly()"
+                                  (click)="emitRowAction(index, 'create-product-copy')"
+                                  [attr.data-test]="'kp-row-drawer-create-catalog-copy-' + index"
+                                >
+                                  Создать копию в каталоге
+                                </button>
+                                @if (line.catalogDirtyFields?.length) {
+                                  <button
+                                    type="button"
+                                    class="editor__drawer-action"
+                                    [disabled]="readOnly()"
+                                    (click)="emitRowAction(index, 'update-product')"
+                                    [attr.data-test]="'kp-row-drawer-update-product-' + index"
+                                  >
+                                    Обновить изделие из строки
+                                  </button>
+                                }
+                              }
+                            }
+                            <button
+                              type="button"
+                              class="editor__drawer-action editor__drawer-action--danger"
+                              [disabled]="readOnly()"
+                              (click)="onRemoveRow(index)"
+                              [attr.data-test]="'kp-table-editor-remove-' + index"
+                            >
+                              <lucide-angular [img]="trashIcon" [size]="14" aria-hidden="true" />
+                              Убрать из КП
+                            </button>
+                          </div>
+                        </div>
+
                         <div class="editor__drawer-section">
                           <p class="editor__drawer-title">Вид строки</p>
                           <div class="editor__drawer-group" role="group" aria-label="Высота строки">
@@ -951,9 +989,26 @@ type ColumnWidths = Record<string, number>;
       white-space: nowrap;
     }
 
+    .editor__toolbar-btn--icon {
+      width: 1.7rem;
+      height: 1.7rem;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .editor__toolbar-btn--active {
+      border-color: var(--color-ink);
+      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper, #fff));
+    }
+
     .editor__toolbar-btn:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+    }
+
+    .editor__font-icon {
+      color: var(--color-muted-foreground, #6b7280);
+      flex: 0 0 auto;
     }
 
     .editor__toolbar-spacer {
@@ -1271,6 +1326,41 @@ type ColumnWidths = Record<string, number>;
       text-transform: uppercase;
     }
 
+    .editor__drawer-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.2rem;
+    }
+
+    .editor__drawer-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.28rem 0.4rem;
+      border: 1px solid var(--color-rule);
+      background: var(--color-paper, #fff);
+      color: var(--color-ink);
+      font-size: 0.72rem;
+      text-align: left;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    .editor__drawer-action:hover:not(:disabled) {
+      background: color-mix(in oklch, var(--color-gold) 12%, transparent);
+    }
+
+    .editor__drawer-action--danger {
+      color: var(--color-danger, #b91c1c);
+      border-color: color-mix(in oklch, var(--color-danger, #b91c1c) 35%, var(--color-rule));
+    }
+
+    .editor__drawer-action:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     .editor__drawer-group {
       display: flex;
       flex-direction: column;
@@ -1356,7 +1446,34 @@ type ColumnWidths = Record<string, number>;
       background: color-mix(in oklch, var(--color-muted) 5%, transparent);
     }
     .editor__col-act {
-      width: 5.25rem;
+      width: 2.25rem;
+    }
+
+    /* TZ-SALES-374: ink frame around open data-row + drawer; dim siblings */
+    .editor__table
+      tbody:has(.editor__row--open)
+      > tr:not(.editor__row--open):not(.editor__row-drawer--open) {
+      opacity: 0.5;
+    }
+
+    .editor__table tr.editor__row--open > td {
+      border-top: 1.5px solid var(--color-ink);
+      border-bottom: none;
+    }
+
+    .editor__table tr.editor__row--open > td:first-child {
+      border-left: 1.5px solid var(--color-ink);
+    }
+
+    .editor__table tr.editor__row--open > td:last-child {
+      border-right: 1.5px solid var(--color-ink);
+    }
+
+    .editor__table tr.editor__row-drawer--open > td {
+      border-top: none;
+      border-left: 1.5px solid var(--color-ink);
+      border-right: 1.5px solid var(--color-ink);
+      border-bottom: 1.5px solid var(--color-ink);
     }
 
     /* ── Buttons ── */
@@ -1626,9 +1743,12 @@ export class ProposalCreateTableEditorComponent {
   readonly tableTargetChange = output<string>();
   readonly chrome = input<ProposalTableChrome>({ borderWeight: 'normal', headerWeight: 'normal' });
   readonly chromeChange = output<ProposalTableChrome>();
-  /** Live KP sheetLayout.tableFontSize (TZ-SALES-373). */
+  /** Live KP sheetLayout.tableFontSize — body (TZ-SALES-373). */
   readonly tableFontSize = input(12);
   readonly tableFontSizeChange = output<number>();
+  /** Live KP sheetLayout.tableHeaderFontSize — header (TZ-SALES-374). */
+  readonly tableHeaderFontSize = input(12);
+  readonly tableHeaderFontSizeChange = output<number>();
 
   // ── Local state ──
   protected readonly columnsMenuOpen = signal(false);
@@ -1644,13 +1764,15 @@ export class ProposalCreateTableEditorComponent {
   });
 
   protected readonly tableFontSizeValue = computed(() => String(this.tableFontSize() ?? 12));
+  protected readonly tableHeaderFontSizeValue = computed(() =>
+    String(this.tableHeaderFontSize() ?? 12),
+  );
 
   /** Drag-and-drop row reordering. */
   protected readonly dragIndex = signal(-1);
   protected readonly dragOverIndex = signal(-1);
   /** At most one open row drawer. */
   protected readonly openRowIndex = signal(-1);
-  protected readonly rowMenuIndex = signal(-1);
 
   protected readonly densityOptions = [
     { value: 'auto' as const, label: 'Авто' },
@@ -1679,6 +1801,11 @@ export class ProposalCreateTableEditorComponent {
     return w === 'bold' ? 'Жирный' : 'Обычный';
   });
 
+  protected readonly borderStrokeWidth = computed(() => {
+    const w = this.chrome().borderWeight ?? 'normal';
+    return ({ thin: 1, normal: 1.75, thick: 2.5 } as const)[w];
+  });
+
   // ── Icons ──
   protected readonly minusIcon = Minus;
   protected readonly plusIcon = Plus;
@@ -1690,6 +1817,10 @@ export class ProposalCreateTableEditorComponent {
   protected readonly moreIcon = MoreHorizontal;
   protected readonly eyeOffIcon = EyeOff;
   protected readonly xIcon = X;
+  protected readonly borderIcon = Square;
+  protected readonly headerIcon = Bold;
+  protected readonly headingIcon = Heading;
+  protected readonly typeIcon = Type;
 
   // ── Visible / hidden columns ──
   private readonly essentialColumnKeys = new Set([
@@ -1893,6 +2024,13 @@ export class ProposalCreateTableEditorComponent {
     this.tableFontSizeChange.emit(value);
   }
 
+  protected onTableHeaderFontSizeChange(raw: string): void {
+    if (this.readOnly()) return;
+    const n = Number(raw);
+    const value = Number.isFinite(n) ? Math.min(20, Math.max(8, Math.round(n))) : 12;
+    this.tableHeaderFontSizeChange.emit(value);
+  }
+
   protected addCommercialColumns(): void {
     this.commercialColumnsRequest.emit();
   }
@@ -2033,15 +2171,9 @@ export class ProposalCreateTableEditorComponent {
 
   protected toggleRowDrawer(index: number): void {
     this.openRowIndex.update((current) => (current === index ? -1 : index));
-    this.rowMenuIndex.set(-1);
-  }
-
-  protected toggleRowMenu(index: number): void {
-    this.rowMenuIndex.update((current) => (current === index ? -1 : index));
   }
 
   protected emitRowAction(index: number, action: ProposalRowAction): void {
-    this.rowMenuIndex.set(-1);
     this.rowAction.emit({ index, action });
   }
 

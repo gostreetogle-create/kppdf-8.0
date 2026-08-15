@@ -222,8 +222,8 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
       undefined,
       { tableFontSize: 9 },
     );
-    expect(compactHtml).toContain('font-size:9px');
-    expect(compactHtml).not.toContain('font-size:12px');
+    expect(compactHtml).toMatch(/<td[^>]*font-size:9px/);
+    expect(compactHtml).toMatch(/<th[^>]*font-size:12px/);
 
     const clampedHtml = await service.preview(
       '507f1f77bcf86cd799439011',
@@ -232,6 +232,39 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
       undefined,
       { tableFontSize: 99 },
     );
-    expect(clampedHtml).toContain('font-size:20px');
+    expect(clampedHtml).toMatch(/<td[^>]*font-size:20px/);
+  });
+
+  it('applies sheetLayout.tableHeaderFontSize to th separately from body (TZ-SALES-374)', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'productName', label: 'Наименование', type: 'text', align: 'left' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const html = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд']],
+      undefined,
+      undefined,
+      { tableFontSize: 10, tableHeaderFontSize: 14 },
+    );
+    expect(html).toMatch(/<th[^>]*font-size:14px/);
+    expect(html).toMatch(/<td[^>]*font-size:10px/);
+
+    const clampedHeader = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд']],
+      undefined,
+      undefined,
+      { tableHeaderFontSize: 99 },
+    );
+    expect(clampedHeader).toMatch(/<th[^>]*font-size:20px/);
   });
 });

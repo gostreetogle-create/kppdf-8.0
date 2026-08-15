@@ -124,6 +124,10 @@ export class QuotationSheetLayout {
   /** KP table body font size in px (TZ-SALES-373). Default 12; clamp 8–20. */
   @Prop({ default: 12, min: 8, max: 20 })
   tableFontSize!: number;
+
+  /** KP table header font size in px (TZ-SALES-374). Default 12; clamp 8–20. */
+  @Prop({ default: 12, min: 8, max: 20 })
+  tableHeaderFontSize!: number;
 }
 
 const QuotationSheetLayoutSchema =
