@@ -10,7 +10,7 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-- `TZ-MODULES-341` — closeout ready; owner confirmed `cc5fac5f` legitimate and pushed; only TZ-341 paths will be staged.
+_(empty — TZ-MODULES-341 DONE; `6d8353d6` pushed; archive + lock created)_
 
 ## NEXT (PO paste prompt)
 
@@ -118,5 +118,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **341 → 343**; 341 closeout ready; deploy НЕ — не автодеплой.
+- Queue: **343**; TZ-MODULES-341 DONE; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой

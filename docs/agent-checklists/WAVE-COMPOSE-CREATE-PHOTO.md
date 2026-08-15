@@ -3,11 +3,11 @@
 ## Live resume
 - last_phase: 341 — closeout
 - last_tz: TZ-MODULES-341
-- last_action: owner confirmed `cc5fac5f` legitimate and pushed; staging only TZ-341 paths
+- last_action: TZ-341 committed as `6d8353d6` and pushed to `origin/main`; archive+lock verified
 - blocked: none
 - score_now: 3/4
-- next_action: commit/push TZ-341, then claim TZ-UI-PHOTO-343
-- updated_at: 2026-08-16T00:20:13+03:00
+- next_action: claim TZ-UI-PHOTO-343
+- updated_at: 2026-08-16T00:24:59+03:00
 - agent: Buffy
 
 ## Phases

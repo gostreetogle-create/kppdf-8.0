@@ -13,7 +13,7 @@ Status: **DONE**
 - [x] form dropzone → PhotosService upload → ProductModulePhoto photoId link
 - [x] detail upload primary; URL retained as collapsed secondary path
 - [x] QC module L dropzone → PhotosService upload → ProductModulePhoto photoId link
-- [x] specs + gates (tsc, Jest, lint, Prettier); archive + MASTER [x]
+- [x] specs + gates (tsc, Jest, lint, Prettier); archive + MASTER [x]; commit/push `6d8353d6`
 ## Gates (fact)
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS (exit 0)
 - `cd frontend && pnpm exec jest src/app/pages/modules/module-form-dialog.component.spec.ts src/app/pages/modules/module-detail.page.spec.ts src/app/shared/ui/quick-create/quick-create-dialog.component.spec.ts src/app/shared/ui/photo/photo-dropzone.component.spec.ts src/app/pages/products/product-form-dialog.component.spec.ts src/app/pages/materials/material-form-dialog.component.spec.ts --runInBand` — PASS, 6 suites / 101 tests
