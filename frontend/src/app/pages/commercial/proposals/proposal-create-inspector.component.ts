@@ -55,6 +55,8 @@ export interface ProposalSheetLayoutState {
   photoScalePercent: number;
   photoCropYPercent: number;
   showPhotoColumn: boolean;
+  /** KP table font size in px (default 12, clamp 8–20). */
+  tableFontSize: number;
 }
 
 export interface ProposalCreateInspectorState {
@@ -285,6 +287,18 @@ export type ProposalCreateStatus = ProposalStatus;
             />
             Колонка фото
           </label>
+          <app-pi-form-field label="Шрифт таблицы" htmlFor="kp-sheet-table-font">
+            <app-pi-overflow-select
+              [items]="tableFontSizeItems"
+              [value]="tableFontSizeValue()"
+              (valueChange)="onTableFontSizeChange($event)"
+              [searchable]="false"
+              placeholder="12"
+              ariaLabel="Шрифт таблицы"
+              dataTest="kp-sheet-table-font"
+              [disabled]="readOnly()"
+            />
+          </app-pi-form-field>
         </section>
 
         <section class="inspector__section" data-test="kp-insp-discount">
@@ -564,6 +578,14 @@ export type ProposalCreateStatus = ProposalStatus;
     .inspector__sheet .inspector__checkbox {
       justify-content: flex-start;
     }
+    .inspector__sheet app-pi-form-field {
+      display: block;
+    }
+    .inspector__sheet app-pi-overflow-select {
+      display: block;
+      width: 5.5rem;
+      margin-left: auto;
+    }
     .inspector__section-heading h3,
     .inspector__section-heading p {
       margin: 0;
@@ -656,6 +678,7 @@ export class ProposalCreateInspectorComponent implements OnInit {
     photoScalePercent: 100,
     photoCropYPercent: 0,
     showPhotoColumn: true,
+    tableFontSize: 12,
   });
   readonly readOnly = input(false);
   readonly status = input<ProposalCreateStatus>('draft');
@@ -687,8 +710,19 @@ export class ProposalCreateInspectorComponent implements OnInit {
     photoScalePercent: 100,
     photoCropYPercent: 0,
     showPhotoColumn: true,
+    tableFontSize: 12,
   });
   protected readonly error = signal<string | null>(null);
+
+  /** Font size options 8…20 for «Шрифт таблицы» (TZ-SALES-373). */
+  protected readonly tableFontSizeItems = Array.from({ length: 13 }, (_, i) => {
+    const n = 8 + i;
+    return { id: String(n), label: String(n) };
+  });
+
+  protected readonly tableFontSizeValue = computed(() =>
+    String(this.sheetLayout().tableFontSize ?? 12),
+  );
 
   private readonly syncInitialState = effect(() => {
     this.organizationId.set(this.initialOrganizationId());
@@ -841,6 +875,14 @@ export class ProposalCreateInspectorComponent implements OnInit {
       ...current,
       showPhotoColumn: (event.target as HTMLInputElement).checked,
     }));
+    this.emitState();
+  }
+
+  protected onTableFontSizeChange(raw: string): void {
+    if (this.readOnly()) return;
+    const n = Number(raw);
+    const value = Number.isFinite(n) ? Math.min(20, Math.max(8, Math.round(n))) : 12;
+    this.sheetLayout.update((current) => ({ ...current, tableFontSize: value }));
     this.emitState();
   }
 

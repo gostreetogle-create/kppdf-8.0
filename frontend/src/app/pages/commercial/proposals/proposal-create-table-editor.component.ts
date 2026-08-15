@@ -20,6 +20,7 @@ import {
   X,
 } from 'lucide-angular';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import { formatPrice } from '../../../shared/util/format';
 import type { ProposalDraftLine, ProposalRowPresentation } from './proposal-product-rail.component';
 import type {
@@ -60,7 +61,7 @@ type ColumnWidths = Record<string, number>;
   selector: 'app-proposal-create-table-editor',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent],
+  imports: [LucideAngularModule, ButtonComponent, PiOverflowSelectComponent],
   template: `
     <section class="editor" data-test="kp-table-editor">
       <!-- Header -->
@@ -139,6 +140,21 @@ type ColumnWidths = Record<string, number>;
             >
               Шапка: {{ headerLabel() }}
             </button>
+          </div>
+
+          <!-- Шрифт (sheetLayout.tableFontSize) -->
+          <div class="editor__toolbar-group editor__toolbar-group--font">
+            <span class="editor__font-label">Шрифт</span>
+            <app-pi-overflow-select
+              [items]="tableFontSizeItems"
+              [value]="tableFontSizeValue()"
+              (valueChange)="onTableFontSizeChange($event)"
+              [searchable]="false"
+              placeholder="12"
+              ariaLabel="Шрифт таблицы"
+              dataTest="kp-table-editor-font"
+              [disabled]="readOnly()"
+            />
           </div>
 
           <!-- Spacer -->
@@ -244,7 +260,7 @@ type ColumnWidths = Record<string, number>;
 
         <!-- Lines table -->
         <div class="editor__table-wrap" data-test="kp-table-editor-lines" (scroll)="closeMenus()">
-          <table class="editor__table">
+          <table class="editor__table" [style.font-size.px]="tableFontSize()">
             <colgroup>
               <col class="editor__col-move" />
               <col class="editor__col-num" />
@@ -902,6 +918,23 @@ type ColumnWidths = Record<string, number>;
 
     .editor__toolbar-group {
       position: relative;
+    }
+
+    .editor__toolbar-group--font {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .editor__font-label {
+      font-size: 0.68rem;
+      color: var(--color-muted-foreground, #6b7280);
+      white-space: nowrap;
+    }
+
+    .editor__toolbar-group--font app-pi-overflow-select {
+      display: block;
+      width: 3.5rem;
     }
 
     .editor__toolbar-btn {
@@ -1593,6 +1626,9 @@ export class ProposalCreateTableEditorComponent {
   readonly tableTargetChange = output<string>();
   readonly chrome = input<ProposalTableChrome>({ borderWeight: 'normal', headerWeight: 'normal' });
   readonly chromeChange = output<ProposalTableChrome>();
+  /** Live KP sheetLayout.tableFontSize (TZ-SALES-373). */
+  readonly tableFontSize = input(12);
+  readonly tableFontSizeChange = output<number>();
 
   // ── Local state ──
   protected readonly columnsMenuOpen = signal(false);
@@ -1600,6 +1636,14 @@ export class ProposalCreateTableEditorComponent {
   protected readonly columnMenuIndex = signal(-1);
   /** Per-column width overrides in %. */
   protected readonly columnWidths = signal<ColumnWidths>({});
+
+  /** Font size options 8…20 — same binding as «Вид листа». */
+  protected readonly tableFontSizeItems = Array.from({ length: 13 }, (_, i) => {
+    const n = 8 + i;
+    return { id: String(n), label: String(n) };
+  });
+
+  protected readonly tableFontSizeValue = computed(() => String(this.tableFontSize() ?? 12));
 
   /** Drag-and-drop row reordering. */
   protected readonly dragIndex = signal(-1);
@@ -1840,6 +1884,13 @@ export class ProposalCreateTableEditorComponent {
     const cur = this.chrome().headerWeight ?? 'normal';
     const next = cur === 'bold' ? 'normal' : 'bold';
     this.chromeChange.emit({ ...this.chrome(), headerWeight: next });
+  }
+
+  protected onTableFontSizeChange(raw: string): void {
+    if (this.readOnly()) return;
+    const n = Number(raw);
+    const value = Number.isFinite(n) ? Math.min(20, Math.max(8, Math.round(n))) : 12;
+    this.tableFontSizeChange.emit(value);
   }
 
   protected addCommercialColumns(): void {

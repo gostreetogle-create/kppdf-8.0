@@ -120,6 +120,10 @@ export class QuotationSheetLayout {
 
   @Prop({ default: true })
   showPhotoColumn!: boolean;
+
+  /** KP table body font size in px (TZ-SALES-373). Default 12; clamp 8–20. */
+  @Prop({ default: 12, min: 8, max: 20 })
+  tableFontSize!: number;
 }
 
 const QuotationSheetLayoutSchema =

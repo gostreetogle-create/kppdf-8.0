@@ -888,6 +888,7 @@ export class QuotationService {
     photoScalePercent: number;
     photoCropYPercent: number;
     showPhotoColumn: boolean;
+    tableFontSize: number;
   } {
     return {
       rowsFirstPage: Math.min(200, Math.max(0, layout?.rowsFirstPage ?? 0)),
@@ -901,6 +902,10 @@ export class QuotationService {
         Math.max(0, layout?.photoCropYPercent ?? 0),
       ),
       showPhotoColumn: layout?.showPhotoColumn ?? true,
+      tableFontSize: Math.min(
+        20,
+        Math.max(8, Math.round(layout?.tableFontSize ?? 12)),
+      ),
     };
   }
 

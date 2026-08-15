@@ -5,10 +5,22 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:15:00Z
+updated_at: 2026-08-15T06:45:00Z
 main_head: `de5ebf78`
 
 ## ACTIVE
+
+### TZ-SALES-373 — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-SALES-373.md`
+- Task: `tasks/TZ-SALES-373-kp-table-font-size.md`
+- Checklist: `docs/agent-checklists/TZ-SALES-373.md`
+- Owner: Buffy (Cursor Agent)
+- claimed_at: 2026-08-15T06:29:48Z
+- workspace: D:\kppdf-8.0
+- State: READY FOR REVIEW — `sheetLayout.tableFontSize` (default 12, clamp 8–20); gates PASS; **no archive until Cursor PASS**
+- Conflict vs AUTH-305: OK (AUTH-305 = deploy only)
+- Deploy/wipe: НЕ
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -41,9 +53,9 @@ main_head: `de5ebf78`
 
 ## READY / ORDER
 
-1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-3. (opt) table column fontSize — only after explicit PO «да» (не DOC-TABLES-310; 310 closed).
+1. **SALES-373** (READY FOR REVIEW above) — await Cursor PASS → then archive; deploy НЕ.
+2. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
+3. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.

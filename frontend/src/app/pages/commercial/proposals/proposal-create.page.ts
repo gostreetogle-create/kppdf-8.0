@@ -102,6 +102,7 @@ const DEFAULT_KP_SHEET_LAYOUT: ProposalSheetLayoutState = {
   photoScalePercent: 100,
   photoCropYPercent: 0,
   showPhotoColumn: true,
+  tableFontSize: 12,
 };
 
 const DEFAULT_KP_TABLE_LAYOUT: ProposalTableLayoutColumn[] = [
@@ -373,6 +374,8 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   [tableTemplateId]="tableTemplateId()"
                   [tableTargets]="tableTargets()"
                   [selectedTableTargetId]="selectedTableTargetId()"
+                  [chrome]="kpTableChrome()"
+                  [tableFontSize]="sheetLayout().tableFontSize"
                   (lineChange)="onCompositionLineChange($event)"
                   (addCustom)="addCustomLine()"
                   (openProducts)="openProductsTool()"
@@ -384,6 +387,8 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
                   (commercialColumnsRequest)="addCommercialColumns()"
                   (openTableTemplate)="openTableTemplatePreset()"
                   (tableTargetChange)="onTableTargetChange($event)"
+                  (chromeChange)="onTableChromeChange($event)"
+                  (tableFontSizeChange)="onTableFontSizeChange($event)"
                 />
               } @else if (rightPane() === 'terms') {
                 <app-proposal-create-terms
@@ -1764,6 +1769,16 @@ export class ProposalCreatePage implements OnInit {
   protected onTableChromeChange(chrome: ProposalTableChrome): void {
     if (this.isReadOnly()) return;
     this.kpTableChrome.set({ ...chrome });
+    if (this.selectedTemplate()?._id) {
+      this.rebuildPreview$.next();
+      this.scheduleAutosave();
+    }
+  }
+
+  protected onTableFontSizeChange(size: number): void {
+    if (this.isReadOnly()) return;
+    const tableFontSize = Math.min(20, Math.max(8, Math.round(size) || 12));
+    this.sheetLayout.update((current) => ({ ...current, tableFontSize }));
     if (this.selectedTemplate()?._id) {
       this.rebuildPreview$.next();
       this.scheduleAutosave();

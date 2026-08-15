@@ -907,6 +907,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         photoScalePercent: number;
         photoCropYPercent: number;
         showPhotoColumn: boolean;
+        tableFontSize: number;
       };
       resumeLastDraft: () => void;
     };
@@ -932,6 +933,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
       photoScalePercent: 85,
       photoCropYPercent: 10,
       showPhotoColumn: false,
+      tableFontSize: 12,
     });
   }));
 

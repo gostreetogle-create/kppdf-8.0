@@ -30,6 +30,8 @@ export interface TablePhotoOptions {
   photoScalePercent?: number;
   photoCropYPercent?: number;
   showPhotoColumn?: boolean;
+  /** KP table font size in px (default 12, clamp 8–20). */
+  tableFontSize?: number;
 }
 
 export interface TablePreviewChrome {
@@ -198,6 +200,7 @@ export class TableTemplateService implements OnModuleInit {
           ? '2px'
           : '1px';
     const headerWeight = chrome?.headerWeight === 'bold' ? '700' : '600';
+    const tableFontPx = this.resolveTableFontSize(photoOptions);
     const colgroup = cols
       .map(
         (c) =>
@@ -224,7 +227,7 @@ export class TableTemplateService implements OnModuleInit {
         )
         .join('');
       const tableHtml =
-        `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
+        `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%;font-size:${tableFontPx}px">` +
         `<colgroup>${colgroup}</colgroup>` +
         `<thead><tr>${headHtml}</tr></thead>` +
         `<tbody><tr>${blankCells}</tr></tbody>` +
@@ -281,7 +284,7 @@ export class TableTemplateService implements OnModuleInit {
       .join('');
 
     const tableHtml =
-      `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
+      `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%;font-size:${tableFontPx}px">` +
       `<colgroup>${colgroup}</colgroup>` +
       `<thead><tr>${headHtml}</tr></thead>` +
       `<tbody>${bodyHtml}</tbody>` +
@@ -290,6 +293,13 @@ export class TableTemplateService implements OnModuleInit {
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
+
+  /** KP sheetLayout.tableFontSize — default 12, clamp 8–20 (TZ-SALES-373). */
+  private resolveTableFontSize(photoOptions?: TablePhotoOptions): number {
+    const raw = photoOptions?.tableFontSize;
+    if (typeof raw !== 'number' || !Number.isFinite(raw)) return 12;
+    return Math.min(20, Math.max(8, Math.round(raw)));
+  }
 
   private resolveWidthPercents(
     cols: TableTemplateDocument['columns'],

@@ -107,6 +107,7 @@ export class QuotationSheetLayoutDto {
   @IsOptional() @IsInt() @Min(10) @Max(400) photoScalePercent?: number;
   @IsOptional() @IsInt() @Min(0) @Max(100) photoCropYPercent?: number;
   @IsOptional() @IsBoolean() showPhotoColumn?: boolean;
+  @IsOptional() @IsInt() @Min(8) @Max(20) tableFontSize?: number;
 }
 
 export class CreateQuotationDto {

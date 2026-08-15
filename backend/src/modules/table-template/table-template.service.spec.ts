@@ -196,4 +196,42 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     );
     expect(htmlSecondBreak).toContain('page-break-before:always');
   });
+
+  it('applies sheetLayout.tableFontSize to the preview table (TZ-SALES-373)', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'productName', label: 'Наименование', type: 'text', align: 'left' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const defaultHtml = await service.preview('507f1f77bcf86cd799439011', [
+      ['Стенд'],
+    ]);
+    expect(defaultHtml).toContain('font-size:12px');
+
+    const compactHtml = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд']],
+      undefined,
+      undefined,
+      { tableFontSize: 9 },
+    );
+    expect(compactHtml).toContain('font-size:9px');
+    expect(compactHtml).not.toContain('font-size:12px');
+
+    const clampedHtml = await service.preview(
+      '507f1f77bcf86cd799439011',
+      [['Стенд']],
+      undefined,
+      undefined,
+      { tableFontSize: 99 },
+    );
+    expect(clampedHtml).toContain('font-size:20px');
+  });
 });
