@@ -1,6 +1,6 @@
 # Angular component integrity — canonical audit
 
-> Status: **STAGE 2 — Lane B DONE; Lane A in progress (A3 amended)**  
+> Status: **STAGE 2 - Lane A child batches DONE; final umbrella gates pending**
 > Parent TZ: `TZ-FRONTEND-301`  
 > Remediation TZ: `TZ-FRONTEND-302`  
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
@@ -11,14 +11,16 @@
 |-------|------|--------|----------|
 | A1 admin HTTP→services | A | **DONE** | impl `91ef835a6eeef561c39e4684b02ed31120785669` · docs `0817d68a02979ac33080db5767b86f13036d817f` |
 | A2 order dialog users | A | **DONE** | impl `003da5f033de5b5895b80d6d291cc13ecb4d8c8a` · closeout `40768423d391cb98dbe66cce9a75aee7f338fd8d` |
-| A3 import-todos HTTP | A | **UNBLOCKED** (amendment below) | blocker `30291b7e710cf2610c702e03a59db55c4dd63092` |
-| A4–A6 KP P0 | A | queued | — |
+| A3 import-todos HTTP | A | **DONE** (amended page-local service) | impl `dfd5e26bb7cd6f651cd34f9e925a90d6ba82d5d9` / docs `5b95d69c4cb93ab201b8ea018fc03ffb2b469eaf` |
+| A4 KP autosave | A | **DONE** | impl `a6ee078f8efa85fcd18f0a3751dff2b45ba2b447` / docs `7f00ca074add45c1f8da4ae1df1a40010c844126` |
+| A5 KP recipient | A | **DONE** | impl `f6625cd34fc65682f018907fbdaf4617682ea0da` / docs `630771acb2227c3524b54de508f9b85f3612dcb7` |
+| A6 KP inspector | A | **DONE** | impl `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0` / closeout `72098d9b09a525fbb473105fc006dfcd115b8849` |
 | B-TOOLING | B | **DONE** | `c58a7da2ca4a373815cdb700fd1eb85c7e5821da` |
 | B-ENTITY-SPEC | B | **DONE** | `6e5a2da3606e08010f44d50d6a33dab1040c711f` |
 | B-PHOTO | B | **DONE** | `8b2f0fc7285c244fdc669b4da4d936ce64470dee` |
 | B-COMPOSITION / B-GROUP-ACL / P3 | B | **STOP / BACKLOG** | not started (correct) |
 
-Lane B Stage 2 ready batches complete. Lane B **STOP** until Lane A finishes A3–A6 + umbrella final gates. Do not start successors without new Cursor assignment.
+Lane B Stage 2 ready batches and Lane A A3-A6 child batches are complete. Lane B remains **STOP** while Lane A runs umbrella final gates; do not start successors without new Cursor assignment.
 
 ## Amendment 2026-08-15b — A3 page-local mutation service (Cursor decision)
 
@@ -263,7 +265,7 @@ Hot serial files (`app.routes.ts`, `app.config.ts`, global styles, shared API se
 
 ## Full Jest gate debt (umbrella)
 
-Lane B evidence: **145/149** suites PASS on `feature/TZ-FRONTEND-302-B`. Same **13** failing tests reproduce on clean canonical `405cb71d` scratch:
+Lane B evidence: **145/149** suites PASS on `feature/TZ-FRONTEND-302-B`. Lane A final run after A3-A6: **150/154** suites PASS, with the same **13** known baseline failures reproduced:
 
 | Fail suite (baseline) | Owner for successor |
 |-----------------------|---------------------|
@@ -278,11 +280,11 @@ Lane B evidence: **145/149** suites PASS on `feature/TZ-FRONTEND-302-B`. Same **
 - Documented deviation (revive `ClassDeclaration` token in oninit rule): **accepted** — was dead rule; severity/config unchanged; new page warnings are Lane A inventory debt, not B scope.
 - Lane B must stay idle on product keys; umbrella closeout is Lane A after A3–A6.
 
-## Recommended Stage 2 remaining order
+## Recommended Stage 2 closeout order
 
-1. Lane A: **A3** (amended) → **A4 → A5 → A6** (serial on KP page file)
-2. Lane B: **idle** (ready batches done)
-3. Lane A umbrella: merge/rebase both feature branches, full tsc/lint, document Jest debt, update audit verdicts, archive 301/302
+1. Lane A: A3 -> A4 -> A5 -> A6 DONE (serial KP sequence)
+2. Lane B: idle (ready batches done)
+3. Lane A umbrella: run full tsc/lint/Jest, document known Jest debt, finalize audit verdicts and archive only after Cursor/PO review
 4. Successors only with new TZ numbers after PASS umbrella
 
 ## Conflict-key matrix (remaining)
@@ -298,21 +300,21 @@ Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) remain **Lane A–owned
 
 - [x] Canonical PASS + A1/A3 amendments  
 - [x] Lane B ready batches DONE + SHAs recorded  
-- [ ] Lane A A3–A6 DONE  
-- [ ] Umbrella final gates + audit SHA updates  
+- [x] Lane A A3-A6 DONE
+- [x] Umbrella gates: frontend tsc/lint/architecture/diff PASS; full Jest `150/154` with 13 known baseline failures documented; audit verdicts and child SHAs updated
 - [ ] Archive children + umbrella; deploy **НЕ**  
 
 ## Counts (canonical — unchanged finding set)
 
 | Severity | Count | FIX NOW ready/done |
 |----------|------:|-------------------|
-| P0 | **3** | A4–A6 queued |
-| P1 | **9** | A1–A2 DONE; A3 unblocked; B three DONE; 4 BACKLOG |
+| P0 | **3** | A4-A6 DONE |
+| P1 | **9** | A1-A3 DONE; B three DONE; 4 BACKLOG |
 | P2 | **5** | KEEP/BACKLOG |
 | P3 | **4** | none |
 
 ## Review / resume
 
 - Lane B: **STOP** — SHAs published; wait umbrella.
-- Lane A: resume **A3** with page-local service amendment, then A4–A6.
+- Lane A: A3-A6 and final technical gates are complete; await Cursor/PO closeout.
 - Successors (composition / group ACL / Jest debt): separate planning after umbrella — not this wave.
