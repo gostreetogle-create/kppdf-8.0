@@ -1,31 +1,32 @@
 # TZ-UX-321 checklist
 
-> Status: **READY FOR CLAIM**
-> Goal: ←→ у внешней грани колонки контента (calc от 1400px), не у края окна
+> Status: **READY FOR CLAIM** (spec rewritten 2026-08-15 — universal rail, not pixel nudge)
+> Goal: левая chrome-панель ~1.5–2 см; ←→ внутри; фильтр = successor
 > Deploy: НЕ
-> Quality bar: ≥98 (PO visual)
+> Quality bar: ≥98 (PO visual vs red outline)
 
 ## Claim slot
 
-- agent_id: _(fill on claim)_
+- agent_id:
 - claimed_at:
 - workspace:
-- branch: feature/TZ-UX-321-nav-beside-content-column
+- branch: feature/TZ-UX-321-universal-chrome-rail
 - team_room_claim:
 
 ## Preflight
 
 - [ ] Isolated worktree from origin/main
-- [ ] Conflict keys free vs FRONTEND-304 / other layout claims
-- [ ] Read TZ + this checklist before code
+- [ ] Read **rewritten** TZ (universal panel) — ignore old calc(50%-700px) draft
+- [ ] Conflict keys free vs FRONTEND-304
 
 ## Acceptance
 
-- [ ] `left/right: max(8px, calc(50% - 700px - 48px))` (or equivalent gap 8–16px to column)
-- [ ] No final `64px` / `14px` as gutter position
+- [ ] `data-test="app-chrome-rail-left"` 56–72px, under header, brand vertical
+- [ ] ←→ children of rail; no floating edge buttons
+- [ ] ≥1680 show / narrow hide
 - [ ] Spec + tsc PASS
-- [ ] Browser 1920: `frame.left - back.right` ∈ [8, 24]; mirror right; screenshot path logged
-- [ ] Self-score ≥98
+- [ ] Browser 1920 smoke + screenshot path
+- [ ] Self-score ≥98; filter NOT moved
 - [ ] Docs + archive + lock; deploy НЕ
 
 ## Executor report (auto)
