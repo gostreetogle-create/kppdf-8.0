@@ -133,6 +133,8 @@ export interface OrderEstimateInput {
   items: OrderItemEstimateInput[];
   /** TZ-PRODUCTION-309 — order-level days; applied in buildGanttBars. */
   estimateDayOverrides?: EstimateDayOverrideRef[];
+  /** TZ-PRODUCTION-316 — per-bar start offset from visualAnchor. */
+  estimateStartOffsets?: EstimateStartOffsetRef[];
 }
 
 /** TZ-PRODUCTION-309 composite key for order-level duration. */
@@ -141,6 +143,14 @@ export interface EstimateDayOverrideRef {
   moduleId: string;
   workTypeId: string;
   days: number;
+}
+
+/** TZ-PRODUCTION-316 composite key for start offset. */
+export interface EstimateStartOffsetRef {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  offsetDays: number;
 }
 
 export function estimateOverrideKey(
@@ -168,6 +178,26 @@ export function indexEstimateDayOverrides(
     const days = normalizeWorkTypeDays(row.days);
     if (days == null) continue;
     map.set(estimateOverrideKey(row.orderItemIndex, row.moduleId, row.workTypeId), days);
+  }
+  return map;
+}
+
+/** Map start offsets; invalid rows skipped. offsetDays must be int ≥ 0. */
+export function indexEstimateStartOffsets(
+  offsets: EstimateStartOffsetRef[] | null | undefined,
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of offsets ?? []) {
+    if (
+      !Number.isInteger(row.orderItemIndex) ||
+      row.orderItemIndex < 0 ||
+      !row.moduleId ||
+      !row.workTypeId
+    ) {
+      continue;
+    }
+    if (!Number.isInteger(row.offsetDays) || row.offsetDays < 0) continue;
+    map.set(estimateOverrideKey(row.orderItemIndex, row.moduleId, row.workTypeId), row.offsetDays);
   }
   return map;
 }
@@ -214,6 +244,11 @@ export interface GanttBar {
   accentHue?: number | null;
   /** TZ-PRODUCTION-314 — summary row vs work-type child. Default work. */
   kind?: GanttBarKind;
+  /**
+   * TZ-PRODUCTION-316 — explicit start offset from visualAnchor when set.
+   * null/undefined = sequential pack (no override).
+   */
+  startOffsetDays?: number | null;
 }
 
 export function isSummaryBar(bar: GanttBar): boolean {
@@ -351,6 +386,7 @@ function sortByOrderThenIndex<T extends { sortOrder: number }>(
 export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date()): GanttBar[] {
   const { anchor, usedFallbackToday } = resolveVisualAnchor(order, today);
   const overrideIndex = indexEstimateDayOverrides(order.estimateDayOverrides);
+  const startOffsetIndex = indexEstimateStartOffsets(order.estimateStartOffsets);
   const bars: GanttBar[] = [];
   let cursor = startOfLocalDay(anchor);
   let occurrence = 0;
@@ -375,7 +411,17 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
           overrideIndex,
         );
         const noTerm = days == null;
-        const start = startOfLocalDay(cursor);
+        const key = estimateOverrideKey(item.orderItemIndex, mod.moduleId, wt.workTypeId);
+        const hasOffset = startOffsetIndex.has(key);
+        const startOffsetDays = hasOffset ? startOffsetIndex.get(key)! : null;
+
+        let start: Date;
+        if (hasOffset && startOffsetDays != null) {
+          // Parallel: absolute from visualAnchor; does not advance sequential cursor.
+          start = addCalendarDays(startOfLocalDay(anchor), startOffsetDays);
+        } else {
+          start = startOfLocalDay(cursor);
+        }
         const end = noTerm ? start : addCalendarDays(start, days - 1);
 
         bars.push({
@@ -407,11 +453,11 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
           usedFallbackToday,
           workerLabel: '—',
           accentHue: wt.accentHue ?? null,
+          startOffsetDays,
         });
 
-        // Sequential visual pack: advance only when we have a positive day span.
-        // Quantity does NOT multiply duration (lock I).
-        if (!noTerm && days != null) {
+        // Sequential pack only for bars without explicit offset.
+        if (!hasOffset && !noTerm && days != null) {
           cursor = addCalendarDays(start, days);
         }
       }

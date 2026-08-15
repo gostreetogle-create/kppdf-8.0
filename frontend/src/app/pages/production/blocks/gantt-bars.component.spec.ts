@@ -314,8 +314,8 @@ describe('GanttBarsComponent', () => {
       (r: { isSummary: boolean }) => r.isSummary,
     )!.bar;
 
-    // Child body-drag must NOT move plannedDate (314 lock).
-    expect(fixture.componentInstance.canMoveBar(sample)).toBe(false);
+    // Child body-drag emits startOffset (316), not plannedDate.
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(true);
     fixture.componentInstance.onMovePointerDown(
       {
         pointerId: 8,
@@ -326,6 +326,14 @@ describe('GanttBarsComponent', () => {
       } as unknown as PointerEvent,
       sample,
     );
+    fixture.componentInstance.onDocumentPointerMove({
+      pointerId: 8,
+      clientX: 50 + GANTT_PX_PER_DAY.day,
+    } as PointerEvent);
+    fixture.componentInstance.onDocumentPointerUp({
+      pointerId: 8,
+      clientX: 50 + GANTT_PX_PER_DAY.day,
+    } as PointerEvent);
     expect(moves).toEqual([]);
 
     fixture.componentInstance.onMovePointerDown(
@@ -349,6 +357,53 @@ describe('GanttBarsComponent', () => {
 
     expect(moves).toEqual([{ orderId: 'o1', deltaDays: 3 }]);
     expect(resizes).toEqual([]);
+  });
+
+  it('emits startOffsetCommit on child body drag (not plannedDate)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+
+    const moves: unknown[] = [];
+    const offsets: unknown[] = [];
+    fixture.componentInstance.plannedDateMoveCommit.subscribe((v) => moves.push(v));
+    fixture.componentInstance.startOffsetCommit.subscribe((v) => offsets.push(v));
+
+    expect(fixture.componentInstance.canMoveBar(sample)).toBe(true);
+    fixture.componentInstance.onMovePointerDown(
+      {
+        pointerId: 9,
+        clientX: 50,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined,
+        currentTarget: { setPointerCapture: () => undefined },
+      } as unknown as PointerEvent,
+      sample,
+    );
+    fixture.componentInstance.onDocumentPointerMove({
+      pointerId: 9,
+      clientX: 50 + GANTT_PX_PER_DAY.day * 2,
+    } as PointerEvent);
+    fixture.componentInstance.onDocumentPointerUp({
+      pointerId: 9,
+      clientX: 50 + GANTT_PX_PER_DAY.day * 2,
+    } as PointerEvent);
+
+    expect(moves).toEqual([]);
+    expect(offsets).toEqual([
+      {
+        orderId: 'o1',
+        orderItemIndex: 0,
+        moduleId: 'm1',
+        workTypeId: 'wt1',
+        startDate: '2026-08-01',
+        deltaDays: 2,
+      },
+    ]);
   });
 
   it('does not emit move when starting on resize handle path', () => {

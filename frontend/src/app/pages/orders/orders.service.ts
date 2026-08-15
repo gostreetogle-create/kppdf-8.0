@@ -77,6 +77,8 @@ export interface Order {
   reservationIds?: string[];
   /** TZ-PRODUCTION-309: order-level Gantt days (catalog WorkType.days is fallback). */
   estimateDayOverrides?: EstimateDayOverride[];
+  /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor. */
+  estimateStartOffsets?: EstimateStartOffset[];
   /** UI-only virtual column key; readiness is calculated from items[].readyForWork. */
   readyForWork?: boolean;
   createdAt?: string;
@@ -90,12 +92,27 @@ export interface EstimateDayOverride {
   days: number;
 }
 
+export interface EstimateStartOffset {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  offsetDays: number;
+}
+
 export interface PatchEstimateDaysPayload {
   orderItemIndex: number;
   moduleId: string;
   workTypeId: string;
   /** Positive days upsert; null clears override. */
   days: number | null;
+}
+
+export interface PatchEstimateStartPayload {
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  /** Days ≥ 0 from visualAnchor; null clears. */
+  offsetDays: number | null;
 }
 
 /**
@@ -151,6 +168,14 @@ export class OrdersService {
     payload: PatchEstimateDaysPayload,
   ): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-days`, payload);
+  }
+
+  /** TZ-PRODUCTION-316 — per-bar start offset (parallel Gantt). */
+  patchEstimateStart(
+    id: string,
+    payload: PatchEstimateStartPayload,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/estimate-start`, payload);
   }
 
   /**

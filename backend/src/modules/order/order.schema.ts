@@ -67,6 +67,28 @@ export class EstimateDayOverride {
 
 const EstimateDayOverrideSchema = SchemaFactory.createForClass(EstimateDayOverride);
 
+/**
+ * TZ-PRODUCTION-316 — per-bar start offset from order visualAnchor (parallel Gantt).
+ * Composite key: (orderItemIndex, moduleId, workTypeId).
+ */
+@Schema({ _id: false })
+export class EstimateStartOffset {
+  @Prop({ required: true, min: 0 })
+  orderItemIndex!: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
+  moduleId!: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'WorkType', required: true })
+  workTypeId!: Types.ObjectId;
+
+  /** Calendar days ≥ 0 from order visualAnchor (plannedDate ?? date ?? today). */
+  @Prop({ required: true, min: 0 })
+  offsetDays!: number;
+}
+
+const EstimateStartOffsetSchema = SchemaFactory.createForClass(EstimateStartOffset);
+
 export type OrderStatus = 'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type OrderDocument = HydratedDocument<Order>;
@@ -140,6 +162,10 @@ export class Order {
   /** TZ-PRODUCTION-309: order-level estimate days (Gantt); catalog WorkType.days is fallback. */
   @Prop({ type: [EstimateDayOverrideSchema], default: [] })
   estimateDayOverrides!: EstimateDayOverride[];
+
+  /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor (parallel OK). */
+  @Prop({ type: [EstimateStartOffsetSchema], default: [] })
+  estimateStartOffsets!: EstimateStartOffset[];
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Model, Types } from 'mongoose';
-import { EstimateDayOverride, Order, OrderDocument, OrderItem } from './order.schema';
+import { EstimateDayOverride, EstimateStartOffset, Order, OrderDocument, OrderItem } from './order.schema';
 import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
+import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
 import { CounterService } from '../counter/counter.service';
 import { ReservationService } from '../reservation/reservation.service';
 import { ShipmentService } from '../shipment/shipment.service';
@@ -297,6 +298,59 @@ export class OrderService {
     }
 
     doc.estimateDayOverrides = overrides;
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /**
+   * TZ-PRODUCTION-316 — upsert or clear per-bar start offset from visualAnchor.
+   * Composite key: (orderItemIndex, moduleId, workTypeId).
+   * `offsetDays: null` removes the override (sequential pack applies).
+   */
+  async patchEstimateStart(id: string, dto: PatchEstimateStartDto): Promise<OrderDocument> {
+    const doc = await this.findByIdRaw(id);
+    if (!Types.ObjectId.isValid(dto.moduleId) || !Types.ObjectId.isValid(dto.workTypeId)) {
+      throw new BadRequestException('moduleId and workTypeId must be valid ObjectIds');
+    }
+    if (!Number.isInteger(dto.orderItemIndex) || dto.orderItemIndex < 0) {
+      throw new BadRequestException('orderItemIndex must be an integer ≥ 0');
+    }
+    if (dto.orderItemIndex >= doc.items.length) {
+      throw new NotFoundException(`Order line ${dto.orderItemIndex} not found`);
+    }
+
+    const moduleId = new Types.ObjectId(dto.moduleId);
+    const workTypeId = new Types.ObjectId(dto.workTypeId);
+    const offsets: EstimateStartOffset[] = [...(doc.estimateStartOffsets ?? [])];
+    const matchIndex = offsets.findIndex(
+      (row) =>
+        row.orderItemIndex === dto.orderItemIndex &&
+        row.moduleId.equals(moduleId) &&
+        row.workTypeId.equals(workTypeId),
+    );
+
+    if (dto.offsetDays === null) {
+      if (matchIndex >= 0) {
+        offsets.splice(matchIndex, 1);
+      }
+    } else {
+      if (!Number.isInteger(dto.offsetDays) || dto.offsetDays < 0) {
+        throw new BadRequestException('offsetDays must be an integer ≥ 0, or null to clear');
+      }
+      const next: EstimateStartOffset = {
+        orderItemIndex: dto.orderItemIndex,
+        moduleId,
+        workTypeId,
+        offsetDays: dto.offsetDays,
+      };
+      if (matchIndex >= 0) {
+        offsets[matchIndex] = next;
+      } else {
+        offsets.push(next);
+      }
+    }
+
+    doc.estimateStartOffsets = offsets;
     await doc.save();
     return this.findById(id);
   }

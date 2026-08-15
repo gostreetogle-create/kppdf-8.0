@@ -23,6 +23,7 @@ import {
   type DirectModuleRef,
   type ModuleWorkTypeRef,
   type EstimateDayOverrideRef,
+  type EstimateStartOffsetRef,
 } from './gantt-bar.model';
 
 export interface ProductionReadState {
@@ -360,6 +361,7 @@ export class ProductionReadFacade {
       date: order.date,
       items: estimateItems,
       estimateDayOverrides: normalizeEstimateDayOverrides(order.estimateDayOverrides),
+      estimateStartOffsets: normalizeEstimateStartOffsets(order.estimateStartOffsets),
     };
   }
 
@@ -416,6 +418,28 @@ function normalizeEstimateDayOverrides(
       moduleId,
       workTypeId,
       days: Math.floor(days),
+    });
+  }
+  return out;
+}
+
+function normalizeEstimateStartOffsets(
+  rows: Order['estimateStartOffsets'] | null | undefined,
+): EstimateStartOffsetRef[] {
+  if (!rows?.length) return [];
+  const out: EstimateStartOffsetRef[] = [];
+  for (const row of rows) {
+    const moduleId = refId(row.moduleId as string | { _id?: string });
+    const workTypeId = refId(row.workTypeId as string | { _id?: string });
+    if (!moduleId || !workTypeId) continue;
+    if (!Number.isInteger(row.orderItemIndex) || row.orderItemIndex < 0) continue;
+    const offsetDays = typeof row.offsetDays === 'number' ? row.offsetDays : Number(row.offsetDays);
+    if (!Number.isInteger(offsetDays) || offsetDays < 0) continue;
+    out.push({
+      orderItemIndex: row.orderItemIndex,
+      moduleId,
+      workTypeId,
+      offsetDays,
     });
   }
   return out;

@@ -18,6 +18,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
+import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
@@ -112,6 +113,23 @@ export class OrderController {
   @ApiResponse({ status: 404, description: 'Order or line not found' })
   patchEstimateDays(@Param('id') id: string, @Body() dto: PatchEstimateDaysDto) {
     return this.service.patchEstimateDays(id, dto);
+  }
+
+  @Patch(':id/estimate-start')
+  @Permissions('production:write')
+  @AuditAction({ action: 'estimate_start', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({
+    summary: 'Upsert or clear per-bar Gantt start offset (parallel)',
+    description:
+      'Composite key (orderItemIndex, moduleId, workTypeId). offsetDays from visualAnchor; null clears. ' +
+      'Requires production:write (admin * passes).',
+  })
+  @ApiResponse({ status: 200, description: 'Order with updated estimateStartOffsets' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden — missing production:write' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  patchEstimateStart(@Param('id') id: string, @Body() dto: PatchEstimateStartDto) {
+    return this.service.patchEstimateStart(id, dto);
   }
 
   @Patch(':id')

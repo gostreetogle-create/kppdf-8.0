@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T16:40:00Z
+updated_at: 2026-08-15T17:10:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — claiming 316 next)_
+_(empty)_
 
 ## Queue hygiene (not live)
 
@@ -22,25 +22,23 @@ _(empty — claiming 316 next)_
 
 ## DONE / LANDED (recent)
 
+### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
+
+- 314 summary+expand · 315 bottom card · 316 start offsets
+
+### TZ-PRODUCTION-316 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-316.done.md`
+
 ### TZ-PRODUCTION-315 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-315.done.md`
-- Карточка bottom sheet under Gantt
 
 ### TZ-PRODUCTION-314 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-314.done.md`
-- Order summary bar + expand; child plannedDate drag off until 316
 
-### TZ-PRODUCTION-312 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-312.done.md`
-
-### TZ-PRODUCTION-313 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-313.done.md`
-
-### TZ-PRODUCTION-311 — DONE 2026-08-15
+### TZ-PRODUCTION-312 / 313 / 311 / 309 — DONE
 
 ### TZ-AUTH-305 — DONE / CUTOVER 2026-08-15
 
@@ -48,11 +46,11 @@ _(empty — claiming 316 next)_
 
 ## NEXT
 
-1. **WAVE-PRODUCTION-GANTT-TREE** — 316 start offsets (last)
-2. AUTH-307 park — только после PO
-3. App warm deploy — только по «деплой»
+1. AUTH-307 park — только после PO
+2. App warm deploy — только по «деплой»
+3. Chrome page-tools migrate wave — по PO
 
 ## HEAD / queue
 
-- Executor: WAVE-PRODUCTION-GANTT-TREE (314+315 DONE → 316)
-- Deploy app: НЕ — после волны готово предложить деплой
+- Queue empty for executor claim (WAVE-PRODUCTION-GANTT-TREE closed)
+- Deploy app: НЕ — **готово предложить деплой**

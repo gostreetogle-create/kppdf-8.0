@@ -18,6 +18,7 @@ import {
   GanttBarsComponent,
   type GanttEstimateDaysCommit,
   type GanttPlannedDateMoveCommit,
+  type GanttStartOffsetCommit,
 } from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
@@ -116,6 +117,7 @@ const CHROME_OWNER = 'production-cockpit';
               (toggleExpand)="onToggleExpand($event)"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
+              (startOffsetCommit)="onStartOffsetCommit($event)"
             />
           </main>
 
@@ -618,6 +620,33 @@ export class ProductionCockpitPage implements OnInit {
     await this.reloadOrdersKeepingSelection();
   }
 
+  /** TZ-PRODUCTION-316 — child body-drag → per-bar start offset (parallel OK). */
+  protected async onStartOffsetCommit(ev: GanttStartOffsetCommit): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const deltaDays = Math.trunc(ev.deltaDays);
+    if (deltaDays === 0) return;
+    const order = this.orders().find((o) => o._id === ev.orderId);
+    if (!order) return;
+    if (isReadOnlyEstimateStatus(order.status)) return;
+    const { anchor } = resolveVisualAnchor(order, new Date());
+    const newStart = addDays(ev.startDate, deltaDays);
+    const offsetDays = Math.max(0, dayDiffDateOnly(formatDateOnly(anchor), newStart));
+    const res = await firstValueFrom(
+      this.ordersApi.patchEstimateStart(ev.orderId, {
+        orderItemIndex: ev.orderItemIndex,
+        moduleId: ev.moduleId,
+        workTypeId: ev.workTypeId,
+        offsetDays,
+      }),
+    );
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      return;
+    }
+    this.toast.success('Сдвиг вида работ сохранён');
+    await this.reloadOrdersKeepingSelection();
+  }
+
   protected async onRefresh(event?: Event): Promise<void> {
     this.rememberToolButton(event);
     await this.reloadOrdersKeepingSelection();
@@ -745,6 +774,14 @@ function addDays(dateOnly: string, days: number): string {
   const dt = new Date(y!, m! - 1, d!);
   dt.setDate(dt.getDate() + days);
   return formatDateOnly(dt);
+}
+
+function dayDiffDateOnly(a: string, b: string): number {
+  const pa = a.split('-').map(Number);
+  const pb = b.split('-').map(Number);
+  const da = Date.UTC(pa[0]!, pa[1]! - 1, pa[2]!);
+  const db = Date.UTC(pb[0]!, pb[1]! - 1, pb[2]!);
+  return Math.round((db - da) / 86400000);
 }
 
 function minDate(a: string, b: string): string {

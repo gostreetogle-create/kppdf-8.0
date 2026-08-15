@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-316 DONE — per-bar start offsets (parallel)
+**Исполнитель:** gemini-executor-gantt-tree
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed; deploy НЕ
+**Что:** `Order.estimateStartOffsets` + `PATCH …/estimate-start`; child body-drag → offset; overlap OK; summary min/max; summary drag = plannedDate.
+**Gates:** FE tsc+jest **39 PASS**; BE tsc+order.service **28 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-316.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-316-gantt-bar-start-offset.lock`
+**Dep:** 314 @ e5089da6; 315 @ 1f4ed444
+
 ## [2026-08-15] — TZ-PRODUCTION-315 DONE — Карточка bottom sheet
 **Исполнитель:** gemini-executor-gantt-tree
 **Статус:** DONE; deploy НЕ

@@ -42,6 +42,12 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
       workTypeId: Types.ObjectId;
       days: number;
     }>,
+    estimateStartOffsets: [] as Array<{
+      orderItemIndex: number;
+      moduleId: Types.ObjectId;
+      workTypeId: Types.ObjectId;
+      offsetDays: number;
+    }>,
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -569,6 +575,88 @@ describe('OrderService — TZ-ORDERS-301', () => {
           days: 2,
         }),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('patchEstimateStart (TZ-PRODUCTION-316)', () => {
+    const MODULE = new Types.ObjectId();
+    const WORK_TYPE = new Types.ObjectId();
+
+    function orderWithItem(overrides: Record<string, unknown> = {}) {
+      return orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            unitPrice: 0,
+            total: 0,
+          },
+        ],
+        estimateStartOffsets: [],
+        ...overrides,
+      });
+    }
+
+    it('upserts a start offset by composite key', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateStart(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        offsetDays: 3,
+      });
+
+      expect(doc.estimateStartOffsets).toHaveLength(1);
+      expect(doc.estimateStartOffsets[0]).toEqual(
+        expect.objectContaining({
+          orderItemIndex: 0,
+          offsetDays: 3,
+        }),
+      );
+      expect(doc.estimateStartOffsets[0].moduleId.equals(MODULE)).toBe(true);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('clears offset when offsetDays is null', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({
+        estimateStartOffsets: [
+          {
+            orderItemIndex: 0,
+            moduleId: MODULE,
+            workTypeId: WORK_TYPE,
+            offsetDays: 2,
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchEstimateStart(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: MODULE.toString(),
+        workTypeId: WORK_TYPE.toString(),
+        offsetDays: null,
+      });
+
+      expect(doc.estimateStartOffsets).toHaveLength(0);
+    });
+
+    it('rejects negative offsetDays', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem();
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchEstimateStart(doc._id.toString(), {
+          orderItemIndex: 0,
+          moduleId: MODULE.toString(),
+          workTypeId: WORK_TYPE.toString(),
+          offsetDays: -1,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

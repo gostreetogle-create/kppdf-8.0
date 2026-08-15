@@ -76,7 +76,7 @@ flyouts: overlay; center width unchanged
 |--------|--------|
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
-| `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) |
+| `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316) |
 
 ### State (signals)
 
@@ -91,8 +91,9 @@ flyouts: overlay; center width unchanged
 - Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
 - Order-level override: `Order.estimateDayOverrides` via `PATCH /orders/:id/estimate-days` (`production:write`); inspector default writes override; catalog «для всех» remains explicit confirm.
 - **TZ-PRODUCTION-311:** правый край полосы состава (не noTerm / не readOnly) → snap к календарным дням → PATCH override → rebuild. Левый край — OUT.
-- **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы заказа → snap ±N дней → `PATCH plannedDate`; у child body-drag plannedDate **выключен** до 316.
-- **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ (min…max children); ▸ expand → виды работ; `ctx.expandedOrderIds`.
+- **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы → `PATCH plannedDate`.
+- **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется.
+- **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -110,6 +111,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-313** | DONE: card flyout compact (dock superseded by 315) |
 | **TZ-PRODUCTION-314** | DONE: order summary row + expand composition |
 | **TZ-PRODUCTION-315** | DONE: Карточка bottom sheet under Gantt |
+| **TZ-PRODUCTION-316** | DONE: per-bar start offsets (parallel) |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -117,7 +119,6 @@ flyouts: overlay; center width unchanged
 | **TZ-UX-322** | DONE: `PiChromeToolsService` + app-layout render |
 | **TZ-UX-323** | DONE: Gantt tools → chrome rails; local 48px rails removed |
 | TZ-PRODUCTION-308…310 | **BLOCKED BY WAVE-PRODUCTION-STUDIO-CHROME**; не запускать поверх docked layout |
-| TZ-PRODUCTION-316 | READY after 314: per-bar start offsets |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
 
 ### Studio wave readiness

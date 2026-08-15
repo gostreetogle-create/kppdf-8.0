@@ -144,7 +144,7 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 - Default: one **summary** bar per order (span = min child start … max child end).
 - ▸ / Expand on the label row reveals work-type child bars; collapse hides them.
 - `ProductionCockpitContext.expandedOrderIds` is session-scoped (F5 reset OK).
-- Summary body-drag = plannedDate; child right-resize = estimate-days; child body-drag plannedDate off until 316.
+- Summary body-drag = plannedDate; child right-resize = estimate-days; child body-drag = start offset (316, parallel OK).
 
 ## 8. Geometry gate
 

@@ -42,6 +42,17 @@ export interface GanttPlannedDateMoveCommit {
   deltaDays: number;
 }
 
+/** Payload for child body-drag → per-bar start offset (TZ-PRODUCTION-316). */
+export interface GanttStartOffsetCommit {
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  /** Bar startDate before drag (YYYY-MM-DD). */
+  startDate: string;
+  deltaDays: number;
+}
+
 /**
  * Snap right-edge resize delta to calendar days (≥1).
  * Pure helper — unit-tested independently of DOM.
@@ -275,10 +286,24 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   [class.border]="row.bar.noTerm || row.isSummary"
                   [class.border-dashed]="row.bar.noTerm"
                   [class.border-muted-foreground]="row.bar.noTerm || row.isSummary"
-                  [class.ring-1]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
-                  [class.ring-ink]="isResizingBar(row.bar.id) || isMovingOrder(row.bar.orderId)"
-                  [class.cursor-grab]="canMoveBar(row.bar) && !isMovingOrder(row.bar.orderId)"
-                  [class.cursor-grabbing]="isMovingOrder(row.bar.orderId)"
+                  [class.ring-1]="
+                    isResizingBar(row.bar.id) ||
+                    isMovingOrder(row.bar.orderId) ||
+                    isMovingBar(row.bar.id)
+                  "
+                  [class.ring-ink]="
+                    isResizingBar(row.bar.id) ||
+                    isMovingOrder(row.bar.orderId) ||
+                    isMovingBar(row.bar.id)
+                  "
+                  [class.cursor-grab]="
+                    canMoveBar(row.bar) &&
+                    !isMovingOrder(row.bar.orderId) &&
+                    !isMovingBar(row.bar.id)
+                  "
+                  [class.cursor-grabbing]="
+                    isMovingOrder(row.bar.orderId) || isMovingBar(row.bar.id)
+                  "
                   [style.left.px]="displayLeftPx(row)"
                   [style.width.px]="displayWidthPx(row)"
                   [style.background]="barFill(row)"
@@ -354,8 +379,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         data-test="gantt-legend"
       >
         Красная линия = сегодня · сводная полоса = срок заказа · ▸ развернуть состав · цвет = вид
-        работ · правый край состава = дни оценки · тело сводной = сдвиг начала заказа · клик =
-        карточка
+        работ · правый край состава = дни оценки · тело сводной = начало заказа · тело состава =
+        сдвиг вида · клик = карточка
       </div>
     </div>
   `,
@@ -389,6 +414,8 @@ export class GanttBarsComponent {
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
   /** Body-drag on summary → parent PATCHes order plannedDate (whole chain). */
   readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
+  /** Child body-drag → parent PATCHes estimate-start offset. */
+  readonly startOffsetCommit = output<GanttStartOffsetCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
 
@@ -402,9 +429,12 @@ export class GanttBarsComponent {
     pointerId: number;
   } | null>(null);
 
-  /** Live body-drag plannedDate preview (null = idle). */
+  /** Live body-drag preview (null = idle). */
   private readonly moveSession = signal<{
+    mode: 'plannedDate' | 'startOffset';
     orderId: string;
+    barId: string;
+    bar: GanttBar;
     startClientX: number;
     previewDeltaDays: number;
     pointerId: number;
@@ -513,11 +543,9 @@ export class GanttBarsComponent {
   }
 
   /**
-   * TZ-PRODUCTION-314: body-drag plannedDate only on summary.
-   * Child body-drag stays off until TZ-PRODUCTION-316 (start offsets).
+   * Summary → plannedDate; child work bar → start offset (316).
    */
   protected canMoveBar(bar: GanttBar): boolean {
-    if (!isSummaryBar(bar)) return false;
     if (!this.canEdit() || this.readOnly()) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
     return true;
@@ -528,7 +556,13 @@ export class GanttBarsComponent {
   }
 
   protected isMovingOrder(orderId: string): boolean {
-    return this.moveSession()?.orderId === orderId;
+    const s = this.moveSession();
+    return !!s && s.mode === 'plannedDate' && s.orderId === orderId;
+  }
+
+  protected isMovingBar(barId: string): boolean {
+    const s = this.moveSession();
+    return !!s && s.mode === 'startOffset' && s.barId === barId;
   }
 
   protected displayDays(row: { bar: GanttBar; baseSpanDays: number }): number {
@@ -547,7 +581,11 @@ export class GanttBarsComponent {
 
   protected displayLeftPx(row: { bar: GanttBar; leftPx: number }): number {
     const session = this.moveSession();
-    if (session && session.orderId === row.bar.orderId) {
+    if (!session) return row.leftPx;
+    if (session.mode === 'plannedDate' && session.orderId === row.bar.orderId) {
+      return row.leftPx + session.previewDeltaDays * this.pxPerDay();
+    }
+    if (session.mode === 'startOffset' && session.barId === row.bar.id) {
       return row.leftPx + session.previewDeltaDays * this.pxPerDay();
     }
     return row.leftPx;
@@ -583,7 +621,10 @@ export class GanttBarsComponent {
     const target = event.currentTarget as HTMLElement;
     target.setPointerCapture?.(event.pointerId);
     this.moveSession.set({
+      mode: isSummaryBar(bar) ? 'plannedDate' : 'startOffset',
       orderId: bar.orderId,
+      barId: bar.id,
+      bar,
       startClientX: event.clientX,
       previewDeltaDays: 0,
       pointerId: event.pointerId,
@@ -658,7 +699,10 @@ export class GanttBarsComponent {
 
   private finishMove(
     session: {
+      mode: 'plannedDate' | 'startOffset';
       orderId: string;
+      barId: string;
+      bar: GanttBar;
       previewDeltaDays: number;
       pointerId: number;
     },
@@ -669,8 +713,19 @@ export class GanttBarsComponent {
     const deltaDays = session.previewDeltaDays;
     if (deltaDays === 0) return;
     this.suppressNextRowClick = true;
-    this.plannedDateMoveCommit.emit({
-      orderId: session.orderId,
+    if (session.mode === 'plannedDate') {
+      this.plannedDateMoveCommit.emit({
+        orderId: session.orderId,
+        deltaDays,
+      });
+      return;
+    }
+    this.startOffsetCommit.emit({
+      orderId: session.bar.orderId,
+      orderItemIndex: session.bar.orderItemIndex,
+      moduleId: session.bar.moduleId,
+      workTypeId: session.bar.workTypeId,
+      startDate: session.bar.startDate,
       deltaDays,
     });
   }
@@ -757,7 +812,8 @@ export class GanttBarsComponent {
   protected barAriaLabel(b: GanttBar): string {
     const base = this.barTitle(b);
     if (!this.canMoveBar(b)) return base;
-    return `${base} · Сдвинуть начало заказа`;
+    if (isSummaryBar(b)) return `${base} · Сдвинуть начало заказа`;
+    return `${base} · Сдвинуть вид работ`;
   }
 }
 

@@ -340,6 +340,48 @@ describe('gantt-bar.model', () => {
     expect(expanded[2]!.workTypeName).toBe('Покраска');
   });
 
+  it('applies start offsets in parallel without advancing sequential cursor', () => {
+    const input: OrderEstimateInput = {
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      estimateStartOffsets: [
+        { orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt-paint', offsetDays: 0 },
+      ],
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p1',
+          productName: 'Стол',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'm1',
+              moduleName: 'Каркас',
+              sortOrder: 0,
+              workTypes: [
+                { workTypeId: 'wt-weld', workTypeName: 'Сварка', days: 2, sortOrder: 0 },
+                { workTypeId: 'wt-paint', workTypeName: 'Покраска', days: 3, sortOrder: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const bars = buildGanttBars(input, new Date(2026, 7, 6));
+    expect(bars[0]!.startDate).toBe('2026-08-01');
+    expect(bars[0]!.endDate).toBe('2026-08-02');
+    // paint overlaps weld (offset 0 from anchor) — parallel OK
+    expect(bars[1]!.startDate).toBe('2026-08-01');
+    expect(bars[1]!.endDate).toBe('2026-08-03');
+    expect(bars[1]!.startOffsetDays).toBe(0);
+    const summary = buildOrderSummaryBar(bars);
+    expect(summary?.startDate).toBe('2026-08-01');
+    expect(summary?.endDate).toBe('2026-08-03');
+    expect(summary?.days).toBe(3);
+  });
+
   it('rail filter supports priority and date range on plannedDate', () => {
     const orders = [
       {
