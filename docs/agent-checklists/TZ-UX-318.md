@@ -52,7 +52,8 @@ cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 - conflict disclosure: AUTH-305 deploy keys only — no overlap
 - known_limitation: ad-hoc dropdown (no CDK Overlay); More menu mouseleave unchanged
 - implementation_commit: `9bd27f11a644384e48d5c26488d70573cdfda7fc`
-- push: origin/main (follow-up SHA commit after this)
+- docs_commit: `2340979af9d5fa792d179f30153a8ff1cbb19278`
+- push: yes → origin/main (`9bd27f11`..`2340979a`)
 - archive: NOT until Cursor/PO PASS
 
 ## Review handoff
