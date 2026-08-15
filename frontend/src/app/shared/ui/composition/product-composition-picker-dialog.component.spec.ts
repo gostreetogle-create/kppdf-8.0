@@ -7,6 +7,7 @@ import type { DialogRef } from '../dialog/pi-dialog.service';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
 import { MaterialsService } from '../../services/materials.service';
 import { ProductsService } from '../../services/products.service';
+import { PiDialogService } from '../dialog/pi-dialog.service';
 
 describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)', () => {
   let fixture: ComponentFixture<ProductCompositionPickerDialogComponent>;
@@ -27,6 +28,7 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
       providers: [
         { provide: PI_DIALOG_DATA, useValue: { productId: 'p1' } },
         { provide: PI_DIALOG_REF, useValue: ref() },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
         {
           provide: ProductModulesService,
           useValue: {
@@ -102,6 +104,8 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     selectKind: (kind: unknown) => void;
     onSubmit: () => void;
     onCancel: () => void;
+    openCreateForActiveKind: () => void;
+    onCatalogCreated: (kind: string, created: unknown) => void;
   } {
     return fixture.componentInstance as unknown as {
       available: () => unknown[];
@@ -115,6 +119,8 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
       selectKind: (kind: unknown) => void;
       onSubmit: () => void;
       onCancel: () => void;
+      openCreateForActiveKind: () => void;
+      onCatalogCreated: (kind: string, created: unknown) => void;
     };
   }
 
@@ -139,10 +145,79 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     expect(tabs).toEqual(['Изделие', 'Модуль', 'Деталь']);
   });
 
-  it('uses overflow-select for catalog pick', () => {
+  it('uses overflow-select for catalog pick and exposes Создать', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-test="composition-picker-select"]')).toBeTruthy();
     expect(el.querySelector('[data-test="pi-overflow-select-trigger"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="composition-picker-create"]')?.textContent).toContain(
+      'Создать',
+    );
+  });
+
+  it('adds a newly created row for every tab and preserves quantity', () => {
+    const component = instance();
+    component.quantity.set('2.5');
+
+    component.onCatalogCreated('product', {
+      _id: 'p-new',
+      name: 'Новое изделие',
+      kind: 'good',
+      unit: 'шт',
+    });
+    expect(component.selectedId()).toBe('p-new');
+    expect(component.quantity()).toBe('2.5');
+    expect(component.available()).toContainEqual({
+      id: 'p-new',
+      label: 'Новое изделие · без SKU',
+    });
+
+    component.selectKind('module' as never);
+    component.quantity.set('3');
+    component.onCatalogCreated('module', {
+      _id: 'm-new',
+      name: 'Новый модуль',
+      article: 'M-1',
+    });
+    expect(component.selectedId()).toBe('m-new');
+    expect(component.quantity()).toBe('3');
+    expect(component.available()).toContainEqual({
+      id: 'm-new',
+      label: 'Новый модуль · M-1',
+    });
+
+    component.selectKind('material' as never);
+    component.quantity.set('4');
+    component.onCatalogCreated('material', {
+      _id: 'mat-new',
+      name: 'Новая деталь',
+      materialKind: 'part',
+    });
+    expect(component.selectedId()).toBe('mat-new');
+    expect(component.quantity()).toBe('4');
+    expect(component.available()).toContainEqual({
+      id: 'mat-new',
+      label: 'Новая деталь · деталь',
+    });
+  });
+
+  it('opens the matching create flow for each active tab', async () => {
+    const component = instance();
+    const open = TestBed.inject(PiDialogService).open as jest.Mock;
+    open.mockReturnValue(ref());
+
+    component.openCreateForActiveKind();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    component.selectKind('module' as never);
+    component.openCreateForActiveKind();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    component.selectKind('material' as never);
+    component.openCreateForActiveKind();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(open).toHaveBeenCalledTimes(3);
+    expect(open.mock.calls[0][1].data).toEqual({ entity: 'product', size: 'M' });
+    expect(open.mock.calls[1][1].data).toEqual({ entity: 'module', size: 'M' });
+    expect(open.mock.calls[2][1].data).toBeNull();
   });
 
   it('labels price field as Цена в составе', () => {
@@ -208,6 +283,7 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
       providers: [
         { provide: PI_DIALOG_DATA, useValue: { productId: 'p1', onAdded } },
         { provide: PI_DIALOG_REF, useValue: ref() },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
         {
           provide: ProductModulesService,
           useValue: {
@@ -289,6 +365,7 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
       providers: [
         { provide: PI_DIALOG_DATA, useValue: { productId: 'p1', onAdded } },
         { provide: PI_DIALOG_REF, useValue: ref() },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
         {
           provide: ProductModulesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
@@ -361,6 +438,7 @@ describe('ProductCompositionPickerDialogComponent restrictToModule (TZ-UX-COMPOS
       providers: [
         { provide: PI_DIALOG_DATA, useValue: { productId: 'm1', restrictToModule: true } },
         { provide: PI_DIALOG_REF, useValue: ref() },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
         {
           provide: ProductModulesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },

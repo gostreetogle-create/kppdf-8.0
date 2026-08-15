@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-CATALOG-340 DONE — Composition picker «Создать» → QuickCreate
+**Исполнитель:** Buffy
+**Статус:** DONE; deploy НЕ
+**Что:** picker рядом с «Что добавить» открывает product/module QuickCreate или material create form по активной вкладке; успешный результат сразу добавляется в options и выбирается без сброса количества; BOM write path не менялся.
+**Gates:** FE tsc PASS; Jest picker + BOM panel + QuickCreate 3 suites / 38 tests PASS; lint PASS с 18 существующими архитектурными предупреждениями; owned Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-340.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-340-composition-picker-create.lock`
+**Dep:** none
+
 ## [2026-08-15] — TZ-ORDERS-337 DONE — Composition-tree pencil + list forest
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

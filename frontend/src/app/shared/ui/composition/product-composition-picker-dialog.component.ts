@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ButtonComponent } from '../button/button.component';
 import { PiDialogComponent } from '../dialog/pi-dialog.component';
-import { DialogRef } from '../dialog/pi-dialog.service';
+import { DialogRef, PiDialogService } from '../dialog/pi-dialog.service';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../dialog/dialog.tokens';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 import { Product, ProductsService } from '../../services/products.service';
@@ -17,6 +25,7 @@ import {
 } from '../../services/pi-dictionary-labels.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { CatalogKindMarkerComponent } from '../catalog/catalog-kind-marker.component';
+import { onDialogCloseOnce } from '../../util/on-dialog-close-once';
 
 export type ProductCompositionPickerResult =
   | { lineType: 'module'; refId: string; quantity: number }
@@ -146,12 +155,23 @@ export interface ProductCompositionPickerData {
                 ariaLabel="Что добавить"
                 dataTest="composition-picker-select"
               />
-              <p class="text-[11px] text-muted-foreground m-0 mt-1.5 tabular-nums">
-                {{ available().length }} в списке
-                @if (query().trim()) {
-                  <span>· фильтр</span>
-                }
-              </p>
+              <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+                <p class="text-[11px] text-muted-foreground m-0 tabular-nums">
+                  {{ available().length }} в списке
+                  @if (query().trim()) {
+                    <span>· фильтр</span>
+                  }
+                </p>
+                <app-pi-button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  (click)="openCreateForActiveKind()"
+                  data-test="composition-picker-create"
+                >
+                  Создать
+                </app-pi-button>
+              </div>
               <label class="block max-w-[10rem] mt-3">
                 <span class="eyebrow block mb-1.5">Кол-во</span>
                 <input
@@ -233,6 +253,9 @@ export class ProductCompositionPickerDialogComponent {
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly materialsSvc = inject(MaterialsService);
   private readonly productsSvc = inject(ProductsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   protected readonly materialKindLabels = signal<Record<string, string>>(
     Object.fromEntries(
@@ -373,6 +396,73 @@ export class ProductCompositionPickerDialogComponent {
     this.validationError.set(null);
   }
 
+  /** Open the catalog create flow for the currently selected picker tab. */
+  protected openCreateForActiveKind(): void {
+    const kind = this.activeKind();
+    this.validationError.set(null);
+
+    if (kind === 'material') {
+      // Material has a richer form rather than the product/module profile QuickCreate.
+      void import('../../../pages/materials/material-form-dialog.component')
+        .then(({ MaterialFormDialogComponent }) => {
+          const ref = this.dialog.open(MaterialFormDialogComponent, {
+            data: null,
+            width: 'lg',
+            parentDestroyRef: this.destroyRef,
+          });
+          onDialogCloseOnce(ref, this.injector, (created) => {
+            this.onCatalogCreated(kind, created);
+          });
+        })
+        .catch(() => {
+          this.validationError.set('Не удалось открыть создание материала.');
+        });
+      return;
+    }
+
+    // Keep QuickCreate dynamic: QuickCreate itself embeds ProductBomPanel, which embeds
+    // this picker.
+    void import('../quick-create/quick-create-dialog.component')
+      .then(({ QuickCreateDialogComponent }) => {
+        const ref = this.dialog.open(QuickCreateDialogComponent, {
+          data: { entity: kind, size: 'M' },
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce(ref, this.injector, (created) => {
+          this.onCatalogCreated(kind, created);
+        });
+      })
+      .catch(() => {
+        this.validationError.set('Не удалось открыть быстрое создание.');
+      });
+  }
+
+  /** Add the newly created catalog row to the active options and preserve quantity. */
+  private onCatalogCreated(kind: PickerKind, created: unknown): void {
+    if (!isCreatedCatalogItem(created)) return;
+
+    if (kind === 'product') {
+      const product = created as Product;
+      this.products.update((items) => [
+        ...items.filter((item) => item._id !== product._id),
+        product,
+      ]);
+    } else if (kind === 'module') {
+      const module = created as ProductModule;
+      this.modules.update((items) => [...items.filter((item) => item._id !== module._id), module]);
+    } else {
+      const material = created as Material;
+      this.materials.update((items) => [
+        ...items.filter((item) => item._id !== material._id),
+        material,
+      ]);
+    }
+
+    this.selectedId.set(created._id);
+    this.validationError.set(null);
+  }
+
   /** Prefill «Цена в составе» from child costPrice → listPrice (D3). Does not PATCH child. */
   protected onSelectItem(id: string): void {
     this.selectedId.set(id);
@@ -483,6 +573,16 @@ export class ProductCompositionPickerDialogComponent {
 }
 
 /** D3: costPrice → listPrice → empty. Never writes to child card. */
+function isCreatedCatalogItem(value: unknown): value is { _id: string; name: string } {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as { _id?: unknown; name?: unknown };
+  return (
+    typeof candidate._id === 'string' &&
+    candidate._id.length > 0 &&
+    typeof candidate.name === 'string'
+  );
+}
+
 export function defaultCompositionPrice(
   product: Pick<Product, 'costPrice' | 'listPrice'> | undefined,
 ): string {

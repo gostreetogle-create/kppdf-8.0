@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-CATALOG-340 DONE: Composition picker «Создать» → QuickCreate
+**Статус:** DONE; deploy НЕ
+**Что:** RU-кнопка «Создать» в picker; product/module → QuickCreate, material/detail → material create form; созданная строка сразу выбрана, количество сохраняется; BOM API не менялся.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-340.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-340-composition-picker-create.lock`
+**Gates:** FE tsc PASS; Jest 3 suites / 38 tests PASS; lint PASS с 18 существующими warnings; owned Prettier PASS.
+
+
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 

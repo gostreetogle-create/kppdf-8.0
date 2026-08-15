@@ -5,16 +5,16 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T00:05:00+03:00
+updated_at: 2026-08-16T00:08:16+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-ORDERS-337 DONE)_
+_(empty — TZ-CATALOG-340 DONE; archive + lock created)_
 
 ## NEXT (PO paste prompt)
 
-_(empty — 337 DONE; queue empty)_
+- `TZ-UI-PHOTO-342` — paste handler + RU three-way hint.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -117,5 +117,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty**; TZ-ORDERS-337 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **342 → 341 → 343**; TZ-CATALOG-340 DONE; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой
