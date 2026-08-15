@@ -82,4 +82,4 @@ UX-изменения. Coordinator — единственная точка су�
 - [x] archive + lock + progress + удалить `_active`
 - [x] Status = DONE
 - closed_at: 2026-08-16T01:28:00+03:00
-- implementation commit: pending until owned files are staged and reviewed
+- implementation commit: `6490fe80`

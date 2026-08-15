@@ -4,6 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-16T01:28:00+03:00
 closed_by: Buffy
+implementation_commit: `6490fe80`
 TZ: TZ-FRONTEND-304
 SCORE: 100/100 scoped acceptance; parent P1 remains PARTIAL where API ownership is intentionally a successor
 
