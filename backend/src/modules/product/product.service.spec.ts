@@ -17,6 +17,45 @@ function computeIsComplex(composition: Array<{ lineType: string }>): boolean {
   return composition.some((line) => line.lineType === 'product');
 }
 
+describe('TZ-MIG-306 — findAll categoryId string|ObjectId match', () => {
+  function buildService(model: Record<string, unknown>) {
+    return new ProductService(
+      model as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+  }
+
+  function listChain(items: unknown[]) {
+    const lean = jest.fn(() => ({ exec: jest.fn().mockResolvedValue(items) }));
+    const skip = jest.fn(() => ({ limit: jest.fn(() => ({ lean })) }));
+    const sort = jest.fn(() => ({ skip }));
+    const populate3 = jest.fn(() => ({ sort }));
+    const populate2 = jest.fn(() => ({ populate: populate3 }));
+    const populate1 = jest.fn(() => ({ populate: populate2 }));
+    return { find: jest.fn(() => ({ populate: populate1 })), countDocuments: jest.fn(() => ({ exec: jest.fn().mockResolvedValue(items.length) })) };
+  }
+
+  it('filters with $in of ObjectId and string so KP3 string categoryId matches', async () => {
+    const categoryId = new Types.ObjectId().toString();
+    const model = listChain([{ _id: new Types.ObjectId(), name: 'Скамья', sku: 'B-1' }]);
+    const service = buildService(model);
+    const result = await service.findAll({ categoryId, page: 1, limit: 10 });
+    expect(result.total).toBe(1);
+    expect(model.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deletedAt: null,
+        categoryId: { $in: [new Types.ObjectId(categoryId), categoryId] },
+      }),
+    );
+  });
+});
+
 describe('TZ-CATALOG-338 — Product article contract', () => {
   function buildService(model: { create: jest.Mock }) {
     return new ProductService(

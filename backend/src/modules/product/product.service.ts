@@ -53,7 +53,15 @@ export class ProductService {
     if (scope.$or) clauses.push(scope);
     if (q.search) { const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const re = new RegExp(escaped, 'i'); clauses.push({ $or: [{ name: re }, { sku: re }] }); }
     if (clauses.length > 0) filter.$and = clauses;
-    if (q.categoryId) filter.categoryId = new Types.ObjectId(q.categoryId); if (q.status) filter.status = q.status; if (typeof q.isActive === 'boolean') filter.isActive = q.isActive;
+    // KP3/migrate rows may store categoryId as string; ObjectId-only equality → total:0.
+    // Match both BSON ObjectId and string forms (TZ-MIG-306).
+    if (q.categoryId) {
+      filter.categoryId = Types.ObjectId.isValid(q.categoryId)
+        ? { $in: [new Types.ObjectId(q.categoryId), q.categoryId] }
+        : q.categoryId;
+    }
+    if (q.status) filter.status = q.status;
+    if (typeof q.isActive === 'boolean') filter.isActive = q.isActive;
     const sortField = q.sortBy ?? 'createdAt'; const sortOrder = q.sortOrder === 'asc' ? 1 : -1;
     const [rawItems, total] = await Promise.all([this.model.find(filter).populate('categoryId').populate('photoIds').populate('productModuleIds').sort({ [sortField]: sortOrder }).skip((page - 1) * limit).limit(limit).lean().exec(), this.model.countDocuments(filter).exec()]);
     const items = rawItems.map((item) => ({ ...item, name: item.name?.trim() || item.sku })) as Record<string, unknown>[];

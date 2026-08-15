@@ -166,7 +166,24 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         },
         {
           provide: CategoriesService,
-          useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
+          useValue: {
+            list: jest.fn().mockReturnValue(
+              of({
+                ok: true,
+                data: [
+                  {
+                    _id: 'cat-trainers',
+                    name: 'Тренажёры',
+                    slug: 'trenazhery',
+                    type: 'product',
+                    skuPrefix: 'TR',
+                    sortOrder: 0,
+                    isActive: true,
+                  },
+                ],
+              }),
+            ),
+          },
         },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: toastSpy },
@@ -420,6 +437,27 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(keys).not.toContain('status');
     expect(keys).not.toContain('stockQty');
     expect(keys).not.toContain('kind');
+  });
+
+  it('category filter reloads list with ?categoryId=', async () => {
+    const fixture = await renderPage();
+    const select = fixture.nativeElement.querySelector(
+      '[data-test="category-filter"]',
+    ) as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    select.value = 'cat-trainers';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    fixture.detectChanges();
+
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === listUrl && r.method === 'GET' && r.params.get('categoryId') === 'cat-trainers',
+    );
+    expect(req.request.params.get('categoryId')).toBe('cat-trainers');
+    req.flush({ items: [PRODUCTS[0]], total: 1, page: 1, limit: 10 });
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
   });
 
   it('filters rail toggles open as overlay', async () => {
