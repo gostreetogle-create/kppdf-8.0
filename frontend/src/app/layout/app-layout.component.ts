@@ -430,6 +430,43 @@ export function matchActiveCategoryId(
           </div>
         </header>
 
+        <!--
+          TZ-UX-321: universal left chrome rail — ←→ stacked inside the panel,
+          aligned with the KPPDF brand vertical (pi-page-frame content start).
+          Visible only when gutters exist (min-width 1680px).
+        -->
+        <aside
+          class="app-chrome-rail-left"
+          data-test="app-chrome-rail-left"
+          aria-label="Левая панель навигации приложения"
+          aria-orientation="vertical"
+        >
+          <button
+            type="button"
+            class="app-nav-rail-button pi-focus-ring"
+            data-test="app-nav-back"
+            [disabled]="!appHistory.canGoBack()"
+            [attr.aria-disabled]="appHistory.canGoBack() ? null : 'true'"
+            (click)="appHistory.back()"
+            aria-label="Назад"
+            title="Назад"
+          >
+            <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="app-nav-rail-button pi-focus-ring"
+            data-test="app-nav-forward"
+            [disabled]="!appHistory.canGoForward()"
+            [attr.aria-disabled]="appHistory.canGoForward() ? null : 'true'"
+            (click)="appHistory.forward()"
+            aria-label="Вперёд"
+            title="Вперёд"
+          >
+            <lucide-angular [img]="forwardIcon" [size]="13" aria-hidden="true" />
+          </button>
+        </aside>
+
         <main
           class="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto"
           [class.pt-page-y]="!denseMain()"
@@ -449,54 +486,42 @@ export function matchActiveCategoryId(
           </footer>
         }
       </div>
-
-      <!--
-        TZ-UX-317 + TZ-UX-320: системные ← → в полях (gutters) app shell —
-        в вертикальных полях слева/справа от белой колонки контента, на
-        линии бокового отступа шапки (left/right: 64px, см. стили ниже).
-        Видны только на широких экранах (min-width 1680px: поле ≥ ~140px —
-        кнопка не налезает на max-width контент и не перекрывает studio
-        rails / builder palette). ← = browser history back, → = forward;
-        без same-app истории кнопки disabled (не прыгают на fallback раздела).
-      -->
-      <button
-        type="button"
-        class="app-nav-gutter app-nav-gutter--back pi-focus-ring"
-        data-test="app-nav-back"
-        [disabled]="!appHistory.canGoBack()"
-        [attr.aria-disabled]="appHistory.canGoBack() ? null : 'true'"
-        (click)="appHistory.back()"
-        aria-label="Назад"
-        title="Назад"
-      >
-        <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
-      </button>
-      <button
-        type="button"
-        class="app-nav-gutter app-nav-gutter--forward pi-focus-ring"
-        data-test="app-nav-forward"
-        [disabled]="!appHistory.canGoForward()"
-        [attr.aria-disabled]="appHistory.canGoForward() ? null : 'true'"
-        (click)="appHistory.forward()"
-        aria-label="Вперёд"
-        title="Вперёд"
-      >
-        <lucide-angular [img]="forwardIcon" [size]="13" aria-hidden="true" />
-      </button>
     </div>
   `,
   styles: `
-    .app-nav-gutter {
-      /* В полях — вне max-width колонки (pi-page-frame 1400px). */
-      position: fixed;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 20; /* под шапкой (z-30) и под CDK-оверлеями; выше контента */
+    /* TZ-UX-321: narrow universal left chrome rail under the header. */
+    .app-chrome-rail-left {
+      position: absolute;
+      top: var(--header-h);
+      bottom: 0;
+      z-index: 20;
       display: none;
+      box-sizing: border-box;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 64px;
+      padding-top: 16px;
+      /* Match pi-page-frame content-start = brand vertical (KPPDF). */
+      left: var(--space-page-x);
+    }
+    @media (min-width: 640px) {
+      .app-chrome-rail-left {
+        left: 40px;
+      }
+    }
+    @media (min-width: 1024px) {
+      .app-chrome-rail-left {
+        left: 64px;
+      }
+    }
+    .app-nav-rail-button {
+      display: inline-flex;
+      flex: 0 0 32px;
       align-items: center;
       justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       padding: 0;
       background: var(--color-paper-raised);
       color: var(--color-ink);
@@ -505,37 +530,16 @@ export function matchActiveCategoryId(
       cursor: pointer;
       transition: background-color 120ms ease;
     }
-
-    .app-nav-gutter--back {
-      /* TZ-UX-320: ← в левом поле, на линии бокового отступа шапки.
-         Шапка (pi-edge-bleed) на ≥1024px имеет padding-inline: 64px и
-         прижата к краю окна — left: 64px = та же вертикаль, что начало
-         контента шапки. На ≥1680px поле ≥140px: зазор до колонки ≥40px
-         и ≥64px от края окна (канон ≥8px оба). */
-      left: 64px;
-    }
-
-    .app-nav-gutter--forward {
-      /* TZ-UX-320: зеркально — правый край кнопки на линии правого
-         отступа шапки. */
-      right: 64px;
-    }
-
-    .app-nav-gutter:hover:not(:disabled) {
+    .app-nav-rail-button:hover:not(:disabled) {
       background: var(--color-paper-2);
     }
-
-    .app-nav-gutter:disabled {
+    .app-nav-rail-button:disabled {
       opacity: 0.35;
       cursor: default;
     }
-
-    /* Поля появляются только на широких экранах: при viewport ≥1680px
-       gutter = (vw − 1400) / 2 ≥ 140px — кнопка (64 + 36 + зазор ≥40px)
-       целиком в поле, на линии отступа шапки. */
     @media (min-width: 1680px) {
-      .app-nav-gutter {
-        display: inline-flex;
+      .app-chrome-rail-left {
+        display: flex;
       }
     }
   `,

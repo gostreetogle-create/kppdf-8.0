@@ -1,0 +1,15 @@
+{
+  "task": "TZ-UX-321",
+  "viewport": "1920x1080",
+  "url": "http://127.0.0.1:4210/modules",
+  "screenshot": "D:\\kppdf-8.0\\.worktrees\\TZ-UX-321\\reports\\TZ-UX-321-chrome-rail-smoke-1920.png",
+  "eval": {
+    "ok": true,
+    "railWidth": 64,
+    "railLeft": 64,
+    "display": "flex",
+    "position": "absolute"
+  },
+  "pass": true,
+  "selfScore": 98
+}
