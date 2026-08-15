@@ -1,7 +1,7 @@
 # TZ-CATALOG-373 checklist
 
-> Status: **READY FOR REVIEW** (gates green; archive после Cursor/PO PASS)
-> Marker: `tasks/_active/TZ-CATALOG-373.md`
+> Status: **DONE**
+> Archive: `tasks/_archive/2026-08/TZ-CATALOG-373.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -26,7 +26,7 @@
 - [x] Kind filter в toolbar **и** rail пишут в один signal → `?materialKind=` (316 не регрессирует; live: rail→toolbar sync + фильтр сработал)
 - [x] `pi-materials-view-mode` переживает F5 (live reload)
 - [x] Gates: FE tsc PASS + materials.page Jest PASS (18/18)
-- [ ] Archive после Executor report (auto) + PASS (ждёт Cursor/PO PASS)
+- [x] Archive после Executor report (auto) + PASS
 
 ## Integrity slot (до READY / archive)
 
@@ -53,10 +53,11 @@
 
 - [x] READY FOR REVIEW (checklist + report; Cursor/PO review ожидается — TZ-373 требует PASS перед archive)
 - [x] Cursor Verdict: **PASS** (2026-08-15) — AC OK; CLOSEOUT_NEEDS_COMMIT then archive
-- [ ] Archive after commit+push + closeout
+- [x] Archive after commit+push + closeout
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T11:25:00Z
+- implementation_sha: `528e3cf9fb21eb283b076893e627097a3736ffea`

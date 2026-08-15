@@ -24,14 +24,24 @@ main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
 
 ## DONE / LANDED (recent)
 
-### TZ-ORDERS-HUB-302 — DONE / LANDED
+### TZ-CATALOG-373 ? DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-CATALOG-373.md`
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-373.done.md`
+- Lock: `.mimocode/locks/TZ-CATALOG-373-materials-list-vitrine-parity.lock`
+- Implementation: `528e3cf9fb21eb283b076893e627097a3736ffea`
+- Closeout: TBD
+- State: Cursor PASS; materials list/grid + filters-rail parity products; archive/lock/checklist DONE; active marker removed; deploy ??.
+- vs CATALOG-372: parallel OK (modules untouched).
+
+### TZ-ORDERS-HUB-302 ? DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-ORDERS-HUB-302.md`
 - Archive: `tasks/_archive/2026-08/TZ-ORDERS-HUB-302.done.md`
 - Lock: `.mimocode/locks/TZ-ORDERS-HUB-302-orders-expand-columns.lock`
 - Implementation: `71446d6bfb37434913450449678ce4b78e26be37`
 - Closeout: `a1da7a2b` (fix foreign WIP); sync `20f0db7e`
-- State: Cursor functional PASS 98/100; layout hunks dropped (UX-320 LANDED); deploy НЕ.
+- State: Cursor functional PASS 98/100; layout hunks dropped (UX-320 LANDED); deploy ??.
 - Next: **TZ-ORDERS-HUB-303 READY** (supply/production/docs expand).
 
 ### TZ-UX-320 ? DONE / LANDED
@@ -128,7 +138,7 @@ main_head: `528e3cf9fb21eb283b076893e627097a3736ffea`
 
 ## READY / ORDER
 
-1. **TZ-ORDERS-HUB-303** — READY (unblocked by HUB-302)
+1. **TZ-ORDERS-HUB-303** ? READY (unblocked by HUB-302)
 2. AUTH-305 rollout ? only after explicit `??????`; outside this predeploy finish.
 3. AUTH-307 cleanup ? only after PASS cutover/rollback evidence.
 4. Successors (new TZ only): composition boundary, group ACL; Jest materials/form-profiles debt is closed by TZ-FRONTEND-303.
@@ -138,7 +148,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
-- ORDERS-HUB-302 orders expand + Deal/Composition — DONE; Cursor PASS 98/100; HUB-303 unblocked; deploy НЕ.
+- ORDERS-HUB-302 orders expand + Deal/Composition ? DONE; Cursor PASS 98/100; HUB-303 unblocked; deploy ??.
 - SALES-378 multipage bg + full next pages ? DONE; Cursor PASS; archive/lock landed; deploy ??; SALES-377 still PARK in backlog.
 - SALES-376 geometry-aware KP page split ? DONE; Cursor PASS; archive/lock landed; deploy ??; SALES-377 still PARK in backlog.
 - SALES-375 remove products rail draft-lines ? DONE; Cursor PASS; archive/lock landed; deploy ??.
