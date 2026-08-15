@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T05:28:31Z
-main_head: `fc065b7e`
+updated_at: 2026-08-15T05:35:00Z
+main_head: `9bd27f11`
 
 ## ACTIVE
 
@@ -16,7 +16,7 @@ main_head: `fc065b7e`
 - Checklist: `docs/agent-checklists/TZ-UX-318.md`
 - Spec: `tasks/TZ-UX-318-kp-columns-checkbox-menu-stay-open.md`
 - Owner: Buffy (Cursor Agent); claimed_at: 2026-08-15T05:28:31Z
-- State: stay-open implemented; tsc PASS; awaiting Cursor/PO review (не archive).
+- State: stay-open implemented; tsc PASS; implementation `9bd27f11`; awaiting Cursor/PO review (не archive).
 - Team Room: claim unavailable (unknown task).
 - Conflict keys: `proposal-create-table-editor.component.ts`, `docs/pages/ui-overflow-select.md`, `docs/pages/proposals-create.page.md`, `docs/pages/PAGE-TZ-INDEX.md`.
 
