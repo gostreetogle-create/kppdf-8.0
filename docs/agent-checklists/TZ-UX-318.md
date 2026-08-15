@@ -1,9 +1,10 @@
 # TZ-UX-318 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-UX-318.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-UX-318.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 > READY FOR REVIEW date: 2026-08-15T05:35:00Z
+> closed_at: 2026-08-15T05:32:00Z
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -61,8 +62,14 @@ cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
 - [x] READY FOR REVIEW
 - [x] **Не** archive до Cursor Verdict PASS (TZ требует review)
 
+## Cursor verdict (2026-08-15)
+
+- Verdict: **PASS**
+- Cross-check: `9bd27f11` impl + page docs; browser smoke «Колонки» ≥2 toggles stay-open → outside closes
+- Next: Buffy closeout (archive + lock + progress + remove `_active`)
+
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T05:32:00Z

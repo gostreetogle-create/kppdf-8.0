@@ -1,0 +1,14 @@
+task: TZ-UX-318
+status: DONE
+closed_at: 2026-08-15T05:32:00Z
+implementation_sha: 9bd27f11a644384e48d5c26488d70573cdfda7fc
+docs_sha: 2340979af9d5fa792d179f30153a8ff1cbb19278
+confirm_sha: d4426510e26525315b321e982ed6e9cf3b686b6d
+protected_files:
+  - frontend/src/app/features/proposals/proposal-create/proposal-create-table-editor.component.ts
+  - docs/pages/ui-overflow-select.md
+  - docs/pages/proposals-create.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+behavior: columns checkbox menu stay-open across toggles; close only outside/Escape/trigger/More/scroll
+cursor_verdict: PASS
+production: not executed

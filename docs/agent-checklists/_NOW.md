@@ -5,20 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T05:40:00Z
-main_head: `2340979a`
+updated_at: 2026-08-15T05:33:00Z
+main_head: `dba9fe09`
 
 ## ACTIVE
-
-### TZ-UX-318 — READY FOR REVIEW
-
-- Marker: `tasks/_active/TZ-UX-318.md`
-- Checklist: `docs/agent-checklists/TZ-UX-318.md`
-- Spec: `tasks/TZ-UX-318-kp-columns-checkbox-menu-stay-open.md`
-- Owner: Buffy (Cursor Agent); claimed_at: 2026-08-15T05:28:31Z
-- State: stay-open implemented; tsc PASS; implementation `9bd27f11`; awaiting Cursor/PO review (не archive).
-- Team Room: claim unavailable (unknown task).
-- Conflict keys: `proposal-create-table-editor.component.ts`, `docs/pages/ui-overflow-select.md`, `docs/pages/proposals-create.page.md`, `docs/pages/PAGE-TZ-INDEX.md`.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -59,6 +49,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- UX-318 KP columns checkbox menu stay-open — DONE; Cursor PASS; archive/lock landed; deploy НЕ.
 - AUTH-306 hidden owner — DONE/pushed.
 - AUTH-303 device enrollment backend + `sessionKind=device` — DONE/pushed.
 - AUTH-304 device enrollment UI — DONE/pushed; closeout lock corrected.

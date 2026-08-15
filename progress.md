@@ -1,6 +1,19 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-UX-318 DONE — KP columns checkbox menu stay-open
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend UX; deploy НЕ
+**Что:** Меню «Колонки» на `/proposals/create` остаётся открытым при нескольких чекбоксах подряд (убраны mouseleave + close-on-toggle). Закрытие только outside-click / Escape / toggle триггера / «Ещё» / scroll table wrap. RU-канон stay-open для checkbox multi-panels в `ui-overflow-select.md`.
+**Gates:** frontend tsc PASS; Cursor Verdict PASS (browser smoke ≥2 toggles stay-open → outside closes).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-318.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-318.md`
+**Lock:** `.mimocode/locks/TZ-UX-318-kp-columns-checkbox-menu-stay-open.lock`
+**Implementation SHA:** `9bd27f11a644384e48d5c26488d70573cdfda7fc`
+**Docs SHA:** `2340979af9d5fa792d179f30153a8ff1cbb19278`
+**Confirm SHA:** `d4426510e26525315b321e982ed6e9cf3b686b6d`
+**Known limit:** ad-hoc dropdown (no CDK Overlay); More menu mouseleave unchanged.
+
 ## [2026-08-14] — TZ-SALES-372 DONE — snapshot edit и решение каталога
 **Исполнитель:** Buffy / predeploy executor
 **Статус:** DONE; frontend + backend contract; deploy НЕ
