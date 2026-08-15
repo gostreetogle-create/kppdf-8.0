@@ -490,6 +490,199 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
   return bars;
 }
 
+/** Deep-enough snapshot so Gantt drag revert restores orders + bars. */
+export function cloneGanttState<TOrder>(
+  bars: readonly GanttBar[],
+  orders: readonly TOrder[],
+): { bars: GanttBar[]; orders: TOrder[] } {
+  return {
+    bars: bars.map((bar) => ({ ...bar })),
+    orders: orders.map((order) => JSON.parse(JSON.stringify(order)) as TOrder),
+  };
+}
+
+function shiftDateOnly(date: string, days: number): string {
+  const parsed = parseDateOnly(date);
+  if (!parsed) return date;
+  return formatDateOnly(addCalendarDays(parsed, days));
+}
+
+function matchesEstimateBar(
+  bar: GanttBar,
+  orderId: string,
+  orderItemIndex: number,
+  moduleId: string,
+  workTypeId: string,
+): boolean {
+  return (
+    !isSummaryBar(bar) &&
+    bar.orderId === orderId &&
+    bar.orderItemIndex === orderItemIndex &&
+    bar.moduleId === moduleId &&
+    bar.workTypeId === workTypeId
+  );
+}
+
+function withDays(bar: GanttBar, days: number): GanttBar {
+  const start = parseDateOnly(bar.startDate);
+  const end = start ? formatDateOnly(addCalendarDays(start, days - 1)) : bar.endDate;
+  return { ...bar, days, noTerm: false, endDate: end };
+}
+
+/** Rebuild summary rows from current children (no-op when list has no summaries). */
+function rebuildSummaries(bars: GanttBar[]): GanttBar[] {
+  if (!bars.some(isSummaryBar)) return bars;
+  const summaryByOrder = new Map<string, GanttBar>();
+  for (const group of groupBarsByOrder(bars)) {
+    const summary = buildOrderSummaryBar(group.children);
+    if (summary) summaryByOrder.set(group.orderId, summary);
+  }
+  return bars.map((bar) => {
+    if (!isSummaryBar(bar)) return bar;
+    return summaryByOrder.get(bar.orderId) ?? bar;
+  });
+}
+
+export interface OptimisticEstimateDaysCommit {
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  days: number;
+}
+
+export function applyOptimisticEstimateDays<
+  TOrder extends { _id: string; estimateDayOverrides?: EstimateDayOverrideRef[] | null },
+>(
+  bars: readonly GanttBar[],
+  orders: readonly TOrder[],
+  commit: OptimisticEstimateDaysCommit,
+): { bars: GanttBar[]; orders: TOrder[] } {
+  const days = Math.max(1, Math.floor(commit.days));
+  const nextBars = rebuildSummaries(
+    bars.map((bar) => {
+      const hit = matchesEstimateBar(
+        bar,
+        commit.orderId,
+        commit.orderItemIndex,
+        commit.moduleId,
+        commit.workTypeId,
+      );
+      return hit ? withDays(bar, days) : { ...bar };
+    }),
+  );
+  const nextOrders = orders.map((order) => {
+    if (order._id !== commit.orderId) return order;
+    const overrides = [...(order.estimateDayOverrides ?? [])];
+    const idx = overrides.findIndex(
+      (row) =>
+        row.orderItemIndex === commit.orderItemIndex &&
+        row.moduleId === commit.moduleId &&
+        row.workTypeId === commit.workTypeId,
+    );
+    const row: EstimateDayOverrideRef = {
+      orderItemIndex: commit.orderItemIndex,
+      moduleId: commit.moduleId,
+      workTypeId: commit.workTypeId,
+      days,
+    };
+    if (idx >= 0) overrides[idx] = row;
+    else overrides.push(row);
+    return { ...order, estimateDayOverrides: overrides };
+  });
+  return { bars: nextBars, orders: nextOrders };
+}
+
+export function applyOptimisticPlannedDateShift<
+  TOrder extends { _id: string; plannedDate?: string | null; date?: string | null },
+>(
+  bars: readonly GanttBar[],
+  orders: readonly TOrder[],
+  orderId: string,
+  deltaDays: number,
+): { bars: GanttBar[]; orders: TOrder[] } {
+  const delta = Math.trunc(deltaDays);
+  const nextBars = rebuildSummaries(
+    bars.map((bar) => {
+      if (bar.orderId !== orderId) return { ...bar };
+      return {
+        ...bar,
+        startDate: shiftDateOnly(bar.startDate, delta),
+        endDate: shiftDateOnly(bar.endDate, delta),
+      };
+    }),
+  );
+  const nextOrders = orders.map((order) => {
+    if (order._id !== orderId) return order;
+    const { anchor } = resolveVisualAnchor(order);
+    return { ...order, plannedDate: formatDateOnly(addCalendarDays(anchor, delta)) };
+  });
+  return { bars: nextBars, orders: nextOrders };
+}
+
+export interface OptimisticStartOffsetCommit {
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  startDate: string;
+  deltaDays: number;
+}
+
+export function applyOptimisticStartOffset<
+  TOrder extends { _id: string; estimateStartOffsets?: EstimateStartOffsetRef[] | null },
+>(
+  bars: readonly GanttBar[],
+  orders: readonly TOrder[],
+  commit: OptimisticStartOffsetCommit,
+  newOffsetDays: number,
+): { bars: GanttBar[]; orders: TOrder[] } {
+  const offsetDays = Math.max(0, Math.trunc(newOffsetDays));
+  const nextBars = rebuildSummaries(
+    bars.map((bar) => {
+      if (
+        !matchesEstimateBar(
+          bar,
+          commit.orderId,
+          commit.orderItemIndex,
+          commit.moduleId,
+          commit.workTypeId,
+        )
+      ) {
+        return { ...bar };
+      }
+      const startDate = shiftDateOnly(commit.startDate, Math.trunc(commit.deltaDays));
+      const start = parseDateOnly(startDate);
+      const days = bar.days;
+      const endDate =
+        start && days != null && days >= 1
+          ? formatDateOnly(addCalendarDays(start, days - 1))
+          : startDate;
+      return { ...bar, startDate, endDate, startOffsetDays: offsetDays };
+    }),
+  );
+  const nextOrders = orders.map((order) => {
+    if (order._id !== commit.orderId) return order;
+    const offsets = [...(order.estimateStartOffsets ?? [])];
+    const idx = offsets.findIndex(
+      (row) =>
+        row.orderItemIndex === commit.orderItemIndex &&
+        row.moduleId === commit.moduleId &&
+        row.workTypeId === commit.workTypeId,
+    );
+    const row: EstimateStartOffsetRef = {
+      orderItemIndex: commit.orderItemIndex,
+      moduleId: commit.moduleId,
+      workTypeId: commit.workTypeId,
+      offsetDays,
+    };
+    if (idx >= 0) offsets[idx] = row;
+    else offsets.push(row);
+    return { ...order, estimateStartOffsets: offsets };
+  });
+  return { bars: nextBars, orders: nextOrders };
+}
+
 /**
  * Stable WorkType palette — max 7 hues (design note).
  * Hash / accentHue snap to nearest bucket so legend stays readable.

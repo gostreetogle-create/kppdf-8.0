@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-333 DONE: Optimistic Gantt drag, no full reload
+**Статус:** DONE; deploy НЕ
+**Что:** three drag paths silent PATCH + local bars; revert + error toast on fail; meta/catalog still reload.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-333.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-333-gantt-optimistic-drag.lock`
+**Gates:** FE tsc PASS; Jest gantt-bar.model + production-cockpit 38 PASS; lint owned files PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-332 DONE: Day Gantt ticks DD.MM + weekday
 **Статус:** DONE; deploy НЕ
 **Что:** day ticks = `DD.MM` + ПН…ВС (UTC); scale + «Заказ» headers `h-10`; month ticks unchanged.

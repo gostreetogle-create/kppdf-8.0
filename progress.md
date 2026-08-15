@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-333 DONE — Optimistic Gantt drag, no full reload
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** resize / summary plannedDate / child start-offset — optimistic local bars + silent PATCH; fail → revert + error toast; «Обновить» по-прежнему полный reload.
+**Gates:** FE tsc PASS; FE Jest gantt-bar.model + production-cockpit **38 PASS**; lint owned files PASS (pre-existing OnInit warning).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-333.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-333-gantt-optimistic-drag.lock`
+**Dep:** 331 / 332
+
 ## [2026-08-15] — TZ-PRODUCTION-332 DONE — Day Gantt ticks DD.MM + weekday
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

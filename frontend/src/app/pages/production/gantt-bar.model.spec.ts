@@ -464,4 +464,131 @@ describe('gantt-bar.model', () => {
     );
     expect(withoutCounterparty.map((o) => o._id)).toEqual(['1']);
   });
+
+  describe('TZ-PRODUCTION-333 optimistic helpers', () => {
+    const workBar = (overrides: Partial<GanttBar> = {}): GanttBar => ({
+      id: 'o1:0:p1:m1:wt1:1',
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      orderStatus: 'confirmed',
+      orderItemIndex: 0,
+      productId: 'p1',
+      productName: 'Стол',
+      moduleId: 'm1',
+      moduleName: 'Каркас',
+      workTypeId: 'wt1',
+      workTypeName: 'Сварка',
+      occurrence: 1,
+      quantity: 1,
+      quantityLabel: null,
+      days: 3,
+      noTerm: false,
+      startDate: '2026-08-10',
+      endDate: '2026-08-12',
+      usedFallbackToday: false,
+      workerLabel: '—',
+      kind: 'work',
+      ...overrides,
+    });
+
+    it('cloneGanttState is independent of later mutations', async () => {
+      const { cloneGanttState } = await import('./gantt-bar.model');
+      const bars = [workBar()];
+      const orders = [{ _id: 'o1', plannedDate: '2026-08-10' }];
+      const snap = cloneGanttState(bars, orders);
+      bars[0]!.days = 99;
+      orders[0]!.plannedDate = '2099-01-01';
+      expect(snap.bars[0]!.days).toBe(3);
+      expect(snap.orders[0]!.plannedDate).toBe('2026-08-10');
+    });
+
+    it('applyOptimisticEstimateDays updates days, endDate, override and summary span', async () => {
+      const { applyOptimisticEstimateDays, buildOrderSummaryBar } =
+        await import('./gantt-bar.model');
+      const children = [
+        workBar(),
+        workBar({
+          id: 'b2',
+          workTypeId: 'wt2',
+          startDate: '2026-08-13',
+          endDate: '2026-08-14',
+          days: 2,
+        }),
+      ];
+      const summary = buildOrderSummaryBar(children)!;
+      const { bars, orders } = applyOptimisticEstimateDays(
+        [...children, summary],
+        [{ _id: 'o1', estimateDayOverrides: [] }],
+        { orderId: 'o1', orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', days: 5 },
+      );
+      const resized = bars.find((b) => b.workTypeId === 'wt1');
+      expect(resized?.days).toBe(5);
+      expect(resized?.endDate).toBe('2026-08-14');
+      expect(orders[0]!.estimateDayOverrides).toEqual([
+        { orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', days: 5 },
+      ]);
+      const nextSummary = bars.find((b) => b.kind === 'summary');
+      expect(nextSummary?.startDate).toBe('2026-08-10');
+      expect(nextSummary?.endDate).toBe('2026-08-14');
+      expect(nextSummary?.days).toBe(5);
+    });
+
+    it('applyOptimisticPlannedDateShift moves all order bars and plannedDate', async () => {
+      const { applyOptimisticPlannedDateShift } = await import('./gantt-bar.model');
+      const { bars, orders } = applyOptimisticPlannedDateShift(
+        [
+          workBar(),
+          workBar({
+            id: 'b2',
+            workTypeId: 'wt2',
+            startDate: '2026-08-13',
+            endDate: '2026-08-14',
+            days: 2,
+          }),
+        ],
+        [
+          { _id: 'o1', plannedDate: '2026-08-10' },
+          { _id: 'o2', plannedDate: '2026-08-01' },
+        ],
+        'o1',
+        2,
+      );
+      expect(bars[0]!.startDate).toBe('2026-08-12');
+      expect(bars[0]!.endDate).toBe('2026-08-14');
+      expect(bars[1]!.startDate).toBe('2026-08-15');
+      expect(orders[0]!.plannedDate).toBe('2026-08-12');
+      expect(orders[1]!.plannedDate).toBe('2026-08-01');
+    });
+
+    it('applyOptimisticStartOffset moves only the matched child and records offset', async () => {
+      const { applyOptimisticStartOffset } = await import('./gantt-bar.model');
+      const other = workBar({
+        id: 'b2',
+        workTypeId: 'wt2',
+        startDate: '2026-08-13',
+        endDate: '2026-08-14',
+        days: 2,
+      });
+      const { bars, orders } = applyOptimisticStartOffset(
+        [workBar(), other],
+        [{ _id: 'o1', estimateStartOffsets: [] }],
+        {
+          orderId: 'o1',
+          orderItemIndex: 0,
+          moduleId: 'm1',
+          workTypeId: 'wt1',
+          startDate: '2026-08-10',
+          deltaDays: 3,
+        },
+        3,
+      );
+      expect(bars[0]!.startDate).toBe('2026-08-13');
+      expect(bars[0]!.endDate).toBe('2026-08-15');
+      expect(bars[0]!.startOffsetDays).toBe(3);
+      expect(bars[1]!.startDate).toBe('2026-08-13');
+      expect(orders[0]!.estimateStartOffsets).toEqual([
+        { orderItemIndex: 0, moduleId: 'm1', workTypeId: 'wt1', offsetDays: 3 },
+      ]);
+    });
+  });
 });

@@ -19,6 +19,7 @@ import type { Order } from '../orders/orders.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { of } from 'rxjs';
+import type { GanttBar } from './gantt-bar.model';
 
 describe('ProductionCockpitPage HUB-303 orderId', () => {
   const queryParamSubject = new BehaviorSubject<{ get: (key: string) => string | null }>({
@@ -585,14 +586,113 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     });
   });
 
-  it('TZ-PRODUCTION-326: planned-date drag uses order role gate and reloads bars', async () => {
-    const fixture = TestBed.createComponent(ProductionCockpitPage);
-    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
-    const ordersApi = TestBed.inject(OrdersService) as unknown as { update: jest.Mock };
-    const page = fixture.componentInstance as unknown as {
-      onPlannedDateMoveCommit: (event: { orderId: string; deltaDays: number }) => Promise<void>;
+  async function waitUntilBootstrapped(
+    fixture: import('@angular/core/testing').ComponentFixture<ProductionCockpitPage>,
+  ): Promise<{ page: ProductionCockpitPage; ctx: ProductionCockpitContext }> {
+    const result = await waitUntil(
+      fixture,
+      (_p, c) => c.selectedOrderId() === null && facade.loadBarsForOrders.mock.calls.length > 0,
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return result;
+  }
+
+  function sampleWorkBar(overrides: Partial<GanttBar> = {}): GanttBar {
+    return {
+      id: 'o1:0:p1:m1:wt1:1',
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      orderStatus: 'confirmed',
+      orderItemIndex: 0,
+      productId: 'p1',
+      productName: 'Стол',
+      moduleId: 'm1',
+      moduleName: 'Каркас',
+      workTypeId: 'wt1',
+      workTypeName: 'Сварка',
+      occurrence: 1,
+      quantity: 1,
+      quantityLabel: null,
+      days: 3,
+      noTerm: false,
+      startDate: '2026-08-10',
+      endDate: '2026-08-12',
+      usedFallbackToday: false,
+      workerLabel: '—',
+      kind: 'work',
+      ...overrides,
     };
-    const loadCallsBefore = facade.loadOrders.mock.calls.length;
+  }
+
+  type DragPage = {
+    bars: { (): GanttBar[]; set: (v: GanttBar[]) => void };
+    orders: { (): Order[]; set: (v: Order[]) => void };
+    onEstimateDaysCommit: (ev: {
+      orderId: string;
+      orderItemIndex: number;
+      moduleId: string;
+      workTypeId: string;
+      days: number;
+    }) => Promise<void>;
+    onPlannedDateMoveCommit: (event: { orderId: string; deltaDays: number }) => Promise<void>;
+    onStartOffsetCommit: (ev: {
+      orderId: string;
+      orderItemIndex: number;
+      moduleId: string;
+      workTypeId: string;
+      startDate: string;
+      deltaDays: number;
+    }) => Promise<void>;
+    onRefresh: () => Promise<void>;
+  };
+
+  it('TZ-PRODUCTION-333: estimate-days commit is silent and does not reload bars', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const ordersApi = TestBed.inject(OrdersService) as unknown as { patchEstimateDays: jest.Mock };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      success: jest.Mock;
+      error: jest.Mock;
+    };
+    const page = fixture.componentInstance as unknown as DragPage;
+    page.bars.set([sampleWorkBar()]);
+    const barCallsBefore = facade.loadBarsForOrders.mock.calls.length;
+
+    await page.onEstimateDaysCommit({
+      orderId: 'o1',
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      days: 5,
+    });
+
+    expect(ordersApi.patchEstimateDays).toHaveBeenCalledWith('o1', {
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      days: 5,
+    });
+    expect(page.bars()[0]!.days).toBe(5);
+    expect(page.bars()[0]!.endDate).toBe('2026-08-14');
+    expect(facade.loadBarsForOrders.mock.calls.length).toBe(barCallsBefore);
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('TZ-PRODUCTION-333: planned-date drag is silent and does not reload bars', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const ordersApi = TestBed.inject(OrdersService) as unknown as { update: jest.Mock };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      success: jest.Mock;
+      error: jest.Mock;
+    };
+    const page = fixture.componentInstance as unknown as DragPage;
+    page.orders.set([
+      { _id: 'o1', number: 'ORD-1', status: 'confirmed', plannedDate: '2026-08-10' },
+    ]);
+    page.bars.set([sampleWorkBar()]);
+    const barCallsBefore = facade.loadBarsForOrders.mock.calls.length;
 
     await page.onPlannedDateMoveCommit({ orderId: 'o1', deltaDays: 1 });
 
@@ -600,7 +700,90 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
       'o1',
       expect.objectContaining({ plannedDate: expect.any(String) }),
     );
+    expect(page.bars()[0]!.startDate).toBe('2026-08-11');
+    expect(page.bars()[0]!.endDate).toBe('2026-08-13');
+    expect(facade.loadBarsForOrders.mock.calls.length).toBe(barCallsBefore);
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('TZ-PRODUCTION-333: start-offset commit is silent and does not reload bars', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const ordersApi = TestBed.inject(OrdersService) as unknown as {
+      patchEstimateStart: jest.Mock;
+    };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      success: jest.Mock;
+      error: jest.Mock;
+    };
+    const page = fixture.componentInstance as unknown as DragPage;
+    page.orders.set([
+      { _id: 'o1', number: 'ORD-1', status: 'confirmed', plannedDate: '2026-08-10' },
+    ]);
+    page.bars.set([sampleWorkBar()]);
+    const barCallsBefore = facade.loadBarsForOrders.mock.calls.length;
+
+    await page.onStartOffsetCommit({
+      orderId: 'o1',
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      startDate: '2026-08-10',
+      deltaDays: 2,
+    });
+
+    expect(ordersApi.patchEstimateStart).toHaveBeenCalledWith('o1', {
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      offsetDays: 2,
+    });
+    expect(page.bars()[0]!.startDate).toBe('2026-08-12');
+    expect(page.bars()[0]!.startOffsetDays).toBe(2);
+    expect(facade.loadBarsForOrders.mock.calls.length).toBe(barCallsBefore);
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('TZ-PRODUCTION-333: failed estimate-days PATCH reverts bars and toasts error', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const ordersApi = TestBed.inject(OrdersService) as unknown as { patchEstimateDays: jest.Mock };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      success: jest.Mock;
+      error: jest.Mock;
+    };
+    ordersApi.patchEstimateDays.mockReturnValueOnce(
+      of({ ok: false, error: { message: 'Сеть недоступна' } }),
+    );
+    const page = fixture.componentInstance as unknown as DragPage;
+    page.bars.set([sampleWorkBar()]);
+
+    await page.onEstimateDaysCommit({
+      orderId: 'o1',
+      orderItemIndex: 0,
+      moduleId: 'm1',
+      workTypeId: 'wt1',
+      days: 5,
+    });
+
+    expect(page.bars()[0]!.days).toBe(3);
+    expect(page.bars()[0]!.endDate).toBe('2026-08-12');
+    expect(toast.error).toHaveBeenCalled();
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('TZ-PRODUCTION-333: explicit refresh still full-reloads orders and bars', async () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const page = fixture.componentInstance as unknown as DragPage;
+    const loadCallsBefore = facade.loadOrders.mock.calls.length;
+    const barCallsBefore = facade.loadBarsForOrders.mock.calls.length;
+
+    await page.onRefresh();
+
+    expect(facade.clearCaches).toHaveBeenCalled();
     expect(facade.loadOrders.mock.calls.length).toBeGreaterThan(loadCallsBefore);
+    expect(facade.loadBarsForOrders.mock.calls.length).toBeGreaterThan(barCallsBefore);
   });
 
   it('TZ-UX-323: flyouts anchor at studio edges (no 48px rail inset)', () => {

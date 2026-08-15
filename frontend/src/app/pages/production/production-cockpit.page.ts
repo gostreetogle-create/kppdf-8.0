@@ -11,7 +11,7 @@ import {
   untracked,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { ProductionScaleControlsComponent } from './blocks/production-scale-controls.component';
@@ -29,6 +29,10 @@ import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import {
+  applyOptimisticEstimateDays,
+  applyOptimisticPlannedDateShift,
+  applyOptimisticStartOffset,
+  cloneGanttState,
   filterOrdersForRail,
   formatDateOnly,
   isHardFrozenOrderStatus,
@@ -36,6 +40,7 @@ import {
   type GanttBar,
 } from './gantt-bar.model';
 import { OrdersService, type Order, type OrderPriority } from '../orders/orders.service';
+import type { SilentResult } from '../../core/silent-http';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -331,6 +336,8 @@ export class ProductionCockpitPage implements OnInit {
     nonce: number;
   } | null>(null);
   private scrollNonce = 0;
+  /** TZ-PRODUCTION-333 — block overlapping drag PATCHes per order. */
+  private readonly ganttWriteInFlight = new Set<string>();
 
   /** Shell tool state; buttons live in app-chrome-rail (TZ-UX-323). */
   protected readonly leftTool = signal<ProductionLeftTool>(null);
@@ -561,11 +568,18 @@ export class ProductionCockpitPage implements OnInit {
     await this.reloadOrdersKeepingSelection();
   }
 
-  /** TZ-PRODUCTION-311 — right-edge resize → order override only (never WorkType catalog). */
+  /** TZ-PRODUCTION-311/333 — right-edge resize → order override; optimistic local bars. */
   protected async onEstimateDaysCommit(ev: GanttEstimateDaysCommit): Promise<void> {
     if (!this.canEditCatalog()) return;
     const days = Math.max(1, Math.floor(ev.days));
-    const res = await firstValueFrom(
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticEstimateDays(this.bars(), this.orders(), { ...ev, days });
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
       this.ordersApi.patchEstimateDays(ev.orderId, {
         orderItemIndex: ev.orderItemIndex,
         moduleId: ev.moduleId,
@@ -573,12 +587,6 @@ export class ProductionCockpitPage implements OnInit {
         days,
       }),
     );
-    if (!res.ok) {
-      this.toast.error(shopOrderWriteError(res.error));
-      return;
-    }
-    this.toast.success('Дни оценки обновлены для этого заказа');
-    await this.reloadOrdersKeepingSelection();
   }
 
   /** TZ-PRODUCTION-321 — work-detail catalog button → WorkType.days (confirm in helper). */
@@ -600,7 +608,7 @@ export class ProductionCockpitPage implements OnInit {
     await this.reloadOrdersKeepingSelection();
   }
 
-  /** TZ-PRODUCTION-312 — body-drag → plannedDate (whole order chain; durations unchanged). */
+  /** TZ-PRODUCTION-312/333 — body-drag → plannedDate; optimistic local bars. */
   protected async onPlannedDateMoveCommit(ev: GanttPlannedDateMoveCommit): Promise<void> {
     if (!this.canEditOrder()) return;
     const deltaDays = Math.trunc(ev.deltaDays);
@@ -608,22 +616,23 @@ export class ProductionCockpitPage implements OnInit {
     const order = this.orders().find((o) => o._id === ev.orderId);
     if (!order) return;
     if (isHardFrozenOrderStatus(order.status)) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
+    const next = applyOptimisticPlannedDateShift(this.bars(), this.orders(), ev.orderId, deltaDays);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
     const { anchor } = resolveVisualAnchor(order, new Date());
     const newDateOnly = addDays(formatDateOnly(anchor), deltaDays);
-    const res = await firstValueFrom(
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
       this.ordersApi.update(ev.orderId, {
         plannedDate: new Date(newDateOnly + 'T12:00:00').toISOString(),
       }),
     );
-    if (!res.ok) {
-      this.toast.error(shopOrderWriteError(res.error));
-      return;
-    }
-    this.toast.success('Начало заказа сдвинуто');
-    await this.reloadOrdersKeepingSelection();
   }
 
-  /** TZ-PRODUCTION-316 — child body-drag → per-bar start offset (parallel OK). */
+  /** TZ-PRODUCTION-316/333 — child body-drag → start offset; optimistic local bars. */
   protected async onStartOffsetCommit(ev: GanttStartOffsetCommit): Promise<void> {
     if (!this.canEditCatalog()) return;
     const deltaDays = Math.trunc(ev.deltaDays);
@@ -631,10 +640,17 @@ export class ProductionCockpitPage implements OnInit {
     const order = this.orders().find((o) => o._id === ev.orderId);
     if (!order) return;
     if (isHardFrozenOrderStatus(order.status)) return;
+    const snapshot = this.beginGanttOptimistic(ev.orderId);
+    if (!snapshot) return;
     const { anchor } = resolveVisualAnchor(order, new Date());
     const newStart = addDays(ev.startDate, deltaDays);
     const offsetDays = Math.max(0, dayDiffDateOnly(formatDateOnly(anchor), newStart));
-    const res = await firstValueFrom(
+    const next = applyOptimisticStartOffset(this.bars(), this.orders(), ev, offsetDays);
+    this.bars.set(next.bars);
+    this.orders.set(next.orders);
+    await this.persistGanttPatch(
+      ev.orderId,
+      snapshot,
       this.ordersApi.patchEstimateStart(ev.orderId, {
         orderItemIndex: ev.orderItemIndex,
         moduleId: ev.moduleId,
@@ -642,12 +658,6 @@ export class ProductionCockpitPage implements OnInit {
         offsetDays,
       }),
     );
-    if (!res.ok) {
-      this.toast.error(shopOrderWriteError(res.error));
-      return;
-    }
-    this.toast.success('Сдвиг вида работ сохранён');
-    await this.reloadOrdersKeepingSelection();
   }
 
   protected async onRefresh(event?: Event): Promise<void> {
@@ -706,6 +716,41 @@ export class ProductionCockpitPage implements OnInit {
     }
     this.orderIdHint.set(`Заказ с идентификатором «${orderId}» не найден. Показаны все активные.`);
     await this.onSelectAll();
+  }
+
+  private beginGanttOptimistic(orderId: string): { bars: GanttBar[]; orders: Order[] } | null {
+    if (this.ganttWriteInFlight.has(orderId)) return null;
+    const snapshot = cloneGanttState(this.bars(), this.orders());
+    this.ganttWriteInFlight.add(orderId);
+    return snapshot;
+  }
+
+  private restoreGanttSnapshot(snapshot: { bars: GanttBar[]; orders: Order[] }): void {
+    this.bars.set(snapshot.bars);
+    this.orders.set(snapshot.orders);
+  }
+
+  /** Silent PATCH after optimistic bars. Revert + error toast on fail; no success toast / reload. */
+  private async persistGanttPatch(
+    orderId: string,
+    snapshot: { bars: GanttBar[]; orders: Order[] },
+    request$: Observable<SilentResult<Order>>,
+  ): Promise<void> {
+    try {
+      const res = await firstValueFrom(request$);
+      if (!res.ok) {
+        this.restoreGanttSnapshot(snapshot);
+        this.toast.error(shopOrderWriteError(res.error));
+        return;
+      }
+      const updated = res.data;
+      this.orders.update((list) => list.map((row) => (row._id === orderId ? updated : row)));
+    } catch (err) {
+      this.restoreGanttSnapshot(snapshot);
+      this.toast.error(shopOrderWriteError(err as { message?: string }));
+    } finally {
+      this.ganttWriteInFlight.delete(orderId);
+    }
   }
 
   private async reloadOrdersKeepingSelection(): Promise<void> {
