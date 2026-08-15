@@ -83,6 +83,8 @@ Evidence: `reports/TZ-UX-321-FIX-chrome-rail-geometry.json`,
 - Restored two frame-relative chrome rails; fixed missing `position:relative` on `.pi-page-frame`.
 - Removed viewport `left:64px` anchoring that caused left-edge regression.
 - AppHistoryStore / aria / button data-tests unchanged; no page-tools.
+- **feat SHA:** `fade51c910b7610ec9ef43834728afd8a6922518`
+- **docs NOW stamp:** `807d7228`
 - Conflict disclosure: left AUTH-305 / orders hub / pi-chrome-tools / ruvector / `.372.patch` untouched.
 - Known limits: archive deferred until Cursor Verdict PASS; deploy НЕ.
 
