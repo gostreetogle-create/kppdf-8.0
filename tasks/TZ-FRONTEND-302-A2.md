@@ -13,4 +13,5 @@ CONFLICT KEYS:
 - Implementation: replaced page `HttpClient`/`silentGet` users lookup with the existing `Users.inject()` entity service; no new shared method or endpoint.
 - Evidence: focused Jest 2/2 PASS; frontend tsc PASS; changed-file ESLint PASS; architecture:check PASS; git diff --check PASS.
 - Browser: authenticated order dialog smoke unavailable in this headless worktree; lookup and submit pending guard are covered by characterization tests.
-- Implementation commit: pending.
+- Implementation commit: `003da5f0`.
+- Push SHA: pending.

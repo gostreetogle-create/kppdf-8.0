@@ -10,4 +10,4 @@ Exact keys:
 - frontend/src/app/pages/orders/order-form-dialog.component.spec.ts
 
 Evidence: focused Jest 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
-Implementation commit: pending
+Implementation commit: 003da5f0

@@ -13,7 +13,8 @@
 - [x] architecture:check PASS: 936 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated order dialog unavailable in this headless worktree; lookup and pending-submit behavior are characterized in the focused spec.
-- [ ] Commit and pushed SHA recorded.
+- [x] Implementation commit: `003da5f0`.
+- [ ] Push SHA: pending.
 
 ## Implementation evidence
 
