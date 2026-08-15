@@ -68,6 +68,12 @@ describe('matchActiveCategoryId (TZ-UX-308)', () => {
   });
 });
 
+describe('matchActiveCategoryId (TZ-SWEEP-401)', () => {
+  it('highlights deals on the Комбайн /dashboard (alias, not a leaf item)', () => {
+    expect(matchActiveCategoryId('/dashboard')).toBe('deals');
+  });
+});
+
 describe('matchActiveCategoryId (TZ-NAV-302)', () => {
   it('highlights clients on /people and /counterparties', () => {
     expect(matchActiveCategoryId('/people')).toBe('clients');

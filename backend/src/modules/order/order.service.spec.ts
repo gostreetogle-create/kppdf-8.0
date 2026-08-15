@@ -20,6 +20,8 @@ interface MockOrderItem {
   readyForWork?: boolean;
   readyAt?: Date;
   readyByUserId?: Types.ObjectId;
+  /** TZ-DASHBOARD-400: ход изделия (может отсутствовать у старых заказов). */
+  status?: 'pending' | 'in_production' | 'ready' | 'shipped';
 }
 
 /** Minimal mock Mongoose document (toObject-free). */
@@ -116,12 +118,13 @@ function createService(overrides: Record<string, unknown> = {}) {
     sites,
     quotationModel,
     organizations,
+    shipmentModel,
     ...overrides,
   };
   return {
     service: new OrderService(
       dependencies.model as never,
-      shipmentModel as never,
+      (dependencies.shipmentModel as { create: jest.Mock }) as never,
       dependencies.counter as never,
       dependencies.reservationService as never,
       dependencies.shipmentService as never,
@@ -143,6 +146,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     },
     quotationModel: dependencies.quotationModel as { findById: jest.Mock; create: jest.Mock },
     organizations: dependencies.organizations as { findCurrent: jest.Mock },
+    shipmentModel: dependencies.shipmentModel as { create: jest.Mock },
   };
 }
 
@@ -307,6 +311,123 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.notes).toBe('новая заметка');
       expect(doc.priority).toBe('urgent');
       expect(doc.save).toHaveBeenCalled();
+      expect(result).toBe(doc);
+    });
+  });
+
+  describe('status transition graph (TZ-SWEEP-401)', () => {
+    function orderWithItem(overrides: Record<string, unknown> = {}) {
+      return orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            unitPrice: 0,
+            total: 0,
+          },
+        ],
+        ...overrides,
+      });
+    }
+
+    it('BLOCKS PATCH to shipped/delivered/cancelled with RU message, no mutation', async () => {
+      const { service, model } = createService();
+      for (const to of ['shipped', 'delivered', 'cancelled']) {
+        const doc = orderWithItem({ status: 'draft' });
+        model.findById.mockReturnValueOnce(mockQuery(doc));
+        await expect(
+          service.update(doc._id.toString(), { status: to } as never),
+        ).rejects.toMatchObject({
+          message: 'Отгрузка — через действие «Отгрузить»; отмена — «Отменить заказ».',
+        });
+        expect(doc.status).toBe('draft');
+        expect(doc.save).not.toHaveBeenCalled();
+      }
+      expect(model.findById).toHaveBeenCalledTimes(3);
+    });
+
+    it('BLOCKS PATCH out of a hard-frozen status (shipped → ready)', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'shipped' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), { status: 'ready' } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.status).toBe('shipped');
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('ALLOWS status-only PATCH in_production → ready (no composition required)', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'in_production' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      const result = await service.update(doc._id.toString(), { status: 'ready' } as never);
+      expect(doc.status).toBe('ready');
+      expect(result).toBe(doc);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('ALLOWS step-back PATCH ready → in_production', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'ready' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { status: 'in_production' } as never);
+      expect(doc.status).toBe('in_production');
+    });
+
+    it('BLOCKS PATCH ready + notes — freeze состава не обходится статусом', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'in_production' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), { status: 'ready', notes: 'нельзя' } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.status).toBe('in_production');
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('ship() creates Shipment, sets order status and marks every item shipped', async () => {
+      const { service, model, sessionRunner, shipmentModel } = createService();
+      const doc = orderWithItem({ status: 'ready' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      sessionRunner.run.mockImplementation(async (fn: (s: unknown) => Promise<unknown>) =>
+        fn({}),
+      );
+      const shipmentId = new Types.ObjectId();
+      shipmentModel.create.mockResolvedValue([{ _id: shipmentId }]);
+
+      const { order, shipmentId: createdId } = await service.ship(doc._id.toString());
+
+      expect(order.status).toBe('shipped');
+      expect(createdId).toBe(shipmentId.toString());
+      expect(order.shipmentIds?.map((s) => s.toString())).toContain(shipmentId.toString());
+      expect(order.items.every((item) => item.status === 'shipped')).toBe(true);
+      expect(order.save).toHaveBeenCalled();
+    });
+
+    it('setItemStatus shipped on a draft order → 400 (ship() owns that transition)', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'draft' });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.setItemStatus(doc._id.toString(), '0', 'shipped'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.items[0].status).toBeUndefined();
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('setItemStatus ready on a line WITHOUT status field writes the value, no throw', async () => {
+      const { service, model } = createService();
+      const doc = orderWithItem({ status: 'in_production' });
+      model.findById.mockReturnValueOnce(mockQuery(doc)).mockReturnValueOnce(mockQuery(doc));
+
+      const result = await service.setItemStatus(doc._id.toString(), '0', 'ready');
+      expect(doc.items[0].status).toBe('ready');
       expect(result).toBe(doc);
     });
   });

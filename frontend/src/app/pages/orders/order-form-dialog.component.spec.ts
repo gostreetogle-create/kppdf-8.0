@@ -287,4 +287,21 @@ describe('OrderFormDialogComponent edit freeze (TZ-ORDERS-336)', () => {
     expect(component.errorMessage()).toBe('Заказ в статусе «Отгружен» нельзя обновлять');
     expect(httpMock.match((req) => req.method === 'PATCH')).toHaveLength(0);
   });
+
+  it('TZ-SWEEP-401: статус-селект = draft…ready; shipped только disabled-показ', async () => {
+    const component = await setup(sampleOrder('shipped'));
+    const options = (
+      component as unknown as { statusOptions: () => { value: string; disabled?: boolean }[] }
+    ).statusOptions();
+    expect(options.map((o) => o.value)).toEqual([
+      'draft',
+      'confirmed',
+      'in_production',
+      'ready',
+      'shipped',
+    ]);
+    expect(options.find((o) => o.value === 'shipped')?.disabled).toBe(true);
+    // Save-status не может быть запретным — hard freeze вообще не шлёт PATCH.
+    expect(component.freezeMode()).toBe('hard');
+  });
 });

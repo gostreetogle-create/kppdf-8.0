@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-SWEEP-401 DONE — Kanban order write-path
+**Исполнитель:** Buffy
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** order status FSM теперь принимает PATCH только по draft↔confirmed↔in_production↔ready; shipped/delivered/cancelled защищены RU-ошибкой без мутаций; ship() создаёт отгрузку и переводит все items в shipped. Канбан получил optimistic PATCH/rollback/toast, подтверждение отгрузки и корректный item.status/readiness; форма и навигация «Комбайн» → `/dashboard` синхронизированы.
+**Gates:** BE tsc PASS; order.service Jest 42/42; BE ESLint PASS; FE tsc PASS; focused FE Jest 26/26 + смежные 62/62; FE ESLint/Prettier/diff-check PASS.
+**Review:** Cursor independent review PASS, 8/8 acceptance points, no blockers.
+**Archive:** `tasks/_archive/2026-08/TZ-SWEEP-401.done.md`
+**Lock:** `.mimocode/locks/TZ-SWEEP-401-kanban-order-write-path.lock`
+**Next:** STOP; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UI-PHOTO-343 DONE — catalog photo-entry sweep
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-COMPOSE-CREATE-PHOTO complete; deploy НЕ

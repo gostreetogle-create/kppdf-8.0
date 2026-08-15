@@ -8,6 +8,8 @@
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 export const DEALS_TOC_CHIPS: readonly GroupChip[] = [
+  // TZ-SWEEP-401: Комбайн (/dashboard) первым — домашняя доска Сделок. «Дашборд» занят складом.
+  { id: 'dashboard', label: 'Комбайн', route: '/dashboard', pageKey: 'orders' },
   { id: 'proposals', label: 'КП', route: '/proposals/create', pageKey: 'proposals' },
   { id: 'contracts', label: 'Договоры', route: '/contracts', pageKey: 'contracts' },
   { id: 'orders', label: 'Заказы', route: '/orders', pageKey: 'orders' },

@@ -29,15 +29,28 @@ type FreezeMode = 'none' | 'plan' | 'hard';
 
 type Result = Order | null | undefined;
 
-const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
+/**
+ * TZ-SWEEP-401: редактируемые статусы формы — только операционные.
+ * Отгрузка/отмена — отдельные действия (POST /ship, POST /cancel),
+ * их нельзя выбрать как Save-status (PATCH-граф их запрещает).
+ */
+const EDITABLE_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: 'draft', label: 'Черновик' },
   { value: 'confirmed', label: 'Подтверждён' },
   { value: 'in_production', label: 'В производстве' },
   { value: 'ready', label: 'Готов' },
-  { value: 'shipped', label: 'Отгружен' },
-  { value: 'delivered', label: 'Доставлен' },
-  { value: 'cancelled', label: 'Отменён' },
 ];
+
+/** Полный словарь лейблов — для disabled-отображения уже отгруженных/отменённых. */
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  draft: 'Черновик',
+  confirmed: 'Подтверждён',
+  in_production: 'В производстве',
+  ready: 'Готов',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
+};
 
 const PRIORITY_OPTIONS: { value: OrderPriority; label: string }[] = [
   { value: 'low', label: 'Низкий' },
@@ -185,8 +198,8 @@ interface ItemFormGroup extends FormGroup {
 
             <app-pi-form-field label="Статус" htmlFor="ord-status">
               <select id="ord-status" formControlName="status" class="pi-input w-full">
-                @for (opt of STATUS_OPTIONS; track opt.value) {
-                  <option [value]="opt.value">{{ opt.label }}</option>
+                @for (opt of statusOptions(); track opt.value) {
+                  <option [value]="opt.value" [disabled]="opt.disabled">{{ opt.label }}</option>
                 }
               </select>
             </app-pi-form-field>
@@ -422,8 +435,22 @@ export class OrderFormDialogComponent {
     }
     this.applyFreeze();
   }
-  protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   protected readonly PRIORITY_OPTIONS = PRIORITY_OPTIONS;
+
+  /**
+   * TZ-SWEEP-401: shipped/delivered/cancelled показываются только disabled,
+   * если заказ уже в таком статусе (Save не может их отправить).
+   */
+  protected readonly statusOptions = computed(() => {
+    const current = this.data?.status;
+    if (current && !EDITABLE_STATUS_OPTIONS.some((o) => o.value === current)) {
+      return [
+        ...EDITABLE_STATUS_OPTIONS,
+        { value: current, label: STATUS_LABELS[current] ?? current, disabled: true },
+      ];
+    }
+    return EDITABLE_STATUS_OPTIONS;
+  });
 
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(OrdersService);
@@ -709,7 +736,7 @@ export class OrderFormDialogComponent {
 
   protected statusLabel(): string {
     const status = this.data?.status ?? this.form.controls.status.value;
-    return STATUS_OPTIONS.find((opt) => opt.value === status)?.label ?? status;
+    return STATUS_LABELS[status] ?? status;
   }
 
   protected itemProductError(index: number): string {

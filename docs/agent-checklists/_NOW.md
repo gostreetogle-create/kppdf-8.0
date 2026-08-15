@@ -5,18 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T00:48:00+03:00
+updated_at: 2026-08-16T00:56:32+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — WAVE-COMPOSE-CREATE-PHOTO DONE; TZ-UI-PHOTO-343 archived and pushed)_
+_(empty — TZ-SWEEP-401 DONE; Cursor Verdict PASS; archive pending commit/push)_
 
 
 ## NEXT (PO paste prompt)
 
-- `TZ-SWEEP-401` — Канбан write-path (ship/cancel vs PATCH, freeze, nav «Комбайн»). Prompt в чате архитектора.
-- After compose/photo wave: `TZ-SWEEP-401` — Канбан write-path; separate architect-owned queue item.
+- After TZ-SWEEP-401 closeout: **STOP** until PO opens the next task.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -119,5 +118,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty** for compose/create/photo wave; WAVE DONE; deploy НЕ — не автодеплой.
+- Queue: **empty** for Buffy; TZ-SWEEP-401 DONE; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой

@@ -80,6 +80,34 @@ describe('OrdersService', () => {
     req.flush({ _id: 'o1', number: 'ORD-001', status: 'confirmed', items: [] });
   });
 
+  it('ship() POSTs /api/orders/:id/ship with empty body (TZ-SWEEP-401)', () => {
+    svc.ship('o1').subscribe((res) => {
+      if (res.ok) expect(res.data.status).toBe('shipped');
+    });
+    const req = httpMock.expectOne('http://test/api/orders/o1/ship');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ _id: 'o1', number: 'ORD-001', status: 'shipped', items: [] });
+  });
+
+  it('ship(id, body) forwards optional body', () => {
+    svc.ship('o1', { recipient: 'Склад' }).subscribe();
+    const req = httpMock.expectOne('http://test/api/orders/o1/ship');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ recipient: 'Склад' });
+    req.flush({ _id: 'o1', number: 'ORD-001', status: 'shipped', items: [] });
+  });
+
+  it('cancel() POSTs /api/orders/:id/cancel (TZ-SWEEP-401)', () => {
+    svc.cancel('o1').subscribe((res) => {
+      if (res.ok) expect(res.data.status).toBe('cancelled');
+    });
+    const req = httpMock.expectOne('http://test/api/orders/o1/cancel');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ _id: 'o1', number: 'ORD-001', status: 'cancelled', items: [] });
+  });
+
   it('createStubProposal() POSTs /api/orders/:id/stub-proposal (TZ-ORDERS-306)', () => {
     svc.createStubProposal('o1').subscribe((res) => {
       if (res.ok) {

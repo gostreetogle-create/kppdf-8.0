@@ -134,7 +134,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     shortLabel: 'Сделки',
     icon: Briefcase,
     entryPath: '/proposals/create',
-    activeAliases: ['/proposals'],
+    // TZ-SWEEP-401: Комбайн (/dashboard) — тоже Сделки (категория подсвечивается).
+    activeAliases: ['/proposals', '/dashboard'],
     items: [
       // TZ-SALES-301 / TZ-SALES-329: КП → Договоры → Заказы; entry = Создать КП.
       { path: '/proposals/create', pageKey: 'proposals', label: 'КП' },
@@ -790,6 +791,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/proposals',
     '/contracts',
     '/orders',
+    '/dashboard',
     '/production',
     '/inventory',
     '/storage-items',

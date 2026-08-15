@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, Injector, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  inject,
+} from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import {
@@ -12,6 +19,8 @@ import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chro
 import { Order, OrdersService } from '../orders/orders.service';
 import { OrderFormDialogComponent } from '../orders/order-form-dialog.component';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiToastService } from '../../shared/ui/toast';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -162,11 +171,17 @@ import { DatePipe } from '@angular/common';
   `,
 })
 export class DashboardPage {
-  protected readonly crumbs: PageCrumb[] = [{ label: 'Главная' }, { label: 'Дашборд' }];
+  // TZ-SWEEP-401: крошки Комбайна — «Сделки → /orders» + «Комбайн» (не «Главная / Дашборд»).
+  protected readonly crumbs: PageCrumb[] = [
+    { label: 'Сделки', link: '/orders' },
+    { label: 'Комбайн' },
+  ];
   protected readonly PencilIcon = Pencil;
 
   private readonly service = inject(OrdersService);
   private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
 
@@ -225,30 +240,84 @@ export class DashboardPage {
     return this.data().filter((o) => col.statuses.includes(o.status));
   }
 
+  /** TZ-SWEEP-401: снимок статусов ДО дропа — эталон отката PRODUCTION-333. */
+  private statusSnapshot(): { id: string; status: Order['status'] }[] {
+    return this.data().map((o) => ({ id: o._id, status: o.status }));
+  }
+
+  /** Вернуть карточки в исходные колонки после отмены/ошибки (без reload). */
+  private restoreStatuses(snapshot: { id: string; status: Order['status'] }[]): void {
+    for (const s of snapshot) {
+      const order = this.data().find((o) => o._id === s.id);
+      if (order) order.status = s.status;
+    }
+  }
+
+  /** Подставить ответ PATCH/POST в список — список совпадает с сервером. */
+  private replaceOrder(updated: Order): void {
+    this.listRes.value.set(this.data().map((o) => (o._id === updated._id ? updated : o)));
+  }
+
   protected dropOrder(event: CdkDragDrop<Order[]>) {
     if (event.previousContainer === event.container) {
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
-    } else {
-      const order = event.previousContainer.data[event.previousIndex];
-      const newStatus = this.columns.find((c) => c.id === event.container.id)?.statuses[0];
-
-      if (newStatus && order.status !== newStatus) {
-        // Optimistic update
-        transferArrayItem(
-          event.previousContainer.data,
-          event.container.data,
-          event.previousIndex,
-          event.currentIndex,
-        );
-        order.status = newStatus as Order['status'];
-
-        // API call
-        this.service.update(order._id, { status: order.status }).subscribe({
-          next: () => this.listRes.reload(),
-          error: () => this.listRes.reload(), // Revert on error
-        });
-      }
+      return;
     }
+    const order = event.previousContainer.data[event.previousIndex];
+    const newStatus = this.columns.find((c) => c.id === event.container.id)?.statuses[0];
+    if (!newStatus || order.status === newStatus) return;
+
+    if (newStatus === 'shipped') {
+      // TZ-SWEEP-401: «Отгружены» — НЕ PATCH. Сначала confirm, потом POST /ship
+      // (создаёт Shipment). Cancel/ESC/backdrop не двигают карточку.
+      this.confirmShip(order);
+      return;
+    }
+
+    const snapshot = this.statusSnapshot();
+    // Оптимистичный перенос (silent-http никогда не error-ит — откат по res.ok).
+    transferArrayItem(
+      event.previousContainer.data,
+      event.container.data,
+      event.previousIndex,
+      event.currentIndex,
+    );
+    order.status = newStatus as Order['status'];
+
+    // Операционные колонки (draft…ready) — PATCH status.
+    this.service.update(order._id, { status: newStatus as Order['status'] }).subscribe((res) => {
+      if (res.ok) {
+        this.replaceOrder(res.data);
+      } else {
+        this.restoreStatuses(snapshot);
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /** TZ-SWEEP-401: confirm отгрузки — onDialogCloseOnce срабатывает только на OK. */
+  private confirmShip(order: Order): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: `Создать отгрузку по заказу №${order.number}?`,
+        description: 'Появится документ отгрузки.',
+        confirmLabel: 'Отгрузить',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      const snapshot = this.statusSnapshot();
+      order.status = 'shipped'; // optimistic
+      this.service.ship(order._id, {}).subscribe((res) => {
+        if (res.ok) {
+          this.replaceOrder(res.data);
+        } else {
+          this.restoreStatuses(snapshot);
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
   }
 
   protected toggleExpand(orderId: string) {
@@ -279,9 +348,14 @@ export class DashboardPage {
     const select = event.target as HTMLSelectElement;
     const newStatus = select.value as 'pending' | 'in_production' | 'ready' | 'shipped';
 
-    this.service.setItemStatus(orderId, itemIndex.toString(), newStatus).subscribe({
-      next: () => this.listRes.reload(),
-      error: () => this.listRes.reload(),
+    this.service.setItemStatus(orderId, itemIndex.toString(), newStatus).subscribe((res) => {
+      if (res.ok) {
+        this.replaceOrder(res.data);
+      } else {
+        // Ошибка не должна оставлять селект в лживом значении — показываем правду.
+        this.toast.error(extractErrorMessage(res.error));
+        this.listRes.reload();
+      }
     });
   }
 
@@ -298,15 +372,17 @@ export class DashboardPage {
     return deadline < new Date() && !['shipped', 'delivered', 'cancelled'].includes(order.status);
   }
 
+  /**
+   * TZ-SWEEP-401: «X из Y» = item.status ∈ {ready, shipped}; нет поля → pending.
+   * НЕ OR-ит readyForWork (это гейт «можно начинать» на /orders, HUB-304).
+   */
   protected readinessLabel(order: Order): string {
     const items = order.items ?? [];
     if (items.length === 0) return '—';
-    const ready = items.filter(
-      (item) =>
-        (item as { status?: string }).status === 'ready' ||
-        (item as { status?: string }).status === 'shipped' ||
-        item.readyForWork === true,
-    ).length;
+    const ready = items.filter((item) => {
+      const s = (item as { status?: string }).status;
+      return s === 'ready' || s === 'shipped';
+    }).length;
     return `${ready} из ${items.length}`;
   }
 }

@@ -12,8 +12,8 @@ import { InputComponent } from '../../shared/ui/input/input.component';
  * TZ-NEW LoginPage — the public entry point of the KPPDF site.
  *
  * Editorial form (Paper & Ink). Username + password, submits via
- * AuthService.login(). On success → / (which the router then
- * resolves to /materials via the AppLayout's default redirect).
+ * AuthService.login(). On success → / which the router resolves to
+ * /dashboard (Комбайн) — не /materials (TZ-SWEEP-401).
  *
  * `publicOnlyGuard` is wired on the route, so already-authed users
  * who hit /login are bounced to / immediately.

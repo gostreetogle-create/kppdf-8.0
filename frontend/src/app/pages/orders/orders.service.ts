@@ -127,9 +127,9 @@ export interface PatchEstimateStartPayload {
  *    doesn't paginate yet — it pushes pagination/sortBy/search to
  *    client-side for v1. Page layer handles this with a local
  *    filter + flat-list render.
- *  - Business actions (reserve-stock, ship, cancel) NOT exposed in
- *    v1 — only CRUD. They exist on backend and are scheduled for a
- *    state-machine iteration when workflow rules are finalized.
+ *  - Business actions: `ship` and `cancel` ARE exposed (TZ-SWEEP-401) —
+ *    PATCH must not bypass them. `reserve-stock` stays unexposed (v1
+ *    only CRUD) until the warehouse picker workflow is finalized.
  *
  * See `core/silent-http.ts` for the silent-error rationale.
  */
@@ -173,6 +173,20 @@ export class OrdersService {
 
   update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}`, payload);
+  }
+
+  /**
+   * TZ-SWEEP-401 — отгрузка заказа: создаёт Shipment на бэке и переводит
+   * заказ (+ все линии) в shipped. НЕ PATCH: PATCH-граф не включает shipped.
+   * Тело пустое/необязательное — warehouseId на бэке optional.
+   */
+  ship(id: string, body: Record<string, unknown> = {}): Observable<SilentResult<Order>> {
+    return silentPost<Order>(this.http, `${this.baseUrl}/orders/${id}/ship`, body);
+  }
+
+  /** TZ-SWEEP-401 — отмена заказа: снимает резервы на бэке. Не PATCH. */
+  cancel(id: string): Observable<SilentResult<Order>> {
+    return silentPost<Order>(this.http, `${this.baseUrl}/orders/${id}/cancel`, {});
   }
 
   /** TZ-PRODUCTION-309 — order-level estimate days (not WorkType catalog). */

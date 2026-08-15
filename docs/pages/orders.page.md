@@ -23,7 +23,7 @@ Read-only expand на списке `/orders`:
 | **Снабжение (HUB-303)**    | 1    | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
 | **Производство (HUB-303)** | 0    | «Оценка в цехе» + `/production?orderId=`                                                                                                                                 |
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |
-| **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели                                                                     |
+| **Готовность (HUB-304)**   | 0    | `X из Y` + линии ready/не ready; link «Открыть заказ» → `/orders/:id`; **нет** toggle ready в панели. Формула списка = `count(items.readyForWork===true)` — **не** `OrderItem.status` (тот считает «X из Y» на Комбайне `/dashboard`, TZ-SWEEP-401). Поля не сливать. |
 | **Склад (HUB-304)**        | 1    | lazy `GET /api/reservations?orderId=<Order.number>` (**номер**, не `_id`, не `reservationIds[]`) → active/total; empty «Нет броней»; error inline; link `/storage-items` |
 | **Отгрузка (HUB-304)**     | 0    | stub copy + link `/shipping`; **не** `GET /shipments`                                                                                                                    |
 

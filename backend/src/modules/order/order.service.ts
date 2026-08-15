@@ -276,6 +276,14 @@ export class OrderService {
     if (!Number.isInteger(index) || index < 0 || index >= doc.items.length) {
       throw new NotFoundException(`Order line ${itemId} not found`);
     }
+    // TZ-SWEEP-401: изделие нельзя отметить отгруженным, пока заказ не отгружен
+    // (ship() проставляет статусы всех линий сам). Старые линии без поля просто
+    // получают реальное значение при первой записи.
+    if (status === 'shipped' && doc.status !== 'shipped' && doc.status !== 'delivered') {
+      throw new BadRequestException(
+        'Нельзя отметить изделие отгруженным — заказ ещё не отгружен',
+      );
+    }
     const line = doc.items[index];
     line.status = status;
     await doc.save();
@@ -390,19 +398,55 @@ export class OrderService {
     return this.findById(id);
   }
 
+  /**
+   * TZ-SWEEP-401 — единственный PATCH-граф статуса заказа.
+   *
+   * PATCH разрешён только между операционными статусами доски
+   * (draft ↔ confirmed ↔ in_production ↔ ready; шаг назад/прыжок вперёд ок).
+   * shipped/delivered/cancelled в граф НЕ входят: отгрузка — только
+   * `POST /orders/:id/ship` (создаёт Shipment), отмена — `POST /orders/:id/cancel`
+   * (снимает резервы). no-op того же статуса из HARD_FROZEN пропускается —
+   * дальше решает freeze состава.
+   */
+  private assertOrderStatusTransition(from: string, to: string): void {
+    if (from === to) return;
+    if (HARD_FROZEN.has(to)) {
+      throw new BadRequestException(
+        'Отгрузка — через действие «Отгрузить»; отмена — «Отменить заказ».',
+      );
+    }
+    if (HARD_FROZEN.has(from)) {
+      const label = ORDER_STATUS_RU[from] ?? from;
+      throw new BadRequestException(`Заказ в статусе «${label}» нельзя изменить через PATCH`);
+    }
+    const graph = new Set(['draft', 'confirmed', 'in_production', 'ready']);
+    if (!graph.has(from) || !graph.has(to)) {
+      throw new BadRequestException(`Недопустимый переход статуса: ${from} → ${to}`);
+    }
+  }
+
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
     const definedKeys = (Object.keys(dto) as (keyof UpdateOrderDto)[]).filter(
       (key) => dto[key] !== undefined,
     );
+    // TZ-SWEEP-401: переход статуса проверяется ДО freeze состава. Status-only
+    // payload проходит в in_production/ready (рабочий дроп), а состав по-прежнему режется.
+    if (dto.status !== undefined) {
+      this.assertOrderStatusTransition(doc.status, dto.status);
+    }
     if (HARD_FROZEN.has(doc.status)) {
-      const blocked = definedKeys.some((key) => key !== 'materialsSource');
+      const blocked = definedKeys.some(
+        (key) => key !== 'status' && key !== 'materialsSource',
+      );
       if (blocked) {
         const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
         throw new BadRequestException(`Заказ в статусе «${label}» нельзя обновлять`);
       }
     } else if (PLAN_EDITABLE_FROZEN.has(doc.status)) {
-      const blocked = definedKeys.some((key) => !PLAN_UPDATE_KEYS.has(key));
+      const blocked = definedKeys.some(
+        (key) => key !== 'status' && !PLAN_UPDATE_KEYS.has(key),
+      );
       if (blocked) {
         const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
         throw new BadRequestException(
@@ -533,6 +577,11 @@ export class OrderService {
         new Types.ObjectId(shipment._id.toString()),
       ];
       order.status = 'shipped';
+      // TZ-SWEEP-401: отгрузка заказа = отгрузка всех линий (item.status — ход
+      // изделия; readyForWork не трогаем). Старые линии без поля получают значение.
+      for (const item of order.items) {
+        item.status = 'shipped';
+      }
       const saved = await order.save({ session });
       return { order: saved, shipmentId: shipment._id.toString() };
     });
