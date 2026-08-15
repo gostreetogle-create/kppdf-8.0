@@ -247,12 +247,12 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Администрирование',
     shortLabel: 'Админ',
     icon: ShieldCheck,
-    entryPath: '/admin/users',
+    entryPath: '/admin/devices',
     items: [
       {
-        path: '/admin/users',
+        path: '/admin/devices',
         pageKey: 'admin-users',
-        label: 'Пользователи',
+        label: 'Устройства',
         capabilities: ['user:admin'],
         systemRoles: ['admin'],
       },
@@ -635,7 +635,7 @@ export class AppLayoutComponent {
         return true;
       });
       // Entry link: prefer declared entryPath if still visible, else first item
-      // (admin caps may hide /admin/users while /admin/roles remains).
+      // (admin caps may hide /admin/devices while /admin/roles remains).
       const entryPath = cat.entryPath
         ? items.some((i) => i.path === cat.entryPath)
           ? cat.entryPath
@@ -761,7 +761,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/doc-constructor/texts',
     '/doc-constructor/tables',
     '/doc-constructor/documents',
-    '/admin/users',
+    '/admin/devices',
     '/admin/roles',
   ];
   const listOnlyNoDetail = new Set(['/products', '/modules']);

@@ -56,11 +56,12 @@
 ## Executor report (auto)
 
 - outcome: DONE
+- commit_sha: ef269935898d3e981070c4b9903e78ca5d679c8d
+- commit_sha_layout: WILL_AMEND
 - closed_at: 2026-08-15T15:00:00Z
 - agent_id: agent-3e757640b7
 - archive: tasks/_archive/2026-08/TZ-AUTH-308.done.md
 - lock: .mimocode/locks/TZ-AUTH-308-device-only-admin-ux.lock
-- commit_sha: PENDING_POST_COMMIT
 - gates: FE tsc PASS; FE tests 147 PASS; BE tsc PASS; BE auth 28 PASS; diff --check TZ PASS
 - conflict_disclosure: only TZ-AUTH-308 in `_active` at claim; no overlap
 - known_limitation: `/admin/users` reset-password UI redirected; break-glass login/script
