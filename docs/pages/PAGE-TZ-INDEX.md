@@ -14,7 +14,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
 | `(app shell)` | page-chrome.md | **UX-317 READY** системные ←→ в gutters |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
-| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`) |
+| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 READY FOR REVIEW** RU copy + taller column fields |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
 | `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 

@@ -264,12 +264,20 @@ interface ClientPreviewModel {
                   (click)="applyKpPreset()"
                   data-test="apply-kp-preset"
                 >
-                  Пресет КП
+                  Колонки как в КП
                 </button>
               </div>
+              <p class="ttd-column-help text-muted-foreground" data-test="add-column-help">
+                Название — заголовок на бланке; ключ — техническое имя (для КП: productName,
+                quantity, …); тип — как показывать значение. Свой ключ = колонка без автоподстановки
+                из каталога.
+              </p>
               @if (presetConfirm()) {
                 <div class="ttd-preset-confirm" role="alert" data-test="kp-preset-confirm">
-                  <span>Заменить текущие столбцы каноном КП?</span>
+                  <span
+                    >Заменить текущие столбцы на стандартные колонки КП (№, название, кол-во, ед.,
+                    цена, сумма)?</span
+                  >
                   <app-pi-button variant="default" size="sm" (click)="confirmKpPreset()"
                     >Заменить</app-pi-button
                   >
@@ -611,6 +619,14 @@ interface ClientPreviewModel {
         align-items: center;
         gap: 4px;
       }
+      .ttd-column-help {
+        flex: 1 1 220px;
+        margin: 0;
+        max-width: 42rem;
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--color-muted);
+      }
       .ttd-preset-confirm {
         display: inline-flex;
         align-items: center;
@@ -743,8 +759,8 @@ interface ClientPreviewModel {
       /* ─── Header Cell (inline editing per column) ─── */
       .ttd-ih {
         position: relative;
-        min-height: 124px;
-        padding: 12px 8px 14px;
+        min-height: 132px;
+        padding: 14px 8px 16px;
         text-align: left;
         font-size: 10px;
         font-weight: 700;
@@ -811,16 +827,17 @@ interface ClientPreviewModel {
       .ttd-ih-fields {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
       }
       .ttd-cell-input--sm {
-        padding: 3px 6px;
+        padding: 7px 8px;
         font-size: 11px;
+        min-height: 28px;
       }
       .ttd-cell-input--sm[type='number'] {
         width: 56px;
         text-align: center;
-        padding: 3px 4px;
+        padding: 7px 4px;
       }
       .ttd-cell-input--select {
         appearance: none;
@@ -853,12 +870,14 @@ interface ClientPreviewModel {
       /* ─── Shared cell input ─── */
       .ttd-cell-input {
         width: 100%;
-        padding: 3px 5px;
+        padding: 7px 8px;
         font-size: 12px;
+        min-height: 28px;
         border: 1px solid transparent;
         border-radius: 3px;
         background: transparent;
         color: var(--color-ink);
+        box-sizing: border-box;
       }
       .ttd-cell-input:hover {
         border-color: var(--color-rule);

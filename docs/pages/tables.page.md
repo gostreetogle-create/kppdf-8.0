@@ -61,7 +61,8 @@
 - **Dialog selectors (TZ-DOC-TABLES-302)** — источник и тип столбца используют `app-pi-overflow-select` с overlay; native `<select>` в диалоге не используется; поля registry показываются читаемыми строками с явным empty state
 - **Compact table dialog (TZ-DOC-TABLES-305)** — верхняя настройка собрана в плотную строку; «Тип» сохраняет `TableTemplateCategory` enum через overflow-select; поля источника выбираются multi-overflow панелью поверх диалога с поиском от 10 полей; шапка колонок немного выше
 - **Dialog layout preview (TZ-DOC-TABLES-308)** — источник и поля выровнены на общей baseline с сопоставимой шириной; шапки колонок выше; при пустых образцах под ними видны skeleton-строки эталона, а не пустое серое поле
-- **KP preset (TZ-DOC-TABLES-307)** — категория «КП» и идемпотентный seed «КП — позиции» с канонными `index`, `productName`, `quantity`, `unit`, `unitPrice`, `sum`; «Пресет КП» заменяет колонки только в текущем диалоге с подтверждением
+- **KP preset (TZ-DOC-TABLES-307)** — категория «КП» и идемпотентный seed «КП — позиции» с канонными `index`, `productName`, `quantity`, `unit`, `unitPrice`, `sum`; кнопка «Колонки как в КП» заменяет колонки только в текущем диалоге с подтверждением
+- **Dialog copy + taller fields (TZ-DOC-TABLES-309)** — RU-справка ключ/название/тип у «+ Добавить столбец»; confirm без «пресет/канон»; поля шапки колонок выше (+padding)
 - **Product registry fields (TZ-DOC-TABLES-303)** — Product exposes schema-backed print fields (notes, status, RAL, dimensions, purpose, installation, flags) and `photoIds` as the current text photo-slot binding
 - **Registry auto-sync (TZ-DOC-TABLES-304)** — Product fields are derived from `ProductSchema.paths` with an explicit deny-list, RU label overrides/fallback, deterministic scalar type mapping, and an explicit entity-source allowlist
 - **Copy** — `PiRowActions` `(copy)` / `copyLabel` (не hand-rolled icon)
@@ -81,6 +82,8 @@
 | TZ-DOC-TABLES-304 | Product field auto-sync from schema paths with deny-list and label/type policy |
 | TZ-DOC-TABLES-305 | Compact settings row, enum «Тип», source fields multi-overflow and taller column headers |
 | TZ-DOC-TABLES-307 | Category `kp` («КП») + seed «КП — позиции» + apply-preset columns (WAVE-KP-TABLE-CONFIG) |
+| TZ-DOC-TABLES-308 | Dialog layout/preview: baseline source/fields, taller headers, skeleton preview |
+| TZ-DOC-TABLES-309 | Dialog RU copy («Колонки как в КП» + help) + taller column header inputs |
 | TZ-DOC-335 | `editId` queryParam auto-open from builder |
 | TZ-DOC-336 | Pi shell; remove promo; copy slot; dialog FormField/Switch |
 
@@ -88,4 +91,4 @@
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-02 (DOC-336)._
+_Создано: 2026-07-19. Обновлено: 2026-08-15 (DOC-TABLES-309)._
