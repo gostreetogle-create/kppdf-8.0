@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  HostListener,
   inject,
   input,
   output,
@@ -24,7 +25,6 @@ import {
   workTypeOklch,
   workTypeWash,
   type OrderEstimateInput,
-  type DirectModuleRef,
 } from '../gantt-bar.model';
 import type { OrderStatus } from '../../orders/orders.service';
 
@@ -151,7 +151,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
           }
         </section>
 
-        <section data-test="inspector-tree">
+        <section data-test="inspector-tree" class="relative min-w-0">
           <h3 class="text-xs font-medium text-muted-foreground mb-2">Состав заказа</h3>
           @if (loadingTree()) {
             <p class="text-xs text-muted-foreground">Загрузка дерева…</p>
@@ -162,19 +162,22 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
           } @else {
             <ul class="space-y-2">
               @for (item of tree()!.items; track item.orderItemIndex) {
-                <li class="border hairline rounded-sm overflow-hidden bg-paper">
+                <li
+                  class="relative border hairline rounded-sm bg-paper"
+                  [attr.data-test]="'inspector-product-row-' + item.orderItemIndex"
+                >
                   <div class="flex items-stretch">
                     <button
                       type="button"
                       class="flex-1 min-w-0 text-left px-2 py-2.5 pi-focus-ring flex items-center gap-2 hover:bg-paper-2"
-                      (click)="toggle('p-' + item.orderItemIndex)"
-                      [attr.aria-expanded]="expanded().has('p-' + item.orderItemIndex)"
+                      (click)="toggleProduct(item.orderItemIndex, $event)"
+                      [attr.aria-expanded]="expandedProduct() === item.orderItemIndex"
                       [attr.data-test]="'inspector-product-' + item.orderItemIndex"
                     >
                       <span
                         class="inline-flex items-center justify-center w-7 h-7 shrink-0 rounded-sm border hairline text-sm font-semibold text-ink bg-paper-2"
                         aria-hidden="true"
-                        >{{ expanded().has('p-' + item.orderItemIndex) ? '−' : '+' }}</span
+                        >{{ expandedProduct() === item.orderItemIndex ? '−' : '+' }}</span
                       >
                       @if (item.productPhotoUrl) {
                         <img
@@ -191,7 +194,7 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
                       <span class="min-w-0 flex-1">
                         <span class="font-medium block truncate">{{ item.productName }}</span>
                         <span class="text-[10px] text-muted-foreground"
-                          >Изделие · нажмите строку</span
+                          >Изделие · состав вверх</span
                         >
                       </span>
                       <span class="font-mono text-[10px] text-muted-foreground shrink-0"
@@ -206,42 +209,70 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
                       >→</a
                     >
                   </div>
-                  @if (expanded().has('p-' + item.orderItemIndex)) {
-                    <ul class="border-t hairline">
-                      @for (mod of item.modules; track mod.moduleId) {
-                        <li>
-                          <div class="flex items-stretch">
-                            <button
-                              type="button"
-                              class="flex-1 min-w-0 text-left pl-3 pr-2 py-2 pi-focus-ring flex items-center gap-2 hover:bg-paper-2 text-xs"
-                              (click)="toggle('m-' + mod.moduleId)"
-                              [attr.aria-expanded]="expanded().has('m-' + mod.moduleId)"
-                              [attr.data-test]="'inspector-module-' + mod.moduleId"
-                            >
-                              <span
-                                class="inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-sm border hairline text-xs font-semibold bg-paper-2"
-                                aria-hidden="true"
-                                >{{ expanded().has('m-' + mod.moduleId) ? '−' : '+' }}</span
+                  @if (expandedProduct() === item.orderItemIndex && productPopoverRect(); as pref) {
+                    <div
+                      class="inspector-up-popover"
+                      data-test="inspector-product-popover"
+                      role="dialog"
+                      aria-label="Модули изделия"
+                      [style.left.px]="pref.left"
+                      [style.width.px]="pref.width"
+                      [style.bottom.px]="pref.bottom"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <ul>
+                        @for (mod of item.modules; track mod.moduleId) {
+                          <li class="border-b hairline last:border-0">
+                            <div class="flex items-stretch">
+                              <button
+                                type="button"
+                                class="flex-1 min-w-0 text-left pl-3 pr-2 py-2 pi-focus-ring flex items-center gap-2 hover:bg-paper-2 text-xs"
+                                (click)="toggleModule(mod.moduleId, $event)"
+                                [attr.aria-expanded]="expandedModule() === mod.moduleId"
+                                [attr.data-test]="'inspector-module-' + mod.moduleId"
                               >
-                              @if (mod.modulePhotoUrl) {
-                                <img
-                                  [src]="mod.modulePhotoUrl"
-                                  alt=""
-                                  class="w-8 h-8 rounded-sm object-cover border hairline shrink-0"
-                                />
-                              }
-                              <span class="truncate font-medium">{{ mod.moduleName }}</span>
-                            </button>
-                            <a
-                              class="shrink-0 px-2 flex items-center text-[11px] underline-offset-2 hover:underline border-l hairline pi-focus-ring"
-                              [routerLink]="['/modules', mod.moduleId]"
-                              data-test="inspector-open-module"
-                              title="Открыть карточку модуля"
-                              >→</a
-                            >
-                          </div>
-                          @if (expanded().has('m-' + mod.moduleId)) {
-                            <ul class="border-t hairline">
+                                <span
+                                  class="inline-flex items-center justify-center w-6 h-6 shrink-0 rounded-sm border hairline text-xs font-semibold bg-paper-2"
+                                  aria-hidden="true"
+                                  >{{ expandedModule() === mod.moduleId ? '−' : '+' }}</span
+                                >
+                                @if (mod.modulePhotoUrl) {
+                                  <img
+                                    [src]="mod.modulePhotoUrl"
+                                    alt=""
+                                    class="w-8 h-8 rounded-sm object-cover border hairline shrink-0"
+                                  />
+                                }
+                                <span class="truncate font-medium">{{ mod.moduleName }}</span>
+                              </button>
+                              <a
+                                class="shrink-0 px-2 flex items-center text-[11px] underline-offset-2 hover:underline border-l hairline pi-focus-ring"
+                                [routerLink]="['/modules', mod.moduleId]"
+                                data-test="inspector-open-module"
+                                title="Открыть карточку модуля"
+                                >→</a
+                              >
+                            </div>
+                          </li>
+                        } @empty {
+                          <li class="px-3 py-2 text-[11px] text-muted-foreground">Нет модулей</li>
+                        }
+                      </ul>
+                    </div>
+                    @if (expandedModule(); as modId) {
+                      @for (mod of item.modules; track mod.moduleId) {
+                        @if (mod.moduleId === modId && modulePopoverRect(); as mref) {
+                          <div
+                            class="inspector-up-popover inspector-up-popover-module"
+                            data-test="inspector-module-popover"
+                            role="dialog"
+                            aria-label="Виды работ модуля"
+                            [style.left.px]="mref.left"
+                            [style.width.px]="mref.width"
+                            [style.bottom.px]="mref.bottom"
+                            (click)="$event.stopPropagation()"
+                          >
+                            <ul>
                               @for (wt of mod.workTypes; track wt.workTypeId) {
                                 <li
                                   class="pl-4 pr-2 py-2.5 space-y-1.5 border-b hairline last:border-0"
@@ -311,17 +342,15 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
                                   }
                                 </li>
                               } @empty {
-                                <li class="pl-8 py-2 text-[11px] text-muted-foreground">
+                                <li class="pl-4 py-2 text-[11px] text-muted-foreground">
                                   Нет видов работ у модуля
                                 </li>
                               }
                             </ul>
-                          }
-                        </li>
-                      } @empty {
-                        <li class="px-3 py-2 text-[11px] text-muted-foreground">Нет модулей</li>
+                          </div>
+                        }
                       }
-                    </ul>
+                    }
                   }
                 </li>
               }
@@ -331,6 +360,29 @@ const PRIORITIES: { value: OrderPriority; label: string; hint: string }[] = [
       </div>
     </aside>
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100%;
+        min-height: 0;
+      }
+      .inspector-up-popover {
+        position: fixed;
+        z-index: 80;
+        max-height: min(13rem, 40vh);
+        overflow-y: auto;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper, #fff);
+        box-shadow: var(--shadow-raised, 0 -6px 20px oklch(0.2 0.02 260 / 0.12));
+      }
+      .inspector-up-popover-module {
+        z-index: 90;
+        max-height: min(12rem, 36vh);
+      }
+    `,
+  ],
 })
 export class OrderInspectorComponent {
   readonly order = input.required<Order>();
@@ -352,7 +404,20 @@ export class OrderInspectorComponent {
   protected readonly priorities = PRIORITIES;
   protected readonly tree = signal<OrderEstimateInput | null>(null);
   protected readonly loadingTree = signal(false);
-  protected readonly expanded = signal(new Set<string>());
+  /** TZ-PRODUCTION-318 — one product popover at a time (opens upward). */
+  protected readonly expandedProduct = signal<number | null>(null);
+  /** Module popover nested above product popover. */
+  protected readonly expandedModule = signal<string | null>(null);
+  protected readonly productPopoverRect = signal<{
+    left: number;
+    width: number;
+    bottom: number;
+  } | null>(null);
+  protected readonly modulePopoverRect = signal<{
+    left: number;
+    width: number;
+    bottom: number;
+  } | null>(null);
   protected readonly saving = signal(false);
   protected readonly daysSaving = signal(false);
   protected readonly priorityDraft = signal<OrderPriority>('normal');
@@ -376,8 +441,33 @@ export class OrderInspectorComponent {
       this.priorityDraft.set(o.priority ?? 'normal');
       this.plannedDraft.set(toDateInput(o.plannedDate) || toDateInput(o.date));
       this.daysOverrides.set({});
+      this.expandedProduct.set(null);
+      this.expandedModule.set(null);
+      this.productPopoverRect.set(null);
+      this.modulePopoverRect.set(null);
       void this.reloadTree(o);
     });
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.expandedModule() != null) {
+      this.expandedModule.set(null);
+      this.modulePopoverRect.set(null);
+      return;
+    }
+    if (this.expandedProduct() != null) {
+      this.expandedProduct.set(null);
+      this.productPopoverRect.set(null);
+    }
+  }
+
+  @HostListener('document:click')
+  protected onDocumentClick(): void {
+    this.expandedModule.set(null);
+    this.expandedProduct.set(null);
+    this.modulePopoverRect.set(null);
+    this.productPopoverRect.set(null);
   }
 
   protected statusLabel(s: OrderStatus): string {
@@ -415,11 +505,44 @@ export class OrderInspectorComponent {
     return fromTree ?? '';
   }
 
-  protected toggle(key: string): void {
-    const next = new Set(this.expanded());
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    this.expanded.set(next);
+  protected toggleProduct(orderItemIndex: number, event: Event): void {
+    event.stopPropagation();
+    if (this.expandedProduct() === orderItemIndex) {
+      this.expandedProduct.set(null);
+      this.expandedModule.set(null);
+      this.productPopoverRect.set(null);
+      this.modulePopoverRect.set(null);
+      return;
+    }
+    const target = event.currentTarget as HTMLElement;
+    const row = target.closest('li') ?? target;
+    const r = row.getBoundingClientRect();
+    this.productPopoverRect.set({
+      left: Math.max(8, r.left),
+      width: Math.min(r.width, window.innerWidth - 16),
+      bottom: Math.max(8, window.innerHeight - r.top + 4),
+    });
+    this.expandedProduct.set(orderItemIndex);
+    this.expandedModule.set(null);
+    this.modulePopoverRect.set(null);
+  }
+
+  protected toggleModule(moduleId: string, event: Event): void {
+    event.stopPropagation();
+    if (this.expandedModule() === moduleId) {
+      this.expandedModule.set(null);
+      this.modulePopoverRect.set(null);
+      return;
+    }
+    const target = event.currentTarget as HTMLElement;
+    const row = target.closest('li') ?? target;
+    const r = row.getBoundingClientRect();
+    this.modulePopoverRect.set({
+      left: Math.max(8, r.left),
+      width: Math.min(r.width, window.innerWidth - 16),
+      bottom: Math.max(8, window.innerHeight - r.top + 4),
+    });
+    this.expandedModule.set(moduleId);
   }
 
   protected onPriority(ev: Event): void {
@@ -560,14 +683,11 @@ export class OrderInspectorComponent {
     try {
       const input = await this.facade.buildOrderEstimatePublic(order);
       this.tree.set(input);
-      const open = new Set<string>();
-      for (const item of input.items) {
-        open.add('p-' + item.orderItemIndex);
-        for (const mod of item.modules as DirectModuleRef[]) {
-          open.add('m-' + mod.moduleId);
-        }
-      }
-      this.expanded.set(open);
+      // TZ-PRODUCTION-318: start collapsed — expand via upward popovers.
+      this.expandedProduct.set(null);
+      this.expandedModule.set(null);
+      this.productPopoverRect.set(null);
+      this.modulePopoverRect.set(null);
     } finally {
       this.loadingTree.set(false);
     }

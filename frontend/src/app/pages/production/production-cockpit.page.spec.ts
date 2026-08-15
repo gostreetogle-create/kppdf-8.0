@@ -303,6 +303,29 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(orderIds.has('o2')).toBe(true);
   });
 
+  it('TZ-PRODUCTION-318: card sheet nearly full width + viewport max-height', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const page = fixture.componentInstance as unknown as {
+      toggleRightTool: (tool: 'card' | 'scale') => void;
+    };
+    page.toggleRightTool('card');
+    fixture.detectChanges();
+    const card = fixture.nativeElement.querySelector(
+      '[data-test="production-flyout-card"]',
+    ) as HTMLElement;
+    expect(card).not.toBeNull();
+    expect(card.classList.contains('production-studio-sheet-card')).toBe(true);
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'production-cockpit.page.ts'),
+      'utf8',
+    );
+    expect(source).toContain('left: 0.5rem');
+    expect(source).toContain('right: 0.5rem');
+    expect(source).toContain('max-height: min(52vh, calc(100% - 1rem))');
+    expect(source).not.toContain('width: min(60rem');
+    expect(source).not.toContain('height: min(42vh, 22rem)');
+  });
+
   it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
@@ -332,5 +355,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
     expect(source).toContain('production-studio-sheet-card');
+    expect(source).toContain('max-height: min(52vh, calc(100% - 1rem))');
   });
 });

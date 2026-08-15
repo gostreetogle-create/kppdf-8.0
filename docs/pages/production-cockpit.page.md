@@ -95,6 +95,7 @@ flyouts: overlay; center width unchanged
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` + `setOrderExpanded(id,true)`; остальные сводки остаются, дети под выбранным.
+- **TZ-PRODUCTION-318:** Карточка sheet почти на всю ширину студии; `max-height` в viewport + scroll; состав изделия/модуля — upward fixed popover.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -114,6 +115,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-315** | DONE: Карточка bottom sheet under Gantt |
 | **TZ-PRODUCTION-316** | DONE: per-bar start offsets (parallel) |
 | **TZ-PRODUCTION-317** | DONE: select keeps multi-order bars; expand in-place |
+| **TZ-PRODUCTION-318** | DONE: sheet full-width + viewport; composition expands up |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |

@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T16:45:00Z
+updated_at: 2026-08-15T16:50:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-- **TZ-PRODUCTION-318** READY — card sheet viewport (claim next)
+_(empty)_
 
 ## Queue hygiene (not live)
 
@@ -22,27 +22,21 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## DONE / LANDED (recent)
 
+### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
+
+- 314 summary+expand · 315 bottom card · 316 start offsets · 317 keep orders · 318 sheet viewport
+
+### TZ-PRODUCTION-318 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-318.done.md`
+
 ### TZ-PRODUCTION-317 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-317.done.md`
 
-### WAVE-PRODUCTION-GANTT-TREE — in progress (318 next)
-
-- 314 summary+expand · 315 bottom card · 316 start offsets · 317 keep orders
-
 ### TZ-PRODUCTION-316 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-316.done.md`
-
-### TZ-PRODUCTION-315 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-315.done.md`
-
-### TZ-PRODUCTION-314 — DONE 2026-08-15
-
-- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-314.done.md`
-
-### TZ-PRODUCTION-312 / 313 / 311 / 309 — DONE
 
 ### TZ-AUTH-305 — DONE / CUTOVER 2026-08-15
 
@@ -56,5 +50,5 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## HEAD / queue
 
-- Queue empty for executor claim (WAVE-PRODUCTION-GANTT-TREE closed)
+- Queue empty for executor claim (WAVE-PRODUCTION-GANTT-TREE closed 314–318)
 - Deploy app: НЕ — **готово предложить деплой**

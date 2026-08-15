@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-318 DONE — card sheet viewport + upward composition
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed; deploy НЕ
+**Что:** sheet почти full-width + max-height в viewport; состав — fixed upward popovers; saves intact.
+**Gates:** FE tsc PASS; FE jest cockpit **9 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-318.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-318-card-sheet-viewport.lock`
+**Dep:** 317 @ 67d266dc
+
 ## [2026-08-15] — TZ-PRODUCTION-317 DONE — Gantt select keeps multi-order
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; deploy НЕ

@@ -310,7 +310,7 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
       }
-      /* TZ-PRODUCTION-315 — Карточка as bottom sheet under Gantt (not right flyout). */
+      /* TZ-PRODUCTION-315/318 — Карточка as bottom sheet under Gantt (not right flyout). */
       .production-studio-sheet {
         position: absolute;
         z-index: 20;
@@ -320,13 +320,15 @@ const CHROME_OWNER = 'production-cockpit';
         box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
       }
       .production-studio-sheet-card {
-        left: 50%;
-        transform: translateX(-50%);
+        left: 0.5rem;
+        right: 0.5rem;
+        transform: none;
         bottom: 0.5rem;
         top: auto;
-        width: min(60rem, calc(100% - 1rem));
-        height: min(42vh, 22rem);
-        max-height: min(42vh, 22rem);
+        width: auto;
+        height: auto;
+        /* Stay fully in studio viewport; body scrolls inside inspector. */
+        max-height: min(52vh, calc(100% - 1rem));
         overflow: hidden;
         padding: 0;
         display: flex;
@@ -347,9 +349,10 @@ const CHROME_OWNER = 'production-cockpit';
           right: 0.5rem;
         }
         .production-studio-sheet-card {
-          width: calc(100% - 1rem);
-          height: min(48vh, 22rem);
-          max-height: min(48vh, 22rem);
+          left: 0.5rem;
+          right: 0.5rem;
+          width: auto;
+          max-height: min(48vh, calc(100% - 1rem));
         }
       }
     `,
