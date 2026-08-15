@@ -1,0 +1,15 @@
+task: TZ-UX-321
+status: DONE
+closed_at: 2026-08-15T14:35:00Z
+implementation_sha: 21f32f11317d79d25e05b651f320579e407d3bf3
+merge_sha: 85dbcc57cb2174fa750c27b425e6319baba8b30a
+protected_files:
+  - frontend/src/app/layout/app-layout.component.ts
+  - frontend/src/app/layout/app-layout.component.spec.ts
+  - docs/pages/page-chrome.md
+  - docs/audits/2026-08-12-nav-return-gutters-canon.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/agent-checklists/TZ-UX-321.md
+behavior: universal left chrome rail (64px) under header; back/forward stacked inside rail; visible >=1680; UX-320 interim floating gutters superseded; page tools deferred to UX-322
+cursor_verdict: PASS
+production: not executed
