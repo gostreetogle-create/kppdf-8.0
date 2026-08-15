@@ -132,6 +132,16 @@ ui/stitch_professional_desktop_crm_refinement/
 # Freebuff AI agent workspace (local only)
 .freebuff/
 
+# Local Cursor/agent worktrees (never commit)
+.worktrees/
+
+# Python bytecode / local vector DB / ad-hoc patches
+__pycache__/
+*.py[cod]
+ruvector.db
+*.patch
+!.github/**/*.patch
+
 # Files intentionally excluded from the ERP repository
 WindowsTheme/
 vendor/
