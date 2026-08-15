@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T09:54:59Z
-main_head: `55dac38afb9e533d1ad28793a1edbae3181482cc`
+updated_at: 2026-08-15T10:12:00Z
+main_head: `9b50bc9ec044216817fd0928c8fd3d29cb3f52e6`
 
 ## ACTIVE
 
