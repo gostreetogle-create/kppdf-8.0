@@ -375,11 +375,11 @@ certbot renew --dry-run
 
 ---
 
-## 15b. TZ-AUTH-305 — `auth_request` вместо Basic (PREP, НЕ применено)
+## 15b. TZ-AUTH-305 — `auth_request` вместо Basic (**ПРИМЕНЕНО 2026-08-15**)
 
-> **Статус:** только документация/план. Переключение — строго после явного слова PO
-> `деплой` и Cursor/PO browser PASS по потоку TZ-AUTH-303/304. Полная политика и
-> nginx-скелет: `docs/ops/home-host-access.md` §4.1.
+> **Статус:** cutover выполнен на VPS `box-946037` после команды PO
+> `деплой / убирай подъезд`. Политика: `docs/ops/home-host-access.md` §4.1.
+> Бэкап: `/etc/nginx/sites-available/kppdf-proxy.bak-auth-basic`.
 
 ### Rollout (когда PO скажет «деплой»)
 

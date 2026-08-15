@@ -2,13 +2,14 @@
 TZ-PRODUCTION-308: Cockpit polish — inspector / keyboard / scroll-today
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — старт **только после** DONE TZ-PRODUCTION-303.1 + PO smoke `/production`
+STATUS: BACKLOG (parked) — **BLOCKED BY: WAVE-PRODUCTION-STUDIO-CHROME (после C/D visual PASS)**
 ACTIVE: не создавать до un-park PO
+ABSORBED: не запускать polish поверх docked w-56 layout; безопасные пункты будут переоценены после studio shell.
 SOURCE: docs/audits/2026-08-06-production-gantt-verdict-response.md
 PLAN: stabilize-then-split 2026-08-07
 
 РОЛЬ АГЕНТА: Frontend
-ЗАВИСИМОСТИ: TZ-PRODUCTION-303.1 DONE; PO browser smoke PASS
+ЗАВИСИМОСТИ: TZ-PRODUCTION-303.1 DONE; WAVE-PRODUCTION-STUDIO-CHROME C/D visual PASS; PO browser smoke PASS
 LAYER: 3
 
 PAGES: /production

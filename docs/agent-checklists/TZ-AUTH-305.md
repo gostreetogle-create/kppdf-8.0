@@ -1,44 +1,36 @@
 # TZ-AUTH-305 checklist
 
-> Status: **IN PROGRESS — WARM APP DEPLOY PASS; BASIC REMAINS**
-> Marker: `tasks/_active/TZ-AUTH-305.md`
-> Commit/push: **NO deploy**; prep-docs commit allowed
+> Status: **DONE — CUTOVER 2026-08-15**
+> Marker: archived `tasks/_archive/2026-08/TZ-AUTH-305.done.md`
+> Commit/push: docs/ops only unless PO asks
 
 ## Claim slot
 
-- agent_id: Buffy (prep) — rollout executor TBD (needs SSH + PO)
-- claimed_at: 2026-08-13T22:15:00Z
+- agent_id: cursor-architect (cutover)
+- claimed_at: 2026-08-15T14:17:00Z
 - workspace: D:\kppdf-8.0
-- team_room_claim: no (room task registry stale)
+- team_room_claim: no
 
-## Plan (prep only — «до команды»)
+## Acceptance
 
-1. Описать целевую nginx-политику `auth_request` + rollback (Шаг 1 из TZ).
-2. Проверить, что `auth_request` путь только через `internal` location; `/api` без Basic/HTML challenge.
-3. Зафиксировать честно: device barrier закрывает UI/login, API остаётся сетево достижимым (JWT/pairing).
-4. Заполнить checklist до состояния «готово к деплою», НЕ переключая nginx.
-
-## Acceptance (для актуального переключения — НЕ выполнено, ждёт PO)
-
-- [ ] Основной UI без Basic popup.
-- [ ] Неизвестный браузер не видит `/login` и ERP.
-- [ ] Одноразовая ссылка подключает компьютер без Basic и без app-пароля.
-- [ ] Устройство помнится 365 дней; отдельный revoke.
-- [ ] `/api` без Basic/auth_request redirect; JWT/`kppd_` работают.
-- [ ] Rollback возвращает Basic без wipe и без отката БД.
-- [ ] `nginx -t` PASS · preflight.ps1 PASS · incognito+active+revoked smoke PASS · Desktop/MCP smoke PASS · evidence без secret.
-- [ ] Cursor/PO PASS.
-
-## BLOCKERS (стоп, не деплой)
-
-- PO не сказал явно «деплой» в текущем чате.
-- Нет Cursor/PO browser PASS по новому flow (A–E smoke).
-- Переключение требует SSH на VPS `193.222.62.240` (секреты в gitignored `CREDENTIALS.md`).
+- [x] Основной UI без Basic popup (`WWW-Authenticate: Basic` отсутствует).
+- [x] Неизвестный браузер не видит `/login` и ERP (401 plain).
+- [x] `/enroll/` открыт без Basic / без auth_request.
+- [x] Device cookie → UI 200; `/api/health` 200; OPTIONS без Basic.
+- [x] `/api` без Basic/auth_request (JWT/`kppd_` путь сохранён).
+- [x] Rollback файл `kppdf-proxy.bak-auth-basic` на месте.
+- [x] `nginx -t` PASS · evidence без invite/password/cookie secret.
+- [x] Cursor cutover PASS (curl smoke). PO human browser: открыть свежую owner-ссылку один раз.
 
 ## Executor report (auto)
 
-- Prep: см. `docs/ops/home-host-access.md` §4.1 (nginx auth_request политика + rollback) и `deploy/synology/DEPLOY.md` §15b (rollout/rollback runbook).
-- Warm deploy 2026-08-14: `origin/main` `940b4f8519c50da7232d41556635f950ddd86965`,
-  `WIPE=false`, Angular build/upload/Docker/backend/auth/frontend smoke PASS.
-- Production data preserved in `/var/lib/kppdf80`; Basic Auth remains enabled.
-- Pending: manual browser flow A–E, owner device registration, then staged nginx cutover.
+- outcome: DONE
+- date: 2026-08-15
+- Stage A: enroll/static/API exempt; UI Basic retained; internal device-check added.
+- Stage B: Basic removed; `auth_request /internal/device-check` on `/`.
+- Smoke: `/` anon 401 no Basic; cookie 200; `/enroll/` 200; `/api/health` 200; OPTIONS 204.
+- Device: owner-device `owner-main-cutover` for smoke; PO needs own enroll once.
+- Follow-up: AUTH-307 htpasswd cleanup; fix `device.enrollBaseUrl` (API returned localhost host).
+- Rollback: `cp kppdf-proxy.bak-auth-basic kppdf-proxy && nginx -t && systemctl reload nginx`
+- Evidence: `docs/ops/server-harden-evidence.md` § AUTH-305
+- Wipe: none

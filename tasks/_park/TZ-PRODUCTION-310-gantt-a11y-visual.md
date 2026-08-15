@@ -2,13 +2,14 @@
 TZ-PRODUCTION-310: Gantt visual + a11y (grid / focus / non-color)
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — после TZ-PRODUCTION-308
-ACTIVE: не создавать до un-park
+STATUS: BACKLOG (parked) — **BLOCKED BY: WAVE-PRODUCTION-STUDIO-CHROME (после C/D visual PASS)**
+ACTIVE: не создавать до un-park PO
+ABSORBED: не запускать a11y/visual polish поверх docked w-56 layout; безопасные пункты переоценить после shell.
 SOURCE: docs/audits/2026-08-06-production-gantt-verdict-response.md
 PLAN: stabilize-then-split 2026-08-07
 
 РОЛЬ АГЕНТА: Frontend a11y
-ЗАВИСИМОСТИ: TZ-PRODUCTION-308 DONE
+ЗАВИСИМОСТИ: WAVE-PRODUCTION-STUDIO-CHROME C/D visual PASS; затем отдельная a11y-реализация
 LAYER: 3
 
 PAGES: /production

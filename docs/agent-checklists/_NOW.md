@@ -37,6 +37,10 @@ Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO 
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-327.done.md`; one dumb scale-controls extract; 70 production tests PASS.
 
+### WAVE-PRODUCTION-GANTT-CASCADE — DONE 2026-08-15
+
+- **321–323:** work-detail cascade · kill bottom card · one full-width meta
+
 ### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
 
 - 314–320: expand · bottom card · offsets · keep orders · sheet viewport · card IA · **split expand vs card**
@@ -52,6 +56,7 @@ Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO 
 ### TZ-PRODUCTION-321 — DONE 2026-08-15
 
 - Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-321.done.md`
+
 
 ### TZ-PRODUCTION-320 — DONE 2026-08-15
 

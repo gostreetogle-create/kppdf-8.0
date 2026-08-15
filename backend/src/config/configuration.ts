@@ -71,7 +71,7 @@ export default (): AppConfig => ({
   device: {
     inviteTtlDays: parseInt(process.env.DEVICE_INVITE_TTL_DAYS ?? '3', 10),
     ownerInviteTtlMinutes: parseInt(
-      process.env.DEVICE_OWNER_INVITE_TTL_MINUTES ?? '15',
+      process.env.DEVICE_OWNER_INVITE_TTL_MINUTES ?? '2880',
       10,
     ),
     grantTtlDays: parseInt(process.env.DEVICE_GRANT_TTL_DAYS ?? '365', 10),

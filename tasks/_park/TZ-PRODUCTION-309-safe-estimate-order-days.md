@@ -2,13 +2,14 @@
 TZ-PRODUCTION-309: Safe estimate — production:write + order-level days
 ═══════════════════════════════════════════════════════════════
 
-STATUS: BACKLOG (parked) — **обязателен перед любым drag/resize** Ганта
-ACTIVE: не создавать до un-park; предпочтительно после 308 или parallel docs-ready
+STATUS: **UNPARKED 2026-08-15** → executable `tasks/TZ-PRODUCTION-309-safe-estimate-order-days.md`
+ACTIVE: см. `tasks/_active/TZ-PRODUCTION-309.md` + WAVE-PRODUCTION-GANTT-RESIZE
+ABSORBED: park file historical; do not duplicate work here.
 SOURCE: docs/audits/2026-08-06-production-gantt-verdict-response.md; PO-DIARY «мышью чётко»
 PLAN: stabilize-then-split 2026-08-07
 
 РОЛЬ АГЕНТА: Backend + Frontend (split ok: BE first)
-ЗАВИСИМОСТИ: TZ-PRODUCTION-303.1 DONE; желательно 308
+ЗАВИСИМОСТИ: TZ-PRODUCTION-303.1 DONE; WAVE-PRODUCTION-STUDIO-CHROME C/D visual PASS; 308 не является обязательным child этой wave
 LAYER: 3 (FE) / 4 (BE) — если параллель: два child или строго sequential BE→FE
 
 PAGES: /production

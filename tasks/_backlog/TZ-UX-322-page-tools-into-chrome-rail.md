@@ -1,18 +1,13 @@
-# TZ-UX-322 (PARK): page-tools → универсальная chrome-панель
+# TZ-UX-322 (ACTIVE via WAVE): page-tools → универсальная chrome-панель
 
-> Park / successor после TZ-UX-321. **Не брать**, пока 321 не LANDED + PO visual PASS.
+> **Un-parked 2026-08-15.** Executable: `tasks/TZ-UX-322-chrome-page-tools-api.md`  
+> First consumer: `/production` in `TZ-UX-323` (not modules filter yet).
 
 ## Intent
 
-Страницы могут отдавать в левый `app-chrome-rail-left` глобальные кнопки
-(пример PO: фильтр на `/modules`), не дублируя их хаотично в контенте.
-
-## Scope sketch
-
-- Shell slot / projection API (один write-path в rail).
-- Первая миграция-кандидат: filter control каталожных списков.
-- Не переносить жёлтое меню разделов; не делать второй sidebar IA.
+Страницы проецируют icon-tools в `app-chrome-rail-left/right` под ←→,
+не дублируя колонки в контенте. Гант — первый мигрант (PO screenshot).
 
 ## Depends
 
-- TZ-UX-321 DONE (rail exists, ←→ inside).
+- TZ-UX-321 / FIX DONE

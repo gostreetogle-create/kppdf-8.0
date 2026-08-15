@@ -100,6 +100,34 @@
 ## Notes
 
 - `kppdf-tunnel` on VM: **active**; health via tunnel and LAN OK.
-- Basic Auth on nginx still required before app login.
+- Basic Auth on nginx still required before app login (**superseded 2026-08-15** — see § AUTH-305 below).
 - No SUID bits removed (nothing unexpected outside allowlist/packages).
 - deploy.ps1 **not** run in this TZ.
+
+---
+
+## TZ-AUTH-305 cutover evidence (2026-08-15)
+
+| Поле | Значение |
+|------|----------|
+| Дата | 2026-08-15 |
+| Agent | cursor-architect (ops cutover) |
+| PO command | `деплой / убирай подъезд` |
+| VPS | box-946037 (`193.222.62.240`) |
+| Backup | `/etc/nginx/sites-available/kppdf-proxy.bak-auth-basic` |
+| `nginx -t` | PASS (Stage A + Stage B) |
+| UI `/` без cookie | **401** text/plain, **нет** `WWW-Authenticate: Basic` |
+| UI `/` с device cookie | **200** |
+| `/enroll/*` без cookie | **200** |
+| `/api/health` | **200** |
+| OPTIONS `/api/health` | **204** (без Basic challenge) |
+| Device grant | owner-device `owner-main-cutover` (smoke); PO human browser — отдельная owner-ссылка |
+| Wipe | **нет** |
+| Known follow-up | invite URLs from API may show `localhost:4200` host — open as `https://kppdf-crm.ru/enroll/<secret>`; fix `device.enrollBaseUrl` in AUTH-307 |
+
+Rollback (без wipe):
+
+```bash
+cp /etc/nginx/sites-available/kppdf-proxy.bak-auth-basic /etc/nginx/sites-available/kppdf-proxy
+nginx -t && systemctl reload nginx
+```

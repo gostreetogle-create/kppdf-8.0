@@ -64,6 +64,8 @@ services:
       FRONTEND_PATH: /app/frontend
       LOG_LEVEL: info
       TRUST_PROXY: "${TRUST_PROXY:-1}"
+      DEVICE_OWNER_INVITE_TTL_MINUTES: "${DEVICE_OWNER_INVITE_TTL_MINUTES:-2880}"
+      DEVICE_ENROLL_BASE_URL: "${DEVICE_ENROLL_BASE_URL:-https://kppdf-crm.ru}"
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/api/health/ready', r => process.exit(r.statusCode===200?0:1)).on('error', () => process.exit(1))"]
       interval: 15s

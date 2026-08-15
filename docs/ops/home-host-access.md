@@ -108,14 +108,11 @@ IP allowlist — только запасной костыль, не страте
 
 ### Что уже сделано / очередь
 
-1. **Сделано 2026-08-10:** HTTP Basic Auth на VPS nginx (`kppdf` / пароль в gitignored `deploy/synology/CREDENTIALS.md` § HTTP Basic Auth). Без пароля снаружи → 401 на HTML/UI.
-   **Уточнение 2026-08-11:** `location /api/` — `auth_basic off` (Nest JWT/pairing сам закрывает API; иначе Desktop/Tauri ловит `Failed to fetch` из‑за CORS/Basic). OPTIONS тоже без Basic (preflight). UI `/` по-прежнему за подъездом.
+1. **Сделано 2026-08-10 → снято 2026-08-15 (TZ-AUTH-305):** HTTP Basic Auth («подъезд») на UI **выключен**. Rollback-копия: `/etc/nginx/sites-available/kppdf-proxy.bak-auth-basic`. Пароль подъезда в `CREDENTIALS.md` оставлен только для rollback.
 2. **Сделано 2026-08-11 (TZ-OPS-310):** SUID/SGID inventory VPS+VM, порты, UFW, tunnel, htpasswd 640 — evidence `docs/ops/server-harden-evidence.md`, archive `tasks/_archive/2026-08/TZ-OPS-310.done.md`.
-   Gate деплоя: `deploy/synology/preflight.ps1` требует этот archive. Warm deploy только по слову PO **«деплой»**.
-   Spec (история): `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`.
-3. **NEXT (доступ):** `TZ-AUTH-306` owner invariant → `TZ-AUTH-303` backend → `TZ-AUTH-304` UI → `TZ-AUTH-305` безопасное снятие Basic → `TZ-AUTH-307` cleanup; **без** IP-allowlist.
-4. Приглашённые устройства входят автоматически без app-пароля сразу в заранее выбранной роли; password login сохраняется для owner/break-glass.
-5. Текст на `/login` — мягкий, **после** барьера; без угроз и «несанкционированный доступ запрещён».
+3. **Сделано 2026-08-15 (TZ-AUTH-305 cutover):** UI `/` за `auth_request` → `GET /api/device/auth-check` (cookie `__Host-kppdf-device`). `/enroll/` + статика + `/api/` — без Basic и без `auth_request`. Без cookie → **401** plain text, **без** `WWW-Authenticate: Basic`. Evidence: `docs/ops/server-harden-evidence.md` § AUTH-305.
+4. **NEXT (доступ):** `TZ-AUTH-307` cleanup (htpasswd/docs) по решению PO; password login owner — break-glass через API + новая owner-ссылка «Добавить мой компьютер»; **без** IP-allowlist.
+5. Приглашённые устройства входят по одноразовой ссылке без подъезда и без app-пароля (роль задана в инвайте).
 6. Cloudflare Access — **не** первый шаг, пока DNS/прокси не на Cloudflare.
 7. Tailscale (§7) — этап «совсем не публичный»; не путать с ключом в браузере.
 
@@ -133,11 +130,10 @@ KPPDF — индивидуальный проект для обучения, э�
 Не использовать: организация/корпоратив/сотрудники; «несанкционированный доступ запрещён»; угрозы, штрафы, РКН.  
 Помнить: текст = этикетка, не compliance.
 
-### 4.1 Целевая nginx-политика TZ-AUTH-305 — `auth_request` вместо Basic (PREP, не применено)
+### 4.1 nginx-политика TZ-AUTH-305 — `auth_request` вместо Basic (**ПРИМЕНЕНО 2026-08-15**)
 
-> **Статус:** подготовка к деплою. НЕ применено на проде — ждёт явного слова PO
-> `деплой` и Cursor/PO browser PASS по потоку TZ-AUTH-303/304. Rollback-план ниже
-> фиксируется ДО переключения, чтобы откат был одной операцией без wipe.
+> **Статус:** применено на проде после команды PO `деплой / убирай подъезд`.
+> Rollback одной операцией — см. ниже (без wipe / без отката БД).
 
 #### Целевая политика (Шаг 1 из TZ-AUTH-305)
 
