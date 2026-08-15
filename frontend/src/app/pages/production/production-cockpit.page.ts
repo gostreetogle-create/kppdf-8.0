@@ -14,14 +14,16 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
-import { GanttBarsComponent } from './blocks/gantt-bars.component';
+import { GanttBarsComponent, type GanttEstimateDaysCommit } from './blocks/gantt-bars.component';
 import { OrderInspectorComponent } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import { filterOrdersForRail, formatDateOnly, type GanttBar } from './gantt-bar.model';
-import type { Order, OrderStatus } from '../orders/orders.service';
+import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
+import { extractErrorMessage } from '../../core/silent-http';
+import { PiToastService } from '../../shared/ui/toast';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
@@ -99,7 +101,9 @@ const CHROME_OWNER = 'production-cockpit';
               [warnings]="facade.state().warnings"
               [usedTodayFallback]="usedTodayFallback()"
               [readOnly]="readOnly()"
+              [canEdit]="canEditCatalog()"
               (selectOrder)="onSelect($event)"
+              (estimateDaysCommit)="onEstimateDaysCommit($event)"
             />
           </main>
 
@@ -325,6 +329,8 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
+  private readonly ordersApi = inject(OrdersService);
+  private readonly toast = inject(PiToastService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly chromeTools = inject(PiChromeToolsService);
@@ -526,6 +532,26 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   protected async onInspectorChanged(): Promise<void> {
+    await this.reloadOrdersKeepingSelection();
+  }
+
+  /** TZ-PRODUCTION-311 — right-edge resize → order override only (never WorkType catalog). */
+  protected async onEstimateDaysCommit(ev: GanttEstimateDaysCommit): Promise<void> {
+    if (!this.canEditCatalog()) return;
+    const days = Math.max(1, Math.floor(ev.days));
+    const res = await firstValueFrom(
+      this.ordersApi.patchEstimateDays(ev.orderId, {
+        orderItemIndex: ev.orderItemIndex,
+        moduleId: ev.moduleId,
+        workTypeId: ev.workTypeId,
+        days,
+      }),
+    );
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      return;
+    }
+    this.toast.success('Дни оценки обновлены для этого заказа');
     await this.reloadOrdersKeepingSelection();
   }
 

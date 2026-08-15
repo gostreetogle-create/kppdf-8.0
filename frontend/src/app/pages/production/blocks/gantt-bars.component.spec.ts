@@ -1,5 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { GanttBarsComponent, GANTT_PX_PER_DAY } from './gantt-bars.component';
+import {
+  GanttBarsComponent,
+  GANTT_PX_PER_DAY,
+  snapEstimateDaysFromDelta,
+} from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
 
 describe('GanttBarsComponent', () => {
@@ -44,7 +48,7 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-bar"]')).toBeTruthy();
   });
 
-  it('shows order number on labels and work-type legend', () => {
+  it('shows compact label (order · work type) and keeps detail in title', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -52,10 +56,28 @@ describe('GanttBarsComponent', () => {
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('ORD-1');
-    expect(el.textContent).toContain('Стол');
+    expect(el.textContent).toContain('Сварка');
+    // Product / module stay out of the dense row — available via title + inspector
+    const label = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(label?.getAttribute('title')).toContain('Стол');
+    expect(label?.getAttribute('title')).toContain('Каркас');
     expect(el.querySelector('[data-test="gantt-worktype-legend"]')?.textContent).toContain(
       'Сварка',
     );
+  });
+
+  it('keeps label and timeline row height in sync', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const label = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    const row = el.querySelector('[data-test="gantt-row-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(label.classList.contains('gantt-row-h')).toBe(true);
+    expect(row.classList.contains('gantt-row-h')).toBe(true);
+    expect(getComputedStyle(label).height).toBe(getComputedStyle(row).height);
   });
 
   it('keeps calendar scale visible when no bars', () => {
@@ -94,5 +116,120 @@ describe('GanttBarsComponent', () => {
     expect(fixture.componentInstance['timelineMinWidth']()).toBeLessThan(
       14 * GANTT_PX_PER_DAY.day + 224,
     );
+  });
+
+  it('shows right-edge resize handle when editable', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('readOnly', false);
+    fixture.detectChanges();
+    const handle = fixture.nativeElement.querySelector(
+      '[data-test="gantt-resize-handle-o1:0:p1:m1:wt1:1"]',
+    );
+    expect(handle).toBeTruthy();
+    expect(handle.getAttribute('aria-label')).toContain('Изменить длительность');
+  });
+
+  it('hides resize handle for noTerm bars', () => {
+    const noTerm: GanttBar = {
+      ...sample,
+      id: 'o1:0:p1:m1:wt1:2',
+      days: null,
+      noTerm: true,
+      endDate: '2026-08-01',
+    };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [noTerm]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-bar-no-term"]')).toBeTruthy();
+  });
+
+  it('hides resize handle when readOnly', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('readOnly', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
+  });
+
+  it('hides resize handle for shipped order status', () => {
+    const shipped: GanttBar = { ...sample, orderStatus: 'shipped' };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [shipped]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
+  });
+
+  it('emits estimateDaysCommit on pointer resize commit', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.detectChanges();
+
+    const commits: unknown[] = [];
+    fixture.componentInstance.estimateDaysCommit.subscribe((v) => commits.push(v));
+
+    const handle = fixture.nativeElement.querySelector(
+      '[data-test="gantt-resize-handle-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    const rows = fixture.componentInstance['rows']();
+    const row = rows[0]!;
+    // jsdom lacks PointerEvent — drive the public handlers directly.
+    fixture.componentInstance.onResizePointerDown(
+      {
+        pointerId: 1,
+        clientX: 100,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined,
+        currentTarget: {
+          setPointerCapture: () => undefined,
+        },
+      } as unknown as PointerEvent,
+      row,
+    );
+    fixture.componentInstance.onDocumentPointerMove({
+      pointerId: 1,
+      clientX: 100 + GANTT_PX_PER_DAY.day * 2,
+    } as PointerEvent);
+    fixture.componentInstance.onDocumentPointerUp({
+      pointerId: 1,
+      clientX: 100 + GANTT_PX_PER_DAY.day * 2,
+    } as PointerEvent);
+
+    expect(handle).toBeTruthy();
+    expect(commits).toEqual([
+      {
+        orderId: 'o1',
+        orderItemIndex: 0,
+        moduleId: 'm1',
+        workTypeId: 'wt1',
+        days: 4,
+      },
+    ]);
+  });
+});
+
+describe('snapEstimateDaysFromDelta', () => {
+  it('snaps to calendar days and clamps to ≥1', () => {
+    expect(snapEstimateDaysFromDelta(2, 36, 36)).toBe(3);
+    expect(snapEstimateDaysFromDelta(2, -36, 36)).toBe(1);
+    expect(snapEstimateDaysFromDelta(2, -1000, 36)).toBe(1);
+    expect(snapEstimateDaysFromDelta(5, 18, 36)).toBe(6); // half day rounds up via Math.round
+    expect(snapEstimateDaysFromDelta(5, 17, 36)).toBe(5);
   });
 });

@@ -13,7 +13,10 @@ import { CapabilitiesService } from '../../core/capabilities/capabilities.servic
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
+import { OrdersService } from '../orders/orders.service';
 import type { Order } from '../orders/orders.service';
+import { PiToastService } from '../../shared/ui/toast';
+import { of } from 'rxjs';
 
 @Component({
   selector: 'app-order-inspector',
@@ -60,6 +63,16 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
         { provide: ProductionReadFacade, useValue: facade },
         { provide: AuthService, useValue: { user: () => ({ role: 'admin' }) } },
         { provide: CapabilitiesService, useValue: { hasAny: () => true } },
+        {
+          provide: OrdersService,
+          useValue: {
+            patchEstimateDays: jest.fn(() => of({ ok: true, data: orders[0] })),
+          },
+        },
+        {
+          provide: PiToastService,
+          useValue: { success: jest.fn(), error: jest.fn() },
+        },
         PiChromeToolsService,
         {
           provide: ActivatedRoute,

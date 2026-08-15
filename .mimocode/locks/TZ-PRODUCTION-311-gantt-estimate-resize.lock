@@ -1,0 +1,6 @@
+TZ-PRODUCTION-311
+gantt-estimate-resize
+LOCKED: 2026-08-15
+AGENT: cursor-executor-311
+ZONE: frontend gantt-bars right-edge resize → OrdersService.patchEstimateDays; production-cockpit wire + refresh
+PROTECTS: order-level estimate days from Gantt handles; never WorkType catalog write from bar resize; no left-edge / body drag

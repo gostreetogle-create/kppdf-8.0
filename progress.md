@@ -1,3 +1,14 @@
+## [2026-08-15] — TZ-PRODUCTION-311 DONE — Gantt right-edge estimate resize
+**Исполнитель:** cursor-executor-311
+**Статус:** DONE; left/move OUT; WorkType catalog from handles НЕТ; deploy НЕ
+**Что:** правый handle на editable bars → snap `GANTT_PX_PER_DAY` + preview «Nд» → `PATCH estimate-days` (order override) → reload bars (cascade); Escape cancel; noTerm/readOnly без ручек.
+**Gates:** FE tsc PASS; FE jest gantt-bars+cockpit 17 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-311.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-311.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-311-gantt-estimate-resize.lock`
+**known_limitation:** left-edge / body drag / plannedDate-from-bar = successor; no undo stack.
+**Dep:** TZ-PRODUCTION-309 @ 9b24c0f1498c12daa996500ccfd760cfca1a0bd6
+
 ## [2026-08-15] — TZ-PRODUCTION-309 DONE — order-level estimate days + production:write
 **Исполнитель:** agent-3e757640b7
 **Статус:** DONE; drag UI НЕ (311); deploy НЕ

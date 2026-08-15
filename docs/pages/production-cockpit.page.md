@@ -75,7 +75,7 @@ flyouts: overlay; center width unchanged
 |--------|--------|
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap |
-| `OrdersService` | list() / update() |
+| `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) |
 
 ### State (signals)
 
@@ -89,6 +89,7 @@ flyouts: overlay; center width unchanged
 
 - Duration = `WorkType.days` only; quantity → `×N` display (не умножает дни).
 - Order-level override: `Order.estimateDayOverrides` via `PATCH /orders/:id/estimate-days` (`production:write`); inspector default writes override; catalog «для всех» remains explicit confirm.
+- **TZ-PRODUCTION-311:** правый край полосы (не noTerm / не readOnly) → snap к календарным дням → тот же PATCH override → rebuild bars (cascade внутри заказа). Левый край / drag тела / plannedDate с полосы — OUT.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -101,6 +102,7 @@ flyouts: overlay; center width unchanged
 | **TZ-ORDERS-HUB-303** | Deep-link `/production?orderId=` → selectOrder; unknown id safe + RU hint |
 | TZ-PRODUCTION-302 | WorkType.days |
 | **TZ-PRODUCTION-309** | DONE: order estimate days + WorkType mutate `production:write` |
+| **TZ-PRODUCTION-311** | DONE: Gantt right-edge resize → order override only (cascade within order) |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |

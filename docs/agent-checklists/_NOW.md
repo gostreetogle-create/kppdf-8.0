@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T15:05:00Z
+updated_at: 2026-08-15T15:55:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
@@ -18,8 +18,18 @@ _(empty — no live `_active/` markers on main)_
 - **TZ-FRONTEND-304** → backlog
 - Backlog: SALES-377 — не брать без PO.
 - Chrome page-tools migrate: UX-326+ — по PO (`WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE`)
+- Gantt left/move / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-311 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-311.done.md`
+- Right-edge estimate resize → order `estimate-days` override
+
+### TZ-PRODUCTION-309 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-309.done.md`
 
 ### TZ-UX-324 — DONE 2026-08-15
 
@@ -38,6 +48,7 @@ _(empty — no live `_active/` markers on main)_
 1. AUTH-307 park — только после PO
 2. App warm deploy — только по «деплой»
 3. Chrome page-tools migrate wave — по PO
+4. Gantt left-edge / move — только после PO
 
 ## HEAD / queue
 

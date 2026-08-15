@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  HostListener,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   formatDateOnly,
   ORDER_STATUS_LABELS,
@@ -13,6 +21,37 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
   day: 36,
   week: 12,
 };
+
+/** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
+export const GANTT_ROW_PX = 44;
+
+/** Payload for order-level estimate days PATCH (never WorkType catalog). */
+export interface GanttEstimateDaysCommit {
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  workTypeId: string;
+  days: number;
+}
+
+/**
+ * Snap right-edge resize delta to calendar days (≥1).
+ * Pure helper — unit-tested independently of DOM.
+ */
+export function snapEstimateDaysFromDelta(
+  baseDays: number,
+  deltaPx: number,
+  pxPerDay: number,
+): number {
+  const base = Number.isFinite(baseDays) ? Math.floor(baseDays) : 1;
+  if (!Number.isFinite(pxPerDay) || pxPerDay <= 0) return Math.max(1, base);
+  const deltaDays = Math.round(deltaPx / pxPerDay);
+  return Math.max(1, base + deltaDays);
+}
+
+function isBarEstimateReadOnly(status: OrderStatus): boolean {
+  return status === 'shipped' || status === 'delivered' || status === 'cancelled';
+}
 
 @Component({
   selector: 'app-gantt-bars',
@@ -88,49 +127,57 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
       <div class="flex-1 min-h-0 overflow-auto">
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
-          <div class="sticky left-0 z-[2] w-56 shrink-0 border-r hairline bg-paper">
+          <div class="sticky left-0 z-[2] w-48 shrink-0 border-r hairline bg-paper">
             <div
-              class="h-7 border-b hairline px-2 flex items-end pb-1 text-xs text-muted-foreground"
+              class="h-7 border-b hairline px-2 flex items-end pb-1 text-[11px] text-muted-foreground"
             >
-              Заказ / изделие / работа
+              Заказ · работа
             </div>
             @for (row of rows(); track row.bar.id) {
               <button
                 type="button"
-                class="h-11 w-full px-2 py-1.5 text-xs border-b hairline text-left pi-focus-ring hover:bg-paper-2"
+                class="gantt-row-h w-full px-2 text-left pi-focus-ring border-b hairline
+                       flex items-center gap-1.5 min-w-0 overflow-hidden hover:bg-paper-2"
                 [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 (click)="selectOrder.emit(row.bar.orderId)"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
+                [attr.title]="labelTitle(row.bar)"
+                [attr.aria-label]="labelTitle(row.bar)"
               >
-                <div class="flex items-center gap-1.5 min-w-0">
-                  <span
-                    class="w-1.5 h-1.5 rounded-full shrink-0"
-                    [style.background]="statusPip(row.bar.orderStatus)"
-                    [attr.title]="statusLabel(row.bar.orderStatus)"
-                    aria-hidden="true"
-                  ></span>
-                  <span class="font-medium truncate text-ink">{{ row.bar.orderNumber }}</span>
-                </div>
-                <div class="text-muted-foreground truncate">
-                  {{ row.bar.productName }} · {{ row.bar.moduleName }}
-                </div>
-                <div class="text-xs text-muted-foreground truncate">
-                  {{ row.bar.workTypeName }}
+                <span
+                  class="w-1.5 h-1.5 rounded-full shrink-0"
+                  [style.background]="statusPip(row.bar.orderStatus)"
+                  aria-hidden="true"
+                ></span>
+                <span
+                  class="w-1.5 h-5 rounded-sm shrink-0"
+                  [style.background]="
+                    row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
+                  "
+                  [class.border]="row.bar.noTerm"
+                  [class.border-dashed]="row.bar.noTerm"
+                  aria-hidden="true"
+                ></span>
+                <span class="min-w-0 flex-1 truncate text-xs leading-none">
+                  <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
+                  <span class="text-muted-foreground"> · {{ row.bar.workTypeName }}</span>
                   @if (row.bar.quantityLabel) {
-                    <span class="ml-1 font-mono">{{ row.bar.quantityLabel }}</span>
+                    <span class="font-mono text-muted-foreground">
+                      {{ row.bar.quantityLabel }}</span
+                    >
                   }
-                  · {{ row.bar.workerLabel }}
-                </div>
+                </span>
               </button>
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
                 <div
-                  class="h-11 px-2 py-2 text-xs border-b hairline text-muted-foreground/70"
+                  class="gantt-row-h px-2 text-xs border-b hairline text-muted-foreground/70
+                         flex items-center"
                   [class.bg-paper-2]="ph % 2 === 1"
                   data-test="gantt-placeholder-row"
                 >
-                  <div class="truncate">—</div>
+                  <span class="truncate">—</span>
                 </div>
               }
             }
@@ -161,11 +208,11 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
 
             @for (row of rows(); track row.bar.id) {
               <div
-                class="relative h-11 border-b hairline cursor-pointer"
+                class="relative gantt-row-h border-b hairline cursor-pointer"
                 [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
-                (click)="selectOrder.emit(row.bar.orderId)"
+                (click)="onRowClick(row.bar.orderId)"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -174,12 +221,14 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
                   ></div>
                 }
                 <div
-                  class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90"
+                  class="absolute top-1.5 bottom-1.5 rounded-sm text-[10px] px-1.5 flex items-center overflow-hidden text-ink/90 group/bar"
                   [class.border]="row.bar.noTerm"
                   [class.border-dashed]="row.bar.noTerm"
                   [class.border-muted-foreground]="row.bar.noTerm"
+                  [class.ring-1]="isResizingBar(row.bar.id)"
+                  [class.ring-ink]="isResizingBar(row.bar.id)"
                   [style.left.px]="row.leftPx"
-                  [style.width.px]="row.widthPx"
+                  [style.width.px]="displayWidthPx(row)"
                   [style.background]="
                     row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
                   "
@@ -193,15 +242,43 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
                   [attr.data-test]="row.bar.noTerm ? 'gantt-bar-no-term' : 'gantt-bar'"
                 >
                   @if (!row.bar.noTerm) {
-                    <span class="truncate">{{ row.bar.days }}д</span>
+                    <span class="truncate" data-test="gantt-bar-days-label"
+                      >{{ displayDays(row) }}д</span
+                    >
+                    @if (isResizingBar(row.bar.id)) {
+                      <span
+                        class="ml-1 shrink-0 text-[9px] opacity-80"
+                        data-test="gantt-resize-hint"
+                        >оценка · не факт</span
+                      >
+                    }
                   } @else {
                     <span class="truncate text-muted-foreground">без срока</span>
+                  }
+                  @if (canResizeBar(row.bar)) {
+                    <button
+                      type="button"
+                      class="gantt-resize-handle absolute top-0 bottom-0 right-0 w-2.5 -mr-px
+                             cursor-ew-resize border-0 p-0 bg-ink/25 hover:bg-ink/45
+                             opacity-0 group-hover/bar:opacity-100 focus-visible:opacity-100
+                             pi-focus-ring"
+                      [class.opacity-100]="isResizingBar(row.bar.id)"
+                      [attr.data-test]="'gantt-resize-handle-' + row.bar.id"
+                      [attr.aria-label]="
+                        'Изменить длительность «' + row.bar.workTypeName + '» (оценка · не факт)'
+                      "
+                      (pointerdown)="onResizePointerDown($event, row)"
+                      (click)="$event.stopPropagation()"
+                    ></button>
                   }
                 </div>
               </div>
             } @empty {
               @for (ph of emptyPlaceholders; track ph) {
-                <div class="relative h-11 border-b hairline" [class.bg-paper-2]="ph % 2 === 1">
+                <div
+                  class="relative gantt-row-h border-b hairline"
+                  [class.bg-paper-2]="ph % 2 === 1"
+                >
                   @for (grid of dayGrid(); track grid.key) {
                     <div
                       class="absolute top-0 bottom-0 border-l hairline opacity-40"
@@ -219,10 +296,19 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · цвет = вид работ (легенда выше) · штриховка = без WorkType.days ·
-        ×N = количество · клик по строке/полосе открывает заказ
+        Красная линия = сегодня · цвет полосы/метки = вид работ · штриховка = без срока · ×N =
+        количество · правый край полосы = дни оценки (этот заказ) · клик открывает карточку
       </div>
     </div>
+  `,
+  styles: `
+    .gantt-row-h {
+      height: ${GANTT_ROW_PX}px;
+      box-sizing: border-box;
+    }
+    .gantt-resize-handle {
+      touch-action: none;
+    }
   `,
 })
 export class GanttBarsComponent {
@@ -233,10 +319,24 @@ export class GanttBarsComponent {
   readonly warnings = input<string[]>([]);
   readonly usedTodayFallback = input(false);
   readonly readOnly = input(false);
+  /** production:write (or equivalent) — required for resize handles. */
+  readonly canEdit = input(false);
   readonly today = input(formatDateOnly(new Date()));
   readonly selectOrder = output<string>();
+  /** Commit snapped days → parent PATCHes order estimate-days only. */
+  readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
+
+  /** Live right-edge resize preview (null = idle). */
+  private readonly resizeSession = signal<{
+    barId: string;
+    bar: GanttBar;
+    baseDays: number;
+    startClientX: number;
+    previewDays: number;
+    pointerId: number;
+  } | null>(null);
 
   protected readonly totalDays = computed(() =>
     Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
@@ -311,6 +411,7 @@ export class GanttBarsComponent {
         orderBoundary: !!prev && prev.orderId !== bar.orderId,
         leftPx: left * px,
         widthPx: Math.max(px * 0.5, span * px),
+        baseSpanDays: span,
       };
     });
   });
@@ -319,6 +420,104 @@ export class GanttBarsComponent {
     const t = dayDiff(this.rangeStart(), this.today());
     return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
   });
+
+  protected canResizeBar(bar: GanttBar): boolean {
+    if (!this.canEdit() || this.readOnly()) return false;
+    if (bar.noTerm || bar.days == null || bar.days < 1) return false;
+    if (isBarEstimateReadOnly(bar.orderStatus)) return false;
+    return true;
+  }
+
+  protected isResizingBar(barId: string): boolean {
+    return this.resizeSession()?.barId === barId;
+  }
+
+  protected displayDays(row: { bar: GanttBar; baseSpanDays: number }): number {
+    const session = this.resizeSession();
+    if (session && session.barId === row.bar.id) return session.previewDays;
+    return row.bar.days ?? row.baseSpanDays;
+  }
+
+  protected displayWidthPx(row: { bar: GanttBar; widthPx: number; baseSpanDays: number }): number {
+    const session = this.resizeSession();
+    if (session && session.barId === row.bar.id) {
+      return Math.max(this.pxPerDay() * 0.5, session.previewDays * this.pxPerDay());
+    }
+    return row.widthPx;
+  }
+
+  protected onRowClick(orderId: string): void {
+    if (this.resizeSession()) return;
+    this.selectOrder.emit(orderId);
+  }
+
+  protected onResizePointerDown(
+    event: PointerEvent,
+    row: { bar: GanttBar; baseSpanDays: number },
+  ): void {
+    if (!this.canResizeBar(row.bar)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const baseDays = Math.max(1, row.bar.days ?? row.baseSpanDays);
+    const target = event.currentTarget as HTMLElement;
+    target.setPointerCapture(event.pointerId);
+    this.resizeSession.set({
+      barId: row.bar.id,
+      bar: row.bar,
+      baseDays,
+      startClientX: event.clientX,
+      previewDays: baseDays,
+      pointerId: event.pointerId,
+    });
+  }
+
+  @HostListener('document:pointermove', ['$event'])
+  protected onDocumentPointerMove(event: PointerEvent): void {
+    const session = this.resizeSession();
+    if (!session || event.pointerId !== session.pointerId) return;
+    const deltaPx = event.clientX - session.startClientX;
+    const previewDays = snapEstimateDaysFromDelta(session.baseDays, deltaPx, this.pxPerDay());
+    if (previewDays === session.previewDays) return;
+    this.resizeSession.set({ ...session, previewDays });
+  }
+
+  @HostListener('document:pointerup', ['$event'])
+  @HostListener('document:pointercancel', ['$event'])
+  protected onDocumentPointerUp(event: PointerEvent): void {
+    const session = this.resizeSession();
+    if (!session || event.pointerId !== session.pointerId) return;
+    this.finishResize(session, /*commit*/ true);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscapeCancel(): void {
+    const session = this.resizeSession();
+    if (!session) return;
+    this.finishResize(session, /*commit*/ false);
+  }
+
+  private finishResize(
+    session: {
+      barId: string;
+      bar: GanttBar;
+      baseDays: number;
+      previewDays: number;
+      pointerId: number;
+    },
+    commit: boolean,
+  ): void {
+    this.resizeSession.set(null);
+    if (!commit) return;
+    const days = Math.max(1, session.previewDays);
+    if (days === session.baseDays) return;
+    this.estimateDaysCommit.emit({
+      orderId: session.bar.orderId,
+      orderItemIndex: session.bar.orderItemIndex,
+      moduleId: session.bar.moduleId,
+      workTypeId: session.bar.workTypeId,
+      days,
+    });
+  }
 
   protected fill(workTypeId: string, hue?: number | null): string {
     return workTypeOklch(workTypeId, 0.12, 0.72, hue);
@@ -349,10 +548,24 @@ export class GanttBarsComponent {
     }
   }
 
+  /** Full detail for tooltip / a11y — visible label stays one line. */
+  protected labelTitle(b: GanttBar): string {
+    const parts = [
+      b.orderNumber,
+      this.statusLabel(b.orderStatus),
+      b.productName,
+      b.moduleName,
+      b.workTypeName,
+      b.quantityLabel,
+      b.workerLabel && b.workerLabel !== '—' ? `исполн.: ${b.workerLabel}` : null,
+    ].filter(Boolean);
+    return parts.join(' · ');
+  }
+
   protected barTitle(b: GanttBar): string {
-    const head = `${b.orderNumber} · ${this.statusLabel(b.orderStatus)} · ${b.productName} · ${b.moduleName} · ${b.workTypeName}`;
+    const head = this.labelTitle(b);
     if (b.noTerm) return `${head} — без срока`;
-    return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д ${b.quantityLabel ?? ''}`.trim();
+    return `${head} · ${b.startDate}→${b.endDate} · ${b.days}д`.trim();
   }
 }
 
