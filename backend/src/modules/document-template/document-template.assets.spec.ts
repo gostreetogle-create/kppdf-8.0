@@ -480,4 +480,123 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
     expect(html).toContain('block--positioned block--table');
     expect(html).toContain('.block--positioned.block--table { overflow: hidden; }');
   });
+
+  it('hoists multipage outer CSS for background and positioned blocks (TZ-SALES-378)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) =>
+        `<table><tbody>${rows.map((row) => `<tr><td>${String((row[0] as { title?: unknown })?.title ?? row[0])}</td></tr>`).join('')}</tbody></table>`,
+      ),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+          layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.15, zIndex: 1, rotation: 0 },
+        },
+      ],
+    });
+
+    const lines = Array.from({ length: 12 }, (_, index) => ({
+      productName: `Позиция ${index + 1}`,
+      quantity: 1,
+      unitPrice: 100,
+    }));
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: lines,
+      sheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+    });
+
+    expect((html.match(/class="doc-page"/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(html).toMatch(/\.doc-bg\s*\{\s*position:\s*absolute/);
+    expect(html).toContain('.doc-page{position:relative');
+    expect(html).toContain('.block--positioned.block--table { overflow: hidden; }');
+  });
+
+  it('auto next-page capacity exceeds short first-page frame (TZ-SALES-378)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) =>
+        `<table><tbody>${rows.map((row) => `<tr><td>${String((row[0] as { title?: unknown })?.title ?? row[0])}</td></tr>`).join('')}</tbody></table>`,
+      ),
+    };
+    const shortFrameBlocks = [
+      {
+        _id: 'table-block',
+        type: 'table',
+        settings: { tableTemplateId: 'table-1', kpLineItems: true },
+        layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.15, zIndex: 1, rotation: 0 },
+      },
+    ];
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: shortFrameBlocks,
+    });
+
+    const manyLines = Array.from({ length: 30 }, (_, index) => ({
+      productName: `Позиция ${index + 1}`,
+      quantity: 1,
+      unitPrice: 100,
+    }));
+
+    const autoHtml = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: manyLines,
+      sheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+    });
+
+    expect((autoHtml.match(/class="doc-page"/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    const autoPageBodies = autoHtml.split('class="doc-page"').slice(1);
+    const rowsOnFirstPage = (autoPageBodies[0].match(/Позиция/g) ?? []).length;
+    const rowsOnSecondPage = (autoPageBodies[1].match(/Позиция/g) ?? []).length;
+    expect(rowsOnSecondPage).toBeGreaterThan(rowsOnFirstPage);
+  });
+
+  it('remaps continuation table block to full-page geometry (TZ-SALES-378)', async () => {
+    const tableTemplate = {
+      findById: jest.fn().mockResolvedValue({
+        columns: [{ key: 'productName', label: 'Наименование', type: 'text', align: 'left' }],
+      }),
+      preview: jest.fn((_id: string, rows: unknown[][]) =>
+        `<table><tbody>${rows.map((row) => `<tr><td>${String((row[0] as { title?: unknown })?.title ?? row[0])}</td></tr>`).join('')}</tbody></table>`,
+      ),
+    };
+    const service = makeService({
+      organization: { _id: ORG_ID, name: 'KPPDF ООО', assets: [] },
+      tableTemplate,
+      blocks: [
+        {
+          _id: 'table-block',
+          type: 'table',
+          settings: { tableTemplateId: 'table-1', kpLineItems: true },
+          layout: { page: 1, x: 0.08, y: 0.2, width: 0.84, height: 0.15, zIndex: 1, rotation: 0 },
+        },
+      ],
+    });
+
+    const html = await service.build(TEMPLATE_ID.toString(), {
+      previewLines: Array.from({ length: 10 }, (_, index) => ({
+        productName: `Позиция ${index + 1}`,
+        quantity: 1,
+        unitPrice: 100,
+      })),
+      sheetLayout: { rowsFirstPage: 2, rowsNextPage: 8 },
+    });
+
+    const pageBodies = html.split('class="doc-page"').slice(1);
+    expect(pageBodies.length).toBeGreaterThanOrEqual(2);
+    expect(pageBodies[0]).toMatch(/top:20%/);
+    expect(pageBodies[0]).toMatch(/height:15%/);
+    expect(pageBodies[1]).toMatch(/top:0%/);
+    expect(pageBodies[1]).toMatch(/height:100%/);
+  });
 });

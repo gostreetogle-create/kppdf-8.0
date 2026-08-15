@@ -690,10 +690,15 @@ export class DocumentTemplateService {
             : rendered;
         }),
       );
+      const filtered = resolved.filter((block): block is TemplateBlockDocument =>
+        Boolean(block),
+      );
       pageBlocks.push(
-        resolved.filter((block): block is TemplateBlockDocument =>
-          Boolean(block),
-        ),
+        pageIndex > 0
+          ? filtered.map((block) =>
+              this.remapContinuationTableBlock(block, lineItemsTargetIds),
+            )
+          : filtered,
       );
     }
 
@@ -767,9 +772,9 @@ export class DocumentTemplateService {
   }
 
   /**
-   * TZ-SALES-376 — estimate rows that fit the template table frame when
-   * rowsFirstPage/rowsNextPage = 0. Uses block layout.height fraction of A4
-   * content area minus thead, with font/photo/density heuristics.
+   * TZ-SALES-376/378 — estimate rows that fit when rowsFirstPage/rowsNextPage = 0.
+   * Page 1 uses the template table frame (layout.height); continuation pages use
+   * the full A4 content area (~1.0), not the short first-page frame.
    */
   private estimateAutoRowCapacity(
     blocks: TemplateBlockDocument[],
@@ -780,7 +785,8 @@ export class DocumentTemplateService {
     const targetBlock = blocks.find((block) =>
       lineItemsTargetIds.has(String(block._id)),
     );
-    const layoutHeight = targetBlock?.layout?.height;
+    const frameHeight = targetBlock?.layout?.height;
+    const layoutHeight = isFirstPage ? frameHeight : 1;
     if (
       !targetBlock ||
       layoutHeight === undefined ||
@@ -826,6 +832,45 @@ export class DocumentTemplateService {
     return Math.min(20, Math.max(8, Math.round(value)));
   }
 
+  /**
+   * TZ-SALES-378 — continuation pages stretch the line-items table to full sheet.
+   */
+  private remapContinuationTableBlock(
+    block: TemplateBlockDocument,
+    lineItemsTargetIds: Set<string>,
+  ): TemplateBlockDocument {
+    if (
+      block.type !== 'table' ||
+      !lineItemsTargetIds.has(String(block._id)) ||
+      !block.layout
+    ) {
+      return block;
+    }
+    return this.cloneResolvedBlock(block, {
+      layout: {
+        ...block.layout,
+        y: 0,
+        height: 1,
+      },
+    });
+  }
+
+  /** Shared in-page CSS for single-page and multipage document shells. */
+  private buildDocumentContentStyles(
+    template: DocumentTemplateDocument,
+  ): string {
+    return `
+        h1, h2, h3 { margin: 8px 0; }
+        .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
+        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
+        .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
+        .block--positioned.block--table { overflow: hidden; }
+        table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
+        .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
+        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }`;
+  }
+
   private renderHtmlPages(
     template: DocumentTemplateDocument,
     pages: TemplateBlockDocument[][],
@@ -843,7 +888,11 @@ export class DocumentTemplateService {
     const orientation = (template as any).orientation === 'landscape';
     const width = orientation ? '297mm' : '210mm';
     const height = orientation ? '210mm' : '297mm';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
+    const contentStyles = this.buildDocumentContentStyles(template);
+    const pageNumberCss = template.pageNumbering
+      ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
+      : '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
   }
 
   private renderQuotationTerms(
@@ -1732,21 +1781,14 @@ export class DocumentTemplateService {
     const isLandscape = (template as any).orientation === 'landscape';
     const pageWidth = isLandscape ? '297mm' : '210mm';
     const pageMinHeight = isLandscape ? '210mm' : '297mm';
+    const contentStyles = this.buildDocumentContentStyles(template);
     const css = `
       <style>
         @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
         html, body { margin: 0; overflow: hidden; }
         html { width: ${pageWidth}; height: ${pageMinHeight}; }
         body { font-family: 'Times New Roman', serif; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 0; position: relative; box-sizing: border-box; }
-        h1, h2, h3 { margin: 8px 0; }
-        .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
-        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
-        .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
-        .block--positioned.block--table { overflow: hidden; }
-        table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
-        .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
-        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }
+        ${contentStyles}
       </style>`;
     const bgImages = template.backgroundImage ?? [];
     const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;

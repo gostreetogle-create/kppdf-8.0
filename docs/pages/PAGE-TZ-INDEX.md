@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-15 (TZ-UX-319 products expanded row frame)
+**Updated:** 2026-08-15 (TZ-CATALOG-372/373 catalog list vitrine parity)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -22,11 +22,11 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10 |
+| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10; **CATALOG-373 READY** grid + filters-rail (parity products) |
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
 | `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **UX-DIALOG-306** picker qty |
-| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush |
+| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 READY** list vitrine parity (photo/grid/rail) |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
@@ -34,6 +34,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=` from inspector |
 
 **Catalog audits / backlog:**  
+[`2026-08-15-catalog-list-vitrine-parity.md`](../audits/2026-08-15-catalog-list-vitrine-parity.md) ·  
 [`2026-08-04-catalog-coherence-audit.md`](../audits/2026-08-04-catalog-coherence-audit.md) ·  
 [`2026-08-04-catalog-readiness-fe-be.md`](../audits/2026-08-04-catalog-readiness-fe-be.md) ·  
 [`_backlog/catalog/README.md`](../../tasks/_backlog/catalog/README.md) (316/317/319 + Wave 2) ·  
@@ -50,7 +51,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–376 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 

@@ -30,5 +30,11 @@
 
 ## Решение волны
 
-1. **TZ-SALES-376** — geometry-aware auto + clip + honor pageBreakBefore + totals fix + RU labels.
-2. **TZ-SALES-377** (park) — continuationMode background+table; **не** multi-template-per-page.
+1. **TZ-SALES-376** — geometry-aware auto + clip + honor pageBreakBefore + totals fix + RU labels. **DONE**
+2. **TZ-SALES-378** (now) — multipage CSS shell (фон) + next pages fill **full A4** + remap table layout on page 2+. **READY FOR REVIEW** (Buffy 2026-08-15).
+3. **TZ-SALES-377** (park) — continuationMode background+table; **не** multi-template-per-page.
+
+### Regression notes (post-376 PO) — addressed by 378
+
+- Фон «слетает» на multipage: `renderHtmlPages` отбрасывает `<style>` из `renderHtml` → **378** hoists `.doc-bg` / clip CSS в outer head.
+- Стр.2+ с той же короткой рамкой: `estimateAutoRowCapacity(false)` всё ещё × `layout.height` стр.1 → **378** uses full sheet (~1.0) + remaps table `y/height` on pageIndex>0.
