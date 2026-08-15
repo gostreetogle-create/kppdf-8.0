@@ -13,8 +13,8 @@
 - [x] architecture:check PASS: 937 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated KP studio unavailable in this headless worktree; existing specs cover autosave, preview, read-only, loading/error, and keyboard shell behavior.
-- [x] Implementation commit: pending.
-- [ ] Push SHA recorded.
+- [x] Implementation commit: `a6ee078f`.
+- [x] Pushed branch SHA: `a6ee078f8efa85fcd18f0a3751dff2b45ba2b447`.
 
 ## Exact keys
 

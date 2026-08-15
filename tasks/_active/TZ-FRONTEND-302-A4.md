@@ -11,4 +11,5 @@ Exact keys:
 - frontend/src/app/pages/commercial/proposals/proposal-create.autosave.spec.ts
 
 Evidence: characterization 1/1; existing proposal-create 45/45; combined 46/46; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
-Implementation commit: pending
+Implementation commit: a6ee078f
+Pushed SHA: a6ee078f8efa85fcd18f0a3751dff2b45ba2b447

@@ -14,5 +14,5 @@ CONFLICT KEYS:
 - Implementation: replaced only the stale-pointer nested subscribe with `switchMap`/`of`; the existing 404/400 remove-pointer and one-create-retry semantics remain unchanged.
 - Evidence: characterization 1/1; existing proposal-create 45/45; combined 46/46; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
 - Browser: authenticated KP studio unavailable in this headless worktree; focused suites cover autosave and shell behavior.
-- Implementation commit: pending.
-- Push SHA: pending.
+- Implementation commit: `a6ee078f`.
+- Push SHA: `a6ee078f8efa85fcd18f0a3751dff2b45ba2b447`.
