@@ -31,8 +31,23 @@ import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-tab
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
+import {
+  SupplyTask,
+  SupplyTaskService,
+  type SupplyTaskStatus,
+} from '../../shared/services/pi-supply.service';
 
 type SortKey = 'number' | 'date' | 'status';
+
+type SupplyExpandCounters = Record<SupplyTaskStatus, number> & { total: number };
+
+const EMPTY_SUPPLY_COUNTERS: SupplyExpandCounters = {
+  draft: 0,
+  confirmed: 0,
+  ordered: 0,
+  received: 0,
+  total: 0,
+};
 
 /** Client-side pagination page size for /orders flat-array endpoint. */
 const PAGE_SIZE = 10;
@@ -365,6 +380,70 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
                         </ul>
                       }
                     </section>
+
+                    <section class="min-w-0" data-test="order-supply-block">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <p class="eyebrow m-0">Снабжение</p>
+                        <a
+                          routerLink="/supply"
+                          [queryParams]="{ orderId: row._id }"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                          data-test="order-supply-link"
+                          (click)="$event.stopPropagation()"
+                          >Открыть снабжение</a
+                        >
+                      </div>
+                      @if (supplyExpandLoading() && supplyExpandOrderId() === row._id) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                      } @else if (supplyExpandError() && supplyExpandOrderId() === row._id) {
+                        <p
+                          class="text-xs text-destructive m-0 mt-1"
+                          role="alert"
+                          data-test="order-supply-error"
+                        >
+                          {{ supplyExpandError() }}
+                        </p>
+                      } @else if (
+                        supplyExpandOrderId() === row._id && supplyExpandCounters().total === 0
+                      ) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Нет задач снабжения</p>
+                      } @else if (supplyExpandOrderId() === row._id) {
+                        <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
+                          Черновик {{ supplyExpandCounters().draft }} · Подтверждено
+                          {{ supplyExpandCounters().confirmed }} · Заказано
+                          {{ supplyExpandCounters().ordered }} · Получено
+                          {{ supplyExpandCounters().received }}
+                          <span class="text-muted-foreground"
+                            >· всего {{ supplyExpandCounters().total }}</span
+                          >
+                        </p>
+                      }
+                    </section>
+
+                    <section class="min-w-0" data-test="order-production-block">
+                      <p class="eyebrow m-0 mb-1">Производство</p>
+                      <p class="text-sm m-0">Оценка в цехе</p>
+                      <a
+                        routerLink="/production"
+                        [queryParams]="{ orderId: row._id }"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
+                        data-test="order-production-link"
+                        (click)="$event.stopPropagation()"
+                        >Открыть производство</a
+                      >
+                    </section>
+
+                    <section class="min-w-0" data-test="order-documents-block">
+                      <p class="eyebrow m-0 mb-1">Документы</p>
+                      <a
+                        routerLink="/doc-constructor/templates"
+                        [queryParams]="{ source: 'order', sourceId: row._id }"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                        data-test="order-documents-link"
+                        (click)="$event.stopPropagation()"
+                        >Шаблоны документов</a
+                      >
+                    </section>
                   </div>
                 </div>
               }
@@ -392,6 +471,7 @@ export class OrdersPage implements OnInit {
   }
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
+  private readonly supply = inject(SupplyTaskService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -672,12 +752,62 @@ export class OrdersPage implements OnInit {
   protected readonly isExpandedRow = (row: Order): boolean => this.expandedId() === row._id;
   protected readonly expandedRowLabel = (row: Order): string => `Сводка заказа: ${row.number}`;
 
+  /** HUB-303: lazy supply summary for the currently expanded row only. */
+  protected readonly supplyExpandOrderId = signal<string | null>(null);
+  protected readonly supplyExpandLoading = signal(false);
+  protected readonly supplyExpandError = signal<string | null>(null);
+  protected readonly supplyExpandCounters = signal<SupplyExpandCounters>({
+    ...EMPTY_SUPPLY_COUNTERS,
+  });
+
   protected onRowClick(row: Order): void {
+    const closing = this.expandedId() === row._id;
     this.expandedId.update((current) => (current === row._id ? null : row._id));
+    if (closing) {
+      this.clearSupplyExpand();
+      return;
+    }
+    this.loadSupplyExpand(row._id);
   }
 
   private resetExpansion(): void {
     this.expandedId.set(null);
+    this.clearSupplyExpand();
+  }
+
+  private clearSupplyExpand(): void {
+    this.supplyExpandOrderId.set(null);
+    this.supplyExpandLoading.set(false);
+    this.supplyExpandError.set(null);
+    this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+  }
+
+  private loadSupplyExpand(orderId: string): void {
+    this.supplyExpandOrderId.set(orderId);
+    this.supplyExpandLoading.set(true);
+    this.supplyExpandError.set(null);
+    this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+    this.supply.list({ orderId }).subscribe((res) => {
+      if (this.expandedId() !== orderId) return;
+      this.supplyExpandLoading.set(false);
+      if (!res.ok) {
+        this.supplyExpandError.set(
+          extractErrorMessage(res.error) || 'Не удалось загрузить задачи снабжения',
+        );
+        this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+        return;
+      }
+      this.supplyExpandCounters.set(this.countSupplyStatuses(res.data ?? []));
+    });
+  }
+
+  private countSupplyStatuses(tasks: SupplyTask[]): SupplyExpandCounters {
+    const counters: SupplyExpandCounters = { ...EMPTY_SUPPLY_COUNTERS };
+    for (const task of tasks) {
+      counters[task.status] = (counters[task.status] ?? 0) + 1;
+      counters.total += 1;
+    }
+    return counters;
   }
 
   // ─── Event handlers ───────────────────────────────────────────────

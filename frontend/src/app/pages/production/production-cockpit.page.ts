@@ -7,7 +7,8 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
@@ -143,6 +144,16 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
         </div>
       }
 
+      @if (orderIdHint()) {
+        <div
+          role="status"
+          class="px-4 py-2 text-sm text-muted-foreground border-b hairline"
+          data-test="production-order-id-hint"
+        >
+          {{ orderIdHint() }}
+        </div>
+      }
+
       <div class="flex flex-1 min-h-0 overflow-hidden">
         <aside
           class="shrink-0 min-h-0 flex flex-col transition-[width] duration-200"
@@ -204,6 +215,7 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly orders = signal<Order[]>([]);
@@ -215,6 +227,8 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly inspectorOpen = signal(false);
+  /** HUB-303: RU hint when ?orderId= is unknown. */
+  protected readonly orderIdHint = signal<string | null>(null);
 
   protected readonly canEditOrder = computed(() => {
     const role = this.auth.user()?.role;
@@ -306,6 +320,25 @@ export class ProductionCockpitPage implements OnInit {
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
     this.orderThumbs.set(await this.facade.getOrderThumbMap(list));
+    const params = await firstValueFrom(this.route.queryParamMap);
+    const orderId = (params.get('orderId') ?? '').trim();
+    await this.applyInitialOrderId(orderId || null);
+  }
+
+  /** HUB-303: deep-link `?orderId=` after orders are loaded. */
+  private async applyInitialOrderId(orderId: string | null): Promise<void> {
+    if (!orderId) {
+      this.orderIdHint.set(null);
+      await this.onSelectAll();
+      return;
+    }
+    const found = this.orders().some((o) => o._id === orderId);
+    if (found) {
+      this.orderIdHint.set(null);
+      await this.onSelect(orderId);
+      return;
+    }
+    this.orderIdHint.set(`Заказ с идентификатором «${orderId}» не найден. Показаны все активные.`);
     await this.onSelectAll();
   }
 

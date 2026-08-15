@@ -271,6 +271,16 @@ describe('OrdersPage', () => {
 
     row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
+    httpMock
+      .expectOne(
+        (r) =>
+          r.method === 'GET' &&
+          r.url === `${baseUrl}/supply-tasks` &&
+          r.params.get('orderId') === 'o1',
+      )
+      .flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
@@ -284,6 +294,91 @@ describe('OrdersPage', () => {
     row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('HUB-303 lazy-loads supply counters on expand and links supply/production/docs', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as { onRowClick: (row: Order) => void };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+
+    const supplyReq = httpMock.expectOne(
+      (r) =>
+        r.method === 'GET' &&
+        r.url === `${baseUrl}/supply-tasks` &&
+        r.params.get('orderId') === 'o1',
+    );
+    supplyReq.flush([
+      { _id: 't1', orderId: 'o1', qty: 1, status: 'draft' },
+      { _id: 't2', orderId: 'o1', qty: 2, status: 'confirmed' },
+      { _id: 't3', orderId: 'o1', qty: 1, status: 'ordered' },
+      { _id: 't4', orderId: 'o1', qty: 3, status: 'received' },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="order-supply-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-supply-counters"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Черновик 1');
+    expect(fixture.nativeElement.textContent).toContain('всего 4');
+
+    const supplyLink = fixture.nativeElement.querySelector(
+      '[data-test="order-supply-link"]',
+    ) as HTMLAnchorElement;
+    expect(supplyLink.getAttribute('href')).toContain('/supply');
+    expect(supplyLink.getAttribute('href')).toContain('orderId=o1');
+
+    const productionLink = fixture.nativeElement.querySelector(
+      '[data-test="order-production-link"]',
+    ) as HTMLAnchorElement;
+    expect(productionLink.getAttribute('href')).toContain('/production');
+    expect(productionLink.getAttribute('href')).toContain('orderId=o1');
+
+    const docsLink = fixture.nativeElement.querySelector(
+      '[data-test="order-documents-link"]',
+    ) as HTMLAnchorElement;
+    expect(docsLink.getAttribute('href')).toContain('/doc-constructor/templates');
+    expect(docsLink.getAttribute('href')).toContain('source=order');
+    expect(docsLink.getAttribute('href')).toContain('sourceId=o1');
+  });
+
+  it('HUB-303 shows empty supply state and isolates supply errors in expand', async () => {
+    const fixture = TestBed.createComponent(OrdersPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onRowClick: (row: Order) => void;
+      supplyExpandError: () => string | null;
+    };
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+
+    httpMock.expectOne((r) => r.url === `${baseUrl}/supply-tasks` && r.method === 'GET').flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Нет задач снабжения');
+
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    comp.onRowClick(fakeOrders[0]!);
+    fixture.detectChanges();
+    httpMock
+      .expectOne((r) => r.url === `${baseUrl}/supply-tasks` && r.method === 'GET')
+      .flush('fail', { status: 500, statusText: 'Error' });
+    await tickMicrotask();
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(comp.supplyExpandError()).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-supply-error"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeTruthy();
   });
 
   it('HUB-302 toggles one read-only expansion and does not call write services', async () => {
@@ -307,6 +402,15 @@ describe('OrdersPage', () => {
     };
 
     comp.onRowClick(row);
+    httpMock
+      .expectOne(
+        (r) =>
+          r.method === 'GET' &&
+          r.url === `${baseUrl}/supply-tasks` &&
+          r.params.get('orderId') === 'o1',
+      )
+      .flush([]);
+    await tickMicrotask();
     expect(comp.expandedId()).toBe('o1');
     expect(comp.proposalLabelOf(row)).toBe('№QTN-1 · заглушка');
     comp.onRowClick(row);

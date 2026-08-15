@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
@@ -58,6 +58,22 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
           <option value="ordered">Заказано</option>
           <option value="received">Получено</option>
         </select>
+        @if (orderFilterId()) {
+          <span
+            class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
+            data-test="supply-order-filter-chip"
+          >
+            <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
+            <button
+              type="button"
+              class="underline underline-offset-2 hover:text-sunrise-warm"
+              (click)="clearOrderFilter()"
+              data-test="supply-order-filter-clear"
+            >
+              Сбросить
+            </button>
+          </span>
+        }
         <span class="text-sm text-muted-foreground">{{ tasks().length }} задач</span>
         <span class="flex-1"></span>
         <app-pi-button variant="outline" size="sm" (click)="reload()" data-test="supply-refresh">
@@ -279,6 +295,8 @@ export class SupplyPage implements AfterViewInit {
   private readonly supply = inject(SupplyTaskService);
   private readonly ordersSvc = inject(OrdersService);
   private readonly toast = inject(PiToastService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly chips = LOGISTICS_SECTION_CHIPS;
@@ -291,6 +309,7 @@ export class SupplyPage implements AfterViewInit {
   protected readonly error = signal<string | null>(null);
   protected readonly busyId = signal<string | null>(null);
   protected readonly statusFilter = signal<SupplyTaskStatus | ''>('');
+  protected readonly orderFilterId = signal<string | null>(null);
   protected readonly showCreate = signal(false);
   private readonly viewReady = signal(false);
 
@@ -335,7 +354,11 @@ export class SupplyPage implements AfterViewInit {
   ];
 
   constructor() {
-    this.reload();
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const raw = (params.get('orderId') ?? '').trim();
+      this.orderFilterId.set(raw || null);
+      this.reload();
+    });
     this.ordersSvc
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -361,6 +384,19 @@ export class SupplyPage implements AfterViewInit {
     return o?.number ?? orderId.slice(-6);
   }
 
+  protected orderFilterLabel(): string {
+    const id = this.orderFilterId();
+    return id ? this.orderLabel(id) : '';
+  }
+
+  protected clearOrderFilter(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { orderId: null },
+      queryParamsHandling: 'merge',
+    });
+  }
+
   protected onStatusFilter(v: string): void {
     this.statusFilter.set((v || '') as SupplyTaskStatus | '');
     this.reload();
@@ -370,8 +406,12 @@ export class SupplyPage implements AfterViewInit {
     this.loading.set(true);
     this.error.set(null);
     const status = this.statusFilter();
+    const orderId = this.orderFilterId() ?? undefined;
     this.supply
-      .list(status ? { status } : undefined)
+      .list({
+        ...(orderId ? { orderId } : {}),
+        ...(status ? { status } : {}),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         this.loading.set(false);
