@@ -30,7 +30,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only; **PRODUCTION-309** mutate → `production:write` |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
-| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **STUDIO-A–D** chrome PASS; **WAVE-PRODUCTION-GANTT-RESIZE** 309/311/312/313 **DONE**; **WAVE-PRODUCTION-GANTT-TREE** 314–320 **DONE**; **WAVE-PRODUCTION-GANTT-CASCADE** **321–323 DONE**; **WAVE-PRODUCTION-COCKPIT-HARDEN** **324–328 DONE** (98/100); **WAVE-PRODUCTION-COCKPIT-POLISH** **329–330 DONE**; **331 DONE** (plan fields through ready + siteId heal); parked **308/310**; **ORDERS-HUB-303** `?orderId=` |
+| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **STUDIO-A–D** chrome PASS; **WAVE-PRODUCTION-GANTT-RESIZE** 309/311/312/313 **DONE**; **WAVE-PRODUCTION-GANTT-TREE** 314–320 **DONE**; **WAVE-PRODUCTION-GANTT-CASCADE** **321–323 DONE**; **WAVE-PRODUCTION-COCKPIT-HARDEN** **324–328 DONE** (98/100); **WAVE-PRODUCTION-COCKPIT-POLISH** **329–330 DONE**; **331 DONE** (plan fields through ready + siteId heal); **332 DONE** (day ticks DD.MM + ПН…ВС); parked **308/310**; **ORDERS-HUB-303** `?orderId=` |
 | `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=`; **ORDERS-HUB-301** DONE; **HUB-302 DONE**; **HUB-303 DONE** supply/production/docs expand; **HUB-304 DONE** readiness/warehouse/shipping stub |
 
 **Catalog audits / backlog:**  

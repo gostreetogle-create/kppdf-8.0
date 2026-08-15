@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-332 DONE: Day Gantt ticks DD.MM + weekday
+**Статус:** DONE; deploy НЕ
+**Что:** day ticks = `DD.MM` + ПН…ВС (UTC); scale + «Заказ» headers `h-10`; month ticks unchanged.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-332.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-332-gantt-day-weekday-ticks.lock`
+**Gates:** FE tsc PASS; gantt-bars Jest 36 PASS; lint owned files PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-331 DONE: Plan fields on ready + heal missing siteId
 **Статус:** DONE; deploy НЕ
 **Что:** план-поля на ready/in_production; состав frozen; shipped hard-block; missing siteId heal; demo seed siteId.

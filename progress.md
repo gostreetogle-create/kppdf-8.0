@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-332 DONE — Day Gantt ticks DD.MM + weekday
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** zoom День — две строки в тике (`DD.MM` + ПН…ВС UTC); шапка шкалы и «Заказ» `h-10`; Месяц без weekday (330).
+**Gates:** FE tsc PASS; FE Jest gantt-bars **36 PASS**; lint owned files PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-332.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-332-gantt-day-weekday-ticks.lock`
+**Dep:** 330 / 331
+
 ## [2026-08-15] — TZ-PRODUCTION-331 DONE — Plan fields on ready + heal missing siteId
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

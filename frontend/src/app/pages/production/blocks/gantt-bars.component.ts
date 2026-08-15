@@ -82,6 +82,15 @@ export function ganttDaysLeftInMonth(dateOnly: string, remaining: number): numbe
   return Math.max(1, Math.min(leftInMonth, remaining));
 }
 
+/** UTC weekday short RU: getUTCDay 0→ВС … 1→ПН … 6→СБ. */
+export const GANTT_WEEKDAY_SHORT_RU = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'] as const;
+
+export function ganttWeekdayShortRu(dateOnly: string): string {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const dow = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+  return GANTT_WEEKDAY_SHORT_RU[dow] ?? '';
+}
+
 /** Always recenter the marker in the scrollport (Сегодня is never a silent no-op). */
 export function calculateCenteredMarkerScrollLeft(opts: {
   scrollLeft: number;
@@ -277,7 +286,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             class="sticky left-0 z-[3] w-52 shrink-0 border-r hairline bg-paper overflow-visible"
           >
             <div
-              class="h-7 border-b hairline flex items-end text-[11px] text-muted-foreground"
+              class="h-10 border-b hairline flex items-end text-[11px] text-muted-foreground"
               data-test="gantt-label-header"
             >
               <span class="gantt-expand-col shrink-0" aria-hidden="true"></span>
@@ -504,17 +513,24 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
           <div class="relative flex-1 min-w-0">
             <div
-              class="relative h-7 border-b hairline sticky top-0 bg-paper z-10"
+              class="relative h-10 border-b hairline sticky top-0 bg-paper z-10"
               data-test="gantt-scale"
             >
               @for (tick of scaleTicks(); track tick.key) {
                 <div
-                  class="absolute top-0 bottom-0 border-l hairline text-[10px] text-muted-foreground pl-0.5 overflow-hidden"
+                  class="absolute top-0 bottom-0 border-l hairline text-[10px] text-muted-foreground pl-0.5 overflow-hidden flex flex-col justify-center leading-tight"
                   [style.left.px]="tick.leftPx"
                   [style.width.px]="tick.widthPx"
                   [attr.data-test]="'gantt-tick-' + tick.key"
                 >
-                  {{ tick.label }}
+                  @if (tick.weekdayLabel) {
+                    <span class="block" data-test="gantt-tick-date">{{ tick.dateLabel }}</span>
+                    <span class="block" data-test="gantt-tick-weekday">{{
+                      tick.weekdayLabel
+                    }}</span>
+                  } @else {
+                    {{ tick.label }}
+                  }
                 </div>
               }
               <div
@@ -931,7 +947,14 @@ export class GanttBarsComponent implements AfterViewInit {
     const total = this.totalDays();
     const px = this.pxPerDay();
     const monthMode = this.zoom() === 'month';
-    const ticks: Array<{ key: string; label: string; leftPx: number; widthPx: number }> = [];
+    const ticks: Array<{
+      key: string;
+      label: string;
+      dateLabel: string;
+      weekdayLabel: string;
+      leftPx: number;
+      widthPx: number;
+    }> = [];
     for (let i = 0; i < total; i++) {
       const date = addDays(start, i);
       const isMonthStart = date.slice(8, 10) === '01';
@@ -940,6 +963,8 @@ export class GanttBarsComponent implements AfterViewInit {
       ticks.push({
         key: date,
         label: monthMode ? ganttMonthTickLabel(date) : shortDay(date),
+        dateLabel: monthMode ? ganttMonthTickLabel(date) : shortDay(date),
+        weekdayLabel: monthMode ? '' : ganttWeekdayShortRu(date),
         leftPx: i * px,
         widthPx: span * px,
       });

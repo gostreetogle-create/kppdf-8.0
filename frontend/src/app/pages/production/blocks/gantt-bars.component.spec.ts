@@ -7,6 +7,7 @@ import {
   calculateGanttPxPerDay,
   calculateCenteredMarkerScrollLeft,
   ganttMonthTickLabel,
+  ganttWeekdayShortRu,
   snapEstimateDaysFromDelta,
   snapMoveDeltaDays,
 } from './gantt-bars.component';
@@ -349,10 +350,51 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-10-02');
     fixture.componentRef.setInput('zoom', 'month');
     fixture.detectChanges();
-    const ticks = fixture.componentInstance['scaleTicks']() as Array<{ label: string }>;
+    const ticks = fixture.componentInstance['scaleTicks']() as Array<{
+      label: string;
+      weekdayLabel: string;
+    }>;
     expect(ticks.map((t) => t.label)).toEqual(['август', 'сентябрь', 'октябрь']);
+    expect(ticks.every((t) => !t.weekdayLabel)).toBe(true);
     expect(fixture.nativeElement.textContent).toContain('август');
     expect(fixture.nativeElement.textContent).not.toMatch(/н\.\d+/);
+  });
+
+  it('TZ-PRODUCTION-332: UTC weekday maps to RU abbr', () => {
+    expect(ganttWeekdayShortRu('2026-08-03')).toBe('ПН');
+    expect(ganttWeekdayShortRu('2026-08-04')).toBe('ВТ');
+    expect(ganttWeekdayShortRu('2026-07-31')).toBe('ПТ');
+    expect(ganttWeekdayShortRu('2026-08-02')).toBe('ВС');
+  });
+
+  it('TZ-PRODUCTION-332: day ticks show DD.MM plus weekday; headers are h-10', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-03');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-05');
+    fixture.componentRef.setInput('zoom', 'day');
+    fixture.detectChanges();
+    const ticks = fixture.componentInstance['scaleTicks']() as Array<{
+      dateLabel: string;
+      weekdayLabel: string;
+    }>;
+    expect(ticks[0]).toEqual(expect.objectContaining({ dateLabel: '03.08', weekdayLabel: 'ПН' }));
+    expect(ticks[1]).toEqual(expect.objectContaining({ dateLabel: '04.08', weekdayLabel: 'ВТ' }));
+    const el: HTMLElement = fixture.nativeElement;
+    const mondayTick = el.querySelector('[data-test="gantt-tick-2026-08-03"]') as HTMLElement;
+    expect(mondayTick.querySelector('[data-test="gantt-tick-date"]')?.textContent).toContain(
+      '03.08',
+    );
+    expect(mondayTick.querySelector('[data-test="gantt-tick-weekday"]')?.textContent).toContain(
+      'ПН',
+    );
+    expect(el.querySelector('[data-test="gantt-tick-2026-08-04"]')?.textContent).toContain('ВТ');
+    const scale = el.querySelector('[data-test="gantt-scale"]') as HTMLElement;
+    const label = el.querySelector('[data-test="gantt-label-header"]') as HTMLElement;
+    expect(scale.classList.contains('h-10')).toBe(true);
+    expect(scale.classList.contains('h-7')).toBe(false);
+    expect(label.classList.contains('h-10')).toBe(true);
+    expect(label.classList.contains('h-7')).toBe(false);
   });
 
   it('TZ-PRODUCTION-330: Сегодня recenters the marker even when already in view', () => {

@@ -80,7 +80,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
 - Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: День / Месяц / **Вместить сроки**.
-- Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День сохраняет читаемые 36px/day.
+- Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День: 36px/day, тик = `DD.MM` + RU weekday (ПН…ВС, UTC); шапка шкалы и колонка «Заказ» — `h-10`.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Месяц и прокручивает к началу диапазона.
 - **Сегодня** добавляет today в диапазон при необходимости и **всегда** центрирует маркер (chrome title «Прокрутить к сегодня»; не silent no-op).
 - Flyout **Заказы** = только список заказов (уже с учётом фильтров) + поиск по номеру; вкладок «Заказы | Заказчики» нет (TZ-329).
@@ -171,6 +171,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-329** | DONE: Filters Counterparty select; tabs Заказы\|Заказчики removed; dirty Reset; Gantt follows select |
 | **TZ-PRODUCTION-330** | DONE: zoom «Месяц» replaces «Неделя»; RU month ticks; Сегодня always recenters |
 | **TZ-PRODUCTION-331** | DONE: plan fields (`plannedDate`/`priority`) editable through ready; composition frozen; missing `siteId` healed from Counterparty sites |
+| **TZ-PRODUCTION-332** | DONE: Day zoom ticks = `DD.MM` + RU weekday (ПН…ВС); scale + «Заказ» headers `h-10`; Month ticks unchanged |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -196,6 +197,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Browser smoke зависит от живого API/Mongo.
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
 - Product/module deep-links из старого inspector — backlog; sheet не восстанавливать.
+- Zoom Месяц: нет полосы дней недели под именем месяца — successor только по запросу PO.
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 
@@ -204,7 +206,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **Заказы** | Поиск по номеру; выбор/мета заказа; `Все активные` сохраняет многозаказные полосы Ганта |
 | **Фильтры** | Заказчик (Counterparty select), активность, приоритет, плановая дата `С`/`По`; Сброс accent если dirty; chrome «Фильтры» active пока dirty |
 | **Сегодня** | Всегда центрирует красный маркер Сегодня (chrome «Прокрутить к сегодня»); расширяет range если today вне) |
-| **Масштаб → День** | Фиксированная читаемая плотность `36px/день` |
+| **Масштаб → День** | Фиксированная читаемая плотность `36px/день`; тик = `DD.MM` + ПН…ВС; шапка шкалы и «Заказ» `h-10` |
 | **Масштаб → Месяц** | Fit-плотность `max(12, floor(width timeline / число дней))`; тики RU месяцев |
 | **Вместить сроки** | Берёт min/max текущих полос с запасом в день, включает Месяц и скроллит к началу; это не no-op |
 | **Подпись заказа** | Переключает одну meta-полосу summary: статус, приоритет, plannedDate, Save, `/orders?q=<номер>` |
@@ -218,7 +220,7 @@ All dates are calendar estimate dates; weekends are not removed. All UI copy rem
 
 | Режим | Поведение |
 |-------|-----------|
-| День | 36px/день, подписи дат на шкале |
+| День | 36px/день, подписи `DD.MM` + ПН…ВС (UTC) на шкале; шапка `h-10` вместе с «Заказ» |
 | Месяц | fit-width: `max(12, floor(width/dayCount))`, подписи RU месяцев |
 | Вместить сроки | padded min…max полос + fit Месяц + scroll к началу |
 | Сегодня | today в range + **всегда** recenter красного маркера |
