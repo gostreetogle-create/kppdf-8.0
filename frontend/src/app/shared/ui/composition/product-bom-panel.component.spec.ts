@@ -1,7 +1,8 @@
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, Subject } from 'rxjs';
 import { ProductBomPanelComponent } from './product-bom-panel.component';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
 import { MaterialsService } from '../../services/materials.service';
@@ -301,5 +302,93 @@ describe('ProductBomPanelComponent', () => {
       quantity: 3,
     });
     expect(service.getProductTree).toHaveBeenCalled();
+  });
+
+  it('characterizes empty-root load and keeps mutations idle until an explicit action', () => {
+    service.getProductTree.mockReturnValue(of({ ok: true, data: { ...tree, children: [] } }));
+    service.getProductComposition.mockReturnValue(of({ ok: true, data: [] }));
+
+    fixture.componentRef.setInput('productId', 'p-empty');
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="composition-tree-node-p1"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="bom-inspector-name"]')?.textContent,
+    ).toContain('Изделие');
+    expect(service.addProductCompositionLine).not.toHaveBeenCalled();
+    expect(service.updateProductCompositionLine).not.toHaveBeenCalled();
+    expect(service.removeProductCompositionLine).not.toHaveBeenCalled();
+  });
+
+  it('characterizes tree error as an alert without exposing mutation actions', () => {
+    service.getProductTree.mockReturnValue(
+      of({
+        ok: false,
+        error: new HttpErrorResponse({ status: 500, error: { message: 'Состав недоступен' } }),
+      }),
+    );
+    service.getProductComposition.mockReturnValue(of({ ok: true, data: [] }));
+
+    fixture.componentRef.setInput('productId', 'p-error');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
+      'Состав недоступен',
+    );
+    expect(fixture.nativeElement.querySelector('[data-test="bom-add-into"]')).toBeNull();
+    expect(service.addProductCompositionLine).not.toHaveBeenCalled();
+  });
+
+  it('characterizes quantity and remove writes for a selected child line', () => {
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (event: {
+        node: (typeof tree.children)[0];
+        parent: typeof tree;
+        depth: number;
+      }) => void;
+      onQtyChange: (event: Event) => void;
+      removeSelected: () => void;
+    };
+
+    comp.onSelect({ node: tree.children[0], parent: tree, depth: 1 });
+    comp.onQtyChange({ target: { value: '3' } } as unknown as Event);
+    comp.removeSelected();
+
+    expect(service.updateProductCompositionLine).toHaveBeenCalledWith('p1', 'line-m1', {
+      quantity: 3,
+    });
+    expect(service.removeProductCompositionLine).toHaveBeenCalledWith('p1', 'line-m1');
+  });
+
+  it('characterizes the cost loading label before the material price resolves', () => {
+    const pending = new Subject<unknown>();
+    materials.findById.mockReturnValue(pending.asObservable());
+    fixture.componentRef.setInput('productId', 'p1');
+    fixture.detectChanges();
+
+    const mat = tree.children[0].children[0];
+    const comp = fixture.componentInstance as unknown as {
+      onSelect: (event: {
+        node: typeof mat;
+        parent: (typeof tree.children)[0];
+        depth: number;
+      }) => void;
+    };
+    comp.onSelect({ node: mat, parent: tree.children[0], depth: 2 });
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="bom-line-cost"]')?.textContent,
+    ).toContain('…');
+    pending.next({ ok: true, data: { _id: 'mat1', name: 'Труба', unit: 'м', pricePerUnit: 25 } });
+    pending.complete();
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="bom-line-cost-total"]')?.textContent,
+    ).toContain('100.00');
   });
 });
