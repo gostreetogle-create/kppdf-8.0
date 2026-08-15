@@ -1,8 +1,9 @@
 # TZ-DOC-TABLES-309 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-DOC-TABLES-309.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-DOC-TABLES-309.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
+> closed_at: 2026-08-15T05:49:50Z
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -52,17 +53,25 @@ cd frontend && pnpm test -- table-template-dialog.component.spec
 - Что сделано: RU copy кнопки/confirm KP columns; help у add-column; taller `.ttd-cell-input` / `.ttd-ih`; page notes 309.
 - Conflict disclosure: параллельно AUTH-305 (deploy keys only) — пересечения нет.
 - known_limitation: fontSize колонок не добавляли (нет schema) → 310 только по PO «да».
-- Archive: **не** до Cursor/PO PASS; `_active` marker остаётся.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-TABLES-309.done.md`
+- Lock: `.mimocode/locks/TZ-DOC-TABLES-309-tables-dialog-copy-and-taller-fields.lock`
 - Commit SHAs:
-  - implementation+docs: `2cc0383d8afd824cff447b92ad7d06c26ceda2b0` (origin/main)
+  - implementation+docs: `2cc0383d8afd824cff447b92ad7d06c26ceda2b0`
+  - review SHA record: `53374e783fa29746756b975c8106f72812631f23`
 
 ## Review handoff
 
 - [x] READY FOR REVIEW (2026-08-15)
 - [x] **Не** archive до Cursor Verdict PASS
 
+## Cursor verdict (2026-08-15)
+
+- Verdict: **PASS**
+- Cross-check: `2cc0383d` — «Колонки как в КП», confirm без «пресет/канон», help, taller inputs; tsc + 45 tests reported PASS
+- Next: Buffy closeout (archive + lock + progress + remove `_active`)
+
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-15T05:49:50Z

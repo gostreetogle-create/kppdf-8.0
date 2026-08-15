@@ -1,0 +1,13 @@
+task: TZ-DOC-TABLES-309
+status: DONE
+closed_at: 2026-08-15T05:49:50Z
+implementation_sha: 2cc0383d8afd824cff447b92ad7d06c26ceda2b0
+docs_sha: 53374e783fa29746756b975c8106f72812631f23
+protected_files:
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts
+  - frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.spec.ts
+  - docs/pages/tables.page.md
+  - docs/pages/PAGE-TZ-INDEX.md
+behavior: KP columns button/confirm RU copy without preset jargon; add-column help; taller dialog inputs
+cursor_verdict: PASS
+production: not executed

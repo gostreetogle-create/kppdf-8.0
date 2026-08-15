@@ -1,6 +1,18 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-DOC-TABLES-309 DONE — tables dialog copy + taller fields
+**Исполнитель:** Buffy (closeout)
+**Статус:** DONE; frontend UI; deploy НЕ
+**Что:** Диалог таблиц `/doc-constructor/tables`: кнопка «Колонки как в КП» + confirm стандартных колонок КП без жаргона «пресет/канон»; короткая RU-справка у add-column; выше `.ttd-cell-input` / шапки колонок. `data-test` ключи сохранены.
+**Gates:** frontend tsc PASS; table-template-dialog.component.spec 45/45; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-DOC-TABLES-309.done.md`
+**Checklist:** `docs/agent-checklists/TZ-DOC-TABLES-309.md`
+**Lock:** `.mimocode/locks/TZ-DOC-TABLES-309-tables-dialog-copy-and-taller-fields.lock`
+**Implementation SHA:** `2cc0383d8afd824cff447b92ad7d06c26ceda2b0`
+**Docs SHA:** `53374e783fa29746756b975c8106f72812631f23`
+**Known limit:** fontSize колонок — только TZ-DOC-TABLES-310 после явного PO «да».
+
 ## [2026-08-15] — TZ-UX-318 DONE — KP columns checkbox menu stay-open
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend UX; deploy НЕ
