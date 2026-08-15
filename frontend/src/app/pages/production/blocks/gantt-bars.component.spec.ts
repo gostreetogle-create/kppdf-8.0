@@ -60,7 +60,10 @@ describe('GanttBarsComponent', () => {
     expect(el.textContent).toContain('ORD-1');
     // Work-type names appear in legend, but not as child label rows when collapsed.
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeFalsy();
-    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent?.trim()).toBe('Заказ');
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain('Заказ');
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).not.toContain(
+      'работа',
+    );
   });
 
   it('expand shows work-type children; collapse hides them', () => {
@@ -75,7 +78,7 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
     expect(el.textContent).toContain('Сварка');
     expect(el.textContent).toContain('Покраска');
-    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent?.trim()).toBe(
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
       'Заказ · работа',
     );
 
@@ -161,6 +164,35 @@ describe('GanttBarsComponent', () => {
     timelineRow.click();
     expect(clicks).toEqual(['o1']);
     expect(toggles).toEqual([]);
+  });
+
+  it('TZ-PRODUCTION-320: expand column + distinct a11y; chevron never emits orderLabelClick', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const expand = el.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement;
+    const labelBtn = el.querySelector(
+      '[data-test="gantt-label-summary:o1"] button.flex-1',
+    ) as HTMLElement;
+    expect(expand.classList.contains('gantt-expand-col')).toBe(true);
+    expect(expand.classList.contains('border-r')).toBe(true);
+    expect(expand.getAttribute('aria-label')).toContain('состав на Ганте');
+    expect(labelBtn.getAttribute('aria-label')).toContain('Карточка заказа');
+    expect(labelBtn.getAttribute('title')).toContain('Карточка заказа');
+
+    const clicks: string[] = [];
+    const toggles: string[] = [];
+    fixture.componentInstance.orderLabelClick.subscribe((id) => clicks.push(id));
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    expand.click();
+    expect(toggles).toEqual(['o1']);
+    expect(clicks).toEqual([]);
+    labelBtn.click();
+    expect(clicks).toEqual(['o1']);
+    expect(toggles).toEqual(['o1']);
   });
 
   it('renders legend and a summary with required range', () => {

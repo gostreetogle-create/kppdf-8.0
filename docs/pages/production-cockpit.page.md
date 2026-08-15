@@ -94,9 +94,11 @@ flyouts: overlay; center width unchanged
 - **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы → `PATCH plannedDate`.
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
-- **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` + `setOrderExpanded(id,true)`; остальные сводки остаются, дети под выбранным.
+- **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-318:** Карточка sheet почти на всю ширину студии; `max-height` в viewport + scroll; состав изделия/модуля — upward fixed popover.
 - **TZ-PRODUCTION-319:** карточка **только** с левой подписи summary-заказа (toggle) или chrome «Карточка»; child / ▸ / полоса timeline **не** открывают; sheet `max-height: min(72vh, …)`.
+- **TZ-PRODUCTION-320:** ▸/▾ = **только** expand/collapse состава на Ганте; номер заказа = **только** toggle нижней карточки; зоны разделены колонкой + hairline; без cross-coupling.
+- **Dismiss:** клик по пустой сетке / Esc / × — свернуть все деревья + закрыть карточку (как раньше).
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -118,6 +120,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-317** | DONE: select keeps multi-order bars; expand in-place |
 | **TZ-PRODUCTION-318** | DONE: sheet full-width + viewport; composition expands up |
 | **TZ-PRODUCTION-319** | DONE: card only from order label (toggle); taller sheet |
+| **TZ-PRODUCTION-320** | DONE: ▸ = tree only; order name = card only (no cross-coupling) |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |

@@ -115,6 +115,7 @@ const CHROME_OWNER = 'production-cockpit';
               [expandedOrderIds]="ctx.expandedOrderIds()"
               (orderLabelClick)="onOrderLabelClick($event)"
               (toggleExpand)="onToggleExpand($event)"
+              (dismissCanvas)="onDismissCanvas()"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
               (startOffsetCommit)="onStartOffsetCommit($event)"
@@ -427,6 +428,12 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   protected onMainClick(): void {
+    this.ctx.clearExpandedOrders();
+    if (this.inspectorOpen() || this.rightTool() === 'card') this.closeInspector();
+  }
+
+  protected onDismissCanvas(): void {
+    this.ctx.clearExpandedOrders();
     if (this.inspectorOpen() || this.rightTool() === 'card') this.closeInspector();
   }
 
@@ -435,11 +442,14 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   /**
-   * TZ-PRODUCTION-319 — left summary order label: toggle card.
-   * Same order already open → close; else open + select + expand.
+   * Left summary order number (TZ-PRODUCTION-320):
+   * - card open for this order → close card only (tree untouched)
+   * - else → open card + select (no expand/collapse)
    */
   protected async onOrderLabelClick(id: string): Promise<void> {
-    if (this.inspectorOpen() && this.rightTool() === 'card' && this.ctx.selectedOrderId() === id) {
+    const cardOpenForThis =
+      this.inspectorOpen() && this.rightTool() === 'card' && this.ctx.selectedOrderId() === id;
+    if (cardOpenForThis) {
       this.closeInspector();
       return;
     }
@@ -448,7 +458,7 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
-    this.ctx.setOrderExpanded(id, true);
+    // TZ-PRODUCTION-320: select/card must not expand Gantt tree.
     this.leftTool.set(null);
     this.inspectorOpen.set(true);
     this.rightTool.set('card');

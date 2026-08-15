@@ -295,7 +295,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     await fixture.whenStable();
 
     expect(ctx.selectedOrderId()).toBe('o1');
-    expect(ctx.isOrderExpanded('o1')).toBe(true);
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
     const lastAfter = facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[];
     expect(lastAfter.map((o) => o._id).sort()).toEqual(['o1', 'o2']);
     const orderIds = new Set(page.bars().map((b) => b.orderId));
@@ -327,7 +327,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('height: min(42vh, 22rem)');
   });
 
-  it('TZ-PRODUCTION-319: summary label toggles card open/close; expand state kept', async () => {
+  it('TZ-PRODUCTION-320: label toggles card only; chevron toggles tree only', async () => {
     facade.loadOrders.mockImplementation(async () => [
       { _id: 'o1', number: 'ORD-1', status: 'confirmed', items: [] },
     ]);
@@ -364,28 +364,45 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     const page = fixture.componentInstance as unknown as {
       onOrderLabelClick: (id: string) => Promise<void>;
       onToggleExpand: (id: string) => void;
+      onDismissCanvas: () => void;
       inspectorOpen: () => boolean;
       rightTool: () => string | null;
     };
     const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
 
+    // Chevron expand/collapse never opens card.
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(true);
     expect(page.inspectorOpen()).toBe(false);
+    expect(page.rightTool()).toBeNull();
 
+    page.onToggleExpand('o1');
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(page.inspectorOpen()).toBe(false);
+
+    // Label open card does not expand tree.
     await page.onOrderLabelClick('o1');
     fixture.detectChanges();
     expect(ctx.selectedOrderId()).toBe('o1');
     expect(page.inspectorOpen()).toBe(true);
     expect(page.rightTool()).toBe('card');
-    expect(ctx.isOrderExpanded('o1')).toBe(true);
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
 
+    // Expand while card open — card stays; tree expands.
+    page.onToggleExpand('o1');
+    expect(ctx.isOrderExpanded('o1')).toBe(true);
+    expect(page.inspectorOpen()).toBe(true);
+
+    // Label close card does not collapse tree.
     await page.onOrderLabelClick('o1');
     fixture.detectChanges();
     expect(page.inspectorOpen()).toBe(false);
     expect(page.rightTool()).toBeNull();
-    expect(ctx.selectedOrderId()).toBe('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(true);
+
+    page.onDismissCanvas();
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(page.inspectorOpen()).toBe(false);
   });
 
   it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {

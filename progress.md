@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-320 DONE — split ▸ tree vs order-name card
+**Исполнитель:** executor-composer
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed 314–320; deploy НЕ
+**Что:** ▸ = только дерево Ганта; номер заказа = только карточка; убран setOrderExpanded из onSelect/label; visual expand-col + a11y.
+**Gates:** FE tsc PASS; FE jest cockpit|gantt-bars **32 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-320.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-320-split-expand-vs-card.lock`
+**Dep:** 319
+
 ## [2026-08-15] — TZ-PRODUCTION-319 DONE — Gantt card IA + taller sheet
 **Исполнитель:** executor-composer
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-TREE closed 314–319; deploy НЕ

@@ -10,8 +10,9 @@
 | 4 | `TZ-PRODUCTION-317-gantt-expand-keep-orders` | DONE | select ≠ filter; expand in-place; deep-link/reload keep multi-order |
 | 5 | `TZ-PRODUCTION-318-card-sheet-viewport` | DONE | full-width sheet; composition expands up (fixed popover) |
 | 6 | `TZ-PRODUCTION-319-gantt-card-interaction` | DONE | card only from order label; toggle; taller sheet |
+| 7 | `TZ-PRODUCTION-320-split-expand-vs-card` | DONE | ▸ = tree only; order name = card only; no cross-coupling |
 
-**Wave status:** 314–319 **DONE** (wave closed).
+**Wave status:** 314–320 **DONE**.
 
 **SoT intent:** summary span = min(start)…max(end) children; detail resize = days override (309/311); summary body-drag = plannedDate (312); detail body-drag = start offset (316).
 

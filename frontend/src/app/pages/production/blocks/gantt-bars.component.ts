@@ -90,7 +90,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
       [attr.data-zoom]="zoom()"
       data-test="gantt-bars-root"
-      (click)="$event.stopPropagation()"
+      (click)="onRootClick($event)"
     >
       <div
         class="shrink-0 px-3 py-2 flex flex-wrap items-center gap-3 border-b hairline text-xs text-muted-foreground"
@@ -160,15 +160,22 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
           <div class="sticky left-0 z-[2] w-52 shrink-0 border-r hairline bg-paper">
             <div
-              class="h-7 border-b hairline px-2 flex items-end pb-1 text-[11px] text-muted-foreground"
+              class="h-7 border-b hairline flex items-end text-[11px] text-muted-foreground"
               data-test="gantt-label-header"
             >
-              {{ anyExpanded() ? 'Заказ · работа' : 'Заказ' }}
+              <span
+                class="gantt-expand-col shrink-0 border-r hairline flex items-end justify-center pb-1"
+                aria-hidden="true"
+                >▸</span
+              >
+              <span class="flex-1 min-w-0 px-2 pb-1 truncate">{{
+                anyExpanded() ? 'Заказ · работа' : 'Заказ'
+              }}</span>
             </div>
             @for (row of rows(); track row.bar.id) {
               <div
-                class="gantt-row-h w-full px-1 text-left border-b hairline
-                       flex items-center gap-0.5 min-w-0 overflow-hidden hover:bg-paper-2"
+                class="gantt-row-h w-full text-left border-b hairline
+                       flex items-stretch min-w-0 overflow-hidden"
                 [class.bg-paper-2]="row.alt"
                 [class.border-t-2]="row.orderBoundary"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
@@ -176,14 +183,12 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 @if (row.isSummary) {
                   <button
                     type="button"
-                    class="shrink-0 w-6 h-6 inline-flex items-center justify-center rounded-sm
-                           text-muted-foreground hover:text-ink pi-focus-ring"
+                    class="gantt-expand-col shrink-0 border-r hairline inline-flex items-center justify-center
+                           text-muted-foreground hover:text-ink hover:bg-paper-2/80 pi-focus-ring"
                     [attr.data-test]="'gantt-expand-' + row.bar.orderId"
                     [attr.aria-expanded]="row.expanded"
-                    [attr.aria-label]="
-                      (row.expanded ? 'Свернуть состав заказа ' : 'Развернуть состав заказа ') +
-                      row.bar.orderNumber
-                    "
+                    [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
+                    [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
                     (click)="onToggleExpand($event, row.bar.orderId)"
                   >
                     <span aria-hidden="true" class="text-[10px] font-mono">{{
@@ -191,14 +196,21 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     }}</span>
                   </button>
                 } @else {
-                  <span class="w-6 shrink-0" aria-hidden="true"></span>
+                  <span
+                    class="gantt-expand-col shrink-0 border-r hairline"
+                    aria-hidden="true"
+                  ></span>
                 }
                 <button
                   type="button"
-                  class="flex-1 min-w-0 h-full px-1 flex items-center gap-1.5 text-left pi-focus-ring rounded-sm"
+                  class="flex-1 min-w-0 h-full px-1.5 flex items-center gap-1.5 text-left
+                         pi-focus-ring hover:bg-paper-2"
+                  [class.rounded-none]="row.isSummary"
                   (click)="onLabelClick($event, row)"
-                  [attr.title]="labelTitle(row.bar)"
-                  [attr.aria-label]="labelTitle(row.bar)"
+                  [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
+                  [attr.aria-label]="
+                    row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
+                  "
                 >
                   <span
                     class="w-1.5 h-1.5 rounded-full shrink-0"
@@ -377,15 +389,19 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · сводная полоса = срок заказа · ▸ развернуть состав · цвет = вид
-        работ · правый край состава = дни оценки · тело сводной = начало заказа · тело состава =
-        сдвиг вида · подпись заказа слева = карточка
+        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = состав на Ганте · номер заказа
+        = карточка · цвет = вид работ · правый край состава = дни оценки · тело сводной = начало
+        заказа · тело состава = сдвиг вида
       </div>
     </div>
   `,
   styles: `
     .gantt-row-h {
       height: ${GANTT_ROW_PX}px;
+      box-sizing: border-box;
+    }
+    .gantt-expand-col {
+      width: 1.875rem; /* 30px — dedicated expand column */
       box-sizing: border-box;
     }
     .gantt-resize-handle {
@@ -412,6 +428,8 @@ export class GanttBarsComponent {
    * Child labels and timeline bars do not emit this.
    */
   readonly orderLabelClick = output<string>();
+  /** Empty canvas / non-control click → parent collapses trees + may close card. */
+  readonly dismissCanvas = output<void>();
   readonly toggleExpand = output<string>();
   /** Commit snapped days → parent PATCHes order estimate-days only. */
   readonly estimateDaysCommit = output<GanttEstimateDaysCommit>();
@@ -601,6 +619,35 @@ export class GanttBarsComponent {
     event.stopPropagation();
     event.preventDefault();
     this.toggleExpand.emit(orderId);
+  }
+
+  /**
+   * Empty Gantt chrome/grid (not labels, bars, handles) → dismiss expand trees.
+   * stopPropagation so studio main does not double-handle inconsistently.
+   */
+  protected onRootClick(event: MouseEvent): void {
+    event.stopPropagation();
+    const t = event.target;
+    if (!(t instanceof Element)) return;
+    if (
+      t.closest(
+        [
+          '[data-test^="gantt-label-"]',
+          '[data-test^="gantt-expand-"]',
+          '[data-test^="gantt-bar"]',
+          '[data-test^="gantt-row-"]',
+          '[data-test^="gantt-resize"]',
+          'button',
+          'a',
+          'input',
+          'select',
+          'textarea',
+        ].join(','),
+      )
+    ) {
+      return;
+    }
+    this.dismissCanvas.emit();
   }
 
   /** Summary left label → card toggle; child work-type label → no card. */
@@ -800,6 +847,18 @@ export class GanttBarsComponent {
       b.workerLabel && b.workerLabel !== '—' ? `исполн.: ${b.workerLabel}` : null,
     ].filter(Boolean);
     return parts.join(' · ');
+  }
+
+  /** TZ-PRODUCTION-320: chevron zone — Gantt tree only. */
+  protected expandTitle(orderNumber: string, expanded: boolean): string {
+    return expanded
+      ? `Свернуть состав на Ганте · ${orderNumber}`
+      : `Развернуть состав на Ганте · ${orderNumber}`;
+  }
+
+  /** TZ-PRODUCTION-320: order-number zone — bottom card only. */
+  protected summaryCardTitle(b: GanttBar): string {
+    return `Карточка заказа ${b.orderNumber}`;
   }
 
   protected barTitle(b: GanttBar): string {
