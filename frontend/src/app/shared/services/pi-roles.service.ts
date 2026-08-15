@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentGet, type SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  type SilentResult,
+} from '../../core/silent-http';
 
 export interface AdminRole {
   id: string;
@@ -30,6 +36,14 @@ export interface AdminRolesListParams {
   search?: string;
 }
 
+export interface AdminRoleMutationPayload {
+  name: string;
+  label: string;
+  description?: string;
+  permissions: string[];
+  pages?: string[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class PiRolesService {
   private readonly http = inject(HttpClient);
@@ -43,5 +57,20 @@ export class PiRolesService {
     return silentGet<AdminRolesListResponse>(this.http, `${this.baseUrl}/admin/roles`, {
       params: httpParams,
     });
+  }
+
+  create(payload: AdminRoleMutationPayload): Observable<SilentResult<AdminRole>> {
+    return silentPost<AdminRole>(this.http, `${this.baseUrl}/admin/roles`, payload);
+  }
+
+  update(
+    id: string,
+    payload: Omit<AdminRoleMutationPayload, 'name'>,
+  ): Observable<SilentResult<AdminRole>> {
+    return silentPatch<AdminRole>(this.http, `${this.baseUrl}/admin/roles/${id}`, payload);
+  }
+
+  remove(id: string): Observable<SilentResult<{ success: true }>> {
+    return silentDelete<{ success: true }>(this.http, `${this.baseUrl}/admin/roles/${id}`);
   }
 }

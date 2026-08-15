@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { silentGet, type SilentResult } from '../../core/silent-http';
+import {
+  silentDelete,
+  silentGet,
+  silentPatch,
+  silentPost,
+  type SilentResult,
+} from '../../core/silent-http';
 
 export interface AdminUser {
   id: string;
@@ -30,6 +36,23 @@ export interface AdminUsersListParams {
   role?: string;
 }
 
+export interface AdminUserCreatePayload {
+  username: string;
+  password?: string;
+  role: string;
+  isActive: boolean;
+  email?: string;
+  displayName?: string;
+}
+
+export interface AdminUserUpdatePayload {
+  username: string;
+  role: string;
+  isActive: boolean;
+  email?: string;
+  displayName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PiUsersService {
   private readonly http = inject(HttpClient);
@@ -43,6 +66,32 @@ export class PiUsersService {
     if (params.role) httpParams = httpParams.set('role', params.role);
     return silentGet<AdminUsersListResponse>(this.http, `${this.baseUrl}/admin/users`, {
       params: httpParams,
+    });
+  }
+
+  create(payload: AdminUserCreatePayload): Observable<SilentResult<AdminUser>> {
+    return silentPost<AdminUser>(this.http, `${this.baseUrl}/admin/users`, payload);
+  }
+
+  update(id: string, payload: AdminUserUpdatePayload): Observable<SilentResult<AdminUser>> {
+    return silentPatch<AdminUser>(this.http, `${this.baseUrl}/admin/users/${id}`, payload);
+  }
+
+  activate(id: string): Observable<SilentResult<AdminUser>> {
+    return silentPost<AdminUser>(this.http, `${this.baseUrl}/admin/users/${id}/activate`, {});
+  }
+
+  deactivate(id: string): Observable<SilentResult<AdminUser>> {
+    return silentPost<AdminUser>(this.http, `${this.baseUrl}/admin/users/${id}/deactivate`, {});
+  }
+
+  remove(id: string): Observable<SilentResult<AdminUser>> {
+    return silentDelete<AdminUser>(this.http, `${this.baseUrl}/admin/users/${id}`);
+  }
+
+  resetPassword(id: string, newPassword: string): Observable<SilentResult<AdminUser>> {
+    return silentPost<AdminUser>(this.http, `${this.baseUrl}/admin/users/${id}/reset-password`, {
+      newPassword,
     });
   }
 }

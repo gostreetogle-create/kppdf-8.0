@@ -9,19 +9,11 @@ import {
   signal,
   OnInit,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { API_BASE_URL } from '../../core/api.tokens';
 import { AuthService } from '../../core/auth.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
-import {
-  extractErrorMessage,
-  silentDelete,
-  silentPatch,
-  silentPost,
-  type SilentResult,
-} from '../../core/silent-http';
+import { extractErrorMessage, type SilentResult } from '../../core/silent-http';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ADMIN_ENTITY_SECTION_CHIPS, ADMIN_TOC_CHIPS } from './admin-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -51,8 +43,8 @@ import {
  * surfaced as the user-visible message «Нельзя удалить/понизить
  * последнего админа».
  *
- * All HTTP goes through `silent-*` helpers — the observables never
- * error, so RxJS never logs noise for expected 4xx responses.
+ * PiUsersService owns the HTTP transport; this page keeps orchestration,
+ * permissions, dialog state, and user-visible result handling.
  */
 type ClientUser = AdminUser;
 const PAGE_SIZE = 10;
@@ -164,9 +156,7 @@ export class UsersAdminPage implements OnInit {
   protected readonly toc = ADMIN_TOC_CHIPS;
   protected readonly chips = ADMIN_ENTITY_SECTION_CHIPS;
 
-  private readonly http = inject(HttpClient);
   private readonly usersService = inject(PiUsersService);
-  private readonly baseUrl = inject(API_BASE_URL);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -321,9 +311,8 @@ export class UsersAdminPage implements OnInit {
     });
     onDialogCloseOnce(ref, this.injector, (ok) => {
       if (!ok) return;
-      const url = `${this.baseUrl}/admin/users/${u.id}/${activating ? 'activate' : 'deactivate'}`;
       this.silentRun(
-        silentPost<ClientUser>(this.http, url, {}),
+        activating ? this.usersService.activate(u.id) : this.usersService.deactivate(u.id),
         activating ? 'Пользователь активирован' : 'Пользователь деактивирован',
         u.id,
       );
@@ -344,11 +333,7 @@ export class UsersAdminPage implements OnInit {
     });
     onDialogCloseOnce(ref, this.injector, (ok) => {
       if (!ok) return;
-      this.silentRun(
-        silentDelete<ClientUser>(this.http, `${this.baseUrl}/admin/users/${u.id}`),
-        'Пользователь удалён',
-        u.id,
-      );
+      this.silentRun(this.usersService.remove(u.id), 'Пользователь удалён', u.id);
     });
   }
 
@@ -357,33 +342,46 @@ export class UsersAdminPage implements OnInit {
    * map the `LAST_ADMIN_INVARIANT` 403 to the user-visible message.
    */
   private createUser(result: UserFormResult): Observable<SilentResult<ClientUser>> {
-    const body: Record<string, unknown> = {
+    const body: {
+      username: string;
+      password?: string;
+      role: string;
+      isActive: boolean;
+      email?: string;
+      displayName?: string;
+    } = {
       username: result.username,
       password: result.password,
       role: result.role,
       isActive: result.isActive,
     };
-    if (result.email) body['email'] = result.email;
-    if (result.displayName) body['displayName'] = result.displayName;
-    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users`, body);
+    if (result.email) body.email = result.email;
+    if (result.displayName) body.displayName = result.displayName;
+    return this.usersService.create(body);
   }
 
   private updateUser(id: string, result: UserFormResult): Observable<SilentResult<ClientUser>> {
-    const body: Record<string, unknown> = {
+    const body: {
+      username: string;
+      role: string;
+      isActive: boolean;
+      email?: string;
+      displayName?: string;
+    } = {
       username: result.username,
       role: result.role,
       isActive: result.isActive,
     };
-    if (result.email) body['email'] = result.email;
-    if (result.displayName) body['displayName'] = result.displayName;
-    return silentPatch<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}`, body);
+    if (result.email) body.email = result.email;
+    if (result.displayName) body.displayName = result.displayName;
+    return this.usersService.update(id, body);
   }
 
   private resetPassword(id: string, newPassword: string): Observable<SilentResult<ClientUser>> {
     this.loadingRowId.set(id);
-    return silentPost<ClientUser>(this.http, `${this.baseUrl}/admin/users/${id}/reset-password`, {
-      newPassword,
-    }).pipe(finalize(() => this.loadingRowId.set(null)));
+    return this.usersService
+      .resetPassword(id, newPassword)
+      .pipe(finalize(() => this.loadingRowId.set(null)));
   }
 
   private silentRun(
