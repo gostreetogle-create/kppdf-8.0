@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { ModuleDetailPage } from './module-detail.page';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { ProductModulePhotosService } from '../../shared/services/pi-product-module-photos.service';
+import { PhotosService } from '../../shared/services/photos.service';
 import { MaterialsService } from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
@@ -98,6 +99,13 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
           },
         },
         {
+          provide: PhotosService,
+          useValue: {
+            uploadWithProgress: jest.fn(),
+            remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+          },
+        },
+        {
           provide: MaterialsService,
           useValue: { findById: jest.fn().mockReturnValue(of({ ok: true, data: {} })) },
         },
@@ -155,6 +163,18 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
     expect(el.querySelector('[data-test="module-hero-dims"]')).toBeTruthy();
     expect(el.querySelector('[data-test="module-cost-total"]')?.textContent).toMatch(/15/);
     expect(el.querySelector('[data-test="module-cost-panel"]')).toBeTruthy();
+  });
+
+  it('shows file dropzone and keeps URL as a secondary collapsed path', () => {
+    const page = fixture.componentInstance as unknown as {
+      openPhotos: { set: (v: boolean) => void };
+    };
+    page.openPhotos.set(true);
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="module-photo-upload"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="photo-dropzone"]')).toBeTruthy();
+    expect(el.textContent).toContain('Добавить по ссылке');
   });
 
   it('passes rootKind=module to BOM panel', () => {

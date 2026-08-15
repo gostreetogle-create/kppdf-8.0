@@ -5,16 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T00:13:14+03:00
+updated_at: 2026-08-16T00:35:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-UI-PHOTO-342 DONE; `c523237c` pushed; archive + lock created)_
+- `TZ-MODULES-341` — closeout ready; owner confirmed `cc5fac5f` legitimate and pushed; only TZ-341 paths will be staged.
 
 ## NEXT (PO paste prompt)
 
-- After 342: `TZ-MODULES-341` — module form/detail/QC photo wiring.
+- `TZ-SWEEP-401` — Канбан write-path (ship/cancel vs PATCH, freeze, nav «Комбайн»). Prompt в чате архитектора.
+- After 341: `TZ-UI-PHOTO-343` — project photo entry sweep. Conflict keys не пересекаются с 401.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -117,5 +118,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **341 → 343**; TZ-UI-PHOTO-342 DONE; deploy НЕ — не автодеплой.
+- Queue: **341 → 343**; 341 closeout ready; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой

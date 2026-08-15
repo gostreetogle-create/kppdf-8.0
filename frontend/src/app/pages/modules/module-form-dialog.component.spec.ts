@@ -7,6 +7,8 @@ import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { PhotosService } from '../../shared/services/photos.service';
+import { ProductModulePhotosService } from '../../shared/services/pi-product-module-photos.service';
 
 describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
   let fixture: ComponentFixture<ModuleFormDialogComponent>;
@@ -33,6 +35,17 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
           },
         },
         { provide: PI_DIALOG_REF, useValue: ref() },
+        {
+          provide: PhotosService,
+          useValue: {
+            uploadWithProgress: jest.fn(),
+            remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
+          },
+        },
+        {
+          provide: ProductModulePhotosService,
+          useValue: { attach: jest.fn().mockReturnValue(of({ ok: true, data: {} })) },
+        },
         {
           provide: ProductModulesService,
           useValue: { update, create: jest.fn(), list: jest.fn() },
@@ -62,6 +75,46 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
     expect(hint).toBeTruthy();
     expect(hint!.textContent).toContain('модули и материалы');
     expect(hint!.textContent).toContain('карточке модуля');
+  });
+
+  it('renders the module photo dropzone in create/edit form', () => {
+    expect(
+      fixture.nativeElement.querySelector('[data-test="module-photo-section"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).not.toBeNull();
+  });
+
+  it('uploads a form photo and attaches it to the saved module', () => {
+    const photosService = TestBed.inject(PhotosService) as {
+      uploadWithProgress: jest.Mock;
+    };
+    photosService.uploadWithProgress = jest.fn().mockReturnValue(
+      of({
+        type: 'done',
+        photo: {
+          _id: 'module-photo-1',
+          storageUrl: '/uploads/module-photo-1.jpg',
+          originalFilename: 'module.jpg',
+        },
+      }),
+    );
+    const modulePhotos = TestBed.inject(ProductModulePhotosService) as {
+      attach: jest.Mock;
+    };
+    const component = fixture.componentInstance as unknown as {
+      onUploadRequest: (files: File[]) => void;
+      onSubmit: () => void;
+    };
+    component.onUploadRequest([new File(['image'], 'module.jpg', { type: 'image/jpeg' })]);
+    component.onSubmit();
+
+    expect(modulePhotos.attach).toHaveBeenCalledWith(
+      expect.objectContaining({
+        productModuleId: 'm1',
+        photoId: 'module-photo-1',
+        isMain: true,
+      }),
+    );
   });
 
   it('keeps dimensions nested and submits width/height/depth/unit without missing-control errors', () => {

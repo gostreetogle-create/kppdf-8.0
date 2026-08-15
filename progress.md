@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-MODULES-341 DONE — module photo upload form/detail/QC
+**Исполнитель:** Buffy
+**Статус:** DONE; deploy НЕ
+**Что:** module form and QuickCreate L upload through shared dropzone/PhotosService and link via ProductModulePhotosService `photoId`; module detail file upload is primary, URL is collapsed secondary; module photo links use one API path.
+**Gates:** FE tsc PASS; Jest module form/detail + QuickCreate + dropzone + product/material forms 6 suites / 101 tests PASS; lint PASS с 18 существующими архитектурными предупреждениями; owned Prettier PASS; diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-MODULES-341.done.md`
+**Lock:** `.mimocode/locks/TZ-MODULES-341-module-photo-upload.lock`
+**Dep:** TZ-UI-PHOTO-342 (`c523237c`)
+
 ## [2026-08-16] — TZ-UI-PHOTO-342 DONE — shared photo dropzone paste + RU hint
 **Исполнитель:** Buffy
 **Статус:** DONE; deploy НЕ

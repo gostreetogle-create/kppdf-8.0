@@ -16,6 +16,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AccordionComponent } from '../../shared/ui/pi-accordion.component';
 import { AccordionItemComponent } from '../../shared/ui/pi-accordion-item.component';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
+import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -34,6 +35,12 @@ import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
+import {
+  PhotosService,
+  uploadPhotosWithProgress,
+  type Photo,
+} from '../../shared/services/photos.service';
+import { forkJoin } from 'rxjs';
 
 /** TZ-COST-302: shape of GET /modules/:id/cost-preview. */
 interface ModuleCostPreview {
@@ -60,6 +67,7 @@ interface ModuleCostPreview {
     AccordionComponent,
     AccordionItemComponent,
     PiEmptyTileComponent,
+    PiPhotoDropzoneComponent,
     ProductBomPanelComponent,
     PiFactCardComponent,
     PiFactStackComponent,
@@ -197,23 +205,40 @@ interface ModuleCostPreview {
                     </figcaption>
                   </figure>
                 } @empty {
-                  <p class="text-sm text-muted-foreground">Нет фото. Добавьте по URL ниже.</p>
+                  <p class="text-sm text-muted-foreground">
+                    Нет фото. Загрузите файл или добавьте по ссылке.
+                  </p>
                 }
               </div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <input
-                  #photoUrl
-                  placeholder="https://…"
-                  class="pi-input w-full sm:w-72 font-mono text-sm"
+              <div class="mt-3" data-test="module-photo-upload">
+                <app-pi-photo-dropzone
+                  [photos]="dropzonePhotos()"
+                  [uploading]="photosUploading()"
+                  [progressPercent]="photoUploadProgress()"
+                  [errorMessage]="photoErrorMessage()"
+                  (uploadRequest)="onPhotoUpload($event)"
+                  (deleteRequest)="onPhotoDelete($event)"
                 />
-                <app-pi-button
-                  variant="default"
-                  type="button"
-                  (click)="addPhotoByUrl(photoUrl.value); photoUrl.value = ''"
-                >
-                  Добавить по URL
-                </app-pi-button>
               </div>
+              <details class="mt-3 hairline rounded-sm p-2">
+                <summary class="cursor-pointer text-xs text-muted-foreground">
+                  Добавить по ссылке
+                </summary>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <input
+                    #photoUrl
+                    placeholder="https://…"
+                    class="pi-input w-full sm:w-72 font-mono text-sm"
+                  />
+                  <app-pi-button
+                    variant="outline"
+                    type="button"
+                    (click)="addPhotoByUrl(photoUrl.value); photoUrl.value = ''"
+                  >
+                    Добавить по ссылке
+                  </app-pi-button>
+                </div>
+              </details>
             </app-pi-accordion-item>
 
             <app-pi-accordion-item
@@ -322,6 +347,7 @@ export class ModuleDetailPage {
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
   private readonly photosSvc = inject(ProductModulePhotosService);
+  private readonly photosService = inject(PhotosService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly bomPanel = viewChild(ProductBomPanelComponent);
 
@@ -359,6 +385,14 @@ export class ModuleDetailPage {
   protected readonly openCost = signal(false);
   protected readonly openWork = signal(false);
   protected readonly photos = signal<ProductModulePhoto[]>([]);
+  protected readonly photosUploading = signal(false);
+  protected readonly photoUploadProgress = signal<number | null>(null);
+  protected readonly photoErrorMessage = signal<string | null>(null);
+  protected readonly dropzonePhotos = computed<Photo[]>(() =>
+    this.photos().flatMap((photo) =>
+      photo.photoId && typeof photo.photoId === 'object' ? [photo.photoId] : [],
+    ),
+  );
 
   protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
     { label: 'Каталог', link: '/modules' },
@@ -464,6 +498,62 @@ export class ModuleDetailPage {
       return p.photoId.storageUrl as string;
     }
     return null;
+  }
+
+  protected onPhotoUpload(files: File[]): void {
+    if (files.length === 0) return;
+    const moduleId = this.idString();
+    if (!moduleId) return;
+    const makeMain = this.photos().length === 0;
+    this.photosUploading.set(true);
+    this.photoUploadProgress.set(null);
+    this.photoErrorMessage.set(null);
+    uploadPhotosWithProgress(this.photosService, files, (percent) =>
+      this.photoUploadProgress.set(percent),
+    ).subscribe((results) => {
+      const uploaded: Photo[] = [];
+      const failed: string[] = [];
+      results.forEach((result, index) => {
+        if (result.ok) uploaded.push(result.data);
+        else failed.push(files[index].name);
+      });
+      if (failed.length > 0) {
+        this.photoErrorMessage.set(`Не удалось загрузить: ${failed.join(', ')}`);
+      }
+      if (uploaded.length === 0) {
+        this.photosUploading.set(false);
+        this.photoUploadProgress.set(null);
+        return;
+      }
+      forkJoin(
+        uploaded.map((photo, index) =>
+          this.photosSvc.attach({
+            productModuleId: moduleId,
+            photoId: photo._id,
+            isMain: makeMain && index === 0,
+            sortOrder: this.photos().length + index,
+          }),
+        ),
+      ).subscribe((attachResults) => {
+        const attachFailed = attachResults.filter((result) => !result.ok).length;
+        if (attachFailed > 0) {
+          this.photoErrorMessage.set(`Не удалось привязать фото: ${attachFailed}`);
+          this.toast.error(`Не удалось привязать фото: ${attachFailed}`);
+        } else {
+          this.toast.success(`Загружено фото: ${uploaded.length}`);
+        }
+        this.photosUploading.set(false);
+        this.photoUploadProgress.set(null);
+        this.reloadPhotos();
+      });
+    });
+  }
+
+  protected onPhotoDelete(photoId: string): void {
+    const linked = this.photos().find(
+      (photo) => typeof photo.photoId === 'object' && photo.photoId?._id === photoId,
+    );
+    if (linked) this.removePhoto(linked);
   }
 
   protected setMain(p: ProductModulePhoto): void {

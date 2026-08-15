@@ -44,6 +44,7 @@ import {
   ProductModulesService,
   type ProductModuleUpsertDto,
 } from '../../services/pi-product-modules.service';
+import { ProductModulePhotosService } from '../../services/pi-product-module-photos.service';
 import { CategoriesService, type Category } from '../../services/categories.service';
 import { controlKindFor, type QuickCreateControlKind } from './field-key-registry';
 import { colSpanClass, controlMaxClass } from './field-capacity';
@@ -57,6 +58,7 @@ import {
   PiDictionaryLabelsService,
 } from '../../services/pi-dictionary-labels.service';
 import { focusDialogField, isSaveAndContinueKey } from '../../util/dialog-save-and-continue';
+import { forkJoin } from 'rxjs';
 
 /** Data injected into QuickCreate (create-only). */
 export interface QuickCreateDialogData {
@@ -493,6 +495,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private readonly profiles = inject(FormProfilesService);
   private readonly products = inject(ProductsService);
   private readonly modules = inject(ProductModulesService);
+  private readonly modulePhotos = inject(ProductModulePhotosService);
   private readonly categoriesSvc = inject(CategoriesService);
   private readonly toast = inject(PiToastService);
   private readonly photosService = inject(PhotosService);
@@ -530,7 +533,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   private submitted = false;
 
   protected readonly isPhotoCapable = computed(
-    () => this.entity === 'product' && this.size() === 'L',
+    () => (this.entity === 'product' || this.entity === 'module') && this.size() === 'L',
   );
 
   protected onCategoryChange(categoryId: string): void {
@@ -774,27 +777,59 @@ export class QuickCreateDialogComponent implements OnDestroy {
       });
     } else {
       this.modules.create(this.buildModulePayload()).subscribe((res) => {
-        this.submitting.set(false);
-        if (res.ok) {
-          this.submitted = true;
-          if (saveAndContinue) {
-            this.resetForNextCreate();
-            this.toast.success('Сохранено — можно создать следующий');
-            return;
-          }
-          this.toast.success('Модуль создан');
-          if (this.compositionCapable() && res.data) {
-            this.createdModule.set(res.data);
-          } else {
-            this.ref.close(res.data ?? null);
-          }
+        if (res.ok && res.data) {
+          this.attachModulePhotos(res.data._id, () => {
+            this.submitting.set(false);
+            this.completeModuleCreate(res.data!, saveAndContinue);
+          });
+        } else if (res.ok) {
+          this.submitting.set(false);
+          this.formError.set('Модуль создан, но сервер не вернул его идентификатор.');
         } else {
+          this.submitting.set(false);
           const msg = extractErrorMessage(res.error);
           this.formError.set(msg);
           this.toast.error(msg);
         }
       });
     }
+  }
+
+  private completeModuleCreate(created: ProductModule, saveAndContinue: boolean): void {
+    this.submitted = true;
+    if (saveAndContinue) {
+      this.resetForNextCreate();
+      this.toast.success('Сохранено — можно создать следующий');
+      return;
+    }
+    this.toast.success('Модуль создан');
+    if (this.compositionCapable()) {
+      this.createdModule.set(created);
+    } else {
+      this.ref.close(created);
+    }
+  }
+
+  private attachModulePhotos(moduleId: string, done: () => void): void {
+    const photos = this.photos();
+    if (photos.length === 0) {
+      done();
+      return;
+    }
+    forkJoin(
+      photos.map((photo, index) =>
+        this.modulePhotos.attach({
+          productModuleId: moduleId,
+          photoId: photo._id,
+          isMain: index === 0,
+          sortOrder: index,
+        }),
+      ),
+    ).subscribe((results) => {
+      const failed = results.filter((result) => !result.ok).length;
+      if (failed > 0) this.toast.error(`Не удалось привязать фото: ${failed}`);
+      done();
+    });
   }
 
   protected onDone(): void {

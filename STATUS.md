@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-MODULES-341 DONE: module photo upload form/detail/QC
+**Статус:** DONE; deploy НЕ
+**Что:** form и QuickCreate L используют dropzone/PhotosService и ProductModulePhotosService `photoId`; detail делает файл primary, URL оставлен collapsed secondary; один link write path.
+**Archive:** `tasks/_archive/2026-08/TZ-MODULES-341.done.md`
+**Lock:** `.mimocode/locks/TZ-MODULES-341-module-photo-upload.lock`
+**Gates:** FE tsc PASS; Jest 6 suites / 101 tests PASS; lint PASS с 18 существующими warnings; owned Prettier PASS.
+
 ## [2026-08-16] — TZ-UI-PHOTO-342 DONE: shared photo dropzone paste + RU hint
 **Статус:** DONE; deploy НЕ
 **Что:** Ctrl+V из clipboard scoped to hovered/focused dropzone; image-only extraction + uploading guard; RU hint «Файл с диска · перетащить · Ctrl+V»; PhotosService/parent ownership unchanged.

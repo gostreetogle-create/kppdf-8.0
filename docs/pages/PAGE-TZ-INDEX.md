@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-15 (ORDERS-HUB-301 contract; CATALOG-372/373 vitrine)
+**Updated:** 2026-08-16 (dashboard Комбайн + TZ-SWEEP-401)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -26,7 +26,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
 | `/products` | products.page.md | PRODUCTS-*; composition **302…305**, **CATALOG-340 DONE** picker «Создать» → QuickCreate; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE; **UX-325** P0 chrome migrate → **UX-326** backlog |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **CATALOG-340 DONE** picker «Создать» → QuickCreate; **UX-DIALOG-306** picker qty |
-| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **CATALOG-340 DONE** picker «Создать» → QuickCreate/material form; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **UX-325** P0 chrome migrate → **UX-327** backlog |
+| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **CATALOG-340 DONE** picker «Создать» → QuickCreate/material form; **MODULES-341 DONE** form/detail/QC photoId upload; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **UX-325** P0 chrome migrate → **UX-327** backlog |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only; **PRODUCTION-309** mutate → `production:write` |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
@@ -51,8 +51,9 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
 | `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 DONE** supply `?orderId=`; **HUB-304 DONE** hub shipping stub link |
+| `/` , `/dashboard` | **dashboard.page.md** | DASHBOARD-400 Канбан; **TZ-SWEEP-401 READY** (write-path ship/cancel, freeze vs drag, nav «Комбайн», item.status fallback) |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
-| `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
+| `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
 | `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK |
 

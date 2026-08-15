@@ -1,19 +1,19 @@
 # WAVE-COMPOSE-CREATE-PHOTO — MASTER checklist
 
 ## Live resume
-- last_phase: 342 — closeout
-- last_tz: TZ-UI-PHOTO-342
-- last_action: TZ-342 committed as `c523237c` and pushed to `origin/main`; archive+lock verified
+- last_phase: 341 — closeout
+- last_tz: TZ-MODULES-341
+- last_action: owner confirmed `cc5fac5f` legitimate and pushed; staging only TZ-341 paths
 - blocked: none
-- score_now: 2/4
-- next_action: claim TZ-MODULES-341
-- updated_at: 2026-08-16T00:13:14+03:00
+- score_now: 3/4
+- next_action: commit/push TZ-341, then claim TZ-UI-PHOTO-343
+- updated_at: 2026-08-16T00:20:13+03:00
 - agent: Buffy
 
 ## Phases
 - [x] **340** TZ-CATALOG-340 picker Create → QuickCreate
 - [x] **342** TZ-UI-PHOTO-342 dropzone paste + hint
-- [ ] **341** TZ-MODULES-341 module photos (form/detail/QC)
+- [x] **341** TZ-MODULES-341 module photos (form/detail/QC)
 - [ ] **343** TZ-UI-PHOTO-343 project photo sweep
 - [ ] WAVE DONE (all archived, prompt closeout)
 

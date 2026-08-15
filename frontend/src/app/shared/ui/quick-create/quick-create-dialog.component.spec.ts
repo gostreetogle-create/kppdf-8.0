@@ -18,6 +18,7 @@ import {
 } from '../../services/form-profiles.service';
 import { ProductsService } from '../../services/products.service';
 import { ProductModulesService } from '../../services/pi-product-modules.service';
+import { ProductModulePhotosService } from '../../services/pi-product-module-photos.service';
 import { MaterialsService } from '../../services/materials.service';
 import { CategoriesService } from '../../services/categories.service';
 import { PiToastService } from '../toast';
@@ -149,6 +150,10 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         { provide: FormProfilesService, useValue: profiles },
         { provide: ProductsService, useValue: products },
         { provide: ProductModulesService, useValue: modules },
+        {
+          provide: ProductModulePhotosService,
+          useValue: { attach: jest.fn().mockReturnValue(of(ok({}))) },
+        },
         {
           provide: MaterialsService,
           useValue: {
@@ -315,6 +320,10 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         { provide: ProductsService, useValue: products },
         { provide: ProductModulesService, useValue: modules },
         {
+          provide: ProductModulePhotosService,
+          useValue: { attach: jest.fn().mockReturnValue(of(ok({}))) },
+        },
+        {
           provide: MaterialsService,
           useValue: {
             findById: jest
@@ -447,12 +456,33 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     expect(close).toHaveBeenCalledWith(expect.objectContaining({ _id: 'p1' }));
   });
 
-  it('module L stays open after create and exposes BomPanel with rootKind=module', async () => {
+  it('module L uploads a photo, stays open after create, and exposes BomPanel', async () => {
     const { component: c, fixture } = await setup({ entity: 'module', size: 'M' });
     profiles.getOne.mockReturnValue(of(ok(moduleLAll)));
     c.onSizeChange('L');
+    const photosService = TestBed.inject(PhotosService) as {
+      uploadWithProgress: jest.Mock;
+    };
+    photosService.uploadWithProgress = jest.fn().mockReturnValue(
+      of({
+        type: 'done',
+        photo: {
+          _id: 'module-photo-1',
+          storageUrl: '/uploads/module-photo-1.jpg',
+          originalFilename: 'module.jpg',
+        },
+      }),
+    );
+    const modulePhotos = TestBed.inject(ProductModulePhotosService) as {
+      attach: jest.Mock;
+    };
+    const file = new File(['image'], 'module.jpg', { type: 'image/jpeg' });
+    c.onUploadRequest([file]);
     c.form.patchValue({ name: 'Каркас', article: 'MOD-001' });
     c.onSubmit();
+    expect(modulePhotos.attach).toHaveBeenCalledWith(
+      expect.objectContaining({ productModuleId: 'm1', photoId: 'module-photo-1', isMain: true }),
+    );
     fixture.detectChanges();
     expect(c.createdModule()?._id).toBe('m1');
     expect(c.createdProduct()).toBeNull();
@@ -471,9 +501,11 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     expect(product.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).toBeNull();
   });
 
-  it('does not expose photo controls for module L', async () => {
+  it('exposes photo controls for module L', async () => {
     const module = await setup({ entity: 'module', size: 'L' });
-    expect(module.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]')).toBeNull();
+    expect(
+      module.fixture.nativeElement.querySelector('[data-test="photo-dropzone"]'),
+    ).not.toBeNull();
   });
 
   it('shows load error when profile GET fails', async () => {
@@ -487,6 +519,10 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
         { provide: FormProfilesService, useValue: profiles },
         { provide: ProductsService, useValue: { create: jest.fn() } },
         { provide: ProductModulesService, useValue: { create: jest.fn() } },
+        {
+          provide: ProductModulePhotosService,
+          useValue: { attach: jest.fn().mockReturnValue(of(ok({}))) },
+        },
         {
           provide: CategoriesService,
           useValue: { list: jest.fn().mockReturnValue(of(ok([]))) },

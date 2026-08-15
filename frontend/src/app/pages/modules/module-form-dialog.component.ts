@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  HostListener,
+  OnDestroy,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormArray, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -17,8 +24,15 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { extractErrorMessage } from '../../core/silent-http';
-import { HostListener } from '@angular/core';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
+import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
+import {
+  PhotosService,
+  uploadPhotosWithProgress,
+  type Photo,
+} from '../../shared/services/photos.service';
+import { ProductModulePhotosService } from '../../shared/services/pi-product-module-photos.service';
+import { forkJoin } from 'rxjs';
 
 /**
  * TZ-83 Phase C: ModuleFormDialog.
@@ -45,6 +59,7 @@ import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog
     TextareaComponent,
     PiDialogComponent,
     PiFormSectionComponent,
+    PiPhotoDropzoneComponent,
   ],
   template: `
     <!-- TZ-UX-DIALOG-305: Module FullEditor = kind C width (parity with material/product). -->
@@ -162,6 +177,18 @@ import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog
             />
           </app-pi-form-field>
 
+          <div data-test="module-photo-section">
+            <p class="eyebrow">Фото</p>
+            <app-pi-photo-dropzone
+              [photos]="photos()"
+              [uploading]="photosUploading()"
+              [progressPercent]="photoUploadProgress()"
+              [errorMessage]="photoErrorMessage()"
+              (uploadRequest)="onUploadRequest($event)"
+              (deleteRequest)="onDeleteRequest($event)"
+            />
+          </div>
+
           <div>
             <div class="flex items-baseline justify-between mb-form-row">
               <p class="eyebrow">Виды работ в составе</p>
@@ -261,7 +288,7 @@ import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog
     </app-pi-dialog>
   `,
 })
-export class ModuleFormDialogComponent {
+export class ModuleFormDialogComponent implements OnDestroy {
   // TZ-83 cleanup: use proper token exports — DialogRef (not PiDialogRef),
   // PI_DIALOG_DATA / PI_DIALOG_REF. DialogRef already exists as exported
   // interface in pi-dialog.service.ts.
@@ -271,11 +298,19 @@ export class ModuleFormDialogComponent {
   private readonly modules = inject(ProductModulesService);
   private readonly workTypes = inject(WorkTypesService);
   private readonly toast = inject(PiToastService);
+  private readonly photosService = inject(PhotosService);
+  private readonly modulePhotos = inject(ProductModulePhotosService);
 
   protected readonly isEdit = this.data != null;
   protected readonly submitting = signal(false);
   protected readonly formError = signal<string | null>(null);
   protected readonly workTypesCatalog = signal<{ _id: string; name: string }[]>([]);
+  protected readonly photos = signal<Photo[]>([]);
+  protected readonly photosUploading = signal(false);
+  protected readonly photoUploadProgress = signal<number | null>(null);
+  protected readonly photoErrorMessage = signal<string | null>(null);
+  private readonly newlyUploadedIds = signal<string[]>([]);
+  private submitted = false;
 
   protected readonly form = this.fb.group({
     name: this.fb.control<string>(this.data?.name ?? '', [
@@ -343,6 +378,50 @@ export class ModuleFormDialogComponent {
     this.onSubmit(true);
   }
 
+  protected onUploadRequest(files: File[]): void {
+    if (files.length === 0) return;
+    this.photosUploading.set(true);
+    this.photoUploadProgress.set(null);
+    this.photoErrorMessage.set(null);
+    uploadPhotosWithProgress(this.photosService, files, (percent) =>
+      this.photoUploadProgress.set(percent),
+    ).subscribe((results) => {
+      const uploaded: Photo[] = [];
+      const failed: string[] = [];
+      results.forEach((result, index) => {
+        if (result.ok) {
+          uploaded.push(result.data);
+        } else {
+          failed.push(files[index].name);
+        }
+      });
+      if (uploaded.length > 0) {
+        this.photos.update((current) => [...current, ...uploaded]);
+        this.newlyUploadedIds.update((ids) => [...ids, ...uploaded.map((photo) => photo._id)]);
+      }
+      this.photosUploading.set(false);
+      this.photoUploadProgress.set(null);
+      if (failed.length > 0) {
+        const message = `Не удалось загрузить: ${failed.join(', ')}`;
+        this.photoErrorMessage.set(message);
+        this.toast.error(message);
+      }
+    });
+  }
+
+  protected onDeleteRequest(id: string): void {
+    this.photos.update((current) => current.filter((photo) => photo._id !== id));
+    this.newlyUploadedIds.update((ids) => ids.filter((photoId) => photoId !== id));
+    this.photosService.remove(id).subscribe((result) => {
+      if (!result.ok) this.toast.error(extractErrorMessage(result.error));
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.submitted) return;
+    this.newlyUploadedIds().forEach((id) => this.photosService.remove(id).subscribe());
+  }
+
   protected onSubmit(saveAndContinue = false): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -372,19 +451,48 @@ export class ModuleFormDialogComponent {
       : this.modules.create(payload);
     op.subscribe((res) => {
       this.submitting.set(false);
-      if (res.ok) {
-        if (saveAndContinue) {
-          if (!this.isEdit) this.resetForNextCreate();
-          this.toast.success('Сохранено — можно создать следующий');
-          return;
-        }
-        this.toast.success(this.isEdit ? 'Модуль обновлён' : 'Модуль создан');
-        this.ref.close(res.data ?? null);
+      if (res.ok && res.data) {
+        this.attachUploadedPhotos(res.data._id, () => {
+          this.submitted = true;
+          if (saveAndContinue) {
+            if (!this.isEdit) this.resetForNextCreate();
+            this.toast.success('Сохранено — можно создать следующий');
+            return;
+          }
+          this.toast.success(this.isEdit ? 'Модуль обновлён' : 'Модуль создан');
+          this.ref.close(res.data);
+        });
+      } else if (res.ok) {
+        this.formError.set('Модуль создан, но сервер не вернул его идентификатор.');
       } else {
         const msg = extractErrorMessage(res.error);
         this.formError.set(msg);
         this.toast.error(msg);
       }
+    });
+  }
+
+  private attachUploadedPhotos(moduleId: string, done: () => void): void {
+    const uploaded = this.photos();
+    if (uploaded.length === 0) {
+      done();
+      return;
+    }
+    forkJoin(
+      uploaded.map((photo, index) =>
+        this.modulePhotos.attach({
+          productModuleId: moduleId,
+          photoId: photo._id,
+          isMain: index === 0,
+          sortOrder: index,
+        }),
+      ),
+    ).subscribe((results) => {
+      const failed = results.filter((result) => !result.ok).length;
+      if (failed > 0) {
+        this.toast.error(`Не удалось привязать фото: ${failed}`);
+      }
+      done();
     });
   }
 
@@ -399,6 +507,14 @@ export class ModuleFormDialogComponent {
       workTypes: [],
     });
     this.formError.set(null);
+    this.photos.set([]);
+    this.newlyUploadedIds.set([]);
+    this.photoErrorMessage.set(null);
+    this.submitted = false;
+    this.focusedReset();
+  }
+
+  private focusedReset(): void {
     focusDialogField('[data-save-continue-first="true"]');
   }
 
