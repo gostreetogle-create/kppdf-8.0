@@ -10,4 +10,5 @@ Exact keys:
 - frontend/src/app/pages/commercial/proposals/proposal-create-recipient.component.spec.ts
 
 Evidence: characterization 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
-Implementation commit: pending
+Implementation commit: f6625cd3
+Pushed SHA: f6625cd34fc65682f018907fbdaf4617682ea0da

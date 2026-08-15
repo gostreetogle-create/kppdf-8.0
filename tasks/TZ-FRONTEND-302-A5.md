@@ -13,5 +13,5 @@ CONFLICT KEYS:
 - Implementation: replaced subscribe inside effect with `toObservable(selectedCounterpartyId)` → `distinctUntilChanged` → `switchMap` → `takeUntilDestroyed`.
 - Evidence: focused characterization 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
 - Browser: authenticated recipient route unavailable in this headless worktree; lookup and output contract are covered by the focused spec.
-- Implementation commit: pending.
-- Push SHA: pending.
+- Implementation commit: `f6625cd3`.
+- Push SHA: `f6625cd34fc65682f018907fbdaf4617682ea0da`.

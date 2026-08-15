@@ -13,5 +13,5 @@
 - [x] architecture:check PASS: 937 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated KP recipient route unavailable in this headless worktree; site lookup and output contract are characterized.
-- [x] Implementation commit: pending.
-- [ ] Push SHA recorded.
+- [x] Implementation commit: `f6625cd3`.
+- [x] Pushed branch SHA: `f6625cd34fc65682f018907fbdaf4617682ea0da`.
