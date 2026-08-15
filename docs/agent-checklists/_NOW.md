@@ -6,7 +6,7 @@
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-15T06:15:00Z
-main_head: `e67a8317` (pre-closeout; bump after closeout commit)
+main_head: `de5ebf78`
 
 ## ACTIVE
 
