@@ -4,7 +4,7 @@
 **Аудит:** `docs/audits/2026-08-15-production-studio-plan-review.md`  
 **SoT:** `docs/ux/production-gantt-studio-spec.md`  
 **Master checklist:** `docs/agent-checklists/WAVE-PRODUCTION-STUDIO-CHROME.md`  
-**Continuous prompt:** `tasks/_backlog/PROMPT-PRODUCTION-STUDIO-CONTINUOUS.md`  
+**Continuous prompt:** `tasks/_archive/2026-08/prompts-spent/PROMPT-PRODUCTION-STUDIO-CONTINUOUS.md`
 **Цель:** `/production` plan-estimate studio **98–99/100** без смены доменной модели.
 
 ## Frozen intent
@@ -17,10 +17,10 @@
 
 | Phase | TZ | Points |
 |-------|-----|-------:|
-| A | `tasks/TZ-PRODUCTION-STUDIO-A-spec.md` | 15 |
-| B | `tasks/TZ-PRODUCTION-STUDIO-B-shell.md` | 25 |
-| C | `tasks/TZ-PRODUCTION-STUDIO-C-visual.md` | 35 |
-| D | `tasks/TZ-PRODUCTION-STUDIO-D-closeout.md` | 24 |
+| A | `tasks/_archive/2026-08/specs-dup-root/TZ-PRODUCTION-STUDIO-A-spec.md` | 15 |
+| B | `tasks/_archive/2026-08/specs-dup-root/TZ-PRODUCTION-STUDIO-B-shell.md` | 25 |
+| C | `tasks/_archive/2026-08/specs-dup-root/TZ-PRODUCTION-STUDIO-C-visual.md` | 35 |
+| D | `tasks/_archive/2026-08/specs-dup-root/TZ-PRODUCTION-STUDIO-D-closeout.md` | 24 |
 | **Sum** | | **99** |
 
 ## Explicit out

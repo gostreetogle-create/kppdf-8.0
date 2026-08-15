@@ -1,6 +1,6 @@
 # WAVE: Chrome Gantt tools (иконки → панель со стрелками)
 
-**Статус:** READY FOR EXECUTION  
+**Статус:** DONE (TZ-UX-322 и TZ-UX-323 архивированы)
 **Цель:** убрать локальные 48px rails Ганта; tools в `app-chrome-rail` L/R под ←→; Гант на всю ширину main.  
 **PO:** скрин 2026-08-15 (красные круги).
 
@@ -14,7 +14,13 @@
 
 ## Prompt
 
-`tasks/_backlog/PROMPT-UX-CHROME-GANTT-TOOLS-CONTINUOUS.md`
+`tasks/_archive/2026-08/prompts-spent/PROMPT-UX-CHROME-GANTT-TOOLS-CONTINUOUS.md`
+
+## Closeout
+
+- `TZ-UX-322` → `tasks/_archive/2026-08/TZ-UX-322.done.md`
+- `TZ-UX-323` → `tasks/_archive/2026-08/TZ-UX-323.done.md`
+- deploy: not performed
 
 ## Out
 

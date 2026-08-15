@@ -2,7 +2,7 @@
 
 **PO:** 2026-08-15 — после CASCADE довести Цех/Гант до 98–99.  
 **Audit:** `docs/audits/2026-08-15-production-cockpit-harden-audit.md`  
-**Prompt:** `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`  
+**Prompt:** `tasks/_archive/2026-08/prompts-spent/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`
 **Master checklist:** `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-HARDEN.md`
 
 | # | TZ | Status | Notes |
