@@ -20,6 +20,10 @@ export class ProductionCockpitContext {
   /** ISO date-only range on plannedDate ?? date. */
   readonly dateFrom = signal<string | null>(null);
   readonly dateTo = signal<string | null>(null);
+  /** Orders flyout mode; counterparties filter the same estimate Gantt. */
+  readonly railMode = signal<'orders' | 'counterparties'>('orders');
+  /** Counterparty id; `__none__` means orders without a populated party. */
+  readonly counterpartyFilter = signal<string | null>(null);
   /** Collapsed rail = icon strip for more calendar width. */
   readonly railCollapsed = signal(false);
 
@@ -128,6 +132,15 @@ export class ProductionCockpitContext {
     this.dateTo.set(value || null);
   }
 
+  setRailMode(value: 'orders' | 'counterparties'): void {
+    this.railMode.set(value);
+    if (value === 'orders') this.counterpartyFilter.set(null);
+  }
+
+  setCounterpartyFilter(value: string | null): void {
+    this.counterpartyFilter.set(value || null);
+  }
+
   toggleRailCollapsed(): void {
     this.railCollapsed.update((v) => !v);
   }
@@ -143,5 +156,7 @@ export class ProductionCockpitContext {
     this.priorityFilter.set('all');
     this.dateFrom.set(null);
     this.dateTo.set(null);
+    this.railMode.set('orders');
+    this.counterpartyFilter.set(null);
   }
 }

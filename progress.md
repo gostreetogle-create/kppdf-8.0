@@ -7,6 +7,15 @@
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-324-gantt-zoom-fit.lock`
 **Dep:** 323
 
+## [2026-08-15] — TZ-PRODUCTION-325 DONE — Orders rail / Заказчики
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 325 closed; deploy НЕ
+**Что:** status-pips убраны из Orders rail; режим Заказчики агрегирует Counterparty/«Без заказчика» и фильтрует rail+Гант; поиск переключается номер/имя; dateFrom/dateTo проверены.
+**Gates:** FE tsc PASS; FE jest orders-rail + model + cockpit **33 PASS**; frontend lint PASS (18 existing architecture warnings); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-325.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-325-orders-rail-counterparties.lock`
+**Dep:** 324
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE — one Gantt meta + full-width cascade panels
 **Исполнитель:** executor-grok-4.6
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ

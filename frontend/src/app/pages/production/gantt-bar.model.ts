@@ -18,6 +18,24 @@ export const ACTIVE_COMMERCIAL_ORDER_STATUSES: readonly OrderStatus[] = [
   'ready',
 ] as const;
 
+export const NO_COUNTERPARTY_FILTER = '__none__';
+
+export interface CounterpartyOrderRef {
+  counterpartyId?: string | { _id: string; name?: string } | null;
+}
+
+export function counterpartyIdOf(order: CounterpartyOrderRef): string {
+  const value = order.counterpartyId;
+  if (!value) return '';
+  return typeof value === 'string' ? value : value._id;
+}
+
+export function counterpartyNameOf(order: CounterpartyOrderRef): string {
+  const value = order.counterpartyId;
+  if (!value || typeof value === 'string' || !value.name?.trim()) return 'Без заказчика';
+  return value.name.trim();
+}
+
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   draft: 'Черновик',
   confirmed: 'Подтверждён',
@@ -524,6 +542,7 @@ export function filterOrdersForRail<
     priority?: string;
     plannedDate?: string | null;
     date?: string | null;
+    counterpartyId?: string | { _id: string; name?: string } | null;
   },
 >(
   orders: T[],
@@ -535,6 +554,8 @@ export function filterOrdersForRail<
     priority?: string | 'all' | null;
     dateFrom?: string | null;
     dateTo?: string | null;
+    counterpartyId?: string | null;
+    searchByCounterparty?: boolean;
   },
 ): T[] {
   const q = opts.search.trim().toLowerCase();
@@ -548,6 +569,12 @@ export function filterOrdersForRail<
       if (o.isActive === false) return false;
     }
     if (priority && (o.priority ?? 'normal') !== priority) return false;
+    if (opts.counterpartyId) {
+      const id = counterpartyIdOf(o);
+      if (opts.counterpartyId === NO_COUNTERPARTY_FILTER ? id !== '' : id !== opts.counterpartyId) {
+        return false;
+      }
+    }
     if (from || to) {
       const anchor = (o.plannedDate || o.date || '').slice(0, 10);
       if (!anchor) return false;
@@ -555,7 +582,9 @@ export function filterOrdersForRail<
       if (to && anchor > to) return false;
     }
     if (!q) return true;
-    const hay = `${o._id} ${o.number ?? ''}`.toLowerCase();
+    const hay = opts.searchByCounterparty
+      ? `${counterpartyNameOf(o)}`.toLowerCase()
+      : `${o._id} ${o.number ?? ''}`.toLowerCase();
     return hay.includes(q);
   });
 }

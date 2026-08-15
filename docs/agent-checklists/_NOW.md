@@ -5,12 +5,19 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T21:35:00+03:00
+updated_at: 2026-08-15T22:15:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-PRODUCTION-324 archived; next claim is TZ-PRODUCTION-325)_
+_(empty — TZ-PRODUCTION-325 archived; next claim is TZ-PRODUCTION-326)_
+
+## NEXT (PO paste prompt)
+
+**WAVE-PRODUCTION-COCKPIT-HARDEN** → 98–99  
+Prompt: `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`  
+Master: `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-HARDEN.md`  
+Queue: **324 → 325 → 326 → 327 → 328** (serial)
 
 ## Queue hygiene (not live)
 
@@ -62,5 +69,5 @@ _(empty — TZ-PRODUCTION-324 archived; next claim is TZ-PRODUCTION-325)_
 
 ## HEAD / queue
 
-- Queue: **325 next**; claim only after 324 targeted commit + push.
+- Queue: **326 next**; claim only after 325 targeted commit + push.
 - Deploy app: НЕ — не автодеплой

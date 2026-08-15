@@ -73,6 +73,8 @@ flyouts: overlay; center width unchanged
 - Неделя вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; День сохраняет читаемые 36px/day.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Неделю и прокручивает к началу диапазона.
 - **Сегодня** добавляет today в диапазон при необходимости и прокручивает маркер в видимую область.
+- Flyout **Заказы** не дублирует статус цветными точками: статус остаётся текстом. Режим **Заказчики** показывает уникальных Counterparty (включая «Без заказчика»); клик фильтрует rail и Гант, повторный клик/«Все заказчики» сбрасывает.
+- Поиск в режиме Заказы — по номеру; в режиме Заказчики — по имени. Фильтры дат режут rail и тот же набор баров Ганта.
 - Даты = **календарная** оценка (выходные не исключаются) — не факт цеха.
 
 ### Services / context
@@ -89,6 +91,8 @@ flyouts: overlay; center width unchanged
 |--------|-----------|
 | `ctx.selectedOrderId` | null = все активные |
 | `ctx.activeOnly` | фильтр ACTIVE_COMMERCIAL_ORDER_STATUSES |
+| `ctx.railMode` | `orders` / `counterparties`; меняет поиск и секцию flyout |
+| `ctx.counterpartyFilter` | id Counterparty или `__none__`; фильтрует rail + Гант |
 | `facade.state` | orders / bars / warnings / loading / error |
 
 ### Business locks (A–J)
@@ -136,6 +140,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-322** | DONE: order-meta under summary; kill sheet + chrome «Карточка» |
 | **TZ-PRODUCTION-323** | DONE: one meta under summary; full-width cascade panels |
 | **TZ-PRODUCTION-324** | DONE: week fit-width; «Вместить сроки» range fit; «Сегодня» marker scroll |
+| **TZ-PRODUCTION-325** | DONE: Orders rail без status-pips; Заказчики → filter rail + Gantt; date filters verified |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |

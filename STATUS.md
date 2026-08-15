@@ -10,6 +10,13 @@
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-324-gantt-zoom-fit.lock`
 **Gates:** FE tsc PASS; FE jest gantt-bars + cockpit **43 PASS**; lint PASS with existing warnings.
 
+## [2026-08-15] — TZ-PRODUCTION-325 DONE: Orders rail / Заказчики
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 325 closed; deploy НЕ
+**Что:** Orders rail без status-pips; Заказчики filter для rail+Гант; поиск номер/имя; date filters verified.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-325.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-325-orders-rail-counterparties.lock`
+**Gates:** FE tsc PASS; FE jest orders-rail + model + cockpit **33 PASS**; lint PASS with existing warnings.
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE: one Gantt meta + full-width cascade panels
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
 **Что:** order-meta только под summary (`row.isSummary`); meta + work-detail — одна широкая полоса (`gantt-cascade-panel` full-bleed из sticky label, spacer на timeline).

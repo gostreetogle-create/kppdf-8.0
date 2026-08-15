@@ -757,6 +757,8 @@ export class ProductionCockpitPage implements OnInit {
       priority: this.ctx.priorityFilter(),
       dateFrom: this.ctx.dateFrom(),
       dateTo: this.ctx.dateTo(),
+      counterpartyId: this.ctx.counterpartyFilter(),
+      searchByCounterparty: this.ctx.railMode() === 'counterparties',
     });
     await this.applyBars(filtered, fitRange);
   }

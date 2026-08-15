@@ -214,6 +214,51 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(page.scrollRequest()).toEqual(expect.objectContaining({ target: 'today' }));
   });
 
+  it('TZ-PRODUCTION-325: counterparty and date filters reach Gantt reload', async () => {
+    const filteredOrders: Order[] = [
+      {
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'confirmed',
+        plannedDate: '2026-08-10',
+        counterpartyId: { _id: 'cp1', name: 'ООО Стол' },
+        items: [],
+      },
+      {
+        _id: 'o2',
+        number: 'ORD-2',
+        status: 'confirmed',
+        plannedDate: '2026-08-11',
+        counterpartyId: { _id: 'cp2', name: 'ИП Лес' },
+        items: [],
+      },
+    ];
+    facade.loadOrders.mockImplementation(async () => filteredOrders);
+    facade.loadBarsForOrders.mockImplementation(async (_target: Order[]) => []);
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const { ctx } = await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    const page = fixture.componentInstance as unknown as {
+      onFiltersChanged: () => Promise<void>;
+    };
+
+    ctx.setDateFrom('2026-08-10');
+    ctx.setDateTo('2026-08-10');
+    await page.onFiltersChanged();
+    expect((facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[]).map((o) => o._id)).toEqual([
+      'o1',
+    ]);
+
+    ctx.setDateFrom(null);
+    ctx.setDateTo(null);
+    ctx.setRailMode('counterparties');
+    ctx.setCounterpartyFilter('cp2');
+    await page.onFiltersChanged();
+    expect((facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[]).map((o) => o._id)).toEqual([
+      'o2',
+    ]);
+  });
+
   it('keeps chrome-projected tools mutually exclusive', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     fixture.detectChanges();

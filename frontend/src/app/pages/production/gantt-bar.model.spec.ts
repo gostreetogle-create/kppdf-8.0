@@ -7,6 +7,7 @@ import {
   buildOrderSummaryBar,
   calendarSpanDays,
   filterOrdersForRail,
+  NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
   resolveVisualAnchor,
   type GanttBar,
@@ -427,5 +428,31 @@ describe('gantt-bar.model', () => {
       dateTo: '2026-08-11',
     });
     expect(byDate.map((o) => o._id)).toEqual(['1']);
+
+    const byCounterparty = filterOrdersForRail(
+      [
+        { ...orders[0]!, counterpartyId: { _id: 'cp1', name: 'ООО Стол' } },
+        { ...orders[1]!, counterpartyId: { _id: 'cp2', name: 'ИП Лес' } },
+        { ...orders[2]!, counterpartyId: undefined },
+      ],
+      {
+        activeOnly: true,
+        search: '',
+        selectedOrderId: null,
+        counterpartyId: 'cp1',
+      },
+    );
+    expect(byCounterparty.map((o) => o._id)).toEqual(['1']);
+
+    const withoutCounterparty = filterOrdersForRail(
+      [{ ...orders[0]!, counterpartyId: undefined }],
+      {
+        activeOnly: true,
+        search: '',
+        selectedOrderId: null,
+        counterpartyId: NO_COUNTERPARTY_FILTER,
+      },
+    );
+    expect(withoutCounterparty.map((o) => o._id)).toEqual(['1']);
   });
 });
