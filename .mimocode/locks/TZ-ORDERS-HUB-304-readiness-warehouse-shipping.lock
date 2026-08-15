@@ -1,8 +1,8 @@
-task: TZ-ORDERS-HUB-304
+﻿task: TZ-ORDERS-HUB-304
 status: DONE
 closed_at: 2026-08-15T14:45:00Z
 implementation_sha: cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1
-closeout_sha: PENDING
+closeout_sha: d08f61f4f2126228d8ae6384b48e052c78cfc200
 protected_files:
   - frontend/src/app/pages/orders/orders.page.ts
   - frontend/src/app/pages/orders/orders.page.spec.ts
@@ -13,7 +13,7 @@ protected_files:
   - docs/pages/PAGE-TZ-INDEX.md
   - docs/agent-checklists/TZ-ORDERS-HUB-304.md
   - tasks/TZ-ORDERS-HUB-304-readiness-warehouse-shipping.md
-behavior: orders expand readiness (0 HTTP) + warehouse reservations by Order.number (1 HTTP) + shipping stub link; read-only ReservationsService; ≤4 HTTP expand (supply+reservations)
+behavior: orders expand readiness (0 HTTP) + warehouse reservations by Order.number (1 HTTP) + shipping stub link; read-only ReservationsService; в‰¤4 HTTP expand (supply+reservations)
 cursor_verdict: PASS
 quality_score: 98
 production: not executed
