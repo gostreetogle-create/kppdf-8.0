@@ -1,0 +1,6 @@
+task_id: TZ-FRONTEND-303
+slug: jest-baseline-debt
+outcome: DONE
+closed_at: 2026-08-15T00:00:00Z
+implementation_sha: 8b60d1f0998b70caa28a1bbe9760c3eec8a8a878
+deploy: no

@@ -1,6 +1,17 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-FRONTEND-303 DONE — Jest baseline debt
+**Исполнитель:** Buffy / isolated `feature/TZ-FRONTEND-303`
+**Статус:** DONE; frontend test-only; deploy НЕ
+**Что:** Материалы-тесты получили локальный fallback mock `PiDictionaryLabelsService`, а `FormProfilesService` assertions выровнены с текущим `LockedRequired` (product: kind/unit/sku; module: name/article). Product/service implementation не изменялись.
+**Gates:** focused 4 suites / 17 tests PASS; full frontend Jest 154/154 suites, 1444/1444 tests PASS; frontend tsc, changed ESLint, architecture:check (937 files; baseline 6), diff-check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-303.done.md`
+**Checklist:** `docs/agent-checklists/TZ-FRONTEND-303.md`
+**Lock:** `.mimocode/locks/TZ-FRONTEND-303-jest-baseline-debt.lock`
+**Implementation SHA:** `8b60d1f0998b70caa28a1bbe9760c3eec8a8a878`
+**Known limit:** Angular/JSDOM console diagnostics remain non-failing in legacy suites; no new failing tests.
+
 ## [2026-08-15] — TZ-SALES-375 DONE — remove products rail draft-lines list
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; frontend UI; deploy НЕ
