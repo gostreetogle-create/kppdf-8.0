@@ -46,10 +46,11 @@
 - Outcome: DONE
 - Archive: tasks/_archive/2026-08/TZ-PRODUCTION-309.done.md
 - Lock: .mimocode/locks/TZ-PRODUCTION-309-safe-estimate-order-days.lock
-- SHA: _(fill after commit)_
+- SHA: 9b24c0f1498c12daa996500ccfd760cfca1a0bd6
 - Team Room claim: unavailable (Unknown task)
 - Drag/resize: not implemented (311)
 - Blockers: none
+- Push: origin/main (claimed executor per GIT-POLICY)
 
 ## Closeout
 
