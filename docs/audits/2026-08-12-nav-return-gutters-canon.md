@@ -37,5 +37,8 @@
 - **317:** глобальные ← → в gutters app shell (`data-test="app-nav-back|app-nav-forward"`,
   видны ≥1680px, иначе скрыты) на стеке `AppHistoryStore` (Router events, `Location.back/forward`,
   `replaceUrl`-тики не растят стек, `/login` не подставляется предыдущим URL).
+- **320 (2026-08-15):** кнопки переставлены с края окна (`left/right: 14px`) **в поля**,
+  на линию бокового отступа шапки (`left/right: 64px` — padding `pi-edge-bleed` на ≥1024px);
+  порог ≥1680px, disabled/aria/data-test и логика `AppHistoryStore` не менялись.
 - Таблица «Как пользоваться сейчас» выше отражает состояние до 316/317 — теперь
   пункты «БАГ»/«Нет» реализованы, см. `docs/pages/page-chrome.md` §Системные ← →.

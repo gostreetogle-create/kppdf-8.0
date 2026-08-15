@@ -12,7 +12,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
-| `(app shell)` | page-chrome.md | **UX-317 READY** системные ←→ в gutters |
+| `(app shell)` | page-chrome.md | **UX-317 READY** системные ←→ в gutters; **UX-320** — в полях на линии отступа шапки |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |

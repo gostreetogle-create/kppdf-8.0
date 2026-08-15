@@ -451,12 +451,13 @@ export function matchActiveCategoryId(
       </div>
 
       <!--
-        TZ-UX-317: системные ← → в полях (gutters) app shell — только когда
-        широкая колонка контента не заполняет экран (min-width 1680px: поле
-        ≥ ~76px, кнопка 36px + отступ не налезает на max-width контент и не
-        перекрывает studio rails / builder palette). ← = browser history back,
-        → = forward; без same-app истории кнопки disabled (не прыгают на
-        fallback раздела).
+        TZ-UX-317 + TZ-UX-320: системные ← → в полях (gutters) app shell —
+        в вертикальных полях слева/справа от белой колонки контента, на
+        линии бокового отступа шапки (left/right: 64px, см. стили ниже).
+        Видны только на широких экранах (min-width 1680px: поле ≥ ~140px —
+        кнопка не налезает на max-width контент и не перекрывает studio
+        rails / builder palette). ← = browser history back, → = forward;
+        без same-app истории кнопки disabled (не прыгают на fallback раздела).
       -->
       <button
         type="button"
@@ -486,7 +487,7 @@ export function matchActiveCategoryId(
   `,
   styles: `
     .app-nav-gutter {
-      /* В полях — вне max-width колонки (pi-page-frame 1400px + паддинги). */
+      /* В полях — вне max-width колонки (pi-page-frame 1400px). */
       position: fixed;
       top: 50%;
       transform: translateY(-50%);
@@ -506,11 +507,18 @@ export function matchActiveCategoryId(
     }
 
     .app-nav-gutter--back {
-      left: 14px;
+      /* TZ-UX-320: ← в левом поле, на линии бокового отступа шапки.
+         Шапка (pi-edge-bleed) на ≥1024px имеет padding-inline: 64px и
+         прижата к краю окна — left: 64px = та же вертикаль, что начало
+         контента шапки. На ≥1680px поле ≥140px: зазор до колонки ≥40px
+         и ≥64px от края окна (канон ≥8px оба). */
+      left: 64px;
     }
 
     .app-nav-gutter--forward {
-      right: 14px;
+      /* TZ-UX-320: зеркально — правый край кнопки на линии правого
+         отступа шапки. */
+      right: 64px;
     }
 
     .app-nav-gutter:hover:not(:disabled) {
@@ -523,7 +531,8 @@ export function matchActiveCategoryId(
     }
 
     /* Поля появляются только на широких экранах: при viewport ≥1680px
-       gutter = (vw − 1400 − 2×64) / 2 ≥ 76px — кнопка целиком в поле. */
+       gutter = (vw − 1400) / 2 ≥ 140px — кнопка (64 + 36 + зазор ≥40px)
+       целиком в поле, на линии отступа шапки. */
     @media (min-width: 1680px) {
       .app-nav-gutter {
         display: inline-flex;
