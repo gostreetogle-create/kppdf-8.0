@@ -68,6 +68,8 @@ describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
     fixture.nativeElement.querySelector('[data-test="app-nav-back"]');
   const forwardBtn = (): HTMLButtonElement | null =>
     fixture.nativeElement.querySelector('[data-test="app-nav-forward"]');
+  const leftRail = (): HTMLElement | null =>
+    fixture.nativeElement.querySelector('[data-test="app-chrome-rail-left"]');
 
   it('TZ-UX-317: renders both gutter buttons with the canonical data-test', () => {
     expect(backBtn()).toBeTruthy();
@@ -105,25 +107,24 @@ describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
     forwardBtn()!.click();
     expect(forward).not.toHaveBeenCalled();
   });
-  it('TZ-UX-320: кнопки стоят в полях на линии отступа шапки, не у края окна', () => {
-    // Class contract: модификаторы несут позицию в поле.
-    expect(backBtn()!.classList.contains('app-nav-gutter--back')).toBe(true);
-    expect(forwardBtn()!.classList.contains('app-nav-gutter--forward')).toBe(true);
+  it('TZ-UX-321: universal left chrome rail owns both history controls', () => {
+    expect(leftRail()).toBeTruthy();
+    expect(leftRail()!.contains(backBtn()!)).toBe(true);
+    expect(leftRail()!.contains(forwardBtn()!)).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="app-chrome-rail-right"]')).toBeNull();
 
-    // Style contract: CSS якорит кнопки на отступе шапки (64px — padding
-    // pi-edge-bleed на >=1024px), а не на 14px от края окна; видимость —
-    // только на min-width 1680px. В TestBed стили компонента не попадают
-    // в DOM (overrideComponent), поэтому контракт проверяется по исходнику;
-    // живая проверка computed style — в browser smoke >=1680.
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'app-layout.component.ts'),
       'utf8',
     );
-    expect(source).toContain('left: 64px');
-    expect(source).toContain('right: 64px');
+    expect(source).toContain('data-test="app-chrome-rail-left"');
+    expect(source).toContain('app-chrome-rail-left');
+    expect(source).toContain('width: 64px');
+    expect(source).not.toContain('position: fixed');
+    expect(source).not.toContain('app-nav-gutter');
     expect(source).not.toContain('left: 14px');
     expect(source).not.toContain('right: 14px');
     expect(source).toContain('@media (min-width: 1680px)');
-    expect(source).toContain('display: inline-flex');
+    expect(source).toContain('display: flex');
   });
 });
