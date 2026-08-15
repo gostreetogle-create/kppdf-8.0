@@ -31,15 +31,11 @@ import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import {
   filterOrdersForRail,
   formatDateOnly,
+  isHardFrozenOrderStatus,
   resolveVisualAnchor,
   type GanttBar,
 } from './gantt-bar.model';
-import {
-  OrdersService,
-  type Order,
-  type OrderPriority,
-  type OrderStatus,
-} from '../orders/orders.service';
+import { OrdersService, type Order, type OrderPriority } from '../orders/orders.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -56,8 +52,19 @@ import {
   ZoomIn,
 } from 'lucide-angular';
 
-function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
-  return status === 'shipped' || status === 'delivered' || status === 'cancelled';
+function shopOrderWriteError(err: { error?: { message?: unknown }; message?: string }): string {
+  const raw = extractErrorMessage(err as never);
+  if (
+    /cannot be updated/i.test(raw) ||
+    /Path `siteId`/i.test(raw) ||
+    /siteId is required/i.test(raw)
+  ) {
+    if (/siteId/i.test(raw)) {
+      return 'У заказа нет площадки (siteId) — создайте объект у контрагента';
+    }
+    return 'Заказ в этом статусе нельзя менять состав — только план/приоритет в Цехе';
+  }
+  return raw;
 }
 
 type ProductionLeftTool = 'orders' | 'filters' | null;
@@ -416,7 +423,7 @@ export class ProductionCockpitPage implements OnInit {
     this.ctx.setOrderMetaOpen(true);
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
-    this.readOnly.set(isReadOnlyEstimateStatus(order.status));
+    this.readOnly.set(isHardFrozenOrderStatus(order.status));
     // TZ-PRODUCTION-317: selection ≠ filter — keep multi-order filtered bars.
     await this.applyFilteredActive();
   }
@@ -537,6 +544,8 @@ export class ProductionCockpitPage implements OnInit {
   /** TZ-PRODUCTION-322 — order-meta save → PATCH orders/:id (priority + plannedDate). */
   protected async onOrderMetaCommit(ev: GanttOrderMetaCommit): Promise<void> {
     if (!this.canEditOrder()) return;
+    const current = this.orders().find((o) => o._id === ev.orderId);
+    if (current && isHardFrozenOrderStatus(current.status)) return;
     const planned = ev.plannedDate.trim();
     const res = await firstValueFrom(
       this.ordersApi.update(ev.orderId, {
@@ -545,7 +554,7 @@ export class ProductionCockpitPage implements OnInit {
       }),
     );
     if (!res.ok) {
-      this.toast.error(extractErrorMessage(res.error));
+      this.toast.error(shopOrderWriteError(res.error));
       return;
     }
     this.toast.success('Заказ обновлён');
@@ -565,7 +574,7 @@ export class ProductionCockpitPage implements OnInit {
       }),
     );
     if (!res.ok) {
-      this.toast.error(extractErrorMessage(res.error));
+      this.toast.error(shopOrderWriteError(res.error));
       return;
     }
     this.toast.success('Дни оценки обновлены для этого заказа');
@@ -583,7 +592,7 @@ export class ProductionCockpitPage implements OnInit {
     }
     const res = await firstValueFrom(this.workTypesApi.update(ev.workTypeId, { days: prompted }));
     if (!res.ok) {
-      this.toast.error(extractErrorMessage(res.error));
+      this.toast.error(shopOrderWriteError(res.error));
       return;
     }
     this.toast.success('Норматив дней вида работ обновлён (глобально)');
@@ -598,7 +607,7 @@ export class ProductionCockpitPage implements OnInit {
     if (deltaDays === 0) return;
     const order = this.orders().find((o) => o._id === ev.orderId);
     if (!order) return;
-    if (isReadOnlyEstimateStatus(order.status)) return;
+    if (isHardFrozenOrderStatus(order.status)) return;
     const { anchor } = resolveVisualAnchor(order, new Date());
     const newDateOnly = addDays(formatDateOnly(anchor), deltaDays);
     const res = await firstValueFrom(
@@ -607,7 +616,7 @@ export class ProductionCockpitPage implements OnInit {
       }),
     );
     if (!res.ok) {
-      this.toast.error(extractErrorMessage(res.error));
+      this.toast.error(shopOrderWriteError(res.error));
       return;
     }
     this.toast.success('Начало заказа сдвинуто');
@@ -621,7 +630,7 @@ export class ProductionCockpitPage implements OnInit {
     if (deltaDays === 0) return;
     const order = this.orders().find((o) => o._id === ev.orderId);
     if (!order) return;
-    if (isReadOnlyEstimateStatus(order.status)) return;
+    if (isHardFrozenOrderStatus(order.status)) return;
     const { anchor } = resolveVisualAnchor(order, new Date());
     const newStart = addDays(ev.startDate, deltaDays);
     const offsetDays = Math.max(0, dayDiffDateOnly(formatDateOnly(anchor), newStart));
@@ -634,7 +643,7 @@ export class ProductionCockpitPage implements OnInit {
       }),
     );
     if (!res.ok) {
-      this.toast.error(extractErrorMessage(res.error));
+      this.toast.error(shopOrderWriteError(res.error));
       return;
     }
     this.toast.success('Сдвиг вида работ сохранён');
@@ -709,7 +718,7 @@ export class ProductionCockpitPage implements OnInit {
     if (id) {
       const order = list.find((o) => o._id === id);
       if (order) {
-        this.readOnly.set(isReadOnlyEstimateStatus(order.status));
+        this.readOnly.set(isHardFrozenOrderStatus(order.status));
       } else {
         this.ctx.selectOrder(null);
         this.ctx.closeOrderMeta();

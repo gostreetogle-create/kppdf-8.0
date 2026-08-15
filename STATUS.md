@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-331 DONE: Plan fields on ready + heal missing siteId
+**Статус:** DONE; deploy НЕ
+**Что:** план-поля на ready/in_production; состав frozen; shipped hard-block; missing siteId heal; demo seed siteId.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-331.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-331-order-plan-fields-ready.lock`
+**Gates:** BE tsc PASS; order.service Jest 34 PASS; FE tsc PASS; production Jest 6/74 PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-330 DONE: Месяц zoom + Сегодня always scrolls
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH complete; deploy НЕ
 **Что:** zoom «Месяц» вместо «Неделя»; RU month ticks; Сегодня всегда recenters; chrome title «Прокрутить к сегодня».

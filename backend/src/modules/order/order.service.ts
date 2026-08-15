@@ -21,6 +21,21 @@ export interface OrderActor {
   role?: string;
 }
 
+const PLAN_UPDATE_KEYS = new Set(['plannedDate', 'priority', 'materialsSource']);
+const PLAN_EDITABLE_FROZEN = new Set(['in_production', 'ready']);
+const HARD_FROZEN = new Set(['shipped', 'delivered', 'cancelled']);
+const ORDER_STATUS_RU: Record<string, string> = {
+  draft: 'Черновик',
+  confirmed: 'Подтверждён',
+  in_production: 'В производстве',
+  ready: 'Готов',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
+};
+const MISSING_SITE_RU =
+  'У заказа нет площадки (siteId) — создайте объект у контрагента';
+
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
@@ -298,6 +313,7 @@ export class OrderService {
     }
 
     doc.estimateDayOverrides = overrides;
+    await this.healMissingSiteId(doc);
     await doc.save();
     return this.findById(id);
   }
@@ -351,22 +367,30 @@ export class OrderService {
     }
 
     doc.estimateStartOffsets = offsets;
+    await this.healMissingSiteId(doc);
     await doc.save();
     return this.findById(id);
   }
 
   async update(id: string, dto: UpdateOrderDto): Promise<OrderDocument> {
     const doc = await this.findByIdRaw(id);
-    const frozenStatus = ['in_production', 'ready', 'shipped', 'delivered', 'cancelled'].includes(
-      doc.status,
+    const definedKeys = (Object.keys(dto) as (keyof UpdateOrderDto)[]).filter(
+      (key) => dto[key] !== undefined,
     );
-    const hasNonMaterialsSourceChange = Object.keys(dto).some(
-      (key) => key !== 'materialsSource',
-    );
-    if (frozenStatus && hasNonMaterialsSourceChange) {
-      throw new BadRequestException(
-        `Order in status "${doc.status}" cannot be updated — only draft/confirmed orders are editable`,
-      );
+    if (HARD_FROZEN.has(doc.status)) {
+      const blocked = definedKeys.some((key) => key !== 'materialsSource');
+      if (blocked) {
+        const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
+        throw new BadRequestException(`Заказ в статусе «${label}» нельзя обновлять`);
+      }
+    } else if (PLAN_EDITABLE_FROZEN.has(doc.status)) {
+      const blocked = definedKeys.some((key) => !PLAN_UPDATE_KEYS.has(key));
+      if (blocked) {
+        const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
+        throw new BadRequestException(
+          `Заказ в статусе «${label}» нельзя менять состав — только план/приоритет в Цехе`,
+        );
+      }
     }
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.materialsSource !== undefined) doc.materialsSource = dto.materialsSource;
@@ -374,6 +398,10 @@ export class OrderService {
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);
     if (dto.deliveryAddress !== undefined) doc.deliveryAddress = dto.deliveryAddress;
     if (dto.priority !== undefined) doc.priority = dto.priority;
+
+    if (dto.siteId === undefined) {
+      await this.healMissingSiteId(doc);
+    }
 
     const nextCounterparty =
       dto.counterpartyId !== undefined
@@ -393,6 +421,21 @@ export class OrderService {
       doc.total = doc.items.reduce((s, i) => s + i.total, 0);
     }
     return doc.save();
+  }
+
+  /** TZ-PRODUCTION-331 — legacy orders without siteId fail mongoose required on any save. */
+  private async healMissingSiteId(doc: OrderDocument): Promise<void> {
+    if (doc.siteId) return;
+    const counterpartyId = doc.counterpartyId?.toString();
+    if (!counterpartyId || !Types.ObjectId.isValid(counterpartyId)) {
+      throw new BadRequestException(MISSING_SITE_RU);
+    }
+    const sites = await this.sites.findByCounterparty(counterpartyId);
+    const first = sites[0];
+    if (!first?._id) {
+      throw new BadRequestException(MISSING_SITE_RU);
+    }
+    doc.siteId = first._id;
   }
 
   async reserveStock(

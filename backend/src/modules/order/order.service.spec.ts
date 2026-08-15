@@ -28,7 +28,9 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     _id: new Types.ObjectId(),
     number: 'ORD-0001',
     counterpartyId: new Types.ObjectId(COUNTERPARTY),
+    siteId: new Types.ObjectId(SITE) as Types.ObjectId | undefined,
     quotationId: undefined as Types.ObjectId | undefined,
+    plannedDate: undefined as Date | undefined,
     date: new Date(),
     status: 'draft',
     total: 0,
@@ -92,6 +94,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   const sites = {
     assertBelongsTo: jest.fn().mockResolvedValue({ _id: SITE }),
     ensureDefaultForCounterparty: jest.fn(),
+    findByCounterparty: jest.fn().mockResolvedValue([{ _id: new Types.ObjectId(SITE) }]),
   };
   // TZ-ORDERS-306: stub КП пишется в quotations, а «наша фирма» приходит из
   // OrganizationService.findCurrent — те же зависимости, что у сервиса.
@@ -134,7 +137,10 @@ function createService(overrides: Record<string, unknown> = {}) {
     },
     counter: dependencies.counter as { next: jest.Mock },
     sessionRunner: dependencies.sessionRunner as { run: jest.Mock },
-    sites: dependencies.sites as { assertBelongsTo: jest.Mock },
+    sites: dependencies.sites as {
+      assertBelongsTo: jest.Mock;
+      findByCounterparty: jest.Mock;
+    },
     quotationModel: dependencies.quotationModel as { findById: jest.Mock; create: jest.Mock },
     organizations: dependencies.organizations as { findCurrent: jest.Mock },
   };
@@ -272,7 +278,7 @@ describe('OrderService — TZ-ORDERS-301', () => {
   });
 
   describe('update (frozen after production)', () => {
-    it('BLOCKS updates once the order is in_production/ready/shipped/delivered/cancelled', async () => {
+    it('BLOCKS composition updates once the order is in_production/ready/shipped/delivered/cancelled', async () => {
       const { service, model } = createService();
       for (const status of [
         'in_production',
@@ -302,6 +308,97 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.priority).toBe('urgent');
       expect(doc.save).toHaveBeenCalled();
       expect(result).toBe(doc);
+    });
+  });
+
+  describe('update plan fields + siteId heal (TZ-PRODUCTION-331)', () => {
+    it('ALLOWS plannedDate on ready', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'ready', siteId: new Types.ObjectId(SITE) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), {
+        plannedDate: '2026-08-20T12:00:00.000Z',
+      } as never);
+      expect(doc.plannedDate).toEqual(new Date('2026-08-20T12:00:00.000Z'));
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('ALLOWS priority on in_production', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'in_production', siteId: new Types.ObjectId(SITE) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { priority: 'urgent' } as never);
+      expect(doc.priority).toBe('urgent');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('BLOCKS notes on ready', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'ready', siteId: new Types.ObjectId(SITE) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), { notes: 'нельзя' } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('BLOCKS plannedDate on shipped', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'shipped', siteId: new Types.ObjectId(SITE) });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), {
+          plannedDate: '2026-08-20T12:00:00.000Z',
+        } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('heals missing siteId then saves patchEstimateDays', async () => {
+      const siteOid = new Types.ObjectId(SITE);
+      const { service, model, sites } = createService();
+      sites.findByCounterparty.mockResolvedValue([{ _id: siteOid }]);
+      const doc = orderDoc({
+        status: 'ready',
+        siteId: undefined,
+        items: [{ productId: new Types.ObjectId(PRODUCT), quantity: 1, total: 0 }],
+        estimateDayOverrides: [],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      const moduleId = new Types.ObjectId();
+      const workTypeId = new Types.ObjectId();
+
+      await service.patchEstimateDays(doc._id.toString(), {
+        orderItemIndex: 0,
+        moduleId: moduleId.toString(),
+        workTypeId: workTypeId.toString(),
+        days: 4,
+      });
+
+      expect(sites.findByCounterparty).toHaveBeenCalled();
+      expect(doc.siteId).toEqual(siteOid);
+      expect(doc.estimateDayOverrides).toHaveLength(1);
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('throws RU when missing siteId and Counterparty has no Site', async () => {
+      const { service, model, sites } = createService();
+      sites.findByCounterparty.mockResolvedValue([]);
+      const doc = orderDoc({ status: 'ready', siteId: undefined });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), {
+          plannedDate: '2026-08-20T12:00:00.000Z',
+        } as never),
+      ).rejects.toMatchObject({
+        message: 'У заказа нет площадки (siteId) — создайте объект у контрагента',
+      });
+      expect(doc.save).not.toHaveBeenCalled();
     });
   });
 

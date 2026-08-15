@@ -50,6 +50,11 @@ export function isActiveCommercialOrderStatus(status: OrderStatus): boolean {
   return (ACTIVE_COMMERCIAL_ORDER_STATUSES as readonly string[]).includes(status);
 }
 
+/** TZ-PRODUCTION-331 — composition frozen; plan fields stay editable through ready. */
+export function isHardFrozenOrderStatus(status: OrderStatus): boolean {
+  return status === 'shipped' || status === 'delivered' || status === 'cancelled';
+}
+
 /** Parse YYYY-MM-DD or ISO date as local date-only (no TZ day-shift). */
 export function parseDateOnly(value: string | null | undefined): Date | null {
   if (!value) return null;

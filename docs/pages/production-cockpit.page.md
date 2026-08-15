@@ -72,6 +72,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 - **No bottom card:** the old `Карточка` bottom sheet and chrome action were removed in TZ-322; order meta lives only as one cascade strip under the summary row. The cascade is the canonical interaction surface for status/priority/plannedDate and work-detail; do not restore a bottom overlay.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
 - **TZ-PRODUCTION-326 write-path:** meta Save и summary drag `plannedDate` используют `canEditOrder` (admin|manager) и после успешного PATCH перезагружают orders/bars; child resize и start-offset, а также WorkType.days используют `production:write`. «Сохранить заказ» — обязательный commit; после него Гант обновляется.
+- **TZ-PRODUCTION-331:** план-поля (`plannedDate`, `priority`) редактируются до статуса **Готов** / **В производстве**; состав/заметки/контрагент на этих статусах заморожены. `shipped`/`delivered`/`cancelled` — hard read-only. Legacy-заказ без `siteId` перед save лечится первой площадкой контрагента (иначе RU 400).
 - Ссылка «Открыть в списке заказов» в order-meta ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
 ### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
@@ -169,6 +170,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-328** | docs closeout: this page and the frozen Gantt spec are the SoT |
 | **TZ-PRODUCTION-329** | DONE: Filters Counterparty select; tabs Заказы\|Заказчики removed; dirty Reset; Gantt follows select |
 | **TZ-PRODUCTION-330** | DONE: zoom «Месяц» replaces «Неделя»; RU month ticks; Сегодня always recenters |
+| **TZ-PRODUCTION-331** | DONE: plan fields (`plannedDate`/`priority`) editable through ready; composition frozen; missing `siteId` healed from Counterparty sites |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |

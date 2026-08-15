@@ -7,6 +7,7 @@ import {
   buildOrderSummaryBar,
   calendarSpanDays,
   filterOrdersForRail,
+  isHardFrozenOrderStatus,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
   resolveVisualAnchor,
@@ -35,6 +36,14 @@ describe('gantt-bar.model', () => {
       ['cancelled', 'confirmed', 'delivered', 'draft', 'in_production', 'ready', 'shipped'].sort(),
     );
     expect('planned' in ORDER_STATUS_LABELS).toBe(false);
+  });
+
+  it('TZ-PRODUCTION-331: hard-frozen statuses exclude plan edits', () => {
+    expect(isHardFrozenOrderStatus('ready')).toBe(false);
+    expect(isHardFrozenOrderStatus('in_production')).toBe(false);
+    expect(isHardFrozenOrderStatus('shipped')).toBe(true);
+    expect(isHardFrozenOrderStatus('delivered')).toBe(true);
+    expect(isHardFrozenOrderStatus('cancelled')).toBe(true);
   });
 
   it('resolves visualAnchor plannedDate ?? date ?? today without TZ day-shift', () => {

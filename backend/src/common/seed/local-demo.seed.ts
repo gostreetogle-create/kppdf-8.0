@@ -20,6 +20,7 @@ import { Counterparty, CounterpartyDocument } from '../../modules/counterparty/c
 import { Material, MaterialDocument } from '../../modules/material/material.schema';
 import { Worker, WorkerDocument } from '../../modules/worker/worker.schema';
 import { Warehouse, WarehouseDocument } from '../../modules/warehouse/warehouse.schema';
+import { Site, SiteDocument } from '../../modules/site/site.schema';
 
 const MARK = 'DEMO-LOCAL';
 const PREFIX = 'Демо · ';
@@ -49,6 +50,7 @@ export class LocalDemoSeed implements OnModuleInit {
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
     @InjectModel(Worker.name) private readonly workerModel: Model<WorkerDocument>,
     @InjectModel(Warehouse.name) private readonly warehouseModel: Model<WarehouseDocument>,
+    @InjectModel(Site.name) private readonly siteModel: Model<SiteDocument>,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -72,7 +74,8 @@ export class LocalDemoSeed implements OnModuleInit {
     await this.ensureWorkers();
     await this.ensureWorkersWithWorkTypes(workTypes);
     await this.ensureWarehouses();
-    await this.ensureOrders(cp._id as Types.ObjectId, products);
+    const siteId = await this.ensureSite(cp._id as Types.ObjectId);
+    await this.ensureOrders(cp._id as Types.ObjectId, products, siteId);
     this.logger.log(`LocalDemoSeed ready (marker ${MARK})`);
   }
 
@@ -313,9 +316,24 @@ export class LocalDemoSeed implements OnModuleInit {
     }
   }
 
+  private async ensureSite(counterpartyId: Types.ObjectId): Promise<Types.ObjectId> {
+    const existing = await this.siteModel
+      .findOne({ counterpartyId, deletedAt: null })
+      .exec();
+    if (existing) return existing._id as Types.ObjectId;
+    const created = await this.siteModel.create({
+      counterpartyId,
+      name: `${PREFIX}Объект 1`,
+      address: 'Локальный адрес объекта',
+      isActive: true,
+    });
+    return created._id as Types.ObjectId;
+  }
+
   private async ensureOrders(
     counterpartyId: Types.ObjectId,
     products: Record<string, { id: Types.ObjectId; name: string; sku: string; price: number }>,
+    siteId: Types.ObjectId,
   ): Promise<void> {
     const defs = [
       {
@@ -356,13 +374,20 @@ export class LocalDemoSeed implements OnModuleInit {
     ];
     for (const o of defs) {
       const exists = await this.orderModel.findOne({ number: o.number }).exec();
-      if (exists) continue;
+      if (exists) {
+        if (!exists.siteId) {
+          exists.siteId = siteId;
+          await exists.save();
+        }
+        continue;
+      }
       const product = products[o.sku];
       if (!product) continue;
       const unitPrice = product.price;
       await this.orderModel.create({
         number: o.number,
         counterpartyId,
+        siteId,
         date: daysFromToday(o.plannedOffset - 2),
         plannedDate: daysFromToday(o.plannedOffset),
         status: o.status,

@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-331 DONE — Plan fields on ready + heal missing siteId
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `plannedDate`/`priority` на in_production/ready; состав заморожен; shipped+ план блокируется; legacy `siteId` лечится первой площадкой контрагента; demo seed всегда пишет siteId.
+**Gates:** BE tsc PASS; BE Jest order.service **34 PASS**; FE tsc PASS; FE Jest production **6 suites / 74 tests PASS**; lint PASS (1 existing OnInit warning).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-331.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-331-order-plan-fields-ready.lock`
+**Dep:** 330
+
 ## [2026-08-15] — TZ-PRODUCTION-330 DONE — Месяц zoom + Сегодня always scrolls
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH complete; deploy НЕ

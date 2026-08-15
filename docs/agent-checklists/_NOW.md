@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T22:25:00+03:00
+updated_at: 2026-08-15T22:16:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — WAVE-PRODUCTION-COCKPIT-POLISH complete; queue empty)_
+_(empty — TZ-PRODUCTION-331 DONE)_
 
 ## NEXT (PO paste prompt)
 
-_(empty — POLISH 329–330 DONE)_
+_(empty — 331 DONE)_
 
-_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE)_
+_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE)_
 
 ## Queue hygiene (not live)
 
@@ -27,6 +27,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE)_
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-331 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-331.done.md`; plan fields through ready; siteId heal; demo seed siteId.
 
 ### TZ-PRODUCTION-330 — DONE 2026-08-15
 
@@ -89,5 +93,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE)_
 
 ## HEAD / queue
 
-- Queue: **empty**; WAVE-PRODUCTION-COCKPIT-POLISH DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **empty**; TZ-PRODUCTION-331 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
 - Deploy app: НЕ — не автодеплой
