@@ -72,5 +72,5 @@ cd frontend && pnpm test -- proposal-create                  → 61/61 PASS
 - implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
 - archive: `tasks/_archive/2026-08/TZ-SALES-375.done.md`
 - lock: `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
-- closeout: PENDING
+- closeout: `f24400d0`
 - cursor_verdict: PASS

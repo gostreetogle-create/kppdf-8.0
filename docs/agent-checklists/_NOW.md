@@ -30,7 +30,7 @@ main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 - Archive: `tasks/_archive/2026-08/TZ-SALES-375.done.md`
 - Lock: `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
 - Implementation: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
-- Closeout: PENDING
+- Closeout: `f24400d0`
 - State: Cursor PASS; archive/lock/checklist DONE; active marker removed; deploy НЕ.
 
 ### TZ-SALES-374 — DONE / LANDED

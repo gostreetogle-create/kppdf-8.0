@@ -8,7 +8,7 @@ closed_at: 2026-08-15T07:13:00Z
 closed_by: Buffy (closeout)
 workspace: D:\kppdf-8.0
 implementation_sha: d75e1f08c10e76077e94beb27ea5b919e5bc9d93
-closeout_sha: PENDING
+closeout_sha: f24400d0
 verification:
   - acceptance criteria: PASS (см. checklist docs/agent-checklists/TZ-SALES-375.md)
   - frontend tsc: PASS

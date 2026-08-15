@@ -10,7 +10,7 @@
 **Checklist:** `docs/agent-checklists/TZ-SALES-375.md`
 **Lock:** `.mimocode/locks/TZ-SALES-375-no-products-rail-draft-lines.lock`
 **Implementation SHA:** `d75e1f08c10e76077e94beb27ea5b919e5bc9d93`
-**Closeout SHA:** PENDING
+**Closeout SHA:** `f24400d0`
 **Known limit:** custom lines without catalog card visible only in table editor (by design).
 
 ## [2026-08-15] — TZ-SALES-374 DONE — KP table editor chrome + dual fonts + drawer-actions
