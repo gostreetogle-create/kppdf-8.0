@@ -13,5 +13,5 @@
 - [x] architecture:check PASS: 937 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated KP inspector route unavailable in this headless worktree; field/rebind contract is covered by focused specs.
-- [x] Implementation commit: pending until commit.
-- [ ] Pushed branch SHA: pending.
+- [x] Implementation commit: `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0`.
+- [x] Pushed branch SHA: `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0`.

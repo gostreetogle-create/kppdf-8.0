@@ -14,6 +14,6 @@ CONFLICT KEYS:
 - Implementation: replaced unconditional input-to-local mirroring with dirty-aware synchronization. Each local field accepts a new parent value only while equal to its last synced input; in-progress edits remain intact. Sheet layout uses value comparison, and `untracked` prevents local signal reads from becoming effect dependencies.
 - Evidence: legacy overwrite reproduced at baseline; characterization 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
 - Browser: authenticated KP inspector route unavailable in this headless worktree; parent rebind and field contract are covered by focused specs.
-- Implementation commit: pending.
-- Push SHA: pending.
+- Implementation commit: `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0`.
+- Push SHA: `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0`.
 - Deploy: НЕ.

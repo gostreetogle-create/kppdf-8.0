@@ -11,5 +11,5 @@ Exact keys:
 - frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.spec.ts
 
 Evidence: baseline overwrite reproduced; characterization 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
-Implementation commit: pending
-Pushed SHA: pending
+Implementation commit: 774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0
+Pushed SHA: 774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0

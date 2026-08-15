@@ -17,4 +17,4 @@
 - `git diff --check`: PASS.
 - Browser: authenticated inspector route unavailable in headless worktree; rebind/field contract covered by focused specs.
 
-Implementation commit: pending. Deploy: НЕ.
+Implementation commit: `774adcbbd4ae14bb0a3b1b0a1f94c0565890dec0`. Deploy: НЕ.
