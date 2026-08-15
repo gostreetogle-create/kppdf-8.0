@@ -406,8 +406,14 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     fixture.detectChanges();
 
     expect(comp.viewMode()).toBe('grid');
-    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeTruthy();
+    const grid = fixture.nativeElement.querySelector('[data-test="products-grid"]') as HTMLElement;
+    expect(grid).toBeTruthy();
+    // Denser than list-era 3-col/gap-4 — closer to KP catalog rail tile width.
+    expect(grid.className).toContain('xl:grid-cols-4');
+    expect(grid.className).toContain('2xl:grid-cols-5');
+    expect(grid.className).toContain('gap-2.5');
     expect(fixture.nativeElement.querySelector('[data-test="showcase-cell-p1"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-size="md"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-pi-table')).toBeFalsy();
   });
 
