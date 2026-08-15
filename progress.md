@@ -1,6 +1,16 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-FRONTEND-301/302 DONE — Angular component integrity
+**Исполнитель:** Lane A/B executors + Cursor closeout
+**Статус:** DONE; ANGULAR INTEGRITY READY yes (known Jest debt); deploy НЕ
+**Что:** Stage 1 dual-lane audit + Stage 2 batches A1–A6 and B-TOOLING/ENTITY/PHOTO. P0 KP autosave/recipient/inspector fixed; admin/order/import-todos raw HttpClient removed; photo dropzone presentational; ESLint harness repaired.
+**Gates:** FE tsc/lint/architecture/diff PASS; full Jest 150/154 (13 baseline materials/form-profiles debt documented, not suppressed).
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`, `tasks/_archive/2026-08/TZ-FRONTEND-302.done.md`
+**Canonical:** `docs/audits/2026-08-15-angular-component-integrity.md`
+**Locks:** `.mimocode/locks/TZ-FRONTEND-301-angular-component-integrity-audit.lock`, `.mimocode/locks/TZ-FRONTEND-302-angular-integrity-remediation-wave.lock`
+**Known limit:** composition/group-ACL successors + Jest debt = separate TZ; merge to main separate; deploy/SSH не выполнялись.
+
 ## [2026-08-14] — TZ-SALES-372 DONE — snapshot edit и решение каталога
 **Исполнитель:** Buffy / predeploy executor
 **Статус:** DONE; frontend + backend contract; deploy НЕ

@@ -1,9 +1,26 @@
 # Angular component integrity — canonical audit
 
-> Status: **STAGE 2 - Lane A child batches DONE; final closeout pending Cursor/PO review**
-> Parent TZ: `TZ-FRONTEND-301`  
-> Remediation TZ: `TZ-FRONTEND-302`  
+> Status: **CURSOR PASS — ANGULAR INTEGRITY READY: yes (known Jest debt)**  
+> Closed_at: 2026-08-15T06:35:00Z  
+> Parent TZ: `TZ-FRONTEND-301` → archived  
+> Remediation TZ: `TZ-FRONTEND-302` → archived  
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
+> Deploy: **НЕ**
+
+## Cursor / PO verdict
+
+**PASS.** All approved Stage 2 ready batches landed (A1–A6, B-TOOLING, B-ENTITY-SPEC, B-PHOTO).  
+**ANGULAR INTEGRITY READY: yes** — with documented full-Jest baseline debt (13 failures in `materials*` + `form-profiles.service`, pre-existing on canonical baseline).
+
+| Fixed | Count | Batches |
+|-------|------:|---------|
+| P0 | 3 | A4, A5, A6 |
+| P1 | 6 | A1, A2, A3, B-TOOLING, B-ENTITY-SPEC, B-PHOTO |
+| P2/P3 | 0 | intentionally omitted / KEEP |
+
+Backlog successors (new TZ later): B-COMPOSITION, B-GROUP-ACL, Jest debt, P3 touch-only.
+
+Closeout branch tip after this archive commit supersedes pending-review state at `fa71e6e7129a15ae24ab2bd5da0d9baab67f201e`.
 
 ## Stage 2 progress board
 
@@ -20,7 +37,7 @@
 | B-PHOTO | B | **DONE** | `8b2f0fc7285c244fdc669b4da4d936ce64470dee` |
 | B-COMPOSITION / B-GROUP-ACL / P3 | B | **STOP / BACKLOG** | not started (correct) |
 
-Lane B Stage 2 ready batches and Lane A A3-A6 child batches are complete. Lane B remains **STOP** while Lane A awaits Cursor/PO closeout; do not start successors without new Cursor assignment.
+Lane B Stage 2 ready batches and Lane A A1–A6 are **DONE**. Conflict keys released. Successors require new TZ numbers — do not reopen this wave.
 
 ## Amendment 2026-08-15b — A3 page-local mutation service (Cursor decision)
 
@@ -300,21 +317,22 @@ Canonical audit + umbrella checklist (`TZ-FRONTEND-302`) remain **Lane A–owned
 
 - [x] Canonical PASS + A1/A3 amendments  
 - [x] Lane B ready batches DONE + SHAs recorded  
-- [x] Lane A A3-A6 DONE
-- [x] Umbrella gates: frontend tsc/lint/architecture/diff PASS; full Jest `150/154` with 13 known baseline failures documented; audit verdicts and child SHAs updated
-- [ ] Archive children + umbrella; deploy **НЕ**  
+- [x] Lane A A1–A6 DONE  
+- [x] Umbrella gates: frontend tsc/lint/architecture/diff PASS; full Jest `150/154` with 13 known baseline failures documented  
+- [x] **Cursor PASS** — READY yes with known debt  
+- [x] Archive children + umbrella + locks; deploy **НЕ**
 
-## Counts (canonical — unchanged finding set)
+## Counts (canonical)
 
-| Severity | Count | FIX NOW ready/done |
-|----------|------:|-------------------|
-| P0 | **3** | A4-A6 DONE |
-| P1 | **9** | A1-A3 DONE; B three DONE; 4 BACKLOG |
+| Severity | Count | Outcome |
+|----------|------:|---------|
+| P0 | **3** | FIXED (A4–A6) |
+| P1 | **9** | 6 FIXED; 4 BACKLOG successors |
 | P2 | **5** | KEEP/BACKLOG |
-| P3 | **4** | none |
+| P3 | **4** | omitted (no style-only churn) |
 
 ## Review / resume
 
-- Lane B: **STOP** — SHAs published; wait umbrella.
-- Lane A: A3-A6 and final technical gates are complete; await Cursor/PO closeout.
-- Successors (composition / group ACL / Jest debt): separate planning after umbrella — not this wave.
+- Wave closed. Merge feature branches to main is a separate PO/git step.
+- Do not start composition / group-ACL / Jest-debt without new TZ.
+- Deploy: **НЕ**.

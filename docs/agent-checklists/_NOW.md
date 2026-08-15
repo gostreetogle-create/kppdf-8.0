@@ -5,10 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-14T06:40:00+03:00
-main_head: `7cc685eb4841a41fbbfe3ef7f9cdb8061aa3e018`
+updated_at: 2026-08-15T09:35:00+03:00
+main_head: _(integrity wave on feature branches; not merged to main yet)_
 
 ## ACTIVE
+
+### TZ-FRONTEND-301 / 302 — DONE (Cursor PASS)
+
+- Canonical: `docs/audits/2026-08-15-angular-component-integrity.md`
+- Archives: `tasks/_archive/2026-08/TZ-FRONTEND-301.done.md`, `TZ-FRONTEND-302.done.md`
+- Branches: `feature/TZ-FRONTEND-302-A`, `feature/TZ-FRONTEND-302-B`, closeout `feature/TZ-FRONTEND-integrity-closeout`
+- State: ANGULAR INTEGRITY READY yes (known Jest debt 13); active markers removed; deploy НЕ.
+- Conflict keys released (wave scope). Successors: composition / group-ACL / Jest debt = new TZ only.
 
 ### TZ-AUTH-305 — PREP ONLY
 
@@ -50,13 +58,9 @@ main_head: `7cc685eb4841a41fbbfe3ef7f9cdb8061aa3e018`
 
 ## READY / ORDER
 
-1. SALES-371 photo output — DONE / landed; archive and lock recorded.
-3. SALES-372 snapshot edit/catalog resolution — DONE / landed; archive and lock recorded.
-4. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
-5. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-
-Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
-Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
+1. Merge Angular integrity feature branches to main (PO git step) — optional after review.
+2. AUTH-305 rollout — only after explicit `деплой`.
+3. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
 
 ## LAST DONE
 
