@@ -6,6 +6,6 @@
 | # | TZ | Status | Notes |
 |---|-----|--------|-------|
 | 1 | `TZ-PRODUCTION-329-filters-counterparty` | DONE | archive `tasks/_archive/2026-08/TZ-PRODUCTION-329.done.md` |
-| 2 | `TZ-PRODUCTION-330-gantt-month-today` | READY | Месяц labels; Сегодня scroll |
+| 2 | `TZ-PRODUCTION-330-gantt-month-today` | DONE | archive `tasks/_archive/2026-08/TZ-PRODUCTION-330.done.md` |
 
 Serial. No deploy.

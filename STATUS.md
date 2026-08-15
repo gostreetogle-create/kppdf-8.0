@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-330 DONE: Месяц zoom + Сегодня always scrolls
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH complete; deploy НЕ
+**Что:** zoom «Месяц» вместо «Неделя»; RU month ticks; Сегодня всегда recenters; chrome title «Прокрутить к сегодня».
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-330.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-330-gantt-month-today.lock`
+**Gates:** FE tsc PASS; production Jest 6 suites / 73 tests PASS; lint PASS with 1 existing warning; targeted Prettier PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-329 DONE: Filters + Counterparty select → Gantt
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH 329 closed; deploy НЕ
 **Что:** вкладки Заказы|Заказчики убраны; Фильтры = Counterparty select + dirty Reset; Gantt и список Заказы следуют выбору заказчика.

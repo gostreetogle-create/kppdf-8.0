@@ -72,8 +72,8 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 - `Заказы`: только список заказов, поиск по номеру, выбор заказа и `Все активные`/select-all. Вкладок Заказы|Заказчики нет.
 - `Фильтры`: Заказчик (Counterparty `<select>`), `active-only`, приоритет, даты и `Сброс фильтров` (accent если dirty).
 - `Обновить`: preserves existing reload behavior; no new persistence.
-- `Сегодня`: ensures today is inside the current range and scrolls to the red marker; no calendar model.
-- `Масштаб`: День, Неделя, **Вместить сроки**; week fit-density and padded bar range are existing estimate-studio behavior.
+- `Сегодня`: always recenters the red today marker (chrome «Прокрутить к сегодня»); pads range if needed.
+- `Масштаб`: День, Месяц, **Вместить сроки**; month fit-density and padded bar range.
 - Order label: opens one summary meta strip (status/priority/plannedDate/save/link); it is not a bottom card.
 - Child label/▸: opens one inline work-detail cascade row (people/days/override/catalog).
 
@@ -85,8 +85,8 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 | Фильтры | `counterpartyFilter` / `activeOnly` / `priorityFilter` / `dateFrom`/`dateTo`, `filtersDirty`, `resetFilters()` |
 | Обновить | existing `ProductionCockpitPage.onRefresh()` |
 | Meta заказа | summary cascade strip; status/priority/plannedDate/save/link; `canEditOrder` |
-| Сегодня | existing `onToday()` range adjustment + viewport scroll to marker |
-| Масштаб | `ctx.zoom`; День/Неделя/Вместить сроки controls |
+| Сегодня | `onToday()` pads range + always recenters marker; chrome «Прокрутить к сегодня» |
+| Масштаб | `ctx.zoom`; День/Месяц/Вместить сроки controls |
 | `/production?orderId=` | existing initial selection contract |
 | unknown `orderId` | existing RU hint + safe fallback to active orders |
 
@@ -126,9 +126,9 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 | `Обновить` | Left → Обновить | same reload/read behavior |
 | `Сброс фильтров` | Left → Фильтры | calls existing reset; no separate rail button |
 | order meta | Gantt summary cascade | status/priority/plannedDate; no bottom sheet |
-| `Сегодня` | Right → Сегодня | range + marker scroll; no new calendar SoT |
-| `День` / `Неделя` | Right → Масштаб | same zoom signal and fit-density |
-| `Вместить сроки` | Right → Масштаб | padded bar range + Неделя + scroll start |
+| `Сегодня` | Right → Сегодня | range + always recenter marker; title «Прокрутить к сегодня» |
+| `День` / `Месяц` | Right → Масштаб | zoom signal; month fit-density + RU month ticks |
+| `Вместить сроки` | Right → Масштаб | padded bar range + Месяц + scroll start |
 | group chips | `PiGroupWorkspace` section chrome | same `/production` ↔ `/work-types` navigation |
 
 ## 7. Accessibility contract
@@ -187,13 +187,14 @@ The following must remain 1:1 through B/C:
 
 Parked 308–310 are blocked by the new studio wave and must not be launched on top of the old docked layout. 309 remains a separate future write wave.
 
-## 11. Current harden contract (TZ-PRODUCTION-324…328)
+## 11. Current polish contract (TZ-PRODUCTION-324…330)
 
-- **324:** Day = 36px/day; Week = `max(12, floor(timelineWidth / dayCount))`; **Вместить сроки** uses padded current-bar range, switches to Week, and scrolls to start; **Сегодня** includes today and scrolls to the marker.
-- **325:** Заказы has no status pips; Заказчики aggregates Counterparty/`Без заказчика`; search switches order number/name; date filters feed rail and Gantt.
+- **324:** Day = 36px/day; denser zoom originally Week, now **Месяц** (`max(12, floor(timelineWidth / dayCount))`).
+- **325 / 329:** Заказы has no status pips; Counterparty lives in Filters `<select>` (not Заказчики tabs); date filters feed rail and Gantt.
 - **326:** Meta Save and summary plannedDate drag use `canEditOrder` (admin/manager) and reload orders/bars after success; child estimate-day/start and catalog days keep `production:write`; existing `PATCH /orders/:id` only.
 - **327:** page/facade/context remain smart boundaries; Gantt/Orders rail stay behavior-sensitive presentational blocks; scale controls are a dumb input/output component.
 - **328:** this spec and `docs/pages/production-cockpit.page.md` are the SoT; no bottom card and fact production remains OUT.
+- **330:** Zoom UX «Месяц» replaces «Неделя»; scale ticks are RU month names (not `н.32`); **Сегодня** always recenters the marker.
 
 ## 12. Success
 

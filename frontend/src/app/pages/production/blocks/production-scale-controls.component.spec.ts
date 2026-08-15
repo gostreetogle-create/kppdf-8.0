@@ -4,15 +4,16 @@ import { ProductionScaleControlsComponent } from './production-scale-controls.co
 describe('ProductionScaleControlsComponent', () => {
   it('renders RU zoom actions and fit action', () => {
     const fixture = TestBed.createComponent(ProductionScaleControlsComponent);
-    fixture.componentRef.setInput('zoom', 'week');
+    fixture.componentRef.setInput('zoom', 'month');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Масштаб');
     expect(fixture.nativeElement.textContent).toContain('День');
-    expect(fixture.nativeElement.textContent).toContain('Неделя');
+    expect(fixture.nativeElement.textContent).toContain('Месяц');
+    expect(fixture.nativeElement.textContent).not.toContain('Неделя');
     expect(fixture.nativeElement.textContent).toContain('Вместить сроки');
     expect(
-      fixture.nativeElement.querySelector('[data-test="gantt-zoom-week"]').classList,
+      fixture.nativeElement.querySelector('[data-test="gantt-zoom-month"]').classList,
     ).toContain('pi-btn-ink');
   });
 
@@ -27,10 +28,10 @@ describe('ProductionScaleControlsComponent', () => {
     });
     fixture.detectChanges();
 
-    (fixture.nativeElement.querySelector('[data-test="gantt-zoom-week"]') as HTMLElement).click();
+    (fixture.nativeElement.querySelector('[data-test="gantt-zoom-month"]') as HTMLElement).click();
     (fixture.nativeElement.querySelector('[data-test="gantt-fit"]') as HTMLElement).click();
 
-    expect(zooms).toEqual(['week']);
+    expect(zooms).toEqual(['month']);
     expect(fits).toBe(1);
   });
 });

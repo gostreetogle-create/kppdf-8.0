@@ -5,7 +5,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import type { OrderPriority } from '../orders/orders.service';
 
-export type GanttZoom = 'day' | 'week';
+export type GanttZoom = 'day' | 'month';
 
 @Injectable()
 export class ProductionCockpitContext {

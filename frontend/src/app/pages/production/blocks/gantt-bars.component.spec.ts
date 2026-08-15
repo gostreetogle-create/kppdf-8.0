@@ -5,6 +5,8 @@ import {
   GANTT_LABEL_COL_PX,
   GANTT_PX_PER_DAY,
   calculateGanttPxPerDay,
+  calculateCenteredMarkerScrollLeft,
+  ganttMonthTickLabel,
   snapEstimateDaysFromDelta,
   snapMoveDeltaDays,
 } from './gantt-bars.component';
@@ -307,13 +309,13 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelectorAll('[data-test="gantt-placeholder-row"]').length).toBeGreaterThan(0);
   });
 
-  it('fits week density to the measured timeline width without shrinking day mode', () => {
-    expect(calculateGanttPxPerDay('week', 14, 700)).toBe(50);
-    expect(calculateGanttPxPerDay('week', 100, 700)).toBe(GANTT_PX_PER_DAY.week);
+  it('fits month density to the measured timeline width without shrinking day mode', () => {
+    expect(calculateGanttPxPerDay('month', 14, 700)).toBe(50);
+    expect(calculateGanttPxPerDay('month', 100, 700)).toBe(GANTT_PX_PER_DAY.month);
     expect(calculateGanttPxPerDay('day', 14, 700)).toBe(GANTT_PX_PER_DAY.day);
   });
 
-  it('day vs week zoom changes px density and scale hint', () => {
+  it('day vs month zoom changes px density and scale hint', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -328,14 +330,52 @@ describe('GanttBarsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('масштаб: день');
     expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.day);
 
-    fixture.componentRef.setInput('zoom', 'week');
+    fixture.componentRef.setInput('zoom', 'month');
     fixture.detectChanges();
-    expect(root.getAttribute('data-zoom')).toBe('week');
-    expect(fixture.nativeElement.textContent).toContain('масштаб: неделя');
-    expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.week);
+    expect(root.getAttribute('data-zoom')).toBe('month');
+    expect(fixture.nativeElement.textContent).toContain('масштаб: месяц');
+    expect(fixture.nativeElement.textContent).not.toContain('н.');
+    expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.month);
     expect(fixture.componentInstance['timelineMinWidth']()).toBeLessThan(
       14 * GANTT_PX_PER_DAY.day + 224,
     );
+  });
+
+  it('TZ-PRODUCTION-330: month ticks use RU month names, not week numbers', () => {
+    expect(ganttMonthTickLabel('2026-08-15')).toBe('август');
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-15');
+    fixture.componentRef.setInput('rangeEnd', '2026-10-02');
+    fixture.componentRef.setInput('zoom', 'month');
+    fixture.detectChanges();
+    const ticks = fixture.componentInstance['scaleTicks']() as Array<{ label: string }>;
+    expect(ticks.map((t) => t.label)).toEqual(['август', 'сентябрь', 'октябрь']);
+    expect(fixture.nativeElement.textContent).toContain('август');
+    expect(fixture.nativeElement.textContent).not.toMatch(/н\.\d+/);
+  });
+
+  it('TZ-PRODUCTION-330: Сегодня recenters the marker even when already in view', () => {
+    expect(
+      calculateCenteredMarkerScrollLeft({
+        scrollLeft: 0,
+        scrollWidth: 2000,
+        clientWidth: 400,
+        scrollLeftEdge: 0,
+        markerLeft: 80,
+        markerWidth: 2,
+      }),
+    ).toBe(0);
+    expect(
+      calculateCenteredMarkerScrollLeft({
+        scrollLeft: 0,
+        scrollWidth: 2000,
+        clientWidth: 400,
+        scrollLeftEdge: 0,
+        markerLeft: 500,
+        markerWidth: 2,
+      }),
+    ).toBe(301);
   });
 
   it('shows right-edge resize handle on child when expanded and editable', () => {

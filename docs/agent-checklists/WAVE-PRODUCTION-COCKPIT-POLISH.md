@@ -1,19 +1,19 @@
 # WAVE-PRODUCTION-COCKPIT-POLISH — MASTER
 
-updated_at: 2026-08-15T22:10:00+03:00
-score_now: 50
-next_action: CLAIM TZ-PRODUCTION-330
+updated_at: 2026-08-15T22:25:00+03:00
+score_now: 100
+next_action: STOP; propose deploy; do not deploy
 
 ## Live resume
 ```
-last_tz: TZ-PRODUCTION-329 DONE
-next_action: TZ-PRODUCTION-330 CLAIM
+last_tz: TZ-PRODUCTION-330 DONE
+next_action: WAVE DONE; propose deploy
 blocked: none
-score_now: 50
+score_now: 100
 ```
 
 - [x] **329** Filters + Counterparty select → Gantt
-- [ ] **330** Месяц + Сегодня scroll
-- [ ] **WAVE DONE**
+- [x] **330** Месяц + Сегодня scroll
+- [x] **WAVE DONE**
 
 Bans: deploy; wipe; fact production.

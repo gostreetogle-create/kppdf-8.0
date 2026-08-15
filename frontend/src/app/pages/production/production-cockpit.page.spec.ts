@@ -159,7 +159,10 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(chrome.leftTools().map((t) => t.id)).toEqual(['orders', 'filters', 'refresh']);
     expect(chrome.rightTools().map((t) => t.id)).toEqual(['today', 'scale']);
     expect(chrome.leftTools()[0]!.ariaLabel).toBe('Заказы');
-    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual(['Сегодня', 'Масштаб']);
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual([
+      'Прокрутить к сегодня',
+      'Масштаб',
+    ]);
     expect(chrome.rightTools().some((t) => t.id === 'card' || t.ariaLabel === 'Карточка')).toBe(
       false,
     );
@@ -198,22 +201,37 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     ).not.toBeNull();
   });
 
-  it('TZ-PRODUCTION-324: renames fit action and issues Today scroll command', () => {
+  it('TZ-PRODUCTION-330: scale shows Месяц; fit uses month; Today always requests scroll', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
       toggleRightTool: (tool: 'scale') => void;
       onToday: () => void;
+      onFitHorizon: () => Promise<void>;
       scrollRequest: () => { target: string; nonce: number } | null;
     };
+    const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
 
     page.toggleRightTool('scale');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[data-test="gantt-fit"]')?.textContent).toContain(
-      'Вместить сроки',
-    );
+    expect(
+      fixture.nativeElement.querySelector('[data-test="gantt-zoom-month"]')?.textContent,
+    ).toContain('Месяц');
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-zoom-week"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Неделя');
+
+    const chrome = TestBed.inject(PiChromeToolsService);
+    expect(chrome.rightTools().find((t) => t.id === 'today')!.title).toBe('Прокрутить к сегодня');
 
     page.onToday();
-    expect(page.scrollRequest()).toEqual(expect.objectContaining({ target: 'today' }));
+    const first = page.scrollRequest();
+    expect(first).toEqual(expect.objectContaining({ target: 'today' }));
+    page.onToday();
+    const second = page.scrollRequest();
+    expect(second?.target).toBe('today');
+    expect(second?.nonce).toBeGreaterThan(first!.nonce);
+
+    void page.onFitHorizon();
+    expect(ctx.zoom()).toBe('month');
   });
 
   it('TZ-PRODUCTION-325: counterparty and date filters reach Gantt reload', async () => {

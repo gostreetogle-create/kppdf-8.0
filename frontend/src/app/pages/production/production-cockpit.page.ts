@@ -508,8 +508,8 @@ export class ProductionCockpitPage implements OnInit {
       {
         id: 'today',
         side: 'right',
-        ariaLabel: 'Сегодня',
-        title: 'Сегодня',
+        ariaLabel: 'Прокрутить к сегодня',
+        title: 'Прокрутить к сегодня',
         icon: this.todayIcon,
         order: 1,
         onClick: (e) => this.onToday(e),
@@ -661,9 +661,9 @@ export class ProductionCockpitPage implements OnInit {
     this.requestTimelineScroll('today');
   }
 
-  /** Re-fit current bars into a focused week-density range. */
+  /** Re-fit current bars into a focused month-density range. */
   protected async onFitHorizon(): Promise<void> {
-    this.ctx.setZoom('week');
+    this.ctx.setZoom('month');
     await this.applyFilteredActive(true);
     this.requestTimelineScroll('start');
   }

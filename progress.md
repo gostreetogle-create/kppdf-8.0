@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-330 DONE — Месяц zoom + Сегодня always scrolls
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH complete; deploy НЕ
+**Что:** «Неделя» → «Месяц» с RU тиками; fit-density как у бывшей недели; Сегодня всегда центрирует маркер (chrome «Прокрутить к сегодня»).
+**Gates:** FE tsc PASS; FE Jest production **6 suites / 73 tests PASS**; lint PASS (1 existing OnInit warning); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-330.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-330-gantt-month-today.lock`
+**Dep:** 329 (`ee0b0c78`)
+
 ## [2026-08-15] — TZ-PRODUCTION-329 DONE — Filters + Counterparty select → Gantt
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH 329 closed; deploy НЕ

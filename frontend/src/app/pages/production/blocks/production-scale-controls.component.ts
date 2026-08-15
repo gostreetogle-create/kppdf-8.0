@@ -21,11 +21,11 @@ import type { GanttZoom } from '../production-cockpit.context';
       <button
         type="button"
         class="pi-btn pi-btn-ghost pi-focus-ring text-left"
-        [class.pi-btn-ink]="zoom() === 'week'"
-        data-test="gantt-zoom-week"
-        (click)="zoomChange.emit('week')"
+        [class.pi-btn-ink]="zoom() === 'month'"
+        data-test="gantt-zoom-month"
+        (click)="zoomChange.emit('month')"
       >
-        Неделя
+        Месяц
       </button>
       <button
         type="button"

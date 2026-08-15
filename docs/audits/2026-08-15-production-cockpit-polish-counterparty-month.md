@@ -22,4 +22,4 @@ Gantt может смениться незаметно. Demo orders без popul
 `onToday` + `scrollRequest('today')` уже есть; если today в range — PO может не видеть скролл.
 Сделать: всегда scroll к маркеру; toast/hint короткий если маркер уже в кадре; не no-op.
 
-Wave: `WAVE-PRODUCTION-COCKPIT-POLISH` · TZ **329** filters **DONE** · **330** month+today READY.
+Wave: `WAVE-PRODUCTION-COCKPIT-POLISH` · TZ **329** filters **DONE** · **330** month+today **DONE**.

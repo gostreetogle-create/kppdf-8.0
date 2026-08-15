@@ -29,17 +29,32 @@ import {
 import type { OrderPriority, OrderStatus } from '../../orders/orders.service';
 import type { GanttZoom } from '../production-cockpit.context';
 
-/** Pixels per calendar day — day zoom is denser, week packs the same span. */
+/** Pixels per calendar day — day zoom is denser, month packs the same span. */
 export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
   day: 36,
-  week: 12,
+  month: 12,
 };
 
-/** Week density never falls below this readable minimum when the range is wide. */
-export const GANTT_WEEK_MIN_PX_PER_DAY = GANTT_PX_PER_DAY.week;
+/** Month density never falls below this readable minimum when the range is wide. */
+export const GANTT_MONTH_MIN_PX_PER_DAY = GANTT_PX_PER_DAY.month;
+
+export const GANTT_MONTH_NAMES_RU = [
+  'январь',
+  'февраль',
+  'март',
+  'апрель',
+  'май',
+  'июнь',
+  'июль',
+  'август',
+  'сентябрь',
+  'октябрь',
+  'ноябрь',
+  'декабрь',
+] as const;
 
 /**
- * Fit week density to the visible timeline pane. Day mode stays readable and
+ * Fit month density to the visible timeline pane. Day mode stays readable and
  * intentionally does not shrink when the pane is narrow.
  */
 export function calculateGanttPxPerDay(
@@ -49,9 +64,38 @@ export function calculateGanttPxPerDay(
 ): number {
   if (zoom === 'day') return GANTT_PX_PER_DAY.day;
   if (!Number.isFinite(totalDays) || totalDays <= 0 || timelineWidthPx <= 0) {
-    return GANTT_WEEK_MIN_PX_PER_DAY;
+    return GANTT_MONTH_MIN_PX_PER_DAY;
   }
-  return Math.max(GANTT_WEEK_MIN_PX_PER_DAY, Math.floor(timelineWidthPx / totalDays));
+  return Math.max(GANTT_MONTH_MIN_PX_PER_DAY, Math.floor(timelineWidthPx / totalDays));
+}
+
+export function ganttMonthTickLabel(dateOnly: string): string {
+  const month = Number(dateOnly.slice(5, 7));
+  return GANTT_MONTH_NAMES_RU[month - 1] ?? dateOnly;
+}
+
+/** Days remaining in the UTC month starting at dateOnly, capped by remaining range days. */
+export function ganttDaysLeftInMonth(dateOnly: string, remaining: number): number {
+  const [y, m, d] = dateOnly.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(y!, m!, 0)).getUTCDate();
+  const leftInMonth = lastDay - (d ?? 1) + 1;
+  return Math.max(1, Math.min(leftInMonth, remaining));
+}
+
+/** Always recenter the marker in the scrollport (Сегодня is never a silent no-op). */
+export function calculateCenteredMarkerScrollLeft(opts: {
+  scrollLeft: number;
+  scrollWidth: number;
+  clientWidth: number;
+  scrollLeftEdge: number;
+  markerLeft: number;
+  markerWidth: number;
+}): number {
+  const markerCenter =
+    opts.scrollLeft + (opts.markerLeft - opts.scrollLeftEdge) + opts.markerWidth / 2;
+  const target = markerCenter - opts.clientWidth / 2;
+  const maxScroll = Math.max(0, opts.scrollWidth - opts.clientWidth);
+  return Math.max(0, Math.min(maxScroll, target));
 }
 
 /** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
@@ -170,7 +214,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         >
         <span class="opacity-80">календарные дни · не факт цеха · выходные не исключаются</span>
         <span class="opacity-70" data-test="gantt-zoom-hint">
-          масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }} · День — подробнее, Неделя — плотнее ·
+          масштаб: {{ zoom() === 'day' ? 'день' : 'месяц' }} · День — подробнее, Месяц — плотнее ·
           «Вместить сроки» — диапазон текущих полос
         </span>
         <span class="opacity-70" data-test="gantt-expand-hint"
@@ -886,16 +930,16 @@ export class GanttBarsComponent implements AfterViewInit {
     const start = this.rangeStart();
     const total = this.totalDays();
     const px = this.pxPerDay();
-    const weekMode = this.zoom() === 'week';
+    const monthMode = this.zoom() === 'month';
     const ticks: Array<{ key: string; label: string; leftPx: number; widthPx: number }> = [];
     for (let i = 0; i < total; i++) {
       const date = addDays(start, i);
-      const dow = utcDow(date);
-      if (weekMode && dow !== 1 && i !== 0) continue;
-      const span = weekMode ? Math.min(7, total - i) : 1;
+      const isMonthStart = date.slice(8, 10) === '01';
+      if (monthMode && !isMonthStart && i !== 0) continue;
+      const span = monthMode ? ganttDaysLeftInMonth(date, total - i) : 1;
       ticks.push({
         key: date,
-        label: weekMode ? `н.${isoWeek(date)}` : shortDay(date),
+        label: monthMode ? ganttMonthTickLabel(date) : shortDay(date),
         leftPx: i * px,
         widthPx: span * px,
       });
@@ -966,19 +1010,16 @@ export class GanttBarsComponent implements AfterViewInit {
   private scrollToMarker(marker: HTMLElement | null): void {
     const scroll = this.ganttScroll()?.nativeElement;
     if (!scroll || !marker) return;
-    const inset = 16;
     const scrollRect = scroll.getBoundingClientRect();
     const markerRect = marker.getBoundingClientRect();
-    const nextLeft = scroll.scrollLeft + markerRect.left - scrollRect.left - inset;
-    const nextRight = scroll.scrollLeft + markerRect.right - scrollRect.right + inset;
-    const maxScroll = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
-    const target =
-      markerRect.left < scrollRect.left + inset
-        ? nextLeft
-        : markerRect.right > scrollRect.right - inset
-          ? nextRight
-          : scroll.scrollLeft;
-    const left = Math.max(0, Math.min(maxScroll, target));
+    const left = calculateCenteredMarkerScrollLeft({
+      scrollLeft: scroll.scrollLeft,
+      scrollWidth: scroll.scrollWidth,
+      clientWidth: scroll.clientWidth,
+      scrollLeftEdge: scrollRect.left,
+      markerLeft: markerRect.left,
+      markerWidth: markerRect.width,
+    });
     if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left, behavior: 'auto' });
     else scroll.scrollLeft = left;
   }
@@ -1421,21 +1462,7 @@ function addDays(dateOnly: string, days: number): string {
   return `${yy}-${mm}-${dd}`;
 }
 
-function utcDow(dateOnly: string): number {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  return new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
-}
-
 function shortDay(dateOnly: string): string {
   const [, m, d] = dateOnly.split('-');
   return `${d}.${m}`;
-}
-
-function isoWeek(dateOnly: string): number {
-  const [y, m, d] = dateOnly.split('-').map(Number);
-  const dt = new Date(Date.UTC(y!, m! - 1, d!));
-  const dayNum = dt.getUTCDay() || 7;
-  dt.setUTCDate(dt.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
-  return Math.ceil(((dt.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

@@ -53,7 +53,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | Block | Файл | Роль |
 |-------|------|------|
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск по номеру; Фильтры: Заказчик (Counterparty select), приоритет, даты, «Все активные», Сброс |
-| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px); order-meta + work-detail cascade |
+| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/month (day ≈36px); order-meta + work-detail cascade |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
 | scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit controls; emits `zoomChange` + `fit` |
 
@@ -78,10 +78,10 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
-- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: День / Неделя / **Вместить сроки**.
-- Неделя вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; День сохраняет читаемые 36px/day.
-- **Вместить сроки** берёт padded min…max текущих полос, включает Неделю и прокручивает к началу диапазона.
-- **Сегодня** добавляет today в диапазон при необходимости и прокручивает маркер в видимую область.
+- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: День / Месяц / **Вместить сроки**.
+- Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День сохраняет читаемые 36px/day.
+- **Вместить сроки** берёт padded min…max текущих полос, включает Месяц и прокручивает к началу диапазона.
+- **Сегодня** добавляет today в диапазон при необходимости и **всегда** центрирует маркер (chrome title «Прокрутить к сегодня»; не silent no-op).
 - Flyout **Заказы** = только список заказов (уже с учётом фильтров) + поиск по номеру; вкладок «Заказы | Заказчики» нет (TZ-329).
 - Flyout **Фильтры**: активность, приоритет, даты, `<select>` **Заказчик** (все / каждый Counterparty из заказов / «Без заказчика»). Выбор сразу режет rail и Гант. **Сброс фильтров** горит `pi-btn-ink`, когда dirty (counterparty / priority / dates / activeOnly≠true; default activeOnly=true). Chrome «Фильтры» active, пока dirty.
 - Покупатель = сущность **Counterparty**, не Organization. Фильтры дат режут rail и тот же набор баров Ганта.
@@ -162,12 +162,13 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-321** | DONE: work-type click → inline detail (люди / дни / catalog) |
 | **TZ-PRODUCTION-322** | DONE: order-meta under summary; kill sheet + chrome «Карточка» |
 | **TZ-PRODUCTION-323** | DONE: one meta under summary; full-width cascade panels |
-| **TZ-PRODUCTION-324** | DONE: week fit-width; «Вместить сроки» range fit; «Сегодня» marker scroll |
+| **TZ-PRODUCTION-324** | DONE: week fit-width historically; «Вместить сроки»; «Сегодня» marker scroll |
 | **TZ-PRODUCTION-325** | DONE: Orders rail без status-pips; Заказчики → filter rail + Gantt; date filters verified |
 | **TZ-PRODUCTION-326** | DONE: plannedDate meta/summary writes use `canEditOrder`; successful writes reload orders/bars |
 | **TZ-PRODUCTION-327** | DONE: smart/dumb inventory; one dumb scale-controls extract; no UX/API rewrite |
 | **TZ-PRODUCTION-328** | docs closeout: this page and the frozen Gantt spec are the SoT |
 | **TZ-PRODUCTION-329** | DONE: Filters Counterparty select; tabs Заказы\|Заказчики removed; dirty Reset; Gantt follows select |
+| **TZ-PRODUCTION-330** | DONE: zoom «Месяц» replaces «Неделя»; RU month ticks; Сегодня always recenters |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -180,7 +181,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 
 ### Studio wave readiness
 
-- Статус: **STUDIO ESTIMATE PASS**; harden 324–327 landed; docs closeout 328.
+- Статус: **STUDIO ESTIMATE PASS**; harden 324–328 + polish 329–330 landed.
 - B/C/D DONE + UX-323: section chrome, full-width Gantt, tools in app chrome, hard filter split.
 - `/work-types` reads as Цех via `Гант` / `Виды работ` chips; CRUD не переписывался.
 - Estimate writes (plannedDate, estimate-day/start, WorkType.days) are explicit existing paths; **fact production, shop-floor status, assignment, ProductionSchedule, ProductionOrder and OrderTask remain OUT**.
@@ -200,32 +201,32 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 |----------|-----------|
 | **Заказы** | Поиск по номеру; выбор/мета заказа; `Все активные` сохраняет многозаказные полосы Ганта |
 | **Фильтры** | Заказчик (Counterparty select), активность, приоритет, плановая дата `С`/`По`; Сброс accent если dirty; chrome «Фильтры» active пока dirty |
-| **Сегодня** | Включает today в диапазон и прокручивает timeline к красному маркеру Сегодня |
+| **Сегодня** | Всегда центрирует красный маркер Сегодня (chrome «Прокрутить к сегодня»); расширяет range если today вне) |
 | **Масштаб → День** | Фиксированная читаемая плотность `36px/день` |
-| **Масштаб → Неделя** | Fit-плотность `max(12, floor(width timeline / число дней))` |
-| **Вместить сроки** | Берёт min/max текущих полос с запасом в день, включает Неделю и скроллит к началу; это не no-op |
+| **Масштаб → Месяц** | Fit-плотность `max(12, floor(width timeline / число дней))`; тики RU месяцев |
+| **Вместить сроки** | Берёт min/max текущих полос с запасом в день, включает Месяц и скроллит к началу; это не no-op |
 | **Подпись заказа** | Переключает одну meta-полосу summary: статус, приоритет, plannedDate, Save, `/orders?q=<номер>` |
 | **Тело summary-полосы** | Сдвиг plannedDate; `canEditOrder` (admin/manager); успешный PATCH перезагружает orders/bars |
 | **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
 | **Resize / тело вида работ** | Existing estimate-days / estimate-start под `production:write`; только estimate |
 
-All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Неделя`, `Вместить сроки`.
+All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Месяц`, `Вместить сроки`.
 
 ### Zoom
 
 | Режим | Поведение |
 |-------|-----------|
 | День | 36px/день, подписи дат на шкале |
-| Неделя | fit-width: `max(12, floor(width/dayCount))`, подписи недель |
-| Вместить сроки | padded min…max полос + fit Неделя + scroll к началу |
-| Сегодня | today в range + scroll к красному маркеру |
+| Месяц | fit-width: `max(12, floor(width/dayCount))`, подписи RU месяцев |
+| Вместить сроки | padded min…max полос + fit Месяц + scroll к началу |
+| Сегодня | today в range + **всегда** recenter красного маркера |
 
 ### Smoke для PO (после land)
 
 1. Войти как admin (или director/manager с `production` page + `production:read`).
 2. Открыть `/production` — **сразу** видна шкала календаря (сегодня красной линией) и список активных заказов слева; пустой белый экран с «Выберите заказ…» — регрессия.
 3. При наличии заказов с изделием→модули→`WorkType.days` — цветные полосы оценки.
-4. Zoom День/Неделя меняет плотность шкалы без перезагрузки.
+4. Zoom День/Месяц меняет плотность шкалы без перезагрузки.
 
 ### Локальные демо-данные (Mongo, не FE-hardcode)
 
@@ -240,7 +241,7 @@ All dates are calendar estimate dates; weekends are not removed. All UI copy rem
 4. Клик по заказу с изделием (модули + workTypes с `days`) → справа полоски «План-оценка».
 5. Заказ без days → штриховка «без срока»; quantity >1 → `×N` без умножения дней.
 6. Dense layout: без двойного скролла страницы.
-7. **День / Неделя** — меняется подпись «масштаб» и плотность шкалы (горизонтальный скролл в режиме День длиннее).
-8. **Вместить сроки** — range сжимается к текущим барам, Неделя заполняет timeline по ширине, начало диапазона видно сразу.
-9. **Сегодня** — красный маркер оказывается в видимой зоне; если today вне range, диапазон расширяется с запасом.
+7. **День / Месяц** — меняется подпись «масштаб» и плотность шкалы (горизонтальный скролл в режиме День длиннее).
+8. **Вместить сроки** — range сжимается к текущим барам, Месяц заполняет timeline по ширине, начало диапазона видно сразу.
+9. **Сегодня** — красный маркер центрируется в видимой зоне; если today вне range, диапазон расширяется с запасом. Повторный клик снова скроллит (не no-op).
 10. **Geometry smoke после B/C:** 1920px light/dark; `getBoundingClientRect()` для rails/center/flyout; center width unchanged; нет docked `w-56/20rem`, двойного scroll и клиппинга.
