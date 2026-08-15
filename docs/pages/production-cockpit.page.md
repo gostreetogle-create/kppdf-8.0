@@ -69,7 +69,10 @@ flyouts: overlay; center width unchanged
 
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
-- Toolbar: Обновить / Сброс фильтров / Сегодня / Весь горизонт.
+- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: День / Неделя / **Вместить сроки**.
+- Неделя вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; День сохраняет читаемые 36px/day.
+- **Вместить сроки** берёт padded min…max текущих полос, включает Неделю и прокручивает к началу диапазона.
+- **Сегодня** добавляет today в диапазон при необходимости и прокручивает маркер в видимую область.
 - Даты = **календарная** оценка (выходные не исключаются) — не факт цеха.
 
 ### Services / context
@@ -132,6 +135,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-321** | DONE: work-type click → inline detail (люди / дни / catalog) |
 | **TZ-PRODUCTION-322** | DONE: order-meta under summary; kill sheet + chrome «Карточка» |
 | **TZ-PRODUCTION-323** | DONE: one meta under summary; full-width cascade panels |
+| **TZ-PRODUCTION-324** | DONE: week fit-width; «Вместить сроки» range fit; «Сегодня» marker scroll |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -161,8 +165,10 @@ flyouts: overlay; center width unchanged
 
 | Режим | Поведение |
 |-------|-----------|
-| День | ~36px/день, подписи дат на шкале |
-| Неделя | ~12px/день, подписи недель — плотнее весь горизонт |
+| День | 36px/день, подписи дат на шкале |
+| Неделя | fit-width: `max(12, floor(width/dayCount))`, подписи недель |
+| Вместить сроки | padded min…max полос + fit Неделя + scroll к началу |
+| Сегодня | today в range + scroll к красному маркеру |
 
 ### Smoke для PO (после land)
 
@@ -185,4 +191,6 @@ flyouts: overlay; center width unchanged
 5. Заказ без days → штриховка «без срока»; quantity >1 → `×N` без умножения дней.
 6. Dense layout: без двойного скролла страницы.
 7. **День / Неделя** — меняется подпись «масштаб» и плотность шкалы (горизонтальный скролл в режиме День длиннее).
-8. **Geometry smoke после B/C:** 1920px light/dark; `getBoundingClientRect()` для rails/center/flyout; center width unchanged; нет docked `w-56/20rem`, двойного scroll и клиппинга.
+8. **Вместить сроки** — range сжимается к текущим барам, Неделя заполняет timeline по ширине, начало диапазона видно сразу.
+9. **Сегодня** — красный маркер оказывается в видимой зоне; если today вне range, диапазон расширяется с запасом.
+10. **Geometry smoke после B/C:** 1920px light/dark; `getBoundingClientRect()` для rails/center/flyout; center width unchanged; нет docked `w-56/20rem`, двойного scroll и клиппинга.

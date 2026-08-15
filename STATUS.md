@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-324 DONE: Gantt fit-width / «Сегодня»
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 324 closed; deploy НЕ
+**Что:** Неделя fit-width от ResizeObserver timeline; «Вместить сроки» = padded range текущих баров + Неделя + scroll start; «Сегодня» = range + scroll marker.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-324.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-324-gantt-zoom-fit.lock`
+**Gates:** FE tsc PASS; FE jest gantt-bars + cockpit **43 PASS**; lint PASS with existing warnings.
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE: one Gantt meta + full-width cascade panels
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ
 **Что:** order-meta только под summary (`row.isSummary`); meta + work-detail — одна широкая полоса (`gantt-cascade-panel` full-bleed из sticky label, spacer на timeline).

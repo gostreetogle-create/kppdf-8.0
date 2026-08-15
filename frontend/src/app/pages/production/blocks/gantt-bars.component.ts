@@ -1,12 +1,19 @@
 import {
+  afterNextRender,
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
+  ElementRef,
   HostListener,
+  inject,
   input,
+  Injector,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
@@ -27,6 +34,25 @@ export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
   day: 36,
   week: 12,
 };
+
+/** Week density never falls below this readable minimum when the range is wide. */
+export const GANTT_WEEK_MIN_PX_PER_DAY = GANTT_PX_PER_DAY.week;
+
+/**
+ * Fit week density to the visible timeline pane. Day mode stays readable and
+ * intentionally does not shrink when the pane is narrow.
+ */
+export function calculateGanttPxPerDay(
+  zoom: GanttZoom,
+  totalDays: number,
+  timelineWidthPx: number,
+): number {
+  if (zoom === 'day') return GANTT_PX_PER_DAY.day;
+  if (!Number.isFinite(totalDays) || totalDays <= 0 || timelineWidthPx <= 0) {
+    return GANTT_WEEK_MIN_PX_PER_DAY;
+  }
+  return Math.max(GANTT_WEEK_MIN_PX_PER_DAY, Math.floor(timelineWidthPx / totalDays));
+}
 
 /** Fixed row height (px) — label column and timeline rows must match (no multi-line drift). */
 export const GANTT_ROW_PX = 44;
@@ -144,7 +170,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         >
         <span class="opacity-80">календарные дни · не факт цеха · выходные не исключаются</span>
         <span class="opacity-70" data-test="gantt-zoom-hint">
-          масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }}
+          масштаб: {{ zoom() === 'day' ? 'день' : 'неделя' }} · День — подробнее, Неделя — плотнее ·
+          «Вместить сроки» — диапазон текущих полос
         </span>
         <span class="opacity-70" data-test="gantt-expand-hint"
           >Разверните заказ, чтобы править виды работ</span
@@ -200,7 +227,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         </div>
       }
 
-      <div class="flex-1 min-h-0 overflow-auto gantt-scroll">
+      <div #ganttScroll class="flex-1 min-h-0 overflow-auto gantt-scroll">
         <div class="flex" [style.minWidth.px]="timelineMinWidth()">
           <div
             class="sticky left-0 z-[3] w-52 shrink-0 border-r hairline bg-paper overflow-visible"
@@ -442,6 +469,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               }
               <div
                 class="absolute top-0 bottom-0 w-px bg-destructive/70 z-[1]"
+                #todayMarker
                 [style.left.px]="todayLeftPx()"
                 title="Сегодня"
                 data-test="gantt-today-marker"
@@ -702,7 +730,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
   `,
 })
-export class GanttBarsComponent {
+export class GanttBarsComponent implements AfterViewInit {
   /** Work-type bars from buildGanttBars (not pre-built summaries). */
   readonly bars = input.required<GanttBar[]>();
   readonly rangeStart = input.required<string>();
@@ -714,6 +742,8 @@ export class GanttBarsComponent {
   /** production:write (or equivalent) — required for resize handles. */
   readonly canEdit = input(false);
   readonly today = input(formatDateOnly(new Date()));
+  /** Parent command after range changes: scroll marker or range start into view. */
+  readonly scrollRequest = input<{ target: 'today' | 'start'; nonce: number } | null>(null);
   /** TZ-PRODUCTION-314 — which orders show work-type children. */
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
@@ -746,6 +776,10 @@ export class GanttBarsComponent {
   readonly orderMetaCommit = output<GanttOrderMetaCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly ganttScroll = viewChild<ElementRef<HTMLElement>>('ganttScroll');
+  private readonly todayMarker = viewChild<ElementRef<HTMLElement>>('todayMarker');
   protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
   protected readonly metaPriorities = ORDER_META_PRIORITIES;
   protected readonly priorityDraft = signal<OrderPriority>('normal');
@@ -763,6 +797,17 @@ export class GanttBarsComponent {
       if (!m) return;
       this.priorityDraft.set(m.priority);
       this.plannedDraft.set(m.plannedDate);
+    });
+    effect(() => {
+      const request = this.scrollRequest();
+      if (!request) return;
+      afterNextRender(
+        () => {
+          if (request.target === 'today') this.scrollToToday();
+          else this.scrollToStart();
+        },
+        { injector: this.injector },
+      );
     });
   }
 
@@ -791,9 +836,15 @@ export class GanttBarsComponent {
     Math.max(1, dayDiff(this.rangeStart(), this.rangeEnd())),
   );
 
-  protected readonly pxPerDay = computed(() => GANTT_PX_PER_DAY[this.zoom()]);
+  private readonly timelineViewportWidth = signal(0);
 
-  protected readonly timelineMinWidth = computed(() => this.totalDays() * this.pxPerDay() + 224);
+  protected readonly pxPerDay = computed(() =>
+    calculateGanttPxPerDay(this.zoom(), this.totalDays(), this.timelineViewportWidth()),
+  );
+
+  protected readonly timelineMinWidth = computed(
+    () => this.totalDays() * this.pxPerDay() + GANTT_LABEL_COL_PX,
+  );
 
   protected readonly dayGrid = computed(() => {
     const total = this.totalDays();
@@ -876,6 +927,55 @@ export class GanttBarsComponent {
     const t = dayDiff(this.rangeStart(), this.today());
     return Math.max(0, Math.min(this.totalDays(), t)) * this.pxPerDay();
   });
+
+  ngAfterViewInit(): void {
+    const scroll = this.ganttScroll()?.nativeElement;
+    if (!scroll) return;
+    const updateViewportWidth = (): void => {
+      this.timelineViewportWidth.set(Math.max(0, scroll.clientWidth - GANTT_LABEL_COL_PX));
+    };
+    if (typeof ResizeObserver === 'undefined') {
+      updateViewportWidth();
+      return;
+    }
+    const observer = new ResizeObserver(updateViewportWidth);
+    observer.observe(scroll);
+    updateViewportWidth();
+    this.destroyRef.onDestroy(() => observer.disconnect());
+  }
+
+  /** Scroll the marker into the visible timeline viewport (Сегодня). */
+  scrollToToday(): void {
+    this.scrollToMarker(this.todayMarker()?.nativeElement ?? null);
+  }
+
+  /** Reveal the beginning of the fitted bars range. */
+  scrollToStart(): void {
+    const scroll = this.ganttScroll()?.nativeElement;
+    if (!scroll) return;
+    if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left: 0, behavior: 'auto' });
+    else scroll.scrollLeft = 0;
+  }
+
+  private scrollToMarker(marker: HTMLElement | null): void {
+    const scroll = this.ganttScroll()?.nativeElement;
+    if (!scroll || !marker) return;
+    const inset = 16;
+    const scrollRect = scroll.getBoundingClientRect();
+    const markerRect = marker.getBoundingClientRect();
+    const nextLeft = scroll.scrollLeft + markerRect.left - scrollRect.left - inset;
+    const nextRight = scroll.scrollLeft + markerRect.right - scrollRect.right + inset;
+    const maxScroll = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
+    const target =
+      markerRect.left < scrollRect.left + inset
+        ? nextLeft
+        : markerRect.right > scrollRect.right - inset
+          ? nextRight
+          : scroll.scrollLeft;
+    const left = Math.max(0, Math.min(maxScroll, target));
+    if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left, behavior: 'auto' });
+    else scroll.scrollLeft = left;
+  }
 
   /** Child work bars only — summary has no right-resize (duration derived). */
   protected canResizeBar(bar: GanttBar): boolean {

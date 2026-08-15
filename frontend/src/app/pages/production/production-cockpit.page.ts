@@ -115,6 +115,7 @@ const CHROME_OWNER = 'production-cockpit';
               [rangeStart]="rangeStart()"
               [rangeEnd]="rangeEnd()"
               [zoom]="ctx.zoom()"
+              [scrollRequest]="scrollRequest()"
               [warnings]="facade.state().warnings"
               [usedTodayFallback]="usedTodayFallback()"
               [readOnly]="readOnly()"
@@ -229,7 +230,7 @@ const CHROME_OWNER = 'production-cockpit';
                   data-test="gantt-fit"
                   (click)="onFitHorizon()"
                 >
-                  Весь горизонт
+                  Вместить сроки
                 </button>
               </div>
             </aside>
@@ -347,6 +348,12 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
+  /** Monotonic command for the Gantt to scroll after a range change. */
+  protected readonly scrollRequest = signal<{
+    target: 'today' | 'start';
+    nonce: number;
+  } | null>(null);
+  private scrollNonce = 0;
 
   /** Shell tool state; buttons live in app-chrome-rail (TZ-UX-323). */
   protected readonly leftTool = signal<ProductionLeftTool>(null);
@@ -679,11 +686,18 @@ export class ProductionCockpitPage implements OnInit {
     const today = formatDateOnly(new Date());
     if (today < this.rangeStart()) this.rangeStart.set(addDays(today, -2));
     if (today > this.rangeEnd()) this.rangeEnd.set(addDays(today, 14));
+    this.requestTimelineScroll('today');
   }
 
-  /** Re-fit timeline to current bars (same logic as after load). */
+  /** Re-fit current bars into a focused week-density range. */
   protected async onFitHorizon(): Promise<void> {
-    await this.applyFilteredActive();
+    this.ctx.setZoom('week');
+    await this.applyFilteredActive(true);
+    this.requestTimelineScroll('start');
+  }
+
+  private requestTimelineScroll(target: 'today' | 'start'): void {
+    this.scrollRequest.set({ target, nonce: ++this.scrollNonce });
   }
 
   private async bootstrap(): Promise<void> {
@@ -734,7 +748,7 @@ export class ProductionCockpitPage implements OnInit {
     await this.applyFilteredActive();
   }
 
-  private async applyFilteredActive(): Promise<void> {
+  private async applyFilteredActive(fitRange = false): Promise<void> {
     // Same filter function as rail — never hardcode activeOnly:true here.
     const filtered = filterOrdersForRail(this.orders(), {
       activeOnly: this.ctx.activeOnly(),
@@ -744,10 +758,10 @@ export class ProductionCockpitPage implements OnInit {
       dateFrom: this.ctx.dateFrom(),
       dateTo: this.ctx.dateTo(),
     });
-    await this.applyBars(filtered);
+    await this.applyBars(filtered, fitRange);
   }
 
-  private async applyBars(target: Order[]): Promise<void> {
+  private async applyBars(target: Order[], fitRange = false): Promise<void> {
     const built = await this.facade.loadBarsForOrders(target);
     this.bars.set(built);
     this.usedTodayFallback.set(built.some((b) => b.usedFallbackToday));
@@ -763,10 +777,10 @@ export class ProductionCockpitPage implements OnInit {
       const e = b.noTerm ? b.startDate : b.endDate;
       if (e > end) end = e;
     }
-    const paddedStart = minDate(start, defaultRangeStart());
-    const paddedEnd = maxDate(addDays(end, 1), defaultRangeEnd());
-    this.rangeStart.set(paddedStart);
-    this.rangeEnd.set(paddedEnd);
+    const paddedStart = addDays(start, -1);
+    const paddedEnd = addDays(end, 1);
+    this.rangeStart.set(fitRange ? paddedStart : minDate(paddedStart, defaultRangeStart()));
+    this.rangeEnd.set(fitRange ? paddedEnd : maxDate(paddedEnd, defaultRangeEnd()));
   }
 }
 

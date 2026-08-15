@@ -196,6 +196,24 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     ).not.toBeNull();
   });
 
+  it('TZ-PRODUCTION-324: renames fit action and issues Today scroll command', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const page = fixture.componentInstance as unknown as {
+      toggleRightTool: (tool: 'scale') => void;
+      onToday: () => void;
+      scrollRequest: () => { target: string; nonce: number } | null;
+    };
+
+    page.toggleRightTool('scale');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-fit"]')?.textContent).toContain(
+      'Вместить сроки',
+    );
+
+    page.onToday();
+    expect(page.scrollRequest()).toEqual(expect.objectContaining({ target: 'today' }));
+  });
+
   it('keeps chrome-projected tools mutually exclusive', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     fixture.detectChanges();

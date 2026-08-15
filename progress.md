@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-324 DONE — Gantt fit-width / «Сегодня»
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN 324 closed; deploy НЕ
+**Что:** Неделя измеряет ширину timeline через ResizeObserver и считает fit-density с readable min 12px/day; «Вместить сроки» сужает range до padded min…max баров, включает Неделю и скроллит начало; «Сегодня» держит today в range и скроллит красный маркер в viewport.
+**Gates:** FE tsc PASS; FE jest gantt-bars + production-cockpit **43 PASS**; frontend lint PASS (18 existing architecture warnings); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-324.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-324-gantt-zoom-fit.lock`
+**Dep:** 323
+
 ## [2026-08-15] — TZ-PRODUCTION-323 DONE — one Gantt meta + full-width cascade panels
 **Исполнитель:** executor-grok-4.6
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321–323); deploy НЕ

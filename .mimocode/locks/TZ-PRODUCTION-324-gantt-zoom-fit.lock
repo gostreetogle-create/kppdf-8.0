@@ -1,0 +1,8 @@
+LOCK_MARKER
+TZ: TZ-PRODUCTION-324
+status: DONE
+closed_at: 2026-08-15
+closed_by: Buffy
+archive: tasks/_archive/2026-08/TZ-PRODUCTION-324.done.md
+verification: frontend tsc PASS; targeted Jest 43/43 PASS; lint PASS with existing warnings
+scope: frontend Gantt zoom fit, Вместить сроки, Сегодня marker scroll

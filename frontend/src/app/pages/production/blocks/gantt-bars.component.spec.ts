@@ -4,6 +4,7 @@ import {
   GanttBarsComponent,
   GANTT_LABEL_COL_PX,
   GANTT_PX_PER_DAY,
+  calculateGanttPxPerDay,
   snapEstimateDaysFromDelta,
   snapMoveDeltaDays,
 } from './gantt-bars.component';
@@ -304,6 +305,12 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-today-marker"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-empty"]')).toBeTruthy();
     expect(el.querySelectorAll('[data-test="gantt-placeholder-row"]').length).toBeGreaterThan(0);
+  });
+
+  it('fits week density to the measured timeline width without shrinking day mode', () => {
+    expect(calculateGanttPxPerDay('week', 14, 700)).toBe(50);
+    expect(calculateGanttPxPerDay('week', 100, 700)).toBe(GANTT_PX_PER_DAY.week);
+    expect(calculateGanttPxPerDay('day', 14, 700)).toBe(GANTT_PX_PER_DAY.day);
   });
 
   it('day vs week zoom changes px density and scale hint', () => {

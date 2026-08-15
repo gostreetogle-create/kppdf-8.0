@@ -1,0 +1,19 @@
+# WAVE-PRODUCTION-COCKPIT-HARDEN
+
+**PO:** 2026-08-15 — после CASCADE довести Цех/Гант до 98–99.  
+**Audit:** `docs/audits/2026-08-15-production-cockpit-harden-audit.md`  
+**Prompt:** `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`  
+**Master checklist:** `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-HARDEN.md`
+
+| # | TZ | Status | Notes |
+|---|-----|--------|-------|
+| 0 | Docs freeze in master checklist | READY | score baseline |
+| 1 | `TZ-PRODUCTION-324-gantt-zoom-fit` | DONE | fit-width week; rename horizon; scroll today |
+| 2 | `TZ-PRODUCTION-325-orders-rail-counterparties` | READY | kill pips; заказчики filter |
+| 3 | `TZ-PRODUCTION-326-gantt-write-sync` | READY after 325 | plannedDate/roles/reload integrity |
+| 4 | `TZ-PRODUCTION-327-cockpit-smart-dumb` | READY after 326 | light architecture pass |
+| 5 | `TZ-PRODUCTION-328-cockpit-docs-closeout` | READY after 327 | page.md + SoT + score 98–99 |
+
+**Order:** strict serial 324→328. No deploy/wipe.
+
+**Out:** fact production; new BE endpoints unless 326 proves a real API bug (then STOP + ask PO).

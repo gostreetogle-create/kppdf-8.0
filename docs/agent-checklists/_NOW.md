@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T18:00:00Z
+updated_at: 2026-08-15T21:35:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty)_
+_(empty — TZ-PRODUCTION-324 archived; next claim is TZ-PRODUCTION-325)_
 
 ## Queue hygiene (not live)
 
@@ -62,5 +62,5 @@ _(empty)_
 
 ## HEAD / queue
 
-- Queue: **empty** after WAVE-PRODUCTION-GANTT-CASCADE (321–323). Готово предложить деплой.
+- Queue: **325 next**; claim only after 324 targeted commit + push.
 - Deploy app: НЕ — не автодеплой
