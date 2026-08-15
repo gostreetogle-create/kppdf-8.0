@@ -28,6 +28,7 @@ import {
   ArrowRight,
 } from 'lucide-angular';
 import { AppHistoryStore } from '../shared/navigation/app-history.store';
+import { PiChromeToolsService } from '../shared/chrome/pi-chrome-tools.service';
 
 /**
  * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
@@ -433,6 +434,7 @@ export function matchActiveCategoryId(
         <!--
           TZ-UX-321-FIX: two transparent chrome rails anchored to .pi-page-frame
           (position:relative). ← left rail, → right rail. Visible ≥1680px only.
+          TZ-UX-322: page tools under history via PiChromeToolsService.
         -->
         <aside
           class="app-chrome-rail app-chrome-rail-left"
@@ -452,6 +454,21 @@ export function matchActiveCategoryId(
           >
             <lucide-angular [img]="backIcon" [size]="13" aria-hidden="true" />
           </button>
+          @for (tool of chromeTools.leftTools(); track tool.id) {
+            <button
+              type="button"
+              class="app-nav-rail-button pi-focus-ring"
+              [class.is-active]="!!tool.active"
+              [attr.data-test]="'chrome-tool-' + tool.id"
+              [attr.aria-label]="tool.ariaLabel"
+              [attr.title]="tool.title"
+              [attr.aria-expanded]="tool.ariaExpanded ?? null"
+              [attr.aria-controls]="tool.ariaControls ?? null"
+              (click)="tool.onClick($event)"
+            >
+              <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+            </button>
+          }
         </aside>
         <aside
           class="app-chrome-rail app-chrome-rail-right"
@@ -471,6 +488,21 @@ export function matchActiveCategoryId(
           >
             <lucide-angular [img]="forwardIcon" [size]="13" aria-hidden="true" />
           </button>
+          @for (tool of chromeTools.rightTools(); track tool.id) {
+            <button
+              type="button"
+              class="app-nav-rail-button pi-focus-ring"
+              [class.is-active]="!!tool.active"
+              [attr.data-test]="'chrome-tool-' + tool.id"
+              [attr.aria-label]="tool.ariaLabel"
+              [attr.title]="tool.title"
+              [attr.aria-expanded]="tool.ariaExpanded ?? null"
+              [attr.aria-controls]="tool.ariaControls ?? null"
+              (click)="tool.onClick($event)"
+            >
+              <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
+            </button>
+          }
         </aside>
 
         <main
@@ -533,7 +565,8 @@ export function matchActiveCategoryId(
       cursor: pointer;
       transition: background-color 120ms ease;
     }
-    .app-nav-rail-button:hover:not(:disabled) {
+    .app-nav-rail-button:hover:not(:disabled),
+    .app-nav-rail-button.is-active {
       background: var(--color-paper-2);
     }
     .app-nav-rail-button:disabled {
@@ -554,6 +587,7 @@ export class AppLayoutComponent {
   protected readonly backIcon = ArrowLeft;
   protected readonly forwardIcon = ArrowRight;
   protected readonly appHistory = inject(AppHistoryStore);
+  protected readonly chromeTools = inject(PiChromeToolsService);
 
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);

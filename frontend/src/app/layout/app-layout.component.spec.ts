@@ -2,17 +2,20 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
+import { Filter, List } from 'lucide-angular';
 
 import { AppLayoutComponent } from './app-layout.component';
 import { AppHistoryStore } from '../shared/navigation/app-history.store';
+import { PiChromeToolsService } from '../shared/chrome/pi-chrome-tools.service';
 import { AuthService } from '../core/auth.service';
 import { CapabilitiesService } from '../core/capabilities/capabilities.service';
 import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../shared/ui/toast/pi-toast.service';
 import { API_BASE_URL } from '../core/api.tokens';
 
-describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX chrome rails)', () => {
+describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 chrome rails)', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
+  let chromeTools: PiChromeToolsService;
 
   const back = jest.fn();
   const forward = jest.fn();
@@ -54,12 +57,16 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX chrome rails)', () => {
             forward,
           },
         },
+        PiChromeToolsService,
       ],
     })
       .overrideComponent(AppLayoutComponent, {
         set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
+    chromeTools = TestBed.inject(PiChromeToolsService);
+    chromeTools.clear('production-cockpit');
+    chromeTools.clear('spec-owner');
     fixture = TestBed.createComponent(AppLayoutComponent);
     fixture.detectChanges();
   });
@@ -137,5 +144,70 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX chrome rails)', () => {
     expect(source).not.toContain('right: 14px');
     expect(source).toContain('@media (min-width: 1680px)');
     expect(source).toContain('display: flex');
+  });
+
+  it('TZ-UX-322: setTools renders chrome-tool buttons under history; clear removes them', () => {
+    const onOrders = jest.fn();
+    const onCard = jest.fn();
+
+    expect(fixture.nativeElement.querySelector('[data-test="chrome-tool-orders"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="chrome-tool-card"]')).toBeNull();
+
+    chromeTools.setTools('spec-owner', [
+      {
+        id: 'orders',
+        side: 'left',
+        ariaLabel: 'Заказы',
+        title: 'Заказы',
+        icon: List,
+        onClick: onOrders,
+        order: 1,
+      },
+      {
+        id: 'card',
+        side: 'right',
+        ariaLabel: 'Карточка',
+        title: 'Карточка',
+        icon: Filter,
+        active: true,
+        ariaExpanded: true,
+        ariaControls: 'flyout-card',
+        onClick: onCard,
+        order: 1,
+      },
+    ]);
+    fixture.detectChanges();
+
+    const ordersBtn = fixture.nativeElement.querySelector(
+      '[data-test="chrome-tool-orders"]',
+    ) as HTMLButtonElement | null;
+    const cardBtn = fixture.nativeElement.querySelector(
+      '[data-test="chrome-tool-card"]',
+    ) as HTMLButtonElement | null;
+
+    expect(ordersBtn).toBeTruthy();
+    expect(cardBtn).toBeTruthy();
+    expect(leftRail()!.contains(ordersBtn!)).toBe(true);
+    expect(rightRail()!.contains(cardBtn!)).toBe(true);
+    expect(ordersBtn!.getAttribute('aria-label')).toBe('Заказы');
+    expect(cardBtn!.getAttribute('aria-expanded')).toBe('true');
+    expect(cardBtn!.classList.contains('is-active')).toBe(true);
+
+    // History arrows remain.
+    expect(backBtn()).toBeTruthy();
+    expect(forwardBtn()).toBeTruthy();
+
+    ordersBtn!.click();
+    expect(onOrders).toHaveBeenCalledTimes(1);
+    cardBtn!.click();
+    expect(onCard).toHaveBeenCalledTimes(1);
+
+    chromeTools.clear('spec-owner');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="chrome-tool-orders"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="chrome-tool-card"]')).toBeNull();
+    expect(backBtn()).toBeTruthy();
+    expect(forwardBtn()).toBeTruthy();
   });
 });

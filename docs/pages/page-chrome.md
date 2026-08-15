@@ -90,9 +90,26 @@ Group Chip Workspace **не** дублирует раздел над chips — �
   ← только в left, → только в right. **TZ-UX-321-FIX READY FOR REVIEW**
   (2026-08-15) — repair после premature closeout UX-321 (один left rail +
   `left:64px` без relative parent). TZ-UX-320 floating superseded.
-  Page-tools (фильтр и т.п.) → successor TZ-UX-322 (не смешивать).
+  Page-tools → **TZ-UX-322** (`PiChromeToolsService`, см. ниже).
 - `/login` никогда не подставляется предыдущим URL — глобальный ← не выкидывает на вход.
 - `AppHistoryStore` аддитивен к `CatalogReturnStore` (API не менялся).
+
+## Page tools в chrome-rail (TZ-UX-322)
+
+Страницы проецируют icon-tools в `app-chrome-rail-left/right` через
+`PiChromeToolsService` (`frontend/src/app/shared/chrome/`):
+
+| API | Роль |
+|-----|------|
+| `setTools(ownerId, items)` | Один write-path: заменить список владельца |
+| `clear(ownerId)` | Снять tools при destroy страницы |
+| `leftTools` / `rightTools` | Merged computed для AppLayout |
+
+- Под ← / → — кнопки `data-test="chrome-tool-{id}"`, RU `aria-label`/`title`.
+- Visual language = `app-nav-rail-button` (+ `.is-active`).
+- Flyout/панели остаются у страницы (overlay) — в chrome только кнопки.
+- Пустой список = только history (страницы без setTools без изменений).
+- Первый consumer: `/production` → **TZ-UX-323** (Gantt tools → chrome; удалить local 48px rails).
 
 ## См. также
 
@@ -101,4 +118,4 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-UX-321-FIX)._
+_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-UX-322 page-tools API)._

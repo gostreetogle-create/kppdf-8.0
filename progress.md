@@ -1,3 +1,34 @@
+## [2026-08-15] — TZ-UX-322 DONE — Chrome page-tools API
+**Исполнитель:** Buffy continuous executor
+**Статус:** DONE; app shell page-tools projection; deploy НЕ
+**Что:** `PiChromeToolsService` setTools/clear; AppLayout left/right tools under ←/→ (`chrome-tool-{id}`); pages without setTools unchanged; production → TZ-UX-323.
+**Gates:** FE tsc PASS; Jest app-layout+chrome 8/8 PASS; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-322.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-322.md`
+**Lock:** `.mimocode/locks/TZ-UX-322-chrome-page-tools-api.lock`
+**Successor:** `TZ-UX-323-gantt-tools-into-chrome-rail.md` (same wave).
+
+## [2026-08-15] — TZ-UX-PHOTO-301 DONE — visible photo upload progress
+**Исполнитель:** Buffy (impl + closeout)
+**Статус:** DONE; FE photo upload progress; deploy НЕ
+**Что:** Progress bar + RU status on dropzone / product / material / QuickCreate; `uploadWithProgress` (reportProgress); legacy `upload()` intact; indeterminate when % unknown.
+**Gates:** FE tsc PASS; Jest dropzone+forms 88/88 PASS; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-PHOTO-301.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-PHOTO-301.md`
+**Lock:** `.mimocode/locks/TZ-UX-PHOTO-301-upload-progress.lock`
+**known_limitation:** точный % зависит от браузера/прокси; иначе indeterminate bar.
+**Successor:** none (UX feedback only).
+
+## [2026-08-15] — TZ-PRODUCTION-STUDIO-A DONE — Gantt studio chrome contract
+**Исполнитель:** Cursor (docs closeout)
+**Статус:** DONE; docs-only; deploy НЕ; product Wave B НЕ стартовал
+**Что:** SoT `production-gantt-studio-spec.md`; page/readiness/IA Цех; park 308–310 BLOCKED; Заказы≠Фильтры split; score 15/99.
+**Gates:** git diff --check PASS; frontend/backend product diff отсутствует.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-STUDIO-A.done.md`
+**Checklist:** `docs/agent-checklists/TZ-PRODUCTION-STUDIO-A.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-STUDIO-A-spec.lock`
+**Successor:** `PROMPT-PRODUCTION-STUDIO-CONTINUOUS` → TZ-B shell (явная выдача PO).
+
 ## [2026-08-15] — TZ-ORDERS-HUB-304 DONE — readiness / warehouse / shipping stub
 **Исполнитель:** Buffy (impl + closeout)
 **Статус:** DONE; frontend orders expand readiness/warehouse/shipping; deploy НЕ

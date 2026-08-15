@@ -12,7 +12,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
-| `(app shell)` | page-chrome.md | **UX-317** ←→ history; **UX-320** interim floating; **UX-321** premature left-rail; **UX-321-FIX READY** frame-relative left/right rails; **UX-322 park** page-tools into rail |
+| `(app shell)` | page-chrome.md | **UX-317** ←→ history; **UX-320** interim floating; **UX-321** / **UX-321-FIX** frame rails; **UX-322 DONE** chrome page-tools API; **UX-323 READY** Gantt tools→chrome (`WAVE-UX-CHROME-GANTT-TOOLS`) |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
@@ -24,13 +24,13 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10; **CATALOG-373 DONE** grid + filters-rail (parity products, `pi-materials-view-mode`) |
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
-| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush |
+| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **UX-DIALOG-306** picker qty |
 | `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail) |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
-| `/work-types` | work-types.page.md | WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
+| `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
-| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; parked **308/309/310**; drawings **DRAWINGS-301**; 304–307 plug-ins later; **ORDERS-HUB-303 DONE** `?orderId=` |
+| `/production` | production-cockpit.page.md | **300** Lego; **303 DONE**; **303.1 READY** hotfix+`?q=`; **STUDIO-A** spec; **STUDIO-B/C/D** + `PROMPT-PRODUCTION-STUDIO-CONTINUOUS` → 98–99; parked **308/309/310 BLOCKED**; drawings **DRAWINGS-301**; 304–307 later; **ORDERS-HUB-303 DONE** `?orderId=` |
 | `/orders` | orders.page.md | ORDERS-*; **303.1** deep-link `?q=`; **ORDERS-HUB-301** DONE; **HUB-302 DONE**; **HUB-303 DONE** supply/production/docs expand; **HUB-304 DONE** readiness/warehouse/shipping stub |
 
 **Catalog audits / backlog:**  
@@ -41,6 +41,8 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 [`_backlog/catalog/README.md`](../../tasks/_backlog/catalog/README.md) (316/317/319 + Wave 2) ·  
 Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVIEW.md)
 
+
+| `/production` ↔ `/work-types` | `production-gantt-studio-spec.md` | **WAVE-PRODUCTION-STUDIO-CHROME** A→D; prompt `PROMPT-PRODUCTION-STUDIO-CONTINUOUS`; master checklist resume; target 98–99 |
 
 ## Deals / orgs / lifecycle stubs
 
