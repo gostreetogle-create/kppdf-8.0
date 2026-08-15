@@ -31,7 +31,12 @@ import {
   ProductModulePhotosService,
 } from '../../shared/services/pi-product-module-photos.service';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
-import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
+import {
+  ProductBomPanelComponent,
+  type ProductBomEditRequest,
+} from '../../shared/ui/composition/product-bom-panel.component';
+import { MaterialsService } from '../../shared/services/materials.service';
+import { ProductsService } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
@@ -246,6 +251,7 @@ interface ModuleCostPreview {
                       [value]="formatRuble(cp.laborCost)"
                       caption="Часы × ставка видов работ"
                       [mono]="true"
+                      variant="emphasis"
                       dataTest="module-cost-labor"
                     />
                   </app-pi-fact-stack>
@@ -304,6 +310,8 @@ interface ModuleCostPreview {
           <app-product-bom-panel
             [productId]="m._id"
             rootKind="module"
+            [editInParent]="true"
+            (editRequested)="onBomEditRequested($event)"
             (changed)="onBomChanged()"
             data-test="module-composition-panel"
           />
@@ -321,6 +329,8 @@ export class ModuleDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
+  private readonly materialsSvc = inject(MaterialsService);
+  private readonly productsSvc = inject(ProductsService);
   private readonly photosSvc = inject(ProductModulePhotosService);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly bomPanel = viewChild(ProductBomPanelComponent);
@@ -408,6 +418,66 @@ export class ModuleDetailPage {
   protected onBomChanged(): void {
     this.moduleRes.reload();
     this.costPreviewRes.reload();
+  }
+
+  protected onBomEditRequested(request: ProductBomEditRequest): void {
+    const afterClose = (): void => {
+      this.moduleRes.reload();
+      this.costPreviewRes.reload();
+    };
+
+    if (request.kind === 'module') {
+      this.modulesSvc.findById(request.id).subscribe((res) => {
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
+          return;
+        }
+        const ref = this.dialog.open(ModuleFormDialogComponent, {
+          data: res.data,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce(ref, this.injector, afterClose);
+      });
+      return;
+    }
+
+    if (request.kind === 'material') {
+      this.materialsSvc.findById(request.id).subscribe((res) => {
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
+          return;
+        }
+        void import('../materials/material-form-dialog.component')
+          .then(({ MaterialFormDialogComponent }) => {
+            const ref = this.dialog.open(MaterialFormDialogComponent, {
+              data: res.data,
+              width: 'lg',
+              parentDestroyRef: this.destroyRef,
+            });
+            onDialogCloseOnce(ref, this.injector, afterClose);
+          })
+          .catch(() => this.toast.error('Не удалось открыть редактирование материала.'));
+      });
+      return;
+    }
+
+    this.productsSvc.findById(request.id).subscribe((res) => {
+      if (!res.ok || !res.data) {
+        this.toast.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
+        return;
+      }
+      void import('../products/product-form-dialog.component')
+        .then(({ ProductFormDialogComponent }) => {
+          const ref = this.dialog.open(ProductFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+            parentDestroyRef: this.destroyRef,
+          });
+          onDialogCloseOnce(ref, this.injector, afterClose);
+        })
+        .catch(() => this.toast.error('Не удалось открыть редактирование изделия.'));
+    });
   }
 
   protected dimensionsLabel(m: ProductModule): string {
