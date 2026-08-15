@@ -48,9 +48,10 @@
 - Feature: right-edge resize → patchEstimateDays → reload bars
 - Archive: tasks/_archive/2026-08/TZ-PRODUCTION-311.done.md
 - Lock: .mimocode/locks/TZ-PRODUCTION-311-gantt-estimate-resize.lock
-- Commit SHA: _(filled after commit)_
+- Commit SHA: 85329247650db938cb80039b458c3e05cb363a7a
 - Team Room: unavailable (task not synced)
 - Out: left/move, catalog writes, 304–307
+- Gates: FE tsc PASS; jest gantt-bars+cockpit 17 PASS
 
 ## Closeout
 
