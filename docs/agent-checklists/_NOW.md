@@ -5,19 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T23:55:00+03:00
+updated_at: 2026-08-15T22:10:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — WAVE-PRODUCTION-COCKPIT-HARDEN complete; queue empty)_
+_(empty — 329 archived; next TZ-PRODUCTION-330)_
 
 ## NEXT (PO paste prompt)
 
-**WAVE-PRODUCTION-COCKPIT-HARDEN** → 98–99  
-Prompt: `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-HARDEN.md`  
-Master: `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-HARDEN.md`  
-Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO command (do not deploy).
+**WAVE-PRODUCTION-COCKPIT-POLISH** next: **330**
+Prompt: `tasks/_backlog/PROMPT-PRODUCTION-COCKPIT-POLISH.md`
+Master: `docs/agent-checklists/WAVE-PRODUCTION-COCKPIT-POLISH.md`
+
+_(HARDEN 324–328 DONE 98/100; POLISH 329 DONE)_
 
 ## Queue hygiene (not live)
 
@@ -28,6 +29,10 @@ Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO 
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+### TZ-PRODUCTION-329 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-329.done.md`; Filters Counterparty select; tabs removed; Gantt follows select.
 
 ### TZ-PRODUCTION-328 — DONE 2026-08-15
 
@@ -82,5 +87,5 @@ Queue: **empty** — 324→328 complete; ready to propose deploy on explicit PO 
 
 ## HEAD / queue
 
-- Queue: **empty**; WAVE DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **TZ-PRODUCTION-330 next**; 329 DONE. Deploy: НЕ.
 - Deploy app: НЕ — не автодеплой

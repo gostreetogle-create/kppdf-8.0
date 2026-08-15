@@ -253,12 +253,73 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
 
     ctx.setDateFrom(null);
     ctx.setDateTo(null);
-    ctx.setRailMode('counterparties');
     ctx.setCounterpartyFilter('cp2');
     await page.onFiltersChanged();
     expect((facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[]).map((o) => o._id)).toEqual([
       'o2',
     ]);
+  });
+
+  it('TZ-PRODUCTION-329: Counterparty select filters Gantt and reset clears', async () => {
+    const filteredOrders: Order[] = [
+      {
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'confirmed',
+        plannedDate: '2026-08-10',
+        counterpartyId: { _id: 'cp1', name: 'ООО Стол' },
+        items: [],
+      },
+      {
+        _id: 'o2',
+        number: 'ORD-2',
+        status: 'confirmed',
+        plannedDate: '2026-08-11',
+        counterpartyId: { _id: 'cp2', name: 'ИП Лес' },
+        items: [],
+      },
+    ];
+    facade.loadOrders.mockImplementation(async () => filteredOrders);
+    facade.loadBarsForOrders.mockImplementation(async (_target: Order[]) => []);
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const { ctx } = await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    const page = fixture.componentInstance as unknown as {
+      onFiltersChanged: () => Promise<void>;
+      onResetFilters: () => Promise<void>;
+      toggleLeftTool: (tool: 'filters') => void;
+    };
+
+    page.toggleLeftTool('filters');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="orders-rail-mode-counterparties"]'),
+    ).toBeNull();
+    const select = fixture.nativeElement.querySelector(
+      '[data-test="orders-rail-counterparty"]',
+    ) as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    select.value = 'cp1';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    await page.onFiltersChanged();
+    expect(ctx.counterpartyFilter()).toBe('cp1');
+    expect(ctx.filtersDirty()).toBe(true);
+    expect((facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[]).map((o) => o._id)).toEqual([
+      'o1',
+    ]);
+
+    const chrome = TestBed.inject(PiChromeToolsService);
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.active).toBe(true);
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.title).toBe('Фильтры изменены');
+
+    await page.onResetFilters();
+    fixture.detectChanges();
+    expect(ctx.counterpartyFilter()).toBeNull();
+    expect(ctx.filtersDirty()).toBe(false);
+    expect(
+      (facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[]).map((o) => o._id).sort(),
+    ).toEqual(['o1', 'o2']);
   });
 
   it('keeps chrome-projected tools mutually exclusive', () => {

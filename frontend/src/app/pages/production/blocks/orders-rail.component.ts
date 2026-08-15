@@ -70,34 +70,14 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
       } @else {
         @if (showList()) {
           <div class="p-3 space-y-2 shrink-0">
-            <div class="flex gap-1" role="tablist" aria-label="Режим списка заказов">
-              <button
-                type="button"
-                class="pi-btn pi-btn-ghost pi-focus-ring flex-1 !text-xs"
-                [class.pi-btn-ink]="!counterpartyMode()"
-                (click)="setRailMode('orders')"
-                data-test="orders-rail-mode-orders"
-              >
-                Заказы
-              </button>
-              <button
-                type="button"
-                class="pi-btn pi-btn-ghost pi-focus-ring flex-1 !text-xs"
-                [class.pi-btn-ink]="counterpartyMode()"
-                (click)="setRailMode('counterparties')"
-                data-test="orders-rail-mode-counterparties"
-              >
-                Заказчики
-              </button>
-            </div>
             <label class="text-xs font-medium text-muted-foreground" for="prod-order-search">
-              {{ counterpartyMode() ? 'Заказчики' : 'Заказы' }}
+              Заказы
             </label>
             <input
               id="prod-order-search"
               type="search"
               class="pi-input w-full text-sm"
-              [placeholder]="counterpartyMode() ? 'Поиск по имени…' : 'Поиск по номеру…'"
+              placeholder="Поиск по номеру…"
               [value]="ctx.search()"
               (input)="onSearch($event)"
               data-test="orders-rail-search"
@@ -107,6 +87,20 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
         @if (showFilters()) {
           <div class="p-3 space-y-2 shrink-0">
             <p class="eyebrow m-0">Фильтры</p>
+            <label class="block text-[11px] text-muted-foreground">
+              Заказчик
+              <select
+                class="pi-input w-full mt-0.5 text-xs"
+                [value]="ctx.counterpartyFilter() ?? ''"
+                (change)="onCounterpartyChange($event)"
+                data-test="orders-rail-counterparty"
+              >
+                <option value="">Все заказчики</option>
+                @for (counterparty of counterparties(); track counterparty.id) {
+                  <option [value]="counterparty.id">{{ counterparty.name }}</option>
+                }
+              </select>
+            </label>
             <label class="flex items-center gap-2 text-xs text-ink cursor-pointer">
               <input
                 type="checkbox"
@@ -155,54 +149,19 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
                 />
               </label>
             </div>
+            <button
+              type="button"
+              class="pi-btn pi-focus-ring w-full"
+              [class.pi-btn-ink]="ctx.filtersDirty()"
+              [class.pi-btn-ghost]="!ctx.filtersDirty()"
+              data-test="production-reset-filters"
+              (click)="onResetFilters()"
+            >
+              Сброс фильтров
+            </button>
           </div>
         }
-        @if (showList() && counterpartyMode()) {
-          <ul
-            class="flex-1 overflow-y-auto min-h-0"
-            role="listbox"
-            aria-label="Список заказчиков"
-            data-test="orders-rail-counterparties"
-          >
-            <li class="px-3 pb-1">
-              <button
-                type="button"
-                class="w-full text-left text-xs px-2 py-1.5 rounded-sm border hairline pi-focus-ring"
-                [class.bg-paper-2]="ctx.counterpartyFilter() === null"
-                (click)="onCounterpartySelect(null)"
-                data-test="orders-rail-counterparty-all"
-              >
-                Все заказчики
-              </button>
-            </li>
-            @for (counterparty of counterparties(); track counterparty.id) {
-              <li>
-                <button
-                  type="button"
-                  role="option"
-                  class="w-full text-left px-3 py-2.5 pi-focus-ring border-b hairline hover:bg-paper-2 transition-colors"
-                  [class.bg-paper-2]="ctx.counterpartyFilter() === counterparty.id"
-                  [attr.aria-selected]="ctx.counterpartyFilter() === counterparty.id"
-                  (click)="onCounterpartySelect(counterparty.id)"
-                  [attr.data-test]="'orders-rail-counterparty-' + counterparty.id"
-                >
-                  {{ counterparty.name }}
-                  <span class="block text-[10px] text-muted-foreground"
-                    >{{ counterparty.count }} заказов</span
-                  >
-                </button>
-              </li>
-            } @empty {
-              <li
-                class="p-4 text-sm text-muted-foreground"
-                data-test="orders-rail-counterparty-empty"
-              >
-                Нет заказчиков под текущие фильтры.
-              </li>
-            }
-          </ul>
-        }
-        @if (showList() && !counterpartyMode()) {
+        @if (showList()) {
           <ul class="flex-1 overflow-y-auto min-h-0" role="listbox" aria-label="Список заказов">
             <li class="px-3 pb-1">
               <button
@@ -277,7 +236,6 @@ export class OrdersRailComponent {
 
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly priorityOpts = PRIORITY_OPTS;
-  protected readonly counterpartyMode = computed(() => this.ctx.railMode() === 'counterparties');
 
   protected readonly visible = computed(() =>
     filterOrdersForRail(this.orders(), {
@@ -288,7 +246,6 @@ export class OrdersRailComponent {
       dateFrom: this.ctx.dateFrom(),
       dateTo: this.ctx.dateTo(),
       counterpartyId: this.ctx.counterpartyFilter(),
-      searchByCounterparty: this.ctx.railMode() === 'counterparties',
     }),
   );
 
@@ -315,10 +272,7 @@ export class OrdersRailComponent {
         });
       }
     }
-    const q = this.ctx.search().trim().toLowerCase();
-    return [...byId.values()]
-      .filter((item) => !q || item.name.toLowerCase().includes(q))
-      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   });
 
   protected shortNum(n: string): string {
@@ -339,15 +293,14 @@ export class OrdersRailComponent {
     return isReadOnlyEstimateStatus(s);
   }
 
-  protected setRailMode(mode: 'orders' | 'counterparties'): void {
-    this.ctx.setRailMode(mode);
-    this.ctx.setSearch('');
+  protected onCounterpartyChange(ev: Event): void {
+    const value = (ev.target as HTMLSelectElement).value;
+    this.ctx.setCounterpartyFilter(value || null);
     this.filtersChanged.emit();
   }
 
-  protected onCounterpartySelect(id: string | null): void {
-    const next = id === this.ctx.counterpartyFilter() ? null : id;
-    this.ctx.setCounterpartyFilter(next);
+  protected onResetFilters(): void {
+    this.ctx.resetFilters();
     this.filtersChanged.emit();
   }
 

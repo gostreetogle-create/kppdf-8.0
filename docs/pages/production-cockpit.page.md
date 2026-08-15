@@ -52,7 +52,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 | Block | Файл | Роль |
 |-------|------|------|
-| orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / приоритет / даты / «Все активные» |
+| orders-rail | `blocks/orders-rail.component.ts` | Список / поиск по номеру; Фильтры: Заказчик (Counterparty select), приоритет, даты, «Все активные», Сброс |
 | gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px); order-meta + work-detail cascade |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
 | scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit controls; emits `zoomChange` + `fit` |
@@ -82,15 +82,16 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 - Неделя вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; День сохраняет читаемые 36px/day.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Неделю и прокручивает к началу диапазона.
 - **Сегодня** добавляет today в диапазон при необходимости и прокручивает маркер в видимую область.
-- Flyout **Заказы** не дублирует статус цветными точками: статус остаётся текстом. Режим **Заказчики** показывает уникальных Counterparty (включая «Без заказчика»); клик фильтрует rail и Гант, повторный клик/«Все заказчики» сбрасывает.
-- Поиск в режиме Заказы — по номеру; в режиме Заказчики — по имени. Фильтры дат режут rail и тот же набор баров Ганта.
+- Flyout **Заказы** = только список заказов (уже с учётом фильтров) + поиск по номеру; вкладок «Заказы | Заказчики» нет (TZ-329).
+- Flyout **Фильтры**: активность, приоритет, даты, `<select>` **Заказчик** (все / каждый Counterparty из заказов / «Без заказчика»). Выбор сразу режет rail и Гант. **Сброс фильтров** горит `pi-btn-ink`, когда dirty (counterparty / priority / dates / activeOnly≠true; default activeOnly=true). Chrome «Фильтры» active, пока dirty.
+- Покупатель = сущность **Counterparty**, не Organization. Фильтры дат режут rail и тот же набор баров Ганта.
 - Даты = **календарная** оценка (выходные не исключаются) — не факт цеха.
 
 ### Services / context
 
 | Сервис | Методы / boundary |
 |--------|-------------------|
-| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, resetFilters; local UI state |
+| `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, counterpartyFilter, filtersDirty, resetFilters; local UI state |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap; read/cache/composition mapping, no fact-production SoT |
 | `ProductionCockpitPage` | `onRefresh`, `onToday`, `onFitHorizon`, order-meta/estimate commits; smart shell: chrome, filters, PATCH orchestration, range + reload |
 | `ProductionScaleControlsComponent` | `zoom` input; `zoomChange` / `fit` outputs; dumb RU controls only |
@@ -113,9 +114,9 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | Сигнал | Назначение |
 |--------|-----------|
 | `ctx.selectedOrderId` | null = все активные |
-| `ctx.activeOnly` | фильтр ACTIVE_COMMERCIAL_ORDER_STATUSES |
-| `ctx.railMode` | `orders` / `counterparties`; меняет поиск и секцию flyout |
+| `ctx.activeOnly` | фильтр ACTIVE_COMMERCIAL_ORDER_STATUSES; default true |
 | `ctx.counterpartyFilter` | id Counterparty или `__none__`; фильтрует rail + Гант |
+| `ctx.filtersDirty` | true если counterparty / priority / dates / activeOnly отличаются от default |
 | `facade.state` | orders / bars / warnings / loading / error |
 
 ### Business locks (A–J)
@@ -166,6 +167,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-326** | DONE: plannedDate meta/summary writes use `canEditOrder`; successful writes reload orders/bars |
 | **TZ-PRODUCTION-327** | DONE: smart/dumb inventory; one dumb scale-controls extract; no UX/API rewrite |
 | **TZ-PRODUCTION-328** | docs closeout: this page and the frozen Gantt spec are the SoT |
+| **TZ-PRODUCTION-329** | DONE: Filters Counterparty select; tabs Заказы\|Заказчики removed; dirty Reset; Gantt follows select |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -197,8 +199,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | Действие | Результат |
 |----------|-----------|
 | **Заказы** | Поиск по номеру; выбор/мета заказа; `Все активные` сохраняет многозаказные полосы Ганта |
-| **Заказчики** | Секция Counterparty, включая `Без заказчика`; клик фильтрует rail и Гант; повторный клик/`Все заказчики` сбрасывает |
-| **Фильтры** | Активность, приоритет, плановая дата `С`/`По` и сброс применяются к rail и тому же набору заказов Ганта |
+| **Фильтры** | Заказчик (Counterparty select), активность, приоритет, плановая дата `С`/`По`; Сброс accent если dirty; chrome «Фильтры» active пока dirty |
 | **Сегодня** | Включает today в диапазон и прокручивает timeline к красному маркеру Сегодня |
 | **Масштаб → День** | Фиксированная читаемая плотность `36px/день` |
 | **Масштаб → Неделя** | Fit-плотность `max(12, floor(width timeline / число дней))` |
@@ -208,7 +209,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
 | **Resize / тело вида работ** | Existing estimate-days / estimate-start под `production:write`; только estimate |
 
-All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Заказчики`, `Фильтры`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Неделя`, `Вместить сроки`.
+All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Неделя`, `Вместить сроки`.
 
 ### Zoom
 

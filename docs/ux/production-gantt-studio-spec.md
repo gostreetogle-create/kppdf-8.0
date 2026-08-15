@@ -69,8 +69,8 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 
 ### Flyout semantics
 
-- `Заказы`: только список заказов, поиск по заказам, выбор заказа и `Все активные`/select-all.
-- `Фильтры`: только `active-only`, приоритет, даты и `Сброс фильтров`.
+- `Заказы`: только список заказов, поиск по номеру, выбор заказа и `Все активные`/select-all. Вкладок Заказы|Заказчики нет.
+- `Фильтры`: Заказчик (Counterparty `<select>`), `active-only`, приоритет, даты и `Сброс фильтров` (accent если dirty).
 - `Обновить`: preserves existing reload behavior; no new persistence.
 - `Сегодня`: ensures today is inside the current range and scrolls to the red marker; no calendar model.
 - `Масштаб`: День, Неделя, **Вместить сроки**; week fit-density and padded bar range are existing estimate-studio behavior.
@@ -82,7 +82,7 @@ PiGroupWorkspace (Цех: Гант | Виды работ)   ← только sec
 | UI label | Existing owner / meaning |
 |---|---|
 | Заказы | `OrdersRailComponent`, `selectedOrderId`, `search` (поиск по заказам) |
-| Фильтры | `activeOnly` / `priorityFilter` / `dateFrom`/`dateTo`, `resetFilters()` |
+| Фильтры | `counterpartyFilter` / `activeOnly` / `priorityFilter` / `dateFrom`/`dateTo`, `filtersDirty`, `resetFilters()` |
 | Обновить | existing `ProductionCockpitPage.onRefresh()` |
 | Meta заказа | summary cascade strip; status/priority/plannedDate/save/link; `canEditOrder` |
 | Сегодня | existing `onToday()` range adjustment + viewport scroll to marker |

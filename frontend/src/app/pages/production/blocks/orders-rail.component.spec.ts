@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { OrdersRailComponent } from './orders-rail.component';
 import { ProductionCockpitContext } from '../production-cockpit.context';
 import type { Order } from '../../orders/orders.service';
+import { NO_COUNTERPARTY_FILTER } from '../gantt-bar.model';
 
 describe('OrdersRailComponent', () => {
   let ctx: ProductionCockpitContext;
@@ -50,7 +51,7 @@ describe('OrdersRailComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('.rounded-full').length).toBe(0);
   });
 
-  it('switches to Заказчики and filters by counterparty, including no party', () => {
+  it('TZ-PRODUCTION-329: Counterparty select filters orders and has no Заказчики tabs', () => {
     ctx.setActiveOnly(false);
     const fixture = TestBed.createComponent(OrdersRailComponent);
     fixture.componentRef.setInput('orders', [
@@ -70,24 +71,49 @@ describe('OrdersRailComponent', () => {
     ]);
     fixture.detectChanges();
 
-    const mode = fixture.nativeElement.querySelector(
-      '[data-test="orders-rail-mode-counterparties"]',
-    ) as HTMLButtonElement;
-    mode.click();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('ООО Стол');
-    expect(fixture.nativeElement.textContent).toContain('Без заказчика');
+    expect(fixture.nativeElement.querySelector('[data-test="orders-rail-mode-orders"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="orders-rail-mode-counterparties"]'),
+    ).toBeNull();
 
-    const cpButton = fixture.nativeElement.querySelector(
-      '[data-test="orders-rail-counterparty-cp1"]',
-    ) as HTMLButtonElement;
-    cpButton.click();
+    const select = fixture.nativeElement.querySelector(
+      '[data-test="orders-rail-counterparty"]',
+    ) as HTMLSelectElement;
+    expect(select).toBeTruthy();
+    expect(select.options[0]?.textContent).toContain('Все заказчики');
+    expect([...select.options].map((o) => o.textContent?.trim())).toEqual(
+      expect.arrayContaining(['ООО Стол', 'Без заказчика']),
+    );
+
+    select.value = 'cp1';
+    select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
     expect(ctx.counterpartyFilter()).toBe('cp1');
+    expect(ctx.filtersDirty()).toBe(true);
     expect(fixture.componentInstance['visible']().map((o: Order) => o._id)).toEqual(['1', '2']);
+    expect(
+      fixture.nativeElement.querySelector('[data-test="production-reset-filters"]')?.classList,
+    ).toContain('pi-btn-ink');
 
-    cpButton.click();
+    select.value = NO_COUNTERPARTY_FILTER;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(ctx.counterpartyFilter()).toBe(NO_COUNTERPARTY_FILTER);
+    expect(fixture.componentInstance['visible']().map((o: Order) => o._id)).toEqual(['3']);
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="production-reset-filters"]',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
     expect(ctx.counterpartyFilter()).toBeNull();
+    expect(ctx.filtersDirty()).toBe(false);
+    expect(fixture.componentInstance['visible']().map((o: Order) => o._id)).toEqual([
+      '1',
+      '2',
+      '3',
+    ]);
   });
 
   it('date filters narrow the rail visible set', () => {

@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-PRODUCTION-329 DONE: Filters + Counterparty select → Gantt
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH 329 closed; deploy НЕ
+**Что:** вкладки Заказы|Заказчики убраны; Фильтры = Counterparty select + dirty Reset; Gantt и список Заказы следуют выбору заказчика.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-329.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-329-filters-counterparty.lock`
+**Gates:** FE tsc PASS; production Jest 6 suites / 71 tests PASS; lint PASS with 1 existing warning; targeted Prettier PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-328 DONE: production cockpit docs closeout
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN complete; deploy НЕ
 **Что:** page.md и production-gantt-studio-spec.md синхронизированы как SoT: chrome, cascade без нижней Карточки, Заказы/Заказчики, write-path, zoom/fit/today, roles и fact-production OUT; final score 98/100.

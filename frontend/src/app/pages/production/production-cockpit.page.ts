@@ -188,14 +188,6 @@ const CHROME_OWNER = 'production-cockpit';
                 (filtersChanged)="onFiltersChanged()"
                 (expandRail)="toggleLeftTool('filters')"
               />
-              <button
-                type="button"
-                class="pi-btn pi-btn-ghost pi-focus-ring w-full mt-2"
-                data-test="production-reset-filters"
-                (click)="onResetFilters()"
-              >
-                Сброс фильтров
-              </button>
             </aside>
           }
 
@@ -371,6 +363,7 @@ export class ProductionCockpitPage implements OnInit {
       // Track active flyout state for chrome button .is-active / aria-expanded.
       void this.leftTool();
       void this.rightTool();
+      void this.ctx.filtersDirty();
       // setTools reads+writes chrome byOwner — must not be effect-tracked (infinite loop).
       untracked(() => this.syncChromeTools());
     });
@@ -475,6 +468,7 @@ export class ProductionCockpitPage implements OnInit {
   private syncChromeTools(): void {
     const left = this.leftTool();
     const right = this.rightTool();
+    const dirty = this.ctx.filtersDirty();
     const items: PiChromeToolItem[] = [
       {
         id: 'orders',
@@ -491,10 +485,10 @@ export class ProductionCockpitPage implements OnInit {
       {
         id: 'filters',
         side: 'left',
-        ariaLabel: 'Фильтры',
-        title: 'Фильтры',
+        ariaLabel: dirty ? 'Фильтры изменены' : 'Фильтры',
+        title: dirty ? 'Фильтры изменены' : 'Фильтры',
         icon: this.filtersIcon,
-        active: left === 'filters',
+        active: left === 'filters' || dirty,
         ariaExpanded: left === 'filters',
         ariaControls: 'production-flyout-filters',
         order: 2,
@@ -736,7 +730,6 @@ export class ProductionCockpitPage implements OnInit {
       dateFrom: this.ctx.dateFrom(),
       dateTo: this.ctx.dateTo(),
       counterpartyId: this.ctx.counterpartyFilter(),
-      searchByCounterparty: this.ctx.railMode() === 'counterparties',
     });
     await this.applyBars(filtered, fitRange);
   }

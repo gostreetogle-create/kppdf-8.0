@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-PRODUCTION-329 DONE — Filters + Counterparty select → Gantt
+**Исполнитель:** Buffy
+**Статус:** DONE; WAVE-PRODUCTION-COCKPIT-POLISH 329 closed; deploy НЕ
+**Что:** вкладки Заказы|Заказчики убраны; Фильтры = Counterparty select + Сброс accent если dirty; выбор заказчика сразу режет список Заказы и Гант; chrome «Фильтры» active пока dirty.
+**Gates:** FE tsc PASS; FE Jest production **6 suites / 71 tests PASS**; lint PASS (1 existing OnInit warning); targeted Prettier PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-329.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-329-filters-counterparty.lock`
+**Dep:** 328
+
 ## [2026-08-15] — TZ-PRODUCTION-328 DONE — production cockpit docs closeout
 **Исполнитель:** Buffy
 **Статус:** DONE; WAVE-PRODUCTION-COCKPIT-HARDEN complete; deploy НЕ

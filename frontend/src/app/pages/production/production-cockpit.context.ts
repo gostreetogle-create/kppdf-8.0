@@ -2,7 +2,7 @@
  * TZ-PRODUCTION-303+ — shared cockpit signals (shell + blocks).
  * No domain fetch logic here — facade owns reads.
  */
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import type { OrderPriority } from '../orders/orders.service';
 
 export type GanttZoom = 'day' | 'week';
@@ -20,10 +20,20 @@ export class ProductionCockpitContext {
   /** ISO date-only range on plannedDate ?? date. */
   readonly dateFrom = signal<string | null>(null);
   readonly dateTo = signal<string | null>(null);
-  /** Orders flyout mode; counterparties filter the same estimate Gantt. */
-  readonly railMode = signal<'orders' | 'counterparties'>('orders');
   /** Counterparty id; `__none__` means orders without a populated party. */
   readonly counterpartyFilter = signal<string | null>(null);
+  /**
+   * Dirty vs defaults: activeOnly=true, priority=all, no dates, no Counterparty.
+   * Search is list-only and does not light the Filters reset.
+   */
+  readonly filtersDirty = computed(
+    () =>
+      this.counterpartyFilter() !== null ||
+      this.priorityFilter() !== 'all' ||
+      this.dateFrom() !== null ||
+      this.dateTo() !== null ||
+      this.activeOnly() !== true,
+  );
   /** Collapsed rail = icon strip for more calendar width. */
   readonly railCollapsed = signal(false);
 
@@ -132,11 +142,6 @@ export class ProductionCockpitContext {
     this.dateTo.set(value || null);
   }
 
-  setRailMode(value: 'orders' | 'counterparties'): void {
-    this.railMode.set(value);
-    if (value === 'orders') this.counterpartyFilter.set(null);
-  }
-
   setCounterpartyFilter(value: string | null): void {
     this.counterpartyFilter.set(value || null);
   }
@@ -156,7 +161,6 @@ export class ProductionCockpitContext {
     this.priorityFilter.set('all');
     this.dateFrom.set(null);
     this.dateTo.set(null);
-    this.railMode.set('orders');
     this.counterpartyFilter.set(null);
   }
 }
