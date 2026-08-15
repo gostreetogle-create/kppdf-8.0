@@ -15,7 +15,6 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -32,7 +31,11 @@ import {
   MATERIAL_KINDS,
   MaterialsService,
 } from '../../shared/services/materials.service';
-import { PhotosService, type Photo } from '../../shared/services/photos.service';
+import {
+  PhotosService,
+  uploadPhotosWithProgress,
+  type Photo,
+} from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
@@ -363,7 +366,12 @@ interface DimensionFormGroup extends FormGroup {
               <div class="flex items-baseline justify-between mb-form-row">
                 <p class="eyebrow">Фото</p>
                 <label
-                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper-2 hover:bg-paper cursor-pointer transition-colors"
+                  class="inline-flex items-center gap-1 min-h-touch px-control-x py-control-y text-xs hairline rounded-sm bg-paper-2 hover:bg-paper transition-colors"
+                  [class.cursor-pointer]="!uploading()"
+                  [class.cursor-wait]="uploading()"
+                  [class.opacity-60]="uploading()"
+                  [class.pointer-events-none]="uploading()"
+                  [attr.aria-busy]="uploading() ? 'true' : null"
                 >
                   <span>+ Загрузить</span>
                   <input
@@ -372,13 +380,40 @@ interface DimensionFormGroup extends FormGroup {
                     multiple
                     class="sr-only"
                     data-test="photo-input"
+                    [disabled]="uploading()"
                     (change)="onPhotoSelect($event)"
                   />
                 </label>
               </div>
 
               @if (uploading()) {
-                <p class="text-xs text-muted-foreground">Загрузка…</p>
+                <div
+                  class="space-y-1.5 hairline rounded-sm bg-paper-2 p-2 mb-form-row"
+                  data-test="photo-upload-progress"
+                >
+                  <p class="text-sm text-ink m-0" role="status">
+                    {{
+                      uploadProgress() === null
+                        ? 'Загрузка фото…'
+                        : 'Загрузка фото… ' + uploadProgress() + '%'
+                    }}
+                  </p>
+                  <div
+                    class="w-full h-2 rounded-sm bg-rule/40 overflow-hidden"
+                    role="progressbar"
+                    [attr.aria-valuemin]="0"
+                    [attr.aria-valuemax]="100"
+                    [attr.aria-valuenow]="uploadProgress() === null ? null : uploadProgress()"
+                    [attr.aria-valuetext]="uploadProgress() === null ? 'Загрузка' : null"
+                    aria-label="Загрузка фото"
+                  >
+                    <div
+                      class="h-full bg-ink motion-reduce:transition-none transition-all duration-300"
+                      [class.animate-pulse]="uploadProgress() === null"
+                      [style.width.%]="uploadProgress() === null ? 50 : uploadProgress()"
+                    ></div>
+                  </div>
+                </div>
               }
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 @for (p of photos(); track p._id; let i = $index) {
@@ -550,6 +585,8 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected readonly isEdit = signal<boolean>(this.data != null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly uploading = signal<boolean>(false);
+  /** null = indeterminate while browser/proxy omits Content-Length. */
+  protected readonly uploadProgress = signal<number | null>(null);
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly suppliers = signal<Organization[]>([]);
@@ -801,10 +838,10 @@ export class MaterialFormDialogComponent implements OnDestroy {
     const files = Array.from(input.files ?? []);
     if (files.length === 0) return;
     this.uploading.set(true);
-    // photosService.upload() returns Observable<SilentResult<Photo>> —
-    // never errors. So forkJoin always completes successfully and
-    // per-file failures are reported via res.ok === false.
-    forkJoin(files.map((f) => this.photosService.upload(f))).subscribe((results) => {
+    this.uploadProgress.set(null);
+    uploadPhotosWithProgress(this.photosService, files, (percent) =>
+      this.uploadProgress.set(percent),
+    ).subscribe((results) => {
       const uploaded: Photo[] = [];
       const failed: string[] = [];
       results.forEach((res, i) => {
@@ -822,6 +859,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
         }
       }
       this.uploading.set(false);
+      this.uploadProgress.set(null);
       input.value = '';
       if (failed.length > 0) {
         this.toast.error(

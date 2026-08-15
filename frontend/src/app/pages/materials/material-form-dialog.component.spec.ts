@@ -124,6 +124,20 @@ async function setup(
             const next = opts.uploadResults?.shift();
             return of(next ?? { ok: true, data: { _id: 'p-new' } });
           },
+          uploadWithProgress: (file: unknown) => {
+            upload(file);
+            const next = opts.uploadResults?.shift();
+            if (next && !next.ok) {
+              return of({
+                type: 'error',
+                error: next.error ?? { message: 'upload failed' },
+              });
+            }
+            return of({
+              type: 'done',
+              photo: next?.data ?? { _id: 'p-new' },
+            });
+          },
           remove,
         },
       },

@@ -67,18 +67,55 @@ describe('PiPhotoDropzoneComponent', () => {
   it('renders uploading status and error message from inputs', async () => {
     const { fixture } = await setup();
     expect(fixture.nativeElement.querySelector('[role="status"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="photo-upload-progress"]')).toBeNull();
 
     fixture.componentRef.setInput('uploading', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
-      'Загрузка фото',
+    const progress = fixture.nativeElement.querySelector(
+      '[data-test="photo-upload-progress"]',
+    ) as HTMLElement;
+    expect(progress).not.toBeNull();
+    expect(progress.querySelector('[role="status"]')?.textContent).toContain('Загрузка фото');
+    expect(progress.querySelector('[role="progressbar"]')).not.toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="photo-drop-target"]')
+        ?.getAttribute('aria-busy'),
+    ).toBe('true');
+
+    fixture.componentRef.setInput('progressPercent', 42);
+    fixture.detectChanges();
+    expect(progress.querySelector('[role="status"]')?.textContent).toContain('42%');
+    expect(progress.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe(
+      '42',
     );
 
     fixture.componentRef.setInput('uploading', false);
     fixture.componentRef.setInput('errorMessage', 'Не удалось загрузить: front.jpg');
     fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="photo-upload-progress"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[role="alert"]')?.textContent).toContain(
       'Не удалось загрузить',
     );
+  });
+
+  it('does not open the file picker while uploading', async () => {
+    const { fixture, component } = await setup();
+    const uploadRequest = jest.fn();
+    component.uploadRequest.subscribe(uploadRequest);
+    fixture.componentRef.setInput('uploading', true);
+    fixture.detectChanges();
+
+    const target = fixture.nativeElement.querySelector(
+      '[data-test="photo-drop-target"]',
+    ) as HTMLElement;
+    target.click();
+    const file = new File(['image'], 'front.jpg', { type: 'image/jpeg' });
+    const drop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: [file] } });
+    target.dispatchEvent(drop);
+    fixture.detectChanges();
+
+    expect(uploadRequest).not.toHaveBeenCalled();
   });
 });

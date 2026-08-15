@@ -15,7 +15,6 @@ import {
   Validators,
   type ValidatorFn,
 } from '@angular/forms';
-import { forkJoin } from 'rxjs';
 import { PiDialogComponent } from '../dialog/pi-dialog.component';
 import { ButtonComponent } from '../button/button.component';
 import { FormFieldComponent } from '../form-field/form-field.component';
@@ -50,7 +49,7 @@ import { controlKindFor, type QuickCreateControlKind } from './field-key-registr
 import { colSpanClass, controlMaxClass } from './field-capacity';
 import { PiFormSectionComponent } from '../form-section';
 import { PiPhotoDropzoneComponent } from '../photo';
-import { PhotosService, type Photo } from '../../services/photos.service';
+import { PhotosService, uploadPhotosWithProgress, type Photo } from '../../services/photos.service';
 import { ProductBomPanelComponent } from '../composition/product-bom-panel.component';
 import { PiOverflowSelectComponent } from '../overflow-select/pi-overflow-select.component';
 import {
@@ -433,6 +432,7 @@ const SIZE_TO_WIDTH: Record<FormProfileSize, 'md' | 'lg' | 'xl'> = {
                 <app-pi-photo-dropzone
                   [photos]="photos()"
                   [uploading]="photosUploading()"
+                  [progressPercent]="photoUploadProgress()"
                   [errorMessage]="photoErrorMessage()"
                   (uploadRequest)="onUploadRequest($event)"
                   (deleteRequest)="onDeleteRequest($event)"
@@ -522,6 +522,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected readonly photos = signal<Photo[]>([]);
   protected readonly uploadedPhotoIds = signal<string[]>([]);
   protected readonly photosUploading = signal(false);
+  protected readonly photoUploadProgress = signal<number | null>(null);
   protected readonly photoErrorMessage = signal<string | null>(null);
   protected readonly createdProduct = signal<Product | null>(null);
   /** TZ-UX-FORM-306: module L stays open with BomPanel after create. */
@@ -695,8 +696,11 @@ export class QuickCreateDialogComponent implements OnDestroy {
   protected onUploadRequest(files: File[]): void {
     if (files.length === 0) return;
     this.photosUploading.set(true);
+    this.photoUploadProgress.set(null);
     this.photoErrorMessage.set(null);
-    forkJoin(files.map((file) => this.photosService.upload(file))).subscribe((results) => {
+    uploadPhotosWithProgress(this.photosService, files, (percent) =>
+      this.photoUploadProgress.set(percent),
+    ).subscribe((results) => {
       const uploaded: Photo[] = [];
       const failed: string[] = [];
       results.forEach((result, index) => {
@@ -708,6 +712,7 @@ export class QuickCreateDialogComponent implements OnDestroy {
         this.uploadedPhotoIds.update((ids) => [...ids, ...uploaded.map((photo) => photo._id)]);
       }
       this.photosUploading.set(false);
+      this.photoUploadProgress.set(null);
       if (failed.length > 0) {
         const message = `Не удалось загрузить: ${failed.join(', ')}`;
         this.photoErrorMessage.set(message);

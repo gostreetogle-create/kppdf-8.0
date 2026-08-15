@@ -57,7 +57,9 @@
 
 Detail intentionally exposes a read-only gallery. To add photos, open the product
 edit dialog: its `multiple` file input accepts a batch, keeps all uploaded thumbnails
-in the same dialog, and sends the accumulated photo IDs on Save. There is no
+in the same dialog, and sends the accumulated photo IDs on Save. While files upload,
+the dialog shows a visible progress bar + RU status (`data-test="photo-upload-progress"`,
+**TZ-UX-PHOTO-301**); exact % depends on browser/proxy (else indeterminate). There is no
 one-photo modal to reopen between files; selecting three or more files is one sitting.
 
 ## Цена в составе vs себестоимость (канон TZ-COST-305)

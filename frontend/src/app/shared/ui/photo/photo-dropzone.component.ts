@@ -1,14 +1,14 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import type { Photo } from '../../services/photos.service';
 import { ButtonComponent } from '../button/button.component';
 
 /**
  * Shared upload/preview strip for product photo-capable form dialogs.
  *
- * Presentational: receives the current photo list, uploading flag and error
- * message as inputs and reports user intent (files to upload / photo to
- * delete) through outputs. All API calls and write state are owned by the
- * parent container (QuickCreateDialogComponent) — B-PHOTO.
+ * Presentational: receives the current photo list, uploading flag, optional
+ * progress percent and error message as inputs and reports user intent
+ * (files to upload / photo to delete) through outputs. All API calls and
+ * write state are owned by the parent container — B-PHOTO.
  */
 @Component({
   selector: 'app-pi-photo-dropzone',
@@ -18,32 +18,61 @@ import { ButtonComponent } from '../button/button.component';
   template: `
     <div class="space-y-2" data-test="photo-dropzone">
       <div
-        class="flex items-center justify-center min-h-20 p-3 hairline rounded-sm bg-paper-2/30 cursor-pointer transition-colors"
+        class="flex items-center justify-center min-h-20 p-3 hairline rounded-sm bg-paper-2/30 transition-colors"
         [class.bg-paper-2]="dragActive()"
+        [class.cursor-pointer]="!uploading()"
+        [class.cursor-wait]="uploading()"
+        [class.opacity-60]="uploading()"
+        [class.pointer-events-none]="uploading()"
         role="button"
         tabindex="0"
-        (click)="fileInput.click()"
-        (keydown.enter)="fileInput.click()"
-        (keydown.space)="fileInput.click(); $event.preventDefault()"
+        [attr.aria-busy]="uploading() ? 'true' : null"
+        [attr.aria-disabled]="uploading() ? 'true' : null"
+        (click)="openPicker(fileInput)"
+        (keydown.enter)="openPicker(fileInput)"
+        (keydown.space)="openPicker(fileInput); $event.preventDefault()"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave()"
         (drop)="onDrop($event)"
         data-test="photo-drop-target"
       >
-        <span class="text-xs text-muted-foreground">Перетащите фото сюда или выберите файл</span>
+        <span class="text-xs text-muted-foreground">
+          {{ uploading() ? 'Идёт загрузка…' : 'Перетащите фото сюда или выберите файл' }}
+        </span>
         <input
           #fileInput
           type="file"
           accept="image/*"
           multiple
           class="sr-only"
+          [disabled]="uploading()"
           (change)="onFileChange($event)"
           data-test="photo-file-input"
         />
       </div>
 
       @if (uploading()) {
-        <p class="text-xs text-muted-foreground" role="status">Загрузка фото…</p>
+        <div
+          class="space-y-1.5 hairline rounded-sm bg-paper-2 p-2"
+          data-test="photo-upload-progress"
+        >
+          <p class="text-sm text-ink m-0" role="status">{{ statusLabel() }}</p>
+          <div
+            class="w-full h-2 rounded-sm bg-rule/40 overflow-hidden"
+            role="progressbar"
+            [attr.aria-valuemin]="0"
+            [attr.aria-valuemax]="100"
+            [attr.aria-valuenow]="progressPercent() === null ? null : progressPercent()"
+            [attr.aria-valuetext]="progressPercent() === null ? 'Загрузка' : null"
+            aria-label="Загрузка фото"
+          >
+            <div
+              class="h-full bg-ink motion-reduce:transition-none transition-all duration-300"
+              [class.animate-pulse]="progressPercent() === null"
+              [style.width.%]="progressPercent() === null ? 50 : progressPercent()"
+            ></div>
+          </div>
+        </div>
       }
       @if (errorMessage()) {
         <p class="text-xs text-destructive" role="alert">{{ errorMessage() }}</p>
@@ -81,19 +110,33 @@ import { ButtonComponent } from '../button/button.component';
 export class PiPhotoDropzoneComponent {
   readonly photos = input<Photo[]>([]);
   readonly uploading = input(false);
+  /** Determinate 0–100 when browser reports totals; null → indeterminate bar. */
+  readonly progressPercent = input<number | null>(null);
   readonly errorMessage = input<string | null>(null);
   readonly uploadRequest = output<File[]>();
   readonly deleteRequest = output<string>();
 
   protected readonly dragActive = signal(false);
 
+  protected readonly statusLabel = computed(() => {
+    const pct = this.progressPercent();
+    return pct === null ? 'Загрузка фото…' : `Загрузка фото… ${pct}%`;
+  });
+
+  protected openPicker(fileInput: HTMLInputElement): void {
+    if (this.uploading()) return;
+    fileInput.click();
+  }
+
   protected onFileChange(event: Event): void {
+    if (this.uploading()) return;
     const input = event.target as HTMLInputElement;
     this.uploadRequest.emit(Array.from(input.files ?? []));
     input.value = '';
   }
 
   protected onDragOver(event: DragEvent): void {
+    if (this.uploading()) return;
     event.preventDefault();
     this.dragActive.set(true);
   }
@@ -105,11 +148,13 @@ export class PiPhotoDropzoneComponent {
   protected onDrop(event: DragEvent): void {
     event.preventDefault();
     this.dragActive.set(false);
+    if (this.uploading()) return;
     this.uploadRequest.emit(Array.from(event.dataTransfer?.files ?? []));
   }
 
   protected remove(id: string, event: Event): void {
     event.stopPropagation();
+    if (this.uploading()) return;
     this.deleteRequest.emit(id);
   }
 }

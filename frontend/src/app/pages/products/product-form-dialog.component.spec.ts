@@ -55,7 +55,12 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   let productsSvc: { create: jest.Mock; update: jest.Mock };
   let categoriesSvc: { list: jest.Mock };
   let colorsSvc: { list: jest.Mock };
-  let photosSvc: { list: jest.Mock; upload: jest.Mock; remove: jest.Mock };
+  let photosSvc: {
+    list: jest.Mock;
+    upload: jest.Mock;
+    uploadWithProgress: jest.Mock;
+    remove: jest.Mock;
+  };
 
   function ref<T>(): DialogRef<T> {
     return {
@@ -202,6 +207,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     photosSvc = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
       upload: jest.fn(),
+      uploadWithProgress: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
     };
   });
@@ -348,17 +354,13 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   });
 
   it('photo: upload adds a thumbnail and the photoIds make it into the payload', async () => {
-    photosSvc.upload.mockReturnValue(
-      of({
-        ok: true,
-        data: { _id: 'ph-1', storageUrl: 'http://x/1.jpg', originalFilename: 'a.jpg' },
-      }),
-    );
+    const photo = { _id: 'ph-1', storageUrl: 'http://x/1.jpg', originalFilename: 'a.jpg' };
+    photosSvc.uploadWithProgress.mockReturnValue(of({ type: 'done', photo }));
     await setup(null);
     instance().onPhotoSelect({
       target: { files: [new File(['x'], 'a.jpg')], value: '' },
     } as unknown as Event);
-    expect(photosSvc.upload).toHaveBeenCalledTimes(1);
+    expect(photosSvc.uploadWithProgress).toHaveBeenCalledTimes(1);
     expect(instance().photos()).toHaveLength(1);
 
     formControls().name.setValue('С фото');
@@ -370,8 +372,8 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
   });
 
   it('photo: removing an uploaded photo before cancel triggers orphan cleanup (photosService.remove)', async () => {
-    photosSvc.upload.mockReturnValue(
-      of({ ok: true, data: { _id: 'ph-2', storageUrl: 'http://x/2.jpg' } }),
+    photosSvc.uploadWithProgress.mockReturnValue(
+      of({ type: 'done', photo: { _id: 'ph-2', storageUrl: 'http://x/2.jpg' } }),
     );
     await setup(null);
     instance().onPhotoSelect({

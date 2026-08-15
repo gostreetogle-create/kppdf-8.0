@@ -398,15 +398,19 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
 
     // B-PHOTO: upload/delete/error are container-owned — the dropzone only
     // reports intent, and the container calls PhotosService itself.
-    const photosService = TestBed.inject(PhotosService) as { upload: jest.Mock };
-    photosService.upload.mockReturnValue(
-      of(
-        ok({
+    const photosService = TestBed.inject(PhotosService) as {
+      upload: jest.Mock;
+      uploadWithProgress: jest.Mock;
+    };
+    photosService.uploadWithProgress = jest.fn().mockReturnValue(
+      of({
+        type: 'done',
+        photo: {
           _id: 'photo-1',
           storageUrl: '/uploads/photo-1.jpg',
           originalFilename: 'front.jpg',
-        }),
-      ),
+        },
+      }),
     );
 
     const file = new File(['image'], 'front.jpg', { type: 'image/jpeg' });
@@ -418,7 +422,7 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     target.dispatchEvent(drop);
     fixture.detectChanges();
 
-    expect(photosService.upload).toHaveBeenCalledWith(file);
+    expect(photosService.uploadWithProgress).toHaveBeenCalledWith(file);
     c.form.patchValue({ name: 'Стол', kind: 'good', unit: 'шт', sku: 'ST-002' });
     c.onSubmit();
     expect(products.create).toHaveBeenCalledWith(
