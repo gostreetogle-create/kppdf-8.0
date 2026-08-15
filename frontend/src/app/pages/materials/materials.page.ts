@@ -12,10 +12,11 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
+import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -91,6 +92,7 @@ const PAGE_SIZE = 10;
     LucideAngularModule,
     PiGroupWorkspaceComponent,
     PiEmptyTileComponent,
+    PiShowcaseCardComponent,
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
@@ -132,6 +134,42 @@ const PAGE_SIZE = 10;
         <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
           <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
         </app-pi-button>
+        <!-- TZ-CATALOG-373: view toggle list/grid (canon products TZ-PRODUCTS-305) -->
+        <div
+          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+          role="group"
+          aria-label="Вид каталога"
+          data-test="view-toggle"
+        >
+          <button
+            type="button"
+            (click)="setViewMode('list')"
+            [attr.aria-pressed]="viewMode() === 'list'"
+            [class]="
+              viewMode() === 'list'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать списком"
+            data-test="view-list-button"
+          >
+            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            (click)="setViewMode('grid')"
+            [attr.aria-pressed]="viewMode() === 'grid'"
+            [class]="
+              viewMode() === 'grid'
+                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+            "
+            aria-label="Показать карточками"
+            data-test="view-grid-button"
+          >
+            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+          </button>
+        </div>
         <span class="flex-1"></span>
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
       </div>
@@ -144,92 +182,268 @@ const PAGE_SIZE = 10;
           {{ error() }}
         </div>
       }
-      <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
-        ← Таблица широкая — прокручивайте горизонтально →
-      </p>
-      <app-pi-table
-        [data]="data()"
-        [columns]="cols"
-        [loading]="loading()"
-        [total]="total()"
-        [page]="page()"
-        [pageSize]="pageSize"
-        [emptyMessage]="emptyMessage()"
-        [ariaLabel]="'Список материалов'"
-        [cellTemplates]="cellTemplates"
-        [rowActions]="rowActionsTplBinding"
-        (pageChange)="onPageChange($event)"
-      >
-        <!-- ───── Photo cell ───── -->
-        <ng-template #photoTpl let-row>
-          @if (mainPhotoOf(row); as mp) {
-            <img
-              [src]="mainPhotoUrl(row)"
-              [alt]="mp.originalFilename || row.name"
-              class="block w-20 h-20 object-cover hairline rounded-sm"
-              loading="lazy"
-            />
-          } @else {
-            <app-pi-empty-tile [sizePx]="80" />
-          }
-        </ng-template>
 
-        <!-- ───── Supplier cell (lookup name) ───── -->
-        <ng-template #supplierTpl let-row>
-          {{ supplierNameOf(row) ?? '' }}
-        </ng-template>
-
-        <!-- ───── TZ-CATALOG-316: kind cell (Russian short label; — for unset) ───── -->
-        <ng-template #kindTpl let-row>
-          {{ kindLabelOf(row) ?? '' }}
-        </ng-template>
-
-        <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
-        <ng-template #dimsTpl let-row>
-          <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
-        </ng-template>
-
-        <!-- ───── Name cell with detail link (TZ-CATALOG-312) ───── -->
-        <ng-template #nameTpl let-row>
-          <app-catalog-kind-marker kind="material" [materialKind]="row.materialKind">
-            <a
-              [routerLink]="['/materials', row._id]"
-              class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
-              [attr.aria-label]="'Открыть ' + row.name"
+      <!-- TZ-CATALOG-373: products-layout паттерн — узкий рейл + колонка контента (канон products.page.ts) -->
+      <div class="relative flex gap-3 items-start" data-test="materials-layout">
+        <!-- Панель ВЫШЕ затемнения (z-40); иначе клики/селекты ломаются -->
+        <aside
+          class="relative z-40 shrink-0 w-12"
+          data-test="filters-rail"
+          [attr.aria-expanded]="filtersOpen()"
+        >
+          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
+            <button
+              type="button"
+              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+              (click)="toggleFiltersRail()"
+              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+              data-test="filters-rail-toggle"
             >
-              {{ row.name }}
-            </a>
-          </app-catalog-kind-marker>
-        </ng-template>
+              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
+            </button>
+          </div>
 
-        <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
-        <ng-template #stockTpl let-row>
-          <a
-            [routerLink]="['/storage-items']"
-            [queryParams]="{ materialId: row._id }"
-            class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
-            [attr.aria-label]="'Остатки на складе: ' + row.name"
-          >
-            Склад →
-          </a>
-        </ng-template>
+          @if (filtersOpen()) {
+            <div
+              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+              data-test="filters-rail-panel"
+              role="dialog"
+              aria-label="Фильтры каталога"
+              (pointerdown)="$event.stopPropagation()"
+              (click)="$event.stopPropagation()"
+            >
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="text-sm font-medium text-ink">Фильтры</div>
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                  (click)="closeFilters()"
+                  aria-label="Закрыть"
+                  data-test="filters-panel-close"
+                >
+                  Закрыть
+                </button>
+              </div>
+              <div class="flex flex-col gap-3">
+                <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
+                <label
+                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                  for="rail-kind"
+                  >Тип</label
+                >
+                <select
+                  id="rail-kind"
+                  class="pi-input w-full text-sm"
+                  [value]="kindFilter() ?? ''"
+                  (change)="onKindFilterChange($event)"
+                  data-test="rail-kind"
+                >
+                  <option value="">Все типы</option>
+                  @for (k of kindOptions(); track k.value) {
+                    <option [value]="k.value">{{ k.label }}</option>
+                  }
+                </select>
+                <!-- TZ-CATALOG-373 known_limitation: backend GET /materials не умеет
+                     sortBy/sortOrder (всегда sort({name:1}), см. MaterialService.findAll) —
+                     rail sort НЕ добавляем (фейковый client-sort page slice запрещён). -->
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                  (click)="clearFilters()"
+                  data-test="clear-filters"
+                >
+                  Сбросить
+                </button>
+              </div>
+            </div>
+          }
+        </aside>
 
-        <!-- ───── Row actions cluster ───── -->
-        <ng-template #rowActionsTpl let-row>
-          <app-pi-row-actions
-            [row]="row"
-            [copyLabel]="'Копировать ' + row.name"
-            [editLabel]="'Редактировать ' + row.name"
-            [deleteLabel]="'Удалить ' + row.name"
-            [dataTestCopy]="'copy-button-' + row._id"
-            [dataTestEdit]="'edit-button-' + row._id"
-            [dataTestDelete]="'delete-button-' + row._id"
-            (copy)="onCopy($event)"
-            (edit)="openEdit($event)"
-            (delete)="onDelete($event)"
+        <div class="relative min-w-0 flex-1">
+          @if (filtersOpen()) {
+            <button
+              type="button"
+              class="absolute inset-0 z-20 border-0 cursor-default bg-ink/20 dark:bg-ink/40"
+              aria-label="Закрыть фильтры"
+              data-test="filters-backdrop"
+              (pointerdown)="closeFilters()"
+              (click)="closeFilters()"
+            ></button>
+          }
+
+          <div class="relative z-0">
+            @if (viewMode() === 'grid') {
+              @if (loading()) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
+                  Загрузка…
+                </p>
+              } @else if (data().length === 0) {
+                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                  {{ emptyMessage() }}
+                </p>
+              } @else {
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
+                  data-test="materials-grid"
+                >
+                  @for (row of data(); track row._id) {
+                    <a
+                      [routerLink]="['/materials', row._id]"
+                      class="block min-w-0 h-full"
+                      [attr.aria-label]="'Открыть ' + row.name"
+                      [attr.data-test]="'showcase-cell-' + row._id"
+                    >
+                      <app-pi-showcase-card
+                        class="h-full"
+                        size="md"
+                        [title]="row.name"
+                        [description]="gridDescription(row)"
+                        [eyebrow]="gridEyebrow(row)"
+                        [mediaUrl]="mainPhotoUrl(row)"
+                        [interactive]="true"
+                        [arrow]="false"
+                      >
+                        <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
+                          <span class="flex flex-col gap-0.5 min-w-0">
+                            <span class="font-medium tabular-nums" data-test="showcase-price">
+                              {{ gridPrice(row) }}
+                            </span>
+                            @if (gridPriceUnit(row); as unit) {
+                              <span class="text-xs text-muted-foreground" data-test="showcase-unit">
+                                за {{ unit }}
+                              </span>
+                            }
+                          </span>
+                          <span class="text-xs text-muted-foreground">{{ row.unit }}</span>
+                        </span>
+                      </app-pi-showcase-card>
+                    </a>
+                  }
+                </div>
+                @if (total() > pageSize) {
+                  <div
+                    class="mt-4 flex items-center justify-end gap-2"
+                    data-test="grid-pager"
+                    role="navigation"
+                    aria-label="Страницы каталога"
+                  >
+                    <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
+                      {{ pageRangeLabel() }}
+                    </span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() <= 1"
+                      (click)="onPageChange(page() - 1)"
+                      data-test="pager-prev"
+                      >Назад</app-pi-button
+                    >
+                    <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
+                    <app-pi-button
+                      variant="ghost"
+                      size="sm"
+                      [disabled]="page() >= totalPages()"
+                      (click)="onPageChange(page() + 1)"
+                      data-test="pager-next"
+                      >Далее</app-pi-button
+                    >
+                  </div>
+                }
+              }
+            } @else {
+              <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+                ← Таблица широкая — прокручивайте горизонтально →
+              </p>
+              <app-pi-table
+                [data]="data()"
+                [columns]="cols"
+                [loading]="loading()"
+                [total]="total()"
+                [page]="page()"
+                [pageSize]="pageSize"
+                [emptyMessage]="emptyMessage()"
+                [ariaLabel]="'Список материалов'"
+                [cellTemplates]="cellTemplates"
+                [rowActions]="rowActionsTplBinding"
+                (pageChange)="onPageChange($event)"
+              ></app-pi-table>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- ───── Cell templates ─────
+           ВНЕ @if/@else: static @ViewChild({ static: true }) не видит ng-template
+           внутри control-flow блоков (embedded view), поэтому шаблоны лежат
+           на верхнем уровне app-pi-group-workspace (канон products.page.ts). -->
+      <ng-template #photoTpl let-row>
+        @if (mainPhotoOf(row); as mp) {
+          <img
+            [src]="mainPhotoUrl(row)"
+            [alt]="mp.originalFilename || row.name"
+            class="block w-20 h-20 object-cover hairline rounded-sm"
+            loading="lazy"
           />
-        </ng-template>
-      </app-pi-table>
+        } @else {
+          <app-pi-empty-tile [sizePx]="80" />
+        }
+      </ng-template>
+
+      <!-- ───── Supplier cell (lookup name) ───── -->
+      <ng-template #supplierTpl let-row>
+        {{ supplierNameOf(row) ?? '' }}
+      </ng-template>
+
+      <!-- ───── TZ-CATALOG-316: kind cell (Russian short label; — for unset) ───── -->
+      <ng-template #kindTpl let-row>
+        {{ kindLabelOf(row) ?? '' }}
+      </ng-template>
+
+      <!-- ───── Dimensions cell (font-mono glyphs) ───── -->
+      <ng-template #dimsTpl let-row>
+        <span class="font-mono text-xs whitespace-nowrap">{{ dimensionsSummary(row) }}</span>
+      </ng-template>
+
+      <!-- ───── Name cell with detail link (TZ-CATALOG-312) ───── -->
+      <ng-template #nameTpl let-row>
+        <app-catalog-kind-marker kind="material" [materialKind]="row.materialKind">
+          <a
+            [routerLink]="['/materials', row._id]"
+            class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
+            [attr.aria-label]="'Открыть ' + row.name"
+          >
+            {{ row.name }}
+          </a>
+        </app-catalog-kind-marker>
+      </ng-template>
+
+      <!-- ───── Stock cell (TZ-MATERIALS-308, read-only link) ───── -->
+      <ng-template #stockTpl let-row>
+        <a
+          [routerLink]="['/storage-items']"
+          [queryParams]="{ materialId: row._id }"
+          class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
+          [attr.aria-label]="'Остатки на складе: ' + row.name"
+        >
+          Склад →
+        </a>
+      </ng-template>
+
+      <!-- ───── Row actions cluster ───── -->
+      <ng-template #rowActionsTpl let-row>
+        <app-pi-row-actions
+          [row]="row"
+          [copyLabel]="'Копировать ' + row.name"
+          [editLabel]="'Редактировать ' + row.name"
+          [deleteLabel]="'Удалить ' + row.name"
+          [dataTestCopy]="'copy-button-' + row._id"
+          [dataTestEdit]="'edit-button-' + row._id"
+          [dataTestDelete]="'delete-button-' + row._id"
+          (copy)="onCopy($event)"
+          (edit)="openEdit($event)"
+          (delete)="onDelete($event)"
+        />
+      </ng-template>
     </app-pi-group-workspace>
   `,
 })
@@ -251,6 +465,29 @@ export class MaterialsPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly RefreshIcon = RefreshCw;
+  protected readonly ListIcon = List;
+  protected readonly GridIcon = LayoutGrid;
+  protected readonly FilterIcon = Filter;
+
+  /**
+   * TZ-CATALOG-373: list↔grid view mode (canon products TZ-PRODUCTS-305).
+   * Persisted to `pi-materials-view-mode` so F5 keeps the user's choice.
+   */
+  protected readonly viewMode = signal<MaterialsViewMode>(loadMaterialsViewMode());
+  protected readonly filtersOpen = signal(false);
+
+  protected setViewMode(mode: MaterialsViewMode): void {
+    this.viewMode.set(mode);
+    saveMaterialsViewMode(mode);
+  }
+
+  protected toggleFiltersRail(): void {
+    this.filtersOpen.update((v) => !v);
+  }
+
+  protected closeFilters(): void {
+    this.filtersOpen.set(false);
+  }
 
   /** Exposed to template via `[pageSize]="pageSize"` (constant literal). */
   protected readonly pageSize = PAGE_SIZE;
@@ -354,6 +591,7 @@ export class MaterialsPage implements OnInit {
    * controls. When backend has ≤limit rows, pi-table hides the pager.
    */
   protected readonly total = computed<number>(() => this.listRes.value()?.total ?? 0);
+  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as
@@ -364,7 +602,7 @@ export class MaterialsPage implements OnInit {
   protected readonly searchQuery = this.search.searchQuery;
 
   protected readonly emptyMessage = computed(() =>
-    this.searchQuery()
+    this.searchQuery() || this.kindFilter()
       ? 'Ничего не найдено.'
       : 'Нет материалов. Нажмите «Создать», чтобы добавить первый.',
   );
@@ -499,6 +737,27 @@ export class MaterialsPage implements OnInit {
     return row.dimensions.map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`).join(' × ');
   }
 
+  // ─── TZ-CATALOG-373: grid-витрина (канон products.page.ts) ───────────────
+  /** Eyebrow карточки — подпись типа материала, иначе артикул. */
+  protected gridEyebrow(row: Material): string {
+    return this.kindLabelOf(row) ?? (row.article || '');
+  }
+
+  /** Описание карточки — габариты, иначе поставщик. */
+  protected gridDescription(row: Material): string {
+    return this.dimensionsSummary(row) || this.supplierNameOf(row) || '';
+  }
+
+  /** Цена карточки (тот же formatPrice, что в таблице). */
+  protected gridPrice(row: Material): string {
+    return row.pricePerUnit != null ? formatPrice(row.pricePerUnit) : '—';
+  }
+
+  /** Подпись под ценой «за <ед.>» (пусто — скрывается). */
+  protected gridPriceUnit(row: Material): string {
+    return row.unit || '';
+  }
+
   protected totalLabel(n: number): string {
     return pluralize(n, ['материал', 'материала', 'материалов']);
   }
@@ -533,7 +792,26 @@ export class MaterialsPage implements OnInit {
   }
 
   protected onPageChange(p: number): void {
-    this.pageSig.set(p);
+    this.pageSig.set(Math.min(Math.max(1, p), this.totalPages()));
+  }
+
+  /**
+   * TZ-CATALOG-373: «Сбросить» в фильтр-рейле — kind + поиск + страница 1
+   * (тот же контракт, что clearFilters у products).
+   */
+  protected clearFilters(): void {
+    this.kindFilterSig.set(null);
+    this.search.searchQuery.set('');
+    this.search.debouncedSearch.set('');
+    this.pageSig.set(1);
+  }
+
+  protected pageRangeLabel(): string {
+    const t = this.total();
+    if (t === 0) return '0';
+    const start = (this.page() - 1) * PAGE_SIZE + 1;
+    const end = Math.min(this.page() * PAGE_SIZE, t);
+    return `${start}–${end} из ${t}`;
   }
 
   protected openCreate(): void {
@@ -630,6 +908,30 @@ export class MaterialsPage implements OnInit {
       this.photosLookup.load();
       this.listRes.reload();
     });
+  }
+}
+
+// ─── View-mode persistence (TZ-CATALOG-373, паттерн products TZ-PRODUCTS-305) ───
+const MATERIALS_VIEW_MODE_KEY = 'pi-materials-view-mode';
+
+type MaterialsViewMode = 'list' | 'grid';
+
+const DEFAULT_VIEW_MODE: MaterialsViewMode = 'list';
+
+function loadMaterialsViewMode(): MaterialsViewMode {
+  try {
+    const raw = localStorage.getItem(MATERIALS_VIEW_MODE_KEY);
+    return raw === 'grid' ? 'grid' : 'list';
+  } catch {
+    return DEFAULT_VIEW_MODE;
+  }
+}
+
+function saveMaterialsViewMode(mode: MaterialsViewMode): void {
+  try {
+    localStorage.setItem(MATERIALS_VIEW_MODE_KEY, mode);
+  } catch {
+    // localStorage may be unavailable (private browsing, quota exceeded)
   }
 }
 
