@@ -1,0 +1,14 @@
+task: TZ-UX-320
+status: DONE
+closed_at: 2026-08-15T09:10:00Z
+implementation_sha: dc424c4515c6e54e503e78394bac2eed6b597684
+protected_files:
+  - frontend/src/app/layout/app-layout.component.ts
+  - frontend/src/app/layout/app-layout.component.spec.ts
+  - docs/pages/page-chrome.md
+  - docs/audits/2026-08-12-nav-return-gutters-canon.md
+  - docs/pages/PAGE-TZ-INDEX.md
+  - docs/agent-checklists/TZ-UX-320.md
+behavior: gutter back/forward moved from viewport edge (left/right 14px) into side fields on the header-padding line (left/right 64px); visible >=1680, hidden below; history/aria/data-test untouched
+cursor_verdict: pending (branch awaiting review)
+production: not executed
