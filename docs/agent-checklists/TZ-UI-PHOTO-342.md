@@ -23,7 +23,7 @@ Status: **DONE**
 - [x] RU hint says «Файл с диска · перетащить · Ctrl+V»
 - [x] Uploading guard prevents paste/drop actions
 - [x] Specs + frontend tsc + Jest + lint/format gates
-- [x] Integrity slot, executor report, archive, lock, MASTER [x]
+- [x] Integrity slot, executor report, archive, lock, MASTER [x]; commit/push `c523237c`
 
 ## Gates (fact)
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` — PASS (exit 0)

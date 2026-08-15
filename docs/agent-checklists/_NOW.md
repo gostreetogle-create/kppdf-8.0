@@ -5,12 +5,12 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T00:11:52+03:00
+updated_at: 2026-08-16T00:13:14+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-UI-PHOTO-342 DONE; archive + lock created)_
+_(empty — TZ-UI-PHOTO-342 DONE; `c523237c` pushed; archive + lock created)_
 
 ## NEXT (PO paste prompt)
 
