@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T07:30:00Z
+updated_at: 2026-08-15T09:10:00Z
 main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
 
 ## ACTIVE
@@ -23,6 +23,15 @@ main_head: 7a619e4c95ceebc64aef45a42e47208437a46516
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-UX-320 — DONE (branch, review pending)
+
+- Checklist: `docs/agent-checklists/TZ-UX-320.md`
+- Archive: `tasks/_archive/2026-08/TZ-UX-320.done.md`
+- Lock: `.mimocode/locks/TZ-UX-320-nav-gutter-align-content-column.lock`
+- Implementation: `dc424c4515c6e54e503e78394bac2eed6b597684`
+- Branch: `feature/TZ-UX-320-nav-gutter-align-content-column` — merge после review; deploy НЕ.
+- State: ←→ в полях на линии отступа шапки (left/right 64px), не 14px; gates + browser smoke ≥1680 light/dark PASS.
 
 ### TZ-SALES-376 — DONE / LANDED
 

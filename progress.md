@@ -1,6 +1,17 @@
 > **APPEND-ONLY HISTORY — НЕ ЧИТАТЬ ПРИ СТАРТЕ.**
 > Текущая работа: `docs/agent-checklists/_NOW.md`.
 
+## [2026-08-15] — TZ-UX-320 DONE — ←→ из края окна в поля у колонки контента
+**Исполнитель:** Buffy (kppdf-8.0)
+**Статус:** DONE on branch; frontend shell CSS; deploy НЕ
+**Что:** Глобальные ← → переставлены с края окна (`left/right: 14px`) в вертикальные поля слева/справа от колонки контента, на линию бокового отступа шапки (`left/right: 64px` — padding `pi-edge-bleed` ≥1024px). `AppHistoryStore`, click/disabled/aria/data-test и порог ≥1680px не менялись.
+**Gates:** FE tsc PASS; app-layout Jest 12/12 PASS; eslint changed PASS; architecture:check PASS; diff-check PASS; browser smoke ≥1680 light/dark 16/16 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-320.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-320.md`
+**Lock:** `.mimocode/locks/TZ-UX-320-nav-gutter-align-content-column.lock`
+**Implementation SHA:** `dc424c4515c6e54e503e78394bac2eed6b597684`
+**Branch:** `feature/TZ-UX-320-nav-gutter-align-content-column` — merge после review; deploy НЕ.
+
 ## [2026-08-15] — TZ-SALES-376 DONE — geometry-aware KP page split
 **Исполнитель:** Buffy (closeout)
 **Статус:** DONE; full-stack document split + Create КП copy; deploy НЕ

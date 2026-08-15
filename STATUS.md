@@ -3,6 +3,15 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-UX-320 DONE: ←→ в поля у колонки контента (не у края окна)
+**Статус:** DONE on branch; frontend-only; deploy НЕ
+**Что:** Кнопки ← → больше не прижаты к краям окна (14px): стоят в вертикальных полях слева/справа от max-width колонки на линии бокового отступа шапки (left/right 64px). Порог видимости ≥1680px, disabled/aria/data-test, `AppHistoryStore` — без изменений.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-320.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-320.md`
+**Lock:** `.mimocode/locks/TZ-UX-320-nav-gutter-align-content-column.lock`
+**Gates:** FE tsc PASS; app-layout Jest 12/12; ESLint/architecture/diff-check PASS; browser smoke 1920px light/dark 16/16 PASS.
+**Branch:** `feature/TZ-UX-320-nav-gutter-align-content-column` — merge после review; deploy НЕ.
+
 ## [2026-08-12] — TZD-46 DONE: Desktop ZIP semver в имени файла (+ deploy publish)
 **Статус:** DONE; desktop publish + deploy scripts + FE URL + docs; deploy НЕ
 **Что:** publish-installer.mjs публикует `kppdf-desktop-setup-v{semver}.zip/.exe` (semver из package.json, assert == tauri.conf.json, FAIL при расхождении) + unversioned aliases тех же байт; NSIS `0.1.0` хардкод убран (candidate versioned, legacy = fallback WARN). deploy.py `publish_desktop_installer` зеркалит схему. FE default остаётся alias (вариант A), деплой инжектит versioned через meta `DESKTOP_DOWNLOAD_URL`; pairing показывает semver. INSTALL/PAIRING — канон имён.
