@@ -56,7 +56,7 @@
 ## Executor report (auto)
 
 - status: DONE
-- commits: 71446d6bfb37434913450449678ce4b78e26be37 (feat) ; closeout SHA filled after push
+- commits: 71446d6bfb37434913450449678ce4b78e26be37 (feat) ; f8b96d4e9b386802c42b002b60edfb619ce709d6
 - gates: jest orders.page 11/11 PASS; AC confirmed in code; foreign layout/CATALOG/AUTH WIP excluded
 - quality: self_score=98 reviewer_score=98
 - known: HUB-303/304 blocks deferred; rebase onto origin/main merged UX-320/321 PAGE-TZ-INDEX lines

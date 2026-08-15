@@ -8,7 +8,7 @@ closed_at: 2026-08-15T11:30:00Z
 closed_by: Buffy (Cursor Product Executor; FreeBuffy unavailable)
 workspace: D:\kppdf-8.0
 implementation_sha: 71446d6bfb37434913450449678ce4b78e26be37
-closeout_sha: TBD
+closeout_sha: f8b96d4e9b386802c42b002b60edfb619ce709d6
 verification:
   - acceptance criteria: PASS
   - quality score: 98
