@@ -6,14 +6,16 @@ reset-password / delete с confirmation-диалогами. **Не путать:
 (аккаунт/логин) ≠ `Worker` (People, сотрудник цеха); FE `admin/*` route —
 это только UI, API живёт в BE `admin` module.**
 
+> **DEPRECATED / redirected (TZ-AUTH-308):** UI-route `/admin/users` перенаправляет на `/admin/devices`. Classic User create/edit login+password не развивать как рабочий UI. BE `/api/admin/users` KEEP для owner/ops/break-glass. People access = Devices invite.
+
 ## Route
 
 ```
 /admin/users — «KPPDF — Пользователи»
 ```
 
-Group Chip TOC: Пользователи | Роли (`ADMIN_TOC_CHIPS`), активный чип `users`.
-`/admin` (bare) → redirect на `/admin/users` (TZ-ADMIN-306).
+Group Chip TOC: **removed users chip** (TZ-AUTH-308). Canonical TOC on Devices: Устройства | Роли.
+`/admin/users` → redirect на `/admin/devices` (replaceUrl). UsersAdminPage may remain in codebase but is not routed.
 
 ## Capabilities gate
 
@@ -88,7 +90,8 @@ Group Chip TOC: Пользователи | Роли (`ADMIN_TOC_CHIPS`), акт�
 |----|------------|
 | TZ-257.A.1 §5 | users-admin page — полная поверхность мутаций |
 | TZ-262 | Capability-гейт выровнен с backend (`user:admin`) |
-| TZ-ADMIN-306 | `/admin` redirect → `/admin/users` |
+| TZ-ADMIN-306 | `/admin` redirect → `/admin/users` (superseded by AUTH-308) |
+| TZ-AUTH-308 | UI `/admin/users` redirect → `/admin/devices`; register HTTP 410; BE users API KEEP |
 
 ## Особенности
 

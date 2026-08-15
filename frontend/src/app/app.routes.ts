@@ -483,19 +483,9 @@ export const routes: Routes = [
       },
       {
         path: 'admin/users',
-        canMatch: [capabilityRouteGuard],
-        // TZ-262 (2026-08-02): gate выровнен с backend GET /api/admin/users
-        // (@Permissions('user:admin') — LIST перечисляет всех пользователей;
-        // user:read зарезервирован для self-service). user:read без user:admin
-        // теперь не проходит гейт → /forbidden, а не тупик 403 на странице.
-        data: {
-          pageKey: 'admin-users',
-          capabilities: ['user:admin'],
-          // Mirror backend `@Roles('admin')` on users-admin controller.
-          systemRoles: ['admin'],
-        },
-        loadComponent: () => import('./pages/admin/users-admin.page').then((m) => m.UsersAdminPage),
-        title: 'KPPDF — Пользователи',
+        // TZ-AUTH-308: classic Users UI deprecated - redirect to Devices invite path.
+        redirectTo: 'admin/devices',
+        pathMatch: 'full',
       },
       {
         path: 'admin/roles',
@@ -516,7 +506,7 @@ export const routes: Routes = [
       // non-admin visitors still land on /forbidden.
       {
         path: 'admin',
-        redirectTo: 'admin/users',
+        redirectTo: 'admin/devices',
         pathMatch: 'full',
       },
     ],

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  GoneException,
   HttpCode,
   HttpStatus,
   Post,
@@ -22,7 +23,6 @@ import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { RegisterDto } from './dto/register.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserService } from '../user/user.service';
 
@@ -43,13 +43,13 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 400, description: 'Validation error' })
-  @ApiResponse({ status: 409, description: 'Username or email already exists' })
-  register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    return this.auth.register(dto, res);
+  @HttpCode(HttpStatus.GONE)
+  @ApiOperation({ summary: 'Public register disabled (TZ-AUTH-308) - use device invite' })
+  @ApiResponse({ status: 410, description: 'Gone - public registration removed; use device invite' })
+  register(): never {
+    // TZ-AUTH-308: classic public register is off. People access = Devices invite.
+    // Owner break-glass remains POST /api/auth/login.
+    throw new GoneException('Public registration is disabled. Use a device invite link.');
   }
 
   @Public()

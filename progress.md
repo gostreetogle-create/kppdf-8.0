@@ -1,3 +1,36 @@
+## [2026-08-15] — TZ-AUTH-308 DONE — Device-only admin UX
+**Исполнитель:** agent-3e757640b7
+**Статус:** DONE; people UI via Devices; users redirect; register 410; login KEEP; deploy НЕТ
+**Итог:** Nav/TOC → Устройства|Роли; `/admin`+`/admin/users` → devices; `POST /api/auth/register` Gone; BE `/api/admin/users` KEEP.
+**Gates:** FE tsc PASS; FE Jest admin|layout|devices|auth 147 PASS; BE tsc PASS; BE Jest auth 28 PASS; git diff --check (TZ files) PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-308.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-308.md`
+**Lock:** `.mimocode/locks/TZ-AUTH-308-device-only-admin-ux.lock`
+**known_limitation:** reset-password UI via users route redirected; break-glass login/script.
+**Successor:** TZ-AUTH-307 (park) only after PO; deploy only on explicit PO.
+
+## [2026-08-15] — TZ-UX-325 DONE — chrome page-tools migration audit
+**Исполнитель:** Buffy continuous executor (docs)
+**Статус:** DONE; docs-only; deploy НЕ
+**Что:** Inventory candidates → chrome-rail; P0 products/modules/materials (`filters-rail` w-12); WAVE 326…330 backlog; page-chrome + PAGE-TZ-INDEX linked; KP/Builder marked already-studio.
+**Gates:** no FE/BE product diff; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-325.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-325.md`
+**Lock:** `.mimocode/locks/TZ-UX-325-chrome-page-tools-migration-audit.lock`
+**Audit:** `docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`
+**Wave:** `tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md`
+**Successor:** executable TZ-UX-326+ when PO opens wave.
+
+## [2026-08-15] — TZ-AUTH-305 DONE — подъезд снят (auth_request)
+**Исполнитель:** cursor-architect (ops cutover)
+**Статус:** DONE; Basic Auth removed from UI; device cookie gate live; wipe нет
+**Что:** Stage A enroll open → owner-device smoke → Stage B `auth_request` + убран Basic; rollback `kppdf-proxy.bak-auth-basic`.
+**Gates:** nginx -t PASS; `/` anon 401 без Basic; cookie 200; `/enroll/` 200; `/api/health` 200; OPTIONS 204; pairing health 200.
+**Archive:** `tasks/_archive/2026-08/TZ-AUTH-305.done.md`
+**Checklist:** `docs/agent-checklists/TZ-AUTH-305.md`
+**Evidence:** `docs/ops/server-harden-evidence.md` § AUTH-305
+**Successor:** TZ-AUTH-307 (htpasswd + enrollBaseUrl); PO открывает owner enroll в своём браузере один раз.
+
 ## [2026-08-15] — TZ-UX-323 DONE — Gantt tools in app chrome-rail
 **Исполнитель:** Buffy continuous executor
 **Статус:** DONE; /production tools→chrome; local 48px rails removed; deploy НЕ

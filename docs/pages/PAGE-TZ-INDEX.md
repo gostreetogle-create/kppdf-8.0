@@ -12,7 +12,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
-| `(app shell)` | page-chrome.md | **UX-317** ←→ history; **UX-320** interim floating; **UX-321** / **UX-321-FIX** frame rails; **UX-322/323 DONE** chrome page-tools + Gantt (`WAVE-UX-CHROME-GANTT-TOOLS` 100) |
+| `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (326…); audit `2026-08-15-chrome-page-tools-migration-audit.md` |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
@@ -22,11 +22,11 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10; **CATALOG-373 DONE** grid + filters-rail (parity products, `pi-materials-view-mode`) |
+| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10; **CATALOG-373 DONE** grid + filters-rail (parity products, `pi-materials-view-mode`); **UX-325** P0 chrome migrate → **UX-328** backlog |
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
-| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE |
+| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE; **UX-325** P0 chrome migrate → **UX-326** backlog |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **UX-DIALOG-306** picker qty |
-| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail) |
+| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **UX-325** P0 chrome migrate → **UX-327** backlog |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
@@ -84,11 +84,11 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | ADMIN/RBAC archived; WAVE-PAGE-DOCS-GAPS |
-| `/admin/devices` | admin-devices.page.md | **TZ-AUTH-306→303→304 READY** pre-role invite / owner-device link / revoke |
-| `/enroll/:token` | enroll.page.md | **TZ-AUTH-303→304 READY** passwordless named-computer enrollment |
-| `/admin` stub | — | optional redirect (P2, not tasked) |
-| `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305→307** device cutover + cleanup |
+| `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | **TZ-AUTH-308 DONE**: users UI redirect→devices; roles KEEP |
+| `/admin/devices` | admin-devices.page.md | **TZ-AUTH-308 DONE** canonical invite UI; AUTH-303/304/305 DONE |
+| `/enroll/:token` | enroll.page.md | **TZ-AUTH-303→304** passwordless named-computer enrollment |
+| `/admin` stub | — | **TZ-AUTH-308** redirect → `/admin/devices` |
+| `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305 DONE**; AUTH-307 park |
 
 ## Cross-cutting UX batch (this sweep)
 

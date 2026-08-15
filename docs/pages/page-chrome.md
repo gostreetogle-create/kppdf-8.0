@@ -94,9 +94,60 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - `/login` никогда не подставляется предыдущим URL — глобальный ← не выкидывает на вход.
 - `AppHistoryStore` аддитивен к `CatalogReturnStore` (API не менялся).
 
-## Page tools в chrome-rail (TZ-UX-322)
+## Page tools в chrome-rail (TZ-UX-322 / 323 / канон PO 2026-08-15)
 
-Страницы проецируют icon-tools в `app-chrome-rail-left/right` через
+### Зачем
+
+Глобальные панели `app-chrome-rail-left/right` (64px, ≥1680px) — **место для
+иконок страницы**, чтобы не есть ширину/высоту рабочей плоскости (Гант, таблица,
+студия). History ←→ всегда сверху; page-tools — ниже, **со своим набором на
+каждый route**.
+
+### Как оформлять (обязательный паттерн)
+
+```text
+app-chrome-rail-left          app-chrome-rail-right
+┌─────────────┐               ┌─────────────┐
+│  ← history  │  (global)     │  → history  │  (global)
+│  · spacer · │  ≈1 кнопка    │  · spacer · │
+│  tool …     │  (page)       │  tool …     │  (page)
+│  tool …     │               │  tool …     │
+└─────────────┘               └─────────────┘
+        │                              │
+        └──── flyout overlay на main ──┘
+              (центр НЕ сжимать)
+```
+
+| Правило | Деталь |
+|---------|--------|
+| API | `PiChromeToolsService.setTools(ownerId, items)` / `clear(ownerId)` на destroy |
+| Только кнопки | В chrome — icon + RU aria/title; панели/списки = **flyout overlay** у страницы |
+| Один owner | Обычно id страницы (`production-cockpit`); не копить чужие tools |
+| Global ≠ page | History = браузерная навигация; page-tools = действия **этого** экрана |
+| Отступ | Между history и первым page-tool — зазор ≈ высота одной кнопки (**TZ-UX-324**) |
+| Visual | Лёгкое отличие фона/бордера page-tool от history (не вторая «коробка») |
+| Пустая страница | Только ←→; spacer не показывать |
+| Viewport | Rails/tools видны ≥1680px (как history); на узких — не дублировать толстый docked rail «на всякий» без отдельного mobile design |
+| Запрет | Не возвращать локальные 48px studio-колонки рядом с контентом, если tools уже в chrome |
+
+### Эталон consumer
+
+`/production` (Гант) — **TZ-UX-323 DONE**: Заказы · Фильтры · Обновить | Карточка · Сегодня · Масштаб.
+
+### Миграция остальных страниц
+
+1. **Аудит кандидатов** — **TZ-UX-325 DONE** →
+   [`docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`](../audits/2026-08-15-chrome-page-tools-migration-audit.md)
+   (P0: `/products`, `/modules`, `/materials` — локальный `filters-rail` `w-12`).
+2. **Волна переносов** —
+   [`tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md`](../../tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md)
+   (черновик TZ-UX-326…330, по одному экрану).
+3. **Новые dense UI (обязательно):** сразу `PiChromeToolsService` + flyout overlay —
+   **не** добавлять локальную колонку ~48px / `w-12` рядом с контентом.
+4. Студии с уже готовым icon-rail (КП Create, Builder) — **не дублировать** в chrome
+   без отдельного PO; Гант уже мигрирован (323).
+
+Страницы проецируют icon-tools через
 `PiChromeToolsService` (`frontend/src/app/shared/chrome/`):
 
 | API | Роль |
@@ -105,17 +156,17 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 | `clear(ownerId)` | Снять tools при destroy страницы |
 | `leftTools` / `rightTools` | Merged computed для AppLayout |
 
-- Под ← / → — кнопки `data-test="chrome-tool-{id}"`, RU `aria-label`/`title`.
-- Visual language = `app-nav-rail-button` (+ `.is-active`).
-- Flyout/панели остаются у страницы (overlay) — в chrome только кнопки.
-- Пустой список = только history (страницы без setTools без изменений).
-- Первый consumer: `/production` — **TZ-UX-323 DONE** (Gantt tools in chrome; local 48px rails removed).
+- Кнопки `data-test="chrome-tool-{id}"`, RU `aria-label`/`title`.
+- Класс `app-chrome-page-tool` (+ `.is-active`) — muted paper-2/rule vs raised history.
+- Spacer `data-test="chrome-rail-tools-gap"` только когда на стороне есть tools.
+- Flyout/панели остаются у страницы (overlay).
 
 ## См. также
 
 - Каталожный выпадающий список: [`ui-overflow-select.md`](./ui-overflow-select.md)
 - Дерево состава (строка = кнопка): [`ui-composition-tree.md`](./ui-composition-tree.md)
+- Gantt studio SoT: [`../ux/production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md)
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-15 (TZ-UX-322 page-tools API)._
+_Создано: 2026-08-07. Обновлено: 2026-08-15 (chrome page-tools canon + gap/audit TZ)._

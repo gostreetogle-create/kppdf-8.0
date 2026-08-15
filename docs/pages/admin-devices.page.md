@@ -2,8 +2,8 @@
 
 **Краткое описание:** список именованных компьютеров (устройства-аккаунты,
 TZ-AUTH-303), создание одноразовой regular-ссылки с заранее выбранной
-активной ролью, owner-only «Добавить мой компьютер» (15 минут, password
-step-up), изменение роли/срока и отзыв конкретного компьютера.
+активной ролью, owner-only «Добавить мой компьютер» (2 дня по умолчанию,
+password step-up), изменение роли/срока и отзыв конкретного компьютера.
 
 ## Route
 
@@ -11,8 +11,7 @@ step-up), изменение роли/срока и отзыв конкретн�
 /admin/devices — «KPPDF — Устройства»
 ```
 
-Group Chip TOC: Устройства | Пользователи | Роли (`ADMIN_TOC_CHIPS`),
-активный чип `devices`.
+Group Chip TOC: Устройства | Роли (`ADMIN_TOC_CHIPS`), активный чип `devices`. `/admin` (bare) → redirect на `/admin/devices` (TZ-AUTH-308). Это единственный UI-путь приглашения людей.
 
 ## Capabilities gate
 
@@ -27,8 +26,9 @@ Group Chip TOC: Устройства | Пользователи | Роли (`ADM
 
 - «Добавить мой компьютер» видна ТОЛЬКО владельцу (`auth.isOwner()`).
   Диалог запрашивает текущий пароль владельца (step-up) → одноразовая
-  ссылка на 15 минут БЕЗ выбора роли; новый браузер привязывается к тому же
-  единственному owner (второй owner не создаётся).
+  ссылка на 2 дня (env `DEVICE_OWNER_INVITE_TTL_MINUTES=2880`) БЕЗ выбора роли;
+  новый браузер привязывается к тому же единственному owner (второй owner
+  не создаётся).
 - Обычный админ не видит owner-кнопку; owner-устройства не появляются в его
   списке (BE фильтрует `inviteKind: 'regular'`, TZ-AUTH-303) — UI ничего не
   скрывает сам.
@@ -41,7 +41,7 @@ Group Chip TOC: Устройства | Пользователи | Роли (`ADM
 |-------|----------|-----------|
 | GET | `/admin/devices` | Список устройств (для owner — включая owner-device) |
 | POST | `/admin/devices/invites` | Regular-ссылка `{ role, ttlDays?, deviceTtlDays? }` → `{ url, ... }` |
-| POST | `/admin/devices/owner-invite` | Owner-ссылка `{ password }` → `{ url }` (15 мин) |
+| POST | `/admin/devices/owner-invite` | Owner-ссылка `{ password }` → `{ url }` (2 дня default) |
 | PATCH | `/admin/devices/:id` | `{ role? }` или `{ expiresInDays? }` |
 | POST | `/admin/devices/:id/revoke` | Отзыв устройства (soft revoke, аудит) |
 
