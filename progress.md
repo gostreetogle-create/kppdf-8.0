@@ -1,3 +1,15 @@
+## [2026-08-15] — TZ-UX-321 DONE — universal left chrome rail
+**Исполнитель:** Buffy (impl + closeout)
+**Статус:** DONE; app shell left chrome rail; deploy НЕ
+**Что:** `app-chrome-rail-left` 64px under header; ←→ stacked inside rail; ≥1680 show; UX-320 interim floating gutters superseded; filter → UX-322.
+**Gates:** app-layout Jest 5/5 PASS; ng build PASS; browser smoke 1920 selfScore 98; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-321.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-321.md`
+**Lock:** `.mimocode/locks/TZ-UX-321-universal-left-chrome-rail.lock`
+**Implementation SHA:** `21f32f11317d79d25e05b651f320579e407d3bf3`
+**Merge SHA:** `85dbcc57cb2174fa750c27b425e6319baba8b30a`
+**Successor:** TZ-UX-322 page-tools projection into rail.
+
 ## [2026-08-15] — TZ-ORDERS-HUB-303 DONE — supply / production / docs expand
 **Исполнитель:** Buffy (impl + closeout)
 **Статус:** DONE; frontend orders expand + supply/production deep-links; deploy НЕ

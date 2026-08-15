@@ -1,15 +1,16 @@
 # TZ-UX-321 checklist
 
-> Status: **READY FOR REVIEW** (await Cursor PASS — do not archive yet)
-> Goal: левая chrome-панель ~1.5–2 см; ←→ внутри; фильтр = successor
-> Deploy: НЕ
-> Quality bar: ≥98 (PO visual vs red outline)
+> Status: **DONE**
+> Archive: `tasks/_archive/2026-08/TZ-UX-321.done.md`
+> Lock: `.mimocode/locks/TZ-UX-321-universal-left-chrome-rail.lock`
+> Deploy: NO
 
 ## Claim slot
 
 - agent_id: Buffy
 - claimed_at: 2026-08-15T11:26:00+03:00
-- workspace: D:\kppdf-8.0\.worktrees\TZ-UX-321
+- closed_at: 2026-08-15T14:35:00Z
+- workspace: D:\kppdf-8.0
 - branch: feature/TZ-UX-321-universal-chrome-rail
 - team_room_claim: unavailable (Unknown task in Team Room)
 
@@ -27,7 +28,7 @@
 - [x] Spec + ng build PASS
 - [x] Browser 1920 smoke + screenshot path (see below)
 - [x] Self-score 98; filter NOT moved
-- [ ] Docs + archive + lock — **deferred until Cursor PASS**
+- [x] Docs + archive + lock
 - [x] deploy НЕ
 
 ## Gates
@@ -37,6 +38,7 @@
 | Jest `app-layout.component.spec.ts` | PASS (5/5) |
 | `ng build --configuration=development` | PASS |
 | Browser smoke 1920 `/modules` | PASS (selfScore 98) |
+| Cursor Verdict | PASS |
 
 ## Evidence
 
@@ -47,5 +49,7 @@
 ## Executor report
 
 - **feat SHA:** `21f32f11317d79d25e05b651f320579e407d3bf3`
-- **READY FOR REVIEW:** yes (archive blocked until Cursor PASS)
+- **merge SHA:** `85dbcc57cb2174fa750c27b425e6319baba8b30a`
+- **closeout SHA:** _(filled after commit)_
+- **Cursor Verdict:** PASS
 - **Deploy:** NO

@@ -5,8 +5,8 @@
 >
 > ????????? ???????????? ?????? in-place. ????? ?????: 120 ?????.
 
-updated_at: 2026-08-15T11:40:00Z
-main_head: `eaef43024978b0e1b9d27493e37e3d3977fa9ab5`
+updated_at: 2026-08-15T14:35:00Z
+main_head: `85dbcc57cb2174fa750c27b425e6319baba8b30a`
 
 ## ACTIVE
 
@@ -23,6 +23,16 @@ main_head: `eaef43024978b0e1b9d27493e37e3d3977fa9ab5`
 - Conflict keys: deploy/synology docs/preflight + `docs/ops/home-host-access.md`.
 
 ## DONE / LANDED (recent)
+
+### TZ-UX-321 ? DONE / LANDED
+
+- Checklist: `docs/agent-checklists/TZ-UX-321.md`
+- Archive: `tasks/_archive/2026-08/TZ-UX-321.done.md`
+- Lock: `.mimocode/locks/TZ-UX-321-universal-left-chrome-rail.lock`
+- Implementation: `21f32f11317d79d25e05b651f320579e407d3bf3`
+- Merge: `85dbcc57cb2174fa750c27b425e6319baba8b30a`
+- State: Cursor PASS; left chrome rail 64px; back/forward inside rail; deploy NO.
+- Successor: **TZ-UX-322** page-tools into rail.
 
 ### TZ-ORDERS-HUB-303 ? DONE / LANDED
 
@@ -168,6 +178,7 @@ Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md
 
 ## LAST DONE
 
+- UX-321 universal left chrome rail ? DONE; Cursor PASS; merge on main; deploy NO; UX-322 successor for page tools.
 - ORDERS-HUB-303 supply/production/docs expand ? DONE; Cursor PASS 98/100; deploy NO.
 - ORDERS-HUB-302 orders expand + Deal/Composition ? DONE; Cursor PASS 98/100; deploy NO.
 - SALES-378 multipage bg + full next pages ? DONE; Cursor PASS; archive/lock landed; deploy NO; SALES-377 still PARK in backlog.
