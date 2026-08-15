@@ -3,14 +3,15 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
-## [2026-08-15] — TZ-UX-320 DONE: ←→ в поля у колонки контента (не у края окна)
-**Статус:** DONE on branch; frontend-only; deploy НЕ
+## [2026-08-15] — TZ-UX-320 DONE / LANDED: ←→ в поля у колонки контента (не у края окна)
+**Статус:** DONE / LANDED on main; frontend-only; deploy НЕ
 **Что:** Кнопки ← → больше не прижаты к краям окна (14px): стоят в вертикальных полях слева/справа от max-width колонки на линии бокового отступа шапки (left/right 64px). Порог видимости ≥1680px, disabled/aria/data-test, `AppHistoryStore` — без изменений.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-320.done.md`
 **Checklist:** `docs/agent-checklists/TZ-UX-320.md`
 **Lock:** `.mimocode/locks/TZ-UX-320-nav-gutter-align-content-column.lock`
-**Gates:** FE tsc PASS; app-layout Jest 12/12; ESLint/architecture/diff-check PASS; browser smoke 1920px light/dark 16/16 PASS.
-**Branch:** `feature/TZ-UX-320-nav-gutter-align-content-column` — merge после review; deploy НЕ.
+**Gates:** FE tsc PASS; app-layout Jest PASS; ESLint/architecture/diff-check PASS; browser smoke 1920px light/dark 16/16 PASS; land re-check app-layout Jest 5/5 PASS.
+**Implementation SHA:** `3d5911d143e4428e4a1bcf656216fcfa011bd8b3` (cherry-pick of `dc424c45`)
+**Land:** `feature/land-TZ-UX-320` — только UX-320 paths; без чужого WIP.
 
 ## [2026-08-12] — TZD-46 DONE: Desktop ZIP semver в имени файла (+ deploy publish)
 **Статус:** DONE; desktop publish + deploy scripts + FE URL + docs; deploy НЕ
