@@ -18,3 +18,9 @@ export class UpdateSiteDto {
   @IsOptional() @IsString() @Length(1, 256) name?: string;
   @IsOptional() @IsString() @Length(1, 512) address?: string;
 }
+
+/** TZ-ORDERS-336 — reuse convert helper from the order form. */
+export class EnsureDefaultSiteDto {
+  @IsObjectId()
+  counterpartyId!: string;
+}

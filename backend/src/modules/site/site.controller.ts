@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CreateSiteDto, UpdateSiteDto } from './dto/create-site.dto';
+import { CreateSiteDto, EnsureDefaultSiteDto, UpdateSiteDto } from './dto/create-site.dto';
 import { SiteService } from './site.service';
 
 @Controller('sites')
@@ -24,6 +24,13 @@ export class SiteController {
   list(@Query('counterpartyId') counterpartyId?: string) {
     if (!counterpartyId) return [];
     return this.service.findByCounterparty(counterpartyId);
+  }
+
+  @Post('ensure-default')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'create', entityType: 'Site' })
+  ensureDefault(@Body() dto: EnsureDefaultSiteDto) {
+    return this.service.ensureDefaultForCounterparty(dto.counterpartyId);
   }
 
   @Get(':id')

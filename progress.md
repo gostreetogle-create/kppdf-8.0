@@ -1,3 +1,12 @@
+## [2026-08-15] — TZ-ORDERS-336 DONE — Order form productId + default Site + freeze
+**Исполнитель:** cursor-grok-4.6-executor
+**Статус:** DONE; deploy НЕ
+**Что:** onProductPick пишет productId; пустой объект → ensure-default Site; freeze in_production/ready только план/приоритет; date input + ship default.
+**Gates:** FE+BE tsc PASS; FE Jest order-form-dialog **9 PASS**; BE site.service **4 PASS**; lint owned files PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-336.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-336-order-form-save-site-freeze.lock`
+**Dep:** none
+
 ## [2026-08-15] — TZ-PRODUCTION-335 DONE — Gantt sort by start + clean order-meta
 **Исполнитель:** cursor-grok-4.6-executor
 **Статус:** DONE; deploy НЕ

@@ -3,6 +3,13 @@
 > **HISTORY — НЕ STARTUP-ФАЙЛ.** Текущее состояние агентов:
 > `docs/agent-checklists/_NOW.md` + `tasks/_active/`.
 
+## [2026-08-15] — TZ-ORDERS-336 DONE: Order form productId + default Site + freeze
+**Статус:** DONE; deploy НЕ
+**Что:** Save пишет productId; ensure-default Site; freeze UX/payload; date input + line ship default.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-336.done.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-336-order-form-save-site-freeze.lock`
+**Gates:** FE+BE tsc PASS; Jest order-form-dialog 9 PASS; site.service 4 PASS; lint owned files PASS.
+
 ## [2026-08-15] — TZ-PRODUCTION-335 DONE: Gantt sort by start + clean order-meta
 **Статус:** DONE; deploy НЕ
 **Что:** Gantt/rail sort by summary startDate; meta RU labels + auto-save silent optimistic; no obsolete hint/Save.

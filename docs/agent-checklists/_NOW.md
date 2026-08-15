@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T23:20:00+03:00
+updated_at: 2026-08-15T23:40:00+03:00
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
 
-_(empty — TZ-PRODUCTION-335 DONE)_
+_(empty — TZ-ORDERS-336 DONE)_
 
 ## NEXT (PO paste prompt)
 
-_(empty — 335 DONE)_
+_(empty — 336 DONE; queue empty)_
 
-_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332 day weekday ticks DONE; 333 optimistic drag DONE; 334 workers limit 100 DONE; 335 Gantt start-sort + meta auto-save DONE)_
+_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**)_
 
 ## Queue hygiene (not live)
 
@@ -27,6 +27,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-15] — TZ-ORDERS-336 DONE — Order form productId + default Site + freeze
+
+- Archive: `tasks/_archive/2026-08/TZ-ORDERS-336.done.md`; Save writes productId; empty CP gets default Site; freeze payload/UI.
 
 ### TZ-PRODUCTION-335 — DONE 2026-08-15
 
@@ -109,5 +113,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331 siteId/plan DONE; 332
 
 ## HEAD / queue
 
-- Queue: **empty**; TZ-PRODUCTION-335 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
+- Queue: **empty**; TZ-ORDERS-336 DONE; готово предложить деплой по явной команде PO — автоматически не деплоить.
 - Deploy app: НЕ — не автодеплой

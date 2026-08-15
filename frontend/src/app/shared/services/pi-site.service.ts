@@ -37,6 +37,13 @@ export class SiteService {
     return silentGet<Site[]>(this.http, `${this.baseUrl}/sites`, { params });
   }
 
+  /** TZ-ORDERS-336 — same helper as КП→заказ convert. */
+  ensureDefaultForCounterparty(counterpartyId: string): Observable<SilentResult<Site>> {
+    return silentPost<Site>(this.http, `${this.baseUrl}/sites/ensure-default`, {
+      counterpartyId,
+    });
+  }
+
   create(payload: SiteUpsertDto): Observable<SilentResult<Site>> {
     return silentPost<Site>(this.http, `${this.baseUrl}/sites`, payload);
   }

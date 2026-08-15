@@ -56,6 +56,7 @@ Read-only expand на списке `/orders`:
 | GET        | `/api/orders/:id`                  | Карточка (populate counterparty/site/items.ownerUserId)      |
 | POST/PATCH | `/api/orders`                      | Create/update — `counterpartyId` + `siteId` обязательны      |
 | GET        | `/api/sites?counterpartyId=`       | Объекты заказчика                                            |
+| POST       | `/api/sites/ensure-default`        | Если объектов нет — «Объект по умолчанию» (как convert)      |
 | POST       | `/api/counterparties/quick`        | Quick-create: name+phone+address → counterparty+site         |
 | GET        | `/api/users?limit=100`             | Список пользователей для «Ответственный» на линии            |
 | GET        | `/api/products/:id/tree?maxDepth=` | Live BOM линии (каталог)                                     |
@@ -77,7 +78,7 @@ Read-only expand на списке `/orders`:
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `OrdersService`         | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `setLineReady(...)`, `createStubProposal(id)`, `remove(id)` |
 | `CounterpartyService`   | `list(params)`, `quickCreateParty({name, phone?, address})`                                                                     |
-| `SiteService`           | `listByCounterparty(id)`, CRUD                                                                                                  |
+| `SiteService`           | `listByCounterparty(id)`, `ensureDefaultForCounterparty(id)`, CRUD                            |
 | `ProductModulesService` | `getProductTree(id, maxDepth)` — live children на карточке                                                                      |
 
 ## State (signals) — список
@@ -120,11 +121,14 @@ Read-only expand на списке `/orders`:
   просьбой отметить «нашу фирму», а не молчаливый выбор случайной;
 - отказ с понятным текстом: заказ отменён или в заказе нет позиций (пустое КП бесполезно).
 
-## Форма заказа (TZ-ORDERS-303)
+## Форма заказа (TZ-ORDERS-303 + TZ-ORDERS-336)
 
 - Обязательны: **Заказчик** (`counterpartyId`) + **Объект** (`siteId`; sites грузятся при смене заказчика).
+- Если у заказчика нет объектов — `POST /api/sites/ensure-default` создаёт «Объект по умолчанию» и подставляет `siteId` (тот же helper, что КП→заказ).
 - **Быстрый заказчик:** имя + телефон + адрес → `POST /counterparties/quick` → подставить `counterpartyId`+`siteId`.
-- На линии: опционально **Ответственный** (`ownerUserId`) и **Отгрузка** (`plannedShipDate`).
+- На линии: изделие (`productId` обязателен; picker пишет id, не только имя); опционально **Ответственный** и **Отгрузка** (`plannedShipDate`, дефолт = дата заказа или сегодня).
+- Шапка **Планируемая дата** — `type="date"` (не required).
+- Freeze: `in_production`/`ready` — состав/заказчик/объект/статус read-only; Save шлёт только `plannedDate`+`priority`. `shipped`/`delivered`/`cancelled` — только просмотр.
 - `unitPrice` пока остаётся в форме (не strip в этом TZ).
 
 ## Computed chain (список)
@@ -165,6 +169,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | TZ-ORDERS-301         | Strip commerce → order lines                                                                 |
 | TZ-ORDERS-302         | Detail + live composition-tree                                                               |
 | TZ-ORDERS-303         | siteId + quick-create + line owner/shipDate                                                  |
+| **TZ-ORDERS-336**     | productId на Save; ensure-default Site; freeze UX; date input + ship default                 |
 | TZ-ORDERS-306         | КП-заглушка из прямого заказа (`POST /orders/:id/stub-proposal`)                             |
 | **TZ-ORDERS-HUB-301** | Контракт хаба (колонки/expand/sources) — READY                                               |
 | **TZ-ORDERS-HUB-302** | Колонки + expand «Состав заказа» (accordion; без «Сделка») — DONE                            |
@@ -180,4 +185,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-15 (TZ-ORDERS-HUB-304)._
+_Обновлено: 2026-08-15 (TZ-ORDERS-336)._

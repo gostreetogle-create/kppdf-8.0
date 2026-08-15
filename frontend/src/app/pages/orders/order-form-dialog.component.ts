@@ -17,12 +17,15 @@ import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tok
 import { PiToastService } from '../../shared/ui/toast';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../core/silent-http';
+import type { HttpErrorResponse } from '@angular/common/http';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Product, ProductsService } from '../../shared/services/products.service';
 import { Site, SiteService } from '../../shared/services/pi-site.service';
 import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
 import { Users } from '../users/users.entity';
+
+type FreezeMode = 'none' | 'plan' | 'hard';
 
 type Result = Order | null | undefined;
 
@@ -94,6 +97,25 @@ interface ItemFormGroup extends FormGroup {
         class="space-y-form-field overflow-y-auto min-h-0"
         data-test="order-form"
       >
+        @if (freezeMode() === 'plan') {
+          <p
+            role="status"
+            class="text-xs text-muted-foreground m-0"
+            data-test="order-freeze-banner"
+          >
+            Заказ в статусе «{{ statusLabel() }}» — состав заморожен. Можно сохранить планируемую
+            дату и приоритет.
+          </p>
+        }
+        @if (freezeMode() === 'hard') {
+          <p
+            role="status"
+            class="text-xs text-muted-foreground m-0"
+            data-test="order-freeze-banner"
+          >
+            Заказ в статусе «{{ statusLabel() }}» нельзя обновлять.
+          </p>
+        }
         <!-- ─── Header ─── -->
         <app-pi-form-section title="Основные данные" headingId="order-sec-basics" tone="gold">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
@@ -110,6 +132,7 @@ interface ItemFormGroup extends FormGroup {
                 searchable="auto"
                 placeholder="— выберите —"
                 ariaLabel="Заказчик"
+                [disabled]="isCompositionLocked()"
                 dataTest="ord-cp"
               />
             </app-pi-form-field>
@@ -125,7 +148,7 @@ interface ItemFormGroup extends FormGroup {
                 [value]="form.controls.siteId.value"
                 (valueChange)="onSiteChange($event)"
                 searchable="auto"
-                [disabled]="!form.controls.counterpartyId.value"
+                [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
                 [placeholder]="
                   form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
                 "
@@ -143,11 +166,12 @@ interface ItemFormGroup extends FormGroup {
             </app-pi-form-field>
 
             <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
-              <app-pi-input
+              <input
                 id="ord-plannedDate"
-                type="text"
+                type="date"
                 formControlName="plannedDate"
-                placeholder="ГГГГ-ММ-ДД"
+                class="h-10 px-3 text-sm hairline rounded-sm bg-paper pi-focus-ring w-full"
+                data-test="ord-plannedDate"
               />
             </app-pi-form-field>
 
@@ -180,49 +204,55 @@ interface ItemFormGroup extends FormGroup {
         </app-pi-form-section>
 
         <!-- ─── Quick-create заказчик ─── -->
-        <app-pi-form-section
-          title="Быстрый заказчик"
-          headingId="order-sec-quick-party"
-          tone="neutral"
-        >
-          <div
-            class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
-            data-test="order-quick-party"
-            [formGroup]="quickForm"
+        @if (!isCompositionLocked()) {
+          <app-pi-form-section
+            title="Быстрый заказчик"
+            headingId="order-sec-quick-party"
+            tone="neutral"
           >
-            <p class="text-xs text-muted-foreground m-0">
-              Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
-            </p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
-              <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
-                <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
-              </app-pi-form-field>
-              <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
-                <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
-              </app-pi-form-field>
-              <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
-                <app-pi-input
-                  id="ord-qc-address"
-                  formControlName="address"
-                  placeholder="Город, улица…"
-                />
-              </app-pi-form-field>
-            </div>
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              [disabled]="quickSubmitting()"
-              (click)="onQuickCreate()"
-              data-test="order-quick-create"
+            <div
+              class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
+              data-test="order-quick-party"
+              [formGroup]="quickForm"
             >
-              {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
-            </app-pi-button>
-            @if (quickError()) {
-              <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
-            }
-          </div>
-        </app-pi-form-section>
+              <p class="text-xs text-muted-foreground m-0">
+                Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
+                <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
+                  <app-pi-input
+                    id="ord-qc-name"
+                    formControlName="name"
+                    placeholder="ООО … / ИП …"
+                  />
+                </app-pi-form-field>
+                <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
+                  <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
+                </app-pi-form-field>
+                <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
+                  <app-pi-input
+                    id="ord-qc-address"
+                    formControlName="address"
+                    placeholder="Город, улица…"
+                  />
+                </app-pi-form-field>
+              </div>
+              <app-pi-button
+                type="button"
+                variant="outline"
+                size="sm"
+                [disabled]="quickSubmitting()"
+                (click)="onQuickCreate()"
+                data-test="order-quick-create"
+              >
+                {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
+              </app-pi-button>
+              @if (quickError()) {
+                <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
+              }
+            </div>
+          </app-pi-form-section>
+        }
 
         <!-- ─── Items ─── -->
         <app-pi-form-section title="Позиции" headingId="order-sec-items" tone="neutral">
@@ -233,6 +263,7 @@ interface ItemFormGroup extends FormGroup {
                 type="button"
                 variant="outline"
                 size="sm"
+                [disabled]="isCompositionLocked()"
                 (click)="addItem()"
                 data-test="add-item"
               >
@@ -261,9 +292,15 @@ interface ItemFormGroup extends FormGroup {
                       (valueChange)="onProductPick(i, $event)"
                       searchable="auto"
                       placeholder="— выберите —"
+                      [disabled]="isCompositionLocked()"
                       [ariaLabel]="'Продукт ' + (i + 1)"
                       [dataTest]="'ord-item-product-' + i"
                     />
+                    @if (itemProductError(i)) {
+                      <p role="alert" class="text-xs text-destructive m-0 mt-1">
+                        {{ itemProductError(i) }}
+                      </p>
+                    }
                   </label>
 
                   <label class="col-span-6 sm:col-span-2 block">
@@ -302,6 +339,7 @@ interface ItemFormGroup extends FormGroup {
                     type="button"
                     variant="destructive"
                     size="icon"
+                    [disabled]="isCompositionLocked()"
                     [attr.aria-label]="'Удалить позицию ' + (i + 1)"
                     (click)="removeItem(i)"
                     data-test="remove-item"
@@ -363,7 +401,7 @@ interface ItemFormGroup extends FormGroup {
         <app-pi-button
           type="button"
           variant="default"
-          [disabled]="submitting()"
+          [disabled]="submitting() || freezeMode() === 'hard'"
           (click)="onSubmit()"
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
@@ -382,6 +420,7 @@ export class OrderFormDialogComponent {
       // Fresh order — start with one empty item to satisfy CreateOrderDto.required.
       this.addItem();
     }
+    this.applyFreeze();
   }
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   protected readonly PRIORITY_OPTIONS = PRIORITY_OPTIONS;
@@ -406,6 +445,14 @@ export class OrderFormDialogComponent {
   protected readonly sites = signal<Site[]>([]);
   protected readonly products = signal<Product[]>([]);
   protected readonly users = signal<OwnerUserOption[]>([]);
+  protected readonly freezeMode = computed((): FreezeMode => {
+    if (!this.data) return 'none';
+    const status = this.data.status;
+    if (status === 'in_production' || status === 'ready') return 'plan';
+    if (status === 'shipped' || status === 'delivered' || status === 'cancelled') return 'hard';
+    return 'none';
+  });
+  protected readonly isCompositionLocked = computed(() => this.freezeMode() !== 'none');
   protected readonly counterpartyItems = computed(() =>
     this.counterparties().map((cp) => ({
       id: cp._id,
@@ -481,14 +528,30 @@ export class OrderFormDialogComponent {
       return;
     }
     this.siteService.listByCounterparty(counterpartyId).subscribe((res) => {
-      if (res.ok) {
-        this.sites.set(res.data ?? []);
+      if (!res.ok) {
+        this.sites.set([]);
+        return;
+      }
+      const list = res.data ?? [];
+      if (list.length > 0) {
+        this.sites.set(list);
         if (preferSiteId) {
           this.form.controls.siteId.setValue(preferSiteId);
         }
-      } else {
-        this.sites.set([]);
+        return;
       }
+      this.siteService.ensureDefaultForCounterparty(counterpartyId).subscribe((ensured) => {
+        if (!ensured.ok || !ensured.data?._id) {
+          this.sites.set([]);
+          this.errorMessage.set(
+            'Не удалось создать объект по умолчанию. Выберите или создайте объект.',
+          );
+          return;
+        }
+        this.sites.set([ensured.data]);
+        this.form.controls.siteId.setValue(ensured.data._id);
+        this.form.controls.siteId.markAsDirty();
+      });
     });
   }
 
@@ -531,7 +594,7 @@ export class OrderFormDialogComponent {
   }
 
   addItem(): void {
-    this.itemsArray.push(this.createItemGroup({}));
+    this.itemsArray.push(this.createItemGroup({}, { defaultShip: true }));
   }
 
   removeItem(i: number): void {
@@ -539,22 +602,44 @@ export class OrderFormDialogComponent {
   }
 
   /**
-   * Auto-fill productName + unit when the user picks a product in
-   * the picker. Keeps `unitPrice` empty — operator enters the actual
-   * deal price manually (business rule: listPrice is reference only).
+   * Auto-fill productId + productName + unit when the user picks a product.
+   * Keeps `unitPrice` empty — operator enters the actual deal price manually
+   * (business rule: listPrice is reference only).
    */
   onProductPick(index: number, productId: string): void {
+    const group = this.itemsArray.at(index);
+    group.controls.productId.setValue(productId);
+    group.controls.productId.markAsDirty();
+    group.controls.productId.markAsTouched();
+    if (!productId) {
+      group.controls.productName.setValue('');
+      return;
+    }
     const selected = this.products().find((p) => p._id === productId);
     if (!selected) return;
-    const group = this.itemsArray.at(index);
     group.controls.productName.setValue(selected.name);
     if (selected.unit && !group.controls.unit.value) {
       group.controls.unit.setValue(selected.unit);
     }
   }
 
-  private createItemGroup(initial: Partial<OrderItem> = {}): ItemFormGroup {
-    const ship = initial.plannedShipDate ? String(initial.plannedShipDate).slice(0, 10) : '';
+  private todayDateOnly(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  private createItemGroup(
+    initial: Partial<OrderItem> = {},
+    opts: { defaultShip?: boolean } = {},
+  ): ItemFormGroup {
+    let ship = initial.plannedShipDate ? String(initial.plannedShipDate).slice(0, 10) : '';
+    if (!ship && opts.defaultShip) {
+      const header = this.form.controls.plannedDate.value;
+      ship = header && header.length >= 10 ? header.slice(0, 10) : this.todayDateOnly();
+    }
     return this.fb.group({
       productId: this.fb.control(initial.productId ?? '', [Validators.required]),
       productName: this.fb.control<string>(initial.productName ?? ''),
@@ -612,7 +697,9 @@ export class OrderFormDialogComponent {
   protected errorFor(name: keyof typeof this.form.controls): string {
     const c = this.form.controls[name];
     if (!c.invalid || (!c.dirty && !c.touched)) return '';
-    if (c.errors?.['required']) return 'Обязательное поле';
+    if (c.errors?.['required']) {
+      return name === 'siteId' ? 'Выберите объект' : 'Обязательное поле';
+    }
     if (c.errors?.['maxlength']) {
       return `Максимум ${c.errors['maxlength'].requiredLength} символов`;
     }
@@ -620,14 +707,92 @@ export class OrderFormDialogComponent {
     return 'Некорректное значение';
   }
 
+  protected statusLabel(): string {
+    const status = this.data?.status ?? this.form.controls.status.value;
+    return STATUS_OPTIONS.find((opt) => opt.value === status)?.label ?? status;
+  }
+
+  protected itemProductError(index: number): string {
+    const c = this.itemsArray.at(index)?.controls.productId;
+    if (!c || !c.invalid || (!c.dirty && !c.touched)) return '';
+    if (c.errors?.['required']) return 'Выберите изделие';
+    return 'Некорректное значение';
+  }
+
+  private itemsMissingProduct(): boolean {
+    return this.itemsArray.controls.some((group) => !group.controls.productId.value);
+  }
+
+  private applyFreeze(): void {
+    const mode = this.freezeMode();
+    if (mode === 'none') return;
+    const composition = [
+      'number',
+      'counterpartyId',
+      'siteId',
+      'status',
+      'deliveryAddress',
+      'notes',
+      'items',
+    ] as const;
+    for (const key of composition) {
+      this.form.controls[key].disable({ emitEvent: false });
+    }
+    this.quickForm.disable({ emitEvent: false });
+    if (mode === 'hard') {
+      this.form.controls.plannedDate.disable({ emitEvent: false });
+      this.form.controls.priority.disable({ emitEvent: false });
+    }
+  }
+
+  private mapSaveError(err: HttpErrorResponse): string {
+    const raw = extractErrorMessage(err);
+    if (err.status === 400 && raw && raw !== 'Неизвестная ошибка') return raw;
+    if (err.status === 400) return 'Нельзя сохранить эти поля в текущем статусе заказа';
+    return raw;
+  }
+
+  private sendPayload(payload: Partial<Order>): void {
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+    const obs = this.data
+      ? this.service.update(this.data._id, payload)
+      : this.service.create(payload);
+    obs.subscribe((res) => {
+      if (res.ok) {
+        this.toast.success(this.isEdit() ? 'Заказ обновлён' : 'Заказ создан');
+        this.ref.close(res.data);
+      } else {
+        this.errorMessage.set(this.mapSaveError(res.error));
+        this.submitting.set(false);
+      }
+    });
+  }
+
   protected onSubmit(): void {
     if (this.submitting()) return;
+    const freeze = this.freezeMode();
+    if (freeze === 'hard') {
+      this.errorMessage.set(`Заказ в статусе «${this.statusLabel()}» нельзя обновлять`);
+      return;
+    }
+    if (freeze === 'plan') {
+      const v = this.form.getRawValue();
+      const payload: Partial<Order> = { priority: v.priority };
+      if (v.plannedDate) payload.plannedDate = v.plannedDate;
+      this.sendPayload(payload);
+      return;
+    }
     if (this.form.invalid || this.itemsArray.length === 0) {
       this.form.markAllAsTouched();
       if (this.itemsArray.length === 0) {
         this.errorMessage.set('Добавьте хотя бы одну позицию');
+      } else if (this.itemsMissingProduct()) {
+        this.errorMessage.set('Выберите изделие в каждой позиции');
       } else if (!this.form.controls.siteId.value) {
         this.errorMessage.set('Выберите объект');
+      } else {
+        this.errorMessage.set('Проверьте обязательные поля');
       }
       return;
     }
@@ -657,20 +822,7 @@ export class OrderFormDialogComponent {
     if (v.deliveryAddress) payload.deliveryAddress = v.deliveryAddress;
     if (v.notes) payload.notes = v.notes;
 
-    this.submitting.set(true);
-    this.errorMessage.set(null);
-    const obs = this.data
-      ? this.service.update(this.data._id, payload)
-      : this.service.create(payload);
-    obs.subscribe((res) => {
-      if (res.ok) {
-        this.toast.success(this.isEdit() ? 'Заказ обновлён' : 'Заказ создан');
-        this.ref.close(res.data);
-      } else {
-        this.errorMessage.set(extractErrorMessage(res.error));
-        this.submitting.set(false);
-      }
-    });
+    this.sendPayload(payload);
   }
 
   protected onCancel(): void {
