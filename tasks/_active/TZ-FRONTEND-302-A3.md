@@ -1,11 +1,14 @@
-# ACTIVE: TZ-FRONTEND-302-A3
+# LOCKED: TZ-FRONTEND-302-A3
 
 Lane: A
 Parent: TZ-FRONTEND-302
 Owner: Buffy-TZ-FRONTEND-302-A
-Status: BLOCKED / needs amendment
-Canonical: 6cb978a2484af108b891a87793247c76dc60329e
-Exact key: frontend/src/app/pages/import-todos/import-todos.page.ts
+Status: DONE
+Canonical: 483ebd0ba6ac82615645cd4077d7e7b69fe17772
+Exact keys:
+- frontend/src/app/pages/import-todos/import-todos.page.ts
+- frontend/src/app/pages/import-todos/import-todos.service.ts
+- frontend/src/app/pages/import-todos/import-todos.service.spec.ts
 
-Blocker: `httpResource` covers the existing GET, but `markDone()` requires PATCH. No existing import-todos shared service/API method exists. A new shared service/file is outside approved A3 scope. No product edits.
-Baseline: ESLint 1 expected warning; focused spec path absent.
+Evidence: service Jest 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; diff-check PASS.
+Implementation commit: pending

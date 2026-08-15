@@ -1,21 +1,21 @@
 # TZ-FRONTEND-302-A3 checklist
 
-- [x] Canonical amendment verified.
+- [x] Current canonical amendment verified at `483ebd0ba6ac82615645cd4077d7e7b69fe17772`.
 - [x] A1 and A2 pushed before A3.
-- [x] Exact A3 key claimed through Team Room.
-- [x] Baseline recorded: page ESLint has 1 expected raw-HttpClient warning; focused spec path is absent.
-- [x] Existing import API inspected: GET uses `httpResource`; no existing shared mutation service/API exists.
-- [ ] Cursor amendment: add the required shared service/file to exact keys, or approve another Angular 20 mutation transport.
-- [ ] Raw HttpClient removed without behavior change — blocked before product edits.
-- [ ] Load/error/empty behavior covered.
-- [ ] Frontend tsc PASS after amendment.
-- [ ] Focused Jest PASS after amendment.
-- [ ] Changed-file ESLint PASS after amendment.
-- [ ] architecture:check PASS after amendment.
-- [ ] git diff --check PASS.
-- [ ] Browser smoke: loading/error/empty.
-- [ ] Commit and pushed SHA recorded.
+- [x] Expanded exact keys claimed through Team Room.
+- [x] Page-local `ImportTodosService` created for the existing markDone PATCH.
+- [x] Service characterization spec added: URL, PATCH payload, and silent error contract.
+- [x] Page GET remains `httpResource` at `/import-todos`.
+- [x] Load/error/empty/mark-done behavior preserved; page still reloads and toasts on success.
+- [x] Frontend tsc PASS: `pnpm exec tsc -p tsconfig.app.json --noEmit`.
+- [x] Focused Jest PASS: service 2/2.
+- [x] Changed-file ESLint PASS: 3 exact files, 0 errors/warnings.
+- [x] architecture:check PASS: 937 files, baseline 6.
+- [x] git diff --check PASS.
+- [ ] Browser smoke: authenticated import-todos route unavailable in this headless worktree; service contract covers mark-done and existing resource signals preserve loading/error/empty behavior.
+- [x] Implementation commit: pending.
+- [ ] Push SHA recorded.
 
-## Stop reason
+## Implementation evidence
 
-The approved A3 key contains only `import-todos.page.ts`. The page's read path is already `httpResource`, while `markDone()` uses `silentPatch` and therefore needs an HTTP client owned by a service. No suitable existing service was found. Expanding scope without a Cursor amendment would violate the exact-key and no-shared-API-expansion contract.
+`ImportTodosService` is page-local and owns only the existing PATCH URL/payload. `ImportTodosPage` retains `httpResource` GET and all filter, toast, reload, and UI behavior. No `shared/services/**` file, endpoint, RBAC, or UX behavior changed.

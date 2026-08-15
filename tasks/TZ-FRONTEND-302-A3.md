@@ -2,14 +2,17 @@
 
 - Parent: `TZ-FRONTEND-302-angular-integrity-remediation-wave`
 - Lane: `A`
-- Status: BLOCKED / needs amendment
+- Status: DONE
 - Finding: `P1-HTTP`
-- Canonical audit: `6cb978a2484af108b891a87793247c76dc60329e`
+- Canonical audit: `483ebd0ba6ac82615645cd4077d7e7b69fe17772`
 
 CONFLICT KEYS:
 - `frontend/src/app/pages/import-todos/import-todos.page.ts`
+- `frontend/src/app/pages/import-todos/import-todos.service.ts`
+- `frontend/src/app/pages/import-todos/import-todos.service.spec.ts`
 
-- Baseline: page ESLint reproduces 1 expected raw-HttpClient warning; no import-todos focused spec exists (Jest path is absent).
-- Blocker: the page already uses `httpResource` for GET, but `markDone()` needs a PATCH transport. No existing import-todos shared service or mutation API exists. Removing `HttpClient` requires a new shared service/file or an amendment allowing a mutation transport; both are outside the approved A3 exact scope.
-- STOP: no product edits made. Request Cursor amendment with the exact shared service key, or explicitly approve the Angular 20 mutation approach and its behavior contract.
-- Commit/push SHA: pending.
+- Implementation: moved only existing `silentPatch` markDone into the page-local service; `httpResource` GET remains on the page at `/import-todos`.
+- Evidence: service Jest 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; git diff --check PASS.
+- Browser: authenticated import-todos smoke unavailable in this headless worktree; service contract covers mark-done and page resource behavior was kept unchanged.
+- Implementation commit: pending.
+- Push SHA: pending.

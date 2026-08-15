@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { HttpClient, HttpErrorResponse, httpResource } from '@angular/common/http';
+import { HttpErrorResponse, httpResource } from '@angular/common/http';
 import { LucideAngularModule, Check, ExternalLink, RefreshCw, Inbox } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiToastService } from '../../shared/ui/toast/pi-toast.service';
-import { extractErrorMessage, silentPatch } from '../../core/silent-http';
+import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { pluralize } from '../../shared/util/format';
+import { ImportTodosService, type ImportTodo } from './import-todos.service';
 
 /**
  * TZD-29 — manager import todos («что доделать после импорта»).
@@ -15,20 +16,6 @@ import { pluralize } from '../../shared/util/format';
  * Thin list page: open/done filter, «Готово» button (PATCH status),
  * href link when present. No heavy design; chrome = PiGroupWorkspace.
  */
-export interface ImportTodo {
-  id: string;
-  title: string;
-  body?: string | null;
-  href?: string | null;
-  importTaskId?: string | null;
-  templateId?: string | null;
-  organizationId?: string | null;
-  createdByUserId?: string | null;
-  status: 'open' | 'done';
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}
-
 export interface ImportTodoListResponse {
   items: ImportTodo[];
   total: number;
@@ -162,8 +149,8 @@ export class ImportTodosPage {
   protected readonly ExternalLinkIcon = ExternalLink;
   protected readonly InboxIcon = Inbox;
 
-  private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+  private readonly todosService = inject(ImportTodosService);
   private readonly toast = inject(PiToastService);
 
   protected readonly statusFilter = signal<StatusFilter>('open');
@@ -204,9 +191,7 @@ export class ImportTodosPage {
   }
 
   protected markDone(todo: ImportTodo): void {
-    silentPatch<ImportTodo>(this.http, `${this.baseUrl}/import-todos/${todo.id}`, {
-      status: 'done',
-    }).subscribe((res) => {
+    this.todosService.markDone(todo.id).subscribe((res) => {
       if (res.ok) {
         this.toast.success('Задача выполнена');
         this.listRes.reload();
