@@ -1,3 +1,15 @@
+## [2026-08-15] — TZ-UX-323 DONE — Gantt tools in app chrome-rail
+**Исполнитель:** Buffy continuous executor
+**Статус:** DONE; /production tools→chrome; local 48px rails removed; deploy НЕ
+**Что:** setTools production-cockpit; studio-body full width; flyouts left:0/right:0; SoT FROZEN updated; untracked sync (no effect loop).
+**Gates:** FE tsc PASS; Jest production+layout+chrome 14/14 PASS; git diff --check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-323.done.md`
+**Checklist:** `docs/agent-checklists/TZ-UX-323.md`
+**Lock:** `.mimocode/locks/TZ-UX-323-gantt-tools-chrome-rail.lock`
+**Wave:** `WAVE-UX-CHROME-GANTT-TOOLS` score 100
+**known_limitation:** chrome tools видны только ≥1680 (как ←→); без локальных 48px fallback.
+**Successor:** none for this wave; deploy only on explicit PO.
+
 ## [2026-08-15] — TZ-UX-322 DONE — Chrome page-tools API
 **Исполнитель:** Buffy continuous executor
 **Статус:** DONE; app shell page-tools projection; deploy НЕ

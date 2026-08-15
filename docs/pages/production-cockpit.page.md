@@ -1,6 +1,21 @@
 # Страница: Производство / Cockpit (`ProductionCockpitPage`)
 
-**Краткое описание:** Lego shell `/production` — слева заказы (rail), справа план-оценка Ганта по `WorkType.days`. Не факт цеха; без ProductionOrder/OrderTask.
+**Статус:** `STUDIO ESTIMATE PASS` — tools in app chrome (TZ-UX-323); fact production out of readiness.
+
+**Краткое описание:** `/production` — студия план-оценки Ганта по `WorkType.days`. Shell: `PiGroupWorkspace` → full-width `production-studio-body` + overlay flyouts; page tools в **app-chrome-rail** (`PiChromeToolsService`). Не факт цеха; без ProductionOrder/OrderTask.
+
+**SoT:** [`production-gantt-studio-spec.md`](../ux/production-gantt-studio-spec.md) · аудит [`2026-08-15-production-studio-plan-review.md`](../audits/2026-08-15-production-studio-plan-review.md)
+
+### Studio chrome (TZ-UX-323 live)
+
+```text
+app-chrome-rail-left:  ← + Заказы · Фильтры · Обновить
+main: Gantt full width (no local 48px columns)
+app-chrome-rail-right: → + Карточка · Сегодня · Масштаб
+flyouts: overlay; center width unchanged
+```
+
+Локальные `production-studio-rail` удалены. Consumer API: TZ-UX-322.
 
 ### Route
 
@@ -43,7 +58,7 @@
 - Раскрытие дерева: крупные «+ / −», клик по всей строке; «→» в карточку `/products/:id` / `/modules/:id`.
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
-- Шире календарь: rail `w-56` / collapsed `w-14`, header компактнее.
+- **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
 - Ссылка «Открыть заказ» в inspector ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
@@ -84,8 +99,21 @@
 | TZ-PRODUCTION-303.1 | Closeout: inspector `/orders?q=` deep-link + Gantt hotfix documentation |
 | **TZ-ORDERS-HUB-303** | Deep-link `/production?orderId=` → selectOrder; unknown id safe + RU hint |
 | TZ-PRODUCTION-302 | WorkType.days |
-| TZ-PRODUCTION-308…310 | backlog polish / safe edit / a11y (см. audit response) |
+| **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
+| **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
+| **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
+| **TZ-PRODUCTION-STUDIO-D** | DONE: geometry/a11y/theme smoke; estimate-only readiness |
+| **TZ-UX-322** | DONE: `PiChromeToolsService` + app-layout render |
+| **TZ-UX-323** | DONE: Gantt tools → chrome rails; local 48px rails removed |
+| TZ-PRODUCTION-308…310 | **BLOCKED BY WAVE-PRODUCTION-STUDIO-CHROME**; не запускать поверх docked layout |
 | TZ-PRODUCTION-304+ | stuck / check-in / auto-chain (plug-ins) |
+
+### Studio wave readiness
+
+- Статус: **STUDIO ESTIMATE PASS**; chrome tools wave DONE (322/323).
+- B/C/D DONE + UX-323: section chrome, full-width Gantt, tools in app chrome, hard filter split.
+- `/work-types` reads as Цех via `Гант` / `Виды работ` chips; CRUD не переписывался.
+- Факт производства, drag, writes и `ProductionSchedule` остаются out.
 
 ### Known limitations
 
@@ -121,3 +149,4 @@
 5. Заказ без days → штриховка «без срока»; quantity >1 → `×N` без умножения дней.
 6. Dense layout: без двойного скролла страницы.
 7. **День / Неделя** — меняется подпись «масштаб» и плотность шкалы (горизонтальный скролл в режиме День длиннее).
+8. **Geometry smoke после B/C:** 1920px light/dark; `getBoundingClientRect()` для rails/center/flyout; center width unchanged; нет docked `w-56/20rem`, двойного scroll и клиппинга.

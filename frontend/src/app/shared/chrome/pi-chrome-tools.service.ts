@@ -18,8 +18,12 @@ export class PiChromeToolsService {
   setTools(ownerId: string, items: readonly PiChromeToolItem[]): void {
     const id = ownerId.trim();
     if (!id) return;
-    const next = new Map(this.byOwner());
-    next.set(id, Object.freeze([...items]));
+    const prev = this.byOwner();
+    const frozen = Object.freeze([...items]) as readonly PiChromeToolItem[];
+    const existing = prev.get(id);
+    if (existing === frozen) return;
+    const next = new Map(prev);
+    next.set(id, frozen);
     this.byOwner.set(next);
   }
 

@@ -2,12 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   inject,
   OnInit,
   signal,
   computed,
+  effect,
+  untracked,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
@@ -19,204 +22,313 @@ import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import { filterOrdersForRail, formatDateOnly, type GanttBar } from './gantt-bar.model';
 import type { Order, OrderStatus } from '../orders/orders.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
+import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
+import {
+  LucideAngularModule,
+  CalendarDays,
+  ClipboardList,
+  List,
+  RefreshCw,
+  SlidersHorizontal,
+  ZoomIn,
+} from 'lucide-angular';
 
 function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
   return status === 'shipped' || status === 'delivered' || status === 'cancelled';
 }
 
+type ProductionLeftTool = 'orders' | 'filters' | null;
+type ProductionRightTool = 'card' | 'scale' | null;
+
+const CHROME_OWNER = 'production-cockpit';
+
 /**
  * Production Cockpit — Lego shell (TZ-PRODUCTION-303 + inspector wave).
  * Docs: docs/pages/production-cockpit.page.md
  * Spec: docs/superpowers/specs/2026-08-06-production-gantt-inspector-design.md
+ * Chrome tools: TZ-UX-323 → app-chrome-rail via PiChromeToolsService.
  */
 @Component({
   selector: 'app-production-cockpit-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ProductionCockpitContext, ProductionReadFacade],
-  imports: [OrdersRailComponent, GanttBarsComponent, OrderInspectorComponent, RouterLink],
+  imports: [
+    PiGroupWorkspaceComponent,
+    LucideAngularModule,
+    OrdersRailComponent,
+    GanttBarsComponent,
+    OrderInspectorComponent,
+  ],
   template: `
-    <div
-      class="flex flex-col h-[calc(100dvh-3.5rem)] min-h-0 overflow-hidden"
-      data-test="production-cockpit"
-    >
-      <header
-        class="shrink-0 flex flex-wrap items-center gap-2 px-3 py-1.5 border-b hairline bg-paper"
-      >
-        <div class="mr-2 min-w-0">
-          <p class="eyebrow text-muted-foreground m-0 pt-0.5" data-test="group-path-label">Цех</p>
-          <nav
-            class="group-chips flex items-center gap-1 flex-wrap pt-0.5"
-            aria-label="Раздел Цех"
-            data-test="group-chips"
-          >
-            @for (chip of chips; track chip.id) {
-              <a
-                [routerLink]="chip.route"
-                class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
-                       text-xs leading-5 rounded-sm transition-colors
-                       pi-focus-ring cursor-pointer no-underline"
-                [class.bg-sunrise-warm]="chip.id === 'production'"
-                [class.text-on-gold]="chip.id === 'production'"
-                [class.text-paper]="chip.id === 'production'"
-                [class.text-ink]="chip.id !== 'production'"
-                [class.hover:bg-paper-2]="chip.id !== 'production'"
-                [attr.aria-current]="chip.id === 'production' ? 'page' : undefined"
-              >
-                {{ chip.label }}
-              </a>
-            }
-          </nav>
-        </div>
-        <span class="text-xs text-muted-foreground">Кокпит · план-оценка</span>
-        <button
-          type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-          (click)="ctx.toggleRailCollapsed()"
-          [attr.aria-pressed]="ctx.railCollapsed()"
-          data-test="rail-collapse-toggle"
-          title="Свернуть/развернуть список заказов"
-        >
-          {{ ctx.railCollapsed() ? '☰ заказы' : '« список' }}
-        </button>
-        <span class="flex-1"></span>
-        <div class="flex flex-wrap items-center gap-1 text-xs">
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            (click)="onRefresh()"
-            data-test="gantt-refresh"
-            title="Обновить оценку"
-          >
-            Обновить
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            (click)="onResetFilters()"
-            data-test="gantt-reset-filters"
-            title="Сбросить поиск и фильтры"
-          >
-            Сброс фильтров
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            (click)="onToday()"
-            data-test="gantt-today"
-            title="Показать сегодня в горизонте"
-          >
-            Сегодня
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            (click)="onFitHorizon()"
-            data-test="gantt-fit"
-            title="Подогнать шкалу под полосы"
-          >
-            Весь горизонт
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            [class.pi-btn-ink]="ctx.zoom() === 'day'"
-            (click)="ctx.setZoom('day')"
-            data-test="gantt-zoom-day"
-          >
-            День
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-ghost pi-focus-ring !text-xs !px-2 !py-1"
-            [class.pi-btn-ink]="ctx.zoom() === 'week'"
-            (click)="ctx.setZoom('week')"
-            data-test="gantt-zoom-week"
-          >
-            Неделя
-          </button>
-        </div>
-      </header>
-
-      @if (facade.state().error) {
-        <div role="alert" class="px-4 py-2 text-sm text-destructive border-b hairline">
-          {{ facade.state().error }}
-        </div>
-      }
-
-      @if (orderIdHint()) {
-        <div
-          role="status"
-          class="px-4 py-2 text-sm text-muted-foreground border-b hairline"
-          data-test="production-order-id-hint"
-        >
-          {{ orderIdHint() }}
-        </div>
-      }
-
-      <div class="flex flex-1 min-h-0 overflow-hidden">
-        <aside
-          class="shrink-0 min-h-0 flex flex-col transition-[width] duration-200"
-          [class.w-14]="ctx.railCollapsed()"
-          [class.w-56]="!ctx.railCollapsed()"
-        >
-          <app-orders-rail
-            [orders]="orders()"
-            [collapsed]="ctx.railCollapsed()"
-            [thumbs]="orderThumbs()"
-            (select)="onSelect($event)"
-            (selectAll)="onSelectAll()"
-            (filtersChanged)="onFiltersChanged()"
-            (expandRail)="ctx.setRailCollapsed(false)"
-          />
-        </aside>
-        <main
-          class="flex-1 min-w-0 min-h-0 flex flex-col relative"
-          data-test="gantt-main"
-          (click)="onMainClick()"
-        >
-          @if (facade.state().loading) {
-            <div
-              class="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground bg-paper/70"
-              data-test="cockpit-loading"
-            >
-              Считаем оценку…
-            </div>
-          }
-          <app-gantt-bars
-            [bars]="bars()"
-            [rangeStart]="rangeStart()"
-            [rangeEnd]="rangeEnd()"
-            [zoom]="ctx.zoom()"
-            [warnings]="facade.state().warnings"
-            [usedTodayFallback]="usedTodayFallback()"
-            [readOnly]="readOnly()"
-            (selectOrder)="onSelect($event)"
-          />
-        </main>
-        @if (inspectorOrder(); as ord) {
-          <app-order-inspector
-            [order]="ord"
-            [estimateReadOnly]="readOnly()"
-            [canEditOrder]="canEditOrder()"
-            [canEditCatalog]="canEditCatalog()"
-            [workerLabels]="workerLabels()"
-            (closed)="closeInspector()"
-            (changed)="onInspectorChanged()"
-          />
+    <app-pi-group-workspace [chips]="chips" activeId="production" [flushBody]="true">
+      <div class="production-cockpit" data-test="production-cockpit">
+        @if (facade.state().error) {
+          <div role="alert" class="px-4 py-2 text-sm text-destructive border-b hairline">
+            {{ facade.state().error }}
+          </div>
         }
+
+        @if (orderIdHint()) {
+          <div
+            role="status"
+            class="px-4 py-2 text-sm text-muted-foreground border-b hairline"
+            data-test="production-order-id-hint"
+          >
+            {{ orderIdHint() }}
+          </div>
+        }
+
+        <div class="production-studio-body" data-test="production-studio-body">
+          <main class="production-studio-center" data-test="gantt-main" (click)="onMainClick()">
+            @if (facade.state().loading) {
+              <div
+                class="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground bg-paper/70"
+                data-test="cockpit-loading"
+              >
+                Считаем оценку…
+              </div>
+            }
+            <app-gantt-bars
+              [bars]="bars()"
+              [rangeStart]="rangeStart()"
+              [rangeEnd]="rangeEnd()"
+              [zoom]="ctx.zoom()"
+              [warnings]="facade.state().warnings"
+              [usedTodayFallback]="usedTodayFallback()"
+              [readOnly]="readOnly()"
+              (selectOrder)="onSelect($event)"
+            />
+          </main>
+
+          @if (leftTool() || rightTool()) {
+            <button
+              type="button"
+              class="production-studio-backdrop"
+              aria-label="Закрыть панель"
+              data-test="production-flyout-backdrop"
+              (click)="closeFlyouts()"
+            ></button>
+          }
+
+          @if (leftTool() === 'orders') {
+            <aside
+              id="production-flyout-orders"
+              class="production-studio-flyout production-studio-flyout-left"
+              data-test="production-flyout-orders"
+              aria-label="Заказы"
+            >
+              <app-orders-rail
+                [orders]="orders()"
+                [collapsed]="false"
+                [showList]="true"
+                [showFilters]="false"
+                [thumbs]="orderThumbs()"
+                (select)="onSelect($event)"
+                (selectAll)="onSelectAll()"
+                (filtersChanged)="onFiltersChanged()"
+                (expandRail)="toggleLeftTool('orders')"
+              />
+            </aside>
+          }
+
+          @if (leftTool() === 'filters') {
+            <aside
+              id="production-flyout-filters"
+              class="production-studio-flyout production-studio-flyout-left production-studio-flyout-filters"
+              data-test="production-flyout-filters"
+              aria-label="Фильтры"
+            >
+              <app-orders-rail
+                [orders]="orders()"
+                [collapsed]="false"
+                [showList]="false"
+                [showFilters]="true"
+                [thumbs]="orderThumbs()"
+                (select)="onSelect($event)"
+                (selectAll)="onSelectAll()"
+                (filtersChanged)="onFiltersChanged()"
+                (expandRail)="toggleLeftTool('filters')"
+              />
+              <button
+                type="button"
+                class="pi-btn pi-btn-ghost pi-focus-ring w-full mt-2"
+                data-test="production-reset-filters"
+                (click)="onResetFilters()"
+              >
+                Сброс фильтров
+              </button>
+            </aside>
+          }
+
+          @if (rightTool() === 'card') {
+            <aside
+              id="production-flyout-card"
+              class="production-studio-flyout production-studio-flyout-right production-studio-flyout-card"
+              data-test="production-flyout-card"
+              aria-label="Карточка"
+            >
+              @if (inspectorOrder(); as ord) {
+                <app-order-inspector
+                  [order]="ord"
+                  [estimateReadOnly]="readOnly()"
+                  [canEditOrder]="canEditOrder()"
+                  [canEditCatalog]="canEditCatalog()"
+                  [workerLabels]="workerLabels()"
+                  (closed)="closeInspector()"
+                  (changed)="onInspectorChanged()"
+                />
+              } @else {
+                <p class="p-4 text-sm text-muted-foreground">
+                  Выберите заказ, чтобы открыть карточку.
+                </p>
+              }
+            </aside>
+          }
+
+          @if (rightTool() === 'scale') {
+            <aside
+              id="production-flyout-scale"
+              class="production-studio-flyout production-studio-flyout-right production-scale-flyout"
+              data-test="production-flyout-scale"
+              aria-label="Масштаб"
+            >
+              <p class="eyebrow m-0">Масштаб</p>
+              <div class="flex flex-col gap-1 mt-2">
+                <button
+                  type="button"
+                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
+                  [class.pi-btn-ink]="ctx.zoom() === 'day'"
+                  data-test="gantt-zoom-day"
+                  (click)="ctx.setZoom('day')"
+                >
+                  День
+                </button>
+                <button
+                  type="button"
+                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
+                  [class.pi-btn-ink]="ctx.zoom() === 'week'"
+                  data-test="gantt-zoom-week"
+                  (click)="ctx.setZoom('week')"
+                >
+                  Неделя
+                </button>
+                <button
+                  type="button"
+                  class="pi-btn pi-btn-ghost pi-focus-ring text-left"
+                  data-test="gantt-fit"
+                  (click)="onFitHorizon()"
+                >
+                  Весь горизонт
+                </button>
+              </div>
+            </aside>
+          }
+        </div>
       </div>
-    </div>
+    </app-pi-group-workspace>
   `,
+  styles: [
+    `
+      :host {
+        display: block;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .production-cockpit {
+        display: flex;
+        flex-direction: column;
+        height: calc(100dvh - 3.5rem);
+        min-height: 0;
+        overflow: hidden;
+      }
+      .production-studio-body {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .production-studio-center {
+        position: relative;
+        display: flex;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .production-studio-backdrop {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        border: 0;
+        padding: 0;
+        background: transparent;
+        cursor: default;
+      }
+      .production-studio-flyout {
+        position: absolute;
+        top: 0.5rem;
+        z-index: 20;
+        width: min(22rem, calc(100% - 1rem));
+        max-height: calc(100% - 1rem);
+        overflow: auto;
+        padding: 0.75rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: color-mix(in oklch, var(--color-paper, #fff) 96%, transparent);
+        box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
+      }
+      .production-studio-flyout-left {
+        left: 0;
+      }
+      .production-studio-flyout-right {
+        right: 0;
+      }
+      .production-studio-flyout-filters {
+        width: min(20rem, calc(100% - 1rem));
+      }
+      .production-studio-flyout-card {
+        width: min(28rem, calc(100% - 1rem));
+      }
+      .production-scale-flyout {
+        width: 12rem;
+      }
+      @media (max-width: 1279px) {
+        .production-studio-flyout {
+          width: min(22rem, calc(100% - 1rem));
+          max-width: calc(100vw - 1rem);
+        }
+        .production-studio-flyout-left {
+          left: 0.5rem;
+        }
+        .production-studio-flyout-right {
+          right: 0.5rem;
+        }
+      }
+    `,
+  ],
 })
 export class ProductionCockpitPage implements OnInit {
   protected readonly chips = PRODUCTION_SECTION_CHIPS;
+  protected readonly ordersIcon = List;
+  protected readonly filtersIcon = SlidersHorizontal;
+  protected readonly refreshIcon = RefreshCw;
+  protected readonly cardIcon = ClipboardList;
+  protected readonly todayIcon = CalendarDays;
+  protected readonly scaleIcon = ZoomIn;
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);
   private readonly caps = inject(CapabilitiesService);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly chromeTools = inject(PiChromeToolsService);
+  private lastToolButton: HTMLElement | null = null;
 
   protected readonly orders = signal<Order[]>([]);
   protected readonly bars = signal<GanttBar[]>([]);
@@ -229,6 +341,10 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly inspectorOpen = signal(false);
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
+
+  /** Shell tool state; buttons live in app-chrome-rail (TZ-UX-323). */
+  protected readonly leftTool = signal<ProductionLeftTool>(null);
+  protected readonly rightTool = signal<ProductionRightTool>(null);
 
   protected readonly canEditOrder = computed(() => {
     const role = this.auth.user()?.role;
@@ -247,9 +363,22 @@ export class ProductionCockpitPage implements OnInit {
     return this.orders().find((o) => o._id === id) ?? null;
   });
 
+  constructor() {
+    effect(() => {
+      // Track active flyout state for chrome button .is-active / aria-expanded.
+      void this.leftTool();
+      void this.rightTool();
+      // setTools reads+writes chrome byOwner — must not be effect-tracked (infinite loop).
+      untracked(() => this.syncChromeTools());
+    });
+    this.destroyRef.onDestroy(() => {
+      this.chromeTools.clear(CHROME_OWNER);
+      this.facade.clearCaches();
+    });
+  }
+
   ngOnInit(): void {
     void this.bootstrap();
-    this.destroyRef.onDestroy(() => this.facade.clearCaches());
   }
 
   protected onMainClick(): void {
@@ -259,6 +388,8 @@ export class ProductionCockpitPage implements OnInit {
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
     this.inspectorOpen.set(true);
+    this.closeFlyouts();
+    this.rightTool.set('card');
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
     this.readOnly.set(isReadOnlyEstimateStatus(order.status));
@@ -268,12 +399,127 @@ export class ProductionCockpitPage implements OnInit {
   protected async onSelectAll(): Promise<void> {
     this.ctx.selectOrder(null);
     this.inspectorOpen.set(false);
+    this.closeFlyouts();
     this.readOnly.set(false);
     await this.applyFilteredActive();
   }
 
   protected closeInspector(): void {
     this.inspectorOpen.set(false);
+  }
+
+  protected toggleLeftTool(tool: Exclude<ProductionLeftTool, null>, event?: Event): void {
+    this.rememberToolButton(event);
+    const next = this.leftTool() === tool ? null : tool;
+    this.leftTool.set(next);
+    this.rightTool.set(null);
+  }
+
+  protected toggleRightTool(tool: Exclude<ProductionRightTool, null>, event?: Event): void {
+    this.rememberToolButton(event);
+    const next = this.rightTool() === tool ? null : tool;
+    this.rightTool.set(next);
+    this.leftTool.set(null);
+  }
+
+  protected openCardTool(event?: Event): void {
+    this.rememberToolButton(event);
+    this.inspectorOpen.set(Boolean(this.ctx.selectedOrderId()));
+    this.rightTool.set('card');
+    this.leftTool.set(null);
+  }
+
+  protected closeFlyouts(): void {
+    this.leftTool.set(null);
+    this.rightTool.set(null);
+    this.lastToolButton?.focus();
+    this.lastToolButton = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.leftTool() || this.rightTool()) this.closeFlyouts();
+  }
+
+  private rememberToolButton(event?: Event): void {
+    const target = event?.target;
+    this.lastToolButton = target instanceof HTMLElement ? target : null;
+  }
+
+  private syncChromeTools(): void {
+    const left = this.leftTool();
+    const right = this.rightTool();
+    const items: PiChromeToolItem[] = [
+      {
+        id: 'orders',
+        side: 'left',
+        ariaLabel: 'Заказы',
+        title: 'Заказы',
+        icon: this.ordersIcon,
+        active: left === 'orders',
+        ariaExpanded: left === 'orders',
+        ariaControls: 'production-flyout-orders',
+        order: 1,
+        onClick: (e) => this.toggleLeftTool('orders', e),
+      },
+      {
+        id: 'filters',
+        side: 'left',
+        ariaLabel: 'Фильтры',
+        title: 'Фильтры',
+        icon: this.filtersIcon,
+        active: left === 'filters',
+        ariaExpanded: left === 'filters',
+        ariaControls: 'production-flyout-filters',
+        order: 2,
+        onClick: (e) => this.toggleLeftTool('filters', e),
+      },
+      {
+        id: 'refresh',
+        side: 'left',
+        ariaLabel: 'Обновить',
+        title: 'Обновить',
+        icon: this.refreshIcon,
+        order: 3,
+        onClick: (e) => {
+          void this.onRefresh(e);
+        },
+      },
+      {
+        id: 'card',
+        side: 'right',
+        ariaLabel: 'Карточка',
+        title: 'Карточка',
+        icon: this.cardIcon,
+        active: right === 'card',
+        ariaExpanded: right === 'card',
+        ariaControls: 'production-flyout-card',
+        order: 1,
+        onClick: (e) => this.openCardTool(e),
+      },
+      {
+        id: 'today',
+        side: 'right',
+        ariaLabel: 'Сегодня',
+        title: 'Сегодня',
+        icon: this.todayIcon,
+        order: 2,
+        onClick: (e) => this.onToday(e),
+      },
+      {
+        id: 'scale',
+        side: 'right',
+        ariaLabel: 'Масштаб',
+        title: 'Масштаб',
+        icon: this.scaleIcon,
+        active: right === 'scale',
+        ariaExpanded: right === 'scale',
+        ariaControls: 'production-flyout-scale',
+        order: 3,
+        onClick: (e) => this.toggleRightTool('scale', e),
+      },
+    ];
+    this.chromeTools.setTools(CHROME_OWNER, items);
   }
 
   protected async onFiltersChanged(): Promise<void> {
@@ -285,7 +531,8 @@ export class ProductionCockpitPage implements OnInit {
     await this.reloadOrdersKeepingSelection();
   }
 
-  protected async onRefresh(): Promise<void> {
+  protected async onRefresh(event?: Event): Promise<void> {
+    this.rememberToolButton(event);
     await this.reloadOrdersKeepingSelection();
   }
 
@@ -296,7 +543,9 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   /** Ensure «today» lies inside the visible range (does not change bars). */
-  protected onToday(): void {
+  protected onToday(event?: Event): void {
+    this.rememberToolButton(event);
+    this.closeFlyouts();
     const today = formatDateOnly(new Date());
     if (today < this.rangeStart()) this.rangeStart.set(addDays(today, -2));
     if (today > this.rangeEnd()) this.rangeEnd.set(addDays(today, 14));

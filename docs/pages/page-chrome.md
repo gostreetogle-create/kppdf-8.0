@@ -109,7 +109,7 @@ Group Chip Workspace **не** дублирует раздел над chips — �
 - Visual language = `app-nav-rail-button` (+ `.is-active`).
 - Flyout/панели остаются у страницы (overlay) — в chrome только кнопки.
 - Пустой список = только history (страницы без setTools без изменений).
-- Первый consumer: `/production` → **TZ-UX-323** (Gantt tools → chrome; удалить local 48px rails).
+- Первый consumer: `/production` — **TZ-UX-323 DONE** (Gantt tools in chrome; local 48px rails removed).
 
 ## См. также
 

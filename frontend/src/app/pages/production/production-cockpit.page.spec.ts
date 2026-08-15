@@ -4,10 +4,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
 import { ProductionCockpitPage } from './production-cockpit.page';
+import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { LucideAngularModule } from 'lucide-angular';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { AuthService } from '../../core/auth.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import { GanttBarsComponent } from './blocks/gantt-bars.component';
 import type { Order } from '../orders/orders.service';
@@ -57,6 +60,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
         { provide: ProductionReadFacade, useValue: facade },
         { provide: AuthService, useValue: { user: () => ({ role: 'admin' }) } },
         { provide: CapabilitiesService, useValue: { hasAny: () => true } },
+        PiChromeToolsService,
         {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParamSubject.asObservable() },
@@ -65,7 +69,14 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     })
       .overrideComponent(ProductionCockpitPage, {
         set: {
-          imports: [OrdersRailComponent, GanttBarsComponent, OrderInspectorStub, RouterLink],
+          imports: [
+            PiGroupWorkspaceComponent,
+            LucideAngularModule,
+            OrdersRailComponent,
+            GanttBarsComponent,
+            OrderInspectorStub,
+            RouterLink,
+          ],
           providers: [
             ProductionCockpitContext,
             { provide: ProductionReadFacade, useValue: facade },
@@ -73,6 +84,10 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
         },
       })
       .compileComponents();
+  });
+
+  afterEach(() => {
+    TestBed.inject(PiChromeToolsService).clear('production-cockpit');
   });
 
   async function waitUntil(
@@ -113,5 +128,104 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect((page as unknown as { orderIdHint: () => string | null }).orderIdHint()).toContain(
       'не найден',
     );
+  });
+
+  it('TZ-UX-323: full-width studio body; no local rails; tools in chrome service', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    fixture.detectChanges();
+    const chrome = TestBed.inject(PiChromeToolsService);
+
+    expect(fixture.nativeElement.querySelector('.production-studio-body')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.production-studio-rail-left')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.production-studio-rail-right')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.production-studio-rail')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-refresh"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.production-studio-center')).not.toBeNull();
+
+    expect(chrome.leftTools().map((t) => t.id)).toEqual(['orders', 'filters', 'refresh']);
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['card', 'today', 'scale']);
+    expect(chrome.leftTools()[0]!.ariaLabel).toBe('Заказы');
+    expect(chrome.rightTools()[0]!.ariaLabel).toBe('Карточка');
+  });
+
+  it('keeps the hard Orders/Filters split in the flyouts', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const page = fixture.componentInstance as unknown as {
+      toggleLeftTool: (tool: 'orders' | 'filters') => void;
+    };
+
+    page.toggleLeftTool('orders');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="production-flyout-orders"] [data-test="orders-rail-search"]',
+      ),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="production-flyout-orders"] [data-test="orders-rail-active-only"]',
+      ),
+    ).toBeNull();
+
+    page.toggleLeftTool('filters');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="production-flyout-filters"] [data-test="orders-rail-search"]',
+      ),
+    ).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="production-flyout-filters"] [data-test="orders-rail-active-only"]',
+      ),
+    ).not.toBeNull();
+  });
+
+  it('keeps chrome-projected tools mutually exclusive', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    fixture.detectChanges();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const page = fixture.componentInstance as unknown as {
+      leftTool: () => string | null;
+      rightTool: () => string | null;
+      toggleLeftTool: (tool: 'orders' | 'filters') => void;
+      toggleRightTool: (tool: 'card' | 'scale') => void;
+      closeFlyouts: () => void;
+    };
+
+    page.toggleLeftTool('orders');
+    fixture.detectChanges();
+    expect(page.leftTool()).toBe('orders');
+    expect(page.rightTool()).toBeNull();
+    expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(true);
+
+    page.toggleRightTool('card');
+    fixture.detectChanges();
+    expect(page.leftTool()).toBeNull();
+    expect(page.rightTool()).toBe('card');
+    expect(chrome.rightTools().find((t) => t.id === 'card')!.active).toBe(true);
+    expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(false);
+
+    page.toggleRightTool('card');
+    expect(page.rightTool()).toBeNull();
+
+    page.toggleLeftTool('filters');
+    page.closeFlyouts();
+    expect(page.leftTool()).toBeNull();
+    expect(page.rightTool()).toBeNull();
+  });
+
+  it('TZ-UX-323: flyouts anchor at studio edges (no 48px rail inset)', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'production-cockpit.page.ts'),
+      'utf8',
+    );
+    expect(source).not.toContain('production-studio-rail');
+    expect(source).toContain('left: 0');
+    expect(source).toContain('right: 0');
+    expect(source).not.toContain('left: 48px');
+    expect(source).not.toContain('right: 48px');
+    expect(source).not.toContain('grid-template-columns: 48px');
+    expect(source).toContain('clear(CHROME_OWNER)');
   });
 });

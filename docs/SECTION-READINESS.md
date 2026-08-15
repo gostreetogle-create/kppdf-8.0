@@ -3,7 +3,7 @@
 > **Зачем:** PO хочет **закрывать разделы целиком**, начинать ими пользоваться и не бояться,  
 > что следующий деплой «перетрёт» данные или сломает цепочку.  
 > Этот файл — **единый чек-лист**: спросил «что готово?» → агент отвечает отсюда.  
-> **Обновлено:** 2026-08-06  
+> **Обновлено:** 2026-08-15 (Производство → STUDIO REFACTOR / WAVE A SPEC DONE)
 > **Обновлено:** 2026-08-06 (строка Производство / Cockpit Lego)
 > **Обновлено:** 2026-08-06 (W6 фильтр склада, W14 dedupe+type help — TZ-WAREHOUSE-UX-301)
 
@@ -39,13 +39,19 @@
 | **Сделки** (орг/КП/договоры/заказы) | **SHELL / MVP** | Осторожно | Зависит от процесса продаж PO |
 | **Админ** (пользователи/роли) | **READY TO USE*** | Да* | *базовый CRUD; warehouse-scoped ACL — нет |
 | **Люди / виды работ** | **MVP BUILD** | Частично | Связка со складом/производством позже |
-| **Производство (Cockpit/Гант)** | **SHELL / MVP BUILD** | Осторожно | TZ-PRODUCTION-303: shell+rail+bars (план-оценка); 304+ plug-ins |
+| **Производство (Cockpit/Гант)** | **STUDIO ESTIMATE PASS** | Только план-оценка | Tools in app-chrome-rail (TZ-UX-323); full-width Gantt; факт/drag/writes вне readiness |
 
 \* «READY» = можно вести данные **этого** раздела; не значит, что весь ERP готов.
 
 **Способности продукта (included / available / absent / removed):** см. [`CAPABILITY-LEDGER.md`](./CAPABILITY-LEDGER.md) — дополняет эту таблицу, не заменяет.
 
 ---
+
+## Производство — текущая готовность
+
+- **Studio estimate PASS:** B/C shell, rails/flyouts и D geometry smoke закрыты; центр Ганта не сжимается.
+- **Geometry:** 1920 light/dark rect evidence; hard Orders/Filters split; focus/backdrop/Escape PASS.
+- **Не обещать:** факт производства, drag, check-in, order-level write, `ProductionSchedule`.
 
 ## 2. Склад — критерий READY TO USE
 

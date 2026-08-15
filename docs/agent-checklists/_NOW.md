@@ -5,20 +5,10 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T16:30:00Z
+updated_at: 2026-08-15T14:35:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
-
-### TZ-UX-322 — IN WORK (WAVE-UX-CHROME-GANTT-TOOLS)
-
-- Marker: `tasks/_active/TZ-UX-322.md`
-- Spec: `tasks/TZ-UX-322-chrome-page-tools-api.md`
-- Checklist: `docs/agent-checklists/TZ-UX-322.md`
-- Master: `docs/agent-checklists/WAVE-UX-CHROME-GANTT-TOOLS.md`
-- Owner: Buffy continuous executor
-- State: PiChromeToolsService + app-layout render; production → 323.
-- Conflict keys: app-layout + `shared/chrome/pi-chrome-tools.*` + page-chrome docs.
 
 ### TZ-AUTH-305 — PREP / PO deploy only
 
@@ -39,9 +29,14 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 - **TZ-FRONTEND-304** → `tasks/_backlog/` (READY, not claimed).
 - **TZ-AUTH-307** → `tasks/_park/` (PARKED; blocked on 305 cutover + PO).
 - Backlog keep: SALES-377 — не брать без PO.
-- **UX-323** next after 322 archive (same wave).
 
 ## DONE / LANDED (recent)
+
+### WAVE-UX-CHROME-GANTT-TOOLS — DONE (100)
+
+- Archives: `TZ-UX-322.done.md`, `TZ-UX-323.done.md`
+- Master: `docs/agent-checklists/WAVE-UX-CHROME-GANTT-TOOLS.md` score_now=100
+- State: Gantt tools in app-chrome-rail; no local 48px rails; deploy НЕ.
 
 ### TZ-UX-PHOTO-301 — DONE
 
@@ -74,12 +69,12 @@ hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## NEXT
 
-1. Finish TZ-UX-322 → archive → CLAIM TZ-UX-323.
-2. AUTH-305 — только после явного `деплой` + browser PASS.
-3. FRONTEND-304 / AUTH-307 — park/backlog; не live.
+1. AUTH-305 — только после явного `деплой` + browser PASS.
+2. FRONTEND-304 / AUTH-307 — park/backlog; не live.
+3. Очередь chrome-gantt tools пуста — **готово предложить деплой** (не авто).
 
 ## HEAD / queue
 
-- Active product CLAIM: TZ-UX-322 (+ AUTH-305 prep).
+- Active product CLAIM: нет (только AUTH-305 prep).
 - Deploy: НЕ.
-- `_active/`: `TZ-UX-322.md`, `TZ-AUTH-305.md`.
+- `_active/`: только `TZ-AUTH-305.md`.
