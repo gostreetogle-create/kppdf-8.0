@@ -8,6 +8,7 @@ import { ProductModulesService } from '../../services/pi-product-modules.service
 import { MaterialsService } from '../../services/materials.service';
 import { ProductsService } from '../../services/products.service';
 import { PiDialogService } from '../dialog/pi-dialog.service';
+import { ProductCompositionDialogService } from '../../services/product-composition-dialog.service';
 
 describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)', () => {
   let fixture: ComponentFixture<ProductCompositionPickerDialogComponent>;
@@ -29,6 +30,10 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
         { provide: PI_DIALOG_DATA, useValue: { productId: 'p1' } },
         { provide: PI_DIALOG_REF, useValue: ref() },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
+        {
+          provide: ProductCompositionDialogService,
+          useValue: { openMaterialCreate: jest.fn().mockResolvedValue(null) },
+        },
         {
           provide: ProductModulesService,
           useValue: {
@@ -203,6 +208,9 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
   it('opens the matching create flow for each active tab', async () => {
     const component = instance();
     const open = TestBed.inject(PiDialogService).open as jest.Mock;
+    const compositionDialogs = TestBed.inject(ProductCompositionDialogService) as unknown as {
+      openMaterialCreate: jest.Mock;
+    };
     open.mockReturnValue(ref());
 
     component.openCreateForActiveKind();
@@ -214,10 +222,10 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
     component.openCreateForActiveKind();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(open).toHaveBeenCalledTimes(3);
+    expect(open).toHaveBeenCalledTimes(2);
     expect(open.mock.calls[0][1].data).toEqual({ entity: 'product', size: 'M' });
     expect(open.mock.calls[1][1].data).toEqual({ entity: 'module', size: 'M' });
-    expect(open.mock.calls[2][1].data).toBeNull();
+    expect(compositionDialogs.openMaterialCreate).toHaveBeenCalledTimes(1);
   });
 
   it('labels price field as Цена в составе', () => {
@@ -284,6 +292,10 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
         { provide: PI_DIALOG_DATA, useValue: { productId: 'p1', onAdded } },
         { provide: PI_DIALOG_REF, useValue: ref() },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
+        {
+          provide: ProductCompositionDialogService,
+          useValue: { openMaterialCreate: jest.fn().mockResolvedValue(null) },
+        },
         {
           provide: ProductModulesService,
           useValue: {
@@ -367,6 +379,10 @@ describe('ProductCompositionPickerDialogComponent (TZ-CATALOG-320 / TZ-COST-305)
         { provide: PI_DIALOG_REF, useValue: ref() },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
         {
+          provide: ProductCompositionDialogService,
+          useValue: { openMaterialCreate: jest.fn().mockResolvedValue(null) },
+        },
+        {
           provide: ProductModulesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },
         },
@@ -439,6 +455,10 @@ describe('ProductCompositionPickerDialogComponent restrictToModule (TZ-UX-COMPOS
         { provide: PI_DIALOG_DATA, useValue: { productId: 'm1', restrictToModule: true } },
         { provide: PI_DIALOG_REF, useValue: ref() },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
+        {
+          provide: ProductCompositionDialogService,
+          useValue: { openMaterialCreate: jest.fn().mockResolvedValue(null) },
+        },
         {
           provide: ProductModulesService,
           useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) },

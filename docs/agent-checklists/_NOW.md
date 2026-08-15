@@ -5,24 +5,24 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T01:08:48+03:00
-hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
+updated_at: 2026-08-16T01:28:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
-_(empty — task-ledger hygiene audit complete; verified DONE specs/waves moved to archive; no active claims)_
+_(empty — TZ-FRONTEND-304 implementation and closeout evidence complete; archive/lock prepared; no deploy)_
 
 
 ## NEXT (PO paste prompt)
 
-- **Next PO choice:** AUTH device wave (307/cutover remains deploy+smoke gated), or start a separately claimed characterization TZ-FRONTEND-304. Do not auto-run parked/backlog work.
+- **Next action:** choose AUTH-307/cutover only with explicit «деплой» + browser smoke, or claim the next non-deploy diploma successor. Do not deploy automatically.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
 ## Queue hygiene (not live)
 
 - **TZ-AUTH-307** → `tasks/_park/` (глубокий cleanup после 308)
-- **TZ-FRONTEND-304** → backlog
+- **TZ-FRONTEND-304** → DONE; archive + lock prepared
 - Backlog: SALES-377 — не брать без PO.
 - Chrome page-tools migrate: UX-326+ — по PO (`WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE`)
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
@@ -118,5 +118,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty** for Buffy; hygiene audit complete; open backlog/park remain intentional; deploy НЕ — не автодеплой.
+- Queue: **empty for Buffy**; remaining backlog/park intentional; deploy НЕ — не автодеплой.
 - Deploy app: НЕ — не автодеплой

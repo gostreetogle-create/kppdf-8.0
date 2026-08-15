@@ -25,6 +25,7 @@ import {
 } from '../../services/pi-dictionary-labels.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { CatalogKindMarkerComponent } from '../catalog/catalog-kind-marker.component';
+import { ProductCompositionDialogService } from '../../services/product-composition-dialog.service';
 import { onDialogCloseOnce } from '../../util/on-dialog-close-once';
 
 export type ProductCompositionPickerResult =
@@ -254,6 +255,7 @@ export class ProductCompositionPickerDialogComponent {
   private readonly materialsSvc = inject(MaterialsService);
   private readonly productsSvc = inject(ProductsService);
   private readonly dialog = inject(PiDialogService);
+  private readonly compositionDialogs = inject(ProductCompositionDialogService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
@@ -403,20 +405,10 @@ export class ProductCompositionPickerDialogComponent {
 
     if (kind === 'material') {
       // Material has a richer form rather than the product/module profile QuickCreate.
-      void import('../../../pages/materials/material-form-dialog.component')
-        .then(({ MaterialFormDialogComponent }) => {
-          const ref = this.dialog.open(MaterialFormDialogComponent, {
-            data: null,
-            width: 'lg',
-            parentDestroyRef: this.destroyRef,
-          });
-          onDialogCloseOnce(ref, this.injector, (created) => {
-            this.onCatalogCreated(kind, created);
-          });
-        })
-        .catch(() => {
-          this.validationError.set('Не удалось открыть создание материала.');
-        });
+      this.compositionDialogs
+        .openMaterialCreate({ parentDestroyRef: this.destroyRef, injector: this.injector })
+        .then((created) => this.onCatalogCreated(kind, created))
+        .catch(() => this.validationError.set('Не удалось открыть создание материала.'));
       return;
     }
 

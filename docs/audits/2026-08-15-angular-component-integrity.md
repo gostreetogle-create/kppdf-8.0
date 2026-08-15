@@ -7,6 +7,18 @@
 > Version gate: Angular 20.3 / RxJS 7.8 / TypeScript 5.9 / Jest  
 > Deploy: **НЕ**
 
+## TZ-FRONTEND-304 amendment — 2026-08-16
+
+The page-dialog portion of P1-COMPOSITION is fixed: `ProductCompositionDialogService` now owns
+existing lazy Product/Module/Material dialog loading and close refresh, while
+`shared/ui/composition/**` has no `pages/**` dynamic imports. Composition tree state, cost reads,
+and add/change/remove writes remain in `ProductBomPanelComponent` deliberately to avoid a risky
+multi-file API lift; that residual ownership is a separate successor, not silently marked complete.
+Focused gates: frontend tsc PASS; 5 suites / 69 tests PASS across composition, QuickCreate,
+module detail and product form; changed-file ESLint/Prettier PASS. The global architecture check
+still reports unrelated pre-existing dashboard cross-page imports at `dashboard.page.ts:19,26`.
+Deploy: НЕ.
+
 ## Cursor / PO verdict
 
 **PASS.** All approved Stage 2 ready batches landed (A1–A6, B-TOOLING, B-ENTITY-SPEC, B-PHOTO).  
@@ -128,7 +140,7 @@ Lane B reported **P0 = 0**. No dedupe needed.
 | P1-ENTITY-SPEC | `entity-service.spec.ts` imports `pages/users` entity | B | FIX NOW | **B-ENTITY-SPEC** |
 | P1-CROSS-DIALOG | KP create statically imports foreign form dialogs | A | BACKLOG | — |
 | P1-BLOCK-FX | `block-renderer` 14 effects (unproven bug) | A | BACKLOG | — |
-| P1-COMPOSITION | Shared BOM panel owns APIs + dynamic page imports; multi-domain callers | B | BACKLOG / serial successor | **B-COMPOSITION-SUCCESSOR** |
+| P1-COMPOSITION | Shared BOM panel owns composition APIs + dynamic page imports; multi-domain callers | B | **PARTIAL — page-dialog boundary fixed by TZ-FRONTEND-304; API ownership remains deliberate successor** | **B-COMPOSITION-SUCCESSOR** |
 | P1-GROUP-ACL | `PiGroupWorkspace` reads AuthService ACL; 30+ page callers | B | BACKLOG / serial successor | **B-GROUP-ACL-SUCCESSOR** |
 
 ### P2 — KEEP / BACKLOG

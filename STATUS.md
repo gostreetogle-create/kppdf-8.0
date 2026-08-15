@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-FRONTEND-304 DONE: composition dialog boundary
+**Статус:** DONE; scoped score 100/100; deploy НЕ
+**Что:** существующие lazy-диалоги изделия/модуля/материала вынесены из `shared/ui/composition/**` в `ProductCompositionDialogService`; дерево, cost hints, add/change/remove write-path и UX не менялись. Остаточное владение composition API панелью явно оставлено отдельному successor.
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-304.done.md`
+**Lock:** `.mimocode/locks/TZ-FRONTEND-304-composition-dialog-boundary.lock`
+**Gates:** FE tsc PASS; 5 suites / 69 tests PASS; changed ESLint/Prettier/diff-check PASS. `architecture:check` остаётся заблокированным двумя pre-existing cross-page imports в `dashboard.page.ts:19,26`; чужой WIP не включён.
+
+
 ## [2026-08-16] — TZ-SWEEP-401 DONE: Kanban order write-path
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ
 **Что:** backend order FSM защищает shipped/delivered/cancelled PATCH без мутаций и переводит заказ через ship() с items shipped; Kanban использует optimistic PATCH/rollback, подтверждение ship и item.status readiness; форма и chip «Комбайн» → `/dashboard` синхронизированы.

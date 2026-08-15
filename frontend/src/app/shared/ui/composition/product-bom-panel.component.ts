@@ -28,6 +28,7 @@ import {
 import { ProductsService } from '../../services/products.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { PiToastService } from '../toast';
+import { ProductCompositionDialogService } from '../../services/product-composition-dialog.service';
 import { ButtonComponent } from '../button/button.component';
 import {
   CompositionTreeComponent,
@@ -323,6 +324,7 @@ export class ProductBomPanelComponent {
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly products = inject(ProductsService);
   private readonly toast = inject(PiToastService);
+  private readonly compositionDialogs = inject(ProductCompositionDialogService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
@@ -569,92 +571,19 @@ export class ProductBomPanelComponent {
   protected openEditSelected(): void {
     const sel = this.selected();
     if (!sel || !this.canEditSelected(sel.node) || this.editLoading()) return;
-    const id = sel.node._id;
-    const kind = sel.node.kind;
     this.editLoading.set(true);
-
-    const afterClose = (): void => {
-      this.moduleLinesCache.set(new Map());
-      this.load();
-      this.changed.emit();
-    };
-
-    if (kind === 'module') {
-      this.service.findById(id).subscribe((res) => {
-        if (!res.ok || !res.data) {
-          this.editLoading.set(false);
-          this.toast.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
-          return;
-        }
-        // TZ-OPS-311: shared panel must not statically import pages — same
-        // lazy pattern as the product form below.
-        void import('../../../pages/modules/module-form-dialog.component')
-          .then(({ ModuleFormDialogComponent }) => {
-            const ref = this.dialog.open(ModuleFormDialogComponent, {
-              data: res.data,
-              width: 'lg',
-              parentDestroyRef: this.destroyRef,
-            });
-            onDialogCloseOnce(ref, this.injector, afterClose);
-          })
-          .catch(() => {
-            this.toast.error('Не удалось открыть редактирование модуля.');
-          })
-          .finally(() => this.editLoading.set(false));
-      });
-      return;
-    }
-
-    if (kind === 'product') {
-      this.products.findById(id).subscribe((res) => {
-        if (!res.ok || !res.data) {
-          this.editLoading.set(false);
-          this.toast.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
-          return;
-        }
-
-        // Keep ProductFormDialog out of this module's static graph. The form imports
-        // ProductBomPanel for edit mode, so a static import here makes one side of
-        // the ESM cycle undefined when Angular evaluates `imports`/`ɵcmp`.
-        void import('../../../pages/products/product-form-dialog.component')
-          .then(({ ProductFormDialogComponent }) => {
-            const ref = this.dialog.open(ProductFormDialogComponent, {
-              data: res.data,
-              width: 'lg',
-              parentDestroyRef: this.destroyRef,
-            });
-            onDialogCloseOnce(ref, this.injector, afterClose);
-          })
-          .catch(() => {
-            this.toast.error('Не удалось открыть редактирование изделия.');
-          })
-          .finally(() => this.editLoading.set(false));
-      });
-      return;
-    }
-
-    this.materials.findById(id).subscribe((res) => {
-      if (!res.ok || !res.data) {
-        this.editLoading.set(false);
-        this.toast.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
-        return;
-      }
-      // TZ-OPS-311: shared panel must not statically import pages — same
-      // lazy pattern as the product form above.
-      void import('../../../pages/materials/material-form-dialog.component')
-        .then(({ MaterialFormDialogComponent }) => {
-          const ref = this.dialog.open(MaterialFormDialogComponent, {
-            data: res.data,
-            width: 'lg',
-            parentDestroyRef: this.destroyRef,
-          });
-          onDialogCloseOnce(ref, this.injector, afterClose);
-        })
-        .catch(() => {
-          this.toast.error('Не удалось открыть редактирование материала.');
-        })
-        .finally(() => this.editLoading.set(false));
+    this.compositionDialogs.openEdit(sel.node, {
+      parentDestroyRef: this.destroyRef,
+      injector: this.injector,
+      afterClose: () => {
+        this.moduleLinesCache.set(new Map());
+        this.load();
+        this.changed.emit();
+      },
     });
+    // The coordinator owns bounded API/import work; this guard only prevents
+    // duplicate clicks while the dialog boundary is being entered.
+    this.editLoading.set(false);
   }
 
   private withLine(

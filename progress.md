@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-FRONTEND-304 DONE — composition dialog boundary
+**Исполнитель:** Buffy
+**Статус:** DONE; scoped score 100/100; deploy НЕ
+**Что:** существующие Product/Module/Material page-dialog imports вынесены из shared composition UI в `ProductCompositionDialogService`; UX, composition API/write-path, cost hints и close refresh сохранены. Остаточный API ownership панели зафиксирован как отдельный successor.
+**Gates:** FE tsc PASS; baseline composition/QuickCreate 3 suites / 38 tests PASS; final unique gate 5 suites / 69 tests PASS (module detail + product form included); ESLint/Prettier/diff-check PASS. Architecture check blocked only by pre-existing dashboard cross-page imports at lines 19,26.
+**Archive:** `tasks/_archive/2026-08/TZ-FRONTEND-304.done.md`
+**Lock:** `.mimocode/locks/TZ-FRONTEND-304-composition-dialog-boundary.lock`
+**Score:** TZ scoped acceptance 100/100; deploy НЕ; next action = explicit PO choice.
+
 ## [2026-08-16] — TZ-SWEEP-401 DONE — Kanban order write-path
 **Исполнитель:** Buffy
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ
