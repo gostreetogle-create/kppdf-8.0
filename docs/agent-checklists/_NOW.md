@@ -5,8 +5,8 @@
 >
 > ????????? ???????????? ?????? in-place. ????? ?????: 120 ?????.
 
-updated_at: 2026-08-15T14:45:00Z
-main_head: `d08f61f4f2126228d8ae6384b48e052c78cfc200`
+updated_at: 2026-08-15T14:50:00Z
+main_head: PENDING
 
 ## ACTIVE
 
@@ -30,7 +30,8 @@ main_head: `d08f61f4f2126228d8ae6384b48e052c78cfc200`
 - Archive: `tasks/_archive/2026-08/TZ-ORDERS-HUB-304.done.md`
 - Lock: `.mimocode/locks/TZ-ORDERS-HUB-304-readiness-warehouse-shipping.lock`
 - Implementation: `cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1`
-- State: Cursor PASS 98/100; readiness/warehouse/shipping expand + pi-reservations read-only; deploy NO.
+- Closeout: `d08f61f4f2126228d8ae6384b48e052c78cfc200`
+- State: Cursor PASS 98/100; readiness/warehouse/shipping expand + pi-reservations read-only; archive/lock/checklist DONE; active marker removed; deploy NO.
 - Next: queue empty for orders-hub wave (AUTH-305 prep only).
 
 ### TZ-UX-321 ? DONE / LANDED
@@ -177,17 +178,18 @@ main_head: `d08f61f4f2126228d8ae6384b48e052c78cfc200`
 
 ## READY / ORDER
 
-1. **TZ-ORDERS-HUB-304** ? next (readiness/warehouse/shipping; after HUB-303)
-2. AUTH-305 rollout ? only after explicit deploy command; outside this predeploy finish.
-3. AUTH-307 cleanup ? only after PASS cutover/rollback evidence.
-4. Successors (new TZ only): composition boundary, group ACL; Jest materials/form-profiles debt is closed by TZ-FRONTEND-303.
+1. AUTH-305 rollout — only after explicit deploy command; outside this predeploy finish.
+2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
+3. Successors (new TZ only): composition boundary, group ACL; UX-322 page-tools into rail; Jest materials/form-profiles debt is closed by TZ-FRONTEND-303.
+4. Orders-hub wave (301→304) complete — no further HUB claim without new TZ.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
 
 ## LAST DONE
 
-- UX-321 universal left chrome rail ? DONE; Cursor PASS; merge on main; deploy NO; UX-322 successor for page tools.
+- ORDERS-HUB-304 readiness/warehouse/shipping expand — DONE; Cursor PASS 98/100; archive/lock landed; deploy NO; orders-hub wave complete.
+- UX-321 universal left chrome rail — DONE; Cursor PASS; merge on main; deploy NO; UX-322 successor for page tools.
 - ORDERS-HUB-303 supply/production/docs expand ? DONE; Cursor PASS 98/100; deploy NO.
 - ORDERS-HUB-302 orders expand + Deal/Composition ? DONE; Cursor PASS 98/100; deploy NO.
 - SALES-378 multipage bg + full next pages ? DONE; Cursor PASS; archive/lock landed; deploy NO; SALES-377 still PARK in backlog.

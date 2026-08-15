@@ -1,3 +1,15 @@
+## [2026-08-15] — TZ-ORDERS-HUB-304 DONE — readiness / warehouse / shipping stub
+**Исполнитель:** Buffy (impl + closeout)
+**Статус:** DONE; frontend orders expand readiness/warehouse/shipping; deploy НЕ
+**Что:** Expand «Готовность» X/Y + lines (0 HTTP); `pi-reservations.service` read-only by Order.number; expand «Склад» lazy reservations; expand «Отгрузка» stub → `/shipping`; no GET /shipments.
+**Gates:** FE tsc PASS; Jest orders.page|pi-reservations 19/19 PASS; quality 98; Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-ORDERS-HUB-304.done.md`
+**Checklist:** `docs/agent-checklists/TZ-ORDERS-HUB-304.md`
+**Lock:** `.mimocode/locks/TZ-ORDERS-HUB-304-readiness-warehouse-shipping.lock`
+**Implementation SHA:** `cd0cd867554a4b7621dc6b0f5b56fdcb5124bab1`
+**Closeout SHA:** `d08f61f4f2126228d8ae6384b48e052c78cfc200`
+**Successor:** orders-hub wave complete; AUTH-305 prep only.
+
 ## [2026-08-15] — TZ-UX-321 DONE — universal left chrome rail
 **Исполнитель:** Buffy (impl + closeout)
 **Статус:** DONE; app shell left chrome rail; deploy НЕ
