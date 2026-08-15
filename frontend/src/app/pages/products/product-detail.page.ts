@@ -37,9 +37,12 @@ import {
 } from '../../shared/services/pi-dictionary-labels.service';
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
-import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
+import {
+  ProductBomPanelComponent,
+  type ProductBomEditRequest,
+} from '../../shared/ui/composition/product-bom-panel.component';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
-import { Product, ProductStatus } from '../../shared/services/products.service';
+import { Product, ProductsService, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
 
@@ -352,6 +355,8 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
         <div class="min-w-0">
           <app-product-bom-panel
             [productId]="p._id"
+            [editInParent]="true"
+            (editRequested)="onBomEditRequested($event)"
             (changed)="onBomChanged()"
             data-test="product-composition-panel"
           />
@@ -369,6 +374,7 @@ export class ProductDetailPage {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
   private readonly modulesSvc = inject(ProductModulesService);
+  private readonly productsSvc = inject(ProductsService);
   private readonly costSvc = inject(CostCalculationsService);
   private readonly materialsSvc = inject(MaterialsService);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
@@ -595,6 +601,65 @@ export class ProductDetailPage {
   protected onBomChanged(): void {
     this.productRes.reload();
     this.scheduleAutoRecalc();
+  }
+  protected onBomEditRequested(request: ProductBomEditRequest): void {
+    const afterClose = (): void => {
+      this.productRes.reload();
+      this.costRes.reload();
+    };
+
+    if (request.kind === 'product') {
+      this.productsSvc.findById(request.id).subscribe((res) => {
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
+          return;
+        }
+        const ref = this.dialog.open(ProductFormDialogComponent, {
+          data: res.data,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce(ref, this.injector, afterClose);
+      });
+      return;
+    }
+
+    if (request.kind === 'module') {
+      this.modulesSvc.findById(request.id).subscribe((res) => {
+        if (!res.ok || !res.data) {
+          this.toast.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
+          return;
+        }
+        void import('../modules/module-form-dialog.component')
+          .then(({ ModuleFormDialogComponent }) => {
+            const ref = this.dialog.open(ModuleFormDialogComponent, {
+              data: res.data,
+              width: 'lg',
+              parentDestroyRef: this.destroyRef,
+            });
+            onDialogCloseOnce(ref, this.injector, afterClose);
+          })
+          .catch(() => this.toast.error('Не удалось открыть редактирование модуля.'));
+      });
+      return;
+    }
+
+    this.materialsSvc.findById(request.id).subscribe((res) => {
+      if (!res.ok || !res.data) {
+        this.toast.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
+        return;
+      }
+      void import('../materials/material-form-dialog.component')
+        .then(({ MaterialFormDialogComponent }) => {
+          const ref = this.dialog.open(MaterialFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+            parentDestroyRef: this.destroyRef,
+          });
+          onDialogCloseOnce(ref, this.injector, afterClose);
+        })
+        .catch(() => this.toast.error('Не удалось открыть редактирование материала.'));
+    });
   }
 
   /** DETAIL-302: debounce auto cost recalc after composition mutate. */
