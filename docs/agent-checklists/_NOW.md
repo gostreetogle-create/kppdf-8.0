@@ -5,8 +5,8 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T06:45:00Z
-main_head: `de5ebf78`
+updated_at: 2026-08-15T06:50:00Z
+main_head: `60fad54a`
 
 ## ACTIVE
 
@@ -18,6 +18,7 @@ main_head: `de5ebf78`
 - Owner: Buffy (Cursor Agent)
 - claimed_at: 2026-08-15T06:29:48Z
 - workspace: D:\kppdf-8.0
+- Implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
 - State: READY FOR REVIEW — `sheetLayout.tableFontSize` (default 12, clamp 8–20); gates PASS; **no archive until Cursor PASS**
 - Conflict vs AUTH-305: OK (AUTH-305 = deploy only)
 - Deploy/wipe: НЕ

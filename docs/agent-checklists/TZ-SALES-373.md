@@ -78,5 +78,6 @@ cd backend && pnpm test -- table-template.service            → PASS (6 tests, 
 - claimed_at: 2026-08-15T06:29:48Z
 - agent: Buffy (Cursor Agent)
 - gates: all PASS
+- implementation: `60fad54a7c0dbf1bcb574c977f1e63061ed6adf3`
 - ready: yes
 - archive: blocked until Cursor PASS
