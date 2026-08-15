@@ -5,10 +5,21 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T09:50:00+03:00
+updated_at: 2026-08-15T06:50:00Z
 main_head: `94a3e4cc599ee30d08e42812162b6fe72caae4be`
 
 ## ACTIVE
+
+### TZ-UX-319 — READY FOR REVIEW
+
+- Marker: `tasks/_active/TZ-UX-319.md`
+- Checklist: `docs/agent-checklists/TZ-UX-319.md`
+- Spec: `tasks/TZ-UX-319-products-expanded-row-frame.md`
+- Owner: Buffy (Cursor Agent)
+- claimed_at: 2026-08-15T06:43:27Z
+- State: pi-table expanded chrome DONE; gates PASS; READY FOR REVIEW; deploy НЕ; archive after Cursor PASS.
+- Conflict keys: `pi-table.component.ts|spec` · `products.page.spec.ts` · `products.page.md` · `PAGE-TZ-INDEX.md`.
+- Parallel-safe vs AUTH-305.
 
 ### TZ-FRONTEND-301 / 302 — DONE / LANDED
 

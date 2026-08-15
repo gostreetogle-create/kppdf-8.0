@@ -196,6 +196,10 @@ module-detail).
   (`catalogKindOklch`), имя/артикул `line-clamp-2`, «N материалов»;
   клик → `routerLink` `/modules/:id`. Nested hierarchy (module→children) —
   **TZ-PRODUCTS-307**.
+- **Expanded chrome (TZ-UX-319):** kit `app-pi-table` ставит `pi-table-row--open`
+  на data-row; ink-рамка (~1.5px `var(--color-ink)`) оборачивает пару
+  data-row + `expanded-row` как один кадр; соседние data-rows приглушены
+  (`opacity ~0.5`) пока одна раскрыта. Expand API / `expandedId` не менялись.
 - **Empty state:** «Нет модулей в составе.»
 - **Колонка «Модулей»:** count из `productModuleIds.length` (numeric, right).
 - **Row-actions НЕ раскрывают строку:** pi-table сам делает

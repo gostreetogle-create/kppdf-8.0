@@ -474,4 +474,77 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       expect(defaultEmpty).toBeNull();
     });
   });
+
+  // ─── TZ-UX-319 expanded-row chrome ────────────────────────────────
+
+  describe('expanded row frame (TZ-UX-319)', () => {
+    @Component({
+      standalone: true,
+      imports: [TableComponent],
+      template: `
+        <app-pi-table
+          [data]="data"
+          [columns]="columns"
+          [expandedRow]="detailTpl"
+          [expandedRowWhen]="isOpen"
+        />
+        <ng-template #detailTpl let-row>
+          <div data-test="detail-body">Detail for {{ row.name }}</div>
+        </ng-template>
+      `,
+    })
+    class ExpandHost {
+      data = sampleData;
+      columns = baseCols;
+      openId: string | null = '1';
+      isOpen = (row: TestRow) => this.openId === row.id;
+
+      /** Rebind predicate so OnPush pi-table sees an input change. */
+      setOpen(id: string | null): void {
+        this.openId = id;
+        this.isOpen = (row: TestRow) => this.openId === row.id;
+      }
+    }
+
+    it('marks the open data row with pi-table-row--open and renders expanded-row', () => {
+      const fixture = TestBed.createComponent(ExpandHost);
+      fixture.detectChanges();
+      const openRow = fixture.nativeElement.querySelector('tr.pi-table-row--open');
+      expect(openRow).toBeTruthy();
+      expect(openRow.getAttribute('data-row-open')).toBe('true');
+      expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+      expect(fixture.nativeElement.querySelectorAll('tr.pi-table-row--open')).toHaveLength(1);
+    });
+
+    it('removes open chrome when collapsed', () => {
+      const fixture = TestBed.createComponent(ExpandHost);
+      const host = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('tr.pi-table-row--open')).toBeTruthy();
+
+      host.setOpen(null);
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('tr.pi-table-row--open')).toBeNull();
+      expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeNull();
+    });
+
+    it('moves the open class when a different row expands', () => {
+      const fixture = TestBed.createComponent(ExpandHost);
+      const host = fixture.componentInstance;
+      fixture.detectChanges();
+      expect(
+        fixture.nativeElement.querySelector('tr.pi-table-row--open')?.getAttribute('data-test'),
+      ).toBe('table-row-1');
+
+      host.setOpen('2');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelectorAll('tr.pi-table-row--open')).toHaveLength(1);
+      expect(
+        fixture.nativeElement.querySelector('tr.pi-table-row--open')?.getAttribute('data-test'),
+      ).toBe('table-row-2');
+      expect(fixture.nativeElement.querySelectorAll('[data-test="expanded-row"]')).toHaveLength(1);
+    });
+  });
 });

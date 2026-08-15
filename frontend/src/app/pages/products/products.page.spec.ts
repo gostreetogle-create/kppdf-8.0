@@ -214,6 +214,12 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
     expect(comp.expandedId()).toBe('p1');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('tr.pi-table-row--open')).toBeTruthy();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="table-row-p1"]')
+        ?.classList.contains('pi-table-row--open'),
+    ).toBe(true);
     expect(
       fixture.nativeElement.querySelector('[data-test="expanded-row"] [role="region"]'),
     ).toBeTruthy();
@@ -233,6 +239,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
     expect(comp.expandedId()).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('tr.pi-table-row--open')).toBeFalsy();
   });
 
   it('clicking a DIFFERENT row switches the expansion', async () => {

@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-09 (TZ-UX-314 list PAGE_SIZE=10)
+**Updated:** 2026-08-15 (TZ-UX-319 products expanded row frame)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -24,7 +24,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10 |
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
-| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush |
+| `/products` | products.page.md | PRODUCTS-*; composition **302…305**; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **UX-DIALOG-306** picker qty |
 | `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |

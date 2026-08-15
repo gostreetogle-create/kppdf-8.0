@@ -129,11 +129,14 @@ export type SelectionMode = 'none' | 'single' | 'multi';
           } @else {
             @for (row of sortedData(); track rowKeyOf(row, $index)) {
               <tr
-                class="hairline-b transition-colors cursor-pointer"
+                class="transition-colors cursor-pointer"
+                [class.hairline-b]="!(expandedRow() && isExpandedRow(row))"
+                [class.pi-table-row--open]="expandedRow() && isExpandedRow(row)"
                 [class.bg-gold-soft]="isRowSelected(row)"
                 [class.hover:bg-paper-2]="!isRowSelected(row)"
                 (click)="onRowClick(row)"
                 [attr.data-test]="'table-row-' + rowKeyOf(row, $index)"
+                [attr.data-row-open]="expandedRow() && isExpandedRow(row) ? 'true' : null"
                 [attr.data-selected]="isRowSelected(row) ? 'true' : null"
                 [attr.aria-expanded]="expandedRow() ? isExpandedRow(row) : null"
                 [attr.tabindex]="expandedRow() ? 0 : null"
@@ -185,7 +188,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                 <tr class="pi-table-expanded-row" data-test="expanded-row">
                   <td
                     [attr.colspan]="visibleColumns() + (rowActions() ? 1 : 0)"
-                    class="bg-paper-2 p-0 hairline-b"
+                    class="bg-paper-2 p-0"
                     role="region"
                     [attr.aria-label]="expandedRowLabel()(row)"
                   >
@@ -255,6 +258,37 @@ export type SelectionMode = 'none' | 'single' | 'multi';
       </div>
     </div>
   `,
+  styles: [
+    `
+      /* TZ-UX-319: one ink frame around open data-row + following expanded tray;
+         dim sibling data-rows while any row is open. No glow/purple. */
+      :host
+        tbody:has(.pi-table-row--open)
+        > tr:not(.pi-table-row--open):not(.pi-table-expanded-row) {
+        opacity: 0.5;
+      }
+
+      :host tr.pi-table-row--open > td {
+        border-top: 1.5px solid var(--color-ink);
+        border-bottom: none;
+      }
+
+      :host tr.pi-table-row--open > td:first-child {
+        border-left: 1.5px solid var(--color-ink);
+      }
+
+      :host tr.pi-table-row--open > td:last-child {
+        border-right: 1.5px solid var(--color-ink);
+      }
+
+      :host tr.pi-table-expanded-row > td {
+        border-top: none;
+        border-left: 1.5px solid var(--color-ink);
+        border-right: 1.5px solid var(--color-ink);
+        border-bottom: 1.5px solid var(--color-ink);
+      }
+    `,
+  ],
 })
 export class TableComponent<T> implements OnInit {
   readonly data = input<T[]>([]);
