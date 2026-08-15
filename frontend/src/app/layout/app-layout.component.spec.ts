@@ -105,4 +105,25 @@ describe('AppLayoutComponent (TZ-UX-317 gutter ← →)', () => {
     forwardBtn()!.click();
     expect(forward).not.toHaveBeenCalled();
   });
+  it('TZ-UX-320: кнопки стоят в полях на линии отступа шапки, не у края окна', () => {
+    // Class contract: модификаторы несут позицию в поле.
+    expect(backBtn()!.classList.contains('app-nav-gutter--back')).toBe(true);
+    expect(forwardBtn()!.classList.contains('app-nav-gutter--forward')).toBe(true);
+
+    // Style contract: CSS якорит кнопки на отступе шапки (64px — padding
+    // pi-edge-bleed на >=1024px), а не на 14px от края окна; видимость —
+    // только на min-width 1680px. В TestBed стили компонента не попадают
+    // в DOM (overrideComponent), поэтому контракт проверяется по исходнику;
+    // живая проверка computed style — в browser smoke >=1680.
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'app-layout.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('left: 64px');
+    expect(source).toContain('right: 64px');
+    expect(source).not.toContain('left: 14px');
+    expect(source).not.toContain('right: 14px');
+    expect(source).toContain('@media (min-width: 1680px)');
+    expect(source).toContain('display: inline-flex');
+  });
 });
