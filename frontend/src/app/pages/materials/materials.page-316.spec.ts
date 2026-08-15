@@ -10,6 +10,10 @@ import { PhotosService } from '../../shared/services/photos.service';
 import { MaterialsService } from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
+import {
+  dictionaryLabelOptions,
+  PiDictionaryLabelsService,
+} from '../../shared/services/pi-dictionary-labels.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 
 /**
@@ -64,6 +68,10 @@ describe('MaterialsPage kindFilter (TZ-CATALOG-316)', () => {
         },
         { provide: PiDialogService, useValue: { open: () => ({}) as never } },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
+        {
+          provide: PiDictionaryLabelsService,
+          useValue: { active: () => of(dictionaryLabelOptions('materialKind')) },
+        },
       ],
     })
       .overrideComponent(MaterialsPage, {

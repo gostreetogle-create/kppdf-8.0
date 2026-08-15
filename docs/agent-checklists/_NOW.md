@@ -24,6 +24,14 @@ main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 
 ## DONE / LANDED (recent)
 
+### TZ-FRONTEND-303 — DONE / PUSHED
+
+- Checklist: `docs/agent-checklists/TZ-FRONTEND-303.md`
+- Archive: `tasks/_archive/2026-08/TZ-FRONTEND-303.done.md`
+- Lock: `.mimocode/locks/TZ-FRONTEND-303-jest-baseline-debt.lock`
+- Implementation: `8b60d1f0998b70caa28a1bbe9760c3eec8a8a878`
+- State: 13 legacy Jest failures closed; full frontend Jest 154/154 suites, 1444/1444 tests; deploy НЕ.
+
 ### TZ-SALES-375 — DONE / LANDED
 
 - Checklist: `docs/agent-checklists/TZ-SALES-375.md`
@@ -84,7 +92,7 @@ main_head: `d75e1f08c10e76077e94beb27ea5b919e5bc9d93` (SALES-375 implementation)
 
 1. AUTH-305 rollout — only after explicit `деплой`; outside this predeploy finish.
 2. AUTH-307 cleanup — only after PASS cutover/rollback evidence.
-3. Successors (new TZ only): composition boundary, group ACL, Jest materials/form-profiles debt.
+3. Successors (new TZ only): composition boundary, group ACL; Jest materials/form-profiles debt is closed by TZ-FRONTEND-303.
 
 Predeploy executor prompt: `tasks/PROMPT-PREDEPLOY-FINISH.md`.
 Later production prompt: `tasks/_backlog/PROMPT-AUTH-DEVICE-ACCESS-CONTINUOUS.md`.
