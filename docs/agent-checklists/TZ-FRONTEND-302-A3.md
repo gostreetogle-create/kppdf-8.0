@@ -13,8 +13,8 @@
 - [x] architecture:check PASS: 937 files, baseline 6.
 - [x] git diff --check PASS.
 - [ ] Browser smoke: authenticated import-todos route unavailable in this headless worktree; service contract covers mark-done and existing resource signals preserve loading/error/empty behavior.
-- [x] Implementation commit: pending.
-- [ ] Push SHA recorded.
+- [x] Implementation commit: `dfd5e26b`.
+- [x] Pushed branch SHA: `dfd5e26bb7cd6f651cd34f9e925a90d6ba82d5d9`.
 
 ## Implementation evidence
 

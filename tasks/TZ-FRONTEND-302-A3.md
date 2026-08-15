@@ -13,6 +13,6 @@ CONFLICT KEYS:
 
 - Implementation: moved only existing `silentPatch` markDone into the page-local service; `httpResource` GET remains on the page at `/import-todos`.
 - Evidence: service Jest 2/2 PASS; FE tsc PASS; changed-file ESLint PASS; architecture:check PASS; git diff --check PASS.
-- Browser: authenticated import-todos smoke unavailable in this headless worktree; service contract covers mark-done and page resource behavior was kept unchanged.
-- Implementation commit: pending.
-- Push SHA: pending.
+- Browser: authenticated import-todos smoke unavailable in this headless worktree; service contract covers mark-done and page resource behavior was unchanged.
+- Implementation commit: `dfd5e26b`.
+- Push SHA: `dfd5e26bb7cd6f651cd34f9e925a90d6ba82d5d9`.
