@@ -9,7 +9,7 @@ closed_by: Buffy (Cursor Product Executor)
 workspace: D:\kppdf-8.0
 implementation_sha: 9eed2860ddadbc4b1daf8d8176dd7345784f3faf
 docs_sha: 00603a36d5650ff3800b9c8f63b31d1a19f744ac
-closeout_sha: pending
+closeout_sha: eaef43024978b0e1b9d27493e37e3d3977fa9ab5
 verification:
   - acceptance criteria: PASS
   - quality score: 98
