@@ -1,15 +1,17 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   computed,
-  effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
+import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { distinctUntilChanged, of, switchMap } from 'rxjs';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import {
@@ -193,6 +195,7 @@ export class ProposalCreateRecipientComponent {
   private readonly personsService = inject(PersonsService);
   private readonly sitesService = inject(SiteService);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedCounterpartyId = input('');
   readonly selectedContactPersonId = input('');
@@ -230,16 +233,23 @@ export class ProposalCreateRecipientComponent {
     this.personsService.list().subscribe((res) => {
       if (res.ok) this.persons.set(res.data.items ?? []);
     });
-    effect(() => {
-      const id = this.selectedCounterpartyId();
-      if (!id) {
-        this.sites.set([]);
-        return;
-      }
-      this.sitesService.listByCounterparty(id).subscribe((res) => {
-        if (res.ok) this.sites.set((res.data ?? []).filter((site) => site.isActive !== false));
+    toObservable(this.selectedCounterpartyId)
+      .pipe(
+        distinctUntilChanged(),
+        switchMap((id) =>
+          id
+            ? this.sitesService.listByCounterparty(id)
+            : of({ ok: true as const, data: [] as Site[] }),
+        ),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) {
+          this.sites.set((res.data ?? []).filter((site) => site.isActive !== false));
+        } else {
+          this.sites.set([]);
+        }
       });
-    });
   }
 
   protected selectCounterparty(id: string): void {
