@@ -1,3 +1,13 @@
+## [2026-08-15] — TZ-PRODUCTION-322 DONE — Gantt order-meta + kill bottom card
+**Исполнитель:** executor-grok-4.6
+**Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE closed (321+322); deploy НЕ
+**Что:** meta strip под summary (status/priority/plannedDate/Save/`/orders`); sheet + chrome «Карточка» сняты; label/select/`?orderId=` → meta; Esc/dismiss чистит meta+detail+trees; 321 work-detail жив.
+**Gates:** FE tsc PASS; FE jest `src/app/pages/production` **58 PASS**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-322.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-322-gantt-order-meta-kill-card.lock`
+**Dep:** 321
+**known_limitations:** product/module deep-links из inspector — backlog; sheet не восстанавливать.
+
 ## [2026-08-15] — TZ-PRODUCTION-321 DONE — Gantt work-detail cascade
 **Исполнитель:** executor-grok-4.6
 **Статус:** DONE; WAVE-PRODUCTION-GANTT-CASCADE 321 closed; 322 next; deploy НЕ

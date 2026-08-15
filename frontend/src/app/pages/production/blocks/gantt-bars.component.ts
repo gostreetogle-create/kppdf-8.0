@@ -2,11 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  effect,
   HostListener,
   input,
   output,
   signal,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   buildGanttTreeBars,
   ESTIMATE_OVERRIDE_HINT_RU,
@@ -17,7 +19,7 @@ import {
   workTypeWash,
   type GanttBar,
 } from '../gantt-bar.model';
-import type { OrderStatus } from '../../orders/orders.service';
+import type { OrderPriority, OrderStatus } from '../../orders/orders.service';
 import type { GanttZoom } from '../production-cockpit.context';
 
 /** Pixels per calendar day — day zoom is denser, week packs the same span. */
@@ -31,6 +33,33 @@ export const GANTT_ROW_PX = 44;
 
 /** Taller row for inline work-type detail (people / days / hint / catalog). */
 export const GANTT_DETAIL_ROW_PX = 120;
+
+/** Dense order-meta strip under summary (status / priority / plannedDate). */
+export const GANTT_META_ROW_PX = 148;
+
+const ORDER_META_PRIORITIES: { value: OrderPriority; label: string }[] = [
+  { value: 'low', label: 'Низкий' },
+  { value: 'normal', label: 'Обычный' },
+  { value: 'high', label: 'Высокий' },
+  { value: 'urgent', label: 'Срочный' },
+];
+
+/** Order-meta strip payload (parent supplies live Order fields). */
+export interface GanttOrderMetaView {
+  orderId: string;
+  number: string;
+  status: OrderStatus;
+  priority: OrderPriority;
+  /** YYYY-MM-DD; empty if unset. */
+  plannedDate: string;
+}
+
+/** Save order-meta → parent PATCHes orders/:id. */
+export interface GanttOrderMetaCommit {
+  orderId: string;
+  priority: OrderPriority;
+  plannedDate: string;
+}
 
 /** Payload for order-level estimate days PATCH (never WorkType catalog). */
 export interface GanttEstimateDaysCommit {
@@ -96,6 +125,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   selector: 'app-gantt-bars',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
   template: `
     <div
       class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
@@ -266,6 +296,69 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   </span>
                 </button>
               </div>
+              @if (orderMetaFor(row.bar.orderId); as meta) {
+                <div
+                  class="gantt-row-h-meta border-b hairline px-2 py-1.5 flex flex-col justify-center gap-1 min-w-0 overflow-hidden"
+                  [attr.data-test]="'gantt-order-meta-' + row.bar.orderId"
+                  (click)="$event.stopPropagation()"
+                >
+                  <div
+                    class="text-[10px] text-muted-foreground truncate"
+                    data-test="gantt-order-meta-status"
+                  >
+                    Статус: {{ statusLabel(meta.status) }}
+                  </div>
+                  <label class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-muted-foreground shrink-0">Приоритет</span>
+                    <select
+                      class="pi-input !py-0.5 !text-xs min-w-0 flex-1"
+                      [value]="priorityDraft()"
+                      [disabled]="!canEditOrder()"
+                      (change)="onMetaPriority($event)"
+                      data-test="gantt-order-meta-priority"
+                      [attr.aria-label]="'Приоритет заказа ' + meta.number"
+                    >
+                      @for (p of metaPriorities; track p.value) {
+                        <option [value]="p.value">{{ p.label }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="flex items-center gap-1.5 text-[11px]">
+                    <span class="text-muted-foreground shrink-0">План. дата</span>
+                    <input
+                      type="date"
+                      class="pi-input !py-0.5 !text-xs min-w-0 flex-1"
+                      [value]="plannedDraft()"
+                      [disabled]="!canEditOrder()"
+                      (change)="onMetaPlanned($event)"
+                      data-test="gantt-order-meta-planned"
+                      [attr.aria-label]="'План. дата заказа ' + meta.number"
+                    />
+                  </label>
+                  @if (canEditOrder()) {
+                    <button
+                      type="button"
+                      class="pi-btn pi-focus-ring !text-[11px] !py-0.5 !px-2 self-start"
+                      [disabled]="!metaDirty()"
+                      (click)="onMetaSave($event)"
+                      data-test="gantt-order-meta-save"
+                    >
+                      Сохранить заказ
+                    </button>
+                  } @else {
+                    <p class="text-[10px] text-muted-foreground leading-tight">
+                      Правка заказа — роли admin / manager
+                    </p>
+                  }
+                  <a
+                    class="text-[10px] underline-offset-2 hover:underline text-ink"
+                    [routerLink]="['/orders']"
+                    [queryParams]="{ q: meta.number }"
+                    data-test="gantt-order-meta-open-order"
+                    >Открыть в списке заказов</a
+                  >
+                </div>
+              }
               @if (isWorkDetailOpen(row.bar.id)) {
                 <div
                   class="gantt-row-h-detail border-b hairline px-2 py-1.5 flex flex-col justify-center gap-0.5 min-w-0 overflow-hidden"
@@ -445,6 +538,13 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   }
                 </div>
               </div>
+              @if (isOrderMetaOpen(row.bar.orderId)) {
+                <div
+                  class="relative gantt-row-h-meta border-b hairline bg-paper-2/40"
+                  [attr.data-test]="'gantt-order-meta-timeline-' + row.bar.orderId"
+                  aria-hidden="true"
+                ></div>
+              }
               @if (isWorkDetailOpen(row.bar.id)) {
                 <div
                   class="relative gantt-row-h-detail border-b hairline"
@@ -477,8 +577,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         data-test="gantt-legend"
       >
         Красная линия = сегодня · сводная полоса = срок заказа · ▸ = состав на Ганте · клик вида
-        работ = дни и люди · номер заказа = карточка · цвет = вид работ · правый край состава = дни
-        оценки · тело сводной = начало заказа · тело состава = сдвиг вида
+        работ = дни и люди · номер заказа = статус и даты · цвет = вид работ · правый край состава =
+        дни оценки · тело сводной = начало заказа · тело состава = сдвиг вида
       </div>
     </div>
   `,
@@ -489,6 +589,10 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
     .gantt-row-h-detail {
       height: ${GANTT_DETAIL_ROW_PX}px;
+      box-sizing: border-box;
+    }
+    .gantt-row-h-meta {
+      height: ${GANTT_META_ROW_PX}px;
       box-sizing: border-box;
     }
     .gantt-expand-col {
@@ -529,7 +633,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-label-btn:focus-visible {
       background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
     }
-    /* Active order while bottom card is open — lighter + bold frame. */
+    /* Active order while order-meta strip is open — lighter + bold frame. */
     .gantt-order-active {
       background: oklch(0.995 0.008 95) !important;
       box-shadow: inset 0 0 0 2px oklch(0.45 0.04 85);
@@ -553,7 +657,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       background: oklch(0.26 0.02 260) !important;
       box-shadow: inset 3px 0 0 oklch(0.72 0.06 85);
     }
-    /* Work-type detail open — distinct from card-active / tree-expanded. */
+    /* Work-type detail open — distinct from meta-active / tree-expanded. */
     .gantt-work-detail-open {
       background: oklch(0.96 0.035 85) !important;
       box-shadow: inset 3px 0 0 oklch(0.62 0.12 85);
@@ -586,14 +690,18 @@ export class GanttBarsComponent {
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
   readonly expandedWorkBarId = input<string | null>(null);
-  /** Order id with open bottom card — highlight label + timeline rows. */
+  /** Order id with open order-meta strip — highlight label + timeline rows. */
   readonly highlightOrderId = input<string | null>(null);
+  /** TZ-PRODUCTION-322 — live order fields for the meta strip under summary. */
+  readonly orderMeta = input<GanttOrderMetaView | null>(null);
+  /** Mirror BE @Roles(admin|manager) for order PATCH. */
+  readonly canEditOrder = input(false);
   /**
-   * TZ-PRODUCTION-319 — left summary order label only (toggle card in parent).
+   * TZ-PRODUCTION-319/322 — left summary order label only (toggle meta in parent).
    * Child labels and timeline bars do not emit this.
    */
   readonly orderLabelClick = output<string>();
-  /** Empty canvas / non-control click → parent collapses trees + may close card. */
+  /** Empty canvas / non-control click → parent collapses trees + meta + work-detail. */
   readonly dismissCanvas = output<void>();
   readonly toggleExpand = output<string>();
   /** Child work-type label / ▸ → parent toggles work-detail for this bar.id. */
@@ -606,9 +714,29 @@ export class GanttBarsComponent {
   readonly plannedDateMoveCommit = output<GanttPlannedDateMoveCommit>();
   /** Child body-drag → parent PATCHes estimate-start offset. */
   readonly startOffsetCommit = output<GanttStartOffsetCommit>();
+  /** Order-meta save → parent PATCHes orders/:id (priority + plannedDate). */
+  readonly orderMetaCommit = output<GanttOrderMetaCommit>();
 
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
   protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
+  protected readonly metaPriorities = ORDER_META_PRIORITIES;
+  protected readonly priorityDraft = signal<OrderPriority>('normal');
+  protected readonly plannedDraft = signal('');
+
+  protected readonly metaDirty = computed(() => {
+    const m = this.orderMeta();
+    if (!m) return false;
+    return this.priorityDraft() !== m.priority || this.plannedDraft() !== m.plannedDate;
+  });
+
+  constructor() {
+    effect(() => {
+      const m = this.orderMeta();
+      if (!m) return;
+      this.priorityDraft.set(m.priority);
+      this.plannedDraft.set(m.plannedDate);
+    });
+  }
 
   /** Live right-edge resize preview (null = idle). */
   private readonly resizeSession = signal<{
@@ -801,6 +929,15 @@ export class GanttBarsComponent {
     return this.expandedWorkBarId() === barId;
   }
 
+  protected isOrderMetaOpen(orderId: string): boolean {
+    return this.orderMeta()?.orderId === orderId;
+  }
+
+  protected orderMetaFor(orderId: string): GanttOrderMetaView | null {
+    const m = this.orderMeta();
+    return m && m.orderId === orderId ? m : null;
+  }
+
   protected isHighlightedOrder(orderId: string): boolean {
     const id = this.highlightOrderId();
     return Boolean(id && id === orderId);
@@ -829,6 +966,7 @@ export class GanttBarsComponent {
           '[data-test^="gantt-expand-"]',
           '[data-test^="gantt-work-expand-"]',
           '[data-test^="gantt-work-detail"]',
+          '[data-test^="gantt-order-meta"]',
           '[data-test^="gantt-bar"]',
           '[data-test^="gantt-row-"]',
           '[data-test^="gantt-resize"]',
@@ -845,7 +983,7 @@ export class GanttBarsComponent {
     this.dismissCanvas.emit();
   }
 
-  /** Summary left label → card toggle; child work-type label → work-detail. */
+  /** Summary left label → order-meta toggle; child work-type label → work-detail. */
   protected onLabelClick(
     event: Event,
     row: { isSummary: boolean; bar: { orderId: string; id: string } },
@@ -893,6 +1031,25 @@ export class GanttBarsComponent {
     this.catalogDaysRequest.emit({
       workTypeId: bar.workTypeId,
       currentDays: bar.days ?? 1,
+    });
+  }
+
+  protected onMetaPriority(ev: Event): void {
+    this.priorityDraft.set((ev.target as HTMLSelectElement).value as OrderPriority);
+  }
+
+  protected onMetaPlanned(ev: Event): void {
+    this.plannedDraft.set((ev.target as HTMLInputElement).value);
+  }
+
+  protected onMetaSave(ev: Event): void {
+    ev.stopPropagation();
+    const m = this.orderMeta();
+    if (!m || !this.canEditOrder() || !this.metaDirty()) return;
+    this.orderMetaCommit.emit({
+      orderId: m.orderId,
+      priority: this.priorityDraft(),
+      plannedDate: this.plannedDraft(),
     });
   }
 
@@ -1091,9 +1248,9 @@ export class GanttBarsComponent {
       : `Развернуть состав на Ганте · ${orderNumber}`;
   }
 
-  /** TZ-PRODUCTION-320: order-number zone — bottom card only. */
+  /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */
   protected summaryCardTitle(b: GanttBar): string {
-    return `Карточка заказа ${b.orderNumber}`;
+    return `Статус и даты заказа ${b.orderNumber}`;
   }
 
   protected barTitle(b: GanttBar): string {

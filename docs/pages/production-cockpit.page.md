@@ -11,11 +11,11 @@
 ```text
 app-chrome-rail-left:  ← + Заказы · Фильтры · Обновить
 main: Gantt full width (no local 48px columns)
-app-chrome-rail-right: → + Карточка · Сегодня · Масштаб   ← «Карточка» уходит в TZ-322
+app-chrome-rail-right: → + Сегодня · Масштаб
 flyouts: overlay; center width unchanged
 ```
 
-**WAVE-PRODUCTION-GANTT-CASCADE (in flight):** **321 DONE** — detail под видом работ; **322** = meta под summary + kill bottom sheet.
+**WAVE-PRODUCTION-GANTT-CASCADE (DONE):** **321** detail под видом работ; **322** meta под summary + kill bottom sheet.
 
 Локальные `production-studio-rail` удалены. Consumer API: TZ-UX-322.
 
@@ -31,7 +31,7 @@ flyouts: overlay; center width unchanged
 
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
-| `orderId` | `string` (sales Order._id) | **HUB-303:** после загрузки orders → `ctx.selectOrder(id)` через существующий onSelect; unknown id — RU hint + fallback «все активные» |
+| `orderId` | `string` (sales Order._id) | **HUB-303 / 322:** после загрузки orders → `ctx.selectOrder(id)` + открыть order-meta strip; unknown id — RU hint + fallback «все активные» |
 | `q` | `string` | Deep-link из инспектора: открывает `/orders?q=<номер>` (сам `/production` `q` не читает) |
 
 Ручной select в rail URL не обязан обновлять.
@@ -50,8 +50,8 @@ flyouts: overlay; center width unchanged
 | Block | Файл | Роль |
 |-------|------|------|
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск / приоритет / даты / «Все активные» |
-| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px) |
-| order-inspector | `blocks/order-inspector.component.ts` | Панель заказа: мета + дерево товар→модуль→вид работ |
+| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/week (day ≈36px); order-meta + work-detail cascade |
+| order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
 
 ### Inspector UX (follow-up 2026-08-06 evening)
 
@@ -61,9 +61,9 @@ flyouts: overlay; center width unchanged
 - Фото изделия/модуля в дереве и иконки в свёрнутом rail (если есть `storageUrl`).
 - Клик по области Ганта закрывает правую панель; rail сворачивается («« список» / «☰ заказы»).
 - **TZ-UX-323 live:** tools in app-chrome-rail; no local 48px columns; flyouts overlay `left:0`/`right:0`.
-- **TZ-PRODUCTION-315:** Карточка = bottom sheet под Гантом (`min(42vh, 22rem)`); right card flyout убран; Заказы/Фильтры left; Масштаб right.
+- **TZ-PRODUCTION-315:** Карточка = bottom sheet под Гантом — **снято 322** (meta в каскаде списка).
 - Правка заказа: роли **admin|manager**. Дни вида работ: confirm «для всех заказов» + rollback; UX-gate `production:write` или admin|manager.
-- Ссылка «Открыть заказ» в inspector ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
+- Ссылка «Открыть в списке заказов» в order-meta ведёт в `/orders?q=<номер>`; OrdersPage применяет `q` через тот же search state, что и поле поиска.
 
 ### Audit hotfix (2026-08-06 late) — см. `docs/audits/2026-08-06-production-gantt-verdict-response.md`
 
@@ -99,12 +99,13 @@ flyouts: overlay; center width unchanged
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-318→:** Карточка sheet **на ширину студии** (`left/right` inset, raised `bottom`), absolute без transform; состав изделия — **inline** expand (+ → модули → дни).
 - **TZ-PRODUCTION-319:** карточка **только** с левой подписи summary-заказа (toggle) или chrome «Карточка»; child / ▸ / полоса timeline **не** открывают.
-- **TZ-PRODUCTION-320:** ▸/▾ = **только** expand/collapse состава на Ганте; номер заказа = **только** toggle нижней карточки; зоны разделены колонкой + hairline; без cross-coupling.
-- **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает. Нижняя Карточка ещё жива (322).
+- **TZ-PRODUCTION-320:** ▸/▾ = **только** expand/collapse состава на Ганте; номер заказа = **только** toggle нижней карточки (superseded: 322 → meta strip).
+- **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает.
+- **TZ-PRODUCTION-322:** номер заказа → order-meta strip под summary (статус, приоритет, план. дата, Сохранить, ссылка `/orders`); chrome «Карточка» и bottom sheet **удалены**. `gantt-order-active` = открытый meta.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
-- **Card open highlight:** открытая карточка → `gantt-order-active` (светлее + inset рамка).
-- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` (wash + left accent); при открытой карточке active имеет приоритет.
-- **Dismiss:** клик по пустой сетке / Esc / × — свернуть work-detail + деревья + закрыть карточку.
+- **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` (wash + left accent); при открытом meta active имеет приоритет.
+- **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
 
@@ -128,6 +129,7 @@ flyouts: overlay; center width unchanged
 | **TZ-PRODUCTION-319** | DONE: card only from order label (toggle); taller sheet |
 | **TZ-PRODUCTION-320** | DONE: ▸ = tree only; order name = card only (no cross-coupling) |
 | **TZ-PRODUCTION-321** | DONE: work-type click → inline detail (люди / дни / catalog) |
+| **TZ-PRODUCTION-322** | DONE: order-meta under summary; kill sheet + chrome «Карточка» |
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
 | **TZ-PRODUCTION-STUDIO-C** | DONE: visual rails/flyouts + hard Orders/Filters split |
@@ -151,6 +153,7 @@ flyouts: overlay; center width unchanged
 - Нет assign writes / ProductionSchedule SoT.
 - Browser smoke зависит от живого API/Mongo.
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
+- Product/module deep-links из старого inspector — backlog; sheet не восстанавливать.
 
 ### Zoom
 

@@ -1,6 +1,6 @@
-import { Component, input, output, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
 import { ProductionCockpitPage } from './production-cockpit.page';
@@ -18,21 +18,6 @@ import type { Order } from '../orders/orders.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { of } from 'rxjs';
-
-@Component({
-  selector: 'app-order-inspector',
-  standalone: true,
-  template: '',
-})
-class OrderInspectorStub {
-  readonly order = input.required<Order>();
-  readonly estimateReadOnly = input(false);
-  readonly canEditOrder = input(false);
-  readonly canEditCatalog = input(false);
-  readonly workerLabels = input<ReadonlyMap<string, string>>(new Map());
-  readonly closed = output<void>();
-  readonly changed = output<void>();
-}
 
 describe('ProductionCockpitPage HUB-303 orderId', () => {
   const queryParamSubject = new BehaviorSubject<{ get: (key: string) => string | null }>({
@@ -88,6 +73,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
           useValue: { success: jest.fn(), error: jest.fn() },
         },
         PiChromeToolsService,
+        provideRouter([]),
         {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParamSubject.asObservable() },
@@ -101,8 +87,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
             LucideAngularModule,
             OrdersRailComponent,
             GanttBarsComponent,
-            OrderInspectorStub,
-            RouterLink,
           ],
           providers: [
             ProductionCockpitContext,
@@ -140,6 +124,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const { page, ctx } = await waitUntil(fixture, (_p, c) => c.selectedOrderId() === 'o1');
     expect(ctx.selectedOrderId()).toBe('o1');
+    expect(ctx.orderMetaOpen()).toBe(true);
     expect((page as unknown as { orderIdHint: () => string | null }).orderIdHint()).toBeNull();
   });
 
@@ -170,9 +155,12 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(fixture.nativeElement.querySelector('.production-studio-center')).not.toBeNull();
 
     expect(chrome.leftTools().map((t) => t.id)).toEqual(['orders', 'filters', 'refresh']);
-    expect(chrome.rightTools().map((t) => t.id)).toEqual(['card', 'today', 'scale']);
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['today', 'scale']);
     expect(chrome.leftTools()[0]!.ariaLabel).toBe('Заказы');
-    expect(chrome.rightTools()[0]!.ariaLabel).toBe('Карточка');
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual(['Сегодня', 'Масштаб']);
+    expect(chrome.rightTools().some((t) => t.id === 'card' || t.ariaLabel === 'Карточка')).toBe(
+      false,
+    );
   });
 
   it('keeps the hard Orders/Filters split in the flyouts', () => {
@@ -216,7 +204,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
       leftTool: () => string | null;
       rightTool: () => string | null;
       toggleLeftTool: (tool: 'orders' | 'filters') => void;
-      toggleRightTool: (tool: 'card' | 'scale') => void;
+      toggleRightTool: (tool: 'scale') => void;
       closeFlyouts: () => void;
     };
 
@@ -226,14 +214,14 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(page.rightTool()).toBeNull();
     expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(true);
 
-    page.toggleRightTool('card');
+    page.toggleRightTool('scale');
     fixture.detectChanges();
     expect(page.leftTool()).toBeNull();
-    expect(page.rightTool()).toBe('card');
-    expect(chrome.rightTools().find((t) => t.id === 'card')!.active).toBe(true);
+    expect(page.rightTool()).toBe('scale');
+    expect(chrome.rightTools().find((t) => t.id === 'scale')!.active).toBe(true);
     expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(false);
 
-    page.toggleRightTool('card');
+    page.toggleRightTool('scale');
     expect(page.rightTool()).toBeNull();
 
     page.toggleLeftTool('filters');
@@ -303,6 +291,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
 
     expect(ctx.selectedOrderId()).toBe('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(true);
     const lastAfter = facade.loadBarsForOrders.mock.calls.at(-1)![0] as Order[];
     expect(lastAfter.map((o) => o._id).sort()).toEqual(['o1', 'o2']);
     const orderIds = new Set(page.bars().map((b) => b.orderId));
@@ -310,33 +299,22 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(orderIds.has('o2')).toBe(true);
   });
 
-  it('card sheet fits studio edges: full width, raised, no transform clip', () => {
+  it('TZ-PRODUCTION-322: no bottom sheet and no chrome Карточка', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
-    const page = fixture.componentInstance as unknown as {
-      toggleRightTool: (tool: 'card' | 'scale') => void;
-    };
-    page.toggleRightTool('card');
     fixture.detectChanges();
-    const card = fixture.nativeElement.querySelector(
-      '[data-test="production-flyout-card"]',
-    ) as HTMLElement;
-    expect(card).not.toBeNull();
-    expect(card.classList.contains('production-studio-sheet-card')).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="production-flyout-card"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('app-order-inspector')).toBeNull();
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'production-cockpit.page.ts'),
       'utf8',
     );
-    expect(source).toContain('left: 0.5rem');
-    expect(source).toContain('right: 0.5rem');
-    expect(source).toContain('bottom: 1.75rem');
-    expect(source).toContain('max-height: calc(100% - 3rem)');
-    expect(source).toContain('transform: none');
-    expect(source).not.toContain('width: min(42rem');
-    expect(source).not.toContain('max-height: calc(100dvh - 5.5rem)');
-    expect(source).not.toContain('height: min(42vh, 22rem)');
+    expect(source).not.toContain('production-studio-sheet-card');
+    expect(source).not.toContain("rightTool() === 'card'");
+    expect(source).not.toContain("id: 'card'");
+    expect(source).not.toContain("ariaLabel: 'Карточка'");
   });
 
-  it('TZ-PRODUCTION-320: label toggles card only; chevron toggles tree only', async () => {
+  it('TZ-PRODUCTION-322: label toggles order-meta only; chevron toggles tree only', async () => {
     facade.loadOrders.mockImplementation(async () => [
       { _id: 'o1', number: 'ORD-1', status: 'confirmed', items: [] },
     ]);
@@ -374,47 +352,45 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
       onOrderLabelClick: (id: string) => Promise<void>;
       onToggleExpand: (id: string) => void;
       onDismissCanvas: () => void;
-      inspectorOpen: () => boolean;
       rightTool: () => string | null;
     };
     const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
 
-    // Chevron expand/collapse never opens card.
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(true);
-    expect(page.inspectorOpen()).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
     expect(page.rightTool()).toBeNull();
 
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(false);
-    expect(page.inspectorOpen()).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
 
-    // Label open card does not expand tree.
     await page.onOrderLabelClick('o1');
     fixture.detectChanges();
     expect(ctx.selectedOrderId()).toBe('o1');
-    expect(page.inspectorOpen()).toBe(true);
-    expect(page.rightTool()).toBe('card');
+    expect(ctx.orderMetaOpen()).toBe(true);
+    expect(page.rightTool()).toBeNull();
     expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-order-meta-o1"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="production-flyout-card"]')).toBeNull();
 
-    // Expand while card open — card stays; tree expands.
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(true);
-    expect(page.inspectorOpen()).toBe(true);
+    expect(ctx.orderMetaOpen()).toBe(true);
 
-    // Label close card does not collapse tree.
     await page.onOrderLabelClick('o1');
     fixture.detectChanges();
-    expect(page.inspectorOpen()).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
     expect(page.rightTool()).toBeNull();
     expect(ctx.isOrderExpanded('o1')).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-order-meta-o1"]')).toBeNull();
 
     page.onDismissCanvas();
     expect(ctx.isOrderExpanded('o1')).toBe(false);
-    expect(page.inspectorOpen()).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
   });
 
-  it('TZ-PRODUCTION-321: dismiss and Esc clear work-detail', async () => {
+  it('TZ-PRODUCTION-321/322: dismiss and Esc clear meta + work-detail + trees', async () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
     const page = fixture.componentInstance as unknown as {
@@ -423,30 +399,46 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     };
     const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
 
+    ctx.setOrderExpanded('o1', true);
     ctx.toggleWorkDetail('o1:0:p1:m1:wt1:1');
+    ctx.setOrderMetaOpen(true);
     expect(ctx.expandedWorkBarId()).toBe('o1:0:p1:m1:wt1:1');
     page.onDismissCanvas();
     expect(ctx.expandedWorkBarId()).toBeNull();
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
 
+    ctx.setOrderExpanded('o1', true);
     ctx.toggleWorkDetail('o1:0:p1:m1:wt1:1');
+    ctx.setOrderMetaOpen(true);
     page.onEscape();
     expect(ctx.expandedWorkBarId()).toBeNull();
+    expect(ctx.isOrderExpanded('o1')).toBe(false);
+    expect(ctx.orderMetaOpen()).toBe(false);
   });
 
-  it('TZ-PRODUCTION-315: Карточка is bottom sheet, not right flyout', () => {
-    const fixture = TestBed.createComponent(ProductionCockpitPage);
-    const page = fixture.componentInstance as unknown as {
-      toggleRightTool: (tool: 'card' | 'scale') => void;
+  it('TZ-PRODUCTION-322: order-meta save PATCHes order priority and plannedDate', async () => {
+    const ordersApi = TestBed.inject(OrdersService) as unknown as {
+      update: jest.Mock;
     };
-    page.toggleRightTool('card');
-    fixture.detectChanges();
-    const card = fixture.nativeElement.querySelector(
-      '[data-test="production-flyout-card"]',
-    ) as HTMLElement;
-    expect(card).not.toBeNull();
-    expect(card.classList.contains('production-studio-sheet-card')).toBe(true);
-    expect(card.classList.contains('production-studio-flyout-right')).toBe(false);
-    expect(card.classList.contains('production-studio-flyout-card')).toBe(false);
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === null);
+    const page = fixture.componentInstance as unknown as {
+      onOrderMetaCommit: (ev: {
+        orderId: string;
+        priority: string;
+        plannedDate: string;
+      }) => Promise<void>;
+    };
+    await page.onOrderMetaCommit({
+      orderId: 'o1',
+      priority: 'urgent',
+      plannedDate: '2026-08-20',
+    });
+    expect(ordersApi.update).toHaveBeenCalledWith('o1', {
+      priority: 'urgent',
+      plannedDate: new Date('2026-08-20T12:00:00').toISOString(),
+    });
   });
 
   it('TZ-UX-323: flyouts anchor at studio edges (no 48px rail inset)', () => {
@@ -461,9 +453,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).not.toContain('right: 48px');
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
-    expect(source).toContain('production-studio-sheet-card');
-    expect(source).toContain('left: 0.5rem');
-    expect(source).toContain('right: 0.5rem');
-    expect(source).toContain('bottom: 1.75rem');
+    expect(source).not.toContain('production-studio-sheet-card');
+    expect(source).not.toContain('bottom: 1.75rem');
   });
 });

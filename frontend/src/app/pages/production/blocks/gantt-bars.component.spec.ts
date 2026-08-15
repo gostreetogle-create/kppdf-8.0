@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import {
   GanttBarsComponent,
   GANTT_PX_PER_DAY,
@@ -45,6 +46,7 @@ describe('GanttBarsComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [GanttBarsComponent],
+      providers: [provideRouter([])],
     });
   });
 
@@ -184,8 +186,8 @@ describe('GanttBarsComponent', () => {
     expect(expand.classList.contains('gantt-expand-btn')).toBe(true);
     expect(expand.classList.contains('border-r')).toBe(false); // vertical split via CSS only
     expect(expand.getAttribute('aria-label')).toContain('состав на Ганте');
-    expect(labelBtn.getAttribute('aria-label')).toContain('Карточка заказа');
-    expect(labelBtn.getAttribute('title')).toContain('Карточка заказа');
+    expect(labelBtn.getAttribute('aria-label')).toContain('Статус и даты заказа');
+    expect(labelBtn.getAttribute('title')).toContain('Статус и даты заказа');
     const header = el.querySelector('[data-test="gantt-label-header"]') as HTMLElement;
     expect(header.textContent).toContain('Заказ');
     expect(header.textContent).not.toMatch(/[▸▾]/);
@@ -250,7 +252,7 @@ describe('GanttBarsComponent', () => {
     expect(getComputedStyle(label).height).toBe(getComputedStyle(row).height);
   });
 
-  it('highlightOrderId marks active order rows (card open)', () => {
+  it('highlightOrderId marks active order rows (order-meta open)', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -283,7 +285,7 @@ describe('GanttBarsComponent', () => {
     expect(label.classList.contains('gantt-order-expanded')).toBe(true);
     expect(row.classList.contains('gantt-order-expanded')).toBe(true);
     expect(label.getAttribute('data-expanded-order')).toBe('true');
-    /* Card-active wins over tree-expanded styling. */
+    /* Meta-active wins over tree-expanded styling. */
     fixture.componentRef.setInput('highlightOrderId', 'o1');
     fixture.detectChanges();
     expect(label.classList.contains('gantt-order-active')).toBe(true);
@@ -727,6 +729,52 @@ describe('GanttBarsComponent', () => {
         days: 5,
       },
     ]);
+  });
+
+  it('TZ-PRODUCTION-322: order-meta strip under summary; save emits PATCH payload', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('highlightOrderId', 'o1');
+    fixture.componentRef.setInput('canEditOrder', true);
+    fixture.componentRef.setInput('orderMeta', {
+      orderId: 'o1',
+      number: 'ORD-1',
+      status: 'confirmed',
+      priority: 'normal',
+      plannedDate: '2026-08-01',
+    });
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const strip = el.querySelector('[data-test="gantt-order-meta-o1"]') as HTMLElement;
+    const timeline = el.querySelector('[data-test="gantt-order-meta-timeline-o1"]') as HTMLElement;
+    expect(strip).toBeTruthy();
+    expect(timeline).toBeTruthy();
+    expect(strip.textContent).toContain('Статус: Подтверждён');
+    expect(el.querySelector('[data-test="gantt-order-meta-priority"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-order-meta-planned"]')).toBeTruthy();
+    expect(
+      el.querySelector('[data-test="gantt-order-meta-open-order"]')?.getAttribute('href'),
+    ).toContain('/orders');
+    expect(getComputedStyle(strip).height).toBe(getComputedStyle(timeline).height);
+
+    const commits: unknown[] = [];
+    fixture.componentInstance.orderMetaCommit.subscribe((v) => commits.push(v));
+    const priority = el.querySelector(
+      '[data-test="gantt-order-meta-priority"]',
+    ) as HTMLSelectElement;
+    priority.value = 'urgent';
+    priority.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    const save = el.querySelector('[data-test="gantt-order-meta-save"]') as HTMLButtonElement;
+    expect(save.disabled).toBe(false);
+    save.click();
+    expect(commits).toEqual([{ orderId: 'o1', priority: 'urgent', plannedDate: '2026-08-01' }]);
+
+    fixture.componentRef.setInput('orderMeta', null);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-test="gantt-order-meta-o1"]')).toBeNull();
   });
 });
 

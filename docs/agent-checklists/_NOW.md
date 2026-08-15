@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-15T17:45:00Z
+updated_at: 2026-08-15T17:50:00Z
 hygiene: `docs/audits/2026-08-15-tasks-queue-hygiene.md`
 
 ## ACTIVE
@@ -25,6 +25,10 @@ _(empty)_
 ### WAVE-PRODUCTION-GANTT-TREE — DONE 2026-08-15
 
 - 314–320: expand · bottom card · offsets · keep orders · sheet viewport · card IA · **split expand vs card**
+
+### TZ-PRODUCTION-322 — DONE 2026-08-15
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-322.done.md`
 
 ### TZ-PRODUCTION-321 — DONE 2026-08-15
 
@@ -48,12 +52,11 @@ _(empty)_
 
 ## NEXT
 
-1. **TZ-PRODUCTION-322** — order-meta under summary + kill bottom card (after 321 DONE)
-2. AUTH-307 park — только после PO
-3. App warm deploy — только по «деплой»
-4. Chrome page-tools migrate wave — по PO
+1. AUTH-307 park — только после PO
+2. App warm deploy — только по «деплой»
+3. Chrome page-tools migrate wave — по PO
 
 ## HEAD / queue
 
-- Queue: **TZ-PRODUCTION-322** READY after 321 archive (WAVE-PRODUCTION-GANTT-CASCADE)
+- Queue: **empty** after WAVE-PRODUCTION-GANTT-CASCADE (321+322). Готово предложить деплой.
 - Deploy app: НЕ — не автодеплой

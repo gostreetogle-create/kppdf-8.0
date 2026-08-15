@@ -6,7 +6,7 @@
 | # | TZ | Status | Notes |
 |---|-----|--------|-------|
 | 1 | `TZ-PRODUCTION-321-gantt-work-detail-cascade` | DONE | клик вида работ → inline detail (дни/люди/каталог) |
-| 2 | `TZ-PRODUCTION-322-gantt-order-meta-kill-card` | BLOCKED on 321 archive | meta под summary; убрать sheet + chrome «Карточка» |
+| 2 | `TZ-PRODUCTION-322-gantt-order-meta-kill-card` | DONE | meta под summary; убрать sheet + chrome «Карточка» |
 
 **SoT:** 3 уровня на левой колонке; timeline drag/resize без регрессии; без новых estimate API.
 

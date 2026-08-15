@@ -34,8 +34,23 @@ export class ProductionCockpitContext {
    */
   readonly expandedWorkBarId = signal<string | null>(null);
 
+  /**
+   * TZ-PRODUCTION-322 — order-meta strip under summary (session; not in URL).
+   * Highlight `gantt-order-active` follows this, not a bottom sheet.
+   */
+  readonly orderMetaOpen = signal(false);
+
   selectOrder(id: string | null): void {
     this.selectedOrderId.set(id);
+  }
+
+  setOrderMetaOpen(open: boolean): void {
+    this.orderMetaOpen.set(open);
+  }
+
+  closeOrderMeta(): void {
+    if (!this.orderMetaOpen()) return;
+    this.orderMetaOpen.set(false);
   }
 
   isOrderExpanded(orderId: string): boolean {

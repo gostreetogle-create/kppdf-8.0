@@ -18,13 +18,12 @@ import {
   GanttBarsComponent,
   type GanttCatalogDaysRequest,
   type GanttEstimateDaysCommit,
+  type GanttOrderMetaCommit,
+  type GanttOrderMetaView,
   type GanttPlannedDateMoveCommit,
   type GanttStartOffsetCommit,
 } from './blocks/gantt-bars.component';
-import {
-  OrderInspectorComponent,
-  promptCatalogDaysChange,
-} from './blocks/order-inspector.component';
+import { promptCatalogDaysChange } from './blocks/order-inspector.component';
 import { ProductionCockpitContext } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
@@ -34,7 +33,12 @@ import {
   resolveVisualAnchor,
   type GanttBar,
 } from './gantt-bar.model';
-import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
+import {
+  OrdersService,
+  type Order,
+  type OrderPriority,
+  type OrderStatus,
+} from '../orders/orders.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -45,7 +49,6 @@ import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types
 import {
   LucideAngularModule,
   CalendarDays,
-  ClipboardList,
   List,
   RefreshCw,
   SlidersHorizontal,
@@ -57,7 +60,7 @@ function isReadOnlyEstimateStatus(status: OrderStatus): boolean {
 }
 
 type ProductionLeftTool = 'orders' | 'filters' | null;
-type ProductionRightTool = 'card' | 'scale' | null;
+type ProductionRightTool = 'scale' | null;
 
 const CHROME_OWNER = 'production-cockpit';
 
@@ -77,7 +80,6 @@ const CHROME_OWNER = 'production-cockpit';
     LucideAngularModule,
     OrdersRailComponent,
     GanttBarsComponent,
-    OrderInspectorComponent,
   ],
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="production" [flushBody]="true">
@@ -119,7 +121,9 @@ const CHROME_OWNER = 'production-cockpit';
               [canEdit]="canEditCatalog()"
               [expandedOrderIds]="ctx.expandedOrderIds()"
               [expandedWorkBarId]="ctx.expandedWorkBarId()"
-              [highlightOrderId]="cardHighlightOrderId()"
+              [highlightOrderId]="metaHighlightOrderId()"
+              [orderMeta]="orderMetaView()"
+              [canEditOrder]="canEditOrder()"
               (orderLabelClick)="onOrderLabelClick($event)"
               (toggleExpand)="onToggleExpand($event)"
               (toggleWorkDetail)="onToggleWorkDetail($event)"
@@ -128,6 +132,7 @@ const CHROME_OWNER = 'production-cockpit';
               (catalogDaysRequest)="onCatalogDaysRequest($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
               (startOffsetCommit)="onStartOffsetCommit($event)"
+              (orderMetaCommit)="onOrderMetaCommit($event)"
             />
           </main>
 
@@ -188,31 +193,6 @@ const CHROME_OWNER = 'production-cockpit';
               >
                 Сброс фильтров
               </button>
-            </aside>
-          }
-
-          @if (rightTool() === 'card') {
-            <aside
-              id="production-flyout-card"
-              class="production-studio-sheet production-studio-sheet-card"
-              data-test="production-flyout-card"
-              aria-label="Карточка"
-            >
-              @if (inspectorOrder(); as ord) {
-                <app-order-inspector
-                  [order]="ord"
-                  [estimateReadOnly]="readOnly()"
-                  [canEditOrder]="canEditOrder()"
-                  [canEditCatalog]="canEditCatalog()"
-                  [workerLabels]="workerLabels()"
-                  (closed)="closeInspector()"
-                  (changed)="onInspectorChanged()"
-                />
-              } @else {
-                <p class="p-4 text-sm text-muted-foreground">
-                  Выберите заказ, чтобы открыть карточку.
-                </p>
-              }
             </aside>
           }
 
@@ -320,30 +300,6 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
       }
-      /* Карточка: full studio width, raised so Save stays on-screen; no transform (popovers). */
-      .production-studio-sheet {
-        position: absolute;
-        z-index: 40;
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        background: color-mix(in oklch, var(--color-paper, #fff) 98%, transparent);
-        box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
-      }
-      .production-studio-sheet-card {
-        left: 0.5rem;
-        right: 0.5rem;
-        transform: none;
-        bottom: 1.75rem;
-        top: auto;
-        width: auto;
-        max-width: none;
-        height: auto;
-        max-height: calc(100% - 3rem);
-        overflow: hidden;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-      }
       .production-scale-flyout {
         width: 12rem;
       }
@@ -358,12 +314,6 @@ const CHROME_OWNER = 'production-cockpit';
         .production-studio-flyout-right {
           right: 0.5rem;
         }
-        .production-studio-sheet-card {
-          left: 0.35rem;
-          right: 0.35rem;
-          bottom: 1.5rem;
-          max-height: calc(100% - 2.75rem);
-        }
       }
     `,
   ],
@@ -373,7 +323,6 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly ordersIcon = List;
   protected readonly filtersIcon = SlidersHorizontal;
   protected readonly refreshIcon = RefreshCw;
-  protected readonly cardIcon = ClipboardList;
   protected readonly todayIcon = CalendarDays;
   protected readonly scaleIcon = ZoomIn;
   protected readonly ctx = inject(ProductionCockpitContext);
@@ -396,7 +345,6 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly readOnly = signal(false);
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
-  protected readonly inspectorOpen = signal(false);
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
 
@@ -412,17 +360,25 @@ export class ProductionCockpitPage implements OnInit {
   /** Catalog / order estimate days — production:write (admin * passes). */
   protected readonly canEditCatalog = computed(() => this.caps.hasAny(['production:write']));
 
-  protected readonly inspectorOrder = computed(() => {
-    if (!this.inspectorOpen()) return null;
-    const id = this.ctx.selectedOrderId();
-    if (!id) return null;
-    return this.orders().find((o) => o._id === id) ?? null;
+  /** When order-meta strip is open — highlight that order on the Gantt. */
+  protected readonly metaHighlightOrderId = computed(() => {
+    if (!this.ctx.orderMetaOpen()) return null;
+    return this.ctx.selectedOrderId();
   });
 
-  /** When bottom card is open — highlight that order on the Gantt. */
-  protected readonly cardHighlightOrderId = computed(() => {
-    if (!this.inspectorOpen() || this.rightTool() !== 'card') return null;
-    return this.ctx.selectedOrderId();
+  protected readonly orderMetaView = computed((): GanttOrderMetaView | null => {
+    if (!this.ctx.orderMetaOpen()) return null;
+    const id = this.ctx.selectedOrderId();
+    if (!id) return null;
+    const order = this.orders().find((o) => o._id === id);
+    if (!order) return null;
+    return {
+      orderId: order._id,
+      number: order.number,
+      status: order.status,
+      priority: (order.priority ?? 'normal') as OrderPriority,
+      plannedDate: toDateInput(order.plannedDate) || toDateInput(order.date),
+    };
   });
 
   constructor() {
@@ -445,12 +401,12 @@ export class ProductionCockpitPage implements OnInit {
 
   protected onMainClick(): void {
     this.ctx.clearExpandedOrders();
-    if (this.inspectorOpen() || this.rightTool() === 'card') this.closeInspector();
+    this.ctx.closeOrderMeta();
   }
 
   protected onDismissCanvas(): void {
     this.ctx.clearExpandedOrders();
-    if (this.inspectorOpen() || this.rightTool() === 'card') this.closeInspector();
+    this.ctx.closeOrderMeta();
   }
 
   protected onToggleExpand(orderId: string): void {
@@ -462,15 +418,14 @@ export class ProductionCockpitPage implements OnInit {
   }
 
   /**
-   * Left summary order number (TZ-PRODUCTION-320):
-   * - card open for this order → close card only (tree untouched)
-   * - else → open card + select (no expand/collapse)
+   * Left summary order number (TZ-PRODUCTION-322):
+   * - meta open for this order → close meta only (tree untouched)
+   * - else → open meta + select (no expand/collapse)
    */
   protected async onOrderLabelClick(id: string): Promise<void> {
-    const cardOpenForThis =
-      this.inspectorOpen() && this.rightTool() === 'card' && this.ctx.selectedOrderId() === id;
-    if (cardOpenForThis) {
-      this.closeInspector();
+    const metaOpenForThis = this.ctx.orderMetaOpen() && this.ctx.selectedOrderId() === id;
+    if (metaOpenForThis) {
+      this.ctx.closeOrderMeta();
       return;
     }
     await this.onSelect(id);
@@ -478,10 +433,9 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
-    // TZ-PRODUCTION-320: select/card must not expand Gantt tree.
     this.leftTool.set(null);
-    this.inspectorOpen.set(true);
-    this.rightTool.set('card');
+    this.rightTool.set(null);
+    this.ctx.setOrderMetaOpen(true);
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
     this.readOnly.set(isReadOnlyEstimateStatus(order.status));
@@ -491,16 +445,11 @@ export class ProductionCockpitPage implements OnInit {
 
   protected async onSelectAll(): Promise<void> {
     this.ctx.selectOrder(null);
-    this.inspectorOpen.set(false);
+    this.ctx.closeOrderMeta();
     this.leftTool.set(null);
     this.rightTool.set(null);
     this.readOnly.set(false);
     await this.applyFilteredActive();
-  }
-
-  protected closeInspector(): void {
-    this.inspectorOpen.set(false);
-    if (this.rightTool() === 'card') this.rightTool.set(null);
   }
 
   protected toggleLeftTool(tool: Exclude<ProductionLeftTool, null>, event?: Event): void {
@@ -515,24 +464,9 @@ export class ProductionCockpitPage implements OnInit {
     const next = this.rightTool() === tool ? null : tool;
     this.rightTool.set(next);
     this.leftTool.set(null);
-    if (tool === 'card' && next === null) this.inspectorOpen.set(false);
-  }
-
-  /** Chrome «Карточка» — toggle if an order is selected. */
-  protected openCardTool(event?: Event): void {
-    this.rememberToolButton(event);
-    if (this.rightTool() === 'card' && this.inspectorOpen()) {
-      this.closeInspector();
-      return;
-    }
-    const hasOrder = Boolean(this.ctx.selectedOrderId());
-    this.inspectorOpen.set(hasOrder);
-    this.rightTool.set('card');
-    this.leftTool.set(null);
   }
 
   protected closeFlyouts(): void {
-    if (this.rightTool() === 'card') this.inspectorOpen.set(false);
     this.leftTool.set(null);
     this.rightTool.set(null);
     this.lastToolButton?.focus();
@@ -541,12 +475,11 @@ export class ProductionCockpitPage implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
-    this.ctx.clearWorkDetail();
+    this.ctx.clearExpandedOrders();
+    this.ctx.closeOrderMeta();
     if (this.leftTool() || this.rightTool()) {
       this.closeFlyouts();
-      return;
     }
-    if (this.inspectorOpen()) this.closeInspector();
   }
 
   private rememberToolButton(event?: Event): void {
@@ -594,24 +527,12 @@ export class ProductionCockpitPage implements OnInit {
         },
       },
       {
-        id: 'card',
-        side: 'right',
-        ariaLabel: 'Карточка',
-        title: 'Карточка',
-        icon: this.cardIcon,
-        active: right === 'card',
-        ariaExpanded: right === 'card',
-        ariaControls: 'production-flyout-card',
-        order: 1,
-        onClick: (e) => this.openCardTool(e),
-      },
-      {
         id: 'today',
         side: 'right',
         ariaLabel: 'Сегодня',
         title: 'Сегодня',
         icon: this.todayIcon,
-        order: 2,
+        order: 1,
         onClick: (e) => this.onToday(e),
       },
       {
@@ -623,7 +544,7 @@ export class ProductionCockpitPage implements OnInit {
         active: right === 'scale',
         ariaExpanded: right === 'scale',
         ariaControls: 'production-flyout-scale',
-        order: 3,
+        order: 2,
         onClick: (e) => this.toggleRightTool('scale', e),
       },
     ];
@@ -634,7 +555,21 @@ export class ProductionCockpitPage implements OnInit {
     await this.applyFilteredActive();
   }
 
-  protected async onInspectorChanged(): Promise<void> {
+  /** TZ-PRODUCTION-322 — order-meta save → PATCH orders/:id (priority + plannedDate). */
+  protected async onOrderMetaCommit(ev: GanttOrderMetaCommit): Promise<void> {
+    if (!this.canEditOrder()) return;
+    const planned = ev.plannedDate.trim();
+    const res = await firstValueFrom(
+      this.ordersApi.update(ev.orderId, {
+        priority: ev.priority,
+        plannedDate: planned ? new Date(planned + 'T12:00:00').toISOString() : undefined,
+      }),
+    );
+    if (!res.ok) {
+      this.toast.error(extractErrorMessage(res.error));
+      return;
+    }
+    this.toast.success('Заказ обновлён');
     await this.reloadOrdersKeepingSelection();
   }
 
@@ -791,7 +726,7 @@ export class ProductionCockpitPage implements OnInit {
         this.readOnly.set(isReadOnlyEstimateStatus(order.status));
       } else {
         this.ctx.selectOrder(null);
-        this.inspectorOpen.set(false);
+        this.ctx.closeOrderMeta();
         this.readOnly.set(false);
       }
     }
@@ -864,4 +799,10 @@ function minDate(a: string, b: string): string {
 
 function maxDate(a: string, b: string): string {
   return a > b ? a : b;
+}
+
+function toDateInput(value: string | undefined | null): string {
+  if (!value) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
 }

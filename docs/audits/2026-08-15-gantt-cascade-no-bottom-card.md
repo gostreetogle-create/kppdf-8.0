@@ -36,7 +36,7 @@ PATCH уже есть: `orders/:id`, `…/estimate-days`, `…/estimate-start`, 
 | Empty / Esc | свернуть detail + meta + деревья |
 | Chrome «Карточка» | **удалить** |
 
-**Не тащить** на Гант product→module дерево из inspector (Gantt уже flat по work type). Ссылки на карточку изделия/модуля — known_limitation / backlog.
+**Не тащить** на Гант product→module дерево из inspector (Gantt уже flat по work type). Ссылки на карточку изделия/модуля — known_limitation / backlog. **322 DONE:** meta strip + sheet/chrome card removed.
 
 ---
 
@@ -45,7 +45,7 @@ PATCH уже есть: `orders/:id`, `…/estimate-days`, `…/estimate-start`, 
 | TZ | Scope |
 |----|--------|
 | **321** | DONE 2026-08-15 — work-detail row; days + catalog; `gantt-work-detail-open` |
-| **322** | order-meta under summary; kill sheet + chrome card; retarget label/select; docs |
+| **322** | DONE 2026-08-15 — order-meta under summary; kill sheet + chrome card; retarget label/select |
 
 Wave: `tasks/_backlog/WAVE-PRODUCTION-GANTT-CASCADE.md`
 
