@@ -5,21 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T14:55:00+03:00
+updated_at: 2026-08-16T14:57:07+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **WAVE COMBINE v1:** 401–**404 DONE** (FE item cards) → **405 DnD** next.
-- Freebuff (параллель later): `tasks/_backlog/PROMPT-WAVE-COMBINE-SHOP-FLOOR-FREEBUFF.md` (Gantt by workers RO).
+- **WAVE COMBINE v1:** 401–**405 DONE** (DnD + freeze + ship-whole). Next: modules 406/407 or warm deploy.
+- Freebuff (параллель): GANTT-401 / `PROMPT-WAVE-COMBINE-SHOP-FLOOR-FREEBUFF.md` — не трогать из combine commits.
 
 ## NEXT (PO paste prompt)
 
-- TZ-COMBINE-405 FE DnD (freeze + ship-whole gate).
-- Modules ghost DnD → COMBINE-406/407 after 405.
+- Modules ghost DnD → COMBINE-406/407.
 - Full home widgets → **TZ-DASHBOARD-401**.
 - **TZ-DATA-UTF8-CLEAN** PARK.
-- **Warm deploy** после пакета 402–405 PASS.
+- **Warm deploy** после пакета 402–405 PASS (готово предложить).
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -32,6 +31,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-405 DONE — FE item DnD + freeze + ship-whole
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-405.done.md`; lock `TZ-COMBINE-405-combine-item-dnd.lock`; FE tsc + dashboard.page 14 PASS. WAVE COMBINE v1 FE write-path DONE. Deploy нет — готово предложить warm deploy 402–405.
 
 ## [2026-08-16] — TZ-COMBINE-404 DONE — FE item cards + boardLane columns
 
@@ -185,5 +188,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **WAVE COMBINE** — next **TZ-COMBINE-403**; 402 DONE on main after push.
-- Deploy app: НЕ — не автодеплой (warm after 402–405 PASS)
+- Queue: **WAVE COMBINE v1** — **405 DONE**; next 406/407 or PO warm deploy.
+- Deploy app: НЕ — не автодеплой; **готово предложить** warm после 402–405 PASS

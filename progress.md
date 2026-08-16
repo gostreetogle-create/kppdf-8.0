@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-405 DONE — FE item DnD + freeze + ship-whole
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** CDK DnD карточек → patchLane; freeze modal на первый shop; дроп в «Отгружены» → toast N / confirmShip POST ship; optimistic+rollback.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `dashboard.page` PASS (14).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-405.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-405-combine-item-dnd.lock`
+**Next:** COMBINE-406/407 modules; warm deploy after 402–405 PASS.
+
 ## [2026-08-16] — TZ-COMBINE-404 DONE — FE item cards + boardLane columns
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; deploy НЕ

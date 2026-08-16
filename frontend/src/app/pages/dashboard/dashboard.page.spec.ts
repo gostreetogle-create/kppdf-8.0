@@ -1,21 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { computed, NO_ERRORS_SCHEMA, signal } from '@angular/core';
+import { CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
 
 import { CombineItemCard, CombineColumn, DashboardPage } from './dashboard.page';
 import { BoardLane, Order, OrderItem } from '../orders/orders.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { DashboardDialogService } from '../../shared/services/dashboard-dialog.service';
+import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiToastService } from '../../shared/ui/toast';
 
 /**
- * TZ-COMBINE-404 — Комбайн как доска изделий:
- *  - колонки = boardLane (prep…shipped) + RU title + helper
- *  - карточки = flat OrderItem; фильтр по orderId
- *  - fallback boardLane из item.status
- *  - клик badge/title → openOrderEdit
- *
- * DnD / patchLane write-path → TZ-COMBINE-405.
+ * TZ-COMBINE-404 — item cards by boardLane + filter.
+ * TZ-COMBINE-405 — CDK DnD → patchLane; freeze on first shop; ship-whole gate.
  */
 
 const baseUrl = '/api';
@@ -45,9 +44,38 @@ function orderOf(overrides: Partial<Order> = {}): Order {
   };
 }
 
-describe('DashboardPage (TZ-COMBINE-404)', () => {
+function dropEvent(card: CombineItemCard, targetLane: BoardLane): CdkDragDrop<BoardLane> {
+  return {
+    previousIndex: 0,
+    currentIndex: 0,
+    item: { data: card } as CdkDrag<CombineItemCard>,
+    container: {
+      id: targetLane,
+      data: targetLane,
+    } as unknown as CdkDragDrop<BoardLane>['container'],
+    previousContainer: {
+      id: card.boardLane,
+      data: card.boardLane,
+    } as unknown as CdkDragDrop<BoardLane>['previousContainer'],
+    isPointerOverContainer: true,
+    distance: { x: 0, y: 0 },
+  } as CdkDragDrop<BoardLane>;
+}
+
+/** DialogRef closed with value already — onDialogCloseOnce fires on first effect. */
+function closedDialogRef(value: unknown): DialogRef<boolean> {
+  const v = signal<unknown>(value);
+  return {
+    closed: computed(() => v()),
+    close: (x?: unknown) => v.set(x),
+  } as unknown as DialogRef<boolean>;
+}
+
+describe('DashboardPage (TZ-COMBINE-404/405)', () => {
   let httpMock: HttpTestingController;
   let dialogs: { openOrderEdit: jest.Mock; openProductEdit: jest.Mock };
+  let dialog: { open: jest.Mock };
+  let toast: { error: jest.Mock; success: jest.Mock };
 
   async function flushInitial(orders: Order[]): Promise<void> {
     const req = httpMock.expectOne((r) => r.url === listUrl && r.method === 'GET');
@@ -57,12 +85,16 @@ describe('DashboardPage (TZ-COMBINE-404)', () => {
 
   beforeEach(async () => {
     dialogs = { openOrderEdit: jest.fn(), openProductEdit: jest.fn() };
+    dialog = { open: jest.fn() };
+    toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: DashboardDialogService, useValue: dialogs },
+        { provide: PiDialogService, useValue: dialog },
+        { provide: PiToastService, useValue: toast },
       ],
     })
       .overrideComponent(DashboardPage, {
@@ -263,5 +295,248 @@ describe('DashboardPage (TZ-COMBINE-404)', () => {
       ],
     });
     expect(page.readinessLabel(mixed)).toBe('2 из 4');
+  });
+
+  it('drop to design PATCHes lane and applies server order', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Стол' })],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+    const card = page.columnCards('prep')[0]!;
+    page.dropItem(dropEvent(card, 'design'));
+
+    expect(page.data()[0]!.items![0]!.boardLane).toBe('design');
+
+    const req = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L1/lane` && r.method === 'PATCH',
+    );
+    expect(req.request.body).toEqual({ lane: 'design' });
+    req.flush(
+      orderOf({
+        items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Стол' })],
+      }),
+    );
+
+    expect(page.columnCards('design').map((c) => c.productName)).toEqual(['Стол']);
+    expect(page.columnCards('prep')).toHaveLength(0);
+  });
+
+  it('ok:false on patchLane rolls lane back and toasts', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Стол' })],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+    page.dropItem(dropEvent(page.columnCards('prep')[0]!, 'design'));
+
+    const req = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L1/lane` && r.method === 'PATCH',
+    );
+    req.flush({ message: 'Нельзя сменить колонку' }, { status: 400, statusText: 'Bad Request' });
+
+    expect(toast.error).toHaveBeenCalledWith('Нельзя сменить колонку');
+    expect(page.data()[0]!.items![0]!.boardLane).toBe('prep');
+  });
+
+  it('first drop into shop opens freeze modal; Cancel aborts PATCH', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'confirmed',
+      items: [
+        itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'A' }),
+        itemOf({ lineId: 'L2', boardLane: 'design', productId: 'p2', productName: 'B' }),
+      ],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+      isFirstShopEntry: (o: Order) => boolean;
+    };
+
+    expect(page.isFirstShopEntry(page.data()[0]!)).toBe(true);
+
+    dialog.open.mockReturnValue(closedDialogRef(undefined)); // Cancel
+    page.dropItem(dropEvent(page.columnCards('prep')[0]!, 'shop'));
+
+    expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.anything());
+    const data = (dialog.open.mock.calls[0]![1] as { data?: { title?: string } }).data;
+    expect(data?.title).toContain('Состав заказа будет заморожен');
+
+    TestBed.flushEffects();
+    expect(httpMock.match((r) => r.method === 'PATCH')).toHaveLength(0);
+    expect(page.data()[0]!.items![0]!.boardLane).toBe('prep');
+  });
+
+  it('first shop OK continues with patchLane', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'confirmed',
+      items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'A' })],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+
+    dialog.open.mockReturnValue(closedDialogRef(true));
+    page.dropItem(dropEvent(page.columnCards('prep')[0]!, 'shop'));
+    TestBed.flushEffects();
+
+    const req = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L1/lane` && r.method === 'PATCH',
+    );
+    expect(req.request.body).toEqual({ lane: 'shop' });
+    req.flush(
+      orderOf({
+        status: 'in_production',
+        items: [itemOf({ lineId: 'L1', boardLane: 'shop', productName: 'A' })],
+      }),
+    );
+    expect(page.columnCards('shop')).toHaveLength(1);
+  });
+
+  it('drop into shipped when lines not ready toasts and does not ship', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      items: [
+        itemOf({ lineId: 'L1', boardLane: 'to_ship', productName: 'Ready' }),
+        itemOf({ lineId: 'L2', boardLane: 'shop', productId: 'p2', productName: 'Not yet' }),
+      ],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      countNotShipReady: (o: Order) => number;
+      data: () => Order[];
+    };
+
+    expect(page.countNotShipReady(page.data()[0]!)).toBe(1);
+    page.dropItem(dropEvent(page.columnCards('to_ship')[0]!, 'shipped'));
+
+    expect(toast.error).toHaveBeenCalledWith('Ещё 1 изделий не готовы');
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(httpMock.match((r) => r.method === 'POST' || r.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('drop into shipped when all to_ship opens confirmShip and POSTs /ship', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'ready',
+      items: [
+        itemOf({ lineId: 'L1', boardLane: 'to_ship', productName: 'A' }),
+        itemOf({ lineId: 'L2', boardLane: 'to_ship', productId: 'p2', productName: 'B' }),
+      ],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+
+    dialog.open.mockReturnValue(closedDialogRef(true));
+    page.dropItem(dropEvent(page.columnCards('to_ship')[0]!, 'shipped'));
+
+    expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.anything());
+    expect((dialog.open.mock.calls[0]![1] as { data?: { title?: string } }).data?.title).toContain(
+      'ORD-1',
+    );
+
+    TestBed.flushEffects();
+    const shipReq = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/ship` && r.method === 'POST',
+    );
+    expect(shipReq.request.body).toEqual({});
+    shipReq.flush(
+      orderOf({
+        status: 'shipped',
+        items: [
+          itemOf({ lineId: 'L1', boardLane: 'shipped', status: 'shipped' }),
+          itemOf({ lineId: 'L2', boardLane: 'shipped', productId: 'p2', status: 'shipped' }),
+        ],
+      }),
+    );
+
+    expect(httpMock.match((r) => r.url.includes('/lane') && r.method === 'PATCH')).toHaveLength(0);
+    expect(page.data()[0]!.status).toBe('shipped');
+  });
+
+  it('ship confirm-cancel does not POST ship', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'ready',
+      items: [itemOf({ lineId: 'L1', boardLane: 'to_ship' })],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+
+    dialog.open.mockReturnValue(closedDialogRef(undefined));
+    page.dropItem(dropEvent(page.columnCards('to_ship')[0]!, 'shipped'));
+    TestBed.flushEffects();
+
+    expect(httpMock.match((r) => r.method === 'POST' || r.method === 'PATCH')).toHaveLength(0);
+    expect(page.data()[0]!.status).toBe('ready');
   });
 });

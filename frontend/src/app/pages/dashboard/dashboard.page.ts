@@ -1,16 +1,22 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   Injector,
   computed,
   inject,
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { LucideAngularModule, Pencil } from 'lucide-angular';
 import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chrome.component';
-import { BoardLane, Order, OrderItem } from '../orders/orders.service';
+import { BoardLane, Order, OrderItem, OrdersService } from '../orders/orders.service';
 import { DashboardDialogService } from '../../shared/services/dashboard-dialog.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { PiToastService } from '../../shared/ui/toast';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { extractErrorMessage } from '../../core/silent-http';
 
@@ -35,6 +41,8 @@ export interface CombineColumn {
   helper: string;
 }
 
+type LaneSnapshot = { orderId: string; lineId: string; boardLane: BoardLane };
+
 /** TZ-COMBINE-402 legacy: OrderItem.status → boardLane when lane missing. */
 const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> = {
   pending: 'prep',
@@ -43,10 +51,13 @@ const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> 
   shipped: 'shipped',
 };
 
+const SHIP_READY_LANES: ReadonlySet<BoardLane> = new Set(['to_ship', 'shipped']);
+const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', 'shipped']);
+
 @Component({
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, PiPageChromeComponent],
+  imports: [LucideAngularModule, PiPageChromeComponent, CdkDropList, CdkDrag],
   template: `
     <app-pi-page-chrome [crumbs]="crumbs" title="Комбайн заказов" />
 
@@ -93,7 +104,7 @@ const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> 
       </select>
     </div>
 
-    <!-- Kanban Board: item cards by boardLane (TZ-COMBINE-404). DnD → 405. -->
+    <!-- Kanban Board: item cards by boardLane + CDK DnD (TZ-COMBINE-405). -->
     <div class="flex gap-4 overflow-x-auto pb-4 min-h-[60vh]">
       @for (col of columns; track col.id) {
         <div
@@ -109,16 +120,25 @@ const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> 
             <p class="text-xs text-muted-foreground mt-1 leading-snug">{{ col.helper }}</p>
           </div>
 
-          <div class="flex-1 p-2 flex flex-col gap-2 overflow-y-auto">
+          <div
+            class="flex-1 p-2 flex flex-col gap-2 overflow-y-auto min-h-[8rem]"
+            cdkDropList
+            [id]="col.id"
+            [cdkDropListData]="col.id"
+            [cdkDropListConnectedTo]="connectedLists"
+            (cdkDropListDropped)="dropItem($event)"
+          >
             @for (card of columnCards(col.id); track card.key) {
               <div
-                class="bg-paper border hairline rounded-sm p-3 shadow-sm hover:border-ink/20 transition-colors"
+                cdkDrag
+                [cdkDragData]="card"
+                class="bg-paper border hairline rounded-sm p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-ink/20 transition-colors"
               >
                 <div class="flex justify-between items-start gap-2 mb-2">
                   <button
                     type="button"
                     class="font-mono text-xs font-medium hover:underline text-left shrink-0"
-                    (click)="openOrder(card.order)"
+                    (click)="openOrder(card.order); $event.stopPropagation()"
                     title="Открыть заказ"
                   >
                     №{{ card.orderNumber }}
@@ -126,7 +146,7 @@ const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> 
                   <button
                     type="button"
                     class="text-muted-foreground hover:text-ink p-1 -mr-1 -mt-1 rounded-sm hover:bg-ink/5 shrink-0"
-                    (click)="editProduct(card.item.productId)"
+                    (click)="editProduct(card.item.productId); $event.stopPropagation()"
                     title="Редактировать изделие"
                   >
                     <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
@@ -165,7 +185,11 @@ export class DashboardPage {
   protected readonly PencilIcon = Pencil;
 
   private readonly dashboardDialogs = inject(DashboardDialogService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly orders = inject(OrdersService);
   private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
 
   protected readonly listRes = httpResource<Order[]>(() => ({
@@ -207,6 +231,8 @@ export class DashboardPage {
       helper: 'Только отгрузка целого заказа (не PATCH lane)',
     },
   ];
+
+  protected readonly connectedLists = this.columns.map((c) => c.id);
 
   protected readonly filterOrderId = signal<string>('');
 
@@ -284,6 +310,153 @@ export class DashboardPage {
 
   protected editProduct(productId: string): void {
     this.dashboardDialogs.openProductEdit(productId, this.injector, () => this.listRes.reload());
+  }
+
+  /**
+   * TZ-COMBINE-405 — drop изделия между колонками boardLane.
+   * «Отгружены» → ship-whole gate (не PATCH lane=shipped).
+   * Первый вход в shop → freeze modal.
+   */
+  protected dropItem(event: CdkDragDrop<BoardLane>): void {
+    if (event.previousContainer === event.container) return;
+
+    const card = event.item.data as CombineItemCard | undefined;
+    const targetLane = event.container.id as BoardLane;
+    if (!card || !targetLane) return;
+    if (card.boardLane === targetLane) return;
+
+    const order = this.data().find((o) => o._id === card.orderId);
+    if (!order) return;
+
+    if (targetLane === 'shipped') {
+      this.handleShipDrop(order);
+      return;
+    }
+
+    if (!card.item.lineId) {
+      this.toast.error('У изделия нет lineId — обновите заказ и повторите.');
+      return;
+    }
+
+    if (targetLane === 'shop' && this.isFirstShopEntry(order)) {
+      this.confirmFreezeThenPatch(order, card.item.lineId, targetLane);
+      return;
+    }
+
+    this.applyLanePatch(order, card.item.lineId, targetLane);
+  }
+
+  /** Все линии ещё не входили в shop/to_ship/shipped → первый вход в цех. */
+  protected isFirstShopEntry(order: Order): boolean {
+    return !(order.items ?? []).some((item) => SHOP_ENTERED_LANES.has(this.boardLaneOf(item)));
+  }
+
+  /** Линии не в to_ship/shipped — сколько «ещё не готовы» к отгрузке. */
+  protected countNotShipReady(order: Order): number {
+    return (order.items ?? []).filter((item) => !SHIP_READY_LANES.has(this.boardLaneOf(item)))
+      .length;
+  }
+
+  private handleShipDrop(order: Order): void {
+    const notReady = this.countNotShipReady(order);
+    if (notReady > 0) {
+      this.toast.error(`Ещё ${notReady} изделий не готовы`);
+      return;
+    }
+    this.confirmShip(order);
+  }
+
+  private confirmFreezeThenPatch(order: Order, lineId: string, lane: BoardLane): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Состав заказа будет заморожен. Добавить изделия после этого нельзя.',
+        confirmLabel: 'Продолжить',
+        cancelLabel: 'Отмена',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.applyLanePatch(order, lineId, lane);
+    });
+  }
+
+  /** TZ-SWEEP-401 pattern: confirm → POST /ship (не PATCH lane). */
+  private confirmShip(order: Order): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: `Создать отгрузку по заказу №${order.number}?`,
+        description: 'Появится документ отгрузки.',
+        confirmLabel: 'Отгрузить',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      const snapshot = this.laneSnapshot();
+      this.applyOptimisticShip(order);
+      this.orders.ship(order._id, {}).subscribe((res) => {
+        if (res.ok) {
+          this.replaceOrder(res.data);
+        } else {
+          this.restoreLanes(snapshot);
+          this.toast.error(extractErrorMessage(res.error));
+        }
+      });
+    });
+  }
+
+  private applyLanePatch(order: Order, lineId: string, lane: BoardLane): void {
+    const snapshot = this.laneSnapshot();
+    this.setItemLane(order._id, lineId, lane);
+
+    this.orders.patchLane(order._id, lineId, lane).subscribe((res) => {
+      if (res.ok) {
+        this.replaceOrder(res.data);
+      } else {
+        this.restoreLanes(snapshot);
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  private laneSnapshot(): LaneSnapshot[] {
+    const out: LaneSnapshot[] = [];
+    for (const order of this.data()) {
+      for (const item of order.items ?? []) {
+        if (!item.lineId) continue;
+        out.push({
+          orderId: order._id,
+          lineId: item.lineId,
+          boardLane: this.boardLaneOf(item),
+        });
+      }
+    }
+    return out;
+  }
+
+  private restoreLanes(snapshot: LaneSnapshot[]): void {
+    for (const s of snapshot) {
+      this.setItemLane(s.orderId, s.lineId, s.boardLane);
+    }
+  }
+
+  private setItemLane(orderId: string, lineId: string, lane: BoardLane): void {
+    const order = this.data().find((o) => o._id === orderId);
+    const item = order?.items?.find((i) => i.lineId === lineId);
+    if (item) item.boardLane = lane;
+  }
+
+  private applyOptimisticShip(order: Order): void {
+    order.status = 'shipped';
+    for (const item of order.items ?? []) {
+      item.boardLane = 'shipped';
+      item.status = 'shipped';
+    }
+  }
+
+  private replaceOrder(updated: Order): void {
+    this.listRes.value.set(this.data().map((o) => (o._id === updated._id ? updated : o)));
   }
 
   /**

@@ -38,13 +38,13 @@
 
 | Метод | Endpoint | Когда |
 |-------|----------|--------|
-| GET | `/api/orders` | данные доски (404: flat item cards + filter) |
-| PATCH | `/api/orders/:id/lines/:lineId/lane` | DnD изделия — BE live (403); FE DnD → **405** |
-| POST | `/api/orders/:id/ship` | все линии `to_ship` → confirm |
+| GET | `/api/orders` | данные доски (flat item cards + filter) |
+| PATCH | `/api/orders/:id/lines/:lineId/lane` | CDK DnD изделия (405); optimistic + rollback |
+| POST | `/api/orders/:id/ship` | дроп в «Отгружены» когда все линии `to_ship`/`shipped` → confirmShip |
 
 Legacy: `PATCH .../items/:i/status` — не расширять новыми значениями.
 
-**TZ-COMBINE-404:** FE колонки RU + helpers, карточки = OrderItem + бейдж №заказа, фильтр orderId, клик → order edit. DnD нет.
+**TZ-COMBINE-405:** DnD карточек → `patchLane`; первый вход любой линии в `shop` → freeze modal RU; дроп в «Отгружены» — ship-whole gate (toast «Ещё N изделий не готовы» / confirm → POST ship, не PATCH lane=shipped).
 
 ## Навигация
 

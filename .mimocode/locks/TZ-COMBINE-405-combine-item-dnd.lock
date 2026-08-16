@@ -1,0 +1,7 @@
+TZ: TZ-COMBINE-405
+STATUS: DONE
+EXECUTOR: cursor-composer-executor
+CURSOR_VERDICT: PASS
+CLOSED_AT: 2026-08-16T14:57:07+03:00
+ARCHIVE: tasks/_archive/2026-08/TZ-COMBINE-405.done.md
+NEXT: COMBINE-406/407 modules; warm deploy after 402–405 PASS
