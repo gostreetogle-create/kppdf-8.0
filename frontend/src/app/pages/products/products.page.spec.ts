@@ -19,6 +19,7 @@ import { signal } from '@angular/core';
 import { of } from 'rxjs';
 
 import { ProductsPage } from './products.page';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { ProductsService } from '../../shared/services/products.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { CategoriesService } from '../../shared/services/categories.service';
@@ -217,6 +218,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
   });
 
   afterEach(() => {
+    TestBed.inject(PiChromeToolsService).clear('products-page');
     httpMock.verify();
     localStorage.clear();
   });
@@ -447,6 +449,11 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
   it('category filter reloads list with ?categoryId=', async () => {
     const fixture = await renderPage();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
+    fixture.detectChanges();
     const select = fixture.nativeElement.querySelector(
       '[data-test="category-filter"]',
     ) as HTMLSelectElement;
@@ -466,24 +473,46 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     flushDictionaryLabels(httpMock);
   });
 
+  it('TZ-UX-326: no w-12 filters-rail; chrome has filters left and view/refresh right', async () => {
+    const fixture = await renderPage();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const layout = fixture.nativeElement.querySelector(
+      '[data-test="products-layout"]',
+    ) as HTMLElement;
+
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
+    expect(layout.className).not.toContain('w-12');
+    expect(fixture.nativeElement.querySelector('.w-12')).toBeNull();
+    expect(chrome.leftTools().map((t) => t.id)).toEqual(['filters']);
+    expect(chrome.leftTools()[0]!.ariaLabel).toBe('Фильтры');
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['view-list', 'view-grid', 'refresh']);
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual([
+      'Показать списком',
+      'Показать карточками',
+      'Обновить',
+    ]);
+  });
+
   it('filters rail toggles open as overlay', async () => {
     const fixture = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
+    const chrome = TestBed.inject(PiChromeToolsService);
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
-    toggle.click();
+    chrome
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')).toBeTruthy();
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.active).toBe(true);
   });
 
   it('filters backdrop click closes overlay', async () => {
     const fixture = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
     const backdrop = fixture.nativeElement.querySelector(
       '[data-test="filters-backdrop"]',
@@ -495,10 +524,10 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
   it('filters panel stays open when interacting with selects', async () => {
     const fixture = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
 
     const panel = fixture.nativeElement.querySelector(
@@ -527,12 +556,32 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
-    // Panel must sit outside the dimmed content column (not under backdrop).
-    const rail = fixture.nativeElement.querySelector('[data-test="filters-rail"]') as HTMLElement;
     const contentCol = fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')
       ?.parentElement as HTMLElement | undefined;
-    expect(rail.contains(panel)).toBe(true);
     expect(contentCol?.contains(panel)).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
+  });
+
+  it('chrome view-grid and refresh tools switch grid and reload', async () => {
+    const fixture = await renderPage();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'view-grid')!
+      .onClick();
+    fixture.detectChanges();
+    expect(comp.viewMode()).toBe('grid');
+    expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeTruthy();
+
+    const page = fixture.componentInstance as unknown as { reload: () => void };
+    const reloadSpy = jest.spyOn(page, 'reload');
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'refresh')!
+      .onClick();
+    expect(reloadSpy).toHaveBeenCalled();
   });
 
   it('grid card routerLink points to /products/:id', async () => {

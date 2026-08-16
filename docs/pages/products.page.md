@@ -227,11 +227,15 @@ media фиксирован в пропорции 16:9 с `object-fit: cover`, а
 перенесён идентичным контентом из part-1 `e00be99`) — общий UI Kit для
 карточек-витрин товара/модуля/материала.
 
-- **Toggle в тулбаре:** кнопки `ListIcon` / `GridIcon` (lucide), `data-test`
-  `view-list-button` / `view-grid-button`, `aria-pressed` для a11y.
-- **Состояние:** `viewMode: signal<'list' | 'grid'>`, выбор персистится в
-  localStorage (`pi-products-view-mode`) — паттерн `snapSettings` из builder
-  (load/save в try/catch, дефолт `list`).
+- **Chrome page-tools (TZ-UX-326):** `PiChromeToolsService` owner `products-page`.
+  Left: «Фильтры» (воронка, active если flyout открыт или фильтры dirty).
+  Right: вид list/grid + «Обновить». `clear` on destroy. Локальной колонки
+  `filters-rail` `w-12` **нет**. На &lt;1680 chrome скрыт — icon-fallback
+  (фильтр / вид / обновить) в toolbar, без docked 48px.
+- **Toolbar:** поиск, «+ Создать», счётчик «N продукт». Селекты статуса/
+  активности/категории и сортировка — **только** в flyout фильтров.
+- **Состояние вида:** `viewMode: signal<'list' | 'grid'>`, localStorage
+  `pi-products-view-mode` (дефолт `list`).
 - **Grid-вид:** сетка `grid-cols-1 md:2 xl:3 gap-4`; каждая ячейка —
   `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="md"`:
   - `mediaUrl` — URL первого populate-фото через общий `photoListUrl`: linked `thumb`, если он есть, иначе original;
@@ -240,19 +244,17 @@ media фиксирован в пропорции 16:9 с `object-fit: cover`, а
   - loading / empty (`grid-loading` / `grid-empty`).
 - **Таблица (2026-08-07):** Фото · Название · Ед. · Цена · Модулей
   (без SKU / Вид / Статус / Остаток).
-- **Фильтры:** select статус/активность/категория в tools + левая полоска
-  `filters-rail` (`w-12` → панель с теми же фильтрами + сортировка).
-- **Оверлей фильтров (канон, не ломать):**
-  1. Затемнение (`filters-backdrop`) только на **колонке контента**, не на рейле/панели.
+- **Flyout фильтров (канон, не ломать):**
+  1. Затемнение (`filters-backdrop`) только на **колонке контента**, не на панели.
   2. Панель `z-40` + непрозрачный `bg-paper` — **не** под `bg-ink/…` (иначе селекты «тусклые» и клик закрывает оверлей).
-  3. Закрытие: клик по backdrop / «Закрыть»; клик и `change` внутри панели **не** закрывают.
+  3. Закрытие: клик по backdrop / «Закрыть» / повтор «Фильтры»; клик и `change` внутри панели **не** закрывают.
   4. Панель достаточно высокая (`min-h` + scroll), чтобы 4 селекта не жались.
 - **Template-refs** на корне — `@ViewChild({ static: true })` независимо от viewMode.
 - **API list:** `status`, `isActive`, `categoryId` + search/sort/page.
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-08-07 (filters overlay z-index / panel above dim)._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-16 (TZ-UX-326 chrome page-tools)._
 
 ## Состав изделия (TZ-CATALOG-320)
 

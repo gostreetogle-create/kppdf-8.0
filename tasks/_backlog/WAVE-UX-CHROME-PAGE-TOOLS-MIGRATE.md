@@ -1,6 +1,6 @@
 # WAVE: Chrome page-tools migrate (каталог и списки → app-chrome-rail)
 
-**Статус:** BACKLOG (после TZ-UX-325 audit)  
+**Статус:** #1 `TZ-UX-326` DONE · дальше 327→330 по PO  
 **Цель:** убрать локальные `w-12` filters-rail и перенести icon-only tools в `PiChromeToolsService` / `app-chrome-rail` под ←→.  
 **SoT audit:** `docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`  
 **Canon:** `docs/pages/page-chrome.md` § Page tools  
@@ -8,13 +8,13 @@
 
 ## Queue (строго по порядку; по одному экрану)
 
-| # | Draft TZ id | Route | Points | Notes |
-|---|-------------|-------|-------:|-------|
-| 1 | `TZ-UX-326-products-chrome-page-tools` | `/products` | 40 | P0: снять filters-rail; L=Фильтры, R=Вид+Обновить; flyout overlay |
-| 2 | `TZ-UX-327-modules-chrome-page-tools` | `/modules` | 35 | P0: зеркало products (CATALOG-372 parity) |
-| 3 | `TZ-UX-328-materials-chrome-page-tools` | `/materials` | 35 | P0: зеркало (CATALOG-373) |
-| 4 | `TZ-UX-329-supply-chrome-refresh` | `/supply` | 15 | P1: Обновить → chrome; selects остаются |
-| 5 | `TZ-UX-330-orders-chrome-refresh` | `/orders` | 15 | P1: Обновить → chrome; search/Create остаются |
+| # | TZ | Route | Points | Notes |
+|---|----|-------|-------:|-------|
+| 1 | **`TZ-UX-326`** DONE → `tasks/_archive/2026-08/TZ-UX-326.done.md` | `/products` | 40 | P0: снять filters-rail; L=Фильтры, R=Вид+Обновить; flyout overlay |
+| 2 | `TZ-UX-327-modules-chrome-page-tools` (draft) | `/modules` | 35 | P0: зеркало products после 326 |
+| 3 | `TZ-UX-328-materials-chrome-page-tools` (draft) | `/materials` | 35 | P0: зеркало после 327 |
+| 4 | `TZ-UX-329-supply-chrome-refresh` (draft) | `/supply` | 15 | P1 |
+| 5 | `TZ-UX-330-orders-chrome-refresh` (draft) | `/orders` | 15 | P1 |
 | | **PASS (P0 only)** | | **110** | |
 | | **PASS (+P1)** | | **140** | |
 

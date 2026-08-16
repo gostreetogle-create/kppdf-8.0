@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:16:00+03:00
+updated_at: 2026-08-16T12:22:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
+- **TZ-UX-340** CLAIMED / IN PROGRESS — cursor-composer — PiPagination канон + pi-table footer. Keys: `pi-pagination*` / `pi-table*` / `pi-pagination.constants.ts`. Не 341/342. Deploy нет.
 - **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
-- **TZ-UX-326** READY FOR REVIEW — cursor-grok-4.6 — `/products` фильтр в app-chrome-rail, w-12 снят. Keys: `products.page.ts` / `products.page.spec.ts` / `products.page.md`. Gates: tsc PASS, products.page 24/24. Archive после Cursor PASS.
 
 ## NEXT (PO paste prompt)
 
-- **Единая пагинация (новая волна):** старт `TZ-UX-340` → `tasks/_backlog/PROMPT-TZ-UX-340.md` (аудит `docs/audits/2026-08-16-pagination-unification-audit.md`)
-- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 только после Cursor/PO PASS.
+- **Единая пагинация:** после 340 → TZ-UX-341 / TZ-UX-342 (не стартовать пока 340 не READY).
+- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-340 только после Cursor/PO PASS. TZ-UX-326 DONE.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -29,6 +29,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-UX-326 DONE — `/products` chrome page-tools
+
+- Archive: `tasks/_archive/2026-08/TZ-UX-326.done.md`; фильтр в app-chrome-rail; w-12 снят. Deploy нет.
 
 ## [2026-08-16] — TZ-UX-332 DONE — Product edit `_id` + RU not-found
 

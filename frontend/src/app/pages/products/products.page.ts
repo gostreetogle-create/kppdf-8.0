@@ -9,12 +9,15 @@ import {
   effect,
   inject,
   signal,
+  untracked,
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
+import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -57,6 +60,8 @@ import {
 
 /** Server-side pagination page size for /products endpoint. */
 const PAGE_SIZE = 15;
+
+const CHROME_OWNER = 'products-page';
 
 /** Backend accepts only these sortBy values (see ProductsListParams). */
 type SortKey = 'name' | 'listPrice';
@@ -141,6 +146,13 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
+  styles: `
+    @media (min-width: 1680px) {
+      .products-chrome-fallback {
+        display: none;
+      }
+    }
+  `,
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="products">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
@@ -155,87 +167,59 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
           data-test="search-input"
           class="pi-input w-64"
         />
-        <select
-          id="products-status-filter"
-          name="products-status-filter"
-          [value]="statusFilter() ?? ''"
-          (change)="onStatusFilterChange($event)"
-          aria-label="Фильтр по статусу"
-          data-test="status-filter"
-          class="pi-input w-36"
-        >
-          <option value="">Все статусы</option>
-          @for (s of STATUS_OPTIONS; track s) {
-            <option [value]="s">{{ STATUS_LABELS[s] }}</option>
-          }
-        </select>
-        <select
-          id="products-active-filter"
-          name="products-active-filter"
-          [value]="activeFilterValue()"
-          (change)="onActiveFilterChange($event)"
-          aria-label="Фильтр активности"
-          data-test="active-filter"
-          class="pi-input w-36"
-        >
-          <option value="">Все</option>
-          <option value="true">Активные</option>
-          <option value="false">Неактивные</option>
-        </select>
-        <select
-          id="products-category-filter"
-          name="products-category-filter"
-          [value]="categoryFilter() ?? ''"
-          (change)="onCategoryFilterChange($event)"
-          aria-label="Фильтр по категории"
-          data-test="category-filter"
-          class="pi-input w-44"
-        >
-          <option value="">Все категории</option>
-          @for (c of categories(); track c._id) {
-            <option [value]="c._id">{{ c.name }}</option>
-          }
-        </select>
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
           + Создать
         </app-pi-button>
-        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-        </app-pi-button>
-        <div
-          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
-          role="group"
-          aria-label="Вид каталога"
-          data-test="view-toggle"
-        >
+        <div class="products-chrome-fallback flex items-center gap-form-field">
           <button
             type="button"
-            (click)="setViewMode('list')"
-            [attr.aria-pressed]="viewMode() === 'list'"
-            [class]="
-              viewMode() === 'list'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать списком"
-            data-test="view-list-button"
+            class="flex min-h-touch min-w-8 items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+            (click)="toggleFiltersRail()"
+            [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+            [attr.aria-expanded]="filtersOpen()"
+            aria-controls="products-flyout-filters"
+            data-test="filters-rail-toggle"
           >
-            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            <lucide-icon [img]="FilterIcon" [size]="16"></lucide-icon>
           </button>
-          <button
-            type="button"
-            (click)="setViewMode('grid')"
-            [attr.aria-pressed]="viewMode() === 'grid'"
-            [class]="
-              viewMode() === 'grid'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать карточками"
-            data-test="view-grid-button"
+          <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+            <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+          </app-pi-button>
+          <div
+            class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+            role="group"
+            aria-label="Вид каталога"
+            data-test="view-toggle"
           >
-            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
-          </button>
+            <button
+              type="button"
+              (click)="setViewMode('list')"
+              [attr.aria-pressed]="viewMode() === 'list'"
+              [class]="
+                viewMode() === 'list'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать списком"
+              data-test="view-list-button"
+            >
+              <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('grid')"
+              [attr.aria-pressed]="viewMode() === 'grid'"
+              [class]="
+                viewMode() === 'grid'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать карточками"
+              data-test="view-grid-button"
+            >
+              <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+            </button>
+          </div>
         </div>
         <span class="flex-1"></span>
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
@@ -250,125 +234,110 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
         </div>
       }
 
-      <div class="relative flex gap-3 items-start" data-test="products-layout">
-        <!-- Узкая полоска + панель ВЫШЕ затемнения (z-40); иначе клики/селекты ломаются -->
-        <aside
-          class="relative z-40 shrink-0 w-12"
-          data-test="filters-rail"
-          [attr.aria-expanded]="filtersOpen()"
-        >
-          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
-            <button
-              type="button"
-              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
-              (click)="toggleFiltersRail()"
-              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
-              data-test="filters-rail-toggle"
-            >
-              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
-            </button>
-          </div>
-
-          @if (filtersOpen()) {
-            <div
-              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
-              data-test="filters-rail-panel"
-              role="dialog"
-              aria-label="Фильтры каталога"
-              (pointerdown)="$event.stopPropagation()"
-              (click)="$event.stopPropagation()"
-            >
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <div class="text-sm font-medium text-ink">Фильтры</div>
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
-                  (click)="closeFilters()"
-                  aria-label="Закрыть"
-                  data-test="filters-panel-close"
-                >
-                  Закрыть
-                </button>
-              </div>
-              <div class="flex flex-col gap-3">
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-status"
-                  >Статус</label
-                >
-                <select
-                  id="rail-status"
-                  class="pi-input w-full text-sm"
-                  [value]="statusFilter() ?? ''"
-                  (change)="onStatusFilterChange($event)"
-                >
-                  <option value="">Все</option>
-                  @for (s of STATUS_OPTIONS; track s) {
-                    <option [value]="s">{{ STATUS_LABELS[s] }}</option>
-                  }
-                </select>
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-active"
-                  >Активность</label
-                >
-                <select
-                  id="rail-active"
-                  class="pi-input w-full text-sm"
-                  [value]="activeFilterValue()"
-                  (change)="onActiveFilterChange($event)"
-                >
-                  <option value="">Все</option>
-                  <option value="true">Активные</option>
-                  <option value="false">Неактивные</option>
-                </select>
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-category"
-                  >Категория</label
-                >
-                <select
-                  id="rail-category"
-                  class="pi-input w-full text-sm"
-                  [value]="categoryFilter() ?? ''"
-                  (change)="onCategoryFilterChange($event)"
-                >
-                  <option value="">Все</option>
-                  @for (c of categories(); track c._id) {
-                    <option [value]="c._id">{{ c.name }}</option>
-                  }
-                </select>
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-sort"
-                  >Сортировка</label
-                >
-                <select
-                  id="rail-sort"
-                  class="pi-input w-full text-sm"
-                  [value]="sortSelectValue()"
-                  (change)="onRailSortChange($event)"
-                  data-test="rail-sort"
-                >
-                  <option value="name:asc">Название ↑</option>
-                  <option value="name:desc">Название ↓</option>
-                  <option value="listPrice:asc">Прайс ↑</option>
-                  <option value="listPrice:desc">Прайс ↓</option>
-                </select>
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
-                  (click)="clearFilters()"
-                  data-test="clear-filters"
-                >
-                  Сбросить
-                </button>
-              </div>
+      <div class="relative" data-test="products-layout">
+        @if (filtersOpen()) {
+          <div
+            id="products-flyout-filters"
+            class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+            data-test="filters-rail-panel"
+            role="dialog"
+            aria-label="Фильтры каталога"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="text-sm font-medium text-ink">Фильтры</div>
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                (click)="closeFilters()"
+                aria-label="Закрыть"
+                data-test="filters-panel-close"
+              >
+                Закрыть
+              </button>
             </div>
-          }
-        </aside>
+            <div class="flex flex-col gap-3">
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-status"
+                >Статус</label
+              >
+              <select
+                id="rail-status"
+                class="pi-input w-full text-sm"
+                [value]="statusFilter() ?? ''"
+                (change)="onStatusFilterChange($event)"
+                data-test="status-filter"
+              >
+                <option value="">Все</option>
+                @for (s of STATUS_OPTIONS; track s) {
+                  <option [value]="s">{{ STATUS_LABELS[s] }}</option>
+                }
+              </select>
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-active"
+                >Активность</label
+              >
+              <select
+                id="rail-active"
+                class="pi-input w-full text-sm"
+                [value]="activeFilterValue()"
+                (change)="onActiveFilterChange($event)"
+                data-test="active-filter"
+              >
+                <option value="">Все</option>
+                <option value="true">Активные</option>
+                <option value="false">Неактивные</option>
+              </select>
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-category"
+                >Категория</label
+              >
+              <select
+                id="rail-category"
+                class="pi-input w-full text-sm"
+                [value]="categoryFilter() ?? ''"
+                (change)="onCategoryFilterChange($event)"
+                data-test="category-filter"
+              >
+                <option value="">Все</option>
+                @for (c of categories(); track c._id) {
+                  <option [value]="c._id">{{ c.name }}</option>
+                }
+              </select>
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-sort"
+                >Сортировка</label
+              >
+              <select
+                id="rail-sort"
+                class="pi-input w-full text-sm"
+                [value]="sortSelectValue()"
+                (change)="onRailSortChange($event)"
+                data-test="rail-sort"
+              >
+                <option value="name:asc">Название ↑</option>
+                <option value="name:desc">Название ↓</option>
+                <option value="listPrice:asc">Прайс ↑</option>
+                <option value="listPrice:desc">Прайс ↓</option>
+              </select>
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                (click)="clearFilters()"
+                data-test="clear-filters"
+              >
+                Сбросить
+              </button>
+            </div>
+          </div>
+        }
 
-        <div class="relative min-w-0 flex-1">
+        <div class="relative min-w-0">
           @if (filtersOpen()) {
             <button
               type="button"
@@ -699,7 +668,10 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
 export class ProductsPage implements OnInit {
   constructor() {
     this.loadKindLabels();
-    this.destroyRef.onDestroy(() => this.search.destroy());
+    this.destroyRef.onDestroy(() => {
+      this.search.destroy();
+      this.chromeTools.clear(CHROME_OWNER);
+    });
     effect(() => {
       const needsCatalog = this.data().some((p) =>
         (p.composition ?? []).some((l) => l.lineType === 'module'),
@@ -709,6 +681,12 @@ export class ProductsPage implements OnInit {
           if (res.ok) this.moduleCatalog.set(res.data);
         });
       }
+    });
+    effect(() => {
+      void this.filtersOpen();
+      void this.viewMode();
+      void this.filtersDirty();
+      untracked(() => this.syncChromeTools());
     });
   }
   protected readonly chips = CATALOG_SECTION_CHIPS;
@@ -722,6 +700,7 @@ export class ProductsPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly modulesService = inject(ProductModulesService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly chromeTools = inject(PiChromeToolsService);
   private readonly appearance = inject(CatalogAppearanceService);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   protected readonly kindLabels = signal<Record<string, string>>(
@@ -742,6 +721,12 @@ export class ProductsPage implements OnInit {
   private readonly activeFilterSig = signal<boolean | null>(null);
   protected readonly statusFilter = this.statusFilterSig.asReadonly();
   protected readonly categoryFilter = this.categoryFilterSig.asReadonly();
+  protected readonly filtersDirty = computed(
+    () =>
+      this.statusFilterSig() != null ||
+      this.categoryFilterSig() != null ||
+      this.activeFilterSig() != null,
+  );
 
   protected setViewMode(mode: ProductsViewMode): void {
     this.viewMode.set(mode);
@@ -754,6 +739,56 @@ export class ProductsPage implements OnInit {
 
   protected closeFilters(): void {
     this.filtersOpen.set(false);
+  }
+
+  private syncChromeTools(): void {
+    const open = this.filtersOpen();
+    const dirty = this.filtersDirty();
+    const mode = this.viewMode();
+    const items: PiChromeToolItem[] = [
+      {
+        id: 'filters',
+        side: 'left',
+        ariaLabel: dirty ? 'Фильтры изменены' : 'Фильтры',
+        title: dirty ? 'Фильтры изменены' : 'Фильтры',
+        icon: this.FilterIcon,
+        active: open || dirty,
+        ariaExpanded: open,
+        ariaControls: 'products-flyout-filters',
+        order: 1,
+        onClick: () => this.toggleFiltersRail(),
+      },
+      {
+        id: 'view-list',
+        side: 'right',
+        ariaLabel: 'Показать списком',
+        title: 'Показать списком',
+        icon: this.ListIcon,
+        active: mode === 'list',
+        order: 1,
+        onClick: () => this.setViewMode('list'),
+      },
+      {
+        id: 'view-grid',
+        side: 'right',
+        ariaLabel: 'Показать карточками',
+        title: 'Показать карточками',
+        icon: this.GridIcon,
+        active: mode === 'grid',
+        order: 2,
+        onClick: () => this.setViewMode('grid'),
+      },
+      {
+        id: 'refresh',
+        side: 'right',
+        ariaLabel: 'Обновить',
+        title: 'Обновить',
+        icon: this.RefreshIcon,
+        order: 3,
+        onClick: () => this.reload(),
+      },
+    ];
+    this.chromeTools.setTools(CHROME_OWNER, items);
   }
 
   protected readonly pageSize = PAGE_SIZE;

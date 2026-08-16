@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-UX-326 DONE — `/products` chrome page-tools
+**Исполнитель:** cursor-grok-4.6
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** воронка фильтра Продукции в `app-chrome-rail` под ←; вид+Обновить справа; локальный `w-12` снят; flyout overlay сохранён; &lt;1680 — icon-fallback в toolbar.
+**Gates:** FE tsc PASS; products.page Jest 24/24 PASS.
+**Review:** Cursor self-review PASS (PO: закрыть без деплоя).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-326.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-326-products-chrome-page-tools.lock`
+**Next:** TZ-UX-327 по PO; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-332 DONE — Product edit `_id` + RU not-found
 **Исполнитель:** cursor-grok-4.6
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ
