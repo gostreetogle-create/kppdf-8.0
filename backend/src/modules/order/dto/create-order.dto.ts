@@ -65,12 +65,17 @@ export class CreateOrderDto {
   @IsOptional() @IsDateString() plannedDate?: string;
 
   @ApiPropertyOptional({
-    enum: ['draft', 'confirmed', 'in_production', 'ready', 'shipped', 'delivered', 'cancelled'],
-    description: 'Статус заказа',
+    enum: ['draft', 'confirmed'],
+    description:
+      'Статус при создании: только draft/confirmed (TZ-OPS-315). shipped/delivered/cancelled '
+      + 'достижимы только через POST /orders/:id/ship|/cancel; in_production/ready — через PATCH.',
   })
   @IsOptional()
-  @IsIn(['draft', 'confirmed', 'in_production', 'ready', 'shipped', 'delivered', 'cancelled'])
-  status?: 'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
+  @IsIn(['draft', 'confirmed'], {
+    message:
+      'Заказ нельзя создать сразу в статусе shipped/delivered/cancelled/in_production/ready — отгрузка через «Отгрузить», отмена через «Отменить», остальное через PATCH',
+  })
+  status?: 'draft' | 'confirmed';
 
   @ApiPropertyOptional({ description: 'Заметки к заказу' })
   @IsOptional() @IsString() notes?: string;

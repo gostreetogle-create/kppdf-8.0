@@ -237,6 +237,45 @@ describe('OrderService — TZ-ORDERS-301', () => {
       });
       expect(result.items[0].productId).toBeInstanceOf(Types.ObjectId);
     });
+
+    it('DEFAULT status = draft when omitted (TZ-OPS-315)', async () => {
+      const { service } = createService();
+
+      const result = await service.create(validCreateDto() as never);
+      expect(result.status).toBe('draft');
+    });
+
+    it('ALLOWS explicit confirmed on create (TZ-OPS-315)', async () => {
+      const { service } = createService();
+
+      const result = await service.create(
+        validCreateDto({ status: 'confirmed' }) as never,
+      );
+      expect(result.status).toBe('confirmed');
+      expect(result.save).toHaveBeenCalled();
+    });
+
+    it('BLOCKS create directly in shipped/delivered/cancelled/in_production/ready — no mutation (TZ-OPS-315)', async () => {
+      const { service, model } = createService();
+
+      for (const status of [
+        'shipped',
+        'delivered',
+        'cancelled',
+        'in_production',
+        'ready',
+      ] as const) {
+        await expect(
+          service.create(validCreateDto({ status }) as never),
+        ).rejects.toMatchObject({
+          message: expect.stringContaining(
+            'Заказ нельзя создать сразу в статусе',
+          ) as never,
+        });
+      }
+      // Guard сработал до создания документа (model-конструктор не вызывался).
+      expect(model).toHaveBeenCalledTimes(0);
+    });
   });
 
   describe('findAll / findById', () => {

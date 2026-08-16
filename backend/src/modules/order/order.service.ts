@@ -24,6 +24,8 @@ export interface OrderActor {
 const PLAN_UPDATE_KEYS = new Set(['plannedDate', 'priority', 'materialsSource']);
 const PLAN_EDITABLE_FROZEN = new Set(['in_production', 'ready']);
 const HARD_FROZEN = new Set(['shipped', 'delivered', 'cancelled']);
+/** TZ-OPS-315 — статусы, в которых заказ МОЖЕТ быть создан (всегда через workflow). */
+const CREATE_ALLOWED_STATUSES = new Set(['draft', 'confirmed']);
 const ORDER_STATUS_RU: Record<string, string> = {
   draft: 'Черновик',
   confirmed: 'Подтверждён',
@@ -87,6 +89,12 @@ export class OrderService {
   }
 
   async create(dto: CreateOrderDto, session?: ClientSession): Promise<OrderDocument> {
+    if (dto.status !== undefined && !CREATE_ALLOWED_STATUSES.has(dto.status)) {
+      const label = ORDER_STATUS_RU[dto.status] ?? dto.status;
+      throw new BadRequestException(
+        `Заказ нельзя создать сразу в статусе «${label}» — используйте PATCH или действия «Отгрузить»/«Отменить»`,
+      );
+    }
     if (!dto.siteId) {
       throw new BadRequestException('siteId is required');
     }
