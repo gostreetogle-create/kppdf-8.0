@@ -1,23 +1,17 @@
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from './deals-group-chips';
 
-describe('Deals workspace chips (TZ-SALES-329)', () => {
-  it('keeps the lifecycle surfaces in the dark TOC, Комбайн first (TZ-SWEEP-401)', () => {
+describe('Deals workspace chips (TZ-SALES-329 / TZ-NAV-303)', () => {
+  it('keeps the lifecycle surfaces in the dark TOC (Комбайн moved to Проект)', () => {
     expect(DEALS_TOC_CHIPS.map((chip) => [chip.id, chip.route])).toEqual([
-      ['dashboard', '/dashboard'],
       ['proposals', '/proposals/create'],
       ['contracts', '/contracts'],
       ['orders', '/orders'],
     ]);
   });
 
-  it('Комбайн chip is labelled «Комбайн», not «Дашборд», with orders grant', () => {
-    const [first] = DEALS_TOC_CHIPS;
-    expect(first).toMatchObject({
-      id: 'dashboard',
-      label: 'Комбайн',
-      route: '/dashboard',
-      pageKey: 'orders',
-    });
+  it('no Комбайн chip in Deals TOC — it lives at /design/combine under Проект', () => {
+    expect(DEALS_TOC_CHIPS.some((chip) => chip.label === 'Комбайн')).toBe(false);
+    expect(DEALS_TOC_CHIPS.some((chip) => chip.route === '/dashboard')).toBe(false);
   });
 
   it('limits yellow subchips to proposal actions', () => {

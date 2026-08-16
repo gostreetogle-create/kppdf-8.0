@@ -5,4 +5,6 @@ import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 export const DESIGN_SECTION_CHIPS: readonly GroupChip[] = [
   { id: 'design', label: 'Очередь', route: '/design', pageKey: 'design' },
+  // TZ-NAV-303: Комбайн заказов (канбан) — зона проектирования.
+  { id: 'combine', label: 'Комбайн', route: '/design/combine', pageKey: 'orders' },
 ];

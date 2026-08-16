@@ -68,9 +68,13 @@ describe('matchActiveCategoryId (TZ-UX-308)', () => {
   });
 });
 
-describe('matchActiveCategoryId (TZ-SWEEP-401)', () => {
-  it('highlights deals on the Комбайн /dashboard (alias, not a leaf item)', () => {
-    expect(matchActiveCategoryId('/dashboard')).toBe('deals');
+describe('matchActiveCategoryId (TZ-NAV-303)', () => {
+  it('highlights design (Проект) on the Комбайн /design/combine', () => {
+    expect(matchActiveCategoryId('/design/combine')).toBe('design');
+  });
+
+  it('no longer highlights deals on /dashboard (home = stats, not deals)', () => {
+    expect(matchActiveCategoryId('/dashboard')).not.toBe('deals');
   });
 });
 

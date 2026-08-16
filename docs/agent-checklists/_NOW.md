@@ -5,18 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:51:23+03:00
+updated_at: 2026-08-16T13:55:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **TZ-NAV-303** — CLAIMED / READY FOR REVIEW (owns S1 from SITE-SMOKE: `dashboard-stats.page.ts` TS2339 `destructive`).
+_(empty — NAV-303 landed; PHOTO-304 landed)_
 
 ## NEXT (PO paste prompt)
 
+- **WAVE-HOME-STATS-COMBINE DONE** (**TZ-NAV-303**). Full home widgets → **TZ-DASHBOARD-401** (backlog).
+- **WAVE-PHOTO-FRAME** #1 DONE (**TZ-PHOTO-304**); next UX-PHOTO-302/303.
 - **WAVE-CONFIDENCE-LEDGER-FLASH DONE**; remediation **TZ-OPS-313…316 DONE** (incl. OPS-315 UpdateOrderDto regression fix).
 - **Единая пагинация:** WAVE #1–#3 **DONE** (**UX-340**, **UX-341**, **UX-342**).
-- Deploy **нет**. **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE; **TZ-UX-328 DONE** (materials chrome).
+- Deploy **нет** (orchestrator later). **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE; **TZ-UX-328 DONE** (materials chrome).
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -29,6 +31,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-NAV-303 DONE — Комбайн → Проект; home = Обзор
+
+- Archive: `tasks/_archive/2026-08/TZ-NAV-303.done.md`; lock `TZ-NAV-303-combine-to-design-home-stats.lock`; S1 `destructive:false` on statCards; home stats stub; `/design/combine` kanban. Deploy нет.
 
 ## [2026-08-16] — TZ-PHOTO-304 DONE — photo frame meta
 

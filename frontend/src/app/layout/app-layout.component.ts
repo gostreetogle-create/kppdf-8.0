@@ -134,8 +134,8 @@ const NAV_CATEGORIES: NavCategory[] = [
     shortLabel: 'Сделки',
     icon: Briefcase,
     entryPath: '/proposals/create',
-    // TZ-SWEEP-401: Комбайн (/dashboard) — тоже Сделки (категория подсвечивается).
-    activeAliases: ['/proposals', '/dashboard'],
+    // TZ-NAV-303: Комбайн ушёл из Сделок в Проект (/design/combine).
+    activeAliases: ['/proposals'],
     items: [
       // TZ-SALES-301 / TZ-SALES-329: КП → Договоры → Заказы; entry = Создать КП.
       { path: '/proposals/create', pageKey: 'proposals', label: 'КП' },
@@ -149,7 +149,11 @@ const NAV_CATEGORIES: NavCategory[] = [
     shortLabel: 'Проект',
     icon: PenLine,
     entryPath: '/design',
-    items: [{ path: '/design', pageKey: 'design', label: 'Очередь' }],
+    items: [
+      { path: '/design', pageKey: 'design', label: 'Очередь' },
+      // TZ-NAV-303: Комбайн заказов (канбан) — зона проектирования.
+      { path: '/design/combine', pageKey: 'orders', label: 'Комбайн' },
+    ],
   },
   {
     id: 'supply',
@@ -327,7 +331,7 @@ export function matchActiveCategoryId(
                  hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-2 min-w-0">
-            <!-- TZ-UX-331: brand = visible home chip → / → Комбайн; text stays «KPPDF · 8.0». -->
+            <!-- TZ-UX-331 + TZ-NAV-303: brand = visible home chip → / → Обзор (home stats); text stays «KPPDF · 8.0». -->
             <a
               routerLink="/"
               class="inline-flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none
@@ -335,8 +339,8 @@ export function matchActiveCategoryId(
                      rounded-sm hairline bg-sunrise-soft text-ink
                      hover:bg-sunrise-warm/20 transition-colors pi-focus-ring
                      cursor-pointer no-underline"
-              aria-label="Комбайн заказов — главная"
-              title="Комбайн заказов — главная"
+              aria-label="Обзор — главная"
+              title="Обзор — главная"
               data-test="nav-brand-home"
             >
               <span
@@ -800,7 +804,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/proposals',
     '/contracts',
     '/orders',
-    '/dashboard',
+    '/design/combine',
     '/production',
     '/inventory',
     '/storage-items',

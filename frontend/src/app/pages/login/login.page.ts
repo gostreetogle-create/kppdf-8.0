@@ -13,7 +13,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
  *
  * Editorial form (Paper & Ink). Username + password, submits via
  * AuthService.login(). On success → / which the router resolves to
- * /dashboard (Комбайн) — не /materials (TZ-SWEEP-401).
+ * /dashboard (Обзор, home stats) — не /materials (TZ-SWEEP-401).
  *
  * `publicOnlyGuard` is wired on the route, so already-authed users
  * who hit /login are bounced to / immediately.

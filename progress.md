@@ -7,6 +7,15 @@
 **Lock:** `.mimocode/locks/TZ-PHOTO-304-photo-frame-meta.lock`
 **Next:** TZ-UX-PHOTO-302 dropzone UI; TZ-UX-PHOTO-303 consumers; deploy не выполнялся.
 
+## [2026-08-16] — TZ-NAV-303 DONE — Комбайн → Проект; home = Обзор
+**Исполнитель:** buffy (impl) + cursor-composer (S1 land + archive)
+**Статус:** DONE; PO-authorized unattended finish; deploy НЕ
+**Что:** Home `/`+`/dashboard` = `DashboardStatsPage` stub «Обзор»; канбан → `/design/combine` (Проект); brand «Обзор — главная»; deals без Комбайн chip; S1 `destructive: false` на non-overdue `statCards`.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `app-layout|dashboard-stats|deals-group-chips` 3 suites / 20 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-NAV-303.done.md`
+**Lock:** `.mimocode/locks/TZ-NAV-303-combine-to-design-home-stats.lock`
+**Next:** TZ-DASHBOARD-401 (full widgets); PHOTO-304 DONE; deploy by orchestrator.
+
 ## [2026-08-16] — TZ-OPS-SITE-SMOKE-401 DONE — site operator walk PASS
 **Исполнитель:** DeepC 4 Pro (live walk) + cursor-composer (docs-only closeout)
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

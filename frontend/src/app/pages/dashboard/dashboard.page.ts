@@ -171,9 +171,10 @@ import { DatePipe } from '@angular/common';
   `,
 })
 export class DashboardPage {
-  // TZ-SWEEP-401: крошки Комбайна — «Сделки → /orders» + «Комбайн» (не «Главная / Дашборд»).
+  // TZ-NAV-303: Комбайн переехал под Проект — /design/combine.
+  // Крошки = «Проектирование → /design» + «Комбайн» (не «Главная / Дашборд»).
   protected readonly crumbs: PageCrumb[] = [
-    { label: 'Сделки', link: '/orders' },
+    { label: 'Проектирование', link: '/design' },
     { label: 'Комбайн' },
   ];
   protected readonly PencilIcon = Pencil;

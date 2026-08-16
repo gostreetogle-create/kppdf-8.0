@@ -1,64 +1,56 @@
-# Страница: Комбайн заказов (DashboardPage)
+# Страница: Обзор — домашняя статистика (`DashboardStatsPage`) — stub
 
-**Краткое описание:** Домашняя Канбан-доска заказов. Не путать со складским дашбордом `/inventory`.
+**Краткое описание:** первая страница сайта — **сводка (home stats)**, НЕ канбан.
+Полные виджеты (заказы по статусам, материалы/склад, сделки) — **TZ-DASHBOARD-401**.
+Сейчас — честный stub: минимальные счётчики заказов из уже доступного `GET /orders`
++ быстрые ссылки в разделы.
 
 ## Routes
 
 ```
 /            — redirect → /dashboard
-/dashboard   — «KPPDF — Дашборд» (UI-лейбл страницы: «Комбайн заказов»)
+/dashboard   — «KPPDF — Обзор» (UI-лейбл: «Обзор»)
 ```
 
-`pageKey`: `orders` (тот же грант, что список заказов).
+`pageKey`: `orders` (как было у Комбайна — без новой pageKey на backend; грант не менялся).
 
-## Канон статусов (TZ-SWEEP-401)
+## UI (stub, TZ-NAV-303)
 
-**Заказ (`Order.status`)** — колонки доски:
+- `PiPageChrome`: заголовок «Обзор» + описание.
+- Счётчики заказов (`data-test="overview-order-counters"`): Новые / В работе / Готовы /
+  Просрочены — те же формулы, что на Канбане (`dashboard.page.ts`), из `GET /orders`.
+- Ссылки в разделы (`data-test="overview-sections"`): Заказы, Комбайн заказов
+  (`/design/combine`), КП, Остатки, Движения.
+- Полные виджеты = TZ-DASHBOARD-401 — здесь НЕ расползаться в BI.
 
-| Колонка | status | Как попасть |
-|---------|--------|-------------|
-| Черновики | `draft` | create / PATCH status |
-| Подтверждены | `confirmed` | PATCH status (коммерческий). Складской резерв — отдельно `POST /orders/:id/reserve-stock` |
-| В производстве | `in_production` | PATCH status |
-| Готовы | `ready` | PATCH status |
-| Отгружены | `shipped` (+ `delivered` только показ) | **только** `POST /orders/:id/ship` (создаёт `Shipment`). Не PATCH |
+## Комбайн заказов
 
-Отмена — `POST /orders/:id/cancel` (снимает резервы). На доске колонки «Отменён» нет.
+Канбан (DashboardPage) переехал под **Проект** — `/design/combine`
+(см. [`design-combine.page.md`](./design-combine.page.md)). Здесь его нет.
 
-**Изделие (`OrderItem.status`)** — селект в раскрытой карточке: `pending` → `in_production` → `ready` → `shipped`.
-Не путать с `readyForWork` (гейт «можно начинать», ORDERS-304, живёт на `/orders`).
-
-Карточка «X из Y» = число линий с `status ∈ {ready, shipped}`; нет поля → `pending`.
-
-## Couplings
+## Couplings (канон)
 
 Канон: [`docs/COUPLING-MAP.md`](../COUPLING-MAP.md).
 
 | Поле | Этот экран | Другие экраны | Смысл |
 |------|------------|---------------|-------|
-| `Order.status` | колонки канбана; PATCH draft…ready; ship/cancel — POST | цех «Все активные»; `/orders`; форма freeze | `draft` = Черновики, **не** работа цеха. Цех active = confirmed/in_production/ready (**TZ-PRODUCTION-337**). |
-| `OrderItem.status` | селект в карточке; лейбл «В работе» = `in_production` | не путать с цехом | **Не** `Order.status`. **Не** `readyForWork`. |
+| `Order.status` | счётчики Обзора (read-only) | Канбан `/design/combine`; цех «Все активные»; `/orders`; форма freeze | `draft` = Черновики, **не** работа цеха. Цех active = confirmed/in_production/ready (**TZ-PRODUCTION-337**). |
 
 ## API
 
 | Метод | Endpoint | Когда |
 |-------|----------|--------|
-| GET | `/api/orders` | список доски |
-| PATCH | `/api/orders/:id` `{status}` | только операционные переходы (не ship/cancel) |
-| POST | `/api/orders/:id/ship` | дроп в «Отгружены» после confirm |
-| PATCH | `/api/orders/:id/items/:lineIndex/status` | селект изделия |
+| GET | `/api/orders` | счётчики Обзора (read-only) |
 
 ## Навигация
 
-- **Бренд в шапке** «KPPDF · 8.0» — кнопка домой (`routerLink="/"`, aria «Комбайн заказов — главная») → сюда. Оформление: soft-gold chip (**TZ-UX-331**), не plain text.
+- **Бренд в шапке** «KPPDF · 8.0» — кнопка домой (`routerLink="/"`, aria «Обзор — главная»)
+  → сюда. Оформление: soft-gold chip (**TZ-UX-331**), не plain text. Не «Комбайн» (**TZ-NAV-303**).
 - Login / `/` → сюда же.
-- Сделки TOC: chip **Комбайн** (`/dashboard`). Не подписывать «Дашборд» — это `/inventory`.
-- Топ «Сделки» entry = Создать КП (`/proposals/create`), не Комбайн.
-
-## Редактирование изделия с доски (TZ-UX-332)
-
-Карандаш изделия вызывает `DashboardDialogService.openProductEdit(productId)` → `GET /api/products/:id` → `ProductFormDialogComponent` с полным `Product` (`_id`). Не передавать `{ id }` без карточки: Save бил в `PATCH /products/undefined`.
+- Комбайн заказов — раздел **Проект** → `/design/combine` (не Сделки).
 
 ## Связанные TZ
 
-DASHBOARD-400 (доска) · **SWEEP-401** (write-path + freeze + nav + optimistic revert)
+**TZ-NAV-303** (stub + перенос Комбайна в Проект) · DASHBOARD-400 (канбан) ·
+**TZ-SWEEP-401** (write-path канбана, живёт на `/design/combine`) ·
+**TZ-DASHBOARD-401** (полные виджеты — следующий шаг)

@@ -89,12 +89,26 @@ export const routes: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
+        // TZ-NAV-303: /dashboard = домашняя статистика (stub «Обзор»), НЕ канбан.
+        // Полные виджеты — TZ-DASHBOARD-401 (другой TZ). pageKey остаётся orders
+        // (грант как был у Комбайна — без новой pageKey на backend).
         path: 'dashboard',
         canMatch: [capabilityRouteGuard],
         data: { pageKey: 'orders' },
         loadComponent: () =>
+          import('./pages/dashboard/dashboard-stats.page').then((m) => m.DashboardStatsPage),
+        title: 'KPPDF — Обзор',
+      },
+      {
+        // TZ-NAV-303: Комбайн заказов (канбан) переехал под Проект — /design/combine.
+        // Тот же компонент DashboardPage (lazy same component), pageKey 'orders' сохранён
+        // (write-path SWEEP-401 не трогаем).
+        path: 'design/combine',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'orders' },
+        loadComponent: () =>
           import('./pages/dashboard/dashboard.page').then((m) => m.DashboardPage),
-        title: 'KPPDF — Дашборд',
+        title: 'KPPDF — Комбайн заказов',
       },
       {
         path: 'materials',

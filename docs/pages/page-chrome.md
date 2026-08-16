@@ -5,11 +5,12 @@
 под header. H1 ERP: `font-display text-lg`. Catalog detail имя (passport):
 `text-lg sm:text-xl` max (TYPE-302).
 
-## Brand home (TZ-UX-331)
+## Brand home (TZ-UX-331 + TZ-NAV-303)
 
 Левый бренд шапки `KPPDF · 8.0` — **кликабельный chip** (`data-test="nav-brand-home"`)
-на `/` → Комбайн (`/dashboard`). Soft sunrise/gold + золотой маркер; aria/title
-«Комбайн заказов — главная». Не путать с entry «Сделки» (Создать КП).
+на `/` → домашняя статистика «Обзор» (`/dashboard`). Soft sunrise/gold + золотой маркер;
+aria/title **«Обзор — главная»** (не «Комбайн»). Комбайн заказов живёт в разделе
+**Проект** — `/design/combine`. Не путать с entry «Сделки» (Создать КП).
 
 ## Компоненты
 
@@ -156,10 +157,10 @@ app-chrome-rail-left          app-chrome-rail-right
 
 1. **Аудит кандидатов** — **TZ-UX-325 DONE** →
    [`docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`](../audits/2026-08-15-chrome-page-tools-migration-audit.md)
-   (P0: /products **UX-326 DONE**, /modules **UX-327**, /materials **UX-328 DONE** —
-   локальный ilters-rail w-12 снят на products/modules/materials).
+   (P0: `/products` **UX-326 DONE**, `/modules` **UX-327**, `/materials` **UX-328 DONE** —
+   локальный `filters-rail` `w-12` снят на products/modules/materials).
 2. **Волна переносов** —
-   [	asks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md](../../tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md)
+   [`tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md`](../../tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md)
    (#1–#3 DONE; 329→330 по PO).
 3. **Новые dense UI (обязательно):** сразу `PiChromeToolsService` + flyout overlay —
    **не** добавлять локальную колонку ~48px / `w-12` рядом с контентом.

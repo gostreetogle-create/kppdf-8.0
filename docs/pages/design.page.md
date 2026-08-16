@@ -7,10 +7,13 @@
 ## Route
 
 ```
-/design — «KPPDF — Проектирование»
+/design          — «KPPDF — Проектирование» (Очередь)
+/design/combine  — «KPPDF — Комбайн заказов» (канбан, DashboardPage)
 ```
 
-Group Chip: `DESIGN_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `design`).
+Group Chip: `DESIGN_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `design`):
+«Очередь» (`/design`) + «Комбайн» (`/design/combine`, TZ-NAV-303).
+Канбан описан в [`design-combine.page.md`](./design-combine.page.md).
 
 ## UI (stub)
 
