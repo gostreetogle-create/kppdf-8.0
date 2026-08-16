@@ -5,20 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T14:15:00+03:00
+updated_at: 2026-08-16T14:50:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-_(empty)_
+- **WAVE COMBINE v1:** TZ-COMBINE-401 DONE (canon) → **402** schema lineId/boardLane → 403 lane API → 404/405 FE.
+- Freebuff (параллель later): `tasks/_backlog/PROMPT-WAVE-COMBINE-SHOP-FLOOR-FREEBUFF.md` (Gantt by workers RO).
 
 ## NEXT (PO paste prompt)
 
-- Full home widgets → **TZ-DASHBOARD-401** (backlog).
-- Photo consumers → UX-PHOTO-302/303 (after PHOTO-304).
-- **TZ-DATA-UTF8-CLEAN** PARK until PO.
-- **Warm deploy DONE** (`0081e0bf`, 2026-08-16) — health LAN+public 200.
-- **TZ-NAV-305 DONE** — Проект entry/flyout: Комбайн → Очередь; deploy by orchestrator.
+- Modules ghost DnD → COMBINE-406/407 after 405.
+- Full home widgets → **TZ-DASHBOARD-401**.
+- **TZ-DATA-UTF8-CLEAN** PARK.
+- **Warm deploy** после пакета 402–405 PASS.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
