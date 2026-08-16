@@ -1,6 +1,6 @@
 # TZD-50 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-50.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
@@ -45,10 +45,12 @@
 - `cd desktop && npx tsc --noEmit` → **PASS** (0 ошибок)
 - `cd desktop && npx svelte-check --threshold error` → **PASS** (0 errors, 0 warnings)
 - `cd desktop && npx tsx --test src/core/*.test.ts src/core/ai/*.test.ts src/importers/*.test.ts src/ai-runner/*.test.ts` → **PASS 56/56** (новые: excel-form-template 9 тестов; multi-import обновлён под статусы invalid/duplicate/needs_review)
-- Коммит: **не делал** (по GIT-POLICY — после review/Cursor PASS)
+- Коммит: `10dde79a8f6e7e0af34bc53ee49e65adc442dc67` — `feat(desktop): Excel Form Studio download + round-trip (TZD-50)` (pushed по GIT-POLICY/PO — не запрошен)
 
-## Executor report
+## Executor report (auto)
 
+- **agent:** buffy-codebuff · TZD-50 · 2026-08-16
+- **Commit:** `10dde79a8f6e7e0af34bc53ee49e65adc442dc67`
 - **ШАГ 1–2:** `desktop/src/core/excel-form-template.ts` (new) — FormCategoryKey `catalog|counterparties`, allowlist V1 (материалы/изделия/модули/контрагенты; колонки re-export из IMPORT_TARGETS), генерация `.xlsx`: лист «Данные» (RU-заголовки, ` *` у обязательных, пустая строка-скелет, ширины колонок) + скрытый `_kppdf` (`1.0.0`, targetKey, generatedAt ISO, columnKeys JSON, app=kppdf-desktop); имя `kppdf-{key}-form.xlsx`.
 - **ШАГ 3 (round-trip):** `excel.ts` — `ExcelWorkbookPreview.fingerprint`, лист `_kppdf` исключён из превью/выбора; `readFormFingerprint` (неизвестный targetKey/битый паспорт → null = safe ignore); `inbox.ts` — fingerprint в InboxAudit (аудит файлов агента тоже распознаёт форму); App.svelte `prepareMapping(rows, fingerprint)` — один блок на targetKey + identity-карта (суффикс ` *` снимается; переименованные колонки остаются красными unfit — отправка закрыта).
 - **ШАГ 4 (качество):** статусы строк target-aware (`duplicate`/`invalid`/`needs_review`/`ok_update`/`ok_new`) в `multi-import.ts` с dedupe-ключами (article/sku/inn); перед проверкой строк тянем ключи каталога страницами (потолок 1000, partial — честная подсказка); send только ok_new/ok_update; итог «записано N / отклонено M» + отчёт `.csv` (UTF-8 BOM, `;`, кавычки).
@@ -64,14 +66,14 @@
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + удалить `_active` (archive `tasks/_archive/2026-08/TZD-50.done.md`; lock `.mimocode/locks/TZD-50-desktop-excel-form-studio.lock`)
+- [x] Status = DONE
+- closed_at: 2026-08-16T17:58:00+03:00
 
 ### Timestamps
 
 | Поле | Когда |
 |------|--------|
 | `claimed_at` | 2026-08-16T14:28:42Z |
-| READY FOR REVIEW date | _(после gates)_ |
-| `closed_at` (archive) | после Cursor PASS / PO PASS |
+| READY FOR REVIEW date | 2026-08-16 (после gates) |
+| `closed_at` (archive) | 2026-08-16T17:58:00+03:00 |
