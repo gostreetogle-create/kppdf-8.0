@@ -25,7 +25,7 @@ import {
   type GanttStartOffsetCommit,
 } from './blocks/gantt-bars.component';
 import { promptCatalogDaysChange } from './blocks/order-inspector.component';
-import { ProductionCockpitContext } from './production-cockpit.context';
+import { ProductionCockpitContext, type GanttGroupBy } from './production-cockpit.context';
 import { ProductionReadFacade } from './production-read.facade';
 import { PRODUCTION_SECTION_CHIPS } from './production-group-chips';
 import {
@@ -138,6 +138,7 @@ const CHROME_OWNER = 'production-cockpit';
               [canEdit]="canEditCatalog()"
               [expandedOrderIds]="ctx.expandedOrderIds()"
               [expandedWorkBarId]="ctx.expandedWorkBarId()"
+              [groupByWorkers]="groupBy() === 'workers'"
               [highlightOrderId]="metaHighlightOrderId()"
               [orderMeta]="orderMetaView()"
               [canEditOrder]="canEditOrder()"
@@ -216,7 +217,9 @@ const CHROME_OWNER = 'production-cockpit';
             >
               <app-production-scale-controls
                 [zoom]="ctx.zoom()"
+                [groupBy]="groupBy()"
                 (zoomChange)="ctx.setZoom($event)"
+                (groupByChange)="groupBy.set($event)"
                 (fit)="onFitHorizon()"
               />
             </aside>
@@ -288,7 +291,7 @@ const CHROME_OWNER = 'production-cockpit';
         width: min(20rem, calc(100% - 1rem));
       }
       .production-scale-flyout {
-        width: 12rem;
+        width: 13rem;
       }
       @media (max-width: 1279px) {
         .production-studio-flyout {
@@ -330,6 +333,8 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly rangeEnd = signal(defaultRangeEnd());
   protected readonly usedTodayFallback = signal(false);
   protected readonly readOnly = signal(false);
+  /** TZ-GANTT-401 — row grouping mode (По заказам | По рабочим). */
+  protected readonly groupBy = signal<GanttGroupBy>('orders');
   protected readonly workerLabels = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   /** HUB-303: RU hint when ?orderId= is unknown. */

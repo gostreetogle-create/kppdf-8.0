@@ -18,10 +18,13 @@ import {
 import { RouterLink } from '@angular/router';
 import {
   buildGanttTreeBars,
+  buildWorkerTreeBars,
   ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
   isSummaryBar,
+  isWorkerSummaryBar,
   ORDER_STATUS_LABELS,
+  workerGroupKeyOf,
   workTypeOklch,
   workTypeWash,
   type GanttBar,
@@ -291,7 +294,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             >
               <span class="gantt-expand-col shrink-0" aria-hidden="true"></span>
               <span class="flex-1 min-w-0 px-2 pb-1 truncate border-l hairline">{{
-                anyExpanded() ? 'Заказ · работа' : 'Заказ'
+                groupByWorkers() ? 'Рабочий · работа' : anyExpanded() ? 'Заказ · работа' : 'Заказ'
               }}</span>
             </div>
             @for (row of rows(); track row.bar.id) {
@@ -315,20 +318,30 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
               >
                 @if (row.isSummary) {
-                  <button
-                    type="button"
-                    class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                           text-muted-foreground hover:text-ink hover:bg-paper-2/60"
-                    [attr.data-test]="'gantt-expand-' + row.bar.orderId"
-                    [attr.aria-expanded]="row.expanded"
-                    [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
-                    [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
-                    (click)="onToggleExpand($event, row.bar.orderId)"
-                  >
-                    <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
-                      row.expanded ? '▾' : '▸'
-                    }}</span>
-                  </button>
+                  @if (!groupByWorkers()) {
+                    <button
+                      type="button"
+                      class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
+                             text-muted-foreground hover:text-ink hover:bg-paper-2/60"
+                      [attr.data-test]="'gantt-expand-' + row.bar.orderId"
+                      [attr.aria-expanded]="row.expanded"
+                      [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
+                      [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
+                      (click)="onToggleExpand($event, row.bar.orderId)"
+                    >
+                      <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
+                        row.expanded ? '▾' : '▸'
+                      }}</span>
+                    </button>
+                  } @else {
+                    <span
+                      class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
+                             text-muted-foreground"
+                      aria-hidden="true"
+                    >
+                      <span aria-hidden="true" class="text-[10px] font-mono leading-none">●</span>
+                    </span>
+                  }
                 } @else {
                   <button
                     type="button"
@@ -457,7 +470,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       step="1"
                       class="pi-input !py-0.5 !text-xs w-14"
                       [value]="row.bar.days ?? ''"
-                      [disabled]="!canEdit() || readOnly()"
+                      [disabled]="!canEdit() || readOnly() || groupByWorkers()"
                       (change)="onWorkDaysChange(row.bar, $event)"
                       [attr.data-test]="'gantt-work-detail-days-' + row.bar.id"
                       [attr.aria-label]="'Дни оценки «' + row.bar.workTypeName + '»'"
@@ -468,7 +481,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   >
                     {{ overrideHint }}
                   </p>
-                  @if (canEdit()) {
+                  @if (canEdit() && !groupByWorkers()) {
                     <button
                       type="button"
                       class="text-[10px] underline-offset-2 hover:underline text-ink shrink-0 pi-focus-ring disabled:opacity-50"
@@ -804,6 +817,8 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly orderMeta = input<GanttOrderMetaView | null>(null);
   /** Mirror BE @Roles(admin|manager) for order PATCH. */
   readonly canEditOrder = input(false);
+  /** TZ-GANTT-401 — group rows by workerLabel instead of order (read-only view). */
+  readonly groupByWorkers = input(false);
   /**
    * TZ-PRODUCTION-319/322 — left summary order label only (toggle meta in parent).
    * Child labels and timeline bars do not emit this.
@@ -901,7 +916,9 @@ export class GanttBarsComponent implements AfterViewInit {
   });
 
   protected readonly treeBars = computed(() =>
-    buildGanttTreeBars(this.bars(), this.expandedOrderIds()),
+    this.groupByWorkers()
+      ? buildWorkerTreeBars(this.bars())
+      : buildGanttTreeBars(this.bars(), this.expandedOrderIds()),
   );
 
   protected readonly anyExpanded = computed(() => this.expandedOrderIds().size > 0);
@@ -966,7 +983,7 @@ export class GanttBarsComponent implements AfterViewInit {
       return {
         bar,
         alt: idx % 2 === 1,
-        orderBoundary: !!prev && prev.orderId !== bar.orderId,
+        orderBoundary: !!prev && this.rowGroupKey(prev) !== this.rowGroupKey(bar),
         leftPx: left * px,
         widthPx: Math.max(px * 0.5, span * px),
         baseSpanDays: span,
@@ -1029,6 +1046,7 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** Child work bars only — summary has no right-resize (duration derived). */
   protected canResizeBar(bar: GanttBar): boolean {
+    if (this.groupByWorkers()) return false;
     if (isSummaryBar(bar)) return false;
     if (!this.canEdit() || this.readOnly()) return false;
     if (bar.noTerm || bar.days == null || bar.days < 1) return false;
@@ -1040,6 +1058,7 @@ export class GanttBarsComponent implements AfterViewInit {
    * Summary → plannedDate; child work bar → start offset (316).
    */
   protected canMoveBar(bar: GanttBar): boolean {
+    if (this.groupByWorkers()) return false;
     const mayMove = isSummaryBar(bar) ? this.canEditOrder() : this.canEdit();
     if (!mayMove || this.readOnly()) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
@@ -1126,6 +1145,11 @@ export class GanttBarsComponent implements AfterViewInit {
     return this.expandedOrderIds().has(orderId);
   }
 
+  /** Row group key for boundary borders: worker label in worker view, else orderId. */
+  private rowGroupKey(bar: GanttBar): string {
+    return this.groupByWorkers() ? workerGroupKeyOf(bar) : bar.orderId;
+  }
+
   protected isOrderEmphasized(orderId: string): boolean {
     return this.isHighlightedOrder(orderId) || this.isTreeExpandedOrder(orderId);
   }
@@ -1170,7 +1194,8 @@ export class GanttBarsComponent implements AfterViewInit {
     event.stopPropagation();
     event.preventDefault();
     if (row.isSummary) {
-      this.orderLabelClick.emit(row.bar.orderId);
+      // Worker group summary is not an order — no order-meta toggle in read-only view.
+      if (!this.groupByWorkers()) this.orderLabelClick.emit(row.bar.orderId);
       return;
     }
     this.toggleWorkDetail.emit(row.bar.id);
@@ -1187,7 +1212,7 @@ export class GanttBarsComponent implements AfterViewInit {
   }
 
   protected onWorkDaysChange(bar: GanttBar, ev: Event): void {
-    if (!this.canEdit() || this.readOnly()) return;
+    if (!this.canEdit() || this.readOnly() || this.groupByWorkers()) return;
     const inputEl = ev.target as HTMLInputElement;
     const days = Math.floor(Number(inputEl.value));
     if (!Number.isFinite(days) || days < 1) {
@@ -1206,7 +1231,7 @@ export class GanttBarsComponent implements AfterViewInit {
 
   protected onCatalogDaysClick(bar: GanttBar, ev: Event): void {
     ev.stopPropagation();
-    if (!this.canEdit() || this.readOnly()) return;
+    if (!this.canEdit() || this.readOnly() || this.groupByWorkers()) return;
     this.catalogDaysRequest.emit({
       workTypeId: bar.workTypeId,
       currentDays: bar.days ?? 1,
@@ -1409,6 +1434,9 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** Full detail for tooltip / a11y — visible label stays one line. */
   protected labelTitle(b: GanttBar): string {
+    if (isWorkerSummaryBar(b)) {
+      return [`Рабочий: ${b.orderNumber}`, `${b.startDate}→${b.endDate}`].join(' · ');
+    }
     if (isSummaryBar(b)) {
       return [b.orderNumber, this.statusLabel(b.orderStatus), `${b.startDate}→${b.endDate}`]
         .filter(Boolean)
@@ -1435,6 +1463,7 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */
   protected summaryCardTitle(b: GanttBar): string {
+    if (isWorkerSummaryBar(b)) return `Группа рабочего: ${b.orderNumber}`;
     return `Статус и даты заказа ${b.orderNumber}`;
   }
 

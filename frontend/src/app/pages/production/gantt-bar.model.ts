@@ -396,6 +396,112 @@ export function buildGanttTreeBars(
   return out;
 }
 
+/** TZ-GANTT-401 — worker group label for unassigned bars. */
+export const UNASSIGNED_WORKER_LABEL = 'Не назначен';
+
+/** Sentinel workTypeId on worker-group summary rows (never a catalog WorkType). */
+export const WORKER_SUMMARY_WORK_TYPE_ID = '__worker_summary__';
+
+/** Worker group key from a bar's workerLabel; '—'/empty → «Не назначен». */
+export function workerGroupKeyOf(bar: GanttBar): string {
+  const label = (bar.workerLabel ?? '').trim();
+  return label && label !== '—' ? label : UNASSIGNED_WORKER_LABEL;
+}
+
+export interface WorkerGroup {
+  label: string;
+  children: GanttBar[];
+}
+
+/** Group work bars by workerLabel; «Не назначен» last, others RU-sorted by label. */
+export function groupBarsByWorker(bars: readonly GanttBar[]): WorkerGroup[] {
+  const map = new Map<string, GanttBar[]>();
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    const key = workerGroupKeyOf(bar);
+    const list = map.get(key);
+    if (list) list.push(bar);
+    else map.set(key, [bar]);
+  }
+  return [...map.entries()]
+    .sort(([a], [b]) => {
+      const aUnassigned = a === UNASSIGNED_WORKER_LABEL ? 1 : 0;
+      const bUnassigned = b === UNASSIGNED_WORKER_LABEL ? 1 : 0;
+      if (aUnassigned !== bUnassigned) return aUnassigned - bUnassigned;
+      return a.localeCompare(b, 'ru');
+    })
+    .map(([label, children]) => ({ label, children }));
+}
+
+/** True for worker-group summary rows (sentinel workTypeId). */
+export function isWorkerSummaryBar(bar: GanttBar): boolean {
+  return isSummaryBar(bar) && bar.workTypeId === WORKER_SUMMARY_WORK_TYPE_ID;
+}
+
+/** One worker-group summary: span = min(child.start)…max(child.end). */
+export function buildWorkerSummaryBar(
+  label: string,
+  children: readonly GanttBar[],
+): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  let minStart = first.startDate;
+  let maxEnd = first.endDate;
+  let usedFallbackToday = first.usedFallbackToday;
+  let allNoTerm = true;
+  for (const c of children) {
+    if (c.startDate < minStart) minStart = c.startDate;
+    if (c.endDate > maxEnd) maxEnd = c.endDate;
+    usedFallbackToday = usedFallbackToday || c.usedFallbackToday;
+    if (!c.noTerm) allNoTerm = false;
+  }
+  const span = calendarSpanDays(minStart, maxEnd);
+  const noTerm = allNoTerm || span == null;
+  return {
+    id: `worker-summary:${label}`,
+    orderId: label,
+    orderNumber: label,
+    orderStatus: first.orderStatus,
+    orderItemIndex: -1,
+    productId: '',
+    productName: '',
+    moduleId: '',
+    moduleName: '',
+    workTypeId: WORKER_SUMMARY_WORK_TYPE_ID,
+    workTypeName: label,
+    occurrence: 0,
+    quantity: 1,
+    quantityLabel: null,
+    days: noTerm ? null : span,
+    noTerm,
+    startDate: minStart,
+    endDate: maxEnd,
+    usedFallbackToday,
+    workerLabel: label,
+    accentHue: null,
+    kind: 'summary',
+  };
+}
+
+/**
+ * TZ-GANTT-401 — worker-grouped tree (always expanded).
+ * One summary row per worker group followed by its work bars (start, then occurrence).
+ */
+export function buildWorkerTreeBars(workBars: readonly GanttBar[]): GanttBar[] {
+  const out: GanttBar[] = [];
+  for (const group of groupBarsByWorker(workBars)) {
+    const summary = buildWorkerSummaryBar(group.label, group.children);
+    if (summary) out.push(summary);
+    const kids = [...group.children].sort((a, b) => {
+      const s = a.startDate.localeCompare(b.startDate);
+      if (s !== 0) return s;
+      return a.occurrence - b.occurrence;
+    });
+    for (const kid of kids) out.push({ ...kid, kind: kid.kind ?? 'work' });
+  }
+  return out;
+}
+
 function sortByOrderThenIndex<T extends { sortOrder: number }>(
   rows: T[],
   indexOf: (row: T) => number,

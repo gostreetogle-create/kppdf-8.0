@@ -2,18 +2,24 @@ import {
   ACTIVE_COMMERCIAL_ORDER_STATUSES,
   ESTIMATE_OVERRIDE_HINT_RU,
   ORDER_STATUS_LABELS,
+  UNASSIGNED_WORKER_LABEL,
+  WORKER_SUMMARY_WORK_TYPE_ID,
   buildGanttBars,
   buildGanttTreeBars,
   buildOrderSummaryBar,
+  buildWorkerTreeBars,
   calendarSpanDays,
   filterOrdersForRail,
   ganttSkipProductNames,
   ganttSkipToastRu,
+  groupBarsByWorker,
   isHardFrozenOrderStatus,
+  isWorkerSummaryBar,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
   orderHasGanttEstimate,
   resolveVisualAnchor,
+  workerGroupKeyOf,
   type GanttBar,
   type OrderEstimateInput,
 } from './gantt-bar.model';
@@ -775,5 +781,120 @@ describe('gantt-bar.model', () => {
     expect(orderHasGanttEstimate(eligible, new Date(2026, 7, 6))).toBe(true);
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('нет прямых модулей');
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('Пустышка');
+  });
+});
+
+describe('gantt-by-workers (TZ-GANTT-401)', () => {
+  function workBar(overrides: Partial<GanttBar>): GanttBar {
+    return {
+      id: 'o1:0:p1:m1:wt1:1',
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      orderStatus: 'confirmed',
+      orderItemIndex: 0,
+      productId: 'p1',
+      productName: 'Стол',
+      moduleId: 'm1',
+      moduleName: 'Каркас',
+      workTypeId: 'wt1',
+      workTypeName: 'Сварка',
+      occurrence: 1,
+      quantity: 1,
+      quantityLabel: null,
+      days: 2,
+      noTerm: false,
+      startDate: '2026-08-01',
+      endDate: '2026-08-02',
+      usedFallbackToday: false,
+      workerLabel: '—',
+      ...overrides,
+    };
+  }
+
+  it('maps empty / dash workerLabel to «Не назначен»', () => {
+    expect(workerGroupKeyOf(workBar({ workerLabel: '—' }))).toBe(UNASSIGNED_WORKER_LABEL);
+    expect(workerGroupKeyOf(workBar({ workerLabel: '' }))).toBe(UNASSIGNED_WORKER_LABEL);
+    expect(workerGroupKeyOf(workBar({ workerLabel: '  ' }))).toBe(UNASSIGNED_WORKER_LABEL);
+    expect(workerGroupKeyOf(workBar({ workerLabel: 'Иванов Иван' }))).toBe('Иванов Иван');
+  });
+
+  it('groups by workerLabel, «Не назначен» last, RU-sorted', () => {
+    const groups = groupBarsByWorker([
+      workBar({ id: 'a', workerLabel: '—' }),
+      workBar({ id: 'b', workerLabel: 'Петров Пётр' }),
+      workBar({ id: 'c', workerLabel: 'Иванов Иван' }),
+      workBar({ id: 'd', workerLabel: 'Иванов Иван' }),
+    ]);
+    expect(groups.map((g) => g.label)).toEqual([
+      'Иванов Иван',
+      'Петров Пётр',
+      UNASSIGNED_WORKER_LABEL,
+    ]);
+    expect(groups[0]!.children.map((c) => c.id)).toEqual(['c', 'd']);
+  });
+
+  it('skips summary bars when grouping', () => {
+    const summary = {
+      ...workBar({ id: 's', workerLabel: 'Иванов Иван' }),
+      kind: 'summary' as const,
+      workTypeId: WORKER_SUMMARY_WORK_TYPE_ID,
+    };
+    const groups = groupBarsByWorker([summary, workBar({ id: 'a', workerLabel: 'Иванов Иван' })]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.children.map((c) => c.id)).toEqual(['a']);
+    expect(isWorkerSummaryBar(summary)).toBe(true);
+    expect(isWorkerSummaryBar(workBar({}))).toBe(false);
+  });
+
+  it('builds a worker summary spanning min start … max end', () => {
+    const summary = buildWorkerTreeBars([
+      workBar({
+        id: 'a',
+        workerLabel: 'Иванов Иван',
+        startDate: '2026-08-01',
+        endDate: '2026-08-02',
+      }),
+      workBar({
+        id: 'b',
+        workerLabel: 'Иванов Иван',
+        startDate: '2026-08-03',
+        endDate: '2026-08-05',
+      }),
+    ])[0]!;
+    expect(summary.kind).toBe('summary');
+    expect(summary.orderNumber).toBe('Иванов Иван');
+    expect(summary.workTypeId).toBe(WORKER_SUMMARY_WORK_TYPE_ID);
+    expect(summary.startDate).toBe('2026-08-01');
+    expect(summary.endDate).toBe('2026-08-05');
+    expect(summary.days).toBe(5);
+    expect(summary.noTerm).toBe(false);
+  });
+
+  it('worker tree is always expanded: summary then children sorted by start', () => {
+    const tree = buildWorkerTreeBars([
+      workBar({
+        id: 'b',
+        workerLabel: 'Иванов Иван',
+        startDate: '2026-08-03',
+        endDate: '2026-08-05',
+        occurrence: 2,
+      }),
+      workBar({
+        id: 'a',
+        workerLabel: 'Иванов Иван',
+        startDate: '2026-08-01',
+        endDate: '2026-08-02',
+        occurrence: 1,
+      }),
+      workBar({ id: 'u', workerLabel: '—' }),
+    ]);
+    expect(tree.map((b) => b.id)).toEqual([
+      'worker-summary:Иванов Иван',
+      'a',
+      'b',
+      `worker-summary:${UNASSIGNED_WORKER_LABEL}`,
+      'u',
+    ]);
+    expect(tree.every((b) => b.kind != null)).toBe(true);
   });
 });

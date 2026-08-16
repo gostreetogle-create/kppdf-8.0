@@ -62,9 +62,9 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | Block | Файл | Роль |
 |-------|------|------|
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск по номеру; Фильтры: Заказчик (Counterparty select), приоритет, даты, «Все активные», Сброс |
-| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/month (day ≈36px); order-meta + work-detail cascade |
+| gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/month (day ≈36px); order-meta + work-detail cascade; `groupByWorkers` input → worker-grouped read-only tree |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
-| scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit controls; emits `zoomChange` + `fit` |
+| scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit + grouping controls; emits `zoomChange` / `fit` / `groupByChange` |
 
 ### Smart / dumb boundary (TZ-PRODUCTION-327)
 
@@ -89,7 +89,8 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
-- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: День / Месяц / **Вместить сроки**.
+- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: **Группировка** (По заказам | По рабочим), День / Месяц / **Вместить сроки**.
+- **TZ-GANTT-401:** «По рабочим» — read-only вид Ганта: строки группируются по `workerLabel` (People×WorkType уже на барах), без назначения → группа «Не назначен»; worker-группа = сводная строка (span min…max детей) + всегда развёрнутые дочерние work-бары; в этом режиме нет resize-handle и body-drag (нельзя PATCH). ACTIVE filter и `buildGanttBars`/facade не изменены. Default = «По заказам» (прежний tree по заказу).
 - Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День: 36px/day, тик = `DD.MM` + RU weekday (ПН…ВС, UTC); шапка шкалы и колонка «Заказ» — `h-10`.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Месяц и прокручивает к началу диапазона.
 - **Сегодня** добавляет today в диапазон при необходимости и **всегда** центрирует маркер (chrome title «Прокрутить к сегодня»; не silent no-op).
@@ -105,7 +106,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | `ProductionCockpitContext` | selectedOrderId, search, activeOnly, zoom, priorityFilter, dateFrom/To, counterpartyFilter, filtersDirty, resetFilters; local UI state |
 | `ProductionReadFacade` | loadOrders, loadBarsForOrders, buildOrderEstimatePublic, getWorkerLabelsMap; read/cache/composition mapping, no fact-production SoT |
 | `ProductionCockpitPage` | `onRefresh`, `onToday`, `onFitHorizon`, order-meta/estimate commits; smart shell: chrome, filters, PATCH orchestration, range + reload |
-| `ProductionScaleControlsComponent` | `zoom` input; `zoomChange` / `fit` outputs; dumb RU controls only |
+| `ProductionScaleControlsComponent` | `zoom` + `groupBy` inputs; `zoomChange` / `fit` / `groupByChange` outputs; dumb RU controls only |
 | `OrdersService` | list() / update() / **patchEstimateDays()** (309/311) / **patchEstimateStart()** (316); existing API paths |
 
 ### Write-path matrix (TZ-PRODUCTION-326 / 333 / 335)
@@ -232,7 +233,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
 | **Resize / тело вида работ** | estimate-days / estimate-start под `production:write`; optimistic local bars; silent PATCH |
 
-All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `День`, `Месяц`, `Вместить сроки`.
+All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `Группировка`, `По заказам`, `По рабочим`, `Не назначен`, `День`, `Месяц`, `Вместить сроки`.
 
 ### Zoom
 

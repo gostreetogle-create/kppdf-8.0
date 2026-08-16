@@ -250,6 +250,34 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(ctx.zoom()).toBe('month');
   });
 
+  it('TZ-GANTT-401: scale flyout toggles По заказам / По рабочим', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const page = fixture.componentInstance as unknown as {
+      toggleRightTool: (tool: 'scale') => void;
+      groupBy: () => 'orders' | 'workers';
+    };
+    page.toggleRightTool('scale');
+    fixture.detectChanges();
+
+    const ordersBtn = fixture.nativeElement.querySelector(
+      '[data-test="gantt-group-orders"]',
+    ) as HTMLElement;
+    const workersBtn = fixture.nativeElement.querySelector(
+      '[data-test="gantt-group-workers"]',
+    ) as HTMLElement;
+    expect(ordersBtn?.textContent).toContain('По заказам');
+    expect(workersBtn?.textContent).toContain('По рабочим');
+    expect(page.groupBy()).toBe('orders');
+
+    workersBtn.click();
+    fixture.detectChanges();
+    expect(page.groupBy()).toBe('workers');
+
+    ordersBtn.click();
+    fixture.detectChanges();
+    expect(page.groupBy()).toBe('orders');
+  });
+
   it('TZ-PRODUCTION-325: counterparty and date filters reach Gantt reload', async () => {
     const filteredOrders: Order[] = [
       {

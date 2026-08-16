@@ -7,6 +7,9 @@ import type { OrderPriority } from '../orders/orders.service';
 
 export type GanttZoom = 'day' | 'month';
 
+/** TZ-GANTT-401 — row grouping mode on the Gantt. */
+export type GanttGroupBy = 'orders' | 'workers';
+
 @Injectable()
 export class ProductionCockpitContext {
   /** null = «Все активные» mode (multi-order estimate). */
