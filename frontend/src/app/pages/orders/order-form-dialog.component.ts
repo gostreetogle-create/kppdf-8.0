@@ -34,7 +34,7 @@ type Result = Order | null | undefined;
  * Отгрузка/отмена — отдельные действия (POST /ship, POST /cancel),
  * их нельзя выбрать как Save-status (PATCH-граф их запрещает).
  */
-const EDITABLE_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
+const EDITABLE_STATUS_OPTIONS: { value: OrderStatus; label: string; disabled?: boolean }[] = [
   { value: 'draft', label: 'Черновик' },
   { value: 'confirmed', label: 'Подтверждён' },
   { value: 'in_production', label: 'В производстве' },
