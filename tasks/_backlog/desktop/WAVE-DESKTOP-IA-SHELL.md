@@ -1,10 +1,10 @@
 # WAVE — Desktop IA: три двери
 
-> **Статус:** READY  
+> **Статус:** CODE DONE (UI + path fix); **deploy / full AI-in-NSIS** — отдельно  
 > **Дата:** 2026-08-16  
 > **Решение PO:** «как ты считаешь» → канон **Подключение | Импорт | AI**  
 > **Аудит:** `docs/audits/2026-08-16-desktop-ia-shell-proposal.md`  
-> **Деплой:** не в этой волне, пока PO не скажет «кати» + VPN off (0.5.5 уже в git).
+> **Деплой:** только «кати» + VPN off (0.5.5 в git; TZD-55 без bump — катить вместе или 0.5.6).
 
 ## Север
 
@@ -27,15 +27,17 @@ HITL / Policy A не ломаем.
 |---|-----|------|---------|
 | 0 | TZD-53 closeout | Archive кода 0.5.5 (если ещё не) | нет |
 | 1 | **TZD-54** | Shell: три двери + подсказки + перенос блоков | нет |
-| 2 | **TZD-55** | Раннер в NSIS + «Открыть папку моделей» | нет |
+| 2 | **TZD-55** | Path resolver + RU + «Открыть папку моделей» (не полный NSIS run) | нет |
+| 2b | **TZD-56** backlog | NSIS sidecar / bundled ai-runner | bump+deploy по «кати» |
 | 3 | позже | Publish 0.5.5 / 0.5.6 после VPN off | **только по «кати»** |
 
 ## DoD волны
 
 - [x] TZD-54 DONE (2026-08-16, commit `7db734d2`, Cursor PASS; archive `TZD-54.done.md`)  
-- [ ] TZD-55 DONE  
+- [x] TZD-55 DONE (2026-08-16, `86b08c79`, Cursor PASS; full NSIS run → TZD-56)  
 - [ ] PO smoke: открыл Desktop → понял три двери без объяснения  
-- [ ] Deploy — отдельно
+- [ ] Deploy — отдельно  
+- [ ] TZD-56 — когда нужен AI в install без monorepo env
 
 ## Park (не брать)
 

@@ -5,18 +5,21 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T19:39:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51/52 DONE; TZD-53 READY FOR REVIEW (deploy DEFERRED — VPN off)
+updated_at: 2026-08-16T20:45:00+03:00
+hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt perf 338 READY
 
 ## ACTIVE
 
-- **P0 TZD-53 READY FOR REVIEW:** Excel-форма writeFile — `fs:allow-write-file` + UX path/error + bump **0.5.5** (code `ac7a49ed`, gates tsc 0 / svelte-check 0/0). Deploy **DEFERRED** (VPN off у PO). Checklist: `docs/agent-checklists/TZD-53.md`.
+- _(idle Desktop)_ WAVE-DESKTOP-IA-SHELL: **TZD-54/55 DONE**. Full AI-in-NSIS = **TZD-56** backlog.
+- **TZ-PRODUCTION-338 READY** — Gantt hydrate parallel (`tasks/TZ-PRODUCTION-338-gantt-hydrate-parallel.md`).
 
 ## NEXT (PO paste prompt)
 
-1. TZD-53 deploy 0.5.5 — по слову PO «кати» + VPN off (warm, WIPE=false)
-2. После 0.5.5: smoke «Скачать» → файл в Downloads
-3. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
+1. Executor: **TZ-PRODUCTION-339** (крупные ▸ + рамки групп) — `tasks/_backlog/perf/PROMPT-PRODUCTION-339-GANTT-EXPAND.md`
+2. Executor: **TZ-PRODUCTION-338** (Gantt speed) — `tasks/_backlog/perf/PROMPT-PRODUCTION-338-GANTT.md` (∥ 339 OK)
+3. Deploy Desktop **0.5.5** (+ опц. bump 0.5.6 с TZD-55) — только «кати» + VPN off
+4. **TZD-56** — когда нужен AI-раннер в чистом install (sidecar)
+5. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
 
 ## Queue hygiene (not live)
 
@@ -25,6 +28,10 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51/52 DON
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZD-53 DONE (код) — 0.5.5 fs:allow-write-file hotfix
+
+- Archive: `tasks/_archive/2026-08/TZD-53.done.md`; lock `TZD-53-excel-form-write-file.lock`; code `ac7a49ed` (fs:allow-write-file + UX path/error + bump 0.5.5); Cursor PASS (код); gates tsc 0 / svelte-check 0/0. **Deploy 0.5.5 DEFERRED** — по слову PO «кати» + VPN off.
 
 ## [2026-08-16] — TZD-52 DONE — Desktop 0.5.4 publish + warm deploy
 

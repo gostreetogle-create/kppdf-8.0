@@ -1,7 +1,8 @@
 # TZD-55 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZD-55.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived `tasks/_archive/2026-08/TZD-55.done.md` · lock `TZD-55-desktop-ai-runner-path.lock`
+> Cursor Verdict: **PASS** 2026-08-16 (known limitation → TZD-56 sidecar)
 > Commit/push: по `docs/GIT-POLICY.md`
 > Spec: `tasks/TZD-55-desktop-ai-runner-installed-path.md`
 > Wave: `tasks/_backlog/desktop/WAVE-DESKTOP-IA-SHELL.md`
@@ -61,10 +62,10 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict **PASS** (2026-08-16) — path crash fixed; NSIS full run = TZD-56
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T20:45:00+03:00
