@@ -67,15 +67,30 @@ export function normalizeError(err: unknown): HttpErrorResponse {
  */
 export function extractErrorMessage(err: HttpErrorResponse): string {
   const fromBody = (err.error as { message?: unknown } | null)?.message;
-  if (typeof fromBody === 'string' && fromBody.length > 0) return fromBody;
+  if (typeof fromBody === 'string' && fromBody.length > 0) {
+    return humanizeEnglishApiError(fromBody);
+  }
   if (Array.isArray(fromBody) && fromBody.length > 0) {
     const parts = fromBody
       .map((item) => (typeof item === 'string' ? item : null))
       .filter((item): item is string => !!item && item.length > 0);
-    if (parts.length > 0) return parts.join('; ');
+    if (parts.length > 0) return humanizeEnglishApiError(parts.join('; '));
   }
-  if (err.message && err.message.length > 0) return err.message;
+  if (err.message && err.message.length > 0) return humanizeEnglishApiError(err.message);
   return 'Неизвестная ошибка';
+}
+
+const HTTP_FAILURE_EN = /^Http failure response/i;
+const ENTITY_NOT_FOUND_EN = /^([A-Za-z][A-Za-z0-9]*)\s+.+\s+not found$/i;
+const HAS_CYRILLIC = /[А-Яа-яЁё]/;
+
+/** FE safety net: English Nest/Angular leftovers → short Russian. Filter is SoT. */
+export function humanizeEnglishApiError(message: string): string {
+  const trimmed = message.trim();
+  if (HTTP_FAILURE_EN.test(trimmed)) return 'Ошибка запроса к серверу';
+  if (ENTITY_NOT_FOUND_EN.test(trimmed)) return 'Объект не найден';
+  if (/not found/i.test(trimmed) && !HAS_CYRILLIC.test(trimmed)) return 'Объект не найден';
+  return message;
 }
 
 /**

@@ -146,6 +146,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     onPhotoSelect: (e: Event) => void;
     ngOnDestroy: () => void;
     form: { markAsDirty: () => void; dirty: boolean };
+    errorMessage: () => string | null;
+    isEdit: () => boolean;
+    editProductId: () => string | null;
   } {
     return fixture.componentInstance as unknown as {
       onSubmit: () => void;
@@ -163,6 +166,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       onPhotoSelect: (e: Event) => void;
       ngOnDestroy: () => void;
       form: { markAsDirty: () => void; dirty: boolean };
+      errorMessage: () => string | null;
+      isEdit: () => boolean;
+      editProductId: () => string | null;
     };
   }
 
@@ -512,6 +518,30 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     await setup({ _id: 'p-bom', name: 'Изделие', kind: 'good', unit: 'шт' });
     expect(fixture.nativeElement.querySelector('[data-test="product-bom-panel"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="composition-create-hint"]')).toBeNull();
+  });
+
+  it('TZ-UX-332: data { id } without _id does not PATCH undefined', async () => {
+    await setup({ id: 'p1', name: 'С дашборда', kind: 'good', unit: 'шт' });
+    formControls().name.setValue('С дашборда');
+    formControls().sku.setValue('DASH-1');
+    formControls().unit.setValue('шт');
+    expect(instance().isEdit()).toBe(false);
+    expect(instance().editProductId()).toBeNull();
+    instance().onSubmit();
+    expect(productsSvc.update).not.toHaveBeenCalled();
+    expect(productsSvc.create).not.toHaveBeenCalled();
+    expect(instance().errorMessage()).toContain('без идентификатора');
+  });
+
+  it('TZ-UX-332: data with _id still PATCHes that id', async () => {
+    await setup({ _id: 'p-edit', name: 'Изделие', kind: 'good', unit: 'шт' });
+    formControls().sku.setValue('EDIT-1');
+    instance().onSubmit();
+    expect(productsSvc.update).toHaveBeenCalledWith(
+      'p-edit',
+      expect.objectContaining({ name: 'Изделие' }),
+    );
+    expect(productsSvc.create).not.toHaveBeenCalled();
   });
 
   it('DEDUP-301: create submit does not touch composition APIs (passport only)', async () => {

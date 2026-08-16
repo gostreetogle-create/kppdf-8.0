@@ -123,6 +123,8 @@
 body со скроллом и всегда видимый sticky footer («Сохранить» / «Отмена»).
 Пользовательские заголовки, вид `good` и уведомления используют подпись из `PiDictionaryLabelsService`; ключ `Product`, API и `/products` не переименовываются.
 
+**TZ-UX-332:** режим редактирования = есть `Product._id` (не «data != null»). Дашборд (`DashboardDialogService.openProductEdit`) сначала грузит карточку через `ProductsService.findById` и открывает диалог с полным Product. Голый `{ id }` без `_id` не уходит в `PATCH /products/undefined`; Save показывает русское «открыто без идентификатора». 404 `Product … not found` в UI — по-русски (BE `HttpExceptionFilter` + FE `extractErrorMessage`). Кириллица в `Photo.originalFilename` декодируется с latin1 Multer.
+
 На desktop основные блоки стоят в три колонки: «Основные» (name/sku/kind/status/
 isActive), «Цена и учёт» (listPrice/category/subcategory), «Габариты и цвет»
 (Д/Ш/В, единицы, вес и RAL). На mobile колонки складываются в стек. Поля

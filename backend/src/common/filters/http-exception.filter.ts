@@ -32,10 +32,52 @@ const VALIDATION_MESSAGES: Record<string, string> = {
   isObject: 'Должно быть объектом',
 };
 
+const NOT_FOUND_RU: Record<string, string> = {
+  Product: 'Изделие не найдено',
+  ProductModule: 'Модуль не найден',
+  Module: 'Модуль не найден',
+  Material: 'Материал не найден',
+  Photo: 'Фото не найдено',
+  ProductPhoto: 'Фото не найдено',
+  Counterparty: 'Контрагент не найден',
+  Order: 'Заказ не найден',
+  User: 'Пользователь не найден',
+  Contract: 'Договор не найден',
+  Shipment: 'Отгрузка не найдена',
+  Comment: 'Комментарий не найден',
+  SupplyTask: 'Задача снабжения не найдена',
+  TechProcess: 'Техпроцесс не найден',
+  TextBlock: 'Текстовый блок не найден',
+  InventorFile: 'Файл Inventor не найден',
+  AttributeDefinition: 'Определение атрибута не найдено',
+  FinancialReport: 'Финансовый отчёт не найден',
+  Interaction: 'Взаимодействие не найдено',
+  DocumentTemplateCategory: 'Категория шаблона не найдена',
+  Status: 'Статус не найден',
+};
+
+const ENTITY_NOT_FOUND = /^([A-Za-z][A-Za-z0-9]*)\s+(.+)\s+not found$/i;
+const MISSING_ID = /^(undefined|null)$/i;
+
+/** User-facing RU for Nest `Entity <id> not found`. Unknown entities → «Объект не найден». */
+export function humanizeNotFoundMessage(message: string): string {
+  const match = message.trim().match(ENTITY_NOT_FOUND);
+  if (!match) return message;
+  const entity = match[1];
+  const id = match[2].trim();
+  const ru = NOT_FOUND_RU[entity] ?? 'Объект не найден';
+  if (!id || MISSING_ID.test(id)) {
+    return `${ru}: не указан идентификатор`;
+  }
+  return ru;
+}
+
 function humanizeValidationMessage(message: string): string {
   if (typeof message !== 'string') return 'Ошибка валидации';
 
   const trimmed = message.trim();
+  const notFound = humanizeNotFoundMessage(trimmed);
+  if (notFound !== trimmed) return notFound;
 
   // class-validator generates: "property must be X" — replace with Russian
   const match = trimmed.match(/^(\w+) must be (.+)$/i);
@@ -77,7 +119,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let message: string | string[];
 
     if (typeof payload === 'string') {
-      message = payload;
+      message = humanizeValidationMessage(payload);
     } else {
       const raw =
         (payload as { message?: string | string[] }).message ?? payload;

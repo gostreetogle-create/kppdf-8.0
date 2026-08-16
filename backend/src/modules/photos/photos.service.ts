@@ -6,6 +6,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Photo, PhotoDocument } from './photo.schema';
+import { decodeMulterOriginalName } from './image-upload.options';
 
 function uploadDir(): string {
   return process.env.UPLOAD_DIR ?? './uploads';
@@ -65,9 +66,10 @@ export class PhotosService {
    * A sharp failure is deliberately non-fatal: the original remains usable.
    */
   async upload(file: UploadedPhotoFile): Promise<PhotoUploadResult> {
+    const originalFilename = decodeMulterOriginalName(file.originalname);
     const original = await this.create({
       storageUrl: `/uploads/${file.filename}`,
-      originalFilename: file.originalname,
+      originalFilename,
       mimeType: file.mimetype,
       sizeBytes: file.size,
       variant: 'original',
@@ -88,7 +90,7 @@ export class PhotosService {
         .toFile(thumbPath);
       const thumb = await this.create({
         storageUrl: `/uploads/${thumbFilename}`,
-        originalFilename: file.originalname,
+        originalFilename,
         variant: 'thumb',
         mimeType: 'image/webp',
         sizeBytes: output.size,

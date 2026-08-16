@@ -60,6 +60,16 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
 
 const DIMENSION_UNIT_OPTIONS = ['mm', 'cm', 'm'] as const;
 
+const MISSING_PRODUCT_ID_MESSAGE =
+  'Не удалось сохранить: изделие открыто без идентификатора. Закройте окно и откройте изделие снова.';
+
+function usableProductId(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const id = value.trim();
+  if (!id || id === 'undefined' || id === 'null') return null;
+  return id;
+}
+
 /**
  * ProductFormDialogComponent — create/edit product (TZ-PRODUCTS-302).
  *
@@ -563,7 +573,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly service = inject(ProductsService);
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
-  private readonly data = inject<Product | null>(PI_DIALOG_DATA);
+  private readonly data = inject<(Partial<Product> & { id?: string }) | null>(PI_DIALOG_DATA);
   private readonly categoriesService = inject(CategoriesService);
   private readonly colorsService = inject(PiColorReferencesService);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
@@ -572,8 +582,8 @@ export class ProductFormDialogComponent implements OnDestroy {
 
   private readonly dropdownHost = viewChild<ElementRef<HTMLElement>>('colorDropdownHost');
 
-  protected readonly isEdit = signal<boolean>(this.data != null);
-  protected readonly editProductId = computed(() => this.data?._id ?? null);
+  protected readonly editProductId = computed(() => usableProductId(this.data?._id));
+  protected readonly isEdit = computed(() => this.editProductId() != null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly uploading = signal<boolean>(false);
   /** null = indeterminate while browser/proxy omits Content-Length. */
@@ -891,9 +901,13 @@ export class ProductFormDialogComponent implements OnDestroy {
 
     this.submitting.set(true);
     this.errorMessage.set(null);
-    const obs = this.data
-      ? this.service.update(this.data._id, payload)
-      : this.service.create(payload);
+    const editId = this.editProductId();
+    if (this.data != null && !editId) {
+      this.submitting.set(false);
+      this.errorMessage.set(MISSING_PRODUCT_ID_MESSAGE);
+      return;
+    }
+    const obs = editId ? this.service.update(editId, payload) : this.service.create(payload);
     obs.subscribe((res) => {
       if (res.ok) {
         this.submitted = true;

@@ -82,6 +82,32 @@ describe('PhotosService upload variants', () => {
     expect(await readFile(join(uploadDirectory, 'original.png'))).toEqual(originalBytes);
   });
 
+  it('stores a decoded Cyrillic originalFilename instead of latin1 mojibake', async () => {
+    const originalBytes = await sharp({
+      create: {
+        width: 32,
+        height: 32,
+        channels: 3,
+        background: { r: 10, g: 20, b: 30 },
+      },
+    })
+      .png()
+      .toBuffer();
+    await writeFile(join(uploadDirectory, 'cyr.png'), originalBytes);
+    const mojibake = Buffer.from('Снимок экрана.png', 'utf8').toString('latin1');
+
+    await service.upload({
+      filename: 'cyr.png',
+      originalname: mojibake,
+      mimetype: 'image/png',
+      size: originalBytes.length,
+    });
+
+    expect(model.create.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ originalFilename: 'Снимок экрана.png' }),
+    );
+  });
+
   it('returns the original and does not fail when sharp cannot decode the file', async () => {
     await writeFile(join(uploadDirectory, 'broken.png'), Buffer.from('not an image'));
 
