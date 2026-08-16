@@ -1002,7 +1002,7 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(orderBtns[2]!.textContent?.trim()).toBe('№ORD-2');
   });
 
-  it('TZ-COMBINE-412: name click → editProduct; chevron expands; fuse classes', async () => {
+  it('TZ-COMBINE-414: name/qty/indicators → expand; pencil → editProduct; fuse intact', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
@@ -1048,7 +1048,36 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     ) as HTMLButtonElement;
     expect(nameBtn).toBeTruthy();
     expect(nameBtn.classList.contains('hover:underline')).toBe(true);
+    expect(nameBtn.getAttribute('aria-expanded')).toBe('false');
+    expect(nameBtn.getAttribute('aria-controls')).toBeTruthy();
     nameBtn.click();
+    fixture.detectChanges();
+    expect(dialogs.openProductEdit).not.toHaveBeenCalled();
+    expect(page.isExpanded(cards[0]!)).toBe(true);
+    expect(nameBtn.getAttribute('aria-expanded')).toBe('true');
+
+    nameBtn.click();
+    fixture.detectChanges();
+    expect(page.isExpanded(cards[0]!)).toBe(false);
+
+    const qtyBtn = root.querySelector('[data-testid="combine-row-qty"]') as HTMLButtonElement;
+    qtyBtn.click();
+    fixture.detectChanges();
+    expect(page.isExpanded(cards[0]!)).toBe(true);
+    expect(dialogs.openProductEdit).not.toHaveBeenCalled();
+
+    const indicatorsBtn = root.querySelector(
+      '[data-testid="combine-lane-indicators"]',
+    ) as HTMLButtonElement;
+    indicatorsBtn.click();
+    fixture.detectChanges();
+    expect(page.isExpanded(cards[0]!)).toBe(false);
+
+    const pencilBtn = root.querySelector(
+      '[data-testid="combine-row-product-edit"]',
+    ) as HTMLButtonElement;
+    expect(pencilBtn).toBeTruthy();
+    pencilBtn.click();
     expect(dialogs.openProductEdit).toHaveBeenCalledWith(
       'p1',
       expect.anything(),

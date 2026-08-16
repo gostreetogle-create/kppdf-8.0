@@ -5,20 +5,19 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T23:10:00+03:00
-hygiene: COMBINE-412 DONE; drain next SALES-369
+updated_at: 2026-08-16T23:15:00+03:00
+hygiene: COMBINE-414 DONE; drain next SALES-369
 
 ## ACTIVE
 
-- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412 landed; 413 DnD no-jump park
-- **Drain queue:** SALES-369 → TZD-39 → TZD-56 → TZD-47 → MIG-302… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
+- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412/414 landed; 413 DnD no-jump park
+- **Drain:** SALES-369… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
 
 
 ## NEXT (PO paste prompt)
 
-1. Смоук `/design/combine` — слитые ряды одного заказа; имя→edit; ▸ expand; module pencil
-2. Freebuff: `tasks/PROMPT-FREEBUFF-TASKS-DRAIN.md` (старт SALES-369)
-3. Deploy / «кати» — только отдельным словом + VPN off
+1. Hard-refresh `/design/combine` — имя/qty/индикаторы → expand; карандаш → edit; fuse rows
+2. Freebuff drain / Deploy — по слову PO
 
 
 ## Queue hygiene (not live)
@@ -27,6 +26,10 @@ hygiene: COMBINE-412 DONE; drain next SALES-369
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-414 DONE — name/row expand; pencil-only edit
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-414.done.md`; lock `TZ-COMBINE-414-combine-name-expands-pencil-edits.lock`; FE tsc + jest dashboard.page **26/26**. Deploy нет. Name/qty/indicators→expand; pencil→editProduct; fuse 412 kept.
 
 ## [2026-08-16] — TZ-COMBINE-412 DONE — fuse rows + name edit
 

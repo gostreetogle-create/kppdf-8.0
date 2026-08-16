@@ -237,22 +237,35 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                 class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
                 data-testid="combine-row-product-name"
                 [title]="card.productName"
-                (click)="editProduct(card.item.productId); $event.stopPropagation()"
+                [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-controls]="expandPanelId(card)"
+                (click)="toggleExpand(card)"
               >
                 {{ card.productName }}
               </button>
 
-              <span
-                class="text-xs text-muted-foreground shrink-0 bg-paper-2 px-1.5 py-0.5 rounded-sm"
+              <button
+                type="button"
+                class="text-xs text-muted-foreground shrink-0 bg-paper-2 px-1.5 py-0.5 rounded-sm pi-focus-ring"
+                data-testid="combine-row-qty"
+                [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-controls]="expandPanelId(card)"
+                [attr.aria-label]="
+                  'Количество ' + card.quantity + ' ' + (card.unit || 'шт') + '. Раскрыть стадии'
+                "
+                (click)="toggleExpand(card)"
               >
                 {{ card.quantity }} {{ card.unit || 'шт' }}
-              </span>
+              </button>
 
-              <div
-                class="flex gap-1 shrink-0 w-32"
-                role="img"
+              <button
+                type="button"
+                class="flex gap-1 shrink-0 w-32 pi-focus-ring rounded-sm"
                 data-testid="combine-lane-indicators"
-                [attr.aria-label]="'Стадии: ' + activeLaneSummary(card)"
+                [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-controls]="expandPanelId(card)"
+                [attr.aria-label]="'Стадии: ' + activeLaneSummary(card) + '. Раскрыть'"
+                (click)="toggleExpand(card)"
               >
                 @for (col of columns; track col.id) {
                   <span
@@ -263,11 +276,12 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                     [title]="col.title"
                   ></span>
                 }
-              </div>
+              </button>
 
               <button
                 type="button"
                 class="text-muted-foreground hover:text-gold-deep p-1.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                data-testid="combine-row-product-edit"
                 (click)="editProduct(card.item.productId); $event.stopPropagation()"
                 title="Редактировать изделие"
               >

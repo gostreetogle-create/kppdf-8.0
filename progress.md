@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-COMBINE-414 DONE — Комбайн: имя/ряд → expand; edit только карандашом
+
+**Исполнитель:** composer-executor-414
+**Статус:** DONE; deploy НЕ
+**Что:** name/qty/indicators → `toggleExpand`; product pencil → `editProduct` only; fuse 412 intact; module pencil/DnD не трогали.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page PASS (26/26).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-414.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-414-combine-name-expands-pencil-edits.lock`
+**Next:** TZ-COMBINE-413 DnD no-jump (park); deploy запрещён.
+
 ## [2026-08-16] — TZ-COMBINE-412 DONE — Комбайн: склейка рядов + имя → edit
 
 **Исполнитель:** composer-executor-412
