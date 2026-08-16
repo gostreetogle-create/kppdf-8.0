@@ -76,7 +76,7 @@ async function ensureModel(): Promise<void> {
   try {
     llamaModule = await import('node-llama-cpp');
     if (!MODEL_PATH || !fs.existsSync(MODEL_PATH)) {
-      modelLoadError = 'Модель не скачана — сначала скачайте модель во вкладке «Модель».';
+      modelLoadError = 'Модель не скачана — сначала скачайте модель во вкладке «AI».';
       modelLoadErrorSticky = false;
       return;
     }

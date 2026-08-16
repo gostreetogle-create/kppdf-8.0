@@ -109,7 +109,7 @@
   let errors = $state<string[]>([]);
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
-  type DesktopTab = 'import' | 'mcp' | 'model';
+  type DesktopTab = 'connection' | 'import' | 'ai';
   let activeTab = $state<DesktopTab>('import');
 
   // MCP host (TZD-14): автозапуск при подключённом аккаунте, статус + настройки.
@@ -191,6 +191,7 @@
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
     stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
     downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный раннер.',
+    openModelFolder: 'Откроет папку с моделями в проводнике (app-data/models).',
   } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
@@ -595,6 +596,17 @@
       await openExternal(dir);
     } catch {
       inboxError = 'Не удалось открыть папку в проводнике — откройте её вручную по пути выше.';
+    }
+  }
+
+  /** Открыть папку моделей в проводнике (app-data/models). */
+  async function openModelFolder() {
+    try {
+      const dir = aiModelDir || (await defaultModelDir());
+      aiModelDir = dir;
+      await openExternal(dir);
+    } catch {
+      aiMessage = 'Не удалось открыть папку моделей — откройте её вручную из данных приложения.';
     }
   }
 
@@ -1898,7 +1910,7 @@
     <div class="shell__brand">
       <div>
         <h1>KPPDF Desktop</h1>
-        <p class="shell__subtitle">Студия импорта спецификаций и локальный доступ для AI</p>
+        <p class="shell__subtitle">Импорт данных и локальный AI для kppdf</p>
       </div>
       <div class="session-chip" data-test="session-chip" aria-live="polite">
         <span class="session-chip__dot" aria-hidden="true"></span>
@@ -1906,6 +1918,17 @@
       </div>
     </div>
     <div class="tabs" aria-label="Разделы Desktop" role="tablist">
+      <button
+        class:tabs__button--active={activeTab === 'connection'}
+        class="tabs__button"
+        data-test="tab-connection"
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'connection'}
+        onclick={() => (activeTab = 'connection')}
+      >
+        Подключение
+      </button>
       <button
         class:tabs__button--active={activeTab === 'import'}
         class="tabs__button"
@@ -1915,35 +1938,24 @@
         aria-selected={activeTab === 'import'}
         onclick={() => (activeTab = 'import')}
       >
-        Студия импорта
+        Импорт
       </button>
       <button
-        class:tabs__button--active={activeTab === 'mcp'}
+        class:tabs__button--active={activeTab === 'ai'}
         class="tabs__button"
-        data-test="tab-mcp"
+        data-test="tab-ai"
         type="button"
         role="tab"
-        aria-selected={activeTab === 'mcp'}
-        onclick={() => (activeTab = 'mcp')}
+        aria-selected={activeTab === 'ai'}
+        onclick={() => (activeTab = 'ai')}
       >
-        MCP
-      </button>
-      <button
-        class:tabs__button--active={activeTab === 'model'}
-        class="tabs__button"
-        data-test="tab-model"
-        type="button"
-        role="tab"
-        aria-selected={activeTab === 'model'}
-        onclick={() => (activeTab = 'model')}
-      >
-        Модель
+        AI
       </button>
     </div>
   </header>
 
   <section class="cards">
-    {#if activeTab === 'mcp'}
+    {#if activeTab === 'connection'}
     <article class="card">
       <h2>Подключение</h2>
 
@@ -2033,11 +2045,142 @@
       {/if}
     </article>
 
+    {:else if activeTab === 'ai'}
+    <div class="ai-banner" role="note" data-test="ai-banner">
+      Импорт и Excel-формы работают без модели и без MCP.
+    </div>
+
     <article class="card">
-      <h2>MCP — локальный доступ для AI</h2>
+      <h2>Локальная модель</h2>
+      <p class="hint">
+        Модель скачивается один раз (~2 ГБ) в папку приложения и работает офлайн — ничего больше ставить
+        не нужно. Подбор колонок работает и без модели (детерминированный классификатор), модель помогает
+        с нестандартными заголовками. Характеристики ПК определяются автоматически — рекомендация ниже.
+      </p>
+
+      <div class="mcp-status">
+        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
+          {AI_STATUS_LABEL[aiState.status]}
+        </span>
+        {#if aiState.modelLoaded && aiState.modelName}
+          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
+        {/if}
+      </div>
+
+      {#if aiState.lastError}
+        <p class="errors" role="alert">{aiState.lastError}</p>
+      {/if}
+      {#if aiMessage}
+        <p class="hint" role="status">{aiMessage}</p>
+      {/if}
+      {#if aiState.modelError}
+        <p class="errors" role="alert">{aiState.modelError}</p>
+      {/if}
+      {#if formatDownload(aiState.download)}
+        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
+      {/if}
+
+      {#if aiState.specs}
+        <p class="hint">
+          Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
+          {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
+          {#if selectedModelId && modelById(selectedModelId)}
+            → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
+          {/if}
+        </p>
+      {/if}
+
+      <label class="field">
+        <span>Модель</span>
+        <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
+          {#each LOCAL_MODELS as model (model.id)}
+            <option value={model.id}>
+              {model.name} — {formatBytes(model.sizeBytes)}
+            </option>
+          {/each}
+        </select>
+      </label>
+
+      <div class="mcp-actions">
+        {#if aiState.status === 'running' || aiState.status === 'starting'}
+          <button
+            class="btn"
+            type="button"
+            onclick={stopAi}
+            disabled={aiState.status === 'starting'}
+            onmouseenter={() => showHint(HINTS.stopAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.stopAi)}
+            onblur={clearHint}
+          >
+            Остановить
+          </button>
+        {/if}
+        {#if aiState.status === 'stopped' || aiState.status === 'error'}
+          <button
+            class="btn btn--primary"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Запустить раннер
+          </button>
+        {/if}
+        {#if aiState.status === 'running'}
+          <button
+            class="btn"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Перезапустить
+          </button>
+        {/if}
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={downloadSelectedModel}
+          disabled={aiState.status !== 'running' || aiState.download.active || aiBusy}
+          onmouseenter={() => showHint(HINTS.downloadModel)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.downloadModel)}
+          onblur={clearHint}
+        >
+          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
+        </button>
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={openModelFolder}
+          onmouseenter={() => showHint(HINTS.openModelFolder)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.openModelFolder)}
+          onblur={clearHint}
+        >
+          Открыть папку моделей
+        </button>
+      </div>
+      <p class="hint">
+        Порядок: <strong>Запустить</strong> → <strong>Скачать модель</strong> → <strong>Перезапустить</strong>.
+        После «Перезапустить» модель загрузится в память, и кнопка «Предложить сопоставление» во вкладке
+        «Импорт» начнёт использовать её для нестандартных колонок.
+      </p>
+    </article>
+
+    <article class="card">
+      <h2>MCP для агентов</h2>
+      <p class="hint">Нужен Cursor или LM Studio. Для обычного импорта Excel не обязателен.</p>
 
       {#if !connected}
-        <p>MCP не запущен: сначала подключите аккаунт (карточка «Подключение» выше).</p>
+        <p>MCP не запущен: сначала подключите аккаунт (вкладка «Подключение»).</p>
       {:else}
         <div class="mcp-status">
           <span class="mcp-badge mcp-badge--{mcpState.status}" aria-live="polite">
@@ -2195,127 +2338,16 @@
       {/if}
     </article>
 
-    {:else if activeTab === 'model'}
-    <article class="card">
-      <h2>Локальная модель — умный подбор колонок</h2>
-      <p class="hint">
-        Модель скачивается один раз (~2 ГБ) в папку приложения и работает офлайн — ничего больше ставить
-        не нужно. Подбор колонок работает и без модели (детерминированный классификатор), модель помогает
-        с нестандартными заголовками. Характеристики ПК определяются автоматически — рекомендация ниже.
-      </p>
-
-      <div class="mcp-status">
-        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
-          {AI_STATUS_LABEL[aiState.status]}
-        </span>
-        {#if aiState.modelLoaded && aiState.modelName}
-          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
-        {/if}
-      </div>
-
-      {#if aiState.lastError}
-        <p class="errors" role="alert">{aiState.lastError}</p>
-      {/if}
-      {#if aiMessage}
-        <p class="hint" role="status">{aiMessage}</p>
-      {/if}
-      {#if aiState.modelError}
-        <p class="errors" role="alert">{aiState.modelError}</p>
-      {/if}
-      {#if formatDownload(aiState.download)}
-        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
-      {/if}
-
-      {#if aiState.specs}
-        <p class="hint">
-          Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
-          {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
-          {#if selectedModelId && modelById(selectedModelId)}
-            → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
-          {/if}
-        </p>
-      {/if}
-
-      <label class="field">
-        <span>Модель</span>
-        <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
-          {#each LOCAL_MODELS as model (model.id)}
-            <option value={model.id}>
-              {model.name} — {formatBytes(model.sizeBytes)}
-            </option>
-          {/each}
-        </select>
-      </label>
-
-      <div class="mcp-actions">
-        {#if aiState.status === 'running' || aiState.status === 'starting'}
-          <button
-            class="btn"
-            type="button"
-            onclick={stopAi}
-            disabled={aiState.status === 'starting'}
-            onmouseenter={() => showHint(HINTS.stopAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.stopAi)}
-            onblur={clearHint}
-          >
-            Остановить
-          </button>
-        {/if}
-        {#if aiState.status === 'stopped' || aiState.status === 'error'}
-          <button
-            class="btn btn--primary"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Запустить раннер
-          </button>
-        {/if}
-        {#if aiState.status === 'running'}
-          <button
-            class="btn"
-            type="button"
-            onclick={startAi}
-            disabled={aiBusy}
-            onmouseenter={() => showHint(HINTS.startAi)}
-            onmouseleave={clearHint}
-            onfocus={() => showHint(HINTS.startAi)}
-            onblur={clearHint}
-          >
-            Перезапустить
-          </button>
-        {/if}
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={downloadSelectedModel}
-          disabled={aiState.status !== 'running' || aiState.download.active || aiBusy}
-          onmouseenter={() => showHint(HINTS.downloadModel)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.downloadModel)}
-          onblur={clearHint}
-        >
-          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
-        </button>
-      </div>
-      <p class="hint">
-        Порядок: <strong>Запустить</strong> → <strong>Скачать модель</strong> → <strong>Перезапустить</strong>.
-        После «Перезапустить» модель загрузится в память, и кнопка «Предложить сопоставление» во вкладке
-        «Студия импорта» начнёт использовать её для нестандартных колонок.
-      </p>
-    </article>
-
     {:else}
     <article class="card card--studio">
-      <h2>Студия импорта</h2>
+      <h2>Импорт</h2>
       <p>
         Два способа загрузить данные: <strong>перетащите файл сюда</strong> (или выберите кнопкой), либо
         <strong>положите файл в папку агента</strong> — он появится в списке ниже.
+      </p>
+      <p class="hint">
+        Шпаргалка: <strong>1</strong> скачайте форму → <strong>2</strong> заполните лист «Данные» →
+        <strong>3</strong> загрузите файл обратно и подтвердите сопоставление.
       </p>
 
       <section class="form-studio" aria-label="Формы Excel">
@@ -2699,8 +2731,8 @@
             </div>
             <p class="hint">
               Подбор работает без подключений (детерминированный классификатор по библиотеке таблиц).
-              Скачайте модель во вкладке «Модель» (Запустить → Скачать → Перезапустить) — она поможет
-              с нестандартными колонками. MCP-хост для внешних AI-клиентов — во вкладке «MCP».
+              Скачайте модель во вкладке «AI» (Запустить → Скачать → Перезапустить) — она поможет
+              с нестандартными колонками. MCP-хост для внешних AI-клиентов — тоже во вкладке «AI».
             </p>
             {#if activeInboxFile}
               <p class="hint" role="status">
@@ -3185,6 +3217,16 @@
     background: #fdf6e7;
     border: 1px solid #ecd9a8;
     color: #7a5c12;
+  }
+
+  .ai-banner {
+    grid-column: 1 / -1;
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    background: #eef4fb;
+    border: 1px solid #c8d9ee;
+    color: #1e4a76;
   }
 
   .status {
