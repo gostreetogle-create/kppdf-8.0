@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-349 DONE — Gantt 4-level milk palette
+**Исполнитель:** composer-executor-349
+**Статус:** DONE; deploy НЕ
+**Что:** CSS vars `--gantt-level-order|product|module`; distinct summary barFill cream/blue/sand; order-expanded без beige flatten; WT accent сохранён; label+timeline wash parity.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest gantt-bars PASS (52/52).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-349.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-349-gantt-level-palette.lock`
+**Next:** queue idle for Gantt palette; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-348 DONE — Gantt toolbar + header + label expand
 **Исполнитель:** composer-executor-348
 **Статус:** DONE; deploy НЕ

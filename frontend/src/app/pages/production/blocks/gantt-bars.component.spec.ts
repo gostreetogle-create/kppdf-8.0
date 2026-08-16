@@ -5,6 +5,7 @@ import {
   GANTT_LABEL_COL_PX,
   GANTT_NEST_INDENT_PX,
   GANTT_PX_PER_DAY,
+  GANTT_SUMMARY_BAR_FILL,
   calculateGanttPxPerDay,
   calculateCenteredMarkerScrollLeft,
   ganttMonthTickLabel,
@@ -370,6 +371,7 @@ describe('GanttBarsComponent', () => {
     expect(productLabel.classList.contains('gantt-level-product')).toBe(true);
     expect(moduleLabel.classList.contains('gantt-level-module')).toBe(true);
     expect(workLabel.classList.contains('gantt-level-work')).toBe(true);
+    expect(orderLabel.classList.contains('gantt-level-order')).toBe(true);
 
     const productPad = Number.parseFloat(
       getComputedStyle(productLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
@@ -395,11 +397,14 @@ describe('GanttBarsComponent', () => {
     const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
       .map((s) => s.textContent ?? '')
       .join('\n');
-    expect(hostStyles).toContain('oklch(0.962 0.022 230)');
-    expect(hostStyles).toContain('oklch(0.955 0.032 70)');
+    expect(hostStyles).toContain('--gantt-level-order');
+    expect(hostStyles).toContain('--gantt-level-product');
+    expect(hostStyles).toContain('--gantt-level-module');
+    expect(hostStyles).toContain('oklch(0.96 0.025 240)');
+    expect(hostStyles).toContain('oklch(0.96 0.03 70)');
     expect(hostStyles).toContain('oklch(0.988 0.006 145)');
     /* Frames / meta still present (hierarchy intact). */
-    expect(hostStyles).toContain('oklch(0.94 0.025 85)');
+    expect(hostStyles).toContain('oklch(0.95 0.025 85)');
     expect(hostStyles).toContain('oklch(0.995 0.008 95)');
   });
 
@@ -529,9 +534,72 @@ describe('GanttBarsComponent', () => {
     const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
       .map((s) => s.textContent ?? '')
       .join('\n');
-    expect(hostStyles).toContain('oklch(0.94 0.025 85)');
-    expect(hostStyles).toContain('oklch(0.97 0.012 95)');
-    expect(hostStyles).toContain('oklch(0.29 0.03 85)');
+    expect(hostStyles).toContain('--gantt-level-order');
+    expect(hostStyles).toContain('oklch(0.95 0.025 85)');
+    /* Expanded frame must not paint children with beige !important. */
+    expect(hostStyles).not.toMatch(
+      /\.gantt-order-expanded\s*\{[^}]*background:\s*oklch\(0\.97 0\.012 95\)\s*!important/,
+    );
+    expect(hostStyles).toContain('oklch(0.26 0.03 85)');
+  });
+
+  it('TZ-PRODUCTION-349: summary barFill distinct per level; WT accent unchanged', () => {
+    expect(GANTT_SUMMARY_BAR_FILL.order).not.toBe(GANTT_SUMMARY_BAR_FILL.product);
+    expect(GANTT_SUMMARY_BAR_FILL.product).not.toBe(GANTT_SUMMARY_BAR_FILL.module);
+    expect(GANTT_SUMMARY_BAR_FILL.order).not.toBe(GANTT_SUMMARY_BAR_FILL.module);
+
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    setFullTreeExpand(fixture);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const cmp = fixture.componentInstance;
+
+    const rows = cmp['rows']() as Array<{
+      bar: { id: string; workTypeId: string; accentHue?: number | null };
+      isSummary: boolean;
+      rowKind: 'order' | 'worker' | 'product' | 'module' | 'work';
+    }>;
+    const orderRow = rows.find((r) => r.rowKind === 'order')!;
+    const productRow = rows.find((r) => r.rowKind === 'product')!;
+    const moduleRow = rows.find((r) => r.rowKind === 'module')!;
+    const workRow = rows.find((r) => r.rowKind === 'work')!;
+
+    expect(cmp.barFill(orderRow)).toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(cmp.barFill(productRow)).toBe(GANTT_SUMMARY_BAR_FILL.product);
+    expect(cmp.barFill(moduleRow)).toBe(GANTT_SUMMARY_BAR_FILL.module);
+    const workFill = cmp.barFill(workRow);
+    expect(workFill).not.toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(workFill).not.toBe(GANTT_SUMMARY_BAR_FILL.product);
+    expect(workFill).not.toBe(GANTT_SUMMARY_BAR_FILL.module);
+    expect(workFill).toMatch(/^oklch\(/);
+
+    const productLabel = el.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"]`,
+    ) as HTMLElement;
+    const productTl = el.querySelector(`[data-test="gantt-row-${productKeyO1}"]`) as HTMLElement;
+    const moduleLabel = el.querySelector(`[data-test="gantt-label-${moduleKeyO1}"]`) as HTMLElement;
+    const moduleTl = el.querySelector(`[data-test="gantt-row-${moduleKeyO1}"]`) as HTMLElement;
+    expect(productLabel.classList.contains('gantt-level-product')).toBe(true);
+    expect(productTl.classList.contains('gantt-level-product')).toBe(true);
+    expect(moduleLabel.classList.contains('gantt-level-module')).toBe(true);
+    expect(moduleTl.classList.contains('gantt-level-module')).toBe(true);
+
+    const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n');
+    expect(hostStyles).toContain('--gantt-bar-order');
+    expect(hostStyles).toContain('--gantt-bar-product');
+    expect(hostStyles).toContain('--gantt-bar-module');
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.order);
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.product);
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.module);
+    /* order-expanded must not beige-flatten children */
+    expect(hostStyles).not.toMatch(
+      /\.gantt-order-expanded\s*\{[^}]*background:\s*oklch\(0\.97 0\.012 95\)\s*!important/,
+    );
   });
 
   it('renders toolbar, legend and a summary with required range', () => {

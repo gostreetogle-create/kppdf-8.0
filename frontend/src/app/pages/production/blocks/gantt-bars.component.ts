@@ -135,6 +135,16 @@ export const GANTT_LABEL_COL_PX = 208;
  */
 export const GANTT_NEST_INDENT_PX = 15;
 
+/**
+ * TZ-PRODUCTION-349 — milk summary bar fills (order / product / module).
+ * Distinct light paper hues; work bars keep accentHue via workTypeOklch.
+ */
+export const GANTT_SUMMARY_BAR_FILL = {
+  order: 'oklch(0.90 0.028 85)',
+  product: 'oklch(0.90 0.028 240)',
+  module: 'oklch(0.90 0.032 70)',
+} as const;
+
 export type GanttRowKind = 'order' | 'worker' | 'product' | 'module' | 'work';
 
 /** Nest depth for cascade indent (labels only; timeline bars stay flush). */
@@ -362,6 +372,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-module-group-start]="row.moduleGroupStart"
                 [class.gantt-module-group-end]="row.moduleGroupEnd"
                 [class.gantt-module-group-mid]="row.moduleGroupMid"
+                [class.gantt-level-order]="row.rowKind === 'order' || row.rowKind === 'worker'"
                 [class.gantt-level-product]="row.rowKind === 'product'"
                 [class.gantt-level-module]="row.rowKind === 'module'"
                 [class.gantt-level-work]="row.rowKind === 'work'"
@@ -624,6 +635,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-module-group-start]="row.moduleGroupStart"
                 [class.gantt-module-group-end]="row.moduleGroupEnd"
                 [class.gantt-module-group-mid]="row.moduleGroupMid"
+                [class.gantt-level-order]="row.rowKind === 'order' || row.rowKind === 'worker'"
                 [class.gantt-level-product]="row.rowKind === 'product'"
                 [class.gantt-level-module]="row.rowKind === 'module'"
                 [class.gantt-level-work]="row.rowKind === 'work'"
@@ -764,6 +776,26 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     </div>
   `,
   styles: `
+    :host {
+      /* TZ-PRODUCTION-349 — milk level palette (row wash + matching summary bars). */
+      --gantt-level-order: oklch(0.95 0.025 85);
+      --gantt-level-product: oklch(0.96 0.025 240);
+      --gantt-level-module: oklch(0.96 0.03 70);
+      --gantt-level-work: oklch(0.988 0.006 145);
+      --gantt-bar-order: ${GANTT_SUMMARY_BAR_FILL.order};
+      --gantt-bar-product: ${GANTT_SUMMARY_BAR_FILL.product};
+      --gantt-bar-module: ${GANTT_SUMMARY_BAR_FILL.module};
+    }
+    :host-context(.dark),
+    :host-context([data-theme='dark']) {
+      --gantt-level-order: oklch(0.26 0.03 85);
+      --gantt-level-product: oklch(0.25 0.03 240);
+      --gantt-level-module: oklch(0.25 0.035 70);
+      --gantt-level-work: oklch(0.27 0.012 145);
+      --gantt-bar-order: oklch(0.32 0.04 85);
+      --gantt-bar-product: oklch(0.32 0.04 240);
+      --gantt-bar-module: oklch(0.32 0.045 70);
+    }
     .gantt-row-h {
       height: ${GANTT_ROW_PX}px;
       box-sizing: border-box;
@@ -855,30 +887,20 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       padding-left: ${GANTT_NEST_INDENT_PX * 3}px;
     }
     /*
-     * Level washes (paper). Stronger separation module vs WT than 346.
-     * Strength: meta-active ≥ order/product/module frames ≥ these.
-     * No !important — group/meta rules with !important keep winning.
+     * Level washes (paper milk). Order/product/module/work must stay distinct
+     * even under expanded-order frame (no beige flatten via !important).
      */
+    .gantt-level-order {
+      background: var(--gantt-level-order);
+    }
     .gantt-level-product {
-      background: oklch(0.962 0.022 230);
+      background: var(--gantt-level-product);
     }
     .gantt-level-module {
-      background: oklch(0.955 0.032 70);
+      background: var(--gantt-level-module);
     }
     .gantt-level-work {
-      background: oklch(0.988 0.006 145);
-    }
-    :host-context(.dark) .gantt-level-product,
-    :host-context([data-theme='dark']) .gantt-level-product {
-      background: oklch(0.245 0.028 230);
-    }
-    :host-context(.dark) .gantt-level-module,
-    :host-context([data-theme='dark']) .gantt-level-module {
-      background: oklch(0.24 0.035 70);
-    }
-    :host-context(.dark) .gantt-level-work,
-    :host-context([data-theme='dark']) .gantt-level-work {
-      background: oklch(0.27 0.012 145);
+      background: var(--gantt-level-work);
     }
     /* Active order while order-meta strip is open — lighter + bold frame. */
     .gantt-order-active {
@@ -887,16 +909,15 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       position: relative;
       z-index: 1;
     }
-    /* Tree expanded via ▸ — wash; perimeter comes from group-start/mid/end. */
+    /* Tree expanded via ▸ — frame only; level washes keep child colors. */
     .gantt-order-expanded {
-      background: oklch(0.97 0.012 95) !important;
       position: relative;
       z-index: 1;
     }
     /* Expanded order block frame (summary→children); weaker than meta-active.
-       Summary header (group-start) = slight darker yellowish wash vs child mid. */
+       Summary header (group-start) = order cream wash. */
     .gantt-order-group-start {
-      background: oklch(0.94 0.025 85) !important;
+      background: var(--gantt-level-order) !important;
       box-shadow:
         inset 0 2px 0 0 oklch(0.42 0.05 85),
         inset 2px 0 0 0 oklch(0.42 0.05 85),
@@ -919,48 +940,48 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         inset -2px 0 0 0 oklch(0.42 0.05 85);
       margin-bottom: 4px;
     }
-    /* Nested product group inside order frame — cooler wash, ≥ mid-row contrast. */
+    /* Nested product group — cooler milk-blue wash (matches level). */
     .gantt-product-group-start {
-      background: oklch(0.955 0.02 230) !important;
+      background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.48 0.06 230),
-        inset 3px 0 0 0 oklch(0.48 0.06 230),
-        inset -1px 0 0 0 oklch(0.48 0.06 230);
+        inset 0 1px 0 0 oklch(0.48 0.06 240),
+        inset 3px 0 0 0 oklch(0.48 0.06 240),
+        inset -1px 0 0 0 oklch(0.48 0.06 240);
     }
     .gantt-product-group-mid {
-      background: oklch(0.97 0.014 230) !important;
+      background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 3px 0 0 0 oklch(0.48 0.06 230),
-        inset -1px 0 0 0 oklch(0.48 0.06 230);
+        inset 3px 0 0 0 oklch(0.48 0.06 240),
+        inset -1px 0 0 0 oklch(0.48 0.06 240);
     }
     .gantt-product-group-end:not(.gantt-product-group-start) {
-      background: oklch(0.97 0.014 230) !important;
+      background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.48 0.06 230),
-        inset 3px 0 0 0 oklch(0.48 0.06 230),
-        inset -1px 0 0 0 oklch(0.48 0.06 230);
+        inset 0 -1px 0 0 oklch(0.48 0.06 240),
+        inset 3px 0 0 0 oklch(0.48 0.06 240),
+        inset -1px 0 0 0 oklch(0.48 0.06 240);
     }
     .gantt-product-group-start.gantt-product-group-end {
       box-shadow:
-        inset 0 0 0 1px oklch(0.48 0.06 230),
-        inset 3px 0 0 0 oklch(0.48 0.06 230);
+        inset 0 0 0 1px oklch(0.48 0.06 240),
+        inset 3px 0 0 0 oklch(0.48 0.06 240);
     }
-    /* Nested module group inside product/order — warmer ink wash. */
+    /* Nested module group — warm sand wash (matches level). */
     .gantt-module-group-start {
-      background: oklch(0.96 0.022 70) !important;
+      background: var(--gantt-level-module) !important;
       box-shadow:
         inset 0 1px 0 0 oklch(0.5 0.07 70),
         inset 5px 0 0 0 oklch(0.5 0.07 70),
         inset -1px 0 0 0 oklch(0.5 0.07 70);
     }
     .gantt-module-group-mid {
-      background: oklch(0.975 0.016 70) !important;
+      background: var(--gantt-level-module) !important;
       box-shadow:
         inset 5px 0 0 0 oklch(0.5 0.07 70),
         inset -1px 0 0 0 oklch(0.5 0.07 70);
     }
     .gantt-module-group-end:not(.gantt-module-group-start) {
-      background: oklch(0.975 0.016 70) !important;
+      background: var(--gantt-level-module) !important;
       box-shadow:
         inset 0 -1px 0 0 oklch(0.5 0.07 70),
         inset 5px 0 0 0 oklch(0.5 0.07 70),
@@ -970,6 +991,17 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       box-shadow:
         inset 0 0 0 1px oklch(0.5 0.07 70),
         inset 5px 0 0 0 oklch(0.5 0.07 70);
+    }
+    /* Work rows keep paper wash — group mid must not flatten WT to sand/blue. */
+    .gantt-product-group-mid.gantt-level-work,
+    .gantt-product-group-end.gantt-level-work,
+    .gantt-module-group-mid.gantt-level-work,
+    .gantt-module-group-end.gantt-level-work {
+      background: var(--gantt-level-work) !important;
+    }
+    .gantt-product-group-mid.gantt-level-module,
+    .gantt-product-group-end.gantt-level-module:not(.gantt-module-group-start) {
+      background: var(--gantt-level-module) !important;
     }
     .gantt-order-active.gantt-order-group-start,
     .gantt-order-active.gantt-order-group-end,
@@ -983,14 +1015,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       background: oklch(0.28 0.02 260) !important;
       box-shadow: inset 0 0 0 2px oklch(0.78 0.06 85);
     }
-    :host-context(.dark) .gantt-order-expanded,
-    :host-context([data-theme='dark']) .gantt-order-expanded {
-      background: oklch(0.26 0.02 260) !important;
-    }
     :host-context(.dark) .gantt-order-group-start,
     :host-context([data-theme='dark']) .gantt-order-group-start {
-      /* Header slightly lighter/warmer than mid wash. */
-      background: oklch(0.29 0.03 85) !important;
+      background: var(--gantt-level-order) !important;
       box-shadow:
         inset 0 2px 0 0 oklch(0.78 0.07 85),
         inset 2px 0 0 0 oklch(0.78 0.07 85),
@@ -1028,31 +1055,31 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
     :host-context(.dark) .gantt-product-group-start,
     :host-context([data-theme='dark']) .gantt-product-group-start {
-      background: oklch(0.3 0.035 230) !important;
+      background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.72 0.08 230),
-        inset 3px 0 0 0 oklch(0.72 0.08 230),
-        inset -1px 0 0 0 oklch(0.72 0.08 230);
+        inset 0 1px 0 0 oklch(0.72 0.08 240),
+        inset 3px 0 0 0 oklch(0.72 0.08 240),
+        inset -1px 0 0 0 oklch(0.72 0.08 240);
     }
     :host-context(.dark) .gantt-product-group-mid,
     :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
     :host-context([data-theme='dark']) .gantt-product-group-mid,
     :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
-      background: oklch(0.28 0.028 230) !important;
+      background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 3px 0 0 0 oklch(0.72 0.08 230),
-        inset -1px 0 0 0 oklch(0.72 0.08 230);
+        inset 3px 0 0 0 oklch(0.72 0.08 240),
+        inset -1px 0 0 0 oklch(0.72 0.08 240);
     }
     :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
     :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.72 0.08 230),
-        inset 3px 0 0 0 oklch(0.72 0.08 230),
-        inset -1px 0 0 0 oklch(0.72 0.08 230);
+        inset 0 -1px 0 0 oklch(0.72 0.08 240),
+        inset 3px 0 0 0 oklch(0.72 0.08 240),
+        inset -1px 0 0 0 oklch(0.72 0.08 240);
     }
     :host-context(.dark) .gantt-module-group-start,
     :host-context([data-theme='dark']) .gantt-module-group-start {
-      background: oklch(0.31 0.04 70) !important;
+      background: var(--gantt-level-module) !important;
       box-shadow:
         inset 0 1px 0 0 oklch(0.75 0.09 70),
         inset 5px 0 0 0 oklch(0.75 0.09 70),
@@ -1062,7 +1089,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     :host-context(.dark) .gantt-module-group-end:not(.gantt-module-group-start),
     :host-context([data-theme='dark']) .gantt-module-group-mid,
     :host-context([data-theme='dark']) .gantt-module-group-end:not(.gantt-module-group-start) {
-      background: oklch(0.29 0.032 70) !important;
+      background: var(--gantt-level-module) !important;
       box-shadow:
         inset 5px 0 0 0 oklch(0.75 0.09 70),
         inset -1px 0 0 0 oklch(0.75 0.09 70);
@@ -1539,9 +1566,20 @@ export class GanttBarsComponent implements AfterViewInit {
     return row.leftPx;
   }
 
-  protected barFill(row: { bar: GanttBar; isSummary: boolean }): string {
+  protected barFill(row: { bar: GanttBar; isSummary: boolean; rowKind: GanttRowKind }): string {
     if (row.bar.noTerm) return 'transparent';
-    if (row.isSummary) return 'oklch(0.88 0.01 250)';
+    if (row.isSummary) {
+      switch (row.rowKind) {
+        case 'product':
+          return GANTT_SUMMARY_BAR_FILL.product;
+        case 'module':
+          return GANTT_SUMMARY_BAR_FILL.module;
+        case 'order':
+        case 'worker':
+        default:
+          return GANTT_SUMMARY_BAR_FILL.order;
+      }
+    }
     return this.fill(row.bar.workTypeId, row.bar.accentHue);
   }
 

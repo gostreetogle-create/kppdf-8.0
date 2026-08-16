@@ -5,12 +5,12 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T22:02:53+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-348 DONE (incl. 348 toolbar+header+expand); deploy deferred
+updated_at: 2026-08-16T22:28:00+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-349 DONE (incl. 349 milk palette + barFill); deploy deferred
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–348 DONE**. Deploy — только «кати».
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–349 DONE**. Deploy — только «кати».
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
@@ -27,6 +27,10 @@ hygiene: TZD-50-55 DONE; Gantt 338-348 DONE (incl. 348 toolbar+header+expand); d
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-349 DONE — Gantt 4-level milk palette
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-349.done.md`; lock `TZ-PRODUCTION-349-gantt-level-palette.lock`; FE tsc + jest gantt-bars **52/52**. Deploy нет. Distinct summary barFill; order-expanded no beige flatten.
 
 ## [2026-08-16] — TZ-PRODUCTION-348 DONE — Gantt toolbar + header + label expand
 
