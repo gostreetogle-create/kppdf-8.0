@@ -5,20 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T19:25:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51 DONE; TZD-52 DONE (warm deploy 0.5.4, Cursor PASS)
+updated_at: 2026-08-16T19:39:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51/52 DONE; TZD-53 READY FOR REVIEW (deploy DEFERRED — VPN off)
 
 ## ACTIVE
 
-- **Свободен:** Desktop Excel Forms волна закрыта (TZD-50→52 DONE). Ручной Smoke Forms на установленном 0.5.4 — PO/агент после install.
+- **P0 TZD-53 READY FOR REVIEW:** Excel-форма writeFile — `fs:allow-write-file` + UX path/error + bump **0.5.5** (code `ac7a49ed`, gates tsc 0 / svelte-check 0/0). Deploy **DEFERRED** (VPN off у PO). Checklist: `docs/agent-checklists/TZD-53.md`.
 
 ## NEXT (PO paste prompt)
 
-1. Ручной Smoke Form Studio на установленном 0.5.4
-2. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
-3. SALES-377 — не без PO
-
-_(HARDEN 324–328 DONE; COMBINE 406–408 DONE; Excel Forms 50–52 DONE; Desktop 0.5.4 deployed DONE)_
+1. TZD-53 deploy 0.5.5 — по слову PO «кати» + VPN off (warm, WIPE=false)
+2. После 0.5.5: smoke «Скачать» → файл в Downloads
+3. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
 
 ## Queue hygiene (not live)
 
