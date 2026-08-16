@@ -38,6 +38,7 @@ import {
   ganttSkipToastRu,
   isHardFrozenOrderStatus,
   resolveVisualAnchor,
+  summarizeUnassignedGanttWork,
   type GanttBar,
 } from './gantt-bar.model';
 import { OrdersService, type Order, type OrderPriority } from '../orders/orders.service';
@@ -305,6 +306,10 @@ export class ProductionCockpitPage implements OnInit {
 
   protected readonly orders = signal<Order[]>([]);
   protected readonly bars = signal<GanttBar[]>([]);
+  /** TZ-PRODUCTION-353 — unassigned WT names for Gantt banner (also computed in gantt-bars). */
+  protected readonly unassignedGanttWork = computed(() =>
+    summarizeUnassignedGanttWork(this.bars()),
+  );
   protected readonly rangeStart = signal(defaultRangeStart());
   protected readonly rangeEnd = signal(defaultRangeEnd());
   protected readonly usedTodayFallback = signal(false);

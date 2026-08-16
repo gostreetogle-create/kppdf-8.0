@@ -22,7 +22,9 @@ import {
   isHardFrozenOrderStatus,
   isModuleSummaryBar,
   isWholeProductModuleId,
+  isUnassignedWorkerSummaryBar,
   isWorkerSummaryBar,
+  summarizeUnassignedGanttWork,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
   orderHasGanttEstimate,
@@ -1309,6 +1311,36 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       }),
     ])[0]!;
     expect(summary.accentHue).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-353: summarizeUnassignedGanttWork lists WT names and count', () => {
+    const unassigned = workBar({
+      id: 'u1',
+      workerLabel: '—',
+      workTypeName: 'Сварка',
+    });
+    const assigned = workBar({
+      id: 'a1',
+      workerLabel: 'Иванов',
+      workTypeId: 'wt2',
+      workTypeName: 'Покраска',
+      occurrence: 2,
+    });
+    expect(summarizeUnassignedGanttWork([unassigned, assigned])).toEqual({
+      barCount: 1,
+      workTypeNames: ['Сварка'],
+    });
+    expect(summarizeUnassignedGanttWork([assigned])).toEqual({
+      barCount: 0,
+      workTypeNames: [],
+    });
+  });
+
+  it('TZ-PRODUCTION-353: isUnassignedWorkerSummaryBar detects «Не назначен» summary', () => {
+    const summary = buildWorkerTreeBars([workBar({ id: 'u', workerLabel: '—' })])[0]!;
+    expect(isUnassignedWorkerSummaryBar(summary)).toBe(true);
+    const assigned = buildWorkerTreeBars([workBar({ id: 'a', workerLabel: 'Иванов Иван' })])[0]!;
+    expect(isUnassignedWorkerSummaryBar(assigned)).toBe(false);
   });
 
   it('TZ-PRODUCTION-351: expand worker → module rows only (data-row-kind module)', () => {

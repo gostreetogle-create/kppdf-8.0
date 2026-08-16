@@ -946,4 +946,52 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
         .get('o1'),
     ).toBe('http://example.test/thumb-1');
   });
+
+  it('TZ-PRODUCTION-353: unassigned bars show Gantt banner with WT name; assigned-only hides it', async () => {
+    const unassignedBar: GanttBar = {
+      id: 'o1:0:p1:m1:wt1:1',
+      orderId: 'o1',
+      orderNumber: 'ORD-1',
+      orderStatus: 'confirmed',
+      orderItemIndex: 0,
+      productId: 'p1',
+      productName: 'Стол',
+      moduleId: 'm1',
+      moduleName: 'Каркас',
+      workTypeId: 'wt1',
+      workTypeName: 'Сварка',
+      occurrence: 1,
+      quantity: 1,
+      quantityLabel: null,
+      days: 2,
+      noTerm: false,
+      startDate: '2026-08-01',
+      endDate: '2026-08-02',
+      usedFallbackToday: false,
+      workerLabel: '—',
+    };
+    const assignedBar: GanttBar = { ...unassignedBar, workerLabel: 'Иванов Иван' };
+    facade.loadBarsForOrders.mockImplementation(async () => [unassignedBar, assignedBar]);
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, () => facade.loadBarsForOrders.mock.calls.length > 0);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const el: HTMLElement = fixture.nativeElement;
+    const banner = el.querySelector('[data-test="gantt-unassigned-banner"]');
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent).toContain('Сварка');
+    expect(
+      el.querySelector('[data-test="gantt-unassigned-people-link"]')?.getAttribute('href'),
+    ).toBe('/people');
+
+    const page = fixture.componentInstance as unknown as {
+      bars: { set: (v: GanttBar[]) => void };
+    };
+    page.bars.set([assignedBar]);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-test="gantt-unassigned-banner"]')).toBeNull();
+  });
 });

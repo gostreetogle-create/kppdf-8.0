@@ -17,6 +17,8 @@ import {
 } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
 import {
+  GANTT_UNASSIGNED_BAR_FILL,
+  GANTT_UNASSIGNED_WASH,
   UNASSIGNED_WORKER_LABEL,
   resolveWorkTypeHue,
   workTypeOklch,
@@ -1622,7 +1624,7 @@ describe('GanttBarsComponent', () => {
     expect(labelBtn.querySelector('span[aria-hidden="true"]')).toBeTruthy();
   });
 
-  it('TZ-PRODUCTION-351: worker summary without hue keeps milk barFill', () => {
+  it('TZ-PRODUCTION-351: unassigned worker summary keeps null accentHue (353 amber barFill)', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [{ ...sample, workerLabel: '—' }]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -1637,7 +1639,7 @@ describe('GanttBarsComponent', () => {
     }>;
     const workerRow = rows.find((r) => r.rowKind === 'worker')!;
     expect(workerRow.bar.accentHue).toBeNull();
-    expect(cmp.barFill(workerRow)).toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(cmp.barFill(workerRow)).toBe(GANTT_UNASSIGNED_BAR_FILL);
   });
 
   it('TZ-PRODUCTION-352: worker summary with null catalog accent gets chip/wash/barFill', () => {
@@ -1687,6 +1689,56 @@ describe('GanttBarsComponent', () => {
     expect(moduleRows.length).toBeGreaterThanOrEqual(1);
     expect(el.querySelector('[data-row-kind="work"]')).toBeNull();
     expect(el.textContent).toContain('ORD-1 · Стол · Каркас');
+  });
+
+  it('TZ-PRODUCTION-353: unassigned work bars show banner with WT name and People link', () => {
+    const unassigned: GanttBar = { ...sample, workerLabel: '—' };
+    const assigned: GanttBar = { ...samplePaint, workerLabel: 'Иванов Иван' };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [unassigned, assigned]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const banner = el.querySelector('[data-test="gantt-unassigned-banner"]');
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent).toContain('Сварка');
+    expect(
+      el.querySelector('[data-test="gantt-unassigned-people-link"]')?.getAttribute('href'),
+    ).toBe('/people');
+  });
+
+  it('TZ-PRODUCTION-353: all assigned bars hide unassigned banner', () => {
+    const assigned: GanttBar = { ...sample, workerLabel: 'Иванов Иван' };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="gantt-unassigned-banner"]')).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-353: unassigned worker row has distinct chrome in workers mode', () => {
+    const unassigned: GanttBar = { ...sample, workerLabel: '—' };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [unassigned]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const row = el.querySelector(
+      `[data-test="gantt-label-worker-summary:${UNASSIGNED_WORKER_LABEL}"]`,
+    );
+    expect(row?.getAttribute('data-unassigned-worker')).toBe('true');
+    const cmp = fixture.componentInstance;
+    const workerRow = (cmp['rows']() as Array<{ bar: GanttBar; rowKind: string }>).find(
+      (r) => r.rowKind === 'worker',
+    )!;
+    expect(cmp.barFill(workerRow)).toBe(GANTT_UNASSIGNED_BAR_FILL);
+    expect(cmp.workerLabelWash({ isWorkerSummary: true, bar: workerRow.bar })).toBe(
+      GANTT_UNASSIGNED_WASH,
+    );
   });
 });
 

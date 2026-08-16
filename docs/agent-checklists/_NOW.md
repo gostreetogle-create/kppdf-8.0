@@ -5,12 +5,12 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T00:15:00+03:00
-hygiene: swarm 353; warm deploy (PO VPN off)
+updated_at: 2026-08-17T00:20:00+03:00
+hygiene: swarm 369; warm deploy (PO VPN off)
 
 ## ACTIVE
 
-- **TZ-PRODUCTION-353** (Gantt unassigned banner + People CTA)
+- **TZ-SALES-369**
 - Prompt: `tasks/PROMPT-TOMORROW-GANTT-THEN-DRAIN.md`
 
 ## NEXT (PO)
@@ -33,6 +33,10 @@ hygiene: swarm 353; warm deploy (PO VPN off)
 ## [2026-08-16] — TZD-39 DONE — Basic Auth + X-Access-Token coexist
 
 - Archive: `tasks/_archive/2026-08/TZD-39.done.md`; lock `TZD-39-desktop-basic-auth-coexist.lock`; gates BE 7/7, FE 7/7, desktop 114/114 @ fd31ab5. Deploy/smoke deferred PO swarm warm.
+
+## [2026-08-17] — TZ-PRODUCTION-353 DONE — unassigned banner + People CTA
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-353.done.md`; lock `TZ-PRODUCTION-353-gantt-unassigned-people-gate.lock`; FE tsc + jest gantt+cockpit **131/131**. Deploy нет. Banner + amber «Не назначен» row; bars stay on Gantt.
 
 ## [2026-08-16] — TZ-PRODUCTION-352 DONE — worker tint hash fallback
 

@@ -24,12 +24,17 @@ import {
   ganttModuleSummaryId,
   ganttProductSummaryId,
   ganttWorkerModuleSummaryId,
+  GANTT_UNASSIGNED_BAR_FILL,
+  GANTT_UNASSIGNED_CHIP_FILL,
+  GANTT_UNASSIGNED_WASH,
   isModuleSummaryBar,
   isOrderSummaryBar,
   isProductSummaryBar,
   isSummaryBar,
+  isUnassignedWorkerSummaryBar,
   isWorkerSummaryBar,
   ORDER_STATUS_LABELS,
+  summarizeUnassignedGanttWork,
   workerGroupKeyOf,
   workTypeOklch,
   workTypeWash,
@@ -294,6 +299,28 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         }
       </div>
 
+      @if (unassignedSummary().workTypeNames.length) {
+        <div
+          class="shrink-0 px-3 py-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-amber-950 dark:text-amber-100 bg-amber-50/90 dark:bg-amber-950/40 border-b hairline"
+          data-test="gantt-unassigned-banner"
+          role="status"
+        >
+          <span>
+            Без исполнителя: {{ unassignedSummary().workTypeNames.length }} видов работ — назначьте
+            в
+          </span>
+          <a
+            routerLink="/people"
+            class="font-medium text-amber-950 dark:text-amber-50 underline underline-offset-2 shrink-0"
+            data-test="gantt-unassigned-people-link"
+            >Люди</a
+          >
+          <span class="text-amber-900/80 dark:text-amber-200/80 truncate min-w-0">
+            — {{ unassignedWorkTypeNamesPreview() }}
+          </span>
+        </div>
+      }
+
       @if (warnings().length) {
         <div
           class="shrink-0 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200 bg-amber-50/80 dark:bg-amber-950/30 border-b hairline"
@@ -388,6 +415,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [attr.data-product-group-end]="row.productGroupEnd ? 'true' : null"
                 [attr.data-module-group-start]="row.moduleGroupStart ? 'true' : null"
                 [attr.data-module-group-end]="row.moduleGroupEnd ? 'true' : null"
+                [attr.data-unassigned-worker]="isUnassignedWorkerSummary(row.bar) ? 'true' : null"
               >
                 @if (row.isSummary) {
                   <button
@@ -431,13 +459,23 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
                   "
                   [attr.data-worker-tint]="
-                    row.isWorkerSummary && row.bar.accentHue != null ? 'true' : null
+                    row.isWorkerSummary && row.bar.accentHue != null
+                      ? 'true'
+                      : isUnassignedWorkerSummary(row.bar)
+                        ? 'unassigned'
+                        : null
                   "
                 >
                   @if (row.isWorkerSummary && row.bar.accentHue != null) {
                     <span
                       class="w-1.5 h-5 rounded-sm shrink-0"
                       [style.background]="workerChipFill(row.bar.accentHue)"
+                      aria-hidden="true"
+                    ></span>
+                  } @else if (isUnassignedWorkerSummary(row.bar)) {
+                    <span
+                      class="w-1.5 h-5 rounded-sm shrink-0 border border-dashed border-amber-700/50 dark:border-amber-400/50"
+                      [style.background]="GANTT_UNASSIGNED_CHIP_FILL"
                       aria-hidden="true"
                     ></span>
                   } @else if (!row.isSummary) {
@@ -1276,6 +1314,10 @@ export class GanttBarsComponent implements AfterViewInit {
         ),
   );
 
+  protected readonly unassignedSummary = computed(() => summarizeUnassignedGanttWork(this.bars()));
+
+  protected readonly GANTT_UNASSIGNED_CHIP_FILL = GANTT_UNASSIGNED_CHIP_FILL;
+
   protected readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();
     for (const b of this.bars()) {
@@ -1585,6 +1627,9 @@ export class GanttBarsComponent implements AfterViewInit {
         case 'module':
           return GANTT_SUMMARY_BAR_FILL.module;
         case 'worker':
+          if (isUnassignedWorkerSummaryBar(row.bar)) {
+            return GANTT_UNASSIGNED_BAR_FILL;
+          }
           if (row.bar.accentHue != null) {
             return this.fill('worker-tint', row.bar.accentHue);
           }
@@ -1599,8 +1644,20 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** TZ-PRODUCTION-351 — soft WT wash on worker FIO label when dominant hue known. */
   protected workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null {
-    if (!row.isWorkerSummary || row.bar.accentHue == null) return null;
+    if (!row.isWorkerSummary) return null;
+    if (isUnassignedWorkerSummaryBar(row.bar)) return GANTT_UNASSIGNED_WASH;
+    if (row.bar.accentHue == null) return null;
     return workTypeWash('worker-tint', row.bar.accentHue);
+  }
+
+  protected isUnassignedWorkerSummary(bar: GanttBar): boolean {
+    return isUnassignedWorkerSummaryBar(bar);
+  }
+
+  protected unassignedWorkTypeNamesPreview(): string {
+    const names = this.unassignedSummary().workTypeNames;
+    if (names.length <= 4) return names.join(', ');
+    return `${names.slice(0, 4).join(', ')}…`;
   }
 
   protected onToggleExpand(event: Event, expandId: string): void {
@@ -1958,6 +2015,13 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** Full detail for tooltip / a11y — visible label stays one line. */
   protected labelTitle(b: GanttBar): string {
+    if (isUnassignedWorkerSummaryBar(b)) {
+      return [
+        `Рабочий: ${b.orderNumber}`,
+        'нет исполнителя на видах работ',
+        `${b.startDate}→${b.endDate}`,
+      ].join(' · ');
+    }
     if (isWorkerSummaryBar(b)) {
       return [`Рабочий: ${b.orderNumber}`, `${b.startDate}→${b.endDate}`].join(' · ');
     }
@@ -2011,6 +2075,9 @@ export class GanttBarsComponent implements AfterViewInit {
 
   /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */
   protected summaryCardTitle(b: GanttBar): string {
+    if (isUnassignedWorkerSummaryBar(b)) {
+      return `Нет исполнителя: ${b.orderNumber} — назначьте виды работ в Люди`;
+    }
     if (isWorkerSummaryBar(b)) return `Группа рабочего: ${b.orderNumber}`;
     if (isProductSummaryBar(b)) return `Изделие · ${b.productName}`;
     if (isModuleSummaryBar(b)) return `Модуль · ${b.moduleName}`;

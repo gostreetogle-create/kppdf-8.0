@@ -658,6 +658,40 @@ export function isWorkerSummaryBar(bar: GanttBar): boolean {
   return isSummaryBar(bar) && bar.workTypeId === WORKER_SUMMARY_WORK_TYPE_ID;
 }
 
+/** TZ-PRODUCTION-353 — «Не назначен» worker summary row. */
+export function isUnassignedWorkerSummaryBar(bar: GanttBar): boolean {
+  return isWorkerSummaryBar(bar) && bar.orderNumber === UNASSIGNED_WORKER_LABEL;
+}
+
+export interface UnassignedGanttWorkSummary {
+  barCount: number;
+  workTypeNames: string[];
+}
+
+/** Unique sorted work-type names + bar count for unassigned work bars. */
+export function summarizeUnassignedGanttWork(
+  bars: readonly GanttBar[],
+): UnassignedGanttWorkSummary {
+  const names = new Set<string>();
+  let barCount = 0;
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    if (workerGroupKeyOf(bar) !== UNASSIGNED_WORKER_LABEL) continue;
+    barCount += 1;
+    const name = (bar.workTypeName ?? '').trim();
+    if (name) names.add(name);
+  }
+  return {
+    barCount,
+    workTypeNames: [...names].sort((a, b) => a.localeCompare(b, 'ru')),
+  };
+}
+
+/** Amber warning wash for unassigned worker summary (TZ-PRODUCTION-353). */
+export const GANTT_UNASSIGNED_WASH = 'oklch(0.94 0.06 85)';
+export const GANTT_UNASSIGNED_BAR_FILL = 'oklch(0.78 0.12 75)';
+export const GANTT_UNASSIGNED_CHIP_FILL = 'oklch(0.88 0.08 85)';
+
 /**
  * TZ-PRODUCTION-351 — dominant work type among work children.
  * Max sum of days; tie-break workTypeName (RU). All noTerm → max bar count, then name.

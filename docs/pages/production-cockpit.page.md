@@ -144,6 +144,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-344:** «По рабочим» — Worker → Module(+контекст) → WT; `expandedWorkerIds` / `expandedWorkerModuleIds`; default collapsed; read-only.
 - **TZ-PRODUCTION-351:** «По рабочим» — ФИО + сводная полоса tinted **dominant WT** (`accentHue`, max days); label wash + chip; milk fallback без hue. ▸ worker → module context rows; WT после ▸ модуля.
 - **TZ-PRODUCTION-352:** dominant WT tint для **назначенных** worker summary — `resolveWorkTypeHue` (catalog `accentHue` или hash/snap как у leaf WT); «Не назначен» без hue до 353.
+- **TZ-PRODUCTION-353:** banner «Без исполнителя» + link `/people`; «Не назначен» row amber wash/chip; bars остаются на Ганте.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
 - **TZ-PRODUCTION-347:** модули/виды работ с именами «сборк*/упаков*» (напр. «Финишная сборка», «Упаковка») скрыты из `buildGanttBars` до складской волны; каталог не удаляется.
@@ -208,6 +209,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-350** | DONE: mono milk ladder (hue ~82–90 L/C only); no rainbow jumps; WT accents kept |
 | **TZ-PRODUCTION-351** | DONE: worker FIO + summary bar tint dominant WT; ▸→modules; orders-mode milk ladder unchanged |
 | **TZ-PRODUCTION-352** | DONE: `resolveWorkTypeHue` hash fallback for assigned worker summary; unassigned hue null until 353 |
+| **TZ-PRODUCTION-353** | DONE: unassigned banner + `/people` CTA; amber «Не назначен» row; bars stay visible |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |

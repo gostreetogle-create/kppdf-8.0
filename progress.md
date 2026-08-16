@@ -1,3 +1,13 @@
+## [2026-08-17] — TZ-PRODUCTION-353 DONE — Gantt unassigned People gate
+
+**Исполнитель:** composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** banner «Без исполнителя» + `/people`; amber «Не назначен» row; `summarizeUnassignedGanttWork`.
+**Gates:** FE tsc PASS; jest model+gantt+cockpit **131/131**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-353.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-353-gantt-unassigned-people-gate.lock`
+**Next:** TZ-SALES-369 / warm deploy по PO.
+
 ## [2026-08-16] — TZ-PRODUCTION-352 DONE — Gantt worker tint hash fallback
 
 **Исполнитель:** composer-executor
