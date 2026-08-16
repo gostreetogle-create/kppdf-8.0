@@ -5,13 +5,13 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T14:57:07+03:00
+updated_at: 2026-08-16T15:11:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
 - **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
-- Freebuff: **TZ-GANTT-401** CLAIMED (не трогать production/**).
+- Freebuff 4–5ч: **TZ-OPS-GANTT-401-CLOSE** DONE → затем тесты **410–414** по очереди.
 
 ## NEXT (PO paste prompt)
 
@@ -32,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-GANTT-401 DONE — Gantt «По рабочим» (read-only)
+
+- Archive: `tasks/_archive/2026-08/TZ-GANTT-401.done.md`; lock `TZ-GANTT-401-gantt-by-workers-readonly.lock`; code `036b5fd5` (pushed). Toggle «По заказам | По рабочим» в Масштаб-флайауте; worker-группировка + «Не назначен»; read-only. Gates FE tsc + jest 3 suites/91. Deploy нет.
 
 ## [2026-08-16] — TZ-COMBINE-405 DONE — FE item DnD + freeze + ship-whole
 

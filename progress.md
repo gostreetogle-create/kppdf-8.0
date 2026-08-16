@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-GANTT-401 DONE — Gantt «По рабочим» (read-only)
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** Toggle «По заказам | По рабочим» в Масштаб-флайауте `/production`; worker-группировка строк по `workerLabel` («Не назначен» для пустых), сводная строка группы + всегда развёрнутые дети; worker-режим read-only (нет resize/drag). ACTIVE filter, buildGanttBars, facade не тронуты.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; `tsc -p tsconfig.spec.json --noEmit` PASS; jest `gantt-bar.model|gantt-bars.component|production-cockpit.page` PASS (3 suites / 91).
+**Archive:** `tasks/_archive/2026-08/TZ-GANTT-401.done.md`
+**Lock:** `.mimocode/locks/TZ-GANTT-401-gantt-by-workers-readonly.lock`
+**Code:** `036b5fd5`
+**Next:** TZ-TEST-GANTT-402 (deepen specs); deploy НЕ.
+
 ## [2026-08-16] — TZ-COMBINE-405 DONE — FE item DnD + freeze + ship-whole
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; deploy НЕ

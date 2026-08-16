@@ -1,9 +1,10 @@
 # TZ-GANTT-401 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-GANTT-401.md` (должен существовать, пока не archive)
-> Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
-> Spec: `tasks/TZ-GANTT-401-gantt-by-workers-readonly.md`
+> Status: **DONE**
+> Marker: _(removed — archived)_
+> Commit/push: по `docs/GIT-POLICY.md`
+> Spec: `tasks/_archive/2026-08/TZ-GANTT-401.done.md`
+> closed_at: 2026-08-16T15:10:00+03:00
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -49,19 +50,22 @@ cd frontend && pnpm exec jest --config jest.config.js --testPathPattern="gantt-b
 → PASS — 3 suites / 91 tests
 ```
 
-## Executor report
+## Executor report (auto)
 
-- что сделано: read-only toggle «По заказам | По рабочим» в Масштаб-флайауте `/production`; worker-группировка по `workerLabel` (группа «Не назначен» для пустых), сводная строка группы (span min…max) + всегда развёрнутые дети; worker-режим read-only (нет resize-handle/body-drag/order-meta). ACTIVE filter, `buildGanttBars`, facade не тронуты.
-- conflict disclosure: COMBINE-403 параллельно работает в orders/combine (не на мои keys).
-- known limits: worker-группы всегда развёрнуты (без per-worker collapse); `workerLabel` с несколькими людьми (через запятую) считается одной группой.
+- task: TZ-GANTT-401
+- outcome: DONE (closeout by wave TZ-OPS-GANTT-401-CLOSE)
+- commit: `036b5fd5cde0de407d2a9b41cb0d884cceb8601c` (pushed to origin/main)
+- what: read-only «По рабочим» toggle + worker grouping; archive + lock + _NOW + progress
+- conflict disclosure: none (COMBINE wave done on separate keys)
+- known limits: worker-группы всегда развёрнуты; `workerLabel` с несколькими людьми — одна группа
 
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Closed by wave TZ-OPS-GANTT-401-CLOSE (PO authorized closeout)
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- [x] closed_at: 2026-08-16T15:10:00+03:00
