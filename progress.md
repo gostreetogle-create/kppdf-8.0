@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-TEST-COMBINE-410 DONE — BE lane controller spec
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** Новый `order.controller.spec.ts` (thin): happy `shop` делегирует, `shipped`→400, unknown lineId→404; + service кейс unknown lineId 404.
+**Gates:** BE `tsc -p tsconfig.build.json --noEmit` PASS; jest `order.controller|order.service` PASS (2 suites / 62).
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-COMBINE-410.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-COMBINE-410-lane-controller-spec.lock`
+**Next:** TZ-TEST-COMBINE-411 (FE orders.service.patchLane spec); deploy НЕ.
+
 ## [2026-08-16] — TZ-GANTT-401 DONE — Gantt «По рабочим» (read-only)
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ

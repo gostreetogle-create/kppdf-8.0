@@ -1049,6 +1049,22 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.save).not.toHaveBeenCalled();
     });
 
+    it('rejects unknown lineId with 404 NotFound (HTTP-contract)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'draft',
+        items: [line('prep', 'line-a')],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'nope', 'shop'),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('not found') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
     it('writes boardLane + derived status and rollups Order.status', async () => {
       const { service, model } = createService();
       const doc = orderDoc({
