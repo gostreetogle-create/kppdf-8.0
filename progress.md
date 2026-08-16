@@ -6,7 +6,7 @@
 **Review:** Cursor Verdict PASS (docs-only).
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-SITE-SMOKE-401.done.md`
 **Journal:** `docs/audits/2026-08-16-site-operator-walk.md`
-**Commit:** `5ec96518e774bf5484d959d1e393fdf5a0345fde`
+**Commit:** `72ba21a8febff130627c7cb4a5307d24a041ae78`
 **Lock:** `.mimocode/locks/TZ-OPS-SITE-SMOKE-401.lock`
 **Next:** NAV-303 owns S1; UTF8-CLEAN stays PARK; deploy не выполнялся.
 

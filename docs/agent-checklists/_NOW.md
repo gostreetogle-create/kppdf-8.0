@@ -33,7 +33,7 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## [2026-08-16] — TZ-OPS-SITE-SMOKE-401 DONE — site operator walk PASS
 
-- Archive: `tasks/_archive/2026-08/TZ-OPS-SITE-SMOKE-401.done.md`; journal `docs/audits/2026-08-16-site-operator-walk.md`; lock `TZ-OPS-SITE-SMOKE-401.lock`; closeout `5ec96518`; Cursor PASS (docs-only). 24 routes PASS/SKIP/stub; catalog P0 OK; S1→NAV-303; S2→TZ-DATA-UTF8-CLEAN PARK. Deploy нет.
+- Archive: `tasks/_archive/2026-08/TZ-OPS-SITE-SMOKE-401.done.md`; journal `docs/audits/2026-08-16-site-operator-walk.md`; lock `TZ-OPS-SITE-SMOKE-401.lock`; closeout `72ba21a8`; Cursor PASS (docs-only). 24 routes PASS/SKIP/stub; catalog P0 OK; S1→NAV-303; S2→TZ-DATA-UTF8-CLEAN PARK. Deploy нет.
 
 ## [2026-08-16] — TZ-OPS-313…316 DONE — confidence ledger P2 remediation
 

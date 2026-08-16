@@ -55,6 +55,6 @@
 - **Cursor Verdict: PASS** (docs-only closeout 2026-08-16T13:49:13+03:00).
 - Archive: `tasks/_archive/2026-08/TZ-OPS-SITE-SMOKE-401.done.md`
 - Lock: `.mimocode/locks/TZ-OPS-SITE-SMOKE-401.lock`
-- Closeout commit: `5ec96518e774bf5484d959d1e393fdf5a0345fde`
+- Closeout commit: `72ba21a8febff130627c7cb4a5307d24a041ae78`
 - S1 handoff → NAV-303 TZ note; S2 → TZ-DATA-UTF8-CLEAN remains PARK.
 - Deploy нет.

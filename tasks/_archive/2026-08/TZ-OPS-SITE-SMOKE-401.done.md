@@ -48,7 +48,7 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN
 
-COMMIT: 5ec96518e774bf5484d959d1e393fdf5a0345fde
+COMMIT: 72ba21a8febff130627c7cb4a5307d24a041ae78
 
 ## Outcome
 
