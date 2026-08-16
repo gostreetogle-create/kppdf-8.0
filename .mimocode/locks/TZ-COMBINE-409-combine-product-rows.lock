@@ -1,0 +1,5 @@
+TZ-COMBINE-409
+zone: frontend/src/app/pages/dashboard/dashboard.page.ts
+closed_at: 2026-08-16T22:50:00+03:00
+outcome: DONE
+note: product-row accordion + scoped mini-kanban DnD; boardLane semantics unchanged
