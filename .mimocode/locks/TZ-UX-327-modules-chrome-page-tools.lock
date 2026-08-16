@@ -3,6 +3,6 @@ STATUS: DONE
 EXECUTOR: composer-frontend-executor
 CURSOR_VERDICT: PASS
 CLOSED_AT: 2026-08-16T13:00:00+03:00
-COMMIT: (filled after commit)
+COMMIT: 8b59195a3a76b47f9fb81bffb685036640fcc83b
 ARCHIVE: tasks/_archive/2026-08/TZ-UX-327.done.md
 NEXT: TZ-UX-328 materials chrome (по PO); deploy only on explicit PO command

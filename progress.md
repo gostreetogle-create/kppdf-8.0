@@ -81,7 +81,7 @@
 **Gates:** FE tsc PASS; modules.page Jest 27/27 PASS.
 **Review:** Cursor Verdict PASS (PO: закрыть без деплоя).
 **Archive:** `tasks/_archive/2026-08/TZ-UX-327.done.md`
-**Commit:** (filled after commit)
+**Commit:** 8b59195a3a76b47f9fb81bffb685036640fcc83b
 **Lock:** `.mimocode/locks/TZ-UX-327-modules-chrome-page-tools.lock`
 **Next:** TZ-UX-328 materials chrome по PO; deploy не выполнялся.
 

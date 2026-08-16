@@ -82,7 +82,7 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN
 
-COMMIT: (filled after commit)
+COMMIT: 8b59195a3a76b47f9fb81bffb685036640fcc83b
 
 ## Outcome
 
