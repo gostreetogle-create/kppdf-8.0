@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-OPS-CONFIDENCE-LEDGER-401 DONE — confidence ledger (LEDGER-01..12)
+**Исполнитель:** Buffy (freebuff audit) + cursor-composer closeout
+**Статус:** DONE; Cursor Verdict PASS (audit wave); deploy НЕ
+**Что:** 11 scorecards + `docs/audits/confidence/00-ROLLUP.md`; overall min **86** / median **91**; P0 **0**; P2 backlog TZ-OPS-313…316 (не стартованы).
+**Gates:** LEDGER-11 FE/BE/desktop tsc PASS; jest sample PASS (см. 11-gates.md).
+**Review:** Cursor Verdict PASS — closeout-only; remediation out of scope.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md`
+**Commit:** `PENDING_STAMP`
+**Lock:** `.mimocode/locks/TZ-OPS-CONFIDENCE-LEDGER-401.lock`
+**Next:** WAVE-CONFIDENCE-LEDGER-FLASH DONE; 313…316 только по PO; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-328 DONE — `/materials` chrome page-tools
 **Исполнитель:** cursor-composer (frontend executor + closeout)
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

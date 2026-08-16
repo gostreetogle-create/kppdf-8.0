@@ -5,15 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:00:04+03:00
+updated_at: 2026-08-16T13:10:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
 - **TZ-PHOTO-304** — photo frame meta (WAVE; Freebuff framing).
+- **TZ-NAV-303** / **TZ-OPS-SITE-SMOKE-401** — peer WIP (не трогать в ledger closeout).
 
 ## NEXT (PO paste prompt)
 
+- **WAVE-CONFIDENCE-LEDGER-FLASH DONE** (umbrella TZ-OPS-CONFIDENCE-LEDGER-401); rollup min86/median91 P0=0. Remediation **TZ-OPS-313…316** — только по явному PO claim.
 - **Единая пагинация:** WAVE #1–#3 **DONE** (**UX-340**, **UX-341**, **UX-342**).
 - Deploy **нет**. **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE; **TZ-UX-328 DONE** (materials chrome).
 
@@ -28,6 +30,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-OPS-CONFIDENCE-LEDGER-401 DONE — confidence ledger wave
+
+- Archive: `tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md`; rollup `docs/audits/confidence/00-ROLLUP.md`; min86/median91 P0=0; lock `TZ-OPS-CONFIDENCE-LEDGER-401.lock`; Cursor PASS. WAVE DONE. Deploy нет.
 
 ## [2026-08-16] — TZ-UX-328 DONE — `/materials` chrome page-tools
 

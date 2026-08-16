@@ -1,0 +1,10 @@
+TZ: TZ-OPS-CONFIDENCE-LEDGER-401
+STATUS: DONE
+EXECUTOR: Buffy (freebuff) + cursor-composer closeout
+CURSOR_VERDICT: PASS
+CLOSED_AT: 2026-08-16T13:10:00+03:00
+COMMIT: PENDING_STAMP
+ARCHIVE: tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md
+ROLLUP: docs/audits/confidence/00-ROLLUP.md
+SCORES: min=86 median=91 P0=0
+NEXT: TZ-OPS-313…316 only on explicit PO claim; deploy only on explicit PO command
