@@ -785,8 +785,10 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       position: relative;
       z-index: 1;
     }
-    /* Expanded order block frame (summary→children); weaker than meta-active. */
+    /* Expanded order block frame (summary→children); weaker than meta-active.
+       Summary header (group-start) = slight darker yellowish wash vs child mid. */
     .gantt-order-group-start {
+      background: oklch(0.94 0.025 85) !important;
       box-shadow:
         inset 0 2px 0 0 oklch(0.42 0.05 85),
         inset 2px 0 0 0 oklch(0.42 0.05 85),
@@ -812,7 +814,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-order-active.gantt-order-group-start,
     .gantt-order-active.gantt-order-group-end,
     .gantt-order-active.gantt-order-group-mid {
-      /* Meta-active frame wins over group chrome. */
+      /* Meta-active wash + frame win over group chrome / header tint. */
+      background: oklch(0.995 0.008 95) !important;
       box-shadow: inset 0 0 0 2px oklch(0.45 0.04 85);
     }
     :host-context(.dark) .gantt-order-active,
@@ -826,10 +829,21 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
     :host-context(.dark) .gantt-order-group-start,
     :host-context([data-theme='dark']) .gantt-order-group-start {
+      /* Header slightly lighter/warmer than mid wash. */
+      background: oklch(0.29 0.03 85) !important;
       box-shadow:
         inset 0 2px 0 0 oklch(0.78 0.07 85),
         inset 2px 0 0 0 oklch(0.78 0.07 85),
         inset -2px 0 0 0 oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-order-active.gantt-order-group-start,
+    :host-context(.dark) .gantt-order-active.gantt-order-group-end,
+    :host-context(.dark) .gantt-order-active.gantt-order-group-mid,
+    :host-context([data-theme='dark']) .gantt-order-active.gantt-order-group-start,
+    :host-context([data-theme='dark']) .gantt-order-active.gantt-order-group-end,
+    :host-context([data-theme='dark']) .gantt-order-active.gantt-order-group-mid {
+      background: oklch(0.28 0.02 260) !important;
+      box-shadow: inset 0 0 0 2px oklch(0.78 0.06 85);
     }
     :host-context(.dark) .gantt-order-group-start.gantt-order-group-end,
     :host-context([data-theme='dark']) .gantt-order-group-start.gantt-order-group-end {

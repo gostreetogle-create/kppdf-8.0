@@ -284,6 +284,30 @@ describe('GanttBarsComponent', () => {
     expect(clicks).toEqual([]);
   });
 
+  it('TZ-PRODUCTION-340: group-start summary wash marker vs mid children', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const sum = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const child = el.querySelector(`[data-test="gantt-label-${sample.id}"]`) as HTMLElement;
+    expect(sum.classList.contains('gantt-order-group-start')).toBe(true);
+    expect(sum.classList.contains('gantt-order-expanded')).toBe(true);
+    expect(child.classList.contains('gantt-order-expanded')).toBe(true);
+    expect(child.classList.contains('gantt-order-group-start')).toBe(false);
+
+    const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n');
+    expect(hostStyles).toContain('oklch(0.94 0.025 85)');
+    expect(hostStyles).toContain('oklch(0.97 0.012 95)');
+    expect(hostStyles).toContain('oklch(0.29 0.03 85)');
+  });
+
   it('renders legend and a summary with required range', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);

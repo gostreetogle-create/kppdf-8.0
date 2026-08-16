@@ -5,13 +5,13 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T21:15:00+03:00
-hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338+339 DONE**
+updated_at: 2026-08-16T20:50:00+03:00
+hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338–340 DONE**
 
 ## ACTIVE
 
 - _(idle Desktop)_ WAVE-DESKTOP-IA-SHELL: **TZD-54/55 DONE**. Full AI-in-NSIS = **TZD-56** backlog.
-- _(idle production)_ TZ-PRODUCTION-338/339 DONE — Gantt hydrate + expand/group frames.
+- _(idle production)_ TZ-PRODUCTION-338–340 DONE — hydrate + expand frames + summary header tint.
 
 ## NEXT (PO paste prompt)
 
@@ -26,6 +26,10 @@ hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338+3
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-340 DONE — Gantt summary header tint
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-340.done.md`; lock `TZ-PRODUCTION-340-gantt-summary-header-tint.lock`; FE tsc + jest gantt-bars **43/43**. Deploy нет.
 
 ## [2026-08-16] — TZ-PRODUCTION-339 DONE — Gantt крупные ▸/▾ + рамки групп
 

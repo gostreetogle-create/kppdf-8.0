@@ -148,7 +148,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
-- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). При открытом meta active имеет приоритет.
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). При открытом meta active имеет приоритет.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.

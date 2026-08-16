@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-340 DONE — Gantt summary header tint
+**Исполнитель:** composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `.gantt-order-group-start` чуть темнее/желтее children wash (light `0.94/0.025/85` vs `0.97/0.012/95`; dark header `0.29/0.03/85`); meta-active background wins. Chevron/estimate/PATCH без изменений.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bars.component` PASS (43/43).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-340.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-340-gantt-summary-header-tint.lock`
+**Next:** очередь production idle; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-338 DONE — Gantt hydrate parallel + non-blocking thumbs
 **Исполнитель:** freebuff (code) + composer-executor (gates/closeout)
 **Статус:** DONE; deploy НЕ
