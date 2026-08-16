@@ -1,23 +1,25 @@
-# NOW � ������������ �������� ����� ������� ������
+﻿# NOW � ������������ �������� ����� ������� ������
 
 > ������ ��� ������/resume. �� ������ ������� `_active-map.md`, `progress.md`
 > ��� root `STATUS.md`: ��� ������������ �������.
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T22:36:00+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-350 DONE (incl. 350 mono milk ladder); deploy deferred
+updated_at: 2026-08-16T22:50:00+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-350 DONE; COMBINE-409 DONE (product rows); 410 READY; deploy deferred
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–350 DONE**. Deploy — только «кати».
+- **WAVE-COMBINE-PRODUCT-ROWS:** TZ-COMBINE-409 DONE (product rows). TZ-COMBINE-410 READY (not claimed). Deploy forbidden.
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–350 DONE**. Deploy — явная команда.
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
 ## NEXT (PO paste prompt)
 
-1. Deploy Desktop **0.5.5** — только «кати» + VPN off
-2. Production warm deploy — только «кати»
+1. TZ-COMBINE-410 (optional polish) — when PO wants
+2. Deploy Desktop **0.5.5** — явная команда + VPN off
+3. Production warm deploy — явная команда
 
 
 ## Queue hygiene (not live)
@@ -27,6 +29,10 @@ hygiene: TZD-50-55 DONE; Gantt 338-350 DONE (incl. 350 mono milk ladder); deploy
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-409 DONE — Комбайн product rows + mini-kanban
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-409.done.md`; lock `TZ-COMBINE-409-combine-product-rows.lock`; FE tsc + jest dashboard.page **23/23**. Deploy нет. Sticky stages + OrderItem rows + scoped mini-kanban.
 
 ## [2026-08-16] — TZ-PRODUCTION-350 DONE — Gantt mono milk ladder
 

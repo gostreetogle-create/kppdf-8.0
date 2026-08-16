@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-409 DONE — Комбайн product rows + mini-kanban
+**Исполнитель:** composer-executor-combine-409
+**Статус:** DONE; deploy НЕ
+**Что:** column-kanban → sticky stages + OrderItem rows; expand = 5-cell mini-kanban; CDK DnD scoped to line; PATCH/freeze/ship reuse.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page PASS (23/23).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-409.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-409-combine-product-rows.lock`
+**Next:** TZ-COMBINE-410 polish (not claimed); deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-350 DONE — Gantt mono milk ladder
 **Исполнитель:** composer-executor-350
 **Статус:** DONE; deploy НЕ

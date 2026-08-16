@@ -141,112 +141,133 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
       </select>
     </div>
 
-    <!-- Kanban Board: item cards by boardLane + CDK DnD (TZ-COMBINE-405). -->
-    <div class="flex gap-4 overflow-x-auto pb-4 min-h-[60vh]">
-      @for (col of columns; track col.id) {
-        <div
-          class="flex-shrink-0 w-80 flex flex-col bg-paper-raised/50 rounded-sm border hairline overflow-hidden"
-        >
-          <div class="p-3 border-b hairline bg-paper">
-            <div class="font-medium flex justify-between items-center">
-              <span>{{ col.title }}</span>
-              <span class="text-xs text-muted-foreground bg-ink/5 px-2 py-0.5 rounded-full">
-                {{ columnCards(col.id).length }}
-              </span>
+    <!-- TZ-COMBINE-409: sticky stage headers + OrderItem rows (expand = mini-kanban). -->
+    <div class="min-h-[60vh] pb-4">
+      <div
+        class="sticky top-0 z-10 grid grid-cols-5 gap-0 border hairline rounded-sm bg-paper mb-3"
+        role="row"
+        aria-label="Стадии комбайна"
+      >
+        @for (col of columns; track col.id) {
+          <div class="px-2 py-2 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
+            <div class="text-xs font-medium truncate">{{ col.title }}</div>
+            <div class="text-[10px] text-muted-foreground truncate leading-snug">
+              {{ col.helper }}
             </div>
-            <p class="text-xs text-muted-foreground mt-1 leading-snug">{{ col.helper }}</p>
           </div>
+        }
+      </div>
 
+      <div class="flex flex-col gap-2" data-testid="combine-product-rows">
+        @for (card of itemCards(); track card.key) {
           <div
-            class="flex-1 p-2 flex flex-col gap-2 overflow-y-auto min-h-[8rem]"
-            cdkDropList
-            [id]="col.id"
-            [cdkDropListData]="col.id"
-            [cdkDropListConnectedTo]="connectedLists"
-            (cdkDropListDropped)="dropItem($event)"
+            class="border hairline rounded-sm bg-paper overflow-hidden"
+            [attr.data-line-key]="card.key"
           >
-            @for (card of columnCards(col.id); track card.key) {
-              <div
-                cdkDrag
-                [cdkDragData]="card"
-                class="bg-paper border hairline rounded-sm p-3 shadow-sm cursor-grab active:cursor-grabbing hover:border-ink/20 transition-colors"
+            <div class="flex items-center gap-3 px-3 py-2.5">
+              <button
+                type="button"
+                class="text-muted-foreground hover:text-ink w-5 shrink-0 text-sm"
+                [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-label]="isExpanded(card) ? 'Свернуть изделие' : 'Раскрыть изделие'"
+                (click)="toggleExpand(card)"
               >
-                <div class="flex justify-between items-start gap-2 mb-2">
-                  <button
-                    type="button"
-                    class="font-mono text-xs font-medium hover:underline text-left shrink-0"
-                    (click)="openOrder(card.order); $event.stopPropagation()"
-                    title="Открыть заказ"
-                  >
-                    №{{ card.orderNumber }}
-                  </button>
-                  <button
-                    type="button"
-                    class="text-muted-foreground hover:text-ink p-1 -mr-1 -mt-1 rounded-sm hover:bg-ink/5 shrink-0"
-                    (click)="editProduct(card.item.productId); $event.stopPropagation()"
-                    title="Редактировать изделие"
-                  >
-                    <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
-                  </button>
-                </div>
+                {{ isExpanded(card) ? '▾' : '▸' }}
+              </button>
 
-                <button
-                  type="button"
-                  class="text-sm font-medium text-left w-full line-clamp-2 hover:underline"
-                  [title]="card.productName"
-                  (click)="openOrder(card.order)"
-                >
-                  {{ card.productName }}
-                </button>
+              <button
+                type="button"
+                class="font-mono text-xs font-medium hover:underline shrink-0"
+                (click)="openOrder(card.order); $event.stopPropagation()"
+                title="Открыть заказ"
+              >
+                №{{ card.orderNumber }}
+              </button>
 
-                <div class="text-xs text-muted-foreground mt-2">
-                  {{ card.quantity }} {{ card.unit || 'шт' }}
-                </div>
+              <button
+                type="button"
+                class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline"
+                [title]="card.productName"
+                (click)="toggleExpand(card)"
+              >
+                {{ card.productName }}
+              </button>
 
-                <!-- TZ-COMBINE-407: ghost — модули, уехавшие вперёд по колонкам -->
-                @for (ghost of divergedModules(card.order, card.item); track ghost.moduleId) {
-                  <div
-                    class="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-ink/5 rounded px-2 py-0.5"
-                    title="Модуль в другой колонке"
-                  >
-                    Модуль в: {{ laneTitle(ghost.lane) }}
-                  </div>
+              <span class="text-xs text-muted-foreground shrink-0">
+                {{ card.quantity }} {{ card.unit || 'шт' }}
+              </span>
+
+              <div
+                class="flex gap-0.5 shrink-0 w-24"
+                role="img"
+                [attr.aria-label]="'Стадии: ' + activeLaneSummary(card)"
+              >
+                @for (col of columns; track col.id) {
+                  <span
+                    class="h-1.5 flex-1 rounded-sm"
+                    [class.bg-ink]="laneIndicatorActive(card, col.id)"
+                    [class.bg-ink/15]="!laneIndicatorActive(card, col.id)"
+                    [title]="col.title"
+                  ></span>
                 }
+              </div>
 
-                <button
-                  type="button"
-                  class="mt-2 block text-xs text-muted-foreground hover:text-ink"
-                  (click)="toggleExpand(card); $event.stopPropagation()"
-                >
-                  {{ isExpanded(card) ? 'Свернуть модули' : 'Модули' }}
-                </button>
+              <button
+                type="button"
+                class="text-muted-foreground hover:text-ink p-1 rounded-sm hover:bg-ink/5 shrink-0"
+                (click)="editProduct(card.item.productId); $event.stopPropagation()"
+                title="Редактировать изделие"
+              >
+                <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
+              </button>
+            </div>
 
-                @if (isExpanded(card)) {
-                  <div class="mt-2 flex flex-col gap-1">
-                    @for (row of moduleRows(card); track row.moduleId) {
+            @if (isExpanded(card)) {
+              <div
+                class="grid grid-cols-5 gap-0 border-t hairline min-h-[4.5rem]"
+                data-testid="combine-mini-kanban"
+              >
+                @for (col of columns; track col.id) {
+                  <div
+                    class="border-r hairline last:border-r-0 p-1.5 flex flex-col gap-1 min-h-[4.5rem] min-w-0 bg-paper-raised/30"
+                    cdkDropList
+                    [id]="rowDropListId(card, col.id)"
+                    [cdkDropListData]="col.id"
+                    [cdkDropListConnectedTo]="rowConnectedLists(card)"
+                    (cdkDropListDropped)="dropItem($event)"
+                  >
+                    @for (row of modulesInLane(card, col.id); track row.moduleId) {
                       <div
                         cdkDrag
                         [cdkDragData]="moduleDrag(card, row)"
-                        class="text-xs border hairline rounded px-2 py-1 bg-paper-raised cursor-grab active:cursor-grabbing"
-                        title="Перетащите в колонку"
+                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing truncate"
+                        [title]="row.name"
                       >
                         {{ row.name }}
-                        <span class="text-muted-foreground">· {{ laneTitle(row.lane) }}</span>
                       </div>
                     }
-                    @if (moduleRows(card).length === 0) {
-                      <div class="text-xs text-muted-foreground">Нет модулей</div>
+                    @if (showWholeProductChip(card, col.id)) {
+                      <div
+                        cdkDrag
+                        [cdkDragData]="card"
+                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing"
+                        title="Перетащите по стадиям"
+                      >
+                        Изделие целиком
+                      </div>
                     }
                   </div>
                 }
               </div>
             }
-            @if (columnCards(col.id).length === 0) {
-              <div class="text-xs text-muted-foreground text-center py-6">Нет изделий</div>
-            }
           </div>
-        </div>
-      }
+        }
+        @if (itemCards().length === 0) {
+          <div class="text-sm text-muted-foreground text-center py-10 border hairline rounded-sm">
+            Нет изделий
+          </div>
+        }
+      </div>
     </div>
   `,
 })
@@ -307,13 +328,54 @@ export class DashboardPage {
     },
   ];
 
-  protected readonly connectedLists = this.columns.map((c) => c.id);
-
   protected readonly filterOrderId = signal<string>('');
-  /** TZ-COMBINE-407 — раскрытое изделие (card.key) или null. */
+  /** TZ-COMBINE-407 — раскрытое изделие (card.key) или null. Accordion: один ряд. */
   protected readonly expandedKey = signal<string | null>(null);
   /** TZ-COMBINE-407 — модули изделия по productId (lazy на раскрытие). */
   protected readonly modulesByProduct = signal<Record<string, ProductModule[]>>({});
+
+  /** TZ-COMBINE-409 — drop list id scoped to expanded line (не глобальный board). */
+  protected rowDropListId(card: CombineItemCard, lane: BoardLane): string {
+    return `${card.key}::${lane}`;
+  }
+
+  protected rowConnectedLists(card: CombineItemCard): string[] {
+    return this.columns.map((c) => this.rowDropListId(card, c.id));
+  }
+
+  /** Индикатор стадии: модуль в lane или (без moduleLanes) effective lane линии. */
+  protected laneIndicatorActive(card: CombineItemCard, lane: BoardLane): boolean {
+    const loaded = this.modulesByProduct()[card.item.productId];
+    if (loaded && loaded.length > 0) {
+      return this.moduleRows(card).some((r) => r.lane === lane);
+    }
+    const mls = (card.order.moduleLanes ?? []).filter((ml) => ml.lineId === card.lineId);
+    if (mls.length > 0) {
+      return mls.some((ml) => ml.lane === lane);
+    }
+    return this.lineEffectiveLane(card.order, card.item) === lane;
+  }
+
+  protected activeLaneSummary(card: CombineItemCard): string {
+    return (
+      this.columns
+        .filter((c) => this.laneIndicatorActive(card, c.id))
+        .map((c) => c.title)
+        .join(', ') || '—'
+    );
+  }
+
+  protected modulesInLane(card: CombineItemCard, lane: BoardLane): CombineModuleRow[] {
+    return this.moduleRows(card).filter((r) => r.lane === lane);
+  }
+
+  /** Без модулей в каталоге — один чип «целиком» в effective lane (polish 410). */
+  protected showWholeProductChip(card: CombineItemCard, lane: BoardLane): boolean {
+    const loaded = this.modulesByProduct()[card.item.productId];
+    if (loaded === undefined) return false;
+    if (loaded.length > 0) return false;
+    return this.lineEffectiveLane(card.order, card.item) === lane;
+  }
 
   constructor() {
     this.listRes.reload();
@@ -481,7 +543,8 @@ export class DashboardPage {
     }
 
     const card = data as CombineItemCard | undefined;
-    const targetLane = event.container.id as BoardLane;
+    /** TZ-COMBINE-409: prefer cdkDropListData (lane); id may be `${key}::lane`. */
+    const targetLane = (event.container.data ?? event.container.id) as BoardLane;
     if (!card || !targetLane) return;
     if (card.boardLane === targetLane) return;
 
@@ -580,9 +643,9 @@ export class DashboardPage {
     });
   }
 
-  /** TZ-COMBINE-407 — DnD модуля по колонкам → PATCH module lane. */
+  /** TZ-COMBINE-407/409 — DnD модуля по ячейкам ряда → PATCH module lane. */
   protected dropModule(event: CdkDragDrop<BoardLane>, drag: CombineModuleDrag): void {
-    const targetLane = event.container.id as BoardLane;
+    const targetLane = (event.container.data ?? event.container.id) as BoardLane;
     if (!targetLane || drag.lane === targetLane) return;
     if (targetLane === 'shipped') {
       this.toast.error('Модуль нельзя отправить в «Отгружены» — отгрузка целого заказа.');

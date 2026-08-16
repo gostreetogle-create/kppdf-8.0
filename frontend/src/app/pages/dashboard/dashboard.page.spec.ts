@@ -791,6 +791,9 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
       isExpanded: (c: CombineItemCard) => boolean;
       moduleRows: (c: CombineItemCard) => CombineModuleRow[];
       columnCards: (id: BoardLane) => CombineItemCard[];
+      modulesInLane: (c: CombineItemCard, lane: BoardLane) => CombineModuleRow[];
+      rowConnectedLists: (c: CombineItemCard) => string[];
+      columns: CombineColumn[];
     };
 
     const card = page.columnCards('prep')[0]!;
@@ -809,5 +812,71 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     const rows = page.moduleRows(card);
     expect(rows.map((r) => r.name)).toEqual(['Каркас', 'Полотно']);
     expect(rows.map((r) => r.lane)).toEqual(['prep', 'prep']);
+  });
+
+  it('TZ-COMBINE-409: itemCards is the product-row list (not column-first UI)', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial([
+      orderOf({
+        items: [
+          itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Мангал' }),
+          itemOf({ lineId: 'L2', boardLane: 'shop', productId: 'p2', productName: 'Стеллаж' }),
+        ],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      itemCards: () => CombineItemCard[];
+      laneIndicatorActive: (c: CombineItemCard, lane: BoardLane) => boolean;
+    };
+    const rows = page.itemCards();
+    expect(rows.map((c) => c.productName)).toEqual(['Мангал', 'Стеллаж']);
+    expect(page.laneIndicatorActive(rows[0]!, 'prep')).toBe(true);
+    expect(page.laneIndicatorActive(rows[0]!, 'shop')).toBe(false);
+    expect(page.laneIndicatorActive(rows[1]!, 'shop')).toBe(true);
+  });
+
+  it('TZ-COMBINE-409: expand scopes 5 drop cells to the line', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial([
+      orderOf({
+        items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Забор' })],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      itemCards: () => CombineItemCard[];
+      toggleExpand: (c: CombineItemCard) => void;
+      rowConnectedLists: (c: CombineItemCard) => string[];
+      rowDropListId: (c: CombineItemCard, lane: BoardLane) => string;
+      modulesInLane: (c: CombineItemCard, lane: BoardLane) => CombineModuleRow[];
+      columns: CombineColumn[];
+    };
+
+    const card = page.itemCards()[0]!;
+    page.toggleExpand(card);
+    const lists = page.rowConnectedLists(card);
+    expect(lists).toHaveLength(5);
+    expect(lists).toEqual(page.columns.map((c) => page.rowDropListId(card, c.id)));
+    expect(lists.every((id) => id.startsWith(card.key + '::'))).toBe(true);
+    expect(lists).not.toContain('prep');
+
+    const modReq = httpMock.expectOne(
+      (r) => r.url.startsWith(`${baseUrl}/modules`) && r.method === 'GET',
+    );
+    modReq.flush([{ _id: 'm1', name: 'Столб', workTypes: [], materials: [] }]);
+
+    expect(page.modulesInLane(card, 'design').map((r) => r.name)).toEqual(['Столб']);
+    expect(page.modulesInLane(card, 'prep')).toHaveLength(0);
   });
 });
