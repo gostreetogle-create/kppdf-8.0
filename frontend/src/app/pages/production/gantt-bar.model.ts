@@ -666,7 +666,13 @@ export function dominantWorkTypeAccentHue(children: readonly GanttBar[]): number
   const workKids = children.filter(isWorkBar);
   if (!workKids.length) return null;
 
-  type Agg = { workTypeName: string; accentHue: number | null; daySum: number; barCount: number };
+  type Agg = {
+    workTypeId: string;
+    workTypeName: string;
+    accentHue: number | null;
+    daySum: number;
+    barCount: number;
+  };
   const map = new Map<string, Agg>();
   let anyTerm = false;
 
@@ -675,6 +681,7 @@ export function dominantWorkTypeAccentHue(children: readonly GanttBar[]): number
     let agg = map.get(key);
     if (!agg) {
       agg = {
+        workTypeId: key,
         workTypeName: c.workTypeName,
         accentHue: c.accentHue ?? null,
         daySum: 0,
@@ -698,7 +705,9 @@ export function dominantWorkTypeAccentHue(children: readonly GanttBar[]): number
     return a.workTypeName.localeCompare(b.workTypeName, 'ru');
   });
 
-  return ranked[0]?.accentHue ?? null;
+  const winner = ranked[0];
+  if (!winner) return null;
+  return resolveWorkTypeHue(winner.workTypeId, winner.accentHue);
 }
 
 /** One worker-group summary: span = min(child.start)…max(child.end). */
@@ -741,7 +750,7 @@ export function buildWorkerSummaryBar(
     endDate: maxEnd,
     usedFallbackToday,
     workerLabel: label,
-    accentHue: dominantWorkTypeAccentHue(children),
+    accentHue: label === UNASSIGNED_WORKER_LABEL ? null : dominantWorkTypeAccentHue(children),
     kind: 'summary',
   };
 }
@@ -1274,6 +1283,19 @@ export function snapWorkTypeHue(raw: number): number {
   return best;
 }
 
+/** Resolve snapped hue: catalog accentHue or stable hash from workTypeId. */
+export function resolveWorkTypeHue(workTypeId: string, accentHue?: number | null): number {
+  let raw = 0;
+  if (accentHue != null && Number.isFinite(accentHue)) {
+    raw = accentHue;
+  } else {
+    for (let i = 0; i < workTypeId.length; i++) {
+      raw = (raw * 31 + workTypeId.charCodeAt(i)) >>> 0;
+    }
+  }
+  return snapWorkTypeHue(raw);
+}
+
 /** Stable OKLCH fill from workTypeId. Optional catalog accentHue (snapped to 7 buckets). */
 export function workTypeOklch(
   workTypeId: string,
@@ -1281,15 +1303,7 @@ export function workTypeOklch(
   lightness = 0.72,
   hueOverride?: number | null,
 ): string {
-  let raw = 0;
-  if (hueOverride != null && Number.isFinite(hueOverride)) {
-    raw = hueOverride;
-  } else {
-    for (let i = 0; i < workTypeId.length; i++) {
-      raw = (raw * 31 + workTypeId.charCodeAt(i)) >>> 0;
-    }
-  }
-  const h = snapWorkTypeHue(raw);
+  const h = resolveWorkTypeHue(workTypeId, hueOverride);
   return `oklch(${lightness} ${chroma} ${h})`;
 }
 

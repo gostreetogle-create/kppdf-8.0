@@ -5,18 +5,19 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T00:05:00+03:00
-hygiene: PRODUCTION-351 DONE; SALES-369 drain next
+updated_at: 2026-08-16T23:50:00+03:00
+hygiene: swarm 353 + 369; warm deploy (PO VPN off)
 
 ## ACTIVE
 
-- _(idle)_ — queue empty after 351
-- **Drain:** SALES-369… (`PROMPT-FREEBUFF-TASKS-DRAIN`) — next when PO assigns
+- **TZ-PRODUCTION-353** (Gantt unassigned banner + People CTA)
+- **TZ-SALES-369**
+- Prompt: `tasks/PROMPT-TOMORROW-GANTT-THEN-DRAIN.md`
 
-## NEXT (PO paste prompt)
+## NEXT (PO)
 
-1. Hard-refresh `/production` → «По рабочим» — verify worker FIO tint + ▸ modules
-2. Freebuff drain / Deploy — по слову PO
+1. После роя: hard-refresh `/production` «По рабочим»
+2. Warm deploy (WIPE=false) — PO разрешил, VPN off
 
 
 ## Queue hygiene (not live)
@@ -25,6 +26,14 @@ hygiene: PRODUCTION-351 DONE; SALES-369 drain next
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZD-39 DONE — Basic Auth + X-Access-Token coexist
+
+- Archive: `tasks/_archive/2026-08/TZD-39.done.md`; lock `TZD-39-desktop-basic-auth-coexist.lock`; gates BE 7/7, FE 7/7, desktop 114/114 @ fd31ab5. Deploy/smoke deferred PO swarm warm.
+
+## [2026-08-16] — TZ-PRODUCTION-352 DONE — worker tint hash fallback
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-352.done.md`; lock `TZ-PRODUCTION-352-gantt-workers-tint-fallback.lock`; FE tsc + jest gantt **102/102**. Deploy нет. `resolveWorkTypeHue` for assigned worker summary when catalog accentHue null; unassigned hue null until 353.
 
 ## [2026-08-17] — TZ-PRODUCTION-351 DONE — worker FIO WT tint
 

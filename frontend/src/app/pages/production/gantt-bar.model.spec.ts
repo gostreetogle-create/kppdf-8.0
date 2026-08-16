@@ -11,6 +11,7 @@ import {
   buildWorkerTreeBars,
   calendarSpanDays,
   dominantWorkTypeAccentHue,
+  resolveWorkTypeHue,
   filterOrdersForRail,
   formatWorkerModuleContextLabel,
   ganttSkipProductNames,
@@ -1187,7 +1188,7 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       accentHue: 170,
       occurrence: 2,
     });
-    expect(dominantWorkTypeAccentHue([weld, paint])).toBe(170);
+    expect(dominantWorkTypeAccentHue([weld, paint])).toBe(resolveWorkTypeHue('wt-paint', 170));
   });
 
   it('TZ-PRODUCTION-351: dominantWorkTypeAccentHue tie-breaks workTypeName RU', () => {
@@ -1206,7 +1207,7 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       accentHue: 140,
       occurrence: 2,
     });
-    expect(dominantWorkTypeAccentHue([a, b])).toBe(160);
+    expect(dominantWorkTypeAccentHue([a, b])).toBe(resolveWorkTypeHue('wt-a', 160));
   });
 
   it('TZ-PRODUCTION-351: dominantWorkTypeAccentHue all noTerm → max bar count', () => {
@@ -1236,7 +1237,7 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       accentHue: 170,
       occurrence: 3,
     });
-    expect(dominantWorkTypeAccentHue([a, b1, b2])).toBe(170);
+    expect(dominantWorkTypeAccentHue([a, b1, b2])).toBe(resolveWorkTypeHue('wt-b', 170));
   });
 
   it('TZ-PRODUCTION-351: worker summary gets dominant WT accentHue', () => {
@@ -1258,8 +1259,56 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
         occurrence: 2,
       }),
     ])[0]!;
-    expect(summary.accentHue).toBe(170);
+    expect(summary.accentHue).toBe(resolveWorkTypeHue('wt2', 170));
     expect(summary.workTypeId).toBe(WORKER_SUMMARY_WORK_TYPE_ID);
+  });
+
+  it('TZ-PRODUCTION-352: dominantWorkTypeAccentHue resolves hash when child accentHue null', () => {
+    const weld = workBar({
+      id: 'a',
+      workTypeId: 'wt-weld-null',
+      workTypeName: 'Сварка',
+      days: 2,
+      accentHue: null,
+    });
+    const paint = workBar({
+      id: 'b',
+      workTypeId: 'wt-paint-null',
+      workTypeName: 'Покраска',
+      days: 5,
+      accentHue: null,
+      occurrence: 2,
+    });
+    const hue = dominantWorkTypeAccentHue([weld, paint]);
+    expect(hue).not.toBeNull();
+    expect(hue).toBe(resolveWorkTypeHue('wt-paint-null', null));
+    expect(resolveWorkTypeHue('wt-weld-null', null)).not.toBe(hue);
+  });
+
+  it('TZ-PRODUCTION-352: worker summary with null-accent children gets resolved hue', () => {
+    const summary = buildWorkerTreeBars([
+      workBar({
+        id: 'a',
+        workerLabel: 'Иванов Иван',
+        workTypeId: 'wt-hash-a',
+        workTypeName: 'Сварка',
+        days: 2,
+        accentHue: null,
+      }),
+    ])[0]!;
+    expect(summary.accentHue).toBe(resolveWorkTypeHue('wt-hash-a', null));
+  });
+
+  it('TZ-PRODUCTION-352: unassigned worker summary keeps null accentHue (353 chrome)', () => {
+    const summary = buildWorkerTreeBars([
+      workBar({
+        id: 'a',
+        workerLabel: '—',
+        workTypeId: 'wt-hash-a',
+        accentHue: null,
+      }),
+    ])[0]!;
+    expect(summary.accentHue).toBeNull();
   });
 
   it('TZ-PRODUCTION-351: expand worker → module rows only (data-row-kind module)', () => {

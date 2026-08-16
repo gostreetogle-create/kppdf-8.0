@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-PRODUCTION-352 DONE — Gantt worker tint hash fallback
+
+**Исполнитель:** composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `resolveWorkTypeHue`; assigned worker summary tint when catalog `accentHue` null; unassigned summary hue null (353).
+**Gates:** FE tsc PASS; jest gantt-bar + gantt-bars **102/102**.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-352.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-352-gantt-workers-tint-fallback.lock`
+**Next:** TZ-PRODUCTION-353 unassigned banner.
+
 ## [2026-08-16] — TZ-COMBINE-415 DONE — Комбайн: читаемые № заказа + text-ink
 
 **Исполнитель:** composer-executor-415

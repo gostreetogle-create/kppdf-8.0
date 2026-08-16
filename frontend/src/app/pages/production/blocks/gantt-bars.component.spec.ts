@@ -16,7 +16,12 @@ import {
   snapMoveDeltaDays,
 } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
-import { UNASSIGNED_WORKER_LABEL, workTypeOklch, workTypeWash } from '../gantt-bar.model';
+import {
+  UNASSIGNED_WORKER_LABEL,
+  resolveWorkTypeHue,
+  workTypeOklch,
+  workTypeWash,
+} from '../gantt-bar.model';
 
 describe('GanttBarsComponent', () => {
   const sample: GanttBar = {
@@ -1599,15 +1604,16 @@ describe('GanttBarsComponent', () => {
       isWorkerSummary: boolean;
     }>;
     const workerRow = rows.find((r) => r.rowKind === 'worker')!;
-    expect(workerRow.bar.accentHue).toBe(paintHue);
-    const wtFill = workTypeOklch('worker-tint', 0.12, 0.72, paintHue);
-    const chipFill = workTypeOklch('worker-tint', 0.14, 0.76, paintHue);
+    const resolvedPaintHue = resolveWorkTypeHue('wt2', paintHue);
+    expect(workerRow.bar.accentHue).toBe(resolvedPaintHue);
+    const wtFill = workTypeOklch('worker-tint', 0.12, 0.72, resolvedPaintHue);
+    const chipFill = workTypeOklch('worker-tint', 0.14, 0.76, resolvedPaintHue);
     expect(cmp.barFill(workerRow)).toBe(wtFill);
     expect(cmp.barFill(workerRow)).not.toBe(GANTT_SUMMARY_BAR_FILL.order);
     expect(cmp.workerLabelWash({ isWorkerSummary: true, bar: workerRow.bar })).toBe(
-      workTypeWash('worker-tint', paintHue),
+      workTypeWash('worker-tint', resolvedPaintHue),
     );
-    expect(cmp.workerChipFill(paintHue)).toBe(chipFill);
+    expect(cmp.workerChipFill(resolvedPaintHue)).toBe(chipFill);
 
     const labelBtn = el.querySelector(
       '[data-test="gantt-label-worker-summary:Иванов Иван"] .gantt-label-btn',
@@ -1632,6 +1638,38 @@ describe('GanttBarsComponent', () => {
     const workerRow = rows.find((r) => r.rowKind === 'worker')!;
     expect(workerRow.bar.accentHue).toBeNull();
     expect(cmp.barFill(workerRow)).toBe(GANTT_SUMMARY_BAR_FILL.order);
+  });
+
+  it('TZ-PRODUCTION-352: worker summary with null catalog accent gets chip/wash/barFill', () => {
+    const assigned: GanttBar = {
+      ...sample,
+      workerLabel: 'Иванов Иван',
+      accentHue: null,
+    };
+    const resolvedHue = resolveWorkTypeHue(assigned.workTypeId, null);
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    const el: HTMLElement = fixture.nativeElement;
+    const rows = cmp['rows']() as Array<{
+      bar: GanttBar;
+      rowKind: 'order' | 'worker' | 'product' | 'module' | 'work';
+      isWorkerSummary: boolean;
+    }>;
+    const workerRow = rows.find((r) => r.rowKind === 'worker')!;
+    expect(workerRow.bar.accentHue).toBe(resolvedHue);
+    expect(cmp.barFill(workerRow)).toBe(workTypeOklch('worker-tint', 0.12, 0.72, resolvedHue));
+    expect(cmp.workerLabelWash({ isWorkerSummary: true, bar: workerRow.bar })).toBe(
+      workTypeWash('worker-tint', resolvedHue),
+    );
+    const labelBtn = el.querySelector(
+      '[data-test="gantt-label-worker-summary:Иванов Иван"] .gantt-label-btn',
+    ) as HTMLElement;
+    expect(labelBtn.getAttribute('data-worker-tint')).toBe('true');
   });
 
   it('TZ-PRODUCTION-351: expand worker → module row-kind only (not raw WT)', () => {
