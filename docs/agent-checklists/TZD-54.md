@@ -1,6 +1,6 @@
 # TZD-54 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-54.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md`
 > Spec: `tasks/TZD-54-desktop-ia-three-doors.md`
@@ -64,10 +64,10 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict **PASS** 2026-08-16 (SHA `7db734d2a3d2fb9ddd9b5499561a44202bff5796`; 3 двери + баннер AI + openModelFolder; gates claimed PASS; deploy нет). Next: closeout → TZD-55.
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active` (archive `tasks/_archive/2026-08/TZD-54.done.md`; lock `.mimocode/locks/TZD-54-desktop-ia-three-doors.lock`)
+- [x] Status = DONE
+- closed_at: 2026-08-16T20:29:00+03:00
