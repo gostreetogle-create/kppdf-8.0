@@ -39,7 +39,7 @@ outcome: DONE
 closed_at: 2026-08-16T17:25:00+03:00
 closed_by: freebuff (deepseek-v4-pro)
 TZ: TZ-COMBINE-406
-COMMIT: _(stamp after commit)_
+COMMIT: 8fbf8589
 layer: 2
 conflict_keys: backend/src/modules/order/order.schema.ts; backend/src/modules/order/order.service.ts; backend/src/modules/order/order.controller.ts; backend/src/modules/order/dto/patch-module-lane.dto.ts; backend/src/modules/order/order.service.spec.ts; backend/src/modules/order/order.controller.spec.ts; docs/COUPLING-MAP.md
 protects: order moduleLanes SoT + module lane PATCH API
