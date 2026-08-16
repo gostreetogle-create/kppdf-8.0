@@ -18,6 +18,13 @@ export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 /** TZ-COMBINE-402+: колонки Комбайна (`/design/combine`). */
 export type BoardLane = 'prep' | 'design' | 'shop' | 'to_ship' | 'shipped';
 
+/** TZ-COMBINE-406: разреженная полоса модуля изделия (ключ lineId, moduleId). */
+export interface ModuleLane {
+  lineId: string;
+  moduleId: string;
+  lane: BoardLane;
+}
+
 export interface OrderItem {
   productId: string;
   productName?: string;
@@ -79,6 +86,8 @@ export interface Order {
   materialsSource?: 'own' | 'customer';
   isActive?: boolean;
   items?: OrderItem[];
+  /** TZ-COMBINE-406: полосы модулей (sparse — только явно сдвинутые). */
+  moduleLanes?: ModuleLane[];
   deliveryAddress?: string;
   managerId?: string;
   priority?: OrderPriority;
@@ -186,6 +195,23 @@ export class OrdersService {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${orderId}/lines/${lineId}/lane`, {
       lane,
     });
+  }
+
+  /**
+   * TZ-COMBINE-406/407 — смена колонки Комбайна модуля изделия.
+   * `lane=shipped` на бэке запрещён (только POST /ship).
+   */
+  patchModuleLane(
+    orderId: string,
+    lineId: string,
+    moduleId: string,
+    lane: BoardLane,
+  ): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(
+      this.http,
+      `${this.baseUrl}/orders/${orderId}/lines/${lineId}/modules/${moduleId}/lane`,
+      { lane },
+    );
   }
 
   update(id: string, payload: Partial<Order>): Observable<SilentResult<Order>> {

@@ -148,6 +148,16 @@ describe('OrdersService', () => {
     expect(result).toEqual(expect.objectContaining({ ok: false }));
   });
 
+  it('patchModuleLane() PATCHes /api/orders/:id/lines/:lineId/modules/:moduleId/lane', () => {
+    svc.patchModuleLane('o1', 'line-a', 'module-m', 'design').subscribe((res) => {
+      if (res.ok) expect(res.data.status).toBe('confirmed');
+    });
+    const req = httpMock.expectOne('http://test/api/orders/o1/lines/line-a/modules/module-m/lane');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ lane: 'design' });
+    req.flush({ _id: 'o1', number: 'ORD-001', status: 'confirmed', items: [] });
+  });
+
   it('remove() DELETEs /api/orders/:id', () => {
     svc.remove('o1').subscribe((res) => {
       if (res.ok) expect(res.data).toBeUndefined();

@@ -11,7 +11,11 @@ import { httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
 import { LucideAngularModule, Pencil } from 'lucide-angular';
 import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chrome.component';
-import { BoardLane, Order, OrderItem, OrdersService } from '../orders/orders.service';
+import { BoardLane, ModuleLane, Order, OrderItem, OrdersService } from '../orders/orders.service';
+import {
+  ProductModule,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
 import { DashboardDialogService } from '../../shared/services/dashboard-dialog.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
@@ -41,7 +45,40 @@ export interface CombineColumn {
   helper: string;
 }
 
+/** TZ-COMBINE-407 — строка модуля внутри раскрытого изделия. */
+export interface CombineModuleRow {
+  moduleId: string;
+  name: string;
+  lane: BoardLane;
+}
+
+/** TZ-COMBINE-407 — payload перетаскиваемого модуля. */
+export interface CombineModuleDrag {
+  kind: 'module';
+  orderId: string;
+  lineId: string;
+  moduleId: string;
+  lane: BoardLane;
+}
+
 type LaneSnapshot = { orderId: string; lineId: string; boardLane: BoardLane };
+
+/** TZ-COMBINE-406 — порядок колонок для «min» полосы модулей (prep = раньше всех). */
+const LANE_ORDER: Record<BoardLane, number> = {
+  prep: 0,
+  design: 1,
+  shop: 2,
+  to_ship: 3,
+  shipped: 4,
+};
+
+const LANE_TITLE: Record<BoardLane, string> = {
+  prep: 'Комплектация',
+  design: 'Проектирование',
+  shop: 'В цехе',
+  to_ship: 'К отгрузке',
+  shipped: 'Отгружены',
+};
 
 /** TZ-COMBINE-402 legacy: OrderItem.status → boardLane when lane missing. */
 const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> = {
@@ -165,6 +202,43 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                 <div class="text-xs text-muted-foreground mt-2">
                   {{ card.quantity }} {{ card.unit || 'шт' }}
                 </div>
+
+                <!-- TZ-COMBINE-407: ghost — модули, уехавшие вперёд по колонкам -->
+                @for (ghost of divergedModules(card.order, card.item); track ghost.moduleId) {
+                  <div
+                    class="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-ink/5 rounded px-2 py-0.5"
+                    title="Модуль в другой колонке"
+                  >
+                    Модуль в: {{ laneTitle(ghost.lane) }}
+                  </div>
+                }
+
+                <button
+                  type="button"
+                  class="mt-2 block text-xs text-muted-foreground hover:text-ink"
+                  (click)="toggleExpand(card); $event.stopPropagation()"
+                >
+                  {{ isExpanded(card) ? 'Свернуть модули' : 'Модули' }}
+                </button>
+
+                @if (isExpanded(card)) {
+                  <div class="mt-2 flex flex-col gap-1">
+                    @for (row of moduleRows(card); track row.moduleId) {
+                      <div
+                        cdkDrag
+                        [cdkDragData]="moduleDrag(card, row)"
+                        class="text-xs border hairline rounded px-2 py-1 bg-paper-raised cursor-grab active:cursor-grabbing"
+                        title="Перетащите в колонку"
+                      >
+                        {{ row.name }}
+                        <span class="text-muted-foreground">· {{ laneTitle(row.lane) }}</span>
+                      </div>
+                    }
+                    @if (moduleRows(card).length === 0) {
+                      <div class="text-xs text-muted-foreground">Нет модулей</div>
+                    }
+                  </div>
+                }
               </div>
             }
             @if (columnCards(col.id).length === 0) {
@@ -188,6 +262,7 @@ export class DashboardPage {
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly orders = inject(OrdersService);
+  private readonly productModules = inject(ProductModulesService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
@@ -235,6 +310,10 @@ export class DashboardPage {
   protected readonly connectedLists = this.columns.map((c) => c.id);
 
   protected readonly filterOrderId = signal<string>('');
+  /** TZ-COMBINE-407 — раскрытое изделие (card.key) или null. */
+  protected readonly expandedKey = signal<string | null>(null);
+  /** TZ-COMBINE-407 — модули изделия по productId (lazy на раскрытие). */
+  protected readonly modulesByProduct = signal<Record<string, ProductModule[]>>({});
 
   constructor() {
     this.listRes.reload();
@@ -271,7 +350,7 @@ export class DashboardPage {
       const items = order.items ?? [];
       items.forEach((item, index) => {
         const lineId = item.lineId || `legacy-${index}-${order._id}`;
-        const boardLane = this.boardLaneOf(item);
+        const boardLane = this.lineEffectiveLane(order, item);
         cards.push({
           key: `${order._id}:${lineId}`,
           orderId: order._id,
@@ -299,6 +378,81 @@ export class DashboardPage {
     return STATUS_TO_BOARD_LANE[item.status ?? 'pending'] ?? 'prep';
   }
 
+  /** TZ-COMBINE-406/407 — эффективная полоса линии = min по её moduleLanes, иначе boardLane. */
+  protected lineEffectiveLane(order: Order, item: OrderItem): BoardLane {
+    if (item.lineId) {
+      const lanes = (order.moduleLanes ?? [])
+        .filter((ml) => ml.lineId === item.lineId)
+        .map((ml) => ml.lane);
+      if (lanes.length > 0) {
+        return lanes.reduce<BoardLane>(
+          (min, lane) => (LANE_ORDER[lane] < LANE_ORDER[min] ? lane : min),
+          lanes[0],
+        );
+      }
+    }
+    return this.boardLaneOf(item);
+  }
+
+  protected laneTitle(lane: BoardLane): string {
+    return LANE_TITLE[lane];
+  }
+
+  /** Явная полоса модуля из moduleLanes; undefined → наследует линию. */
+  protected moduleLaneOf(order: Order, lineId: string, moduleId: string): BoardLane | undefined {
+    return (order.moduleLanes ?? []).find((ml) => ml.lineId === lineId && ml.moduleId === moduleId)
+      ?.lane;
+  }
+
+  /** TZ-COMBINE-407 — модули, чья полоса уехала вперёд от эффективной полосы линии (ghost). */
+  protected divergedModules(order: Order, item: OrderItem): ModuleLane[] {
+    if (!item.lineId) return [];
+    const effective = this.lineEffectiveLane(order, item);
+    return (order.moduleLanes ?? []).filter(
+      (ml) => ml.lineId === item.lineId && ml.lane !== effective,
+    );
+  }
+
+  protected isExpanded(card: CombineItemCard): boolean {
+    return this.expandedKey() === card.key;
+  }
+
+  protected toggleExpand(card: CombineItemCard): void {
+    const next = this.isExpanded(card) ? null : card.key;
+    this.expandedKey.set(next);
+    if (next && !this.modulesByProduct()[card.item.productId]) {
+      this.loadModules(card.item.productId);
+    }
+  }
+
+  private loadModules(productId: string): void {
+    this.productModules.list(productId).subscribe((res) => {
+      if (res.ok) {
+        this.modulesByProduct.update((map) => ({ ...map, [productId]: res.data }));
+      }
+    });
+  }
+
+  protected moduleRows(card: CombineItemCard): CombineModuleRow[] {
+    const modules = this.modulesByProduct()[card.item.productId] ?? [];
+    const fallback = this.boardLaneOf(card.item);
+    return modules.map((m) => ({
+      moduleId: m._id,
+      name: m.name,
+      lane: this.moduleLaneOf(card.order, card.lineId, m._id) ?? fallback,
+    }));
+  }
+
+  protected moduleDrag(card: CombineItemCard, row: CombineModuleRow): CombineModuleDrag {
+    return {
+      kind: 'module',
+      orderId: card.orderId,
+      lineId: card.lineId,
+      moduleId: row.moduleId,
+      lane: row.lane,
+    };
+  }
+
   protected onFilterChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.filterOrderId.set(select.value);
@@ -320,7 +474,13 @@ export class DashboardPage {
   protected dropItem(event: CdkDragDrop<BoardLane>): void {
     if (event.previousContainer === event.container) return;
 
-    const card = event.item.data as CombineItemCard | undefined;
+    const data = event.item.data;
+    if (data && (data as CombineModuleDrag).kind === 'module') {
+      this.dropModule(event, data as CombineModuleDrag);
+      return;
+    }
+
+    const card = data as CombineItemCard | undefined;
     const targetLane = event.container.id as BoardLane;
     if (!card || !targetLane) return;
     if (card.boardLane === targetLane) return;
@@ -415,6 +575,34 @@ export class DashboardPage {
         this.replaceOrder(res.data);
       } else {
         this.restoreLanes(snapshot);
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /** TZ-COMBINE-407 — DnD модуля по колонкам → PATCH module lane. */
+  protected dropModule(event: CdkDragDrop<BoardLane>, drag: CombineModuleDrag): void {
+    const targetLane = event.container.id as BoardLane;
+    if (!targetLane || drag.lane === targetLane) return;
+    if (targetLane === 'shipped') {
+      this.toast.error('Модуль нельзя отправить в «Отгружены» — отгрузка целого заказа.');
+      return;
+    }
+    const order = this.data().find((o) => o._id === drag.orderId);
+    if (!order) return;
+    this.applyModuleLanePatch(order, drag.lineId, drag.moduleId, targetLane);
+  }
+
+  private applyModuleLanePatch(
+    order: Order,
+    lineId: string,
+    moduleId: string,
+    lane: BoardLane,
+  ): void {
+    this.orders.patchModuleLane(order._id, lineId, moduleId, lane).subscribe((res) => {
+      if (res.ok) {
+        this.replaceOrder(res.data);
+      } else {
         this.toast.error(extractErrorMessage(res.error));
       }
     });

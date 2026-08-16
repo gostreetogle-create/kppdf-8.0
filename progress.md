@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-407 DONE — module DnD ghost
+**Исполнитель:** freebuff (deepseek-v4-pro)
+**Статус:** DONE; deploy НЕ
+**Что:** FE Комбайн: expand изделия → модули (BOM top-level), DnD модуля по колонкам → PATCH module lane, ghost «Модуль в: {колонка}» при расхождении с эффективной полосой линии; карточка линии следует min(moduleLanes); lane=shipped при DnD → RU toast. Материалы не карточки.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; `tsc -p tsconfig.spec.json --noEmit` PASS; jest `dashboard.page|orders.service` PASS (3 suites / 35, +6).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-407.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-407-module-dnd-ghost.lock`
+**Next:** TZ-COMBINE-408 (shop workType/days gate); deploy только по слову PO.
+
 ## [2026-08-16] — TZ-COMBINE-406 DONE — moduleLanes SoT (v1.1)
 **Исполнитель:** freebuff (deepseek-v4-pro)
 **Статус:** DONE; deploy НЕ
