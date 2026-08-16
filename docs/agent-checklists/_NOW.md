@@ -10,15 +10,15 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 
 ## ACTIVE
 
-- **WAVE COMBINE v1:** 401–**405 DONE** (DnD + freeze + ship-whole). Next: modules 406/407 or warm deploy.
-- Freebuff (параллель): GANTT-401 / `PROMPT-WAVE-COMBINE-SHOP-FLOOR-FREEBUFF.md` — не трогать из combine commits.
+- **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
+- Freebuff: **TZ-GANTT-401** CLAIMED (не трогать production/**).
 
 ## NEXT (PO paste prompt)
 
-- Modules ghost DnD → COMBINE-406/407.
+- **Warm deploy** COMBINE 402–405 — готов.
+- Modules/gate: executable PARK specs `TZ-COMBINE-406`…`408` in `_backlog/`.
 - Full home widgets → **TZ-DASHBOARD-401**.
 - **TZ-DATA-UTF8-CLEAN** PARK.
-- **Warm deploy** после пакета 402–405 PASS (готово предложить).
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
