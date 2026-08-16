@@ -5,7 +5,7 @@
 **Gates:** LEDGER-11 FE/BE/desktop tsc PASS; jest sample PASS (см. 11-gates.md).
 **Review:** Cursor Verdict PASS — closeout-only; remediation out of scope.
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md`
-**Commit:** `PENDING_STAMP`
+**Commit:** `7c8822544515f97f4b4fb39120a6447e8f25c668`
 **Lock:** `.mimocode/locks/TZ-OPS-CONFIDENCE-LEDGER-401.lock`
 **Next:** WAVE-CONFIDENCE-LEDGER-FLASH DONE; 313…316 только по PO; deploy не выполнялся.
 
