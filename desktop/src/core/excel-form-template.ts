@@ -27,7 +27,7 @@ export const FORM_SHEET_NAME = '_kppdf';
 /** Лист данных формы (строка 1 — заголовки, строка 2 — пустой скелет). */
 export const FORM_DATA_SHEET = 'Данные';
 
-export type FormCategoryKey = 'catalog' | 'counterparties';
+export type FormCategoryKey = 'catalog' | 'counterparties' | 'references';
 
 export interface FormCategory {
   key: FormCategoryKey;
@@ -45,6 +45,11 @@ export const FORM_CATEGORIES: readonly FormCategory[] = [
     key: 'counterparties',
     labelRu: 'Контрагенты',
     descriptionRu: 'Клиенты и подрядчики: компания + реквизиты для документов.',
+  },
+  {
+    key: 'references',
+    labelRu: 'Справочники',
+    descriptionRu: 'Склады, виды работ, цвета (RAL) и категории — справочники пишутся сразу после подтверждения.',
   },
 ];
 
@@ -95,6 +100,42 @@ const FORM_TEMPLATES: readonly FormTemplate[] = [
     descriptionRu: 'Клиенты и подрядчики: наименование, ИНН, реквизиты банка.',
     requiredFields: IMPORT_TARGETS.counterparty.requiredFields,
     columns: IMPORT_TARGETS.counterparty.columns,
+  },
+  {
+    targetKey: 'warehouse',
+    categoryKey: 'references',
+    labelRu: IMPORT_TARGETS.warehouse.label,
+    descriptionRu:
+      'Склады: наименование и тип (main / branch / transit / production / other). Справочник пишется сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.warehouse.requiredFields,
+    columns: IMPORT_TARGETS.warehouse.columns,
+  },
+  {
+    targetKey: 'workType',
+    categoryKey: 'references',
+    labelRu: IMPORT_TARGETS.workType.label,
+    descriptionRu:
+      'Виды работ: наименование и ставка ₽/час (0 = явно бесплатно). Справочник пишется сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.workType.requiredFields,
+    columns: IMPORT_TARGETS.workType.columns,
+  },
+  {
+    targetKey: 'colorReference',
+    categoryKey: 'references',
+    labelRu: IMPORT_TARGETS.colorReference.label,
+    descriptionRu:
+      'Цвета (RAL): наименование и Hex (#RRGGBB). Slug не обязателен — сервер сгенерирует сам. Пишется сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.colorReference.requiredFields,
+    columns: IMPORT_TARGETS.colorReference.columns,
+  },
+  {
+    targetKey: 'category',
+    categoryKey: 'references',
+    labelRu: IMPORT_TARGETS.category.label,
+    descriptionRu:
+      'Категории: наименование, тип (material / product / general), Slug и префикс SKU. Slug и префикс SKU лучше латиницей; префикс — заглавными. Пишется сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.category.requiredFields,
+    columns: IMPORT_TARGETS.category.columns,
   },
 ];
 

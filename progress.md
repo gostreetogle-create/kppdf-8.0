@@ -1,3 +1,11 @@
+## [2026-08-16] — TZD-51 READY FOR REVIEW — Desktop Excel Forms: справочники V2
+**Исполнитель:** freebuff (deepseek-v4-pro)
+**Статус:** READY FOR REVIEW (не archive до Cursor/PO PASS); deploy НЕ
+**Что:** Form Studio + категория «Справочники» → 4 таблицы (склады/виды работ/цвета RAL/категории) с RU-колонками и `_kppdf`-формой; валидация (enum type, hex, hourlyRate, skuPrefix, slug); dedupe до POST → `duplicate` в отчёте, не пишется; write path POST `/api/warehouses|work-types|color-references|categories` + confirm.
+**Gates:** desktop `tsc --noEmit` PASS; `svelte-check --threshold error` PASS (0/0); `tsx --test` 64/64 (+8).
+**Checklist:** `docs/agent-checklists/TZD-51.md` (READY FOR REVIEW).
+**Next:** Cursor/PO PASS → archive `TZD-51.done.md` + lock; deploy ZIP только по слову PO.
+
 ## [2026-08-16] — TZ-COMBINE-408 DONE — shop workType/days gate
 **Исполнитель:** freebuff (deepseek-v4-pro)
 **Статус:** DONE; deploy НЕ

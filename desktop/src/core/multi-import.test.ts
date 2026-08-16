@@ -114,3 +114,82 @@ test('counterparty without INN is not ok_new (TZD-48)', () => {
   assert.equal(bad[0].status, 'invalid');
   assert.ok(bad[0].message.includes('inn'));
 });
+
+test('TZD-51 warehouse: 1 новая + 1 дубль имени (trim+lower) → дубль в отчёте', () => {
+  const rows = [
+    { name: 'Склад сборки' },
+    { name: 'СКЛАД СБОРКИ' },
+    { name: 'Основной склад' },
+  ];
+  // Каталог уже содержит «основной склад» → третья строка дубль по каталогу.
+  const validated = validateTableRows(rows, 'warehouse', new Set(['основной склад']));
+  assert.equal(validated[0].status, 'duplicate'); // «Склад сборки» × «СКЛАД СБОРКИ» — дубль в файле
+  assert.equal(validated[1].status, 'duplicate');
+  assert.equal(validated[2].status, 'duplicate'); // совпадение с каталогом — не писать
+});
+
+test('TZD-51 warehouse: новая строка проходит, каталог-дубль не пишется', () => {
+  const validated = validateTableRows(
+    [{ name: 'Склад сборки' }],
+    'warehouse',
+    new Set(['основной склад']),
+  );
+  assert.equal(validated[0].status, 'ok_new');
+  const dup = validateTableRows([{ name: 'Основной склад' }], 'warehouse', new Set(['основной склад']));
+  assert.equal(dup[0].status, 'duplicate');
+});
+
+test('TZD-51 workType: без ставки → invalid; с ставкой → ok_new', () => {
+  const bad = validateTableRows([{ name: 'Сварка' }], 'workType');
+  assert.equal(bad[0].status, 'invalid');
+  assert.ok(bad[0].message.includes('hourlyRate'));
+  const ok = validateTableRows([{ name: 'Сварка', hourlyRate: 2500 }], 'workType');
+  assert.equal(ok[0].status, 'ok_new');
+  const negative = validateTableRows([{ name: 'Сварка', hourlyRate: -1 }], 'workType');
+  assert.equal(negative[0].status, 'invalid');
+});
+
+test('TZD-51 colorReference: плохой hex → invalid; без slug → ok_new (сервер примет по name)', () => {
+  const badHex = validateTableRows([{ name: 'RAL 9003', hex: 'FFF' }], 'colorReference');
+  assert.equal(badHex[0].status, 'invalid');
+  assert.ok(badHex[0].message.includes('Hex'));
+  const ok = validateTableRows([{ name: 'RAL 9003', hex: '#F4F4F4' }], 'colorReference');
+  assert.equal(ok[0].status, 'ok_new');
+  const noSlug = validateTableRows([{ name: 'RAL 9003' }], 'colorReference');
+  assert.equal(noSlug[0].status, 'ok_new');
+});
+
+test('TZD-51 category: плохой skuPrefix → invalid; валидная → ok_new; skuPrefix-дубль → duplicate', () => {
+  const bad = validateTableRows(
+    [{ name: 'Металлопрокат', type: 'material', slug: 'metal', skuPrefix: 'металл' }],
+    'category',
+  );
+  assert.equal(bad[0].status, 'invalid');
+  assert.ok(bad[0].message.includes('Префикс SKU'));
+
+  const ok = validateTableRows(
+    [{ name: 'Металлопрокат', type: 'material', slug: 'metal', skuPrefix: 'MPT' }],
+    'category',
+  );
+  assert.equal(ok[0].status, 'ok_new');
+
+  const dup = validateTableRows(
+    [{ name: 'Другой', type: 'material', slug: 'other', skuPrefix: 'MPT' }],
+    'category',
+    new Set(['prefix:MPT']),
+  );
+  assert.equal(dup[0].status, 'duplicate');
+});
+
+test('TZD-51 category: плохой slug / тип вне enum → invalid', () => {
+  const badSlug = validateTableRows(
+    [{ name: 'Металл', type: 'material', slug: 'Bad Slug', skuPrefix: 'M' }],
+    'category',
+  );
+  assert.equal(badSlug[0].status, 'invalid');
+  const badType = validateTableRows(
+    [{ name: 'Металл', type: 'whatever', slug: 'metal', skuPrefix: 'M' }],
+    'category',
+  );
+  assert.equal(badType[0].status, 'invalid');
+});

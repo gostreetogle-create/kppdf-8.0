@@ -25,7 +25,27 @@ export interface ImportTarget {
   requiredFields: readonly string[];
 }
 
-export type ImportTargetKey = 'material' | 'product' | 'module' | 'counterparty';
+export type ImportTargetKey =
+  | 'material'
+  | 'product'
+  | 'module'
+  | 'counterparty'
+  | 'warehouse'
+  | 'workType'
+  | 'colorReference'
+  | 'category';
+
+/** TZD-51 — справочники (пишутся сразу после confirm, без журнала предложений). */
+export const REFERENCE_TARGET_KEYS: readonly ImportTargetKey[] = [
+  'warehouse',
+  'workType',
+  'colorReference',
+  'category',
+];
+
+export function isReferenceTargetKey(key: ImportTargetKey): boolean {
+  return (REFERENCE_TARGET_KEYS as readonly string[]).includes(key);
+}
 
 export const IMPORT_TARGETS = {
   material: {
@@ -96,12 +116,66 @@ export const IMPORT_TARGETS = {
       { key: 'directorName', label: 'Директор', aliases: ['directorname', 'директор', 'руководитель'] },
     ],
   },
+  warehouse: {
+    key: 'warehouse',
+    label: 'Склады',
+    requiredFields: ['name'],
+    columns: [
+      { key: 'name', label: 'Наименование', aliases: ['name', 'наименование', 'название', 'склад', 'название склада', 'наименование склада'] },
+      { key: 'type', label: 'Тип', aliases: ['type', 'тип', 'тип склада'] },
+      { key: 'address', label: 'Адрес', aliases: ['address', 'адрес', 'адрес склада'] },
+      { key: 'description', label: 'Описание', aliases: ['description', 'описание', 'примечание', 'комментарий'] },
+    ],
+  },
+  workType: {
+    key: 'workType',
+    label: 'Виды работ',
+    requiredFields: ['name', 'hourlyRate'],
+    columns: [
+      { key: 'name', label: 'Наименование', aliases: ['name', 'наименование', 'название', 'вид работ', 'вид работы', 'работа'] },
+      { key: 'hourlyRate', label: 'Ставка ₽/час', aliases: ['hourlyrate', 'ставка', 'ставка ₽/час', 'ставка руб/час', 'ставка в час', 'расценка', 'цена часа', 'руб/час'] },
+      { key: 'section', label: 'Участок', aliases: ['section', 'участок', 'отдел', 'цех'] },
+      { key: 'description', label: 'Описание', aliases: ['description', 'описание'] },
+      { key: 'days', label: 'Дни (Gantt)', aliases: ['days', 'дни', 'дней', 'дни (gantt)', 'длительность'] },
+    ],
+  },
+  colorReference: {
+    key: 'colorReference',
+    label: 'Цвета (RAL)',
+    requiredFields: ['name'],
+    columns: [
+      { key: 'name', label: 'Наименование', aliases: ['name', 'наименование', 'название', 'цвет', 'ral', 'цвет ral', 'наименование цвета'] },
+      { key: 'hex', label: 'Hex (#RRGGBB)', aliases: ['hex', 'hex код', 'цвет hex', 'hexcolor', 'шестнадцатеричный', '#rrggbb'] },
+      { key: 'description', label: 'Описание', aliases: ['description', 'описание', 'примечание'] },
+    ],
+  },
+  category: {
+    key: 'category',
+    label: 'Категории',
+    requiredFields: ['name', 'type', 'slug', 'skuPrefix'],
+    columns: [
+      { key: 'name', label: 'Наименование', aliases: ['name', 'наименование', 'название', 'категория', 'название категории'] },
+      { key: 'type', label: 'Тип', aliases: ['type', 'тип', 'тип категории'] },
+      { key: 'slug', label: 'Slug', aliases: ['slug', 'слаг', 'slug категории', 'код категории'] },
+      { key: 'skuPrefix', label: 'Префикс SKU', aliases: ['skuprefix', 'префикс sku', 'префикс', 'sku префикс', 'префикс артикула'] },
+      { key: 'description', label: 'Описание', aliases: ['description', 'описание', 'примечание'] },
+    ],
+  },
 } as const satisfies Record<ImportTargetKey, ImportTarget>;
 
 export type ImportTargetTable = (typeof IMPORT_TARGETS)[ImportTargetKey];
 
 /** Порядок таблиц для UI (сначала самые частые). */
-export const IMPORT_TARGET_ORDER: ImportTargetKey[] = ['material', 'product', 'module', 'counterparty'];
+export const IMPORT_TARGET_ORDER: ImportTargetKey[] = [
+  'material',
+  'product',
+  'module',
+  'counterparty',
+  'warehouse',
+  'workType',
+  'colorReference',
+  'category',
+];
 
 export function importTarget(key: ImportTargetKey): ImportTargetTable {
   return IMPORT_TARGETS[key];

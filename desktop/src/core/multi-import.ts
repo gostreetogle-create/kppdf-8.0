@@ -11,6 +11,7 @@ import {
   IMPORT_TARGET_ORDER,
   importTarget,
   fieldLabel,
+  isReferenceTargetKey,
   type ImportTargetKey,
 } from './import-targets';
 
@@ -67,15 +68,149 @@ export function reshapeForTable(rows: RawRow[], mapping: MappingResult): RawRow[
 }
 
 /**
- * Ключ дедупликации строки по таблице (канон WAVE-DESKTOP-EXCEL-FORMS):
+ * Ключ дедупликации строки по таблице (канон WAVE-DESKTOP-EXCEL-FORMS V1):
  * material/module — артикул, product — SKU, counterparty — ИНН.
+ * Справочники (TZD-51) используют `referenceDedupeKeysOf` — их нет здесь.
  */
-export const DEDUPE_KEYS: Record<ImportTargetKey, string> = {
+export const DEDUPE_KEYS: Partial<Record<ImportTargetKey, string>> = {
   material: 'article',
   product: 'sku',
   module: 'article',
   counterparty: 'inn',
 };
+
+/**
+ * TZD-51 — нормализованные ключи дедупликации справочников. Одна и та же
+ * функция работает и для строки Excel, и для записи каталога (обе — плоские
+ * `Record<string, unknown>`), поэтому ключи в `existingKeys` и в строке всегда
+ * сравнимы.
+ *
+ * - warehouse / workType: `name` trim + lower;
+ * - colorReference: `name:<lower>` и (если задан) `slug:<exact>`;
+ * - category: пара `cat:<type>|<slug>` и/или `prefix:<skuPrefix>`.
+ */
+export function referenceDedupeKeysOf(
+  targetKey: ImportTargetKey,
+  record: Record<string, unknown>,
+): string[] {
+  const lower = (value: unknown): string => String(value ?? '').trim().toLowerCase();
+  const exact = (value: unknown): string => String(value ?? '').trim();
+  const only = (keys: string[]): string[] => keys.filter(Boolean);
+  switch (targetKey) {
+    case 'warehouse':
+    case 'workType':
+      return only([lower(record.name)]);
+    case 'colorReference':
+      return only([
+        `name:${lower(record.name)}`,
+        record.slug ? `slug:${exact(record.slug)}` : '',
+      ]);
+    case 'category': {
+      const type = lower(record.type);
+      const slug = lower(record.slug);
+      const prefix = exact(record.skuPrefix);
+      const keys: string[] = [];
+      if (type && slug) keys.push(`cat:${type}|${slug}`);
+      if (prefix) keys.push(`prefix:${prefix}`);
+      return keys;
+    }
+    default:
+      return [];
+  }
+}
+
+/** Enum каталога для типа склада и типа категории (канон Nest DTO). */
+const WAREHOUSE_TYPES = new Set(['main', 'branch', 'transit', 'production', 'other']);
+const CATEGORY_TYPES = new Set(['material', 'product', 'general']);
+
+/** TZD-51 — проверка значений строки справочника; null = ок, иначе RU-причина. */
+function referenceFieldError(targetKey: ImportTargetKey, values: RawRow): string | null {
+  switch (targetKey) {
+    case 'warehouse': {
+      const type = textValue(values, 'type').toLowerCase();
+      if (type && !WAREHOUSE_TYPES.has(type)) {
+        return 'Тип склада: main, branch, transit, production или other';
+      }
+      return null;
+    }
+    case 'workType': {
+      const raw = values.hourlyRate;
+      const has = raw !== undefined && raw !== null && String(raw).trim() !== '';
+      if (has) {
+        const rate = numberValue(values, 'hourlyRate');
+        if (rate === undefined || rate < 0) {
+          return 'Ставка ₽/час должна быть числом от 0';
+        }
+      }
+      return null;
+    }
+    case 'colorReference': {
+      const hex = textValue(values, 'hex');
+      if (hex && !/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+        return 'Hex должен быть в формате #RRGGBB';
+      }
+      const slug = textValue(values, 'slug');
+      if (slug && !/^[a-z0-9-]+$/.test(slug)) {
+        return 'Slug: только строчные a-z, 0-9 и дефис';
+      }
+      return null;
+    }
+    case 'category': {
+      const type = textValue(values, 'type').toLowerCase();
+      if (!CATEGORY_TYPES.has(type)) {
+        return 'Тип категории: material, product или general';
+      }
+      const slug = textValue(values, 'slug');
+      if (!/^[a-z0-9-]+$/.test(slug)) {
+        return 'Slug: только строчные a-z, 0-9 и дефис';
+      }
+      const prefix = textValue(values, 'skuPrefix');
+      if (!/^[A-Z0-9-]+$/.test(prefix)) {
+        return 'Префикс SKU: заглавные A-Z, 0-9 и дефис';
+      }
+      return null;
+    }
+    default:
+      return null;
+  }
+}
+
+/** TZD-51 — валидация строк справочника (обязательные поля + типы + dedupe). */
+function validateReferenceRows(
+  rows: RawRow[],
+  targetKey: ImportTargetKey,
+  existingKeys: ReadonlySet<string>,
+): ValidatedImportRow[] {
+  const target = importTarget(targetKey);
+  const seen = new Map<string, number[]>();
+  rows.forEach((row, index) => {
+    for (const key of referenceDedupeKeysOf(targetKey, row)) {
+      const indexes = seen.get(key) ?? [];
+      indexes.push(index);
+      seen.set(key, indexes);
+    }
+  });
+
+  return rows.map((values, rowIndex) => {
+    const missing = target.requiredFields.filter((key) => !textValue(values, key));
+    if (missing.length > 0) {
+      return { rowIndex, values, status: 'invalid', message: `Пусто: ${missing.join(', ')}` };
+    }
+    const fieldError = referenceFieldError(targetKey, values);
+    if (fieldError) {
+      return { rowIndex, values, status: 'invalid', message: fieldError };
+    }
+    const keys = referenceDedupeKeysOf(targetKey, values);
+    const inFile = keys.find((key) => (seen.get(key)?.length ?? 0) > 1);
+    if (inFile) {
+      return { rowIndex, values, status: 'duplicate', message: 'Дубликат в файле' };
+    }
+    if (keys.some((key) => existingKeys.has(key))) {
+      return { rowIndex, values, status: 'duplicate', message: 'Дубликат: уже есть в справочнике' };
+    }
+    return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
+  });
+}
 
 function textValue(row: RawRow, key: string): string {
   const value = row[key];
@@ -107,8 +242,11 @@ export function validateTableRows(
   targetKey: ImportTargetKey,
   existingKeys: ReadonlySet<string> = new Set(),
 ): ValidatedImportRow[] {
+  if (isReferenceTargetKey(targetKey)) {
+    return validateReferenceRows(rows, targetKey, existingKeys);
+  }
   const target = importTarget(targetKey);
-  const dedupeKey = DEDUPE_KEYS[targetKey];
+  const dedupeKey = DEDUPE_KEYS[targetKey] ?? '';
   const seen = new Map<string, number[]>();
   rows.forEach((row, index) => {
     const key = textValue(row, dedupeKey);

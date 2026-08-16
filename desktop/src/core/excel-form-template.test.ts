@@ -18,7 +18,7 @@ import {
   serializeFormWorkbook,
 } from './excel-form-template';
 
-test('V1 allowlist: catalog → material/product/module, counterparties → counterparty only', () => {
+test('V2 allowlist: catalog/counterparties/references → 8 таблиц (TZD-51)', () => {
   assert.deepEqual(
     formTemplatesByCategory('catalog').map((t) => t.targetKey),
     ['material', 'product', 'module'],
@@ -27,11 +27,16 @@ test('V1 allowlist: catalog → material/product/module, counterparties → coun
     formTemplatesByCategory('counterparties').map((t) => t.targetKey),
     ['counterparty'],
   );
-  // В V1 нет справочников (warehouse/workType/color/category — TZD-51).
-  assert.equal(formTemplateFor('warehouse' as never), undefined);
-  assert.equal(formTemplates().length, 4);
+  assert.deepEqual(
+    formTemplatesByCategory('references').map((t) => t.targetKey),
+    ['warehouse', 'workType', 'colorReference', 'category'],
+  );
+  assert.equal(formTemplates().length, 8);
+  assert.ok(formTemplateFor('warehouse'));
+  assert.ok(formTemplateFor('category'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'catalog'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'counterparties'));
+  assert.ok(FORM_CATEGORIES.some((c) => c.key === 'references'));
 });
 
 test('form file name uses latin target key (stable for V1)', () => {
@@ -81,11 +86,47 @@ test('generate → parse round-trip preserves targetKey and columnKeys order', a
   }
 });
 
+test('TZD-51 identity mapping: заголовки справочников с « *» → ключи', () => {
+  const warehouse = identityMappingForForm(['Наименование *', 'Тип', 'Адрес'], 'warehouse');
+  const wMap = Object.fromEntries(warehouse.rows.map((r) => [r.header, r.canonical]));
+  assert.equal(wMap['Наименование *'], 'name');
+  assert.equal(wMap['Тип'], 'type');
+  assert.equal(wMap['Адрес'], 'address');
+
+  const category = identityMappingForForm(
+    ['Наименование *', 'Тип *', 'Slug *', 'Префикс SKU *'],
+    'category',
+  );
+  const cMap = Object.fromEntries(category.rows.map((r) => [r.header, r.canonical]));
+  assert.equal(cMap['Наименование *'], 'name');
+  assert.equal(cMap['Тип *'], 'type');
+  assert.equal(cMap['Slug *'], 'slug');
+  assert.equal(cMap['Префикс SKU *'], 'skuPrefix');
+});
+
+test('TZD-51 round-trip: warehouse + category сохраняют targetKey и порядок колонок', async () => {
+  for (const targetKey of ['warehouse', 'category'] as const) {
+    const wb = buildFormWorkbook(targetKey);
+    const template = formTemplateFor(targetKey)!;
+    XLSX.utils.sheet_add_aoa(
+      wb.Sheets[FORM_DATA_SHEET],
+      [template.columns.map((_, index) => `test-${index}`)],
+      { origin: 'A2' },
+    );
+    const bytes = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+    const preview = await parseExcelWorkbook({ name: formFileName(targetKey), data: bytes });
+    assert.ok(preview.fingerprint, `fingerprint expected for ${targetKey}`);
+    assert.equal(preview.fingerprint!.targetKey, targetKey);
+    assert.deepEqual(preview.fingerprint!.columnKeys, template.columns.map((c) => c.key));
+    assert.ok(!preview.sheets.some((s) => s.name === FORM_SHEET_NAME));
+  }
+});
+
 test('unknown targetKey in fingerprint → safe ignore (null)', () => {
   const wb = buildFormWorkbook('material');
   wb.Sheets[FORM_SHEET_NAME] = XLSX.utils.aoa_to_sheet([
     ['templateVersion', FORM_TEMPLATE_VERSION],
-    ['targetKey', 'warehouse'], // справочник вне V1 (TZD-51)
+    ['targetKey', 'order'], // заказы вне allowlist волны
     ['generatedAt', new Date().toISOString()],
     ['columnKeys', '["name"]'],
     ['app', FORM_APP],

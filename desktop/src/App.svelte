@@ -24,10 +24,17 @@
     type MappingResult,
     type ValidatedImportRow,
   } from './core/import-mapping';
-  import { IMPORT_TARGETS, IMPORT_TARGET_ORDER, isImportTargetKey, type ImportTargetKey } from './core/import-targets';
+  import {
+    IMPORT_TARGETS,
+    IMPORT_TARGET_ORDER,
+    isImportTargetKey,
+    isReferenceTargetKey,
+    type ImportTargetKey,
+  } from './core/import-targets';
   import {
     analyzeTables,
     applyTableMapping,
+    referenceDedupeKeysOf,
     reshapeForTable,
     validateTableRows,
   } from './core/multi-import';
@@ -1196,6 +1203,70 @@
             bankCorrAccount: row.bankCorrAccount ? String(row.bankCorrAccount) : undefined,
             directorName: row.directorName ? String(row.directorName) : undefined,
           });
+        } else if (targetKey === 'warehouse') {
+          const name = String(row.name ?? '').trim();
+          if (!name) {
+            errors.push({ rowName: 'без имени', error: 'Складу нужно наименование' });
+            continue;
+          }
+          const rawType = String(row.type ?? '').trim().toLowerCase();
+          const type = ['main', 'branch', 'transit', 'production', 'other'].includes(rawType)
+            ? rawType
+            : 'main';
+          await apiPost(apiFrom(cfg), '/api/warehouses', {
+            name,
+            type,
+            address: row.address ? String(row.address) : undefined,
+            description: row.description ? String(row.description) : undefined,
+          });
+        } else if (targetKey === 'workType') {
+          const name = String(row.name ?? '').trim();
+          const hourlyRate = numberOr(row.hourlyRate);
+          if (!name || hourlyRate === undefined || hourlyRate < 0) {
+            errors.push({
+              rowName: name || 'без имени',
+              error: 'Виду работ нужны наименование и ставка ₽/час (число от 0)',
+            });
+            continue;
+          }
+          await apiPost(apiFrom(cfg), '/api/work-types', {
+            name,
+            hourlyRate,
+            section: row.section ? String(row.section) : undefined,
+            description: row.description ? String(row.description) : undefined,
+            days: numberOr(row.days) !== undefined ? Math.max(1, Math.round(numberOr(row.days)!)) : undefined,
+          });
+        } else if (targetKey === 'colorReference') {
+          const name = String(row.name ?? '').trim();
+          if (!name) {
+            errors.push({ rowName: 'без имени', error: 'Цвету нужно наименование' });
+            continue;
+          }
+          // organizationId приходит с сервера (по аккаунту) — не из Excel.
+          await apiPost(apiFrom(cfg), '/api/color-references', {
+            name,
+            hex: row.hex ? String(row.hex) : undefined,
+            description: row.description ? String(row.description) : undefined,
+          });
+        } else if (targetKey === 'category') {
+          const name = String(row.name ?? '').trim();
+          const type = String(row.type ?? '').trim().toLowerCase();
+          const slug = String(row.slug ?? '').trim();
+          const skuPrefix = String(row.skuPrefix ?? '').trim();
+          if (!name || !type || !slug || !skuPrefix) {
+            errors.push({
+              rowName: name || 'без имени',
+              error: 'Категории нужны наименование, тип, slug и префикс SKU',
+            });
+            continue;
+          }
+          await apiPost(apiFrom(cfg), '/api/categories', {
+            name,
+            type,
+            slug,
+            skuPrefix,
+            description: row.description ? String(row.description) : undefined,
+          });
         }
         created += 1;
       } catch (err) {
@@ -1226,7 +1297,7 @@
     if (directCounts.length > 0) {
       const summary = directCounts.map((item) => `${item.label}: ${item.rows}`).join(', ');
       const ok = confirm(
-        `Записать в каталог сразу? Эти записи попадут в систему без дополнительного подтверждения:\n${summary}\nМатериалы останутся в журнале предложений.`, 
+        `Записать сразу? Эти записи попадут в систему без дополнительного подтверждения (справочники пишутся сразу):\n${summary}\nМатериалы останутся в журнале предложений.`,
       );
       if (!ok) return;
     }
@@ -1730,6 +1801,23 @@
     targetKey: ImportTargetKey,
   ): Promise<{ keys: Set<string>; truncated: boolean }> {
     const keys = new Set<string>();
+    // TZD-51 — справочники: list endpoint возвращает массив, ключи нормализуются
+    // той же функцией, что и строки файла (`referenceDedupeKeysOf`).
+    if (isReferenceTargetKey(targetKey)) {
+      const path =
+        targetKey === 'warehouse'
+          ? '/api/warehouses'
+          : targetKey === 'workType'
+            ? '/api/work-types'
+            : targetKey === 'colorReference'
+              ? '/api/color-references'
+              : '/api/categories';
+      const items = await apiGet<Array<Record<string, unknown>>>(api, path);
+      for (const item of items) {
+        for (const key of referenceDedupeKeysOf(targetKey, item)) keys.add(key);
+      }
+      return { keys, truncated: false };
+    }
     const keyOf = (item: Record<string, unknown>): string => {
       if (targetKey === 'product') return String(item.sku ?? item.article ?? '').trim();
       if (targetKey === 'counterparty') return String(item.inn ?? '').trim();

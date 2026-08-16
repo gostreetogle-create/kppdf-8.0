@@ -5,18 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T18:00:00+03:00
+updated_at: 2026-08-16T18:35:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed; TZD-50 closeout 2026-08-16
 
 ## ACTIVE
 
 - **Свободен Freebuff:** WAVE-COMBINE-MODULES **закрыта** (406→408 DONE).
 - **TZD-50:** **DONE** — closeout 2026-08-16 (commit `10dde79a` desktop-only, archive `TZD-50.done.md`, lock поставлен; marker `_active/TZD-50.md` удалён).
-- **TZD-51:** старт возможен (TZD-50 archived) — крупный, → Freebuff по промпту.
+- **TZD-51:** **READY FOR REVIEW** — Freebuff (справочники V2: склады/виды работ/цвета RAL/категории; desktop tsc + svelte-check 0 + tsx --test 64/64). Archive после Cursor/PO PASS.
 
 ## NEXT (PO paste prompt)
 
-1. Крупный **TZD-51** → **Freebuff** (TZD-50 archived, lock поставлен)
+1. **TZD-51** → Cursor review PASS → archive `TZD-51.done.md` + lock
 2. Warm deploy — только по «деплой»/«кати»
 3. **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок»
 4. SALES-377 — не без PO
