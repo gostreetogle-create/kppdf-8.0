@@ -101,10 +101,32 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
   let dialog: { open: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
 
-  async function flushInitial(orders: Order[]): Promise<void> {
+  async function flushInitial(
+    orders: Order[],
+    modulesByProductId: Record<string, unknown[]> = {},
+  ): Promise<void> {
     const req = httpMock.expectOne((r) => r.url === listUrl && r.method === 'GET');
     req.flush(orders);
     await new Promise<void>((r) => setTimeout(r, 0));
+    TestBed.flushEffects();
+
+    /** TZ-COMBINE-410 prefetch: drain GET /modules?productId=… */
+    const productIds = [
+      ...new Set(
+        orders
+          .flatMap((o) => (o.items ?? []).map((i) => i.productId))
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    const pending = httpMock.match(
+      (r) => r.method === 'GET' && r.url.startsWith(`${baseUrl}/modules`),
+    );
+    for (const m of pending) {
+      const url = m.request.urlWithParams || m.request.url;
+      const productId =
+        productIds.find((pid) => url.includes(`productId=${pid}`)) ?? productIds[0] ?? '';
+      m.flush(modulesByProductId[productId] ?? []);
+    }
   }
 
   beforeEach(async () => {
@@ -773,16 +795,26 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(page.data()[0]!.moduleLanes![0]!.lane).toBe('shop');
   });
 
-  it('toggleExpand lazy-fetch модули по productId и наполняет moduleRows (TZ-COMBINE-407)', async () => {
+  it('prefetch модули по productId и наполняет moduleRows (TZ-COMBINE-407/410)', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    await flushInitial([
-      orderOf({
-        items: [itemOf({ lineId: 'L1', boardLane: 'prep', productId: 'p1', productName: 'Дверь' })],
-      }),
-    ]);
+    await flushInitial(
+      [
+        orderOf({
+          items: [
+            itemOf({ lineId: 'L1', boardLane: 'prep', productId: 'p1', productName: 'Дверь' }),
+          ],
+        }),
+      ],
+      {
+        p1: [
+          { _id: 'm1', name: 'Каркас', workTypes: [], materials: [] },
+          { _id: 'm2', name: 'Полотно', workTypes: [], materials: [] },
+        ],
+      },
+    );
     TestBed.flushEffects();
     fixture.detectChanges();
 
@@ -791,27 +823,14 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
       isExpanded: (c: CombineItemCard) => boolean;
       moduleRows: (c: CombineItemCard) => CombineModuleRow[];
       columnCards: (id: BoardLane) => CombineItemCard[];
-      modulesInLane: (c: CombineItemCard, lane: BoardLane) => CombineModuleRow[];
-      rowConnectedLists: (c: CombineItemCard) => string[];
-      columns: CombineColumn[];
     };
 
     const card = page.columnCards('prep')[0]!;
-    expect(page.moduleRows(card)).toEqual([]);
-    page.toggleExpand(card);
-    expect(page.isExpanded(card)).toBe(true);
-
-    const modReq = httpMock.expectOne(
-      (r) => r.url.startsWith(`${baseUrl}/modules`) && r.method === 'GET',
-    );
-    modReq.flush([
-      { _id: 'm1', name: 'Каркас', workTypes: [], materials: [] },
-      { _id: 'm2', name: 'Полотно', workTypes: [], materials: [] },
-    ]);
-
     const rows = page.moduleRows(card);
     expect(rows.map((r) => r.name)).toEqual(['Каркас', 'Полотно']);
     expect(rows.map((r) => r.lane)).toEqual(['prep', 'prep']);
+    page.toggleExpand(card);
+    expect(page.isExpanded(card)).toBe(true);
   });
 
   it('TZ-COMBINE-409: itemCards is the product-row list (not column-first UI)', async () => {
@@ -846,11 +865,16 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     fixture.detectChanges();
     TestBed.flushEffects();
 
-    await flushInitial([
-      orderOf({
-        items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Забор' })],
-      }),
-    ]);
+    await flushInitial(
+      [
+        orderOf({
+          items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Забор' })],
+        }),
+      ],
+      {
+        p1: [{ _id: 'm1', name: 'Столб', workTypes: [], materials: [] }],
+      },
+    );
     TestBed.flushEffects();
     fixture.detectChanges();
 
@@ -871,12 +895,85 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(lists.every((id) => id.startsWith(card.key + '::'))).toBe(true);
     expect(lists).not.toContain('prep');
 
-    const modReq = httpMock.expectOne(
-      (r) => r.url.startsWith(`${baseUrl}/modules`) && r.method === 'GET',
-    );
-    modReq.flush([{ _id: 'm1', name: 'Столб', workTypes: [], materials: [] }]);
-
     expect(page.modulesInLane(card, 'design').map((r) => r.name)).toEqual(['Столб']);
     expect(page.modulesInLane(card, 'prep')).toHaveLength(0);
+  });
+
+  it('TZ-COMBINE-410: empty catalog modules → whole-product chip in effective lane', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial(
+      [
+        orderOf({
+          items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Мангал' })],
+        }),
+      ],
+      { p1: [] },
+    );
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      itemCards: () => CombineItemCard[];
+      showWholeProductChip: (c: CombineItemCard, lane: BoardLane) => boolean;
+      laneIndicatorActive: (c: CombineItemCard, lane: BoardLane) => boolean;
+      showOrderGroupHeader: (c: CombineItemCard, i: number) => boolean;
+      expandPanelId: (c: CombineItemCard) => string;
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      data: () => Order[];
+    };
+
+    const card = page.itemCards()[0]!;
+    expect(page.showWholeProductChip(card, 'design')).toBe(true);
+    expect(page.showWholeProductChip(card, 'prep')).toBe(false);
+    expect(page.laneIndicatorActive(card, 'design')).toBe(true);
+    expect(page.laneIndicatorActive(card, 'shop')).toBe(false);
+    expect(page.showOrderGroupHeader(card, 0)).toBe(true);
+    expect(page.expandPanelId(card)).toContain('combine-expand-');
+
+    page.dropItem(dropEvent(card, 'prep'));
+    const patch = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L1/lane` && r.method === 'PATCH',
+    );
+    expect(patch.request.body).toEqual({ lane: 'prep' });
+    patch.flush({
+      ...page.data()[0]!,
+      items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Мангал' })],
+    });
+  });
+
+  it('TZ-COMBINE-410: order group header on orderId change', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial([
+      orderOf({
+        _id: 'o1',
+        number: 'ORD-1',
+        items: [
+          itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'A' }),
+          itemOf({ lineId: 'L2', boardLane: 'prep', productId: 'p2', productName: 'B' }),
+        ],
+      }),
+      orderOf({
+        _id: 'o2',
+        number: 'ORD-2',
+        items: [itemOf({ lineId: 'L3', boardLane: 'design', productId: 'p3', productName: 'C' })],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      itemCards: () => CombineItemCard[];
+      showOrderGroupHeader: (c: CombineItemCard, i: number) => boolean;
+    };
+    const cards = page.itemCards();
+    expect(page.showOrderGroupHeader(cards[0]!, 0)).toBe(true);
+    expect(page.showOrderGroupHeader(cards[1]!, 1)).toBe(false);
+    expect(page.showOrderGroupHeader(cards[2]!, 2)).toBe(true);
   });
 });

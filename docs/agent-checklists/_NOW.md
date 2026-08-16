@@ -5,30 +5,36 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T22:50:00+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-350 DONE; COMBINE-409 DONE (product rows); 410 READY; deploy deferred
+updated_at: 2026-08-16T23:05:00+03:00
+hygiene: tasks drained (DONE dups→archive); live QUEUE thin; Freebuff PROMPT-FREEBUFF-TASKS-DRAIN ready
 
 ## ACTIVE
 
-- **WAVE-COMBINE-PRODUCT-ROWS:** TZ-COMBINE-409 DONE (product rows). TZ-COMBINE-410 READY (not claimed). Deploy forbidden.
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–350 DONE**. Deploy — явная команда.
-- _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
+- **Drain queue:** SALES-369 → TZD-39 → TZD-56 → TZD-47 → MIG-302… (see PROMPT-FREEBUFF-TASKS-DRAIN)
+- Gantt 338–350 DONE; Desktop TZD-50–55 DONE; COMBINE-409/410 DONE
 
 
 ## NEXT (PO paste prompt)
 
-1. TZ-COMBINE-410 (optional polish) — when PO wants
-2. Deploy Desktop **0.5.5** — явная команда + VPN off
-3. Production warm deploy — явная команда
+1. Freebuff: целиком файл `tasks/PROMPT-FREEBUFF-TASKS-DRAIN.md`
+2. Deploy / «кати» — только отдельным словом + VPN off
 
 
 ## Queue hygiene (not live)
 
-- **TZ-AUTH-307** > `tasks/_park/`
-- Backlog: SALES-377 — не брать без PO.
-- Chrome page-tools / Gantt polish — parked
+- **_park/** — не брать (AUTH-307, SALES-377, UTF8, passports, TZD-49, …)
+- Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-410 DONE — Комбайн «целиком» + polish
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-410.done.md`; lock `TZ-COMBINE-410-combine-rows-whole-product-polish.lock`; FE tsc + jest dashboard.page **25/25**. Deploy нет. Whole-product chip + indicator prefetch + a11y + order group headers.
+
+## [2026-08-16] — tasks hygiene drain (Cursor)
+
+- DONE specs/PROMPT/WAVE → `_archive/2026-08/{specs-dup-root,prompts-spent,waves-done}`
+- PARK → `_park/`; live = SALES-369 + TZD-39/47/56 + MIG-302+
 
 ## [2026-08-16] — TZ-COMBINE-409 DONE — Комбайн product rows + mini-kanban
 

@@ -4,8 +4,10 @@ import {
   DestroyRef,
   Injector,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
@@ -159,7 +161,15 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
       </div>
 
       <div class="flex flex-col gap-2" data-testid="combine-product-rows">
-        @for (card of itemCards(); track card.key) {
+        @for (card of itemCards(); track card.key; let i = $index) {
+          @if (showOrderGroupHeader(card, i)) {
+            <div
+              class="text-[11px] uppercase tracking-wider text-muted-foreground px-1 pt-1"
+              data-testid="combine-order-group"
+            >
+              Заказ №{{ card.orderNumber }}
+            </div>
+          }
           <div
             class="border hairline rounded-sm bg-paper overflow-hidden"
             [attr.data-line-key]="card.key"
@@ -167,8 +177,9 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
             <div class="flex items-center gap-3 px-3 py-2.5">
               <button
                 type="button"
-                class="text-muted-foreground hover:text-ink w-5 shrink-0 text-sm"
+                class="text-muted-foreground hover:text-ink w-5 shrink-0 text-sm pi-focus-ring rounded-sm"
                 [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-controls]="expandPanelId(card)"
                 [attr.aria-label]="isExpanded(card) ? 'Свернуть изделие' : 'Раскрыть изделие'"
                 (click)="toggleExpand(card)"
               >
@@ -177,7 +188,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="font-mono text-xs font-medium hover:underline shrink-0"
+                class="font-mono text-xs font-medium hover:underline shrink-0 pi-focus-ring rounded-sm"
                 (click)="openOrder(card.order); $event.stopPropagation()"
                 title="Открыть заказ"
               >
@@ -186,8 +197,10 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline"
+                class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
                 [title]="card.productName"
+                [attr.aria-expanded]="isExpanded(card)"
+                [attr.aria-controls]="expandPanelId(card)"
                 (click)="toggleExpand(card)"
               >
                 {{ card.productName }}
@@ -198,15 +211,18 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
               </span>
 
               <div
-                class="flex gap-0.5 shrink-0 w-24"
+                class="flex gap-1 shrink-0 w-28"
                 role="img"
+                data-testid="combine-lane-indicators"
                 [attr.aria-label]="'Стадии: ' + activeLaneSummary(card)"
               >
                 @for (col of columns; track col.id) {
                   <span
-                    class="h-1.5 flex-1 rounded-sm"
+                    class="h-2 flex-1 rounded-sm"
                     [class.bg-ink]="laneIndicatorActive(card, col.id)"
                     [class.bg-ink/15]="!laneIndicatorActive(card, col.id)"
+                    [attr.data-lane]="col.id"
+                    [attr.data-active]="laneIndicatorActive(card, col.id) ? 'true' : null"
                     [title]="col.title"
                   ></span>
                 }
@@ -214,7 +230,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="text-muted-foreground hover:text-ink p-1 rounded-sm hover:bg-ink/5 shrink-0"
+                class="text-muted-foreground hover:text-ink p-1 rounded-sm hover:bg-ink/5 shrink-0 pi-focus-ring"
                 (click)="editProduct(card.item.productId); $event.stopPropagation()"
                 title="Редактировать изделие"
               >
@@ -225,6 +241,9 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
             @if (isExpanded(card)) {
               <div
                 class="grid grid-cols-5 gap-0 border-t hairline min-h-[4.5rem]"
+                role="region"
+                [attr.id]="expandPanelId(card)"
+                [attr.aria-label]="'Стадии изделия ' + card.productName"
                 data-testid="combine-mini-kanban"
               >
                 @for (col of columns; track col.id) {
@@ -250,10 +269,11 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                       <div
                         cdkDrag
                         [cdkDragData]="card"
-                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing"
-                        title="Перетащите по стадиям"
+                        data-testid="combine-whole-product-chip"
+                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing font-medium"
+                        title="Изделие целиком — перетащите по стадиям"
                       >
-                        Изделие целиком
+                        целиком
                       </div>
                     }
                   </div>
@@ -331,8 +351,9 @@ export class DashboardPage {
   protected readonly filterOrderId = signal<string>('');
   /** TZ-COMBINE-407 — раскрытое изделие (card.key) или null. Accordion: один ряд. */
   protected readonly expandedKey = signal<string | null>(null);
-  /** TZ-COMBINE-407 — модули изделия по productId (lazy на раскрытие). */
+  /** TZ-COMBINE-407 — модули изделия по productId (lazy / prefetch). */
   protected readonly modulesByProduct = signal<Record<string, ProductModule[]>>({});
+  private readonly modulesLoadInflight = new Set<string>();
 
   /** TZ-COMBINE-409 — drop list id scoped to expanded line (не глобальный board). */
   protected rowDropListId(card: CombineItemCard, lane: BoardLane): string {
@@ -343,10 +364,31 @@ export class DashboardPage {
     return this.columns.map((c) => this.rowDropListId(card, c.id));
   }
 
-  /** Индикатор стадии: модуль в lane или (без moduleLanes) effective lane линии. */
+  /** TZ-COMBINE-410 — a11y target for aria-controls. */
+  protected expandPanelId(card: CombineItemCard): string {
+    return `combine-expand-${card.key.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  }
+
+  /**
+   * TZ-COMBINE-410 — лёгкий подзаголовок при смене orderId (ряды уже идут по заказам).
+   */
+  protected showOrderGroupHeader(card: CombineItemCard, index: number): boolean {
+    if (index === 0) return true;
+    const prev = this.itemCards()[index - 1];
+    return !!prev && prev.orderId !== card.orderId;
+  }
+
+  /**
+   * Индикатор стадии (TZ-COMBINE-409/410):
+   * — модуль в lane (после prefetch/expand или из moduleLanes);
+   * — без модулей каталога — один сегмент = effective lane («целиком»).
+   */
   protected laneIndicatorActive(card: CombineItemCard, lane: BoardLane): boolean {
     const loaded = this.modulesByProduct()[card.item.productId];
-    if (loaded && loaded.length > 0) {
+    if (loaded !== undefined) {
+      if (loaded.length === 0) {
+        return this.lineEffectiveLane(card.order, card.item) === lane;
+      }
       return this.moduleRows(card).some((r) => r.lane === lane);
     }
     const mls = (card.order.moduleLanes ?? []).filter((ml) => ml.lineId === card.lineId);
@@ -369,7 +411,10 @@ export class DashboardPage {
     return this.moduleRows(card).filter((r) => r.lane === lane);
   }
 
-  /** Без модулей в каталоге — один чип «целиком» в effective lane (polish 410). */
+  /**
+   * TZ-COMBINE-410 — без модулей в каталоге: один чип «целиком» в effective lane.
+   * Prefetch/expand заполняет modulesByProduct; до загрузки чип не рисуем.
+   */
   protected showWholeProductChip(card: CombineItemCard, lane: BoardLane): boolean {
     const loaded = this.modulesByProduct()[card.item.productId];
     if (loaded === undefined) return false;
@@ -379,6 +424,17 @@ export class DashboardPage {
 
   constructor() {
     this.listRes.reload();
+    /** TZ-COMBINE-410 — prefetch modules so collapsed indicators / whole-product path work without expand. */
+    effect(() => {
+      const productIds = [...new Set(this.itemCards().map((c) => c.item.productId))];
+      untracked(() => {
+        for (const productId of productIds) {
+          if (!productId) continue;
+          if (this.modulesByProduct()[productId] !== undefined) continue;
+          this.loadModules(productId);
+        }
+      });
+    });
   }
 
   protected stats = computed(() => {
@@ -488,10 +544,19 @@ export class DashboardPage {
   }
 
   private loadModules(productId: string): void {
-    this.productModules.list(productId).subscribe((res) => {
-      if (res.ok) {
-        this.modulesByProduct.update((map) => ({ ...map, [productId]: res.data }));
-      }
+    if (this.modulesLoadInflight.has(productId)) return;
+    if (this.modulesByProduct()[productId] !== undefined) return;
+    this.modulesLoadInflight.add(productId);
+    this.productModules.list(productId).subscribe({
+      next: (res) => {
+        this.modulesLoadInflight.delete(productId);
+        if (res.ok) {
+          this.modulesByProduct.update((map) => ({ ...map, [productId]: res.data }));
+        }
+      },
+      error: () => {
+        this.modulesLoadInflight.delete(productId);
+      },
     });
   }
 

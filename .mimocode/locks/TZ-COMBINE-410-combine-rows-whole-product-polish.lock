@@ -1,0 +1,7 @@
+TZ-COMBINE-410
+slug: combine-rows-whole-product-polish
+closed_at: 2026-08-16T23:05:00+03:00
+outcome: DONE
+protects:
+  - frontend/src/app/pages/dashboard/dashboard.page.ts (whole-product chip + indicators + a11y + order group)
+  - design-combine product-row polish (prefetch modules; boardLane semantics unchanged)

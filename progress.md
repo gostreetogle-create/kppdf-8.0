@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-410 DONE — Комбайн «целиком» + polish индикаторов
+**Исполнитель:** composer-executor-combine-410
+**Статус:** DONE; deploy НЕ
+**Что:** prefetch modules → collapsed indicators; chip «целиком» DnD; a11y expand; light order group headers; boardLane semantics intact.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page PASS (25/25).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-410.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-410-combine-rows-whole-product-polish.lock`
+**Next:** Freebuff drain queue; deploy запрещён.
+
 ## [2026-08-16] — TZ-COMBINE-409 DONE — Комбайн product rows + mini-kanban
 **Исполнитель:** composer-executor-combine-409
 **Статус:** DONE; deploy НЕ
