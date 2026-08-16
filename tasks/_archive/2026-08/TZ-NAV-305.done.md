@@ -18,8 +18,8 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN (PO: Do NOT deploy)
 
-COMMIT: COMMIT_PLACEHOLDER
-CLOSEOUT_COMMIT: COMMIT_PLACEHOLDER
+COMMIT: d3de1b229e30430282120230e0ad4fd1e8b0e227
+CLOSEOUT_COMMIT: d3de1b229e30430282120230e0ad4fd1e8b0e227
 
 ## Spec (body)
 
