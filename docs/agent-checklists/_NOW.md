@@ -33,7 +33,7 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## [2026-08-16] — TZ-UX-344 DONE — showcase photo contain
 
-- Archive: `tasks/_archive/2026-08/TZ-UX-344.done.md`; lock `TZ-UX-344-showcase-photo-contain.lock`; Cursor PASS. Deploy нет.
+- Archive: `tasks/_archive/2026-08/TZ-UX-344.done.md`; code `0dec96e9`; lock `TZ-UX-344-showcase-photo-contain.lock`; Cursor PASS. Deploy нет.
 
 ## [2026-08-16] — TZ-UX-342 DONE — KP rail pager + dead totals
 

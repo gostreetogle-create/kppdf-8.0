@@ -5,7 +5,7 @@
 **Gates:** FE tsc PASS; pi-showcase-card Jest 12/12 PASS.
 **Review:** Cursor Verdict PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-344.done.md`
-**Commit:** _(stamp after commit)_
+**Commit:** `0dec96e9`
 **Lock:** `.mimocode/locks/TZ-UX-344-showcase-photo-contain.lock`
 **Next:** STOP for this TZ; list-thumb cover = known_limitation / successor; deploy не выполнялся.
 
