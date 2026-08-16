@@ -19,7 +19,7 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN
 
-COMMIT: _(filled after commit)_
+COMMIT: 215b89fb4a551f3aeefdd2a71174e5752f9a1f54 (code+archive; landed with peer UX-331 commit)
 
 ## Outcome
 

@@ -5,17 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:45:00+03:00
+updated_at: 2026-08-16T12:46:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **TZ-UX-342** CLAIMED / IN PROGRESS — cursor-composer — KP rail → app-pi-pagination + dead-total cleanup. Keys: proposal-product-rail, inventory/**, supply, dict categories, texts/tables. Deps: UX-340 landed.
+- **TZ-UX-331** READY FOR REVIEW — cursor-composer — brand chip home → Комбайн. Gates: tsc PASS, app-layout 8 tests. SHA `9e410338`. Archive после Cursor PASS. Keys: `app-layout.component.ts` / `.spec.ts` / dashboard docs.
+- **TZ-UX-342** READY FOR REVIEW — cursor-composer — KP rail → app-pi-pagination + dead-total cleanup. Gates: tsc PASS, 109 tests. Archive после Cursor PASS. Keys: proposal-product-rail, inventory/**, supply, dict categories, texts/tables.
 
 ## NEXT (PO paste prompt)
 
 - **Единая пагинация:** NEXT = **TZ-UX-341** then finish **TZ-UX-342** (WAVE #1 **TZ-UX-340 DONE** `dc3491c6` / code `a36120d4`). 341 не пересекать keys с 342.
-- Deploy **нет**. Archive TZ-UX-342 только после Cursor/PO PASS. **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; TZ-UX-326 DONE.
+- Deploy **нет**. Archive TZ-UX-331 / TZ-UX-342 только после Cursor/PO PASS. **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; TZ-UX-326 DONE.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 

@@ -49,9 +49,9 @@
 - Outcome: **READY FOR REVIEW** (TZ REVIEW required; archive after Cursor PASS)
 - Brand chip: `data-test="nav-brand-home"`, `routerLink="/"`, aria/title «Комбайн заказов — главная»
 - Visual: `bg-sunrise-soft` + hairline + `bg-sunrise-warm` marker + hover/focus
-- Docs: dashboard.page.md §Навигация; page-chrome Brand home; PAGE-TZ-INDEX shell+dashboard
+- Docs: dashboard.page.md §Навигация; page-chrome Brand home (already in tree); PAGE-TZ-INDEX shell+dashboard
 - Gates: tsc PASS; app-layout.spec 8/8 PASS
-- Not touched: products/modules/materials, pi-pagination, desktop, deals entry
+- Not touched (intent): products/modules TS, pi-pagination, desktop, deals entry
+- Note: commit also picked `modules.page.md` one-line grid pager doc (peer race / lint-staged)
 - Deploy: forbidden
-- Parent SHA before commit: `a36120d45cf66e1d6e95fa506d777937b0cbb2ea`
-- Commit SHA: _(fill after commit)_
+- Commit SHA: `9e4103380527d169ab20a18ab03f452a199f6bfa`

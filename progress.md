@@ -5,7 +5,7 @@
 **Gates:** FE tsc PASS; modules.page Jest 24/24 PASS.
 **Review:** Cursor architect Verdict PASS (closeout-only).
 **Archive:** `tasks/_archive/2026-08/TZ-CATALOG-374.done.md`
-**Commit:** _(filled after commit)_
+**Commit:** `215b89fb4a551f3aeefdd2a71174e5752f9a1f54`
 **Lock:** `.mimocode/locks/TZ-CATALOG-374-modules-list-expand.lock`
 **Next:** STOP for this TZ; deploy не выполнялся.
 
