@@ -34,6 +34,25 @@ export interface GanttSkipInfo {
   productNames: string[];
 }
 
+/** TZ-PRODUCTION-338 — bounded fan-out for catalog hydrate (not 1×N sequential). */
+const PREFETCH_CONCURRENCY = 8;
+
+/** Run `fn` over `items` with at most `limit` promises in flight at once. */
+async function runBounded<T>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let index = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (index < items.length) {
+      const i = index++;
+      await fn(items[i]!);
+    }
+  });
+  await Promise.all(workers);
+}
+
 export interface ProductionReadState {
   loading: boolean;
   error: string | null;
@@ -181,6 +200,9 @@ export class ProductionReadFacade {
     try {
       const workTypes = await this.getWorkTypesMap();
       const workersByWt = await this.getWorkersByWorkType();
+      // TZ-PRODUCTION-338 — warm the catalog in parallel; the sequential build below
+      // then only walks the caches (same estimate math, same warnings).
+      await this.prefetchCatalog(orders, warnings);
       const bars: GanttBar[] = [];
 
       for (const order of orders) {
@@ -225,6 +247,38 @@ export class ProductionReadFacade {
       out.set(wtId, names.join(', ') || '—');
     }
     return out;
+  }
+
+  /**
+   * TZ-PRODUCTION-338 — collect unique productIds across orders and fetch them
+   * in parallel (reuses cache + inflight, so thumbs share calls with the bar build).
+   */
+  private async prefetchCatalog(orders: Order[], warnings: string[]): Promise<void> {
+    const productIds = new Set<string>();
+    for (const order of orders) {
+      for (const item of order.items ?? []) {
+        const productId = item.productId;
+        if (productId) productIds.add(productId);
+      }
+    }
+    if (productIds.size === 0) return;
+
+    await runBounded([...productIds], PREFETCH_CONCURRENCY, async (id) => {
+      await this.getProduct(id, warnings);
+    });
+
+    const moduleIds = new Set<string>();
+    for (const productId of productIds) {
+      const product = this.productCache.get(productId) ?? null;
+      if (!product) continue;
+      const { moduleIds: ids } = extractDirectModuleIds(product);
+      for (const id of ids) moduleIds.add(id);
+    }
+    if (moduleIds.size === 0) return;
+
+    await runBounded([...moduleIds], PREFETCH_CONCURRENCY, async (id) => {
+      await this.getModule(id, warnings);
+    });
   }
 
   /** First product photo per order (for collapsed rail icons). */

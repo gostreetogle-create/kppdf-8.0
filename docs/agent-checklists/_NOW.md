@@ -5,21 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T20:45:00+03:00
-hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt perf 338 READY
+updated_at: 2026-08-16T21:00:00+03:00
+hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt perf **338 DONE**; 339 NEXT
 
 ## ACTIVE
 
 - _(idle Desktop)_ WAVE-DESKTOP-IA-SHELL: **TZD-54/55 DONE**. Full AI-in-NSIS = **TZD-56** backlog.
-- **TZ-PRODUCTION-338 READY** — Gantt hydrate parallel (`tasks/TZ-PRODUCTION-338-gantt-hydrate-parallel.md`).
+- _(idle production)_ TZ-PRODUCTION-338 DONE — next = **339** expand/group frames.
 
 ## NEXT (PO paste prompt)
 
 1. Executor: **TZ-PRODUCTION-339** (крупные ▸ + рамки групп) — `tasks/_backlog/perf/PROMPT-PRODUCTION-339-GANTT-EXPAND.md`
-2. Executor: **TZ-PRODUCTION-338** (Gantt speed) — `tasks/_backlog/perf/PROMPT-PRODUCTION-338-GANTT.md` (∥ 339 OK)
-3. Deploy Desktop **0.5.5** (+ опц. bump 0.5.6 с TZD-55) — только «кати» + VPN off
-4. **TZD-56** — когда нужен AI-раннер в чистом install (sidecar)
-5. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
+2. Deploy Desktop **0.5.5** (+ опц. bump 0.5.6 с TZD-55) — только «кати» + VPN off
+3. **TZD-56** — когда нужен AI-раннер в чистом install (sidecar)
+4. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
 
 ## Queue hygiene (not live)
 
@@ -28,6 +27,10 @@ hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt perf 33
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-338 DONE — Gantt hydrate parallel + non-blocking thumbs
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-338.done.md`; lock `TZ-PRODUCTION-338-gantt-hydrate-parallel.lock`; FE tsc + jest facade|cockpit 27. Deploy нет. Next: **339**.
 
 ## [2026-08-16] — TZD-53 DONE (код) — 0.5.5 fs:allow-write-file hotfix
 

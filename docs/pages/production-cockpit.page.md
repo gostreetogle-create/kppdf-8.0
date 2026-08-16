@@ -148,7 +148,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
-- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` (wash + left accent); при открытом meta active имеет приоритет.
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). При открытом meta active имеет приоритет.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
@@ -188,6 +188,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-334** | DONE: workers list for Gantt labels uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 |
 | **TZ-PRODUCTION-335** | DONE: Gantt/rail sort by summary startDate (tie orderNumber); meta labels Статус заказа / Важность / Начало плана; auto-save silent optimistic; no obsolete sync hint |
 | **TZ-PRODUCTION-336** | DONE: skip orders without direct modules/work types on Gantt; rail marker «нет плана»; toast only on select / `?orderId=` |
+| **TZ-PRODUCTION-338** | DONE: Gantt hydrate = parallel product/module prefetch + non-blocking rail thumbs (bars first); estimate math unchanged |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -217,6 +218,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-333/335:** catalog WorkType.days по-прежнему toast + full reload; второй write того же заказа, пока PATCH в полёте, игнорируется.
 - Plan-vs-fact: после «выполнено» предлагать обновить норматив `WorkType.days` — **parked** (fact production OUT). См. `tasks/_backlog/PARK-plan-vs-fact-days.md`.
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
+- **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

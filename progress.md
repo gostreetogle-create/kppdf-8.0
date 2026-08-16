@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-338 DONE — Gantt hydrate parallel + non-blocking thumbs
+**Исполнитель:** freebuff (code) + composer-executor (gates/closeout)
+**Статус:** DONE; deploy НЕ
+**Что:** Prefetch уникальных product/module ids (`runBounded` concurrency 8) перед `buildOrderEstimate`/`buildGanttBars`; bootstrap/reload не ждёт `getOrderThumbMap` до bars. Estimate math / PATCH / filters без изменений.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `production-read.facade|production-cockpit.page` PASS (2/27).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-338.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-338-gantt-hydrate-parallel.lock`
+**Next:** TZ-PRODUCTION-339 (expand/group frames); deploy запрещён.
+
 ## [2026-08-16] — TZD-51 READY FOR REVIEW — Desktop Excel Forms: справочники V2
 **Исполнитель:** freebuff (deepseek-v4-pro)
 **Статус:** READY FOR REVIEW (не archive до Cursor/PO PASS); deploy НЕ

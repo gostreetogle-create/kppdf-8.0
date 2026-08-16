@@ -712,10 +712,17 @@ export class ProductionCockpitPage implements OnInit {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
-    this.orderThumbs.set(await this.facade.getOrderThumbMap(list));
+    // TZ-PRODUCTION-338 — thumbs must not block first bars; they fill in after.
+    void this.loadThumbs(list);
     const params = await firstValueFrom(this.route.queryParamMap);
     const orderId = (params.get('orderId') ?? '').trim();
     await this.applyInitialOrderId(orderId || null);
+  }
+
+  /** TZ-PRODUCTION-338 — rail thumbnails hydrate in background (bars go first). */
+  private async loadThumbs(orders: Order[]): Promise<void> {
+    const thumbs = await this.facade.getOrderThumbMap(orders);
+    this.orderThumbs.set(thumbs);
   }
 
   /** HUB-303: deep-link `?orderId=` after orders are loaded. */
@@ -787,7 +794,8 @@ export class ProductionCockpitPage implements OnInit {
     const list = await this.facade.loadOrders();
     this.orders.set(list);
     this.workerLabels.set(await this.facade.getWorkerLabelsMap());
-    this.orderThumbs.set(await this.facade.getOrderThumbMap(list));
+    // TZ-PRODUCTION-338 — same as bootstrap: thumbs hydrate in background.
+    void this.loadThumbs(list);
     const id = this.ctx.selectedOrderId();
     if (id) {
       const order = list.find((o) => o._id === id);

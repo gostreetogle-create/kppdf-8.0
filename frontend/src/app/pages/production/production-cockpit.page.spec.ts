@@ -930,4 +930,31 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     );
     expect(toast.warning).toHaveBeenCalled();
   });
+
+  it('TZ-PRODUCTION-338: bars load without waiting for the thumb map (thumbs non-blocking)', async () => {
+    let resolveThumbs!: (v: Map<string, string>) => void;
+    const thumbsGate = new Promise<Map<string, string>>((r) => (resolveThumbs = r));
+    facade.getOrderThumbMap.mockImplementation(() => thumbsGate);
+
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, () => facade.loadBarsForOrders.mock.calls.length > 0);
+
+    // Bars path was reached while the thumb map is still pending — thumbs did not block.
+    expect(facade.loadBarsForOrders).toHaveBeenCalled();
+    expect(facade.getOrderThumbMap).toHaveBeenCalled();
+    expect(
+      (
+        fixture.componentInstance as unknown as { orderThumbs: () => ReadonlyMap<string, string> }
+      ).orderThumbs().size,
+    ).toBe(0);
+
+    resolveThumbs(new Map([['o1', 'http://example.test/thumb-1']]));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(
+      (fixture.componentInstance as unknown as { orderThumbs: () => ReadonlyMap<string, string> })
+        .orderThumbs()
+        .get('o1'),
+    ).toBe('http://example.test/thumb-1');
+  });
 });

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { ProductionReadFacade, extractDirectModuleIds } from './production-read.facade';
 import { OrdersService } from '../orders/orders.service';
 import { ProductsService } from '../../shared/services/products.service';
@@ -259,4 +259,134 @@ describe('ProductionReadFacade', () => {
       { orderId: 'o-skip', orderNumber: 'ORD-SKIP', productNames: ['Пустышка'] },
     ]);
   });
+
+  it('TZ-PRODUCTION-338: prefetches distinct products/modules in parallel, bars unchanged', async () => {
+    const deferred = <T>() => {
+      let resolve!: (v: T) => void;
+      const promise = new Promise<T>((r) => (resolve = r));
+      return { promise, resolve };
+    };
+    const p1 = deferred<{ ok: boolean; data: unknown }>();
+    const p2 = deferred<{ ok: boolean; data: unknown }>();
+    const m1 = deferred<{ ok: boolean; data: unknown }>();
+    const m2 = deferred<{ ok: boolean; data: unknown }>();
+    const fromGate = (gate: { promise: Promise<{ ok: boolean; data: unknown }> }) =>
+      new Observable<{ ok: boolean; data: unknown }>((sub) => {
+        void gate.promise.then((v) => {
+          sub.next(v);
+          sub.complete();
+        });
+      });
+    const productsApi = {
+      findById: jest.fn((id: string) => fromGate(id === 'p1' ? p1 : p2)),
+    };
+    const modulesApi = {
+      findById: jest.fn((id: string) => fromGate(id === 'm1' ? m1 : m2)),
+    };
+    const workTypesApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            items: [
+              { _id: 'wt1', name: 'Сварка', isActive: true, days: 2 },
+              { _id: 'wt2', name: 'Сборка', isActive: true, days: 3 },
+            ],
+            total: 2,
+          },
+        }),
+      ),
+    };
+    const workersApi = {
+      list: jest
+        .fn()
+        .mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProductionReadFacade,
+        { provide: OrdersService, useValue: { list: jest.fn() } },
+        { provide: ProductsService, useValue: productsApi },
+        { provide: ProductModulesService, useValue: modulesApi },
+        { provide: WorkTypesService, useValue: workTypesApi },
+        { provide: PiWorkersService, useValue: workersApi },
+      ],
+    });
+
+    const facade = TestBed.inject(ProductionReadFacade);
+    const orders = [
+      {
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [{ productId: 'p1', productName: 'Стол', quantity: 1 }],
+      },
+      {
+        _id: 'o2',
+        number: 'ORD-2',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [{ productId: 'p2', productName: 'Шкаф', quantity: 1 }],
+      },
+    ] as never;
+
+    const barsPromise = facade.loadBarsForOrders(orders);
+    // Let workTypes/workers settle — prefetch must have subscribed BOTH products
+    // before either resolves (parallel fan-out, not sequential).
+    await new Promise((r) => setTimeout(r, 0));
+    expect(productsApi.findById).toHaveBeenCalledTimes(2);
+    expect(productsApi.findById.mock.calls.map((c) => c[0])).toEqual(['p1', 'p2']);
+    expect(modulesApi.findById).not.toHaveBeenCalled();
+
+    p1.resolve({ ok: true, data: specProduct('p1', 'Стол', 'm1') });
+    p2.resolve({ ok: true, data: specProduct('p2', 'Шкаф', 'm2') });
+    await new Promise((r) => setTimeout(r, 0));
+    // Module prefetch fans out before either module resolves.
+    expect(modulesApi.findById).toHaveBeenCalledTimes(2);
+    expect(modulesApi.findById.mock.calls.map((c) => c[0])).toEqual(['m1', 'm2']);
+
+    m1.resolve({ ok: true, data: specModule('m1', 'Каркас', 'wt1') });
+    m2.resolve({ ok: true, data: specModule('m2', 'Корпус', 'wt2') });
+
+    const bars = await barsPromise;
+    // Same bar set as the sequential build would produce (ids/days/workers unchanged).
+    expect(bars.map((b) => b.id)).toEqual(['o1:0:p1:m1:wt1:1', 'o2:0:p2:m2:wt2:1']);
+    expect(bars.map((b) => b.orderId)).toEqual(['o1', 'o2']);
+    expect(bars.map((b) => b.productId)).toEqual(['p1', 'p2']);
+    expect(bars.map((b) => b.moduleId)).toEqual(['m1', 'm2']);
+    expect(bars.map((b) => b.workTypeId)).toEqual(['wt1', 'wt2']);
+    expect(bars.map((b) => b.days)).toEqual([2, 3]);
+    expect(bars.map((b) => b.workerLabel)).toEqual(['—', '—']);
+    expect(facade.state().loading).toBe(false);
+  });
 });
+
+function specProduct(id: string, name: string, moduleRefId: string): unknown {
+  return {
+    _id: id,
+    name,
+    kind: 'good',
+    unit: 'шт',
+    composition: [
+      {
+        _id: `${moduleRefId}-l`,
+        lineType: 'module',
+        refId: moduleRefId,
+        quantity: 1,
+        sortOrder: 0,
+      },
+    ],
+  };
+}
+
+function specModule(id: string, name: string, workTypeId: string): unknown {
+  return {
+    _id: id,
+    name,
+    workTypes: [{ workTypeId, estimatedHours: 8, sortOrder: 0 }],
+    materials: [],
+  };
+}
