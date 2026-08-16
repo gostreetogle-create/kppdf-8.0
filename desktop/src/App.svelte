@@ -18,16 +18,19 @@
   import { importerFor, type RawRow } from './importers';
   import { parseExcelWorkbook, type ExcelSheetPreview } from './importers/excel';
   import {
-    CANONICAL_COLUMNS,
     canConfirmMapping,
     classifyHeaders,
-    reshapeRows,
     updateMapping,
-    validateMappedRows,
-    type CanonicalColumn,
     type MappingResult,
     type ValidatedImportRow,
   } from './core/import-mapping';
+  import { IMPORT_TARGETS, IMPORT_TARGET_ORDER, isImportTargetKey, type ImportTargetKey } from './core/import-targets';
+  import {
+    analyzeTables,
+    applyTableMapping,
+    reshapeForTable,
+    validateTableRows,
+  } from './core/multi-import';
   import {
     buildSpecificationPreview,
     type SpecificationPreview,
@@ -66,6 +69,17 @@
   } from './core/mcpHost';
   import { buildMcpClientSnippet } from './core/mcpClientSnippet';
   import { DEFAULT_MCP_PORT } from './core/config';
+  import {
+    AiRunnerController,
+    defaultModelDir,
+    formatDownload,
+    aiEndpoint,
+    type AiRunnerState,
+    type AiRunnerStatus,
+  } from './core/aiRunner';
+  import { LOCAL_MODELS, recommendModel, modelById, formatBytes, formatRamGb } from './core/model-catalog';
+  import { chatCompletion } from './core/ai';
+  import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
   const pairingPlaceholder =
@@ -77,7 +91,7 @@
   let errors = $state<string[]>([]);
   let connecting = $state(false);
   let connected = $state<{ username: string; apiBaseUrl: string } | null>(null);
-  type DesktopTab = 'import' | 'mcp';
+  type DesktopTab = 'import' | 'mcp' | 'model';
   let activeTab = $state<DesktopTab>('import');
 
   // MCP host (TZD-14): автозапуск при подключённом аккаунте, статус + настройки.
@@ -87,6 +101,25 @@
     port: DEFAULT_MCP_PORT,
     allowLan: false,
   });
+
+  // Встроенный AI-раннер (Фаза 2): локальная модель для умного подбора колонок.
+  let aiRunner: AiRunnerController;
+  let aiState = $state<AiRunnerState>({
+    status: 'stopped',
+    modelLoaded: false,
+    download: { active: false, fileName: '', received: 0, total: 0 },
+  });
+  let selectedModelId = $state('');
+  let aiBusy = $state(false);
+  let aiMessage = $state('');
+  let aiModelDir = $state('');
+  const AI_STATUS_LABEL: Record<AiRunnerStatus, string> = {
+    stopped: 'остановлен',
+    starting: 'запускается…',
+    running: 'работает',
+    stopping: 'останавливается…',
+    error: 'ошибка',
+  };
   /** Semver из tauri.conf / Cargo — не хардкод «v0.5». */
   let appVersion = $state('…');
   /** TZD-40: решение совместимости версий после /api/desktop/compat. */
@@ -121,9 +154,10 @@
     copyMcpFragment:
       'Скопирует только фрагмент «kppdf»: {…} для вставки внутрь существующего mcpServers.',
     applyPort: 'Сохранит предпочтительный порт и перезапустит MCP, если он уже был запущен.',
+    openInbox: 'Откроет папку Inbox в проводнике — туда можно скопировать файлы, и они появятся в списке.',
     pickInbox: 'Выберет другую папку Inbox вместо каталога по умолчанию.',
     resetInbox: 'Вернёт папку Inbox к стандартной в данных приложения.',
-    scanInbox: 'Сейчас перечитает файлы в папке Inbox.',
+    scanInbox: 'Перечитает файлы папки сейчас (обычно не нужно — папка отслеживается автоматически).',
     audit: 'Только прочитает файл и покажет таблицу. В базу ничего не пишет.',
     propose:
       'Без сверки с базой — только черновики (proposals). В справочник материалов ещё НЕ попадёт — нужен «Подтвердить».',
@@ -133,6 +167,10 @@
     cancel: 'Снимет черновики без записи в базу. Файл уйдёт в «отклонённые».',
     discard: 'Переместит файл в папку «отклонённые» без записи на сервер.',
     pickFile: 'Откроет диалог выбора файла для локального предпросмотра (не Inbox).',
+    startAi:
+      'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
+    stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
+    downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный раннер.',
   } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
@@ -251,6 +289,102 @@
     }
   }
 
+  // Встроенный AI-раннер (Фаза 2): функции управления моделью.
+  async function startAi() {
+    if (aiBusy) return;
+    aiBusy = true;
+    try {
+      const cfg = await loadConfig();
+      aiModelDir = await defaultModelDir();
+      const model = selectedModelId ? modelById(selectedModelId) : undefined;
+      aiMessage = '';
+      await aiRunner.start({ modelDir: aiModelDir, modelFile: model?.fileName });
+      const st = aiRunner.getState();
+      if (st.status === 'running') {
+        await saveConfig({ ...cfg, modelId: selectedModelId || undefined });
+        await aiRunner.refreshHealth();
+      }
+    } finally {
+      aiBusy = false;
+    }
+  }
+
+  async function stopAi() {
+    if (aiBusy) return;
+    aiBusy = true;
+    try {
+      await aiRunner.stop();
+    } finally {
+      aiBusy = false;
+    }
+  }
+
+  async function downloadSelectedModel() {
+    if (aiBusy) return;
+    const model = modelById(selectedModelId);
+    if (!model) {
+      aiMessage = 'Выберите модель из списка.';
+      return;
+    }
+    aiBusy = true;
+    try {
+      aiMessage = '';
+      const ok = await aiRunner.downloadModel(model);
+      if (ok) {
+        aiMessage = `Модель ${model.name} скачана. Нажмите «Перезапустить», чтобы загрузить её в память.`;
+        await aiRunner.refreshHealth();
+      } else {
+        aiMessage = aiState.download.error ?? 'Не удалось скачать модель.';
+      }
+    } finally {
+      aiBusy = false;
+    }
+  }
+
+  /** Автоопределение ПК → рекомендация + восстановление выбранной модели из конфига. */
+  async function loadAiSettings() {
+    aiModelDir = await defaultModelDir();
+    const cfg = await loadConfig();
+    selectedModelId = cfg.modelId && modelById(cfg.modelId) ? cfg.modelId : '';
+    try {
+      const specs = await aiRunner.getSpecs();
+      if (!selectedModelId) {
+        selectedModelId = recommendModel(specs.totalMemoryGb).id;
+      }
+    } catch {
+      // ПК определить не удалось — рекомендация остаётся прежней (Qwen 3B).
+      selectedModelId = selectedModelId || LOCAL_MODELS[0].id;
+    }
+  }
+
+  /** «Предложить сопоставление» через встроенную модель (если раннер жив и модель загружена). */
+  async function suggestWithAi(
+    headers: string[],
+    rows: RawRow[],
+  ): Promise<Record<ImportTargetKey, MappingResult>> {
+    const port = aiState.port;
+    if (!port) throw new Error('AI-раннер не готов: нет порта.');
+    const out = {} as Record<ImportTargetKey, MappingResult>;
+    for (const block of importBlocks) {
+      const { system, user } = buildMappingPrompt(headers, block.targetKey);
+      const res = await chatCompletion(
+        { baseUrl: aiEndpoint(port), timeoutMs: 120_000 },
+        {
+          model: aiState.modelName ?? 'local',
+          messages: [
+            { role: 'system', content: system },
+            { role: 'user', content: user },
+          ],
+          temperature: 0.2,
+        },
+      );
+      const text = res.choices?.[0]?.message?.content ?? '';
+      const suggested = parseMappingJson(text, block.targetKey);
+      out[block.targetKey] = applyTableMapping(headers, block.targetKey, suggested);
+    }
+    return out;
+  }
+
   // Импорт
   let importRows = $state<RawRow[]>([]);
   let importError = $state('');
@@ -259,14 +393,23 @@
   let importFileName = $state('');
   let importSheets = $state<ExcelSheetPreview[]>([]);
   let activeSheetName = $state('');
-  let mappingResult = $state<MappingResult | null>(null);
-  let validatedRows = $state<ValidatedImportRow[]>([]);
+  /** Один файл → несколько таблиц: блок сопоставления на каждую. */
+  interface ImportBlock {
+    targetKey: ImportTargetKey;
+    mapping: MappingResult;
+    validated: ValidatedImportRow[];
+    proposalIds: string[];
+  }
+  let importBlocks = $state<ImportBlock[]>([]);
+  /** Есть ли блоки, которые пишут в SoT сразу (не через журнал предложений). */
+  let hasDirectWriteBlocks = $derived(
+    importBlocks.some((block) => block.targetKey !== 'material'),
+  );
   let mappingBusy = $state(false);
   let mappingMessage = $state('');
   let profileName = $state('');
   let profiles = $state<ImportMappingProfile[]>([]);
   let selectedProfileId = $state('');
-  let rowProposalIds = $state<string[]>([]);
   let specificationPreview = $state<SpecificationPreview | null>(null);
   let specificationBusy = $state(false);
   let specificationMessage = $state('');
@@ -296,6 +439,10 @@
   let inboxBusy = $state(false);
   let inboxLog = $state('');
   let inboxScanTimer: ReturnType<typeof setInterval> | null = null;
+  /** Функция отмены fs.watch (встроенное слежение за папкой). */
+  let inboxUnwatch: (() => void) | null = null;
+  /** Файл из папки агента, открытый сейчас в студии (для финализации после отправки). */
+  let activeInboxFile = $state('');
 
   /** Инициализация: каталог + layout + первая выгрузка лога. */
   async function initInbox() {
@@ -345,22 +492,62 @@
     }
   }
 
-  /** Начать периодическое сканирование (пока приложение открыто и есть inbox). */
-  function startInboxWatcher() {
-    if (inboxScanTimer) return;
-    inboxScanTimer = setInterval(() => {
-      if (disposed) {
-        stopInboxWatcher();
-        return;
-      }
-      void refreshInbox();
-    }, 4000);
+  /**
+   * Слежение за папкой в реальном времени: fs.watch (Tauri) с дебаунсом;
+   * если watch недоступен (вне Tauri-рантайма) — fallback на опрос раз в 4 с.
+   */
+  async function startInboxWatcher() {
+    stopInboxWatcher();
+    if (!inboxDir) return;
+    try {
+      const { watch } = await import('@tauri-apps/plugin-fs');
+      inboxUnwatch = await watch(
+        inboxDir,
+        () => {
+          if (disposed) return;
+          void refreshInbox();
+        },
+        { recursive: true, delayMs: 700 },
+      );
+    } catch {
+      // fs.watch недоступен (например, запуск вне Tauri) — опрос.
+      inboxUnwatch = null;
+      inboxScanTimer = setInterval(() => {
+        if (disposed) {
+          stopInboxWatcher();
+          return;
+        }
+        void refreshInbox();
+      }, 4000);
+    }
   }
 
   function stopInboxWatcher() {
+    if (inboxUnwatch) {
+      try {
+        inboxUnwatch();
+      } catch {
+        // функция отмены могла уже не действовать
+      }
+      inboxUnwatch = null;
+    }
     if (inboxScanTimer) {
       clearInterval(inboxScanTimer);
       inboxScanTimer = null;
+    }
+  }
+
+  /** Открыть папку inbox в проводнике (путь из конфига или дефолт). */
+  async function openInboxFolder() {
+    const dir = inboxDir || (await resolveInboxDir(await loadConfig()));
+    if (!dir) {
+      inboxError = 'Папка inbox ещё не определена — сначала выберите папку.';
+      return;
+    }
+    try {
+      await openExternal(dir);
+    } catch {
+      inboxError = 'Не удалось открыть папку в проводнике — откройте её вручную по пути выше.';
     }
   }
 
@@ -375,6 +562,7 @@
       inboxDir = picked;
       inboxFiles = [];
       await refreshInbox();
+      await startInboxWatcher(); // слежение переключается на новую папку
     } catch (err) {
       inboxError = err instanceof Error ? err.message : 'Не удалось выбрать каталог inbox.';
     }
@@ -385,9 +573,14 @@
     const cfg = await loadConfig();
     await saveConfig({ ...cfg, inbox: {} });
     await initInbox();
+    await startInboxWatcher(); // слежение возвращается на папку по умолчанию
   }
 
-  /** Audit: распарсить файл и показать строки (запись в SoT не происходит). */
+  /**
+   * Audit: распарсить файл агента и открыть его в основной студии — те же
+   * блоки таблиц, профили и дропдауны, что при ручном импорте (HITL).
+   * Запись в SoT не происходит до «Отправить на подтверждение».
+   */
   async function auditFile(file: InboxFileUi) {
     if (inboxBusy) return;
     inboxBusy = true;
@@ -398,6 +591,17 @@
       file.status = audit.error ? 'failed' : 'audited';
       file.note = audit.error;
       inboxFiles = [...inboxFiles];
+      if (!audit.error && audit.rows.length > 0) {
+        // Открываем в студии: те же таблицы/профили, что при ручном импорте.
+        activeInboxFile = file.name;
+        importFileName = file.name;
+        importSheets = [];
+        activeSheetName = '';
+        importRows = audit.rows;
+        prepareMapping(audit.rows);
+        file.note = 'Открыт в студии ниже — сопоставьте колонки и отправьте.';
+        inboxFiles = [...inboxFiles];
+      }
     } catch (err) {
       file.status = 'failed';
       file.note = err instanceof Error ? err.message : 'Не удалось разобрать файл.';
@@ -578,35 +782,53 @@
     }
   }
 
-  function setMappingFromMap(sourceMap: Record<string, CanonicalColumn | null>) {
+  /** Блоки из профиля «метода приложения»: таблицы, чьи колонки есть в файле. */
+  function blocksFromProfile(profile: ImportMappingProfile): ImportBlock[] {
     const headers = Object.keys(importRows[0] ?? {});
-    let result = classifyHeaders(headers);
-    for (const header of headers) {
-      result = updateMapping(result, header, sourceMap[header] ?? null);
+    const tables = profile.tables?.length
+      ? profile.tables
+      : [{ targetEntity: profile.targetEntity, columnMap: profile.columnMap }];
+    const skipped: string[] = [];
+    const blocks: ImportBlock[] = [];
+    for (const table of tables) {
+      // Неизвестная сущность (legacy `bom` и т.п.) — пропускаем, студию не роняем.
+      if (!isImportTargetKey(table.targetEntity)) {
+        skipped.push(String(table.targetEntity));
+        continue;
+      }
+      if (!headers.some((header) => table.columnMap[header] !== undefined && table.columnMap[header] !== null)) {
+        continue;
+      }
+      blocks.push({
+        targetKey: table.targetEntity,
+        mapping: applyTableMapping(headers, table.targetEntity, table.columnMap),
+        validated: [],
+        proposalIds: [],
+      });
     }
-    mappingResult = result;
+    if (skipped.length > 0) {
+      mappingMessage = `Профиль содержит таблицы, которых больше нет в студии: ${skipped.join(', ')} — они пропущены.`;
+    }
+    return blocks;
   }
 
   function prepareMapping(rows: RawRow[]) {
     specificationPreview = buildSpecificationPreview(rows);
-    mappingResult = classifyHeaders(Object.keys(rows[0] ?? {}));
-    // Hierarchy columns belong to the specification graph, not the flat material
-    // canonical map. Keep TZD-37 flat mapping available without red conflicts.
-    for (const header of Object.keys(rows[0] ?? {})) {
-      const normalized = header.trim().toLowerCase();
-      if (['level', 'parentarticle', 'parent article', 'родитель', 'артикул родителя', 'уровень', 'kind', 'тип элемента'].includes(normalized)) {
-        mappingResult = updateMapping(mappingResult, header, null);
-      }
-    }
-    validatedRows = [];
+    const headers = Object.keys(rows[0] ?? {});
+    importBlocks = analyzeTables(headers).map((suggestion) => ({
+      targetKey: suggestion.targetKey,
+      mapping: suggestion.mapping,
+      validated: [],
+      proposalIds: [],
+    }));
     importStage = 'mapping';
     mappingMessage = '';
     specificationMessage = '';
-    rowProposalIds = [];
     const defaultProfile = profiles.find((profile) => profile.isDefault);
-    if (defaultProfile) {
+    if (defaultProfile && importBlocks.length > 0) {
+      const profileBlocks = blocksFromProfile(defaultProfile);
+      if (profileBlocks.length > 0) importBlocks = profileBlocks;
       selectedProfileId = defaultProfile.id;
-      setMappingFromMap(defaultProfile.columnMap);
       mappingMessage = `Профиль «${defaultProfile.name}» применён автоматически — проверьте карту перед подтверждением.`;
     }
   }
@@ -619,29 +841,56 @@
     prepareMapping(sheet.rows);
   }
 
-  function changeMapping(header: string, event: Event) {
+  function changeMapping(blockIndex: number, header: string, event: Event) {
     const value = (event.currentTarget as HTMLSelectElement).value;
-    mappingResult = updateMapping(
-      mappingResult ?? classifyHeaders(Object.keys(importRows[0] ?? {})),
-      header,
-      value === '__ignore__' ? null : (value as CanonicalColumn),
+    const block = importBlocks[blockIndex];
+    if (!block) return;
+    const mapping = updateMapping(block.mapping, header, value === '__ignore__' ? null : value);
+    importBlocks = importBlocks.map((item, index) =>
+      index === blockIndex ? { ...item, mapping } : item,
     );
   }
 
+  function addImportTable(targetKey: ImportTargetKey) {
+    if (importBlocks.some((block) => block.targetKey === targetKey)) return;
+    const headers = Object.keys(importRows[0] ?? {});
+    importBlocks = [
+      ...importBlocks,
+      {
+        targetKey,
+        mapping: classifyHeaders(headers, IMPORT_TARGETS[targetKey].columns),
+        validated: [],
+        proposalIds: [],
+      },
+    ];
+  }
+
+  function removeImportTable(index: number) {
+    importBlocks = importBlocks.filter((_, item) => item !== index);
+  }
+
   function confirmMapping() {
-    if (!mappingResult || !canConfirmMapping(mappingResult)) {
-      mappingMessage = 'Сначала исправьте красные колонки или выберите «Игнорировать». Отправка закрыта.';
+    if (importBlocks.length === 0) {
+      mappingMessage = 'Не найдено таблиц для импорта — добавьте таблицу вручную или выберите профиль.';
       return;
     }
-    importRows = reshapeRows(importRows, mappingResult.mapping);
-    validatedRows = validateMappedRows(importRows);
+    for (const block of importBlocks) {
+      if (!canConfirmMapping(block.mapping)) {
+        mappingMessage = `Сначала исправьте красные колонки в блоке «${IMPORT_TARGETS[block.targetKey].label}» или выберите «Игнорировать». Отправка закрыта.`;
+        return;
+      }
+    }
+    importBlocks = importBlocks.map((block) => ({
+      ...block,
+      validated: validateTableRows(reshapeForTable(importRows, block.mapping), block.targetKey),
+    }));
     importStage = 'rows';
-    mappingMessage = 'Сопоставление подтверждено. Проверьте статусы строк перед отправкой.';
+    mappingMessage = 'Сопоставление подтверждено. Проверьте статусы строк в каждом блоке перед отправкой.';
   }
 
   async function saveMappingProfile() {
     const name = profileName.trim();
-    if (!name || !mappingResult) {
+    if (!name || importBlocks.length === 0) {
       mappingMessage = 'Введите название профиля после сопоставления колонок.';
       return;
     }
@@ -654,7 +903,14 @@
     try {
       const created = await createImportMappingProfile(
         apiFrom(cfg),
-        { name, columnMap: mappingResult.mapping, targetEntity: 'material', isDefault: false },
+        {
+          name,
+          tables: importBlocks.map((block) => ({
+            targetEntity: block.targetKey,
+            columnMap: block.mapping.mapping,
+          })),
+          isDefault: false,
+        },
       );
       profiles = [created, ...profiles.filter((profile) => profile.id !== created.id)];
       selectedProfileId = created.id;
@@ -704,80 +960,279 @@
 
   function applySavedProfile(profile: ImportMappingProfile) {
     selectedProfileId = profile.id;
-    setMappingFromMap(profile.columnMap);
-    mappingMessage = `Профиль «${profile.name}» загружен — подтвердите сопоставление вручную.`;
+    const blocks = blocksFromProfile(profile);
+    if (blocks.length === 0) {
+      mappingMessage = `Профиль «${profile.name}» не подходит к колонкам этого файла — сопоставьте вручную.`;
+      return;
+    }
+    importBlocks = blocks;
+    mappingMessage = `Профиль «${profile.name}» применён — подтвердите сопоставление вручную.`;
   }
 
-  async function suggestMappingWithMcp() {
-    if (!mappingResult || mcpState.status !== 'running' || !pairedApiKey) return;
+  /**
+   * «Предложить сопоставление»: перезапускает классификатор колонок.
+   * Работает и без MCP — классификация локальная и детерминированная.
+   * Если MCP-хост запущен — используем его классификатор (тот же результат,
+   * но по образцу строк); сообщение о результате всегда видно в панели.
+   */
+  /** Перезапуск классификатора для всех блоков (локально или через MCP). */
+  async function suggestMapping() {
+    if (importBlocks.length === 0) return;
     mappingBusy = true;
+    mappingMessage = '';
     try {
-      const suggested = await suggestMappingThroughMcp(
-        mcpState.port,
-        pairedApiKey,
-        Object.keys(importRows[0] ?? {}),
-        importRows.slice(0, 5),
+      const headers = Object.keys(importRows[0] ?? {});
+      if (aiState.status === 'running' && aiState.modelLoaded && aiState.port) {
+        // Встроенная модель (Фаза 2): умный подбор нестандартных колонок.
+        const byTable = await suggestWithAi(headers, importRows.slice(0, 5));
+        importBlocks = importBlocks.map((block) => ({
+          ...block,
+          mapping: byTable[block.targetKey],
+        }));
+      } else if (mcpState.status === 'running' && pairedApiKey) {
+        const suggested = await suggestMappingThroughMcp(
+          mcpState.port,
+          pairedApiKey,
+          headers,
+          importRows.slice(0, 5),
+        );
+        importBlocks = importBlocks.map((block) => ({
+          ...block,
+          mapping: applyTableMapping(headers, block.targetKey, suggested),
+        }));
+      } else {
+        importBlocks = importBlocks.map((block) => ({
+          ...block,
+          mapping: classifyHeaders(headers, IMPORT_TARGETS[block.targetKey].columns),
+        }));
+      }
+      const ready = importBlocks.reduce(
+        (sum, block) => sum + block.mapping.rows.filter((row) => row.state === 'ready').length,
+        0,
       );
-      setMappingFromMap(suggested);
-      mappingMessage = 'MCP предложил карту. Красные поля по-прежнему требуют подтверждения человека.';
+      const needCheck = importBlocks.reduce(
+        (sum, block) =>
+          sum + block.mapping.rows.filter((row) => row.state !== 'ready' && row.state !== 'ignored').length,
+        0,
+      );
+      mappingMessage =
+        `Сопоставление предложено: готово ${ready}, проверить ${needCheck}. ` +
+        (needCheck > 0
+          ? 'Исправьте красные строки или выберите «Игнорировать колонку», затем подтвердите.'
+          : 'Все колонки определены — можно подтверждать.');
     } catch (err) {
-      mappingMessage = err instanceof Error ? err.message : 'MCP не смог предложить карту.';
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось предложить сопоставление.';
     } finally {
       mappingBusy = false;
     }
   }
 
-  async function sendValidatedRows() {
-    const allowed = validatedRows.filter((row) => row.status === 'ok_new' || row.status === 'ok_update');
-    if (allowed.length === 0) {
-      mappingMessage = 'Нет строк без ошибок для отправки на подтверждение.';
-      return;
+  function numberOr(value: unknown): number | undefined {
+    if (value === undefined || value === null || String(value).trim() === '') return undefined;
+    const n = Number(String(value).replace(',', '.'));
+    return Number.isFinite(n) ? n : undefined;
+  }
+
+  function dimensionsOr(row: RawRow): { length?: number; width?: number; height?: number; unit?: string } | undefined {
+    const length = numberOr(row['dimensions.length']);
+    const width = numberOr(row['dimensions.width']);
+    const height = numberOr(row['dimensions.height']);
+    const unit = row['dimensions.unit'] ? String(row['dimensions.unit']) : undefined;
+    return length === undefined && width === undefined && height === undefined && !unit
+      ? undefined
+      : { length, width, height, unit };
+  }
+
+  /** Прямое создание записей (product/module/counterparty) из сопоставленных строк. */
+  async function createEntities(
+    targetKey: ImportTargetKey,
+    rows: RawRow[],
+  ): Promise<{ created: number; errors: Array<{ rowName: string; error: string }> }> {
+    const cfg = await loadConfig();
+    if (!cfg.apiBaseUrl || !cfg.apiKey) {
+      throw new Error('Запись требует подключённого аккаунта.');
     }
+    let created = 0;
+    const errors: Array<{ rowName: string; error: string }> = [];
+    for (const row of rows) {
+      try {
+        if (targetKey === 'product') {
+          const kind = String(row.kind ?? 'good').trim() as 'good' | 'service' | 'work';
+          const safeKind = ['good', 'service', 'work'].includes(kind) ? kind : 'good';
+          await apiPost(apiFrom(cfg), '/api/products', {
+            name: String(row.name ?? '').trim(),
+            sku: String(row.sku ?? row.article ?? '').trim(),
+            kind: safeKind,
+            unit: String(row.unit ?? 'шт').trim(),
+            description: row.description ? String(row.description) : undefined,
+            notes: row.notes ? String(row.notes) : undefined,
+            listPrice: numberOr(row.listPrice),
+            costPrice: numberOr(row.costPrice),
+            stockQty: numberOr(row.stockQty),
+            ralCode: row.ralCode ? String(row.ralCode) : undefined,
+            dimensions: dimensionsOr(row),
+            weightKg: numberOr(row.weightKg),
+          });
+        } else if (targetKey === 'module') {
+          await apiPost(apiFrom(cfg), '/api/modules', {
+            name: String(row.name ?? '').trim(),
+            article: String(row.article ?? '').trim(),
+            unit: String(row.unit ?? 'шт').trim(),
+            notes: row.notes ? String(row.notes) : undefined,
+            dimensions: dimensionsOr(row),
+            weightKg: numberOr(row.weightKg),
+          });
+        } else if (targetKey === 'counterparty') {
+          const name = String(row.name ?? '').trim();
+          const inn = String(row.inn ?? '').trim();
+          if (!name || !inn) {
+            errors.push({ rowName: name || 'без имени', error: 'Контрагенту нужны имя и ИНН' });
+            continue;
+          }
+          await apiPost(apiFrom(cfg), '/api/counterparties', {
+            name,
+            inn,
+            roles: [],
+            shortName: row.shortName ? String(row.shortName) : undefined,
+            legalForm: row.legalForm ? String(row.legalForm) : undefined,
+            kpp: row.kpp ? String(row.kpp) : undefined,
+            ogrn: row.ogrn ? String(row.ogrn) : undefined,
+            bankName: row.bankName ? String(row.bankName) : undefined,
+            bankBik: row.bankBik ? String(row.bankBik) : undefined,
+            bankAccount: row.bankAccount ? String(row.bankAccount) : undefined,
+            bankCorrAccount: row.bankCorrAccount ? String(row.bankCorrAccount) : undefined,
+            directorName: row.directorName ? String(row.directorName) : undefined,
+          });
+        }
+        created += 1;
+      } catch (err) {
+        errors.push({
+          rowName: String(row.name ?? row.article ?? row.sku ?? 'строка'),
+          error: err instanceof Error ? err.message : 'Ошибка сервера',
+        });
+      }
+    }
+    return { created, errors };
+  }
+
+  /** Отправить блоки: материалы → предложения журнала; остальные → прямое создание. */
+  async function sendBlocks() {
     const cfg = await loadConfig();
     if (!cfg.apiBaseUrl || !cfg.apiKey) {
       mappingMessage = 'Отправка требует подключённого аккаунта.';
       return;
     }
+    // Non-material пишут в SoT сразу — честный confirm перед записью.
+    const directCounts = importBlocks
+      .filter((block) => block.targetKey !== 'material')
+      .map((block) => ({
+        label: IMPORT_TARGETS[block.targetKey].label,
+        rows: block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update').length,
+      }))
+      .filter((item) => item.rows > 0);
+    if (directCounts.length > 0) {
+      const summary = directCounts.map((item) => `${item.label}: ${item.rows}`).join(', ');
+      const ok = confirm(
+        `Записать в каталог сразу? Эти записи попадут в систему без дополнительного подтверждения:\n${summary}\nМатериалы останутся в журнале предложений.`, 
+      );
+      if (!ok) return;
+    }
     mappingBusy = true;
     try {
-      const result = await proposeMaterialRows(
-        apiFrom(cfg),
-        allowed.map((row) => row.values),
-      );
-      rowProposalIds = result.proposalIds;
-      mappingMessage = `Создано предложений: ${result.proposed}. SoT не изменён — подтвердите их отдельной кнопкой.`;
+      let proposed = 0;
+      let created = 0;
+      const errors: string[] = [];
+      const next: ImportBlock[] = [];
+      for (const block of importBlocks) {
+        const allowed = block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update');
+        if (allowed.length === 0) {
+          next.push(block);
+          continue;
+        }
+        if (block.targetKey === 'material') {
+          const result = await proposeMaterialRows(apiFrom(cfg), allowed.map((row) => row.values));
+          proposed += result.proposed;
+          errors.push(...result.failed.map((f) => `${f.rowName}: ${f.error}`));
+          next.push({ ...block, proposalIds: result.proposalIds });
+        } else {
+          const result = await createEntities(block.targetKey, allowed.map((row) => row.values));
+          created += result.created;
+          errors.push(...result.errors.map((f) => `${f.rowName}: ${f.error}`));
+          next.push(block);
+        }
+      }
+      importBlocks = next;
+      const parts = [`предложено материалов: ${proposed}`, `создано записей: ${created}`];
+      if (errors.length > 0) parts.push(`ошибок: ${errors.length} (${errors[0].slice(0, 100)})`);
+      mappingMessage = parts.join(' · ') + '. Предложения материалов требуют подтверждения.';
+      await finalizeInboxFileIfDone({ proposed, created });
     } catch (err) {
-      mappingMessage = err instanceof Error ? err.message : 'Не удалось отправить строки на подтверждение.';
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось отправить строки.';
     } finally {
       mappingBusy = false;
     }
   }
 
-  async function confirmMappedRows() {
-    if (rowProposalIds.length === 0) return;
+  /**
+   * Если файл агента открыт в студии и все его блоки отправлены/подтверждены
+   * (нет висящих предложений) — переносим файл в processed/ и убираем из списка.
+   * Перенос только если хоть что-то реально ушло в SoT/журнал: (proposed + created) > 0.
+   */
+  async function finalizeInboxFileIfDone(summary?: { proposed: number; created: number }) {
+    if (!activeInboxFile) return;
+    const file = inboxFiles.find((f) => f.name === activeInboxFile);
+    if (!file) {
+      activeInboxFile = '';
+      return;
+    }
+    const hasPending = importBlocks.some((block) => block.proposalIds.length > 0);
+    if (hasPending) return; // ждём подтверждения предложений материалов
+    if (summary && summary.proposed + summary.created === 0) {
+      // Полный провал — файл остаётся в папке для повторной попытки.
+      file.note = 'Ничего не записано — проверьте ошибки выше и отправьте снова.';
+      inboxFiles = [...inboxFiles];
+      return;
+    }
+    try {
+      await moveInboxFile(inboxDir, file.name, 'processed');
+      await appendInboxLog(inboxDir, `${file.name} → processed: импортирован через студию`);
+      inboxFiles = inboxFiles.filter((f) => f.name !== file.name);
+      activeInboxFile = '';
+      await loadInboxLog();
+    } catch (err) {
+      inboxError = err instanceof Error ? err.message : 'Не удалось переместить файл после импорта.';
+    }
+  }
+
+  async function confirmBlockProposals(blockIndex: number) {
+    const block = importBlocks[blockIndex];
+    if (!block || block.proposalIds.length === 0) return;
     const cfg = await loadConfig();
     if (!cfg.apiBaseUrl || !cfg.apiKey) return;
     mappingBusy = true;
     try {
-      const result = await confirmProposals(
-        apiFrom(cfg),
-        rowProposalIds,
+      const result = await confirmProposals(apiFrom(cfg), block.proposalIds);
+      importBlocks = importBlocks.map((item, index) =>
+        index === blockIndex ? { ...item, proposalIds: [] } : item,
       );
-      rowProposalIds = [];
       mappingMessage = `Подтверждено: ${result.applied}. Изменения записаны через журнал.`;
+      await finalizeInboxFileIfDone();
     } finally {
       mappingBusy = false;
     }
   }
 
-  async function cancelMappedRows() {
-    if (rowProposalIds.length === 0) return;
+  async function cancelBlockProposals(blockIndex: number) {
+    const block = importBlocks[blockIndex];
+    if (!block || block.proposalIds.length === 0) return;
     const cfg = await loadConfig();
     if (!cfg.apiBaseUrl || !cfg.apiKey) return;
     mappingBusy = true;
     try {
-      await cancelProposals(apiFrom(cfg), rowProposalIds);
-      rowProposalIds = [];
+      await cancelProposals(apiFrom(cfg), block.proposalIds);
+      importBlocks = importBlocks.map((item, index) =>
+        index === blockIndex ? { ...item, proposalIds: [] } : item,
+      );
       mappingMessage = 'Предложения отменены; SoT не изменён.';
     } finally {
       mappingBusy = false;
@@ -903,6 +1358,10 @@
     mcp = new McpHostController((state) => {
       mcpState = state;
     });
+    aiRunner = new AiRunnerController((state) => {
+      aiState = state;
+    });
+    await loadAiSettings();
     // Закрытие по крестику (Tauri 2): listener + destroy ACL.
     // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
     await getCurrentWindow().onCloseRequested(async (event) => {
@@ -913,6 +1372,11 @@
         mcp?.dispose();
       } catch {
         // MCP не должен блокировать выход
+      }
+      try {
+        aiRunner?.dispose();
+      } catch {
+        // AI-раннер не должен блокировать выход
       }
       try {
         await getCurrentWindow().destroy();
@@ -943,10 +1407,10 @@
       }
     }
 
-    // Inbox (TZD-15): подготовка каталога + периодическое сканирование.
+    // Inbox (TZD-15): подготовка каталога + слежение в реальном времени.
     await initInbox();
     await loadMappingProfiles();
-    startInboxWatcher();
+    await startInboxWatcher();
   });
 
   function apiFrom(cfg: AppConfig): ApiClientOptions {
@@ -1071,6 +1535,8 @@
     importing = true;
     importError = '';
     try {
+      // Ручной файл — не финализируем файлы агента по завершении.
+      activeInboxFile = '';
       importFileName = name;
       if (importer.id === 'excel') {
         const workbook = await parseExcelWorkbook({ name, data });
@@ -1087,8 +1553,7 @@
       importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
       importRows = [];
       importSheets = [];
-      mappingResult = null;
-      validatedRows = [];
+      importBlocks = [];
     } finally {
       importing = false;
     }
@@ -1146,7 +1611,7 @@
         aria-selected={activeTab === 'import'}
         onclick={() => (activeTab = 'import')}
       >
-        Импорт Excel
+        Студия импорта
       </button>
       <button
         class:tabs__button--active={activeTab === 'mcp'}
@@ -1158,6 +1623,17 @@
         onclick={() => (activeTab = 'mcp')}
       >
         MCP
+      </button>
+      <button
+        class:tabs__button--active={activeTab === 'model'}
+        class="tabs__button"
+        data-test="tab-model"
+        type="button"
+        role="tab"
+        aria-selected={activeTab === 'model'}
+        onclick={() => (activeTab = 'model')}
+      >
+        Модель
       </button>
     </div>
   </header>
@@ -1415,10 +1891,128 @@
       {/if}
     </article>
 
+    {:else if activeTab === 'model'}
+    <article class="card">
+      <h2>Локальная модель — умный подбор колонок</h2>
+      <p class="hint">
+        Модель скачивается один раз (~2 ГБ) в папку приложения и работает офлайн — ничего больше ставить
+        не нужно. Подбор колонок работает и без модели (детерминированный классификатор), модель помогает
+        с нестандартными заголовками. Характеристики ПК определяются автоматически — рекомендация ниже.
+      </p>
+
+      <div class="mcp-status">
+        <span class="mcp-badge mcp-badge--{aiState.status}" aria-live="polite">
+          {AI_STATUS_LABEL[aiState.status]}
+        </span>
+        {#if aiState.modelLoaded && aiState.modelName}
+          <span class="mcp-badge mcp-badge--running">модель загружена: {aiState.modelName}</span>
+        {/if}
+      </div>
+
+      {#if aiState.lastError}
+        <p class="errors" role="alert">{aiState.lastError}</p>
+      {/if}
+      {#if aiMessage}
+        <p class="hint" role="status">{aiMessage}</p>
+      {/if}
+      {#if aiState.modelError}
+        <p class="errors" role="alert">{aiState.modelError}</p>
+      {/if}
+      {#if formatDownload(aiState.download)}
+        <p class="hint" role="status">{formatDownload(aiState.download)}</p>
+      {/if}
+
+      {#if aiState.specs}
+        <p class="hint">
+          Ваш ПК: ОЗУ {formatRamGb(aiState.specs.totalMemoryGb)} · свободно
+          {formatRamGb(aiState.specs.freeMemoryGb)} · ядер CPU: {aiState.specs.cpus}
+          {#if selectedModelId && modelById(selectedModelId)}
+            → рекомендация: <strong>{modelById(selectedModelId)!.name}</strong>
+          {/if}
+        </p>
+      {/if}
+
+      <label class="field">
+        <span>Модель</span>
+        <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
+          {#each LOCAL_MODELS as model (model.id)}
+            <option value={model.id}>
+              {model.name} — {formatBytes(model.sizeBytes)}
+            </option>
+          {/each}
+        </select>
+      </label>
+
+      <div class="mcp-actions">
+        {#if aiState.status === 'running' || aiState.status === 'starting'}
+          <button
+            class="btn"
+            type="button"
+            onclick={stopAi}
+            disabled={aiState.status === 'starting'}
+            onmouseenter={() => showHint(HINTS.stopAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.stopAi)}
+            onblur={clearHint}
+          >
+            Остановить
+          </button>
+        {/if}
+        {#if aiState.status === 'stopped' || aiState.status === 'error'}
+          <button
+            class="btn btn--primary"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Запустить раннер
+          </button>
+        {/if}
+        {#if aiState.status === 'running'}
+          <button
+            class="btn"
+            type="button"
+            onclick={startAi}
+            disabled={aiBusy}
+            onmouseenter={() => showHint(HINTS.startAi)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.startAi)}
+            onblur={clearHint}
+          >
+            Перезапустить
+          </button>
+        {/if}
+        <button
+          class="btn btn--small"
+          type="button"
+          onclick={downloadSelectedModel}
+          disabled={aiState.status !== 'running' || aiState.download.active || aiBusy}
+          onmouseenter={() => showHint(HINTS.downloadModel)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.downloadModel)}
+          onblur={clearHint}
+        >
+          {aiState.download.active ? 'Скачивается…' : 'Скачать модель'}
+        </button>
+      </div>
+      <p class="hint">
+        Порядок: <strong>Запустить</strong> → <strong>Скачать модель</strong> → <strong>Перезапустить</strong>.
+        После «Перезапустить» модель загрузится в память, и кнопка «Предложить сопоставление» во вкладке
+        «Студия импорта» начнёт использовать её для нестандартных колонок.
+      </p>
+    </article>
+
     {:else}
     <article class="card card--studio">
-      <h2>Импорт Excel</h2>
-      <p>Перетащите спецификацию сюда или выберите файл — ниже появится широкая таблица предпросмотра.</p>
+      <h2>Студия импорта</h2>
+      <p>
+        Два способа загрузить данные: <strong>перетащите файл сюда</strong> (или выберите кнопкой), либо
+        <strong>положите файл в папку агента</strong> — он появится в списке ниже.
+      </p>
 
       <button
         class="btn btn--primary"
@@ -1446,6 +2040,214 @@
       {#if importError}
         <p class="errors" role="alert">{importError}</p>
       {/if}
+
+      <section class="inbox-panel" aria-label="Файлы агента">
+        <div class="inbox-panel__head">
+          <div>
+            <h3>Файлы агента (папка Inbox)</h3>
+            <p class="card__lead">
+              Положите файл в папку → <strong>Разобрать</strong> — он откроется в студии ниже: те же
+              таблицы, профили и сопоставление колонок, что при ручном импорте. После отправки файл
+              уходит в <code>processed/</code>. Для экспертных путей: <strong>Создать задачу для ИИ</strong>
+              (без proposals) или <strong>Предложить строки</strong> (материалы, без сверки).
+            </p>
+          </div>
+        </div>
+
+        <div class="inbox-dir">
+          <code class="inbox-dir__path" title={inboxDir}>{inboxDir || '…'}</code>
+          <button
+            class="btn btn--small"
+            type="button"
+            onclick={openInboxFolder}
+            disabled={!inboxDir}
+            onmouseenter={() => showHint(HINTS.openInbox)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.openInbox)}
+            onblur={clearHint}
+          >
+            Открыть папку…
+          </button>
+          <button
+            class="btn btn--small"
+            type="button"
+            onclick={pickInboxDir}
+            onmouseenter={() => showHint(HINTS.pickInbox)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.pickInbox)}
+            onblur={clearHint}
+          >
+            Выбрать папку…
+          </button>
+          <button
+            class="btn btn--small"
+            type="button"
+            onclick={resetInboxDir}
+            onmouseenter={() => showHint(HINTS.resetInbox)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.resetInbox)}
+            onblur={clearHint}
+          >
+            По умолчанию
+          </button>
+          <button
+            class="btn btn--small"
+            type="button"
+            onclick={() => refreshInbox()}
+            onmouseenter={() => showHint(HINTS.scanInbox)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.scanInbox)}
+            onblur={clearHint}
+          >
+            Сканировать
+          </button>
+        </div>
+
+        {#if inboxError}
+          <p class="errors" role="alert">{inboxError}</p>
+        {/if}
+
+        {#if inboxFiles.length === 0}
+          <p class="hint">В папке inbox пока нет файлов (или все обработаны). Папка отслеживается — положите файл, и он появится здесь автоматически.</p>
+        {:else}
+          <ul class="inbox-list">
+            {#each inboxFiles as file (file.name)}
+              <li class="inbox-item">
+                <div class="inbox-item__head">
+                  <span class="inbox-badge inbox-badge--{file.status}">
+                    {INBOX_STATUS_LABEL[file.status]}
+                  </span>
+                  {#if activeInboxFile === file.name}
+                    <span class="inbox-badge inbox-badge--audited">в студии</span>
+                  {/if}
+                  <strong class="inbox-item__name" title={file.name}>{file.name}</strong>
+                  <span class="inbox-item__meta">
+                    {file.size > 0 ? `${(file.size / 1024).toFixed(1)} КБ` : '—'}
+                    {file.modifiedAt ? `· ${new Date(file.modifiedAt).toLocaleString('ru-RU')}` : ''}
+                  </span>
+                </div>
+
+                {#if file.note}
+                  <p class="inbox-item__note" role="status">{file.note}</p>
+                {/if}
+
+                {#if file.audit && file.audit.rows.length > 0}
+                  <p class="inbox-item__rows">
+                    Строк: <strong>{file.audit.rows.length}</strong>
+                    {#if file.audit.skippedRows > 0}· без наименования: {file.audit.skippedRows}{/if}
+                  </p>
+                  {@render PreviewTable(file.audit.rows)}
+                {/if}
+
+                <div class="inbox-item__actions">
+                  {#if (file.status === 'new' || file.status === 'audited') && activeInboxFile !== file.name}
+                    <button
+                      class="btn btn--small"
+                      type="button"
+                      onclick={() => auditFile(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.audit)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.audit)}
+                      onblur={clearHint}
+                    >
+                      Разобрать
+                    </button>
+                  {/if}
+                  {#if activeInboxFile === file.name}
+                    <button
+                      class="btn btn--small"
+                      type="button"
+                      onclick={() => {
+                        activeInboxFile = '';
+                        file.note = 'Разобран — можно снова открыть в студии кнопкой «Разобрать».';
+                        inboxFiles = [...inboxFiles];
+                      }}
+                      onmouseenter={() => showHint('Закроет файл в студии — сопоставление останется, файл не перемещается.')}
+                      onmouseleave={clearHint}
+                    >
+                      Закрыть в студии
+                    </button>
+                  {/if}
+                  {#if file.status === 'audited' && activeInboxFile !== file.name}
+                    <button
+                      class="btn btn--small btn--primary"
+                      type="button"
+                      onclick={() => createAiTask(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.createAiTask)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.createAiTask)}
+                      onblur={clearHint}
+                    >
+                      Создать задачу для ИИ
+                    </button>
+                    <button
+                      class="btn btn--small"
+                      type="button"
+                      onclick={() => proposeFile(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.propose)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.propose)}
+                      onblur={clearHint}
+                    >
+                      Предложить строки
+                    </button>
+                  {/if}
+                  {#if file.status === 'proposed'}
+                    <button
+                      class="btn btn--small btn--primary"
+                      type="button"
+                      onclick={() => confirmFile(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.confirm)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.confirm)}
+                      onblur={clearHint}
+                    >
+                      Подтвердить ({file.proposalIds.length})
+                    </button>
+                    <button
+                      class="btn btn--small"
+                      type="button"
+                      onclick={() => cancelFile(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.cancel)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.cancel)}
+                      onblur={clearHint}
+                    >
+                      Отменить
+                    </button>
+                  {/if}
+                  {#if file.status === 'new' || file.status === 'audited' || file.status === 'failed'}
+                    <button
+                      class="btn btn--small btn--danger"
+                      type="button"
+                      onclick={() => discardFile(file)}
+                      disabled={inboxBusy}
+                      onmouseenter={() => showHint(HINTS.discard)}
+                      onmouseleave={clearHint}
+                      onfocus={() => showHint(HINTS.discard)}
+                      onblur={clearHint}
+                    >
+                      Убрать в «отклонённые»
+                    </button>
+                  {/if}
+                </div>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+
+        {#if inboxLog}
+          <details class="inbox-log">
+            <summary>Журнал inbox (последние строки)</summary>
+            <pre>{inboxLog}</pre>
+          </details>
+        {/if}
+      </section>
 
       {#if importSheets.length > 1}
         <div class="sheet-picker" aria-label="Листы Excel">
@@ -1482,10 +2284,13 @@
             </div>
             {#if specificationPreview.issues.length > 0}
               <ul class="specification-issues" role="alert">
-                {#each specificationPreview.issues as issue (issue.rowIndex + issue.code + issue.message)}
+                {#each specificationPreview.issues.slice(0, 12) as issue (issue.rowIndex + issue.code + issue.message)}
                   <li>#{issue.rowIndex + 1}: {issue.message}</li>
                 {/each}
               </ul>
+              {#if specificationPreview.issues.length > 12}
+                <p class="hint">…и ещё {specificationPreview.issues.length - 12} замечаний — покажите полный список в консоли после доработки файла.</p>
+              {/if}
             {:else}
               <div class="specification-tree">
                 {#each specificationPreview.roots as root (root.article)}
@@ -1500,56 +2305,103 @@
           </section>
         {/if}
 
-        {#if importStage === 'mapping' && mappingResult}
+        {#if importStage === 'mapping'}
           <section class="mapping-panel" aria-label="Сопоставление полей">
             <div class="mapping-panel__head">
               <div>
                 <h3>1. Сопоставление полей</h3>
-                <p class="hint">Готовые поля выбраны автоматически. Красные строки нужно исправить или явно игнорировать.</p>
+                <p class="hint">Агент нашёл таблицы, куда данные подходят. Проверьте колонки каждого блока: исправьте красные или выберите «Игнорировать».</p>
               </div>
               <button
                 class="btn btn--small"
                 type="button"
-                onclick={suggestMappingWithMcp}
-                disabled={mappingBusy || mcpState.status !== 'running' || !pairedApiKey}
-                title={mcpState.status === 'running' ? 'MCP предложит карту; подтверждение остаётся у человека.' : 'Сначала подключите и запустите MCP.'}
+                onclick={suggestMapping}
+                disabled={mappingBusy || importBlocks.length === 0}
+                title="Перезапускает подбор полей: известные колонки подставляются сразу, сомнительные помечаются красным. Подтверждение всегда за человеком."
               >
-                Предложить через ИИ
+                {mappingBusy ? 'Подбираем…' : 'Предложить сопоставление'}
               </button>
             </div>
+            <p class="hint">
+              Подбор работает без подключений (детерминированный классификатор по библиотеке таблиц).
+              Скачайте модель во вкладке «Модель» (Запустить → Скачать → Перезапустить) — она поможет
+              с нестандартными колонками. MCP-хост для внешних AI-клиентов — во вкладке «MCP».
+            </p>
+            {#if activeInboxFile}
+              <p class="hint" role="status">
+                Файл из папки агента: <strong>{activeInboxFile}</strong>. После отправки он будет перемещён в
+                <code>processed/</code>.
+              </p>
+            {/if}
 
-            <div class="mapping-list">
-              {#each mappingResult.rows as row (row.header)}
-                <div class:mapping-row--bad={row.state !== 'ready'} class="mapping-row">
-                  <span class="mapping-row__source">{row.header || 'Без заголовка'}</span>
-                  <span class="mapping-row__state">{row.state === 'ready' ? 'Готово' : row.state === 'conflict' ? 'Конфликт' : row.state === 'ignored' ? 'Игнорировано' : 'Нужно проверить'}</span>
-                  <select
-                    aria-label={`Канон для ${row.header}`}
-                    value={row.canonical ?? '__ignore__'}
-                    onchange={(event) => changeMapping(row.header, event)}
-                  >
-                    <option value="__ignore__">Игнорировать колонку</option>
-                    {#each CANONICAL_COLUMNS as canonical (canonical)}
-                      <option value={canonical}>{canonical}</option>
+            {#if importBlocks.length === 0}
+              <p class="hint">Подходящих таблиц не найдено — добавьте таблицу вручную или примените сохранённый профиль.</p>
+            {/if}
+
+            <div class="import-blocks">
+              {#each importBlocks as block, blockIndex (block.targetKey)}
+                <div class="import-block">
+                  <div class="import-block__head">
+                    <strong>{IMPORT_TARGETS[block.targetKey].label}</strong>
+                    <button class="btn btn--small" type="button" onclick={() => removeImportTable(blockIndex)}>Убрать</button>
+                  </div>
+                  <div class="mapping-list">
+                    {#each block.mapping.rows as row (row.header)}
+                      <div class:mapping-row--bad={row.state !== 'ready'} class="mapping-row">
+                        <span class="mapping-row__source">{row.header || 'Без заголовка'}</span>
+                        <span class="mapping-row__state">{row.state === 'ready' ? 'Готово' : row.state === 'conflict' ? 'Конфликт' : row.state === 'ignored' ? 'Игнорировано' : 'Нужно проверить'}</span>
+                        <select
+                          aria-label={`Поле для ${row.header}`}
+                          value={row.canonical ?? '__ignore__'}
+                          onchange={(event) => changeMapping(blockIndex, row.header, event)}
+                        >
+                          <option value="__ignore__">Игнорировать колонку</option>
+                          {#each IMPORT_TARGETS[block.targetKey].columns as column (column.key)}
+                            <option value={column.key}>{column.label} ({column.key})</option>
+                          {/each}
+                        </select>
+                      </div>
                     {/each}
-                  </select>
+                  </div>
                 </div>
               {/each}
             </div>
 
+            <select
+              class="import-block-add"
+              aria-label="Добавить таблицу"
+              value=""
+              onchange={(event) => {
+                const key = (event.currentTarget as HTMLSelectElement).value as ImportTargetKey;
+                if (key) addImportTable(key);
+                (event.currentTarget as HTMLSelectElement).value = '';
+              }}
+            >
+              <option value="">+ Добавить таблицу…</option>
+              {#each IMPORT_TARGET_ORDER as key (key)}
+                {#if !importBlocks.some((block) => block.targetKey === key)}
+                  <option value={key}>{IMPORT_TARGETS[key].label}</option>
+                {/if}
+              {/each}
+            </select>
+
+            {#if mappingMessage}
+              <p class="hint" role="status">{mappingMessage}</p>
+            {/if}
+
             <div class="mapping-actions">
-              <button class="btn btn--primary" type="button" onclick={confirmMapping} disabled={!canConfirmMapping(mappingResult)}>
+              <button class="btn btn--primary" type="button" onclick={confirmMapping} disabled={mappingBusy || importBlocks.length === 0}>
                 Подтвердить сопоставление
               </button>
               <input class="profile-name" bind:value={profileName} placeholder="Название профиля…" aria-label="Название профиля" />
-              <button class="btn btn--small" type="button" onclick={saveMappingProfile} disabled={mappingBusy || !canConfirmMapping(mappingResult)}>
+              <button class="btn btn--small" type="button" onclick={saveMappingProfile} disabled={mappingBusy || importBlocks.length === 0}>
                 Сохранить профиль
               </button>
             </div>
 
             {#if profiles.length > 0}
               <div class="profiles">
-                <span class="profiles__label">Сохранённые профили:</span>
+                <span class="profiles__label">Методы сопоставления:</span>
                 {#each profiles as profile (profile.id)}
                   <button class="profile-chip" type="button" onclick={() => applySavedProfile(profile)}>
                     {profile.isDefault ? '★ ' : ''}{profile.name}
@@ -1565,36 +2417,58 @@
             <div class="validation-panel__head">
               <div>
                 <h3>2. Проверка строк</h3>
-                <p class="hint">До подтверждения предложения ничего не записывается в SoT.</p>
-              </div>
-              <div class="validation-counts">
-                <span>Новые: {validatedRows.filter((row) => row.status === 'ok_new').length}</span>
-                <span>Обновления: {validatedRows.filter((row) => row.status === 'ok_update').length}</span>
-                <span>Конфликты: {validatedRows.filter((row) => row.status === 'conflict').length}</span>
-                <span>Ошибки: {validatedRows.filter((row) => row.status === 'error').length}</span>
+                {#if hasDirectWriteBlocks}
+                  <p class="hint">
+                    <strong>Внимание:</strong> изделия, модули и контрагенты попадут в каталог
+                    <strong>сразу</strong> после кнопки записи; материалы — через журнал предложений
+                    (нужно подтверждение).
+                  </p>
+                {:else}
+                  <p class="hint">До вашего подтверждения ничего не записывается в систему (SoT) — материалы уходят в журнал предложений.</p>
+                {/if}
               </div>
             </div>
-            <div class="validation-list">
-              {#each validatedRows as row (row.rowIndex)}
-                <div class="validation-row validation-row--{row.status}">
-                  <span>#{row.rowIndex + 1}</span>
-                  <strong>{String(row.values.article ?? row.values.name ?? 'Строка')}</strong>
-                  <span>{row.status}</span>
-                  <small>{row.message}</small>
+
+            {#each importBlocks as block, blockIndex (block.targetKey)}
+              <div class="import-block">
+                <div class="import-block__head">
+                  <strong>{IMPORT_TARGETS[block.targetKey].label}</strong>
+                  <span class="validation-counts">
+                    Новые: {block.validated.filter((row) => row.status === 'ok_new').length} ·
+                    Обновления: {block.validated.filter((row) => row.status === 'ok_update').length} ·
+                    Ошибки: {block.validated.filter((row) => row.status === 'error').length}
+                  </span>
+                  {#if block.targetKey === 'material' && block.proposalIds.length > 0}
+                    <button class="btn btn--primary" type="button" onclick={() => confirmBlockProposals(blockIndex)} disabled={mappingBusy}>
+                      Подтвердить предложения ({block.proposalIds.length})
+                    </button>
+                    <button class="btn btn--small" type="button" onclick={() => cancelBlockProposals(blockIndex)} disabled={mappingBusy}>Отменить</button>
+                  {/if}
                 </div>
-              {/each}
-            </div>
+                <div class="validation-list">
+                  {#each block.validated as row (row.rowIndex)}
+                    <div class="validation-row validation-row--{row.status}">
+                      <span>#{row.rowIndex + 1}</span>
+                      <strong>{String(row.values.name ?? row.values.article ?? row.values.sku ?? 'Строка')}</strong>
+                      <span>{row.status}</span>
+                      <small>{row.message}</small>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+
             {@render PreviewTable(importRows)}
             {#if mappingMessage}<p class="hint" role="status">{mappingMessage}</p>{/if}
             <div class="mapping-actions">
-              {#if rowProposalIds.length === 0}
-                <button class="btn btn--primary" type="button" onclick={sendValidatedRows} disabled={mappingBusy || validatedRows.every((row) => row.status !== 'ok_new' && row.status !== 'ok_update')}>
-                  Отправить на подтверждение
-                </button>
-              {:else}
-                <button class="btn btn--primary" type="button" onclick={confirmMappedRows} disabled={mappingBusy}>Подтвердить предложения ({rowProposalIds.length})</button>
-                <button class="btn btn--small" type="button" onclick={cancelMappedRows} disabled={mappingBusy}>Отменить</button>
-              {/if}
+              <button
+                class="btn btn--primary"
+                type="button"
+                onclick={sendBlocks}
+                disabled={mappingBusy || importBlocks.every((block) => block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update').length === 0)}
+              >
+                {hasDirectWriteBlocks ? 'Записать в каталог' : 'Отправить на подтверждение'}
+              </button>
               <button class="btn btn--small" type="button" onclick={() => prepareMapping(importRows)}>Изменить сопоставление</button>
             </div>
           </section>
@@ -1602,178 +2476,6 @@
       {/if}
     </article>
 
-    <article class="card card--wide">
-      <h2>Inbox — файлы для агента</h2>
-      <p class="card__lead">
-        Файл в папку → <strong>Разобрать</strong> → <strong>Создать задачу для ИИ</strong>
-        (точка сборки, без proposals) или <strong>Предложить строки</strong> (expert, без сверки) →
-        <strong>Подтвердить</strong> / <strong>Отменить</strong>.
-      </p>
-
-      <div class="inbox-dir">
-        <code class="inbox-dir__path" title={inboxDir}>{inboxDir || '…'}</code>
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={pickInboxDir}
-          onmouseenter={() => showHint(HINTS.pickInbox)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.pickInbox)}
-          onblur={clearHint}
-        >
-          Выбрать папку…
-        </button>
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={resetInboxDir}
-          onmouseenter={() => showHint(HINTS.resetInbox)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.resetInbox)}
-          onblur={clearHint}
-        >
-          По умолчанию
-        </button>
-        <button
-          class="btn btn--small"
-          type="button"
-          onclick={() => refreshInbox()}
-          onmouseenter={() => showHint(HINTS.scanInbox)}
-          onmouseleave={clearHint}
-          onfocus={() => showHint(HINTS.scanInbox)}
-          onblur={clearHint}
-        >
-          Сканировать
-        </button>
-      </div>
-
-      {#if inboxError}
-        <p class="errors" role="alert">{inboxError}</p>
-      {/if}
-
-      {#if inboxFiles.length === 0}
-        <p class="hint">В папке inbox пока нет файлов (или все обработаны).</p>
-      {:else}
-        <ul class="inbox-list">
-          {#each inboxFiles as file (file.name)}
-            <li class="inbox-item">
-              <div class="inbox-item__head">
-                <span class="inbox-badge inbox-badge--{file.status}">
-                  {INBOX_STATUS_LABEL[file.status]}
-                </span>
-                <strong class="inbox-item__name" title={file.name}>{file.name}</strong>
-                <span class="inbox-item__meta">
-                  {file.size > 0 ? `${(file.size / 1024).toFixed(1)} КБ` : '—'}
-                  {file.modifiedAt ? `· ${new Date(file.modifiedAt).toLocaleString('ru-RU')}` : ''}
-                </span>
-              </div>
-
-              {#if file.note}
-                <p class="inbox-item__note" role="status">{file.note}</p>
-              {/if}
-
-              {#if file.audit && file.audit.rows.length > 0}
-                <p class="inbox-item__rows">
-                  Строк: <strong>{file.audit.rows.length}</strong>
-                  {#if file.audit.skippedRows > 0}· без наименования: {file.audit.skippedRows}{/if}
-                </p>
-                {@render PreviewTable(file.audit.rows)}
-              {/if}
-
-              <div class="inbox-item__actions">
-                {#if file.status === 'new' || file.status === 'audited'}
-                  <button
-                    class="btn btn--small"
-                    type="button"
-                    onclick={() => auditFile(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.audit)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.audit)}
-                    onblur={clearHint}
-                  >
-                    Разобрать
-                  </button>
-                {/if}
-                {#if file.status === 'audited'}
-                  <button
-                    class="btn btn--small btn--primary"
-                    type="button"
-                    onclick={() => createAiTask(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.createAiTask)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.createAiTask)}
-                    onblur={clearHint}
-                  >
-                    Создать задачу для ИИ
-                  </button>
-                  <button
-                    class="btn btn--small"
-                    type="button"
-                    onclick={() => proposeFile(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.propose)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.propose)}
-                    onblur={clearHint}
-                  >
-                    Предложить строки
-                  </button>
-                {/if}
-                {#if file.status === 'proposed'}
-                  <button
-                    class="btn btn--small btn--primary"
-                    type="button"
-                    onclick={() => confirmFile(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.confirm)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.confirm)}
-                    onblur={clearHint}
-                  >
-                    Подтвердить ({file.proposalIds.length})
-                  </button>
-                  <button
-                    class="btn btn--small"
-                    type="button"
-                    onclick={() => cancelFile(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.cancel)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.cancel)}
-                    onblur={clearHint}
-                  >
-                    Отменить
-                  </button>
-                {/if}
-                {#if file.status === 'new' || file.status === 'audited' || file.status === 'failed'}
-                  <button
-                    class="btn btn--small btn--danger"
-                    type="button"
-                    onclick={() => discardFile(file)}
-                    disabled={inboxBusy}
-                    onmouseenter={() => showHint(HINTS.discard)}
-                    onmouseleave={clearHint}
-                    onfocus={() => showHint(HINTS.discard)}
-                    onblur={clearHint}
-                  >
-                    Убрать в «отклонённые»
-                  </button>
-                {/if}
-              </div>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-
-      {#if inboxLog}
-        <details class="inbox-log">
-          <summary>Журнал inbox (последние строки)</summary>
-          <pre>{inboxLog}</pre>
-        </details>
-      {/if}
-    </article>
     {/if}
   </section>
 
@@ -2378,6 +3080,43 @@
     font-size: 0.95rem;
   }
 
+  .import-blocks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .import-block {
+    border: 1px solid #d0d7de;
+    border-radius: 9px;
+    padding: 0.55rem 0.65rem;
+    background: #f7f9fb;
+  }
+
+  .import-block__head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.45rem;
+  }
+
+  .import-block__head strong {
+    font-size: 0.85rem;
+  }
+
+  .import-block-add {
+    margin-top: 0.55rem;
+    padding: 0.35rem 0.45rem;
+    border: 1px dashed #b7c0c8;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1c2733;
+    font: inherit;
+    font-size: 0.78rem;
+    max-width: 16rem;
+  }
+
   .mapping-list,
   .validation-list {
     display: flex;
@@ -2475,6 +3214,24 @@
 
   .validation-row small {
     color: #5a6a78;
+  }
+
+  .inbox-panel {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e9ed;
+  }
+
+  .inbox-panel__head {
+    margin-bottom: 0.6rem;
+  }
+
+  .inbox-panel__head h3 {
+    margin: 0 0 0.25rem;
+  }
+
+  .inbox-panel__head .card__lead {
+    margin: 0;
   }
 
   .inbox-dir {

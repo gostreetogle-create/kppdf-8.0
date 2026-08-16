@@ -53,13 +53,16 @@ export interface SpecificationPreview {
 type SpecificationColumn = (typeof SPECIFICATION_COLUMNS)[number];
 
 const aliases: Record<SpecificationColumn, readonly string[]> = {
-  level: ['level', 'уровень', 'уровень вложенности', 'глубина'],
+  // «Позиция» из выгрузок CAD/PDM — иерархический номер строки (1, 1.1, 1.2…).
+  level: ['level', 'уровень', 'уровень вложенности', 'глубина', 'позиция'],
   parentArticle: ['parentarticle', 'parent article', 'родитель', 'артикул родителя', 'код родителя'],
   article: ['article', 'артикул', 'обозначение', 'код'],
-  name: ['name', 'наименование', 'название', 'материал', 'описание'],
-  qty: ['qty', 'quantity', 'количество', 'кол-во', 'кол'],
+  // «Сортамент, ГОСТ» — это и есть наименование позиции (Труба, 57х3,5 мм, ГОСТ…).
+  // «Материал» намеренно НЕ алиас имени: в CAD-выгрузках это марка стали, не название.
+  name: ['name', 'наименование', 'название', 'описание', 'сортамент'],
+  qty: ['qty', 'quantity', 'количество', 'кол-во', 'кол', 'к-во'],
   unit: ['unit', 'ед', 'ед.', 'единица', 'ед. изм.', 'ед.изм', 'единицы'],
-  kind: ['kind', 'тип', 'тип элемента', 'вид', 'entity', 'сущность'],
+  kind: ['kind', 'тип', 'тип элемента', 'вид', 'вид изделия', 'entity', 'сущность'],
 };
 
 function normalizeKey(value: unknown): string {
@@ -79,14 +82,28 @@ function findColumn(row: RawRow, column: SpecificationColumn): unknown {
 
 function parseKind(value: unknown): SpecificationKind | null {
   const normalized = normalizeKey(value);
-  if (normalized === 'material' || normalized === 'материал' || normalized === 'м') return 'material';
+  if (normalized === 'material' || normalized === 'материал' || normalized === 'м' || normalized === 'деталь' || normalized === 'дет') return 'material';
   if (normalized === 'module' || normalized === 'модуль' || normalized === 'мод') return 'module';
   if (normalized === 'product' || normalized === 'изделие' || normalized === 'продукт' || normalized === 'п') return 'product';
   return null;
 }
 
-function parseLevel(value: unknown): number {
-  const level = Number(value);
+/**
+ * Уровень строки.
+ *
+ * Для колонок-позиций из выгрузок CAD/PDM («1», «1.1», «2.3.4») уровень —
+ * число сегментов минус один (корень «1» = уровень 0). В обычных файлах
+ * уровень — само целое число (0, 1, 2…). Режим выбирается по всему файлу:
+ * если хоть одна ячейка колонки уровня содержит точечную позицию — позиционный.
+ */
+function parseLevel(value: unknown, positionNotation: boolean): number {
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+  if (positionNotation) {
+    if (!/^\d+(\.\d+)*$/.test(raw)) return 0;
+    return raw.split('.').length - 1;
+  }
+  const level = Number(raw);
   return Number.isInteger(level) && level >= 0 ? level : 0;
 }
 
@@ -112,6 +129,9 @@ export function hasSpecificationHierarchy(headers: readonly string[]): boolean {
 export function buildSpecificationPreview(rows: readonly RawRow[]): SpecificationPreview {
   const hierarchical = hasSpecificationHierarchy(Object.keys(rows[0] ?? {}));
   const issues: SpecificationIssue[] = [];
+  // Позиционная нотация уровня: «1», «1.1», «2.3.4» (CAD/PDM) или целые уровни.
+  const levelValues = rows.map((row) => findColumn(row, 'level'));
+  const positionNotation = levelValues.some((value) => /^\d+(\.\d+)+$/.test(String(value ?? '').trim()));
   const lines: SpecificationLine[] = rows.map((row, rowIndex) => {
     const article = text(findColumn(row, 'article'));
     const name = text(findColumn(row, 'name'));
@@ -119,7 +139,7 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
     const quantity = parseQuantity(findColumn(row, 'qty'));
     const line: SpecificationLine = {
       rowIndex,
-      level: parseLevel(findColumn(row, 'level')),
+      level: parseLevel(findColumn(row, 'level'), positionNotation),
       parentArticle: text(findColumn(row, 'parentArticle')) || null,
       article,
       name,
@@ -155,8 +175,9 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
     while (stack.length > line.level) stack.pop();
     const inferredParent = line.level > 0 ? stack[line.level - 1]?.article : null;
     const parentArticle = line.parentArticle ?? inferredParent;
-    if (line.level === 0 && line.kind !== 'product') {
-      issues.push({ rowIndex: line.rowIndex, code: 'invalid_root', message: 'Корнем спецификации может быть только product' });
+    // В выгрузках CAD/PDM изделие часто не перечислено — корень может быть модулем.
+    if (line.level === 0 && line.kind !== 'product' && line.kind !== 'module') {
+      issues.push({ rowIndex: line.rowIndex, code: 'invalid_root', message: 'Корнем спецификации может быть изделие или модуль' });
     }
     if (line.level > 0 && !parentArticle) {
       issues.push({ rowIndex: line.rowIndex, code: 'missing_parent', message: 'Не найден родитель строки' });
@@ -183,6 +204,16 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
     node.children.forEach(attach);
   };
   roots.forEach(attach);
+
+  // Выведенный из уровней/позиций родитель живёт на узлах дерева. Синхронизируем
+  // его обратно в `lines`, потому что confirm-путь (запись состава) читает `lines`.
+  const nodeByArticle = new Map<string, SpecificationTreeNode>();
+  for (const node of flattenSpecificationTree(roots)) nodeByArticle.set(node.article, node);
+  for (const line of lines) {
+    const node = nodeByArticle.get(line.article);
+    if (node?.parentArticle) line.parentArticle = node.parentArticle;
+  }
+
   return { hierarchical, lines, roots, issues };
 }
 

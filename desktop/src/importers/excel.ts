@@ -28,13 +28,31 @@ function normalizeCell(value: unknown): unknown {
   return null;
 }
 
+/**
+ * Находит строку заголовков в матрице листа.
+ *
+ * Файлы из CAD/PDM часто начинаются с «шапки» документа (заголовок,
+ * объединённые ячейки), а настоящие заголовки колонок — в следующей строке.
+ * Поэтому берём первую строку с «полным» набором непустых ячеек: не меньше
+ * половины от максимума среди первых 10 непустых строк (минимум 2 ячейки).
+ */
+function findHeaderRow(matrix: unknown[][]): number {
+  const MAX_SCAN = 10;
+  const scan = matrix.slice(0, MAX_SCAN);
+  const counts = scan.map((row) => row.filter((cell) => !isEmptyCell(cell)).length);
+  const maxCount = Math.max(0, ...counts);
+  if (maxCount === 0) return -1;
+  const threshold = Math.max(2, Math.ceil(maxCount / 2));
+  return counts.findIndex((count) => count >= threshold);
+}
+
 function parseSheet(sheet: XLSX.WorkSheet): RawRow[] {
   const matrix = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
     header: 1,
     raw: true,
     defval: null,
   });
-  const headerIdx = matrix.findIndex((row) => row.some((c) => !isEmptyCell(c)));
+  const headerIdx = findHeaderRow(matrix);
   if (headerIdx === -1) return [];
 
   const headerRow = matrix[headerIdx];
@@ -52,7 +70,7 @@ function parseSheet(sheet: XLSX.WorkSheet): RawRow[] {
     if (!row.some((c) => !isEmptyCell(c))) continue;
     const record: RawRow = {};
     for (const col of keptColumns) {
-      const header = String(headerRow[col] ?? '').trim() || `колонка_${col + 1}`;
+      const header = String(headerRow[col] ?? '').trim() || `Колонка ${col + 1}`;
       record[header] = normalizeCell(row[col]);
     }
     rows.push(record);
@@ -87,7 +105,9 @@ export const excelImporter: Importer = {
   extensions: ['.xlsx', '.xls'],
   async parse(source: ImportSource): Promise<RawRow[]> {
     const preview = await parseExcelWorkbook(source);
-    const rows = preview.sheets[0]?.rows ?? [];
+    // Лист с данными (активный), а не слепой sheets[0]: первый лист может быть
+    // пустым/шапкой, а данные — на втором.
+    const rows = preview.sheets.find((sheet) => sheet.name === preview.activeSheet)?.rows ?? [];
     if (rows.length === 0) {
       throw new Error(`«${source.name}» пустой — нет данных для импорта.`);
     }

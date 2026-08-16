@@ -1,63 +1,66 @@
 import type { RawRow } from '../importers';
+import { IMPORT_TARGETS, type ImportTargetColumn } from './import-targets';
 
-export const CANONICAL_COLUMNS = [
-  'article',
-  'name',
-  'unit',
-  'qty',
-  'sku',
-  'notes',
-  'categoryId',
-] as const;
+export const MATERIAL_COLUMNS: readonly ImportTargetColumn[] = IMPORT_TARGETS.material.columns;
 
+/** Легаси-экспорт: канонические ключи материальной таблицы. */
+export const CANONICAL_COLUMNS: readonly string[] = MATERIAL_COLUMNS.map((column) => column.key);
 export type CanonicalColumn = (typeof CANONICAL_COLUMNS)[number];
 export type MappingState = 'ready' | 'unfit' | 'conflict' | 'ignored';
 
-const ALIASES: Record<CanonicalColumn, readonly string[]> = {
-  article: ['article', 'артикул', 'обозначение', 'код изделия'],
-  name: ['name', 'наименование', 'название', 'материал', 'описание', 'текст'],
-  unit: ['unit', 'ед', 'ед.', 'единица', 'ед. изм.', 'ед.изм', 'единицы'],
-  qty: ['qty', 'quantity', 'количество', 'кол-во', 'кол'],
-  sku: ['sku', 'код', 'код товара', 'штрихкод'],
-  notes: ['notes', 'примечание', 'примечания', 'комментарий', 'комментарии', 'заметки'],
-  categoryId: ['categoryid', 'категория', 'category', 'тип элемента', 'тип'],
-};
+/** Русские подписи материальной таблицы (легаси для существующих экранов). */
+export const CANONICAL_LABELS: Record<CanonicalColumn, string> = Object.fromEntries(
+  MATERIAL_COLUMNS.map((column) => [column.key, column.label]),
+) as Record<CanonicalColumn, string>;
+
+/** Подпись опции в выпадающем списке: «Наименование (name)». */
+export function canonicalLabel(canonical: CanonicalColumn): string {
+  return `${CANONICAL_LABELS[canonical]} (${canonical})`;
+}
 
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function candidatesForHeader(header: string): CanonicalColumn[] {
+function candidatesForHeader(header: string, columns: readonly ImportTargetColumn[]): string[] {
   const normalized = normalize(header);
   if (!normalized) return [];
-  return CANONICAL_COLUMNS.filter((canonical) =>
-    ALIASES[canonical].some((alias) => {
-      const candidate = normalize(alias);
-      return candidate === normalized ||
-        (candidate.length > 1 && (normalized.includes(candidate) || candidate.includes(normalized)));
-    }),
-  );
+  return columns
+    .filter((column) =>
+      column.aliases.some((alias) => {
+        const candidate = normalize(alias);
+        return (
+          candidate === normalized ||
+          (candidate.length > 1 &&
+            (normalized.includes(candidate) || candidate.includes(normalized)))
+        );
+      }),
+    )
+    .map((column) => column.key);
 }
 
 export interface MappingRow {
   header: string;
-  canonical: CanonicalColumn | null;
-  candidates: CanonicalColumn[];
+  canonical: string | null;
+  candidates: string[];
   state: MappingState;
 }
 
 export interface MappingResult {
   rows: MappingRow[];
-  mapping: Record<string, CanonicalColumn | null>;
+  mapping: Record<string, string | null>;
   ready: string[];
   unfit: string[];
   conflicts: string[];
 }
 
-/** Classify headers and mark duplicate canonical assignments as conflicts. */
-export function classifyHeaders(headers: readonly string[]): MappingResult {
+/** Classify headers against a target table; duplicate assignments become conflicts. */
+export function classifyHeaders(
+  headers: readonly string[],
+  columns: readonly ImportTargetColumn[] = MATERIAL_COLUMNS,
+): MappingResult {
   const initial = headers.map((header): MappingRow => {
-    const candidates = candidatesForHeader(header);
+    const candidates = candidatesForHeader(header, columns);
     return {
       header,
       candidates,
@@ -65,7 +68,7 @@ export function classifyHeaders(headers: readonly string[]): MappingResult {
       state: candidates.length === 1 ? 'ready' : candidates.length > 1 ? 'conflict' : 'unfit',
     };
   });
-  const assigned = new Map<CanonicalColumn, MappingRow[]>();
+  const assigned = new Map<string, MappingRow[]>();
   for (const row of initial) {
     if (!row.canonical) continue;
     const list = assigned.get(row.canonical) ?? [];
@@ -84,7 +87,7 @@ export function classifyHeaders(headers: readonly string[]): MappingResult {
 }
 
 function makeMappingResult(rows: MappingRow[]): MappingResult {
-  const mapping: Record<string, CanonicalColumn | null> = {};
+  const mapping: Record<string, string | null> = {};
   for (const row of rows) mapping[row.header] = row.canonical;
   return {
     rows,
@@ -96,18 +99,22 @@ function makeMappingResult(rows: MappingRow[]): MappingResult {
 }
 
 /** Apply a user choice for one source header and recalculate duplicate conflicts. */
-export function updateMapping(result: MappingResult, header: string, canonical: CanonicalColumn | null): MappingResult {
+export function updateMapping(
+  result: MappingResult,
+  header: string,
+  canonical: string | null,
+): MappingResult {
   const rows = result.rows.map((row) =>
     row.header === header
       ? {
           ...row,
           canonical,
           candidates: canonical ? [canonical] : row.candidates,
-          state: canonical ? 'ready' as const : 'ignored' as const,
+          state: canonical ? ('ready' as const) : ('ignored' as const),
         }
       : { ...row },
   );
-  const assigned = new Map<CanonicalColumn, MappingRow[]>();
+  const assigned = new Map<string, MappingRow[]>();
   for (const row of rows) {
     if (!row.canonical || row.state === 'ignored') continue;
     const list = assigned.get(row.canonical) ?? [];
@@ -132,7 +139,7 @@ export function canConfirmMapping(result: MappingResult): boolean {
   return result.rows.length > 0 && result.rows.every((row) => row.state === 'ready' || row.state === 'ignored');
 }
 
-export function reshapeRows(rows: RawRow[], mapping: Record<string, CanonicalColumn | null>): RawRow[] {
+export function reshapeRows(rows: RawRow[], mapping: Record<string, string | null>): RawRow[] {
   return rows.map((row) => {
     const out: RawRow = {};
     for (const [source, value] of Object.entries(row)) {
@@ -157,8 +164,12 @@ function textValue(row: RawRow, key: string): string {
   return value === undefined || value === null ? '' : String(value).trim();
 }
 
-/** Validate canonical rows before any proposal; no network or SoT writes. */
-export function validateMappedRows(rows: RawRow[], existingArticles: ReadonlySet<string> = new Set()): ValidatedImportRow[] {
+/** Validate canonical rows against a target table before any proposal. */
+export function validateMappedRows(
+  rows: RawRow[],
+  requiredFields: readonly string[] = IMPORT_TARGETS.material.requiredFields,
+  existingArticles: ReadonlySet<string> = new Set(),
+): ValidatedImportRow[] {
   const seen = new Map<string, number[]>();
   rows.forEach((row, index) => {
     const article = textValue(row, 'article');
@@ -169,20 +180,21 @@ export function validateMappedRows(rows: RawRow[], existingArticles: ReadonlySet
   });
 
   return rows.map((values, rowIndex) => {
-    const article = textValue(values, 'article');
-    const name = textValue(values, 'name');
+    const missing = requiredFields.filter((key) => !textValue(values, key));
+    if (missing.length > 0) {
+      return { rowIndex, values, status: 'error', message: `Пусто: ${missing.join(', ')}` };
+    }
     const quantity = values.qty === undefined || values.qty === null || values.qty === ''
       ? undefined
       : Number(values.qty);
-    if (!article) return { rowIndex, values, status: 'error', message: 'Пустой артикул' };
-    if (!name) return { rowIndex, values, status: 'error', message: 'Пустое наименование' };
     if (quantity !== undefined && (!Number.isFinite(quantity) || quantity <= 0)) {
       return { rowIndex, values, status: 'error', message: 'Количество должно быть больше нуля' };
     }
-    if ((seen.get(article)?.length ?? 0) > 1) {
+    if ((seen.get(textValue(values, 'article'))?.length ?? 0) > 1) {
       return { rowIndex, values, status: 'conflict', message: 'Дубликат артикула в файле' };
     }
-    if (existingArticles.has(article)) {
+    const article = textValue(values, 'article');
+    if (article && existingArticles.has(article)) {
       return { rowIndex, values, status: 'ok_update', message: 'Совпадение с каталогом — готово к обновлению' };
     }
     return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };

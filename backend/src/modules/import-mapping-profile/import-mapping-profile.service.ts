@@ -35,11 +35,17 @@ export class ImportMappingProfileService {
   async create(dto: CreateImportMappingProfileDto, user: AuthenticatedUser) {
     const organizationId = this.requireOrganization(user);
     const createdByUserId = this.requireUser(user);
+    // Пустой профиль (нет tables и нет columnMap) бесполезен — отклоняем.
+    const tables = this.normalizeTables(dto);
+    if (!tables || tables.length === 0) {
+      throw new BadRequestException('Профиль должен содержать хотя бы одну таблицу с сопоставлением колонок');
+    }
     if (dto.isDefault) await this.clearDefault(organizationId);
     try {
       return await this.model.create({
         ...dto,
         name: dto.name.trim(),
+        tables,
         targetEntity: dto.targetEntity ?? 'material',
         isDefault: dto.isDefault === true,
         organizationId,
@@ -56,8 +62,20 @@ export class ImportMappingProfileService {
     const doc = await this.findScoped(id, organizationId);
     if (dto.isDefault === true) await this.clearDefault(organizationId, doc._id);
     if (dto.name !== undefined) doc.name = dto.name.trim();
-    if (dto.columnMap !== undefined) doc.columnMap = dto.columnMap;
-    if (dto.targetEntity !== undefined) doc.targetEntity = dto.targetEntity;
+    // Одна SoT-форма после записи: если пришли tables — legacy columnMap/targetEntity
+    // убираем; если пришёл только columnMap при существующих tables — нормализуем tables
+    // (первая таблица) или 400 при противоречии.
+    if (dto.tables !== undefined && dto.tables.length > 0) {
+      doc.tables = dto.tables;
+      doc.columnMap = undefined;
+      doc.targetEntity = undefined;
+    } else if (dto.tables !== undefined && dto.tables.length === 0 && !dto.columnMap) {
+      throw new BadRequestException('Профиль должен содержать хотя бы одну таблицу');
+    } else if (dto.columnMap !== undefined) {
+      doc.columnMap = dto.columnMap;
+      doc.targetEntity = dto.targetEntity ?? doc.targetEntity ?? 'material';
+      doc.tables = [{ targetEntity: doc.targetEntity, columnMap: dto.columnMap }];
+    }
     if (dto.isDefault !== undefined) doc.isDefault = dto.isDefault;
     try {
       return await doc.save();
@@ -85,6 +103,18 @@ export class ImportMappingProfileService {
     const doc = await this.model.findOne({ _id: new Types.ObjectId(id), organizationId }).exec();
     if (!doc) throw new NotFoundException('Профиль не найден');
     return doc;
+  }
+
+  /**
+   * Мульти-табличный профиль: `tables` если переданы, иначе легаси-одиночная
+   * таблица из columnMap + targetEntity (старые клиенты).
+   */
+  private normalizeTables(dto: CreateImportMappingProfileDto): ImportMappingProfile['tables'] {
+    if (dto.tables && dto.tables.length > 0) return dto.tables;
+    if (dto.columnMap) {
+      return [{ targetEntity: dto.targetEntity ?? 'material', columnMap: dto.columnMap }];
+    }
+    return undefined;
   }
 
   private requireOrganization(user: AuthenticatedUser): Types.ObjectId {

@@ -59,6 +59,8 @@ export interface AppConfig {
   /** Подъездный пароль nginx (prod). Пусто на LAN. */
   basicAuth?: BasicAuthConfig;
   aiProvider: AiProviderConfig;
+  /** Ид выбранной встроенной модели (Фаза 2); пусто — модель не выбрана. */
+  modelId?: string;
   /** MCP host: порт + bind (сохраняется между запусками). */
   mcp: McpHostConfig;
   /** Inbox (TZD-15): каталог для файлов агента. */
@@ -167,6 +169,7 @@ function migrate(parsed: { version?: number } & Partial<AppConfig>): AppConfig {
       parsed.aiProvider && typeof parsed.aiProvider === 'object'
         ? parsed.aiProvider
         : { ...DEFAULT_CONFIG.aiProvider },
+    modelId: typeof parsed.modelId === 'string' && parsed.modelId.trim() ? parsed.modelId.trim() : undefined,
     mcp: migrateMcp(parsed.mcp),
     inbox: migrateInbox(parsed.inbox),
   };
