@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-TEST-COMBINE-412 DONE — dashboard доп. кейсы Комбайна
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** dashboard.page.spec +3: reverse drop design→prep patchLane; карточка без lineId → toast без PATCH; prep→shop при уже-shop без freeze modal.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `dashboard.page` PASS (2 suites / 17).
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-COMBINE-412.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-COMBINE-412-dashboard-extra-cases.lock`
+**Next:** TZ-TEST-GANTT-402 (workers view specs); deploy НЕ.
+
 ## [2026-08-16] — TZ-TEST-COMBINE-411 DONE — FE orders.service.patchLane spec
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ

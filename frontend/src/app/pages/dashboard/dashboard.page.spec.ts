@@ -539,4 +539,108 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(httpMock.match((r) => r.method === 'POST' || r.method === 'PATCH')).toHaveLength(0);
     expect(page.data()[0]!.status).toBe('ready');
   });
+
+  it('drop design→prep (reverse) PATCHes lane without freeze/ship gates', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'confirmed',
+      items: [itemOf({ lineId: 'L1', boardLane: 'design', productName: 'Стол' })],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      data: () => Order[];
+    };
+
+    page.dropItem(dropEvent(page.columnCards('design')[0]!, 'prep'));
+    expect(page.data()[0]!.items![0]!.boardLane).toBe('prep');
+
+    const req = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L1/lane` && r.method === 'PATCH',
+    );
+    expect(req.request.body).toEqual({ lane: 'prep' });
+    req.flush(
+      orderOf({
+        status: 'draft',
+        items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Стол' })],
+      }),
+    );
+
+    expect(page.columnCards('prep')).toHaveLength(1);
+    expect(page.columnCards('design')).toHaveLength(0);
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  it('drop card without lineId toasts and does not PATCH (guard)', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      items: [itemOf({ boardLane: 'prep', productName: 'Стол' })], // no lineId
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+    };
+
+    const card = page.columnCards('prep')[0]!;
+    expect(card.lineId).toContain('legacy-'); // synthetic card key survives
+    page.dropItem(dropEvent(card, 'design'));
+
+    expect(toast.error).toHaveBeenCalledWith('У изделия нет lineId — обновите заказ и повторите.');
+    expect(httpMock.match((r) => r.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('drop prep→shop when order already in shop skips freeze modal', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    const order = orderOf({
+      status: 'in_production',
+      items: [
+        itemOf({ lineId: 'L1', boardLane: 'shop', productId: 'p1', productName: 'In shop' }),
+        itemOf({ lineId: 'L2', boardLane: 'prep', productId: 'p2', productName: 'To move' }),
+      ],
+    });
+    await flushInitial([order]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      dropItem: (e: CdkDragDrop<BoardLane>) => void;
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      isFirstShopEntry: (o: Order) => boolean;
+    };
+
+    expect(page.isFirstShopEntry(order)).toBe(false);
+    page.dropItem(dropEvent(page.columnCards('prep')[0]!, 'shop'));
+
+    expect(dialog.open).not.toHaveBeenCalled();
+    const req = httpMock.expectOne(
+      (r) => r.url === `${baseUrl}/orders/o1/lines/L2/lane` && r.method === 'PATCH',
+    );
+    expect(req.request.body).toEqual({ lane: 'shop' });
+    req.flush(
+      orderOf({
+        status: 'in_production',
+        items: [
+          itemOf({ lineId: 'L1', boardLane: 'shop', productId: 'p1', productName: 'In shop' }),
+          itemOf({ lineId: 'L2', boardLane: 'shop', productId: 'p2', productName: 'To move' }),
+        ],
+      }),
+    );
+  });
 });
