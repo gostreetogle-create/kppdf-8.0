@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-406 DONE — moduleLanes SoT (v1.1)
+**Исполнитель:** freebuff (deepseek-v4-pro)
+**Статус:** DONE; deploy НЕ
+**Что:** `Order.moduleLanes: [{lineId, moduleId, lane}]` sparse + `PATCH /orders/:id/lines/:lineId/modules/:moduleId/lane`; полоса линии = min(moduleLanes) или boardLane; rollup Order.status по эффективной полосе; lane=shipped через PATCH → 400 RU.
+**Gates:** BE `tsc --noEmit` PASS; jest `src/modules/order` PASS (3 suites / 75).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-406.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-406-module-lanes.lock`
+**Next:** TZ-COMBINE-407 (module DnD ghost); deploy только по слову PO.
+
 ## [2026-08-16] — TZ-DASHBOARD-401 DONE — home stats виджеты обзора
 **Исполнитель:** composer-executor-dashboard-401
 **Статус:** DONE; deploy НЕ

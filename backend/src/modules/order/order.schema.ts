@@ -77,6 +77,28 @@ export class OrderItem {
 const OrderItemSchema = SchemaFactory.createForClass(OrderItem);
 
 /**
+ * TZ-COMBINE-406 — разреженная полоса модуля изделия на Комбайне.
+ * Ключ: (lineId, moduleId). Запись существует только для модуля, который
+ * сдвинут отдельно от линии; линия без записей наследует boardLane.
+ */
+@Schema({ _id: false })
+export class ModuleLane {
+  @Prop({ required: true })
+  lineId!: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'ProductModule', required: true })
+  moduleId!: Types.ObjectId;
+
+  @Prop({
+    enum: ['prep', 'design', 'shop', 'to_ship', 'shipped'],
+    required: true,
+  })
+  lane!: BoardLane;
+}
+
+const ModuleLaneSchema = SchemaFactory.createForClass(ModuleLane);
+
+/**
  * TZ-PRODUCTION-309 — per-order Gantt duration override (not WorkType catalog).
  * Composite key: (orderItemIndex, moduleId, workTypeId).
  */
@@ -174,6 +196,10 @@ export class Order {
 
   @Prop({ type: [OrderItemSchema], default: [] })
   items!: OrderItem[];
+
+  /** TZ-COMBINE-406 — полосы модулей (sparse: только явно сдвинутые модули). */
+  @Prop({ type: [ModuleLaneSchema], default: [] })
+  moduleLanes!: ModuleLane[];
 
   @Prop()
   deliveryAddress?: string;

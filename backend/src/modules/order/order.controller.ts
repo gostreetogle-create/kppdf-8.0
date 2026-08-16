@@ -20,6 +20,7 @@ import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
 import { PatchLineBoardLaneDto } from './dto/patch-line-board-lane.dto';
+import { PatchModuleLaneDto } from './dto/patch-module-lane.dto';
 import { ReserveStockDto } from './dto/reserve-stock.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
@@ -131,6 +132,27 @@ export class OrderController {
     @Body() dto: PatchLineBoardLaneDto,
   ) {
     return this.service.patchLineBoardLane(id, lineId, dto.lane);
+  }
+
+  @Patch(':id/lines/:lineId/modules/:moduleId/lane')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'module_board_lane', entityType: 'Order', idParam: 'id' })
+  @ApiOperation({
+    summary: 'Сменить колонку Комбайна (boardLane) модуля изделия',
+    description:
+      'Пишет разреженный moduleLanes по ключу (lineId, moduleId); полоса линии следует min. ' +
+      'lane=shipped через PATCH запрещён — только POST /orders/:id/ship.',
+  })
+  @ApiResponse({ status: 200, description: 'Order with updated module lane + rollup status' })
+  @ApiResponse({ status: 400, description: 'lane=shipped or hard-frozen order' })
+  @ApiResponse({ status: 404, description: 'Order or line not found' })
+  patchModuleLane(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @Param('moduleId') moduleId: string,
+    @Body() dto: PatchModuleLaneDto,
+  ) {
+    return this.service.patchModuleLane(id, lineId, moduleId, dto.lane);
   }
 
   @Patch(':id/estimate-days')

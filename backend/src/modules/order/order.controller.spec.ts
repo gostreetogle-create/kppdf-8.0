@@ -4,6 +4,7 @@ import { OrderController } from './order.controller';
 function buildController() {
   const service = {
     patchLineBoardLane: jest.fn(),
+    patchModuleLane: jest.fn(),
   };
   return { controller: new OrderController(service as never), service };
 }
@@ -42,5 +43,47 @@ describe('OrderController PATCH /orders/:id/lines/:lineId/lane', () => {
       controller.patchLineBoardLane('order-id', 'nope', { lane: 'shop' } as never),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(service.patchLineBoardLane).toHaveBeenCalledWith('order-id', 'nope', 'shop');
+  });
+});
+
+describe('OrderController PATCH /orders/:id/lines/:lineId/modules/:moduleId/lane', () => {
+  it('delegates happy-path module shop lane to the service', async () => {
+    const { controller, service } = buildController();
+    const updated = { _id: 'order-id', status: 'in_production' };
+    service.patchModuleLane.mockResolvedValue(updated);
+
+    const result = await controller.patchModuleLane(
+      'order-id',
+      'line-a',
+      'module-m',
+      { lane: 'shop' } as never,
+    );
+
+    expect(service.patchModuleLane).toHaveBeenCalledWith(
+      'order-id',
+      'line-a',
+      'module-m',
+      'shop',
+    );
+    expect(result).toBe(updated);
+  });
+
+  it('propagates service BadRequest for lane=shipped (HTTP 400)', async () => {
+    const { controller, service } = buildController();
+    service.patchModuleLane.mockRejectedValue(
+      new BadRequestException('lane=shipped через PATCH запрещён'),
+    );
+
+    await expect(
+      controller.patchModuleLane('order-id', 'line-a', 'module-m', {
+        lane: 'shipped',
+      } as never),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(service.patchModuleLane).toHaveBeenCalledWith(
+      'order-id',
+      'line-a',
+      'module-m',
+      'shipped',
+    );
   });
 });

@@ -55,6 +55,11 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
       workTypeId: Types.ObjectId;
       offsetDays: number;
     }>,
+    moduleLanes: [] as Array<{
+      lineId: string;
+      moduleId: Types.ObjectId;
+      lane: 'prep' | 'design' | 'shop' | 'to_ship' | 'shipped';
+    }>,
     markModified: jest.fn(),
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
@@ -1200,6 +1205,138 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.items).toHaveLength(1);
       expect(doc.items[0].lineId).toBe('keep');
       expect(doc.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('TZ-COMBINE-406 patchModuleLane + module lane rollup', () => {
+    const MODULE_A = new Types.ObjectId();
+    const MODULE_B = new Types.ObjectId();
+
+    function line(
+      lane: MockOrderItem['boardLane'],
+      lineId = 'line-a',
+    ): MockOrderItem {
+      return {
+        lineId,
+        boardLane: lane,
+        productId: new Types.ObjectId(PRODUCT),
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+        status: 'pending',
+      };
+    }
+
+    it('rejects lane=shipped via module PATCH with RU message', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchModuleLane(
+          doc._id.toString(),
+          'line-a',
+          MODULE_A.toString(),
+          'shipped',
+        ),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Отгружены') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects unknown lineId with 404', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'draft', items: [line('prep', 'line-a')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchModuleLane(doc._id.toString(), 'nope', MODULE_A.toString(), 'shop'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects invalid moduleId with 400', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'draft', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchModuleLane(doc._id.toString(), 'line-a', 'not-an-id', 'shop'),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('upserts a sparse moduleLane entry keyed by (lineId, moduleId)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'draft', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchModuleLane(
+        doc._id.toString(),
+        'line-a',
+        MODULE_A.toString(),
+        'shop',
+      );
+      expect(doc.moduleLanes).toHaveLength(1);
+      expect(doc.moduleLanes[0]).toEqual(
+        expect.objectContaining({ lineId: 'line-a', lane: 'shop' }),
+      );
+      expect(doc.moduleLanes[0].moduleId.equals(MODULE_A)).toBe(true);
+
+      await service.patchModuleLane(
+        doc._id.toString(),
+        'line-a',
+        MODULE_A.toString(),
+        'to_ship',
+      );
+      expect(doc.moduleLanes).toHaveLength(1);
+      expect(doc.moduleLanes[0].lane).toBe('to_ship');
+    });
+
+    it('rollup follows min: parent band = earliest module lane, last module leave → ready', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [line('to_ship', 'line-a')],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchModuleLane(
+        doc._id.toString(),
+        'line-a',
+        MODULE_A.toString(),
+        'shop',
+      );
+      expect(doc.status).toBe('in_production');
+
+      await service.patchModuleLane(
+        doc._id.toString(),
+        'line-a',
+        MODULE_A.toString(),
+        'to_ship',
+      );
+      expect(doc.status).toBe('ready');
+    });
+
+    it('effectiveLineLane: no moduleLanes → boardLane; with lanes → min', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        items: [line('to_ship', 'line-a')],
+        moduleLanes: [
+          { lineId: 'line-a', moduleId: MODULE_A, lane: 'design' },
+          { lineId: 'line-a', moduleId: MODULE_B, lane: 'shop' },
+        ],
+      });
+
+      expect(service.effectiveLineLane(doc as never, doc.items[0] as never)).toBe(
+        'design',
+      );
+
+      const bare = orderDoc({ items: [line('design', 'line-b')] });
+      expect(service.effectiveLineLane(bare as never, bare.items[0] as never)).toBe(
+        'design',
+      );
     });
   });
 });

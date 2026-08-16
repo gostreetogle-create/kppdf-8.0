@@ -6,6 +6,7 @@ import {
   BoardLane,
   EstimateDayOverride,
   EstimateStartOffset,
+  ModuleLane,
   Order,
   OrderDocument,
   OrderItem,
@@ -66,6 +67,15 @@ const BOARD_LANE_TO_STATUS: Record<BoardLane, NonNullable<OrderItem['status']>> 
   shipped: 'shipped',
 };
 
+/** TZ-COMBINE-406 — порядок колонок для «min» полосы модулей (prep = раньше всех). */
+const LANE_ORDER: Record<BoardLane, number> = {
+  prep: 0,
+  design: 1,
+  shop: 2,
+  to_ship: 3,
+  shipped: 4,
+};
+
 const LINE_DELETE_BLOCKED_RU =
   'Нельзя удалить изделие вне колонки «Комплектация»';
 const LANE_SHIPPED_PATCH_RU =
@@ -99,13 +109,30 @@ export class OrderService {
   }
 
   /**
+   * TZ-COMBINE-406 — эффективная полоса линии: min по moduleLanes этой линии
+   * (если есть записи), иначе boardLane линии.
+   */
+  effectiveLineLane(order: OrderDocument, item: OrderItem): BoardLane {
+    const moduleLanes = (order.moduleLanes ?? []).filter(
+      (ml) => ml.lineId === item.lineId,
+    );
+    if (moduleLanes.length === 0) return item.boardLane ?? 'prep';
+    return moduleLanes.reduce<BoardLane>(
+      (min, ml) => (LANE_ORDER[ml.lane] < LANE_ORDER[min] ? ml.lane : min),
+      moduleLanes[0].lane,
+    );
+  }
+
+  /**
    * TZ-COMBINE-403 / COUPLING-MAP §2 — Order.status rollup from item boardLane.
    * Never writes `shipped` (only POST ship). Monotonic: do not return to `draft`
    * after the order has left it.
    */
   rollupOrderStatus(order: OrderDocument): void {
     if (HARD_FROZEN.has(order.status)) return;
-    const lanes = (order.items ?? []).map((item) => item.boardLane ?? 'prep');
+    const lanes = (order.items ?? []).map((item) =>
+      this.effectiveLineLane(order, item),
+    );
     if (lanes.length === 0) return;
 
     if (lanes.some((lane) => lane === 'shop')) {
@@ -450,6 +477,48 @@ export class OrderService {
     line.status = this.statusFromBoardLane(lane);
     this.rollupOrderStatus(doc);
     doc.markModified('items');
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /**
+   * TZ-COMBINE-406 — PATCH lane модуля изделия; разреженный moduleLanes по
+   * ключу (lineId, moduleId). Родительская полоса линии следует min (rollup).
+   */
+  async patchModuleLane(
+    id: string,
+    lineId: string,
+    moduleId: string,
+    lane: BoardLane,
+  ): Promise<OrderDocument> {
+    if (lane === 'shipped') {
+      throw new BadRequestException(LANE_SHIPPED_PATCH_RU);
+    }
+    const doc = await this.findByIdRaw(id);
+    if (HARD_FROZEN.has(doc.status)) {
+      const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
+      throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
+    }
+    const line = (doc.items ?? []).find((item) => item.lineId === lineId);
+    if (!line) {
+      throw new NotFoundException(`Order line ${lineId} not found`);
+    }
+    if (!Types.ObjectId.isValid(moduleId)) {
+      throw new BadRequestException('moduleId must be a valid ObjectId');
+    }
+    const moduleOid = new Types.ObjectId(moduleId);
+    const lanes: ModuleLane[] = [...(doc.moduleLanes ?? [])];
+    const matchIndex = lanes.findIndex(
+      (ml) => ml.lineId === lineId && ml.moduleId.equals(moduleOid),
+    );
+    if (matchIndex >= 0) {
+      lanes[matchIndex] = { lineId, moduleId: moduleOid, lane };
+    } else {
+      lanes.push({ lineId, moduleId: moduleOid, lane });
+    }
+    doc.moduleLanes = lanes;
+    this.rollupOrderStatus(doc);
+    doc.markModified('moduleLanes');
     await doc.save();
     return this.findById(id);
   }

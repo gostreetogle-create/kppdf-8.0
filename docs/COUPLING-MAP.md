@@ -3,7 +3,7 @@
 > Для **агентов и PO**. Не UI для сотрудников.
 > `DOMAIN-MAP` = домен → модуль → страница. Эта карта = **одно поле → все экраны и смысл значения**.
 > Правило: код + эта строка = один TZ. Спорят doc и код → чинить карту в той же TZ.
-> Лимит: ≤160 строк. Обновлено: TZ-COMBINE-403 (PATCH lane + Order.status rollup).
+> Лимит: ≤160 строк. Обновлено: TZ-COMBINE-406 (moduleLanes + min-полоса линии).
 
 ## 0. Зачем
 
@@ -53,7 +53,7 @@ SoT колонки `/design/combine`. Create/delete досок **нет**.
 
 Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** писать `shipped` через PATCH.
 Карточки = изделия (`lineId` + бейдж № заказа). Материалы — никогда не карточки.
-Модули на доске — TZ-COMBINE-406+ (после v1).
+Модули на доске — `Order.moduleLanes` (TZ-COMBINE-406): разреженные `[{ lineId, moduleId, lane }]`. Полоса линии = **min** по её moduleLanes (если есть записи), иначе `boardLane`; rollup `Order.status` считает по этой эффективной полосе. Write: `PATCH /orders/:id/lines/:lineId/modules/:moduleId/lane` (shipped через PATCH запрещён).
 Отгрузка **целым** заказом: дроп в «Отгружены» только если все линии `to_ship` → POST ship.
 Первый переход в `shop` → freeze состава заказа (модалка).
 
