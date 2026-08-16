@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-PRODUCTION-336 DONE — Gantt skip orders without modules
+**Исполнитель:** cursor-grok-4.6
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** на Гант не кладутся заказы без прямых модулей/видов работ; шапка без спама «нет прямых модулей»; rail показывает их с маркером «нет плана»; toast только при выборе / `?orderId=`.
+**Gates:** FE tsc PASS; focused Jest 4 suites / 56 tests PASS; eslint owned files PASS (pre-existing OnInit warning).
+**Review:** Cursor PASS — eligibility = `buildGanttBars`; header spam gone; toast on attempt only.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-336.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-336-gantt-skip-orders-without-modules.lock`
+**Next:** STOP for this TZ; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-FRONTEND-305 DONE — dashboard dialog boundary
 **Исполнитель:** Buffy
 **Статус:** DONE; scoped score 100/100; deploy НЕ

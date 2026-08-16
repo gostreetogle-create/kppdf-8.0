@@ -32,7 +32,14 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
   ];
 
   const facade = {
-    state: signal({ loading: false, error: null, warnings: [], orders: [], bars: [] }),
+    state: signal({
+      loading: false,
+      error: null,
+      warnings: [],
+      orders: [],
+      bars: [],
+      ineligible: [] as Array<{ orderId: string; orderNumber: string; productNames: string[] }>,
+    }),
     loadOrders: jest.fn(async () => orders),
     getWorkerLabelsMap: jest.fn(async () => new Map()),
     getOrderThumbMap: jest.fn(async () => new Map()),
@@ -46,6 +53,14 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     facade.loadOrders.mockImplementation(async () => orders);
     facade.loadBarsForOrders.mockReset();
     facade.loadBarsForOrders.mockImplementation(async () => []);
+    facade.state.set({
+      loading: false,
+      error: null,
+      warnings: [],
+      orders: [],
+      bars: [],
+      ineligible: [],
+    });
     facade.getWorkerLabelsMap.mockClear();
     facade.getOrderThumbMap.mockClear();
     facade.clearCaches.mockClear();
@@ -72,7 +87,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
         },
         {
           provide: PiToastService,
-          useValue: { success: jest.fn(), error: jest.fn() },
+          useValue: { success: jest.fn(), error: jest.fn(), warning: jest.fn() },
         },
         PiChromeToolsService,
         provideRouter([]),
@@ -831,5 +846,60 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(source).toContain('clear(CHROME_OWNER)');
     expect(source).not.toContain('production-studio-sheet-card');
     expect(source).not.toContain('bottom: 1.75rem');
+  });
+
+  it('TZ-PRODUCTION-336: selecting ineligible order toasts RU reason; Gantt stays without its bars', async () => {
+    facade.loadBarsForOrders.mockImplementation(async () => {
+      facade.state.update((s) => ({
+        ...s,
+        warnings: [],
+        ineligible: [{ orderId: 'o1', orderNumber: 'ORD-1', productNames: ['Пустышка'] }],
+      }));
+      return [];
+    });
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntilBootstrapped(fixture);
+    const page = fixture.componentInstance as unknown as {
+      onSelect: (id: string) => Promise<void>;
+      bars: () => GanttBar[];
+    };
+    const toast = TestBed.inject(PiToastService) as unknown as {
+      warning: jest.Mock;
+    };
+
+    await page.onSelect('o1');
+
+    expect(toast.warning).toHaveBeenCalled();
+    expect(String(toast.warning.mock.calls[0]![0])).toContain('нет прямых модулей');
+    expect(String(toast.warning.mock.calls[0]![0])).toContain('ORD-1');
+    expect(page.bars().some((b) => b.orderId === 'o1')).toBe(false);
+  });
+
+  it('TZ-PRODUCTION-336: deep-link to ineligible order toasts and shows hint', async () => {
+    facade.loadBarsForOrders.mockImplementation(async () => {
+      facade.state.update((s) => ({
+        ...s,
+        warnings: [],
+        ineligible: [{ orderId: 'o1', orderNumber: 'ORD-1', productNames: ['Пустышка'] }],
+      }));
+      return [];
+    });
+    queryParamSubject.next({
+      get: (key: string) => (key === 'orderId' ? 'o1' : null),
+    });
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const toast = TestBed.inject(PiToastService) as unknown as { warning: jest.Mock };
+    const { page, ctx } = await waitUntil(fixture, (p) =>
+      Boolean(
+        (p as unknown as { orderIdHint: () => string | null })
+          .orderIdHint()
+          ?.includes('нет прямых модулей'),
+      ),
+    );
+    expect(ctx.selectedOrderId()).toBe('o1');
+    expect((page as unknown as { orderIdHint: () => string | null }).orderIdHint()).toContain(
+      'нет прямых модулей',
+    );
+    expect(toast.warning).toHaveBeenCalled();
   });
 });

@@ -7,9 +7,12 @@ import {
   buildOrderSummaryBar,
   calendarSpanDays,
   filterOrdersForRail,
+  ganttSkipProductNames,
+  ganttSkipToastRu,
   isHardFrozenOrderStatus,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
+  orderHasGanttEstimate,
   resolveVisualAnchor,
   type GanttBar,
   type OrderEstimateInput,
@@ -706,5 +709,74 @@ describe('gantt-bar.model', () => {
       expect(bars[0]!.startDate).toBe('2026-08-12');
       expect(bars[0]!.endDate).toBe('2026-08-14');
     });
+  });
+
+  it('TZ-PRODUCTION-336: orderHasGanttEstimate follows buildGanttBars work-bars', () => {
+    const empty: OrderEstimateInput = {
+      orderId: 'o-empty',
+      orderNumber: 'ORD-EMPTY',
+      status: 'confirmed',
+      items: [],
+    };
+    expect(orderHasGanttEstimate(empty)).toBe(false);
+
+    const noModules: OrderEstimateInput = {
+      orderId: 'o-nomod',
+      orderNumber: 'ORD-NOMOD',
+      status: 'confirmed',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p1',
+          productName: 'Пустышка',
+          quantity: 1,
+          modules: [],
+        },
+      ],
+    };
+    expect(orderHasGanttEstimate(noModules)).toBe(false);
+    expect(ganttSkipProductNames(noModules)).toEqual(['Пустышка']);
+
+    const noWorkTypes: OrderEstimateInput = {
+      orderId: 'o-nowt',
+      orderNumber: 'ORD-NOWT',
+      status: 'confirmed',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p2',
+          productName: 'Без видов',
+          quantity: 1,
+          modules: [{ moduleId: 'm1', moduleName: 'Каркас', sortOrder: 0, workTypes: [] }],
+        },
+      ],
+    };
+    expect(orderHasGanttEstimate(noWorkTypes)).toBe(false);
+
+    const eligible: OrderEstimateInput = {
+      orderId: 'o-ok',
+      orderNumber: 'ORD-OK',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p3',
+          productName: 'Стол',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'm1',
+              moduleName: 'Каркас',
+              sortOrder: 0,
+              workTypes: [{ workTypeId: 'wt1', workTypeName: 'Сварка', days: 2, sortOrder: 0 }],
+            },
+          ],
+        },
+      ],
+    };
+    expect(orderHasGanttEstimate(eligible, new Date(2026, 7, 6))).toBe(true);
+    expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('нет прямых модулей');
+    expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('Пустышка');
   });
 });

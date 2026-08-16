@@ -152,4 +152,17 @@ describe('OrdersRailComponent', () => {
     allBtn.click();
     expect(allClicks).toBe(1);
   });
+
+  it('TZ-PRODUCTION-336: ineligible orders stay listed with «нет плана» marker', () => {
+    const fixture = TestBed.createComponent(OrdersRailComponent);
+    fixture.componentRef.setInput('orders', orders);
+    fixture.componentRef.setInput('noGanttOrderIds', new Set(['1']));
+    fixture.detectChanges();
+
+    const visible = fixture.componentInstance['visible']();
+    expect(visible.map((o: Order) => o._id)).toContain('1');
+    const marker = fixture.nativeElement.querySelector('[data-test="orders-rail-no-plan"]');
+    expect(marker?.textContent).toContain('нет плана');
+    expect(marker?.getAttribute('title')).toBe('Нет модулей для Ганта');
+  });
 });

@@ -491,6 +491,34 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
   return bars;
 }
 
+/**
+ * TZ-PRODUCTION-336 — order belongs on the Gantt iff buildGanttBars yields ≥1 work-bar
+ * (direct module + at least one work-type row). Deep product→product BOM is out of scope.
+ */
+export function orderHasGanttEstimate(
+  input: OrderEstimateInput,
+  today: Date = new Date(),
+): boolean {
+  return buildGanttBars(input, today).some(isWorkBar);
+}
+
+/** Product names that produced no work-type bars (empty modules / no work types). */
+export function ganttSkipProductNames(input: OrderEstimateInput): string[] {
+  return input.items
+    .filter((item) => item.modules.every((mod) => mod.workTypes.length === 0))
+    .map((item) => item.productName.trim())
+    .filter((name) => name.length > 0);
+}
+
+/** RU toast when a manager tries to put an ineligible order on the plan. */
+export function ganttSkipToastRu(orderNumber: string, productNames: string[] = []): string {
+  const products = productNames.length ? ` Изделия: ${productNames.join(', ')}.` : '';
+  return (
+    `Заказ ${orderNumber} нельзя показать на Ганте: у изделий нет прямых модулей` +
+    ` (или нет видов работ). Добавьте модули в состав изделия.${products}`
+  );
+}
+
 /** Deep-enough snapshot so Gantt drag revert restores orders + bars. */
 export function cloneGanttState<TOrder>(
   bars: readonly GanttBar[],

@@ -18,6 +18,8 @@ import { photoListUrl, type PhotoLike } from '../../shared/services/photos.servi
 import { PiWorkersService, personDisplayName } from '../../shared/services/pi-workers.service';
 import {
   buildGanttBars,
+  ganttSkipProductNames,
+  orderHasGanttEstimate,
   type GanttBar,
   type OrderEstimateInput,
   type DirectModuleRef,
@@ -26,12 +28,20 @@ import {
   type EstimateStartOffsetRef,
 } from './gantt-bar.model';
 
+export interface GanttSkipInfo {
+  orderId: string;
+  orderNumber: string;
+  productNames: string[];
+}
+
 export interface ProductionReadState {
   loading: boolean;
   error: string | null;
   warnings: string[];
   orders: Order[];
   bars: GanttBar[];
+  /** TZ-PRODUCTION-336 — filtered-out orders (rail marker + toast on select). */
+  ineligible: GanttSkipInfo[];
 }
 
 function refId(value: string | { _id?: string } | null | undefined): string | null {
@@ -129,6 +139,7 @@ export class ProductionReadFacade {
     warnings: [],
     orders: [],
     bars: [],
+    ineligible: [],
   });
 
   clearCaches(): void {
@@ -151,6 +162,7 @@ export class ProductionReadFacade {
         error: 'Не удалось загрузить заказы',
         orders: [],
         bars: [],
+        ineligible: [],
       });
       return [];
     }
@@ -163,23 +175,37 @@ export class ProductionReadFacade {
    * Build estimate bars for one order, or for all provided orders (active multi).
    */
   async loadBarsForOrders(orders: Order[]): Promise<GanttBar[]> {
-    this.patch({ loading: true, error: null, warnings: [] });
+    this.patch({ loading: true, error: null, warnings: [], ineligible: [] });
     const warnings: string[] = [];
+    const ineligible: GanttSkipInfo[] = [];
     try {
       const workTypes = await this.getWorkTypesMap();
       const workersByWt = await this.getWorkersByWorkType();
       const bars: GanttBar[] = [];
 
       for (const order of orders) {
-        const input = await this.buildOrderEstimate(order, workTypes, warnings);
+        const orderWarnings: string[] = [];
+        const input = await this.buildOrderEstimate(order, workTypes, orderWarnings);
+        if (!orderHasGanttEstimate(input)) {
+          ineligible.push({
+            orderId: order._id,
+            orderNumber: order.number,
+            productNames: ganttSkipProductNames(input),
+          });
+          continue;
+        }
+        for (const warning of orderWarnings) {
+          if (isGanttHeaderSpam(warning)) continue;
+          warnings.push(warning);
+        }
         bars.push(...applyWorkerLabels(buildGanttBars(input), workersByWt));
       }
 
-      this.patch({ loading: false, bars, warnings: [...warnings] });
+      this.patch({ loading: false, bars, warnings: [...warnings], ineligible });
       return bars;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Ошибка загрузки оценки';
-      this.patch({ loading: false, error: message, bars: [] });
+      this.patch({ loading: false, error: message, bars: [], ineligible: [] });
       return [];
     }
   }
@@ -304,7 +330,7 @@ export class ProductionReadFacade {
       const item = items[orderItemIndex];
       const productId = item.productId;
       if (!productId) {
-        warnings.push(`Заказ ${order.number}: позиция ${orderItemIndex + 1} без изделия`);
+        // TZ-PRODUCTION-336: no Gantt header spam — toast only when selecting the order.
         continue;
       }
 
@@ -317,9 +343,7 @@ export class ProductionReadFacade {
           `Изделие «${product.name}»: состав через legacy productModuleIds (dual-read)`,
         );
       }
-      if (moduleIds.length === 0) {
-        warnings.push(`Изделие «${product.name}»: нет прямых модулей`);
-      }
+      // TZ-PRODUCTION-336: empty modules stay off the Gantt; no persistent header warning.
 
       const modules: DirectModuleRef[] = [];
       for (let mi = 0; mi < moduleIds.length; mi++) {
@@ -392,6 +416,10 @@ export class ProductionReadFacade {
       this.workersInflight = null;
     }
   }
+}
+
+function isGanttHeaderSpam(warning: string): boolean {
+  return warning.includes('нет прямых модулей') || warning.includes('без изделия');
 }
 
 function applyWorkerLabels(bars: GanttBar[], workersByWt: Map<string, string[]>): GanttBar[] {

@@ -54,7 +54,7 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
               class="w-10 h-10 rounded-sm border hairline pi-focus-ring overflow-hidden relative"
               [class.ring-2]="ctx.selectedOrderId() === o._id"
               (click)="select.emit(o._id)"
-              [attr.title]="o.number"
+              [attr.title]="railTitle(o)"
               [attr.data-test]="'orders-rail-icon-' + o._id"
             >
               @if (thumbs().get(o._id); as src) {
@@ -195,6 +195,15 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
                   <span class="min-w-0 flex-1">
                     <span class="flex items-center justify-between gap-2">
                       <span class="text-sm font-medium truncate">{{ o.number }}</span>
+                      @if (noGanttOrderIds().has(o._id)) {
+                        <span
+                          class="text-[10px] text-muted-foreground shrink-0"
+                          title="Нет модулей для Ганта"
+                          data-test="orders-rail-no-plan"
+                        >
+                          нет плана
+                        </span>
+                      }
                     </span>
                     <span class="text-[11px] text-muted-foreground mt-0.5 flex gap-2 flex-wrap">
                       <span>{{ statusLabel(o.status) }}</span>
@@ -229,6 +238,8 @@ export class OrdersRailComponent {
   readonly showList = input(true);
   readonly showFilters = input(true);
   readonly thumbs = input<ReadonlyMap<string, string>>(new Map());
+  /** TZ-PRODUCTION-336 — orders without Gantt estimate (marker, still listed). */
+  readonly noGanttOrderIds = input<ReadonlySet<string>>(new Set());
   readonly select = output<string>();
   readonly selectAll = output<void>();
   readonly filtersChanged = output<void>();
@@ -278,6 +289,10 @@ export class OrdersRailComponent {
   protected shortNum(n: string): string {
     const parts = n.split('-');
     return parts[parts.length - 1]?.slice(-4) || n.slice(-4);
+  }
+
+  protected railTitle(o: Order): string {
+    return this.noGanttOrderIds().has(o._id) ? `${o.number} — Нет модулей для Ганта` : o.number;
   }
 
   protected statusLabel(s: OrderStatus): string {

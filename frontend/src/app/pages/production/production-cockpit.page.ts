@@ -36,6 +36,7 @@ import {
   cloneGanttState,
   filterOrdersForRail,
   formatDateOnly,
+  ganttSkipToastRu,
   isHardFrozenOrderStatus,
   resolveVisualAnchor,
   type GanttBar,
@@ -175,6 +176,7 @@ const CHROME_OWNER = 'production-cockpit';
                 [showList]="true"
                 [showFilters]="false"
                 [thumbs]="orderThumbs()"
+                [noGanttOrderIds]="noGanttOrderIds()"
                 (select)="onSelect($event)"
                 (selectAll)="onSelectAll()"
                 (filtersChanged)="onFiltersChanged()"
@@ -196,6 +198,7 @@ const CHROME_OWNER = 'production-cockpit';
                 [showList]="false"
                 [showFilters]="true"
                 [thumbs]="orderThumbs()"
+                [noGanttOrderIds]="noGanttOrderIds()"
                 (select)="onSelect($event)"
                 (selectAll)="onSelectAll()"
                 (filtersChanged)="onFiltersChanged()"
@@ -358,6 +361,11 @@ export class ProductionCockpitPage implements OnInit {
     return this.ctx.selectedOrderId();
   });
 
+  /** TZ-PRODUCTION-336 — rail marker for orders skipped on the Gantt. */
+  protected readonly noGanttOrderIds = computed(
+    () => new Set(this.facade.state().ineligible.map((row) => row.orderId)),
+  );
+
   protected readonly orderMetaView = computed((): GanttOrderMetaView | null => {
     if (!this.ctx.orderMetaOpen()) return null;
     const id = this.ctx.selectedOrderId();
@@ -434,6 +442,7 @@ export class ProductionCockpitPage implements OnInit {
     this.readOnly.set(isHardFrozenOrderStatus(order.status));
     // TZ-PRODUCTION-317: selection ≠ filter — keep multi-order filtered bars.
     await this.applyFilteredActive();
+    this.warnIfIneligible(id);
   }
 
   protected async onSelectAll(): Promise<void> {
@@ -715,10 +724,22 @@ export class ProductionCockpitPage implements OnInit {
     if (found) {
       this.orderIdHint.set(null);
       await this.onSelect(orderId);
+      const skip = this.facade.state().ineligible.find((row) => row.orderId === orderId);
+      if (skip) {
+        this.orderIdHint.set(
+          `Заказ «${skip.orderNumber}» нельзя показать на Ганте: нет прямых модулей. Показаны все активные с планом.`,
+        );
+      }
       return;
     }
     this.orderIdHint.set(`Заказ с идентификатором «${orderId}» не найден. Показаны все активные.`);
     await this.onSelectAll();
+  }
+
+  private warnIfIneligible(orderId: string): void {
+    const skip = this.facade.state().ineligible.find((row) => row.orderId === orderId);
+    if (!skip) return;
+    this.toast.warning(ganttSkipToastRu(skip.orderNumber, skip.productNames));
   }
 
   private beginGanttOptimistic(orderId: string): { bars: GanttBar[]; orders: Order[] } | null {

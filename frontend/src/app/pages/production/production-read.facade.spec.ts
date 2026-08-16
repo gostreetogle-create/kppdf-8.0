@@ -169,4 +169,94 @@ describe('ProductionReadFacade', () => {
     expect(workersApi.list).toHaveBeenCalledTimes(1);
     expect(workersApi.list).toHaveBeenCalledWith({ limit: 100, isActive: true });
   });
+
+  it('TZ-PRODUCTION-336: skips ineligible orders and does not persist «нет прямых модулей»', async () => {
+    const ordersApi = { list: jest.fn() };
+    const productsApi = {
+      findById: jest.fn((id: string) =>
+        of({
+          ok: true,
+          data:
+            id === 'p-ok'
+              ? {
+                  _id: 'p-ok',
+                  name: 'Стол',
+                  kind: 'good',
+                  unit: 'шт',
+                  composition: [
+                    { _id: 'l1', lineType: 'module', refId: 'm1', quantity: 1, sortOrder: 0 },
+                  ],
+                }
+              : {
+                  _id: 'p-empty',
+                  name: 'Пустышка',
+                  kind: 'good',
+                  unit: 'шт',
+                  composition: [],
+                },
+        }),
+      ),
+    };
+    const modulesApi = {
+      findById: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            _id: 'm1',
+            name: 'Каркас',
+            workTypes: [{ workTypeId: 'wt1', estimatedHours: 8, sortOrder: 0 }],
+            materials: [],
+          },
+        }),
+      ),
+    };
+    const workTypesApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: { items: [{ _id: 'wt1', name: 'Сварка', isActive: true, days: 2 }], total: 1 },
+        }),
+      ),
+    };
+    const workersApi = {
+      list: jest
+        .fn()
+        .mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProductionReadFacade,
+        { provide: OrdersService, useValue: ordersApi },
+        { provide: ProductsService, useValue: productsApi },
+        { provide: ProductModulesService, useValue: modulesApi },
+        { provide: WorkTypesService, useValue: workTypesApi },
+        { provide: PiWorkersService, useValue: workersApi },
+      ],
+    });
+
+    const facade = TestBed.inject(ProductionReadFacade);
+    const bars = await facade.loadBarsForOrders([
+      {
+        _id: 'o-ok',
+        number: 'ORD-OK',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [{ productId: 'p-ok', productName: 'Стол', quantity: 1 }],
+      } as never,
+      {
+        _id: 'o-skip',
+        number: 'ORD-SKIP',
+        status: 'confirmed',
+        items: [{ productId: 'p-empty', productName: 'Пустышка', quantity: 1 }],
+      } as never,
+    ]);
+
+    expect(bars.map((b) => b.orderId)).toEqual(['o-ok']);
+    expect(facade.state().warnings.join(' ')).not.toContain('нет прямых модулей');
+    expect(facade.state().ineligible).toEqual([
+      { orderId: 'o-skip', orderNumber: 'ORD-SKIP', productNames: ['Пустышка'] },
+    ]);
+  });
 });

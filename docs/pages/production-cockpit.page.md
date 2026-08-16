@@ -131,6 +131,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется локально.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
+- **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
 - **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
 
 - **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает.
@@ -177,6 +178,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-333** | DONE: Gantt drag/resize commit = optimistic local bars + silent PATCH; revert + error toast on fail; no success toast / full reload |
 | **TZ-PRODUCTION-334** | DONE: workers list for Gantt labels uses `limit: 100` (BE `@Max(100)`); no `limit=200` 400 |
 | **TZ-PRODUCTION-335** | DONE: Gantt/rail sort by summary startDate (tie orderNumber); meta labels Статус заказа / Важность / Начало плана; auto-save silent optimistic; no obsolete sync hint |
+| **TZ-PRODUCTION-336** | DONE: skip orders without direct modules/work types on Gantt; rail marker «нет плана»; toast only on select / `?orderId=` |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -201,7 +203,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Нет assign writes / ProductionSchedule SoT.
 - Browser smoke зависит от живого API/Mongo.
 - Existing manager roles in DB may need `production:write` re-seed / manual grant if created before 309.
-- Product/module deep-links из старого inspector — backlog; sheet не восстанавливать.
+- Изделия только с вложенными изделиями (без прямых module lines) по-прежнему «не для Ганта» — отдельная TZ на deep BOM, если PO попросит.
 - Zoom Месяц: нет полосы дней недели под именем месяца — successor только по запросу PO.
 - **TZ-PRODUCTION-333/335:** catalog WorkType.days по-прежнему toast + full reload; второй write того же заказа, пока PATCH в полёте, игнорируется.
 - Plan-vs-fact: после «выполнено» предлагать обновить норматив `WorkType.days` — **parked** (fact production OUT). См. `tasks/_backlog/PARK-plan-vs-fact-days.md`.

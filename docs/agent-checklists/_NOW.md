@@ -5,18 +5,19 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T01:32:00+03:00
+updated_at: 2026-08-16T12:20:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
-_(empty — TZ-FRONTEND-305 dashboard boundary complete; architecture gate green; no deploy)_
-
-
+- **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
+- **TZ-UX-326** CLAIMED — cursor-grok-4.6 — `/products` фильтр в app-chrome-rail, убрать w-12. Keys: `products.page.ts` / `products.page.spec.ts` / `products.page.md`. Не пересекается с UX-332 / TZD-48 / CATALOG-374.
+- **TZ-UX-332** READY FOR REVIEW — cursor-grok-4.6 — dashboard findById + RU not-found + photo filename. Gates PASS. Archive после Cursor PASS. Keys: dashboard-dialog / product-form-dialog / silent-http / http-exception.filter / photos.
+- **TZD-48** CLAIMED — buffy — desktop import studio. Keys: `desktop/**` + `import-mapping-profile/**`.
 
 ## NEXT (PO paste prompt)
 
-- **Next action:** STOP for today. Tomorrow: explicit «деплой» then browser/auth smoke; do not deploy automatically.
+- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 / TZ-UX-332 / TZD-48 только после Cursor/PO PASS.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -29,6 +30,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-336 DONE — Gantt skip orders without modules
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-336.done.md`; no empty-module orders on Gantt; rail marker; toast on attempt.
 
 ## [2026-08-15] — TZ-ORDERS-337 DONE — Composition-tree pencil + list forest
 
