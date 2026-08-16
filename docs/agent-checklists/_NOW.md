@@ -5,21 +5,22 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T18:35:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed; TZD-50 closeout 2026-08-16
+updated_at: 2026-08-16T18:50:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed; TZD-50 closeout 2026-08-16; TZD-51 closeout 2026-08-16 (Cursor PASS)
 
 ## ACTIVE
 
 - **Свободен Freebuff:** WAVE-COMBINE-MODULES **закрыта** (406→408 DONE).
 - **TZD-50:** **DONE** — closeout 2026-08-16 (commit `10dde79a` desktop-only, archive `TZD-50.done.md`, lock поставлен; marker `_active/TZD-50.md` удалён).
-- **TZD-51:** **READY FOR REVIEW** — Freebuff (справочники V2: склады/виды работ/цвета RAL/категории; desktop tsc + svelte-check 0 + tsx --test 64/64). Archive после Cursor/PO PASS.
+- **TZD-51:** **DONE** — closeout 2026-08-16 (commit `76aa08c7` desktop-only; archive `TZD-51.done.md`, lock `TZD-51-desktop-excel-form-dictionaries.lock`; Cursor PASS). Next: bump Desktop 0.5.4 + publish.
 
 ## NEXT (PO paste prompt)
 
-1. **TZD-51** → Cursor review PASS → archive `TZD-51.done.md` + lock
-2. Warm deploy — только по «деплой»/«кати»
-3. **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок»
-4. SALES-377 — не без PO
+1. **Desktop 0.5.4** — bump версии + publish ZIP — только по слову PO
+2. **WAVE Desktop Excel Forms** — Smoke-прогон нового ZIP (ручной, после публикации)
+3. Warm deploy — только по «деплой»/«кати»
+4. **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок»
+5. SALES-377 — не без PO
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -32,6 +33,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZD-51 DONE — Excel Forms справочники V2
+
+- Archive: `tasks/_archive/2026-08/TZD-51.done.md`; lock `TZD-51-desktop-excel-form-dictionaries.lock`; commit `76aa08c7` (desktop-only, 10 файлов); Cursor PASS; gates tsc 0 / svelte-check 0/0 / tsx 64/64. Next: bump Desktop 0.5.4 + publish — только по слову PO; Smoke после нового ZIP.
 
 ## [2026-08-16] — TZD-50 DONE — Excel Form Studio (скачать форму V1)
 

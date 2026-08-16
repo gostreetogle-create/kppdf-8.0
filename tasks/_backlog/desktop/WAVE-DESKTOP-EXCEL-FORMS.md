@@ -43,7 +43,7 @@
 ## DoD волны
 
 - [x] TZD-50 DONE — archived + lock `TZD-50-desktop-excel-form-studio.lock` (2026-08-16, commit `10dde79a`); TZD-51 свободен  
-- [x] TZD-51 code DONE + gates green (desktop tsc + svelte-check 0 + tsx --test 64/64) — READY FOR REVIEW; archive + Cursor PASS — после вердикта  
+- [x] TZD-51 DONE — archived + lock `TZD-51-desktop-excel-form-dictionaries.lock` (2026-08-16, commit `76aa08c7`, Cursor PASS); Smoke и ZIP остаются  
 - [ ] Smoke: скачал Материалы → 2 строки (1 ок, 1 дубль) → отчёт отклонил дубль → ok в SoT/journal  
 - [ ] Deploy Desktop ZIP — только по слову PO
 

@@ -1,6 +1,6 @@
 # TZD-51 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-51.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md` (после gates/review)
 
@@ -48,8 +48,9 @@
 - `cd desktop && npx tsx --test src/core/*.test.ts src/core/ai/*.test.ts src/importers/*.test.ts src/ai-runner/*.test.ts` → **PASS 64/64** (+8 новых)
   - (TZ пишет `pnpm test` — в desktop нет такого script; канон TZD-50 — `npx tsx --test`.)
 
-## Executor report
+## Executor report (auto)
 
+- **Commit:** `76aa08c73706486d0f69fa0c528b2f97b9772f71` (`feat(desktop): Excel Forms справочники V2 — склады/виды работ/цвета/категории (TZD-51)`)
 - `import-targets.ts`: `ImportTargetKey` + 4 справочника (`warehouse`/`workType`/`colorReference`/`category`), `REFERENCE_TARGET_KEYS` + `isReferenceTargetKey`; таблицы с RU-колонками/алиасами; порядок UI дополнен.
 - `excel-form-template.ts`: категория `references` + 4 `FORM_TEMPLATES` с RU-hints («пишется сразу после подтверждения», slug/SKU-латиница, ставка 0).
 - `multi-import.ts`: `referenceDedupeKeysOf` (normalized name/slug/type+slug/skuPrefix) + `validateReferenceRows` (enum/hex/skuPrefix/slug/hourlyRate; catalog-hit → `duplicate`, не пишется).
@@ -59,10 +60,10 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [x] **Не** archive до Cursor/PO PASS (по TZ HANDOFF)
+- [x] Cursor Verdict **PASS** 2026-08-16 (SHA `76aa08c73706486d0f69fa0c528b2f97b9772f71`; spot-check: references×4, validate/dedupe, POST branches, tests 26 focused PASS; V1 intact). Next: archive + lock — не bump/deploy без слова PO.
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active` (archive `tasks/_archive/2026-08/TZD-51.done.md`; lock `.mimocode/locks/TZD-51-desktop-excel-form-dictionaries.lock`)
+- [x] Status = DONE
+- closed_at: 2026-08-16T18:50:00+03:00
