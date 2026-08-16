@@ -348,6 +348,10 @@ import {
                 [rowActions]="rowActionsTplBinding"
                 (pageChange)="onPageChange($event)"
                 (pageSizeChange)="onPageSizeChange($event)"
+                (rowClick)="onRowClick($event)"
+                [expandedRow]="expandedTpl"
+                [expandedRowWhen]="isExpandedRow"
+                [expandedRowLabel]="expandedRowLabel"
               ></app-pi-table>
             }
           </div>
@@ -391,8 +395,10 @@ import {
         <app-catalog-kind-marker kind="material" [materialKind]="row.materialKind">
           <a
             [routerLink]="['/materials', row._id]"
+            (click)="$event.stopPropagation()"
             class="text-ink hover:text-sunrise-warm underline decoration-dotted underline-offset-4 transition-colors"
             [attr.aria-label]="'Открыть ' + row.name"
+            data-test="open-row-link"
           >
             {{ row.name }}
           </a>
@@ -404,8 +410,10 @@ import {
         <a
           [routerLink]="['/storage-items']"
           [queryParams]="{ materialId: row._id }"
+          (click)="$event.stopPropagation()"
           class="inline-flex items-center gap-1 text-primary underline decoration-dotted underline-offset-4 transition-colors"
           [attr.aria-label]="'Остатки на складе: ' + row.name"
+          data-test="stock-row-link"
         >
           Склад →
         </a>
@@ -425,6 +433,175 @@ import {
           (edit)="openEdit($event)"
           (delete)="onDelete($event)"
         />
+      </ng-template>
+
+      <!-- TZ-CATALOG-375: expandable attribute preview tray (products/modules parity). -->
+      <ng-template #expandedTpl let-row>
+        @if (expandedId() === row._id) {
+          <div
+            class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-gold-soft)]"
+            data-test="expanded-content"
+            [attr.aria-label]="'Материал: ' + row.name"
+          >
+            <div
+              class="flex items-center justify-between gap-3 mb-2.5 flex-wrap"
+              data-test="material-expand-header"
+            >
+              <!-- Future tray sections via expandedSection signal (successor). -->
+              <span class="text-xs font-medium text-ink tracking-wide">Обзор</span>
+              <a
+                [routerLink]="['/materials', row._id]"
+                (click)="$event.stopPropagation()"
+                class="text-xs text-ink hover:text-sunrise-warm hover:underline"
+                data-test="material-expand-open-detail"
+                >Открыть карточку</a
+              >
+            </div>
+
+            <div
+              class="grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+              data-test="material-expand-sections"
+            >
+              @if (expandHasIdentity(row)) {
+                <div
+                  class="min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                  data-test="material-expand-identity"
+                >
+                  <p class="eyebrow text-muted-foreground m-0 mb-1.5">Идентификация</p>
+                  <dl class="m-0 space-y-1 text-xs">
+                    @if (row.article) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Артикул</dt>
+                        <dd class="m-0 min-w-0 font-mono break-all">{{ row.article }}</dd>
+                      </div>
+                    }
+                    @if (row.sku) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Код</dt>
+                        <dd class="m-0 min-w-0 font-mono break-all">{{ row.sku }}</dd>
+                      </div>
+                    }
+                    @if (kindLabelOf(row); as kindLabel) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Тип</dt>
+                        <dd class="m-0 min-w-0">{{ kindLabel }}</dd>
+                      </div>
+                    }
+                    @if (row.unit) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Ед.</dt>
+                        <dd class="m-0 min-w-0">{{ row.unit }}</dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+              }
+
+              <div
+                class="min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                data-test="material-expand-supplier"
+              >
+                <p class="eyebrow text-muted-foreground m-0 mb-1.5">Поставщик</p>
+                <p class="text-xs m-0">
+                  {{ supplierNameOf(row) ?? 'Поставщик не указан' }}
+                </p>
+              </div>
+
+              @if (expandHasGeometry(row)) {
+                <div
+                  class="min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                  data-test="material-expand-geometry"
+                >
+                  <p class="eyebrow text-muted-foreground m-0 mb-1.5">Геометрия и сортамент</p>
+                  <dl class="m-0 space-y-1 text-xs">
+                    @if (dimensionsSummary(row); as dims) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Габариты</dt>
+                        <dd class="m-0 min-w-0 font-mono">{{ dims }}</dd>
+                      </div>
+                    }
+                    @if (row.assortment) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Сортамент</dt>
+                        <dd class="m-0 min-w-0 break-words">{{ row.assortment }}</dd>
+                      </div>
+                    }
+                    @if (row.materialGrade) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Марка</dt>
+                        <dd class="m-0 min-w-0 break-words">{{ row.materialGrade }}</dd>
+                      </div>
+                    }
+                    @if (row.standardRef) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Стандарт</dt>
+                        <dd class="m-0 min-w-0 break-words">{{ row.standardRef }}</dd>
+                      </div>
+                    }
+                    @if (row.weightKg != null) {
+                      <div class="flex gap-2 min-w-0">
+                        <dt class="shrink-0 text-muted-foreground">Масса</dt>
+                        <dd class="m-0 min-w-0 tabular-nums">{{ row.weightKg }} кг</dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+              }
+
+              <div
+                class="min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                data-test="material-expand-price-stock"
+              >
+                <p class="eyebrow text-muted-foreground m-0 mb-1.5">Цена и склад</p>
+                <dl class="m-0 space-y-1 text-xs">
+                  @if (row.pricePerUnit != null) {
+                    <div class="flex gap-2 min-w-0">
+                      <dt class="shrink-0 text-muted-foreground">Цена</dt>
+                      <dd class="m-0 min-w-0 tabular-nums">
+                        {{ expandPriceLabel(row) }}
+                      </dd>
+                    </div>
+                  }
+                  @if (row.stockQty != null) {
+                    <div class="flex gap-2 min-w-0">
+                      <dt class="shrink-0 text-muted-foreground">Остаток</dt>
+                      <dd class="m-0 min-w-0 tabular-nums">{{ row.stockQty }}</dd>
+                    </div>
+                  }
+                  <div class="pt-0.5">
+                    <a
+                      [routerLink]="['/storage-items']"
+                      [queryParams]="{ materialId: row._id }"
+                      (click)="$event.stopPropagation()"
+                      class="text-primary underline decoration-dotted underline-offset-4"
+                      data-test="material-expand-stock-link"
+                      >Склад →</a
+                    >
+                  </div>
+                </dl>
+              </div>
+
+              @if (expandHasDescription(row)) {
+                <div
+                  class="min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70 sm:col-span-2"
+                  data-test="material-expand-description"
+                >
+                  <p class="eyebrow text-muted-foreground m-0 mb-1.5">Описание</p>
+                  @if (row.description) {
+                    <p class="text-xs m-0 whitespace-pre-wrap break-words">{{ row.description }}</p>
+                  }
+                  @if (row.notes) {
+                    <p
+                      class="text-xs m-0 mt-1 text-muted-foreground whitespace-pre-wrap break-words"
+                    >
+                      {{ row.notes }}
+                    </p>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
       </ng-template>
     </app-pi-group-workspace>
   `,
@@ -457,6 +634,20 @@ export class MaterialsPage implements OnInit {
    */
   protected readonly viewMode = signal<MaterialsViewMode>(loadMaterialsViewMode());
   protected readonly filtersOpen = signal(false);
+
+  /**
+   * TZ-CATALOG-375: which list row has the gold preview tray open.
+   * Detail stays via name link / «Открыть карточку» — row-click only toggles.
+   * `expandedSection: 'overview'` reserved for successor multi-tab trays.
+   */
+  protected readonly expandedId = signal<string | null>(null);
+  protected readonly expandedSection = 'overview' as const;
+  protected readonly isExpandedRow = (row: Material): boolean => this.expandedId() === row._id;
+  protected readonly expandedRowLabel = (row: Material): string => `Материал: ${row.name}`;
+
+  protected onRowClick(row: Material): void {
+    this.expandedId.update((cur) => (cur === row._id ? null : row._id));
+  }
 
   protected setViewMode(mode: MaterialsViewMode): void {
     this.viewMode.set(mode);
@@ -720,6 +911,34 @@ export class MaterialsPage implements OnInit {
   protected dimensionsSummary(row: Material): string {
     if (!row.dimensions || row.dimensions.length === 0) return '';
     return row.dimensions.map((d) => `${typeLetter(d.type)} ${formatVal(d.value)}`).join(' × ');
+  }
+
+  /** TZ-CATALOG-375: hide empty identity block (unit alone still counts). */
+  protected expandHasIdentity(row: Material): boolean {
+    return !!(row.article || row.sku || this.kindLabelOf(row) || row.unit);
+  }
+
+  /** TZ-CATALOG-375: geometry/assortment block — hide when all empty. */
+  protected expandHasGeometry(row: Material): boolean {
+    return !!(
+      this.dimensionsSummary(row) ||
+      row.assortment ||
+      row.materialGrade ||
+      row.standardRef ||
+      row.weightKg != null
+    );
+  }
+
+  /** TZ-CATALOG-375: description/notes — hide when both empty. */
+  protected expandHasDescription(row: Material): boolean {
+    return !!(row.description?.trim() || row.notes?.trim());
+  }
+
+  /** TZ-CATALOG-375: price line for tray (unit suffix when present). */
+  protected expandPriceLabel(row: Material): string {
+    if (row.pricePerUnit == null) return '';
+    const price = formatPrice(row.pricePerUnit);
+    return row.unit ? `${price} / ${row.unit}` : price;
   }
 
   // ─── TZ-CATALOG-373: grid-витрина (канон products.page.ts) ───────────────

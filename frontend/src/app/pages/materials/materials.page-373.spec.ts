@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { signal } from '@angular/core';
 import { of } from 'rxjs';
 
 import { MaterialsPage } from './materials.page';
@@ -18,6 +19,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 
 /**
  * TZ-CATALOG-373 — materials list↔grid + filters-rail (canon products).
+ * TZ-CATALOG-375 — list expandable attribute preview (products/modules parity).
  *
  * Own suite (like materials.page-316.spec.ts) because the
  * settled→signal→flushEffects re-fetch cycle trips NG0101 when mixed
@@ -26,12 +28,19 @@ import { API_BASE_URL } from '../../core/api.tokens';
  * Renders the REAL page (imports: [MaterialsPage], provideRouter) so:
  *   - view-toggle buttons are clickable native <button>s;
  *   - grid cell routerLink produces a real href="/materials/:id";
- *   - the filters-rail overlay + backdrop are in the DOM.
+ *   - the filters-rail overlay + backdrop are in the DOM;
+ *   - (rowClick) toggles expandedId and [expandedRow] tray.
  */
 describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
   let httpMock: HttpTestingController;
   const baseUrl = '/api';
   const listUrl = `${baseUrl}/materials`;
+  const dialogSpy = {
+    open: jest.fn().mockReturnValue({
+      closed: signal<unknown>(undefined),
+      close: jest.fn(),
+    }),
+  };
 
   const fakeItems: Material[] = [
     { _id: 'm1', name: 'Сталь лист 3мм', article: 'ST-3', unit: 'м2', pricePerUnit: 1240.5 },
@@ -46,6 +55,12 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
   }
 
   beforeEach(async () => {
+    dialogSpy.open.mockClear();
+    dialogSpy.open.mockReturnValue({
+      closed: signal<unknown>(undefined),
+      close: jest.fn(),
+    });
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [MaterialsPage],
       providers: [
@@ -56,7 +71,23 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
         {
           provide: OrganizationsService,
           useValue: {
-            list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 200 } }),
+            list: () =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    {
+                      _id: 'org-sup-1',
+                      name: 'МеталлТорг ООО',
+                      shortName: 'МеталлТорг',
+                      type: ['supplier'],
+                    },
+                  ],
+                  total: 1,
+                  page: 1,
+                  limit: 200,
+                },
+              }),
           },
         },
         {
@@ -78,7 +109,7 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
             duplicate: () => of({ ok: true, data: { _id: 'c', name: 'x', unit: 'м2' } }),
           },
         },
-        { provide: PiDialogService, useValue: { open: () => ({}) as never } },
+        { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
         {
           provide: PiDictionaryLabelsService,
@@ -94,15 +125,15 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
   });
 
   /** Create the page, flush the initial list GET, settle. */
-  async function renderPage(): Promise<{
+  async function renderPage(items: Material[] = fakeItems): Promise<{
     fixture: import('@angular/core/testing').ComponentFixture<MaterialsPage>;
   }> {
     const fixture = TestBed.createComponent(MaterialsPage);
     fixture.detectChanges();
     TestBed.flushEffects();
     httpMock.expectOne(matchListGet).flush({
-      items: fakeItems,
-      total: fakeItems.length,
+      items,
+      total: items.length,
       page: 1,
       limit: 10,
     });
@@ -111,6 +142,31 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     fixture.detectChanges();
     return { fixture };
   }
+
+  const expandFixtureItems: Material[] = [
+    {
+      _id: 'm1',
+      name: 'Сталь лист 3мм',
+      article: 'ST-3',
+      sku: 'SKU-ST-3',
+      unit: 'м2',
+      materialKind: 'raw',
+      supplierId: 'org-sup-1',
+      dimensions: [{ type: 'thickness', value: 3 }],
+      assortment: 'лист',
+      materialGrade: 'Ст3',
+      pricePerUnit: 1240.5,
+      stockQty: 12,
+      description: 'Листовая сталь для корпусов',
+    },
+    {
+      _id: 'm2',
+      name: 'Алюминий пруток',
+      article: 'AL-10',
+      unit: 'кг',
+      pricePerUnit: 380,
+    },
+  ];
 
   // ─── View toggle ────────────────────────────────────────────────────
 
@@ -382,5 +438,129 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     // Панель не обязана закрываться по «Сбросить» (канон products) —
     // рейл остаётся открытым для дальнейших действий.
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeTruthy();
+  });
+
+  // ─── TZ-CATALOG-375: list expandable preview ─────────────────────────
+
+  async function renderListForExpand(items: Material[] = expandFixtureItems) {
+    localStorage.setItem('pi-materials-view-mode', 'list');
+    return renderPage(items);
+  }
+
+  it('row click toggles expandedId and renders the gold preview tray', async () => {
+    const { fixture } = await renderListForExpand();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-m1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBe('m1');
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-sections"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-identity"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-supplier"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('МеталлТорг');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-geometry"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-price-stock"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-description"]'),
+    ).toBeTruthy();
+  });
+
+  it('second click on the same row collapses (expandedId → null)', async () => {
+    const { fixture } = await renderListForExpand();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-m1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBe('m1');
+
+    rowEl.click();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
+  });
+
+  it('clicking a DIFFERENT row switches the expansion', async () => {
+    const { fixture } = await renderListForExpand();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const row1 = fixture.nativeElement.querySelector('[data-test="table-row-m1"]') as HTMLElement;
+    row1.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBe('m1');
+
+    const row2 = fixture.nativeElement.querySelector('[data-test="table-row-m2"]') as HTMLElement;
+    row2.click();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBe('m2');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="expanded-row"]')).toHaveLength(1);
+  });
+
+  it('name link points to /materials/:id; «Открыть карточку» in tray', async () => {
+    const { fixture } = await renderListForExpand();
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-test="open-row-link"]'),
+    ) as HTMLAnchorElement[];
+    expect(links.some((l) => l.getAttribute('href') === '/materials/m1')).toBe(true);
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-m1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+
+    const openDetail = fixture.nativeElement.querySelector(
+      '[data-test="material-expand-open-detail"]',
+    ) as HTMLAnchorElement;
+    expect(openDetail.getAttribute('href')).toBe('/materials/m1');
+  });
+
+  it('stock link and edit action do NOT open the expand tray', async () => {
+    const { fixture } = await renderListForExpand();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const stockLink = fixture.nativeElement.querySelector(
+      '[data-test="stock-row-link"]',
+    ) as HTMLElement;
+    stockLink.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBeNull();
+
+    const editBtn = fixture.nativeElement.querySelector(
+      '[data-test="edit-button-m1"]',
+    ) as HTMLElement;
+    editBtn.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
+  });
+
+  it('tray hides empty description block when notes/description absent', async () => {
+    const { fixture } = await renderListForExpand();
+    const row2 = fixture.nativeElement.querySelector('[data-test="table-row-m2"]') as HTMLElement;
+    row2.click();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-description"]'),
+    ).toBeFalsy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="material-expand-identity"]'),
+    ).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('Поставщик не указан');
   });
 });

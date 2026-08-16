@@ -36,11 +36,12 @@
   kind=null + поиск='' + page=1).
 - **Grid**: `app-pi-showcase-card size="md"`, сетка `1/2/3` (`data-test="materials-grid"`),
   карточки-ссылки на `/materials/:id` (`showcase-cell-{{id}}`); media из `mainPhotoUrl`,
-  eyebrow = kind-label (иначе артикул), description = габариты (иначе поставщик),
+  grid media: contain (TZ-UX-344); eyebrow = kind-label (иначе артикул), description = габариты (иначе поставщик),
   footer = `formatPrice(pricePerUnit)` + «за <ед.>» + ед.; pager = `<app-pi-pagination>`
   (`data-test="grid-pager"` wrapper; канон TZ-UX-341 / UX-340).
   при `total > pageSize`.
-- **List**: текущий `pi-table` без регресса (kind filter / фото / stock link сохранены).
+- **List**: `pi-table` с expandable preview (TZ-CATALOG-375): клик по строке
+  toggle gold tray с блоками атрибутов; detail — через имя / «Открыть карточку».
 
 known_limitation (TZ-CATALOG-373):
 
@@ -48,6 +49,26 @@ known_limitation (TZ-CATALOG-373):
   `sortBy`/`sortOrder` (всегда `sort({name: 1})`, см. `MaterialService.findAll`),
   поэтому client-sort текущей page slice не фейкается. Rail = «Тип» + «Сбросить».
 - Сужение колонок таблицы «как у products» — successor (не этот TZ).
+
+## TZ-CATALOG-375 — list expandable preview (паритет products/modules)
+
+Клик по строке списка (не только по имени) раскрывает gold tray
+(`border-l-gold` + `bg-[var(--color-gold-soft)]`, `data-test="expanded-content"`):
+
+- Шапка: «Обзор» + ссылка «Открыть карточку» → `/materials/:id`
+  (`data-test="material-expand-open-detail"`).
+- Блоки (`data-test="material-expand-sections"`): **Идентификация**, **Поставщик**,
+  **Геометрия и сортамент**, **Цена и склад**, **Описание** — пустые блоки скрыты
+  (поставщик всегда: имя или «Поставщик не указан»).
+- Имя (`data-test="open-row-link"`), склад (`data-test="stock-row-link"`) и
+  `pi-row-actions` — `stopPropagation` / не открывают expand.
+- Данные из уже загруженной list-строки (без lazy GET).
+- `expandedSection: 'overview'` — reserved для successor multi-tab.
+
+known_limitation (TZ-CATALOG-375):
+
+- **Grid**: клик по карточке = navigate-to-detail (без expand), как у products/modules
+  на этапе без grid-expand.
 
 ## API endpoints
 
