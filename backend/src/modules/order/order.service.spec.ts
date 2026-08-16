@@ -7,6 +7,7 @@ const COUNTERPARTY = new Types.ObjectId().toString();
 const SITE = new Types.ObjectId().toString();
 const PRODUCT = new Types.ObjectId().toString();
 const ORGANIZATION = new Types.ObjectId().toString();
+const WORKTYPE = new Types.ObjectId();
 
 /** Shape of a stored OrderItem — unitPrice may be absent (strip-commerce). */
 interface MockOrderItem {
@@ -78,6 +79,37 @@ function mockQuery<T>(value: T) {
   };
 }
 
+/** TZ-COMBINE-408 — query chain `.select().lean().exec()` для каталог-моделей. */
+function leanQuery<T>(value: T) {
+  return {
+    select: jest.fn().mockReturnThis(),
+    lean: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue(value),
+  };
+}
+
+/** TZ-COMBINE-408 — изделие с модулем, у которого есть workType + catalog days. */
+function stubShopReady(
+  deps: {
+    productModel: { findById: jest.Mock; find: jest.Mock };
+    productModuleModel: { find: jest.Mock };
+    workTypeModel: { find: jest.Mock };
+  },
+  moduleId = new Types.ObjectId(),
+): void {
+  deps.productModel.findById.mockReturnValue(
+    leanQuery({ composition: [], productModuleIds: [moduleId] }),
+  );
+  deps.productModuleModel.find.mockReturnValue(
+    leanQuery([
+      { workTypes: [{ workTypeId: WORKTYPE, estimatedHours: 1, sortOrder: 0 }] },
+    ]),
+  );
+  deps.workTypeModel.find.mockReturnValue(
+    leanQuery([{ _id: WORKTYPE, days: 2 }]),
+  );
+}
+
 function createService(overrides: Record<string, unknown> = {}) {
   // `model` is BOTH a constructor (`new this.model(...)`) and a static
   // query namespace (find/findById/updateOne) — same dual shape as Mongoose.
@@ -119,6 +151,17 @@ function createService(overrides: Record<string, unknown> = {}) {
   const organizations = {
     findCurrent: jest.fn().mockResolvedValue({ _id: new Types.ObjectId(ORGANIZATION) }),
   };
+  // TZ-COMBINE-408: каталог-модели для gate входа в «Цех».
+  const productModel = {
+    findById: jest.fn(),
+    find: jest.fn(),
+  };
+  const productModuleModel = {
+    find: jest.fn(),
+  };
+  const workTypeModel = {
+    find: jest.fn(),
+  };
   const dependencies = {
     model,
     counter,
@@ -129,6 +172,9 @@ function createService(overrides: Record<string, unknown> = {}) {
     quotationModel,
     organizations,
     shipmentModel,
+    productModel,
+    productModuleModel,
+    workTypeModel,
     ...overrides,
   };
   return {
@@ -142,6 +188,9 @@ function createService(overrides: Record<string, unknown> = {}) {
       dependencies.sites as never,
       dependencies.quotationModel as never,
       dependencies.organizations as never,
+      dependencies.productModel as never,
+      dependencies.productModuleModel as never,
+      dependencies.workTypeModel as never,
     ),
     model: dependencies.model as jest.Mock & {
       find: jest.Mock;
@@ -157,6 +206,9 @@ function createService(overrides: Record<string, unknown> = {}) {
     quotationModel: dependencies.quotationModel as { findById: jest.Mock; create: jest.Mock },
     organizations: dependencies.organizations as { findCurrent: jest.Mock },
     shipmentModel: dependencies.shipmentModel as { create: jest.Mock },
+    productModel: dependencies.productModel as { findById: jest.Mock; find: jest.Mock },
+    productModuleModel: dependencies.productModuleModel as { find: jest.Mock },
+    workTypeModel: dependencies.workTypeModel as { find: jest.Mock },
   };
 }
 
@@ -1071,12 +1123,14 @@ describe('OrderService — TZ-ORDERS-301', () => {
     });
 
     it('writes boardLane + derived status and rollups Order.status', async () => {
-      const { service, model } = createService();
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
       const doc = orderDoc({
         status: 'draft',
         items: [line('prep')],
       });
       model.findById.mockReturnValue(mockQuery(doc));
+      stubShopReady({ productModel, productModuleModel, workTypeModel });
 
       await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop');
       expect(doc.items[0]).toMatchObject({
@@ -1268,9 +1322,14 @@ describe('OrderService — TZ-ORDERS-301', () => {
     });
 
     it('upserts a sparse moduleLane entry keyed by (lineId, moduleId)', async () => {
-      const { service, model } = createService();
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
       const doc = orderDoc({ status: 'draft', items: [line('prep')] });
       model.findById.mockReturnValue(mockQuery(doc));
+      stubShopReady(
+        { productModel, productModuleModel, workTypeModel },
+        MODULE_A,
+      );
 
       await service.patchModuleLane(
         doc._id.toString(),
@@ -1295,12 +1354,17 @@ describe('OrderService — TZ-ORDERS-301', () => {
     });
 
     it('rollup follows min: parent band = earliest module lane, last module leave → ready', async () => {
-      const { service, model } = createService();
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
       const doc = orderDoc({
         status: 'confirmed',
         items: [line('to_ship', 'line-a')],
       });
       model.findById.mockReturnValue(mockQuery(doc));
+      stubShopReady(
+        { productModel, productModuleModel, workTypeModel },
+        MODULE_A,
+      );
 
       await service.patchModuleLane(
         doc._id.toString(),
@@ -1336,6 +1400,179 @@ describe('OrderService — TZ-ORDERS-301', () => {
       const bare = orderDoc({ items: [line('design', 'line-b')] });
       expect(service.effectiveLineLane(bare as never, bare.items[0] as never)).toBe(
         'design',
+      );
+    });
+  });
+
+  describe('TZ-COMBINE-408 shop workType/days gate', () => {
+    const MODULE_A = new Types.ObjectId();
+
+    function line(
+      lane: MockOrderItem['boardLane'],
+      lineId = 'line-a',
+    ): MockOrderItem {
+      return {
+        lineId,
+        boardLane: lane,
+        productId: new Types.ObjectId(PRODUCT),
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+        status: 'pending',
+      };
+    }
+
+    it('line → shop: 400 RU когда у изделия нет модулей', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      productModel.findById.mockReturnValue(
+        leanQuery({ composition: [], productModuleIds: [] }),
+      );
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop'),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Цех') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+      expect(productModuleModel.find).not.toHaveBeenCalled();
+      expect(workTypeModel.find).not.toHaveBeenCalled();
+    });
+
+    it('line → shop: 400 RU когда у модулей нет видов работ', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      productModel.findById.mockReturnValue(
+        leanQuery({ composition: [], productModuleIds: [MODULE_A] }),
+      );
+      productModuleModel.find.mockReturnValue(leanQuery([{ workTypes: [] }]));
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop'),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Цех') as never,
+      });
+      expect(workTypeModel.find).not.toHaveBeenCalled();
+    });
+
+    it('line → shop: 400 RU когда в каталоге нет дней и нет overrides', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      productModel.findById.mockReturnValue(
+        leanQuery({ composition: [], productModuleIds: [MODULE_A] }),
+      );
+      productModuleModel.find.mockReturnValue(
+        leanQuery([
+          { workTypes: [{ workTypeId: WORKTYPE, estimatedHours: 1, sortOrder: 0 }] },
+        ]),
+      );
+      workTypeModel.find.mockReturnValue(
+        leanQuery([{ _id: WORKTYPE, days: null }]),
+      );
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop'),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Цех') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('line → shop: PASS при каталоге с days (override не нужен)', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      stubShopReady({ productModel, productModuleModel, workTypeModel }, MODULE_A);
+
+      await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop');
+      expect(doc.items[0]).toMatchObject({ boardLane: 'shop', status: 'in_production' });
+      expect(doc.status).toBe('in_production');
+    });
+
+    it('line → shop: PASS через estimateDayOverrides, даже если каталог days = null', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [line('prep')],
+        estimateDayOverrides: [
+          { orderItemIndex: 0, moduleId: MODULE_A, workTypeId: WORKTYPE, days: 3 },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+      productModel.findById.mockReturnValue(
+        leanQuery({ composition: [], productModuleIds: [MODULE_A] }),
+      );
+      productModuleModel.find.mockReturnValue(
+        leanQuery([
+          { workTypes: [{ workTypeId: WORKTYPE, estimatedHours: 1, sortOrder: 0 }] },
+        ]),
+      );
+
+      await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop');
+      expect(doc.status).toBe('in_production');
+      // override покрывает дни → каталог не запрашивается.
+      expect(workTypeModel.find).not.toHaveBeenCalled();
+    });
+
+    it('line → не-shop lane пропускает gate (design без модулей ок)', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'design');
+      expect(doc.items[0]).toMatchObject({ boardLane: 'design' });
+      expect(productModel.findById).not.toHaveBeenCalled();
+      expect(productModuleModel.find).not.toHaveBeenCalled();
+      expect(workTypeModel.find).not.toHaveBeenCalled();
+    });
+
+    it('module → shop: 400 RU когда у модуля нет workType', async () => {
+      const { service, model, productModuleModel } = createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      productModuleModel.find.mockReturnValue(leanQuery([{ workTypes: [] }]));
+
+      await expect(
+        service.patchModuleLane(
+          doc._id.toString(),
+          'line-a',
+          MODULE_A.toString(),
+          'shop',
+        ),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Цех') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('module → shop: PASS при workType + catalog days', async () => {
+      const { service, model, productModel, productModuleModel, workTypeModel } =
+        createService();
+      const doc = orderDoc({ status: 'confirmed', items: [line('prep')] });
+      model.findById.mockReturnValue(mockQuery(doc));
+      stubShopReady(
+        { productModel, productModuleModel, workTypeModel },
+        MODULE_A,
+      );
+
+      await service.patchModuleLane(
+        doc._id.toString(),
+        'line-a',
+        MODULE_A.toString(),
+        'shop',
+      );
+      expect(doc.moduleLanes).toHaveLength(1);
+      expect(doc.moduleLanes[0]).toEqual(
+        expect.objectContaining({ lineId: 'line-a', lane: 'shop' }),
       );
     });
   });

@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-408 DONE — shop workType/days gate
+**Исполнитель:** freebuff (deepseek-v4-pro)
+**Статус:** DONE; deploy НЕ
+**Что:** Вход линии/модуля в `shop` — 400 RU, если нет вида работы с оценкой дней (override заказа или каталог `WorkType.days`); gate в `patchLineBoardLane`/`patchModuleLane`; FE уже показывает toast из тела ошибки. Auto-assign рабочих НЕ.
+**Gates:** BE `tsc --noEmit` PASS; jest `src/modules/order` PASS (3 suites / 83, +8).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-408.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-408-shop-worktype-days-gate.lock`
+**Next:** WAVE-FREEBUFF-COMBINE-MODULES завершена; deploy только по слову PO.
+
 ## [2026-08-16] — TZ-COMBINE-407 DONE — module DnD ghost
 **Исполнитель:** freebuff (deepseek-v4-pro)
 **Статус:** DONE; deploy НЕ

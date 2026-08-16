@@ -13,6 +13,12 @@ import {
 } from './order.schema';
 import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
+import { Product, ProductDocument } from '../product/product.schema';
+import {
+  ProductModule,
+  ProductModuleDocument,
+} from '../product-module/product-module.schema';
+import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
@@ -81,6 +87,10 @@ const LINE_DELETE_BLOCKED_RU =
 const LANE_SHIPPED_PATCH_RU =
   'Колонку «Отгружены» нельзя выставить вручную — используйте действие «Отгрузить» (POST /orders/:id/ship)';
 
+/** TZ-COMBINE-408 — вход в «Цех» без видов работ/оценки дней запрещён. */
+const SHOP_GATE_RU =
+  'В «Цех» можно отправить позицию только с видами работ и оценкой дней — заполните состав изделия и оценку (каталог или оценка заказа).';
+
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
@@ -98,6 +108,12 @@ export class OrderService {
     @InjectModel(Quotation.name)
     private readonly quotationModel: Model<QuotationDocument>,
     private readonly organizations: OrganizationService,
+    @InjectModel(Product.name)
+    private readonly productModel: Model<ProductDocument>,
+    @InjectModel(ProductModule.name)
+    private readonly productModuleModel: Model<ProductModuleDocument>,
+    @InjectModel(WorkType.name)
+    private readonly workTypeModel: Model<WorkTypeDocument>,
   ) {}
 
   private boardLaneFromStatus(status?: OrderItem['status']): BoardLane {
@@ -454,6 +470,91 @@ export class OrderService {
   }
 
   /**
+   * TZ-COMBINE-408 — direct module ids изделия (composition-first, как на фронте).
+   */
+  private directModuleIds(product: {
+    composition?: Array<{ lineType?: string; refId?: unknown }>;
+    productModuleIds?: unknown[];
+  }): string[] {
+    const composition = product.composition ?? [];
+    if (composition.length > 0) {
+      return composition
+        .filter((line) => line.lineType === 'module' && line.refId)
+        .map((line) => String(line.refId));
+    }
+    return (product.productModuleIds ?? []).map((m) => String(m));
+  }
+
+  /**
+   * TZ-COMBINE-408 — вход в «Цех» разрешён, только если у модулей есть хотя бы
+   * один вид работы с оценкой дней (override заказа или каталог WorkType.days).
+   */
+  private async assertModulesShopReady(
+    doc: OrderDocument,
+    orderItemIndex: number,
+    moduleIds: string[],
+  ): Promise<void> {
+    if (moduleIds.length === 0) {
+      throw new BadRequestException(SHOP_GATE_RU);
+    }
+    const modules = await this.productModuleModel
+      .find({ _id: { $in: moduleIds } })
+      .select('workTypes')
+      .lean()
+      .exec();
+    const workTypeIds: string[] = [];
+    for (const mod of modules) {
+      for (const wt of mod.workTypes ?? []) {
+        if (wt.workTypeId) workTypeIds.push(String(wt.workTypeId));
+      }
+    }
+    if (workTypeIds.length === 0) {
+      throw new BadRequestException(SHOP_GATE_RU);
+    }
+
+    const moduleIdSet = new Set(moduleIds);
+    const workTypeIdSet = new Set(workTypeIds);
+    const hasOverrideDays = (doc.estimateDayOverrides ?? []).some(
+      (o) =>
+        o.orderItemIndex === orderItemIndex &&
+        moduleIdSet.has(String(o.moduleId)) &&
+        workTypeIdSet.has(String(o.workTypeId)) &&
+        (o.days ?? 0) >= 1,
+    );
+    if (hasOverrideDays) return;
+
+    const workTypes = await this.workTypeModel
+      .find({ _id: { $in: workTypeIds } })
+      .select('days')
+      .lean()
+      .exec();
+    const hasCatalogDays = workTypes.some(
+      (wt) => typeof wt.days === 'number' && wt.days >= 1,
+    );
+    if (!hasCatalogDays) {
+      throw new BadRequestException(SHOP_GATE_RU);
+    }
+  }
+
+  /** TZ-COMBINE-408 — gate по линии: изделие → модули → workType + days. */
+  private async assertLineShopReady(
+    doc: OrderDocument,
+    orderItemIndex: number,
+    line: OrderItem,
+  ): Promise<void> {
+    const product = await this.productModel
+      .findById(line.productId)
+      .select('composition productModuleIds')
+      .lean()
+      .exec();
+    await this.assertModulesShopReady(
+      doc,
+      orderItemIndex,
+      product ? this.directModuleIds(product) : [],
+    );
+  }
+
+  /**
    * TZ-COMBINE-403 — PATCH boardLane by stable lineId; derive item.status; rollup Order.status.
    */
   async patchLineBoardLane(
@@ -469,9 +570,14 @@ export class OrderService {
       const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
       throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
     }
-    const line = (doc.items ?? []).find((item) => item.lineId === lineId);
-    if (!line) {
+    const items = doc.items ?? [];
+    const index = items.findIndex((item) => item.lineId === lineId);
+    if (index < 0) {
       throw new NotFoundException(`Order line ${lineId} not found`);
+    }
+    const line = items[index];
+    if (lane === 'shop') {
+      await this.assertLineShopReady(doc, index, line);
     }
     line.boardLane = lane;
     line.status = this.statusFromBoardLane(lane);
@@ -499,12 +605,16 @@ export class OrderService {
       const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
       throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
     }
-    const line = (doc.items ?? []).find((item) => item.lineId === lineId);
-    if (!line) {
+    const items = doc.items ?? [];
+    const index = items.findIndex((item) => item.lineId === lineId);
+    if (index < 0) {
       throw new NotFoundException(`Order line ${lineId} not found`);
     }
     if (!Types.ObjectId.isValid(moduleId)) {
       throw new BadRequestException('moduleId must be a valid ObjectId');
+    }
+    if (lane === 'shop') {
+      await this.assertModulesShopReady(doc, index, [moduleId]);
     }
     const moduleOid = new Types.ObjectId(moduleId);
     const lanes: ModuleLane[] = [...(doc.moduleLanes ?? [])];

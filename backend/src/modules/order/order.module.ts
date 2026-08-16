@@ -10,6 +10,9 @@ import { SessionRunner } from '../../common/db/session-runner';
 import { SiteModule } from '../site/site.module';
 import { Quotation, QuotationSchema } from '../quotation/quotation.schema';
 import { OrganizationModule } from '../organization/organization.module';
+import { Product, ProductSchema } from '../product/product.schema';
+import { ProductModule, ProductModuleSchema } from '../product-module/product-module.schema';
+import { WorkType, WorkTypeSchema } from '../work-type/work-type.schema';
 
 @Module({
   imports: [
@@ -18,6 +21,10 @@ import { OrganizationModule } from '../organization/organization.module';
     // QuotationModule сам импортирует OrderModule (convert-to-order), и импорт
     // обратно дал бы циклическую зависимость модулей.
     MongooseModule.forFeature([{ name: Quotation.name, schema: QuotationSchema }]),
+    // TZ-COMBINE-408: gate входа линии/модуля в shop — нужны Product → modules → WorkType.days.
+    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+    MongooseModule.forFeature([{ name: ProductModule.name, schema: ProductModuleSchema }]),
+    MongooseModule.forFeature([{ name: WorkType.name, schema: WorkTypeSchema }]),
     CounterModule,
     ReservationModule,
     ShipmentModule,
