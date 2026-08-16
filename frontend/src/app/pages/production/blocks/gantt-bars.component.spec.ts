@@ -400,11 +400,11 @@ describe('GanttBarsComponent', () => {
     expect(hostStyles).toContain('--gantt-level-order');
     expect(hostStyles).toContain('--gantt-level-product');
     expect(hostStyles).toContain('--gantt-level-module');
-    expect(hostStyles).toContain('oklch(0.96 0.025 240)');
-    expect(hostStyles).toContain('oklch(0.96 0.03 70)');
-    expect(hostStyles).toContain('oklch(0.988 0.006 145)');
+    expect(hostStyles).toContain('oklch(0.945 0.016 84)');
+    expect(hostStyles).toContain('oklch(0.965 0.012 82)');
+    expect(hostStyles).toContain('oklch(0.985 0.006 85)');
     /* Frames / meta still present (hierarchy intact). */
-    expect(hostStyles).toContain('oklch(0.95 0.025 85)');
+    expect(hostStyles).toContain('oklch(0.92 0.022 86)');
     expect(hostStyles).toContain('oklch(0.995 0.008 95)');
   });
 
@@ -535,12 +535,62 @@ describe('GanttBarsComponent', () => {
       .map((s) => s.textContent ?? '')
       .join('\n');
     expect(hostStyles).toContain('--gantt-level-order');
-    expect(hostStyles).toContain('oklch(0.95 0.025 85)');
+    expect(hostStyles).toContain('oklch(0.92 0.022 86)');
     /* Expanded frame must not paint children with beige !important. */
     expect(hostStyles).not.toMatch(
       /\.gantt-order-expanded\s*\{[^}]*background:\s*oklch\(0\.97 0\.012 95\)\s*!important/,
     );
-    expect(hostStyles).toContain('oklch(0.26 0.03 85)');
+    expect(hostStyles).toContain('oklch(0.26 0.03 86)');
+  });
+
+  it('TZ-PRODUCTION-350: mono milk ladder — one hue family; no rainbow jumps', () => {
+    expect(GANTT_SUMMARY_BAR_FILL.order).toBe('oklch(0.90 0.028 86)');
+    expect(GANTT_SUMMARY_BAR_FILL.product).toBe('oklch(0.925 0.022 84)');
+    expect(GANTT_SUMMARY_BAR_FILL.module).toBe('oklch(0.945 0.016 82)');
+    expect(GANTT_SUMMARY_BAR_FILL.order).not.toBe(GANTT_SUMMARY_BAR_FILL.product);
+    expect(GANTT_SUMMARY_BAR_FILL.product).not.toBe(GANTT_SUMMARY_BAR_FILL.module);
+
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    setFullTreeExpand(fixture);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const cmp = fixture.componentInstance;
+
+    const rows = cmp['rows']() as Array<{
+      bar: { id: string; workTypeId: string; accentHue?: number | null };
+      isSummary: boolean;
+      rowKind: 'order' | 'worker' | 'product' | 'module' | 'work';
+    }>;
+    const orderRow = rows.find((r) => r.rowKind === 'order')!;
+    const productRow = rows.find((r) => r.rowKind === 'product')!;
+    const moduleRow = rows.find((r) => r.rowKind === 'module')!;
+    const workRow = rows.find((r) => r.rowKind === 'work')!;
+
+    expect(cmp.barFill(orderRow)).toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(cmp.barFill(productRow)).toBe(GANTT_SUMMARY_BAR_FILL.product);
+    expect(cmp.barFill(moduleRow)).toBe(GANTT_SUMMARY_BAR_FILL.module);
+    const workFill = cmp.barFill(workRow);
+    expect(workFill).not.toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(workFill).toMatch(/^oklch\(/);
+
+    const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n');
+    expect(hostStyles).toContain('oklch(0.92 0.022 86)');
+    expect(hostStyles).toContain('oklch(0.945 0.016 84)');
+    expect(hostStyles).toContain('oklch(0.965 0.012 82)');
+    expect(hostStyles).toContain('oklch(0.985 0.006 85)');
+    /* No rainbow hue jumps from 349. */
+    expect(hostStyles).not.toContain('oklch(0.96 0.025 240)');
+    expect(hostStyles).not.toContain('oklch(0.96 0.03 70)');
+    expect(hostStyles).not.toContain('oklch(0.988 0.006 145)');
+    expect(hostStyles).not.toContain('oklch(0.90 0.028 240)');
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.order);
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.product);
+    expect(hostStyles).toContain(GANTT_SUMMARY_BAR_FILL.module);
   });
 
   it('TZ-PRODUCTION-349: summary barFill distinct per level; WT accent unchanged', () => {

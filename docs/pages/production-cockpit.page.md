@@ -153,7 +153,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
 - **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). **TZ-PRODUCTION-343:** вложенные рамки изделия/модуля (`gantt-product-group-*` / `gantt-module-group-*`) читаемы внутри order frame; aria/title: изделие = «модули изделия», модуль = «виды работ». **TZ-PRODUCTION-348:** шапка колонки одно слово `Заказ` / `Рабочий` (без `·` и без border-l рамки); клик по лейблу worker/product/module = expand.
-- **Nest indent + level washes (TZ-PRODUCTION-346/349):** колонка лейблов — `padding-left` ~15/30/45px по глубине (order|worker=0, product=1, module=2, work=3); полосы календаря без горизонтального сдвига. **TZ-PRODUCTION-349:** CSS vars `--gantt-level-order|product|module|work` (milk paper); сводные `barFill` order/product/module различны; `gantt-order-expanded` — только рамка (не бежевый flatten детей); WT bars = accentHue.
+- **Nest indent + level washes (TZ-PRODUCTION-346/349/350):** колонка лейблов — `padding-left` ~15/30/45px по глубине (order|worker=0, product=1, module=2, work=3); полосы календаря без горизонтального сдвига. **TZ-PRODUCTION-350:** одна тёплая paper hue-семья (~82–90), лестница только L/C (order→product→module→work светлее вниз); сводные `barFill` плотнее row wash той же семьи; `gantt-order-expanded` — только рамка; WT bars = accentHue.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
@@ -203,6 +203,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-347** | DONE: hide module/WT names matching сборк/упаков from `buildGanttBars`; catalog untouched |
 | **TZ-PRODUCTION-348** | DONE: Gantt toolbar group/zoom; header Заказ/Рабочий; label click expand; nest 15px |
 | **TZ-PRODUCTION-349** | DONE: 4-level milk palette CSS vars; distinct summary barFill; order-expanded no beige flatten |
+| **TZ-PRODUCTION-350** | DONE: mono milk ladder (hue ~82–90 L/C only); no rainbow jumps; WT accents kept |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |

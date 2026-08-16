@@ -136,13 +136,13 @@ export const GANTT_LABEL_COL_PX = 208;
 export const GANTT_NEST_INDENT_PX = 15;
 
 /**
- * TZ-PRODUCTION-349 — milk summary bar fills (order / product / module).
- * Distinct light paper hues; work bars keep accentHue via workTypeOklch.
+ * TZ-PRODUCTION-350 — mono milk summary bar fills (order / product / module).
+ * One warm paper hue family (~82–90); denser L/C than row wash; WT = accentHue.
  */
 export const GANTT_SUMMARY_BAR_FILL = {
-  order: 'oklch(0.90 0.028 85)',
-  product: 'oklch(0.90 0.028 240)',
-  module: 'oklch(0.90 0.032 70)',
+  order: 'oklch(0.90 0.028 86)',
+  product: 'oklch(0.925 0.022 84)',
+  module: 'oklch(0.945 0.016 82)',
 } as const;
 
 export type GanttRowKind = 'order' | 'worker' | 'product' | 'module' | 'work';
@@ -777,24 +777,24 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   `,
   styles: `
     :host {
-      /* TZ-PRODUCTION-349 — milk level palette (row wash + matching summary bars). */
-      --gantt-level-order: oklch(0.95 0.025 85);
-      --gantt-level-product: oklch(0.96 0.025 240);
-      --gantt-level-module: oklch(0.96 0.03 70);
-      --gantt-level-work: oklch(0.988 0.006 145);
+      /* TZ-PRODUCTION-350 — mono milk ladder (one hue family; L/C steps only). */
+      --gantt-level-order: oklch(0.92 0.022 86);
+      --gantt-level-product: oklch(0.945 0.016 84);
+      --gantt-level-module: oklch(0.965 0.012 82);
+      --gantt-level-work: oklch(0.985 0.006 85);
       --gantt-bar-order: ${GANTT_SUMMARY_BAR_FILL.order};
       --gantt-bar-product: ${GANTT_SUMMARY_BAR_FILL.product};
       --gantt-bar-module: ${GANTT_SUMMARY_BAR_FILL.module};
     }
     :host-context(.dark),
     :host-context([data-theme='dark']) {
-      --gantt-level-order: oklch(0.26 0.03 85);
-      --gantt-level-product: oklch(0.25 0.03 240);
-      --gantt-level-module: oklch(0.25 0.035 70);
-      --gantt-level-work: oklch(0.27 0.012 145);
-      --gantt-bar-order: oklch(0.32 0.04 85);
-      --gantt-bar-product: oklch(0.32 0.04 240);
-      --gantt-bar-module: oklch(0.32 0.045 70);
+      --gantt-level-order: oklch(0.26 0.03 86);
+      --gantt-level-product: oklch(0.25 0.028 84);
+      --gantt-level-module: oklch(0.24 0.024 82);
+      --gantt-level-work: oklch(0.27 0.012 85);
+      --gantt-bar-order: oklch(0.32 0.04 86);
+      --gantt-bar-product: oklch(0.31 0.035 84);
+      --gantt-bar-module: oklch(0.3 0.03 82);
     }
     .gantt-row-h {
       height: ${GANTT_ROW_PX}px;
@@ -940,59 +940,59 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         inset -2px 0 0 0 oklch(0.42 0.05 85);
       margin-bottom: 4px;
     }
-    /* Nested product group — cooler milk-blue wash (matches level). */
+    /* Nested product group — milk ladder (hue ~84). */
     .gantt-product-group-start {
       background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.48 0.06 240),
-        inset 3px 0 0 0 oklch(0.48 0.06 240),
-        inset -1px 0 0 0 oklch(0.48 0.06 240);
+        inset 0 1px 0 0 oklch(0.48 0.05 84),
+        inset 3px 0 0 0 oklch(0.48 0.05 84),
+        inset -1px 0 0 0 oklch(0.48 0.05 84);
     }
     .gantt-product-group-mid {
       background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 3px 0 0 0 oklch(0.48 0.06 240),
-        inset -1px 0 0 0 oklch(0.48 0.06 240);
+        inset 3px 0 0 0 oklch(0.48 0.05 84),
+        inset -1px 0 0 0 oklch(0.48 0.05 84);
     }
     .gantt-product-group-end:not(.gantt-product-group-start) {
       background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.48 0.06 240),
-        inset 3px 0 0 0 oklch(0.48 0.06 240),
-        inset -1px 0 0 0 oklch(0.48 0.06 240);
+        inset 0 -1px 0 0 oklch(0.48 0.05 84),
+        inset 3px 0 0 0 oklch(0.48 0.05 84),
+        inset -1px 0 0 0 oklch(0.48 0.05 84);
     }
     .gantt-product-group-start.gantt-product-group-end {
       box-shadow:
-        inset 0 0 0 1px oklch(0.48 0.06 240),
-        inset 3px 0 0 0 oklch(0.48 0.06 240);
+        inset 0 0 0 1px oklch(0.48 0.05 84),
+        inset 3px 0 0 0 oklch(0.48 0.05 84);
     }
-    /* Nested module group — warm sand wash (matches level). */
+    /* Nested module group — milk ladder (hue ~82). */
     .gantt-module-group-start {
       background: var(--gantt-level-module) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.5 0.07 70),
-        inset 5px 0 0 0 oklch(0.5 0.07 70),
-        inset -1px 0 0 0 oklch(0.5 0.07 70);
+        inset 0 1px 0 0 oklch(0.5 0.045 82),
+        inset 5px 0 0 0 oklch(0.5 0.045 82),
+        inset -1px 0 0 0 oklch(0.5 0.045 82);
     }
     .gantt-module-group-mid {
       background: var(--gantt-level-module) !important;
       box-shadow:
-        inset 5px 0 0 0 oklch(0.5 0.07 70),
-        inset -1px 0 0 0 oklch(0.5 0.07 70);
+        inset 5px 0 0 0 oklch(0.5 0.045 82),
+        inset -1px 0 0 0 oklch(0.5 0.045 82);
     }
     .gantt-module-group-end:not(.gantt-module-group-start) {
       background: var(--gantt-level-module) !important;
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.5 0.07 70),
-        inset 5px 0 0 0 oklch(0.5 0.07 70),
-        inset -1px 0 0 0 oklch(0.5 0.07 70);
+        inset 0 -1px 0 0 oklch(0.5 0.045 82),
+        inset 5px 0 0 0 oklch(0.5 0.045 82),
+        inset -1px 0 0 0 oklch(0.5 0.045 82);
     }
     .gantt-module-group-start.gantt-module-group-end {
       box-shadow:
-        inset 0 0 0 1px oklch(0.5 0.07 70),
-        inset 5px 0 0 0 oklch(0.5 0.07 70);
+        inset 0 0 0 1px oklch(0.5 0.045 82),
+        inset 5px 0 0 0 oklch(0.5 0.045 82);
     }
-    /* Work rows keep paper wash — group mid must not flatten WT to sand/blue. */
+    /* Work rows keep paper wash — group mid must not flatten WT. */
     .gantt-product-group-mid.gantt-level-work,
     .gantt-product-group-end.gantt-level-work,
     .gantt-module-group-mid.gantt-level-work,
@@ -1057,9 +1057,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     :host-context([data-theme='dark']) .gantt-product-group-start {
       background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.72 0.08 240),
-        inset 3px 0 0 0 oklch(0.72 0.08 240),
-        inset -1px 0 0 0 oklch(0.72 0.08 240);
+        inset 0 1px 0 0 oklch(0.72 0.06 84),
+        inset 3px 0 0 0 oklch(0.72 0.06 84),
+        inset -1px 0 0 0 oklch(0.72 0.06 84);
     }
     :host-context(.dark) .gantt-product-group-mid,
     :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
@@ -1067,23 +1067,23 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
       background: var(--gantt-level-product) !important;
       box-shadow:
-        inset 3px 0 0 0 oklch(0.72 0.08 240),
-        inset -1px 0 0 0 oklch(0.72 0.08 240);
+        inset 3px 0 0 0 oklch(0.72 0.06 84),
+        inset -1px 0 0 0 oklch(0.72 0.06 84);
     }
     :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
     :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.72 0.08 240),
-        inset 3px 0 0 0 oklch(0.72 0.08 240),
-        inset -1px 0 0 0 oklch(0.72 0.08 240);
+        inset 0 -1px 0 0 oklch(0.72 0.06 84),
+        inset 3px 0 0 0 oklch(0.72 0.06 84),
+        inset -1px 0 0 0 oklch(0.72 0.06 84);
     }
     :host-context(.dark) .gantt-module-group-start,
     :host-context([data-theme='dark']) .gantt-module-group-start {
       background: var(--gantt-level-module) !important;
       box-shadow:
-        inset 0 1px 0 0 oklch(0.75 0.09 70),
-        inset 5px 0 0 0 oklch(0.75 0.09 70),
-        inset -1px 0 0 0 oklch(0.75 0.09 70);
+        inset 0 1px 0 0 oklch(0.75 0.055 82),
+        inset 5px 0 0 0 oklch(0.75 0.055 82),
+        inset -1px 0 0 0 oklch(0.75 0.055 82);
     }
     :host-context(.dark) .gantt-module-group-mid,
     :host-context(.dark) .gantt-module-group-end:not(.gantt-module-group-start),
@@ -1091,15 +1091,15 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     :host-context([data-theme='dark']) .gantt-module-group-end:not(.gantt-module-group-start) {
       background: var(--gantt-level-module) !important;
       box-shadow:
-        inset 5px 0 0 0 oklch(0.75 0.09 70),
-        inset -1px 0 0 0 oklch(0.75 0.09 70);
+        inset 5px 0 0 0 oklch(0.75 0.055 82),
+        inset -1px 0 0 0 oklch(0.75 0.055 82);
     }
     :host-context(.dark) .gantt-module-group-end:not(.gantt-module-group-start),
     :host-context([data-theme='dark']) .gantt-module-group-end:not(.gantt-module-group-start) {
       box-shadow:
-        inset 0 -1px 0 0 oklch(0.75 0.09 70),
-        inset 5px 0 0 0 oklch(0.75 0.09 70),
-        inset -1px 0 0 0 oklch(0.75 0.09 70);
+        inset 0 -1px 0 0 oklch(0.75 0.055 82),
+        inset 5px 0 0 0 oklch(0.75 0.055 82),
+        inset -1px 0 0 0 oklch(0.75 0.055 82);
     }
     :host-context(.dark) .gantt-chevron,
     :host-context([data-theme='dark']) .gantt-chevron {

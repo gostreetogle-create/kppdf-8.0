@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-350 DONE — Gantt mono milk ladder
+**Исполнитель:** composer-executor-350
+**Статус:** DONE; deploy НЕ
+**Что:** одна paper hue-семья (~82–90), лестница L/C; убраны rainbow 240/70/145; denser summary barFill; WT accent сохранён.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest gantt-bars PASS (53/53).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-350.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-350-gantt-mono-milk-ladder.lock`
+**Next:** queue idle for Gantt palette; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-349 DONE — Gantt 4-level milk palette
 **Исполнитель:** composer-executor-349
 **Статус:** DONE; deploy НЕ
