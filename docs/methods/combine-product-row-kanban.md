@@ -27,7 +27,7 @@
 4. **Раскрыто:** равные ячейки + hairline; DnD **scoped** к `lineId` / entity key.  
 5. **Без children:** один чип «целиком» двигает сущность по стадиям.  
 6. **Группировка родителя** (заказ): без текстовых «ЗАКАЗ №» дублей — компакт внутри группы, отступ / рамка на смене родителя; цвет — опционально позже.  
-7. **Клики:** номер родителя → карточка родителя; **имя / qty / индикаторы ряда → expand**; **карандаш → edit** сущности; ▸ → expand; children → edit child (карандаш на чипе). Не открывать edit по клику имени.
+7. **Клики:** номер родителя → карточка родителя; **имя / qty / индикаторы ряда → expand**; **карандаш → edit** сущности (диалог); ▸ → expand; children pencil → edit child dialog. Не открывать edit по клику имени.
 
 ## Инварианты данных (kppdf)
 
@@ -50,10 +50,10 @@
 - Гант (время/ресурсы) ≠ комбайн (стадии состава).  
 - KPI-карточки сверху — rollup, не стадии ряда.
 
-## Successor polish (не блокер метода)
+## Successor polish
 
-- DnD preview без прыжка (placeholder / cdkDragPreview).  
-- Цветовое кодирование групп-родителей.  
-- Плотная склейка рядов одной группы (общая рамка).
+- DnD: solid opaque preview + `.cdk-drag-placeholder { opacity: 0 }` (CDK always clones preview+placeholder; native OS drag without clone is unreachable).  
+- Module pencil → in-place `ModuleFormDialog` via `openModuleEdit` (stay on `/design/combine`).
+
 
 См. также: `docs/pages/design-combine.page.md`, `docs/COUPLING-MAP.md` § boardLane.

@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-COMBINE-413 DONE — Комбайн: DnD no-jump + module dialog
+
+**Исполнитель:** gemini-executor-combine-413
+**Статус:** DONE; deploy НЕ
+**Что:** solid opaque CDK preview + placeholder opacity 0 + soft drop anim; `openModuleEdit` dialog (stay on `/design/combine`); lane PATCH untouched.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page + dashboard-dialog.service PASS (33/33).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-413.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-413-combine-dnd-no-jump.lock`
+**Next:** Freebuff drain / deploy по слову PO.
+
 ## [2026-08-16] — TZ-COMBINE-414 DONE — Комбайн: имя/ряд → expand; edit только карандашом
 
 **Исполнитель:** composer-executor-414

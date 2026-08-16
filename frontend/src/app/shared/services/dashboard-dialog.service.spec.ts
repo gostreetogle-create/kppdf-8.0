@@ -6,13 +6,16 @@ import { DashboardDialogService } from './dashboard-dialog.service';
 import { PiDialogService } from '../ui/dialog/pi-dialog.service';
 import { PiToastService } from '../ui/toast';
 import { ProductsService } from './products.service';
+import { ProductModulesService } from './pi-product-modules.service';
 import type { Order } from '../../pages/orders/orders.service';
 import type { Product } from './products.service';
+import type { ProductModule } from './pi-product-modules.service';
 
 describe('DashboardDialogService', () => {
   let dialog: { open: jest.Mock };
   let toast: { error: jest.Mock };
   let products: { findById: jest.Mock };
+  let modules: { findById: jest.Mock };
 
   const loadedProduct = {
     _id: '64a1b2c3d4e5f678901234ab',
@@ -20,6 +23,12 @@ describe('DashboardDialogService', () => {
     kind: 'good',
     unit: 'шт',
   } as Product;
+
+  const loadedModule = {
+    _id: '64a1b2c3d4e5f678901234cd',
+    name: 'Каркас',
+    productId: loadedProduct._id,
+  } as ProductModule;
 
   beforeEach(() => {
     dialog = {
@@ -32,12 +41,16 @@ describe('DashboardDialogService', () => {
     products = {
       findById: jest.fn().mockReturnValue(of({ ok: true, data: loadedProduct })),
     };
+    modules = {
+      findById: jest.fn().mockReturnValue(of({ ok: true, data: loadedModule })),
+    };
     TestBed.configureTestingModule({
       providers: [
         DashboardDialogService,
         { provide: PiDialogService, useValue: dialog },
         { provide: PiToastService, useValue: toast },
         { provide: ProductsService, useValue: products },
+        { provide: ProductModulesService, useValue: modules },
       ],
     });
   });
@@ -95,5 +108,29 @@ describe('DashboardDialogService', () => {
     expect(products.findById).not.toHaveBeenCalled();
     expect(dialog.open).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith('Изделие не найдено: не указан идентификатор');
+  });
+
+  it('TZ-COMBINE-413: loads module by id and opens ModuleFormDialog', async () => {
+    const service = TestBed.inject(DashboardDialogService);
+
+    service.openModuleEdit(loadedModule._id, TestBed.inject(Injector), jest.fn());
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(modules.findById).toHaveBeenCalledWith(loadedModule._id);
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'ModuleFormDialogComponent' }),
+      expect.objectContaining({ data: loadedModule, width: 'lg' }),
+    );
+  });
+
+  it('TZ-COMBINE-413: toasts and skips API when module id is missing', () => {
+    const service = TestBed.inject(DashboardDialogService);
+
+    service.openModuleEdit('null', TestBed.inject(Injector), jest.fn());
+
+    expect(modules.findById).not.toHaveBeenCalled();
+    expect(dialog.open).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith('Модуль не найден: не указан идентификатор');
   });
 });

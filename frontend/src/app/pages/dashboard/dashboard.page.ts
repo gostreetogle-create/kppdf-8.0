@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import { Router } from '@angular/router';
 import {
   LucideAngularModule,
   Pencil,
@@ -89,6 +88,9 @@ const LANE_TITLE: Record<BoardLane, string> = {
   shipped: 'Отгружены',
 };
 
+/** TZ-COMBINE-413 — opaque CDK preview class for module / «целиком» chips. */
+export const COMBINE_CHIP_DRAG_PREVIEW_CLASS = 'combine-chip-drag-preview';
+
 /** TZ-COMBINE-402 legacy: OrderItem.status → boardLane when lane missing. */
 const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> = {
   pending: 'prep',
@@ -104,38 +106,63 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideAngularModule, PiPageChromeComponent, CdkDropList, CdkDrag],
+  styles: `
+    /* TZ-COMBINE-413 — solid grab feel; CDK always uses preview+placeholder */
+    .combine-chip-drag-preview,
+    .cdk-drag-preview {
+      box-sizing: border-box;
+      opacity: 1 !important;
+      background: var(--color-paper, #fff);
+      border: 1px solid var(--color-rule, #e5e5e5);
+      border-radius: 2px;
+      box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.22);
+    }
+
+    .cdk-drag-placeholder {
+      opacity: 0;
+      min-height: 2.25rem;
+    }
+
+    .cdk-drag-animating {
+      transition: transform 180ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+      transition: transform 180ms cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+  `,
   template: `
     <app-pi-page-chrome [crumbs]="crumbs" title="Комбайн заказов" />
 
     <!-- Analytics Panel -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-info transition-colors"
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.75_0.02_160)] transition-colors"
       >
         <span
           class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
         >
-          <span class="w-1.5 h-1.5 rounded-sm bg-info"></span> Новые
+          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.75_0.02_160)]"></span> Новые
         </span>
         <span class="text-2xl font-display">{{ stats().new }}</span>
       </div>
       <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-warning transition-colors"
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.65_0.02_160)] transition-colors"
       >
         <span
           class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
         >
-          <span class="w-1.5 h-1.5 rounded-sm bg-warning"></span> В работе
+          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.65_0.02_160)]"></span> В работе
         </span>
         <span class="text-2xl font-display">{{ stats().inProgress }}</span>
       </div>
       <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-success transition-colors"
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.55_0.02_160)] transition-colors"
       >
         <span
           class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
         >
-          <span class="w-1.5 h-1.5 rounded-sm bg-success"></span> Готовы
+          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.55_0.02_160)]"></span> Готовы
         </span>
         <span class="text-2xl font-display">{{ stats().ready }}</span>
       </div>
@@ -310,6 +337,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                       <div
                         cdkDrag
                         [cdkDragData]="moduleDrag(card, row)"
+                        [cdkDragPreviewClass]="chipDragPreviewClass"
                         class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
                         data-testid="combine-module-chip"
                         [title]="row.name"
@@ -336,6 +364,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                       <div
                         cdkDrag
                         [cdkDragData]="card"
+                        [cdkDragPreviewClass]="chipDragPreviewClass"
                         data-testid="combine-whole-product-chip"
                         class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing font-medium flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
                         title="Изделие целиком — перетащите по стадиям"
@@ -373,13 +402,13 @@ export class DashboardPage {
   protected readonly ChevronDownIcon = ChevronDown;
   protected readonly ChevronRightIcon = ChevronRight;
   protected readonly GripVerticalIcon = GripVertical;
+  protected readonly chipDragPreviewClass = COMBINE_CHIP_DRAG_PREVIEW_CLASS;
 
   private readonly dashboardDialogs = inject(DashboardDialogService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly orders = inject(OrdersService);
   private readonly productModules = inject(ProductModulesService);
-  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
@@ -607,33 +636,33 @@ export class DashboardPage {
   protected laneDotClass(lane: BoardLane): string {
     switch (lane) {
       case 'prep':
-        return 'bg-muted-foreground';
+        return 'bg-paper-3';
       case 'design':
-        return 'bg-info';
+        return 'bg-[oklch(0.75_0.02_160)]';
       case 'shop':
-        return 'bg-warning';
+        return 'bg-[oklch(0.65_0.02_160)]';
       case 'to_ship':
-        return 'bg-success';
+        return 'bg-[oklch(0.55_0.02_160)]';
       case 'shipped':
-        return 'bg-ink';
+        return 'bg-[oklch(0.45_0.02_160)]';
     }
   }
 
   protected laneIndicatorClass(card: CombineItemCard, lane: BoardLane): string {
     const isActive = this.laneIndicatorActive(card, lane);
-    if (!isActive) return 'bg-paper-3';
+    if (!isActive) return 'bg-paper-2';
 
     switch (lane) {
       case 'prep':
-        return 'bg-muted-foreground';
+        return 'bg-paper-3';
       case 'design':
-        return 'bg-info';
+        return 'bg-[oklch(0.75_0.02_160)]';
       case 'shop':
-        return 'bg-warning';
+        return 'bg-[oklch(0.65_0.02_160)]';
       case 'to_ship':
-        return 'bg-success';
+        return 'bg-[oklch(0.55_0.02_160)]';
       case 'shipped':
-        return 'bg-ink';
+        return 'bg-[oklch(0.45_0.02_160)]';
     }
   }
 
@@ -714,9 +743,9 @@ export class DashboardPage {
     this.dashboardDialogs.openProductEdit(productId, this.injector, () => this.listRes.reload());
   }
 
-  /** TZ-COMBINE-412 — карандаш модуля → карточка модуля. */
+  /** TZ-COMBINE-413 — карандаш модуля → диалог на Комбайне (без /modules/:id). */
   protected editModule(moduleId: string): void {
-    void this.router.navigate(['/modules', moduleId]);
+    this.dashboardDialogs.openModuleEdit(moduleId, this.injector, () => this.listRes.reload());
   }
 
   /**

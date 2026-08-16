@@ -31,9 +31,9 @@ Create/delete досок нет. Write-path отгрузки = SWEEP-401 `POST /
 - Один ряд = одно изделие (`OrderItem` + `lineId`), на всю ширину.
 - Без группового «Заказ №…»: номер только на ряду; **склейка** одного заказа (`gap-0`, `border-t-0` между рядами, `border-rule-strong` + скругление только на краях группы); межзаказный зазор `mt-3`.
 - Свёрнутый: № заказа · имя · qty · ▸ · **5 индикаторов** (сегмент active = модуль в lane / effective lane без модулей). Prefetch `GET /modules?productId=` — индикаторы корректны без expand.
-- **Клики:** ▸ / **имя изделия** / qty / индикаторы → expand mini-kanban; **карандаш изделия** → `editProduct`; № заказа → карточка заказа; карандаш модуля → `/modules/:id`.
+- **Клики:** ▸ / **имя изделия** / qty / индикаторы → expand mini-kanban; **карандаш изделия** → `editProduct`; № заказа → карточка заказа; **карандаш модуля** → `openModuleEdit` (диалог, URL остаётся `/design/combine`).
 - Expand (accordion `expandedKey`): `aria-expanded` + `aria-controls` → panel id; под рядом grid 5 ячеек; вертикальные hairline; чипы модулей (`py-2` + grip + pencil).
-- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями. Placeholder jump → COMBINE-413.
+- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями. Preview непрозрачный (`combine-chip-drag-preview`); placeholder `opacity: 0` (нет «двойника»); drop animating смягчён (COMBINE-413).
 - Без модулей каталога: чип **«целиком»** в effective lane; drag → тот же `PATCH .../lines/:lineId/lane` (не module lane).
 - Бейдж № заказа; фильтр по `orderId`; KPI-карточки сверху (Order.status) — без изменений.
 - `Order.status` на доске не колонка — **rollup** (см. COUPLING-MAP §2).
@@ -63,9 +63,11 @@ Legacy: `PATCH .../items/:i/status` — не расширять новыми з�
 
 **TZ-COMBINE-411:** drop duplicate order group headers; compact same-order gap + larger margin on orderId change (no color coding).
 
-**TZ-COMBINE-412:** fuse same-order rows (`gap-0` / shared border); name→expand (см. 414); module pencil → `/modules/:id`; inter-order `mt-3`. Method: [`combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md).
+**TZ-COMBINE-412:** fuse same-order rows (`gap-0` / shared border); name→expand (см. 414); module pencil → dialog (см. 413); inter-order `mt-3`. Method: [`combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md).
 
-**TZ-COMBINE-414:** PO rollback — имя/qty/индикаторы → `toggleExpand`; edit изделия **только** карандашом. Fuse 412 без изменений. DnD → 413.
+**TZ-COMBINE-414:** PO rollback — имя/qty/индикаторы → `toggleExpand`; edit изделия **только** карандашом. Fuse 412 без изменений.
+
+**TZ-COMBINE-413:** DnD polish — solid preview + invisible placeholder + soft drop anim; module pencil → `DashboardDialogService.openModuleEdit` (stay on combine). Lane PATCH unchanged.
 
 ## Навигация
 
@@ -73,4 +75,4 @@ Legacy: `PATCH .../items/:i/status` — не расширять новыми з�
 
 ## Связанные TZ
 
-**COMBINE-401…408** · **409** product rows · **410** polish · **411** drop headers · **412** fuse DONE · **414** name→expand / pencil-edit DONE · **413** DnD no-jump (park) · SWEEP-401 ship · NAV-303/305 · DASHBOARD-401 home widgets — не здесь
+**COMBINE-401…408** · **409** product rows · **410** polish · **411** drop headers · **412** fuse DONE · **414** name→expand / pencil-edit DONE · **413** DnD no-jump + module dialog DONE · SWEEP-401 ship · NAV-303/305 · DASHBOARD-401 home widgets — не здесь

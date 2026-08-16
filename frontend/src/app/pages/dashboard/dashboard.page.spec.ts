@@ -10,6 +10,7 @@ import {
   CombineColumn,
   CombineModuleDrag,
   CombineModuleRow,
+  COMBINE_CHIP_DRAG_PREVIEW_CLASS,
   DashboardPage,
 } from './dashboard.page';
 import { BoardLane, ModuleLane, Order, OrderItem } from '../orders/orders.service';
@@ -98,7 +99,7 @@ function closedDialogRef(value: unknown): DialogRef<boolean> {
 
 describe('DashboardPage (TZ-COMBINE-404/405)', () => {
   let httpMock: HttpTestingController;
-  let dialogs: { openOrderEdit: jest.Mock; openProductEdit: jest.Mock };
+  let dialogs: { openOrderEdit: jest.Mock; openProductEdit: jest.Mock; openModuleEdit: jest.Mock };
   let dialog: { open: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
 
@@ -131,7 +132,7 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
   }
 
   beforeEach(async () => {
-    dialogs = { openOrderEdit: jest.fn(), openProductEdit: jest.fn() };
+    dialogs = { openOrderEdit: jest.fn(), openProductEdit: jest.fn(), openModuleEdit: jest.fn() };
     dialog = { open: jest.fn() };
     toast = { error: jest.fn(), success: jest.fn() };
     await TestBed.configureTestingModule({
@@ -1101,6 +1102,23 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     const router = TestBed.inject(Router);
     const navSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
     page.editModule('mod-42');
-    expect(navSpy).toHaveBeenCalledWith(['/modules', 'mod-42']);
+    expect(navSpy).not.toHaveBeenCalled();
+    expect(dialogs.openModuleEdit).toHaveBeenCalledWith(
+      'mod-42',
+      expect.anything(),
+      expect.any(Function),
+    );
+  });
+
+  it('TZ-COMBINE-413: chip DnD preview class is solid (not ghost)', () => {
+    expect(COMBINE_CHIP_DRAG_PREVIEW_CLASS).toBe('combine-chip-drag-preview');
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    void httpMock.expectOne((r) => r.url === listUrl && r.method === 'GET');
+    const page = fixture.componentInstance as unknown as {
+      chipDragPreviewClass: string;
+    };
+    expect(page.chipDragPreviewClass).toBe(COMBINE_CHIP_DRAG_PREVIEW_CLASS);
   });
 });
