@@ -6,14 +6,18 @@ import {
   TemplateRef,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
+import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -45,6 +49,8 @@ import {
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
+
+const CHROME_OWNER = 'modules-page';
 
 /**
  * SortKey union intentionally narrow: matches the pre-migration
@@ -139,11 +145,11 @@ function moduleHasComposition(row: ProductModule): boolean {
  * TZ-CATALOG-372 — витрина как у Продукции (эталон products.page.ts):
  *   - Фото-колонка (PhotosService lookup + photoListUrl, materials-паттерн)
  *     и имя-ссылка на `/modules/:id`;
- *   - Toolbar: поиск · «Состав» · «+ Создать» · «Обновить» · list↔grid toggle
- *     · счётчик; view mode живёт в localStorage `pi-modules-view-mode`;
- *   - Filters rail (канон оверлея products): узкая полоска + панель поверх
- *     колонки контента, backdrop только на контенте; Состав · Сортировка
- *     (name↑↓ / article↑↓) · Сбросить · Закрыть;
+ *   - Toolbar: поиск · «Состав» · «+ Создать» · счётчик; view/refresh/filters
+ *     → PiChromeToolsService (TZ-UX-327, эталон products TZ-UX-326); fallback
+ *     &lt;1680 в toolbar без локальной w-12 колонки.
+ *   - Filters flyout (канон products): absolute left overlay + backdrop на
+ *     контенте; Состав · Сортировка (name↑↓ / article↑↓) · Сбросить · Закрыть;
  *   - Grid: `PiShowcaseCard` md в сетке 1/2/3, клик → `/modules/:id`,
  *     pager через app-pi-pagination (TZ-UX-341); себест. — hint «см. карточку» (TZ-COST-303,
  *     без N+1 cost-preview).
@@ -172,6 +178,13 @@ function moduleHasComposition(row: ProductModule): boolean {
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
+  styles: `
+    @media (min-width: 1680px) {
+      .modules-chrome-fallback {
+        display: none;
+      }
+    }
+  `,
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="modules">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
@@ -203,43 +216,56 @@ function moduleHasComposition(row: ProductModule): boolean {
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
           + Создать
         </app-pi-button>
-        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-        </app-pi-button>
-        <div
-          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
-          role="group"
-          aria-label="Вид каталога"
-          data-test="view-toggle"
-        >
+        <div class="modules-chrome-fallback flex items-center gap-form-field">
           <button
             type="button"
-            (click)="setViewMode('list')"
-            [attr.aria-pressed]="viewMode() === 'list'"
-            [class]="
-              viewMode() === 'list'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать списком"
-            data-test="view-list-button"
+            class="flex min-h-touch min-w-8 items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+            (click)="toggleFiltersRail()"
+            [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+            [attr.aria-expanded]="filtersOpen()"
+            aria-controls="modules-flyout-filters"
+            data-test="filters-rail-toggle"
           >
-            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            <lucide-icon [img]="FilterIcon" [size]="16"></lucide-icon>
           </button>
-          <button
-            type="button"
-            (click)="setViewMode('grid')"
-            [attr.aria-pressed]="viewMode() === 'grid'"
-            [class]="
-              viewMode() === 'grid'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать карточками"
-            data-test="view-grid-button"
+          <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+            <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+          </app-pi-button>
+          <div
+            class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+            role="group"
+            aria-label="Вид каталога"
+            data-test="view-toggle"
           >
-            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
-          </button>
+            <button
+              type="button"
+              (click)="setViewMode('list')"
+              [attr.aria-pressed]="viewMode() === 'list'"
+              [class]="
+                viewMode() === 'list'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать списком"
+              data-test="view-list-button"
+            >
+              <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('grid')"
+              [attr.aria-pressed]="viewMode() === 'grid'"
+              [class]="
+                viewMode() === 'grid'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать карточками"
+              data-test="view-grid-button"
+            >
+              <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+            </button>
+          </div>
         </div>
         <span class="flex-1"></span>
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
@@ -254,94 +280,76 @@ function moduleHasComposition(row: ProductModule): boolean {
         </div>
       }
 
-      <div class="relative flex gap-3 items-start" data-test="modules-layout">
-        <!-- Узкая полоска + панель ВЫШЕ затемнения (z-40); канон оверлея products (TZ-CATALOG-372). -->
-        <aside
-          class="relative z-40 shrink-0 w-12"
-          data-test="filters-rail"
-          [attr.aria-expanded]="filtersOpen()"
-        >
-          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
-            <button
-              type="button"
-              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
-              (click)="toggleFiltersRail()"
-              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
-              data-test="filters-rail-toggle"
-            >
-              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
-            </button>
-          </div>
-
-          @if (filtersOpen()) {
-            <div
-              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
-              data-test="filters-rail-panel"
-              role="dialog"
-              aria-label="Фильтры каталога"
-              (pointerdown)="$event.stopPropagation()"
-              (click)="$event.stopPropagation()"
-            >
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <div class="text-sm font-medium text-ink">Фильтры</div>
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
-                  (click)="closeFilters()"
-                  aria-label="Закрыть"
-                  data-test="filters-panel-close"
-                >
-                  Закрыть
-                </button>
-              </div>
-              <div class="flex flex-col gap-3">
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-composition"
-                  >Состав</label
-                >
-                <select
-                  id="rail-composition"
-                  class="pi-input w-full text-sm"
-                  [value]="compositionFilter()"
-                  (change)="onCompositionFilterChange($event)"
-                  data-test="rail-composition"
-                >
-                  <option value="all">Все</option>
-                  <option value="with-materials">С материалами</option>
-                  <option value="empty">Пустые</option>
-                </select>
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-sort"
-                  >Сортировка</label
-                >
-                <select
-                  id="rail-sort"
-                  class="pi-input w-full text-sm"
-                  [value]="sortSelectValue()"
-                  (change)="onRailSortChange($event)"
-                  data-test="rail-sort"
-                >
-                  <option value="name:asc">Название ↑</option>
-                  <option value="name:desc">Название ↓</option>
-                  <option value="article:asc">Артикул ↑</option>
-                  <option value="article:desc">Артикул ↓</option>
-                </select>
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
-                  (click)="clearFilters()"
-                  data-test="clear-filters"
-                >
-                  Сбросить
-                </button>
-              </div>
+      <div class="relative" data-test="modules-layout">
+        @if (filtersOpen()) {
+          <div
+            id="modules-flyout-filters"
+            class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+            data-test="filters-rail-panel"
+            role="dialog"
+            aria-label="Фильтры каталога"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="text-sm font-medium text-ink">Фильтры</div>
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                (click)="closeFilters()"
+                aria-label="Закрыть"
+                data-test="filters-panel-close"
+              >
+                Закрыть
+              </button>
             </div>
-          }
-        </aside>
+            <div class="flex flex-col gap-3">
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-composition"
+                >Состав</label
+              >
+              <select
+                id="rail-composition"
+                class="pi-input w-full text-sm"
+                [value]="compositionFilter()"
+                (change)="onCompositionFilterChange($event)"
+                data-test="rail-composition"
+              >
+                <option value="all">Все</option>
+                <option value="with-materials">С материалами</option>
+                <option value="empty">Пустые</option>
+              </select>
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-sort"
+                >Сортировка</label
+              >
+              <select
+                id="rail-sort"
+                class="pi-input w-full text-sm"
+                [value]="sortSelectValue()"
+                (change)="onRailSortChange($event)"
+                data-test="rail-sort"
+              >
+                <option value="name:asc">Название ↑</option>
+                <option value="name:desc">Название ↓</option>
+                <option value="article:asc">Артикул ↑</option>
+                <option value="article:desc">Артикул ↓</option>
+              </select>
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                (click)="clearFilters()"
+                data-test="clear-filters"
+              >
+                Сбросить
+              </button>
+            </div>
+          </div>
+        }
 
-        <div class="relative min-w-0 flex-1">
+        <div class="relative min-w-0">
           @if (filtersOpen()) {
             <button
               type="button"
@@ -606,7 +614,16 @@ function moduleHasComposition(row: ProductModule): boolean {
 export class ModulesPage implements OnInit {
   constructor() {
     this.photosLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
+    this.destroyRef.onDestroy(() => {
+      this.search.destroy();
+      this.chromeTools.clear(CHROME_OWNER);
+    });
+    effect(() => {
+      void this.filtersOpen();
+      void this.viewMode();
+      void this.filtersDirty();
+      untracked(() => this.syncChromeTools());
+    });
   }
   protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(ProductModulesService);
@@ -618,6 +635,7 @@ export class ModulesPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly photosService = inject(PhotosService);
   private readonly appearance = inject(CatalogAppearanceService);
+  private readonly chromeTools = inject(PiChromeToolsService);
 
   protected readonly RefreshIcon = RefreshCw;
   protected readonly ListIcon = List;
@@ -648,6 +666,56 @@ export class ModulesPage implements OnInit {
     this.filtersOpen.set(false);
   }
 
+  private syncChromeTools(): void {
+    const open = this.filtersOpen();
+    const dirty = this.filtersDirty();
+    const mode = this.viewMode();
+    const items: PiChromeToolItem[] = [
+      {
+        id: 'filters',
+        side: 'left',
+        ariaLabel: dirty ? 'Фильтры изменены' : 'Фильтры',
+        title: dirty ? 'Фильтры изменены' : 'Фильтры',
+        icon: this.FilterIcon,
+        active: open || dirty,
+        ariaExpanded: open,
+        ariaControls: 'modules-flyout-filters',
+        order: 1,
+        onClick: () => this.toggleFiltersRail(),
+      },
+      {
+        id: 'view-list',
+        side: 'right',
+        ariaLabel: 'Показать списком',
+        title: 'Показать списком',
+        icon: this.ListIcon,
+        active: mode === 'list',
+        order: 1,
+        onClick: () => this.setViewMode('list'),
+      },
+      {
+        id: 'view-grid',
+        side: 'right',
+        ariaLabel: 'Показать карточками',
+        title: 'Показать карточками',
+        icon: this.GridIcon,
+        active: mode === 'grid',
+        order: 2,
+        onClick: () => this.setViewMode('grid'),
+      },
+      {
+        id: 'refresh',
+        side: 'right',
+        ariaLabel: 'Обновить',
+        title: 'Обновить',
+        icon: this.RefreshIcon,
+        order: 3,
+        onClick: () => this.reload(),
+      },
+    ];
+    this.chromeTools.setTools(CHROME_OWNER, items);
+  }
+
   /**
    * Page-owned sort signals. Seeded to MATCH pi-table's internal
    * state after ngOnInit applies the `[initialSortKey]="'name'"`
@@ -666,6 +734,7 @@ export class ModulesPage implements OnInit {
    */
   private readonly compositionFilterSig = signal<CompositionFilter>('all');
   protected readonly compositionFilter = this.compositionFilterSig.asReadonly();
+  protected readonly filtersDirty = computed(() => this.compositionFilterSig() !== 'all');
 
   /** Single debounced search state — owns its own `searchQuery` signal. */
   private readonly search = createSearchState(300);

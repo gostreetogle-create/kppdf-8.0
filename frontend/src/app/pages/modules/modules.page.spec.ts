@@ -1,13 +1,14 @@
 /**
  * TZ-CATALOG-372 — ModulesPage vitrine-parity tests.
  * TZ-CATALOG-374 — list expandable composition (products expand parity).
+ * TZ-UX-327 — chrome page-tools (products TZ-UX-326 mirror).
  *
  * The page renders the REAL imports (no NO_ERRORS_SCHEMA override of
  * imports) so that:
  *   - routerLink on the name link / grid cells produces a real href
  *     "/modules/:id";
- *   - the filters-rail overlay (toggle/panel/backdrop) is testable
- *     through the actual template;
+ *   - the filters flyout overlay (chrome / fallback toggle / panel /
+ *     backdrop) is testable through the actual template;
  *   - PiShowcaseCard md renders under [data-test="modules-grid"];
  *   - (rowClick) toggles expandedId and [expandedRow] tray.
  *
@@ -32,6 +33,7 @@ import { PhotosService } from '../../shared/services/photos.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 
 describe('ModulesPage', () => {
   let httpMock: HttpTestingController;
@@ -139,6 +141,7 @@ describe('ModulesPage', () => {
   });
 
   afterEach(() => {
+    TestBed.inject(PiChromeToolsService).clear('modules-page');
     httpMock.verify();
     localStorage.clear();
   });
@@ -404,36 +407,48 @@ describe('ModulesPage', () => {
     expect(links.map((l) => l.getAttribute('href'))).toEqual(['/modules/pm2', '/modules/pm1']);
   });
 
-  // ─── TZ-CATALOG-372: filters rail overlay ───
+  // ─── TZ-UX-327: chrome page-tools (no w-12 filters-rail) ───
+
+  it('TZ-UX-327: no w-12 filters-rail; chrome has filters left and view/refresh right', async () => {
+    const fixture = await renderList([]);
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const layout = fixture.nativeElement.querySelector(
+      '[data-test="modules-layout"]',
+    ) as HTMLElement;
+
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
+    expect(layout.className).not.toContain('w-12');
+    expect(fixture.nativeElement.querySelector('.w-12')).toBeNull();
+    expect(chrome.leftTools().map((t) => t.id)).toEqual(['filters']);
+    expect(chrome.leftTools()[0]!.ariaLabel).toBe('Фильтры');
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['view-list', 'view-grid', 'refresh']);
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual([
+      'Показать списком',
+      'Показать карточками',
+      'Обновить',
+    ]);
+  });
 
   it('filters rail toggles open as overlay with backdrop', async () => {
-    const fixture = TestBed.createComponent(ModulesPage);
-    fixture.detectChanges();
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
+    const fixture = await renderList([]);
+    const chrome = TestBed.inject(PiChromeToolsService);
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
-    toggle.click();
+    chrome
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')).toBeTruthy();
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.active).toBe(true);
   });
 
   it('filters backdrop click closes overlay', async () => {
-    const fixture = TestBed.createComponent(ModulesPage);
-    fixture.detectChanges();
-    httpMock.expectOne(matchListGet).flush([]);
-    await tickMicrotask();
-    fixture.detectChanges();
-
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    const fixture = await renderList([]);
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
 
     const backdrop = fixture.nativeElement.querySelector(
@@ -443,6 +458,28 @@ describe('ModulesPage', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
+  });
+
+  it('chrome view-grid and refresh tools switch grid and reload', async () => {
+    const fixture = await renderList();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'view-grid')!
+      .onClick();
+    fixture.detectChanges();
+    expect(comp.viewMode()).toBe('grid');
+    expect(fixture.nativeElement.querySelector('[data-test="modules-grid"]')).toBeTruthy();
+
+    const page = fixture.componentInstance as unknown as { reload: () => void };
+    const reloadSpy = jest.spyOn(page, 'reload');
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'refresh')!
+      .onClick();
+    expect(reloadSpy).toHaveBeenCalled();
   });
 
   // ─── TZ-CATALOG-372: client-side «Состав» filter ───
@@ -494,10 +531,10 @@ describe('ModulesPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
 
     const railSelect = fixture.nativeElement.querySelector(

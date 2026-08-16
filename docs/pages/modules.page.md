@@ -1,6 +1,6 @@
 # Страница: Модули (ModulesPage)
 
-**Краткое описание:** Справочник модулей продукции — составные части, переиспользуемые между товарами. Витрина как у Продукции (TZ-CATALOG-372): фото, filters-rail, list↔grid, клиентская пагинация/поиск/сортировка. **TZ-CATALOG-374:** клик по строке в list раскрывает tray состава (как `/products`); detail — через имя-ссылку / «Открыть карточку».
+**Краткое описание:** Справочник модулей продукции — составные части, переиспользуемые между товарами. Витрина как у Продукции (TZ-CATALOG-372): фото, chrome page-tools + flyout фильтров (TZ-UX-327), list↔grid, клиентская пагинация/поиск/сортировка. **TZ-CATALOG-374:** клик по строке в list раскрывает tray состава (как `/products`); detail — через имя-ссылку / «Открыть карточку».
 
 ## TZ-CATALOG-372 — витрина как у Продукции
 
@@ -9,8 +9,9 @@
 - **Фото-колонка** первая: thumb 5.5rem или `app-pi-empty-tile`; фото резолвится по паттерну материалов — `PhotosService` + `createLookupTable` + `photoListUrl` (list-эндпоинт отдаёт id, не populate).
 - **Имя-ссылка**: `catalog-kind-marker` + `<a routerLink="/modules/:id">` с `stopPropagation` (detail без expand).
 - **Row-click (TZ-CATALOG-374)**: toggle expand tray состава под строкой (`expandedId` + `getModuleTree`); **не** navigate. Grid: клик по карточке → detail (list-only expand).
-- **Toolbar** (порядок как у products): поиск · Select «Состав» (Все / С материалами / Пустые) · «+ Создать» · ghost «Обновить» · toggle list/grid (`view-list-button` / `view-grid-button`, `aria-pressed`) · счётчик справа.
-- **Filters rail** (канон оверлея): узкая полоска `w-12` + панель `filters-rail-panel` absolute left-full поверх колонки контента; backdrop **только** на контенте; клик/`change` внутри панели не закрывают. Панель: Состав · Сортировка (name↑↓, article↑↓) · «Сбросить» (`clear-filters`) · «Закрыть`.
+- **Toolbar**: поиск · Select «Состав» (Все / С материалами / Пустые) · «+ Создать» · счётчик справа. View/refresh/filters — в app-chrome-rail (ниже).
+- **Chrome page-tools (TZ-UX-327):** `PiChromeToolsService` owner `modules-page`. Left: «Фильтры» (воронка, active если flyout открыт или «Состав» ≠ Все). Right: вид list/grid + «Обновить». `clear` on destroy. Локальной колонки `filters-rail` `w-12` **нет**. На &lt;1680 chrome скрыт — icon-fallback (фильтр / вид / обновить) в toolbar, без docked 48px.
+- **Filters flyout** (канон products): панель `filters-rail-panel` absolute left поверх layout; backdrop **только** на контенте; клик/`change` внутри панели не закрывают. Панель: Состав · Сортировка (name↑↓, article↑↓) · «Сбросить» (`clear-filters`) · «Закрыть`.
 - **Grid**: `app-pi-showcase-card size="md"` в сетке `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`; `mediaUrl` из main/first фото; grid media: contain (TZ-UX-344); `title` = name, `eyebrow` = article или «Модуль», `description` = габариты или «N мат. · M раб.»; `sc-actions-md` — hint «Себест. см. карточку» (без batch cost-preview, TZ-COST-303); grid slice = `paginatedRows()`; pager = `<app-pi-pagination>` (канон TZ-UX-341 / UX-340).
 - **View mode persistence**: `localStorage['pi-modules-view-mode']` (`list` | `grid`), load/save в try/catch (паттерн products).
 - **Фильтр «Состав»** — client-side, dual-read: непустой `composition` (material-линии) приоритетнее legacy `materials[]`.
@@ -115,9 +116,10 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 | TZ-104.3 | Миграция на pi-table (batch-2-B-flat) |
 | TZ-104.4.2 | Typed TemplateRef + lockstep sort |
 | TZ-CATALOG-319 | Docs: hard-delete Module (не soft) |
-| TZ-CATALOG-372 | Витрина как у Продукции: фото, имя-ссылка, toolbar (Состав/Обновить/toggle), filters-rail, grid `PiShowcaseCard` md, `pi-modules-view-mode` |
+| TZ-CATALOG-372 | Витрина как у Продукции: фото, имя-ссылка, toolbar (Состав), filters flyout, grid `PiShowcaseCard` md, `pi-modules-view-mode` |
 | TZ-CATALOG-374 | List expandable состав (`expandedId` + `getModuleTree`); detail через имя / «Открыть карточку» |
+| TZ-UX-327 | Chrome page-tools: `PiChromeToolsService` owner `modules-page`; L=filters R=view+refresh; нет w-12 filters-rail |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-CATALOG-374)._
+_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-UX-327 chrome page-tools)._
