@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-UX-342 DONE — KP rail pager + dead totals
+**Исполнитель:** cursor-composer
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** KP rail → `app-pi-pagination` (PAGE_SIZE 10, `showPageSize=false`); dead `[total]` removed on inventory/supply/dict/doc lists; documents/templates unused Показано helpers cleaned; forms demo 5→10.
+**Gates:** FE tsc PASS; focused Jest 14 suites / 109 tests PASS.
+**Review:** Cursor Verdict PASS (closeout-only).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-342.done.md`
+**Commit:** `db689987256bbc8e054e1838aacc1417aa5ac14f`
+**Lock:** `.mimocode/locks/TZ-UX-342-pager-dead-totals.lock`
+**Next:** STOP for this TZ; WAVE-UX-PAGINATION-UNIFY #1–#3 DONE; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-341 DONE — catalog grid pager → pi-pagination
 **Исполнитель:** cursor-composer
 **Статус:** DONE; REVIEW not required; deploy НЕ

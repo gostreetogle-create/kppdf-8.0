@@ -1,10 +1,11 @@
 # TZ-UX-342 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-UX-342.md` (должен существовать, пока не archive)
-> Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
-> Spec: `tasks/TZ-UX-342-pager-dead-totals-and-rail.md`
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-UX-342.done.md`
+> Commit/push: по `docs/GIT-POLICY.md`
+> Spec: `tasks/_archive/2026-08/TZ-UX-342.done.md` (body from root TZ)
 > READY FOR REVIEW: 2026-08-16T09:45:00Z
+> closed_at: 2026-08-16T12:35:00+03:00
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -63,6 +64,11 @@ cd frontend && pnpm test -- --testPathPattern="proposal-product-rail|documents.p
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T12:35:00+03:00
+- Cursor Verdict: PASS
+- Code SHA: `db689987256bbc8e054e1838aacc1417aa5ac14f`
+- Archive: `tasks/_archive/2026-08/TZ-UX-342.done.md`
+- Lock: `.mimocode/locks/TZ-UX-342-pager-dead-totals.lock`
+- Deploy: NOT RUN
