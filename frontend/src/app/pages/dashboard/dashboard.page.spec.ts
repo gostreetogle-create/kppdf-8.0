@@ -3,6 +3,7 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { provideRouter, Router } from '@angular/router';
 
 import {
   CombineItemCard,
@@ -137,6 +138,7 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: API_BASE_URL, useValue: baseUrl },
         { provide: DashboardDialogService, useValue: dialogs },
         { provide: PiDialogService, useValue: dialog },
@@ -989,14 +991,87 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(rows[0]!.getAttribute('data-order-boundary')).toBeNull();
     expect(rows[1]!.getAttribute('data-order-boundary')).toBeNull();
     expect(rows[2]!.getAttribute('data-order-boundary')).toBe('true');
-    expect(rows[2]!.classList.contains('mt-4')).toBe(true);
+    expect(rows[2]!.classList.contains('mt-3')).toBe(true);
 
     const list = root.querySelector('[data-testid="combine-product-rows"]');
-    expect(list?.classList.contains('gap-1')).toBe(true);
+    expect(list?.classList.contains('gap-0')).toBe(true);
 
     const orderBtns = root.querySelectorAll('[data-testid="combine-row-order-number"]');
     expect(orderBtns.length).toBe(3);
     expect(orderBtns[0]!.textContent?.trim()).toBe('№ORD-1');
     expect(orderBtns[2]!.textContent?.trim()).toBe('№ORD-2');
+  });
+
+  it('TZ-COMBINE-412: name click → editProduct; chevron expands; fuse classes', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial([
+      orderOf({
+        _id: 'o1',
+        number: 'ORD-1',
+        items: [
+          itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Alpha' }),
+          itemOf({ lineId: 'L2', boardLane: 'prep', productId: 'p2', productName: 'Beta' }),
+        ],
+      }),
+      orderOf({
+        _id: 'o2',
+        number: 'ORD-2',
+        items: [
+          itemOf({ lineId: 'L3', boardLane: 'design', productId: 'p3', productName: 'Gamma' }),
+        ],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      itemCards: () => CombineItemCard[];
+      isExpanded: (c: CombineItemCard) => boolean;
+      isOrderGroupStart: (c: CombineItemCard, i: number) => boolean;
+      isOrderGroupEnd: (c: CombineItemCard, i: number) => boolean;
+      editModule: (id: string) => void;
+    };
+    const cards = page.itemCards();
+    expect(page.isOrderGroupStart(cards[0]!, 0)).toBe(true);
+    expect(page.isOrderGroupEnd(cards[0]!, 0)).toBe(false);
+    expect(page.isOrderGroupStart(cards[1]!, 1)).toBe(false);
+    expect(page.isOrderGroupEnd(cards[1]!, 1)).toBe(true);
+    expect(page.isOrderGroupStart(cards[2]!, 2)).toBe(true);
+    expect(page.isOrderGroupEnd(cards[2]!, 2)).toBe(true);
+
+    const root = fixture.nativeElement as HTMLElement;
+    const nameBtn = root.querySelector(
+      '[data-testid="combine-row-product-name"]',
+    ) as HTMLButtonElement;
+    expect(nameBtn).toBeTruthy();
+    expect(nameBtn.classList.contains('hover:underline')).toBe(true);
+    nameBtn.click();
+    expect(dialogs.openProductEdit).toHaveBeenCalledWith(
+      'p1',
+      expect.anything(),
+      expect.any(Function),
+    );
+    expect(page.isExpanded(cards[0]!)).toBe(false);
+
+    const expandBtn = root.querySelector('[data-testid="combine-row-expand"]') as HTMLButtonElement;
+    expandBtn.click();
+    fixture.detectChanges();
+    expect(page.isExpanded(cards[0]!)).toBe(true);
+
+    const rows = root.querySelectorAll('[data-testid="combine-product-row"]');
+    expect(rows[0]!.classList.contains('rounded-t-sm')).toBe(true);
+    expect(rows[0]!.classList.contains('border-t-0')).toBe(false);
+    expect(rows[1]!.classList.contains('border-t-0')).toBe(true);
+    expect(rows[1]!.classList.contains('rounded-b-sm')).toBe(true);
+    expect(rows[2]!.classList.contains('mt-3')).toBe(true);
+    expect(rows[0]!.classList.contains('border-rule-strong')).toBe(true);
+
+    const router = TestBed.inject(Router);
+    const navSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+    page.editModule('mod-42');
+    expect(navSpy).toHaveBeenCalledWith(['/modules', 'mod-42']);
   });
 });

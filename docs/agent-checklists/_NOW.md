@@ -5,18 +5,18 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T22:58:00+03:00
-hygiene: COMBINE-411 DONE; drain next SALES-369
+updated_at: 2026-08-16T23:10:00+03:00
+hygiene: COMBINE-412 DONE; drain next SALES-369
 
 ## ACTIVE
 
-- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 411 (`gap` polish)
+- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412 landed; 413 DnD no-jump park
 - **Drain queue:** SALES-369 → TZD-39 → TZD-56 → TZD-47 → MIG-302… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
 
 
 ## NEXT (PO paste prompt)
 
-1. Смоук `/design/combine` (hard-refresh) — без «Заказ №…» между рядами, плотнее внутри заказа
+1. Смоук `/design/combine` — слитые ряды одного заказа; имя→edit; ▸ expand; module pencil
 2. Freebuff: `tasks/PROMPT-FREEBUFF-TASKS-DRAIN.md` (старт SALES-369)
 3. Deploy / «кати» — только отдельным словом + VPN off
 
@@ -27,6 +27,10 @@ hygiene: COMBINE-411 DONE; drain next SALES-369
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-412 DONE — fuse rows + name edit
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-412.done.md`; lock `TZ-COMBINE-412-combine-fuse-rows-name-edit.lock`; FE tsc + jest dashboard.page **26/26**. Deploy нет. Fuse same-order; mt-3 boundary; name→edit; module pencil→/modules/:id.
 
 ## [2026-08-16] — TZ-COMBINE-411 DONE — drop order group dup
 

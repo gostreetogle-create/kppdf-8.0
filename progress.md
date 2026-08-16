@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-COMBINE-412 DONE — Комбайн: склейка рядов + имя → edit
+
+**Исполнитель:** composer-executor-412
+**Статус:** DONE; deploy НЕ
+**Что:** fuse same-order (`gap-0` / shared border); inter-order `mt-3`; name→editProduct; ▸ expand; module pencil→`/modules/:id`.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page PASS (26/26).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-412.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-412-combine-fuse-rows-name-edit.lock`
+**Next:** TZ-COMBINE-413 DnD no-jump (park); deploy запрещён.
+
 ## [2026-08-16] — TZ-COMBINE-411 DONE — Комбайн: убрать дубль «Заказ №»
 
 **Исполнитель:** composer-executor-combine-411

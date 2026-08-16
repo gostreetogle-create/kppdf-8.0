@@ -11,7 +11,14 @@ import {
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { CdkDrag, CdkDragDrop, CdkDropList } from '@angular/cdk/drag-drop';
-import { LucideAngularModule, Pencil } from 'lucide-angular';
+import { Router } from '@angular/router';
+import {
+  LucideAngularModule,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
+  GripVertical,
+} from 'lucide-angular';
 import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chrome.component';
 import { BoardLane, ModuleLane, Order, OrderItem, OrdersService } from '../orders/orders.service';
 import {
@@ -102,21 +109,45 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
     <!-- Analytics Panel -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1">
-        <span class="text-xs text-muted-foreground uppercase tracking-wider">Новые</span>
+      <div
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-info transition-colors"
+      >
+        <span
+          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+        >
+          <span class="w-1.5 h-1.5 rounded-sm bg-info"></span> Новые
+        </span>
         <span class="text-2xl font-display">{{ stats().new }}</span>
       </div>
-      <div class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1">
-        <span class="text-xs text-muted-foreground uppercase tracking-wider">В работе</span>
+      <div
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-warning transition-colors"
+      >
+        <span
+          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+        >
+          <span class="w-1.5 h-1.5 rounded-sm bg-warning"></span> В работе
+        </span>
         <span class="text-2xl font-display">{{ stats().inProgress }}</span>
       </div>
-      <div class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1">
-        <span class="text-xs text-muted-foreground uppercase tracking-wider">Готовы</span>
+      <div
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-success transition-colors"
+      >
+        <span
+          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+        >
+          <span class="w-1.5 h-1.5 rounded-sm bg-success"></span> Готовы
+        </span>
         <span class="text-2xl font-display">{{ stats().ready }}</span>
       </div>
-      <div class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1">
-        <span class="text-xs text-muted-foreground uppercase tracking-wider">Просрочены</span>
-        <span class="text-2xl font-display text-destructive">{{ stats().overdue }}</span>
+      <div
+        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-destructive transition-colors"
+      >
+        <span
+          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+        >
+          <span class="w-1.5 h-1.5 rounded-sm bg-destructive"></span> Просрочены
+        </span>
+        <span class="text-2xl font-display">{{ stats().overdue }}</span>
       </div>
     </div>
 
@@ -146,25 +177,31 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
     <!-- TZ-COMBINE-409: sticky stage headers + OrderItem rows (expand = mini-kanban). -->
     <div class="min-h-[60vh] pb-4">
       <div
-        class="sticky top-0 z-10 grid grid-cols-5 gap-0 border hairline rounded-sm bg-paper mb-3"
+        class="sticky top-0 z-10 grid grid-cols-5 gap-0 border hairline rounded-sm bg-paper-raised mb-3 shadow-sm"
         role="row"
         aria-label="Стадии комбайна"
       >
         @for (col of columns; track col.id) {
-          <div class="px-2 py-2 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
-            <div class="text-xs font-medium truncate">{{ col.title }}</div>
-            <div class="text-[10px] text-muted-foreground truncate leading-snug">
+          <div class="px-3 py-2.5 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
+            <div class="text-xs font-medium truncate flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-sm" [class]="laneDotClass(col.id)"></span>
+              {{ col.title }}
+            </div>
+            <div class="text-[10px] text-muted-foreground truncate leading-snug mt-0.5">
               {{ col.helper }}
             </div>
           </div>
         }
       </div>
 
-      <div class="flex flex-col gap-1" data-testid="combine-product-rows">
+      <div class="flex flex-col gap-0" data-testid="combine-product-rows">
         @for (card of itemCards(); track card.key; let i = $index) {
           <div
-            class="border hairline rounded-sm bg-paper overflow-hidden"
-            [class.mt-4]="isOrderBoundary(card, i)"
+            class="border border-rule-strong bg-paper overflow-hidden group hover:border-ink/40 transition-colors"
+            [class.mt-3]="isOrderBoundary(card, i)"
+            [class.rounded-t-sm]="isOrderGroupStart(card, i)"
+            [class.rounded-b-sm]="isOrderGroupEnd(card, i)"
+            [class.border-t-0]="!isOrderGroupStart(card, i)"
             [attr.data-order-boundary]="isOrderBoundary(card, i) ? 'true' : null"
             [attr.data-line-key]="card.key"
             [attr.data-testid]="'combine-product-row'"
@@ -172,18 +209,22 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
             <div class="flex items-center gap-3 px-3 py-2.5">
               <button
                 type="button"
-                class="text-muted-foreground hover:text-ink w-5 shrink-0 text-sm pi-focus-ring rounded-sm"
+                class="text-muted-foreground hover:text-ink w-6 h-6 flex items-center justify-center shrink-0 pi-focus-ring rounded-sm hover:bg-paper-2 transition-colors"
+                data-testid="combine-row-expand"
                 [attr.aria-expanded]="isExpanded(card)"
                 [attr.aria-controls]="expandPanelId(card)"
                 [attr.aria-label]="isExpanded(card) ? 'Свернуть изделие' : 'Раскрыть изделие'"
                 (click)="toggleExpand(card)"
               >
-                {{ isExpanded(card) ? '▾' : '▸' }}
+                <lucide-icon
+                  [img]="isExpanded(card) ? ChevronDownIcon : ChevronRightIcon"
+                  [size]="16"
+                ></lucide-icon>
               </button>
 
               <button
                 type="button"
-                class="font-mono text-xs font-medium hover:underline shrink-0 pi-focus-ring rounded-sm"
+                class="pi-tech-label hover:text-ink hover:underline shrink-0 pi-focus-ring rounded-sm px-1.5 py-0.5 bg-paper-2"
                 data-testid="combine-row-order-number"
                 (click)="openOrder(card.order); $event.stopPropagation()"
                 title="Открыть заказ"
@@ -194,29 +235,29 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
               <button
                 type="button"
                 class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
+                data-testid="combine-row-product-name"
                 [title]="card.productName"
-                [attr.aria-expanded]="isExpanded(card)"
-                [attr.aria-controls]="expandPanelId(card)"
-                (click)="toggleExpand(card)"
+                (click)="editProduct(card.item.productId); $event.stopPropagation()"
               >
                 {{ card.productName }}
               </button>
 
-              <span class="text-xs text-muted-foreground shrink-0">
+              <span
+                class="text-xs text-muted-foreground shrink-0 bg-paper-2 px-1.5 py-0.5 rounded-sm"
+              >
                 {{ card.quantity }} {{ card.unit || 'шт' }}
               </span>
 
               <div
-                class="flex gap-1 shrink-0 w-28"
+                class="flex gap-1 shrink-0 w-32"
                 role="img"
                 data-testid="combine-lane-indicators"
                 [attr.aria-label]="'Стадии: ' + activeLaneSummary(card)"
               >
                 @for (col of columns; track col.id) {
                   <span
-                    class="h-2 flex-1 rounded-sm"
-                    [class.bg-ink]="laneIndicatorActive(card, col.id)"
-                    [class.bg-ink/15]="!laneIndicatorActive(card, col.id)"
+                    class="h-1.5 flex-1 rounded-sm transition-colors"
+                    [class]="laneIndicatorClass(card, col.id)"
                     [attr.data-lane]="col.id"
                     [attr.data-active]="laneIndicatorActive(card, col.id) ? 'true' : null"
                     [title]="col.title"
@@ -226,7 +267,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="text-muted-foreground hover:text-ink p-1 rounded-sm hover:bg-ink/5 shrink-0 pi-focus-ring"
+                class="text-muted-foreground hover:text-gold-deep p-1.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
                 (click)="editProduct(card.item.productId); $event.stopPropagation()"
                 title="Редактировать изделие"
               >
@@ -244,7 +285,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
               >
                 @for (col of columns; track col.id) {
                   <div
-                    class="border-r hairline last:border-r-0 p-1.5 flex flex-col gap-1 min-h-[4.5rem] min-w-0 bg-paper-raised/30"
+                    class="border-r hairline last:border-r-0 p-1.5 flex flex-col gap-1.5 min-h-[4.5rem] min-w-0 bg-paper-2/50"
                     cdkDropList
                     [id]="rowDropListId(card, col.id)"
                     [cdkDropListData]="col.id"
@@ -255,10 +296,26 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                       <div
                         cdkDrag
                         [cdkDragData]="moduleDrag(card, row)"
-                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing truncate"
+                        class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
+                        data-testid="combine-module-chip"
                         [title]="row.name"
                       >
-                        {{ row.name }}
+                        <lucide-icon
+                          [img]="GripVerticalIcon"
+                          [size]="12"
+                          class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
+                        ></lucide-icon>
+                        <span class="truncate flex-1 min-w-0">{{ row.name }}</span>
+                        <button
+                          type="button"
+                          class="text-muted-foreground hover:text-gold-deep p-0.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover/chip:opacity-100 focus-visible:opacity-100 transition-opacity"
+                          data-testid="combine-module-edit"
+                          (click)="editModule(row.moduleId); $event.stopPropagation()"
+                          (pointerdown)="$event.stopPropagation()"
+                          title="Редактировать модуль"
+                        >
+                          <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+                        </button>
                       </div>
                     }
                     @if (showWholeProductChip(card, col.id)) {
@@ -266,10 +323,15 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                         cdkDrag
                         [cdkDragData]="card"
                         data-testid="combine-whole-product-chip"
-                        class="text-[11px] border hairline rounded px-1.5 py-1 bg-paper cursor-grab active:cursor-grabbing font-medium"
+                        class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing font-medium flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
                         title="Изделие целиком — перетащите по стадиям"
                       >
-                        целиком
+                        <lucide-icon
+                          [img]="GripVerticalIcon"
+                          [size]="12"
+                          class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
+                        ></lucide-icon>
+                        <span>целиком</span>
                       </div>
                     }
                   </div>
@@ -294,12 +356,16 @@ export class DashboardPage {
     { label: 'Комбайн' },
   ];
   protected readonly PencilIcon = Pencil;
+  protected readonly ChevronDownIcon = ChevronDown;
+  protected readonly ChevronRightIcon = ChevronRight;
+  protected readonly GripVerticalIcon = GripVertical;
 
   private readonly dashboardDialogs = inject(DashboardDialogService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly orders = inject(OrdersService);
   private readonly productModules = inject(ProductModulesService);
+  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
@@ -366,13 +432,24 @@ export class DashboardPage {
   }
 
   /**
-   * TZ-COMBINE-411 — визуальная граница заказа без текста «Заказ №…»:
-   * больший верхний отступ при смене orderId (внутри заказа — компактный gap-1).
+   * TZ-COMBINE-411/412 — визуальная граница заказа без текста «Заказ №…»:
+   * внутри заказа ряды слиты (gap-0 / border-t-0); смена orderId → mt-3.
    */
   protected isOrderBoundary(card: CombineItemCard, index: number): boolean {
     if (index === 0) return false;
     const prev = this.itemCards()[index - 1];
     return !!prev && prev.orderId !== card.orderId;
+  }
+
+  /** TZ-COMBINE-412 — первый ряд группы заказа (скругление сверху + полная верхняя рамка). */
+  protected isOrderGroupStart(card: CombineItemCard, index: number): boolean {
+    return index === 0 || this.isOrderBoundary(card, index);
+  }
+
+  /** TZ-COMBINE-412 — последний ряд группы заказа (скругление снизу). */
+  protected isOrderGroupEnd(card: CombineItemCard, index: number): boolean {
+    const next = this.itemCards()[index + 1];
+    return !next || next.orderId !== card.orderId;
   }
 
   /**
@@ -513,6 +590,39 @@ export class DashboardPage {
     return LANE_TITLE[lane];
   }
 
+  protected laneDotClass(lane: BoardLane): string {
+    switch (lane) {
+      case 'prep':
+        return 'bg-muted-foreground';
+      case 'design':
+        return 'bg-info';
+      case 'shop':
+        return 'bg-warning';
+      case 'to_ship':
+        return 'bg-success';
+      case 'shipped':
+        return 'bg-ink';
+    }
+  }
+
+  protected laneIndicatorClass(card: CombineItemCard, lane: BoardLane): string {
+    const isActive = this.laneIndicatorActive(card, lane);
+    if (!isActive) return 'bg-paper-3';
+
+    switch (lane) {
+      case 'prep':
+        return 'bg-muted-foreground';
+      case 'design':
+        return 'bg-info';
+      case 'shop':
+        return 'bg-warning';
+      case 'to_ship':
+        return 'bg-success';
+      case 'shipped':
+        return 'bg-ink';
+    }
+  }
+
   /** Явная полоса модуля из moduleLanes; undefined → наследует линию. */
   protected moduleLaneOf(order: Order, lineId: string, moduleId: string): BoardLane | undefined {
     return (order.moduleLanes ?? []).find((ml) => ml.lineId === lineId && ml.moduleId === moduleId)
@@ -588,6 +698,11 @@ export class DashboardPage {
 
   protected editProduct(productId: string): void {
     this.dashboardDialogs.openProductEdit(productId, this.injector, () => this.listRes.reload());
+  }
+
+  /** TZ-COMBINE-412 — карандаш модуля → карточка модуля. */
+  protected editModule(moduleId: string): void {
+    void this.router.navigate(['/modules', moduleId]);
   }
 
   /**

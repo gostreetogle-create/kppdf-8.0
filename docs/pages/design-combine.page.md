@@ -1,9 +1,10 @@
 # Страница: Комбайн (`/design/combine`) — ряды изделий + mini-kanban
 
 **Краткое описание:** Доска **изделий** (позиций заказа) в Проекте. Не склад `/inventory`,
-не Обзор `/dashboard`. Layout V1 (TZ-COMBINE-409/410): **горизонтальный ряд = OrderItem**,
+не Обзор `/dashboard`. Layout V1 (TZ-COMBINE-409+): **горизонтальный ряд = OrderItem**,
 sticky шапка стадий (`boardLane`), раскрытие → мини-комбайн 5 ячеек с чипами модулей
-(или «целиком»). Create/delete досок нет. Write-path отгрузки = SWEEP-401 `POST /ship` (целый заказ).
+(или «целиком»). **Метод (переиспользовать):** [`docs/methods/combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md).
+Create/delete досок нет. Write-path отгрузки = SWEEP-401 `POST /ship` (целый заказ).
 
 ## Routes
 
@@ -25,13 +26,14 @@ sticky шапка стадий (`boardLane`), раскрытие → мини-к
 
 Шапка: grid `1fr`×5, без horizontal scroll доски.
 
-## Ряды (TZ-COMBINE-409 + polish 410)
+## Ряды (TZ-COMBINE-409 + polish 410…412)
 
 - Один ряд = одно изделие (`OrderItem` + `lineId`), на всю ширину.
-- Без группового «Заказ №…»: номер только на ряду; компакт `gap-1` внутри заказа, `mt-4` при смене `orderId`.
+- Без группового «Заказ №…»: номер только на ряду; **склейка** одного заказа (`gap-0`, `border-t-0` между рядами, `border-rule-strong` + скругление только на краях группы); межзаказный зазор `mt-3`.
 - Свёрнутый: № заказа · имя · qty · ▸ · **5 индикаторов** (сегмент active = модуль в lane / effective lane без модулей). Prefetch `GET /modules?productId=` — индикаторы корректны без expand.
-- Expand (accordion `expandedKey`): `aria-expanded` + `aria-controls` → panel id; под рядом grid 5 ячеек; вертикальные hairline; чипы модулей.
-- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями.
+- **Клики:** ▸ → expand mini-kanban; **имя изделия** / карандаш → `editProduct`; № заказа → карточка заказа; карандаш модуля → `/modules/:id`.
+- Expand (accordion `expandedKey`): `aria-expanded` + `aria-controls` → panel id; под рядом grid 5 ячеек; вертикальные hairline; чипы модулей (`py-2` + grip + pencil).
+- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями. Placeholder jump → COMBINE-413.
 - Без модулей каталога: чип **«целиком»** в effective lane; drag → тот же `PATCH .../lines/:lineId/lane` (не module lane).
 - Бейдж № заказа; фильтр по `orderId`; KPI-карточки сверху (Order.status) — без изменений.
 - `Order.status` на доске не колонка — **rollup** (см. COUPLING-MAP §2).
@@ -61,10 +63,12 @@ Legacy: `PATCH .../items/:i/status` — не расширять новыми з�
 
 **TZ-COMBINE-411:** drop duplicate order group headers; compact same-order gap + larger margin on orderId change (no color coding).
 
+**TZ-COMBINE-412:** fuse same-order rows (`gap-0` / shared border); name → edit; module pencil → `/modules/:id`; inter-order `mt-3`. Method: [`combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md).
+
 ## Навигация
 
 Проект: Комбайн первым, Очередь вторым; `entryPath` = `/design/combine` (TZ-NAV-305).
 
 ## Связанные TZ
 
-**COMBINE-401…408** · **409** product rows · **410** polish DONE · SWEEP-401 ship · NAV-303/305 · DASHBOARD-401 home widgets — не здесь
+**COMBINE-401…408** · **409** product rows · **410** polish · **411** drop headers · **412** fuse+name-edit DONE · **413** DnD no-jump (park) · SWEEP-401 ship · NAV-303/305 · DASHBOARD-401 home widgets — не здесь
