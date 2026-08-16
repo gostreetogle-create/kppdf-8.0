@@ -1,6 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, of } from 'rxjs';
-import { ProductionReadFacade, extractDirectModuleIds } from './production-read.facade';
+import {
+  ProductionReadFacade,
+  PREFETCH_CONCURRENCY,
+  extractDirectModuleIds,
+} from './production-read.facade';
 import { OrdersService } from '../orders/orders.service';
 import { ProductsService } from '../../shared/services/products.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
@@ -361,6 +365,101 @@ describe('ProductionReadFacade', () => {
     expect(bars.map((b) => b.days)).toEqual([2, 3]);
     expect(bars.map((b) => b.workerLabel)).toEqual(['—', '—']);
     expect(facade.state().loading).toBe(false);
+  });
+
+  it('TZ-PRODUCTION-341: PREFETCH_CONCURRENCY stays in 2–3 (Nest short throttle budget)', () => {
+    expect(PREFETCH_CONCURRENCY).toBeGreaterThanOrEqual(2);
+    expect(PREFETCH_CONCURRENCY).toBeLessThanOrEqual(3);
+  });
+
+  it('TZ-PRODUCTION-341: retries getProduct once on 429 then succeeds; no retry on 404', async () => {
+    jest.useFakeTimers();
+    const productOk = {
+      _id: 'p1',
+      name: 'Стол',
+      kind: 'good',
+      unit: 'шт',
+      composition: [{ _id: 'l1', lineType: 'module', refId: 'm1', quantity: 1, sortOrder: 0 }],
+    };
+    const productsApi = {
+      findById: jest
+        .fn()
+        .mockReturnValueOnce(
+          of({ ok: false, error: { status: 429, message: 'ThrottlerException' } }),
+        )
+        .mockReturnValueOnce(of({ ok: true, data: productOk }))
+        .mockReturnValue(of({ ok: false, error: { status: 404, message: 'Not found' } })),
+    };
+    const modulesApi = {
+      findById: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: {
+            _id: 'm1',
+            name: 'Каркас',
+            workTypes: [{ workTypeId: 'wt1', estimatedHours: 8, sortOrder: 0 }],
+            materials: [],
+          },
+        }),
+      ),
+    };
+    const workTypesApi = {
+      list: jest.fn().mockReturnValue(
+        of({
+          ok: true,
+          data: { items: [{ _id: 'wt1', name: 'Сварка', isActive: true, days: 2 }], total: 1 },
+        }),
+      ),
+    };
+    const workersApi = {
+      list: jest
+        .fn()
+        .mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProductionReadFacade,
+        { provide: OrdersService, useValue: { list: jest.fn() } },
+        { provide: ProductsService, useValue: productsApi },
+        { provide: ProductModulesService, useValue: modulesApi },
+        { provide: WorkTypesService, useValue: workTypesApi },
+        { provide: PiWorkersService, useValue: workersApi },
+      ],
+    });
+
+    const facade = TestBed.inject(ProductionReadFacade);
+    const barsPromise = facade.loadBarsForOrders([
+      {
+        _id: 'o1',
+        number: 'ORD-1',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [{ productId: 'p1', productName: 'Стол', quantity: 1 }],
+      } as never,
+    ]);
+    await jest.advanceTimersByTimeAsync(300);
+    const bars = await barsPromise;
+    expect(bars.map((b) => b.id)).toEqual(['o1:0:p1:m1:wt1:1']);
+    expect(productsApi.findById).toHaveBeenCalledTimes(2);
+
+    facade.clearCaches();
+    const missingPromise = facade.loadBarsForOrders([
+      {
+        _id: 'o2',
+        number: 'ORD-2',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [{ productId: 'p-missing', productName: 'Gone', quantity: 1 }],
+      } as never,
+    ]);
+    await jest.advanceTimersByTimeAsync(5000);
+    const missingBars = await missingPromise;
+    expect(missingBars).toEqual([]);
+    // One 404 call only — no backoff retries.
+    expect(productsApi.findById.mock.calls.filter((c) => c[0] === 'p-missing')).toHaveLength(1);
+    jest.useRealTimers();
   });
 });
 

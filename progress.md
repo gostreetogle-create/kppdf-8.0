@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-341 DONE — Gantt hydrate throttle 429
+**Исполнитель:** composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `PREFETCH_CONCURRENCY` 8→3; `getProduct`/`getModule` retry на 429/503 (backoff 300/800/1500); без retry на 404; unique prefetch + cache сохранены; estimate/PATCH/bars/BE throttle не трогали.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `production-read.facade` PASS (6/6).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-341.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-341-gantt-hydrate-throttle-429.lock`
+**Next:** production idle; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-340 DONE — Gantt summary header tint
 **Исполнитель:** composer-executor
 **Статус:** DONE; deploy НЕ

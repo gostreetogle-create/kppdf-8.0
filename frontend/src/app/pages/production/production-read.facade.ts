@@ -5,6 +5,7 @@
  */
 import { Injectable, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { type SilentResult } from '../../core/silent-http';
 import { OrdersService, type Order, type OrderStatus } from '../orders/orders.service';
 import { ProductsService, type Product } from '../../shared/services/products.service';
 import {
@@ -34,8 +35,15 @@ export interface GanttSkipInfo {
   productNames: string[];
 }
 
-/** TZ-PRODUCTION-338 — bounded fan-out for catalog hydrate (not 1×N sequential). */
-const PREFETCH_CONCURRENCY = 8;
+/**
+ * TZ-PRODUCTION-338/341 — bounded fan-out for catalog hydrate (not 1×N sequential).
+ * Nest short throttle is 10 req/s; keep fan-out ≤3 so products+modules stay under
+ * that budget with room for orders/workers/thumbs (TZ-341: was 8 → 429).
+ */
+export const PREFETCH_CONCURRENCY = 3;
+
+/** Backoff delays (ms) between 429/503 retries — TZ-PRODUCTION-341. */
+const RETRY_BACKOFF_MS = [300, 800, 1500] as const;
 
 /** Run `fn` over `items` with at most `limit` promises in flight at once. */
 async function runBounded<T>(
@@ -51,6 +59,14 @@ async function runBounded<T>(
     }
   });
   await Promise.all(workers);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableHttpStatus(status: number): boolean {
+  return status === 429 || status === 503;
 }
 
 export interface ProductionReadState {
@@ -324,13 +340,35 @@ export class ProductionReadFacade {
     }
   }
 
+  /**
+   * TZ-PRODUCTION-341 — retry transient throttle (429) / overload (503).
+   * Never retries 404 or other client errors. Max attempts = 1 + RETRY_BACKOFF_MS.length.
+   */
+  private async fetchWithThrottleRetry<T>(
+    request: () => Promise<SilentResult<T>>,
+  ): Promise<SilentResult<T>> {
+    let attempt = 0;
+    for (;;) {
+      const res = await request();
+      if (res.ok) return res;
+      const status = res.error.status;
+      if (!isRetryableHttpStatus(status) || attempt >= RETRY_BACKOFF_MS.length) {
+        return res;
+      }
+      await sleep(RETRY_BACKOFF_MS[attempt]!);
+      attempt++;
+    }
+  }
+
   private async getProduct(id: string, warnings: string[]): Promise<Product | null> {
     if (this.productCache.has(id)) return this.productCache.get(id) ?? null;
     const inflight = this.productInflight.get(id);
     if (inflight) return inflight;
 
     const promise = (async () => {
-      const res = await firstValueFrom(this.productsApi.findById(id));
+      const res = await this.fetchWithThrottleRetry(() =>
+        firstValueFrom(this.productsApi.findById(id)),
+      );
       if (!res.ok || !res.data) {
         warnings.push(`Изделие ${id} недоступно`);
         this.productCache.set(id, null);
@@ -354,7 +392,9 @@ export class ProductionReadFacade {
     if (inflight) return inflight;
 
     const promise = (async () => {
-      const res = await firstValueFrom(this.modulesApi.findById(id));
+      const res = await this.fetchWithThrottleRetry(() =>
+        firstValueFrom(this.modulesApi.findById(id)),
+      );
       if (!res.ok || !res.data) {
         warnings.push(`Модуль ${id} недоступен`);
         this.moduleCache.set(id, null);

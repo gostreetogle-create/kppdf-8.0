@@ -5,13 +5,13 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T20:50:00+03:00
-hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338–340 DONE**
+updated_at: 2026-08-16T20:55:00+03:00
+hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338–341 DONE**
 
 ## ACTIVE
 
 - _(idle Desktop)_ WAVE-DESKTOP-IA-SHELL: **TZD-54/55 DONE**. Full AI-in-NSIS = **TZD-56** backlog.
-- _(idle production)_ TZ-PRODUCTION-338–340 DONE — hydrate + expand frames + summary header tint.
+- _(idle production)_ TZ-PRODUCTION-338–341 DONE — hydrate + expand frames + summary tint + throttle 429.
 
 ## NEXT (PO paste prompt)
 
@@ -26,6 +26,10 @@ hygiene: TZD-50–55 DONE (Desktop IA wave code); deploy DEFERRED; Gantt **338�
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-341 DONE — Gantt hydrate throttle 429
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-341.done.md`; lock `TZ-PRODUCTION-341-gantt-hydrate-throttle-429.lock`; FE tsc + jest facade **6/6**. Deploy нет. `PREFETCH_CONCURRENCY` 8→3 + 429 retry.
 
 ## [2026-08-16] — TZ-PRODUCTION-340 DONE — Gantt summary header tint
 
