@@ -3,10 +3,13 @@ import { provideRouter } from '@angular/router';
 import {
   GanttBarsComponent,
   GANTT_LABEL_COL_PX,
+  GANTT_NEST_INDENT_PX,
   GANTT_PX_PER_DAY,
   calculateGanttPxPerDay,
   calculateCenteredMarkerScrollLeft,
   ganttMonthTickLabel,
+  ganttNestDepth,
+  ganttRowKind,
   ganttWeekdayShortRu,
   snapEstimateDaysFromDelta,
   snapMoveDeltaDays,
@@ -328,6 +331,109 @@ describe('GanttBarsComponent', () => {
     expect(moduleLabel).toBeTruthy();
     expect(moduleLabel.textContent).toContain('Стол · целиком');
     expect(moduleLabel.textContent).not.toContain('Каркас');
+  });
+
+  it('TZ-PRODUCTION-346: nest indent + level wash markers; timeline bars unshifted', () => {
+    expect(ganttNestDepth('order')).toBe(0);
+    expect(ganttNestDepth('product')).toBe(1);
+    expect(ganttNestDepth('module')).toBe(2);
+    expect(ganttNestDepth('work')).toBe(3);
+    expect(
+      ganttRowKind({
+        isOrderSummary: false,
+        isWorkerSummary: false,
+        isProductSummary: true,
+        isModuleSummary: false,
+      }),
+    ).toBe('product');
+
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    setFullTreeExpand(fixture);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const orderLabel = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const productLabel = el.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"]`,
+    ) as HTMLElement;
+    const moduleLabel = el.querySelector(`[data-test="gantt-label-${moduleKeyO1}"]`) as HTMLElement;
+    const workLabel = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(orderLabel.getAttribute('data-nest-depth')).toBe('0');
+    expect(productLabel.getAttribute('data-nest-depth')).toBe('1');
+    expect(moduleLabel.getAttribute('data-nest-depth')).toBe('2');
+    expect(workLabel.getAttribute('data-nest-depth')).toBe('3');
+    expect(productLabel.getAttribute('data-row-kind')).toBe('product');
+    expect(moduleLabel.getAttribute('data-row-kind')).toBe('module');
+    expect(workLabel.getAttribute('data-row-kind')).toBe('work');
+    expect(productLabel.classList.contains('gantt-level-product')).toBe(true);
+    expect(moduleLabel.classList.contains('gantt-level-module')).toBe(true);
+    expect(workLabel.classList.contains('gantt-level-work')).toBe(true);
+
+    const productPad = Number.parseFloat(
+      getComputedStyle(productLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
+    );
+    const modulePad = Number.parseFloat(
+      getComputedStyle(moduleLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
+    );
+    const workPad = Number.parseFloat(
+      getComputedStyle(workLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
+    );
+    expect(productPad).toBe(GANTT_NEST_INDENT_PX);
+    expect(modulePad).toBe(GANTT_NEST_INDENT_PX * 2);
+    expect(workPad).toBe(GANTT_NEST_INDENT_PX * 3);
+
+    const workRow = el.querySelector('[data-test="gantt-row-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(workRow.getAttribute('data-row-kind')).toBe('work');
+    expect(workRow.getAttribute('data-nest-depth')).toBeNull();
+    expect(workRow.classList.contains('gantt-level-work')).toBe(true);
+    const bar = workRow.querySelector('[data-test="gantt-bar"]') as HTMLElement;
+    expect(bar).toBeTruthy();
+    expect(bar.style.left).toBeTruthy();
+
+    const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
+      .map((s) => s.textContent ?? '')
+      .join('\n');
+    expect(hostStyles).toContain('oklch(0.978 0.01 230)');
+    expect(hostStyles).toContain('oklch(0.98 0.012 70)');
+    expect(hostStyles).toContain('oklch(0.976 0.008 145)');
+    /* Frames / meta still present (hierarchy intact). */
+    expect(hostStyles).toContain('oklch(0.94 0.025 85)');
+    expect(hostStyles).toContain('oklch(0.995 0.008 95)');
+  });
+
+  it('TZ-PRODUCTION-346: worker lens module/work nest indent', () => {
+    const assigned: GanttBar = { ...sample, workerLabel: 'Иванов Иван' };
+    const paint: GanttBar = { ...samplePaint, workerLabel: 'Иванов Иван' };
+    const moduleId = `worker-module:Иванов Иван:${assigned.orderId}:${assigned.orderItemIndex}:${assigned.moduleId}`;
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned, paint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('expandedWorkerIds', new Set(['Иванов Иван']));
+    fixture.componentRef.setInput('expandedWorkerModuleIds', new Set([moduleId]));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const workerLabel = el.querySelector(
+      '[data-test="gantt-label-worker-summary:Иванов Иван"]',
+    ) as HTMLElement;
+    const moduleLabel = el.querySelector(`[data-test="gantt-label-${moduleId}"]`) as HTMLElement;
+    const workLabel = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(workerLabel.getAttribute('data-nest-depth')).toBe('0');
+    expect(moduleLabel.getAttribute('data-nest-depth')).toBe('2');
+    expect(workLabel.getAttribute('data-nest-depth')).toBe('3');
+    const modulePad = Number.parseFloat(
+      getComputedStyle(moduleLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
+    );
+    const workPad = Number.parseFloat(
+      getComputedStyle(workLabel.querySelector('.gantt-label-btn') as HTMLElement).paddingLeft,
+    );
+    expect(modulePad).toBe(GANTT_NEST_INDENT_PX * 2);
+    expect(workPad).toBe(GANTT_NEST_INDENT_PX * 3);
   });
 
   it('TZ-PRODUCTION-339: chevron ≥14px ink, expand hit ≥36px; not text-[10px]', () => {

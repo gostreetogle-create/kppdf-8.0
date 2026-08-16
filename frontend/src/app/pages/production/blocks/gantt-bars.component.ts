@@ -128,6 +128,42 @@ export const GANTT_META_ROW_PX = 56;
 /** Label column width (Tailwind `w-52` = 13rem @ 16px). */
 export const GANTT_LABEL_COL_PX = 208;
 
+/**
+ * Nest indent step for label column only (~3mm / ~8–12px).
+ * Depth: order|worker=0, product=1, module=2, work=3 → padding-left = depth × step.
+ */
+export const GANTT_NEST_INDENT_PX = 10;
+
+export type GanttRowKind = 'order' | 'worker' | 'product' | 'module' | 'work';
+
+/** Nest depth for cascade indent (labels only; timeline bars stay flush). */
+export function ganttNestDepth(kind: GanttRowKind): number {
+  switch (kind) {
+    case 'order':
+    case 'worker':
+      return 0;
+    case 'product':
+      return 1;
+    case 'module':
+      return 2;
+    case 'work':
+      return 3;
+  }
+}
+
+export function ganttRowKind(opts: {
+  isOrderSummary: boolean;
+  isWorkerSummary: boolean;
+  isProductSummary: boolean;
+  isModuleSummary: boolean;
+}): GanttRowKind {
+  if (opts.isWorkerSummary) return 'worker';
+  if (opts.isOrderSummary) return 'order';
+  if (opts.isProductSummary) return 'product';
+  if (opts.isModuleSummary) return 'module';
+  return 'work';
+}
+
 const ORDER_META_PRIORITIES: { value: OrderPriority; label: string }[] = [
   { value: 'low', label: 'Низкий' },
   { value: 'normal', label: 'Обычный' },
@@ -313,7 +349,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               <div
                 class="gantt-row-h w-full text-left border-b hairline
                        flex items-stretch min-w-0 overflow-hidden"
-                [class.bg-paper-2]="row.alt && !isOrderEmphasized(row.bar.orderId)"
+                [class.bg-paper-2]="
+                  row.alt && row.nestDepth === 0 && !isOrderEmphasized(row.bar.orderId)
+                "
                 [class.border-t-2]="row.orderBoundary"
                 [class.gantt-work-detail-open]="isWorkDetailOpen(row.bar.id)"
                 [class.gantt-order-active]="
@@ -332,7 +370,12 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-module-group-start]="row.moduleGroupStart"
                 [class.gantt-module-group-end]="row.moduleGroupEnd"
                 [class.gantt-module-group-mid]="row.moduleGroupMid"
+                [class.gantt-level-product]="row.rowKind === 'product'"
+                [class.gantt-level-module]="row.rowKind === 'module'"
+                [class.gantt-level-work]="row.rowKind === 'work'"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
+                [attr.data-nest-depth]="row.nestDepth"
+                [attr.data-row-kind]="row.rowKind"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
@@ -400,16 +443,16 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     @if (row.isOrderSummary || row.isWorkerSummary) {
                       <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
                     } @else if (row.isProductSummary) {
-                      <span class="font-medium text-ink pl-1">{{ row.bar.productName }}</span>
+                      <span class="font-medium text-ink">{{ row.bar.productName }}</span>
                       @if (row.bar.quantityLabel) {
                         <span class="font-mono text-muted-foreground">
                           {{ row.bar.quantityLabel }}</span
                         >
                       }
                     } @else if (row.isModuleSummary) {
-                      <span class="text-ink/85 pl-2">{{ row.bar.moduleName }}</span>
+                      <span class="text-ink/85">{{ row.bar.moduleName }}</span>
                     } @else {
-                      <span class="text-muted-foreground pl-3">{{ row.bar.workTypeName }}</span>
+                      <span class="text-muted-foreground">{{ row.bar.workTypeName }}</span>
                       @if (row.bar.quantityLabel) {
                         <span class="font-mono text-muted-foreground">
                           {{ row.bar.quantityLabel }}</span
@@ -568,7 +611,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             @for (row of rows(); track row.bar.id) {
               <div
                 class="relative gantt-row-h border-b hairline"
-                [class.bg-paper-2]="row.alt && !isOrderEmphasized(row.bar.orderId)"
+                [class.bg-paper-2]="
+                  row.alt && row.nestDepth === 0 && !isOrderEmphasized(row.bar.orderId)
+                "
                 [class.border-t-2]="row.orderBoundary"
                 [class.gantt-work-detail-open]="isWorkDetailOpen(row.bar.id)"
                 [class.gantt-order-active]="
@@ -587,7 +632,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-module-group-start]="row.moduleGroupStart"
                 [class.gantt-module-group-end]="row.moduleGroupEnd"
                 [class.gantt-module-group-mid]="row.moduleGroupMid"
+                [class.gantt-level-product]="row.rowKind === 'product'"
+                [class.gantt-level-module]="row.rowKind === 'module'"
+                [class.gantt-level-work]="row.rowKind === 'work'"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
+                [attr.data-row-kind]="row.rowKind"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
@@ -802,6 +851,41 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
     .gantt-label-btn:focus-visible {
       background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
+    }
+    /* TZ-PRODUCTION-346: cascade indent — labels only (~3mm / 10px per depth). */
+    [data-nest-depth='1'] .gantt-label-btn {
+      padding-left: ${GANTT_NEST_INDENT_PX}px;
+    }
+    [data-nest-depth='2'] .gantt-label-btn {
+      padding-left: ${GANTT_NEST_INDENT_PX * 2}px;
+    }
+    [data-nest-depth='3'] .gantt-label-btn {
+      padding-left: ${GANTT_NEST_INDENT_PX * 3}px;
+    }
+    /*
+     * Level washes (paper, quiet). Strength: meta-active ≥ order/product/module frames ≥ these.
+     * No !important — group/meta rules with !important keep winning.
+     */
+    .gantt-level-product {
+      background: oklch(0.978 0.01 230);
+    }
+    .gantt-level-module {
+      background: oklch(0.98 0.012 70);
+    }
+    .gantt-level-work {
+      background: oklch(0.976 0.008 145);
+    }
+    :host-context(.dark) .gantt-level-product,
+    :host-context([data-theme='dark']) .gantt-level-product {
+      background: oklch(0.255 0.018 230);
+    }
+    :host-context(.dark) .gantt-level-module,
+    :host-context([data-theme='dark']) .gantt-level-module {
+      background: oklch(0.26 0.02 70);
+    }
+    :host-context(.dark) .gantt-level-work,
+    :host-context([data-theme='dark']) .gantt-level-work {
+      background: oklch(0.25 0.015 145);
     }
     /* Active order while order-meta strip is open — lighter + bold frame. */
     .gantt-order-active {
@@ -1318,6 +1402,13 @@ export class GanttBarsComponent implements AfterViewInit {
       const moduleGroupStart = inModuleGroup && moduleSummary;
       const moduleGroupEnd = inModuleGroup && !!moduleId && lastIdxByModule.get(moduleId) === idx;
       const moduleGroupMid = inModuleGroup && !moduleGroupStart && !moduleGroupEnd;
+      const rowKind = ganttRowKind({
+        isOrderSummary: orderSummary,
+        isWorkerSummary: workerSummary,
+        isProductSummary: productSummary,
+        isModuleSummary: moduleSummary,
+      });
+      const nestDepth = ganttNestDepth(rowKind);
 
       return {
         bar,
@@ -1331,6 +1422,8 @@ export class GanttBarsComponent implements AfterViewInit {
         isProductSummary: productSummary,
         isModuleSummary: moduleSummary,
         isWorkerSummary: workerSummary,
+        rowKind,
+        nestDepth,
         expanded: branchExpanded,
         orderGroupStart: treeExpanded && (byWorkers ? workerSummary : orderSummary),
         orderGroupEnd: treeExpanded && lastIdxByGroup.get(groupKey) === idx,

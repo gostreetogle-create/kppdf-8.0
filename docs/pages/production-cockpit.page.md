@@ -152,6 +152,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
 - **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). **TZ-PRODUCTION-343:** вложенные рамки изделия/модуля (`gantt-product-group-*` / `gantt-module-group-*`) читаемы внутри order frame; aria/title: изделие = «модули изделия», модуль = «виды работ»; шапка колонки `Заказ · изделие`. При открытом meta active имеет приоритет.
+- **Nest indent + level washes (TZ-PRODUCTION-346):** колонка лейблов — `padding-left` ~10/20/30px по глубине (order|worker=0, product=1, module=2, work=3); полосы календаря без горизонтального сдвига. Тихие washes `gantt-level-product|module|work` (oklch paper); сила: meta ≥ order/product/module frames ≥ level wash.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
@@ -197,6 +198,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-343** | DONE: RU expand aria/title (изделие/модуль); nested product/module frames; header `Заказ · изделие`; «По заказам» unchanged |
 | **TZ-PRODUCTION-344** | DONE: Worker → Module(order·product·module) → WT; ▸ on worker; default collapsed; RO |
 | **TZ-PRODUCTION-345** | DONE: whole-product pseudo-module «… · целиком»; empty modules stay ineligible |
+| **TZ-PRODUCTION-346** | DONE: label nest indent ~10/20/30px + quiet level washes; timeline bars unshifted; frames/meta intact |
 | **TZ-PRODUCTION-347** | DONE: hide module/WT names matching сборк/упаков from `buildGanttBars`; catalog untouched |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |

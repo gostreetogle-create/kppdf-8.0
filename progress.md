@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-346 DONE — Gantt nest indent + level tint
+**Исполнитель:** local-executor-composer
+**Статус:** DONE; deploy НЕ
+**Что:** label `data-nest-depth` indent 10/20/30px (product/module/work); quiet `gantt-level-*` washes; timeline bars unshifted; frames/meta hierarchy intact; worker lens same indent.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bars.component` PASS (48/48).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-346.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-346-gantt-nest-indent-tint.lock`
+**Next:** queue idle for Gantt IA visual; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-347 DONE — Gantt hide assembly/packaging
 **Исполнитель:** composer-executor-347
 **Статус:** DONE; deploy НЕ
