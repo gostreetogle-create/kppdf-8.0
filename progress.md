@@ -5,6 +5,7 @@
 **Gates:** FE tsc PASS; products.page Jest 24/24 PASS.
 **Review:** Cursor self-review PASS (PO: закрыть без деплоя).
 **Archive:** `tasks/_archive/2026-08/TZ-UX-326.done.md`
+**Commit:** `da5bf969c31d3939f376758da0c9ae4bb9888646`
 **Lock:** `.mimocode/locks/TZ-UX-326-products-chrome-page-tools.lock`
 **Next:** TZ-UX-327 по PO; deploy не выполнялся.
 

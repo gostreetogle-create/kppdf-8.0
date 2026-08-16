@@ -19,6 +19,8 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN
 
+COMMIT: da5bf969c31d3939f376758da0c9ae4bb9888646
+
 ## Outcome
 
 - `/products`: `PiChromeToolsService` owner `products-page`. Left «Фильтры»; right вид list/grid + «Обновить»; `clear` on destroy.

@@ -50,7 +50,7 @@ Primary signal: met. Secondary: PASS.
 - TZ-UX-326 `/products`: chrome L=filters, R=view-list/view-grid/refresh; w-12 rail снят.
 - Не трогал UX-332 / PRODUCTION-336 / TZD-48 / CATALOG-374.
 - Deploy не запускался.
-- commit: _(заполняется после git commit)_
+- commit: `da5bf969c31d3939f376758da0c9ae4bb9888646`
 
 ## Review handoff
 
