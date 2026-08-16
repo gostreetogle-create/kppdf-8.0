@@ -57,6 +57,20 @@ const STATUS_TO_BOARD_LANE: Record<
   shipped: 'shipped',
 };
 
+/** TZ-COMBINE-403 — boardLane → OrderItem.status (SoT lane). */
+const BOARD_LANE_TO_STATUS: Record<BoardLane, NonNullable<OrderItem['status']>> = {
+  prep: 'pending',
+  design: 'pending',
+  shop: 'in_production',
+  to_ship: 'ready',
+  shipped: 'shipped',
+};
+
+const LINE_DELETE_BLOCKED_RU =
+  'Нельзя удалить изделие вне колонки «Комплектация»';
+const LANE_SHIPPED_PATCH_RU =
+  'Колонку «Отгружены» нельзя выставить вручную — используйте действие «Отгрузить» (POST /orders/:id/ship)';
+
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
@@ -80,12 +94,58 @@ export class OrderService {
     return STATUS_TO_BOARD_LANE[status ?? 'pending'] ?? 'prep';
   }
 
+  private statusFromBoardLane(lane: BoardLane): NonNullable<OrderItem['status']> {
+    return BOARD_LANE_TO_STATUS[lane];
+  }
+
+  /**
+   * TZ-COMBINE-403 / COUPLING-MAP §2 — Order.status rollup from item boardLane.
+   * Never writes `shipped` (only POST ship). Monotonic: do not return to `draft`
+   * after the order has left it.
+   */
+  rollupOrderStatus(order: OrderDocument): void {
+    if (HARD_FROZEN.has(order.status)) return;
+    const lanes = (order.items ?? []).map((item) => item.boardLane ?? 'prep');
+    if (lanes.length === 0) return;
+
+    if (lanes.some((lane) => lane === 'shop')) {
+      order.status = 'in_production';
+      return;
+    }
+
+    if (lanes.every((lane) => lane === 'to_ship')) {
+      order.status = 'ready';
+      return;
+    }
+
+    if (lanes.every((lane) => lane === 'prep')) {
+      if (order.status === 'draft') return;
+      // Monotonic: once left draft, all-prep does not go back to draft.
+      order.status = 'confirmed';
+      return;
+    }
+
+    // First leave prep (design / mix / partial to_ship) → confirmed.
+    order.status = 'confirmed';
+  }
+
+  /** TZ-COMBINE-403 — drop trailing lines only while they remain in prep. */
+  private assertTrailingLinesDeletable(
+    previous: OrderItem[],
+    nextLength: number,
+  ): void {
+    for (let index = nextLength; index < previous.length; index++) {
+      const lane = previous[index]?.boardLane ?? 'prep';
+      if (lane !== 'prep') {
+        throw new BadRequestException(LINE_DELETE_BLOCKED_RU);
+      }
+    }
+  }
+
   /**
    * TZ-COMBINE-402 — fill missing lineId / boardLane on legacy items.
    * Stable lineId: `legacy-{index}-{orderId}` (or uuid on create via mapItems).
    * Returns true if mutated.
-   * TODO(TZ-COMBINE-403): forbid deleting a line when boardLane !== 'prep'
-   * (no remove-line path in this service yet).
    */
   private ensureLineBoardFields(doc: OrderDocument): boolean {
     let dirty = false;
@@ -359,8 +419,37 @@ export class OrderService {
     }
     const line = doc.items[index];
     line.status = status;
-    // Keep boardLane aligned until TZ-COMBINE-403 owns lane writes.
     line.boardLane = this.boardLaneFromStatus(status);
+    this.rollupOrderStatus(doc);
+    doc.markModified('items');
+    await doc.save();
+    return this.findById(id);
+  }
+
+  /**
+   * TZ-COMBINE-403 — PATCH boardLane by stable lineId; derive item.status; rollup Order.status.
+   */
+  async patchLineBoardLane(
+    id: string,
+    lineId: string,
+    lane: BoardLane,
+  ): Promise<OrderDocument> {
+    if (lane === 'shipped') {
+      throw new BadRequestException(LANE_SHIPPED_PATCH_RU);
+    }
+    const doc = await this.findByIdRaw(id);
+    if (HARD_FROZEN.has(doc.status)) {
+      const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
+      throw new BadRequestException(`Заказ в статусе «${label}» нельзя менять`);
+    }
+    const line = (doc.items ?? []).find((item) => item.lineId === lineId);
+    if (!line) {
+      throw new NotFoundException(`Order line ${lineId} not found`);
+    }
+    line.boardLane = lane;
+    line.status = this.statusFromBoardLane(lane);
+    this.rollupOrderStatus(doc);
+    doc.markModified('items');
     await doc.save();
     return this.findById(id);
   }
@@ -554,6 +643,7 @@ export class OrderService {
       await this.sites.assertBelongsTo(doc.siteId.toString(), nextCounterparty);
     }
     if (dto.items !== undefined) {
+      this.assertTrailingLinesDeletable(doc.items ?? [], dto.items.length);
       doc.items = this.mapItems(dto.items, doc.items);
       doc.total = doc.items.reduce((s, i) => s + i.total, 0);
     }

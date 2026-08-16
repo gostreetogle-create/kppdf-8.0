@@ -1,3 +1,21 @@
+## [2026-08-16] — TZ-COMBINE-403 DONE — PATCH line boardLane + Order.status rollup
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `PATCH /orders/:id/lines/:lineId/lane`; derive item.status; rollup Order.status (Opus §2); reject shipped via PATCH; delete line only if prep.
+**Gates:** BE `tsc -p tsconfig.build.json --noEmit` PASS; jest `order.service` 1 suite / 58 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-403.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-403-patch-lane-rollup.lock`
+**Next:** TZ-COMBINE-404/405 FE; deploy не выполнялся.
+
+## [2026-08-16] — TZ-COMBINE-403 DONE — PATCH line boardLane + Order.status rollup
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** `PATCH /orders/:id/lines/:lineId/lane`; derive item.status; rollup Order.status; reject lane=shipped; delete line only if prep.
+**Gates:** BE `tsc -p tsconfig.build.json --noEmit` PASS; jest `order.service` 1 suite / 58 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-403.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-403-patch-lane-rollup.lock`
+**Next:** TZ-COMBINE-404/405 FE; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-COMBINE-402 DONE — OrderItem.lineId + boardLane
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; deploy НЕ

@@ -1016,4 +1016,174 @@ describe('OrderService — TZ-ORDERS-301', () => {
       );
     });
   });
+
+  describe('TZ-COMBINE-403 patchLineBoardLane + rollupOrderStatus', () => {
+    function line(
+      lane: MockOrderItem['boardLane'],
+      lineId = 'line-a',
+    ): MockOrderItem {
+      return {
+        lineId,
+        boardLane: lane,
+        productId: new Types.ObjectId(PRODUCT),
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+        status: 'pending',
+      };
+    }
+
+    it('rejects lane=shipped via PATCH with RU message', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [line('prep')],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shipped'),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Отгружены') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('writes boardLane + derived status and rollups Order.status', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'draft',
+        items: [line('prep')],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.patchLineBoardLane(doc._id.toString(), 'line-a', 'shop');
+      expect(doc.items[0]).toMatchObject({
+        boardLane: 'shop',
+        status: 'in_production',
+      });
+      expect(doc.status).toBe('in_production');
+      expect(doc.markModified).toHaveBeenCalledWith('items');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('rollup: all prep keeps draft', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        status: 'draft',
+        items: [line('prep', 'a'), line('prep', 'b')],
+      });
+      service.rollupOrderStatus(doc as never);
+      expect(doc.status).toBe('draft');
+    });
+
+    it('rollup: first leave prep → confirmed', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        status: 'draft',
+        items: [line('design', 'a'), line('prep', 'b')],
+      });
+      service.rollupOrderStatus(doc as never);
+      expect(doc.status).toBe('confirmed');
+    });
+
+    it('rollup: any shop → in_production', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [line('shop', 'a'), line('to_ship', 'b')],
+      });
+      service.rollupOrderStatus(doc as never);
+      expect(doc.status).toBe('in_production');
+    });
+
+    it('rollup: all to_ship → ready', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        status: 'in_production',
+        items: [line('to_ship', 'a'), line('to_ship', 'b')],
+      });
+      service.rollupOrderStatus(doc as never);
+      expect(doc.status).toBe('ready');
+    });
+
+    it('rollup: all prep after leave stays confirmed (monotonic, no draft)', () => {
+      const { service } = createService();
+      const doc = orderDoc({
+        status: 'ready',
+        items: [line('prep', 'a'), line('prep', 'b')],
+      });
+      service.rollupOrderStatus(doc as never);
+      expect(doc.status).toBe('confirmed');
+    });
+
+    it('rollup: never sets shipped; hard-frozen unchanged', () => {
+      const { service } = createService();
+      const shipped = orderDoc({
+        status: 'shipped',
+        items: [line('to_ship', 'a')],
+      });
+      service.rollupOrderStatus(shipped as never);
+      expect(shipped.status).toBe('shipped');
+
+      const cancelled = orderDoc({
+        status: 'cancelled',
+        items: [line('shop', 'a')],
+      });
+      service.rollupOrderStatus(cancelled as never);
+      expect(cancelled.status).toBe('cancelled');
+    });
+
+    it('blocks deleting a non-prep line via update items shrink', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'confirmed',
+        items: [
+          line('prep', 'keep'),
+          {
+            ...line('shop', 'drop'),
+            status: 'in_production',
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(
+        service.update(doc._id.toString(), {
+          items: [
+            {
+              productId: PRODUCT,
+              quantity: 1,
+              unitPrice: 0,
+            },
+          ],
+        } as never),
+      ).rejects.toMatchObject({
+        message: expect.stringContaining('Комплектация') as never,
+      });
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('allows deleting a prep line via update items shrink', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'draft',
+        items: [line('prep', 'keep'), line('prep', 'drop')],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), {
+        items: [
+          {
+            productId: PRODUCT,
+            quantity: 1,
+            unitPrice: 0,
+          },
+        ],
+      } as never);
+      expect(doc.items).toHaveLength(1);
+      expect(doc.items[0].lineId).toBe('keep');
+      expect(doc.save).toHaveBeenCalled();
+    });
+  });
 });

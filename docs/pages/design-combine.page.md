@@ -39,7 +39,7 @@
 | Метод | Endpoint | Когда |
 |-------|----------|--------|
 | GET | `/api/orders` | данные доски |
-| PATCH | `/api/orders/:id/lines/:lineId/lane` | DnD изделия (403) |
+| PATCH | `/api/orders/:id/lines/:lineId/lane` | DnD изделия (TZ-COMBINE-403 live) |
 | POST | `/api/orders/:id/ship` | все линии `to_ship` → confirm |
 
 Legacy: `PATCH .../items/:i/status` — не расширять новыми значениями.
