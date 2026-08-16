@@ -1,13 +1,14 @@
 # Страница: Модули (ModulesPage)
 
-**Краткое описание:** Справочник модулей продукции — составные части, переиспользуемые между товарами. Витрина как у Продукции (TZ-CATALOG-372): фото, filters-rail, list↔grid, клиентская пагинация/поиск/сортировка. Row-click → детальная страница.
+**Краткое описание:** Справочник модулей продукции — составные части, переиспользуемые между товарами. Витрина как у Продукции (TZ-CATALOG-372): фото, filters-rail, list↔grid, клиентская пагинация/поиск/сортировка. **TZ-CATALOG-374:** клик по строке в list раскрывает tray состава (как `/products`); detail — через имя-ссылку / «Открыть карточку».
 
 ## TZ-CATALOG-372 — витрина как у Продукции
 
 Паритет chrome с `/products` (`products.page.ts`, канон `docs/audits/2026-08-15-catalog-list-vitrine-parity.md`):
 
 - **Фото-колонка** первая: thumb 5.5rem или `app-pi-empty-tile`; фото резолвится по паттерну материалов — `PhotosService` + `createLookupTable` + `photoListUrl` (list-эндпоинт отдаёт id, не populate).
-- **Имя-ссылка**: `catalog-kind-marker` + `<a routerLink="/modules/:id">` с `stopPropagation` (row-click на detail сохранён).
+- **Имя-ссылка**: `catalog-kind-marker` + `<a routerLink="/modules/:id">` с `stopPropagation` (detail без expand).
+- **Row-click (TZ-CATALOG-374)**: toggle expand tray состава под строкой (`expandedId` + `getModuleTree`); **не** navigate. Grid: клик по карточке → detail (list-only expand).
 - **Toolbar** (порядок как у products): поиск · Select «Состав» (Все / С материалами / Пустые) · «+ Создать» · ghost «Обновить» · toggle list/grid (`view-list-button` / `view-grid-button`, `aria-pressed`) · счётчик справа.
 - **Filters rail** (канон оверлея): узкая полоска `w-12` + панель `filters-rail-panel` absolute left-full поверх колонки контента; backdrop **только** на контенте; клик/`change` внутри панели не закрывают. Панель: Состав · Сортировка (name↑↓, article↑↓) · «Сбросить» (`clear-filters`) · «Закрыть`.
 - **Grid**: `app-pi-showcase-card size="md"` в сетке `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`; `mediaUrl` из main/first фото; `title` = name, `eyebrow` = article или «Модуль», `description` = габариты или «N мат. · M раб.»; `sc-actions-md` — hint «Себест. см. карточку» (без batch cost-preview, TZ-COST-303); pager под сеткой при `total > PAGE_SIZE` (те же `pageSig`/`PAGE_SIZE`).
@@ -64,7 +65,7 @@
 
 | Сервис | Методы |
 |--------|--------|
-| `ProductModulesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)` |
+| `ProductModulesService` | `list()`, `findById(id)`, `create(payload)`, `update(id, payload)`, `remove(id)`, `getModuleTree(id, maxDepth?)` |
 | `ProductModulesService` | `getModuleComposition(id)`, `addModuleCompositionLine(id, dto)`, `updateModuleCompositionLine(id, lineId, dto)`, `removeModuleCompositionLine(id, lineId)` (composition CRUD) |
 
 ## State (signals)
@@ -80,6 +81,9 @@
 | `filtersOpen` | `Signal<boolean>` | Оверлей filters-rail — TZ-CATALOG-372 |
 | `photosLookup` | `LookupTable<Photo>` | Фото-лукап (PhotosService) — TZ-CATALOG-372 |
 | `listRes` | `HttpResource<ProductModule[]>` | GET /api/modules |
+| `expandedId` | `Signal<string \| null>` | Развёрнутая строка list — TZ-CATALOG-374 |
+| `expandedSection` | `Signal<'composition'>` | Секция tray (задел successor) — TZ-CATALOG-374 |
+| `treeCache` / loading / error | maps/sets | Lazy `getModuleTree` cache — TZ-CATALOG-374 |
 
 ## Computed chain
 
@@ -99,7 +103,7 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 
 - **Client-side pagination** — flat array от backend
 - **Client-side sort** — только `name` + `article` (sortable), остальное display-only
-- **Row-click** → `/modules/:id` через `(rowClick)` pi-table event
+- **Row-click (list)** → expand tray состава (TZ-CATALOG-374); detail через имя / «Открыть карточку»
 - **Dimensions formatter** — `moduleDimensions()`: `W 300 × H 200 × D 50 мм`
 - **Sort only by name/article** — materials/workTypes count typesystem-forbidden (key must be `keyof ProductModule`)
 - **Lockstep sort signals** — seeded to `name`/`asc`
@@ -112,7 +116,8 @@ listRes → data → filteredRows (поиск + «Состав») → sortedRows
 | TZ-104.4.2 | Typed TemplateRef + lockstep sort |
 | TZ-CATALOG-319 | Docs: hard-delete Module (не soft) |
 | TZ-CATALOG-372 | Витрина как у Продукции: фото, имя-ссылка, toolbar (Состав/Обновить/toggle), filters-rail, grid `PiShowcaseCard` md, `pi-modules-view-mode` |
+| TZ-CATALOG-374 | List expandable состав (`expandedId` + `getModuleTree`); detail через имя / «Открыть карточку» |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-15 (TZ-CATALOG-372)._
+_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-CATALOG-374)._

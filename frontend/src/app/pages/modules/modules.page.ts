@@ -27,9 +27,12 @@ import { createSearchState } from '../../shared/util/search';
 import { pluralize } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { PaginationComponent } from '../../shared/ui/pi-pagination.component';
+import { PI_DEFAULT_PAGE_SIZE } from '../../shared/ui/pi-pagination.constants';
 import {
   ProductModule,
   ProductModulesService,
+  type CompositionTreeNode,
 } from '../../shared/services/pi-product-modules.service';
 import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos.service';
 import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
@@ -40,6 +43,8 @@ import {
   type QuickCreateDialogData,
 } from '../../shared/ui/quick-create/quick-create-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
+import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
+import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 
 /**
  * SortKey union intentionally narrow: matches the pre-migration
@@ -51,9 +56,6 @@ import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind
  * NOT sortable — same UX as pre-migration.
  */
 type SortKey = 'name' | 'article' | null;
-
-/** Client-side pagination page size for /modules flat-array endpoint. */
-const PAGE_SIZE = 10;
 
 /** TZ-CATALOG-372 — client-side «Состав» filter (dual-read composition/lines). */
 type CompositionFilter = 'all' | 'with-materials' | 'empty';
@@ -121,6 +123,13 @@ function moduleHasMaterials(row: ProductModule): boolean {
   return moduleMaterialCount(row) > 0;
 }
 
+/** Dual-read: composition lines (any) or legacy materials[] — for expand empty. */
+function moduleHasComposition(row: ProductModule): boolean {
+  const lines = row.composition ?? [];
+  if (lines.length > 0) return true;
+  return (row.materials?.length ?? 0) > 0;
+}
+
 /**
  * Полная документация страницы: docs/pages/modules.page.md
  *
@@ -136,8 +145,12 @@ function moduleHasMaterials(row: ProductModule): boolean {
  *     колонки контента, backdrop только на контенте; Состав · Сортировка
  *     (name↑↓ / article↑↓) · Сбросить · Закрыть;
  *   - Grid: `PiShowcaseCard` md в сетке 1/2/3, клик → `/modules/:id`,
- *     pager при total > PAGE_SIZE; себест. — hint «см. карточку» (TZ-COST-303,
+ *     pager через app-pi-pagination (TZ-UX-341); себест. — hint «см. карточку» (TZ-COST-303,
  *     без N+1 cost-preview).
+ *
+ * TZ-CATALOG-374 — list row-click раскрывает tray состава (паритет products
+ *   `expandedId` / `expandedTpl` / `getProductTree` → `getModuleTree`).
+ *   Detail — через имя-ссылку и «Открыть карточку» в tray. Grid без expand.
  *
  * Backend response caveat: flat array (no envelope). Pagination TODO
  * at backend. Sort + filter + slice are page-owned.
@@ -154,6 +167,7 @@ function moduleHasMaterials(row: ProductModule): boolean {
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    PaginationComponent,
     PiShowcaseCardComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
@@ -354,7 +368,7 @@ function moduleHasMaterials(row: ProductModule): boolean {
                   class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
                   data-test="modules-grid"
                 >
-                  @for (row of data(); track row._id) {
+                  @for (row of paginatedRows(); track row._id) {
                     <a
                       [routerLink]="['/modules', row._id]"
                       class="block min-w-0 h-full"
@@ -380,35 +394,16 @@ function moduleHasMaterials(row: ProductModule): boolean {
                     </a>
                   }
                 </div>
-                @if (total() > pageSize) {
-                  <div
-                    class="mt-4 flex items-center justify-end gap-2"
-                    data-test="grid-pager"
-                    role="navigation"
-                    aria-label="Страницы каталога"
-                  >
-                    <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
-                      {{ pageRangeLabel() }}
-                    </span>
-                    <app-pi-button
-                      variant="ghost"
-                      size="sm"
-                      [disabled]="page() <= 1"
-                      (click)="onPageChange(page() - 1)"
-                      data-test="pager-prev"
-                      >Назад</app-pi-button
-                    >
-                    <span class="text-xs tabular-nums" data-test="pager-page">{{ page() }}</span>
-                    <app-pi-button
-                      variant="ghost"
-                      size="sm"
-                      [disabled]="page() >= totalPages()"
-                      (click)="onPageChange(page() + 1)"
-                      data-test="pager-next"
-                      >Далее</app-pi-button
-                    >
-                  </div>
-                }
+                <div class="mt-4 flex justify-end" data-test="grid-pager">
+                  <app-pi-pagination
+                    [total]="total()"
+                    [pageSize]="pageSize()"
+                    [currentPage]="page()"
+                    ariaLabel="Страницы каталога"
+                    (pageChange)="onPageChange($event)"
+                    (pageSizeChange)="onPageSizeChange($event)"
+                  />
+                </div>
               }
             } @else {
               <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
@@ -420,7 +415,7 @@ function moduleHasMaterials(row: ProductModule): boolean {
                 [loading]="loading()"
                 [total]="total()"
                 [page]="page()"
-                [pageSize]="pageSize"
+                [pageSize]="pageSize()"
                 [emptyMessage]="emptyMessage()"
                 [ariaLabel]="'Список модулей'"
                 [cellTemplates]="cellTemplates"
@@ -429,8 +424,12 @@ function moduleHasMaterials(row: ProductModule): boolean {
                 [initialSortKey]="'name'"
                 [initialSortDir]="'asc'"
                 (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)"
                 (sortChange)="onSortChange($event)"
                 (rowClick)="onRowClick($event)"
+                [expandedRow]="expandedTpl"
+                [expandedRowWhen]="isExpandedRow"
+                [expandedRowLabel]="expandedRowLabel"
               ></app-pi-table>
             }
           </div>
@@ -493,6 +492,114 @@ function moduleHasMaterials(row: ProductModule): boolean {
           (delete)="onDelete($event)"
         />
       </ng-template>
+
+      <!-- TZ-CATALOG-374: expandable composition tray (products parity). -->
+      <ng-template #expandedTpl let-row>
+        @if (expandedId() === row._id) {
+          <div
+            class="px-4 py-3.5 border-l-[3px] border-l-gold bg-[var(--color-gold-soft)]"
+            data-test="expanded-content"
+            [attr.aria-label]="'Состав модуля: ' + row.name"
+          >
+            <div
+              class="flex items-center justify-between gap-3 mb-2.5 flex-wrap"
+              data-test="module-expand-sections"
+            >
+              <!-- Future tray sections: expand via expandedSection signal (successor). -->
+              <span class="text-xs font-medium text-ink tracking-wide">Состав</span>
+              <a
+                [routerLink]="['/modules', row._id]"
+                (click)="$event.stopPropagation()"
+                class="text-xs text-ink hover:text-sunrise-warm hover:underline"
+                data-test="module-expand-open-detail"
+                >Открыть карточку</a
+              >
+            </div>
+
+            @if (!moduleHasComposition(row)) {
+              <p class="text-xs text-muted-foreground m-0" data-test="expanded-empty">
+                В составе нет материалов.
+                <a
+                  [routerLink]="['/modules', row._id]"
+                  (click)="$event.stopPropagation()"
+                  class="ml-1 hover:text-sunrise-warm hover:underline"
+                  >Открыть карточку</a
+                >
+                , чтобы добавить состав.
+              </p>
+            } @else if (treeLoading(row._id)) {
+              <p
+                class="text-xs text-muted-foreground m-0"
+                role="status"
+                data-test="expanded-tree-loading"
+              >
+                Загрузка состава…
+              </p>
+            } @else if (treeError(row._id)) {
+              <p class="text-xs text-destructive m-0" role="alert" data-test="expanded-tree-error">
+                Не удалось загрузить состав модуля.
+              </p>
+            } @else if (moduleTree(row._id); as tree) {
+              <div class="space-y-1" data-test="expanded-tree" role="list">
+                @for (child of tree.children; track child._id + ':' + $index) {
+                  <div
+                    class="flex items-start gap-2 min-w-0 px-2.5 py-2 hairline rounded-sm bg-paper/70"
+                    [attr.data-test]="'preview-child-' + child._id"
+                  >
+                    @if (child.kind === 'module' && child.children.length > 0) {
+                      <button
+                        type="button"
+                        class="shrink-0 min-w-6 min-h-6 rounded-sm text-muted-foreground hover:bg-paper-2 pi-focus-ring"
+                        [attr.aria-expanded]="isPreviewExpanded(child)"
+                        [attr.aria-label]="
+                          (isPreviewExpanded(child) ? 'Свернуть ' : 'Развернуть ') + child.name
+                        "
+                        (click)="togglePreviewNode(child); $event.stopPropagation()"
+                      >
+                        {{ isPreviewExpanded(child) ? '⌄' : '›' }}
+                      </button>
+                    } @else {
+                      <span class="w-6 shrink-0" aria-hidden="true"></span>
+                    }
+                    <span
+                      class="shrink-0 eyebrow px-1.5 py-0.5 rounded-sm hairline"
+                      [style.color]="childAccent(child)"
+                      >{{ kindShort(child) }}</span
+                    >
+                    <a
+                      [routerLink]="previewLink(child)"
+                      (click)="$event.stopPropagation()"
+                      class="min-w-0 flex-1 line-clamp-2 break-words hover:text-sunrise-warm hover:underline"
+                      >{{ child.name }}</a
+                    >
+                    @if (child.quantity != null && child.quantity !== 1) {
+                      <span class="shrink-0 text-xs text-muted-foreground tabular-nums"
+                        >×{{ child.quantity }}</span
+                      >
+                    }
+                  </div>
+                  @if (isPreviewExpanded(child)) {
+                    <div class="ml-8 space-y-1" data-test="preview-child-children">
+                      @for (grandchild of child.children; track grandchild._id + ':' + $index) {
+                        <a
+                          [routerLink]="previewLink(grandchild)"
+                          (click)="$event.stopPropagation()"
+                          class="block px-2 py-1 text-xs text-muted-foreground line-clamp-2 break-words hover:text-ink"
+                          >{{ kindShort(grandchild) }} {{ grandchild.name }}</a
+                        >
+                      }
+                    </div>
+                  }
+                } @empty {
+                  <p class="text-xs text-muted-foreground m-0" data-test="expanded-empty">
+                    В составе нет материалов.
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        }
+      </ng-template>
     </app-pi-group-workspace>
   `,
 })
@@ -510,14 +617,16 @@ export class ModulesPage implements OnInit {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
   private readonly photosService = inject(PhotosService);
+  private readonly appearance = inject(CatalogAppearanceService);
 
   protected readonly RefreshIcon = RefreshCw;
   protected readonly ListIcon = List;
   protected readonly GridIcon = LayoutGrid;
   protected readonly FilterIcon = Filter;
 
-  /** Exposed to template via `[pageSize]="pageSize"`. */
-  protected readonly pageSize = PAGE_SIZE;
+  /** Exposed to template via `[pageSize]="pageSize()"`. */
+  private readonly pageSizeSig = signal(PI_DEFAULT_PAGE_SIZE);
+  protected readonly pageSize = this.pageSizeSig.asReadonly();
 
   /**
    * TZ-CATALOG-372: list↔grid view mode, persisted in localStorage
@@ -619,7 +728,9 @@ export class ModulesPage implements OnInit {
    * Prev/Next accordingly.
    */
   protected readonly total = computed<number>(() => this.sortedRows().length);
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.total() / this.pageSizeSig())),
+  );
 
   /**
    * Page slice of the sorted+filtered list.
@@ -628,8 +739,9 @@ export class ModulesPage implements OnInit {
    */
   protected readonly paginatedRows = computed<ProductModule[]>(() => {
     const all = this.sortedRows();
-    const start = (this.pageSig() - 1) * PAGE_SIZE;
-    return all.slice(start, start + PAGE_SIZE);
+    const size = this.pageSizeSig();
+    const start = (this.pageSig() - 1) * size;
+    return all.slice(start, start + size);
   });
 
   protected readonly emptyMessage = computed(() =>
@@ -751,14 +863,6 @@ export class ModulesPage implements OnInit {
     return `${k}:${d}`;
   }
 
-  protected pageRangeLabel(): string {
-    const t = this.total();
-    if (t === 0) return '0';
-    const start = (this.page() - 1) * PAGE_SIZE + 1;
-    const end = Math.min(this.page() * PAGE_SIZE, t);
-    return `${start}–${end} из ${t}`;
-  }
-
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
     // Reset to first page when the search filter changes so users
@@ -792,6 +896,12 @@ export class ModulesPage implements OnInit {
     this.pageSig.set(Math.min(Math.max(1, p), this.totalPages()));
   }
 
+  /** TZ-UX-341: size select → update slice size and reset to page 1. */
+  protected onPageSizeChange(size: number): void {
+    this.pageSizeSig.set(size);
+    this.pageSig.set(1);
+  }
+
   /**
    * Page-owned sort handler. `[localSort]="false"` keeps pi-table
    * from re-sorting the visible page slice, and this handler simply
@@ -812,15 +922,98 @@ export class ModulesPage implements OnInit {
   }
 
   /**
-   * Row-click handler — preserved from pre-migration. Clicking any
-   * cell OUTSIDE the trailing action column navigates to
-   * `/modules/:id` for the detailed product module page. Trailing
-   * action `<td>` is wrapped by pi-table with `$event.stopPropagation()`
-   * (per pi-table JSDoc on `[rowActions]`), so action clicks don't
-   * bubble.
+   * TZ-CATALOG-374: row-click toggles composition expand (products parity).
+   * Detail navigation stays on the name link / «Открыть карточку».
    */
   protected onRowClick(row: ProductModule): void {
-    this.router.navigate(['/modules', row._id]);
+    const opening = this.expandedId() !== row._id;
+    this.expandedId.update((cur) => (cur === row._id ? null : row._id));
+    if (opening) {
+      this.expandedSection.set('composition');
+      if (this.moduleHasComposition(row)) this.ensureModuleTree(row._id);
+    }
+  }
+
+  protected readonly expandedId = signal<string | null>(null);
+  /** Tray section key — only `composition` is live; successors add more without template rewrite. */
+  protected readonly expandedSection = signal<'composition'>('composition');
+  protected readonly isExpandedRow = (row: ProductModule): boolean => this.expandedId() === row._id;
+  protected readonly expandedRowLabel = (row: ProductModule): string =>
+    `Состав модуля: ${row.name}`;
+
+  private readonly treeCache = signal(new Map<string, CompositionTreeNode>());
+  private readonly treeLoadingIds = signal(new Set<string>());
+  private readonly treeErrorIds = signal(new Set<string>());
+  private readonly previewExpandedIds = signal(new Set<string>());
+
+  protected moduleHasComposition = moduleHasComposition;
+
+  protected moduleTree(moduleId: string): CompositionTreeNode | null {
+    return this.treeCache().get(moduleId) ?? null;
+  }
+
+  protected treeLoading(moduleId: string): boolean {
+    return this.treeLoadingIds().has(moduleId);
+  }
+
+  protected treeError(moduleId: string): boolean {
+    return this.treeErrorIds().has(moduleId);
+  }
+
+  protected kindShort(node: CompositionTreeNode): string {
+    return node.kind === 'module' ? 'мод' : node.kind === 'product' ? 'изд' : 'мат';
+  }
+
+  protected childAccent(node: CompositionTreeNode): string {
+    return catalogKindOklch(
+      node.kind,
+      node.materialKind ?? null,
+      0.11,
+      0.62,
+      this.appearance.palette(),
+    );
+  }
+
+  protected previewLink(node: CompositionTreeNode): string[] {
+    return node.kind === 'module'
+      ? ['/modules', node._id]
+      : node.kind === 'product'
+        ? ['/products', node._id]
+        : ['/materials', node._id];
+  }
+
+  protected isPreviewExpanded(node: CompositionTreeNode): boolean {
+    return this.previewExpandedIds().has(node._id);
+  }
+
+  protected togglePreviewNode(node: CompositionTreeNode): void {
+    const next = new Set(this.previewExpandedIds());
+    if (next.has(node._id)) next.delete(node._id);
+    else next.add(node._id);
+    this.previewExpandedIds.set(next);
+  }
+
+  private ensureModuleTree(moduleId: string): void {
+    if (this.treeCache().has(moduleId) || this.treeLoading(moduleId)) return;
+    this.treeLoadingIds.update((ids) => new Set(ids).add(moduleId));
+    this.treeErrorIds.update((ids) => {
+      const next = new Set(ids);
+      next.delete(moduleId);
+      return next;
+    });
+    this.service.getModuleTree(moduleId, 2).subscribe((res) => {
+      this.treeLoadingIds.update((ids) => {
+        const next = new Set(ids);
+        next.delete(moduleId);
+        return next;
+      });
+      if (res.ok) {
+        this.treeCache.update((cache) => new Map(cache).set(moduleId, res.data));
+      } else {
+        this.treeErrorIds.update((ids) => new Set(ids).add(moduleId));
+        this.toast.error('Не удалось загрузить состав модуля');
+      }
+    });
   }
 
   /** TZ-DICT-316 — list «Создать» → QuickCreate (profile S/M/L); edit stays FullEditor. */

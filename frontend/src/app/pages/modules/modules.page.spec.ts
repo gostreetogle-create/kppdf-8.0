@@ -1,5 +1,6 @@
 /**
  * TZ-CATALOG-372 — ModulesPage vitrine-parity tests.
+ * TZ-CATALOG-374 — list expandable composition (products expand parity).
  *
  * The page renders the REAL imports (no NO_ERRORS_SCHEMA override of
  * imports) so that:
@@ -7,7 +8,8 @@
  *     "/modules/:id";
  *   - the filters-rail overlay (toggle/panel/backdrop) is testable
  *     through the actual template;
- *   - PiShowcaseCard md renders under [data-test="modules-grid"].
+ *   - PiShowcaseCard md renders under [data-test="modules-grid"];
+ *   - (rowClick) toggles expandedId and [expandedRow] tray.
  *
  * The list is fetched through httpResource, so the harness uses
  * provideHttpClient + provideHttpClientTesting + API_BASE_URL and
@@ -24,6 +26,7 @@ import { ModulesPage } from './modules.page';
 import {
   ProductModulesService,
   ProductModule,
+  type CompositionTreeNode,
 } from '../../shared/services/pi-product-modules.service';
 import { PhotosService } from '../../shared/services/photos.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
@@ -41,9 +44,47 @@ describe('ModulesPage', () => {
     }),
   };
 
+  const moduleTreePm1: CompositionTreeNode = {
+    _id: 'pm1',
+    name: 'Корпус шкафа',
+    kind: 'module',
+    quantity: 1,
+    children: [
+      {
+        _id: 'mat1',
+        name: 'ЛДСП 16мм',
+        kind: 'material',
+        quantity: 2,
+        children: [],
+      },
+      {
+        _id: 'pm-nested',
+        name: 'Полка',
+        kind: 'module',
+        quantity: 1,
+        children: [
+          {
+            _id: 'mat2',
+            name: 'Кромка',
+            kind: 'material',
+            quantity: 1,
+            children: [],
+          },
+        ],
+      },
+    ],
+  };
+
+  const getModuleTree = jest.fn().mockReturnValue(of({ ok: true, data: moduleTreePm1 }));
+
   const fakeModules: ProductModule[] = [
-    { _id: 'pm1', name: 'Корпус шкафа', article: 'KW-001' } as ProductModule,
-    { _id: 'pm2', name: 'Дверца', article: 'DW-001' } as ProductModule,
+    {
+      _id: 'pm1',
+      name: 'Корпус шкафа',
+      article: 'KW-001',
+      materials: [{ materialId: 'mat1', quantity: 2, isPurchased: false, sortOrder: 1 }],
+    } as ProductModule,
+    { _id: 'pm2', name: 'Дверца', article: 'DW-001', materials: [] } as ProductModule,
   ];
 
   const matchListGet = (r: { url: string; method: string }): boolean =>
@@ -53,8 +94,20 @@ describe('ModulesPage', () => {
     await new Promise<void>((r) => setTimeout(r, 0));
   }
 
+  async function renderList(modules: ProductModule[] = fakeModules) {
+    const fixture = TestBed.createComponent(ModulesPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(modules);
+    await tickMicrotask();
+    fixture.detectChanges();
+    return fixture;
+  }
+
   beforeEach(async () => {
     dialogSpy.open.mockClear();
+    getModuleTree.mockClear();
+    getModuleTree.mockReturnValue(of({ ok: true, data: moduleTreePm1 }));
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [ModulesPage],
       providers: [
@@ -70,6 +123,7 @@ describe('ModulesPage', () => {
             create: () => of({ ok: true, data: {} as never }),
             update: () => of({ ok: true, data: {} as never }),
             remove: () => of({ ok: true, data: undefined }),
+            getModuleTree,
           },
         },
         {
@@ -86,6 +140,7 @@ describe('ModulesPage', () => {
 
   afterEach(() => {
     httpMock.verify();
+    localStorage.clear();
   });
 
   it('fires an initial GET /api/modules on creation', async () => {
@@ -276,6 +331,53 @@ describe('ModulesPage', () => {
     expect(localStorage.getItem('pi-modules-view-mode')).toBe('list');
   });
 
+  it('TZ-UX-341: grid pager is app-pi-pagination; pageSizeChange resets page to 1', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      _id: `pm${i + 1}`,
+      name: `Модуль ${i + 1}`,
+      article: `A-${i + 1}`,
+      materials: [],
+    })) as ProductModule[];
+    const fixture = await renderList(many);
+    const comp = fixture.componentInstance as unknown as {
+      page: () => number;
+      pageSize: () => number;
+      paginatedRows: () => ProductModule[];
+      onPageChange: (p: number) => void;
+      onPageSizeChange: (s: number) => void;
+    };
+
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement.querySelector(
+      '[data-test="grid-pager"] [data-test="pi-pagination"]',
+    ) as HTMLElement;
+    expect(nav).toBeTruthy();
+    expect(nav.querySelector('[data-test="pager-info"]')?.textContent?.trim()).toMatch(
+      /1–10 из 12/,
+    );
+    expect(comp.paginatedRows().length).toBe(10);
+
+    comp.onPageChange(2);
+    fixture.detectChanges();
+    expect(comp.page()).toBe(2);
+    expect(comp.paginatedRows().length).toBe(2);
+
+    comp.onPageSizeChange(25);
+    fixture.detectChanges();
+    expect(comp.pageSize()).toBe(25);
+    expect(comp.page()).toBe(1);
+    expect(comp.paginatedRows().length).toBe(12);
+    // total ≤ pageSize → pager hides
+    expect(
+      fixture.nativeElement.querySelector('[data-test="grid-pager"] [data-test="pi-pagination"]'),
+    ).toBeFalsy();
+  });
+
   // ─── TZ-CATALOG-372: list chrome (photo cell, name link) ───
 
   it('photo empty tile renders when module has no photo', async () => {
@@ -413,5 +515,160 @@ describe('ModulesPage', () => {
     fixture.detectChanges();
 
     expect(comp.total()).toBe(2);
+  });
+
+  // ─── TZ-CATALOG-374: list expandable composition ───
+
+  it('row click toggles expandedId and renders the expanded composition tray', async () => {
+    const fixture = await renderList();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-pm1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBe('pm1');
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="module-expand-sections"]'),
+    ).toBeTruthy();
+    expect(getModuleTree).toHaveBeenCalledWith('pm1', 2);
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-tree"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="preview-child-mat1"]')).toBeTruthy();
+  });
+
+  it('second click on the same row collapses (expandedId → null)', async () => {
+    const fixture = await renderList();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-pm1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBe('pm1');
+
+    rowEl.click();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
+  });
+
+  it('clicking a DIFFERENT row switches the expansion', async () => {
+    getModuleTree.mockImplementation((id: string) =>
+      of({
+        ok: true,
+        data: {
+          _id: id,
+          name: id === 'pm1' ? 'Корпус шкафа' : 'Дверца',
+          kind: 'module' as const,
+          quantity: 1,
+          children: [
+            {
+              _id: `mat-${id}`,
+              name: 'Материал',
+              kind: 'material' as const,
+              quantity: 1,
+              children: [],
+            },
+          ],
+        },
+      }),
+    );
+    const fixture = await renderList([
+      {
+        _id: 'pm1',
+        name: 'Корпус шкафа',
+        article: 'KW-001',
+        materials: [{ materialId: 'm1', quantity: 1, isPurchased: false, sortOrder: 1 }],
+      } as ProductModule,
+      {
+        _id: 'pm2',
+        name: 'Дверца',
+        article: 'DW-001',
+        materials: [{ materialId: 'm2', quantity: 1, isPurchased: false, sortOrder: 1 }],
+      } as ProductModule,
+    ]);
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const row1 = fixture.nativeElement.querySelector('[data-test="table-row-pm1"]') as HTMLElement;
+    row1.click();
+    fixture.detectChanges();
+    expect(comp.expandedId()).toBe('pm1');
+
+    const row2 = fixture.nativeElement.querySelector('[data-test="table-row-pm2"]') as HTMLElement;
+    row2.click();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBe('pm2');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="expanded-row"]')).toHaveLength(1);
+  });
+
+  it('name link still points to /modules/:id and does not require expand', async () => {
+    const fixture = await renderList();
+    const links = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-test="open-row-link"]'),
+    ) as HTMLAnchorElement[];
+    expect(links.some((l) => l.getAttribute('href') === '/modules/pm1')).toBe(true);
+
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-pm1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const openDetail = fixture.nativeElement.querySelector(
+      '[data-test="module-expand-open-detail"]',
+    ) as HTMLAnchorElement;
+    expect(openDetail.getAttribute('href')).toBe('/modules/pm1');
+  });
+
+  it('empty composition shows RU empty message without calling getModuleTree', async () => {
+    const fixture = await renderList([
+      { _id: 'pm1', name: 'Корпус шкафа', article: 'KW-001', materials: [] } as ProductModule,
+      { _id: 'pm2', name: 'Дверца', article: 'DW-001', materials: [] } as ProductModule,
+    ]);
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-pm2"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-empty"]')).toBeTruthy();
+    expect(fixture.nativeElement.textContent).toContain('В составе нет материалов');
+    expect(getModuleTree).not.toHaveBeenCalled();
+  });
+
+  it('tree load success path renders child kind badges and material links', async () => {
+    const fixture = await renderList();
+    const rowEl = fixture.nativeElement.querySelector('[data-test="table-row-pm1"]') as HTMLElement;
+    rowEl.click();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const child = fixture.nativeElement.querySelector(
+      '[data-test="preview-child-mat1"]',
+    ) as HTMLElement;
+    expect(child.textContent).toContain('мат');
+    expect(child.textContent).toContain('ЛДСП 16мм');
+    const link = child.querySelector('a') as HTMLAnchorElement;
+    expect(link.getAttribute('href')).toBe('/materials/mat1');
+  });
+
+  it('row-actions (edit) do NOT trigger the row expand', async () => {
+    const fixture = await renderList();
+    const comp = fixture.componentInstance as unknown as { expandedId: () => string | null };
+
+    const editBtn = fixture.nativeElement.querySelector(
+      '[data-test="edit-button-pm1"]',
+    ) as HTMLElement;
+    editBtn.click();
+    fixture.detectChanges();
+
+    expect(comp.expandedId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="expanded-row"]')).toBeFalsy();
   });
 });
