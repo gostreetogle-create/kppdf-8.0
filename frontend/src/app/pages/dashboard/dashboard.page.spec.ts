@@ -919,7 +919,7 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
       itemCards: () => CombineItemCard[];
       showWholeProductChip: (c: CombineItemCard, lane: BoardLane) => boolean;
       laneIndicatorActive: (c: CombineItemCard, lane: BoardLane) => boolean;
-      showOrderGroupHeader: (c: CombineItemCard, i: number) => boolean;
+      isOrderBoundary: (c: CombineItemCard, i: number) => boolean;
       expandPanelId: (c: CombineItemCard) => string;
       dropItem: (e: CdkDragDrop<BoardLane>) => void;
       data: () => Order[];
@@ -930,8 +930,12 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     expect(page.showWholeProductChip(card, 'prep')).toBe(false);
     expect(page.laneIndicatorActive(card, 'design')).toBe(true);
     expect(page.laneIndicatorActive(card, 'shop')).toBe(false);
-    expect(page.showOrderGroupHeader(card, 0)).toBe(true);
+    expect(page.isOrderBoundary(card, 0)).toBe(false);
     expect(page.expandPanelId(card)).toContain('combine-expand-');
+    expect(fixture.nativeElement.querySelector('[data-testid="combine-order-group"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="combine-row-order-number"]')?.textContent,
+    ).toContain('№');
 
     page.dropItem(dropEvent(card, 'prep'));
     const patch = httpMock.expectOne(
@@ -944,7 +948,7 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     });
   });
 
-  it('TZ-COMBINE-410: order group header on orderId change', async () => {
+  it('TZ-COMBINE-411: no order group header; boundary margin on orderId change', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
@@ -969,11 +973,30 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
 
     const page = fixture.componentInstance as unknown as {
       itemCards: () => CombineItemCard[];
-      showOrderGroupHeader: (c: CombineItemCard, i: number) => boolean;
+      isOrderBoundary: (c: CombineItemCard, i: number) => boolean;
     };
     const cards = page.itemCards();
-    expect(page.showOrderGroupHeader(cards[0]!, 0)).toBe(true);
-    expect(page.showOrderGroupHeader(cards[1]!, 1)).toBe(false);
-    expect(page.showOrderGroupHeader(cards[2]!, 2)).toBe(true);
+    expect(page.isOrderBoundary(cards[0]!, 0)).toBe(false);
+    expect(page.isOrderBoundary(cards[1]!, 1)).toBe(false);
+    expect(page.isOrderBoundary(cards[2]!, 2)).toBe(true);
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('[data-testid="combine-order-group"]')).toBeNull();
+    expect(root.textContent).not.toContain('Заказ №');
+
+    const rows = root.querySelectorAll('[data-testid="combine-product-row"]');
+    expect(rows.length).toBe(3);
+    expect(rows[0]!.getAttribute('data-order-boundary')).toBeNull();
+    expect(rows[1]!.getAttribute('data-order-boundary')).toBeNull();
+    expect(rows[2]!.getAttribute('data-order-boundary')).toBe('true');
+    expect(rows[2]!.classList.contains('mt-4')).toBe(true);
+
+    const list = root.querySelector('[data-testid="combine-product-rows"]');
+    expect(list?.classList.contains('gap-1')).toBe(true);
+
+    const orderBtns = root.querySelectorAll('[data-testid="combine-row-order-number"]');
+    expect(orderBtns.length).toBe(3);
+    expect(orderBtns[0]!.textContent?.trim()).toBe('№ORD-1');
+    expect(orderBtns[2]!.textContent?.trim()).toBe('№ORD-2');
   });
 });

@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-16] — TZ-COMBINE-411 DONE: drop order group dup
+**Статус:** DONE; deploy НЕ
+**Что:** убран дубль «Заказ №…» на `/design/combine`; номер только на ряду; `gap-1` + `mt-4` на смене orderId; без color coding / boardLane.
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-411.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-411-combine-drop-order-group-dup.lock`
+**Gates:** FE tsc PASS; jest dashboard.page 25/25 PASS.
+
+
 ## [2026-08-16] — TZ-FRONTEND-305 DONE: dashboard dialog boundary
 **Статус:** DONE; scoped score 100/100; deploy НЕ
 **Что:** DashboardPage больше не импортирует page-компоненты заказов/изделий; существующие lazy dialog paths вынесены в `DashboardDialogService`. Канбан, PATCH/ship/item-status/readiness и payloads не менялись.

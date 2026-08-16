@@ -28,7 +28,7 @@ sticky шапка стадий (`boardLane`), раскрытие → мини-к
 ## Ряды (TZ-COMBINE-409 + polish 410)
 
 - Один ряд = одно изделие (`OrderItem` + `lineId`), на всю ширину.
-- Опционально: лёгкий подзаголовок `Заказ №…` при смене `orderId` (группировка без смены канона ряда).
+- Без группового «Заказ №…»: номер только на ряду; компакт `gap-1` внутри заказа, `mt-4` при смене `orderId`.
 - Свёрнутый: № заказа · имя · qty · ▸ · **5 индикаторов** (сегмент active = модуль в lane / effective lane без модулей). Prefetch `GET /modules?productId=` — индикаторы корректны без expand.
 - Expand (accordion `expandedKey`): `aria-expanded` + `aria-controls` → panel id; под рядом grid 5 ячеек; вертикальные hairline; чипы модулей.
 - DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями.
@@ -57,7 +57,9 @@ Legacy: `PATCH .../items/:i/status` — не расширять новыми з�
 
 **TZ-COMBINE-409:** column-kanban → product rows + scoped mini-kanban. Semantics `boardLane`/`moduleLanes` без изменений.
 
-**TZ-COMBINE-410:** whole-product chip + indicator prefetch + a11y expand + light order group headers.
+**TZ-COMBINE-410:** whole-product chip + indicator prefetch + a11y expand.
+
+**TZ-COMBINE-411:** drop duplicate order group headers; compact same-order gap + larger margin on orderId change (no color coding).
 
 ## Навигация
 

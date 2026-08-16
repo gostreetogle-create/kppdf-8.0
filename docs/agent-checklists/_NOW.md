@@ -5,19 +5,20 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T23:05:00+03:00
-hygiene: tasks drained (DONE dups→archive); live QUEUE thin; Freebuff PROMPT-FREEBUFF-TASKS-DRAIN ready
+updated_at: 2026-08-16T22:58:00+03:00
+hygiene: COMBINE-411 DONE; drain next SALES-369
 
 ## ACTIVE
 
-- **Drain queue:** SALES-369 → TZD-39 → TZD-56 → TZD-47 → MIG-302… (see PROMPT-FREEBUFF-TASKS-DRAIN)
-- Gantt 338–350 DONE; Desktop TZD-50–55 DONE; COMBINE-409/410 DONE
+- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 411 (`gap` polish)
+- **Drain queue:** SALES-369 → TZD-39 → TZD-56 → TZD-47 → MIG-302… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
 
 
 ## NEXT (PO paste prompt)
 
-1. Freebuff: целиком файл `tasks/PROMPT-FREEBUFF-TASKS-DRAIN.md`
-2. Deploy / «кати» — только отдельным словом + VPN off
+1. Смоук `/design/combine` (hard-refresh) — без «Заказ №…» между рядами, плотнее внутри заказа
+2. Freebuff: `tasks/PROMPT-FREEBUFF-TASKS-DRAIN.md` (старт SALES-369)
+3. Deploy / «кати» — только отдельным словом + VPN off
 
 
 ## Queue hygiene (not live)
@@ -26,6 +27,10 @@ hygiene: tasks drained (DONE dups→archive); live QUEUE thin; Freebuff PROMPT-F
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-411 DONE — drop order group dup
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-411.done.md`; lock `TZ-COMBINE-411-combine-drop-order-group-dup.lock`; FE tsc + jest dashboard.page **25/25**. Deploy нет. No «Заказ №…» headers; gap-1 + mt-4 on orderId change.
 
 ## [2026-08-16] — TZ-COMBINE-410 DONE — Комбайн «целиком» + polish
 

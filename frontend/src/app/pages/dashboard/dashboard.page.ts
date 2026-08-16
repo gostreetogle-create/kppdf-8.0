@@ -160,19 +160,14 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
         }
       </div>
 
-      <div class="flex flex-col gap-2" data-testid="combine-product-rows">
+      <div class="flex flex-col gap-1" data-testid="combine-product-rows">
         @for (card of itemCards(); track card.key; let i = $index) {
-          @if (showOrderGroupHeader(card, i)) {
-            <div
-              class="text-[11px] uppercase tracking-wider text-muted-foreground px-1 pt-1"
-              data-testid="combine-order-group"
-            >
-              Заказ №{{ card.orderNumber }}
-            </div>
-          }
           <div
             class="border hairline rounded-sm bg-paper overflow-hidden"
+            [class.mt-4]="isOrderBoundary(card, i)"
+            [attr.data-order-boundary]="isOrderBoundary(card, i) ? 'true' : null"
             [attr.data-line-key]="card.key"
+            [attr.data-testid]="'combine-product-row'"
           >
             <div class="flex items-center gap-3 px-3 py-2.5">
               <button
@@ -189,6 +184,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
               <button
                 type="button"
                 class="font-mono text-xs font-medium hover:underline shrink-0 pi-focus-ring rounded-sm"
+                data-testid="combine-row-order-number"
                 (click)="openOrder(card.order); $event.stopPropagation()"
                 title="Открыть заказ"
               >
@@ -370,10 +366,11 @@ export class DashboardPage {
   }
 
   /**
-   * TZ-COMBINE-410 — лёгкий подзаголовок при смене orderId (ряды уже идут по заказам).
+   * TZ-COMBINE-411 — визуальная граница заказа без текста «Заказ №…»:
+   * больший верхний отступ при смене orderId (внутри заказа — компактный gap-1).
    */
-  protected showOrderGroupHeader(card: CombineItemCard, index: number): boolean {
-    if (index === 0) return true;
+  protected isOrderBoundary(card: CombineItemCard, index: number): boolean {
+    if (index === 0) return false;
     const prev = this.itemCards()[index - 1];
     return !!prev && prev.orderId !== card.orderId;
   }
