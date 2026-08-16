@@ -5,34 +5,36 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T18:50:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed; TZD-50 closeout 2026-08-16; TZD-51 closeout 2026-08-16 (Cursor PASS)
+updated_at: 2026-08-16T19:20:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51 DONE; TZD-52 READY FOR REVIEW (warm deploy 0.5.4)
 
 ## ACTIVE
 
-- **Свободен Freebuff:** WAVE-COMBINE-MODULES **закрыта** (406→408 DONE).
-- **TZD-50:** **DONE** — closeout 2026-08-16 (commit `10dde79a` desktop-only, archive `TZD-50.done.md`, lock поставлен; marker `_active/TZD-50.md` удалён).
-- **TZD-51:** **DONE** — closeout 2026-08-16 (commit `76aa08c7` desktop-only; archive `TZD-51.done.md`, lock `TZD-51-desktop-excel-form-dictionaries.lock`; Cursor PASS). Next: bump Desktop 0.5.4 + publish.
+- **TZD-52 READY FOR REVIEW:** bump `c856c178` + NSIS/publish + warm deploy PASS. Checklist: `docs/agent-checklists/TZD-52.md`. **Не archive** до Cursor PASS.
+- Smoke Forms на установленном 0.5.4 — ещё open (PO/агент после install).
 
 ## NEXT (PO paste prompt)
 
-1. **Desktop 0.5.4** — bump версии + publish ZIP — только по слову PO
-2. **WAVE Desktop Excel Forms** — Smoke-прогон нового ZIP (ручной, после публикации)
-3. Warm deploy — только по «деплой»/«кати»
-4. **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок»
-5. SALES-377 — не без PO
+1. Cursor PASS на TZD-52 evidence → archive + lock
+2. Ручной Smoke Form Studio на установленном 0.5.4
+3. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
+4. SALES-377 — не без PO
 
-_(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
+_(HARDEN 324–328 DONE; COMBINE 406–408 DONE; Excel Forms 50–51 DONE; Desktop 0.5.4 deployed pending review)_
 
 ## Queue hygiene (not live)
 
-- **TZ-AUTH-307** → `tasks/_park/` (глубокий cleanup после 308)
-- **TZ-FRONTEND-304** → DONE; archive + lock prepared
+- **TZ-AUTH-307** → `tasks/_park/`
 - Backlog: SALES-377 — не брать без PO.
-- Chrome page-tools migrate: UX-326+ — по PO (`WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE`)
-- Gantt left-edge / a11y polish — parked 308/310; successor after PO
+- Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — Preflight local перед TZD-52
+
+- `:3000`/`:4200` listen; `/api/health` + proxy → mongo up; login page 200; auth/me 401 без сессии = норма.
+- Vite ECONNREFUSED при старте = фронт раньше Nest — не блокер.
+- Drift: Cargo.toml ещё 0.5.2 при package 0.5.3 → TZD-52 выравнивает на **0.5.4**.
 
 ## [2026-08-16] — TZD-51 DONE — Excel Forms справочники V2
 

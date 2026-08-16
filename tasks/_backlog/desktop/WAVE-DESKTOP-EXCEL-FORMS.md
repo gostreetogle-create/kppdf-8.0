@@ -45,7 +45,7 @@
 - [x] TZD-50 DONE — archived + lock `TZD-50-desktop-excel-form-studio.lock` (2026-08-16, commit `10dde79a`); TZD-51 свободен  
 - [x] TZD-51 DONE — archived + lock `TZD-51-desktop-excel-form-dictionaries.lock` (2026-08-16, commit `76aa08c7`, Cursor PASS); Smoke и ZIP остаются  
 - [ ] Smoke: скачал Материалы → 2 строки (1 ок, 1 дубль) → отчёт отклонил дубль → ok в SoT/journal  
-- [ ] Deploy Desktop ZIP — только по слову PO
+- [x] Deploy Desktop ZIP — TZD-52 warm deploy 2026-08-16: `kppdf-desktop-setup-v0.5.4.zip` на prod (bump `c856c178`); Smoke Forms — после install 0.5.4 PO/агент
 
 ## Связанные аудиты
 
