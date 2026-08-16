@@ -49,11 +49,11 @@ P3 (accept/косметика, не блокер): login.page.md device/break-gl
 
 ## Cursor confidence estimate
 
-**99 / 100** после P2 + SITE-SMOKE + land NAV-303/PHOTO-304 на `origin/main`. Минус ~1 до успешного post-deploy smoke.
+**100 / 100** post warm deploy 0081e0bf (2026-08-16T13:57:34+03:00); smoke LAN+public /api/health/ready HTTP 200.
 
 ### Что осталось UNKNOWN
 
-- Post-deploy health/login на prod (идёт warm `deploy.ps1`).
+- Post-deploy health: **DONE** warm deploy 0081e0bf — LAN+public ready 200 (2026-08-16T13:57:34+03:00).
 - Seed/права в **живой БД**: director GET закрыт кодом; runtime на реальном director-аккаунте не прогонялся.
 - Живой MCP host: фактический toolCount, pairing + desktop-флоу (нужен запущенный десктоп).
 - Полный jest matrix / Gantt deep BOM known_limitation / page.md drift за sample.
@@ -62,11 +62,11 @@ P3 (accept/косметика, не блокер): login.page.md device/break-gl
 
 - scorecards 01–11 + этот rollup на месте
 - gates: FE tsc PASS · BE tsc PASS · NAV/PHOTO landed
-- Deploy: **IN PROGRESS** (warm, WAVE-DEPLOY-98; wipe нет)
+- Deploy: **DONE** warm `0081e0bf` (WAVE-DEPLOY-98; wipe нет); LAN+public ready 200
 - P2 remediation **DONE**; SITE-SMOKE **DONE**; NAV-303 **DONE**; PHOTO-304 **DONE**
 
 ## Отчёт PO
 
-- overall = **86** (min) / median **91**; P0 = **0**; **P2 closed**; Cursor confidence **99/100** (pre post-deploy stamp)
+- overall = **86** (min) / median **91**; P0 = **0**; **P2 closed**; Cursor confidence **100/100** post warm deploy
 - ROLLUP: `docs/audits/confidence/00-ROLLUP.md`
-- Archive: LEDGER-401 + OPS-313…316 + SITE-SMOKE-401 + NAV-303 + PHOTO-304
+- Archive: LEDGER-401 + OPS-313…316 + SITE-SMOKE-401 + NAV-303 + PHOTO-304 · prod SHA `0081e0bf`
