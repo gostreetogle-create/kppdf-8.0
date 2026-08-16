@@ -5,19 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:30:00+03:00
+updated_at: 2026-08-16T12:16:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
 - **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
-- **TZ-UX-326** CLAIMED — cursor-grok-4.6 — `/products` фильтр в app-chrome-rail, убрать w-12. Keys: `products.page.ts` / `products.page.spec.ts` / `products.page.md`. Не пересекается с UX-332 / TZD-48 / CATALOG-374.
-- **TZ-UX-332** READY FOR REVIEW — cursor-grok-4.6 — dashboard findById + RU not-found + photo filename. Gates PASS. Archive после Cursor PASS. Keys: dashboard-dialog / product-form-dialog / silent-http / http-exception.filter / photos.
-
+- **TZ-UX-326** READY FOR REVIEW — cursor-grok-4.6 — `/products` фильтр в app-chrome-rail, w-12 снят. Keys: `products.page.ts` / `products.page.spec.ts` / `products.page.md`. Gates: tsc PASS, products.page 24/24. Archive после Cursor PASS.
 
 ## NEXT (PO paste prompt)
 
-- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 / TZ-UX-332 только после Cursor/PO PASS. TZD-48 DONE 2026-08-16 (`b03ecc22`, closeout выполнен).
+- **Единая пагинация (новая волна):** старт `TZ-UX-340` → `tasks/_backlog/PROMPT-TZ-UX-340.md` (аудит `docs/audits/2026-08-16-pagination-unification-audit.md`)
+- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 только после Cursor/PO PASS.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -30,6 +29,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-UX-332 DONE — Product edit `_id` + RU not-found
+
+- Archive: `tasks/_archive/2026-08/TZ-UX-332.done.md`; dashboard findById; RU not-found; photo filename. Deploy нет.
 
 ## [2026-08-16] — TZ-PRODUCTION-336 DONE — Gantt skip orders without modules
 

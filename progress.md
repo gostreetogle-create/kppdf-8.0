@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-UX-332 DONE — Product edit `_id` + RU not-found
+**Исполнитель:** cursor-grok-4.6
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** дашборд открывает изделие через `findById` (полный `Product._id`); Save больше не бьёт `PATCH /products/undefined`; 404 not-found в UI по-русски; кириллица в имени фото декодируется с latin1 Multer.
+**Gates:** FE tsc PASS; FE jest 3/35; BE tsc PASS; BE jest 5/14.
+**Review:** Cursor self-review PASS (PO: закрыть без деплоя).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-332.done.md`
+**Commit:** `e45bfcccd049315561d15873f672569dde16783a`
+**Lock:** `.mimocode/locks/TZ-UX-332-product-edit-undefined-ru-errors.lock`
+**Next:** STOP for this TZ; deploy не выполнялся.
+
 ## [2026-08-16] — TZD-48 DONE — Desktop Import Studio release blockers
 **Исполнитель:** Buffy / фоновый desktop исполнитель
 **Статус:** DONE; Cursor Verdict PASS; commit b03ecc22060f4d20c6d559c043910ea4701b5d87 pushed (e108e22a..b03ecc22 → main); deploy НЕ

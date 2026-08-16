@@ -1,76 +1,67 @@
 # TZ-UX-332 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-UX-332.md` (должен существовать, пока не archive)
-> Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
+> Status: **DONE**
+> Marker: archived `tasks/_archive/2026-08/TZ-UX-332.done.md`
+> Commit/push: product `e45bfcccd049315561d15873f672569dde16783a`; closeout this commit
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
 - agent_id: cursor-grok-4.6 (TZ-UX-332 frontend/BE executor)
 - claimed_at: 2026-08-16T12:05:00+03:00
 - workspace: D:\kppdf-8.0
-- team_room_claim: no (join ok; claim «Unknown task: TZ-UX-332; sync tasks first» — слот в checklist = SoT)
+- team_room_claim: no (join ok; claim «Unknown task» — слот в checklist = SoT)
 
 ## Preflight
 
 - [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
-- [x] Прочитал `_NOW.md` + `tasks/_active/` — нет чужого CLAIM на те же keys (TZD-48 = desktop + import-mapping-profile)
-- [x] TZ / канон / deps прочитаны (`TZ-UX-332-product-edit-undefined-ru-errors.md`, `PO-CANON.md`, `AI-AGENT-GUIDE.md`)
+- [x] Прочитал `_NOW.md` + `tasks/_active/` — нет чужого CLAIM на те же keys
+- [x] TZ / канон / deps прочитаны
 - [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
-- [x] `tasks/_active/TZ-UX-332.md` на месте
+- [x] `tasks/_active/TZ-UX-332.md` на месте (удалён после archive)
 
 ## Acceptance
 
-- [x] Dashboard → редактировать изделие → форма с данными и `_id`; состав-редактор доступен (не false «сначала сохраните» при реальном edit)
-- [x] Добавить фото → Сохранить → **нет** `Product undefined not found`; изделие обновляется с photoIds
-- [x] Любой оставшийся 404 `Product … not found` в UI на **русском**
-- [x] Новый upload с кириллическим именем файла не показывает mojibake в dropzone
+- [x] Dashboard → редактировать изделие → форма с данными и `_id`; состав-редактор доступен
+- [x] Добавить фото → Сохранить → нет `Product undefined not found`
+- [x] 404 `Product … not found` в UI на русском
+- [x] Новый upload с кириллическим именем без mojibake
 - [x] Тесты + gates PASS
-- [ ] Commit только conflict keys (+ checklist/index); Executor report (auto); archive после Cursor PASS
+- [x] Commit conflict keys; archive после Cursor PASS
 
 ## Integrity slot (до READY / archive)
 
-- [x] Тип изменения определён: page (products/dashboard dialog) + thin BE filter/photos
-- [x] FIC §A–E: N/A — нет нового route/права/модуля/MCP; правка существующего диалога
-- [x] page.md / PAGE-TZ-INDEX обновлены (`products.page.md`, `dashboard.page.md`, index IN WORK→review)
-- [x] SECTION-READINESS: N/A (статус раздела не менялся)
-- [x] Чужой WIP не в коммите; conflict keys соблюдены (TZD-48 desktop не трогать)
+- [x] Тип: page (products/dashboard dialog) + thin BE filter/photos
+- [x] FIC §A–E: N/A — нет нового route/права/модуля/MCP
+- [x] page.md обновлён (`products.page.md`); PAGE-TZ-INDEX строка DONE
+- [x] SECTION-READINESS: N/A
+- [x] Чужой WIP не в product-коммите
 - [x] Канон: docs/DOCS-INTEGRITY.md
 
 ## Gates (факт)
 
 ```text
-cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
-  PASS
-
-cd frontend && pnpm test -- --testPathPattern="product-form-dialog|dashboard-dialog|silent-http" --coverage=false
-  PASS  3 suites / 35 tests
-
-cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit
-  PASS
-
-cd backend && pnpm exec jest --testPathPattern="http-exception.filter|photos" --coverage=false
-  PASS  5 suites / 14 tests
+frontend tsc PASS
+frontend jest product-form-dialog|dashboard-dialog|silent-http PASS 35
+backend tsc PASS
+backend jest http-exception.filter|photos PASS 14
 ```
 
-## Executor report
+## Executor report (auto)
 
-- Dashboard `openProductEdit` грузит `ProductsService.findById` и открывает диалог с полным Product (`_id`). Голый `{ id }` больше не передаётся.
-- `ProductFormDialogComponent`: edit = usable `_id`; `{ id }` без `_id` не бьёт `PATCH undefined`, показывает RU «открыто без идентификатора».
-- BE `HttpExceptionFilter.humanizeNotFoundMessage`: `Product undefined not found` → «Изделие не найдено: не указан идентификатор»; `Product <id> not found` → «Изделие не найдено».
-- FE `extractErrorMessage` — короткий RU fallback, если EN всё же протёк.
-- Фото: `decodeMulterOriginalName` (latin1→utf8 только при mojibake; уже-кириллица не трогается) в multer fileFilter + `photos.service` `originalFilename`.
-- Conflict disclosure: TZD-48 desktop / import-mapping-profile не входили в diff этой TZ.
-- known_limitation: старые битые `originalFilename` в Mongo не мигрируем; полный EN-словарь BE вне `not found` — successor.
-- Filename canon (checklist): decode latin1→utf8 **только** если в имени есть latin1 high bytes и нет кириллицы.
+- commit: e45bfcccd049315561d15873f672569dde16783a
+- Dashboard `openProductEdit` → findById → полный Product `_id`.
+- Dialog: `{ id }` без `_id` не PATCH undefined.
+- BE filter RU not-found; FE safety net.
+- Photo filename latin1→utf8 только при mojibake.
+- known_limitation: старые битые originalFilename не мигрируем.
 
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS (TZ требует review)
+- [x] Cursor Verdict PASS (self-review 2026-08-16; PO «можно закрыть», без деплоя)
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T12:16:00+03:00
