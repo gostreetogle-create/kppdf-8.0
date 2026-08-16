@@ -15,8 +15,9 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 
 ## NEXT (PO paste prompt)
 
-- **Warm deploy** COMBINE 402–405 — готов.
-- Modules/gate: executable PARK specs `TZ-COMBINE-406`…`408` in `_backlog/`.
+- **Freebuff 4–5ч:** скопировать `tasks/_backlog/PROMPT-FREEBUFF-4H-COMBINE-GATES.md` (волна тестов/closeout COMBINE+GANTT; deploy нет).
+- Warm deploy COMBINE — когда скажет PO.
+- Modules/gate: `TZ-COMBINE-406`…`408` PARK.
 - Full home widgets → **TZ-DASHBOARD-401**.
 - **TZ-DATA-UTF8-CLEAN** PARK.
 
