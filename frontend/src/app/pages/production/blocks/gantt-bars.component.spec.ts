@@ -16,7 +16,7 @@ import {
   snapMoveDeltaDays,
 } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
-import { UNASSIGNED_WORKER_LABEL } from '../gantt-bar.model';
+import { UNASSIGNED_WORKER_LABEL, workTypeOklch, workTypeWash } from '../gantt-bar.model';
 
 describe('GanttBarsComponent', () => {
   const sample: GanttBar = {
@@ -1569,6 +1569,86 @@ describe('GanttBarsComponent', () => {
     expect(days).toBeTruthy();
     expect(days.disabled).toBe(true);
     expect(el.querySelector(`[data-test="gantt-work-detail-catalog-${sample.id}"]`)).toBeNull();
+  });
+
+  it('TZ-PRODUCTION-351: worker summary barFill + label use WT oklch when hue set', () => {
+    const paintHue = 170;
+    const assigned: GanttBar = {
+      ...sample,
+      workerLabel: 'Иванов Иван',
+      accentHue: 140,
+    };
+    const paint: GanttBar = {
+      ...samplePaint,
+      workerLabel: 'Иванов Иван',
+      accentHue: paintHue,
+    };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned, paint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    const el: HTMLElement = fixture.nativeElement;
+
+    const rows = cmp['rows']() as Array<{
+      bar: GanttBar;
+      isSummary: boolean;
+      rowKind: 'order' | 'worker' | 'product' | 'module' | 'work';
+      isWorkerSummary: boolean;
+    }>;
+    const workerRow = rows.find((r) => r.rowKind === 'worker')!;
+    expect(workerRow.bar.accentHue).toBe(paintHue);
+    const wtFill = workTypeOklch('worker-tint', 0.12, 0.72, paintHue);
+    const chipFill = workTypeOklch('worker-tint', 0.14, 0.76, paintHue);
+    expect(cmp.barFill(workerRow)).toBe(wtFill);
+    expect(cmp.barFill(workerRow)).not.toBe(GANTT_SUMMARY_BAR_FILL.order);
+    expect(cmp.workerLabelWash({ isWorkerSummary: true, bar: workerRow.bar })).toBe(
+      workTypeWash('worker-tint', paintHue),
+    );
+    expect(cmp.workerChipFill(paintHue)).toBe(chipFill);
+
+    const labelBtn = el.querySelector(
+      '[data-test="gantt-label-worker-summary:Иванов Иван"] .gantt-label-btn',
+    ) as HTMLElement;
+    expect(labelBtn.getAttribute('data-worker-tint')).toBe('true');
+    expect(labelBtn.querySelector('span[aria-hidden="true"]')).toBeTruthy();
+  });
+
+  it('TZ-PRODUCTION-351: worker summary without hue keeps milk barFill', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [{ ...sample, workerLabel: '—' }]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance;
+    const rows = cmp['rows']() as Array<{
+      bar: GanttBar;
+      isSummary: boolean;
+      rowKind: 'order' | 'worker' | 'product' | 'module' | 'work';
+    }>;
+    const workerRow = rows.find((r) => r.rowKind === 'worker')!;
+    expect(workerRow.bar.accentHue).toBeNull();
+    expect(cmp.barFill(workerRow)).toBe(GANTT_SUMMARY_BAR_FILL.order);
+  });
+
+  it('TZ-PRODUCTION-351: expand worker → module row-kind only (not raw WT)', () => {
+    const assigned: GanttBar = { ...sample, workerLabel: 'Иванов Иван', accentHue: 140 };
+    const paint: GanttBar = { ...samplePaint, workerLabel: 'Иванов Иван', accentHue: 170 };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned, paint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('expandedWorkerIds', new Set(['Иванов Иван']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const moduleRows = el.querySelectorAll('[data-row-kind="module"]');
+    expect(moduleRows.length).toBeGreaterThanOrEqual(1);
+    expect(el.querySelector('[data-row-kind="work"]')).toBeNull();
+    expect(el.textContent).toContain('ORD-1 · Стол · Каркас');
   });
 });
 

@@ -5,18 +5,17 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T23:32:00+03:00
-hygiene: COMBINE-415 DONE; Combine wave idle; drain next SALES-369
+updated_at: 2026-08-17T00:05:00+03:00
+hygiene: PRODUCTION-351 DONE; SALES-369 drain next
 
 ## ACTIVE
 
-- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412/413/414/415 landed
-- **Drain:** SALES-369… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
-
+- _(idle)_ — queue empty after 351
+- **Drain:** SALES-369… (`PROMPT-FREEBUFF-TASKS-DRAIN`) — next when PO assigns
 
 ## NEXT (PO paste prompt)
 
-1. Hard-refresh `/design/combine` — № заказа и имя читаемы (light/dark)
+1. Hard-refresh `/production` → «По рабочим» — verify worker FIO tint + ▸ modules
 2. Freebuff drain / Deploy — по слову PO
 
 
@@ -26,6 +25,10 @@ hygiene: COMBINE-415 DONE; Combine wave idle; drain next SALES-369
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-PRODUCTION-351 DONE — worker FIO WT tint
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-351.done.md`; lock `TZ-PRODUCTION-351-gantt-workers-fio-wt-tint.lock`; FE tsc + jest gantt **98/98**. Deploy нет. Dominant WT accentHue on worker summary; FIO wash + chip + timeline tint; ▸→modules (344 kept); orders milk ladder unchanged.
 
 ## [2026-08-16] — TZ-COMBINE-415 DONE — readable order № + text-ink
 

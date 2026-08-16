@@ -658,6 +658,49 @@ export function isWorkerSummaryBar(bar: GanttBar): boolean {
   return isSummaryBar(bar) && bar.workTypeId === WORKER_SUMMARY_WORK_TYPE_ID;
 }
 
+/**
+ * TZ-PRODUCTION-351 — dominant work type among work children.
+ * Max sum of days; tie-break workTypeName (RU). All noTerm → max bar count, then name.
+ */
+export function dominantWorkTypeAccentHue(children: readonly GanttBar[]): number | null {
+  const workKids = children.filter(isWorkBar);
+  if (!workKids.length) return null;
+
+  type Agg = { workTypeName: string; accentHue: number | null; daySum: number; barCount: number };
+  const map = new Map<string, Agg>();
+  let anyTerm = false;
+
+  for (const c of workKids) {
+    const key = c.workTypeId;
+    let agg = map.get(key);
+    if (!agg) {
+      agg = {
+        workTypeName: c.workTypeName,
+        accentHue: c.accentHue ?? null,
+        daySum: 0,
+        barCount: 0,
+      };
+      map.set(key, agg);
+    }
+    agg.barCount += 1;
+    if (!c.noTerm && c.days != null) {
+      anyTerm = true;
+      agg.daySum += c.days;
+    }
+  }
+
+  const ranked = [...map.values()].sort((a, b) => {
+    if (anyTerm) {
+      if (a.daySum !== b.daySum) return b.daySum - a.daySum;
+    } else if (a.barCount !== b.barCount) {
+      return b.barCount - a.barCount;
+    }
+    return a.workTypeName.localeCompare(b.workTypeName, 'ru');
+  });
+
+  return ranked[0]?.accentHue ?? null;
+}
+
 /** One worker-group summary: span = min(child.start)…max(child.end). */
 export function buildWorkerSummaryBar(
   label: string,
@@ -698,7 +741,7 @@ export function buildWorkerSummaryBar(
     endDate: maxEnd,
     usedFallbackToday,
     workerLabel: label,
-    accentHue: null,
+    accentHue: dominantWorkTypeAccentHue(children),
     kind: 'summary',
   };
 }

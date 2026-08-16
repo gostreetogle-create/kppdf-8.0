@@ -10,6 +10,7 @@ import {
   buildOrderSummaryBar,
   buildWorkerTreeBars,
   calendarSpanDays,
+  dominantWorkTypeAccentHue,
   filterOrdersForRail,
   formatWorkerModuleContextLabel,
   ganttSkipProductNames,
@@ -1168,5 +1169,120 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
     ]);
     const tree = buildWorkerTreeBars([multi, solo]);
     expect(tree.filter((b) => b.kind === 'summary')).toHaveLength(2);
+  });
+
+  it('TZ-PRODUCTION-351: dominantWorkTypeAccentHue picks max days WT', () => {
+    const weld = workBar({
+      id: 'a',
+      workTypeId: 'wt-weld',
+      workTypeName: 'Сварка',
+      days: 2,
+      accentHue: 140,
+    });
+    const paint = workBar({
+      id: 'b',
+      workTypeId: 'wt-paint',
+      workTypeName: 'Покраска',
+      days: 5,
+      accentHue: 170,
+      occurrence: 2,
+    });
+    expect(dominantWorkTypeAccentHue([weld, paint])).toBe(170);
+  });
+
+  it('TZ-PRODUCTION-351: dominantWorkTypeAccentHue tie-breaks workTypeName RU', () => {
+    const a = workBar({
+      id: 'a',
+      workTypeId: 'wt-a',
+      workTypeName: 'Покраска',
+      days: 3,
+      accentHue: 160,
+    });
+    const b = workBar({
+      id: 'b',
+      workTypeId: 'wt-b',
+      workTypeName: 'Сварка',
+      days: 3,
+      accentHue: 140,
+      occurrence: 2,
+    });
+    expect(dominantWorkTypeAccentHue([a, b])).toBe(160);
+  });
+
+  it('TZ-PRODUCTION-351: dominantWorkTypeAccentHue all noTerm → max bar count', () => {
+    const a = workBar({
+      id: 'a',
+      workTypeId: 'wt-a',
+      workTypeName: 'Сварка',
+      days: null,
+      noTerm: true,
+      accentHue: 140,
+    });
+    const b1 = workBar({
+      id: 'b1',
+      workTypeId: 'wt-b',
+      workTypeName: 'Покраска',
+      days: null,
+      noTerm: true,
+      accentHue: 170,
+      occurrence: 2,
+    });
+    const b2 = workBar({
+      id: 'b2',
+      workTypeId: 'wt-b',
+      workTypeName: 'Покраска',
+      days: null,
+      noTerm: true,
+      accentHue: 170,
+      occurrence: 3,
+    });
+    expect(dominantWorkTypeAccentHue([a, b1, b2])).toBe(170);
+  });
+
+  it('TZ-PRODUCTION-351: worker summary gets dominant WT accentHue', () => {
+    const summary = buildWorkerTreeBars([
+      workBar({
+        id: 'a',
+        workerLabel: 'Иванов Иван',
+        workTypeName: 'Сварка',
+        days: 2,
+        accentHue: 140,
+      }),
+      workBar({
+        id: 'b',
+        workerLabel: 'Иванов Иван',
+        workTypeId: 'wt2',
+        workTypeName: 'Покраска',
+        days: 5,
+        accentHue: 170,
+        occurrence: 2,
+      }),
+    ])[0]!;
+    expect(summary.accentHue).toBe(170);
+    expect(summary.workTypeId).toBe(WORKER_SUMMARY_WORK_TYPE_ID);
+  });
+
+  it('TZ-PRODUCTION-351: expand worker → module rows only (data-row-kind module)', () => {
+    const tree = buildWorkerTreeBars(
+      [
+        workBar({
+          id: 'a',
+          workerLabel: 'Иванов Иван',
+          workTypeName: 'Сварка',
+        }),
+        workBar({
+          id: 'b',
+          workerLabel: 'Иванов Иван',
+          workTypeId: 'wt2',
+          workTypeName: 'Покраска',
+          occurrence: 2,
+        }),
+      ],
+      new Set(['Иванов Иван']),
+    );
+    const children = tree.slice(1);
+    expect(children.every((b) => isModuleSummaryBar(b))).toBe(true);
+    expect(children.some((b) => b.kind === 'work')).toBe(false);
+    expect(children.every((b) => !b.workTypeName.match(/^(Сварка|Покраска)$/))).toBe(true);
   });
 });

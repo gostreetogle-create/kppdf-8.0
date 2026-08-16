@@ -424,13 +424,23 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   type="button"
                   class="gantt-label-btn flex-1 min-w-0 h-full px-1.5 flex items-center gap-1.5 text-left
                          hover:bg-paper-2"
+                  [style.background]="workerLabelWash(row)"
                   (click)="onLabelClick($event, row)"
                   [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
                   [attr.aria-label]="
                     row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
                   "
+                  [attr.data-worker-tint]="
+                    row.isWorkerSummary && row.bar.accentHue != null ? 'true' : null
+                  "
                 >
-                  @if (!row.isSummary) {
+                  @if (row.isWorkerSummary && row.bar.accentHue != null) {
+                    <span
+                      class="w-1.5 h-5 rounded-sm shrink-0"
+                      [style.background]="workerChipFill(row.bar.accentHue)"
+                      aria-hidden="true"
+                    ></span>
+                  } @else if (!row.isSummary) {
                     <span
                       class="w-1.5 h-5 rounded-sm shrink-0"
                       [style.background]="
@@ -1574,13 +1584,23 @@ export class GanttBarsComponent implements AfterViewInit {
           return GANTT_SUMMARY_BAR_FILL.product;
         case 'module':
           return GANTT_SUMMARY_BAR_FILL.module;
-        case 'order':
         case 'worker':
+          if (row.bar.accentHue != null) {
+            return this.fill('worker-tint', row.bar.accentHue);
+          }
+          return GANTT_SUMMARY_BAR_FILL.order;
+        case 'order':
         default:
           return GANTT_SUMMARY_BAR_FILL.order;
       }
     }
     return this.fill(row.bar.workTypeId, row.bar.accentHue);
+  }
+
+  /** TZ-PRODUCTION-351 — soft WT wash on worker FIO label when dominant hue known. */
+  protected workerLabelWash(row: { isWorkerSummary: boolean; bar: GanttBar }): string | null {
+    if (!row.isWorkerSummary || row.bar.accentHue == null) return null;
+    return workTypeWash('worker-tint', row.bar.accentHue);
   }
 
   protected onToggleExpand(event: Event, expandId: string): void {
@@ -1904,6 +1924,11 @@ export class GanttBarsComponent implements AfterViewInit {
 
   protected fill(workTypeId: string, hue?: number | null): string {
     return workTypeOklch(workTypeId, 0.12, 0.72, hue);
+  }
+
+  /** Denser WT chip on worker FIO row (TZ-PRODUCTION-351). */
+  protected workerChipFill(hue: number | null | undefined): string {
+    return workTypeOklch('worker-tint', 0.14, 0.76, hue);
   }
 
   protected statusLabel(s: OrderStatus): string {

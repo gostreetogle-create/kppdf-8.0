@@ -1,0 +1,5 @@
+TZ-PRODUCTION-351
+zone: frontend/src/app/pages/production/gantt-bar.model.ts; frontend/src/app/pages/production/blocks/gantt-bars.component.ts
+closed_at: 2026-08-17T00:05:00+03:00
+outcome: DONE
+note: worker FIO/summary dominant WT tint; expand worker to modules; orders milk ladder kept
