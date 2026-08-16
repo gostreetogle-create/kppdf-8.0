@@ -1,6 +1,6 @@
 # WAVE — Gantt IA: изделие / модуль (не плоский вид работ)
 
-**Статус:** IN PROGRESS (342 + 344 DONE; 343/345 READY)  
+**Статус:** IN PROGRESS (342+343+344 DONE; 345 READY)  
 **Дата:** 2026-08-16  
 **Аудит:** `docs/audits/2026-08-16-gantt-ia-order-product-module.md`  
 **Инвариант:** UX expand / cascade / frames / drag-shell **не ломать** — меняем уровни данных в дереве.
@@ -15,8 +15,8 @@
 | # | ID | Суть | Параллель |
 |---|-----|------|-----------|
 | 1 | **TZ-PRODUCTION-342** | `buildGanttTreeBars`: Order→Product→Module→WT + expand keys; summary spans | solo (model+bars) |
-| 2 | **TZ-PRODUCTION-343** | Лейблы RU, toggle copy, frames на product/module groups | after 342 |
-| 3 | **TZ-PRODUCTION-344** | «По рабочим»: ▸ + дети = модули с контекстом заказа/изделия | after 342 |
+| 2 | **TZ-PRODUCTION-343** | Лейблы RU, toggle copy, frames на product/module groups | after 342 — **DONE** |
+| 3 | **TZ-PRODUCTION-344** | «По рабочим»: ▸ + дети = модули с контекстом заказа/изделия | after 342 — **DONE** |
 | 4 | **TZ-PRODUCTION-345** | Изделие без модулей = одна «целая» строка уровня модуля | after 342; can ∥ 343 |
 
 ## DoD волны
@@ -25,6 +25,7 @@
 - [x] Под изделием ▸ **модули**; под модулем ▸ виды работ + cascade *(342)*
 - [x] По рабочим: модуль отвечает «чем занят»; WT внутри *(344)*
 - [x] Drag/resize/estimate PATCH не регрессируют на WT *(342 gates)*
+- [x] RU labels + nested frames product/module *(343)*
 - [ ] Deploy — только по «кати»
 
 ## Park

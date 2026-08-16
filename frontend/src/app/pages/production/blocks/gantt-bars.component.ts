@@ -21,6 +21,9 @@ import {
   buildWorkerTreeBars,
   ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
+  ganttModuleSummaryId,
+  ganttProductSummaryId,
+  ganttWorkerModuleSummaryId,
   isModuleSummaryBar,
   isOrderSummaryBar,
   isProductSummaryBar,
@@ -233,7 +236,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
           «Вместить сроки» — диапазон текущих полос
         </span>
         <span class="opacity-70" data-test="gantt-expand-hint"
-          >Разверните заказ, чтобы править виды работ</span
+          >Разверните заказ → изделие → модуль, чтобы править виды работ</span
         >
         @if (usedTodayFallback()) {
           <span class="text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
@@ -302,7 +305,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     ? 'Рабочий · модуль'
                     : 'Рабочий'
                   : anyExpanded()
-                    ? 'Заказ · работа'
+                    ? 'Заказ · изделие'
                     : 'Заказ'
               }}</span>
             </div>
@@ -323,12 +326,22 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 "
                 [class.gantt-order-group-start]="row.orderGroupStart"
                 [class.gantt-order-group-end]="row.orderGroupEnd"
+                [class.gantt-product-group-start]="row.productGroupStart"
+                [class.gantt-product-group-end]="row.productGroupEnd"
+                [class.gantt-product-group-mid]="row.productGroupMid"
+                [class.gantt-module-group-start]="row.moduleGroupStart"
+                [class.gantt-module-group-end]="row.moduleGroupEnd"
+                [class.gantt-module-group-mid]="row.moduleGroupMid"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
                 [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
                 [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
+                [attr.data-product-group-start]="row.productGroupStart ? 'true' : null"
+                [attr.data-product-group-end]="row.productGroupEnd ? 'true' : null"
+                [attr.data-module-group-start]="row.moduleGroupStart ? 'true' : null"
+                [attr.data-module-group-end]="row.moduleGroupEnd ? 'true' : null"
               >
                 @if (row.isSummary) {
                   <button
@@ -337,8 +350,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                            text-ink/80 hover:text-ink hover:bg-paper-2/60"
                     [attr.data-test]="'gantt-expand-' + expandKey(row.bar)"
                     [attr.aria-expanded]="row.expanded"
-                    [attr.title]="expandTitle(treeLabel(row.bar), row.expanded)"
-                    [attr.aria-label]="expandTitle(treeLabel(row.bar), row.expanded)"
+                    [attr.title]="expandTitle(row.bar, row.expanded)"
+                    [attr.aria-label]="expandTitle(row.bar, row.expanded)"
                     (click)="onToggleExpand($event, expandKey(row.bar))"
                   >
                     <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
@@ -387,14 +400,14 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     @if (row.isOrderSummary || row.isWorkerSummary) {
                       <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
                     } @else if (row.isProductSummary) {
-                      <span class="text-ink pl-1">{{ row.bar.productName }}</span>
+                      <span class="font-medium text-ink pl-1">{{ row.bar.productName }}</span>
                       @if (row.bar.quantityLabel) {
                         <span class="font-mono text-muted-foreground">
                           {{ row.bar.quantityLabel }}</span
                         >
                       }
                     } @else if (row.isModuleSummary) {
-                      <span class="text-muted-foreground pl-2">{{ row.bar.moduleName }}</span>
+                      <span class="text-ink/85 pl-2">{{ row.bar.moduleName }}</span>
                     } @else {
                       <span class="text-muted-foreground pl-3">{{ row.bar.workTypeName }}</span>
                       @if (row.bar.quantityLabel) {
@@ -568,12 +581,22 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 "
                 [class.gantt-order-group-start]="row.orderGroupStart"
                 [class.gantt-order-group-end]="row.orderGroupEnd"
+                [class.gantt-product-group-start]="row.productGroupStart"
+                [class.gantt-product-group-end]="row.productGroupEnd"
+                [class.gantt-product-group-mid]="row.productGroupMid"
+                [class.gantt-module-group-start]="row.moduleGroupStart"
+                [class.gantt-module-group-end]="row.moduleGroupEnd"
+                [class.gantt-module-group-mid]="row.moduleGroupMid"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
                 [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
                 [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
+                [attr.data-product-group-start]="row.productGroupStart ? 'true' : null"
+                [attr.data-product-group-end]="row.productGroupEnd ? 'true' : null"
+                [attr.data-module-group-start]="row.moduleGroupStart ? 'true' : null"
+                [attr.data-module-group-end]="row.moduleGroupEnd ? 'true' : null"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -693,9 +716,9 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         class="shrink-0 px-3 py-2 border-t hairline text-[10px] text-muted-foreground"
         data-test="gantt-legend"
       >
-        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = состав на Ганте · клик вида
-        работ = дни и люди · номер заказа = статус и даты · цвет = вид работ · правый край состава =
-        дни оценки · тело сводной = начало заказа · тело состава = сдвиг вида
+        Красная линия = сегодня · сводная полоса = срок заказа · ▸ = изделие / модуль / виды работ ·
+        клик вида работ = дни и люди · номер заказа = статус и даты · цвет = вид работ · правый край
+        состава = дни оценки · тело сводной = начало заказа · тело состава = сдвиг вида
       </div>
     </div>
   `,
@@ -819,6 +842,58 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         inset -2px 0 0 0 oklch(0.42 0.05 85);
       margin-bottom: 4px;
     }
+    /* Nested product group inside order frame — cooler wash, ≥ mid-row contrast. */
+    .gantt-product-group-start {
+      background: oklch(0.955 0.02 230) !important;
+      box-shadow:
+        inset 0 1px 0 0 oklch(0.48 0.06 230),
+        inset 3px 0 0 0 oklch(0.48 0.06 230),
+        inset -1px 0 0 0 oklch(0.48 0.06 230);
+    }
+    .gantt-product-group-mid {
+      background: oklch(0.97 0.014 230) !important;
+      box-shadow:
+        inset 3px 0 0 0 oklch(0.48 0.06 230),
+        inset -1px 0 0 0 oklch(0.48 0.06 230);
+    }
+    .gantt-product-group-end:not(.gantt-product-group-start) {
+      background: oklch(0.97 0.014 230) !important;
+      box-shadow:
+        inset 0 -1px 0 0 oklch(0.48 0.06 230),
+        inset 3px 0 0 0 oklch(0.48 0.06 230),
+        inset -1px 0 0 0 oklch(0.48 0.06 230);
+    }
+    .gantt-product-group-start.gantt-product-group-end {
+      box-shadow:
+        inset 0 0 0 1px oklch(0.48 0.06 230),
+        inset 3px 0 0 0 oklch(0.48 0.06 230);
+    }
+    /* Nested module group inside product/order — warmer ink wash. */
+    .gantt-module-group-start {
+      background: oklch(0.96 0.022 70) !important;
+      box-shadow:
+        inset 0 1px 0 0 oklch(0.5 0.07 70),
+        inset 5px 0 0 0 oklch(0.5 0.07 70),
+        inset -1px 0 0 0 oklch(0.5 0.07 70);
+    }
+    .gantt-module-group-mid {
+      background: oklch(0.975 0.016 70) !important;
+      box-shadow:
+        inset 5px 0 0 0 oklch(0.5 0.07 70),
+        inset -1px 0 0 0 oklch(0.5 0.07 70);
+    }
+    .gantt-module-group-end:not(.gantt-module-group-start) {
+      background: oklch(0.975 0.016 70) !important;
+      box-shadow:
+        inset 0 -1px 0 0 oklch(0.5 0.07 70),
+        inset 5px 0 0 0 oklch(0.5 0.07 70),
+        inset -1px 0 0 0 oklch(0.5 0.07 70);
+    }
+    .gantt-module-group-start.gantt-module-group-end {
+      box-shadow:
+        inset 0 0 0 1px oklch(0.5 0.07 70),
+        inset 5px 0 0 0 oklch(0.5 0.07 70);
+    }
     .gantt-order-active.gantt-order-group-start,
     .gantt-order-active.gantt-order-group-end,
     .gantt-order-active.gantt-order-group-mid {
@@ -873,6 +948,54 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         inset 0 -2px 0 0 oklch(0.78 0.07 85),
         inset 2px 0 0 0 oklch(0.78 0.07 85),
         inset -2px 0 0 0 oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-product-group-start,
+    :host-context([data-theme='dark']) .gantt-product-group-start {
+      background: oklch(0.3 0.035 230) !important;
+      box-shadow:
+        inset 0 1px 0 0 oklch(0.72 0.08 230),
+        inset 3px 0 0 0 oklch(0.72 0.08 230),
+        inset -1px 0 0 0 oklch(0.72 0.08 230);
+    }
+    :host-context(.dark) .gantt-product-group-mid,
+    :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
+    :host-context([data-theme='dark']) .gantt-product-group-mid,
+    :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
+      background: oklch(0.28 0.028 230) !important;
+      box-shadow:
+        inset 3px 0 0 0 oklch(0.72 0.08 230),
+        inset -1px 0 0 0 oklch(0.72 0.08 230);
+    }
+    :host-context(.dark) .gantt-product-group-end:not(.gantt-product-group-start),
+    :host-context([data-theme='dark']) .gantt-product-group-end:not(.gantt-product-group-start) {
+      box-shadow:
+        inset 0 -1px 0 0 oklch(0.72 0.08 230),
+        inset 3px 0 0 0 oklch(0.72 0.08 230),
+        inset -1px 0 0 0 oklch(0.72 0.08 230);
+    }
+    :host-context(.dark) .gantt-module-group-start,
+    :host-context([data-theme='dark']) .gantt-module-group-start {
+      background: oklch(0.31 0.04 70) !important;
+      box-shadow:
+        inset 0 1px 0 0 oklch(0.75 0.09 70),
+        inset 5px 0 0 0 oklch(0.75 0.09 70),
+        inset -1px 0 0 0 oklch(0.75 0.09 70);
+    }
+    :host-context(.dark) .gantt-module-group-mid,
+    :host-context(.dark) .gantt-module-group-end:not(.gantt-module-group-start),
+    :host-context([data-theme='dark']) .gantt-module-group-mid,
+    :host-context([data-theme='dark']) .gantt-module-group-end:not(.gantt-module-group-start) {
+      background: oklch(0.29 0.032 70) !important;
+      box-shadow:
+        inset 5px 0 0 0 oklch(0.75 0.09 70),
+        inset -1px 0 0 0 oklch(0.75 0.09 70);
+    }
+    :host-context(.dark) .gantt-module-group-end:not(.gantt-module-group-start),
+    :host-context([data-theme='dark']) .gantt-module-group-end:not(.gantt-module-group-start) {
+      box-shadow:
+        inset 0 -1px 0 0 oklch(0.75 0.09 70),
+        inset 5px 0 0 0 oklch(0.75 0.09 70),
+        inset -1px 0 0 0 oklch(0.75 0.09 70);
     }
     :host-context(.dark) .gantt-chevron,
     :host-context([data-theme='dark']) .gantt-chevron {
@@ -1101,11 +1224,37 @@ export class GanttBarsComponent implements AfterViewInit {
     const byWorkers = this.groupByWorkers();
     /** Last tree index per expanded order/worker — for group-end frame. */
     const lastIdxByGroup = new Map<string, number>();
+    /** Last tree index per expanded product / module branch (nested frames). */
+    const lastIdxByProduct = new Map<string, number>();
+    const lastIdxByModule = new Map<string, number>();
     for (let i = 0; i < sorted.length; i++) {
       const bar = sorted[i]!;
       const key = byWorkers ? workerGroupKeyOf(bar) : bar.orderId;
       const expanded = byWorkers ? expandedWorkers.has(key) : expandedOrders.has(key);
       if (expanded) lastIdxByGroup.set(key, i);
+
+      if (byWorkers) {
+        if (isModuleSummaryBar(bar) && expandedWorkerModules.has(bar.id)) {
+          lastIdxByModule.set(bar.id, i);
+        } else if (!isSummaryBar(bar)) {
+          const modId = ganttWorkerModuleSummaryId(
+            workerGroupKeyOf(bar),
+            bar.orderId,
+            bar.orderItemIndex,
+            bar.moduleId,
+          );
+          if (expandedWorkerModules.has(modId)) lastIdxByModule.set(modId, i);
+        }
+      } else {
+        if (!isOrderSummaryBar(bar) && !isWorkerSummaryBar(bar)) {
+          const productId = ganttProductSummaryId(bar.orderId, bar.orderItemIndex);
+          if (expandedProducts.has(productId)) lastIdxByProduct.set(productId, i);
+          if (!isProductSummaryBar(bar)) {
+            const moduleId = ganttModuleSummaryId(bar.orderId, bar.orderItemIndex, bar.moduleId);
+            if (expandedModules.has(moduleId)) lastIdxByModule.set(moduleId, i);
+          }
+        }
+      }
     }
     return sorted.map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
@@ -1135,6 +1284,41 @@ export class GanttBarsComponent implements AfterViewInit {
             : moduleSummary
               ? expandedModules.has(bar.id)
               : false;
+
+      let productId = '';
+      let moduleId = '';
+      let inProductGroup = false;
+      let inModuleGroup = false;
+      if (byWorkers) {
+        if (moduleSummary && expandedWorkerModules.has(bar.id)) {
+          moduleId = bar.id;
+          inModuleGroup = true;
+        } else if (!isSummary) {
+          moduleId = ganttWorkerModuleSummaryId(
+            workerGroupKeyOf(bar),
+            bar.orderId,
+            bar.orderItemIndex,
+            bar.moduleId,
+          );
+          inModuleGroup = expandedWorkerModules.has(moduleId);
+        }
+      } else if (!orderSummary && !workerSummary) {
+        productId = ganttProductSummaryId(bar.orderId, bar.orderItemIndex);
+        inProductGroup = expandedProducts.has(productId);
+        if (!productSummary) {
+          moduleId = ganttModuleSummaryId(bar.orderId, bar.orderItemIndex, bar.moduleId);
+          inModuleGroup = expandedModules.has(moduleId);
+        }
+      }
+
+      const productGroupStart = inProductGroup && productSummary;
+      const productGroupEnd =
+        inProductGroup && !!productId && lastIdxByProduct.get(productId) === idx;
+      const productGroupMid = inProductGroup && !productGroupStart && !productGroupEnd;
+      const moduleGroupStart = inModuleGroup && moduleSummary;
+      const moduleGroupEnd = inModuleGroup && !!moduleId && lastIdxByModule.get(moduleId) === idx;
+      const moduleGroupMid = inModuleGroup && !moduleGroupStart && !moduleGroupEnd;
+
       return {
         bar,
         alt: idx % 2 === 1,
@@ -1150,6 +1334,12 @@ export class GanttBarsComponent implements AfterViewInit {
         expanded: branchExpanded,
         orderGroupStart: treeExpanded && (byWorkers ? workerSummary : orderSummary),
         orderGroupEnd: treeExpanded && lastIdxByGroup.get(groupKey) === idx,
+        productGroupStart,
+        productGroupEnd,
+        productGroupMid,
+        moduleGroupStart,
+        moduleGroupEnd,
+        moduleGroupMid,
       };
     });
   });
@@ -1650,11 +1840,25 @@ export class GanttBarsComponent implements AfterViewInit {
     return parts.join(' · ');
   }
 
-  /** TZ-PRODUCTION-320: chevron zone — Gantt tree only. */
-  protected expandTitle(orderNumber: string, expanded: boolean): string {
+  /** TZ-PRODUCTION-320/343: chevron zone — kind-aware Gantt tree expand. */
+  protected expandTitle(bar: GanttBar, expanded: boolean): string {
+    const label = this.treeLabel(bar);
+    if (isProductSummaryBar(bar)) {
+      return expanded
+        ? `Свернуть модули изделия · ${label}`
+        : `Развернуть модули изделия · ${label}`;
+    }
+    if (isModuleSummaryBar(bar)) {
+      return expanded ? `Свернуть виды работ · ${label}` : `Развернуть виды работ · ${label}`;
+    }
+    if (isWorkerSummaryBar(bar)) {
+      return expanded
+        ? `Свернуть модули рабочего · ${label}`
+        : `Развернуть модули рабочего · ${label}`;
+    }
     return expanded
-      ? `Свернуть состав на Ганте · ${orderNumber}`
-      : `Развернуть состав на Ганте · ${orderNumber}`;
+      ? `Свернуть состав на Ганте · ${label}`
+      : `Развернуть состав на Ганте · ${label}`;
   }
 
   /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */

@@ -5,20 +5,19 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T21:15:49+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (342+344 DONE; 343/345 READY)
+updated_at: 2026-08-16T21:20:45+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (342+343+344 DONE; 345 READY)
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342 DONE** + **344 DONE** (Worker→Module→WT). Next: **343** (RU labels) / **345** (no-modules product).
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342+343+344 DONE**. Next: **345** (product without modules).
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
 ## NEXT (PO paste prompt)
 
-1. Executor: **TZ-PRODUCTION-343** — labels/frames polish
-2. **TZ-PRODUCTION-345** — product without modules
-3. Deploy Desktop **0.5.5** — только «кати» + VPN off
+1. Executor: **TZ-PRODUCTION-345** — product without modules
+2. Deploy Desktop **0.5.5** — только «кати» + VPN off
 
 
 ## Queue hygiene (not live)
@@ -28,6 +27,10 @@ hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (3
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-343 DONE — Gantt RU labels + product/module frames
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-343.done.md`; lock `TZ-PRODUCTION-343-gantt-ia-labels-frames.lock`; FE tsc + jest gantt-bars **45/45**. Deploy нет. Nested product/module frames + kind-aware expand aria.
 
 ## [2026-08-16] — TZ-PRODUCTION-344 DONE — Gantt workers Module+context + expand
 

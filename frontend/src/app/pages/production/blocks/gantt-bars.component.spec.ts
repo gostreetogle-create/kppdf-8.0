@@ -106,7 +106,7 @@ describe('GanttBarsComponent', () => {
     expect(el.textContent).toContain('Стол');
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeFalsy();
     expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
-      'Заказ · работа',
+      'Заказ · изделие',
     );
 
     setFullTreeExpand(fixture);
@@ -248,6 +248,57 @@ describe('GanttBarsComponent', () => {
     expect(toggles).toEqual(['o1']);
   });
 
+  it('TZ-PRODUCTION-343: product/module expand aria + nested group frames', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set([productKeyO1]));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const productExpand = el.querySelector(
+      `[data-test="gantt-expand-${productKeyO1}"]`,
+    ) as HTMLElement;
+    expect(productExpand.getAttribute('aria-label')).toContain('модули изделия');
+    expect(productExpand.getAttribute('aria-label')).toContain('Стол');
+    expect(productExpand.getAttribute('aria-expanded')).toBe('true');
+
+    const productLabel = el.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"]`,
+    ) as HTMLElement;
+    expect(productLabel.classList.contains('gantt-product-group-start')).toBe(true);
+    expect(productLabel.getAttribute('data-product-group-start')).toBe('true');
+    expect(productLabel.textContent).toContain('Стол');
+
+    const moduleLabel = el.querySelector(`[data-test="gantt-label-${moduleKeyO1}"]`) as HTMLElement;
+    expect(moduleLabel.classList.contains('gantt-product-group-end')).toBe(true);
+    expect(moduleLabel.getAttribute('data-product-group-end')).toBe('true');
+    expect(moduleLabel.textContent).toContain('Каркас');
+
+    const moduleExpand = el.querySelector(
+      `[data-test="gantt-expand-${moduleKeyO1}"]`,
+    ) as HTMLElement;
+    expect(moduleExpand.getAttribute('aria-label')).toContain('виды работ');
+    expect(moduleExpand.getAttribute('aria-label')).toContain('Каркас');
+    expect(moduleExpand.getAttribute('aria-expanded')).toBe('false');
+
+    fixture.componentRef.setInput('expandedModuleIds', new Set([moduleKeyO1]));
+    fixture.detectChanges();
+
+    expect(moduleExpand.getAttribute('aria-expanded')).toBe('true');
+    expect(moduleLabel.classList.contains('gantt-module-group-start')).toBe(true);
+    expect(moduleLabel.getAttribute('data-module-group-start')).toBe('true');
+
+    const wtRow = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]') as HTMLElement;
+    expect(wtRow.classList.contains('gantt-module-group-mid')).toBe(true);
+    const wtEnd = el.querySelector(`[data-test="gantt-label-${samplePaint.id}"]`) as HTMLElement;
+    expect(wtEnd.classList.contains('gantt-module-group-end')).toBe(true);
+    expect(wtEnd.getAttribute('data-module-group-end')).toBe('true');
+    expect(wtRow.textContent).toContain('Сварка');
+  });
+
   it('TZ-PRODUCTION-339: chevron ≥14px ink, expand hit ≥36px; not text-[10px]', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
@@ -358,7 +409,7 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelector('[data-test="gantt-legend"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-bar-summary"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-expand-hint"]')?.textContent).toContain(
-      'Разверните заказ',
+      'заказ → изделие → модуль',
     );
   });
 

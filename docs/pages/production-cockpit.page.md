@@ -150,7 +150,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
-- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). При открытом meta active имеет приоритет.
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). **TZ-PRODUCTION-343:** вложенные рамки изделия/модуля (`gantt-product-group-*` / `gantt-module-group-*`) читаемы внутри order frame; aria/title: изделие = «модули изделия», модуль = «виды работ»; шапка колонки `Заказ · изделие`. При открытом meta active имеет приоритет.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
 - No `planned` Order status; no ProductionOrder/OrderTask.
@@ -193,6 +193,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-338** | DONE: Gantt hydrate = parallel product/module prefetch + non-blocking rail thumbs (bars first); estimate math unchanged |
 | **TZ-PRODUCTION-341** | DONE: hydrate `PREFETCH_CONCURRENCY` 8→3 + 429/503 retry (backoff 300/800/1500); no 404 retry; BE throttle untouched |
 | **TZ-PRODUCTION-342** | DONE: Gantt tree Order→Product→Module→WT; expand product/module keys; WT leaf + cascade/drag after module ▸; worker IA = 344 |
+| **TZ-PRODUCTION-343** | DONE: RU expand aria/title (изделие/модуль); nested product/module frames; header `Заказ · изделие`; «По заказам» unchanged |
 | **TZ-PRODUCTION-344** | DONE: Worker → Module(order·product·module) → WT; ▸ on worker; default collapsed; RO |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
@@ -225,7 +226,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 - **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.
 - **TZ-PRODUCTION-341 known_limitation:** полный batch products/modules API — later; BE short throttle 10/s не меняли (successor только по PO); `DISABLE_THROTTLE=1` — только local/dev.
-- **TZ-PRODUCTION-342 known_limitation:** product-without-modules polish = 345; RU toggle wording = 343.
+- **TZ-PRODUCTION-342 known_limitation:** product-without-modules polish = 345.
+- **TZ-PRODUCTION-343:** RU labels/frames for product/module DONE («По заказам» ok).
 - **TZ-PRODUCTION-344:** worker lens Module+context DONE (default collapsed).
 
 ### Final interaction contract (TZ-PRODUCTION-328)

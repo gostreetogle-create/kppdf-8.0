@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-343 DONE — Gantt RU labels + product/module frames
+**Исполнитель:** local-executor-composer
+**Статус:** DONE; deploy НЕ
+**Что:** kind-aware expand aria/title (изделие/модуль/заказ); nested `gantt-product-group-*` / `gantt-module-group-*` frames; header `Заказ · изделие`; лейблы изделие(+qty)/модуль; tree 342 и worker 344 без изменений.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bars.component` PASS (45/45).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-343.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-343-gantt-ia-labels-frames.lock`
+**Next:** TZ-PRODUCTION-345 (product without modules); deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-344 DONE — Gantt «По рабочим» Module+context + ▸
 **Исполнитель:** local-executor-composer
 **Статус:** DONE; deploy НЕ
