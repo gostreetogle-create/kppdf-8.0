@@ -4,5 +4,5 @@ WAVE: WAVE-PRODUCTION-COCKPIT-POLISH successor
 STATUS: DONE
 CLOSED_AT: 2026-08-16
 CLOSED_BY: cursor-grok-4.6-executor
-COMMIT: pending-landing
+COMMIT: 1650cb22
 NEXT: STOP; propose deploy only on explicit PO command; do not deploy

@@ -63,7 +63,7 @@ Secondary: PASS
 
 - task: TZ-PRODUCTION-336
 - outcome: DONE
-- commit: (landing SHA after git commit)
+- commit: 1650cb22
 - what: Gantt shows only orders with ≥1 work-bar; ineligible stay in rail with «нет плана»; toast.warning on select / `?orderId=`
 - conflict disclosure: none vs UX-332 / TZD-48 / UX-326 / CATALOG-374
 - known limits: no deep BOM; no auto in_production

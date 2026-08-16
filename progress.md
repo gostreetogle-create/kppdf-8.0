@@ -1,3 +1,14 @@
+## [2026-08-16] — TZD-48 DONE — Desktop Import Studio release blockers
+**Исполнитель:** Buffy / фоновый desktop исполнитель
+**Статус:** DONE; Cursor Verdict PASS; commit b03ecc22060f4d20c6d559c043910ea4701b5d87 pushed (e108e22a..b03ecc22 → main); deploy НЕ
+**Что:** сняты 10 блокеров релиза 0.5.3: AI-runner `/download` асинхронный + mkdir models + URL allowlist HF + не-sticky missing-file; частичный merge AI-карты (не обнуляет эвристики); честность SoT (non-material «Записать в каталог» + confirm, processed/ только при proposed+created>0); inbox Excel — лист с данными; counterparty inn required; bom убран из enum + guard; BE 400 на пустой профиль + нормализация legacy columnMap; копи «Модель» Запустить→Скачать→Перезапустить.
+**Gates:** desktop tsc PASS; svelte-check 0/0; desktop tests 46/46 (вкл. partial AI map, inn, sheet-with-data, URL allowlist); backend jest 12/12 (empty profile 400, dual-state normalize); smoke ai-runner PASS.
+**Review:** Cursor PASS (b03ecc22060f4d20c6d559c043910ea4701b5d87).
+**Archive:** `tasks/_archive/2026-08/TZD-48.done.md`
+**Lock:** `.mimocode/locks/TZD-48-desktop-import-studio-release-blockers.lock`
+**Known limit:** живой GGUF-прогон не делался (трафик); journal HITL для product/module/counterparty, размеры/вес CAD, session-per-chat Llama — successor TZD-49 (PARK).
+**Next:** STOP; новых TZ не брать. Версия 0.5.3 готова к сборке инсталлятора.
+
 ## [2026-08-16] — TZ-PRODUCTION-336 DONE — Gantt skip orders without modules
 **Исполнитель:** cursor-grok-4.6
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ
@@ -5,6 +16,7 @@
 **Gates:** FE tsc PASS; focused Jest 4 suites / 56 tests PASS; eslint owned files PASS (pre-existing OnInit warning).
 **Review:** Cursor PASS — eligibility = `buildGanttBars`; header spam gone; toast on attempt only.
 **Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-336.done.md`
+**Commit:** `1650cb22`
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-336-gantt-skip-orders-without-modules.lock`
 **Next:** STOP for this TZ; deploy не выполнялся.
 
