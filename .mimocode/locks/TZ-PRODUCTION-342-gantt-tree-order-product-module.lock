@@ -1,0 +1,5 @@
+TZ-PRODUCTION-342
+zone: frontend/src/app/pages/production/gantt-bar.model.ts + gantt-bars + cockpit context/page
+closed_at: 2026-08-16T21:10:43Z
+outcome: DONE
+note: Order→Product→Module→WT tree; worker lens deferred to 344

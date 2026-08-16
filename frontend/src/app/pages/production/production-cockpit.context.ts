@@ -47,6 +47,13 @@ export class ProductionCockpitContext {
   readonly expandedOrderIds = signal<ReadonlySet<string>>(new Set());
 
   /**
+   * TZ-PRODUCTION-342 — product / module expand keys
+   * (`product:{orderId}:{item}` / `module:{orderId}:{item}:{moduleId}`).
+   */
+  readonly expandedProductIds = signal<ReadonlySet<string>>(new Set());
+  readonly expandedModuleIds = signal<ReadonlySet<string>>(new Set());
+
+  /**
    * TZ-PRODUCTION-321 — one open work-type detail bar id (session; not in URL).
    */
   readonly expandedWorkBarId = signal<string | null>(null);
@@ -74,17 +81,66 @@ export class ProductionCockpitContext {
     return this.expandedOrderIds().has(orderId);
   }
 
+  isProductExpanded(productId: string): boolean {
+    return this.expandedProductIds().has(productId);
+  }
+
+  isModuleExpanded(moduleId: string): boolean {
+    return this.expandedModuleIds().has(moduleId);
+  }
+
   toggleOrderExpanded(orderId: string): void {
     this.expandedOrderIds.update((prev) => {
       const next = new Set(prev);
       if (next.has(orderId)) {
         next.delete(orderId);
+        this.pruneExpandUnderOrder(orderId);
         const workId = this.expandedWorkBarId();
         if (workId && workId.startsWith(`${orderId}:`)) {
           this.expandedWorkBarId.set(null);
         }
       } else {
         next.add(orderId);
+      }
+      return next;
+    });
+  }
+
+  toggleProductExpanded(productSummaryId: string): void {
+    this.expandedProductIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(productSummaryId)) {
+        next.delete(productSummaryId);
+        this.pruneModulesUnderProduct(productSummaryId);
+      } else {
+        next.add(productSummaryId);
+      }
+      return next;
+    });
+  }
+
+  toggleModuleExpanded(moduleSummaryId: string): void {
+    this.expandedModuleIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleSummaryId)) {
+        next.delete(moduleSummaryId);
+        const workId = this.expandedWorkBarId();
+        // module:{orderId}:{item}:{moduleId} — clear work-detail under this module path
+        if (workId) {
+          const parts = moduleSummaryId.split(':');
+          // ['module', orderId, item, moduleId...]
+          if (parts.length >= 4) {
+            const orderId = parts[1]!;
+            const item = parts[2]!;
+            const moduleId = parts.slice(3).join(':');
+            const prefix = `${orderId}:${item}:`;
+            if (workId.startsWith(prefix) && workId.includes(`:${moduleId}:`)) {
+              this.expandedWorkBarId.set(null);
+            }
+          }
+        }
+      } else {
+        next.add(moduleSummaryId);
       }
       return next;
     });
@@ -105,6 +161,7 @@ export class ProductionCockpitContext {
       if (expanded) next.add(orderId);
       else {
         next.delete(orderId);
+        this.pruneExpandUnderOrder(orderId);
         const workId = this.expandedWorkBarId();
         if (workId && workId.startsWith(`${orderId}:`)) {
           this.expandedWorkBarId.set(null);
@@ -114,11 +171,49 @@ export class ProductionCockpitContext {
     });
   }
 
-  /** Collapse all Gantt order trees + work-detail (backdrop / empty canvas). */
+  /** Collapse all Gantt trees + work-detail (backdrop / empty canvas). */
   clearExpandedOrders(): void {
-    if (this.expandedOrderIds().size === 0 && this.expandedWorkBarId() == null) return;
+    if (
+      this.expandedOrderIds().size === 0 &&
+      this.expandedProductIds().size === 0 &&
+      this.expandedModuleIds().size === 0 &&
+      this.expandedWorkBarId() == null
+    ) {
+      return;
+    }
     this.expandedOrderIds.set(new Set());
+    this.expandedProductIds.set(new Set());
+    this.expandedModuleIds.set(new Set());
     this.expandedWorkBarId.set(null);
+  }
+
+  private pruneExpandUnderOrder(orderId: string): void {
+    this.expandedProductIds.update((prev) => {
+      const next = new Set(prev);
+      for (const id of prev) {
+        if (id.startsWith(`product:${orderId}:`)) next.delete(id);
+      }
+      return next;
+    });
+    this.expandedModuleIds.update((prev) => {
+      const next = new Set(prev);
+      for (const id of prev) {
+        if (id.startsWith(`module:${orderId}:`)) next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  private pruneModulesUnderProduct(productSummaryId: string): void {
+    // product:{orderId}:{item} → module:{orderId}:{item}:*
+    const prefix = productSummaryId.replace(/^product:/, 'module:');
+    this.expandedModuleIds.update((prev) => {
+      const next = new Set(prev);
+      for (const id of prev) {
+        if (id.startsWith(`${prefix}:`)) next.delete(id);
+      }
+      return next;
+    });
   }
 
   setSearch(value: string): void {

@@ -21,6 +21,9 @@ import {
   buildWorkerTreeBars,
   ESTIMATE_OVERRIDE_HINT_RU,
   formatDateOnly,
+  isModuleSummaryBar,
+  isOrderSummaryBar,
+  isProductSummaryBar,
   isSummaryBar,
   isWorkerSummaryBar,
   ORDER_STATUS_LABELS,
@@ -327,11 +330,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                       type="button"
                       class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
                              text-ink/80 hover:text-ink hover:bg-paper-2/60"
-                      [attr.data-test]="'gantt-expand-' + row.bar.orderId"
+                      [attr.data-test]="'gantt-expand-' + expandKey(row.bar)"
                       [attr.aria-expanded]="row.expanded"
-                      [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
-                      [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
-                      (click)="onToggleExpand($event, row.bar.orderId)"
+                      [attr.title]="expandTitle(treeLabel(row.bar), row.expanded)"
+                      [attr.aria-label]="expandTitle(treeLabel(row.bar), row.expanded)"
+                      (click)="onToggleExpand($event, expandKey(row.bar))"
                     >
                       <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
                         row.expanded ? '▾' : '▸'
@@ -385,10 +388,19 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     ></span>
                   }
                   <span class="min-w-0 flex-1 truncate text-xs leading-none">
-                    @if (row.isSummary) {
+                    @if (row.isOrderSummary || row.isWorkerSummary) {
                       <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
+                    } @else if (row.isProductSummary) {
+                      <span class="text-ink pl-1">{{ row.bar.productName }}</span>
+                      @if (row.bar.quantityLabel) {
+                        <span class="font-mono text-muted-foreground">
+                          {{ row.bar.quantityLabel }}</span
+                        >
+                      }
+                    } @else if (row.isModuleSummary) {
+                      <span class="text-muted-foreground pl-2">{{ row.bar.moduleName }}</span>
                     } @else {
-                      <span class="text-muted-foreground pl-1">{{ row.bar.workTypeName }}</span>
+                      <span class="text-muted-foreground pl-3">{{ row.bar.workTypeName }}</span>
                       @if (row.bar.quantityLabel) {
                         <span class="font-mono text-muted-foreground">
                           {{ row.bar.quantityLabel }}</span
@@ -398,7 +410,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   </span>
                 </button>
               </div>
-              @if (row.isSummary && orderMetaFor(row.bar.orderId); as meta) {
+              @if (row.isOrderSummary && orderMetaFor(row.bar.orderId); as meta) {
                 <div
                   class="gantt-row-h-meta gantt-cascade-panel border-b hairline px-3 py-1.5 flex flex-nowrap items-center gap-x-4 min-w-0"
                   [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
@@ -647,7 +659,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   }
                 </div>
               </div>
-              @if (row.isSummary && isOrderMetaOpen(row.bar.orderId)) {
+              @if (row.isOrderSummary && isOrderMetaOpen(row.bar.orderId)) {
                 <div
                   class="relative gantt-row-h-meta gantt-cascade-spacer border-b hairline"
                   [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
@@ -902,8 +914,11 @@ export class GanttBarsComponent implements AfterViewInit {
   readonly today = input(formatDateOnly(new Date()));
   /** Parent command after range changes: scroll marker or range start into view. */
   readonly scrollRequest = input<{ target: 'today' | 'start'; nonce: number } | null>(null);
-  /** TZ-PRODUCTION-314 — which orders show work-type children. */
+  /** TZ-PRODUCTION-314 — which orders show product children. */
   readonly expandedOrderIds = input<ReadonlySet<string>>(new Set());
+  /** TZ-PRODUCTION-342 — product / module expand keys. */
+  readonly expandedProductIds = input<ReadonlySet<string>>(new Set());
+  readonly expandedModuleIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
   readonly expandedWorkBarId = input<string | null>(null);
   /** Order id with open order-meta strip — highlight label + timeline rows. */
@@ -1013,10 +1028,20 @@ export class GanttBarsComponent implements AfterViewInit {
   protected readonly treeBars = computed(() =>
     this.groupByWorkers()
       ? buildWorkerTreeBars(this.bars())
-      : buildGanttTreeBars(this.bars(), this.expandedOrderIds()),
+      : buildGanttTreeBars(
+          this.bars(),
+          this.expandedOrderIds(),
+          this.expandedProductIds(),
+          this.expandedModuleIds(),
+        ),
   );
 
-  protected readonly anyExpanded = computed(() => this.expandedOrderIds().size > 0);
+  protected readonly anyExpanded = computed(
+    () =>
+      this.expandedOrderIds().size > 0 ||
+      this.expandedProductIds().size > 0 ||
+      this.expandedModuleIds().size > 0,
+  );
 
   protected readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();
@@ -1066,7 +1091,9 @@ export class GanttBarsComponent implements AfterViewInit {
     const start = this.rangeStart();
     const total = this.totalDays();
     const px = this.pxPerDay();
-    const expanded = this.expandedOrderIds();
+    const expandedOrders = this.expandedOrderIds();
+    const expandedProducts = this.expandedProductIds();
+    const expandedModules = this.expandedModuleIds();
     const sorted = this.treeBars();
     const byWorkers = this.groupByWorkers();
     /** Last tree index per expanded order — for group-end frame. */
@@ -1074,7 +1101,7 @@ export class GanttBarsComponent implements AfterViewInit {
     if (!byWorkers) {
       for (let i = 0; i < sorted.length; i++) {
         const bar = sorted[i]!;
-        if (expanded.has(bar.orderId)) lastIdxByOrder.set(bar.orderId, i);
+        if (expandedOrders.has(bar.orderId)) lastIdxByOrder.set(bar.orderId, i);
       }
     }
     return sorted.map((bar, idx) => {
@@ -1084,7 +1111,18 @@ export class GanttBarsComponent implements AfterViewInit {
         : Math.max(1, dayDiff(bar.startDate, bar.endDate) + 1);
       const prev = idx > 0 ? sorted[idx - 1] : null;
       const isSummary = isSummaryBar(bar);
-      const treeExpanded = !byWorkers && expanded.has(bar.orderId);
+      const orderSummary = isOrderSummaryBar(bar);
+      const productSummary = isProductSummaryBar(bar);
+      const moduleSummary = isModuleSummaryBar(bar);
+      const workerSummary = isWorkerSummaryBar(bar);
+      const treeExpanded = !byWorkers && expandedOrders.has(bar.orderId);
+      const branchExpanded = orderSummary
+        ? expandedOrders.has(bar.orderId)
+        : productSummary
+          ? expandedProducts.has(bar.id)
+          : moduleSummary
+            ? expandedModules.has(bar.id)
+            : false;
       return {
         bar,
         alt: idx % 2 === 1,
@@ -1093,8 +1131,12 @@ export class GanttBarsComponent implements AfterViewInit {
         widthPx: Math.max(px * 0.5, span * px),
         baseSpanDays: span,
         isSummary,
-        expanded: expanded.has(bar.orderId),
-        orderGroupStart: treeExpanded && isSummary,
+        isOrderSummary: orderSummary,
+        isProductSummary: productSummary,
+        isModuleSummary: moduleSummary,
+        isWorkerSummary: workerSummary,
+        expanded: branchExpanded,
+        orderGroupStart: treeExpanded && orderSummary,
         orderGroupEnd: treeExpanded && lastIdxByOrder.get(bar.orderId) === idx,
       };
     });
@@ -1162,11 +1204,13 @@ export class GanttBarsComponent implements AfterViewInit {
   }
 
   /**
-   * Summary → plannedDate; child work bar → start offset (316).
+   * Order summary → plannedDate; work bar → start offset (316).
+   * Product/module summaries are derived spans — not movable.
    */
   protected canMoveBar(bar: GanttBar): boolean {
     if (this.groupByWorkers()) return false;
-    const mayMove = isSummaryBar(bar) ? this.canEditOrder() : this.canEdit();
+    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) return false;
+    const mayMove = isOrderSummaryBar(bar) ? this.canEditOrder() : this.canEdit();
     if (!mayMove || this.readOnly()) return false;
     if (isBarEstimateReadOnly(bar.orderStatus)) return false;
     return true;
@@ -1218,10 +1262,22 @@ export class GanttBarsComponent implements AfterViewInit {
     return this.fill(row.bar.workTypeId, row.bar.accentHue);
   }
 
-  protected onToggleExpand(event: Event, orderId: string): void {
+  protected onToggleExpand(event: Event, expandId: string): void {
     event.stopPropagation();
     event.preventDefault();
-    this.toggleExpand.emit(orderId);
+    this.toggleExpand.emit(expandId);
+  }
+
+  /** Expand emit key: orderId | product:… | module:… */
+  protected expandKey(bar: GanttBar): string {
+    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) return bar.id;
+    return bar.orderId;
+  }
+
+  protected treeLabel(bar: GanttBar): string {
+    if (isProductSummaryBar(bar)) return bar.productName;
+    if (isModuleSummaryBar(bar)) return bar.moduleName;
+    return bar.orderNumber;
   }
 
   protected onChildWorkToggle(event: Event, barId: string): void {
@@ -1293,16 +1349,19 @@ export class GanttBarsComponent implements AfterViewInit {
     this.dismissCanvas.emit();
   }
 
-  /** Summary left label → order-meta toggle; child work-type label → work-detail. */
-  protected onLabelClick(
-    event: Event,
-    row: { isSummary: boolean; bar: { orderId: string; id: string } },
-  ): void {
+  /** Order summary left label → order-meta; product/module ignore; work → detail. */
+  protected onLabelClick(event: Event, row: { isSummary: boolean; bar: GanttBar }): void {
     event.stopPropagation();
     event.preventDefault();
-    if (row.isSummary) {
-      // Worker group summary is not an order — no order-meta toggle in read-only view.
+    if (isOrderSummaryBar(row.bar)) {
       if (!this.groupByWorkers()) this.orderLabelClick.emit(row.bar.orderId);
+      return;
+    }
+    if (
+      isProductSummaryBar(row.bar) ||
+      isModuleSummaryBar(row.bar) ||
+      isWorkerSummaryBar(row.bar)
+    ) {
       return;
     }
     this.toggleWorkDetail.emit(row.bar.id);
@@ -1379,7 +1438,7 @@ export class GanttBarsComponent implements AfterViewInit {
     const target = event.currentTarget as HTMLElement;
     target.setPointerCapture?.(event.pointerId);
     this.moveSession.set({
-      mode: isSummaryBar(bar) ? 'plannedDate' : 'startOffset',
+      mode: isOrderSummaryBar(bar) ? 'plannedDate' : 'startOffset',
       orderId: bar.orderId,
       barId: bar.id,
       bar,
@@ -1544,8 +1603,18 @@ export class GanttBarsComponent implements AfterViewInit {
     if (isWorkerSummaryBar(b)) {
       return [`Рабочий: ${b.orderNumber}`, `${b.startDate}→${b.endDate}`].join(' · ');
     }
-    if (isSummaryBar(b)) {
+    if (isOrderSummaryBar(b)) {
       return [b.orderNumber, this.statusLabel(b.orderStatus), `${b.startDate}→${b.endDate}`]
+        .filter(Boolean)
+        .join(' · ');
+    }
+    if (isProductSummaryBar(b)) {
+      return [b.orderNumber, b.productName, b.quantityLabel, `${b.startDate}→${b.endDate}`]
+        .filter(Boolean)
+        .join(' · ');
+    }
+    if (isModuleSummaryBar(b)) {
+      return [b.orderNumber, b.productName, b.moduleName, `${b.startDate}→${b.endDate}`]
         .filter(Boolean)
         .join(' · ');
     }
@@ -1571,6 +1640,8 @@ export class GanttBarsComponent implements AfterViewInit {
   /** TZ-PRODUCTION-322: order-number zone — order-meta strip only. */
   protected summaryCardTitle(b: GanttBar): string {
     if (isWorkerSummaryBar(b)) return `Группа рабочего: ${b.orderNumber}`;
+    if (isProductSummaryBar(b)) return `Изделие · ${b.productName}`;
+    if (isModuleSummaryBar(b)) return `Модуль · ${b.moduleName}`;
     return `Статус и даты заказа ${b.orderNumber}`;
   }
 
@@ -1584,7 +1655,7 @@ export class GanttBarsComponent implements AfterViewInit {
   protected barAriaLabel(b: GanttBar): string {
     const base = this.barTitle(b);
     if (!this.canMoveBar(b)) return base;
-    if (isSummaryBar(b)) return `${base} · Сдвинуть начало заказа`;
+    if (isOrderSummaryBar(b)) return `${base} · Сдвинуть начало заказа`;
     return `${base} · Сдвинуть вид работ`;
   }
 }

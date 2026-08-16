@@ -321,7 +321,7 @@ describe('gantt-bar.model', () => {
     );
   });
 
-  it('tree bars: collapsed = one summary per order; expand shows children', () => {
+  it('tree bars: collapsed = one summary; expand order → product; module → work', () => {
     const input: OrderEstimateInput = {
       orderId: 'o1',
       orderNumber: 'ORD-1',
@@ -353,11 +353,38 @@ describe('gantt-bar.model', () => {
     expect(collapsed[0]!.kind).toBe('summary');
     expect(collapsed[0]!.days).toBe(5);
 
-    const expanded = buildGanttTreeBars(work, new Set(['o1']));
-    expect(expanded).toHaveLength(3);
-    expect(expanded[0]!.kind).toBe('summary');
-    expect(expanded[1]!.workTypeName).toBe('Сварка');
-    expect(expanded[2]!.workTypeName).toBe('Покраска');
+    const orderOpen = buildGanttTreeBars(work, new Set(['o1']));
+    expect(orderOpen).toHaveLength(2);
+    expect(orderOpen[0]!.kind).toBe('summary');
+    expect(orderOpen[1]!.kind).toBe('product');
+    expect(orderOpen[1]!.productName).toBe('Стол');
+    expect(orderOpen[1]!.id).toBe('product:o1:0');
+    expect(orderOpen.some((b) => b.workTypeName === 'Сварка')).toBe(false);
+
+    const productOpen = buildGanttTreeBars(work, new Set(['o1']), new Set(['product:o1:0']));
+    expect(productOpen).toHaveLength(3);
+    expect(productOpen[2]!.kind).toBe('module');
+    expect(productOpen[2]!.moduleName).toBe('Каркас');
+    expect(productOpen[2]!.id).toBe('module:o1:0:m1');
+    expect(
+      productOpen.some(
+        (b) =>
+          b.kind !== 'summary' &&
+          b.kind !== 'product' &&
+          b.kind !== 'module' &&
+          b.workTypeName === 'Сварка',
+      ),
+    ).toBe(false);
+
+    const moduleOpen = buildGanttTreeBars(
+      work,
+      new Set(['o1']),
+      new Set(['product:o1:0']),
+      new Set(['module:o1:0:m1']),
+    );
+    expect(moduleOpen).toHaveLength(5);
+    expect(moduleOpen[3]!.workTypeName).toBe('Сварка');
+    expect(moduleOpen[4]!.workTypeName).toBe('Покраска');
   });
 
   function treeOrderInput(

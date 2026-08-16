@@ -137,6 +137,8 @@ const CHROME_OWNER = 'production-cockpit';
               [readOnly]="readOnly()"
               [canEdit]="canEditCatalog()"
               [expandedOrderIds]="ctx.expandedOrderIds()"
+              [expandedProductIds]="ctx.expandedProductIds()"
+              [expandedModuleIds]="ctx.expandedModuleIds()"
               [expandedWorkBarId]="ctx.expandedWorkBarId()"
               [groupByWorkers]="groupBy() === 'workers'"
               [highlightOrderId]="metaHighlightOrderId()"
@@ -415,8 +417,16 @@ export class ProductionCockpitPage implements OnInit {
     this.ctx.closeOrderMeta();
   }
 
-  protected onToggleExpand(orderId: string): void {
-    this.ctx.toggleOrderExpanded(orderId);
+  protected onToggleExpand(expandId: string): void {
+    if (expandId.startsWith('product:')) {
+      this.ctx.toggleProductExpanded(expandId);
+      return;
+    }
+    if (expandId.startsWith('module:')) {
+      this.ctx.toggleModuleExpanded(expandId);
+      return;
+    }
+    this.ctx.toggleOrderExpanded(expandId);
   }
 
   protected onToggleWorkDetail(barId: string): void {

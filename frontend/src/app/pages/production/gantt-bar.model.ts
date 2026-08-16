@@ -240,7 +240,12 @@ export function resolveEstimateDays(
   return normalizeWorkTypeDays(catalogDays);
 }
 
-export type GanttBarKind = 'work' | 'summary';
+/**
+ * TZ-PRODUCTION-342 — tree levels:
+ * summary (order) → product → module → work.
+ * Worker group rows stay `summary` + WORKER_SUMMARY_WORK_TYPE_ID (401).
+ */
+export type GanttBarKind = 'work' | 'summary' | 'product' | 'module';
 
 export interface GanttBar {
   id: string;
@@ -265,7 +270,7 @@ export interface GanttBar {
   usedFallbackToday: boolean;
   workerLabel: string;
   accentHue?: number | null;
-  /** TZ-PRODUCTION-314 — summary row vs work-type child. Default work. */
+  /** TZ-PRODUCTION-314/342 — order/product/module summary vs work leaf. Default work. */
   kind?: GanttBarKind;
   /**
    * TZ-PRODUCTION-316 — explicit start offset from visualAnchor when set.
@@ -274,12 +279,34 @@ export interface GanttBar {
   startOffsetDays?: number | null;
 }
 
+/** Any non-work tree branch (order / product / module / worker summary). */
 export function isSummaryBar(bar: GanttBar): boolean {
-  return bar.kind === 'summary';
+  const k = bar.kind;
+  return k === 'summary' || k === 'product' || k === 'module';
 }
 
 export function isWorkBar(bar: GanttBar): boolean {
-  return bar.kind !== 'summary';
+  return !isSummaryBar(bar);
+}
+
+export function isProductSummaryBar(bar: GanttBar): boolean {
+  return bar.kind === 'product';
+}
+
+export function isModuleSummaryBar(bar: GanttBar): boolean {
+  return bar.kind === 'module';
+}
+
+export function ganttProductSummaryId(orderId: string, orderItemIndex: number): string {
+  return `product:${orderId}:${orderItemIndex}`;
+}
+
+export function ganttModuleSummaryId(
+  orderId: string,
+  orderItemIndex: number,
+  moduleId: string,
+): string {
+  return `module:${orderId}:${orderItemIndex}:${moduleId}`;
 }
 
 /**
@@ -361,13 +388,147 @@ export function buildOrderSummaryBar(children: readonly GanttBar[]): GanttBar | 
   };
 }
 
+/** Span = min(child.start)…max(child.end); duration = calendar span. */
+function buildSpanSummaryBar(
+  children: readonly GanttBar[],
+  patch: Partial<GanttBar> & Pick<GanttBar, 'id' | 'kind' | 'workTypeId' | 'workTypeName'>,
+): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  let minStart = first.startDate;
+  let maxEnd = first.endDate;
+  let usedFallbackToday = first.usedFallbackToday;
+  let allNoTerm = true;
+  for (const c of children) {
+    if (c.startDate < minStart) minStart = c.startDate;
+    if (c.endDate > maxEnd) maxEnd = c.endDate;
+    usedFallbackToday = usedFallbackToday || c.usedFallbackToday;
+    if (!c.noTerm) allNoTerm = false;
+  }
+  const span = calendarSpanDays(minStart, maxEnd);
+  const noTerm = allNoTerm || span == null;
+  return {
+    id: patch.id,
+    orderId: first.orderId,
+    orderNumber: first.orderNumber,
+    orderStatus: first.orderStatus,
+    orderItemIndex: patch.orderItemIndex ?? first.orderItemIndex,
+    productId: patch.productId ?? first.productId,
+    productName: patch.productName ?? first.productName,
+    moduleId: patch.moduleId ?? '',
+    moduleName: patch.moduleName ?? '',
+    workTypeId: patch.workTypeId,
+    workTypeName: patch.workTypeName,
+    occurrence: 0,
+    quantity: patch.quantity ?? first.quantity,
+    quantityLabel: patch.quantityLabel !== undefined ? patch.quantityLabel : first.quantityLabel,
+    days: noTerm ? null : span,
+    noTerm,
+    startDate: minStart,
+    endDate: maxEnd,
+    usedFallbackToday,
+    workerLabel: '—',
+    accentHue: null,
+    kind: patch.kind,
+  };
+}
+
+export function buildProductSummaryBar(children: readonly GanttBar[]): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  return buildSpanSummaryBar(children, {
+    id: ganttProductSummaryId(first.orderId, first.orderItemIndex),
+    kind: 'product',
+    orderItemIndex: first.orderItemIndex,
+    productId: first.productId,
+    productName: first.productName,
+    moduleId: '',
+    moduleName: '',
+    workTypeId: '__product_summary__',
+    workTypeName: first.productName,
+    quantity: first.quantity,
+    quantityLabel: first.quantityLabel,
+  });
+}
+
+export function buildModuleSummaryBar(children: readonly GanttBar[]): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  return buildSpanSummaryBar(children, {
+    id: ganttModuleSummaryId(first.orderId, first.orderItemIndex, first.moduleId),
+    kind: 'module',
+    orderItemIndex: first.orderItemIndex,
+    productId: first.productId,
+    productName: first.productName,
+    moduleId: first.moduleId,
+    moduleName: first.moduleName,
+    workTypeId: '__module_summary__',
+    workTypeName: first.moduleName,
+    quantity: first.quantity,
+    quantityLabel: null,
+  });
+}
+
+/** Group work bars by orderItemIndex (stable first-appearance). */
+export function groupBarsByProduct(bars: readonly GanttBar[]): Array<{
+  orderItemIndex: number;
+  children: GanttBar[];
+}> {
+  const map = new Map<number, GanttBar[]>();
+  const order: number[] = [];
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    const list = map.get(bar.orderItemIndex);
+    if (!list) {
+      map.set(bar.orderItemIndex, [bar]);
+      order.push(bar.orderItemIndex);
+    } else {
+      list.push(bar);
+    }
+  }
+  return order.map((orderItemIndex) => ({
+    orderItemIndex,
+    children: map.get(orderItemIndex)!,
+  }));
+}
+
+/** Group work bars by moduleId within one product (stable first-appearance). */
+export function groupBarsByModule(bars: readonly GanttBar[]): Array<{
+  moduleId: string;
+  children: GanttBar[];
+}> {
+  const map = new Map<string, GanttBar[]>();
+  const order: string[] = [];
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    const list = map.get(bar.moduleId);
+    if (!list) {
+      map.set(bar.moduleId, [bar]);
+      order.push(bar.moduleId);
+    } else {
+      list.push(bar);
+    }
+  }
+  return order.map((moduleId) => ({ moduleId, children: map.get(moduleId)! }));
+}
+
+function sortWorkKids(kids: readonly GanttBar[]): GanttBar[] {
+  return [...kids].sort((a, b) => {
+    const s = a.startDate.localeCompare(b.startDate);
+    if (s !== 0) return s;
+    return a.occurrence - b.occurrence;
+  });
+}
+
 /**
- * Collapsed tree: one summary per order.
- * Expanded orderIds also append work-type children under their summary.
+ * TZ-PRODUCTION-342 — Order → Product → Module → WorkType tree.
+ * Expand sets use ids: orderId | product:{orderId}:{item} | module:{orderId}:{item}:{moduleId}.
  */
 export function buildGanttTreeBars(
   workBars: readonly GanttBar[],
   expandedOrderIds: ReadonlySet<string>,
+  expandedProductIds: ReadonlySet<string> = new Set(),
+  expandedModuleIds: ReadonlySet<string> = new Set(),
 ): GanttBar[] {
   const groups = groupBarsByOrder(workBars);
   // Earlier summary startDate on top; tie-break orderNumber (not priority).
@@ -382,14 +543,20 @@ export function buildGanttTreeBars(
   const out: GanttBar[] = [];
   for (const { g, summary } of ranked) {
     out.push(summary);
-    if (expandedOrderIds.has(g.orderId)) {
-      const kids = [...g.children].sort((a, b) => {
-        const s = a.startDate.localeCompare(b.startDate);
-        if (s !== 0) return s;
-        return a.occurrence - b.occurrence;
-      });
-      for (const kid of kids) {
-        out.push({ ...kid, kind: kid.kind ?? 'work' });
+    if (!expandedOrderIds.has(g.orderId)) continue;
+    for (const productGroup of groupBarsByProduct(g.children)) {
+      const productSummary = buildProductSummaryBar(productGroup.children);
+      if (!productSummary) continue;
+      out.push(productSummary);
+      if (!expandedProductIds.has(productSummary.id)) continue;
+      for (const moduleGroup of groupBarsByModule(productGroup.children)) {
+        const moduleSummary = buildModuleSummaryBar(moduleGroup.children);
+        if (!moduleSummary) continue;
+        out.push(moduleSummary);
+        if (!expandedModuleIds.has(moduleSummary.id)) continue;
+        for (const kid of sortWorkKids(moduleGroup.children)) {
+          out.push({ ...kid, kind: kid.kind ?? 'work' });
+        }
       }
     }
   }
@@ -401,6 +568,11 @@ export const UNASSIGNED_WORKER_LABEL = 'Не назначен';
 
 /** Sentinel workTypeId on worker-group summary rows (never a catalog WorkType). */
 export const WORKER_SUMMARY_WORK_TYPE_ID = '__worker_summary__';
+
+/** Order-level summary (not worker / product / module). */
+export function isOrderSummaryBar(bar: GanttBar): boolean {
+  return bar.kind === 'summary' && bar.workTypeId !== WORKER_SUMMARY_WORK_TYPE_ID;
+}
 
 /** Worker group key from a bar's workerLabel; '—'/empty → «Не назначен». */
 export function workerGroupKeyOf(bar: GanttBar): string {

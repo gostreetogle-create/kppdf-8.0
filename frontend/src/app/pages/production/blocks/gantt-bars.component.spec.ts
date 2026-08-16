@@ -48,6 +48,25 @@ describe('GanttBarsComponent', () => {
     endDate: '2026-08-05',
   };
 
+  const productKeyO1 = 'product:o1:0';
+  const moduleKeyO1 = 'module:o1:0:m1';
+
+  /** Expand Order → Product → Module so work bars are visible (TZ-PRODUCTION-342). */
+  function setFullTreeExpand(
+    fixture: { componentRef: { setInput: (k: string, v: unknown) => void } },
+    orderIds: string[] = ['o1'],
+  ): void {
+    fixture.componentRef.setInput('expandedOrderIds', new Set(orderIds));
+    fixture.componentRef.setInput(
+      'expandedProductIds',
+      new Set(orderIds.map((id) => `product:${id}:0`)),
+    );
+    fixture.componentRef.setInput(
+      'expandedModuleIds',
+      new Set(orderIds.map((id) => `module:${id}:0:m1`)),
+    );
+  }
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [GanttBarsComponent],
@@ -73,7 +92,7 @@ describe('GanttBarsComponent', () => {
     );
   });
 
-  it('expand shows work-type children; collapse hides them', () => {
+  it('TZ-PRODUCTION-342: expand order shows products; full path shows work types', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -81,20 +100,29 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(1);
-    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
-    expect(el.textContent).toContain('Сварка');
-    expect(el.textContent).toContain('Покраска');
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(2); // order + product
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(0);
+    expect(el.textContent).toContain('Стол');
+    expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeFalsy();
     expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
       'Заказ · работа',
     );
 
+    setFullTreeExpand(fixture);
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    expect(el.textContent).toContain('Сварка');
+    expect(el.textContent).toContain('Покраска');
+    expect(el.textContent).toContain('Каркас');
+
     fixture.componentRef.setInput('expandedOrderIds', new Set());
+    fixture.componentRef.setInput('expandedProductIds', new Set());
+    fixture.componentRef.setInput('expandedModuleIds', new Set());
     fixture.detectChanges();
     expect(el.querySelector('[data-test="gantt-bar"]')).toBeFalsy();
   });
 
-  it('TZ-PRODUCTION-317: expand inserts children under summary; peer orders remain and shift down', () => {
+  it('TZ-PRODUCTION-317/342: expand order inserts products; full path shows work; peer remains', () => {
     const peer: GanttBar = {
       ...sample,
       id: 'o2:0:p1:m1:wt1:1',
@@ -112,17 +140,27 @@ describe('GanttBarsComponent', () => {
 
     fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
     fixture.detectChanges();
-    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(2);
-    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(3); // o1 + product + o2
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(0);
     const labels = Array.from(el.querySelectorAll('[data-test^="gantt-label-"]')).map((n) =>
       (n as HTMLElement).getAttribute('data-test'),
     );
     const iSum1 = labels.indexOf('gantt-label-summary:o1');
-    const iChild = labels.indexOf('gantt-label-o1:0:p1:m1:wt1:1');
+    const iProduct = labels.indexOf(`gantt-label-${productKeyO1}`);
     const iSum2 = labels.indexOf('gantt-label-summary:o2');
     expect(iSum1).toBeGreaterThanOrEqual(0);
-    expect(iChild).toBeGreaterThan(iSum1);
-    expect(iSum2).toBeGreaterThan(iChild);
+    expect(iProduct).toBeGreaterThan(iSum1);
+    expect(iSum2).toBeGreaterThan(iProduct);
+
+    setFullTreeExpand(fixture, ['o1']);
+    fixture.detectChanges();
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    const labels2 = Array.from(el.querySelectorAll('[data-test^="gantt-label-"]')).map((n) =>
+      (n as HTMLElement).getAttribute('data-test'),
+    );
+    const iChild = labels2.indexOf('gantt-label-o1:0:p1:m1:wt1:1');
+    expect(iChild).toBeGreaterThan(labels2.indexOf(`gantt-label-${moduleKeyO1}`));
+    expect(iChild).toBeLessThan(labels2.indexOf('gantt-label-summary:o2'));
   });
 
   it('emits toggleExpand from chevron', () => {
@@ -146,7 +184,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     const clicks: string[] = [];
     const toggles: string[] = [];
@@ -214,7 +252,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     const expand = el.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement;
@@ -253,7 +291,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint, peer, peerPaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1', 'o2']));
+    setFullTreeExpand(fixture, ['o1', 'o2']);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
 
@@ -289,7 +327,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
 
@@ -328,7 +366,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.textContent).toContain('ORD-1');
@@ -526,7 +564,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('readOnly', false);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     const handle = fixture.nativeElement.querySelector(
       '[data-test="gantt-resize-handle-o1:0:p1:m1:wt1:1"]',
@@ -552,7 +590,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
     expect(fixture.nativeElement.querySelector('[data-test="gantt-bar-no-term"]')).toBeTruthy();
@@ -565,7 +603,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('readOnly', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
   });
@@ -577,7 +615,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test^="gantt-resize-handle-"]')).toBeFalsy();
   });
@@ -588,7 +626,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
 
     const commits: unknown[] = [];
@@ -659,7 +697,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('canEditOrder', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
 
     const moves: unknown[] = [];
@@ -722,7 +760,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
 
     const moves: unknown[] = [];
@@ -769,7 +807,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('canEdit', true);
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.detectChanges();
 
     const moves: unknown[] = [];
@@ -824,7 +862,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [withPeople, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.componentRef.setInput('canEdit', true);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
@@ -870,7 +908,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.componentRef.setInput('canEdit', false);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
@@ -911,7 +949,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.componentRef.setInput('expandedWorkBarId', sample.id);
     fixture.componentRef.setInput('canEdit', true);
     fixture.detectChanges();
@@ -994,7 +1032,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.componentRef.setInput('highlightOrderId', 'o1');
     fixture.componentRef.setInput('orderMeta', {
       orderId: 'o1',
@@ -1026,7 +1064,7 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
-    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    setFullTreeExpand(fixture);
     fixture.componentRef.setInput('expandedWorkBarId', sample.id);
     fixture.componentRef.setInput('orderMeta', {
       orderId: 'o1',

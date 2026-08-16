@@ -138,7 +138,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-311:** правый край полосы состава (не noTerm / не readOnly) → snap к календарным дням → PATCH override → optimistic local bars (333). Левый край — OUT.
 - **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы → `PATCH plannedDate` (optimistic, 333).
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется локально.
-- **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → виды работ; `ctx.expandedOrderIds`.
+- **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → **изделия** (не сразу WT); `ctx.expandedOrderIds`.
+- **TZ-PRODUCTION-342:** дерево **Заказ → Изделие → Модуль → Вид работ**; expand keys `expandedProductIds` / `expandedModuleIds` (`product:{orderId}:{item}` / `module:{orderId}:{item}:{moduleId}`); WT + cascade/drag только после ▸ модуля; product/module summary = derived span (не resize). Worker lens IA → 344.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
 - **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
@@ -190,6 +191,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-336** | DONE: skip orders without direct modules/work types on Gantt; rail marker «нет плана»; toast only on select / `?orderId=` |
 | **TZ-PRODUCTION-338** | DONE: Gantt hydrate = parallel product/module prefetch + non-blocking rail thumbs (bars first); estimate math unchanged |
 | **TZ-PRODUCTION-341** | DONE: hydrate `PREFETCH_CONCURRENCY` 8→3 + 429/503 retry (backoff 300/800/1500); no 404 retry; BE throttle untouched |
+| **TZ-PRODUCTION-342** | DONE: Gantt tree Order→Product→Module→WT; expand product/module keys; WT leaf + cascade/drag after module ▸; worker IA = 344 |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -221,6 +223,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 - **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.
 - **TZ-PRODUCTION-341 known_limitation:** полный batch products/modules API — later; BE short throttle 10/s не меняли (successor только по PO); `DISABLE_THROTTLE=1` — только local/dev.
+- **TZ-PRODUCTION-342 known_limitation:** worker lens IA = 344; product-without-modules polish = 345; RU toggle wording = 343.
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

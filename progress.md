@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-342 DONE — Gantt tree Order→Product→Module→WT
+**Исполнитель:** local-executor-composer
+**Статус:** DONE; deploy НЕ
+**Что:** `buildGanttTreeBars` rematerialized: expand order → изделия, product → модули, module → виды работ; expand sets product/module; shell ▸/frames/cascade/WT drag сохранены; estimate day math без изменений; worker lens не трогали (344).
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bar.model|gantt-bars|production-cockpit.page` PASS (3/97).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-342.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-342-gantt-tree-order-product-module.lock`
+**Next:** TZ-PRODUCTION-343 (RU labels) / 344 (worker IA); deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-341 DONE — Gantt hydrate throttle 429
 **Исполнитель:** composer-executor
 **Статус:** DONE; deploy НЕ
