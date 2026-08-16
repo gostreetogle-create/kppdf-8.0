@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-CATALOG-375 DONE — materials list expandable preview
+**Исполнитель:** agent-3e757640b7 (frontend executor)
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** `/materials` list row-click → gold expand tray (Идентификация / Поставщик / Геометрия / Цена и склад / Описание); detail via name / «Открыть карточку».
+**Gates:** FE tsc PASS; materials.page Jest 25/25 PASS.
+**Review:** Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-375.done.md`
+**Commit:** `1322248d764ad05903b3f14b31b4809b4d9c06ac`
+**Lock:** `.mimocode/locks/TZ-CATALOG-375-materials-list-expand.lock`
+**Next:** STOP for this TZ; grid expand = known_limitation; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-344 DONE — showcase photo contain
 **Исполнитель:** agent-ux344-WIN-LOQVGED63JM-28704
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

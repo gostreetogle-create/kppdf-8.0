@@ -1,7 +1,7 @@
 # TZ-CATALOG-375 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-CATALOG-375.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-CATALOG-375.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -64,9 +64,9 @@ cd frontend && pnpm test -- --testPathPattern="materials.page" --coverage=false
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T09:47:00Z
 
 ## known_limitation
 

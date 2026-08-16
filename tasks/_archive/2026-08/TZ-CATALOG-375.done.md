@@ -1,3 +1,56 @@
+# TZ-CATALOG-375 DONE — Materials list expandable preview
+
+```
+ARCHIVE_MARKER
+task_id: TZ-CATALOG-375
+outcome: DONE
+closed_at: 2026-08-16T09:47:00Z
+agent_id: agent-3e757640b7 (frontend executor)
+workspace: D:\kppdf-8.0
+branch: main
+code_sha: 1322248d764ad05903b3f14b31b4809b4d9c06ac
+review: Cursor Verdict PASS
+deploy: NOT RUN
+```
+
+## Что сделано
+
+- `/materials` list: `(rowClick)` → `expandedId` toggle; gold tray с блоками Идентификация / Поставщик / Геометрия / Цена и склад / Описание.
+- Detail: name link (`open-row-link`) + «Открыть карточку»; stopPropagation на name/stock.
+- `pi-row-actions` edit не открывает expand.
+- Тесты expand в `materials.page-373.spec.ts` (real imports; list mode forced).
+- known_limitation: grid card click = navigate-to-detail (без expand).
+- Не тронуты: products.page / modules.page / desktop / chrome-rail.
+
+## Gates
+
+- `pnpm exec tsc -p tsconfig.app.json --noEmit` → PASS
+- `pnpm test -- --testPathPattern="materials.page" --coverage=false` → PASS (3 suites, 25 tests)
+
+## Review
+
+Cursor Verdict PASS → archive + lock + progress. Deploy нет.
+
+## known_limitation
+
+Grid: клик по карточке = navigate-to-detail (без expand), как в TZ.
+
+## Files
+
+- `frontend/src/app/pages/materials/materials.page.ts`
+- `frontend/src/app/pages/materials/materials.page.spec.ts`
+- `frontend/src/app/pages/materials/materials.page-373.spec.ts`
+- `docs/pages/materials.page.md`
+- `docs/pages/PAGE-TZ-INDEX.md`
+- `docs/agent-checklists/TZ-CATALOG-375.md`
+- `docs/agent-checklists/_NOW.md`
+- `progress.md`
+- `.mimocode/locks/TZ-CATALOG-375-materials-list-expand.lock`
+
+---
+
+## Original TZ body
+
 # TZ-CATALOG-375: Материалы — expandable строка с превью карточки
 
 > PO: на `/materials` клик не только по названию — по строке (как `/products` и `/modules`)

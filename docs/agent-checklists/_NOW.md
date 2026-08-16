@@ -5,19 +5,18 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:00:00+03:00
+updated_at: 2026-08-16T12:47:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **TZ-CATALOG-375** READY FOR REVIEW — `/materials` list expandable preview (gold tray); tsc + materials.page 25/25 PASS; await Cursor PASS. Checklist `docs/agent-checklists/TZ-CATALOG-375.md`.
+- **TZ-PRODUCTION-337** READY FOR REVIEW — цех «Все активные» без draft; tsc + 53 production tests PASS; await Cursor/PO PASS. Checklist `docs/agent-checklists/TZ-PRODUCTION-337.md`.
 - **TZ-PHOTO-304** — photo frame meta (WAVE; Freebuff framing).
 
 ## NEXT (PO paste prompt)
 
-- **Цех без черновиков:** `TZ-PRODUCTION-337` — «Все активные» = confirmed/in_production/ready. Канон `docs/COUPLING-MAP.md`.
 - **Единая пагинация:** WAVE #1–#3 **DONE** (**UX-340**, **UX-341**, **UX-342**).
-- Deploy **нет**. **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE.
+- Deploy **нет**. **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -30,6 +29,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-CATALOG-375 DONE — materials list expandable preview
+
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-375.done.md`; code `1322248d`; lock `TZ-CATALOG-375-materials-list-expand.lock`; Cursor PASS. Deploy нет.
 
 ## [2026-08-16] — TZ-UX-344 DONE — showcase photo contain
 

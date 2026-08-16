@@ -1,0 +1,14 @@
+TZ: TZ-CATALOG-375
+STATUS: DONE
+EXECUTOR: agent-3e757640b7 (frontend executor)
+CURSOR_VERDICT: PASS
+CLOSED_AT: 2026-08-16T09:47:00Z
+COMMIT: 1322248d764ad05903b3f14b31b4809b4d9c06ac
+ARCHIVE: tasks/_archive/2026-08/TZ-CATALOG-375.done.md
+NEXT: STOP for this TZ; deploy only on explicit PO command
+GATES: tsc PASS; materials.page 25/25 PASS
+KEYS:
+  - frontend/src/app/pages/materials/materials.page.ts
+  - frontend/src/app/pages/materials/materials.page.spec.ts
+  - frontend/src/app/pages/materials/materials.page-373.spec.ts
+  - docs/pages/materials.page.md
