@@ -1,6 +1,6 @@
 # TZ-COMBINE-408: Gate workType + days before shop (v2 PARK)
 
-STATUS: **PARK** — после 405; желательно после Gantt assign волны
+STATUS: **READY** — после COMBINE-407 archive (не раньше).
 
 РОЛЬ АГЕНТА: Backend + optional FE toast
 

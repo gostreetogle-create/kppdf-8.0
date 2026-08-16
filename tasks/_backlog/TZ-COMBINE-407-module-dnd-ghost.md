@@ -1,6 +1,6 @@
 # TZ-COMBINE-407: FE module DnD + ghost parent (v1.1 PARK)
 
-STATUS: **PARK** — после COMBINE-406
+STATUS: **READY** — после COMBINE-406 archive (не раньше).
 
 РОЛЬ АГЕНТА: Frontend Комбайн
 

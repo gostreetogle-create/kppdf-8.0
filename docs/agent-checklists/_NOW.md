@@ -10,15 +10,15 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 
 ## ACTIVE
 
-- **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
-- Freebuff 4–5ч: **вся очередь DONE** (GANTT-401 closeout + 410–414). Ожидание PO.
+- Cursor: hygiene + **TZ-DASHBOARD-401** (мелкое/среднее).
+- Freebuff (параллель): **WAVE-FREEBUFF-COMBINE-MODULES** — промпт `PROMPT-FREEBUFF-COMBINE-MODULES.md` (406→407→408).
 
 ## NEXT (PO paste prompt)
 
-- **Warm deploy** COMBINE 402–405 + GANTT-401 + test wave — только по «деплой»/«кати».
-- Modules/gate: `TZ-COMBINE-406`…`408` PARK.
-- Full home widgets → **TZ-DASHBOARD-401**.
-- **TZ-DATA-UTF8-CLEAN** PARK.
+- Freebuff: скопировать `tasks/_backlog/PROMPT-FREEBUFF-COMBINE-MODULES.md`
+- Warm deploy — только по «деплой»/«кати»
+- **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок» (трогает демо-данные)
+- SALES-377 — не без PO
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 

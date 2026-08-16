@@ -2,7 +2,7 @@
 
 > Старт только после COMBINE-405 DONE (уже на main). Opus: v1 без модулей.
 
-STATUS: **PARK** — unpark по слову PO
+STATUS: **READY** — unpark PO 2026-08-16 (добить модули). Зависимость: COMBINE-405 DONE.
 
 РОЛЬ АГЕНТА: Backend order schema/service
 
