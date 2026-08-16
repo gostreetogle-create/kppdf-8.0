@@ -11,7 +11,7 @@
 - **Row-click (TZ-CATALOG-374)**: toggle expand tray состава под строкой (`expandedId` + `getModuleTree`); **не** navigate. Grid: клик по карточке → detail (list-only expand).
 - **Toolbar** (порядок как у products): поиск · Select «Состав» (Все / С материалами / Пустые) · «+ Создать» · ghost «Обновить» · toggle list/grid (`view-list-button` / `view-grid-button`, `aria-pressed`) · счётчик справа.
 - **Filters rail** (канон оверлея): узкая полоска `w-12` + панель `filters-rail-panel` absolute left-full поверх колонки контента; backdrop **только** на контенте; клик/`change` внутри панели не закрывают. Панель: Состав · Сортировка (name↑↓, article↑↓) · «Сбросить» (`clear-filters`) · «Закрыть`.
-- **Grid**: `app-pi-showcase-card size="md"` в сетке `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`; `mediaUrl` из main/first фото; `title` = name, `eyebrow` = article или «Модуль», `description` = габариты или «N мат. · M раб.»; `sc-actions-md` — hint «Себест. см. карточку» (без batch cost-preview, TZ-COST-303); pager под сеткой при `total > PAGE_SIZE` (те же `pageSig`/`PAGE_SIZE`).
+- **Grid**: `app-pi-showcase-card size="md"` в сетке `grid-cols-1 md:grid-cols-2 xl:grid-cols-3`; `mediaUrl` из main/first фото; `title` = name, `eyebrow` = article или «Модуль», `description` = габариты или «N мат. · M раб.»; `sc-actions-md` — hint «Себест. см. карточку» (без batch cost-preview, TZ-COST-303); grid slice = `paginatedRows()`; pager = `<app-pi-pagination>` (канон TZ-UX-341 / UX-340).
 - **View mode persistence**: `localStorage['pi-modules-view-mode']` (`list` | `grid`), load/save в try/catch (паттерн products).
 - **Фильтр «Состав»** — client-side, dual-read: непустой `composition` (material-линии) приоритетнее legacy `materials[]`.
 

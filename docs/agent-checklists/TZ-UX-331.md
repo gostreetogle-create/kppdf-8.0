@@ -1,0 +1,57 @@
+# TZ-UX-331 checklist
+
+> Status: **READY FOR REVIEW**
+> Marker: `tasks/_active/TZ-UX-331.md`
+> Spec: `tasks/TZ-UX-331-brand-home-combine-affordance.md`
+> Commit/push: по `docs/GIT-POLICY.md`
+> Review: required — archive только после Cursor PASS
+
+## Claim slot (ОБЯЗАТЕЛЬНО до кода)
+
+- agent_id: cursor-composer (TZ-UX-331 frontend executor)
+- claimed_at: 2026-08-16T12:25:59+03:00
+- workspace: D:\kppdf-8.0
+- team_room_claim: unavailable (root checklist Claim slot = SoT)
+
+## Preflight
+
+- [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
+- [x] `_active/` + `_active-map` — нет чужого CLAIM на те же keys
+- [x] TZ прочитан
+- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS → READY FOR REVIEW
+- [x] `tasks/_active/TZ-UX-331.md` на месте
+
+## Acceptance
+
+- [x] Бренд-chip: soft gold/sunrise, золотой маркер, hover/focus
+- [x] `routerLink="/"`, aria/title «Комбайн заказов — главная», `data-test="nav-brand-home"`
+- [x] Spec layout green
+- [x] dashboard.page.md + page-chrome.md + PAGE-TZ-INDEX
+- [x] tsc app + focused test
+- [x] Light/dark читаемы (sunrise tokens: soft fill + warm marker; dark overrides in styles.css)
+
+## Integrity slot
+
+- [x] Тип: page (shell)
+- [x] FIC N/A (shell affordance only)
+- [x] page docs + PAGE-TZ-INDEX
+- [x] Чужой WIP не в коммите (только UX-331 paths)
+
+## Gates
+
+| Gate | Result |
+|------|--------|
+| `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` | PASS |
+| `cd frontend && pnpm test -- app-layout.component.spec` | PASS (8 tests) |
+
+## Executor report (auto)
+
+- Outcome: **READY FOR REVIEW** (TZ REVIEW required; archive after Cursor PASS)
+- Brand chip: `data-test="nav-brand-home"`, `routerLink="/"`, aria/title «Комбайн заказов — главная»
+- Visual: `bg-sunrise-soft` + hairline + `bg-sunrise-warm` marker + hover/focus
+- Docs: dashboard.page.md §Навигация; page-chrome Brand home; PAGE-TZ-INDEX shell+dashboard
+- Gates: tsc PASS; app-layout.spec 8/8 PASS
+- Not touched: products/modules/materials, pi-pagination, desktop, deals entry
+- Deploy: forbidden
+- Parent SHA before commit: `a36120d45cf66e1d6e95fa506d777937b0cbb2ea`
+- Commit SHA: _(fill after commit)_

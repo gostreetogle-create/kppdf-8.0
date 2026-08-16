@@ -13,7 +13,7 @@ import { PiDialogService } from '../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../shared/ui/toast/pi-toast.service';
 import { API_BASE_URL } from '../core/api.tokens';
 
-describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 chrome rails)', () => {
+describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 / TZ-UX-331)', () => {
   let fixture: ComponentFixture<AppLayoutComponent>;
   let chromeTools: PiChromeToolsService;
 
@@ -79,6 +79,26 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     fixture.nativeElement.querySelector('[data-test="app-chrome-rail-left"]');
   const rightRail = (): HTMLElement | null =>
     fixture.nativeElement.querySelector('[data-test="app-chrome-rail-right"]');
+
+  it('TZ-UX-331: brand home chip links to / with Комбайн aria', () => {
+    const brand = fixture.nativeElement.querySelector(
+      'a[data-test="nav-brand-home"]',
+    ) as HTMLAnchorElement | null;
+    expect(brand).toBeTruthy();
+    expect(brand!.getAttribute('aria-label') ?? '').toContain('Комбайн');
+    expect(brand!.getAttribute('title') ?? '').toContain('Комбайн');
+    expect(brand!.textContent ?? '').toContain('KPPDF');
+
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'app-layout.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('data-test="nav-brand-home"');
+    expect(source).toMatch(/routerLink="\/"/);
+    expect(source).toContain('Комбайн заказов — главная');
+    expect(source).toContain('bg-sunrise-warm');
+    expect(source).toContain('bg-sunrise-soft');
+  });
 
   it('TZ-UX-317: renders both gutter buttons with the canonical data-test', () => {
     expect(backBtn()).toBeTruthy();

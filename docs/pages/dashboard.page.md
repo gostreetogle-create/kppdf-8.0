@@ -41,8 +41,14 @@
 
 ## Навигация
 
-- Логотип / login / `/` → сюда.
+- **Бренд в шапке** «KPPDF · 8.0» — кнопка домой (`routerLink="/"`, aria «Комбайн заказов — главная») → сюда. Оформление: soft-gold chip (**TZ-UX-331**), не plain text.
+- Login / `/` → сюда же.
 - Сделки TOC: chip **Комбайн** (`/dashboard`). Не подписывать «Дашборд» — это `/inventory`.
+- Топ «Сделки» entry = Создать КП (`/proposals/create`), не Комбайн.
+
+## Редактирование изделия с доски (TZ-UX-332)
+
+Карандаш изделия вызывает `DashboardDialogService.openProductEdit(productId)` → `GET /api/products/:id` → `ProductFormDialogComponent` с полным `Product` (`_id`). Не передавать `{ id }` без карточки: Save бил в `PATCH /products/undefined`.
 
 ## Связанные TZ
 

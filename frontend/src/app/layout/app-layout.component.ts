@@ -327,13 +327,22 @@ export function matchActiveCategoryId(
                  hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-2 min-w-0">
+            <!-- TZ-UX-331: brand = visible home chip → / → Комбайн; text stays «KPPDF · 8.0». -->
             <a
               routerLink="/"
-              class="flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none"
-              aria-label="На главную"
-              title="На главную"
+              class="inline-flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none
+                     h-10 px-2 py-1
+                     rounded-sm hairline bg-sunrise-soft text-ink
+                     hover:bg-sunrise-warm/20 transition-colors pi-focus-ring
+                     cursor-pointer no-underline"
+              aria-label="Комбайн заказов — главная"
+              title="Комбайн заказов — главная"
+              data-test="nav-brand-home"
             >
-              <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
+              <span
+                class="block w-[10px] h-[10px] bg-sunrise-warm shrink-0"
+                aria-hidden="true"
+              ></span>
               <span class="font-display font-bold tracking-tight truncate"> KPPDF · 8.0 </span>
             </a>
 
