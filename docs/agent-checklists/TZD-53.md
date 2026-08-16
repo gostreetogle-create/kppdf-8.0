@@ -1,10 +1,10 @@
 # TZD-53 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-53.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md`
 > Spec: `tasks/TZD-53-desktop-excel-form-write-permission.md`
-> **Не archive / не lock** до Cursor Verdict PASS.
+> **Deploy 0.5.5 DEFERRED** — по слову PO «кати» + VPN off.
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -70,10 +70,10 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] Cursor Verdict PASS (не archive до PASS)
+- [x] Cursor Verdict **PASS** 2026-08-16 (код `ac7a49ed`; deploy 0.5.5 **DEFERRED** до «кати» + VPN off). Closeout docs OK; ZIP на сайт — отдельным шагом.
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active` (archive `tasks/_archive/2026-08/TZD-53.done.md`; lock `.mimocode/locks/TZD-53-excel-form-write-file.lock`)
+- [x] Status = DONE
+- closed_at: 2026-08-16T19:47:00+03:00
