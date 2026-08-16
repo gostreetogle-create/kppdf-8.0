@@ -4,6 +4,7 @@
 **Что:** products/modules/materials grid custom pager → `app-pi-pagination`; products 15→10; `pageSizeChange` resets page 1; modules grid slice via `paginatedRows()`.
 **Gates:** FE tsc PASS; products|modules|materials page Jest 69/69 PASS.
 **Archive:** `tasks/_archive/2026-08/TZ-UX-341.done.md`
+**Commit:** `c1e5d1c5`
 **Lock:** `.mimocode/locks/TZ-UX-341-catalog-grid-pager-unify.lock`
 **Next:** TZ-UX-342 (already READY FOR REVIEW); deploy не выполнялся.
 
