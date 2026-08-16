@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-TEST-OPS-413 DONE — docs link smoke COMBINE/GANTT
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** 0 broken `.page.md` ссылок в PAGE-TZ-INDEX (41), 0 broken rel `.md` в COUPLING-MAP; design-combine boardLane ↔ §2b, production-cockpit «По рабочим» согласованы.
+**Gates:** docs-link smoke PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-OPS-413.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-OPS-413-docs-link-smoke.lock`
+**Next:** TZ-TEST-REGRESS-414 (jest pack); deploy НЕ.
+
 ## [2026-08-16] — TZ-TEST-GANTT-402 DONE — specs «По рабочим»
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ
