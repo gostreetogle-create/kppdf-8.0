@@ -570,12 +570,8 @@ const CHROME_OWNER = 'materials-page';
                       </dd>
                     </div>
                   }
-                  @if (row.stockQty != null) {
-                    <div class="flex gap-2 min-w-0">
-                      <dt class="shrink-0 text-muted-foreground">Остаток</dt>
-                      <dd class="m-0 min-w-0 tabular-nums">{{ row.stockQty }}</dd>
-                    </div>
-                  }
+                  <!-- TZ-OPS-316: остаток НЕ берём из Material.stockQty (legacy, не обновляется
+                       движениями) — SoT = StorageItem; показываем только переход на /storage-items. -->
                   <div class="pt-0.5">
                     <a
                       [routerLink]="['/storage-items']"
