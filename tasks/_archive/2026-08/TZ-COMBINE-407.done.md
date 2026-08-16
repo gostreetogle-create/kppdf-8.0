@@ -41,7 +41,7 @@ outcome: DONE
 closed_at: 2026-08-16T17:40:00+03:00
 closed_by: freebuff (deepseek-v4-pro)
 TZ: TZ-COMBINE-407
-COMMIT: <pending>
+COMMIT: 740ce9bb
 layer: 2
 conflict_keys: frontend/src/app/pages/dashboard/dashboard.page.ts; frontend/src/app/pages/dashboard/dashboard.page.spec.ts; frontend/src/app/pages/orders/orders.service.ts; frontend/src/app/pages/orders/orders.service.spec.ts
 protects: module expand + DnD + ghost на Комбайне (moduleLanes FE write-path)
