@@ -37,6 +37,7 @@
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
 | Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` — протокол триггер→файлы + Integrity slot |
 | Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` — домен → BE module → route → page.md → SoT |
+| Общее поле на нескольких экранах | `docs/COUPLING-MAP.md` — смысл статуса/FK; не выдумывать локальный «активный» |
 
 ## 4. Не потерять при DONE (чеклист)
 
@@ -50,6 +51,7 @@
 - Чужой WIP / чужие conflict keys — не stage и не коммитить (`git add <свои файлы>` поимённо).
 - Archive только после зелёных gates и (если TZ требует) Cursor/PO PASS.
 - Перед READY/archive — **Integrity slot** в checklist заполнен (`docs/DOCS-INTEGRITY.md`).
+- Трогал статус/фильтр «активные»/FK на ≥2 экранах → строка в `docs/COUPLING-MAP.md`.
 
 ## 5. Не ломать (BAN)
 
@@ -70,6 +72,7 @@
 - **Desktop import / MCP** → `desktop/docs/MCP.md` + journal; FIC §E.
 - **Не уверен в каноне имён** → `docs/TZ-AUTHORING.md` §1.1 (1 термин = 1 сущность).
 - **Домен вообще** → сначала `docs/DOMAIN-MAP.md`, затем модуль в `backend/src/modules/`.
+- **Статус / фильтр «активные» / канбан / freeze / FK** → `docs/COUPLING-MAP.md`, потом свой page.md. Соседний экран того же поля — обязателен.
 
 ---
 

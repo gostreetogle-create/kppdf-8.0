@@ -81,6 +81,7 @@
 - [ ] AC измеримы + `pnpm` gates зоны
 - [ ] known_limitation: что остаётся successor’у
 - [ ] Нет дубля уже существующего TZ (`tasks/` + `_archive/2026-08/`)
+- [ ] Общее поле/статус: строка в `docs/COUPLING-MAP.md` или явный N/A
 
 ---
 

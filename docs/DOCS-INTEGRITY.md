@@ -20,6 +20,7 @@
 | Доменный SoT / write-path | page.md + при необходимости audit/vision; канон не менять молча |
 | Только refactor без UX/API | progress + checklist; page.md только если изменилось UX-поведение |
 | Доменная карта | строка в `docs/DOMAIN-MAP.md` при смене контура домена (module/route/page) |
+| Общее поле / статус / фильтр «активные» (≥2 экрана) | строка в `docs/COUPLING-MAP.md` + Couplings в затронутых page.md |
 
 ## 3. Integrity slot (обязателен в checklist)
 
@@ -29,10 +30,11 @@
 ## Integrity slot (до READY / archive)
 
 - [ ] Тип изменения определён: page | permission | module | MCP | docs-only | other
-- [ ] FIC §A–E пройдены **или** N/A с причиной одной строкой
+- [ ] FIC §A–E (и §F если общее поле) пройдены **или** N/A с причиной одной строкой
 - [ ] page.md / PAGE-TZ-INDEX обновлены **или** N/A (нет UI route)
 - [ ] SECTION-READINESS обновлён **или** N/A
 - [ ] Чужой WIP не в коммите; conflict keys соблюдены
+- [ ] Coupling map: строка в `docs/COUPLING-MAP.md` обновлена **или** N/A (не трогал общее поле/статус)
 - [ ] Канон: docs/DOCS-INTEGRITY.md
 ```
 
@@ -49,9 +51,10 @@ page.md = N/A, SECTION-READINESS = N/A — и так явно в Acceptance.
 
 ## 5. Ссылки
 
-- Списки интеграции: `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC §A–E)
+- Списки интеграции: `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC §A–F)
 - Тонкий склад: `docs/PROJECT-MEMORY.md`
 - Карта доменов: `docs/DOMAIN-MAP.md`
+- Общие поля между экранами: `docs/COUPLING-MAP.md`
 - Готовность разделов: `docs/SECTION-READINESS.md`
 - Шаблон checklist: `docs/agent-checklists/_TEMPLATE.md`
 

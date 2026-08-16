@@ -99,9 +99,19 @@
 - [x] Desktop pairing keys (TTL / multi / revoke) — **TZD-21**: opaque `kppd_…` + `/api/desktop/pairing-keys`; session JWT больше не в пакете; PAIRING.md / MCP.md ✅
 - [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»); локально для Ганта/каталога — `node scripts/seed-local-demo.mjs` (маркер `DEMO-LOCAL`, пишет в Mongo через API; boot-seed `LocalDemoSeed`, off: `LOCAL_DEMO_SEED=0`)
 
-## F. Перед «DONE / archive»
+## F. Общее поле / статус (coupling)
 
-- [ ] Этот чеклист пройден для типа изменения (A–E)
+Если TZ меняет поле, которое читают **≥2 экрана** (статус заказа, фильтр «активные», freeze, FK id-тип, «X из Y»):
+
+- [ ] Строка в [`COUPLING-MAP.md`](./COUPLING-MAP.md) обновлена в **том же** TZ
+- [ ] Пройдены все экраны из строки (не только свой)
+- [ ] Секция Couplings в затронутых `page.md`
+
+Пример дыры: Комбайн пишет `draft`, цех считает `draft` «Все активные» — `docs/audits/2026-08-16-order-status-coupling.md`.
+
+## G. Перед «DONE / archive»
+
+- [ ] Этот чеклист пройден для типа изменения (A–E, F если общее поле)
 - [ ] FE/BE tsc + focused tests
 - [ ] `progress.md` + checklist; чужой dirty не в коммите
 - [ ] **Integrity slot в checklist заполнен** (см. `docs/DOCS-INTEGRITY.md` + `_TEMPLATE.md`)
@@ -124,6 +134,6 @@
 
 В шаблоне TZ (acceptance / ЧТО ДЕЛАТЬ) явно укажи:
 
-> Обновить Feature Integration Checklist (`docs/FEATURE-INTEGRATION-CHECKLIST.md`) — пункты A/B/C…
+> Обновить Feature Integration Checklist (`docs/FEATURE-INTEGRATION-CHECKLIST.md`) — пункты A/B/C…; общее поле — §F + `docs/COUPLING-MAP.md`.
 
 Исполнитель без галочек чеклиста не ставит DONE.

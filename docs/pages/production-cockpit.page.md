@@ -215,6 +215,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - Zoom Месяц: нет полосы дней недели под именем месяца — successor только по запросу PO.
 - **TZ-PRODUCTION-333/335:** catalog WorkType.days по-прежнему toast + full reload; второй write того же заказа, пока PATCH в полёте, игнорируется.
 - Plan-vs-fact: после «выполнено» предлагать обновить норматив `WorkType.days` — **parked** (fact production OUT). См. `tasks/_backlog/PARK-plan-vs-fact-days.md`.
+- **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

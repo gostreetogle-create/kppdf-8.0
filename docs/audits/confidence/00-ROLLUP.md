@@ -30,17 +30,17 @@ umbrella: TZ-OPS-CONFIDENCE-LEDGER-401 (DONE — tasks/_archive/2026-08/TZ-OPS-C
 
 **P0: нет.** Волна не нашла ни одного P0 (security/corruption/deploy-blocker).
 
-### P2 backlog (fix-now кандидаты) + пути TZ
+### P2 backlog — CLOSED 2026-08-16
 
-| # | P2 | Где | TZ |
-|---|----|-----|----|
-| 1 | Директор видит страницы каталога (materials/organizations/counterparties/import-todos/categories/doc-template-categories/text-block-categories), но GET-списки `@Roles('admin','manager')` → 403; соседние products/modules/work-types включают director | LEDGER-04 F-01 | `tasks/_backlog/TZ-OPS-314-director-catalog-403.md` |
-| 2 | `CreateOrderDto.status` enum позволяет shipped/delivered/cancelled при create (bypass transition graph; FE шлёт draft — бага нет, дыра контракта) | LEDGER-05 F-01 | `tasks/_backlog/TZ-OPS-315-order-create-status.md` |
-| 3 | materials.page.ts рендерит legacy `Material.stockQty` как «Склад»/«Остаток» — поле не поддерживается движениями (SoT = StorageItem, FIC §D) | LEDGER-07 F-01 | `tasks/_backlog/TZ-OPS-316-materials-stock-display.md` |
-| 4 | PAGE-TZ-INDEX.md — ~15 битых относительных ссылок (префикс `../tasks/` вместо `../../tasks/`); «377» назван PARK хотя в backlog | LEDGER-01 F-01/F-03 | `tasks/_backlog/TZ-OPS-313-fix-page-tz-index-links.md` (DEFER пока NAV-303 WIP на файле) |
-| 5 | COUPLING-MAP §2/§4 «Комбайн `/dashboard`» устарел (канбан → `/design/combine`, NAV-303) | LEDGER-02 F-01 | после land NAV-303 (1 строка) |
+| # | Was | Outcome | Code / archive |
+|---|-----|---------|----------------|
+| 1 | director GET 403 на каталоге | DONE | `9ddadae2` · `TZ-OPS-314.done.md` |
+| 2 | CreateOrderDto status bypass | DONE (+ UpdateOrderDto OmitType fix) | `aba3842b` · `TZ-OPS-315.done.md` |
+| 3 | materials stale stockQty | DONE | `a1ad0e35` · `TZ-OPS-316.done.md` |
+| 4–5 | PAGE-TZ-INDEX links + COUPLING Комбайн | DONE | `18d9b915` · `TZ-OPS-313.done.md` |
+| — | docs closeout | DONE | `b9bd2031` |
 
-P3 (accept/косметика): _NOW.md ACTIVE не упоминает NAV-303/SITE-SMOKE-401 (LEDGER-01 F-02); login.page.md без device/break-glass секции (LEDGER-10 F-01); контракт списков modules = plain array vs envelope (LEDGER-04 F-02); MCP.md toolCount числа (LEDGER-08 F-02).
+P3 (accept/косметика, не блокер): login.page.md device/break-glass (LEDGER-10 F-01); modules list envelope drift (LEDGER-04 F-02); MCP.md toolCount (LEDGER-08 F-02).
 
 ### Fixed locally в волне (docs-only, не чужой WIP)
 
@@ -49,27 +49,24 @@ P3 (accept/косметика): _NOW.md ACTIVE не упоминает NAV-303/S
 
 ## Cursor confidence estimate
 
-**90 / 100** (моя честная оценка до закрытия P2-бэкалога и seed-доказательств; 98–99 — за Cursor после rollup + закрытия P0/P2 по правилу волны).
+**99 / 100** после P2 + SITE-SMOKE + land NAV-303/PHOTO-304 на `origin/main`. Минус ~1 до успешного post-deploy smoke.
 
 ### Что осталось UNKNOWN
 
-- Seed/права в **живой БД**: «director 403» доказан статикой (RolesGuard + seed), runtime на реальном аккаунте не прогонялся; кастомные роли/grants вне проверки.
+- Post-deploy health/login на prod (идёт warm `deploy.ps1`).
+- Seed/права в **живой БД**: director GET закрыт кодом; runtime на реальном director-аккаунте не прогонялся.
 - Живой MCP host: фактический toolCount, pairing + desktop-флоу (нужен запущенный десктоп).
-- Полный прогон всех тестов репозитория — только sample (170 тестов, все зелёные; FE tsc / BE tsc / desktop tsc PASS).
-- Browser smoke / E2E (живой UI + Mongo) не запускался; SITE-OPERATOR-WALK (DeepC) — отдельный поток.
-- Gantt deep BOM «изделие→изделие» — known_limitation (TZ-PRODUCTION-336).
-- Drift page.md ↔ код за пределами выборочных 5 страниц (LEDGER-01) не опровергнут.
+- Полный jest matrix / Gantt deep BOM known_limitation / page.md drift за sample.
 
 ## Проверка волны
 
 - scorecards 01–11 + этот rollup на месте
-- gates: FE tsc PASS · BE tsc PASS · desktop tsc PASS · jest sample 6/6 зелёный
-- чужой WIP не тронут/не закоммичен; коммит только своих keys (audit docs + umbrella) — по GIT-POLICY
-- Deploy: НЕТ (запрещён волной)
-- Checklist umbrella: **DONE** (Cursor Verdict PASS; archive + lock; remediation 313…316 не стартованы)
+- gates: FE tsc PASS · BE tsc PASS · NAV/PHOTO landed
+- Deploy: **IN PROGRESS** (warm, WAVE-DEPLOY-98; wipe нет)
+- P2 remediation **DONE**; SITE-SMOKE **DONE**; NAV-303 **DONE**; PHOTO-304 **DONE**
 
 ## Отчёт PO
 
-- overall = **86** (min) / median **91**; P0 = **0**; P2 = 5 (4 с тонкими TZ в `tasks/_backlog/`, 1 после NAV-303)
+- overall = **86** (min) / median **91**; P0 = **0**; **P2 closed**; Cursor confidence **99/100** (pre post-deploy stamp)
 - ROLLUP: `docs/audits/confidence/00-ROLLUP.md`
-- Archive: `tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md` · WAVE DONE · deploy нет
+- Archive: LEDGER-401 + OPS-313…316 + SITE-SMOKE-401 + NAV-303 + PHOTO-304

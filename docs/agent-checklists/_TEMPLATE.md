@@ -32,10 +32,11 @@
 ## Integrity slot (до READY / archive)
 
 - [ ] Тип изменения определён: page | permission | module | MCP | docs-only | other
-- [ ] FIC §A–E пройдены **или** N/A с причиной одной строкой
+- [ ] FIC §A–E (и §F если общее поле) пройдены **или** N/A с причиной одной строкой
 - [ ] page.md / PAGE-TZ-INDEX обновлены **или** N/A (нет UI route)
 - [ ] SECTION-READINESS обновлён **или** N/A
 - [ ] Чужой WIP не в коммите; conflict keys соблюдены
+- [ ] Coupling map: `docs/COUPLING-MAP.md` обновлён **или** N/A (не трогал общее поле/статус)
 - [ ] Канон: docs/DOCS-INTEGRITY.md
 
 ## Gates (факт)
