@@ -216,7 +216,7 @@ module-detail).
 `PiShowcaseCard` — единый card-system для каталога и будущей витрины Create КП:
 `sm` для компактных строк, `md` для shop-grid/Create КП, `lg` для detail. Размер `md`
 является stretchable flex-column плиткой: title и description зажаты до двух строк,
-media фиксирован в пропорции 16:9 с `object-fit: cover`, а actions прижаты к низу.
+media фиксирован в пропорции 16:9 с `object-fit: contain` (весь кадр, TZ-UX-344), а actions прижаты к низу.
 Пустой `mediaUrl` сохраняет ту же геометрию нейтральным placeholder; URL фото берётся
 через общий `photoListUrl` (thumb/list pipeline), второй photo pipeline не создаётся.
 

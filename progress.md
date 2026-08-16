@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-UX-344 DONE — showcase photo contain
+**Исполнитель:** agent-ux344-WIN-LOQVGED63JM-28704
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** `pi-showcase-card` media img `object-fit: contain` + `object-position: center`; removed md cover override; spec asserts contain.
+**Gates:** FE tsc PASS; pi-showcase-card Jest 12/12 PASS.
+**Review:** Cursor Verdict PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-344.done.md`
+**Commit:** _(stamp after commit)_
+**Lock:** `.mimocode/locks/TZ-UX-344-showcase-photo-contain.lock`
+**Next:** STOP for this TZ; list-thumb cover = known_limitation / successor; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-342 DONE — KP rail pager + dead totals
 **Исполнитель:** cursor-composer
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

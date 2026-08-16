@@ -202,7 +202,8 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       .sc-media img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
+        object-position: center;
         display: block;
       }
 
@@ -313,9 +314,6 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         );
         border: 1px solid var(--color-rule, #e7e3da);
         flex-shrink: 0;
-      }
-      .sc-media--md img {
-        object-fit: cover;
       }
       .sc-media--md.sc-media--empty {
         background: linear-gradient(

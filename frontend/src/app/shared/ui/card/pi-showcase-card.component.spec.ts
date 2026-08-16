@@ -117,7 +117,9 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     expect(article.querySelector('[data-test="title"]')?.textContent?.trim()).toBe('Module M');
     expect(article.querySelector('img')?.getAttribute('src')).toBe('/img.png');
     expect(article.classList.contains('size-md-with-media')).toBe(true);
-    expect(article.querySelector('.sc-media--md')?.classList.contains('sc-media--empty')).toBe(false);
+    expect(article.querySelector('.sc-media--md')?.classList.contains('sc-media--empty')).toBe(
+      false,
+    );
   });
 
   it('md keeps a placeholder media box when photo is missing', () => {
@@ -193,5 +195,16 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     // Confirm body content was projected into the body wrapper, not elsewhere
     const wrapper = fixture.nativeElement.querySelector('.sc-body-lg');
     expect(wrapper?.contains(bodySpan)).toBe(true);
+  });
+
+  it('TZ-UX-344: .sc-media img uses object-fit contain (md does not force cover)', () => {
+    const css = require('fs').readFileSync(
+      require('path').join(__dirname, 'pi-showcase-card.component.ts'),
+      'utf8',
+    );
+    expect(css).toMatch(/\.sc-media\s+img\s*\{[^}]*object-fit:\s*contain/s);
+    expect(css).toMatch(/\.sc-media\s+img\s*\{[^}]*object-position:\s*center/s);
+    expect(css).not.toMatch(/\.sc-media--md\s+img\s*\{[^}]*object-fit:\s*cover/s);
+    expect(css).not.toMatch(/\.sc-media\s+img\s*\{[^}]*object-fit:\s*cover/s);
   });
 });

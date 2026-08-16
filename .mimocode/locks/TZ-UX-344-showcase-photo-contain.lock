@@ -1,0 +1,5 @@
+TZ-UX-344 showcase photo contain (object-fit)
+closed_at: 2026-08-16T09:45:00Z
+keys:
+  - frontend/src/app/shared/ui/card/pi-showcase-card.component.ts
+  - frontend/src/app/shared/ui/card/pi-showcase-card.component.spec.ts
