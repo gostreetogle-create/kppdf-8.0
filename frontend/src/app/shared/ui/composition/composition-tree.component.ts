@@ -95,7 +95,12 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
         >
           @if (node.kind !== 'material' && node.children.length > 0) {
             <span
-              class="w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-sm text-muted-foreground"
+              class="w-7 h-7 shrink-0 inline-flex items-center justify-center rounded-sm transition-colors"
+              [class.bg-gold]="isExpanded(node)"
+              [class.text-ink]="isExpanded(node)"
+              [class.text-muted-foreground]="!isExpanded(node)"
+              [class.hover:text-ink]="!isExpanded(node)"
+              [class.hover:bg-gold-soft]="!isExpanded(node)"
               [attr.aria-hidden]="true"
               data-test="composition-tree-toggle"
             >
