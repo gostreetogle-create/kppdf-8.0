@@ -20,6 +20,7 @@ CONFLICT KEYS: `frontend/src/app/pages/production/blocks/gantt-bars.component.ts
 
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` → PASS
 - `cd frontend && pnpm test -- gantt-bars.component` → **42/42** PASS
+- Commit: `8614493d` (pushed)
 - Deploy: **нет**
 - Не трогали: facade / hydrate / estimate / PATCH / backend / desktop
 
