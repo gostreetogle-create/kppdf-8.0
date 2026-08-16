@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-TEST-GANTT-402 DONE — specs «По рабочим»
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** +2 кейса: multi-person workerLabel = одна группа (known_limitation); worker work-detail read-only (дни disabled, нет catalog).
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `production-cockpit|gantt` PASS (3 suites / 93).
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-GANTT-402.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-GANTT-402-workers-view-specs.lock`
+**Next:** TZ-TEST-OPS-413 (docs link smoke); deploy НЕ.
+
 ## [2026-08-16] — TZ-TEST-COMBINE-412 DONE — dashboard доп. кейсы Комбайна
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ

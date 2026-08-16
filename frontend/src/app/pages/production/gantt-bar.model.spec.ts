@@ -897,4 +897,17 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
     ]);
     expect(tree.every((b) => b.kind != null)).toBe(true);
   });
+
+  it('treats a comma-separated multi-person workerLabel as one group (known limitation)', () => {
+    const multi = workBar({ id: 'm', workerLabel: 'Иванов Иван, Петров Пётр' });
+    const solo = workBar({ id: 's', workerLabel: 'Иванов Иван' });
+    expect(workerGroupKeyOf(multi)).toBe('Иванов Иван, Петров Пётр');
+    expect(groupBarsByWorker([multi, solo]).map((g) => g.label)).toEqual([
+      'Иванов Иван',
+      'Иванов Иван, Петров Пётр',
+    ]);
+    // One summary row per group; the multi-person bar stays together.
+    const tree = buildWorkerTreeBars([multi, solo]);
+    expect(tree.filter((b) => b.kind === 'summary')).toHaveLength(2);
+  });
 });

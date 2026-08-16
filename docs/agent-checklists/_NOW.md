@@ -11,7 +11,7 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 ## ACTIVE
 
 - **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
-- Freebuff 4–5ч: GANTT-401 closeout DONE; **410/411/412 DONE**; далее **402 (Gantt)→413→414**.
+- Freebuff 4–5ч: GANTT-401 closeout DONE; **410/411/412 + GANTT-402 DONE**; далее **413→414**.
 
 ## NEXT (PO paste prompt)
 
@@ -32,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-TEST-GANTT-402 DONE — specs «По рабочим»
+
+- Archive: `tasks/_archive/2026-08/TZ-TEST-GANTT-402.done.md`; lock `TZ-TEST-GANTT-402-workers-view-specs.lock`; +2: multi-person label одна группа; worker work-detail read-only. FE tsc + jest production-cockpit|gantt 93. Deploy нет.
 
 ## [2026-08-16] — TZ-TEST-COMBINE-412 DONE — dashboard доп. кейсы Комбайна
 

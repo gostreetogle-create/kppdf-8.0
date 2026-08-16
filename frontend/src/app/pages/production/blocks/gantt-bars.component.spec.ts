@@ -1018,6 +1018,24 @@ describe('GanttBarsComponent', () => {
     expect(clicks).toEqual([]);
     expect(summaryLabel.getAttribute('aria-label')).toContain('Группа рабочего');
   });
+
+  it('TZ-GANTT-402: worker view work-detail is read-only (days disabled, no catalog button)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [{ ...sample, workerLabel: 'Иванов Иван' }]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedWorkBarId', sample.id);
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const days = el.querySelector(
+      `[data-test="gantt-work-detail-days-${sample.id}"]`,
+    ) as HTMLInputElement;
+    expect(days).toBeTruthy();
+    expect(days.disabled).toBe(true);
+    expect(el.querySelector(`[data-test="gantt-work-detail-catalog-${sample.id}"]`)).toBeNull();
+  });
 });
 
 describe('snapEstimateDaysFromDelta', () => {
