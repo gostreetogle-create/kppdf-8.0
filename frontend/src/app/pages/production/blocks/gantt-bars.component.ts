@@ -312,48 +312,52 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   !isHighlightedOrder(row.bar.orderId) &&
                   !isWorkDetailOpen(row.bar.id)
                 "
+                [class.gantt-order-group-start]="row.orderGroupStart"
+                [class.gantt-order-group-end]="row.orderGroupEnd"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
+                [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
+                [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
               >
                 @if (row.isSummary) {
                   @if (!groupByWorkers()) {
                     <button
                       type="button"
                       class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                             text-muted-foreground hover:text-ink hover:bg-paper-2/60"
+                             text-ink/80 hover:text-ink hover:bg-paper-2/60"
                       [attr.data-test]="'gantt-expand-' + row.bar.orderId"
                       [attr.aria-expanded]="row.expanded"
                       [attr.title]="expandTitle(row.bar.orderNumber, row.expanded)"
                       [attr.aria-label]="expandTitle(row.bar.orderNumber, row.expanded)"
                       (click)="onToggleExpand($event, row.bar.orderId)"
                     >
-                      <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
+                      <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
                         row.expanded ? '▾' : '▸'
                       }}</span>
                     </button>
                   } @else {
                     <span
                       class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                             text-muted-foreground"
+                             text-ink/80"
                       aria-hidden="true"
                     >
-                      <span aria-hidden="true" class="text-[10px] font-mono leading-none">●</span>
+                      <span aria-hidden="true" class="gantt-chevron font-mono leading-none">●</span>
                     </span>
                   }
                 } @else {
                   <button
                     type="button"
                     class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                           text-muted-foreground hover:text-ink hover:bg-paper-2/60"
+                           text-ink/80 hover:text-ink hover:bg-paper-2/60"
                     [attr.data-test]="'gantt-work-expand-' + row.bar.id"
                     [attr.aria-expanded]="isWorkDetailOpen(row.bar.id)"
                     [attr.title]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
                     [attr.aria-label]="workDetailTitle(row.bar, isWorkDetailOpen(row.bar.id))"
                     (click)="onChildWorkToggle($event, row.bar.id)"
                   >
-                    <span aria-hidden="true" class="text-[10px] font-mono leading-none">{{
+                    <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
                       isWorkDetailOpen(row.bar.id) ? '▾' : '▸'
                     }}</span>
                   </button>
@@ -397,6 +401,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               @if (row.isSummary && orderMetaFor(row.bar.orderId); as meta) {
                 <div
                   class="gantt-row-h-meta gantt-cascade-panel border-b hairline px-3 py-1.5 flex flex-nowrap items-center gap-x-4 min-w-0"
+                  [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
                   [style.minWidth.px]="timelineMinWidth()"
                   [attr.data-test]="'gantt-order-meta-' + row.bar.orderId"
                   (click)="$event.stopPropagation()"
@@ -553,10 +558,14 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   !isHighlightedOrder(row.bar.orderId) &&
                   !isWorkDetailOpen(row.bar.id)
                 "
+                [class.gantt-order-group-start]="row.orderGroupStart"
+                [class.gantt-order-group-end]="row.orderGroupEnd"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
+                [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
+                [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
               >
                 @for (grid of dayGrid(); track grid.key) {
                   <div
@@ -641,6 +650,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               @if (row.isSummary && isOrderMetaOpen(row.bar.orderId)) {
                 <div
                   class="relative gantt-row-h-meta gantt-cascade-spacer border-b hairline"
+                  [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
                   [attr.data-test]="'gantt-order-meta-timeline-' + row.bar.orderId"
                   aria-hidden="true"
                 ></div>
@@ -715,8 +725,18 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       background: transparent;
     }
     .gantt-expand-col {
-      width: 1.875rem; /* 30px — dedicated expand column */
+      width: 36px; /* dedicated expand hit column ≥36px */
       box-sizing: border-box;
+    }
+    .gantt-chevron {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--color-ink, oklch(0.28 0.02 95));
+      opacity: 0.88;
+    }
+    .gantt-expand-btn[aria-expanded='true'] .gantt-chevron {
+      opacity: 1;
     }
     /* One row frame: only vertical split after ▸ — no boxed button chrome. */
     .gantt-expand-btn {
@@ -759,12 +779,41 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       position: relative;
       z-index: 1;
     }
-    /* Tree expanded via ▸ — distinct wash + left accent (weaker than card-active). */
+    /* Tree expanded via ▸ — wash; perimeter comes from group-start/mid/end. */
     .gantt-order-expanded {
       background: oklch(0.97 0.012 95) !important;
-      box-shadow: inset 3px 0 0 oklch(0.5 0.05 85);
       position: relative;
       z-index: 1;
+    }
+    /* Expanded order block frame (summary→children); weaker than meta-active. */
+    .gantt-order-group-start {
+      box-shadow:
+        inset 0 2px 0 0 oklch(0.42 0.05 85),
+        inset 2px 0 0 0 oklch(0.42 0.05 85),
+        inset -2px 0 0 0 oklch(0.42 0.05 85);
+    }
+    .gantt-order-group-start.gantt-order-group-end {
+      box-shadow: inset 0 0 0 2px oklch(0.42 0.05 85);
+      margin-bottom: 4px;
+    }
+    .gantt-order-group-mid,
+    .gantt-order-expanded:not(.gantt-order-group-start):not(.gantt-order-group-end) {
+      box-shadow:
+        inset 2px 0 0 0 oklch(0.42 0.05 85),
+        inset -2px 0 0 0 oklch(0.42 0.05 85);
+    }
+    .gantt-order-group-end:not(.gantt-order-group-start) {
+      box-shadow:
+        inset 0 -2px 0 0 oklch(0.42 0.05 85),
+        inset 2px 0 0 0 oklch(0.42 0.05 85),
+        inset -2px 0 0 0 oklch(0.42 0.05 85);
+      margin-bottom: 4px;
+    }
+    .gantt-order-active.gantt-order-group-start,
+    .gantt-order-active.gantt-order-group-end,
+    .gantt-order-active.gantt-order-group-mid {
+      /* Meta-active frame wins over group chrome. */
+      box-shadow: inset 0 0 0 2px oklch(0.45 0.04 85);
     }
     :host-context(.dark) .gantt-order-active,
     :host-context([data-theme='dark']) .gantt-order-active {
@@ -774,7 +823,39 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     :host-context(.dark) .gantt-order-expanded,
     :host-context([data-theme='dark']) .gantt-order-expanded {
       background: oklch(0.26 0.02 260) !important;
-      box-shadow: inset 3px 0 0 oklch(0.72 0.06 85);
+    }
+    :host-context(.dark) .gantt-order-group-start,
+    :host-context([data-theme='dark']) .gantt-order-group-start {
+      box-shadow:
+        inset 0 2px 0 0 oklch(0.78 0.07 85),
+        inset 2px 0 0 0 oklch(0.78 0.07 85),
+        inset -2px 0 0 0 oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-order-group-start.gantt-order-group-end,
+    :host-context([data-theme='dark']) .gantt-order-group-start.gantt-order-group-end {
+      box-shadow: inset 0 0 0 2px oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-order-group-mid,
+    :host-context(.dark)
+      .gantt-order-expanded:not(.gantt-order-group-start):not(.gantt-order-group-end),
+    :host-context([data-theme='dark']) .gantt-order-group-mid,
+    :host-context([data-theme='dark'])
+      .gantt-order-expanded:not(.gantt-order-group-start):not(.gantt-order-group-end) {
+      box-shadow:
+        inset 2px 0 0 0 oklch(0.78 0.07 85),
+        inset -2px 0 0 0 oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-order-group-end:not(.gantt-order-group-start),
+    :host-context([data-theme='dark']) .gantt-order-group-end:not(.gantt-order-group-start) {
+      box-shadow:
+        inset 0 -2px 0 0 oklch(0.78 0.07 85),
+        inset 2px 0 0 0 oklch(0.78 0.07 85),
+        inset -2px 0 0 0 oklch(0.78 0.07 85);
+    }
+    :host-context(.dark) .gantt-chevron,
+    :host-context([data-theme='dark']) .gantt-chevron {
+      color: oklch(0.92 0.02 95);
+      opacity: 0.92;
     }
     /* Work-type detail open — distinct from meta-active / tree-expanded. */
     .gantt-work-detail-open {
@@ -973,6 +1054,15 @@ export class GanttBarsComponent implements AfterViewInit {
     const px = this.pxPerDay();
     const expanded = this.expandedOrderIds();
     const sorted = this.treeBars();
+    const byWorkers = this.groupByWorkers();
+    /** Last tree index per expanded order — for group-end frame. */
+    const lastIdxByOrder = new Map<string, number>();
+    if (!byWorkers) {
+      for (let i = 0; i < sorted.length; i++) {
+        const bar = sorted[i]!;
+        if (expanded.has(bar.orderId)) lastIdxByOrder.set(bar.orderId, i);
+      }
+    }
     return sorted.map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
       const span = bar.noTerm
@@ -980,6 +1070,7 @@ export class GanttBarsComponent implements AfterViewInit {
         : Math.max(1, dayDiff(bar.startDate, bar.endDate) + 1);
       const prev = idx > 0 ? sorted[idx - 1] : null;
       const isSummary = isSummaryBar(bar);
+      const treeExpanded = !byWorkers && expanded.has(bar.orderId);
       return {
         bar,
         alt: idx % 2 === 1,
@@ -989,6 +1080,8 @@ export class GanttBarsComponent implements AfterViewInit {
         baseSpanDays: span,
         isSummary,
         expanded: expanded.has(bar.orderId),
+        orderGroupStart: treeExpanded && isSummary,
+        orderGroupEnd: treeExpanded && lastIdxByOrder.get(bar.orderId) === idx,
       };
     });
   });

@@ -209,6 +209,81 @@ describe('GanttBarsComponent', () => {
     expect(toggles).toEqual(['o1']);
   });
 
+  it('TZ-PRODUCTION-339: chevron ≥14px ink, expand hit ≥36px; not text-[10px]', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const expand = el.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement;
+    const chevron = expand.querySelector('.gantt-chevron') as HTMLElement;
+    expect(chevron).toBeTruthy();
+    expect(chevron.classList.contains('text-[10px]')).toBe(false);
+    expect(expand.classList.contains('text-muted-foreground')).toBe(false);
+    const chevronSize = Number.parseFloat(getComputedStyle(chevron).fontSize);
+    expect(chevronSize).toBeGreaterThanOrEqual(14);
+    const colWidth = Number.parseFloat(getComputedStyle(expand).width);
+    expect(colWidth).toBeGreaterThanOrEqual(36);
+    expect(expand.getAttribute('aria-expanded')).toBe('true');
+
+    const workExpand = el.querySelector(
+      '[data-test="gantt-work-expand-o1:0:p1:m1:wt1:1"]',
+    ) as HTMLElement;
+    const workChevron = workExpand.querySelector('.gantt-chevron') as HTMLElement;
+    expect(workChevron.classList.contains('text-[10px]')).toBe(false);
+    expect(Number.parseFloat(getComputedStyle(workChevron).fontSize)).toBeGreaterThanOrEqual(14);
+  });
+
+  it('TZ-PRODUCTION-339: two expanded orders get group-start/end frame markers', () => {
+    const peer: GanttBar = {
+      ...sample,
+      id: 'o2:0:p1:m1:wt1:1',
+      orderId: 'o2',
+      orderNumber: 'ORD-2',
+    };
+    const peerPaint: GanttBar = {
+      ...samplePaint,
+      id: 'o2:0:p1:m1:wt2:2',
+      orderId: 'o2',
+      orderNumber: 'ORD-2',
+    };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint, peer, peerPaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1', 'o2']));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+
+    const sum1 = el.querySelector('[data-test="gantt-label-summary:o1"]') as HTMLElement;
+    const sum2 = el.querySelector('[data-test="gantt-label-summary:o2"]') as HTMLElement;
+    const end1 = el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt2:2"]') as HTMLElement;
+    const end2 = el.querySelector('[data-test="gantt-label-o2:0:p1:m1:wt2:2"]') as HTMLElement;
+    expect(sum1.classList.contains('gantt-order-group-start')).toBe(true);
+    expect(sum2.classList.contains('gantt-order-group-start')).toBe(true);
+    expect(sum1.getAttribute('data-order-group-start')).toBe('true');
+    expect(end1.classList.contains('gantt-order-group-end')).toBe(true);
+    expect(end2.classList.contains('gantt-order-group-end')).toBe(true);
+    expect(end1.getAttribute('data-order-group-end')).toBe('true');
+    expect(sum1.classList.contains('gantt-order-expanded')).toBe(true);
+    expect(sum2.classList.contains('gantt-order-expanded')).toBe(true);
+
+    const rowSum1 = el.querySelector('[data-test="gantt-row-summary:o1"]') as HTMLElement;
+    expect(rowSum1.classList.contains('gantt-order-group-start')).toBe(true);
+    expect(rowSum1.getAttribute('data-order-group-start')).toBe('true');
+
+    /* Chevron still separated from orderLabelClick (320). */
+    const clicks: string[] = [];
+    const toggles: string[] = [];
+    fixture.componentInstance.orderLabelClick.subscribe((id) => clicks.push(id));
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    (el.querySelector('[data-test="gantt-expand-o1"]') as HTMLElement).click();
+    expect(toggles).toEqual(['o1']);
+    expect(clicks).toEqual([]);
+  });
+
   it('renders legend and a summary with required range', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
