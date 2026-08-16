@@ -5,17 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:22:00+03:00
+updated_at: 2026-08-16T12:25:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
 
-- **TZ-UX-340** CLAIMED / IN PROGRESS — cursor-composer — PiPagination канон + pi-table footer. Keys: `pi-pagination*` / `pi-table*` / `pi-pagination.constants.ts`. Не 341/342. Deploy нет.
+- **TZ-UX-340** READY FOR REVIEW — cursor-composer — PiPagination канон + pi-table footer; default 10; size 10/25/50. Gates: tsc PASS, 42 tests. Archive после Cursor PASS. Keys: `pi-pagination*` / `pi-table*` / `pi-pagination.constants.ts`.
 - **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
 
 ## NEXT (PO paste prompt)
 
-- **Единая пагинация:** после 340 → TZ-UX-341 / TZ-UX-342 (не стартовать пока 340 не READY).
+- **Единая пагинация:** после Cursor PASS на 340 → TZ-UX-341 / TZ-UX-342.
 - Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-340 только после Cursor/PO PASS. TZ-UX-326 DONE.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_

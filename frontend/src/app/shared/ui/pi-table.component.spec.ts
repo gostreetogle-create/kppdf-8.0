@@ -192,6 +192,7 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
           [page]="page"
           [pageSize]="pageSize"
           (pageChange)="onPageChange($event)"
+          (pageSizeChange)="onPageSizeChange($event)"
         />
       `,
     })
@@ -202,21 +203,31 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       page = 1;
       pageSize = 20;
       captured: number[] = [];
+      sizes: number[] = [];
       onPageChange(p: number): void {
         this.captured.push(p);
       }
+      onPageSizeChange(s: number): void {
+        this.sizes.push(s);
+      }
     }
 
-    it('showPager renders when total > pageSize', () => {
+    it('showPager renders when total > pageSize (via app-pi-pagination)', () => {
       const fixture = TestBed.createComponent(PagerHost);
       fixture.detectChanges();
       const info = fixture.nativeElement.querySelector('[data-test="pager-info"]');
       const prev = fixture.nativeElement.querySelector('[data-test="pager-prev"]');
       const next = fixture.nativeElement.querySelector('[data-test="pager-next"]');
+      const current = fixture.nativeElement.querySelector('[data-test="pager-page"]');
+      const size = fixture.nativeElement.querySelector('[data-test="pager-page-size"]');
       expect(info).toBeTruthy();
       expect(info.textContent.trim()).toContain('из 100');
+      expect(info.textContent.trim()).toContain('1–20');
       expect(prev).toBeTruthy();
       expect(next).toBeTruthy();
+      expect(current).toBeTruthy();
+      expect(current.textContent.trim()).toBe('1');
+      expect(size).toBeTruthy();
     });
 
     it('pager hidden when total=0 (default) or total <= pageSize', () => {
@@ -249,11 +260,45 @@ describe('TableComponent — TZ-104.3 Phase A', () => {
       expect(host.captured).toEqual([]);
     });
 
-    it('totalPages = ceil(total/pageSize) and rendered as "{page} / {totalPages}"', () => {
+    it('current page button has data-test=pager-page; numbered nav present', () => {
       const fixture = TestBed.createComponent(PagerHost);
       fixture.detectChanges();
       const pageLabel = fixture.nativeElement.querySelector('[data-test="pager-page"]');
-      expect(pageLabel.textContent.trim()).toBe('1 / 5');
+      expect(pageLabel.textContent.trim()).toBe('1');
+      // 100/20 = 5 pages → all numbers ≤7 without gaps
+      const buttons = fixture.nativeElement.querySelectorAll(
+        '[data-test="pager-page"], [data-test="pager-page-btn"]',
+      );
+      expect(buttons.length).toBe(5);
+    });
+
+    it('page-size change relays pageSizeChange from embedded pagination', () => {
+      const fixture = TestBed.createComponent(PagerHost);
+      fixture.detectChanges();
+      const size = fixture.nativeElement.querySelector(
+        '[data-test="pager-page-size"]',
+      ) as HTMLSelectElement;
+      size.value = '50';
+      size.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      const host = fixture.componentInstance as PagerHost;
+      expect(host.sizes).toEqual([50]);
+    });
+
+    it('default pageSize input is 10 (PI_DEFAULT_PAGE_SIZE)', () => {
+      @Component({
+        standalone: true,
+        imports: [TableComponent],
+        template: `<app-pi-table [data]="data" [columns]="columns" [total]="100" />`,
+      })
+      class DefaultSizeHost {
+        data: TestRow[] = [{ id: '1', name: 'Widget', price: 1 }];
+        columns = baseCols;
+      }
+      const fixture = TestBed.createComponent(DefaultSizeHost);
+      fixture.detectChanges();
+      const info = fixture.nativeElement.querySelector('[data-test="pager-info"]') as HTMLElement;
+      expect(info.textContent.trim()).toBe('1–10 из 100');
     });
   });
 

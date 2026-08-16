@@ -9,6 +9,8 @@ import {
   signal,
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { PaginationComponent } from './pi-pagination.component';
+import { PI_DEFAULT_PAGE_SIZE } from './pi-pagination.constants';
 
 export type SortDirection = 'asc' | 'desc' | null;
 
@@ -44,10 +46,11 @@ export type SelectionMode = 'none' | 'single' | 'multi';
  * - Optional expanded row content via TemplateRef.
  * - Per-column sticky cells (`sticky: 'left' | 'right' | false`).
  * - Row action slot via TemplateRef (`[rowActions]`).
- * - Server-side pagination (`total` + `page` + `pageSize` → `(pageChange)`).
+ * - Server-side pagination via embedded `<app-pi-pagination>`
+ *   (`total` + `page` + `pageSize` → `(pageChange)` / `(pageSizeChange)`).
  * - Loading skeleton (5 pulsing rows when `loading=true`).
  * - Empty state via `<app-pi-empty-state>` with `emptyMessage` override.
- * - Footer slot for `<app-pi-pagination>`-style paginators.
+ * - Footer slot for extra caption/actions beside the canonical pager.
  *
  * Standalone, OnPush, signal-based. NO Material, NO shadows.
  */
@@ -55,7 +58,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
   selector: 'app-pi-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, PaginationComponent],
   template: `
     <div class="pi-table-surface overflow-x-auto" data-test="pi-table-surface">
       <table
@@ -224,34 +227,16 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         <div class="text-xs text-muted-foreground">
           <ng-content select="[caption]" />
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 justify-end">
           @if (showPager()) {
-            <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
-              {{ pageRangeStart() }}–{{ pageRangeEnd() }} из {{ total() }}
-            </span>
-            <button
-              type="button"
-              class="pi-icon-btn pi-focus-ring"
-              [disabled]="page() <= 1"
-              (click)="goToPage(page() - 1)"
-              aria-label="Предыдущая страница"
-              data-test="pager-prev"
-            >
-              <span aria-hidden="true">←</span>
-            </button>
-            <span class="text-xs tabular-nums" data-test="pager-page" aria-label="Текущая страница">
-              {{ page() }} / {{ totalPages() }}
-            </span>
-            <button
-              type="button"
-              class="pi-icon-btn pi-focus-ring"
-              [disabled]="page() >= totalPages()"
-              (click)="goToPage(page() + 1)"
-              aria-label="Следующая страница"
-              data-test="pager-next"
-            >
-              <span aria-hidden="true">→</span>
-            </button>
+            <app-pi-pagination
+              [total]="total()"
+              [pageSize]="pageSize()"
+              [currentPage]="page()"
+              [ariaLabel]="ariaLabel() + ' — пагинация'"
+              (pageChange)="onPagerPageChange($event)"
+              (pageSizeChange)="onPagerPageSizeChange($event)"
+            />
           }
           <ng-content select="[footer]" />
         </div>
@@ -361,8 +346,8 @@ export class TableComponent<T> implements OnInit {
   readonly localSort = input<boolean>(true);
   /**
    * Total row count for server-side pagination. When 0 (default),
-   * pagination footer is hidden. When > pageSize(), a minimal pager
-   * (Prev / page / Next + range label) is auto-rendered.
+   * pagination footer is hidden. When > pageSize(), `<app-pi-pagination>`
+   * is auto-rendered (range + ‹› + numbers + page-size select).
    */
   readonly total = input<number>(0);
   /**
@@ -370,10 +355,15 @@ export class TableComponent<T> implements OnInit {
    * Defaults to 1 — meaningful only when `total() > pageSize()`.
    */
   readonly page = input<number>(1);
-  /** Items per page. Defaults to 20. */
-  readonly pageSize = input<number>(20);
-  /** Fires when the user clicks Prev / Next in the auto pager. */
+  /** Items per page. Defaults to {@link PI_DEFAULT_PAGE_SIZE} (10). */
+  readonly pageSize = input<number>(PI_DEFAULT_PAGE_SIZE);
+  /** Fires when the user picks a page in the embedded pager. */
   readonly pageChange = output<number>();
+  /**
+   * Fires when the user changes page size in the embedded pager.
+   * Parent should reset to page 1 and re-fetch / re-slice.
+   */
+  readonly pageSizeChange = output<number>();
   /**
    * When true, the table body renders 5 animated skeleton rows instead
    * of the data rows (sortedData is bypassed). Sorts are preserved but
@@ -519,20 +509,6 @@ export class TableComponent<T> implements OnInit {
   /** Whether the auto pager should render (server-side mode + >1 page). */
   readonly showPager = computed(() => this.total() > 0 && this.totalPages() > 1);
 
-  /** Index of first row on current page (1-indexed), for pager range label. */
-  readonly pageRangeStart = computed(() => {
-    const page = this.page();
-    const pageSize = Math.max(1, this.pageSize());
-    return Math.max(1, (page - 1) * pageSize + 1);
-  });
-
-  /** Index of last row on current page (clamped to total). */
-  readonly pageRangeEnd = computed(() => {
-    const start = this.pageRangeStart();
-    const end = start + Math.max(1, this.pageSize()) - 1;
-    return Math.min(end, this.total());
-  });
-
   readonly sortedData = computed<T[]>(() => {
     if (!this.localSort()) return this.data().slice();
     const data = this.data().slice();
@@ -621,15 +597,17 @@ export class TableComponent<T> implements OnInit {
     this.rowClick.emit(row);
   }
 
-  /**
-   * Pager navigation. Clamps the target page to [1, totalPages] then
-   * emits via `pageChange`. Parent listens, fetches new data, updates
-   * `[page]` input.
-   */
-  goToPage(target: number): void {
+  /** Relay from embedded `<app-pi-pagination>` → parent. */
+  onPagerPageChange(target: number): void {
     const clamped = Math.max(1, Math.min(target, this.totalPages()));
     if (clamped === this.page()) return;
     this.pageChange.emit(clamped);
+  }
+
+  /** Relay page-size change; parent resets to page 1. */
+  onPagerPageSizeChange(size: number): void {
+    if (size === this.pageSize()) return;
+    this.pageSizeChange.emit(size);
   }
 
   formatCell(col: ColumnDef<T>, row: T): string {
