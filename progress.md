@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PHOTO-304 DONE — photo frame meta (fit/posX/posY)
+**Исполнитель:** Buffy (WIP) + cursor-composer unattended land
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** `Photo.frame` schema + Create/UpdateFrame DTO + `PATCH /photos/:id/frame` + FE `PhotoFrame`/`updateFrame`; default contain/center.
+**Gates:** BE tsc PASS; jest photos 4 suites / 13 tests PASS; FE tsc PASS; FE photos.service.spec 8 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-PHOTO-304.done.md`
+**Lock:** `.mimocode/locks/TZ-PHOTO-304-photo-frame-meta.lock`
+**Next:** TZ-UX-PHOTO-302 dropzone UI; TZ-UX-PHOTO-303 consumers; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-OPS-SITE-SMOKE-401 DONE — site operator walk PASS
 **Исполнитель:** DeepC 4 Pro (live walk) + cursor-composer (docs-only closeout)
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

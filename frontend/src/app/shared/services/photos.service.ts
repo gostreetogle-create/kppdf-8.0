@@ -7,9 +7,18 @@ import {
   normalizeError,
   silentDelete,
   silentGet,
+  silentPatch,
   silentPost,
   SilentResult,
 } from '../../core/silent-http';
+
+export interface PhotoFrame {
+  fit: 'contain' | 'cover';
+  /** 0..100, CSS object-position % (горизонталь). */
+  posX: number;
+  /** 0..100, CSS object-position % (вертикаль). */
+  posY: number;
+}
 
 export interface Photo {
   _id: string;
@@ -23,6 +32,8 @@ export interface Photo {
   widthPx?: number;
   heightPx?: number;
   alt?: string;
+  /** Прямоугольный кадр показа (TZ-PHOTO-304); отсутствует = contain/center. */
+  frame?: PhotoFrame;
   createdAt?: string;
 }
 
@@ -143,5 +154,10 @@ export class PhotosService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/photos/${id}`);
+  }
+
+  /** Сохранить кадр показа без перезагрузки файла (TZ-PHOTO-304). Частичный merge. */
+  updateFrame(id: string, frame: Partial<PhotoFrame>): Observable<SilentResult<Photo>> {
+    return silentPatch<Photo>(this.http, `${this.baseUrl}/photos/${id}/frame`, { frame });
   }
 }

@@ -5,7 +5,7 @@ import sharp from 'sharp';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Photo, PhotoDocument } from './photo.schema';
+import { Photo, PhotoDocument, PhotoFrame } from './photo.schema';
 import { decodeMulterOriginalName } from './image-upload.options';
 
 function uploadDir(): string {
@@ -22,6 +22,12 @@ export interface CreatePhotoDto {
   heightPx?: number;
   alt?: string;
   parentPhotoId?: string;
+  frame?: Partial<PhotoFrame>;
+}
+
+/** Только кадр — PATCH /photos/:id/frame без перезагрузки файла. */
+export interface UpdatePhotoFrameDto {
+  frame: Partial<PhotoFrame>;
 }
 
 export interface UploadedPhotoFile {
@@ -59,6 +65,18 @@ export class PhotosService {
       ...dto,
       parentPhotoId: dto.parentPhotoId ? new Types.ObjectId(dto.parentPhotoId) : undefined,
     });
+  }
+
+  /**
+   * Сохранить/обновить кадр показа (TZ-PHOTO-304). Частичное обновление:
+   * переданные ключи мержатся поверх текущего frame (или default contain/center).
+   */
+  async updateFrame(id: string, dto: UpdatePhotoFrameDto): Promise<PhotoDocument> {
+    const doc = await this.findById(id);
+    const current = doc.frame ?? { fit: 'contain' as const, posX: 50, posY: 50 };
+    doc.frame = { ...current, ...dto.frame };
+    await doc.save();
+    return doc;
   }
 
   /**

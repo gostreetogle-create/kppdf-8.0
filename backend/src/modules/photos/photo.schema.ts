@@ -3,6 +3,20 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type PhotoDocument = HydratedDocument<Photo>;
 export type PhotoVariant = 'original' | 'full' | 'medium' | 'thumb';
+export type PhotoFrameFit = 'contain' | 'cover';
+
+/**
+ * Прямоугольный кадр показа фото (WAVE-PHOTO-FRAME-POSITION, TZ-PHOTO-304).
+ * v1 — тонкий: CSS `object-fit` + `object-position` проценты, без ре-энкода.
+ * Default без meta: `{ fit: 'contain', posX: 50, posY: 50 }`.
+ */
+export interface PhotoFrame {
+  fit: PhotoFrameFit;
+  /** 0..100, CSS object-position % (горизонталь). */
+  posX: number;
+  /** 0..100, CSS object-position % (вертикаль). */
+  posY: number;
+}
 
 @Schema({ collection: 'photos', timestamps: true })
 export class Photo {
@@ -36,6 +50,10 @@ export class Photo {
 
   @Prop()
   alt?: string;
+
+  /** Прямоугольный кадр показа (TZ-PHOTO-304). Отсутствует = contain/center. */
+  @Prop({ type: () => Object, default: () => ({ fit: 'contain', posX: 50, posY: 50 }) })
+  frame?: PhotoFrame;
 
   /**
    * Multipart uploads persist the original and a separate `thumb` child;

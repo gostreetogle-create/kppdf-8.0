@@ -13,6 +13,7 @@ type PhotoPayload = {
   sizeBytes?: number;
   widthPx?: number;
   heightPx?: number;
+  frame?: { fit?: string; posX?: number; posY?: number };
 };
 
 function buildPhotoDocument(payload: PhotoPayload) {
@@ -121,5 +122,59 @@ describe('PhotosService upload variants', () => {
     expect(model.create).toHaveBeenCalledTimes(1);
     expect(result.thumb).toBeUndefined();
     expect(result.original.storageUrl).toBe('/uploads/broken.png');
+  });
+});
+
+describe('PhotosService frame (TZ-PHOTO-304)', () => {
+  function buildDoc(overrides: Partial<PhotoPayload> = {}) {
+    const document = {
+      _id: new Types.ObjectId(),
+      frame: { fit: 'contain', posX: 50, posY: 50 },
+      ...overrides,
+      save: jest.fn(async function () {
+        return this;
+      }),
+      toObject: () => document,
+    };
+    return document as never;
+  }
+
+  function buildModel(doc: unknown) {
+    return {
+      create: jest.fn(),
+      findById: jest.fn(() => ({ exec: async () => doc })),
+    };
+  }
+
+  it('merges partial frame keys over the default contain/center frame', async () => {
+    const doc = buildDoc();
+    const model = buildModel(doc);
+    const service = new PhotosService(model as never);
+    const id = new Types.ObjectId().toString();
+
+    const result = await service.updateFrame(id, { frame: { posX: 25 } });
+
+    expect(model.findById).toHaveBeenCalledWith(id);
+    expect((result as { frame: { fit: string; posX: number; posY: number } }).frame).toEqual({
+      fit: 'contain',
+      posX: 25,
+      posY: 50,
+    });
+    expect((doc as { save: jest.Mock }).save).toHaveBeenCalled();
+  });
+
+  it('defaults to contain/center when the photo has no frame yet', async () => {
+    const doc = buildDoc({ frame: undefined });
+    const model = buildModel(doc);
+    const service = new PhotosService(model as never);
+    const id = new Types.ObjectId().toString();
+
+    const result = await service.updateFrame(id, { frame: { fit: 'cover', posY: 80 } });
+
+    expect((result as { frame: { fit: string; posX: number; posY: number } }).frame).toEqual({
+      fit: 'cover',
+      posX: 50,
+      posY: 80,
+    });
   });
 });

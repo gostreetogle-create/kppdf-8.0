@@ -3,6 +3,7 @@ import { PhotosController } from './photos.controller';
 function buildController() {
   const service = {
     upload: jest.fn(),
+    updateFrame: jest.fn(),
   };
   return { controller: new PhotosController(service as never), service };
 }
@@ -66,5 +67,18 @@ describe('PhotosController upload', () => {
       storageUrl: '/uploads/original.png',
       variants: {},
     });
+  });
+
+  it('forwards the frame body to the service on PATCH :id/frame', async () => {
+    const { controller, service } = buildController();
+    service.updateFrame = jest.fn();
+    service.updateFrame.mockResolvedValue({ _id: 'photo-id', frame: { fit: 'cover', posX: 30, posY: 70 } });
+
+    const response = await controller.updateFrame('photo-id', { frame: { fit: 'cover', posX: 30, posY: 70 } });
+
+    expect(service.updateFrame).toHaveBeenCalledWith('photo-id', {
+      frame: { fit: 'cover', posX: 30, posY: 70 },
+    });
+    expect(response).toEqual({ _id: 'photo-id', frame: { fit: 'cover', posX: 30, posY: 70 } });
   });
 });

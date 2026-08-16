@@ -1,0 +1,8 @@
+TZ: TZ-PHOTO-304
+STATUS: DONE
+EXECUTOR: Buffy (WIP) + cursor-composer unattended land
+CURSOR_VERDICT: PASS
+CLOSED_AT: 2026-08-16T13:51:23+03:00
+ARCHIVE: tasks/_archive/2026-08/TZ-PHOTO-304.done.md
+SCOPE: Photo.frame schema/DTO/PATCH + FE PhotoFrame type; default contain/center
+NEXT: TZ-UX-PHOTO-302 dropzone UI; TZ-UX-PHOTO-303 consumers; deploy only on explicit PO

@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -13,7 +14,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CreatePhotoDto, PhotosService, UploadedPhotoFile } from './photos.service';
+import {
+  CreatePhotoDto,
+  PhotosService,
+  UpdatePhotoFrameDto,
+  UploadedPhotoFile,
+} from './photos.service';
 
 @Controller('photos')
 export class PhotosController {
@@ -56,6 +62,17 @@ export class PhotosController {
       ...result.original.toObject(),
       variants: result.thumb ? { thumb: result.thumb } : {},
     };
+  }
+
+  /**
+   * Сохранить кадр показа без перезагрузки файла (TZ-PHOTO-304).
+   * Частичный merge: `{ frame: { posX?, posY?, fit? } }`.
+   */
+  @Patch(':id/frame')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update', entityType: 'Photo', idParam: 'id' })
+  async updateFrame(@Param('id') id: string, @Body() dto: UpdatePhotoFrameDto) {
+    return this.service.updateFrame(id, dto);
   }
 
   @Delete(':id')

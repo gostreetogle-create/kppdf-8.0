@@ -5,12 +5,11 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:49:13+03:00
+updated_at: 2026-08-16T13:51:23+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **TZ-PHOTO-304** — photo frame meta (WAVE; Freebuff framing).
 - **TZ-NAV-303** — CLAIMED / READY FOR REVIEW (owns S1 from SITE-SMOKE: `dashboard-stats.page.ts` TS2339 `destructive`).
 
 ## NEXT (PO paste prompt)
@@ -30,6 +29,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PHOTO-304 DONE — photo frame meta
+
+- Archive: `tasks/_archive/2026-08/TZ-PHOTO-304.done.md`; lock `TZ-PHOTO-304-photo-frame-meta.lock`; BE 4/13 photos + FE tsc + FE photos.service 8; WAVE #1 DONE. Next: UX-PHOTO-302/303. Deploy нет.
 
 ## [2026-08-16] — TZ-OPS-SITE-SMOKE-401 DONE — site operator walk PASS
 
