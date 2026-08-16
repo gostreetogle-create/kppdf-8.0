@@ -240,7 +240,12 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
             <div class="flex items-center gap-3 px-3 py-2.5">
               <button
                 type="button"
-                class="text-muted-foreground hover:text-ink w-6 h-6 flex items-center justify-center shrink-0 pi-focus-ring rounded-sm hover:bg-paper-2 transition-colors"
+                class="w-6 h-6 flex items-center justify-center shrink-0 pi-focus-ring rounded-sm transition-colors"
+                [class.bg-gold]="isExpanded(card)"
+                [class.text-ink]="isExpanded(card)"
+                [class.text-muted-foreground]="!isExpanded(card)"
+                [class.hover:text-ink]="!isExpanded(card)"
+                [class.hover:bg-gold-soft]="!isExpanded(card)"
                 data-testid="combine-row-expand"
                 [attr.aria-expanded]="isExpanded(card)"
                 [attr.aria-controls]="expandPanelId(card)"
