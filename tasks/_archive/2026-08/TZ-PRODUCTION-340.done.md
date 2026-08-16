@@ -30,6 +30,7 @@ deploy: no
 
 - `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit` → PASS
 - `cd frontend && pnpm test -- gantt-bars.component` → **43/43** PASS
+- Commit: `bb4d36f8` (pushed)
 - Deploy: **нет**
 - Не трогали: chevron size, estimate, PATCH, facade, worker-view logic
 
