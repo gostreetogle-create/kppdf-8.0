@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:20:00+03:00
+updated_at: 2026-08-16T12:30:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 
 ## ACTIVE
@@ -13,11 +13,11 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
 - **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
 - **TZ-UX-326** CLAIMED — cursor-grok-4.6 — `/products` фильтр в app-chrome-rail, убрать w-12. Keys: `products.page.ts` / `products.page.spec.ts` / `products.page.md`. Не пересекается с UX-332 / TZD-48 / CATALOG-374.
 - **TZ-UX-332** READY FOR REVIEW — cursor-grok-4.6 — dashboard findById + RU not-found + photo filename. Gates PASS. Archive после Cursor PASS. Keys: dashboard-dialog / product-form-dialog / silent-http / http-exception.filter / photos.
-- **TZD-48** CLAIMED — buffy — desktop import studio. Keys: `desktop/**` + `import-mapping-profile/**`.
+
 
 ## NEXT (PO paste prompt)
 
-- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 / TZ-UX-332 / TZD-48 только после Cursor/PO PASS.
+- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-326 / TZ-UX-332 только после Cursor/PO PASS. TZD-48 DONE 2026-08-16 (`b03ecc22`, closeout выполнен).
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 

@@ -1,6 +1,6 @@
 # TZD-48 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-48.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
@@ -58,20 +58,23 @@ cd backend && npx jest src/modules/import-mapping-profile --no-coverage
 - [x] backend jest — PASS 12/12 (вкл. empty profile 400, dual-state normalize)
 - [x] Smoke ai-runner: non-HF URL отклонён, job принят мгновенно, models/ создан, статус корректен
 
-## Executor report
+## Executor report (auto)
 
 - **agent:** buffy (desktop executor) · TZD-48 · 2026-08-16
+- **Commit:** `b03ecc22060f4d20c6d559c043910ea4701b5d87` (pushed `e108e22a..b03ecc22 → main`)
 - **Сделано:** 1) ai-runner `/download` — асинхронный приём + mkdir models + allowlist HF + не-sticky missing-file; клиент — короткий timeout на приём, poll статуса, `modelLoaded` только после `/health`. 2) `applyTableMapping` — частичный merge (не обнуляет эвристики). 3) Честность SoT: кнопка «Записать в каталог» + `confirm()` для non-material, hint в шаге 2; `processed/` только при (proposed+created)>0; inbox-кнопки «Предложить/Задачу ИИ» скрыты для активного файла. 4) Inbox Excel — лист с данными. 5) BE/FE: counterparty `inn` required; `bom` убран из enum, unknown target — guard+RU; BE 400 на пустой профиль; update нормализует legacy columnMap в tables (одна SoT). 6) Копи «Модель» (Запустить→Скачать→Перезапустить) + «Студия импорта». 7) Тесты: 46 desktop (новые: partial AI map, inn, лист с данными, allowlist) + 12 BE.
 - **Conflict disclosure:** stage — только conflict keys TZD-48 + тесты + checklist. Чужой WIP (TZ-PRODUCTION-336 / UX-326 / UX-332, photos, silent-http, gantt и др.) НЕ включён. `data/**`, `TZ-UX-331*`, `docs/PO-DIARY.md`, page-docs вне desktop — не трогал.
 - **Known limits (successor TZD-49):** journal HITL для product/module/counterparty; живой GGUF-прогон не делался (трафик); session-per-chat Llama; размеры/вес CAD-колонок.
+- **Cursor Verdict:** PASS (b03ecc22060f4d20c6d559c043910ea4701b5d87)
 
 ## Review handoff
 
 - [x] READY FOR REVIEW — commit + push сделан, ожидание Cursor Verdict PASS
+- SHA: `b03ecc22` (`e108e22a..b03ecc22 → main`, pushed)
 - [x] **Не** archive до Cursor Verdict PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T12:25:00+03:00
