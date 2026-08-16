@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-DASHBOARD-401 DONE — home stats виджеты обзора
+**Исполнитель:** composer-executor-dashboard-401
+**Статус:** DONE; deploy НЕ
+**Что:** `/dashboard` denser RU: KPI заказов (GET /orders) + pulse склада (GET /inventory aggregate); loading/empty/error RU; без канбана. `dashboard.page.ts` не тронут.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `dashboard-stats|dashboard.page` PASS (3 suites / 23).
+**Archive:** `tasks/_archive/2026-08/TZ-DASHBOARD-401.done.md`
+**Lock:** `.mimocode/locks/TZ-DASHBOARD-401-home-stats-widgets.lock`
+**Next:** Freebuff COMBINE modules; deploy только по слову PO.
+
 ## [2026-08-16] — TZ-TEST-REGRESS-414 DONE — jest pack COMBINE+GANTT
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ

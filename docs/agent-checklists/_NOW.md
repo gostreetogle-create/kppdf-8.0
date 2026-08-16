@@ -5,13 +5,13 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T15:11:00+03:00
+updated_at: 2026-08-16T17:04:17+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- Cursor: hygiene + **TZ-DASHBOARD-401** (мелкое/среднее).
 - Freebuff (параллель): **WAVE-FREEBUFF-COMBINE-MODULES** — промпт `PROMPT-FREEBUFF-COMBINE-MODULES.md` (406→407→408).
+- Cursor/executor queue: **пуста** после TZ-DASHBOARD-401 (готово предложить warm deploy по слову PO).
 
 ## NEXT (PO paste prompt)
 
@@ -19,6 +19,7 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 - Warm deploy — только по «деплой»/«кати»
 - **TZ-DATA-UTF8-CLEAN** — нужен отдельный «ок» (трогает демо-данные)
 - SALES-377 — не без PO
+- Опц. **TZ-DASHBOARD-402** — КП open aggregate (если понадобится)
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -31,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-DASHBOARD-401 DONE — home stats виджеты обзора
+
+- Archive: `tasks/_archive/2026-08/TZ-DASHBOARD-401.done.md`; lock `TZ-DASHBOARD-401-home-stats-widgets.lock`; FE tsc + jest dashboard-stats|dashboard.page 23. Deploy нет.
 
 ## [2026-08-16] — TZ-TEST-REGRESS-414 DONE — jest pack COMBINE+GANTT
 

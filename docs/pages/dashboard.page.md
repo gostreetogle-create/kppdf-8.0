@@ -1,9 +1,8 @@
-# Страница: Обзор — домашняя статистика (`DashboardStatsPage`) — stub
+# Страница: Обзор — домашняя статистика (`DashboardStatsPage`)
 
 **Краткое описание:** первая страница сайта — **сводка (home stats)**, НЕ канбан.
-Полные виджеты (заказы по статусам, материалы/склад, сделки) — **TZ-DASHBOARD-401**.
-Сейчас — честный stub: минимальные счётчики заказов из уже доступного `GET /orders`
-+ быстрые ссылки в разделы.
+Виджеты обзора (**TZ-DASHBOARD-401**): KPI заказов + pulse склада. Канбан — только
+на `/design/combine`.
 
 ## Routes
 
@@ -14,14 +13,21 @@
 
 `pageKey`: `orders` (как было у Комбайна — без новой pageKey на backend; грант не менялся).
 
-## UI (stub, TZ-NAV-303)
+## UI (TZ-DASHBOARD-401)
 
-- `PiPageChrome`: заголовок «Обзор» + описание.
-- Счётчики заказов (`data-test="overview-order-counters"`): Новые / В работе / Готовы /
-  Просрочены — те же формулы, что на Канбане (`dashboard.page.ts`), из `GET /orders`.
-- Ссылки в разделы (`data-test="overview-sections"`): Заказы, Комбайн заказов
-  (`/design/combine`), КП, Остатки, Движения.
-- Полные виджеты = TZ-DASHBOARD-401 — здесь НЕ расползаться в BI.
+- `PiPageChrome`: заголовок «Обзор» + описание (сводка; канбан в Проекте).
+- **Заказы** (`data-test="overview-orders-section"`): счётчики Новые / В работе /
+  Готовы / Просрочены — те же формулы, что на Канбане (`dashboard.page.ts`), из
+  `GET /orders`. Ссылки: «Все заказы» → `/orders`, «Комбайн заказов» → `/design/combine`.
+- **Склад** (`data-test="overview-warehouse-section"`): pulse из aggregate
+  `GET /inventory` (склады / позиции / мало остатков / движения 30д) — **без**
+  unbounded N×list. Ссылки на `/storage-items`, `/stock-movements`, `/warehouses`.
+- Состояния RU: loading (`overview-loading`), error (`overview-error`), empty
+  (`overview-empty`) когда нет заказов и складской активности.
+- Разделы (`data-test="overview-sections"`): Заказы, Комбайн, КП, Остатки, Движения,
+  Сводка склада. На home **нет** канбана.
+- КП open-count не считаем (нет aggregate API) → при необходимости
+  **TZ-DASHBOARD-402**.
 
 ## Комбайн заказов
 
@@ -40,7 +46,8 @@
 
 | Метод | Endpoint | Когда |
 |-------|----------|--------|
-| GET | `/api/orders` | счётчики Обзора (read-only) |
+| GET | `/api/orders` | KPI заказов Обзора (read-only) |
+| GET | `/api/inventory` | aggregate pulse склада (read-only) |
 
 ## Навигация
 
@@ -53,4 +60,4 @@
 
 **TZ-NAV-303** (stub + перенос Комбайна в Проект) · DASHBOARD-400 (канбан) ·
 **TZ-SWEEP-401** (write-path канбана, живёт на `/design/combine`) ·
-**TZ-DASHBOARD-401** (полные виджеты — следующий шаг)
+**TZ-DASHBOARD-401** (виджеты обзора — DONE) · опц. successor **TZ-DASHBOARD-402** (КП aggregate)
