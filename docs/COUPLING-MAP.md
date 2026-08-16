@@ -28,7 +28,7 @@
 Write: `PATCH /api/orders/:id {status}` только `draft|confirmed|in_production|ready`.
 Отгрузка = `POST /orders/:id/ship`. Отмена = `POST /orders/:id/cancel`.
 
-| Значение | RU | Комбайн `/dashboard` | Цех `/production` «Все активные» | `/orders` | Форма |
+| Значение | RU | Комбайн `/design/combine` | Цех `/production` «Все активные» | `/orders` | Форма |
 |----------|----|----------------------|-----------------------------------|-----------|-------|
 | `draft` | Черновик | колонка Черновики | **нет** — не работа цеха | виден | состав можно |
 | `confirmed` | Подтверждён | колонка Подтверждены | да (план) | виден | состав можно |
@@ -62,7 +62,7 @@ Write: `PATCH /api/orders/:id {status}` только `draft|confirmed|in_product
 
 | Экран | Route | Общие поля |
 |-------|-------|------------|
-| Комбайн | `/` → `/dashboard` | `Order.status`, `OrderItem.status` |
+| Комбайн | `/design/combine` (канбан; `/dashboard` — «Обзор» stats, NAV-303) | `Order.status`, `OrderItem.status` |
 | Заказы | `/orders`, `/orders/:id` | `Order.status`, `readyForWork`, supply, reservations |
 | Цех | `/production` | `Order.status` (фильтр), `plannedDate`, estimate |
 | Снабжение | `/supply` | `SupplyTask.orderId` |

@@ -38,7 +38,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 [`2026-08-15-catalog-list-vitrine-parity.md`](../audits/2026-08-15-catalog-list-vitrine-parity.md) ·  
 [`2026-08-04-catalog-coherence-audit.md`](../audits/2026-08-04-catalog-coherence-audit.md) ·  
 [`2026-08-04-catalog-readiness-fe-be.md`](../audits/2026-08-04-catalog-readiness-fe-be.md) ·  
-[`_backlog/catalog/README.md`](../../tasks/_backlog/catalog/README.md) (316/317/319 + Wave 2) ·  
+[`_backlog/README.md`](../../tasks/_backlog/README.md) ·  
 Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVIEW.md)
 
 
@@ -55,7 +55,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **UX-342 DONE** KP rail PAGE_SIZE=10; **320** PARK |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** backlog (не брать без PO) continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **UX-342 DONE** KP rail PAGE_SIZE=10; **320** PARK |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
@@ -95,14 +95,14 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 | TZ | Pages | One-liner |
 |----|-------|-----------|
-| [UX-301 DONE](../tasks/_archive/2026-08/TZ-UX-301.done.md) | inventory, storage-items, stock-movements | Add Склад nav |
-| [UX-302 DONE](../tasks/_archive/2026-08/TZ-UX-302.done.md) | categories | Strip dead docCat |
-| [UX-303 DONE](../tasks/_archive/2026-08/TZ-UX-303.done.md) | documents, dictionaries | Unify labels |
-| [UX-304](../tasks/TZ-UX-304-reference-pi-table.md) | color-references, doc-template-categories | pi-table |
-| [UX-305 DONE](../tasks/_archive/2026-08/TZ-UX-305.done.md) | orgs, work-types, storage, materials | Fix page.md |
-| [UX-306 DONE](../tasks/_archive/2026-08/TZ-UX-306.done.md) | people | Route+nav+dialog |
-| [DOC-324..326](../docs/agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
-| [DOC-334 audit](../docs/audits/DOC-334-doc-constructor-ui-polish-audit.md) | builder/texts/tables/categories | Deploy polish queue 334→335→332→336 |
+| [UX-301 DONE](../../tasks/_archive/2026-08/TZ-UX-301.done.md) | inventory, storage-items, stock-movements | Add Склад nav |
+| [UX-302 DONE](../../tasks/_archive/2026-08/TZ-UX-302.done.md) | categories | Strip dead docCat |
+| [UX-303 DONE](../../tasks/_archive/2026-08/TZ-UX-303.done.md) | documents, dictionaries | Unify labels |
+| [UX-304](../../tasks/_archive/2026-08/TZ-UX-304-reference-pi-table.md) | color-references, doc-template-categories | pi-table |
+| [UX-305 DONE](../../tasks/_archive/2026-08/TZ-UX-305.done.md) | orgs, work-types, storage, materials | Fix page.md |
+| [UX-306 DONE](../../tasks/_archive/2026-08/TZ-UX-306.done.md) | people | Route+nav+dialog |
+| [DOC-324..326](../agent-checklists/DOC-CONSTRUCTOR-UX-AUDIT.md) | builder/templates/texts | Prior audit |
+| [DOC-334 audit](../audits/DOC-334-doc-constructor-ui-polish-audit.md) | builder/texts/tables/categories | Deploy polish queue 334→335→332→336 |
 
 ## Stabilization Wave (2026-08-03)
 
@@ -139,12 +139,12 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | TZ | Pages | One-liner |
 |----|-------|-----------|
 | Vision | — | [product-vision-lite.md](../product-vision-lite.md) |
-| [ACCESS-301](../tasks/TZ-ACCESS-301-page-acl-catalog.md) | admin | Page ACL + 4 roles seed |
-| [ACCESS-302](../tasks/TZ-ACCESS-302-director-page-grants-ui.md) | admin/access | Director page checkboxes |
-| [JOURNEY-301 DONE](../tasks/_archive/2026-08/TZ-JOURNEY-301.done.md) | all | Flow gap map (docs) |
-| [SALES-301](../tasks/TZ-SALES-301-proposal-thin-ui.md) | /proposals (NEW) | Thin КП list |
+| [ACCESS-301](../../tasks/_archive/2026-08/TZ-ACCESS-301-page-acl-catalog.md) | admin | Page ACL + 4 roles seed |
+| [ACCESS-302](../../tasks/_archive/2026-08/TZ-ACCESS-302-director-page-grants-ui.md) | admin/access | Director page checkboxes |
+| [JOURNEY-301 DONE](../../tasks/_archive/2026-08/TZ-JOURNEY-301.done.md) | all | Flow gap map (docs) |
+| [SALES-301](../../tasks/_archive/2026-08/TZ-SALES-301-proposal-thin-ui.done.md) | /proposals (NEW) | Thin КП list |
 | GANT | parked | `_backlog/vision/GANT-calendar.md` |
-| **[CORE-301](../tasks/_backlog/TZ-CORE-301-snapshot-immutability-pattern.md)** | backend/common | Snapshot-on-transition immutability helper (foundational) |
-| **[DEPLOY-301](../tasks/TZ-DEPLOY-301-prep-first-deploy.md)** | ops | **Gate перед первым деплоем** (auth/CORS/secrets/compose) |
+| **[CORE-301](../../tasks/_archive/2026-08/TZ-CORE-301-snapshot-immutability-pattern.done.md) ** | backend/common | Snapshot-on-transition immutability helper (foundational) |
+| **[DEPLOY-301](../../tasks/_archive/2026-08/TZ-DEPLOY-301-prep-first-deploy.done.md) ** | ops | **Gate перед первым деплоем** (auth/CORS/secrets/compose) |
 
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
