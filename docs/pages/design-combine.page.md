@@ -34,15 +34,17 @@
 
 Канон: [`docs/COUPLING-MAP.md`](../COUPLING-MAP.md).
 
-## API (целевое WAVE)
+## API (WAVE)
 
 | Метод | Endpoint | Когда |
 |-------|----------|--------|
-| GET | `/api/orders` | данные доски |
-| PATCH | `/api/orders/:id/lines/:lineId/lane` | DnD изделия (TZ-COMBINE-403 live) |
+| GET | `/api/orders` | данные доски (404: flat item cards + filter) |
+| PATCH | `/api/orders/:id/lines/:lineId/lane` | DnD изделия — BE live (403); FE DnD → **405** |
 | POST | `/api/orders/:id/ship` | все линии `to_ship` → confirm |
 
 Legacy: `PATCH .../items/:i/status` — не расширять новыми значениями.
+
+**TZ-COMBINE-404:** FE колонки RU + helpers, карточки = OrderItem + бейдж №заказа, фильтр orderId, клик → order edit. DnD нет.
 
 ## Навигация
 

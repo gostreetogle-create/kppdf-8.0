@@ -1,29 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { computed, NO_ERRORS_SCHEMA, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
-import { CdkDrag, CdkDragDrop } from '@angular/cdk/drag-drop';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
-import { DashboardPage } from './dashboard.page';
-import { Order } from '../orders/orders.service';
+import { CombineItemCard, CombineColumn, DashboardPage } from './dashboard.page';
+import { BoardLane, Order, OrderItem } from '../orders/orders.service';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
-import { PiToastService } from '../../shared/ui/toast';
+import { DashboardDialogService } from '../../shared/services/dashboard-dialog.service';
 
 /**
- * TZ-SWEEP-401 — write-path Канбана:
- *  - дроп в операционные колонки (draft…ready) → PATCH {status}
- *  - дроп в «Отгружены» → confirm → POST /orders/:id/ship (не PATCH)
- *  - ok:false → карточка возвращается в исходную колонку + toast
+ * TZ-COMBINE-404 — Комбайн как доска изделий:
+ *  - колонки = boardLane (prep…shipped) + RU title + helper
+ *  - карточки = flat OrderItem; фильтр по orderId
+ *  - fallback boardLane из item.status
+ *  - клик badge/title → openOrderEdit
  *
- * httpResource sync contract — см. materials.page.spec.ts: GET уходит через
- * flushEffects(), value() обновляется после tickMicrotask().
+ * DnD / patchLane write-path → TZ-COMBINE-405.
  */
 
 const baseUrl = '/api';
 const listUrl = `${baseUrl}/orders`;
+
+function itemOf(overrides: Partial<OrderItem> = {}): OrderItem {
+  return {
+    productId: 'p1',
+    productName: 'Изделие А',
+    quantity: 2,
+    unit: 'шт',
+    unitPrice: 100,
+    ...overrides,
+  };
+}
 
 function orderOf(overrides: Partial<Order> = {}): Order {
   return {
@@ -38,35 +45,9 @@ function orderOf(overrides: Partial<Order> = {}): Order {
   };
 }
 
-function dropEvent(previousData: Order[], containerId: string): CdkDragDrop<Order[]> {
-  return {
-    previousIndex: 0,
-    currentIndex: 0,
-    item: {} as CdkDrag<Order[]>,
-    container: { id: containerId, data: [] as Order[] } as unknown as CdkDragDrop<
-      Order[]
-    >['container'],
-    previousContainer: { data: previousData } as unknown as CdkDragDrop<
-      Order[]
-    >['previousContainer'],
-    isPointerOverContainer: true,
-    distance: { x: 0, y: 0 },
-  } as CdkDragDrop<Order[]>;
-}
-
-/** DialogRef, закрытый значением заранее — onDialogCloseOnce сработает на первом эффекте. */
-function closedDialogRef(value: unknown): DialogRef<boolean> {
-  const v = signal<unknown>(value);
-  return {
-    closed: computed(() => v()),
-    close: (x?: unknown) => v.set(x),
-  } as unknown as DialogRef<boolean>;
-}
-
-describe('DashboardPage (TZ-SWEEP-401)', () => {
+describe('DashboardPage (TZ-COMBINE-404)', () => {
   let httpMock: HttpTestingController;
-  let dialog: { open: jest.Mock };
-  let toast: { error: jest.Mock; success: jest.Mock };
+  let dialogs: { openOrderEdit: jest.Mock; openProductEdit: jest.Mock };
 
   async function flushInitial(orders: Order[]): Promise<void> {
     const req = httpMock.expectOne((r) => r.url === listUrl && r.method === 'GET');
@@ -75,19 +56,17 @@ describe('DashboardPage (TZ-SWEEP-401)', () => {
   }
 
   beforeEach(async () => {
-    dialog = { open: jest.fn() };
-    toast = { error: jest.fn(), success: jest.fn() };
+    dialogs = { openOrderEdit: jest.fn(), openProductEdit: jest.fn() };
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: baseUrl },
-        { provide: PiDialogService, useValue: dialog },
-        { provide: PiToastService, useValue: toast },
+        { provide: DashboardDialogService, useValue: dialogs },
       ],
     })
       .overrideComponent(DashboardPage, {
-        set: { imports: [DatePipe], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
@@ -97,112 +76,173 @@ describe('DashboardPage (TZ-SWEEP-401)', () => {
     httpMock.verify();
   });
 
-  it('drop in «Готовы» PATCHes {status: ready} and applies the server order', async () => {
+  it('exposes five boardLane columns with RU titles and helpers', () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
-    const order = orderOf({ status: 'in_production' });
-    await flushInitial([order]);
-    TestBed.flushEffects();
-    fixture.detectChanges();
+    void httpMock.expectOne((r) => r.url === listUrl && r.method === 'GET');
 
-    const page = fixture.componentInstance as unknown as {
-      dropOrder: (e: CdkDragDrop<Order[]>) => void;
-      data: () => Order[];
-    };
-    page.dropOrder(dropEvent([order], 'ready'));
-
-    const req = httpMock.expectOne((r) => r.url === `${baseUrl}/orders/o1` && r.method === 'PATCH');
-    expect(req.request.body).toEqual({ status: 'ready' });
-    req.flush(orderOf({ status: 'ready' }));
-
-    expect(page.data()[0].status).toBe('ready');
+    const page = fixture.componentInstance as unknown as { columns: CombineColumn[] };
+    expect(page.columns.map((c) => c.id)).toEqual(['prep', 'design', 'shop', 'to_ship', 'shipped']);
+    expect(page.columns.map((c) => c.title)).toEqual([
+      'Комплектация',
+      'Проектирование',
+      'В цехе',
+      'К отгрузке',
+      'Отгружены',
+    ]);
+    for (const col of page.columns) {
+      expect(col.helper.trim().length).toBeGreaterThan(0);
+    }
   });
 
-  it('drop in «Отгружены» asks confirm and POSTs /orders/:id/ship (never PATCH)', async () => {
+  it('flattens OrderItems into cards grouped by boardLane', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
-    const order = orderOf({ status: 'ready' });
-    await flushInitial([order]);
+
+    await flushInitial([
+      orderOf({
+        _id: 'o1',
+        number: 'ORD-1',
+        items: [
+          itemOf({
+            lineId: 'L1',
+            boardLane: 'prep',
+            productName: 'Стол',
+          }),
+          itemOf({
+            lineId: 'L2',
+            boardLane: 'shop',
+            productId: 'p2',
+            productName: 'Стул',
+          }),
+        ],
+      }),
+      orderOf({
+        _id: 'o2',
+        number: 'ORD-2',
+        items: [
+          itemOf({
+            lineId: 'L3',
+            boardLane: 'design',
+            productId: 'p3',
+            productName: 'Шкаф',
+          }),
+        ],
+      }),
+    ]);
     TestBed.flushEffects();
     fixture.detectChanges();
 
     const page = fixture.componentInstance as unknown as {
-      dropOrder: (e: CdkDragDrop<Order[]>) => void;
-      data: () => Order[];
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      itemCards: () => CombineItemCard[];
     };
-    dialog.open.mockReturnValue(closedDialogRef(true));
-    page.dropOrder(dropEvent([order], 'shipped'));
 
-    expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.anything());
-    expect((dialog.open.mock.calls[0]![1] as { data?: { title?: string } }).data?.title).toContain(
-      'ORD-1',
-    );
-
-    // onDialogCloseOnce → ship() уходит после flush эффектов.
-    TestBed.flushEffects();
-    const shipReq = httpMock.expectOne(
-      (r) => r.url === `${baseUrl}/orders/o1/ship` && r.method === 'POST',
-    );
-    expect(shipReq.request.body).toEqual({});
-    shipReq.flush(orderOf({ status: 'shipped' }));
-
-    expect(
-      httpMock.match((r) => r.url === `${baseUrl}/orders/o1` && r.method === 'PATCH'),
-    ).toHaveLength(0);
-    expect(page.data()[0].status).toBe('shipped');
+    expect(page.itemCards()).toHaveLength(3);
+    expect(page.columnCards('prep').map((c) => c.productName)).toEqual(['Стол']);
+    expect(page.columnCards('shop').map((c) => c.productName)).toEqual(['Стул']);
+    expect(page.columnCards('design').map((c) => c.productName)).toEqual(['Шкаф']);
+    expect(page.columnCards('prep')[0]!.orderNumber).toBe('ORD-1');
   });
 
-  it('confirm-cancel keeps the card in its column (no ship, no PATCH)', async () => {
+  it('derives boardLane from item.status when lane is missing', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
-    const order = orderOf({ status: 'ready' });
-    await flushInitial([order]);
+
+    await flushInitial([
+      orderOf({
+        items: [
+          itemOf({ status: 'pending', productName: 'A' }),
+          itemOf({ status: 'in_production', productId: 'p2', productName: 'B' }),
+          itemOf({ status: 'ready', productId: 'p3', productName: 'C' }),
+          itemOf({ status: 'shipped', productId: 'p4', productName: 'D' }),
+        ],
+      }),
+    ]);
     TestBed.flushEffects();
     fixture.detectChanges();
 
     const page = fixture.componentInstance as unknown as {
-      dropOrder: (e: CdkDragDrop<Order[]>) => void;
-      data: () => Order[];
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      boardLaneOf: (item: OrderItem) => BoardLane;
     };
-    dialog.open.mockReturnValue(closedDialogRef(undefined)); // Cancel
-    page.dropOrder(dropEvent([order], 'shipped'));
 
-    TestBed.flushEffects();
-    expect(httpMock.match((r) => r.method === 'POST' || r.method === 'PATCH')).toHaveLength(0);
-    expect(page.data()[0].status).toBe('ready');
+    expect(page.columnCards('prep').map((c) => c.productName)).toEqual(['A']);
+    expect(page.columnCards('shop').map((c) => c.productName)).toEqual(['B']);
+    expect(page.columnCards('to_ship').map((c) => c.productName)).toEqual(['C']);
+    expect(page.columnCards('shipped').map((c) => c.productName)).toEqual(['D']);
+    expect(page.boardLaneOf(itemOf({ status: 'pending' }))).toBe('prep');
   });
 
-  it('ok:false on PATCH rolls the card back to the original column and toasts', async () => {
+  it('filters cards by orderId («Все заказы» = empty)', async () => {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
     TestBed.flushEffects();
-    const order = orderOf({ status: 'in_production' });
+
+    await flushInitial([
+      orderOf({
+        _id: 'o1',
+        number: 'ORD-1',
+        items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'One' })],
+      }),
+      orderOf({
+        _id: 'o2',
+        number: 'ORD-2',
+        items: [
+          itemOf({
+            lineId: 'L2',
+            boardLane: 'prep',
+            productId: 'p2',
+            productName: 'Two',
+          }),
+        ],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const page = fixture.componentInstance as unknown as {
+      filterOrderId: { set: (v: string) => void; (): string };
+      columnCards: (id: BoardLane) => CombineItemCard[];
+      itemCards: () => CombineItemCard[];
+    };
+
+    expect(page.itemCards()).toHaveLength(2);
+
+    page.filterOrderId.set('o2');
+    fixture.detectChanges();
+    expect(page.itemCards().map((c) => c.productName)).toEqual(['Two']);
+    expect(page.columnCards('prep')).toHaveLength(1);
+
+    page.filterOrderId.set('');
+    fixture.detectChanges();
+    expect(page.itemCards()).toHaveLength(2);
+  });
+
+  it('openOrder delegates to DashboardDialogService.openOrderEdit', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    const order = orderOf({
+      items: [itemOf({ lineId: 'L1', boardLane: 'prep' })],
+    });
     await flushInitial([order]);
     TestBed.flushEffects();
     fixture.detectChanges();
 
     const page = fixture.componentInstance as unknown as {
-      dropOrder: (e: CdkDragDrop<Order[]>) => void;
-      data: () => Order[];
+      openOrder: (o: Order) => void;
     };
-    page.dropOrder(dropEvent([order], 'ready'));
+    page.openOrder(order);
 
-    const req = httpMock.expectOne((r) => r.url === `${baseUrl}/orders/o1` && r.method === 'PATCH');
-    req.flush(
-      { message: 'Отгрузка — через действие «Отгрузить»; отмена — «Отменить заказ».' },
-      {
-        status: 400,
-        statusText: 'Bad Request',
-      },
+    expect(dialogs.openOrderEdit).toHaveBeenCalledWith(
+      order,
+      expect.anything(),
+      expect.any(Function),
     );
-
-    expect(toast.error).toHaveBeenCalledWith(
-      'Отгрузка — через действие «Отгрузить»; отмена — «Отменить заказ».',
-    );
-    expect(page.data()[0].status).toBe('in_production');
   });
 
   it('readinessLabel counts item.status ∈ {ready, shipped}, never readyForWork', () => {
@@ -216,11 +256,10 @@ describe('DashboardPage (TZ-SWEEP-401)', () => {
 
     const mixed: Order = orderOf({
       items: [
-        { productId: 'p1', quantity: 1, unitPrice: 1, status: 'ready' },
-        { productId: 'p2', quantity: 1, unitPrice: 1, status: 'shipped' },
-        // readyForWork=true НЕ считается на Канбане (гейт /orders, HUB-304).
-        { productId: 'p3', quantity: 1, unitPrice: 1, readyForWork: true },
-        { productId: 'p4', quantity: 1, unitPrice: 1 },
+        itemOf({ productId: 'p1', status: 'ready' }),
+        itemOf({ productId: 'p2', status: 'shipped' }),
+        itemOf({ productId: 'p3', readyForWork: true }),
+        itemOf({ productId: 'p4' }),
       ],
     });
     expect(page.readinessLabel(mixed)).toBe('2 из 4');

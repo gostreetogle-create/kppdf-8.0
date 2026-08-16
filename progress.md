@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-404 DONE — FE item cards + boardLane columns
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** Комбайн = flat OrderItem cards by boardLane (RU+helper); filter orderId; click → order edit; patchLane stub for 405; DnD нет.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `dashboard.page` PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-404.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-404-combine-item-cards.lock`
+**Next:** TZ-COMBINE-405 DnD; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-COMBINE-403 DONE — PATCH line boardLane + Order.status rollup
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; deploy НЕ

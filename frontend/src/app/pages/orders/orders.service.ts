@@ -15,6 +15,9 @@ export type OrderStatus =
 
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
 
+/** TZ-COMBINE-402+: колонки Комбайна (`/design/combine`). */
+export type BoardLane = 'prep' | 'design' | 'shop' | 'to_ship' | 'shipped';
+
 export interface OrderItem {
   productId: string;
   productName?: string;
@@ -23,6 +26,10 @@ export interface OrderItem {
   unit?: string;
   unitPrice: number;
   total?: number;
+  /** TZ-COMBINE-402: стабильный id линии (uuid / legacy backfill). */
+  lineId?: string;
+  /** TZ-COMBINE-402: колонка Комбайна (SoT). */
+  boardLane?: BoardLane;
   /** TZ-ORDERS-303: ответственный за изделие. */
   ownerUserId?: string | { _id: string; displayName?: string; username?: string };
   /** TZ-ORDERS-303: плановая дата отгрузки позиции. */
@@ -30,7 +37,7 @@ export interface OrderItem {
   readyForWork?: boolean;
   readyAt?: string;
   readyByUserId?: string | { _id: string; displayName?: string; username?: string };
-  /** TZ-DASHBOARD-400: статус позиции заказа для Канбана */
+  /** Дериват boardLane (403); legacy PATCH .../items/:i/status. */
   status?: 'pending' | 'in_production' | 'ready' | 'shipped';
 }
 
@@ -168,6 +175,16 @@ export class OrdersService {
   ): Observable<SilentResult<Order>> {
     return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${id}/items/${lineIndex}/status`, {
       status,
+    });
+  }
+
+  /**
+   * TZ-COMBINE-403/405 — смена колонки Комбайна по lineId.
+   * `lane=shipped` на бэке запрещён (только POST /ship). Wired for 405 DnD.
+   */
+  patchLane(orderId: string, lineId: string, lane: BoardLane): Observable<SilentResult<Order>> {
+    return silentPatch<Order>(this.http, `${this.baseUrl}/orders/${orderId}/lines/${lineId}/lane`, {
+      lane,
     });
   }
 
