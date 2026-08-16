@@ -1,3 +1,15 @@
+## [2026-08-16] — TZ-OPS-SITE-SMOKE-401 DONE — site operator walk PASS
+**Исполнитель:** DeepC 4 Pro (live walk) + cursor-composer (docs-only closeout)
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** Живой обход 24 routes (PASS/SKIP/stub); P0 catalog write paths OK; product code не менялся. Findings: S1 → NAV-303 (`dashboard-stats.page.ts` TS2339 `destructive`); S2 → `TZ-DATA-UTF8-CLEAN` PARK.
+**Gates:** N/A (docs-only closeout; no product commit).
+**Review:** Cursor Verdict PASS (docs-only).
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-SITE-SMOKE-401.done.md`
+**Journal:** `docs/audits/2026-08-16-site-operator-walk.md`
+**Commit:** `5ec96518e774bf5484d959d1e393fdf5a0345fde`
+**Lock:** `.mimocode/locks/TZ-OPS-SITE-SMOKE-401.lock`
+**Next:** NAV-303 owns S1; UTF8-CLEAN stays PARK; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-OPS-313…316 DONE — confidence ledger P2 remediation
 **Исполнитель:** P2 executor + cursor-composer (315 regression fix + closeout)
 **Статус:** DONE; deploy НЕ
