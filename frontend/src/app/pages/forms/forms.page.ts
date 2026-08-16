@@ -206,7 +206,7 @@ export class FormsPage {
   ]);
 
   protected readonly page = signal(1);
-  protected readonly pageSize = 5;
+  protected readonly pageSize = 10;
   protected readonly sortKey = signal<SortKey>(null);
   protected readonly sortDir = signal<SortDir>('asc');
 

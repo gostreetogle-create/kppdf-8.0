@@ -43,7 +43,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
           items: [product],
           total: 13,
           page: 1,
-          limit: 12,
+          limit: 10,
         },
       }),
     );
@@ -76,7 +76,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
           ],
           total: 1,
           page: 1,
-          limit: 12,
+          limit: 10,
         },
       }),
     );
@@ -137,7 +137,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
   });
 
   it('renders md showcase cards with photo, add/edit actions, and pager', () => {
-    expect(listMock).toHaveBeenCalledWith({ page: 1, limit: 12 });
+    expect(listMock).toHaveBeenCalledWith({ page: 1, limit: 10 });
     expect(fixture.nativeElement.querySelector('[data-size="md"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-size="md"] .sc-media--md img').src).toContain(
       '/uploads/stand-thumb.jpg',
@@ -237,7 +237,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
       onQuery: (value: string) => void;
     };
     listMock.mockReturnValueOnce(
-      of({ ok: true, data: { items: [], total: 0, page: 1, limit: 12 } }),
+      of({ ok: true, data: { items: [], total: 0, page: 1, limit: 10 } }),
     );
     rail.onQuery('несуществующее');
     tick(250);
@@ -307,7 +307,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
       ) as HTMLButtonElement
     ).click();
     fixture.detectChanges();
-    expect(materialsListMock).toHaveBeenCalledWith({ page: 1, limit: 12 });
+    expect(materialsListMock).toHaveBeenCalledWith({ page: 1, limit: 10 });
     (
       fixture.nativeElement.querySelector(
         '[data-test="kp-rail-add-material-1"] button',
@@ -328,7 +328,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     const categoryEvent = new Event('change');
     Object.defineProperty(categoryEvent, 'target', { value: { value: 'category-1' } });
     category.triggerEventHandler('change', categoryEvent);
-    expect(listMock).toHaveBeenLastCalledWith({ page: 1, limit: 12, categoryId: 'category-1' });
+    expect(listMock).toHaveBeenLastCalledWith({ page: 1, limit: 10, categoryId: 'category-1' });
 
     const rail = fixture.componentInstance as ProposalProductRailComponent & {
       onQuery: (value: string) => void;
@@ -337,7 +337,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     tick(250);
     expect(listMock).toHaveBeenLastCalledWith({
       page: 1,
-      limit: 12,
+      limit: 10,
       search: 'стенд',
       categoryId: 'category-1',
     });
@@ -348,7 +348,7 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     next.click();
     expect(listMock).toHaveBeenLastCalledWith({
       page: 2,
-      limit: 12,
+      limit: 10,
       search: 'стенд',
       categoryId: 'category-1',
     });

@@ -82,7 +82,6 @@ import { Warehouse } from './warehouses.service';
             [data]="lowStockItems()"
             [columns]="columns"
             [loading]="lowStockLoading()"
-            [total]="lowStockItems().length"
             [localSort]="false"
             ariaLabel="Позиции с низким остатком"
             data-test="inventory-low-stock-table"

@@ -17,6 +17,7 @@ import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiShowcaseCardComponent } from '../../../shared/ui/card/pi-showcase-card.component';
 import { PaginationComponent } from '../../../shared/ui/pi-pagination.component';
+import { PI_DEFAULT_PAGE_SIZE } from '../../../shared/ui/pi-pagination.constants';
 import { Product, ProductsService } from '../../../shared/services/products.service';
 import { CategoriesService, type Category } from '../../../shared/services/categories.service';
 import { photoListUrl, type Photo } from '../../../shared/services/photos.service';
@@ -90,7 +91,8 @@ interface RailCard {
   raw: Product | ProductModule | Material;
 }
 
-const PAGE_SIZE = 12;
+/** Canon PAGE_SIZE=10 (TZ-UX-342); 3-col grid still fits. */
+const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
 
 /**
  * Shop-style catalog picker for Create КП (TZ-SALES-328 + 348).
@@ -261,13 +263,11 @@ const PAGE_SIZE = 12;
 
         @if (total() > pageSize) {
           <div class="rail__pager" data-test="kp-rail-pager">
-            <span class="text-xs text-muted-foreground tabular-nums" data-test="kp-rail-pager-info">
-              {{ pageRangeLabel() }}
-            </span>
             <app-pi-pagination
               [total]="total()"
               [pageSize]="pageSize"
               [currentPage]="page()"
+              [showPageSize]="false"
               [ariaLabel]="pagerAria()"
               (pageChange)="onPageChange($event)"
             />
@@ -411,7 +411,7 @@ const PAGE_SIZE = 12;
     }
 
     .rail__pager {
-      justify-content: space-between;
+      justify-content: flex-end;
       flex-wrap: wrap;
       padding-top: 0.25rem;
       border-top: 1px solid var(--color-rule);
@@ -597,14 +597,6 @@ export class ProposalProductRailComponent implements OnInit, OnDestroy {
 
   protected totalPages(): number {
     return Math.max(1, Math.ceil(this.total() / PAGE_SIZE));
-  }
-
-  protected pageRangeLabel(): string {
-    const count = this.total();
-    if (count === 0) return '0';
-    const start = (this.page() - 1) * PAGE_SIZE + 1;
-    const end = Math.min(this.page() * PAGE_SIZE, count);
-    return `${start}–${end} из ${count}`;
   }
 
   protected addCard(card: RailCard): void {

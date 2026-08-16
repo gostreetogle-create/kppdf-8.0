@@ -202,7 +202,6 @@ const STATUS_LABELS: Record<SupplyTaskStatus, string> = {
             [cellTemplates]="tpls()"
             [rowActions]="actionsTpl"
             [loading]="loading()"
-            [total]="tasks().length"
             [emptyMessage]="'Нет задач снабжения. Создайте первую — «+ Задача».'"
             [initialSortKey]="'createdAt'"
             [initialSortDir]="'desc'"

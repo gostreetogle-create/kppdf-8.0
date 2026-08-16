@@ -132,7 +132,6 @@ type SortDir = 'asc' | 'desc';
               [columns]="columns"
               [cellTemplates]="cellTemplates()"
               [rowActions]="rowActionsTpl"
-              [total]="sortedRows().length"
               [loading]="loading()"
               [localSort]="false"
               (sortChange)="onSortChange($event)"

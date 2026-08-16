@@ -139,8 +139,6 @@ function populatedName(
           [data]="items()"
           [columns]="columns"
           [loading]="loading()"
-          [total]="items().length"
-          [pageSize]="10"
           [emptyMessage]="'Нет движений. Проведите приход или расход.'"
           [initialSortKey]="'date'"
           [initialSortDir]="'desc'"

@@ -82,7 +82,6 @@ const TYPE_LABELS: Record<string, string> = {
           [cellTemplates]="tpls()"
           [rowActions]="rowActionsTpl"
           [loading]="loading()"
-          [total]="filtered().length"
           [emptyMessage]="'Нет складов. Создайте первый — «+ Склад».'"
           [initialSortKey]="'name'"
           [initialSortDir]="'asc'"

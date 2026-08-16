@@ -104,7 +104,6 @@ function pluralGenitive(n: number): string {
         [columns]="columns"
         [cellTemplates]="tpls()"
         [rowActions]="rowActionsTpl"
-        [total]="visible().length"
         [loading]="loading()"
         [emptyMessage]="
           searchQuery() ? 'Ничего не найдено.' : 'Нет категорий шаблонов. Создайте первую.'

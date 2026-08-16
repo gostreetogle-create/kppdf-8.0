@@ -43,6 +43,7 @@
 | TZ-SUPPLY-301 | Live registry + confirm/ordered/received |
 | TZ-SUPPLY-302 | BOM explode → draft tasks |
 | **TZ-ORDERS-HUB-303** | Query `orderId` filter + deep-link from orders expand |
+| **TZ-UX-342** | Removed dead `[total]` on pi-table (no fake pager without slice) |
 
 ## Канон
 

@@ -98,7 +98,6 @@ import { StorageAdjustDialogComponent } from './storage-adjust-dialog.component'
           [columns]="columns"
           [rowActions]="rowActionsTpl"
           [loading]="loading()"
-          [total]="items().length"
           [emptyMessage]="'Нет остатков. Нажмите «+ Поставить на склад».'"
           ariaLabel="Остатки на складе"
           data-test="storage-items-table"

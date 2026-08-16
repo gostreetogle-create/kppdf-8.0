@@ -84,6 +84,7 @@
 - **326** — products flyout **36–40rem** (≈×2) + transparent backdrop dismiss вне панели (вкл. iframe); A4 center/rails не сжимаются
 - **327** — PiShowcaseCard md equal-height (эталон; sm/md/lg уже есть)
 - **328** — visual trial: `PiShowcaseCard md` grid **3-col** in the wider ~58rem products flyout (narrow fallback 2→1), slightly compact rail spacing, search + category + pager, `Добавить` / `Редактировать` / `Создать изделие` без выхода из студии
+- **UX-342** — KP products rail pager = shared `app-pi-pagination` (range + ‹› + numbers, `showPageSize=false`); `PAGE_SIZE` **10** (was 12)
 - **332** — таблица синхронизируется с реальными columns выбранного бланка; right rail разделён на Параметры/Таблица, CTA = «Открыть шаблон таблицы», flyouts имеют воздух и content-height, витрина не клипается.
 - **337** — Параметры содержит только фирму/наценку/НДС/оценку/клиента; columns и CTA «Открыть шаблон таблицы» доступны только в rail «Таблица».
 - Persist Quotation / snapshot → later · **322 PARK** · Печать → **320 PARK**

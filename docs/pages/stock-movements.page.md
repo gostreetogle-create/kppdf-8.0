@@ -50,7 +50,8 @@
 |----|------------|
 | TZ-115 | silent-http error toast + httpResource migration |
 | **TZ-WAREHOUSE-UX-301** | **Фильтр склада (chips ≤8 / select >8) + сохранение type; page doc** |
+| **TZ-UX-342** | Removed dead `[total]`/`[pageSize]` (no fake pager without pageChange) |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-06 (TZ-WAREHOUSE-UX-301)._
+_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-UX-342)._

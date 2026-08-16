@@ -156,7 +156,6 @@ function pluralGenitive(n: number): string {
           [columns]="columns"
           [cellTemplates]="tpls()"
           [rowActions]="rowActionsTpl"
-          [total]="visible().length"
           [emptyMessage]="
             searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'
           "

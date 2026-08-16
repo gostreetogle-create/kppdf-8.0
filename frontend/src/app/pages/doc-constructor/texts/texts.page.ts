@@ -158,7 +158,6 @@ type SortDir = 'asc' | 'desc';
               [columns]="columns"
               [cellTemplates]="cellTemplates()"
               [rowActions]="rowActionsTpl"
-              [total]="sortedRows().length"
               [loading]="loading()"
               ariaLabel="Текстовые блоки"
               data-test="texts-table"

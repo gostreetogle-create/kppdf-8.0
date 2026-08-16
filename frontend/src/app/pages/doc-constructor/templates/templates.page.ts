@@ -234,10 +234,6 @@ export class TemplatesPage {
     );
   });
 
-  protected readonly totalPages = computed(() =>
-    Math.max(1, Math.ceil(this.filtered().length / PAGE_SIZE)),
-  );
-
   protected readonly pageRows = computed(() => {
     const start = this.pageIndex() * PAGE_SIZE;
     return this.filtered().slice(start, start + PAGE_SIZE);
@@ -283,21 +279,6 @@ export class TemplatesPage {
   protected onSearch(e: Event): void {
     this.searchQuery.set((e.target as HTMLInputElement).value);
     this.pageIndex.set(0);
-  }
-
-  protected rangeLabel(): string {
-    const total = this.filtered().length;
-    const start = this.pageIndex() * PAGE_SIZE + 1;
-    const end = Math.min((this.pageIndex() + 1) * PAGE_SIZE, total);
-    return `Показано ${start}–${end} из ${total}`;
-  }
-
-  protected prevPage(): void {
-    this.pageIndex.update((p) => Math.max(0, p - 1));
-  }
-
-  protected nextPage(): void {
-    this.pageIndex.update((p) => Math.min(this.totalPages() - 1, p + 1));
   }
 
   protected docTypeName(t: DocumentTemplate): string {
