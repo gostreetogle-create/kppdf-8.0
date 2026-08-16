@@ -16,6 +16,7 @@ import {
   ganttSkipToastRu,
   ganttWorkerModuleSummaryId,
   groupBarsByWorker,
+  isGanttShopFloorNoiseName,
   isHardFrozenOrderStatus,
   isModuleSummaryBar,
   isWholeProductModuleId,
@@ -815,6 +816,110 @@ describe('gantt-bar.model', () => {
     expect(orderHasGanttEstimate(eligible, new Date(2026, 7, 6))).toBe(true);
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('нет прямых модулей');
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('Пустышка');
+  });
+
+  describe('TZ-PRODUCTION-347 shop-floor noise filter', () => {
+    it('isGanttShopFloorNoiseName matches assembly/packaging, not крепёж/резка/сварка', () => {
+      expect(isGanttShopFloorNoiseName('Финишная сборка')).toBe(true);
+      expect(isGanttShopFloorNoiseName('Сборка')).toBe(true);
+      expect(isGanttShopFloorNoiseName('  УПАКОВКА  ')).toBe(true);
+      expect(isGanttShopFloorNoiseName('Упаковка готовой продукции')).toBe(true);
+      expect(isGanttShopFloorNoiseName('Крепёжный')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Рама')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Полка')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Резка')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Сварка')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Покраска')).toBe(false);
+      expect(isGanttShopFloorNoiseName('Гибка')).toBe(false);
+      expect(isGanttShopFloorNoiseName('')).toBe(false);
+      expect(isGanttShopFloorNoiseName(null)).toBe(false);
+    });
+
+    it('buildGanttBars skips noise modules and work types; keeps рама/резка', () => {
+      const input: OrderEstimateInput = {
+        orderId: 'o-noise',
+        orderNumber: 'ORD-NOISE',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [
+          {
+            orderItemIndex: 0,
+            productId: 'p1',
+            productName: 'Стеллаж',
+            quantity: 1,
+            modules: [
+              {
+                moduleId: 'm-frame',
+                moduleName: 'Рама',
+                sortOrder: 0,
+                workTypes: [
+                  { workTypeId: 'wt-cut', workTypeName: 'Резка', days: 1, sortOrder: 0 },
+                  { workTypeId: 'wt-asm', workTypeName: 'Сборка', days: 2, sortOrder: 1 },
+                  { workTypeId: 'wt-weld', workTypeName: 'Сварка', days: 2, sortOrder: 2 },
+                ],
+              },
+              {
+                moduleId: 'm-pack',
+                moduleName: 'Финишная сборка',
+                sortOrder: 1,
+                workTypes: [
+                  { workTypeId: 'wt-pack', workTypeName: 'Упаковка', days: 1, sortOrder: 0 },
+                ],
+              },
+              {
+                moduleId: 'm-shelf',
+                moduleName: 'Полка',
+                sortOrder: 2,
+                workTypes: [
+                  { workTypeId: 'wt-paint', workTypeName: 'Покраска', days: 1, sortOrder: 0 },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const bars = buildGanttBars(input, new Date(2026, 7, 6));
+      expect(bars.map((b) => `${b.moduleName}:${b.workTypeName}`)).toEqual([
+        'Рама:Резка',
+        'Рама:Сварка',
+        'Полка:Покраска',
+      ]);
+      expect(bars.some((b) => /сборк|упаков/i.test(b.moduleName))).toBe(false);
+      expect(bars.some((b) => /сборк|упаков/i.test(b.workTypeName))).toBe(false);
+      // Sequential: Резка 1d → Сварка starts next day (skipped Сборка does not take a slot).
+      expect(bars[0]!.startDate).toBe('2026-08-01');
+      expect(bars[1]!.startDate).toBe('2026-08-02');
+      expect(bars[2]!.startDate).toBe('2026-08-04');
+    });
+
+    it('order with only noise modules is ineligible (existing skip path)', () => {
+      const onlyNoise: OrderEstimateInput = {
+        orderId: 'o-only-noise',
+        orderNumber: 'ORD-ONLY-NOISE',
+        status: 'confirmed',
+        plannedDate: '2026-08-01',
+        items: [
+          {
+            orderItemIndex: 0,
+            productId: 'p1',
+            productName: 'Короб',
+            quantity: 1,
+            modules: [
+              {
+                moduleId: 'm-asm',
+                moduleName: 'Финишная сборка',
+                sortOrder: 0,
+                workTypes: [
+                  { workTypeId: 'wt-pack', workTypeName: 'Упаковка', days: 1, sortOrder: 0 },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      expect(buildGanttBars(onlyNoise, new Date(2026, 7, 6))).toEqual([]);
+      expect(orderHasGanttEstimate(onlyNoise, new Date(2026, 7, 6))).toBe(false);
+    });
   });
 
   it('TZ-PRODUCTION-345: empty modules stay ineligible; whole-product pseudo-module = «целиком» row', () => {

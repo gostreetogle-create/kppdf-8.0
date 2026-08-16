@@ -143,6 +143,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-344:** «По рабочим» — Worker → Module(+контекст) → WT; `expandedWorkerIds` / `expandedWorkerModuleIds`; default collapsed; read-only.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
+- **TZ-PRODUCTION-347:** модули/виды работ с именами «сборк*/упаков*» (напр. «Финишная сборка», «Упаковка») скрыты из `buildGanttBars` до складской волны; каталог не удаляется.
 - **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
 
 - **TZ-PRODUCTION-321:** клик вида работ (лейбл или ▸) → inline detail **под строкой**: люди, дни (PATCH estimate-days), override-hint, «Изменить в справочнике» при `production:write`. Один detail; Esc/dismiss закрывает.
@@ -195,6 +196,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-342** | DONE: Gantt tree Order→Product→Module→WT; expand product/module keys; WT leaf + cascade/drag after module ▸; worker IA = 344 |
 | **TZ-PRODUCTION-343** | DONE: RU expand aria/title (изделие/модуль); nested product/module frames; header `Заказ · изделие`; «По заказам» unchanged |
 | **TZ-PRODUCTION-344** | DONE: Worker → Module(order·product·module) → WT; ▸ on worker; default collapsed; RO |
+| **TZ-PRODUCTION-345** | DONE: whole-product pseudo-module «… · целиком»; empty modules stay ineligible |
+| **TZ-PRODUCTION-347** | DONE: hide module/WT names matching сборк/упаков from `buildGanttBars`; catalog untouched |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |

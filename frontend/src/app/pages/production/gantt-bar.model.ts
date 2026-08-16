@@ -848,6 +848,17 @@ function sortByOrderThenIndex<T extends { sortOrder: number }>(
   });
 }
 
+/**
+ * TZ-PRODUCTION-347 — shop-floor noise names hidden from Gantt estimate tree.
+ * Matches «Финишная сборка», «Сборка», «Упаковка…» (module or work type).
+ * Does not match «Крепёжный» / резка / сварка / покраска / гибка.
+ */
+const GANTT_SHOP_FLOOR_NOISE_RE = /сборк|упаков/i;
+
+export function isGanttShopFloorNoiseName(name: string | null | undefined): boolean {
+  return GANTT_SHOP_FLOOR_NOISE_RE.test((name ?? '').trim());
+}
+
 export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date()): GanttBar[] {
   const { anchor, usedFallbackToday } = resolveVisualAnchor(order, today);
   const overrideIndex = indexEstimateDayOverrides(order.estimateDayOverrides);
@@ -866,9 +877,14 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
     const modules = sortByOrderThenIndex(resolved, (m) => resolved.indexOf(m));
 
     for (const mod of modules) {
+      // TZ-347: hide assembly/packaging modules from Gantt (catalog unchanged).
+      if (isGanttShopFloorNoiseName(mod.moduleName)) continue;
+
       const workTypes = sortByOrderThenIndex(mod.workTypes, (w) => mod.workTypes.indexOf(w));
 
       for (const wt of workTypes) {
+        if (isGanttShopFloorNoiseName(wt.workTypeName)) continue;
+
         occurrence += 1;
         const days = resolveEstimateDays(
           item.orderItemIndex,

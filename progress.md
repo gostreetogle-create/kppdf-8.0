@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-347 DONE — Gantt hide assembly/packaging
+**Исполнитель:** composer-executor-347
+**Статус:** DONE; deploy НЕ
+**Что:** `isGanttShopFloorNoiseName` + filter в `buildGanttBars` (модуль/WT `/сборк|упаков/i`); only-noise → skip 336; каталог/wipe/346 CSS не трогали.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bar.model` PASS (37/37).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-347.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-347-gantt-hide-assembly-pack.lock`
+**Next:** TZ-PRODUCTION-346 (CSS nest) READY; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-345 DONE — Gantt product-as-module «целиком»
 **Исполнитель:** local-executor-composer
 **Статус:** DONE; deploy НЕ

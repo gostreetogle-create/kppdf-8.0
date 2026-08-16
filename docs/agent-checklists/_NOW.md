@@ -5,12 +5,13 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T21:26:35+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (342+343+344+345 DONE; deploy deferred)
+updated_at: 2026-08-16T21:45:00+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-345 + **347 DONE**; 346 READY (CSS nest); deploy deferred
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–345 DONE**. Deploy — только «кати».
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–345 DONE**; **347 DONE** (hide assembly/pack). Deploy — только «кати».
+- **TZ-PRODUCTION-346** READY — gantt-bars CSS nest indent/tint (do not mix with 347).
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
@@ -18,6 +19,7 @@ hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (3
 
 1. Deploy Desktop **0.5.5** — только «кати» + VPN off
 2. Production warm deploy — только «кати»
+3. Optional: claim **TZ-PRODUCTION-346** (CSS only)
 
 
 ## Queue hygiene (not live)
@@ -27,6 +29,10 @@ hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (3
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-347 DONE — Gantt hide assembly/pack
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-347.done.md`; lock `TZ-PRODUCTION-347-gantt-hide-assembly-pack.lock`; FE tsc + jest model **37/37**. Deploy нет. Filter `/сборк|упаков/` in `buildGanttBars`.
 
 ## [2026-08-16] — TZ-PRODUCTION-345 DONE — Gantt product-as-module «целиком»
 
