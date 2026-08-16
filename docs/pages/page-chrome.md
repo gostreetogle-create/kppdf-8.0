@@ -5,6 +5,12 @@
 под header. H1 ERP: `font-display text-lg`. Catalog detail имя (passport):
 `text-lg sm:text-xl` max (TYPE-302).
 
+## Brand home (TZ-UX-331)
+
+Левый бренд шапки `KPPDF · 8.0` — **кликабельный chip** (`data-test="nav-brand-home"`)
+на `/` → Комбайн (`/dashboard`). Soft sunrise/gold + золотой маркер; aria/title
+«Комбайн заказов — главная». Не путать с entry «Сделки» (Создать КП).
+
 ## Компоненты
 
 | Компонент | Когда |
@@ -13,6 +19,18 @@
 | `app-pi-page-header` | UI-kit showcase (`size="display"`); ERP — prefer chrome |
 | `app-pi-group-workspace` | TOC + section chips + tools; `pathLabel` deprecated no-op (TZ-UX-315) |
 | `app-pi-breadcrumb` | Демо в `/navigation`; production prefer chrome |
+
+## Пагинация списков (TZ-UX-340)
+
+Канон: **`<app-pi-pagination>`** — единственный визуальный pager SoT.
+
+- Диапазон `N–M из T` + `‹`/`›` + номера (gaps) + select **10 / 25 / 50**
+- Дефолт `PI_DEFAULT_PAGE_SIZE = 10` (`pi-pagination.constants.ts`)
+- `app-pi-table` footer встраивает тот же компонент (`pageChange` / `pageSizeChange`)
+- Скрытие при `total ≤ pageSize`; при смене size родитель сбрасывает на page 1
+- Миграция grid/rail pages → TZ-UX-341 / 342
+
+Аудит: `docs/audits/2026-08-16-pagination-unification-audit.md`
 
 ## Паттерн крошек
 

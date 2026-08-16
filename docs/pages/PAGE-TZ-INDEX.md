@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-16 (dashboard Комбайн + TZ-SWEEP-401)
+**Updated:** 2026-08-16 (TZ-UX-331 brand home → Комбайн)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -12,7 +12,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
 | `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
-| `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (326…); audit `2026-08-15-chrome-page-tools-migration-audit.md` |
+| `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (326…); **UX-331 READY FOR REVIEW** brand chip → Комбайн; audit `2026-08-15-chrome-page-tools-migration-audit.md` |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
@@ -51,7 +51,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
 | `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 DONE** supply `?orderId=`; **HUB-304 DONE** hub shipping stub link |
-| `/` , `/dashboard` | **dashboard.page.md** | DASHBOARD-400 Канбан; **TZ-SWEEP-401 READY** (write-path ship/cancel, freeze vs drag, nav «Комбайн», item.status fallback) |
+| `/` , `/dashboard` | **dashboard.page.md** | DASHBOARD-400 Канбан; **TZ-SWEEP-401 READY** (write-path ship/cancel, freeze vs drag, nav «Комбайн», item.status fallback); **UX-331 READY FOR REVIEW** shell brand = home chip → Комбайн |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |

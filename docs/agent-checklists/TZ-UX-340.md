@@ -1,10 +1,11 @@
 # TZ-UX-340 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-UX-340.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived → `tasks/_archive/2026-08/TZ-UX-340.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
-> Spec: `tasks/TZ-UX-340-pi-pagination-canon.md`
+> Spec: archived (was `tasks/TZ-UX-340-pi-pagination-canon.md`)
 > READY FOR REVIEW: 2026-08-16T12:25:00Z
+> closed_at: 2026-08-16T12:30:00+03:00
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
 
@@ -18,8 +19,8 @@
 - [x] Get-Location + git rev-parse --show-toplevel → оба `D:\kppdf-8.0`
 - [x] Прочитал `_NOW.md` + `tasks/_active/` — нет чужого CLAIM на те же keys (326=products, 374=modules)
 - [x] TZ / канон / deps прочитаны (audit + TZ-UX-340)
-- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS → READY FOR REVIEW
-- [x] `tasks/_active/TZ-UX-340.md` на месте
+- [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS → READY FOR REVIEW → DONE
+- [x] `tasks/_active/TZ-UX-340.md` на месте (removed on archive)
 
 ## Acceptance
 
@@ -33,7 +34,7 @@
 
 - [x] Тип изменения определён: other (shared UI primitive)
 - [x] FIC §A–E: N/A — нет нового route/permission/module/MCP; shared pager UX
-- [x] page.md / PAGE-TZ-INDEX: shell note в `page-chrome.md` + PAGE-TZ-INDEX UX-340 IN WORK→READY
+- [x] page.md / PAGE-TZ-INDEX: shell note в `page-chrome.md` + PAGE-TZ-INDEX UX-340 DONE
 - [x] SECTION-READINESS: N/A (не менялся статус секции продукта)
 - [x] Чужой WIP не в коммите; conflict keys соблюдены (не трогали products/modules/desktop)
 - [x] Канон: docs/DOCS-INTEGRITY.md
@@ -56,15 +57,15 @@ cd frontend && pnpm test -- --testPathPattern="pi-pagination|pi-table" --coverag
 - Specs: новый `pi-pagination.component.spec.ts`; обновлён pager block в `pi-table.component.spec.ts`.
 - Conflict disclosure: не трогал products.page / modules.page / desktop.
 - Known limits: pages/grid/KP rail migration = TZ-UX-341/342 (не стартованы). Consumers ещё могут передавать свой pageSize (часто 10 уже).
-- Archive **не** делаю — TZ требует Cursor PASS.
+- Code commit: `a36120d4`. Cursor Verdict PASS → archive + lock.
 
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [x] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T12:30:00+03:00

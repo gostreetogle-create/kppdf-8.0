@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-CATALOG-374 DONE — `/modules` list expandable состав
+**Исполнитель:** cursor-composer
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** клик по строке модуля в list раскрывает gold-soft tray состава (`getModuleTree`); detail через имя / «Открыть карточку»; empty/loading/error RU; `expandedSection` задел без пустых вкладок; grid без expand.
+**Gates:** FE tsc PASS; modules.page Jest 24/24 PASS.
+**Review:** Cursor architect Verdict PASS (closeout-only).
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-374.done.md`
+**Commit:** _(filled after commit)_
+**Lock:** `.mimocode/locks/TZ-CATALOG-374-modules-list-expand.lock`
+**Next:** STOP for this TZ; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-326 DONE — `/products` chrome page-tools
 **Исполнитель:** cursor-grok-4.6
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ
