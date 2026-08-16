@@ -60,6 +60,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     }),
   );
   const syncFromMasterMock = jest.fn(() => of({ ok: true, data: {} as never }));
+  const downloadPdfMock = jest.fn(() => of(new Blob(['pdf'], { type: 'application/pdf' })));
   const findByIdMock = jest.fn(() =>
     of({
       ok: true,
@@ -122,6 +123,8 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     );
     getFamilyMock.mockClear();
     syncFromMasterMock.mockClear();
+    downloadPdfMock.mockClear();
+    downloadPdfMock.mockReturnValue(of(new Blob(['pdf'], { type: 'application/pdf' })));
     findByIdMock.mockClear();
     await TestBed.configureTestingModule({
       providers: [
@@ -144,6 +147,7 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
             getFamily: getFamilyMock,
             attachOrganizations: () => of({ ok: true, data: {} as never }),
             syncFromMaster: syncFromMasterMock,
+            downloadPdf: downloadPdfMock,
           },
         },
         {
@@ -619,5 +623,47 @@ describe('ProposalsPage (TZ-SALES-301)', () => {
     expect(syncFromMasterMock).toHaveBeenCalledWith('p1');
     httpMock.expectOne(matchListGet).flush([]);
     await tickMicrotask();
+  });
+
+  it('onDownloadPdf sets anchor.download to КП-{number}.pdf (TZ-SALES-369)', async () => {
+    const fixture = TestBed.createComponent(ProposalsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush(fakeProposals);
+    await tickMicrotask();
+
+    const click = jest.fn();
+    const anchor = { href: '', download: '', click } as HTMLAnchorElement;
+    const originalCreateElement = document.createElement.bind(document);
+    const createElementSpy = jest
+      .spyOn(document, 'createElement')
+      .mockImplementation((tag: string, options?: ElementCreationOptions) => {
+        if (tag === 'a') return anchor;
+        return originalCreateElement(tag, options);
+      });
+    const createObjectURL = jest.fn(() => 'blob:mock');
+    const revokeObjectURL = jest.fn();
+    const urlRef = global.URL as typeof URL & {
+      createObjectURL: typeof URL.createObjectURL;
+      revokeObjectURL: typeof URL.revokeObjectURL;
+    };
+    const prevCreate = urlRef.createObjectURL;
+    const prevRevoke = urlRef.revokeObjectURL;
+    urlRef.createObjectURL = createObjectURL as typeof URL.createObjectURL;
+    urlRef.revokeObjectURL = revokeObjectURL as typeof URL.revokeObjectURL;
+
+    const comp = fixture.componentInstance as unknown as {
+      onDownloadPdf: (p: Proposal) => void;
+    };
+    comp.onDownloadPdf(fakeProposals[0]);
+
+    expect(downloadPdfMock).toHaveBeenCalledWith('p1');
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+    expect(click).toHaveBeenCalled();
+    expect(anchor.download).toBe('КП-QTN-001.pdf');
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock');
+
+    createElementSpy.mockRestore();
+    urlRef.createObjectURL = prevCreate;
+    urlRef.revokeObjectURL = prevRevoke;
   });
 });

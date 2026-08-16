@@ -9,6 +9,7 @@ import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { RequireOrgScope } from '../../common/decorators/require-org-scope.decorator';
 import { OrgScopeGuardInterceptor } from '../../common/interceptors/org-scope.interceptor';
 import { QuotationOutputService } from './quotation-output.service';
+import { buildKpPdfContentDisposition } from './kp-pdf-filename';
 
 @RequireOrgScope()
 @UseInterceptors(OrgScopeGuardInterceptor)
@@ -25,11 +26,10 @@ export class QuotationOutputController {
     @CurrentUser() user?: AuthenticatedUser,
   ): Promise<void> {
     const rendered = await this.output.renderPdf(id, user);
-    const quotationNumber = rendered.number;
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="KP-${quotationNumber}.pdf"; filename*=UTF-8''${encodeURIComponent(`КП-${quotationNumber}.pdf`)}`,
+      buildKpPdfContentDisposition(rendered.number, id),
     );
     res.send(rendered.buffer);
   }

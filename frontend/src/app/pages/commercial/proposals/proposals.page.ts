@@ -27,6 +27,7 @@ import { API_BASE_URL } from '../../../core/api.tokens';
 import { createSearchState } from '../../../shared/util/search';
 import { pluralize, formatDate, formatPrice } from '../../../shared/util/format';
 import { createLookupTable } from '../../../shared/util/lookup-table';
+import { buildKpPdfFilename } from './kp-pdf-filename';
 import { ColumnDef, SortDirection, TableComponent } from '../../../shared/ui/pi-table.component';
 import {
   Counterparty,
@@ -797,7 +798,7 @@ export class ProposalsPage implements OnInit {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `КП-${row.number}.pdf`;
+        anchor.download = buildKpPdfFilename(row.number, row._id);
         anchor.click();
         URL.revokeObjectURL(url);
         this.toast.success('PDF подготовлен');

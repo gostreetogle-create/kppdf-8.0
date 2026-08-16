@@ -26,6 +26,7 @@ import {
 } from 'lucide-angular';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import type { SilentResult } from '../../../core/silent-http';
+import { buildKpPdfFilename } from './kp-pdf-filename';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { PiGroupWorkspaceComponent } from '../../../shared/page/pi-group-workspace.component';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
@@ -1288,7 +1289,7 @@ export class ProposalCreatePage implements OnInit {
         const url = URL.createObjectURL(blob);
         const anchor = document.createElement('a');
         anchor.href = url;
-        anchor.download = `КП-${this.proposalNumber() || id}.pdf`;
+        anchor.download = buildKpPdfFilename(this.proposalNumber(), id);
         anchor.click();
         URL.revokeObjectURL(url);
         this.toast.success('PDF подготовлен');

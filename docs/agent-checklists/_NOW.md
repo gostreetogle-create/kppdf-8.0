@@ -5,13 +5,12 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T23:50:00+03:00
-hygiene: swarm 353 + 369; warm deploy (PO VPN off)
+updated_at: 2026-08-17T00:15:00+03:00
+hygiene: swarm 353; warm deploy (PO VPN off)
 
 ## ACTIVE
 
 - **TZ-PRODUCTION-353** (Gantt unassigned banner + People CTA)
-- **TZ-SALES-369**
 - Prompt: `tasks/PROMPT-TOMORROW-GANTT-THEN-DRAIN.md`
 
 ## NEXT (PO)
@@ -26,6 +25,10 @@ hygiene: swarm 353 + 369; warm deploy (PO VPN off)
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-SALES-369 DONE — KP PDF filename canon
+
+- Archive: `tasks/_archive/2026-08/TZ-SALES-369.done.md`; lock `TZ-SALES-369-kp-pdf-filename.lock`; FE tsc + jest 5/5; BE jest 4/4. Deploy нет. `КП-{number}.pdf`; draft `КП-черновик-{shortId}`; shared FE/BE helpers.
 
 ## [2026-08-16] — TZD-39 DONE — Basic Auth + X-Access-Token coexist
 
