@@ -21,17 +21,20 @@
 
 Нет — всё состояние через сигналы.
 
-## TZ-CATALOG-373 — витрина: list↔grid + filters-rail (канон products)
+## TZ-CATALOG-373 / TZ-UX-328 — витрина: list↔grid + chrome filters (канон products)
 
-Паритет chrome с `/products` (эталон `products.page.ts`, TZ-PRODUCTS-305):
+Паритет chrome с `/products` (эталон `products.page.ts`, TZ-UX-326):
 
-- **View toggle** (toolbar, после «Обновить»): кнопки `data-test="view-list-button"` /
-  `data-test="view-grid-button"` (`lucide` List / LayoutGrid), `viewMode` signal,
-  персистентность в `localStorage['pi-materials-view-mode']` (try/catch, F5 сохраняет вид).
-- **Filters rail**: узкая полоска `w-12` + оверлей-панель (`filters-rail-panel`), backdrop
-  (`filters-backdrop`, `z-20`) не перекрывает рейл (`z-40`); клик внутри панели не закрывает
-  (`pointerdown/click stopPropagation`). 1:1 канон оверлея products.
-- **Rail панель**: «Тип» (`rail-kind`, **тот же `kindFilterSig`, что у toolbar-селекта** →
+- **Chrome tools** (`PiChromeToolsService`, owner `materials-page`): слева «Фильтры»;
+  справа view-list / view-grid / refresh. Sync effect + `clear` on destroy.
+- **View toggle** (&lt;1680 fallback toolbar `materials-chrome-fallback`; ≥1680 — chrome rail):
+  кнопки `data-test="view-list-button"` / `view-grid-button`, `viewMode` signal,
+  персистентность в `localStorage['pi-materials-view-mode']`.
+- **Filters flyout**: без узкой полоски `w-12` (`filters-rail` удалён). Панель
+  `filters-rail-panel` absolute overlay + backdrop (`filters-backdrop`, `z-20`);
+  клик внутри панели не закрывает (`pointerdown/click stopPropagation`).
+- **Toolbar**: search + kind filter + Create; icon-дубли view/refresh только в fallback.
+- **Flyout панель**: «Тип» (`rail-kind`, **тот же `kindFilterSig`, что у toolbar-селекта** →
   `?materialKind=`, TZ-CATALOG-316 не регрессирует) + «Сбросить» (`clearFilters`:
   kind=null + поиск='' + page=1).
 - **Grid**: `app-pi-showcase-card size="md"`, сетка `1/2/3` (`data-test="materials-grid"`),
@@ -45,9 +48,9 @@
 
 known_limitation (TZ-CATALOG-373):
 
-- Сортировка в rail **не** добавлена: backend `GET /materials` не принимает
+- Сортировка в flyout **не** добавлена: backend `GET /materials` не принимает
   `sortBy`/`sortOrder` (всегда `sort({name: 1})`, см. `MaterialService.findAll`),
-  поэтому client-sort текущей page slice не фейкается. Rail = «Тип» + «Сбросить».
+  поэтому client-sort текущей page slice не фейкается. Flyout = «Тип» + «Сбросить».
 - Сужение колонок таблицы «как у products» — successor (не этот TZ).
 
 ## TZ-CATALOG-375 — list expandable preview (паритет products/modules)

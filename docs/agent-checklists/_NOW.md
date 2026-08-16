@@ -11,11 +11,12 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 ## ACTIVE
 
 - **TZ-PHOTO-304** — photo frame meta (WAVE; Freebuff framing).
+- **TZ-UX-328** — `/materials` chrome page-tools (READY FOR REVIEW pending Cursor PASS).
 
 ## NEXT (PO paste prompt)
 
 - **Единая пагинация:** WAVE #1–#3 **DONE** (**UX-340**, **UX-341**, **UX-342**).
-- Deploy **нет**. **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE.
+- Deploy **нет**. **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE; **TZ-UX-328 READY** (materials chrome).
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 

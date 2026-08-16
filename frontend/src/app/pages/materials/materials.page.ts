@@ -6,14 +6,18 @@ import {
   TemplateRef,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
   OnInit,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
+import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
@@ -46,6 +50,8 @@ import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
+
+const CHROME_OWNER = 'materials-page';
 
 /**
  * Полная документация страницы: docs/pages/materials.page.md
@@ -99,6 +105,13 @@ import {
     RouterLink,
     CatalogKindMarkerComponent,
   ],
+  styles: `
+    @media (min-width: 1680px) {
+      .materials-chrome-fallback {
+        display: none;
+      }
+    }
+  `,
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="materials">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
@@ -131,44 +144,57 @@ import {
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
           + Создать
         </app-pi-button>
-        <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
-          <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
-        </app-pi-button>
-        <!-- TZ-CATALOG-373: view toggle list/grid (canon products TZ-PRODUCTS-305) -->
-        <div
-          class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
-          role="group"
-          aria-label="Вид каталога"
-          data-test="view-toggle"
-        >
+        <div class="materials-chrome-fallback flex items-center gap-form-field">
           <button
             type="button"
-            (click)="setViewMode('list')"
-            [attr.aria-pressed]="viewMode() === 'list'"
-            [class]="
-              viewMode() === 'list'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать списком"
-            data-test="view-list-button"
+            class="flex min-h-touch min-w-8 items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
+            (click)="toggleFiltersRail()"
+            [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
+            [attr.aria-expanded]="filtersOpen()"
+            aria-controls="materials-flyout-filters"
+            data-test="filters-rail-toggle"
           >
-            <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            <lucide-icon [img]="FilterIcon" [size]="16"></lucide-icon>
           </button>
-          <button
-            type="button"
-            (click)="setViewMode('grid')"
-            [attr.aria-pressed]="viewMode() === 'grid'"
-            [class]="
-              viewMode() === 'grid'
-                ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
-                : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
-            "
-            aria-label="Показать карточками"
-            data-test="view-grid-button"
+          <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
+            <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
+          </app-pi-button>
+          <!-- TZ-CATALOG-373 / TZ-UX-328: view toggle (&lt;1680 fallback; chrome ≥1680) -->
+          <div
+            class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
+            role="group"
+            aria-label="Вид каталога"
+            data-test="view-toggle"
           >
-            <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
-          </button>
+            <button
+              type="button"
+              (click)="setViewMode('list')"
+              [attr.aria-pressed]="viewMode() === 'list'"
+              [class]="
+                viewMode() === 'list'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать списком"
+              data-test="view-list-button"
+            >
+              <lucide-icon [img]="ListIcon" [size]="16"></lucide-icon>
+            </button>
+            <button
+              type="button"
+              (click)="setViewMode('grid')"
+              [attr.aria-pressed]="viewMode() === 'grid'"
+              [class]="
+                viewMode() === 'grid'
+                  ? 'min-h-touch min-w-8 px-2 rounded-sm bg-paper-2 text-ink transition-colors'
+                  : 'min-h-touch min-w-8 px-2 rounded-sm text-muted-foreground hover:bg-paper-2/60 hover:text-ink transition-colors'
+              "
+              aria-label="Показать карточками"
+              data-test="view-grid-button"
+            >
+              <lucide-icon [img]="GridIcon" [size]="16"></lucide-icon>
+            </button>
+          </div>
         </div>
         <span class="flex-1"></span>
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
@@ -183,83 +209,65 @@ import {
         </div>
       }
 
-      <!-- TZ-CATALOG-373: products-layout паттерн — узкий рейл + колонка контента (канон products.page.ts) -->
-      <div class="relative flex gap-3 items-start" data-test="materials-layout">
-        <!-- Панель ВЫШЕ затемнения (z-40); иначе клики/селекты ломаются -->
-        <aside
-          class="relative z-40 shrink-0 w-12"
-          data-test="filters-rail"
-          [attr.aria-expanded]="filtersOpen()"
-        >
-          <div class="sticky top-2 hairline rounded-sm bg-paper p-1 shadow-sm">
-            <button
-              type="button"
-              class="flex w-full min-h-touch items-center justify-center rounded-sm text-ink hover:bg-paper-2 transition-colors pi-focus-ring"
-              (click)="toggleFiltersRail()"
-              [attr.aria-label]="filtersOpen() ? 'Свернуть фильтры' : 'Открыть фильтры'"
-              data-test="filters-rail-toggle"
-            >
-              <lucide-icon [img]="FilterIcon" [size]="18"></lucide-icon>
-            </button>
-          </div>
-
-          @if (filtersOpen()) {
-            <div
-              class="absolute left-full top-0 ml-2 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
-              data-test="filters-rail-panel"
-              role="dialog"
-              aria-label="Фильтры каталога"
-              (pointerdown)="$event.stopPropagation()"
-              (click)="$event.stopPropagation()"
-            >
-              <div class="flex items-center justify-between gap-2 mb-3">
-                <div class="text-sm font-medium text-ink">Фильтры</div>
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
-                  (click)="closeFilters()"
-                  aria-label="Закрыть"
-                  data-test="filters-panel-close"
-                >
-                  Закрыть
-                </button>
-              </div>
-              <div class="flex flex-col gap-3">
-                <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
-                <label
-                  class="text-[10px] uppercase tracking-wide text-muted-foreground"
-                  for="rail-kind"
-                  >Тип</label
-                >
-                <select
-                  id="rail-kind"
-                  class="pi-input w-full text-sm"
-                  [value]="kindFilter() ?? ''"
-                  (change)="onKindFilterChange($event)"
-                  data-test="rail-kind"
-                >
-                  <option value="">Все типы</option>
-                  @for (k of kindOptions(); track k.value) {
-                    <option [value]="k.value">{{ k.label }}</option>
-                  }
-                </select>
-                <!-- TZ-CATALOG-373 known_limitation: backend GET /materials не умеет
-                     sortBy/sortOrder (всегда sort({name:1}), см. MaterialService.findAll) —
-                     rail sort НЕ добавляем (фейковый client-sort page slice запрещён). -->
-                <button
-                  type="button"
-                  class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
-                  (click)="clearFilters()"
-                  data-test="clear-filters"
-                >
-                  Сбросить
-                </button>
-              </div>
+      <!-- TZ-UX-328: flyout overlay (no w-12 rail) — mirror products TZ-UX-326 -->
+      <div class="relative" data-test="materials-layout">
+        @if (filtersOpen()) {
+          <div
+            id="materials-flyout-filters"
+            class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+            data-test="filters-rail-panel"
+            role="dialog"
+            aria-label="Фильтры каталога"
+            (pointerdown)="$event.stopPropagation()"
+            (click)="$event.stopPropagation()"
+          >
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="text-sm font-medium text-ink">Фильтры</div>
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
+                (click)="closeFilters()"
+                aria-label="Закрыть"
+                data-test="filters-panel-close"
+              >
+                Закрыть
+              </button>
             </div>
-          }
-        </aside>
+            <div class="flex flex-col gap-3">
+              <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
+              <label
+                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                for="rail-kind"
+                >Тип</label
+              >
+              <select
+                id="rail-kind"
+                class="pi-input w-full text-sm"
+                [value]="kindFilter() ?? ''"
+                (change)="onKindFilterChange($event)"
+                data-test="rail-kind"
+              >
+                <option value="">Все типы</option>
+                @for (k of kindOptions(); track k.value) {
+                  <option [value]="k.value">{{ k.label }}</option>
+                }
+              </select>
+              <!-- TZ-CATALOG-373 known_limitation: backend GET /materials не умеет
+                   sortBy/sortOrder (всегда sort({name:1}), см. MaterialService.findAll) —
+                   rail sort НЕ добавляем (фейковый client-sort page slice запрещён). -->
+              <button
+                type="button"
+                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+                (click)="clearFilters()"
+                data-test="clear-filters"
+              >
+                Сбросить
+              </button>
+            </div>
+          </div>
+        }
 
-        <div class="relative min-w-0 flex-1">
+        <div class="relative min-w-0">
           @if (filtersOpen()) {
             <button
               type="button"
@@ -611,7 +619,16 @@ export class MaterialsPage implements OnInit {
     this.loadKindLabels();
     this.suppliersLookup.load();
     this.photosLookup.load();
-    this.destroyRef.onDestroy(() => this.search.destroy());
+    this.destroyRef.onDestroy(() => {
+      this.search.destroy();
+      this.chromeTools.clear(CHROME_OWNER);
+    });
+    effect(() => {
+      void this.filtersOpen();
+      void this.viewMode();
+      void this.filtersDirty();
+      untracked(() => this.syncChromeTools());
+    });
   }
   protected readonly chips = CATALOG_SECTION_CHIPS;
   private readonly service = inject(MaterialsService);
@@ -622,6 +639,7 @@ export class MaterialsPage implements OnInit {
   private readonly injector = inject(Injector);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly chromeTools = inject(PiChromeToolsService);
 
   protected readonly RefreshIcon = RefreshCw;
   protected readonly ListIcon = List;
@@ -662,6 +680,56 @@ export class MaterialsPage implements OnInit {
     this.filtersOpen.set(false);
   }
 
+  private syncChromeTools(): void {
+    const open = this.filtersOpen();
+    const dirty = this.filtersDirty();
+    const mode = this.viewMode();
+    const items: PiChromeToolItem[] = [
+      {
+        id: 'filters',
+        side: 'left',
+        ariaLabel: dirty ? 'Фильтры изменены' : 'Фильтры',
+        title: dirty ? 'Фильтры изменены' : 'Фильтры',
+        icon: this.FilterIcon,
+        active: open || dirty,
+        ariaExpanded: open,
+        ariaControls: 'materials-flyout-filters',
+        order: 1,
+        onClick: () => this.toggleFiltersRail(),
+      },
+      {
+        id: 'view-list',
+        side: 'right',
+        ariaLabel: 'Показать списком',
+        title: 'Показать списком',
+        icon: this.ListIcon,
+        active: mode === 'list',
+        order: 1,
+        onClick: () => this.setViewMode('list'),
+      },
+      {
+        id: 'view-grid',
+        side: 'right',
+        ariaLabel: 'Показать карточками',
+        title: 'Показать карточками',
+        icon: this.GridIcon,
+        active: mode === 'grid',
+        order: 2,
+        onClick: () => this.setViewMode('grid'),
+      },
+      {
+        id: 'refresh',
+        side: 'right',
+        ariaLabel: 'Обновить',
+        title: 'Обновить',
+        icon: this.RefreshIcon,
+        order: 3,
+        onClick: () => this.reload(),
+      },
+    ];
+    this.chromeTools.setTools(CHROME_OWNER, items);
+  }
+
   /** Exposed to template via `[pageSize]="pageSize()"`. */
   private readonly pageSizeSig = signal(PI_DEFAULT_PAGE_SIZE);
   protected readonly pageSize = this.pageSizeSig.asReadonly();
@@ -683,6 +751,7 @@ export class MaterialsPage implements OnInit {
    */
   private readonly kindFilterSig = signal<MaterialKind | null>(null);
   protected readonly kindFilter = this.kindFilterSig.asReadonly();
+  protected readonly filtersDirty = computed(() => this.kindFilterSig() != null);
 
   /**
    * Public exposure of the debounced search signal. Required so the

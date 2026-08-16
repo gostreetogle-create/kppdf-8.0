@@ -16,9 +16,10 @@ import {
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 
 /**
- * TZ-CATALOG-373 — materials list↔grid + filters-rail (canon products).
+ * TZ-CATALOG-373 — materials list↔grid + filters flyout (canon products / TZ-UX-328).
  * TZ-CATALOG-375 — list expandable attribute preview (products/modules parity).
  *
  * Own suite (like materials.page-316.spec.ts) because the
@@ -28,7 +29,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
  * Renders the REAL page (imports: [MaterialsPage], provideRouter) so:
  *   - view-toggle buttons are clickable native <button>s;
  *   - grid cell routerLink produces a real href="/materials/:id";
- *   - the filters-rail overlay + backdrop are in the DOM;
+ *   - the filters flyout overlay + backdrop are in the DOM;
  *   - (rowClick) toggles expandedId and [expandedRow] tray.
  */
 describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
@@ -121,6 +122,7 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
   });
 
   afterEach(() => {
+    TestBed.inject(PiChromeToolsService).clear('materials-page');
     httpMock.verify();
   });
 
@@ -335,26 +337,48 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     fixture.detectChanges();
   });
 
-  // ─── Filters rail ───────────────────────────────────────────────────
+  // ─── Filters flyout (TZ-UX-328 chrome) ───────────────────────────────
+
+  it('TZ-UX-328: no w-12 filters-rail; chrome has filters left and view/refresh right', async () => {
+    const { fixture } = await renderPage();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const layout = fixture.nativeElement.querySelector(
+      '[data-test="materials-layout"]',
+    ) as HTMLElement;
+
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
+    expect(layout.className).not.toContain('w-12');
+    expect(fixture.nativeElement.querySelector('.w-12')).toBeNull();
+    expect(chrome.leftTools().map((t) => t.id)).toEqual(['filters']);
+    expect(chrome.leftTools()[0]!.ariaLabel).toBe('Фильтры');
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['view-list', 'view-grid', 'refresh']);
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual([
+      'Показать списком',
+      'Показать карточками',
+      'Обновить',
+    ]);
+  });
 
   it('filters rail toggles open as overlay with backdrop', async () => {
     const { fixture } = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
+    const chrome = TestBed.inject(PiChromeToolsService);
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
-    toggle.click();
+    chrome
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')).toBeTruthy();
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.active).toBe(true);
   });
 
   it('filters backdrop click closes overlay', async () => {
     const { fixture } = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
     const backdrop = fixture.nativeElement.querySelector(
       '[data-test="filters-backdrop"]',
@@ -364,32 +388,31 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeFalsy();
   });
 
-  it('filters panel sits inside the rail (not under backdrop)', async () => {
+  it('filters panel is flyout sibling (not under backdrop); no w-12 rail', async () => {
     const { fixture } = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
 
     const panel = fixture.nativeElement.querySelector(
       '[data-test="filters-rail-panel"]',
     ) as HTMLElement;
-    const rail = fixture.nativeElement.querySelector('[data-test="filters-rail"]') as HTMLElement;
     const backdrop = fixture.nativeElement.querySelector(
       '[data-test="filters-backdrop"]',
     ) as HTMLElement;
     expect(panel).toBeTruthy();
-    expect(rail.contains(panel)).toBe(true);
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
     expect(backdrop.parentElement?.contains(panel)).toBe(false);
   });
 
   it('rail kind select refires GET with ?materialKind= (same signal as toolbar)', async () => {
     const { fixture } = await renderPage();
-    const toggle = fixture.nativeElement.querySelector(
-      '[data-test="filters-rail-toggle"]',
-    ) as HTMLElement;
-    toggle.click();
+    TestBed.inject(PiChromeToolsService)
+      .leftTools()
+      .find((t) => t.id === 'filters')!
+      .onClick();
     fixture.detectChanges();
 
     const railKind = fixture.nativeElement.querySelector(
@@ -436,8 +459,30 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     expect(comp.kindFilter()).toBeNull();
     expect(comp.searchQuery()).toBe('');
     // Панель не обязана закрываться по «Сбросить» (канон products) —
-    // рейл остаётся открытым для дальнейших действий.
-    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeTruthy();
+    // w-12 rail снят (TZ-UX-328).
+    expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
+  });
+
+  it('chrome view-grid and refresh tools switch grid and reload', async () => {
+    const { fixture } = await renderPage();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const comp = fixture.componentInstance as unknown as { viewMode: () => string };
+
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'view-grid')!
+      .onClick();
+    fixture.detectChanges();
+    expect(comp.viewMode()).toBe('grid');
+    expect(fixture.nativeElement.querySelector('[data-test="materials-grid"]')).toBeTruthy();
+
+    const page = fixture.componentInstance as unknown as { reload: () => void };
+    const reloadSpy = jest.spyOn(page, 'reload');
+    chrome
+      .rightTools()
+      .find((t) => t.id === 'refresh')!
+      .onClick();
+    expect(reloadSpy).toHaveBeenCalled();
   });
 
   // ─── TZ-CATALOG-375: list expandable preview ─────────────────────────

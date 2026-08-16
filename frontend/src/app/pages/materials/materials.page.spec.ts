@@ -19,6 +19,7 @@ import {
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
 import { API_BASE_URL } from '../../core/api.tokens';
+import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 
 /**
  * Unit tests for the httpResource refactor of MaterialsPage.
@@ -147,6 +148,7 @@ describe('MaterialsPage (httpResource refactor)', () => {
   });
 
   afterEach(() => {
+    TestBed.inject(PiChromeToolsService).clear('materials-page');
     httpMock.verify();
   });
 
