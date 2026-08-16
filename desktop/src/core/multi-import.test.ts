@@ -96,14 +96,14 @@ test('reshape and validate rows per table', () => {
   assert.equal(validated[0].status, 'ok_new');
   // Контрагент без имени — ошибка (name обязателен).
   const bad = validateTableRows([{ inn: '7707083893' }], 'counterparty');
-  assert.equal(bad[0].status, 'error');
+  assert.equal(bad[0].status, 'invalid');
 });
 
 test('module target requires article for validity', () => {
   const ok = validateTableRows([{ article: 'M-1', name: 'Каркас' }], 'module');
   assert.equal(ok[0].status, 'ok_new');
   const bad = validateTableRows([{ name: 'Без артикула' }], 'module');
-  assert.equal(bad[0].status, 'error');
+  assert.equal(bad[0].status, 'invalid');
   assert.ok(bad[0].message.includes('article'));
 });
 
@@ -111,6 +111,6 @@ test('counterparty without INN is not ok_new (TZD-48)', () => {
   const ok = validateTableRows([{ name: 'ООО Ромашка', inn: '7707083893' }], 'counterparty');
   assert.equal(ok[0].status, 'ok_new');
   const bad = validateTableRows([{ name: 'Без ИНН' }], 'counterparty');
-  assert.equal(bad[0].status, 'error');
+  assert.equal(bad[0].status, 'invalid');
   assert.ok(bad[0].message.includes('inn'));
 });

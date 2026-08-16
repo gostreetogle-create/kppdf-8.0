@@ -24,6 +24,8 @@ import type { AppConfig } from './config';
 import type { ApiClientOptions } from './api';
 import { apiPost } from './api';
 import { importerFor, type RawRow } from '../importers';
+import { parseExcelWorkbook } from '../importers/excel';
+import type { FormFingerprint } from './excel-form-template';
 
 /** Расширения, которые inbox распознаёт как файлы для агента. */
 export const INBOX_EXTENSIONS = ['.xlsx', '.xls', '.csv', '.tsv', '.txt'] as const;
@@ -56,6 +58,8 @@ export interface InboxAudit {
   skippedRows: number;
   /** Сколько строк прошли маппинг в material (имеют наименование). */
   mappableRows: number;
+  /** Fingerprint «_kppdf» (TZD-50): файл — скачанная форма Form Studio. */
+  fingerprint?: FormFingerprint | null;
   error?: string;
 }
 
@@ -188,9 +192,18 @@ export async function auditInboxFile(dir: string, fileName: string): Promise<Inb
   }
   try {
     const data = await readFile(await join(dir, fileName));
-    const rows = await importer.parse({ name: fileName, data });
+    let rows: RawRow[];
+    let fingerprint: FormFingerprint | null = null;
+    if (importer.id === 'excel') {
+      // Через parseExcelWorkbook, чтобы захватить fingerprint «_kppdf» формы.
+      const preview = await parseExcelWorkbook({ name: fileName, data });
+      fingerprint = preview.fingerprint ?? null;
+      rows = preview.sheets.find((sheet) => sheet.name === preview.activeSheet)?.rows ?? [];
+    } else {
+      rows = await importer.parse({ name: fileName, data });
+    }
     const mappableRows = rows.filter((r) => mapRowToMaterial(r) !== null).length;
-    return { fileName, rows, skippedRows: rows.length - mappableRows, mappableRows };
+    return { fileName, rows, skippedRows: rows.length - mappableRows, mappableRows, fingerprint };
   } catch (err) {
     return {
       fileName,

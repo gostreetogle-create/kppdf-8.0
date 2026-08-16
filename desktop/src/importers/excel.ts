@@ -3,6 +3,7 @@
  */
 
 import * as XLSX from 'xlsx';
+import { FORM_SHEET_NAME, readFormFingerprint, type FormFingerprint } from '../core/excel-form-template';
 import type { Importer, ImportSource, RawRow } from './index';
 
 export interface ExcelSheetPreview {
@@ -13,6 +14,8 @@ export interface ExcelSheetPreview {
 export interface ExcelWorkbookPreview {
   sheets: ExcelSheetPreview[];
   activeSheet: string;
+  /** Fingerprint «_kppdf» (TZD-50): файл — скачанная форма Form Studio. */
+  fingerprint?: FormFingerprint | null;
 }
 
 function isEmptyCell(value: unknown): boolean {
@@ -89,14 +92,16 @@ export async function parseExcelWorkbook(source: ImportSource): Promise<ExcelWor
     );
   }
 
-  const sheets = workbook.SheetNames.map((name) => ({
+  // Скрытый лист-паспорт формы не участвует в превью и выборе листа.
+  const visibleNames = workbook.SheetNames.filter((name) => name !== FORM_SHEET_NAME);
+  const sheets = visibleNames.map((name) => ({
     name,
     rows: parseSheet(workbook.Sheets[name]),
   }));
   if (sheets.length === 0) throw new Error(`В «${source.name}» нет ни одного листа.`);
   const firstWithRows = sheets.find((sheet) => sheet.rows.length > 0) ?? sheets[0];
   if (firstWithRows.rows.length === 0) throw new Error(`«${source.name}» пустой — нет данных для импорта.`);
-  return { sheets, activeSheet: firstWithRows.name };
+  return { sheets, activeSheet: firstWithRows.name, fingerprint: readFormFingerprint(workbook) };
 }
 
 export const excelImporter: Importer = {

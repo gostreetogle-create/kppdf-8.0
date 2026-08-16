@@ -150,53 +150,17 @@ export function reshapeRows(rows: RawRow[], mapping: Record<string, string | nul
   });
 }
 
-export type RowValidationStatus = 'ok_new' | 'ok_update' | 'skip' | 'conflict' | 'error';
+export type RowValidationStatus =
+  | 'ok_new'
+  | 'ok_update'
+  | 'skip'
+  | 'duplicate'
+  | 'invalid'
+  | 'needs_review';
 
 export interface ValidatedImportRow {
   rowIndex: number;
   values: RawRow;
   status: RowValidationStatus;
   message: string;
-}
-
-function textValue(row: RawRow, key: string): string {
-  const value = row[key];
-  return value === undefined || value === null ? '' : String(value).trim();
-}
-
-/** Validate canonical rows against a target table before any proposal. */
-export function validateMappedRows(
-  rows: RawRow[],
-  requiredFields: readonly string[] = IMPORT_TARGETS.material.requiredFields,
-  existingArticles: ReadonlySet<string> = new Set(),
-): ValidatedImportRow[] {
-  const seen = new Map<string, number[]>();
-  rows.forEach((row, index) => {
-    const article = textValue(row, 'article');
-    if (!article) return;
-    const indexes = seen.get(article) ?? [];
-    indexes.push(index);
-    seen.set(article, indexes);
-  });
-
-  return rows.map((values, rowIndex) => {
-    const missing = requiredFields.filter((key) => !textValue(values, key));
-    if (missing.length > 0) {
-      return { rowIndex, values, status: 'error', message: `Пусто: ${missing.join(', ')}` };
-    }
-    const quantity = values.qty === undefined || values.qty === null || values.qty === ''
-      ? undefined
-      : Number(values.qty);
-    if (quantity !== undefined && (!Number.isFinite(quantity) || quantity <= 0)) {
-      return { rowIndex, values, status: 'error', message: 'Количество должно быть больше нуля' };
-    }
-    if ((seen.get(textValue(values, 'article'))?.length ?? 0) > 1) {
-      return { rowIndex, values, status: 'conflict', message: 'Дубликат артикула в файле' };
-    }
-    const article = textValue(values, 'article');
-    if (article && existingArticles.has(article)) {
-      return { rowIndex, values, status: 'ok_update', message: 'Совпадение с каталогом — готово к обновлению' };
-    }
-    return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
-  });
 }

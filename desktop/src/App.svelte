@@ -32,6 +32,17 @@
     validateTableRows,
   } from './core/multi-import';
   import {
+    FORM_CATEGORIES,
+    formFileName,
+    formTemplateFor,
+    formTemplatesByCategory,
+    identityMappingForForm,
+    serializeFormWorkbook,
+    type FormCategoryKey,
+    type FormFingerprint,
+  } from './core/excel-form-template';
+  import type { RowValidationStatus } from './core/import-mapping';
+  import {
     buildSpecificationPreview,
     type SpecificationPreview,
     type SpecificationTreeNode,
@@ -167,6 +178,8 @@
     cancel: 'Снимет черновики без записи в базу. Файл уйдёт в «отклонённые».',
     discard: 'Переместит файл в папку «отклонённые» без записи на сервер.',
     pickFile: 'Откроет диалог выбора файла для локального предпросмотра (не Inbox).',
+    downloadForm:
+      'Скачает готовый .xlsx с каноническими русскими заголовками. Заполните лист «Данные» и загрузите файл в студии импорта — форма распознается сама. Аккаунт для скачивания не нужен.',
     startAi:
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
     stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
@@ -414,6 +427,33 @@
   let specificationBusy = $state(false);
   let specificationMessage = $state('');
 
+  // Формы Excel (TZD-50): категория → таблица → скачать .xlsx с fingerprint «_kppdf».
+  let formCategory = $state<FormCategoryKey | ''>('');
+  let formTable = $state<ImportTargetKey | ''>('');
+  let formBusy = $state(false);
+  let formMessage = $state('');
+  let availableFormTemplates = $derived(formCategory ? formTemplatesByCategory(formCategory) : []);
+  let selectedFormTemplate = $derived(formTable ? formTemplateFor(formTable) : undefined);
+  /** Отклонённые строки последней отправки — источник отчёта .csv. */
+  let rejectionReport = $state<
+    | Array<{ table: string; rowIndex: number; name: string; status: string; message: string }>
+    | null
+  >(null);
+
+  /** Русские подписи статусов строки (TZD-50: UI без английских лейблов). */
+  const ROW_STATUS_LABEL: Record<string, string> = {
+    ok_new: 'Новая',
+    ok_update: 'Обновление',
+    duplicate: 'Дубликат',
+    invalid: 'Ошибка',
+    needs_review: 'Нужна проверка',
+    skip: 'Пропуск',
+  };
+
+  function countStatus(block: ImportBlock, status: RowValidationStatus): number {
+    return block.validated.filter((row) => row.status === status).length;
+  }
+
   let disposed = false;
 
   // Inbox (TZD-15): папка для файлов агента — audit → propose → confirm/cancel.
@@ -598,7 +638,7 @@
         importSheets = [];
         activeSheetName = '';
         importRows = audit.rows;
-        prepareMapping(audit.rows);
+        prepareMapping(audit.rows, audit.fingerprint ?? undefined);
         file.note = 'Открыт в студии ниже — сопоставьте колонки и отправьте.';
         inboxFiles = [...inboxFiles];
       }
@@ -812,9 +852,33 @@
     return blocks;
   }
 
-  function prepareMapping(rows: RawRow[]) {
+  function prepareMapping(rows: RawRow[], fingerprint?: FormFingerprint | null) {
+    rejectionReport = null;
     specificationPreview = buildSpecificationPreview(rows);
     const headers = Object.keys(rows[0] ?? {});
+    if (fingerprint?.targetKey) {
+      // TZD-50 round-trip: скачанная форма — один блок на targetKey из паспорта,
+      // identity-карта по русским заголовкам (суффикс « *» обязательности снимается).
+      const targetKey = fingerprint.targetKey;
+      importBlocks = [
+        {
+          targetKey,
+          mapping: identityMappingForForm(headers, targetKey),
+          validated: [],
+          proposalIds: [],
+        },
+      ];
+      importStage = 'mapping';
+      specificationMessage = '';
+      const generated =
+        fingerprint.generatedAt && !Number.isNaN(Date.parse(fingerprint.generatedAt))
+          ? new Date(fingerprint.generatedAt).toLocaleString('ru-RU')
+          : '';
+      mappingMessage =
+        `Форма распознана: «${IMPORT_TARGETS[targetKey].label}»${generated ? ` (сгенерирована ${generated})` : ''}. ` +
+        'Проверьте колонки и подтвердите сопоставление.';
+      return;
+    }
     importBlocks = analyzeTables(headers).map((suggestion) => ({
       targetKey: suggestion.targetKey,
       mapping: suggestion.mapping,
@@ -869,7 +933,7 @@
     importBlocks = importBlocks.filter((_, item) => item !== index);
   }
 
-  function confirmMapping() {
+  async function confirmMapping() {
     if (importBlocks.length === 0) {
       mappingMessage = 'Не найдено таблиц для импорта — добавьте таблицу вручную или выберите профиль.';
       return;
@@ -880,12 +944,41 @@
         return;
       }
     }
-    importBlocks = importBlocks.map((block) => ({
-      ...block,
-      validated: validateTableRows(reshapeForTable(importRows, block.mapping), block.targetKey),
-    }));
-    importStage = 'rows';
-    mappingMessage = 'Сопоставление подтверждено. Проверьте статусы строк в каждом блоке перед отправкой.';
+    mappingBusy = true;
+    try {
+      // TZD-50: перед проверкой строк тянем ключи каталога для дедупликации.
+      const hints: string[] = [];
+      const existingByTarget: Partial<Record<ImportTargetKey, ReadonlySet<string>>> = {};
+      const cfg = await loadConfig();
+      if (cfg.apiBaseUrl && cfg.apiKey) {
+        const targets = [...new Set(importBlocks.map((block) => block.targetKey))];
+        for (const targetKey of targets) {
+          const fetched = await fetchDedupeKeys(apiFrom(cfg), targetKey);
+          existingByTarget[targetKey] = fetched.keys;
+          if (fetched.truncated) {
+            hints.push(
+              `каталог «${IMPORT_TARGETS[targetKey].label}» больше 1000 записей — часть дублей станет видна только при записи`,
+            );
+          }
+        }
+      }
+      importBlocks = importBlocks.map((block) => ({
+        ...block,
+        validated: validateTableRows(
+          reshapeForTable(importRows, block.mapping),
+          block.targetKey,
+          existingByTarget[block.targetKey] ?? EMPTY_DEDUPE,
+        ),
+      }));
+      importStage = 'rows';
+      mappingMessage =
+        ['Сопоставление подтверждено. Проверьте статусы строк в каждом блоке перед отправкой.', ...hints].join(' ') ||
+        'Сопоставление подтверждено.';
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось проверить строки.';
+    } finally {
+      mappingBusy = false;
+    }
   }
 
   async function saveMappingProfile() {
@@ -1162,9 +1255,26 @@
         }
       }
       importBlocks = next;
-      const parts = [`предложено материалов: ${proposed}`, `создано записей: ${created}`];
-      if (errors.length > 0) parts.push(`ошибок: ${errors.length} (${errors[0].slice(0, 100)})`);
-      mappingMessage = parts.join(' · ') + '. Предложения материалов требуют подтверждения.';
+      // TZD-50: отклонённые строки остаются в отчёте на экране + .csv.
+      const rejected = next.flatMap((block) =>
+        block.validated
+          .filter((row) => row.status !== 'ok_new' && row.status !== 'ok_update')
+          .map((row) => ({
+            table: IMPORT_TARGETS[block.targetKey].label,
+            rowIndex: row.rowIndex,
+            name: String(row.values.name ?? row.values.article ?? row.values.sku ?? 'Строка'),
+            status: ROW_STATUS_LABEL[row.status] ?? row.status,
+            message: row.message,
+          })),
+      );
+      rejectionReport = rejected.length > 0 ? rejected : null;
+      const parts = [
+        `записано: материалов в предложения ${proposed}, создано записей ${created}`,
+        `отклонено: ${rejected.length}`,
+      ];
+      if (errors.length > 0) parts.push(`ошибок записи: ${errors.length}`);
+      mappingMessage = parts.join(' · ');
+      if (proposed > 0) mappingMessage += '. Материалы — в журнале предложений: подтвердите блок выше.';
       await finalizeInboxFileIfDone({ proposed, created });
     } catch (err) {
       mappingMessage = err instanceof Error ? err.message : 'Не удалось отправить строки.';
@@ -1543,11 +1653,12 @@
         importSheets = workbook.sheets;
         activeSheetName = workbook.activeSheet;
         importRows = workbook.sheets.find((sheet) => sheet.name === workbook.activeSheet)?.rows ?? [];
-      } else {
-        importSheets = [];
-        activeSheetName = '';
-        importRows = await importer.parse({ name, data });
+        prepareMapping(importRows, workbook.fingerprint ?? undefined);
+        return;
       }
+      importSheets = [];
+      activeSheetName = '';
+      importRows = await importer.parse({ name, data });
       prepareMapping(importRows);
     } catch (err) {
       importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
@@ -1582,6 +1693,106 @@
         importError = err instanceof Error ? err.message : 'Не удалось прочитать файл.';
       }
     })();
+  }
+
+  /** Скачать Excel-форму (TZD-50): сгенерировать .xlsx и сохранить нативным диалогом. */
+  async function downloadExcelForm() {
+    if (!formTable) return;
+    formBusy = true;
+    formMessage = '';
+    try {
+      const bytes = serializeFormWorkbook(formTable);
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const path = await save({
+        defaultPath: formFileName(formTable),
+        filters: [{ name: 'Excel-форма', extensions: ['xlsx'] }],
+      });
+      if (!path) return; // пользователь отменил диалог
+      const { writeFile } = await import('@tauri-apps/plugin-fs');
+      await writeFile(path, bytes);
+      formMessage = `Форма «${IMPORT_TARGETS[formTable].label}» сохранена. Заполните лист «Данные» и загрузите файл в студии импорта — система распознает форму сама.`;
+    } catch (err) {
+      formMessage = err instanceof Error ? err.message : 'Не удалось сохранить форму.';
+    } finally {
+      formBusy = false;
+    }
+  }
+
+  const EMPTY_DEDUPE: ReadonlySet<string> = new Set();
+
+  /**
+   * Ключи дедупликации каталога для таблицы (материалы — артикул,
+   * изделия — SKU, модули — артикул, контрагенты — ИНН). Страничный обход
+   * с потолком 10 страниц по 100 — частичная проверка честно помечается.
+   */
+  async function fetchDedupeKeys(
+    api: ApiClientOptions,
+    targetKey: ImportTargetKey,
+  ): Promise<{ keys: Set<string>; truncated: boolean }> {
+    const keys = new Set<string>();
+    const keyOf = (item: Record<string, unknown>): string => {
+      if (targetKey === 'product') return String(item.sku ?? item.article ?? '').trim();
+      if (targetKey === 'counterparty') return String(item.inn ?? '').trim();
+      return String(item.article ?? item.sku ?? '').trim();
+    };
+    if (targetKey === 'module') {
+      const items = await apiGet<Array<Record<string, unknown>>>(api, '/api/modules');
+      for (const item of items) {
+        const key = keyOf(item);
+        if (key) keys.add(key);
+      }
+      return { keys, truncated: false };
+    }
+    const path =
+      targetKey === 'material' ? '/api/materials' : targetKey === 'product' ? '/api/products' : '/api/counterparties';
+    const MAX_PAGES = 10;
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const resp = await apiGet<{ items?: Array<Record<string, unknown>>; total?: number }>(
+        api,
+        `${path}?limit=100&page=${page}`,
+      );
+      const items = resp.items ?? [];
+      for (const item of items) {
+        const key = keyOf(item);
+        if (key) keys.add(key);
+      }
+      const total = resp.total ?? items.length;
+      if (items.length === 0 || page * 100 >= total) return { keys, truncated: false };
+    }
+    return { keys, truncated: true };
+  }
+
+  /** Сохранить отчёт отклонённых строк как .csv (простой, Excel-совместимый). */
+  async function downloadRejectionReport() {
+    if (!rejectionReport || rejectionReport.length === 0) return;
+    try {
+      const { save } = await import('@tauri-apps/plugin-dialog');
+      const path = await save({
+        defaultPath: 'kppdf-import-rejections.csv',
+        filters: [{ name: 'CSV-отчёт', extensions: ['csv'] }],
+      });
+      if (!path) return;
+      const lines = [
+        ['Таблица', 'Строка', 'Имя', 'Статус', 'Причина'],
+        ...rejectionReport.map((row) => [
+          row.table,
+          String(row.rowIndex + 1),
+          row.name,
+          row.status,
+          row.message,
+        ]),
+      ];
+      const csv =
+        '\uFEFF' +
+        lines
+          .map((cells) => cells.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(';'))
+          .join('\r\n');
+      const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+      await writeTextFile(path, csv);
+      mappingMessage = `Отчёт отклонений сохранён: ${path}`;
+    } catch (err) {
+      mappingMessage = err instanceof Error ? err.message : 'Не удалось сохранить отчёт.';
+    }
   }
 </script>
 
@@ -2014,6 +2225,77 @@
         <strong>положите файл в папку агента</strong> — он появится в списке ниже.
       </p>
 
+      <section class="form-studio" aria-label="Формы Excel">
+        <div class="form-studio__head">
+          <h3>Формы Excel</h3>
+          <p class="hint">
+            Скачайте готовую форму с каноническими заголовками — заполните её в Excel и загрузите обратно:
+            система сама распознает таблицу и колонки.
+          </p>
+        </div>
+        <div class="form-studio__controls">
+          <label class="field">
+            <span>Категория</span>
+            <select
+              class="input"
+              aria-label="Категория формы"
+              value={formCategory}
+              onchange={(event) => {
+                formCategory = (event.currentTarget as HTMLSelectElement).value as FormCategoryKey | '';
+                formTable = '';
+              }}
+            >
+              <option value="">— Выберите категорию —</option>
+              {#each FORM_CATEGORIES as category (category.key)}
+                <option value={category.key}>{category.labelRu}</option>
+              {/each}
+            </select>
+          </label>
+          <label class="field">
+            <span>Таблица</span>
+            <select
+              class="input"
+              aria-label="Таблица формы"
+              value={formTable}
+              disabled={!formCategory}
+              onchange={(event) => {
+                formTable = (event.currentTarget as HTMLSelectElement).value as ImportTargetKey | '';
+              }}
+            >
+              <option value="">
+                {formCategory ? '— Выберите таблицу —' : 'Сначала выберите категорию'}
+              </option>
+              {#each availableFormTemplates as template (template.targetKey)}
+                <option value={template.targetKey}>{template.labelRu}</option>
+              {/each}
+            </select>
+          </label>
+          <button
+            class="btn btn--primary"
+            type="button"
+            onclick={downloadExcelForm}
+            disabled={!formTable || formBusy}
+            onmouseenter={() => showHint(HINTS.downloadForm)}
+            onmouseleave={clearHint}
+            onfocus={() => showHint(HINTS.downloadForm)}
+            onblur={clearHint}
+          >
+            {formBusy ? 'Готовим…' : 'Скачать Excel-форму'}
+          </button>
+        </div>
+        {#if selectedFormTemplate}
+          <p class="hint">{selectedFormTemplate.descriptionRu}</p>
+        {/if}
+        <ol class="form-studio__steps">
+          <li>Скачайте форму нужной таблицы (аккаунт для этого не нужен).</li>
+          <li>Заполните лист «Данные» — строку с заголовками не удаляйте.</li>
+          <li>Загрузите файл в студии импорта: «Выбрать файл» или папка агента.</li>
+        </ol>
+        {#if formMessage}
+          <p class="hint" role="status">{formMessage}</p>
+        {/if}
+      </section>
+
       <button
         class="btn btn--primary"
         type="button"
@@ -2434,9 +2716,21 @@
                 <div class="import-block__head">
                   <strong>{IMPORT_TARGETS[block.targetKey].label}</strong>
                   <span class="validation-counts">
-                    Новые: {block.validated.filter((row) => row.status === 'ok_new').length} ·
-                    Обновления: {block.validated.filter((row) => row.status === 'ok_update').length} ·
-                    Ошибки: {block.validated.filter((row) => row.status === 'error').length}
+                    {#if countStatus(block, 'ok_new') > 0}
+                      <span class="vc vc--ok">Новые: {countStatus(block, 'ok_new')}</span>
+                    {/if}
+                    {#if countStatus(block, 'ok_update') > 0}
+                      <span class="vc">Обновления: {countStatus(block, 'ok_update')}</span>
+                    {/if}
+                    {#if countStatus(block, 'duplicate') > 0}
+                      <span class="vc vc--bad">Дубликаты: {countStatus(block, 'duplicate')}</span>
+                    {/if}
+                    {#if countStatus(block, 'invalid') > 0}
+                      <span class="vc vc--bad">Ошибки: {countStatus(block, 'invalid')}</span>
+                    {/if}
+                    {#if countStatus(block, 'needs_review') > 0}
+                      <span class="vc vc--warn">Проверить: {countStatus(block, 'needs_review')}</span>
+                    {/if}
                   </span>
                   {#if block.targetKey === 'material' && block.proposalIds.length > 0}
                     <button class="btn btn--primary" type="button" onclick={() => confirmBlockProposals(blockIndex)} disabled={mappingBusy}>
@@ -2450,7 +2744,7 @@
                     <div class="validation-row validation-row--{row.status}">
                       <span>#{row.rowIndex + 1}</span>
                       <strong>{String(row.values.name ?? row.values.article ?? row.values.sku ?? 'Строка')}</strong>
-                      <span>{row.status}</span>
+                      <span>{ROW_STATUS_LABEL[row.status] ?? row.status}</span>
                       <small>{row.message}</small>
                     </div>
                   {/each}
@@ -2460,6 +2754,17 @@
 
             {@render PreviewTable(importRows)}
             {#if mappingMessage}<p class="hint" role="status">{mappingMessage}</p>{/if}
+            {#if rejectionReport && rejectionReport.length > 0}
+              <div class="rejection-summary" role="status">
+                <p class="hint">
+                  Отклонено строк: <strong>{rejectionReport.length}</strong> — они не записаны. Скачайте отчёт,
+                  исправьте файл и загрузите снова.
+                </p>
+                <button class="btn btn--small" type="button" onclick={downloadRejectionReport}>
+                  Скачать отчёт отклонений (.csv)
+                </button>
+              </div>
+            {/if}
             <div class="mapping-actions">
               <button
                 class="btn btn--primary"
@@ -2934,6 +3239,67 @@
     background: #fbfcfd;
   }
 
+  .form-studio {
+    margin: 0.85rem 0;
+    padding: 0.9rem 1rem;
+    border: 1px solid #d9dee3;
+    border-radius: 10px;
+    background: #fbfcfd;
+  }
+
+  .form-studio__head h3 {
+    margin: 0 0 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .form-studio__head .hint {
+    margin: 0;
+  }
+
+  .form-studio__controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
+  }
+
+  .form-studio .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    color: #5a6a78;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .form-studio .field select.input {
+    min-width: 12rem;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid #b7c0c8;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #1c2733;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 400;
+  }
+
+  .form-studio .field select.input:disabled {
+    background: #eef1f4;
+    color: #7a8794;
+  }
+
+  .form-studio__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0.65rem 0 0;
+    padding-left: 1.25rem;
+    color: #44535f;
+    font-size: 0.78rem;
+  }
+
   .sheet-picker,
   .mapping-actions,
   .profiles,
@@ -3194,6 +3560,18 @@
     font-size: 0.72rem;
   }
 
+  .vc--ok {
+    color: #1e7d43;
+  }
+
+  .vc--bad {
+    color: #a12b23;
+  }
+
+  .vc--warn {
+    color: #8a6d1a;
+  }
+
   .validation-row {
     grid-template-columns: 2.5rem minmax(8rem, 1fr) 5rem minmax(12rem, 2fr);
   }
@@ -3206,10 +3584,31 @@
     border-color: #a9c4dc;
   }
 
-  .validation-row--conflict,
-  .validation-row--error {
+  .validation-row--duplicate,
+  .validation-row--invalid {
     border-color: #d9a39d;
     background: #fdf0ef;
+  }
+
+  .validation-row--needs_review {
+    border-color: #e3cf9e;
+    background: #fdf7e8;
+  }
+
+  .rejection-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #e8c4bf;
+    border-radius: 8px;
+    background: #fdf0ef;
+  }
+
+  .rejection-summary .hint {
+    margin: 0 !important;
+    color: #a12b23;
   }
 
   .validation-row small {
