@@ -1766,7 +1766,7 @@
     })();
   }
 
-  /** Скачать Excel-форму (TZD-50): сгенерировать .xlsx и сохранить нативным диалогом. */
+  /** Скачать Excel-форму (TZD-50/53): сгенерировать .xlsx и сохранить нативным диалогом. */
   async function downloadExcelForm() {
     if (!formTable) return;
     formBusy = true;
@@ -1781,9 +1781,14 @@
       if (!path) return; // пользователь отменил диалог
       const { writeFile } = await import('@tauri-apps/plugin-fs');
       await writeFile(path, bytes);
-      formMessage = `Форма «${IMPORT_TARGETS[formTable].label}» сохранена. Заполните лист «Данные» и загрузите файл в студии импорта — система распознает форму сама.`;
+      formMessage = `Форма «${IMPORT_TARGETS[formTable].label}» сохранена: ${path}. Заполните лист «Данные» и загрузите файл в студии импорта — система распознает форму сама.`;
     } catch (err) {
-      formMessage = err instanceof Error ? err.message : 'Не удалось сохранить форму.';
+      const detail = err instanceof Error ? err.message : String(err);
+      const denied =
+        /permission|not allowed|forbidden|denied|capabilities|acl/i.test(detail);
+      formMessage = denied
+        ? `Не удалось сохранить форму: нет права записи файла (обновите Desktop). ${detail}`
+        : `Не удалось сохранить форму: ${detail}`;
     } finally {
       formBusy = false;
     }
