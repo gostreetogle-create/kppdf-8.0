@@ -1,6 +1,7 @@
 # WAVE: Chrome page-tools migrate (каталог и списки → app-chrome-rail)
 
-**Статус:** #1 DONE · **#2 DONE** (UX-327 modules) · #3 materials (UX-328) · 329→330 позже  
+**Статус:** #1 DONE · **#2 DONE** (UX-327 modules) · **#3 DONE** (UX-328 materials) · 329→330 позже  
+
 **Цель:** убрать локальные `w-12` filters-rail и перенести icon-only tools в `PiChromeToolsService` / `app-chrome-rail` под ←→.  
 **SoT audit:** `docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`  
 **Canon:** `docs/pages/page-chrome.md` § Page tools  
@@ -14,7 +15,7 @@
 |---|----|-------|-------:|-------|
 | 1 | **`TZ-UX-326`** DONE → `tasks/_archive/2026-08/TZ-UX-326.done.md` | `/products` | 40 | P0: снять filters-rail; L=Фильтры, R=Вид+Обновить; flyout overlay |
 | 2 | **`TZ-UX-327`** DONE → `tasks/_archive/2026-08/TZ-UX-327.done.md` | `/modules` | 35 | P0: зеркало products; Cursor PASS; deploy нет |
-| 3 | **`TZ-UX-328`** → `tasks/TZ-UX-328-materials-chrome-page-tools.md` | `/materials` | 35 | P0: зеркало products |
+| 3 | **`TZ-UX-328`** DONE → `tasks/_archive/2026-08/TZ-UX-328.done.md` | `/materials` | 35 | P0: зеркало products; Cursor PASS; deploy нет |
 | 4 | `TZ-UX-329-supply-chrome-refresh` (draft) | `/supply` | 15 | P1 |
 | 5 | `TZ-UX-330-orders-chrome-refresh` (draft) | `/orders` | 15 | P1 |
 | | **PASS (P0 only)** | | **110** | |

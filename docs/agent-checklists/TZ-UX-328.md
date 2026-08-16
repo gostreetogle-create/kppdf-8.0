@@ -1,7 +1,7 @@
 # TZ-UX-328 checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-UX-328.md` (должен существовать, пока не archive)
+> Status: **DONE**
+> Marker: archived — `tasks/_archive/2026-08/TZ-UX-328.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -55,10 +55,10 @@ Primary signal: met. Secondary: PASS.
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict PASS
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-16T13:00:04+03:00

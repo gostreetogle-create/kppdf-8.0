@@ -156,10 +156,11 @@ app-chrome-rail-left          app-chrome-rail-right
 
 1. **Аудит кандидатов** — **TZ-UX-325 DONE** →
    [`docs/audits/2026-08-15-chrome-page-tools-migration-audit.md`](../audits/2026-08-15-chrome-page-tools-migration-audit.md)
-   (P0: `/products`, `/modules`, `/materials` — локальный `filters-rail` `w-12`).
+   (P0: /products **UX-326 DONE**, /modules **UX-327**, /materials **UX-328 DONE** —
+   локальный ilters-rail w-12 снят на products/modules/materials).
 2. **Волна переносов** —
-   [`tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md`](../../tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md)
-   (черновик TZ-UX-326…330, по одному экрану).
+   [	asks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md](../../tasks/_backlog/WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE.md)
+   (#1–#3 DONE; 329→330 по PO).
 3. **Новые dense UI (обязательно):** сразу `PiChromeToolsService` + flyout overlay —
    **не** добавлять локальную колонку ~48px / `w-12` рядом с контентом.
 4. Студии с уже готовым icon-rail (КП Create, Builder) — **не дублировать** в chrome

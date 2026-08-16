@@ -1,3 +1,14 @@
+## [2026-08-16] — TZ-UX-328 DONE — `/materials` chrome page-tools
+**Исполнитель:** cursor-composer (frontend executor + closeout)
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** `/materials` filters/view/refresh → `PiChromeToolsService` owner `materials-page`; w-12 `filters-rail` снят; flyout overlay + &lt;1680 fallback (зеркало UX-326).
+**Gates:** FE tsc PASS; materials.page Jest 27/27 PASS.
+**Review:** Cursor Verdict PASS (closeout-only).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-328.done.md`
+**Commit:** `e7b3c88ba550333c7c581fb6ae87e8ce6c417abb`
+**Lock:** `.mimocode/locks/TZ-UX-328-materials-chrome-page-tools.lock`
+**Next:** WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE #3 DONE; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-CATALOG-375 DONE — materials list expandable preview
 **Исполнитель:** agent-3e757640b7 (frontend executor)
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

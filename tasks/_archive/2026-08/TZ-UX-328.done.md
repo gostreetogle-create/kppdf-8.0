@@ -50,8 +50,56 @@ cd frontend && pnpm test -- --testPathPattern="materials.page" --coverage=false
 
 ## AC
 
-- [ ] `/materials` chrome как products  
-- [ ] Нет w-12 filters-rail  
-- [ ] Gates PASS  
+- [x] `/materials` chrome как products  
+- [x] Нет w-12 filters-rail  
+- [x] Gates PASS  
 
 Archive после Cursor PASS.
+
+---
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-16
+closed_by: cursor-composer (TZ-UX-328 closeout)
+TZ: TZ-UX-328
+WAVE: WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (#3)
+DEP: TZ-UX-326 DONE
+Cursor_verdict: PASS
+
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS
+  - tests: PASS (materials.page 27/27)
+  - lint: N/A (focused tsc + jest; owned files)
+  - checklist: UPDATED
+  - progress.md: UPDATED
+  - status synchronization: PASS
+  - deploy: NOT RUN
+
+COMMIT: e7b3c88ba550333c7c581fb6ae87e8ce6c417abb
+
+## Outcome
+
+- `/materials`: `PiChromeToolsService` owner `materials-page`. Left «Фильтры»; right view-list/view-grid/refresh; `clear` on destroy.
+- Локальный `aside.w-12` `filters-rail` снят; flyout overlay + backdrop сохранены.
+- Toolbar: search + kind + Create; &lt;1680 `materials-chrome-fallback` без docked 48px.
+
+## Verification
+
+- `frontend` `tsc -p tsconfig.app.json --noEmit`: PASS
+- `frontend` jest `--testPathPattern="materials.page"`: PASS 27/27
+- deploy: NOT RUN (PO: без деплоя)
+
+## Files
+
+- `frontend/src/app/pages/materials/materials.page.ts`
+- `frontend/src/app/pages/materials/materials.page.spec.ts`
+- `frontend/src/app/pages/materials/materials.page-373.spec.ts`
+- `docs/pages/materials.page.md`
+- `docs/agent-checklists/TZ-UX-328.md`
+
+## known_limitation
+
+- Chrome rails ≥1680; узкий экран — toolbar icon-fallback.
+- Modules parity → TZ-UX-327 (wave #2).
