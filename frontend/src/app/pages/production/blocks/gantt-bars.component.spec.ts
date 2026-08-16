@@ -108,9 +108,8 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(0);
     expect(el.textContent).toContain('Стол');
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeFalsy();
-    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
-      'Заказ · изделие',
-    );
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain('Заказ');
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).not.toContain('·');
 
     setFullTreeExpand(fixture);
     fixture.detectChanges();
@@ -396,9 +395,9 @@ describe('GanttBarsComponent', () => {
     const hostStyles = Array.from(el.ownerDocument.querySelectorAll('style'))
       .map((s) => s.textContent ?? '')
       .join('\n');
-    expect(hostStyles).toContain('oklch(0.978 0.01 230)');
-    expect(hostStyles).toContain('oklch(0.98 0.012 70)');
-    expect(hostStyles).toContain('oklch(0.976 0.008 145)');
+    expect(hostStyles).toContain('oklch(0.962 0.022 230)');
+    expect(hostStyles).toContain('oklch(0.955 0.032 70)');
+    expect(hostStyles).toContain('oklch(0.988 0.006 145)');
     /* Frames / meta still present (hierarchy intact). */
     expect(hostStyles).toContain('oklch(0.94 0.025 85)');
     expect(hostStyles).toContain('oklch(0.995 0.008 95)');
@@ -535,19 +534,25 @@ describe('GanttBarsComponent', () => {
     expect(hostStyles).toContain('oklch(0.29 0.03 85)');
   });
 
-  it('renders legend and a summary with required range', () => {
+  it('renders toolbar, legend and a summary with required range', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
-    expect(el.textContent).toContain('План-оценка');
+    expect(el.querySelector('[data-test="gantt-toolbar"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-group-orders"]')?.textContent).toContain(
+      'По заказам',
+    );
+    expect(el.querySelector('[data-test="gantt-zoom-day"]')?.textContent).toContain('День');
+    expect(el.querySelector('[data-test="gantt-fit"]')?.textContent).toContain('Вместить сроки');
+    expect(el.textContent).not.toContain('План-оценка');
+    expect(el.querySelector('[data-test="gantt-estimate-label"]')).toBeNull();
+    expect(el.querySelector('[data-test="gantt-expand-hint"]')).toBeNull();
+    expect(el.querySelector('[data-test="gantt-zoom-hint"]')).toBeNull();
     expect(el.querySelector('[data-test="gantt-legend"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-bar-summary"]')).toBeTruthy();
-    expect(el.querySelector('[data-test="gantt-expand-hint"]')?.textContent).toContain(
-      'заказ → изделие → модуль',
-    );
   });
 
   it('shows work-type detail in title when expanded', () => {
@@ -642,7 +647,7 @@ describe('GanttBarsComponent', () => {
     expect(calculateGanttPxPerDay('day', 14, 700)).toBe(GANTT_PX_PER_DAY.day);
   });
 
-  it('day vs month zoom changes px density and scale hint', () => {
+  it('day vs month zoom changes px density and toolbar active state', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -654,13 +659,17 @@ describe('GanttBarsComponent', () => {
       '[data-test="gantt-bars-root"]',
     ) as HTMLElement;
     expect(root.getAttribute('data-zoom')).toBe('day');
-    expect(fixture.nativeElement.textContent).toContain('масштаб: день');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="gantt-zoom-day"]')?.classList,
+    ).toContain('pi-btn-ink');
     expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.day);
 
     fixture.componentRef.setInput('zoom', 'month');
     fixture.detectChanges();
     expect(root.getAttribute('data-zoom')).toBe('month');
-    expect(fixture.nativeElement.textContent).toContain('масштаб: месяц');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="gantt-zoom-month"]')?.classList,
+    ).toContain('pi-btn-ink');
     expect(fixture.nativeElement.textContent).not.toContain('н.');
     expect(fixture.componentInstance['pxPerDay']()).toBe(GANTT_PX_PER_DAY.month);
     expect(fixture.componentInstance['timelineMinWidth']()).toBeLessThan(
@@ -1324,9 +1333,59 @@ describe('GanttBarsComponent', () => {
     el = fixture.nativeElement;
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt2:2"]')).toBeTruthy();
-    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
-      'Рабочий · модуль',
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent?.trim()).toBe(
+      'Рабочий',
     );
+  });
+
+  it('TZ-PRODUCTION-348: worker label click emits toggleExpand', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [{ ...sample, workerLabel: 'Иванов Иван' }]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.detectChanges();
+    const toggles: string[] = [];
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    const summaryLabel = fixture.nativeElement.querySelector(
+      '[data-test="gantt-label-worker-summary:Иванов Иван"] button.flex-1',
+    ) as HTMLElement;
+    summaryLabel.click();
+    expect(toggles).toEqual(['worker:Иванов Иван']);
+  });
+
+  it('TZ-PRODUCTION-348: product/module label click emits toggleExpand', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample, samplePaint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const toggles: string[] = [];
+    fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
+    const productLabel = fixture.nativeElement.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"] button.flex-1`,
+    ) as HTMLElement;
+    productLabel.click();
+    expect(toggles).toEqual([productKeyO1]);
+  });
+
+  it('TZ-PRODUCTION-348: header is single word without border-l box', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [sample]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const header = fixture.nativeElement.querySelector(
+      '[data-test="gantt-label-header"]',
+    ) as HTMLElement;
+    expect(header.classList.contains('items-center')).toBe(true);
+    expect(header.classList.contains('items-end')).toBe(false);
+    expect(header.textContent?.trim()).toBe('Заказ');
+    expect(header.textContent).not.toContain('·');
+    const textSpan = header.querySelector('span.flex-1') as HTMLElement;
+    expect(textSpan.classList.contains('border-l')).toBe(false);
   });
 
   it('TZ-GANTT-401: worker view is read-only (no resize handle, no move)', () => {

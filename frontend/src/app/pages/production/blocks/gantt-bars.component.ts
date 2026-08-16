@@ -36,7 +36,8 @@ import {
   type GanttBar,
 } from '../gantt-bar.model';
 import type { OrderPriority, OrderStatus } from '../../orders/orders.service';
-import type { GanttZoom } from '../production-cockpit.context';
+import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
+import { ProductionScaleControlsComponent } from './production-scale-controls.component';
 
 /** Pixels per calendar day — day zoom is denser, month packs the same span. */
 export const GANTT_PX_PER_DAY: Record<GanttZoom, number> = {
@@ -129,10 +130,10 @@ export const GANTT_META_ROW_PX = 56;
 export const GANTT_LABEL_COL_PX = 208;
 
 /**
- * Nest indent step for label column only (~3mm / ~8–12px).
+ * Nest indent step for label column only (~14–16px).
  * Depth: order|worker=0, product=1, module=2, work=3 → padding-left = depth × step.
  */
-export const GANTT_NEST_INDENT_PX = 10;
+export const GANTT_NEST_INDENT_PX = 15;
 
 export type GanttRowKind = 'order' | 'worker' | 'product' | 'module' | 'work';
 
@@ -252,7 +253,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   selector: 'app-gantt-bars',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, ProductionScaleControlsComponent],
   template: `
     <div
       class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
@@ -261,26 +262,23 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       (click)="onRootClick($event)"
     >
       <div
-        class="shrink-0 px-3 py-2 flex flex-wrap items-center gap-3 border-b hairline text-xs text-muted-foreground"
+        class="shrink-0 px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-b hairline"
       >
-        <span class="font-medium text-ink" data-test="gantt-estimate-label"
-          >План-оценка по дням видов работ</span
-        >
-        <span class="opacity-80">календарные дни · не факт цеха · выходные не исключаются</span>
-        <span class="opacity-70" data-test="gantt-zoom-hint">
-          масштаб: {{ zoom() === 'day' ? 'день' : 'месяц' }} · День — подробнее, Месяц — плотнее ·
-          «Вместить сроки» — диапазон текущих полос
-        </span>
-        <span class="opacity-70" data-test="gantt-expand-hint"
-          >Разверните заказ → изделие → модуль, чтобы править виды работ</span
-        >
+        <app-production-scale-controls
+          class="min-w-0 flex-1"
+          [zoom]="zoom()"
+          [groupBy]="groupByWorkers() ? 'workers' : 'orders'"
+          (zoomChange)="zoomChange.emit($event)"
+          (groupByChange)="groupByChange.emit($event)"
+          (fit)="fit.emit()"
+        />
         @if (usedTodayFallback()) {
-          <span class="text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
+          <span class="text-xs text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
             >Дата начала не задана — показано от сегодня</span
           >
         }
         @if (readOnly()) {
-          <span class="text-amber-800 dark:text-amber-300"
+          <span class="text-xs text-amber-800 dark:text-amber-300"
             >Заказ завершён/отменён — только просмотр</span
           >
         }
@@ -331,18 +329,12 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             class="sticky left-0 z-[3] w-52 shrink-0 border-r hairline bg-paper overflow-visible"
           >
             <div
-              class="h-10 border-b hairline flex items-end text-[11px] text-muted-foreground"
+              class="h-10 border-b hairline flex items-center text-[11px] text-muted-foreground"
               data-test="gantt-label-header"
             >
               <span class="gantt-expand-col shrink-0" aria-hidden="true"></span>
-              <span class="flex-1 min-w-0 px-2 pb-1 truncate border-l hairline">{{
-                groupByWorkers()
-                  ? anyWorkerExpanded()
-                    ? 'Рабочий · модуль'
-                    : 'Рабочий'
-                  : anyExpanded()
-                    ? 'Заказ · изделие'
-                    : 'Заказ'
+              <span class="flex-1 min-w-0 px-2 truncate">{{
+                groupByWorkers() ? 'Рабочий' : 'Заказ'
               }}</span>
             </div>
             @for (row of rows(); track row.bar.id) {
@@ -852,7 +844,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-label-btn:focus-visible {
       background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
     }
-    /* TZ-PRODUCTION-346: cascade indent — labels only (~3mm / 10px per depth). */
+    /* TZ-PRODUCTION-348: cascade indent — labels only (~15px per depth). */
     [data-nest-depth='1'] .gantt-label-btn {
       padding-left: ${GANTT_NEST_INDENT_PX}px;
     }
@@ -863,29 +855,30 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       padding-left: ${GANTT_NEST_INDENT_PX * 3}px;
     }
     /*
-     * Level washes (paper, quiet). Strength: meta-active ≥ order/product/module frames ≥ these.
+     * Level washes (paper). Stronger separation module vs WT than 346.
+     * Strength: meta-active ≥ order/product/module frames ≥ these.
      * No !important — group/meta rules with !important keep winning.
      */
     .gantt-level-product {
-      background: oklch(0.978 0.01 230);
+      background: oklch(0.962 0.022 230);
     }
     .gantt-level-module {
-      background: oklch(0.98 0.012 70);
+      background: oklch(0.955 0.032 70);
     }
     .gantt-level-work {
-      background: oklch(0.976 0.008 145);
+      background: oklch(0.988 0.006 145);
     }
     :host-context(.dark) .gantt-level-product,
     :host-context([data-theme='dark']) .gantt-level-product {
-      background: oklch(0.255 0.018 230);
+      background: oklch(0.245 0.028 230);
     }
     :host-context(.dark) .gantt-level-module,
     :host-context([data-theme='dark']) .gantt-level-module {
-      background: oklch(0.26 0.02 70);
+      background: oklch(0.24 0.035 70);
     }
     :host-context(.dark) .gantt-level-work,
     :host-context([data-theme='dark']) .gantt-level-work {
-      background: oklch(0.25 0.015 145);
+      background: oklch(0.27 0.012 145);
     }
     /* Active order while order-meta strip is open — lighter + bold frame. */
     .gantt-order-active {
@@ -1143,6 +1136,10 @@ export class GanttBarsComponent implements AfterViewInit {
   /** Empty canvas / non-control click → parent collapses trees + meta + work-detail. */
   readonly dismissCanvas = output<void>();
   readonly toggleExpand = output<string>();
+  /** TZ-PRODUCTION-348 — toolbar zoom / group / fit (parent owns state). */
+  readonly zoomChange = output<GanttZoom>();
+  readonly groupByChange = output<GanttGroupBy>();
+  readonly fit = output<void>();
   /** Child work-type label / ▸ → parent toggles work-detail for this bar.id. */
   readonly toggleWorkDetail = output<string>();
   /** Catalog button in work-detail → parent prompts + PATCHes WorkType.days. */
@@ -1241,15 +1238,6 @@ export class GanttBarsComponent implements AfterViewInit {
           this.expandedModuleIds(),
         ),
   );
-
-  protected readonly anyExpanded = computed(
-    () =>
-      this.expandedOrderIds().size > 0 ||
-      this.expandedProductIds().size > 0 ||
-      this.expandedModuleIds().size > 0,
-  );
-
-  protected readonly anyWorkerExpanded = computed(() => this.expandedWorkerIds().size > 0);
 
   protected readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();
@@ -1652,7 +1640,10 @@ export class GanttBarsComponent implements AfterViewInit {
     this.dismissCanvas.emit();
   }
 
-  /** Order summary left label → order-meta; product/module ignore; work → detail. */
+  /**
+   * Order summary → order-meta; worker/product/module → same expand as ▸; work → detail.
+   * TZ-PRODUCTION-348: label click toggles cascade (not chevron-only).
+   */
   protected onLabelClick(event: Event, row: { isSummary: boolean; bar: GanttBar }): void {
     event.stopPropagation();
     event.preventDefault();
@@ -1665,6 +1656,7 @@ export class GanttBarsComponent implements AfterViewInit {
       isModuleSummaryBar(row.bar) ||
       isWorkerSummaryBar(row.bar)
     ) {
+      this.toggleExpand.emit(this.expandKey(row.bar));
       return;
     }
     this.toggleWorkDetail.emit(row.bar.id);

@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-348 DONE — Gantt toolbar + header + label expand
+**Исполнитель:** composer-executor-348
+**Статус:** DONE; deploy НЕ
+**Что:** тулбар «По заказам|По рабочим» + «День|Месяц|Вместить сроки» в шапке Ганта; chrome «Масштаб» убран; header «Заказ»/«Рабочий» без рамки; клик лейбла worker/product/module = expand; nest 15px + сильнее washes.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest gantt-bars|scale-controls|cockpit PASS (76/76).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-348.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-348-gantt-toolbar-header-expand.lock`
+**Next:** queue idle for Gantt chrome; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-346 DONE — Gantt nest indent + level tint
 **Исполнитель:** local-executor-composer
 **Статус:** DONE; deploy НЕ

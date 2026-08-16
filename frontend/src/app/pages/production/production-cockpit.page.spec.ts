@@ -173,12 +173,12 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(fixture.nativeElement.querySelector('.production-studio-center')).not.toBeNull();
 
     expect(chrome.leftTools().map((t) => t.id)).toEqual(['orders', 'filters', 'refresh']);
-    expect(chrome.rightTools().map((t) => t.id)).toEqual(['today', 'scale']);
+    expect(chrome.rightTools().map((t) => t.id)).toEqual(['today']);
     expect(chrome.leftTools()[0]!.ariaLabel).toBe('Заказы');
-    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual([
-      'Прокрутить к сегодня',
-      'Масштаб',
-    ]);
+    expect(chrome.rightTools().map((t) => t.ariaLabel)).toEqual(['Прокрутить к сегодня']);
+    expect(chrome.rightTools().some((t) => t.id === 'scale' || t.ariaLabel === 'Масштаб')).toBe(
+      false,
+    );
     expect(chrome.rightTools().some((t) => t.id === 'card' || t.ariaLabel === 'Карточка')).toBe(
       false,
     );
@@ -217,26 +217,26 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     ).not.toBeNull();
   });
 
-  it('TZ-PRODUCTION-330: scale shows Месяц; fit uses month; Today always requests scroll', () => {
+  it('TZ-PRODUCTION-330: toolbar shows Месяц; fit uses month; Today always requests scroll', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
-      toggleRightTool: (tool: 'scale') => void;
       onToday: () => void;
       onFitHorizon: () => Promise<void>;
       scrollRequest: () => { target: string; nonce: number } | null;
     };
     const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
-
-    page.toggleRightTool('scale');
     fixture.detectChanges();
+
     expect(
       fixture.nativeElement.querySelector('[data-test="gantt-zoom-month"]')?.textContent,
     ).toContain('Месяц');
     expect(fixture.nativeElement.querySelector('[data-test="gantt-zoom-week"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="production-flyout-scale"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Неделя');
 
     const chrome = TestBed.inject(PiChromeToolsService);
     expect(chrome.rightTools().find((t) => t.id === 'today')!.title).toBe('Прокрутить к сегодня');
+    expect(chrome.rightTools().some((t) => t.id === 'scale')).toBe(false);
 
     page.onToday();
     const first = page.scrollRequest();
@@ -250,13 +250,11 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(ctx.zoom()).toBe('month');
   });
 
-  it('TZ-GANTT-401: scale flyout toggles По заказам / По рабочим', () => {
+  it('TZ-PRODUCTION-348: gantt toolbar toggles По заказам / По рабочим', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {
-      toggleRightTool: (tool: 'scale') => void;
       groupBy: () => 'orders' | 'workers';
     };
-    page.toggleRightTool('scale');
     fixture.detectChanges();
 
     const ordersBtn = fixture.nativeElement.querySelector(
@@ -390,32 +388,27 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     const chrome = TestBed.inject(PiChromeToolsService);
     const page = fixture.componentInstance as unknown as {
       leftTool: () => string | null;
-      rightTool: () => string | null;
       toggleLeftTool: (tool: 'orders' | 'filters') => void;
-      toggleRightTool: (tool: 'scale') => void;
       closeFlyouts: () => void;
     };
 
     page.toggleLeftTool('orders');
     fixture.detectChanges();
     expect(page.leftTool()).toBe('orders');
-    expect(page.rightTool()).toBeNull();
     expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(true);
 
-    page.toggleRightTool('scale');
+    page.toggleLeftTool('filters');
     fixture.detectChanges();
-    expect(page.leftTool()).toBeNull();
-    expect(page.rightTool()).toBe('scale');
-    expect(chrome.rightTools().find((t) => t.id === 'scale')!.active).toBe(true);
+    expect(page.leftTool()).toBe('filters');
+    expect(chrome.leftTools().find((t) => t.id === 'filters')!.active).toBe(true);
     expect(chrome.leftTools().find((t) => t.id === 'orders')!.active).toBe(false);
 
-    page.toggleRightTool('scale');
-    expect(page.rightTool()).toBeNull();
+    page.toggleLeftTool('filters');
+    expect(page.leftTool()).toBeNull();
 
     page.toggleLeftTool('filters');
     page.closeFlyouts();
     expect(page.leftTool()).toBeNull();
-    expect(page.rightTool()).toBeNull();
   });
 
   it('TZ-PRODUCTION-317: select keeps multi-order bars and expands that order', async () => {
@@ -540,14 +533,12 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
       onOrderLabelClick: (id: string) => Promise<void>;
       onToggleExpand: (id: string) => void;
       onDismissCanvas: () => void;
-      rightTool: () => string | null;
     };
     const ctx = (fixture.componentInstance as unknown as { ctx: ProductionCockpitContext }).ctx;
 
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(true);
     expect(ctx.orderMetaOpen()).toBe(false);
-    expect(page.rightTool()).toBeNull();
 
     page.onToggleExpand('o1');
     expect(ctx.isOrderExpanded('o1')).toBe(false);
@@ -557,7 +548,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     fixture.detectChanges();
     expect(ctx.selectedOrderId()).toBe('o1');
     expect(ctx.orderMetaOpen()).toBe(true);
-    expect(page.rightTool()).toBeNull();
     expect(ctx.isOrderExpanded('o1')).toBe(false);
     expect(fixture.nativeElement.querySelector('[data-test="gantt-order-meta-o1"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="production-flyout-card"]')).toBeNull();
@@ -569,7 +559,6 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     await page.onOrderLabelClick('o1');
     fixture.detectChanges();
     expect(ctx.orderMetaOpen()).toBe(false);
-    expect(page.rightTool()).toBeNull();
     expect(ctx.isOrderExpanded('o1')).toBe(true);
     expect(fixture.nativeElement.querySelector('[data-test="gantt-order-meta-o1"]')).toBeNull();
 
@@ -867,13 +856,13 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     );
     expect(source).not.toContain('production-studio-rail');
     expect(source).toContain('left: 0');
-    expect(source).toContain('right: 0');
     expect(source).not.toContain('left: 48px');
     expect(source).not.toContain('right: 48px');
     expect(source).not.toContain('grid-template-columns: 48px');
     expect(source).toContain('clear(CHROME_OWNER)');
     expect(source).not.toContain('production-studio-sheet-card');
     expect(source).not.toContain('bottom: 1.75rem');
+    expect(source).not.toContain('production-flyout-scale');
   });
 
   it('TZ-PRODUCTION-336: selecting ineligible order toasts RU reason; Gantt stays without its bars', async () => {

@@ -14,7 +14,6 @@ import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom, type Observable } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
-import { ProductionScaleControlsComponent } from './blocks/production-scale-controls.component';
 import {
   GanttBarsComponent,
   type GanttCatalogDaysRequest,
@@ -56,7 +55,6 @@ import {
   List,
   RefreshCw,
   SlidersHorizontal,
-  ZoomIn,
 } from 'lucide-angular';
 
 function shopOrderWriteError(err: { error?: { message?: unknown }; message?: string }): string {
@@ -75,7 +73,6 @@ function shopOrderWriteError(err: { error?: { message?: unknown }; message?: str
 }
 
 type ProductionLeftTool = 'orders' | 'filters' | null;
-type ProductionRightTool = 'scale' | null;
 
 const CHROME_OWNER = 'production-cockpit';
 
@@ -94,7 +91,6 @@ const CHROME_OWNER = 'production-cockpit';
     PiGroupWorkspaceComponent,
     LucideAngularModule,
     OrdersRailComponent,
-    ProductionScaleControlsComponent,
     GanttBarsComponent,
   ],
   template: `
@@ -150,6 +146,9 @@ const CHROME_OWNER = 'production-cockpit';
               (toggleExpand)="onToggleExpand($event)"
               (toggleWorkDetail)="onToggleWorkDetail($event)"
               (dismissCanvas)="onDismissCanvas()"
+              (zoomChange)="ctx.setZoom($event)"
+              (groupByChange)="groupBy.set($event)"
+              (fit)="onFitHorizon()"
               (estimateDaysCommit)="onEstimateDaysCommit($event)"
               (catalogDaysRequest)="onCatalogDaysRequest($event)"
               (plannedDateMoveCommit)="onPlannedDateMoveCommit($event)"
@@ -158,7 +157,7 @@ const CHROME_OWNER = 'production-cockpit';
             />
           </main>
 
-          @if (leftTool() || rightTool()) {
+          @if (leftTool()) {
             <button
               type="button"
               class="production-studio-backdrop"
@@ -208,23 +207,6 @@ const CHROME_OWNER = 'production-cockpit';
                 (selectAll)="onSelectAll()"
                 (filtersChanged)="onFiltersChanged()"
                 (expandRail)="toggleLeftTool('filters')"
-              />
-            </aside>
-          }
-
-          @if (rightTool() === 'scale') {
-            <aside
-              id="production-flyout-scale"
-              class="production-studio-flyout production-studio-flyout-right production-scale-flyout"
-              data-test="production-flyout-scale"
-              aria-label="Масштаб"
-            >
-              <app-production-scale-controls
-                [zoom]="ctx.zoom()"
-                [groupBy]="groupBy()"
-                (zoomChange)="ctx.setZoom($event)"
-                (groupByChange)="groupBy.set($event)"
-                (fit)="onFitHorizon()"
               />
             </aside>
           }
@@ -288,14 +270,8 @@ const CHROME_OWNER = 'production-cockpit';
       .production-studio-flyout-left {
         left: 0;
       }
-      .production-studio-flyout-right {
-        right: 0;
-      }
       .production-studio-flyout-filters {
         width: min(20rem, calc(100% - 1rem));
-      }
-      .production-scale-flyout {
-        width: 13rem;
       }
       @media (max-width: 1279px) {
         .production-studio-flyout {
@@ -304,9 +280,6 @@ const CHROME_OWNER = 'production-cockpit';
         }
         .production-studio-flyout-left {
           left: 0.5rem;
-        }
-        .production-studio-flyout-right {
-          right: 0.5rem;
         }
       }
     `,
@@ -318,7 +291,6 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly filtersIcon = SlidersHorizontal;
   protected readonly refreshIcon = RefreshCw;
   protected readonly todayIcon = CalendarDays;
-  protected readonly scaleIcon = ZoomIn;
   protected readonly ctx = inject(ProductionCockpitContext);
   protected readonly facade = inject(ProductionReadFacade);
   private readonly auth = inject(AuthService);
@@ -354,7 +326,6 @@ export class ProductionCockpitPage implements OnInit {
 
   /** Shell tool state; buttons live in app-chrome-rail (TZ-UX-323). */
   protected readonly leftTool = signal<ProductionLeftTool>(null);
-  protected readonly rightTool = signal<ProductionRightTool>(null);
 
   protected readonly canEditOrder = computed(() => {
     const role = this.auth.user()?.role;
@@ -394,7 +365,6 @@ export class ProductionCockpitPage implements OnInit {
     effect(() => {
       // Track active flyout state for chrome button .is-active / aria-expanded.
       void this.leftTool();
-      void this.rightTool();
       void this.ctx.filtersDirty();
       // setTools reads+writes chrome byOwner — must not be effect-tracked (infinite loop).
       untracked(() => this.syncChromeTools());
@@ -460,7 +430,6 @@ export class ProductionCockpitPage implements OnInit {
   protected async onSelect(id: string): Promise<void> {
     this.ctx.selectOrder(id);
     this.leftTool.set(null);
-    this.rightTool.set(null);
     this.ctx.setOrderMetaOpen(true);
     const order = this.orders().find((o) => o._id === id);
     if (!order) return;
@@ -474,7 +443,6 @@ export class ProductionCockpitPage implements OnInit {
     this.ctx.selectOrder(null);
     this.ctx.closeOrderMeta();
     this.leftTool.set(null);
-    this.rightTool.set(null);
     this.readOnly.set(false);
     await this.applyFilteredActive();
   }
@@ -483,19 +451,10 @@ export class ProductionCockpitPage implements OnInit {
     this.rememberToolButton(event);
     const next = this.leftTool() === tool ? null : tool;
     this.leftTool.set(next);
-    this.rightTool.set(null);
-  }
-
-  protected toggleRightTool(tool: Exclude<ProductionRightTool, null>, event?: Event): void {
-    this.rememberToolButton(event);
-    const next = this.rightTool() === tool ? null : tool;
-    this.rightTool.set(next);
-    this.leftTool.set(null);
   }
 
   protected closeFlyouts(): void {
     this.leftTool.set(null);
-    this.rightTool.set(null);
     this.lastToolButton?.focus();
     this.lastToolButton = null;
   }
@@ -504,7 +463,7 @@ export class ProductionCockpitPage implements OnInit {
   protected onEscape(): void {
     this.ctx.clearExpandedOrders();
     this.ctx.closeOrderMeta();
-    if (this.leftTool() || this.rightTool()) {
+    if (this.leftTool()) {
       this.closeFlyouts();
     }
   }
@@ -516,7 +475,6 @@ export class ProductionCockpitPage implements OnInit {
 
   private syncChromeTools(): void {
     const left = this.leftTool();
-    const right = this.rightTool();
     const dirty = this.ctx.filtersDirty();
     const items: PiChromeToolItem[] = [
       {
@@ -562,18 +520,6 @@ export class ProductionCockpitPage implements OnInit {
         icon: this.todayIcon,
         order: 1,
         onClick: (e) => this.onToday(e),
-      },
-      {
-        id: 'scale',
-        side: 'right',
-        ariaLabel: 'Масштаб',
-        title: 'Масштаб',
-        icon: this.scaleIcon,
-        active: right === 'scale',
-        ariaExpanded: right === 'scale',
-        ariaControls: 'production-flyout-scale',
-        order: 2,
-        onClick: (e) => this.toggleRightTool('scale', e),
       },
     ];
     this.chromeTools.setTools(CHROME_OWNER, items);

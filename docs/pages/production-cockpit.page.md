@@ -11,8 +11,9 @@
 ```text
 app-chrome-rail-left:  ← + Заказы · Фильтры · Обновить
 main: Gantt full width (no local 48px columns)
-app-chrome-rail-right: → + Сегодня · Масштаб
+app-chrome-rail-right: → + Сегодня
 flyouts: overlay; center width unchanged
+gantt-toolbar: По заказам|По рабочим · День|Месяц|Вместить сроки (в шапке Ганта, не chrome)
 ```
 
 **WAVE-PRODUCTION-GANTT-CASCADE (DONE):** **321** detail под видом работ; **322** meta под summary + kill bottom sheet; **323** один meta + full-width панели.
@@ -64,11 +65,11 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | orders-rail | `blocks/orders-rail.component.ts` | Список / поиск по номеру; Фильтры: Заказчик (Counterparty select), приоритет, даты, «Все активные», Сброс |
 | gantt-bars | `blocks/gantt-bars.component.ts` | Timeline-оценка, zoom day/month (day ≈36px); order-meta + work-detail cascade; `groupByWorkers` input → worker-grouped read-only tree |
 | order-inspector helpers | `blocks/order-inspector.component.ts` | Shared `promptCatalogDaysChange` (sheet host removed in 322) |
-| scale controls | `blocks/production-scale-controls.component.ts` | Dumb RU zoom/fit + grouping controls; emits `zoomChange` / `fit` / `groupByChange` |
+| scale controls | `blocks/production-scale-controls.component.ts` | Horizontal toolbar in Gantt header; emits `zoomChange` / `fit` / `groupByChange` |
 
 ### Smart / dumb boundary (TZ-PRODUCTION-327)
 
-`ProductionCockpitPage` remains the smart shell: it owns reads, PATCH orchestration, chrome registration, filters, and range fitting. `ProductionReadFacade` owns read/cache/composition mapping; `ProductionCockpitContext` owns local UI signals. Gantt and Orders rail remain behavior-sensitive presentational blocks, while the scale flyout buttons are isolated as `ProductionScaleControlsComponent` with input/output-only state and events. No UX/API rewrite or fact-production model is introduced.
+`ProductionCockpitPage` remains the smart shell: it owns reads, PATCH orchestration, chrome registration, filters, and range fitting. `ProductionReadFacade` owns read/cache/composition mapping; `ProductionCockpitContext` owns local UI signals. Gantt embeds `ProductionScaleControlsComponent` as a dense header toolbar (group left, zoom right); chrome «Масштаб» flyout removed (TZ-PRODUCTION-348). No UX/API rewrite or fact-production model is introduced.
 
 ### Inspector UX (follow-up 2026-08-06 evening)
 
@@ -89,7 +90,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
-- Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: **Группировка** (По заказам | По рабочим), День / Месяц / **Вместить сроки**.
+- Chrome tools: Обновить / Сегодня. В шапке Ганта: **Группировка** (По заказам | По рабочим), День / Месяц / **Вместить сроки**.
 - **TZ-GANTT-401:** «По рабочим» — read-only вид Ганта: строки группируются по `workerLabel` (People×WorkType уже на барах), без назначения → группа «Не назначен»; **TZ-PRODUCTION-344:** Worker ▸ (default collapsed) → модули с контекстом `заказ · изделие · модуль` → WT после ▸ модуля; нет resize-handle и body-drag (нельзя PATCH). ACTIVE filter и `buildGanttBars`/facade не изменены. Default = «По заказам» (прежний tree по заказу).
 - Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День: 36px/day, тик = `DD.MM` + RU weekday (ПН…ВС, UTC); шапка шкалы и колонка «Заказ» — `h-10`.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Месяц и прокручивает к началу диапазона.
@@ -151,7 +152,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-323:** order-meta **только** под summary (`row.isSummary`); при раскрытом составе не дублируется на child. Meta и work-detail — **одна широкая** полоса (`gantt-cascade-panel`) через колонку «Заказ» + календарь (full-bleed из sticky label, spacer на timeline). Поля плотно в один ряд.
 - **Work-detail highlight:** открытый detail → `gantt-work-detail-open` (отличим от `gantt-order-expanded` / `gantt-order-active`).
 - **Meta open highlight:** открытый order-meta → `gantt-order-active` (светлее + inset рамка).
-- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). **TZ-PRODUCTION-343:** вложенные рамки изделия/модуля (`gantt-product-group-*` / `gantt-module-group-*`) читаемы внутри order frame; aria/title: изделие = «модули изделия», модуль = «виды работ»; шапка колонки `Заказ · изделие`. При открытом meta active имеет приоритет.
+- **Tree expand highlight:** ▸ раскрытый заказ → `gantt-order-expanded` + рамка блока (`gantt-order-group-start` / mid / `-end`, ≥2px); chevron ▸/▾ ≥14–16px, колонка ≥36px (TZ-PRODUCTION-339). Шапка summary (`group-start`) чуть темнее/желтее children (TZ-PRODUCTION-340). **TZ-PRODUCTION-343:** вложенные рамки изделия/модуля (`gantt-product-group-*` / `gantt-module-group-*`) читаемы внутри order frame; aria/title: изделие = «модули изделия», модуль = «виды работ». **TZ-PRODUCTION-348:** шапка колонки одно слово `Заказ` / `Рабочий` (без `·` и без border-l рамки); клик по лейблу worker/product/module = expand.
 - **Nest indent + level washes (TZ-PRODUCTION-346):** колонка лейблов — `padding-left` ~10/20/30px по глубине (order|worker=0, product=1, module=2, work=3); полосы календаря без горизонтального сдвига. Тихие washes `gantt-level-product|module|work` (oklch paper); сила: meta ≥ order/product/module frames ≥ level wash.
 - **Dismiss:** клик по пустой сетке / Esc — свернуть work-detail + meta + деревья.
 - `visualAnchor = plannedDate ?? date ?? today`.
@@ -250,7 +251,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **Подпись / ▸ вида работ** | Inline work-detail (люди/дни/override/catalog); нижней Карточки нет |
 | **Resize / тело вида работ** | estimate-days / estimate-start под `production:write`; optimistic local bars; silent PATCH |
 
-All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `Масштаб`, `Группировка`, `По заказам`, `По рабочим`, `Не назначен`, `День`, `Месяц`, `Вместить сроки`.
+All dates are calendar estimate dates; weekends are not removed. All UI copy remains Russian: `Цех`, `Гант`, `Заказы`, `Фильтры`, `Заказчик`, `Сброс фильтров`, `Обновить`, `Сегодня`, `По заказам`, `По рабочим`, `Не назначен`, `День`, `Месяц`, `Вместить сроки`.
 
 ### Zoom
 

@@ -5,12 +5,12 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T21:44:02+03:00
-hygiene: TZD-50-55 DONE; Gantt 338-347 DONE (incl. 346 nest+tint); deploy deferred
+updated_at: 2026-08-16T22:02:53+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-348 DONE (incl. 348 toolbar+header+expand); deploy deferred
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–347 DONE**. Deploy — только «кати».
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342–348 DONE**. Deploy — только «кати».
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
@@ -27,6 +27,10 @@ hygiene: TZD-50-55 DONE; Gantt 338-347 DONE (incl. 346 nest+tint); deploy deferr
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-348 DONE — Gantt toolbar + header + label expand
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-348.done.md`; lock `TZ-PRODUCTION-348-gantt-toolbar-header-expand.lock`; FE tsc + jest bars|scale|cockpit **76/76**. Deploy нет. Toolbar in Gantt; chrome Масштаб removed; label expand; nest 15px.
 
 ## [2026-08-16] — TZ-PRODUCTION-346 DONE — Gantt nest indent + level tint
 
