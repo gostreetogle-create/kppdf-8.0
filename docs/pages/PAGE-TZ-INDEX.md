@@ -11,22 +11,22 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
-| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell) |
-| `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (326…); **UX-331 READY FOR REVIEW** brand chip → Комбайн; audit `2026-08-15-chrome-page-tools-migration-audit.md` |
-| `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY |
-| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons |
-| `/doc-constructor/documents` | documents.page.md | **UX-303 DONE** |
+| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell); **UX-342** remove unused Показано helpers |
+| `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → WAVE-UX-CHROME-PAGE-TOOLS-MIGRATE (326…); **UX-331 READY FOR REVIEW** brand chip → Комбайн; **UX-341** catalog grid→pi-pagination; 342 next; **WAVE-UX-PAGINATION-UNIFY**: **UX-340 DONE** PiPagination канон+pi-table; next 341→342; audit `2026-08-15-chrome-page-tools-migration-audit.md` · `2026-08-16-pagination-unification-audit.md` |
+| `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY; **UX-342** drop dead pager total |
+| `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons; **UX-342** drop dead pager total |
+| `/doc-constructor/documents` | documents.page.md | **UX-303 DONE**; **UX-342** remove unused Показано helpers |
 | `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 
 ## Catalog / production
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314 READY** PAGE_SIZE=10; **CATALOG-373 DONE** grid + filters-rail (parity products, `pi-materials-view-mode`); **TZ-UI-PHOTO-343 DONE** shared dropzone file/drag/Ctrl+V; **UX-325** P0 chrome migrate → **UX-328** backlog |
+| `/materials` | materials.page.md | MATERIALS-*; **CATALOG-301** BE DONE; **FE поля 301 = TZ-CATALOG-316**; **CATALOG-UI-301** Group Chip; **UX-314** PAGE_SIZE=10; **UX-341** grid→pi-pagination; **CATALOG-373 DONE** grid + filters-rail (parity products, `pi-materials-view-mode`); **TZ-UI-PHOTO-343 DONE** shared dropzone file/drag/Ctrl+V; **UX-325** P0 chrome migrate → **UX-328** backlog |
 | `/materials/:id` | **material-detail.page.md** | 312 section sheet; **FACT-304 DONE** FactStack; **CATALOG-337 DONE** A+ shell; **UX-313** smart back |
-| `/products` | products.page.md | PRODUCTS-*; composition **302…305**, **CATALOG-340 DONE** picker «Создать» → QuickCreate; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE; **TZ-UI-PHOTO-343 DONE** shared dropzone file/drag/Ctrl+V; **UX-325** P0 chrome migrate → **UX-326** backlog |
+| `/products` | products.page.md | PRODUCTS-*; composition **302…305**, **CATALOG-340 DONE** picker «Создать» → QuickCreate; expand polish (gold tray); **UX-319** expanded ink frame + sibling dim (pi-table); **hierarchy preview 307 DONE**; FE **317**; gap **320**; tree **311**; **CATALOG-UI-301**; **PRODUCTS-308/309**; **PRODUCTS-310** (circular ɵcmp edit); **CATALOG-338** article; **UX-314** PAGE_SIZE=10; **UX-341** grid→pi-pagination (15→10); **OPS-312 READY** page.spec dict-labels flush; **UX-PHOTO-301** upload progress DONE; **TZ-UI-PHOTO-343 DONE** shared dropzone file/drag/Ctrl+V; **UX-326 DONE** chrome page-tools |
 | `/products/:id` | **product-detail.page.md** | 319 stub docs; detail UI; **320** complex/cascade; **311** tree; **330–331** kind palette; **UX-313** smart back; **PRODUCTS-309** BomPanel in FullEditor; **PRODUCTS-310**; **CATALOG-340 DONE** picker «Создать» → QuickCreate; **UX-DIALOG-306** picker qty |
-| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **CATALOG-340 DONE** picker «Создать» → QuickCreate/material form; **MODULES-341 DONE** form/detail/QC photoId upload; **TZ-UI-PHOTO-343 DONE** sweep + shared dropzone canon; **UX-313**; **UX-314 READY** PAGE_SIZE=10; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **CATALOG-374 DONE** list expandable состав (как products); **UX-325** P0 chrome migrate → **UX-327** backlog |
+| `/modules`, `/modules/:id` | modules.page.md, **module-detail.page.md** | **CATALOG-336** A+; **COMPOSE-301** discoverability; **DIALOG-305** kind-C width; **CATALOG-340 DONE** picker «Создать» → QuickCreate/material form; **MODULES-341 DONE** form/detail/QC photoId upload; **TZ-UI-PHOTO-343 DONE** sweep + shared dropzone canon; **UX-313**; **UX-314** PAGE_SIZE=10; **UX-341** grid→pi-pagination; **OPS-312 READY** module-detail.spec dict-labels flush; **CATALOG-372 DONE** list vitrine parity (photo/grid/rail); **CATALOG-374 DONE** list expandable состав (как products); **UX-325** P0 chrome migrate → **UX-327** backlog |
 | `/catalog/appearance` | **catalog-appearance.page.md** | **CATALOG-331** kind palette settings (admin) |
 | `/work-types` | work-types.page.md | **Цех IA**; WORKTYPES-*, **UX-305 DONE**, **PRODUCTION-302 DONE**; **CATALOG-UI-301**; **UX-314 READY**; **PRODUCTION-STUDIO-A** docs-only; **PRODUCTION-309** mutate → `production:write` |
 | `/people` | people.page.md | **UX-306 DONE**; **CATALOG-UI-301**; **UX-314 READY** |
@@ -50,12 +50,12 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
-| `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 DONE** supply `?orderId=`; **HUB-304 DONE** hub shipping stub link |
+| `/design`, `/supply`, `/shipping` | supply.page.md; shipping.page.md; **design/shipping OPS-307 DONE** | **NAV-301** design stub; **supply** live (SUPPLY-301); **shipping** stub; **ORDERS-HUB-303 DONE** supply `?orderId=`; **HUB-304 DONE** hub shipping stub link; **UX-342** drop dead pager total |
 | `/` , `/dashboard` | **dashboard.page.md** | DASHBOARD-400 Канбан; **TZ-SWEEP-401 READY** (write-path ship/cancel, freeze vs drag, nav «Комбайн», item.status fallback); **UX-331 READY FOR REVIEW** shell brand = home chip → Комбайн |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **320** PARK |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** PARK continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **UX-342** KP rail PAGE_SIZE=10; **320** PARK |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
@@ -69,17 +69,17 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/dictionaries/color-references` | color-references.page.md | PRODUCTS-301; DICT-306; **DICT-310**; **DICT-318** (RAL prefix) |
 | `/dictionaries/units` | units.page.md | DICT-304 DONE; **DICT-309** → redirect |
 | `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group); **DICT-312** (dense/adaptive Group Chip chrome) |
-| `/doc-template-categories` | **OPS-305 DONE** → `document-template-categories.page.md` | UX-304; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS |
-| `/dictionaries/text-block-categories` | **OPS-305 DONE** → `text-block-categories.page.md` | DOC-334; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS |
+| `/doc-template-categories` | **OPS-305 DONE** → `document-template-categories.page.md` | UX-304; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS; **UX-342** drop dead pager total |
+| `/dictionaries/text-block-categories` | **OPS-305 DONE** → `text-block-categories.page.md` | DOC-334; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS; **UX-342** drop dead pager total |
 
 ## Warehouse
 
 | Route | Page doc | TZs |
 |-------|----------|-----|
-| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301 DONE** (dedupe TOC buttons) |
-| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅) |
-| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter) |
-| `/warehouses` | warehouses.page.md | CRUD; **WAREHOUSE-UX-301 DONE** (type default main + hint; page doc created) |
+| `/inventory` | inventory-dashboard.page.md | **UX-301 DONE**; **WAREHOUSE-UX-301 DONE** (dedupe TOC buttons); **UX-342** drop dead pager total |
+| `/storage-items` | storage-items.page.md | **UX-301 DONE**, **UX-305 DONE**, **MATERIALS-308 DONE** (фильтр склада ✅); **UX-342** drop dead pager total |
+| `/stock-movements` | stock-movements.page.md | type filter ✅; **WAREHOUSE-UX-301 DONE** (+warehouse filter); **UX-342** drop dead pager total |
+| `/warehouses` | warehouses.page.md | CRUD; **WAREHOUSE-UX-301 DONE** (type default main + hint; page doc created); **UX-342** drop dead pager total |
 
 ## Admin / auth
 
