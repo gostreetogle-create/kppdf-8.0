@@ -5,17 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:10:00+03:00
+updated_at: 2026-08-16T13:25:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
 - **TZ-PHOTO-304** — photo frame meta (WAVE; Freebuff framing).
-- **TZ-NAV-303** / **TZ-OPS-SITE-SMOKE-401** — peer WIP (не трогать в ledger closeout).
+- **TZ-NAV-303** / **TZ-OPS-SITE-SMOKE-401** — peer WIP (не трогать).
 
 ## NEXT (PO paste prompt)
 
-- **WAVE-CONFIDENCE-LEDGER-FLASH DONE** (umbrella TZ-OPS-CONFIDENCE-LEDGER-401); rollup min86/median91 P0=0. Remediation **TZ-OPS-313…316** — только по явному PO claim.
+- **WAVE-CONFIDENCE-LEDGER-FLASH DONE**; remediation **TZ-OPS-313…316 DONE** (incl. OPS-315 UpdateOrderDto regression fix).
 - **Единая пагинация:** WAVE #1–#3 **DONE** (**UX-340**, **UX-341**, **UX-342**).
 - Deploy **нет**. **TZ-PRODUCTION-337 DONE**; **TZ-CATALOG-375 DONE**; **TZ-UX-344 DONE**; **TZ-UX-342 DONE**; **TZ-UX-331 DONE**; **TZ-CATALOG-374 DONE**; **TZ-UX-340 DONE**; **TZ-UX-341 DONE**; TZ-UX-326 DONE; **TZ-UX-328 DONE** (materials chrome).
 
@@ -30,6 +30,14 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-OPS-313…316 DONE — confidence ledger P2 remediation
+
+- **315** `aba3842b` — CreateOrderDto create-only status + UpdateOrderDto OmitType+PATCH FSM IsIn (ValidationPipe accepts ready/in_production); archive `TZ-OPS-315.done.md`
+- **314** `9ddadae2` — director on catalog GET @Roles; archive `TZ-OPS-314.done.md`
+- **316** `a1ad0e35` — materials expand без Material.stockQty; archive `TZ-OPS-316.done.md`
+- **313** `18d9b915` — PAGE-TZ-INDEX links + COUPLING-MAP combine; archive `TZ-OPS-313.done.md`
+- Deploy нет. photos/** WIP не коммитился.
 
 ## [2026-08-16] — TZ-OPS-CONFIDENCE-LEDGER-401 DONE — confidence ledger wave
 

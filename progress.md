@@ -1,13 +1,27 @@
+## [2026-08-16] — TZ-OPS-313…316 DONE — confidence ledger P2 remediation
+**Исполнитель:** P2 executor + cursor-composer (315 regression fix + closeout)
+**Статус:** DONE; deploy НЕ
+**Что:**
+- **315** CreateOrderDto `draft|confirmed` + CREATE_ALLOWED_STATUSES; **regression fix:** UpdateOrderDto `OmitType(…,['status'])` + PATCH IsIn `draft|confirmed|in_production|ready` (не наследует create-only); ValidationPipe spec accepts ready/in_production, rejects shipped.
+- **314** director в @Roles на catalog GET (18 controllers; photos WIP excluded).
+- **316** materials expand: убран «Остаток» из Material.stockQty; ссылка «Склад →».
+- **313** PAGE-TZ-INDEX битые ссылки + COUPLING-MAP combine path.
+**Gates:** BE `tsc` + jest `order.service|create-order|update-order` 50/50 PASS (315); prior P2 gates for 314/316.
+**Archive:** `tasks/_archive/2026-08/TZ-OPS-313.done.md` … `TZ-OPS-316.done.md`
+**Commits:** 315 `aba3842b` · 314 `9ddadae2` · 316 `a1ad0e35` · 313 `18d9b915`
+**Locks:** `.mimocode/locks/TZ-OPS-313-…` … `TZ-OPS-316-…`
+**Next:** queue empty for this wave; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-OPS-CONFIDENCE-LEDGER-401 DONE — confidence ledger (LEDGER-01..12)
 **Исполнитель:** Buffy (freebuff audit) + cursor-composer closeout
 **Статус:** DONE; Cursor Verdict PASS (audit wave); deploy НЕ
-**Что:** 11 scorecards + `docs/audits/confidence/00-ROLLUP.md`; overall min **86** / median **91**; P0 **0**; P2 backlog TZ-OPS-313…316 (не стартованы).
+**Что:** 11 scorecards + `docs/audits/confidence/00-ROLLUP.md`; overall min **86** / median **91**; P0 **0**; P2 backlog TZ-OPS-313…316 (later remediated — see entry above).
 **Gates:** LEDGER-11 FE/BE/desktop tsc PASS; jest sample PASS (см. 11-gates.md).
 **Review:** Cursor Verdict PASS — closeout-only; remediation out of scope.
 **Archive:** `tasks/_archive/2026-08/TZ-OPS-CONFIDENCE-LEDGER-401.done.md`
 **Commit:** `7c8822544515f97f4b4fb39120a6447e8f25c668`
 **Lock:** `.mimocode/locks/TZ-OPS-CONFIDENCE-LEDGER-401.lock`
-**Next:** WAVE-CONFIDENCE-LEDGER-FLASH DONE; 313…316 только по PO; deploy не выполнялся.
+**Next:** WAVE-CONFIDENCE-LEDGER-FLASH DONE; 313…316 remediated separately; deploy не выполнялся.
 
 ## [2026-08-16] — TZ-UX-328 DONE — `/materials` chrome page-tools
 **Исполнитель:** cursor-composer (frontend executor + closeout)
