@@ -1,0 +1,8 @@
+TZ: TZ-UX-331
+STATUS: DONE
+EXECUTOR: cursor-composer
+CURSOR_VERDICT: PASS
+CLOSED_AT: 2026-08-16T12:50:00+03:00
+COMMIT: 9e4103380527d169ab20a18ab03f452a199f6bfa
+ARCHIVE: tasks/_archive/2026-08/TZ-UX-331.done.md
+NEXT: STOP for this TZ; deploy only on explicit PO command

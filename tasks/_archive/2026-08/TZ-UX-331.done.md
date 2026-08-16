@@ -1,3 +1,29 @@
+# TZ-UX-331.done — Brand home chip → Комбайн
+
+ARCHIVE_MARKER
+outcome: DONE
+closed_at: 2026-08-16T12:50:00+03:00
+closed_by: cursor-composer (TZ-UX-331 closeout)
+TZ: TZ-UX-331
+WAVE: none
+DEP: none
+Cursor_verdict: PASS
+
+verification:
+  - acceptance criteria: PASS
+  - typecheck: PASS
+  - tests: PASS (app-layout.component.spec — 8 tests)
+  - lint: N/A (focused tsc + jest; owned files)
+  - checklist: UPDATED DONE
+  - progress.md: UPDATED
+  - status synchronization: PASS
+  - deploy: NOT RUN
+
+COMMIT: 9e4103380527d169ab20a18ab03f452a199f6bfa
+CLOSEOUT_COMMIT: (this closeout)
+
+## Spec (body)
+
 # TZ-UX-331: Бренд KPPDF → явная кнопка «домой» (Комбайн)
 
 РОЛЬ АГЕНТА: Frontend UI Engineer (app shell)
@@ -112,3 +138,30 @@ known_limitation: отдельный leaf «Комбайн» в топ-меню 
 
 Финализация: root `tasks/_archive/YYYY-MM/` + checklist + lock по `GEMINI.md`.
 Archive после Cursor/PO PASS. Перед archive — `## Executor report (auto)` в checklist.
+
+## Outcome
+
+- App shell brand «KPPDF · 8.0» → visible home chip (`data-test="nav-brand-home"`, soft sunrise fill, gold marker, hover/focus).
+- `routerLink="/"`, aria/title «Комбайн заказов — главная».
+- Docs: dashboard.page.md §Навигация; page-chrome Brand home; PAGE-TZ-INDEX shell+dashboard → UX-331 DONE.
+- Gates: tsc PASS; app-layout.spec 8/8 PASS.
+- Cursor Verdict PASS. Deploy not run.
+
+## Verification
+
+- `frontend` `tsc -p tsconfig.app.json --noEmit`: PASS
+- `frontend` jest `app-layout.component.spec`: PASS 8 tests
+- deploy: NOT RUN (PO: closeout only; deploy/wipe forbidden)
+
+## Files
+
+- `frontend/src/app/layout/app-layout.component.ts`
+- `frontend/src/app/layout/app-layout.component.spec.ts`
+- `docs/pages/dashboard.page.md`
+- `docs/pages/page-chrome.md`
+- `docs/pages/PAGE-TZ-INDEX.md`
+- `docs/agent-checklists/TZ-UX-331.md`
+
+## known_limitation
+
+- Отдельный leaf «Комбайн» в топ-меню Сделок не добавляли; TOC chip остаётся внутри раздела.
