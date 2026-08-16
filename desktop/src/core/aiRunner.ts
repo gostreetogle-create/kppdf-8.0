@@ -11,7 +11,7 @@
 
 import { Command, type Child } from '@tauri-apps/plugin-shell';
 import { appDataDir, dirname, join, resourceDir } from '@tauri-apps/api/path';
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { exists, readTextFile } from '@tauri-apps/plugin-fs';
 import type { LocalModelEntry } from './model-catalog';
 import { formatBytes } from './model-catalog';
 
@@ -61,18 +61,63 @@ export async function defaultModelDir(): Promise<string> {
   return join(await appDataDir(), 'models');
 }
 
-/** Обход от resourceDir вверх в поисках пакета kppdf-desktop. */
-export async function resolveDesktopDir(): Promise<string> {
-  let dir = await resourceDir();
-  for (let i = 0; i < 10; i++) {
-    const name = await readPackageNameAt(dir);
-    if (name === DESKTOP_PACKAGE_NAME) return dir;
+/** Имя env-переменной с абсолютным путём к каталогу ai-runner (TZD-55). */
+export const AI_RUNNER_DIR_ENV = 'KPPDF_AI_RUNNER_DIR';
+
+/**
+ * Значение `KPPDF_AI_RUNNER_DIR` из Vite `import.meta.env` (dev Desktop) или
+ * `process.env` (Node-контекст, напр. тесты). Приоритет над resourceDir walk.
+ */
+export function envAiRunnerDir(): string | undefined {
+  const metaEnv = (import.meta as { env?: Record<string, unknown> }).env;
+  const fromMeta = typeof metaEnv?.[AI_RUNNER_DIR_ENV] === 'string' ? metaEnv[AI_RUNNER_DIR_ENV] : '';
+  if (fromMeta.trim()) return fromMeta.trim();
+  const proc = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process;
+  const fromProcess = proc?.env?.[AI_RUNNER_DIR_ENV];
+  if (fromProcess?.trim()) return fromProcess.trim();
+  return undefined;
+}
+
+/** `dirname`, не бросающий «path does not have a parent» на корне диска. */
+async function safeDirname(dir: string): Promise<string | null> {
+  try {
     const parent = await dirname(dir);
-    if (parent === dir) break;
+    return parent === dir ? null : parent;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Чистый обход вверх от startDir в поисках пакета kppdf-desktop.
+ * Вынесен отдельно для теста release-layout (parentOf → null = корень, не бросает).
+ */
+export async function walkUpToPackage(
+  startDir: string,
+  readName: (dir: string) => Promise<string | null>,
+  parentOf: (dir: string) => Promise<string | null>,
+): Promise<string | null> {
+  let dir = startDir;
+  for (let i = 0; i < 10; i++) {
+    const name = await readName(dir);
+    if (name === DESKTOP_PACKAGE_NAME) return dir;
+    const parent = await parentOf(dir);
+    if (!parent) break;
     dir = parent;
   }
+  return null;
+}
+
+/** Обход от resourceDir вверх в поисках пакета kppdf-desktop (dev fallback). */
+export async function resolveDesktopDir(): Promise<string> {
+  const env = envAiRunnerDir();
+  if (env) return env;
+
+  const start = await resourceDir();
+  const found = await walkUpToPackage(start, readPackageNameAt, safeDirname);
+  if (found) return found;
   // Последний заход: resourceDir — это часто …/desktop/src-tauri; parent — desktop.
-  return dirname(await resourceDir());
+  return (await safeDirname(start)) ?? start;
 }
 
 async function readPackageNameAt(dir: string): Promise<string | null> {
@@ -186,9 +231,19 @@ export class AiRunnerController {
       return;
     }
 
+    const runnerEntry = await join(desktopDir, 'src', 'ai-runner', 'index.ts');
+    if (!(await exists(runnerEntry))) {
+      this.expectedRunning = false;
+      this.setState({
+        status: 'error',
+        lastError: `AI-раннер не найден в этом билде (нет ${runnerEntry}). Задайте ${AI_RUNNER_DIR_ENV} или обновите Desktop.`,
+      });
+      return;
+    }
+
     try {
       const cli = await join(desktopDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-      const entry = await join(desktopDir, 'src', 'ai-runner', 'index.ts');
+      const entry = runnerEntry;
       const cmd = Command.create('nodejs', [cli, entry], {
         cwd: desktopDir,
         env: childEnv({
@@ -402,6 +457,9 @@ export class AiRunnerController {
 
   private describeSpawnError(raw: string): string {
     const lower = raw.toLowerCase();
+    if (lower.includes('path does not have a parent')) {
+      return 'AI-раннер не найден в установленном приложении — задайте KPPDF_AI_RUNNER_DIR или обновите Desktop.';
+    }
     if (lower.includes('not found') || lower.includes('notfound')) {
       return 'AI-раннер не запущен: не найден Node.js (нужен установленный Node для десктопа).';
     }

@@ -5,7 +5,7 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { open as openExternal } from '@tauri-apps/plugin-shell';
-  import { readFile } from '@tauri-apps/plugin-fs';
+  import { mkdir, readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, apiPost, ApiError, type ApiClientOptions, type HttpBasicAuth } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import {
@@ -191,7 +191,8 @@
       'Запустит встроенный движок llama.cpp. Если модель уже скачана — она загрузится в память.',
     stopAi: 'Остановит встроенный AI-раннер. Скачанная модель останется на диске.',
     downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный раннер.',
-    openModelFolder: 'Откроет папку с моделями в проводнике (app-data/models).',
+    openModelFolder:
+      'Откроет папку с моделями. Сюда кладётся файл .gguf (~2 ГБ): можно скачать кнопкой или положить вручную с тем же именем, что в списке.',
   } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
@@ -599,11 +600,12 @@
     }
   }
 
-  /** Открыть папку моделей в проводнике (app-data/models). */
+  /** Открыть папку моделей в проводнике (app-data/models), создав её при отсутствии. */
   async function openModelFolder() {
     try {
       const dir = aiModelDir || (await defaultModelDir());
       aiModelDir = dir;
+      await mkdir(dir, { recursive: true });
       await openExternal(dir);
     } catch {
       aiMessage = 'Не удалось открыть папку моделей — откройте её вручную из данных приложения.';
