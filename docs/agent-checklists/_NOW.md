@@ -5,22 +5,20 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T19:20:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51 DONE; TZD-52 READY FOR REVIEW (warm deploy 0.5.4)
+updated_at: 2026-08-16T19:25:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; TZD-50/51 DONE; TZD-52 DONE (warm deploy 0.5.4, Cursor PASS)
 
 ## ACTIVE
 
-- **TZD-52 READY FOR REVIEW:** bump `c856c178` + NSIS/publish + warm deploy PASS. Checklist: `docs/agent-checklists/TZD-52.md`. **Не archive** до Cursor PASS.
-- Smoke Forms на установленном 0.5.4 — ещё open (PO/агент после install).
+- **Свободен:** Desktop Excel Forms волна закрыта (TZD-50→52 DONE). Ручной Smoke Forms на установленном 0.5.4 — PO/агент после install.
 
 ## NEXT (PO paste prompt)
 
-1. Cursor PASS на TZD-52 evidence → archive + lock
-2. Ручной Smoke Form Studio на установленном 0.5.4
-3. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
-4. SALES-377 — не без PO
+1. Ручной Smoke Form Studio на установленном 0.5.4
+2. **TZ-DATA-UTF8-CLEAN** — отдельный «ок»
+3. SALES-377 — не без PO
 
-_(HARDEN 324–328 DONE; COMBINE 406–408 DONE; Excel Forms 50–51 DONE; Desktop 0.5.4 deployed pending review)_
+_(HARDEN 324–328 DONE; COMBINE 406–408 DONE; Excel Forms 50–52 DONE; Desktop 0.5.4 deployed DONE)_
 
 ## Queue hygiene (not live)
 
@@ -29,6 +27,10 @@ _(HARDEN 324–328 DONE; COMBINE 406–408 DONE; Excel Forms 50–51 DONE; Deskt
 - Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZD-52 DONE — Desktop 0.5.4 publish + warm deploy
+
+- Archive: `tasks/_archive/2026-08/TZD-52.done.md`; lock `TZD-52-desktop-054-publish-deploy.lock`; bump `c856c178` (package/tauri/Cargo == 0.5.4), ready `2c5f6435`; Cursor PASS; NSIS 2 899 027 bytes + zip served 2 879 895; warm deploy WIPE=false; prod health/ready 200. Next: ручной Smoke Forms на 0.5.4.
 
 ## [2026-08-16] — Preflight local перед TZD-52
 

@@ -1,6 +1,6 @@
 # TZD-52 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE**
 > Marker: `tasks/_active/TZD-52.md` (должен существовать, пока не archive)
 > Commit/push: по `docs/GIT-POLICY.md`
 > Spec: `tasks/TZD-52-desktop-054-publish-warm-deploy.md`
@@ -97,10 +97,10 @@
 ## Review handoff
 
 - [x] READY FOR REVIEW
-- [ ] **Не** archive до Cursor Verdict PASS
+- [x] Cursor Verdict **PASS** 2026-08-16 (bump `c856c178`; health/ready 200; LAN zip 200; public HTTPS zip 401 = AUTH-305 без device cookie — артефакт на VM подтверждён агентом). Next: archive + lock.
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active` (archive `tasks/_archive/2026-08/TZD-52.done.md`; lock `.mimocode/locks/TZD-52-desktop-054-publish-deploy.lock`)
+- [x] Status = DONE
+- closed_at: 2026-08-16T19:25:00+03:00
