@@ -11,7 +11,7 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 ## ACTIVE
 
 - **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
-- Freebuff 4–5ч: GANTT-401 closeout DONE; **410/411/412 + GANTT-402 + 413 DONE**; остался **414**.
+- Freebuff 4–5ч: **вся очередь DONE** (GANTT-401 closeout + 410–414). Ожидание PO.
 
 ## NEXT (PO paste prompt)
 
@@ -32,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-TEST-REGRESS-414 DONE — jest pack COMBINE+GANTT
+
+- Archive: `tasks/_archive/2026-08/TZ-TEST-REGRESS-414.done.md`; lock `TZ-TEST-REGRESS-414-combine-gantt-jest-pack.lock`; BE jest 62 + FE jest 122 + BE/FE tsc EXIT 0. ВОЛНА DONE. Deploy нет.
 
 ## [2026-08-16] — TZ-TEST-OPS-413 DONE — docs link smoke COMBINE/GANTT
 

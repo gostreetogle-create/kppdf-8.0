@@ -1,3 +1,11 @@
+## [2026-08-16] — TZ-TEST-REGRESS-414 DONE — jest pack COMBINE+GANTT
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** Регресс-пакет: BE jest order.service|order.controller 62 PASS; FE jest dashboard.page|orders.service|production-cockpit|gantt 122 PASS; BE + FE tsc EXIT 0.
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-REGRESS-414.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-REGRESS-414-combine-gantt-jest-pack.lock`
+**Next:** волна Freebuff 4h завершена — отчёт PO.
+
 ## [2026-08-16] — TZ-TEST-OPS-413 DONE — docs link smoke COMBINE/GANTT
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ
