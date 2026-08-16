@@ -20,8 +20,8 @@ verification:
   - status synchronization: PASS
   - deploy: NOT RUN (orchestrator deploys later)
 
-COMMIT: (this land commit)
-CLOSEOUT_COMMIT: (this land commit)
+COMMIT: bb852fbb44fd2701a89a9104cfafae6df503f96f
+CLOSEOUT_COMMIT: bb852fbb44fd2701a89a9104cfafae6df503f96f
 
 ## Spec (body)
 
