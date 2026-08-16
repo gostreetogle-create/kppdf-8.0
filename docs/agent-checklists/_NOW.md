@@ -11,7 +11,7 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 ## ACTIVE
 
 - **TZ-UX-331** READY FOR REVIEW — cursor-composer — brand chip home → Комбайн. Gates: tsc PASS, app-layout 8 tests. SHA `9e410338`. Archive после Cursor PASS. Keys: `app-layout.component.ts` / `.spec.ts` / dashboard docs.
-- **TZ-UX-342** READY FOR REVIEW — cursor-composer — KP rail → app-pi-pagination + dead-total cleanup. Gates: tsc PASS, 109 tests. Archive после Cursor PASS. Keys: proposal-product-rail, inventory/**, supply, dict categories, texts/tables.
+- **TZ-UX-342** READY FOR REVIEW — cursor-composer — KP rail → app-pi-pagination + dead-total cleanup. Gates: tsc PASS, 109 tests. SHA db689987. Archive после Cursor PASS. Keys: proposal-product-rail, inventory/**, supply, dict categories, texts/tables.
 
 ## NEXT (PO paste prompt)
 
