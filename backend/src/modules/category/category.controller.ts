@@ -13,15 +13,15 @@ export class CategoryController {
   constructor(private readonly service: CategoryService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   list(@CurrentUser() user: AuthenticatedUser, @Query('type') type?: string) { return this.service.findAll(type, user.organizationId); }
 
   @Get('tree')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   tree(@CurrentUser() user: AuthenticatedUser, @Query('type') type?: string) { return this.service.buildTree(type, user.organizationId); }
 
   @Get(':id')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.service.findById(id, user.organizationId); }
 
   @Post()

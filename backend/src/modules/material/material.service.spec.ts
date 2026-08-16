@@ -16,6 +16,7 @@ function buildService(
     create?: jest.Mock;
     findById?: jest.Mock;
     updateOne?: jest.Mock;
+    findOneAndUpdate?: jest.Mock;
     categoryFindById?: jest.Mock;
     counterNext?: jest.Mock;
   } = {},
@@ -23,9 +24,10 @@ function buildService(
   const create = opts.create ?? jest.fn();
   const findById = opts.findById ?? jest.fn();
   const updateOne = opts.updateOne ?? jest.fn();
+  const findOneAndUpdate = opts.findOneAndUpdate ?? jest.fn();
   const categoryFindById = opts.categoryFindById ?? jest.fn();
   const counterNext = opts.counterNext ?? jest.fn();
-  const model = { create, findById, updateOne } as any;
+  const model = { create, findById, updateOne, findOneAndUpdate } as any;
   const categoryModel = { findById: categoryFindById } as any;
   const counter = { next: counterNext } as any;
   const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
@@ -222,12 +224,17 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
       expect(save).not.toHaveBeenCalled();
     });
 
-    it('maps an E11000 raised by doc.save() to 409 Conflict', async () => {
-      const save = jest.fn().mockRejectedValue({ code: 11000, message: 'E11000 duplicate key' });
+    it('maps an E11000 raised by findOneAndUpdate to 409 Conflict (TZ-CATALOG-339)', async () => {
+      // update() пишет через findOneAndUpdate (TZ-CATALOG-339) — регекс-тест
+      // мокает именно его, а не doc.save() (старый путь устарел).
+      const findOneAndUpdate = jest.fn().mockReturnValue({
+        exec: jest.fn().mockRejectedValue({ code: 11000, message: 'E11000 duplicate key' }),
+      });
       const { service } = buildService({
         findById: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue(doc({ save })),
+          exec: jest.fn().mockResolvedValue(doc({})),
         }),
+        findOneAndUpdate,
       });
 
       const updateDto: UpdateMaterialDto = { sku: 'M-0001' };

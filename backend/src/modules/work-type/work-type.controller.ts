@@ -19,7 +19,7 @@ export class WorkTypeController {
   findAll(@Query('workCenterId') workCenterId?: string) { return this.service.findAll(workCenterId); }
 
   @Get(':id/where-used')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'List modules that use this work type' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
@@ -28,7 +28,7 @@ export class WorkTypeController {
   getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) { return this.catalogGraph.getWhereUsed('workType', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId }); }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   /** TZ-PRODUCTION-309: mutate requires production:write (not Roles ∧ Permissions). Admin * passes. */

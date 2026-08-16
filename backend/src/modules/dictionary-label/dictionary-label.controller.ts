@@ -12,7 +12,7 @@ export class DictionaryLabelController {
   constructor(private readonly service: DictionaryLabelService) {}
 
   @Get()
-  @Roles('user', 'admin', 'manager')
+  @Roles('user', 'admin', 'director', 'manager')
   @ApiOperation({ summary: 'Получить подписи справочников' })
   @ApiQuery({ name: 'scope', required: false, enum: ['productKind', 'materialKind'] })
   list(
@@ -23,7 +23,7 @@ export class DictionaryLabelController {
   }
 
   @Get('active')
-  @Roles('user', 'admin', 'manager')
+  @Roles('user', 'admin', 'director', 'manager')
   @ApiOperation({ summary: 'Получить активные подписи для селектов' })
   @ApiQuery({ name: 'scope', required: false, enum: ['productKind', 'materialKind'] })
   active(

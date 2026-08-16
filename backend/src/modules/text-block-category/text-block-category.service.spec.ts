@@ -94,6 +94,10 @@ class FakeModel {
 
 function matchesQuery(doc: MockDoc, query: Record<string, unknown>): boolean {
   return Object.entries(query).every(([k, v]) => {
+    if (k === '$or' && Array.isArray(v)) {
+      // resolveDefault() ищет «system-дефолт» через $or (organizationId отсутствует ИЛИ null).
+      return v.some((sub) => matchesQuery(doc, sub as Record<string, unknown>));
+    }
     if (v && typeof v === 'object' && '$exists' in v) {
       const present = doc[k] !== undefined;
       return v.$exists ? present : !present;

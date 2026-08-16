@@ -441,7 +441,7 @@ import { Reflector } from '@nestjs/core';
 describe('ColorReferenceController RBAC (TZ-PRODUCTS-301)', () => {
   const reflector = new Reflector();
 
-  it('read routes require user|admin|manager roles', () => {
+  it('read routes require user|admin|director|manager roles (TZ-OPS-314: director read-only)', () => {
     const listRoles = reflector.getAllAndOverride<string[]>(ROLES_KEY, [
       ColorReferenceController.prototype.list,
       ColorReferenceController,
@@ -450,8 +450,8 @@ describe('ColorReferenceController RBAC (TZ-PRODUCTS-301)', () => {
       ColorReferenceController.prototype.findOne,
       ColorReferenceController,
     ]);
-    expect(listRoles).toEqual(['user', 'admin', 'manager']);
-    expect(findRoles).toEqual(['user', 'admin', 'manager']);
+    expect(listRoles).toEqual(['user', 'admin', 'director', 'manager']);
+    expect(findRoles).toEqual(['user', 'admin', 'director', 'manager']);
   });
 
   it('mutating routes require admin|manager only', () => {

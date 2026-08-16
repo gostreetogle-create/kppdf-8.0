@@ -19,7 +19,7 @@ export class ProductModuleController {
   list(@Query('productId') productId?: string) { return this.service.findAll(productId); }
 
   @Get(':id/where-used')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'List catalog parents that use this module' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
@@ -28,7 +28,7 @@ export class ProductModuleController {
   getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) { return this.catalogGraph.getWhereUsed('module', id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId }); }
 
   @Get(':id/composition')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   getComposition(@Param('id') id: string) { return this.service.getComposition(id); }
 
   @Post(':id/composition')
@@ -48,7 +48,7 @@ export class ProductModuleController {
   async removeComposition(@Param('id') id: string, @Param('lineId') lineId: string) { await this.service.removeComposition(id, lineId); }
 
   @Get(':id/tree')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) { return this.catalogGraph.getTree('module', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth)); }
 
   @Get(':id/cost-preview')

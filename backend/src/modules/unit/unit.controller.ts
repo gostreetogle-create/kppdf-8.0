@@ -21,7 +21,7 @@ export class UnitController {
   constructor(private readonly service: UnitService) {}
 
   @Get()
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   list(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
@@ -38,13 +38,13 @@ export class UnitController {
 
   /** Compact active-only list for form dropdowns (no pagination). */
   @Get('active')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   listActive() {
     return this.service.findActive();
   }
 
   @Get(':key')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('key') key: string) {
     return this.service.findByKey(key);
   }

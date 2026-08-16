@@ -20,7 +20,7 @@ export class SiteController {
   constructor(private readonly service: SiteService) {}
 
   @Get()
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   list(@Query('counterpartyId') counterpartyId?: string) {
     if (!counterpartyId) return [];
     return this.service.findByCounterparty(counterpartyId);
@@ -34,7 +34,7 @@ export class SiteController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
   }

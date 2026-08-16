@@ -41,7 +41,7 @@ export class ImportTodoController {
   }
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'List import todos (filter by status)' })
   @ApiQuery({ name: 'status', required: false, enum: ['open', 'done'] })
   @ApiQuery({ name: 'page', required: false })

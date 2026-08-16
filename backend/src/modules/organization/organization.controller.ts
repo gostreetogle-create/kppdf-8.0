@@ -33,7 +33,7 @@ export class OrganizationController {
   constructor(private readonly service: OrganizationService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'List all organizations with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -56,7 +56,7 @@ export class OrganizationController {
 
   /** TZ-PARTY-301 — «наша фирма» for documents. Declared before `:id`. */
   @Get('current')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'Get the organization used as our own company' })
   @ApiResponse({ status: 200, description: 'Our organization' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -66,7 +66,7 @@ export class OrganizationController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'Get organization by ID' })
   @ApiResponse({ status: 200, description: 'Organization found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

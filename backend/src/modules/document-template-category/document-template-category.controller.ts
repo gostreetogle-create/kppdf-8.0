@@ -36,7 +36,7 @@ export class DocumentTemplateCategoryController {
   constructor(private readonly service: DocumentTemplateCategoryService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'List document-template categories' })
   @ApiQuery({ name: 'activeOnly', required: false, description: 'Only active categories' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by name' })
@@ -55,7 +55,7 @@ export class DocumentTemplateCategoryController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'Get document-template category by ID' })
   @ApiResponse({ status: 200, description: 'Category found' })
   @ApiResponse({ status: 404, description: 'Category not found' })

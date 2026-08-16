@@ -37,7 +37,7 @@ export class TextBlockCategoryController {
   constructor(private readonly service: TextBlockCategoryService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'List text-block categories' })
   @ApiQuery({ name: 'activeOnly', required: false })
   @ApiQuery({ name: 'search', required: false })
@@ -55,7 +55,7 @@ export class TextBlockCategoryController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'Get text-block category by ID' })
   @ApiResponse({ status: 200 })
   @ApiResponse({ status: 404 })

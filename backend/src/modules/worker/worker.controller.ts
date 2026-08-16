@@ -43,7 +43,7 @@ export class WorkerController {
   }
 
   @Get()
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'List workers (org-scoped, envelope)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -57,7 +57,7 @@ export class WorkerController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'Get worker by ID (org-scoped read)' })
   @ApiResponse({ status: 200 })
   @ApiResponse({ status: 403, description: 'Foreign org scope' })

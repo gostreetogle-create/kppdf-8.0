@@ -37,7 +37,7 @@ export class ColorReferenceController {
   constructor(private readonly service: ColorReferenceService) {}
 
   @Get()
-  @Roles('user', 'admin', 'manager')
+  @Roles('user', 'admin', 'director', 'manager')
   @ApiOperation({ summary: 'List color references' })
   @ApiQuery({ name: 'activeOnly', required: false, description: 'Only active colors' })
   @ApiQuery({ name: 'search', required: false, description: 'Search by name or slug' })
@@ -56,7 +56,7 @@ export class ColorReferenceController {
   }
 
   @Get(':id')
-  @Roles('user', 'admin', 'manager')
+  @Roles('user', 'admin', 'director', 'manager')
   @ApiOperation({ summary: 'Get color reference by ID' })
   @ApiResponse({ status: 200, description: 'Color found' })
   @ApiResponse({ status: 404, description: 'Color not found' })

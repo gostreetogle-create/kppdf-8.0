@@ -28,7 +28,7 @@ export class SupplyTaskController {
   constructor(private readonly service: SupplyTaskService) {}
 
   @Get()
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   list(
     @Query('orderId') orderId?: string,
     @Query('status') status?: string,
@@ -44,7 +44,7 @@ export class SupplyTaskController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('id') id: string) {
     return this.service.findById(id);
   }

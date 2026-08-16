@@ -13,7 +13,7 @@ export class MaterialController {
   constructor(private readonly service: MaterialService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   @ApiOperation({ summary: 'List all materials with pagination and filters' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
@@ -27,7 +27,7 @@ export class MaterialController {
   }
 
   @Get(':id/where-used')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'List catalog parents that use this material' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
@@ -36,7 +36,7 @@ export class MaterialController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) { return this.service.findById(id, user.organizationId); }
 
   @Post()

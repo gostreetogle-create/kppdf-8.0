@@ -24,7 +24,7 @@ export class CounterpartyController {
   constructor(private readonly service: CounterpartyService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   list(
     @Query('page') page = '1',
     @Query('limit') limit = '20',
@@ -41,7 +41,7 @@ export class CounterpartyController {
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   findOne(@Param('id') id: string, @CurrentUser() user?: AuthenticatedUser) {
     return this.service.findById(id, user);
   }

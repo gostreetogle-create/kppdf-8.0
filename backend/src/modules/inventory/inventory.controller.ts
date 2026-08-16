@@ -29,7 +29,7 @@ export class InventoryController {
   ) {}
 
   @Get()
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   async dashboard() {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -120,7 +120,7 @@ export class InventoryController {
   }
 
   @Get('low-stock')
-  @Roles('admin', 'manager', 'user')
+  @Roles('admin', 'director', 'manager', 'user')
   async lowStock() {
     // TZ-MATERIALS-308: canonical envelope { items, total } — matches the
     // frontend contract (inventory-dashboard reads .items).

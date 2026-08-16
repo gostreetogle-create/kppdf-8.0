@@ -23,7 +23,7 @@ export class OrganizationContactController {
   constructor(private readonly service: OrganizationContactService) {}
 
   @Get()
-  @Roles('admin', 'manager')
+  @Roles('admin', 'director', 'manager')
   list(@Param('orgId') orgId: string) {
     return this.service.list(orgId);
   }
