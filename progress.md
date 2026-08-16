@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-NAV-305 DONE — Проект: Комбайн first, then Очередь
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** Nav «Проект» — `design.items` Комбайн → Очередь; `entryPath` → `/design/combine`; specs + docs one-liners.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `app-layout` 2 suites / 18 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-NAV-305.done.md`
+**Lock:** `.mimocode/locks/TZ-NAV-305-project-combine-first.lock`
+**Next:** deploy by orchestrator; PHOTO/kanban write-path не трогались.
+
 ## [2026-08-16] — TZ-PHOTO-304 DONE — photo frame meta (fit/posX/posY)
 **Исполнитель:** Buffy (WIP) + cursor-composer unattended land
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

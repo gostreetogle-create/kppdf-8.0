@@ -148,13 +148,15 @@ const NAV_CATEGORIES: NavCategory[] = [
     label: 'Проектирование',
     shortLabel: 'Проект',
     icon: PenLine,
-    entryPath: '/design',
+    // TZ-NAV-305: entry + flyout first = Комбайн (не пустой stub Очереди).
+    entryPath: '/design/combine',
     items: [
-      { path: '/design', pageKey: 'design', label: 'Очередь' },
-      // TZ-NAV-303: Комбайн заказов (канбан) — зона проектирования.
+      // TZ-NAV-303/305: Комбайн заказов (канбан) — зона проектирования.
       { path: '/design/combine', pageKey: 'orders', label: 'Комбайн' },
+      { path: '/design', pageKey: 'design', label: 'Очередь' },
     ],
   },
+
   {
     id: 'supply',
     label: 'Снабжение',

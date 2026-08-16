@@ -11,9 +11,10 @@
 /design/combine  — «KPPDF — Комбайн заказов» (канбан, DashboardPage)
 ```
 
-Group Chip: `DESIGN_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `design`):
-«Очередь» (`/design`) + «Комбайн» (`/design/combine`, TZ-NAV-303).
+Group Chip / nav «Проект» (TZ-NAV-305): сначала «Комбайн» (`/design/combine`),
+потом «Очередь» (`/design`); `entryPath` → `/design/combine`.
 Канбан описан в [`design-combine.page.md`](./design-combine.page.md).
+
 
 ## UI (stub)
 

@@ -78,6 +78,25 @@ describe('matchActiveCategoryId (TZ-NAV-303)', () => {
   });
 });
 
+describe('design category order (TZ-NAV-305)', () => {
+  it('lists Комбайн before Очередь and entryPath is /design/combine', () => {
+    const source: string = require('fs').readFileSync(
+      require('path').join(__dirname, 'app-layout.component.ts'),
+      'utf8',
+    );
+    const designBlock = source.slice(
+      source.indexOf("id: 'design'"),
+      source.indexOf("id: 'supply'"),
+    );
+    expect(designBlock).toContain("entryPath: '/design/combine'");
+    const combineIdx = designBlock.indexOf("label: 'Комбайн'");
+    const queueIdx = designBlock.indexOf("label: 'Очередь'");
+    expect(combineIdx).toBeGreaterThan(-1);
+    expect(queueIdx).toBeGreaterThan(-1);
+    expect(combineIdx).toBeLessThan(queueIdx);
+  });
+});
+
 describe('matchActiveCategoryId (TZ-NAV-302)', () => {
   it('highlights clients on /people and /counterparties', () => {
     expect(matchActiveCategoryId('/people')).toBe('clients');

@@ -5,7 +5,7 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T13:57:34+03:00
+updated_at: 2026-08-16T14:15:00+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
@@ -18,6 +18,7 @@ _(empty)_
 - Photo consumers → UX-PHOTO-302/303 (after PHOTO-304).
 - **TZ-DATA-UTF8-CLEAN** PARK until PO.
 - **Warm deploy DONE** (`0081e0bf`, 2026-08-16) — health LAN+public 200.
+- **TZ-NAV-305 DONE** — Проект entry/flyout: Комбайн → Очередь; deploy by orchestrator.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -30,6 +31,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-NAV-305 DONE — Проект: Комбайн first
+
+- Archive: `tasks/_archive/2026-08/TZ-NAV-305.done.md`; lock `TZ-NAV-305-project-combine-first.lock`; entryPath `/design/combine`; flyout Комбайн → Очередь. Deploy нет.
 
 ## [2026-08-16] - WARM DEPLOY OK — unattended deploy.ps1
 
