@@ -5,18 +5,19 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T12:25:00+03:00
-hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`
+updated_at: 2026-08-16T12:30:00+03:00
+hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
+- **TZ-UX-342** CLAIMED / IN PROGRESS — cursor-composer — KP rail → app-pi-pagination + dead-total cleanup. Keys: proposal-product-rail, inventory/**, supply, dict categories, texts/tables. Deps: UX-340 landed.
 - **TZ-UX-340** READY FOR REVIEW — cursor-composer — PiPagination канон + pi-table footer; default 10; size 10/25/50. Gates: tsc PASS, 42 tests. Archive после Cursor PASS. Keys: `pi-pagination*` / `pi-table*` / `pi-pagination.constants.ts`.
 - **TZ-CATALOG-374** READY FOR REVIEW — cursor-composer — `/modules` list expandable состав (как products). Gates PASS (tsc + 24 tests). Archive после Cursor PASS. Keys: `modules.page.ts` / `modules.page.spec.ts` / `modules.page.md`.
 
 ## NEXT (PO paste prompt)
 
-- **Единая пагинация:** после Cursor PASS на 340 → TZ-UX-341 / TZ-UX-342.
-- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-340 только после Cursor/PO PASS. TZ-UX-326 DONE.
+- **Единая пагинация:** TZ-UX-341 (products/modules/materials grid) — не пересекать keys с 342; 342 in work.
+- Deploy **нет**. Archive TZ-CATALOG-374 / TZ-UX-340 / TZ-UX-342 только после Cursor/PO PASS. TZ-UX-326 DONE.
 
 _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DONE; **336 order-form Save/site/freeze DONE**; **337 composition pencil/forest DONE**)_
 
@@ -29,6 +30,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-CATALOG-374 DONE — `/modules` list expandable состав
+
+- Archive: `tasks/_archive/2026-08/TZ-CATALOG-374.done.md`; row-click expand tray; detail via name; tsc + 24 modules.page tests. Deploy нет.
 
 ## [2026-08-16] — TZ-UX-326 DONE — `/products` chrome page-tools
 
