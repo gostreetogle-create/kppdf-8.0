@@ -16,7 +16,7 @@
 **Gates:** FE tsc PASS; focused Jest 3 suites / 53 tests PASS.
 **Review:** Cursor PASS — ACTIVE set; known_limitation selected bypass for draft `?orderId=`.
 **Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-337.done.md`
-**Commit:** PENDING_STAMP
+**Commit:** `6e6b492237a9b7f23b7ae08acb99b94a0ea1c6cd`
 **Lock:** `.mimocode/locks/TZ-PRODUCTION-337-workshop-exclude-draft.lock`
 **Next:** STOP for this TZ; deploy не выполнялся.
 

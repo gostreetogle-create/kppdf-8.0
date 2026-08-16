@@ -47,6 +47,10 @@ verification:
 
 `.mimocode/locks/TZ-PRODUCTION-337-workshop-exclude-draft.lock`
 
+## Commit
+
+`6e6b492237a9b7f23b7ae08acb99b94a0ea1c6cd`
+
 ## known_limitation
 
 - Deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass. Не чинить в этом TZ.

@@ -4,5 +4,5 @@ WAVE: order-status coupling (workshop ACTIVE)
 STATUS: DONE
 CLOSED_AT: 2026-08-16T09:50:00Z
 CLOSED_BY: cursor-closeout
-COMMIT: PENDING_STAMP
+COMMIT: 6e6b492237a9b7f23b7ae08acb99b94a0ea1c6cd
 NEXT: STOP; deploy forbidden; known_limitation selected bypass for draft ?orderId=
