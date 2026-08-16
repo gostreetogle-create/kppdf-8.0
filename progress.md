@@ -1,3 +1,23 @@
+## [2026-08-16] — TZ-UX-341 DONE — catalog grid pager → pi-pagination
+**Исполнитель:** cursor-composer
+**Статус:** DONE; REVIEW not required; deploy НЕ
+**Что:** products/modules/materials grid custom pager → `app-pi-pagination`; products 15→10; `pageSizeChange` resets page 1; modules grid slice via `paginatedRows()`.
+**Gates:** FE tsc PASS; products|modules|materials page Jest 69/69 PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-341.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-341-catalog-grid-pager-unify.lock`
+**Next:** TZ-UX-342 (already READY FOR REVIEW); deploy не выполнялся.
+
+## [2026-08-16] — TZ-UX-331 DONE — Brand home chip → Комбайн
+**Исполнитель:** cursor-composer
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** бренд «KPPDF · 8.0» в шапке — видимый home-chip (`nav-brand-home`, sunrise soft + gold marker, hover/focus); `routerLink="/"` → Комбайн; aria/title «Комбайн заказов — главная»; канон dashboard/page-chrome/PAGE-TZ-INDEX.
+**Gates:** FE tsc PASS; app-layout Jest 8/8 PASS.
+**Review:** Cursor Verdict PASS (closeout-only).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-331.done.md`
+**Commit:** `9e4103380527d169ab20a18ab03f452a199f6bfa`
+**Lock:** `.mimocode/locks/TZ-UX-331-brand-home-combine.lock`
+**Next:** STOP for this TZ; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-CATALOG-374 DONE — `/modules` list expandable состав
 **Исполнитель:** cursor-composer
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

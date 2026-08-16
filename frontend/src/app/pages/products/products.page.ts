@@ -31,6 +31,8 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { createSearchState } from '../../shared/util/search';
 import { pluralize, formatPrice } from '../../shared/util/format';
 import { ColumnDef, SortDirection, TableComponent } from '../../shared/ui/pi-table.component';
+import { PaginationComponent } from '../../shared/ui/pi-pagination.component';
+import { PI_DEFAULT_PAGE_SIZE } from '../../shared/ui/pi-pagination.constants';
 import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
 import {
   Product,
@@ -57,9 +59,6 @@ import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
-
-/** Server-side pagination page size for /products endpoint. */
-const PAGE_SIZE = 15;
 
 const CHROME_OWNER = 'products-page';
 
@@ -142,6 +141,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
+    PaginationComponent,
     PiShowcaseCardComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
@@ -398,37 +398,16 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                     </a>
                   }
                 </div>
-                @if (total() > pageSize) {
-                  <div
-                    class="mt-4 flex items-center justify-end gap-2"
-                    data-test="grid-pager"
-                    role="navigation"
-                    aria-label="Страницы каталога"
-                  >
-                    <span class="text-xs text-muted-foreground tabular-nums" data-test="pager-info">
-                      {{ pageRangeLabel() }}
-                    </span>
-                    <app-pi-button
-                      variant="ghost"
-                      size="sm"
-                      [disabled]="page() <= 1"
-                      (click)="onPageChange(page() - 1)"
-                      data-test="pager-prev"
-                      >Назад</app-pi-button
-                    >
-                    <span class="text-xs tabular-nums" data-test="pager-page"
-                      >Стр. {{ page() }} из {{ totalPages() }}</span
-                    >
-                    <app-pi-button
-                      variant="ghost"
-                      size="sm"
-                      [disabled]="page() >= totalPages()"
-                      (click)="onPageChange(page() + 1)"
-                      data-test="pager-next"
-                      >Далее</app-pi-button
-                    >
-                  </div>
-                }
+                <div class="mt-4 flex justify-end" data-test="grid-pager">
+                  <app-pi-pagination
+                    [total]="total()"
+                    [pageSize]="pageSize()"
+                    [currentPage]="page()"
+                    ariaLabel="Страницы каталога"
+                    (pageChange)="onPageChange($event)"
+                    (pageSizeChange)="onPageSizeChange($event)"
+                  />
+                </div>
               }
             } @else {
               <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
@@ -440,7 +419,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 [loading]="loading()"
                 [total]="total()"
                 [page]="page()"
-                [pageSize]="pageSize"
+                [pageSize]="pageSize()"
                 [emptyMessage]="emptyMessage()"
                 [ariaLabel]="'Список продукции'"
                 [cellTemplates]="cellTemplates"
@@ -449,6 +428,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 [initialSortKey]="'name'"
                 [initialSortDir]="'asc'"
                 (pageChange)="onPageChange($event)"
+                (pageSizeChange)="onPageSizeChange($event)"
                 (sortChange)="onSortChange($event)"
                 (rowClick)="onRowClick($event)"
                 [expandedRow]="expandedTpl"
@@ -791,7 +771,8 @@ export class ProductsPage implements OnInit {
     this.chromeTools.setTools(CHROME_OWNER, items);
   }
 
-  protected readonly pageSize = PAGE_SIZE;
+  private readonly pageSizeSig = signal(PI_DEFAULT_PAGE_SIZE);
+  protected readonly pageSize = this.pageSizeSig.asReadonly();
   private readonly pageSig = signal<number>(1);
   protected readonly page = this.pageSig.asReadonly();
 
@@ -809,7 +790,7 @@ export class ProductsPage implements OnInit {
     const isActive = this.activeFilterSig();
     return {
       page: this.pageSig(),
-      limit: PAGE_SIZE,
+      limit: this.pageSizeSig(),
       ...(this.search.debouncedSearch() ? { search: this.search.debouncedSearch() } : {}),
       ...(sortKey && sortDir ? { sortBy: sortKey, sortOrder: sortDir } : {}),
       ...(status ? { status } : {}),
@@ -825,7 +806,9 @@ export class ProductsPage implements OnInit {
 
   protected readonly data = computed<Product[]>(() => this.listRes.value()?.items ?? []);
   protected readonly total = computed<number>(() => this.listRes.value()?.total ?? 0);
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / PAGE_SIZE)));
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil(this.total() / this.pageSizeSig())),
+  );
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
   protected readonly error = computed<string | null>(() => {
     const err = this.listRes.error() as
@@ -908,14 +891,6 @@ export class ProductsPage implements OnInit {
     return `${k}:${d}`;
   }
 
-  protected pageRangeLabel(): string {
-    const t = this.total();
-    if (t === 0) return '0';
-    const start = (this.page() - 1) * PAGE_SIZE + 1;
-    const end = Math.min(this.page() * PAGE_SIZE, t);
-    return `${start}–${end} из ${t}`;
-  }
-
   protected onSearchInput(event: Event): void {
     this.search.onSearchInput(event);
     this.pageSig.set(1);
@@ -958,6 +933,12 @@ export class ProductsPage implements OnInit {
 
   protected onPageChange(p: number): void {
     this.pageSig.set(Math.min(Math.max(1, p), this.totalPages()));
+  }
+
+  /** TZ-UX-341: size select → update limit and reset to page 1. */
+  protected onPageSizeChange(size: number): void {
+    this.pageSizeSig.set(size);
+    this.pageSig.set(1);
   }
 
   protected onSortChange(event: { key: string; dir: SortDirection }): void {

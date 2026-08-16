@@ -217,6 +217,68 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="materials-grid"]')).toBeFalsy();
   });
 
+  it('TZ-UX-341: grid pager is app-pi-pagination; pageSizeChange resets page to 1', async () => {
+    const fixture = TestBed.createComponent(MaterialsPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+    httpMock.expectOne(matchListGet).flush({
+      items: fakeItems,
+      total: 25,
+      page: 1,
+      limit: 10,
+    });
+    await tickMicrotask();
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement.querySelector(
+      '[data-test="grid-pager"] [data-test="pi-pagination"]',
+    ) as HTMLElement;
+    expect(nav).toBeTruthy();
+    expect(nav.querySelector('[data-test="pager-info"]')?.textContent?.trim()).toMatch(
+      /1–10 из 25/,
+    );
+
+    const comp = fixture.componentInstance as unknown as {
+      page: () => number;
+      pageSize: () => number;
+      onPageChange: (p: number) => void;
+      onPageSizeChange: (s: number) => void;
+    };
+    comp.onPageChange(2);
+    fixture.detectChanges();
+    expect(comp.page()).toBe(2);
+    TestBed.flushEffects();
+    httpMock.expectOne(matchListGet).flush({
+      items: fakeItems,
+      total: 25,
+      page: 2,
+      limit: 10,
+    });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    comp.onPageSizeChange(25);
+    fixture.detectChanges();
+    expect(comp.pageSize()).toBe(25);
+    expect(comp.page()).toBe(1);
+    await tickMicrotask();
+    const sizeReqs = httpMock.match(matchListGet);
+    expect(sizeReqs.length).toBeGreaterThanOrEqual(1);
+    const sizeReq = sizeReqs[sizeReqs.length - 1]!;
+    expect(sizeReq.request.params.get('limit')).toBe('25');
+    expect(sizeReq.request.params.get('page')).toBe('1');
+    sizeReq.flush({ items: fakeItems, total: 25, page: 1, limit: 25 });
+    await tickMicrotask();
+    fixture.detectChanges();
+  });
+
   // ─── Filters rail ───────────────────────────────────────────────────
 
   it('filters rail toggles open as overlay with backdrop', async () => {

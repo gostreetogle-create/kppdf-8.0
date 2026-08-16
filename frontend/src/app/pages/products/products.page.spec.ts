@@ -201,7 +201,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 15,
+      limit: 10,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -467,7 +467,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
         r.url === listUrl && r.method === 'GET' && r.params.get('categoryId') === 'cat-trainers',
     );
     expect(req.request.params.get('categoryId')).toBe('cat-trainers');
-    req.flush({ items: [PRODUCTS[0]], total: 1, page: 1, limit: 15 });
+    req.flush({ items: [PRODUCTS[0]], total: 1, page: 1, limit: 10 });
     await tickMicrotask();
     fixture.detectChanges();
     flushDictionaryLabels(httpMock);
@@ -547,7 +547,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
       items: PRODUCTS,
       total: PRODUCTS.length,
       page: 1,
-      limit: 15,
+      limit: 10,
     });
     await tickMicrotask();
     fixture.detectChanges();
@@ -638,7 +638,7 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
   it('grid empty state renders when no products', async () => {
     const fixture = TestBed.createComponent(ProductsPage);
     fixture.detectChanges();
-    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 15 });
+    httpMock.expectOne(matchListGet).flush({ items: [], total: 0, page: 1, limit: 10 });
     await tickMicrotask();
     fixture.detectChanges();
     flushDictionaryLabels(httpMock);
@@ -653,5 +653,70 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
 
     expect(fixture.nativeElement.querySelector('[data-test="grid-empty"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="products-grid"]')).toBeFalsy();
+  });
+
+  it('TZ-UX-341: default list limit is 10; grid pager is app-pi-pagination', async () => {
+    const fixture = TestBed.createComponent(ProductsPage);
+    fixture.detectChanges();
+    const req = httpMock.expectOne(matchListGet);
+    expect(req.request.params.get('limit')).toBe('10');
+    req.flush({ items: PRODUCTS, total: 25, page: 1, limit: 10 });
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    // List mode: pi-table footer uses the same canon.
+    expect(
+      fixture.nativeElement.querySelector('app-pi-table [data-test="pi-pagination"]'),
+    ).toBeTruthy();
+
+    const gridBtn = fixture.nativeElement.querySelector(
+      '[data-test="view-grid-button"]',
+    ) as HTMLElement;
+    gridBtn.click();
+    fixture.detectChanges();
+
+    const nav = fixture.nativeElement.querySelector(
+      '[data-test="grid-pager"] [data-test="pi-pagination"]',
+    ) as HTMLElement;
+    expect(nav).toBeTruthy();
+    expect(nav.querySelector('[data-test="pager-info"]')?.textContent?.trim()).toMatch(
+      /1–10 из 25/,
+    );
+    expect(nav.querySelector('[data-test="pager-page-size"]')).toBeTruthy();
+
+    const comp = fixture.componentInstance as unknown as {
+      page: () => number;
+      pageSize: () => number;
+      onPageChange: (p: number) => void;
+      onPageSizeChange: (s: number) => void;
+    };
+    comp.onPageChange(2);
+    fixture.detectChanges();
+    expect(comp.page()).toBe(2);
+    httpMock.expectOne(matchListGet).flush({
+      items: PRODUCTS,
+      total: 25,
+      page: 2,
+      limit: 10,
+    });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    comp.onPageSizeChange(25);
+    fixture.detectChanges();
+    expect(comp.pageSize()).toBe(25);
+    expect(comp.page()).toBe(1);
+    await tickMicrotask();
+    const sizeReqs = httpMock.match(matchListGet);
+    expect(sizeReqs.length).toBeGreaterThanOrEqual(1);
+    const sizeReq = sizeReqs[sizeReqs.length - 1]!;
+    expect(sizeReq.request.params.get('limit')).toBe('25');
+    expect(sizeReq.request.params.get('page')).toBe('1');
+    sizeReq.flush({ items: PRODUCTS, total: 25, page: 1, limit: 25 });
+    await tickMicrotask();
+    fixture.detectChanges();
   });
 });

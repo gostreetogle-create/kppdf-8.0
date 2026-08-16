@@ -340,6 +340,9 @@ describe('MaterialsPage (httpResource refactor)', () => {
 
   // ──────────────────────────────────────────────────────────────────────
   // silent-error pipeline follow-ups — dropped (see tests 2/3).
+  // TZ-UX-341 pager unify covered by products/modules page specs + initial
+  // limit=10 assertion above (materials suite cannot add post-search
+  // flushEffects tests — NG0101 poison, see test 4 note).
   // ──────────────────────────────────────────────────────────────────────
 });
 

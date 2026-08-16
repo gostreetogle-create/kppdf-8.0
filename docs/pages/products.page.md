@@ -76,7 +76,7 @@
 
 | Computed | Трансформация |
 |----------|--------------|
-| `listParams` | `{ page, limit: 15, search?, sortBy?, sortOrder? }` |
+| `listParams` | `{ page, limit: pageSize (default 10), search?, sortBy?, sortOrder? }` |
 | `data` | `listRes.value()?.items ?? []` |
 | `total` | `listRes.value()?.total ?? 0` |
 | `loading` | `listRes.isLoading()` |
@@ -240,7 +240,7 @@ media фиксирован в пропорции 16:9 с `object-fit: cover`, а
   `<a [routerLink]="['/products', id]">` с `app-pi-showcase-card size="md"`:
   - `mediaUrl` — URL первого populate-фото через общий `photoListUrl`: linked `thumb`, если он есть, иначе original;
   - `eyebrow` — вид; `title` — название; `description` — подкатегория · N мод.;
-  - `sc-actions-md` — цена + ед.; pager под сеткой при `total > pageSize`;
+  - `sc-actions-md` — цена + ед.; grid pager = `<app-pi-pagination>` (тот же канон, что footer pi-table; TZ-UX-341; default pageSize 10, `pageSizeChange` → page 1);
   - loading / empty (`grid-loading` / `grid-empty`).
 - **Таблица (2026-08-07):** Фото · Название · Ед. · Цена · Модулей
   (без SKU / Вид / Статус / Остаток).

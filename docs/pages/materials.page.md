@@ -37,7 +37,8 @@
 - **Grid**: `app-pi-showcase-card size="md"`, сетка `1/2/3` (`data-test="materials-grid"`),
   карточки-ссылки на `/materials/:id` (`showcase-cell-{{id}}`); media из `mainPhotoUrl`,
   eyebrow = kind-label (иначе артикул), description = габариты (иначе поставщик),
-  footer = `formatPrice(pricePerUnit)` + «за <ед.>» + ед.; pager (`grid-pager`)
+  footer = `formatPrice(pricePerUnit)` + «за <ед.>» + ед.; pager = `<app-pi-pagination>`
+  (`data-test="grid-pager"` wrapper; канон TZ-UX-341 / UX-340).
   при `total > pageSize`.
 - **List**: текущий `pi-table` без регресса (kind filter / фото / stock link сохранены).
 
