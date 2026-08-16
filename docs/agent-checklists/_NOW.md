@@ -5,18 +5,18 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T23:20:00+03:00
-hygiene: COMBINE-413 DONE; Combine wave idle; drain next SALES-369
+updated_at: 2026-08-16T23:32:00+03:00
+hygiene: COMBINE-415 DONE; Combine wave idle; drain next SALES-369
 
 ## ACTIVE
 
-- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412/413/414 landed
+- _(idle Combine)_ WAVE-COMBINE-PRODUCT-ROWS + 412/413/414/415 landed
 - **Drain:** SALES-369… (`PROMPT-FREEBUFF-TASKS-DRAIN`)
 
 
 ## NEXT (PO paste prompt)
 
-1. Hard-refresh `/design/combine` — DnD chips без двойника; карандаш модуля → диалог
+1. Hard-refresh `/design/combine` — № заказа и имя читаемы (light/dark)
 2. Freebuff drain / Deploy — по слову PO
 
 
@@ -26,6 +26,10 @@ hygiene: COMBINE-413 DONE; Combine wave idle; drain next SALES-369
 - Аудит: `docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-415 DONE — readable order № + text-ink
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-415.done.md`; lock `TZ-COMBINE-415-combine-readable-order-labels.lock`; FE tsc + jest dashboard.page **28/28**. Deploy нет. No pi-tech-label; mono text-ink badge; name+stage titles text-ink; placeholder opacity scoped to mini-kanban.
 
 ## [2026-08-16] — TZ-COMBINE-413 DONE — DnD no-jump + module dialog
 

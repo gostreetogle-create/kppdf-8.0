@@ -24,16 +24,16 @@ Create/delete досок нет. Write-path отгрузки = SWEEP-401 `POST /
 | К отгрузке | `to_ship` | Готово к документам |
 | Отгружены | `shipped` | Только отгрузка **целого** заказа (не PATCH lane) |
 
-Шапка: grid `1fr`×5, без horizontal scroll доски.
+Шапка: grid `1fr`×5, без horizontal scroll доски. Titles: `text-ink` (COMBINE-415).
 
 ## Ряды (TZ-COMBINE-409 + polish 410…412)
 
 - Один ряд = одно изделие (`OrderItem` + `lineId`), на всю ширину.
 - Без группового «Заказ №…»: номер только на ряду; **склейка** одного заказа (`gap-0`, `border-t-0` между рядами, `border-rule-strong` + скругление только на краях группы); межзаказный зазор `mt-3`.
-- Свёрнутый: № заказа · имя · qty · ▸ · **5 индикаторов** (сегмент active = модуль в lane / effective lane без модулей). Prefetch `GET /modules?productId=` — индикаторы корректны без expand.
+- Свёрнутый: **№ заказа** (`font-mono text-xs font-medium text-ink` + `bg-paper-2`, без `pi-tech-label`) · **имя** (`text-ink`) · qty · ▸ · **5 индикаторов** (сегмент active = модуль в lane / effective lane без модулей). Prefetch `GET /modules?productId=` — индикаторы корректны без expand.
 - **Клики:** ▸ / **имя изделия** / qty / индикаторы → expand mini-kanban; **карандаш изделия** → `editProduct`; № заказа → карточка заказа; **карандаш модуля** → `openModuleEdit` (диалог, URL остаётся `/design/combine`).
 - Expand (accordion `expandedKey`): `aria-expanded` + `aria-controls` → panel id; под рядом grid 5 ячеек; вертикальные hairline; чипы модулей (`py-2` + grip + pencil).
-- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями. Preview непрозрачный (`combine-chip-drag-preview`); placeholder `opacity: 0` (нет «двойника»); drop animating смягчён (COMBINE-413).
+- DnD CDK **только** между 5 ячейками **этого** `lineId` (`${card.key}::lane`); не между изделиями. Preview непрозрачный (`combine-chip-drag-preview`); placeholder `opacity: 0` **только** внутри `[data-testid=combine-mini-kanban]` (COMBINE-415); drop animating смягчён (COMBINE-413).
 - Без модулей каталога: чип **«целиком»** в effective lane; drag → тот же `PATCH .../lines/:lineId/lane` (не module lane).
 - Бейдж № заказа; фильтр по `orderId`; KPI-карточки сверху (Order.status) — без изменений.
 - `Order.status` на доске не колонка — **rollup** (см. COUPLING-MAP §2).

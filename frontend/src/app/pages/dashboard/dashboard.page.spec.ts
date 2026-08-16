@@ -1121,4 +1121,45 @@ describe('DashboardPage (TZ-COMBINE-404/405)', () => {
     };
     expect(page.chipDragPreviewClass).toBe(COMBINE_CHIP_DRAG_PREVIEW_CLASS);
   });
+
+  it('TZ-COMBINE-415: order № / product name / stage titles use readable text-ink (no pi-tech-label)', async () => {
+    const fixture = TestBed.createComponent(DashboardPage);
+    fixture.detectChanges();
+    TestBed.flushEffects();
+
+    await flushInitial([
+      orderOf({
+        _id: 'o1',
+        number: 'З-101',
+        items: [itemOf({ lineId: 'L1', boardLane: 'prep', productName: 'Мангал Pro' })],
+      }),
+    ]);
+    TestBed.flushEffects();
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const orderBtn = root.querySelector(
+      '[data-testid="combine-row-order-number"]',
+    ) as HTMLButtonElement;
+    expect(orderBtn).toBeTruthy();
+    expect(orderBtn.textContent?.trim()).toBe('№З-101');
+    expect(orderBtn.classList.contains('pi-tech-label')).toBe(false);
+    expect(orderBtn.classList.contains('font-mono')).toBe(true);
+    expect(orderBtn.classList.contains('text-xs')).toBe(true);
+    expect(orderBtn.classList.contains('font-medium')).toBe(true);
+    expect(orderBtn.classList.contains('text-ink')).toBe(true);
+    expect(orderBtn.classList.contains('bg-paper-2')).toBe(true);
+    expect(orderBtn.classList.contains('hover:underline')).toBe(true);
+
+    const nameBtn = root.querySelector(
+      '[data-testid="combine-row-product-name"]',
+    ) as HTMLButtonElement;
+    expect(nameBtn.classList.contains('text-ink')).toBe(true);
+    expect(nameBtn.textContent?.trim()).toBe('Мангал Pro');
+
+    const sticky = root.querySelector('[aria-label="Стадии комбайна"]');
+    expect(sticky).toBeTruthy();
+    const stageTitles = sticky!.querySelectorAll('.text-ink');
+    expect(stageTitles.length).toBeGreaterThanOrEqual(5);
+  });
 });

@@ -1,3 +1,13 @@
+## [2026-08-16] — TZ-COMBINE-415 DONE — Комбайн: читаемые № заказа + text-ink
+
+**Исполнитель:** composer-executor-415
+**Статус:** DONE; deploy НЕ
+**Что:** order № без `pi-tech-label` (`font-mono text-xs font-medium text-ink` + `bg-paper-2`); имя + sticky titles `text-ink`; CDK placeholder opacity scoped to mini-kanban.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest dashboard.page PASS (28/28).
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-415.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-415-combine-readable-order-labels.lock`
+**Next:** Freebuff drain / deploy по слову PO.
+
 ## [2026-08-16] — TZ-COMBINE-413 DONE — Комбайн: DnD no-jump + module dialog
 
 **Исполнитель:** gemini-executor-combine-413

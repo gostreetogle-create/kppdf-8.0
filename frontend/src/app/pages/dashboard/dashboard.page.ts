@@ -118,16 +118,20 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
       box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.22);
     }
 
-    .cdk-drag-placeholder {
+    /* TZ-COMBINE-415 — placeholder opacity only inside mini-kanban (not row labels) */
+    :host [data-testid='combine-mini-kanban'] .cdk-drag-placeholder {
       opacity: 0;
       min-height: 2.25rem;
     }
 
-    .cdk-drag-animating {
+    :host [data-testid='combine-mini-kanban'] .cdk-drag-animating {
       transition: transform 180ms cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
-    .cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-placeholder) {
+    :host
+      [data-testid='combine-mini-kanban']
+      .cdk-drop-list-dragging
+      .cdk-drag:not(.cdk-drag-placeholder) {
       transition: transform 180ms cubic-bezier(0.25, 0.8, 0.25, 1);
     }
   `,
@@ -210,7 +214,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
       >
         @for (col of columns; track col.id) {
           <div class="px-3 py-2.5 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
-            <div class="text-xs font-medium truncate flex items-center gap-2">
+            <div class="text-xs font-medium text-ink truncate flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-sm" [class]="laneDotClass(col.id)"></span>
               {{ col.title }}
             </div>
@@ -251,7 +255,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="pi-tech-label hover:text-ink hover:underline shrink-0 pi-focus-ring rounded-sm px-1.5 py-0.5 bg-paper-2"
+                class="font-mono text-xs font-medium text-ink hover:underline shrink-0 pi-focus-ring rounded-sm px-1.5 py-0.5 bg-paper-2"
                 data-testid="combine-row-order-number"
                 (click)="openOrder(card.order); $event.stopPropagation()"
                 title="Открыть заказ"
@@ -261,7 +265,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 
               <button
                 type="button"
-                class="text-sm font-medium text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
+                class="text-sm font-medium text-ink text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
                 data-testid="combine-row-product-name"
                 [title]="card.productName"
                 [attr.aria-expanded]="isExpanded(card)"
