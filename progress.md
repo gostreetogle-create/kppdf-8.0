@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-TEST-COMBINE-411 DONE — FE orders.service.patchLane spec
+**Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
+**Статус:** DONE; deploy НЕ
+**Что:** orders.service.spec +2: patchLane PATCH `.../lines/:lineId/lane` body `{ lane }` (ok→data) + http error → `ok:false`.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `orders.service` PASS (12).
+**Archive:** `tasks/_archive/2026-08/TZ-TEST-COMBINE-411.done.md`
+**Lock:** `.mimocode/locks/TZ-TEST-COMBINE-411-orders-service-patchlane.lock`
+**Next:** TZ-TEST-COMBINE-412 (dashboard extra cases); deploy НЕ.
+
 ## [2026-08-16] — TZ-TEST-COMBINE-410 DONE — BE lane controller spec
 **Исполнитель:** deepseek/deepseek-v4-pro (Freebuff)
 **Статус:** DONE; deploy НЕ

@@ -11,7 +11,7 @@ hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE
 ## ACTIVE
 
 - **WAVE COMBINE v1:** 401–**405 DONE** (`a3b66329`).
-- Freebuff 4–5ч: GANTT-401 closeout DONE; **410 DONE**; далее **411→414** по очереди.
+- Freebuff 4–5ч: GANTT-401 closeout DONE; **410/411 DONE**; далее **412→414**.
 
 ## NEXT (PO paste prompt)
 
@@ -32,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-TEST-COMBINE-411 DONE — FE orders.service.patchLane spec
+
+- Archive: `tasks/_archive/2026-08/TZ-TEST-COMBINE-411.done.md`; lock `TZ-TEST-COMBINE-411-orders-service-patchlane.lock`; patchLane URL/body/error 2 кейса. FE tsc + jest orders.service 12. Deploy нет.
 
 ## [2026-08-16] — TZ-TEST-COMBINE-410 DONE — BE lane controller spec
 

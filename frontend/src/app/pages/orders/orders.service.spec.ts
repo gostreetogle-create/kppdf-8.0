@@ -125,6 +125,29 @@ describe('OrdersService', () => {
     });
   });
 
+  it('patchLane() PATCHes /api/orders/:id/lines/:lineId/lane with { lane } body', () => {
+    svc.patchLane('o1', 'line-a', 'shop').subscribe((res) => {
+      if (res.ok) expect(res.data.status).toBe('in_production');
+    });
+    const req = httpMock.expectOne('http://test/api/orders/o1/lines/line-a/lane');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ lane: 'shop' });
+    req.flush({ _id: 'o1', number: 'ORD-001', status: 'in_production', items: [] });
+  });
+
+  it('patchLane() surfaces HTTP error as ok:false (SilentResult)', () => {
+    let result: unknown;
+    svc.patchLane('o1', 'line-a', 'shipped').subscribe((res) => (result = res));
+    const req = httpMock.expectOne('http://test/api/orders/o1/lines/line-a/lane');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ lane: 'shipped' });
+    req.flush(
+      { message: 'Отгружены: lane=shipped через PATCH запрещён' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    expect(result).toEqual(expect.objectContaining({ ok: false }));
+  });
+
   it('remove() DELETEs /api/orders/:id', () => {
     svc.remove('o1').subscribe((res) => {
       if (res.ok) expect(res.data).toBeUndefined();
