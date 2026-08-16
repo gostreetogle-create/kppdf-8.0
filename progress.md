@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-345 DONE — Gantt product-as-module «целиком»
+**Исполнитель:** local-executor-composer
+**Статус:** DONE; deploy НЕ
+**Что:** `resolveEstimateModules` + лейбл `«{product} · целиком»` для pseudo-module (`moduleId=productId` / `__product_whole__`); empty modules → ineligible (336) без регресса; order/worker trees 342–344 ок.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bar.model|gantt-bars` PASS (2/80); cockpit 23/23.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-345.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-345-gantt-product-as-module.lock`
+**Next:** WAVE IA DoD complete except deploy; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-343 DONE — Gantt RU labels + product/module frames
 **Исполнитель:** local-executor-composer
 **Статус:** DONE; deploy НЕ

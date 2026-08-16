@@ -3,6 +3,7 @@ import {
   ESTIMATE_OVERRIDE_HINT_RU,
   ORDER_STATUS_LABELS,
   UNASSIGNED_WORKER_LABEL,
+  WHOLE_PRODUCT_MODULE_SENTINEL,
   WORKER_SUMMARY_WORK_TYPE_ID,
   buildGanttBars,
   buildGanttTreeBars,
@@ -17,11 +18,14 @@ import {
   groupBarsByWorker,
   isHardFrozenOrderStatus,
   isModuleSummaryBar,
+  isWholeProductModuleId,
   isWorkerSummaryBar,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
   orderHasGanttEstimate,
+  resolveEstimateModules,
   resolveVisualAnchor,
+  wholeProductModuleName,
   workerGroupKeyOf,
   type GanttBar,
   type OrderEstimateInput,
@@ -811,6 +815,71 @@ describe('gantt-bar.model', () => {
     expect(orderHasGanttEstimate(eligible, new Date(2026, 7, 6))).toBe(true);
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('нет прямых модулей');
     expect(ganttSkipToastRu('ORD-NOMOD', ['Пустышка'])).toContain('Пустышка');
+  });
+
+  it('TZ-PRODUCTION-345: empty modules stay ineligible; whole-product pseudo-module = «целиком» row', () => {
+    expect(wholeProductModuleName('Стеллаж')).toBe('Стеллаж · целиком');
+    expect(wholeProductModuleName('')).toBe('целиком');
+    expect(isWholeProductModuleId('p1', 'p1')).toBe(true);
+    expect(isWholeProductModuleId(WHOLE_PRODUCT_MODULE_SENTINEL, 'p1')).toBe(true);
+    expect(isWholeProductModuleId('m1', 'p1')).toBe(false);
+    expect(
+      resolveEstimateModules({
+        orderItemIndex: 0,
+        productId: 'p1',
+        productName: 'Пустышка',
+        quantity: 1,
+        modules: [],
+      }),
+    ).toEqual([]);
+
+    const whole: OrderEstimateInput = {
+      orderId: 'o-whole',
+      orderNumber: 'ORD-WHOLE',
+      status: 'confirmed',
+      plannedDate: '2026-08-01',
+      items: [
+        {
+          orderItemIndex: 0,
+          productId: 'p-whole',
+          productName: 'Стеллаж',
+          quantity: 1,
+          modules: [
+            {
+              moduleId: 'p-whole',
+              moduleName: '',
+              sortOrder: 0,
+              workTypes: [
+                { workTypeId: 'wt1', workTypeName: 'Сварка', days: 2, sortOrder: 0 },
+                { workTypeId: 'wt2', workTypeName: 'Покраска', days: 3, sortOrder: 1 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(orderHasGanttEstimate(whole, new Date(2026, 7, 6))).toBe(true);
+    const work = buildGanttBars(whole, new Date(2026, 7, 6));
+    expect(work.every((b) => b.moduleName === 'Стеллаж · целиком')).toBe(true);
+    expect(work.every((b) => b.moduleId === 'p-whole')).toBe(true);
+
+    const productOpen = buildGanttTreeBars(
+      work,
+      new Set(['o-whole']),
+      new Set(['product:o-whole:0']),
+    );
+    expect(productOpen.map((b) => b.kind)).toEqual(['summary', 'product', 'module']);
+    expect(productOpen[2]!.moduleName).toBe('Стеллаж · целиком');
+    expect(productOpen[2]!.id).toBe('module:o-whole:0:p-whole');
+
+    const moduleOpen = buildGanttTreeBars(
+      work,
+      new Set(['o-whole']),
+      new Set(['product:o-whole:0']),
+      new Set(['module:o-whole:0:p-whole']),
+    );
+    expect(moduleOpen.some((b) => b.workTypeName === 'Сварка')).toBe(true);
+    expect(formatWorkerModuleContextLabel(work[0]!)).toBe('ORD-WHOLE · Стеллаж · целиком');
   });
 });
 

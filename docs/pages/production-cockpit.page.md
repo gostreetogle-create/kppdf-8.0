@@ -226,7 +226,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 - **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.
 - **TZ-PRODUCTION-341 known_limitation:** полный batch products/modules API — later; BE short throttle 10/s не меняли (successor только по PO); `DISABLE_THROTTLE=1` — только local/dev.
-- **TZ-PRODUCTION-342 known_limitation:** product-without-modules polish = 345.
+- **TZ-PRODUCTION-345:** изделие без модулей остаётся ineligible (336), если нет WT; pseudo-module `moduleId=productId` → одна строка модуля «Изделие · целиком» под изделием (order/worker trees 342–344).
 - **TZ-PRODUCTION-343:** RU labels/frames for product/module DONE («По заказам» ok).
 - **TZ-PRODUCTION-344:** worker lens Module+context DONE (default collapsed).
 

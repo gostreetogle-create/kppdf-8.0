@@ -299,6 +299,37 @@ describe('GanttBarsComponent', () => {
     expect(wtRow.textContent).toContain('Сварка');
   });
 
+  it('TZ-PRODUCTION-345: whole-product module row shows «целиком» label', () => {
+    const wholeModuleId = 'p1';
+    const wholeBars: GanttBar[] = [
+      {
+        ...sample,
+        id: 'o1:0:p1:p1:wt1:1',
+        moduleId: wholeModuleId,
+        moduleName: 'Стол · целиком',
+      },
+      {
+        ...samplePaint,
+        id: 'o1:0:p1:p1:wt2:2',
+        moduleId: wholeModuleId,
+        moduleName: 'Стол · целиком',
+      },
+    ];
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', wholeBars);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.componentRef.setInput('expandedProductIds', new Set([productKeyO1]));
+    fixture.detectChanges();
+    const el: HTMLElement = fixture.nativeElement;
+    const moduleKey = `module:o1:0:${wholeModuleId}`;
+    const moduleLabel = el.querySelector(`[data-test="gantt-label-${moduleKey}"]`) as HTMLElement;
+    expect(moduleLabel).toBeTruthy();
+    expect(moduleLabel.textContent).toContain('Стол · целиком');
+    expect(moduleLabel.textContent).not.toContain('Каркас');
+  });
+
   it('TZ-PRODUCTION-339: chevron ≥14px ink, expand hit ≥36px; not text-[10px]', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample, samplePaint]);

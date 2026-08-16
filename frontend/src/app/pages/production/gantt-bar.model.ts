@@ -310,6 +310,49 @@ export function ganttModuleSummaryId(
 }
 
 /**
+ * TZ-PRODUCTION-345 — sentinel when estimate input uses a synthetic whole-product module
+ * (no catalog module ids; moduleId may also equal productId).
+ */
+export const WHOLE_PRODUCT_MODULE_SENTINEL = '__product_whole__';
+
+/** True when moduleId stands for the product made as a whole (pseudo-module). */
+export function isWholeProductModuleId(moduleId: string, productId: string): boolean {
+  const id = (moduleId ?? '').trim();
+  if (!id) return true;
+  if (id === WHOLE_PRODUCT_MODULE_SENTINEL) return true;
+  if (productId && id === productId) return true;
+  if (productId && id === `${WHOLE_PRODUCT_MODULE_SENTINEL}:${productId}`) return true;
+  return false;
+}
+
+/** RU module-row label for a product manufactured without module breakdown. */
+export function wholeProductModuleName(productName: string): string {
+  const name = (productName ?? '').trim();
+  return name ? `${name} · целиком` : 'целиком';
+}
+
+/**
+ * TZ-PRODUCTION-345 — resolve module list for estimate bars.
+ * Empty modules stay empty → orderHasGanttEstimate false (336 skip intact).
+ * Whole-product pseudo-modules get a stable id + «… · целиком» label.
+ */
+export function resolveEstimateModules(item: OrderItemEstimateInput): DirectModuleRef[] {
+  if (!item.modules.length) return [];
+  return item.modules.map((mod, idx) => {
+    if (!isWholeProductModuleId(mod.moduleId, item.productId)) return mod;
+    const explicit = (mod.moduleName ?? '').trim();
+    const keepExplicit =
+      explicit.length > 0 && explicit !== 'целиком' && !explicit.endsWith(' · целиком');
+    return {
+      ...mod,
+      moduleId: (mod.moduleId ?? '').trim() || item.productId || WHOLE_PRODUCT_MODULE_SENTINEL,
+      moduleName: keepExplicit ? explicit : wholeProductModuleName(item.productName),
+      sortOrder: mod.sortOrder ?? idx,
+    };
+  });
+}
+
+/**
  * Span days inclusive (end − start + 1). Returns null when dates invalid.
  */
 export function calendarSpanDays(startDate: string, endDate: string): number | null {
@@ -454,6 +497,11 @@ export function buildProductSummaryBar(children: readonly GanttBar[]): GanttBar 
 export function buildModuleSummaryBar(children: readonly GanttBar[]): GanttBar | null {
   if (!children.length) return null;
   const first = children[0]!;
+  const moduleName =
+    (first.moduleName ?? '').trim() ||
+    (isWholeProductModuleId(first.moduleId, first.productId)
+      ? wholeProductModuleName(first.productName)
+      : first.moduleName);
   return buildSpanSummaryBar(children, {
     id: ganttModuleSummaryId(first.orderId, first.orderItemIndex, first.moduleId),
     kind: 'module',
@@ -461,9 +509,9 @@ export function buildModuleSummaryBar(children: readonly GanttBar[]): GanttBar |
     productId: first.productId,
     productName: first.productName,
     moduleId: first.moduleId,
-    moduleName: first.moduleName,
+    moduleName,
     workTypeId: '__module_summary__',
-    workTypeName: first.moduleName,
+    workTypeName: moduleName,
     quantity: first.quantity,
     quantityLabel: null,
   });
@@ -667,8 +715,14 @@ export function ganttWorkerModuleSummaryId(
 
 /** Short context label: order · product · module (truncate in UI). */
 export function formatWorkerModuleContextLabel(
-  bar: Pick<GanttBar, 'orderNumber' | 'productName' | 'moduleName'>,
+  bar: Pick<GanttBar, 'orderNumber' | 'productName' | 'moduleName' | 'moduleId' | 'productId'>,
 ): string {
+  if (isWholeProductModuleId(bar.moduleId, bar.productId)) {
+    const parts = [bar.orderNumber, wholeProductModuleName(bar.productName)]
+      .map((s) => (s ?? '').trim())
+      .filter(Boolean);
+    return parts.join(' · ') || 'целиком';
+  }
   const parts = [bar.orderNumber, bar.productName, bar.moduleName]
     .map((s) => (s ?? '').trim())
     .filter(Boolean);
@@ -807,7 +861,9 @@ export function buildGanttBars(order: OrderEstimateInput, today: Date = new Date
   for (const item of items) {
     const qty = Number.isFinite(item.quantity) && item.quantity > 0 ? item.quantity : 1;
     const quantityLabel = qty > 1 ? `×${qty}` : null;
-    const modules = sortByOrderThenIndex(item.modules, (m) => item.modules.indexOf(m));
+    // TZ-345: empty modules stay empty (skip/ineligible); whole-product ids get «целиком».
+    const resolved = resolveEstimateModules(item);
+    const modules = sortByOrderThenIndex(resolved, (m) => resolved.indexOf(m));
 
     for (const mod of modules) {
       const workTypes = sortByOrderThenIndex(mod.workTypes, (w) => mod.workTypes.indexOf(w));
