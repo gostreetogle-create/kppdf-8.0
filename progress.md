@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-PRODUCTION-344 DONE — Gantt «По рабочим» Module+context + ▸
+**Исполнитель:** local-executor-composer
+**Статус:** DONE; deploy НЕ
+**Что:** `buildWorkerTreeBars` rematerialized: expand worker → модули с лейблом `заказ · изделие · модуль`, expand module → виды работ; ▸ на worker; default collapsed; RO (нет drag/resize); order lens 342 не трогали.
+**Gates:** FE `tsc -p tsconfig.app.json --noEmit` PASS; jest `gantt-bar.model|gantt-bars|production-cockpit.page` PASS (3/100).
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-344.done.md`
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-344-gantt-workers-modules.lock`
+**Next:** TZ-PRODUCTION-343 (RU labels) / 345; deploy запрещён.
+
 ## [2026-08-16] — TZ-PRODUCTION-342 DONE — Gantt tree Order→Product→Module→WT
 **Исполнитель:** local-executor-composer
 **Статус:** DONE; deploy НЕ

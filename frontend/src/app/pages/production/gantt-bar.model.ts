@@ -655,21 +655,130 @@ export function buildWorkerSummaryBar(
   };
 }
 
+/** Expand / id key for a module row under a worker (TZ-PRODUCTION-344). */
+export function ganttWorkerModuleSummaryId(
+  workerLabel: string,
+  orderId: string,
+  orderItemIndex: number,
+  moduleId: string,
+): string {
+  return `worker-module:${workerLabel}:${orderId}:${orderItemIndex}:${moduleId}`;
+}
+
+/** Short context label: order · product · module (truncate in UI). */
+export function formatWorkerModuleContextLabel(
+  bar: Pick<GanttBar, 'orderNumber' | 'productName' | 'moduleName'>,
+): string {
+  const parts = [bar.orderNumber, bar.productName, bar.moduleName]
+    .map((s) => (s ?? '').trim())
+    .filter(Boolean);
+  return parts.join(' · ') || 'Модуль';
+}
+
 /**
- * TZ-GANTT-401 — worker-grouped tree (always expanded).
- * One summary row per worker group followed by its work bars (start, then occurrence).
+ * Group work bars by order item + module (stable first-appearance).
+ * Used under a single worker: same physical module across WT leaves.
  */
-export function buildWorkerTreeBars(workBars: readonly GanttBar[]): GanttBar[] {
+export function groupBarsByOrderProductModule(bars: readonly GanttBar[]): Array<{
+  orderId: string;
+  orderItemIndex: number;
+  moduleId: string;
+  children: GanttBar[];
+}> {
+  const map = new Map<string, GanttBar[]>();
+  const order: string[] = [];
+  for (const bar of bars) {
+    if (isSummaryBar(bar)) continue;
+    const key = `${bar.orderId}:${bar.orderItemIndex}:${bar.moduleId}`;
+    const list = map.get(key);
+    if (!list) {
+      map.set(key, [bar]);
+      order.push(key);
+    } else {
+      list.push(bar);
+    }
+  }
+  return order.map((key) => {
+    const children = map.get(key)!;
+    const first = children[0]!;
+    return {
+      orderId: first.orderId,
+      orderItemIndex: first.orderItemIndex,
+      moduleId: first.moduleId,
+      children,
+    };
+  });
+}
+
+/** Module summary under a worker: span + context label in moduleName. */
+export function buildWorkerModuleSummaryBar(
+  workerLabel: string,
+  children: readonly GanttBar[],
+): GanttBar | null {
+  if (!children.length) return null;
+  const first = children[0]!;
+  const label = formatWorkerModuleContextLabel(first);
+  const bar = buildSpanSummaryBar(children, {
+    id: ganttWorkerModuleSummaryId(
+      workerLabel,
+      first.orderId,
+      first.orderItemIndex,
+      first.moduleId,
+    ),
+    kind: 'module',
+    orderItemIndex: first.orderItemIndex,
+    productId: first.productId,
+    productName: first.productName,
+    moduleId: first.moduleId,
+    moduleName: label,
+    workTypeId: '__worker_module_summary__',
+    workTypeName: label,
+    quantity: first.quantity,
+    quantityLabel: null,
+  });
+  if (!bar) return null;
+  return { ...bar, workerLabel };
+}
+
+/**
+ * TZ-PRODUCTION-344 — Worker → Module(+order·product·module) → WorkType.
+ * Default collapsed (empty expand sets). Worker mode stays read-only in UI.
+ */
+export function buildWorkerTreeBars(
+  workBars: readonly GanttBar[],
+  expandedWorkerIds: ReadonlySet<string> = new Set(),
+  expandedWorkerModuleIds: ReadonlySet<string> = new Set(),
+): GanttBar[] {
   const out: GanttBar[] = [];
   for (const group of groupBarsByWorker(workBars)) {
     const summary = buildWorkerSummaryBar(group.label, group.children);
-    if (summary) out.push(summary);
-    const kids = [...group.children].sort((a, b) => {
-      const s = a.startDate.localeCompare(b.startDate);
-      if (s !== 0) return s;
-      return a.occurrence - b.occurrence;
-    });
-    for (const kid of kids) out.push({ ...kid, kind: kid.kind ?? 'work' });
+    if (!summary) continue;
+    out.push(summary);
+    if (!expandedWorkerIds.has(group.label)) continue;
+
+    const moduleGroups = groupBarsByOrderProductModule(group.children);
+    const ranked = moduleGroups
+      .map((mg) => ({
+        mg,
+        moduleSummary: buildWorkerModuleSummaryBar(group.label, mg.children),
+      }))
+      .filter(
+        (row): row is { mg: (typeof moduleGroups)[number]; moduleSummary: GanttBar } =>
+          row.moduleSummary != null,
+      )
+      .sort((a, b) => {
+        const byStart = a.moduleSummary.startDate.localeCompare(b.moduleSummary.startDate);
+        if (byStart !== 0) return byStart;
+        return a.moduleSummary.moduleName.localeCompare(b.moduleSummary.moduleName, 'ru');
+      });
+
+    for (const { mg, moduleSummary } of ranked) {
+      out.push(moduleSummary);
+      if (!expandedWorkerModuleIds.has(moduleSummary.id)) continue;
+      for (const kid of sortWorkKids(mg.children)) {
+        out.push({ ...kid, kind: kid.kind ?? 'work' });
+      }
+    }
   }
   return out;
 }

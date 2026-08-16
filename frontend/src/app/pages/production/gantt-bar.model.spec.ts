@@ -10,10 +10,13 @@ import {
   buildWorkerTreeBars,
   calendarSpanDays,
   filterOrdersForRail,
+  formatWorkerModuleContextLabel,
   ganttSkipProductNames,
   ganttSkipToastRu,
+  ganttWorkerModuleSummaryId,
   groupBarsByWorker,
   isHardFrozenOrderStatus,
+  isModuleSummaryBar,
   isWorkerSummaryBar,
   NO_COUNTERPARTY_FILTER,
   normalizeWorkTypeDays,
@@ -874,20 +877,23 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
   });
 
   it('builds a worker summary spanning min start … max end', () => {
-    const summary = buildWorkerTreeBars([
-      workBar({
-        id: 'a',
-        workerLabel: 'Иванов Иван',
-        startDate: '2026-08-01',
-        endDate: '2026-08-02',
-      }),
-      workBar({
-        id: 'b',
-        workerLabel: 'Иванов Иван',
-        startDate: '2026-08-03',
-        endDate: '2026-08-05',
-      }),
-    ])[0]!;
+    const summary = buildWorkerTreeBars(
+      [
+        workBar({
+          id: 'a',
+          workerLabel: 'Иванов Иван',
+          startDate: '2026-08-01',
+          endDate: '2026-08-02',
+        }),
+        workBar({
+          id: 'b',
+          workerLabel: 'Иванов Иван',
+          startDate: '2026-08-03',
+          endDate: '2026-08-05',
+        }),
+      ],
+      new Set(['Иванов Иван']),
+    )[0]!;
     expect(summary.kind).toBe('summary');
     expect(summary.orderNumber).toBe('Иванов Иван');
     expect(summary.workTypeId).toBe(WORKER_SUMMARY_WORK_TYPE_ID);
@@ -897,7 +903,7 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
     expect(summary.noTerm).toBe(false);
   });
 
-  it('worker tree is always expanded: summary then children sorted by start', () => {
+  it('TZ-PRODUCTION-344: worker tree defaults collapsed (summaries only)', () => {
     const tree = buildWorkerTreeBars([
       workBar({
         id: 'b',
@@ -917,11 +923,64 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
     ]);
     expect(tree.map((b) => b.id)).toEqual([
       'worker-summary:Иванов Иван',
-      'a',
-      'b',
       `worker-summary:${UNASSIGNED_WORKER_LABEL}`,
-      'u',
     ]);
+  });
+
+  it('TZ-PRODUCTION-344: expand worker → module context rows (not raw WT)', () => {
+    const a = workBar({
+      id: 'a',
+      workerLabel: 'Иванов Иван',
+      workTypeName: 'Сварка',
+      startDate: '2026-08-01',
+      endDate: '2026-08-02',
+    });
+    const b = workBar({
+      id: 'b',
+      workerLabel: 'Иванов Иван',
+      workTypeId: 'wt2',
+      workTypeName: 'Покраска',
+      startDate: '2026-08-03',
+      endDate: '2026-08-05',
+      occurrence: 2,
+    });
+    const tree = buildWorkerTreeBars([a, b], new Set(['Иванов Иван']));
+    expect(tree.map((b) => b.id)).toEqual([
+      'worker-summary:Иванов Иван',
+      ganttWorkerModuleSummaryId('Иванов Иван', 'o1', 0, 'm1'),
+    ]);
+    const mod = tree[1]!;
+    expect(isModuleSummaryBar(mod)).toBe(true);
+    expect(mod.moduleName).toBe('ORD-1 · Стол · Каркас');
+    expect(formatWorkerModuleContextLabel(a)).toBe('ORD-1 · Стол · Каркас');
+    expect(tree.some((b) => b.workTypeName === 'Сварка')).toBe(false);
+  });
+
+  it('TZ-PRODUCTION-344: expand worker-module → work types sorted by start', () => {
+    const moduleId = ganttWorkerModuleSummaryId('Иванов Иван', 'o1', 0, 'm1');
+    const tree = buildWorkerTreeBars(
+      [
+        workBar({
+          id: 'b',
+          workerLabel: 'Иванов Иван',
+          workTypeName: 'Покраска',
+          startDate: '2026-08-03',
+          endDate: '2026-08-05',
+          occurrence: 2,
+        }),
+        workBar({
+          id: 'a',
+          workerLabel: 'Иванов Иван',
+          workTypeName: 'Сварка',
+          startDate: '2026-08-01',
+          endDate: '2026-08-02',
+          occurrence: 1,
+        }),
+      ],
+      new Set(['Иванов Иван']),
+      new Set([moduleId]),
+    );
+    expect(tree.map((b) => b.id)).toEqual(['worker-summary:Иванов Иван', moduleId, 'a', 'b']);
     expect(tree.every((b) => b.kind != null)).toBe(true);
   });
 
@@ -933,7 +992,6 @@ describe('gantt-by-workers (TZ-GANTT-401)', () => {
       'Иванов Иван',
       'Иванов Иван, Петров Пётр',
     ]);
-    // One summary row per group; the multi-person bar stays together.
     const tree = buildWorkerTreeBars([multi, solo]);
     expect(tree.filter((b) => b.kind === 'summary')).toHaveLength(2);
   });

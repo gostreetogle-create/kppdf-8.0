@@ -5,29 +5,33 @@
 >
 > ��������� ������������ ������ in-place. ����� �����: 120 �����.
 
-updated_at: 2026-08-16T21:10:43+03:00
-hygiene: TZD-50�55 DONE; Gantt 338�341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (342 DONE; 343+) READY
+updated_at: 2026-08-16T21:15:49+03:00
+hygiene: TZD-50-55 DONE; Gantt 338-341 DONE; **WAVE-GANTT-IA-PRODUCT-MODULE** (342+344 DONE; 343/345 READY)
 
 ## ACTIVE
 
-- **WAVE-GANTT-IA-PRODUCT-MODULE:** **TZ-PRODUCTION-342 DONE** — дерево Заказ→Изделие→Модуль→WT. Next: **343** (RU labels) / **344** (worker IA).
+- **WAVE-GANTT-IA-PRODUCT-MODULE:** **342 DONE** + **344 DONE** (Worker→Module→WT). Next: **343** (RU labels) / **345** (no-modules product).
 - _(idle Desktop)_ TZD-54/55 DONE; TZD-56 backlog; deploy DEFERRED.
 
 
 ## NEXT (PO paste prompt)
 
-1. Executor: **TZ-PRODUCTION-343** — labels/frames polish (after 342)
-2. Deploy Desktop **0.5.5** — только «кати» + VPN off
-3. **TZD-56** / **TZ-DATA-UTF8-CLEAN** — по слову PO
+1. Executor: **TZ-PRODUCTION-343** — labels/frames polish
+2. **TZ-PRODUCTION-345** — product without modules
+3. Deploy Desktop **0.5.5** — только «кати» + VPN off
 
 
 ## Queue hygiene (not live)
 
 - **TZ-AUTH-307** > `tasks/_park/`
-- Backlog: SALES-377 � �� ����� ��� PO.
-- Chrome page-tools / Gantt polish � parked
+- Backlog: SALES-377 — не брать без PO.
+- Chrome page-tools / Gantt polish — parked
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-PRODUCTION-344 DONE — Gantt workers Module+context + expand
+
+- Archive: `tasks/_archive/2026-08/TZ-PRODUCTION-344.done.md`; lock `TZ-PRODUCTION-344-gantt-workers-modules.lock`; FE tsc + jest model|bars|cockpit **100/100**. Deploy нет. Tree: Worker→Module(context)→WT; default collapsed; RO.
 
 ## [2026-08-16] — TZ-PRODUCTION-342 DONE — Gantt tree Order→Product→Module→WT
 

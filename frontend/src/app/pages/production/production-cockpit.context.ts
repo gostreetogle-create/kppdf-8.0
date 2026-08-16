@@ -54,6 +54,14 @@ export class ProductionCockpitContext {
   readonly expandedModuleIds = signal<ReadonlySet<string>>(new Set());
 
   /**
+   * TZ-PRODUCTION-344 — worker lens expand keys
+   * (worker label / `worker-module:{label}:{orderId}:{item}:{moduleId}`).
+   * Default collapsed, same as orders.
+   */
+  readonly expandedWorkerIds = signal<ReadonlySet<string>>(new Set());
+  readonly expandedWorkerModuleIds = signal<ReadonlySet<string>>(new Set());
+
+  /**
    * TZ-PRODUCTION-321 — one open work-type detail bar id (session; not in URL).
    */
   readonly expandedWorkBarId = signal<string | null>(null);
@@ -87,6 +95,14 @@ export class ProductionCockpitContext {
 
   isModuleExpanded(moduleId: string): boolean {
     return this.expandedModuleIds().has(moduleId);
+  }
+
+  isWorkerExpanded(workerLabel: string): boolean {
+    return this.expandedWorkerIds().has(workerLabel);
+  }
+
+  isWorkerModuleExpanded(moduleSummaryId: string): boolean {
+    return this.expandedWorkerModuleIds().has(moduleSummaryId);
   }
 
   toggleOrderExpanded(orderId: string): void {
@@ -146,6 +162,33 @@ export class ProductionCockpitContext {
     });
   }
 
+  toggleWorkerExpanded(workerLabel: string): void {
+    this.expandedWorkerIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(workerLabel)) {
+        next.delete(workerLabel);
+        this.pruneWorkerModulesUnder(workerLabel);
+        this.clearWorkDetailIfUnderWorkerModules(workerLabel);
+      } else {
+        next.add(workerLabel);
+      }
+      return next;
+    });
+  }
+
+  toggleWorkerModuleExpanded(moduleSummaryId: string): void {
+    this.expandedWorkerModuleIds.update((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleSummaryId)) {
+        next.delete(moduleSummaryId);
+        this.clearWorkDetailIfUnderWorkerModuleId(moduleSummaryId);
+      } else {
+        next.add(moduleSummaryId);
+      }
+      return next;
+    });
+  }
+
   toggleWorkDetail(barId: string): void {
     this.expandedWorkBarId.update((cur) => (cur === barId ? null : barId));
   }
@@ -177,6 +220,8 @@ export class ProductionCockpitContext {
       this.expandedOrderIds().size === 0 &&
       this.expandedProductIds().size === 0 &&
       this.expandedModuleIds().size === 0 &&
+      this.expandedWorkerIds().size === 0 &&
+      this.expandedWorkerModuleIds().size === 0 &&
       this.expandedWorkBarId() == null
     ) {
       return;
@@ -184,6 +229,8 @@ export class ProductionCockpitContext {
     this.expandedOrderIds.set(new Set());
     this.expandedProductIds.set(new Set());
     this.expandedModuleIds.set(new Set());
+    this.expandedWorkerIds.set(new Set());
+    this.expandedWorkerModuleIds.set(new Set());
     this.expandedWorkBarId.set(null);
   }
 
@@ -214,6 +261,36 @@ export class ProductionCockpitContext {
       }
       return next;
     });
+  }
+
+  private pruneWorkerModulesUnder(workerLabel: string): void {
+    const prefix = `worker-module:${workerLabel}:`;
+    this.expandedWorkerModuleIds.update((prev) => {
+      const next = new Set(prev);
+      for (const id of prev) {
+        if (id.startsWith(prefix)) next.delete(id);
+      }
+      return next;
+    });
+  }
+
+  private clearWorkDetailIfUnderWorkerModules(_workerLabel: string): void {
+    if (this.expandedWorkBarId() != null) this.expandedWorkBarId.set(null);
+  }
+
+  private clearWorkDetailIfUnderWorkerModuleId(moduleSummaryId: string): void {
+    const workId = this.expandedWorkBarId();
+    if (!workId) return;
+    // worker-module:{label}:{orderId}:{item}:{moduleId}
+    const parts = moduleSummaryId.split(':');
+    if (parts.length < 5) return;
+    const orderId = parts[2]!;
+    const item = parts[3]!;
+    const moduleId = parts.slice(4).join(':');
+    const prefix = `${orderId}:${item}:`;
+    if (workId.startsWith(prefix) && workId.includes(`:${moduleId}:`)) {
+      this.expandedWorkBarId.set(null);
+    }
   }
 
   setSearch(value: string): void {

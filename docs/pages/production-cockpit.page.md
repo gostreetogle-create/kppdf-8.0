@@ -90,7 +90,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 - Единый `filterOrdersForRail` для rail и multi-order bars; поиск пересчитывает Гант.
 - На полосах: номер заказа, изделие, status pip, легенда WorkType, 7 hue buckets.
 - Chrome tools: Обновить / Сегодня / Масштаб; внутри «Масштаб»: **Группировка** (По заказам | По рабочим), День / Месяц / **Вместить сроки**.
-- **TZ-GANTT-401:** «По рабочим» — read-only вид Ганта: строки группируются по `workerLabel` (People×WorkType уже на барах), без назначения → группа «Не назначен»; worker-группа = сводная строка (span min…max детей) + всегда развёрнутые дочерние work-бары; в этом режиме нет resize-handle и body-drag (нельзя PATCH). ACTIVE filter и `buildGanttBars`/facade не изменены. Default = «По заказам» (прежний tree по заказу).
+- **TZ-GANTT-401:** «По рабочим» — read-only вид Ганта: строки группируются по `workerLabel` (People×WorkType уже на барах), без назначения → группа «Не назначен»; **TZ-PRODUCTION-344:** Worker ▸ (default collapsed) → модули с контекстом `заказ · изделие · модуль` → WT после ▸ модуля; нет resize-handle и body-drag (нельзя PATCH). ACTIVE filter и `buildGanttBars`/facade не изменены. Default = «По заказам» (прежний tree по заказу).
 - Месяц вычисляет `px/day = max(12, floor(ширина timeline / число дней))`; тики = RU месяцы (`август`, не `н.32`). День: 36px/day, тик = `DD.MM` + RU weekday (ПН…ВС, UTC); шапка шкалы и колонка «Заказ» — `h-10`.
 - **Вместить сроки** берёт padded min…max текущих полос, включает Месяц и прокручивает к началу диапазона.
 - **Сегодня** добавляет today в диапазон при необходимости и **всегда** центрирует маркер (chrome title «Прокрутить к сегодня»; не silent no-op).
@@ -139,7 +139,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-312 / 314:** тело **сводной** полосы → `PATCH plannedDate` (optimistic, 333).
 - **TZ-PRODUCTION-316:** тело **состава** → `PATCH …/estimate-start` (offset от visualAnchor; overlap OK); summary span обновляется локально.
 - **TZ-PRODUCTION-314:** default = одна сводная полоса на заказ; ▸ expand → **изделия** (не сразу WT); `ctx.expandedOrderIds`.
-- **TZ-PRODUCTION-342:** дерево **Заказ → Изделие → Модуль → Вид работ**; expand keys `expandedProductIds` / `expandedModuleIds` (`product:{orderId}:{item}` / `module:{orderId}:{item}:{moduleId}`); WT + cascade/drag только после ▸ модуля; product/module summary = derived span (не resize). Worker lens IA → 344.
+- **TZ-PRODUCTION-342:** дерево **Заказ → Изделие → Модуль → Вид работ**; expand keys `expandedProductIds` / `expandedModuleIds` (`product:{orderId}:{item}` / `module:{orderId}:{item}:{moduleId}`); WT + cascade/drag только после ▸ модуля; product/module summary = derived span (не resize).
+- **TZ-PRODUCTION-344:** «По рабочим» — Worker → Module(+контекст) → WT; `expandedWorkerIds` / `expandedWorkerModuleIds`; default collapsed; read-only.
 - **TZ-PRODUCTION-317:** select/deep-link/reload **не** фильтруют Gantt до одного заказа; `applyFilteredActive()` без auto-expand; остальные сводки остаются.
 - **TZ-PRODUCTION-336:** на Гант кладутся только заказы с ≥1 work-bar (прямой модуль + вид работ). Заказы без модулей остаются в rail с маркером «нет плана»; жёлтая шапка «нет прямых модулей» не показывается. При выборе / `?orderId=` такого заказа — RU toast (и hint для deep-link); диаграмма не заполняется пустыми полосками. Deep product→product BOM — known_limitation.
 - **TZ-PRODUCTION-318→320:** the historical full-width Карточка sheet contract is superseded; ▸/▾ is only Gantt composition expand/collapse and the order label only toggles the summary meta strip. Child labels open inline work-detail; no bottom card or chrome `Карточка` action exists.
@@ -192,6 +193,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | **TZ-PRODUCTION-338** | DONE: Gantt hydrate = parallel product/module prefetch + non-blocking rail thumbs (bars first); estimate math unchanged |
 | **TZ-PRODUCTION-341** | DONE: hydrate `PREFETCH_CONCURRENCY` 8→3 + 429/503 retry (backoff 300/800/1500); no 404 retry; BE throttle untouched |
 | **TZ-PRODUCTION-342** | DONE: Gantt tree Order→Product→Module→WT; expand product/module keys; WT leaf + cascade/drag after module ▸; worker IA = 344 |
+| **TZ-PRODUCTION-344** | DONE: Worker → Module(order·product·module) → WT; ▸ on worker; default collapsed; RO |
 
 | **TZ-PRODUCTION-STUDIO-A** | DONE: frozen studio chrome contract (docs-only) |
 | **TZ-PRODUCTION-STUDIO-B** | DONE: PiGroupWorkspace wrap + local shell state |
@@ -223,7 +225,8 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 - **TZ-PRODUCTION-337 known_limitation:** deep-link `?orderId=` на draft-заказ по-прежнему показывает его через selected bypass (`filterOrdersForRail`), хотя из «Все активные» draft исключён. Не чинить без отдельного TZ.
 - **TZ-PRODUCTION-338 known_limitation:** `destroy` → `clearCaches()` — повторный вход на `/production` снова платит cold hydrate; session cache / BE batch — successor.
 - **TZ-PRODUCTION-341 known_limitation:** полный batch products/modules API — later; BE short throttle 10/s не меняли (successor только по PO); `DISABLE_THROTTLE=1` — только local/dev.
-- **TZ-PRODUCTION-342 known_limitation:** worker lens IA = 344; product-without-modules polish = 345; RU toggle wording = 343.
+- **TZ-PRODUCTION-342 known_limitation:** product-without-modules polish = 345; RU toggle wording = 343.
+- **TZ-PRODUCTION-344:** worker lens Module+context DONE (default collapsed).
 
 ### Final interaction contract (TZ-PRODUCTION-328)
 

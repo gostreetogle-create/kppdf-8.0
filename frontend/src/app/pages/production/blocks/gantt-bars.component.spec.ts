@@ -12,6 +12,7 @@ import {
   snapMoveDeltaDays,
 } from './gantt-bars.component';
 import type { GanttBar } from '../gantt-bar.model';
+import { UNASSIGNED_WORKER_LABEL } from '../gantt-bar.model';
 
 describe('GanttBarsComponent', () => {
   const sample: GanttBar = {
@@ -1093,7 +1094,7 @@ describe('GanttBarsComponent', () => {
     expect(getComputedStyle(detail).height).toBe(getComputedStyle(detailTl).height);
   });
 
-  it('TZ-GANTT-401: worker view groups rows by workerLabel and is always expanded', () => {
+  it('TZ-PRODUCTION-344: worker view shows ▸ and collapses to worker summaries by default', () => {
     const assigned: GanttBar = { ...sample, workerLabel: 'Иванов Иван' };
     const unassigned: GanttBar = { ...samplePaint, workerLabel: '—' };
     const fixture = TestBed.createComponent(GanttBarsComponent);
@@ -1104,18 +1105,39 @@ describe('GanttBarsComponent', () => {
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
 
-    // two worker groups, both with a summary + work children
     expect(el.querySelectorAll('[data-test="gantt-bar-summary"]').length).toBe(2);
-    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(2);
+    expect(el.querySelectorAll('[data-test="gantt-bar"]').length).toBe(0);
     expect(el.textContent).toContain('Иванов Иван');
     expect(el.textContent).toContain('Не назначен');
-    // child labels are visible without any expandedOrderIds
+    expect(el.querySelector('[data-test="gantt-expand-worker:Иванов Иван"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-expand-worker:Не назначен"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeNull();
+    expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain('Рабочий');
+  });
+
+  it('TZ-PRODUCTION-344: expand worker → module context; expand module → WT', () => {
+    const assigned: GanttBar = { ...sample, workerLabel: 'Иванов Иван' };
+    const paint: GanttBar = { ...samplePaint, workerLabel: 'Иванов Иван' };
+    const moduleId = `worker-module:Иванов Иван:${assigned.orderId}:${assigned.orderItemIndex}:${assigned.moduleId}`;
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [assigned, paint]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('expandedWorkerIds', new Set(['Иванов Иван']));
+    fixture.detectChanges();
+    let el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('ORD-1 · Стол · Каркас');
+    expect(el.querySelector(`[data-test="gantt-label-${moduleId}"]`)).toBeTruthy();
+    expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeNull();
+
+    fixture.componentRef.setInput('expandedWorkerModuleIds', new Set([moduleId]));
+    fixture.detectChanges();
+    el = fixture.nativeElement;
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt1:1"]')).toBeTruthy();
     expect(el.querySelector('[data-test="gantt-label-o1:0:p1:m1:wt2:2"]')).toBeTruthy();
-    // no order expand chevrons in worker view
-    expect(el.querySelector('[data-test="gantt-expand-o1"]')).toBeNull();
     expect(el.querySelector('[data-test="gantt-label-header"]')?.textContent).toContain(
-      'Рабочий · работа',
+      'Рабочий · модуль',
     );
   });
 
@@ -1127,13 +1149,20 @@ describe('GanttBarsComponent', () => {
     fixture.componentRef.setInput('canEdit', true);
     fixture.componentRef.setInput('canEditOrder', true);
     fixture.componentRef.setInput('groupByWorkers', true);
+    fixture.componentRef.setInput('expandedWorkerIds', new Set([UNASSIGNED_WORKER_LABEL]));
+    fixture.componentRef.setInput(
+      'expandedWorkerModuleIds',
+      new Set([
+        `worker-module:${UNASSIGNED_WORKER_LABEL}:${sample.orderId}:${sample.orderItemIndex}:${sample.moduleId}`,
+      ]),
+    );
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('[data-test^="gantt-resize-handle-"]')).toBeNull();
 
     const rows = fixture.componentInstance['rows']() as Array<{ bar: GanttBar }>;
     const summary = rows.find((r) => r.bar.kind === 'summary')!.bar;
-    const child = rows.find((r) => r.bar.kind !== 'summary')!.bar;
+    const child = rows.find((r) => r.bar.kind !== 'summary' && r.bar.kind !== 'module')!.bar;
     expect(fixture.componentInstance.canResizeBar(child)).toBe(false);
     expect(fixture.componentInstance.canMoveBar(summary)).toBe(false);
     expect(fixture.componentInstance.canMoveBar(child)).toBe(false);
@@ -1157,12 +1186,15 @@ describe('GanttBarsComponent', () => {
   });
 
   it('TZ-GANTT-402: worker view work-detail is read-only (days disabled, no catalog button)', () => {
+    const moduleId = `worker-module:Иванов Иван:${sample.orderId}:${sample.orderItemIndex}:${sample.moduleId}`;
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [{ ...sample, workerLabel: 'Иванов Иван' }]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
     fixture.componentRef.setInput('rangeEnd', '2026-08-10');
     fixture.componentRef.setInput('groupByWorkers', true);
     fixture.componentRef.setInput('canEdit', true);
+    fixture.componentRef.setInput('expandedWorkerIds', new Set(['Иванов Иван']));
+    fixture.componentRef.setInput('expandedWorkerModuleIds', new Set([moduleId]));
     fixture.componentRef.setInput('expandedWorkBarId', sample.id);
     fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement;

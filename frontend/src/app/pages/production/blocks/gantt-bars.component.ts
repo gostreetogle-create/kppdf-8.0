@@ -297,7 +297,13 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
             >
               <span class="gantt-expand-col shrink-0" aria-hidden="true"></span>
               <span class="flex-1 min-w-0 px-2 pb-1 truncate border-l hairline">{{
-                groupByWorkers() ? 'Рабочий · работа' : anyExpanded() ? 'Заказ · работа' : 'Заказ'
+                groupByWorkers()
+                  ? anyWorkerExpanded()
+                    ? 'Рабочий · модуль'
+                    : 'Рабочий'
+                  : anyExpanded()
+                    ? 'Заказ · работа'
+                    : 'Заказ'
               }}</span>
             </div>
             @for (row of rows(); track row.bar.id) {
@@ -311,7 +317,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   isHighlightedOrder(row.bar.orderId) && !isWorkDetailOpen(row.bar.id)
                 "
                 [class.gantt-order-expanded]="
-                  isTreeExpandedOrder(row.bar.orderId) &&
+                  isTreeExpandedGroup(row.bar) &&
                   !isHighlightedOrder(row.bar.orderId) &&
                   !isWorkDetailOpen(row.bar.id)
                 "
@@ -319,36 +325,26 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-order-group-end]="row.orderGroupEnd"
                 [attr.data-test]="'gantt-label-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
-                [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
                 [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
                 [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
               >
                 @if (row.isSummary) {
-                  @if (!groupByWorkers()) {
-                    <button
-                      type="button"
-                      class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                             text-ink/80 hover:text-ink hover:bg-paper-2/60"
-                      [attr.data-test]="'gantt-expand-' + expandKey(row.bar)"
-                      [attr.aria-expanded]="row.expanded"
-                      [attr.title]="expandTitle(treeLabel(row.bar), row.expanded)"
-                      [attr.aria-label]="expandTitle(treeLabel(row.bar), row.expanded)"
-                      (click)="onToggleExpand($event, expandKey(row.bar))"
-                    >
-                      <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
-                        row.expanded ? '▾' : '▸'
-                      }}</span>
-                    </button>
-                  } @else {
-                    <span
-                      class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
-                             text-ink/80"
-                      aria-hidden="true"
-                    >
-                      <span aria-hidden="true" class="gantt-chevron font-mono leading-none">●</span>
-                    </span>
-                  }
+                  <button
+                    type="button"
+                    class="gantt-expand-btn gantt-expand-col shrink-0 inline-flex items-center justify-center
+                           text-ink/80 hover:text-ink hover:bg-paper-2/60"
+                    [attr.data-test]="'gantt-expand-' + expandKey(row.bar)"
+                    [attr.aria-expanded]="row.expanded"
+                    [attr.title]="expandTitle(treeLabel(row.bar), row.expanded)"
+                    [attr.aria-label]="expandTitle(treeLabel(row.bar), row.expanded)"
+                    (click)="onToggleExpand($event, expandKey(row.bar))"
+                  >
+                    <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
+                      row.expanded ? '▾' : '▸'
+                    }}</span>
+                  </button>
                 } @else {
                   <button
                     type="button"
@@ -413,7 +409,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               @if (row.isOrderSummary && orderMetaFor(row.bar.orderId); as meta) {
                 <div
                   class="gantt-row-h-meta gantt-cascade-panel border-b hairline px-3 py-1.5 flex flex-nowrap items-center gap-x-4 min-w-0"
-                  [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
+                  [class.gantt-order-group-mid]="isTreeExpandedGroup(row.bar)"
                   [style.minWidth.px]="timelineMinWidth()"
                   [attr.data-test]="'gantt-order-meta-' + row.bar.orderId"
                   (click)="$event.stopPropagation()"
@@ -566,7 +562,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                   isHighlightedOrder(row.bar.orderId) && !isWorkDetailOpen(row.bar.id)
                 "
                 [class.gantt-order-expanded]="
-                  isTreeExpandedOrder(row.bar.orderId) &&
+                  isTreeExpandedGroup(row.bar) &&
                   !isHighlightedOrder(row.bar.orderId) &&
                   !isWorkDetailOpen(row.bar.id)
                 "
@@ -574,7 +570,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [class.gantt-order-group-end]="row.orderGroupEnd"
                 [attr.data-test]="'gantt-row-' + row.bar.id"
                 [attr.data-active-order]="isHighlightedOrder(row.bar.orderId) ? 'true' : null"
-                [attr.data-expanded-order]="isTreeExpandedOrder(row.bar.orderId) ? 'true' : null"
+                [attr.data-expanded-order]="isTreeExpandedGroup(row.bar) ? 'true' : null"
                 [attr.data-work-detail-open]="isWorkDetailOpen(row.bar.id) ? 'true' : null"
                 [attr.data-order-group-start]="row.orderGroupStart ? 'true' : null"
                 [attr.data-order-group-end]="row.orderGroupEnd ? 'true' : null"
@@ -662,7 +658,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               @if (row.isOrderSummary && isOrderMetaOpen(row.bar.orderId)) {
                 <div
                   class="relative gantt-row-h-meta gantt-cascade-spacer border-b hairline"
-                  [class.gantt-order-group-mid]="isTreeExpandedOrder(row.bar.orderId)"
+                  [class.gantt-order-group-mid]="isTreeExpandedGroup(row.bar)"
                   [attr.data-test]="'gantt-order-meta-timeline-' + row.bar.orderId"
                   aria-hidden="true"
                 ></div>
@@ -919,6 +915,9 @@ export class GanttBarsComponent implements AfterViewInit {
   /** TZ-PRODUCTION-342 — product / module expand keys. */
   readonly expandedProductIds = input<ReadonlySet<string>>(new Set());
   readonly expandedModuleIds = input<ReadonlySet<string>>(new Set());
+  /** TZ-PRODUCTION-344 — worker / worker-module expand keys. */
+  readonly expandedWorkerIds = input<ReadonlySet<string>>(new Set());
+  readonly expandedWorkerModuleIds = input<ReadonlySet<string>>(new Set());
   /** TZ-PRODUCTION-321 — one open work-type detail (`bar.id`). */
   readonly expandedWorkBarId = input<string | null>(null);
   /** Order id with open order-meta strip — highlight label + timeline rows. */
@@ -1027,7 +1026,7 @@ export class GanttBarsComponent implements AfterViewInit {
 
   protected readonly treeBars = computed(() =>
     this.groupByWorkers()
-      ? buildWorkerTreeBars(this.bars())
+      ? buildWorkerTreeBars(this.bars(), this.expandedWorkerIds(), this.expandedWorkerModuleIds())
       : buildGanttTreeBars(
           this.bars(),
           this.expandedOrderIds(),
@@ -1042,6 +1041,8 @@ export class GanttBarsComponent implements AfterViewInit {
       this.expandedProductIds().size > 0 ||
       this.expandedModuleIds().size > 0,
   );
+
+  protected readonly anyWorkerExpanded = computed(() => this.expandedWorkerIds().size > 0);
 
   protected readonly legendItems = computed(() => {
     const seen = new Map<string, { id: string; name: string; color: string }>();
@@ -1094,15 +1095,17 @@ export class GanttBarsComponent implements AfterViewInit {
     const expandedOrders = this.expandedOrderIds();
     const expandedProducts = this.expandedProductIds();
     const expandedModules = this.expandedModuleIds();
+    const expandedWorkers = this.expandedWorkerIds();
+    const expandedWorkerModules = this.expandedWorkerModuleIds();
     const sorted = this.treeBars();
     const byWorkers = this.groupByWorkers();
-    /** Last tree index per expanded order — for group-end frame. */
-    const lastIdxByOrder = new Map<string, number>();
-    if (!byWorkers) {
-      for (let i = 0; i < sorted.length; i++) {
-        const bar = sorted[i]!;
-        if (expandedOrders.has(bar.orderId)) lastIdxByOrder.set(bar.orderId, i);
-      }
+    /** Last tree index per expanded order/worker — for group-end frame. */
+    const lastIdxByGroup = new Map<string, number>();
+    for (let i = 0; i < sorted.length; i++) {
+      const bar = sorted[i]!;
+      const key = byWorkers ? workerGroupKeyOf(bar) : bar.orderId;
+      const expanded = byWorkers ? expandedWorkers.has(key) : expandedOrders.has(key);
+      if (expanded) lastIdxByGroup.set(key, i);
     }
     return sorted.map((bar, idx) => {
       const left = dayDiff(start, bar.startDate);
@@ -1115,14 +1118,23 @@ export class GanttBarsComponent implements AfterViewInit {
       const productSummary = isProductSummaryBar(bar);
       const moduleSummary = isModuleSummaryBar(bar);
       const workerSummary = isWorkerSummaryBar(bar);
-      const treeExpanded = !byWorkers && expandedOrders.has(bar.orderId);
-      const branchExpanded = orderSummary
-        ? expandedOrders.has(bar.orderId)
-        : productSummary
-          ? expandedProducts.has(bar.id)
+      const groupKey = byWorkers ? workerGroupKeyOf(bar) : bar.orderId;
+      const treeExpanded = byWorkers
+        ? expandedWorkers.has(groupKey)
+        : expandedOrders.has(bar.orderId);
+      const branchExpanded = byWorkers
+        ? workerSummary
+          ? expandedWorkers.has(groupKey)
           : moduleSummary
-            ? expandedModules.has(bar.id)
-            : false;
+            ? expandedWorkerModules.has(bar.id)
+            : false
+        : orderSummary
+          ? expandedOrders.has(bar.orderId)
+          : productSummary
+            ? expandedProducts.has(bar.id)
+            : moduleSummary
+              ? expandedModules.has(bar.id)
+              : false;
       return {
         bar,
         alt: idx % 2 === 1,
@@ -1136,8 +1148,8 @@ export class GanttBarsComponent implements AfterViewInit {
         isModuleSummary: moduleSummary,
         isWorkerSummary: workerSummary,
         expanded: branchExpanded,
-        orderGroupStart: treeExpanded && orderSummary,
-        orderGroupEnd: treeExpanded && lastIdxByOrder.get(bar.orderId) === idx,
+        orderGroupStart: treeExpanded && (byWorkers ? workerSummary : orderSummary),
+        orderGroupEnd: treeExpanded && lastIdxByGroup.get(groupKey) === idx,
       };
     });
   });
@@ -1268,13 +1280,15 @@ export class GanttBarsComponent implements AfterViewInit {
     this.toggleExpand.emit(expandId);
   }
 
-  /** Expand emit key: orderId | product:… | module:… */
+  /** Expand emit key: orderId | product:… | module:… | worker:… | worker-module:… */
   protected expandKey(bar: GanttBar): string {
+    if (isWorkerSummaryBar(bar)) return `worker:${bar.orderNumber}`;
     if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) return bar.id;
     return bar.orderId;
   }
 
   protected treeLabel(bar: GanttBar): string {
+    if (isWorkerSummaryBar(bar)) return bar.orderNumber;
     if (isProductSummaryBar(bar)) return bar.productName;
     if (isModuleSummaryBar(bar)) return bar.moduleName;
     return bar.orderNumber;
@@ -1306,6 +1320,12 @@ export class GanttBarsComponent implements AfterViewInit {
 
   protected isTreeExpandedOrder(orderId: string): boolean {
     return this.expandedOrderIds().has(orderId);
+  }
+
+  /** Order or worker group currently expanded (frames / tint). */
+  protected isTreeExpandedGroup(bar: GanttBar): boolean {
+    if (this.groupByWorkers()) return this.expandedWorkerIds().has(workerGroupKeyOf(bar));
+    return this.expandedOrderIds().has(bar.orderId);
   }
 
   /** Row group key for boundary borders: worker label in worker view, else orderId. */
