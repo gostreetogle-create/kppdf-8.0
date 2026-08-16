@@ -1,3 +1,12 @@
+## [2026-08-16] — TZ-COMBINE-402 DONE — OrderItem.lineId + boardLane
+**Исполнитель:** cursor-composer-executor
+**Статус:** DONE; deploy НЕ
+**Что:** Schema `lineId` + `boardLane` (prep|design|shop|to_ship|shipped); create uuid+prep+pending; find backfill `legacy-{i}-{orderId}` + status→lane; no PATCH lane.
+**Gates:** BE `tsc -p tsconfig.build.json --noEmit` PASS; jest `order.service` 1 suite / 48 tests PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-COMBINE-402.done.md`
+**Lock:** `.mimocode/locks/TZ-COMBINE-402-order-item-lineid-boardlane.lock`
+**Next:** TZ-COMBINE-403 lane PATCH + Order.status rollup; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-NAV-305 DONE — Проект: Комбайн first, then Очередь
 **Исполнитель:** cursor-composer-executor
 **Статус:** DONE; deploy НЕ

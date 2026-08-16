@@ -1,7 +1,15 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { randomUUID } from 'node:crypto';
 import { ClientSession, Model, Types } from 'mongoose';
-import { EstimateDayOverride, EstimateStartOffset, Order, OrderDocument, OrderItem } from './order.schema';
+import {
+  BoardLane,
+  EstimateDayOverride,
+  EstimateStartOffset,
+  Order,
+  OrderDocument,
+  OrderItem,
+} from './order.schema';
 import { Shipment, ShipmentDocument } from '../shipment/shipment.schema';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -38,6 +46,17 @@ const ORDER_STATUS_RU: Record<string, string> = {
 const MISSING_SITE_RU =
   'У заказа нет площадки (siteId) — создайте объект у контрагента';
 
+/** TZ-COMBINE-402 — legacy OrderItem.status → boardLane (backfill only). */
+const STATUS_TO_BOARD_LANE: Record<
+  NonNullable<OrderItem['status']>,
+  BoardLane
+> = {
+  pending: 'prep',
+  in_production: 'shop',
+  ready: 'to_ship',
+  shipped: 'shipped',
+};
+
 @Injectable()
 export class OrderService {
   private readonly logger = new Logger(OrderService.name);
@@ -57,35 +76,75 @@ export class OrderService {
     private readonly organizations: OrganizationService,
   ) {}
 
+  private boardLaneFromStatus(status?: OrderItem['status']): BoardLane {
+    return STATUS_TO_BOARD_LANE[status ?? 'pending'] ?? 'prep';
+  }
+
+  /**
+   * TZ-COMBINE-402 — fill missing lineId / boardLane on legacy items.
+   * Stable lineId: `legacy-{index}-{orderId}` (or uuid on create via mapItems).
+   * Returns true if mutated.
+   * TODO(TZ-COMBINE-403): forbid deleting a line when boardLane !== 'prep'
+   * (no remove-line path in this service yet).
+   */
+  private ensureLineBoardFields(doc: OrderDocument): boolean {
+    let dirty = false;
+    const orderId = doc._id?.toString() ?? 'unknown';
+    const items = doc.items ?? [];
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+      if (!item.lineId) {
+        item.lineId = `legacy-${index}-${orderId}`;
+        dirty = true;
+      }
+      if (!item.boardLane) {
+        item.boardLane = this.boardLaneFromStatus(item.status);
+        dirty = true;
+      }
+    }
+    return dirty;
+  }
+
+  private async persistLineBoardFieldsIfNeeded(doc: OrderDocument): Promise<void> {
+    if (!this.ensureLineBoardFields(doc)) return;
+    doc.markModified('items');
+    await doc.save();
+  }
+
   private mapItems(
     dtoItems: CreateOrderDto['items'],
     previousItems: OrderItem[] = [],
   ): OrderItem[] {
-    return dtoItems.map((i, index) => ({
-      productId: new Types.ObjectId(i.productId),
-      productName: i.productName,
-      productSku: i.productSku,
-      quantity: i.quantity,
-      unit: i.unit,
-      unitPrice: i.unitPrice ?? 0,
-      total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
-      ownerUserId: i.ownerUserId ? new Types.ObjectId(i.ownerUserId) : undefined,
-      plannedShipDate: i.plannedShipDate ? new Date(i.plannedShipDate) : undefined,
-      readyForWork: i.readyForWork ?? previousItems[index]?.readyForWork ?? false,
-      readyAt:
-        i.readyForWork === undefined
-          ? previousItems[index]?.readyAt
-          : i.readyForWork
-            ? previousItems[index]?.readyAt
-            : undefined,
-      readyByUserId:
-        i.readyForWork === undefined
-          ? previousItems[index]?.readyByUserId
-          : i.readyForWork
-            ? previousItems[index]?.readyByUserId
-            : undefined,
-      status: previousItems[index]?.status ?? 'pending',
-    }));
+    return dtoItems.map((i, index) => {
+      const prev = previousItems[index];
+      return {
+        lineId: prev?.lineId ?? randomUUID(),
+        boardLane: prev?.boardLane ?? 'prep',
+        productId: new Types.ObjectId(i.productId),
+        productName: i.productName,
+        productSku: i.productSku,
+        quantity: i.quantity,
+        unit: i.unit,
+        unitPrice: i.unitPrice ?? 0,
+        total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
+        ownerUserId: i.ownerUserId ? new Types.ObjectId(i.ownerUserId) : undefined,
+        plannedShipDate: i.plannedShipDate ? new Date(i.plannedShipDate) : undefined,
+        readyForWork: i.readyForWork ?? prev?.readyForWork ?? false,
+        readyAt:
+          i.readyForWork === undefined
+            ? prev?.readyAt
+            : i.readyForWork
+              ? prev?.readyAt
+              : undefined,
+        readyByUserId:
+          i.readyForWork === undefined
+            ? prev?.readyByUserId
+            : i.readyForWork
+              ? prev?.readyByUserId
+              : undefined,
+        status: prev?.status ?? 'pending',
+      };
+    });
   }
 
   async create(dto: CreateOrderDto, session?: ClientSession): Promise<OrderDocument> {
@@ -143,7 +202,7 @@ export class OrderService {
       if (!Types.ObjectId.isValid(managerId)) return [];
       filter.managerId = new Types.ObjectId(managerId);
     }
-    return this.model
+    const docs = await this.model
       .find(filter)
       .populate('counterpartyId')
       .populate('siteId')
@@ -151,6 +210,10 @@ export class OrderService {
       .populate('contractId')
       .sort({ date: -1 })
       .exec();
+    for (const doc of docs) {
+      await this.persistLineBoardFieldsIfNeeded(doc);
+    }
+    return docs;
   }
 
   async findById(id: string): Promise<OrderDocument> {
@@ -166,6 +229,7 @@ export class OrderService {
       .populate('items.ownerUserId', 'displayName username fullName')
       .exec();
     if (!doc) throw new NotFoundException(`Order ${id} not found`);
+    await this.persistLineBoardFieldsIfNeeded(doc);
     return doc;
   }
 
@@ -175,6 +239,7 @@ export class OrderService {
     }
     const doc = await this.model.findById(id).exec();
     if (!doc) throw new NotFoundException(`Order ${id} not found`);
+    this.ensureLineBoardFields(doc);
     return doc;
   }
 
@@ -294,6 +359,8 @@ export class OrderService {
     }
     const line = doc.items[index];
     line.status = status;
+    // Keep boardLane aligned until TZ-COMBINE-403 owns lane writes.
+    line.boardLane = this.boardLaneFromStatus(status);
     await doc.save();
     return this.findById(id);
   }
@@ -587,8 +654,13 @@ export class OrderService {
       order.status = 'shipped';
       // TZ-SWEEP-401: отгрузка заказа = отгрузка всех линий (item.status — ход
       // изделия; readyForWork не трогаем). Старые линии без поля получают значение.
-      for (const item of order.items) {
+      for (let i = 0; i < order.items.length; i++) {
+        const item = order.items[i];
         item.status = 'shipped';
+        item.boardLane = 'shipped';
+        if (!item.lineId) {
+          item.lineId = `legacy-${i}-${order._id.toString()}`;
+        }
       }
       const saved = await order.save({ session });
       return { order: saved, shipmentId: shipment._id.toString() };

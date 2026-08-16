@@ -1,8 +1,28 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
+/** TZ-COMBINE-402 / COUPLING-MAP §2b — колонка Комбайна (SoT lane). */
+export type BoardLane = 'prep' | 'design' | 'shop' | 'to_ship' | 'shipped';
+
 @Schema({ _id: false })
 export class OrderItem {
+  /**
+   * TZ-COMBINE-402 — стабильный ключ линии (не index).
+   * Required after create/backfill; legacy docs get `legacy-{index}-{orderId}` on read.
+   */
+  @Prop({ required: true })
+  lineId!: string;
+
+  /**
+   * TZ-COMBINE-402 — колонка Комбайна. Default `prep` on create.
+   * Write path: PATCH .../lines/:lineId/lane (TZ-COMBINE-403). Do not write `shipped` via PATCH.
+   */
+  @Prop({
+    enum: ['prep', 'design', 'shop', 'to_ship', 'shipped'],
+    default: 'prep',
+  })
+  boardLane!: BoardLane;
+
   @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId!: Types.ObjectId;
 
@@ -42,7 +62,11 @@ export class OrderItem {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   readyByUserId?: Types.ObjectId;
 
-  /** TZ-DASHBOARD-400: статус позиции заказа для Канбана */
+  /**
+   * TZ-DASHBOARD-400: ход изделия (legacy kanban).
+   * TZ-COMBINE-402+: derived from `boardLane` in TZ-COMBINE-403 — do not treat as SoT lane.
+   * Mapping: prep|design→pending, shop→in_production, to_ship→ready, shipped→shipped.
+   */
   @Prop({
     enum: ['pending', 'in_production', 'ready', 'shipped'],
     default: 'pending',

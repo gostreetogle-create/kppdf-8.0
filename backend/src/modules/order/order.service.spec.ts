@@ -20,6 +20,9 @@ interface MockOrderItem {
   readyForWork?: boolean;
   readyAt?: Date;
   readyByUserId?: Types.ObjectId;
+  /** TZ-COMBINE-402 */
+  lineId?: string;
+  boardLane?: 'prep' | 'design' | 'shop' | 'to_ship' | 'shipped';
   /** TZ-DASHBOARD-400: ход изделия (может отсутствовать у старых заказов). */
   status?: 'pending' | 'in_production' | 'ready' | 'shipped';
 }
@@ -52,6 +55,7 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
       workTypeId: Types.ObjectId;
       offsetDays: number;
     }>,
+    markModified: jest.fn(),
     save: jest.fn().mockImplementation(function (this: unknown) {
       return Promise.resolve(this);
     }),
@@ -83,6 +87,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   model.mockImplementation((payload: Record<string, unknown>) => ({
     ...orderDoc(),
     ...payload,
+    markModified: jest.fn(),
     save: jest.fn().mockResolvedValue(undefined),
   }));
   model.find = jest.fn();
@@ -245,6 +250,18 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(result.status).toBe('draft');
     });
 
+    it('TZ-COMBINE-402: create assigns lineId + boardLane prep + status pending', async () => {
+      const { service } = createService();
+
+      const result = await service.create(validCreateDto() as never);
+      expect(result.items[0].lineId).toEqual(expect.any(String));
+      expect(result.items[0].lineId.length).toBeGreaterThan(8);
+      expect(result.items[0]).toMatchObject({
+        boardLane: 'prep',
+        status: 'pending',
+      });
+    });
+
     it('ALLOWS explicit confirmed on create (TZ-OPS-315)', async () => {
       const { service } = createService();
 
@@ -317,6 +334,73 @@ describe('OrderService — TZ-ORDERS-301', () => {
       await expect(service.findById(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+
+    it('backfills stable legacy lineId + boardLane from status on findById (TZ-COMBINE-402)', async () => {
+      const { service, model } = createService();
+      const orderId = new Types.ObjectId();
+      const doc = orderDoc({
+        _id: orderId,
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            total: 0,
+            status: 'in_production',
+          },
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            total: 0,
+            status: 'ready',
+          },
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            total: 0,
+            status: 'shipped',
+          },
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            total: 0,
+            // pending / missing status → prep
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      const result = await service.findById(orderId.toString());
+      expect(result.items[0].lineId).toBe(`legacy-0-${orderId.toString()}`);
+      expect(result.items[0].boardLane).toBe('shop');
+      expect(result.items[1].lineId).toBe(`legacy-1-${orderId.toString()}`);
+      expect(result.items[1].boardLane).toBe('to_ship');
+      expect(result.items[2].boardLane).toBe('shipped');
+      expect(result.items[3].boardLane).toBe('prep');
+      expect(doc.markModified).toHaveBeenCalledWith('items');
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('does not re-save when lineId and boardLane already present (TZ-COMBINE-402)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        items: [
+          {
+            productId: new Types.ObjectId(PRODUCT),
+            quantity: 1,
+            total: 0,
+            lineId: 'already-there',
+            boardLane: 'design',
+            status: 'pending',
+          },
+        ],
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.findById(doc._id.toString());
+      expect(doc.items[0].lineId).toBe('already-there');
+      expect(doc.items[0].boardLane).toBe('design');
+      expect(doc.save).not.toHaveBeenCalled();
     });
   });
 

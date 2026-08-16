@@ -5,16 +5,17 @@
 >
 > Обновлять существующие секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-16T14:50:00+03:00
+updated_at: 2026-08-16T14:46:25+03:00
 hygiene: `docs/audits/2026-08-16-task-ledger-hygiene-audit.md`; orphan root DONE specs UX-326/332/TZD-48 merged into archive + prompts spent removed
 
 ## ACTIVE
 
-- **WAVE COMBINE v1:** TZ-COMBINE-401 DONE (canon) → **402** schema lineId/boardLane → 403 lane API → 404/405 FE.
+- **WAVE COMBINE v1:** 401 DONE → **402 DONE** (lineId/boardLane) → **403** lane API + rollup → 404/405 FE.
 - Freebuff (параллель later): `tasks/_backlog/PROMPT-WAVE-COMBINE-SHOP-FLOOR-FREEBUFF.md` (Gantt by workers RO).
 
 ## NEXT (PO paste prompt)
 
+- TZ-COMBINE-403 next (PATCH lane + Order.status rollup).
 - Modules ghost DnD → COMBINE-406/407 after 405.
 - Full home widgets → **TZ-DASHBOARD-401**.
 - **TZ-DATA-UTF8-CLEAN** PARK.
@@ -31,6 +32,10 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 - Gantt left-edge / a11y polish — parked 308/310; successor after PO
 
 ## DONE / LANDED (recent)
+
+## [2026-08-16] — TZ-COMBINE-402 DONE — OrderItem.lineId + boardLane
+
+- Archive: `tasks/_archive/2026-08/TZ-COMBINE-402.done.md`; lock `TZ-COMBINE-402-order-item-lineid-boardlane.lock`; BE tsc + order.service 48/48. Next: 403. Deploy нет.
 
 ## [2026-08-16] — TZ-NAV-305 DONE — Проект: Комбайн first
 
@@ -172,5 +177,5 @@ _(HARDEN 324–328 DONE 98/100; POLISH 329–330 DONE; 331–335 Gantt polish DO
 
 ## HEAD / queue
 
-- Queue: **empty for today**; AUTH-307 remains deploy/smoke gated; deploy НЕ — не автодеплой.
-- Deploy app: НЕ — не автодеплой
+- Queue: **WAVE COMBINE** — next **TZ-COMBINE-403**; 402 DONE on main after push.
+- Deploy app: НЕ — не автодеплой (warm after 402–405 PASS)
