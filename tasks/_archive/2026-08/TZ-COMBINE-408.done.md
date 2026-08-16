@@ -39,7 +39,7 @@ outcome: DONE
 closed_at: 2026-08-16T17:50:00+03:00
 closed_by: freebuff (deepseek-v4-pro)
 TZ: TZ-COMBINE-408
-COMMIT: <pending>
+COMMIT: e2b6a88f
 layer: 2
 conflict_keys: backend/src/modules/order/order.service.ts; backend/src/modules/order/order.module.ts; backend/src/modules/order/order.service.spec.ts; docs/COUPLING-MAP.md; docs/pages/design-combine.page.md
 protects: shop workType/days gate (line + module) на Комбайне
