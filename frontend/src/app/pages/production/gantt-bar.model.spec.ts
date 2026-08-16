@@ -20,13 +20,8 @@ import {
 import type { OrderStatus } from '../orders/orders.service';
 
 describe('gantt-bar.model', () => {
-  it('exposes exactly four active commercial statuses', () => {
-    expect([...ACTIVE_COMMERCIAL_ORDER_STATUSES]).toEqual([
-      'draft',
-      'confirmed',
-      'in_production',
-      'ready',
-    ]);
+  it('exposes exactly three active commercial statuses', () => {
+    expect([...ACTIVE_COMMERCIAL_ORDER_STATUSES]).toEqual(['confirmed', 'in_production', 'ready']);
   });
 
   it('exposes shared estimate override hint for Gantt work-detail and inspector', () => {
@@ -233,6 +228,7 @@ describe('gantt-bar.model', () => {
       { _id: '2', number: 'A-2', status: 'shipped' as const },
       { _id: '3', number: 'B-3', status: 'cancelled' as const },
       { _id: '4', number: 'C-4', status: 'confirmed' as const, isActive: false },
+      { _id: '5', number: 'D-5', status: 'confirmed' as const },
     ];
 
     const active = filterOrdersForRail(orders, {
@@ -240,14 +236,14 @@ describe('gantt-bar.model', () => {
       search: '',
       selectedOrderId: null,
     });
-    expect(active.map((o) => o._id)).toEqual(['1']);
+    expect(active.map((o) => o._id)).toEqual(['5']);
 
     const withSelected = filterOrdersForRail(orders, {
       activeOnly: true,
       search: '',
       selectedOrderId: '3',
     });
-    expect(withSelected.map((o) => o._id).sort()).toEqual(['1', '3']);
+    expect(withSelected.map((o) => o._id).sort()).toEqual(['3', '5']);
 
     const search = filterOrdersForRail(orders, {
       activeOnly: false,
@@ -509,7 +505,8 @@ describe('gantt-bar.model', () => {
       selectedOrderId: null,
       priority: 'urgent',
     });
-    expect(byPriority.map((o) => o._id).sort()).toEqual(['1', '3']);
+    // draft+urgent (_id 3) excluded from ACTIVE (TZ-PRODUCTION-337)
+    expect(byPriority.map((o) => o._id)).toEqual(['1']);
 
     const byDate = filterOrdersForRail(orders, {
       activeOnly: true,

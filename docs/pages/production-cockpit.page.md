@@ -39,6 +39,14 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 
 Ручной select в rail URL не обязан обновлять.
 
+### Couplings
+
+Канон: [`docs/COUPLING-MAP.md`](../COUPLING-MAP.md). Audit: [`2026-08-16-order-status-coupling.md`](../audits/2026-08-16-order-status-coupling.md).
+
+| Поле | Этот экран | Другие экраны | Смысл |
+|------|------------|---------------|-------|
+| `Order.status` | «Все активные» = `confirmed` / `in_production` / `ready` | Комбайн колонки (`draft` = Черновики); `/orders`; форма freeze | **Канон + код (TZ-PRODUCTION-337):** `draft` ≠ цех. См. [`COUPLING-MAP.md`](../COUPLING-MAP.md) §2. |
+
 ### Read path / existing API contracts
 
 | Метод | Endpoint | Назначение |
@@ -117,7 +125,7 @@ BE verify: existing `OrdersService.update` accepts ISO `plannedDate`; no new end
 | Сигнал | Назначение |
 |--------|-----------|
 | `ctx.selectedOrderId` | null = все активные |
-| `ctx.activeOnly` | фильтр ACTIVE_COMMERCIAL_ORDER_STATUSES; default true |
+| `ctx.activeOnly` | фильтр `confirmed`/`in_production`/`ready`; default true; **код = канон** (TZ-PRODUCTION-337, без `draft`) |
 | `ctx.counterpartyFilter` | id Counterparty или `__none__`; фильтрует rail + Гант |
 | `ctx.filtersDirty` | true если counterparty / priority / dates / activeOnly отличаются от default |
 | `facade.state` | orders / bars / warnings / loading / error |

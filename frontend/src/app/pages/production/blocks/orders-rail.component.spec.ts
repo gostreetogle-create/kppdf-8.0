@@ -8,7 +8,7 @@ describe('OrdersRailComponent', () => {
   let ctx: ProductionCockpitContext;
 
   const orders: Order[] = [
-    { _id: '1', number: 'ORD-1', status: 'draft', items: [] },
+    { _id: '1', number: 'ORD-1', status: 'confirmed', items: [] },
     { _id: '2', number: 'ORD-2', status: 'shipped', items: [] },
     { _id: '3', number: 'ORD-3', status: 'in_production', items: [] },
     { _id: '4', number: 'ORD-4', status: 'cancelled', items: [] },
@@ -46,7 +46,7 @@ describe('OrdersRailComponent', () => {
     fixture.componentRef.setInput('orders', orders);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Черновик');
+    expect(fixture.nativeElement.textContent).toContain('Подтверждён');
     expect(fixture.nativeElement.textContent).toContain('В производстве');
     expect(fixture.nativeElement.querySelectorAll('.rounded-full').length).toBe(0);
   });
@@ -156,11 +156,11 @@ describe('OrdersRailComponent', () => {
   it('TZ-PRODUCTION-336: ineligible orders stay listed with «нет плана» marker', () => {
     const fixture = TestBed.createComponent(OrdersRailComponent);
     fixture.componentRef.setInput('orders', orders);
-    fixture.componentRef.setInput('noGanttOrderIds', new Set(['1']));
+    fixture.componentRef.setInput('noGanttOrderIds', new Set(['3']));
     fixture.detectChanges();
 
     const visible = fixture.componentInstance['visible']();
-    expect(visible.map((o: Order) => o._id)).toContain('1');
+    expect(visible.map((o: Order) => o._id)).toContain('3');
     const marker = fixture.nativeElement.querySelector('[data-test="orders-rail-no-plan"]');
     expect(marker?.textContent).toContain('нет плана');
     expect(marker?.getAttribute('title')).toBe('Нет модулей для Ганта');

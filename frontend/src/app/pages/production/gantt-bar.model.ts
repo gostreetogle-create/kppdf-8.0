@@ -2,7 +2,8 @@
  * TZ-PRODUCTION-303 — pure Gantt estimate model (no Angular DI).
  *
  * Locks:
- *  A/C — 7 commercial Order statuses; ACTIVE = draft/confirmed/in_production/ready
+ *  A/C — 7 commercial Order statuses; ACTIVE = confirmed/in_production/ready
+ *       (draft = Комбайн «Черновики», не цех — TZ-PRODUCTION-337)
  *  B   — visualAnchor = plannedDate ?? date ?? today; sequential pack by sortOrder
  *  D   — duration = WorkType.days only (never estimatedHours)
  *  E   — no ProductionOrder / OrderTask
@@ -12,7 +13,6 @@
 import type { OrderStatus } from '../orders/orders.service';
 
 export const ACTIVE_COMMERCIAL_ORDER_STATUSES: readonly OrderStatus[] = [
-  'draft',
   'confirmed',
   'in_production',
   'ready',

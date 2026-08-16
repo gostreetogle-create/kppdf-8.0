@@ -32,6 +32,15 @@ Read-only expand на списке `/orders`:
 - Budget: supply=1 + reservations=1 + composition tree per line when accordion open.
 - Service: `ReservationsService` (`pi-reservations.service.ts`) — read-only `list(orderNumber?)`.
 
+## Couplings
+
+Канон: [`docs/COUPLING-MAP.md`](../COUPLING-MAP.md).
+
+| Поле | Этот экран | Другие экраны | Смысл |
+|------|------------|---------------|-------|
+| `Order.status` | список / форма freeze | Комбайн колонки; цех «Все активные» | `draft` ≠ работа цеха. Цех active = confirmed/in_production/ready (TZ-PRODUCTION-337). |
+| `items.readyForWork` | список «X из Y», hub Готовность | не Комбайн | **Не** `OrderItem.status`. |
+
 ### Визуальная иерархия expand
 
 Панель раскрытия разделена на четыре смысловые группы, чтобы не смешивать разные контуры жизненного цикла:

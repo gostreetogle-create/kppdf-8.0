@@ -30,6 +30,15 @@
 
 Карточка «X из Y» = число линий с `status ∈ {ready, shipped}`; нет поля → `pending`.
 
+## Couplings
+
+Канон: [`docs/COUPLING-MAP.md`](../COUPLING-MAP.md).
+
+| Поле | Этот экран | Другие экраны | Смысл |
+|------|------------|---------------|-------|
+| `Order.status` | колонки канбана; PATCH draft…ready; ship/cancel — POST | цех «Все активные»; `/orders`; форма freeze | `draft` = Черновики, **не** работа цеха. Цех active = confirmed/in_production/ready (**TZ-PRODUCTION-337**). |
+| `OrderItem.status` | селект в карточке; лейбл «В работе» = `in_production` | не путать с цехом | **Не** `Order.status`. **Не** `readyForWork`. |
+
 ## API
 
 | Метод | Endpoint | Когда |

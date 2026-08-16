@@ -9,6 +9,17 @@
 **Lock:** `.mimocode/locks/TZ-CATALOG-375-materials-list-expand.lock`
 **Next:** STOP for this TZ; grid expand = known_limitation; deploy не выполнялся.
 
+## [2026-08-16] — TZ-PRODUCTION-337 DONE — workshop ACTIVE exclude draft
+**Исполнитель:** frontend executor + cursor-closeout
+**Статус:** DONE; Cursor Verdict PASS; deploy НЕ
+**Что:** цех «Все активные» = confirmed/in_production/ready (без draft); Couplings + COUPLING-MAP код=канон.
+**Gates:** FE tsc PASS; focused Jest 3 suites / 53 tests PASS.
+**Review:** Cursor PASS — ACTIVE set; known_limitation selected bypass for draft `?orderId=`.
+**Archive:** `tasks/_archive/2026-08/TZ-PRODUCTION-337.done.md`
+**Commit:** PENDING_STAMP
+**Lock:** `.mimocode/locks/TZ-PRODUCTION-337-workshop-exclude-draft.lock`
+**Next:** STOP for this TZ; deploy не выполнялся.
+
 ## [2026-08-16] — TZ-UX-344 DONE — showcase photo contain
 **Исполнитель:** agent-ux344-WIN-LOQVGED63JM-28704
 **Статус:** DONE; Cursor Verdict PASS; deploy НЕ

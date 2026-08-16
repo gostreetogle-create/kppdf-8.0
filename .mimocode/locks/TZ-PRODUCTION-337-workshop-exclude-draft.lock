@@ -1,0 +1,8 @@
+LOCK
+TZ: TZ-PRODUCTION-337
+WAVE: order-status coupling (workshop ACTIVE)
+STATUS: DONE
+CLOSED_AT: 2026-08-16T09:50:00Z
+CLOSED_BY: cursor-closeout
+COMMIT: PENDING_STAMP
+NEXT: STOP; deploy forbidden; known_limitation selected bypass for draft ?orderId=
