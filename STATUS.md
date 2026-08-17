@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-17] — TZ-MIG-303 DONE: KP3 photos attach verify
+**Статус:** DONE; deploy НЕ; uploaded this run 0
+**Что:** REST readback prod — 661/661 products with photoIds (100%); idempotent loader script; orphans 35 logged; MCP offline.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-303.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-303-kp3-photos-attach.lock`
+**Gates:** script PASS; AC ≥95% PASS.
+
 ## [2026-08-17] — TZ-MIG-302 DONE: KP3 scoped load closeout
 **Статус:** DONE (archive-only); deploy НЕ; no re-load
 **Что:** Load 2026-08-12 Synology prod — 699 products / 16 CP / 13 cat / 27 KP; REST when MCP down; id-map local gitignore.

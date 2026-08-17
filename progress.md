@@ -1,3 +1,13 @@
+## [2026-08-17] — TZ-MIG-303 DONE — KP3 photos attach verify
+
+**Исполнитель:** composer-executor-mig-303
+**Статус:** DONE; deploy НЕ; uploaded this run **0** (661 already had photoIds)
+**Что:** REST verify on `https://kppdf-crm.ru`; idempotent script `scripts/mig303-attach-kp3-photos.py`; coverage **661/661 (100%)**; orphans 35 logged not deleted; MCP :9743 offline; LAN unreachable.
+**Gates:** script exit 0; AC ≥95% PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-303.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-303-kp3-photos-attach.lock`
+**Next:** MIG-304 email; PO smoke catalog photos in UI.
+
 ## [2026-08-17] — TZ-MIG-306 DONE — product categoryId filter
 
 **Исполнитель:** composer-executor-mig-306

@@ -5,24 +5,28 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T20:05:00+03:00
-hygiene: TZ-MIG-302 DONE (archive-only); TZ-MIG-306 DONE; next MIG-304; deploy НЕ
+updated_at: 2026-08-17T21:00:00+03:00
+hygiene: DONE-висячки в archive; live = MIG-304
 
 ## ACTIVE
 
-- _(idle)_ next = **TZ-MIG-304** · email→Person · `_backlog/migrate-kp3/`
-- Deploy запрещён. Live category filter smoke — после deploy BE когда PO скажет «кати».
+- **TZ-MIG-304** Counterparty.email + 10 КП3
 
 ## NEXT (PO)
 
-1. Новый чат: **TZ-MIG-304** (одна TZ) — Counterparty.email → Person
-2. MIG-303 attach photos — когда live MCP + id-map
+1. После агентов — проверить карточки контрагентов (поле Почта) и фото в каталоге
+2. «Кати» когда скажешь (VPN off)
 
 ## DONE / LANDED (recent)
 
+## [2026-08-17] — TZ-MIG-303 DONE — KP3 photos attach verify
+
+- Archive: `tasks/_archive/2026-08/TZ-MIG-303.done.md`; coverage 661/661 (100%); uploaded 0 / skipped 661; REST prod; MCP offline.
+- Next: MIG-304; PO smoke catalog photos.
+
 ## [2026-08-17] — TZ-MIG-302 DONE — KP3 scoped load closeout
 
-- Archive: `tasks/_archive/2026-08/TZ-MIG-302.done.md`; load 2026-08-12 (699/16/13/27); REST when MCP down; no re-load.
+- Archive: `tasks/_archive/2026-08/TZ-MIG-302.done.md`; SHA `833c12c5`; load 2026-08-12 (699/16/13/27); REST when MCP down; no re-load.
 - Next: MIG-304 / MIG-303 successors; no deploy.
 
 ## [2026-08-17] — TZ-MIG-306 DONE — product categoryId filter
