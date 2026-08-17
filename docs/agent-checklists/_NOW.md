@@ -5,26 +5,31 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T20:00:00+03:00
-hygiene: TZ-MIG-306 DONE (live verify BLOCKED); next MIG-302 one-chat; MCP must be ON
+updated_at: 2026-08-17T20:05:00+03:00
+hygiene: TZ-MIG-302 DONE (archive-only); TZ-MIG-306 DONE; next MIG-304; deploy НЕ
 
 ## ACTIVE
 
-- _(idle)_ next = **TZ-MIG-302** · `tasks/PROMPT-MIG-302-ONE-CHAT.md`
-- Deploy запрещён. Live category filter smoke после deploy BE + API up.
+- _(idle)_ next = **TZ-MIG-304** · email→Person · `_backlog/migrate-kp3/`
+- Deploy запрещён. Live category filter smoke — после deploy BE когда PO скажет «кати».
 
 ## NEXT (PO)
 
-1. Включить Desktop/MCP, затем новый чат: вставить `PROMPT-MIG-302-ONE-CHAT.md`
-2. Живой 1-file photo smoke — когда понадобится MIG-303, не сейчас
+1. Новый чат: **TZ-MIG-304** (одна TZ) — Counterparty.email → Person
+2. MIG-303 attach photos — когда live MCP + id-map
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-MIG-302 DONE — KP3 scoped load closeout
+
+- Archive: `tasks/_archive/2026-08/TZ-MIG-302.done.md`; load 2026-08-12 (699/16/13/27); REST when MCP down; no re-load.
+- Next: MIG-304 / MIG-303 successors; no deploy.
 
 ## [2026-08-17] — TZ-MIG-306 DONE — product categoryId filter
 
 - Archive: `tasks/_archive/2026-08/TZ-MIG-306.done.md`; BE tsc 0; product.service.spec **17/17**; live GET/UI **BLOCKED** (API down).
 - Fix: `findAll` `$in: [ObjectId, string]` for KP3 mixed categoryId types @ `bceb1762`.
-- Next: warm-deploy BE when PO says prod, then live filter smoke; then MIG-302.
+- Next: MIG-304 / deploy BE when PO says «кати»; MIG-302 closed archive-only.
 
 ## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
 

@@ -4,6 +4,8 @@
 > Cursor `user-kppdf` MCP discovery was down; Desktop was paired to `127.0.0.1:3000`.
 > Load used the **same REST** endpoints MCP tools wrap (admin JWT). No wipe/deploy.
 > Resume runs: throttle 429 → backoff; long `name` truncated to 256; quotation payload without `total`; `organizationId` from `/api/organizations`.
+>
+> **Closeout 2026-08-17:** TZ-MIG-302 archived DONE (docs-only). Mass re-load **не** выполнялся; MCP :9743 offline; Synology readback timeout. SoT counts ниже — из load 2026-08-12 + id-map.
 
 ## Final SoT (readback + id-map)
 

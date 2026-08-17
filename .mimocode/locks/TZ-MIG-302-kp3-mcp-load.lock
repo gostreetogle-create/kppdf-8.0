@@ -1,0 +1,4 @@
+TZ-MIG-302-kp3-mcp-load
+locked: 2026-08-17
+zone: docs/audits/2026-08-12-kp3-mcp-load-report.md ; data/from-kp3/id-map.json (gitignore)
+note: KP3 scoped load 2026-08-12 Synology prod — 699 products / 16 CP / 13 cat / 27 KP; REST when MCP down; no re-load on closeout; photo/email/brand = MIG-303/304/305

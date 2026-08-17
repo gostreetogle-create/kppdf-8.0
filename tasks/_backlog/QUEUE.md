@@ -2,20 +2,23 @@
 
 **Аудит:** [`docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`](../../docs/audits/2026-08-16-tasks-hygiene-drain-audit.md)  
 **Слить очередь:** [`tasks/PROMPT-SEQUENTIAL-DRAIN-NOW.md`](../PROMPT-SEQUENTIAL-DRAIN-NOW.md)  
-**Обрыв:** [`tasks/PROMPT-RESUME-ANY.md`](../PROMPT-RESUME-ANY.md)
+**Обрыв:** [`tasks/PROMPT-RESUME-AFTER-DROP.md`](../PROMPT-RESUME-AFTER-DROP.md)  
+**След. чат:** **TZ-MIG-304** · `_backlog/migrate-kp3/TZ-MIG-304-*.md`
 
 ## Живое (порядок)
 
 | # | ID | Где | Класс | Кому |
 |---|-----|-----|--------|------|
-| 0 | **TZ-UX-371** | archive | FE orders expand + dark | DONE (unpushed WIP may remain) |
-| 1 | **TZD-56** | archive | Desktop AI NSIS bundle | DONE 0.5.6 |
-| 2 | **TZD-47** | `_backlog/desktop/` | MCP tool | Freebuff |
-| 3 | **TZ-MIG-302→306→304→303** | `_backlog/migrate-kp3/` | data wave (MCP) | Freebuff |
+| 1 | **TZ-MIG-304** | `_backlog/migrate-kp3/` | email→Person | Freebuff · 1 чат |
+| 2 | **TZ-MIG-303** | `_backlog/migrate-kp3/` | attach photos | после 304 + TZD-47 |
 
 ## Закрыто в рое (сегодня)
 
-- **TZD-56** DONE — NSIS `ai-runner.mjs` + llama CPU; bump 0.5.6; deploy НЕ
+- **TZ-MIG-302** DONE (archive-only) — KP3 load 2026-08-12; 699 products; REST when MCP down; no re-load
+- **TZ-MIG-306** DONE @ `bceb1762` — categoryId `$in` filter; live verify BLOCKED (API down)
+- **TZD-47** DONE @ `d158c112` — HITL photo upload; live MCP был offline; BE не трогал
+- **TZD-56** DONE @ `07593970` — NSIS `ai-runner.mjs` + llama CPU; bump 0.5.6; deploy НЕ
+- **TZ-UX-371** DONE (archive на диске)
 - **TZ-PRODUCTION-353** DONE @ `61dd144e` — unassigned banner + amber «Не назначен»
 - **TZ-PRODUCTION-352** DONE @ `eccc1d6b` — worker tint hash fallback
 - **TZ-SALES-369** DONE @ `8898a13e` — КП PDF filename

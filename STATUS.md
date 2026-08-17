@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-17] — TZ-MIG-302 DONE: KP3 scoped load closeout
+**Статус:** DONE (archive-only); deploy НЕ; no re-load
+**Что:** Load 2026-08-12 Synology prod — 699 products / 16 CP / 13 cat / 27 KP; REST when MCP down; id-map local gitignore.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-302.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-302-kp3-mcp-load.lock`
+**Gates:** load-report PASS; live MCP/SoT offline on closeout — не fake.
+
 ## [2026-08-17] — TZD-47 DONE: MCP photo upload HITL
 **Статус:** DONE; deploy НЕ; live MCP offline
 **Что:** propose/confirm photo → `POST /api/photos/upload` + optional `Product.photoIds`; registry 95.

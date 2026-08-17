@@ -8,6 +8,16 @@
 **Lock:** `.mimocode/locks/TZ-MIG-306-category-filter.lock`
 **Next:** warm-deploy BE + live filter smoke when API up; then MIG-302.
 
+## [2026-08-17] — TZ-MIG-302 DONE — KP3 scoped load closeout
+
+**Исполнитель:** composer-executor-mig-302
+**Статус:** DONE (archive-only); deploy НЕ; mass re-load НЕ
+**Что:** Closeout load 2026-08-12: 699 products / 16 CP / 13 cat / 27 KP на Synology prod; REST when MCP down; id-map gitignore; deferred photo/email/brand.
+**Gates:** load-report PASS; MCP :9743 offline; Synology timeout — не re-verify.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-302.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-302-kp3-mcp-load.lock`
+**Next:** TZ-MIG-304 email→Person; deploy запрещён.
+
 ## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
 
 **Исполнитель:** composer-executor-tzd-47
