@@ -1,3 +1,13 @@
+## [2026-08-17] — TZ-MIG-306 DONE — product categoryId filter
+
+**Исполнитель:** composer-executor-mig-306
+**Статус:** DONE (live GET/UI **BLOCKED** — Synology/local API offline); deploy НЕ
+**Что:** `ProductService.findAll` matches `categoryId` via `$in: [ObjectId, string]` for KP3 mixed types; unit test TZ-MIG-306; code @ `bceb1762`.
+**Gates:** BE tsc PASS; `product.service.spec` **17/17**; live `GET /api/products?categoryId=` not run.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-306.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-306-category-filter.lock`
+**Next:** warm-deploy BE + live filter smoke when API up; then MIG-302.
+
 ## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
 
 **Исполнитель:** composer-executor-tzd-47

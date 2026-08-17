@@ -5,21 +5,26 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T19:40:00+03:00
-hygiene: TZD-47 DONE; next chat = MIG-302 one-TZ; MCP live was offline
+updated_at: 2026-08-17T20:00:00+03:00
+hygiene: TZ-MIG-306 DONE (live verify BLOCKED); next MIG-302 one-chat; MCP must be ON
 
 ## ACTIVE
 
-- _(idle)_ next = **TZ-MIG-302** · одна TZ в следующем чате
-- Deploy запрещён. Live MCP :9743 был offline на closeout 47.
+- _(idle)_ next = **TZ-MIG-302** · `tasks/PROMPT-MIG-302-ONE-CHAT.md`
+- Deploy запрещён. Live category filter smoke после deploy BE + API up.
 
 ## NEXT (PO)
 
-1. Новый чат: **MIG-302** (тот же стиль: одна TZ)
-2. Перед живым photo smoke / MIG-303: **подключи MCP**
-3. Deploy только по слову «кати»
+1. Включить Desktop/MCP, затем новый чат: вставить `PROMPT-MIG-302-ONE-CHAT.md`
+2. Живой 1-file photo smoke — когда понадобится MIG-303, не сейчас
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-MIG-306 DONE — product categoryId filter
+
+- Archive: `tasks/_archive/2026-08/TZ-MIG-306.done.md`; BE tsc 0; product.service.spec **17/17**; live GET/UI **BLOCKED** (API down).
+- Fix: `findAll` `$in: [ObjectId, string]` for KP3 mixed categoryId types @ `bceb1762`.
+- Next: warm-deploy BE when PO says prod, then live filter smoke; then MIG-302.
 
 ## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
 
