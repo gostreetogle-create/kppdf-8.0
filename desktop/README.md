@@ -99,7 +99,8 @@ host (`src/core/mcpHost.ts`) и root scripts запускают именно э�
 `desktop/mcp-runtime/` не является вторым исходным деревом: в canonical worktree он
 отсутствует и не должен восстанавливаться или коммититься как копия. Installer-side
 packaging/sidecar остаётся отдельным follow-up: текущий Tauri config не объявляет
-runtime resource, а development host требует Node.js и `desktop/mcp`.
+MCP runtime resource, а development host требует Node.js и `desktop/mcp`.
+AI-раннер (вкладка AI) с 0.5.6 — resource `ai-runner.mjs` (TZD-56), не MCP.
 
 Проверки из `desktop/`:
 

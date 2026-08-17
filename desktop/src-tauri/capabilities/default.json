@@ -27,6 +27,8 @@
         "$APPDATA",
         "$APPDATA/**",
         "$HOME/**",
+        "$RESOURCE",
+        "$RESOURCE/**",
         "D:/kppdf-8.0/desktop/mcp",
         "D:/kppdf-8.0/desktop/mcp/**"
       ]

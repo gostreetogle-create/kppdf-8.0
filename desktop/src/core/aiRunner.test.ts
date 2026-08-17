@@ -1,6 +1,28 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { AI_RUNNER_DIR_ENV, envAiRunnerDir, walkUpToPackage } from './aiRunner';
+import {
+  AI_RUNNER_DIR_ENV,
+  BUNDLED_RUNNER_MISSING,
+  envAiRunnerDir,
+  nodeArgsForPlan,
+  resolveAiLaunchPlan,
+  walkUpToPackage,
+  type AiPathIo,
+} from './aiRunner';
+
+function mockIo(files: string[]): AiPathIo {
+  const set = new Set(files);
+  return {
+    join: async (...parts: string[]) => parts.join('\\').replace(/\\+/g, '\\'),
+    exists: async (p: string) => set.has(p),
+  };
+}
+
+const DEV_DIR = 'C:\\repo\\desktop';
+const DEV_ENTRY = 'C:\\repo\\desktop\\src\\ai-runner\\index.ts';
+const DEV_TSX = 'C:\\repo\\desktop\\node_modules\\tsx\\dist\\cli.mjs';
+const NSIS_RES = 'C:\\Program Files\\KPPDF Desktop';
+const NSIS_MJS = 'C:\\Program Files\\KPPDF Desktop\\ai-runner\\ai-runner.mjs';
 
 test('walkUpToPackage находит каталог пакета при обходе вверх', async () => {
   const names: Record<string, string | null> = {
@@ -47,3 +69,60 @@ test('envAiRunnerDir читает KPPDF_AI_RUNNER_DIR из process.env', () => {
     else process.env[AI_RUNNER_DIR_ENV] = prev;
   }
 });
+
+test('resolveAiLaunchPlan: NSIS resource без src → bundled, без tsx и без env monorepo', async () => {
+  const io = mockIo([NSIS_MJS]);
+  const resolved = await resolveAiLaunchPlan(io, {
+    resourceDirPath: NSIS_RES,
+    desktopDir: 'C:\\Program Files\\KPPDF Desktop\\_up_',
+  });
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  assert.equal(resolved.plan.kind, 'bundled');
+  assert.equal(resolved.plan.entry, NSIS_MJS);
+  assert.equal(resolved.plan.cwd, 'C:\\Program Files\\KPPDF Desktop\\ai-runner');
+  assert.deepEqual(nodeArgsForPlan(resolved.plan), [NSIS_MJS]);
+  assert.deepEqual(nodeArgsForPlan(resolved.plan, ['--specs']), [NSIS_MJS, '--specs']);
+});
+
+test('resolveAiLaunchPlan: tauri dev (src+tsx) побеждает leftover bundled mjs', async () => {
+  const leftover = 'C:\\repo\\desktop\\src-tauri\\resources\\ai-runner\\ai-runner.mjs';
+  const io = mockIo([DEV_ENTRY, DEV_TSX, leftover]);
+  const resolved = await resolveAiLaunchPlan(io, {
+    resourceDirPath: 'C:\\repo\\desktop\\src-tauri',
+    desktopDir: DEV_DIR,
+  });
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  assert.equal(resolved.plan.kind, 'dev');
+  if (resolved.plan.kind !== 'dev') return;
+  assert.deepEqual(nodeArgsForPlan(resolved.plan), [DEV_TSX, DEV_ENTRY]);
+});
+
+test('resolveAiLaunchPlan: env-каталог с ai-runner.mjs — bundled без monorepo', async () => {
+  const envDir = 'D:\\tmp\\ai-sidecars';
+  const entry = `${envDir}\\ai-runner.mjs`;
+  const io = mockIo([entry]);
+  const resolved = await resolveAiLaunchPlan(io, {
+    envDir,
+    resourceDirPath: NSIS_RES,
+    desktopDir: DEV_DIR,
+  });
+  assert.equal(resolved.ok, true);
+  if (!resolved.ok) return;
+  assert.equal(resolved.plan.kind, 'bundled');
+  assert.equal(resolved.plan.entry, entry);
+});
+
+test('resolveAiLaunchPlan: нет src и нет bundle → RU без path does not have a parent', async () => {
+  const io = mockIo([]);
+  const resolved = await resolveAiLaunchPlan(io, {
+    resourceDirPath: NSIS_RES,
+    desktopDir: NSIS_RES,
+  });
+  assert.equal(resolved.ok, false);
+  if (resolved.ok) return;
+  assert.equal(resolved.error, BUNDLED_RUNNER_MISSING);
+  assert.equal(resolved.error.includes('path does not have a parent'), false);
+});
+

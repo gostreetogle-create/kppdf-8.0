@@ -1,5 +1,13 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-17] — TZD-56 DONE: NSIS AI runner bundle
+**Статус:** DONE; bump 0.5.6; deploy НЕ
+**Что:** `ai-runner.mjs` + `node-llama-cpp` win-x64 как Tauri resource; dev tsx сохранён; hooks.nsh taskkill Desktop.
+**Archive:** `tasks/_archive/2026-08/TZD-56.done.md`
+**Lock:** `.mimocode/locks/TZD-56-desktop-ai-runner-nsis-sidecar.lock`
+**Gates:** desktop tsc PASS; svelte-check 0/0; 72/72 tests; bundle import getLlama PASS.
+
+
 ## [2026-08-16] — TZ-COMBINE-411 DONE: drop order group dup
 **Статус:** DONE; deploy НЕ
 **Что:** убран дубль «Заказ №…» на `/design/combine`; номер только на ряду; `gap-1` + `mt-4` на смене orderId; без color coding / boardLane.

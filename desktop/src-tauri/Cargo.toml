@@ -1,6 +1,6 @@
 [package]
 name = "kppdf-desktop"
-version = "0.5.5"
+version = "0.5.6"
 description = "KPPDF Desktop — десктоп-компаньон kppdf-8.0"
 authors = ["kppdf"]
 edition = "2021"

@@ -1,3 +1,23 @@
+## [2026-08-17] — TZD-56 DONE — NSIS AI runner sidecar/bundle
+
+**Исполнитель:** composer-executor-tzd-56
+**Статус:** DONE; deploy НЕ; bump **0.5.6**
+**Что:** bundled `ai-runner.mjs` + `node-llama-cpp` (win-x64 CPU) как Tauri resource; NSIS без `tsx`/monorepo; `tauri dev` по-прежнему tsx.
+**Gates:** desktop tsc PASS; svelte-check 0/0; tests **72/72**; bundle smoke `--specs` + `getLlama`.
+**Archive:** `tasks/_archive/2026-08/TZD-56.done.md`
+**Lock:** `.mimocode/locks/TZD-56-desktop-ai-runner-nsis-sidecar.lock`
+**Next:** TZD-47 MCP photo upload; deploy запрещён.
+
+## [2026-08-17] — TZ-UX-371 DONE — Orders list redesign
+
+**Исполнитель:** freebuff-gpt-5.6-luna
+**Статус:** DONE; deploy НЕ
+**Что:** expanded order row переведён в плоскую semantic Paper & Ink разметку; `PiTable` получил RU read-only `▸/▾` control с `bg-gold` в раскрытом состоянии; API/business logic не менялись.
+**Gates:** FE tsc PASS; focused Jest OrdersPage + PiTable **44/44**; `pnpm run build` PASS; owned ESLint 0 errors (pre-existing OnInit warning).
+**Archive:** `tasks/_archive/2026-08/TZ-UX-371.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-371-orders-list-redesign.lock`
+**Next:** TZD-56 desktop AI runner sidecar; deploy запрещён.
+
 ## [2026-08-17] — TZ-PRODUCTION-353 DONE — Gantt unassigned People gate
 
 **Исполнитель:** composer-executor

@@ -55,7 +55,7 @@ cd desktop
 pnpm mcp:check
 ```
 
-Требование на машине клиента: **Node.js** в PATH (MCP host пока не sidecar).
+Требование на машине клиента: **Node.js** в PATH (MCP host пока не sidecar; AI-раннер с 0.5.6 — bundled `.mjs`, но spawn всё ещё через `node.exe`).
 
 ### Import Studio и вкладки (TZD-36)
 
@@ -109,16 +109,16 @@ dev-раскладки — см. `MCP.md`.
 
 ### Исправление (обязательно в каждом новом setup)
 
-В текущем `desktop/src-tauri/tauri.conf.json` MCP runtime и NSIS hook не объявлены:
-канонический `desktop/mcp/` работает в dev-раскладке, а installer packaging/sidecar
-остаётся отдельным follow-up. При его выпуске конфигурация должна добавить hook,
-который останавливает только собственный Desktop/MCP процесс.
-
-Будущий hook:
+В текущем `desktop/src-tauri/tauri.conf.json` MCP runtime resource **не** объявлен
+(канон `desktop/mcp/` только в dev). AI-раннер с **0.5.6** упакован как resource
+(`resources/ai-runner/ai-runner.mjs` + `node-llama-cpp` CPU win-x64) скриптом
+`desktop/scripts/bundle-ai-runner.mjs` в `beforeBuildCommand`. `hooks.nsh` перед
+update/uninstall делает `taskkill` дерева `KPPDF Desktop.exe`, чтобы не лочить
+native `.node`.
 
 | Макрос | Когда | Действие |
 |--------|--------|----------|
-| `NSIS_HOOK_PREINSTALL` | будущая упаковка MCP | `taskkill` `kppdf-desktop.exe`; останавливать только MCP-процессы, идентифицированные по `KPPDF Desktop` / canonical MCP path; пауза ~2 с |
+| `NSIS_HOOK_PREINSTALL` | каждый setup 0.5.6+ | `taskkill /T` `KPPDF Desktop.exe`; пауза ~2 с |
 | `NSIS_HOOK_PREUNINSTALL` | до удаления | то же |
 
 Чужие `node` (Cursor, другие инструменты) **не** трогаем.
@@ -158,6 +158,11 @@ Desktop после подключения вызывает `GET /api/desktop/com
 создаёт каталог и открывает его в проводнике — можно скачать кнопкой «Скачать модель»
 или положить `.gguf` вручную с тем же именем, что в списке. Импорт и Excel-формы
 работают без модели и без MCP.
+
+**TZD-56 (0.5.6):** кнопка «Запустить» в установленном NSIS **не** требует
+`KPPDF_AI_RUNNER_DIR` на дерево репозитория и **не** вызывает `tsx`. Раннер —
+`ai-runner.mjs` из resource + `node-llama-cpp` (CPU win-x64). Dev (`tauri dev`)
+по-прежнему `tsx` + `src/ai-runner`. Node.js на машине всё ещё нужен.
 
 ---
 

@@ -1,0 +1,4 @@
+TZD-56-desktop-ai-runner-nsis-sidecar
+locked: 2026-08-17
+zone: desktop/src/core/aiRunner.ts ; desktop/scripts/bundle-ai-runner.mjs ; desktop/src-tauri/resources/ai-runner ; desktop/src-tauri/tauri.conf.json
+note: NSIS bundled ai-runner.mjs + node-llama-cpp win-x64; bump 0.5.6; deploy DEFERRED

@@ -120,6 +120,106 @@ export async function resolveDesktopDir(): Promise<string> {
   return (await safeDirname(start)) ?? start;
 }
 
+/** FS-адаптер: в runtime — Tauri; в тестах — Node path + mock exists. */
+export interface AiPathIo {
+  join: (...parts: string[]) => Promise<string>;
+  exists: (p: string) => Promise<boolean>;
+}
+
+export type AiLaunchPlan =
+  | { kind: 'dev'; cwd: string; tsxCli: string; entry: string }
+  | { kind: 'bundled'; cwd: string; entry: string };
+
+export const BUNDLED_RUNNER_MISSING =
+  'AI-раннер не найден в этом билде. Обновите Desktop (0.5.6+) или задайте KPPDF_AI_RUNNER_DIR.';
+
+export function nodeArgsForPlan(plan: AiLaunchPlan, extra: string[] = []): string[] {
+  if (plan.kind === 'dev') return [plan.tsxCli, plan.entry, ...extra];
+  return [plan.entry, ...extra];
+}
+
+function nodeModulesDir(cwd: string): string {
+  const sep = cwd.includes('\\') ? '\\' : '/';
+  return `${cwd}${sep}node_modules`;
+}
+
+export async function bundledEntryCandidates(
+  resourceDirPath: string,
+  joinFn: AiPathIo['join'],
+): Promise<string[]> {
+  return [
+    await joinFn(resourceDirPath, 'ai-runner', 'ai-runner.mjs'),
+    await joinFn(resourceDirPath, 'resources', 'ai-runner', 'ai-runner.mjs'),
+    await joinFn(resourceDirPath, 'ai-runner.mjs'),
+  ];
+}
+
+async function firstExisting(paths: string[], exists: AiPathIo['exists']): Promise<string | null> {
+  for (const p of paths) {
+    if (await exists(p)) return p;
+  }
+  return null;
+}
+
+async function devPlanAt(dir: string, io: AiPathIo): Promise<AiLaunchPlan | null> {
+  const entry = await io.join(dir, 'src', 'ai-runner', 'index.ts');
+  const tsxCli = await io.join(dir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  if ((await io.exists(entry)) && (await io.exists(tsxCli))) {
+    return { kind: 'dev', cwd: dir, tsxCli, entry };
+  }
+  return null;
+}
+
+async function bundledPlanAt(dir: string, io: AiPathIo): Promise<AiLaunchPlan | null> {
+  const entry = await firstExisting(await bundledEntryCandidates(dir, io.join), io.exists);
+  if (!entry) return null;
+  const cut = Math.max(entry.lastIndexOf('/'), entry.lastIndexOf('\\'));
+  const cwd = cut > 0 ? entry.slice(0, cut) : dir;
+  return { kind: 'bundled', cwd, entry };
+}
+
+/**
+ * Dev (есть src/ai-runner + tsx) побеждает leftover resource.
+ * Release NSIS: нет исходников → bundled ai-runner.mjs рядом с resourceDir.
+ */
+export async function resolveAiLaunchPlan(
+  io: AiPathIo,
+  opts: { envDir?: string; resourceDirPath: string; desktopDir: string },
+): Promise<{ ok: true; plan: AiLaunchPlan } | { ok: false; error: string }> {
+  if (opts.envDir) {
+    const fromEnvBundled = await bundledPlanAt(opts.envDir, io);
+    if (fromEnvBundled) return { ok: true, plan: fromEnvBundled };
+    const fromEnvDev = await devPlanAt(opts.envDir, io);
+    if (fromEnvDev) return { ok: true, plan: fromEnvDev };
+  }
+  const fromDev = await devPlanAt(opts.desktopDir, io);
+  if (fromDev) return { ok: true, plan: fromDev };
+  const fromBundle = await bundledPlanAt(opts.resourceDirPath, io);
+  if (fromBundle) return { ok: true, plan: fromBundle };
+  return { ok: false, error: BUNDLED_RUNNER_MISSING };
+}
+
+const tauriIo: AiPathIo = { join, exists };
+
+async function resolveRuntimeLaunchPlan(): Promise<
+  { ok: true; plan: AiLaunchPlan } | { ok: false; error: string }
+> {
+  let desktopDir: string;
+  try {
+    desktopDir = await resolveDesktopDir();
+  } catch (err) {
+    return {
+      ok: false,
+      error: `Не найден каталог desktop: ${err instanceof Error ? err.message : String(err)}`,
+    };
+  }
+  return resolveAiLaunchPlan(tauriIo, {
+    envDir: envAiRunnerDir(),
+    resourceDirPath: await resourceDir(),
+    desktopDir,
+  });
+}
+
 async function readPackageNameAt(dir: string): Promise<string | null> {
   try {
     const raw = await readTextFile(await join(dir, 'package.json'));
@@ -174,12 +274,15 @@ export class AiRunnerController {
   /** Характеристики ПК через одноразовый запуск раннера (--specs). */
   async getSpecs(): Promise<{ totalMemoryGb: number; freeMemoryGb: number; cpus: number }> {
     try {
-      const desktopDir = await resolveDesktopDir();
-      const cli = await join(desktopDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-      const entry = await join(desktopDir, 'src', 'ai-runner', 'index.ts');
-      const cmd = Command.create('nodejs', [cli, entry, '--specs'], {
-        cwd: desktopDir,
-        env: childEnv({}),
+      const resolved = await resolveRuntimeLaunchPlan();
+      if (!resolved.ok) {
+        this.setState({ lastError: resolved.error });
+        throw new Error(resolved.error);
+      }
+      const plan = resolved.plan;
+      const cmd = Command.create('nodejs', nodeArgsForPlan(plan, ['--specs']), {
+        cwd: plan.cwd,
+        env: childEnv(plan.kind === 'bundled' ? { NODE_PATH: nodeModulesDir(plan.cwd) } : {}),
       });
       const output = await new Promise<string>((resolve, reject) => {
         let out = '';
@@ -222,34 +325,22 @@ export class AiRunnerController {
     this.sawListenLog = false;
     this.setState({ status: 'starting', lastError: undefined, port: undefined });
 
-    let desktopDir: string;
-    try {
-      desktopDir = await resolveDesktopDir();
-    } catch (err) {
+    const resolved = await resolveRuntimeLaunchPlan();
+    if (!resolved.ok) {
       this.expectedRunning = false;
-      this.setState({ status: 'error', lastError: `Не найден каталог desktop: ${err instanceof Error ? err.message : String(err)}` });
+      this.setState({ status: 'error', lastError: resolved.error });
       return;
     }
-
-    const runnerEntry = await join(desktopDir, 'src', 'ai-runner', 'index.ts');
-    if (!(await exists(runnerEntry))) {
-      this.expectedRunning = false;
-      this.setState({
-        status: 'error',
-        lastError: `AI-раннер не найден в этом билде (нет ${runnerEntry}). Задайте ${AI_RUNNER_DIR_ENV} или обновите Desktop.`,
-      });
-      return;
-    }
+    const plan = resolved.plan;
 
     try {
-      const cli = await join(desktopDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-      const entry = runnerEntry;
-      const cmd = Command.create('nodejs', [cli, entry], {
-        cwd: desktopDir,
+      const cmd = Command.create('nodejs', nodeArgsForPlan(plan), {
+        cwd: plan.cwd,
         env: childEnv({
           KPPDF_AI_PORT: String(DEFAULT_AI_PORT),
           KPPDF_AI_MODEL_DIR: opts.modelDir,
           KPPDF_AI_MODEL_FILE: opts.modelFile ?? '',
+          ...(plan.kind === 'bundled' ? { NODE_PATH: nodeModulesDir(plan.cwd) } : {}),
         }),
       });
 
@@ -458,7 +549,7 @@ export class AiRunnerController {
   private describeSpawnError(raw: string): string {
     const lower = raw.toLowerCase();
     if (lower.includes('path does not have a parent')) {
-      return 'AI-раннер не найден в установленном приложении — задайте KPPDF_AI_RUNNER_DIR или обновите Desktop.';
+      return BUNDLED_RUNNER_MISSING;
     }
     if (lower.includes('not found') || lower.includes('notfound')) {
       return 'AI-раннер не запущен: не найден Node.js (нужен установленный Node для десктопа).';

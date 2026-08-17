@@ -10,3 +10,8 @@ dist-installers/
 src-tauri/target/
 src-tauri/gen/schemas/
 src-tauri/Cargo.lock
+
+# TZD-56: generated AI runner resource (script: scripts/bundle-ai-runner.mjs)
+src-tauri/resources/ai-runner/ai-runner.mjs
+src-tauri/resources/ai-runner/package.json
+src-tauri/resources/ai-runner/node_modules/

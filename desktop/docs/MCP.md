@@ -199,8 +199,9 @@ pnpm start
 ```
 
 > Dev-стадия: приложение запускает MCP из папки репозитория `desktop/mcp`
-> (Node + tsx). В собранный инсталлятор Node и MCP runtime сейчас не бандлятся —
-> packaging/sidecar остаётся отдельным follow-up, а не второй source tree.
+> (Node + tsx). В собранный инсталлятор MCP runtime **не** бандлится —
+> packaging/sidecar MCP остаётся follow-up. Локальный AI-раннер с 0.5.6 —
+> отдельный resource (`ai-runner.mjs`), см. `INSTALL.md` TZD-56.
 
 ## Env
 
