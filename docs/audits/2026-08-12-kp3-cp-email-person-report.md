@@ -1,27 +1,29 @@
-# KP3 → KP8 counterparty email load (MIG-304)
+# KP3 → KP8 counterparty email load (MIG-307)
 
-> Generated: 2026-08-17 · transport: REST `http://192.168.1.103:3000` · MCP: offline
+> Generated: 2026-08-17 18:00 UTC · transport: REST `https://kppdf-crm.ru` · MCP: offline
 
-**Load BLOCKED:** SoT unreachable — login timeout (WinError 10060) to `192.168.1.103:3000`.
+**Load BLOCKED:** нужен кати BE `da01f1e5` — property email rejected by prod DTO (property email should not exist) — нужен кати BE da01f1e5
 
-Schema + UI shipped; re-run `data/from-kp3/_mig304_cp_email_load.py` when LAN/VPN up.
+Schema + UI in git (`da01f1e5`); prod needs warm deploy before load.
 
-**Summary:** 0/10 emails written to Counterparty.email (blocked before PATCH)
+**Probe:** property email rejected by prod DTO (property email should not exist) — нужен кати BE da01f1e5
 
-| inn | name | email | cpId (id-map) | person | status |
-|-----|------|-------|---------------|--------|--------|
-| 7719402047 | ООО «СтройГрупп» | info@stroygroup.ru | 6a7cdc082db898d9bdcfc74c | pending | BLOCKED |
-| 5047082100 | ООО «ПромИнвест» | zakaz@prominvest.ru | — (search by INN) | pending | BLOCKED |
-| 7701234567 | АО «МеталлТрейд» | trade@metalltr.ru | — | pending | BLOCKED |
-| 771234567890 | ИП Иванов Иван Иванович | ivanov@mail.ru | — | pending | BLOCKED |
-| 5001234567 | ООО «УниверсСтрой» | info@universtroy.ru | — | pending | BLOCKED |
-| 2312308098 | ОО «СпортСтройЮг» | sportstroy_yug@mail.ru | 6a7cdc082db898d9bdcfc755 | pending | BLOCKED |
-| 2310181417 | ООО «СпортИн-Юг» | sportin-yug@mail.ru | — | isOurCompany skip | skipped |
-| 2311371971 | ООО «СпортСет» | sportset23@mail.ru | 6a7cdc082db898d9bdcfc75a | pending | BLOCKED |
-| 2301094140 | ООО Беркут | berkut1989@snipermail.ru | 6a7cdc652db898d9bdcfcc1b | pending | BLOCKED |
-| 0105048850 | ООО Благотворительный фонд | blag.otdel.2011@mail.ru | 6a7cdc652db898d9bdcfcc20 | pending | BLOCKED |
+**Summary:** 0/9 CP emails written (1 skipped isOurCompany)
+
+| inn | name | email | cpId | person | status |
+|-----|------|-------|------|--------|--------|
+| 7719402047 | ООО "СтройГрупп" | info@stroygroup.ru | 6a7cdc082db898d9bdcfc74c | — | BLOCKED |
+| 5047082100 | ООО "ПромИнвест" | zakaz@prominvest.ru | — | CP не найден в SoT | no_cp |
+| 7701234567 | АО "МеталлТрейд" | trade@metalltr.ru | — | CP не найден в SoT | no_cp |
+| 771234567890 | ИП Иванов Иван Иванович | ivanov@mail.ru | — | CP не найден в SoT | no_cp |
+| 5001234567 | ООО "УниверсалСтрой" | info@universtroy.ru | — | CP не найден в SoT | no_cp |
+| 2312308098 | ООО "СпортСтройЮг" | sportstroy_yug@mail.ru | 6a7cdc082db898d9bdcfc755 | — | BLOCKED |
+| 2310181417 | ООО "СпортИН-ЮГ" | sportin-yug@mail.ru | — | isOurCompany — не Counterparty | skipped |
+| 2311371971 | ООО "СПОРТСЕТ" | sportset23@mail.ru | 6a7cdc082db898d9bdcfc75a | — | BLOCKED |
+| 2301094140 | ООО «Алсмет» | berkut1989@snipermail.ru | 6a7cdc652db898d9bdcfcc1b | — | BLOCKED |
+| 0105048850 | МКУ «Благоустройство МО «Город Майкоп» | blag.otdel.2011@mail.ru | 6a7cdc652db898d9bdcfcc20 | — | BLOCKED |
 
 Notes:
-- 5 CP have id-map from MIG-302; 4 without map will resolve via INN search when SoT up.
+- 5 CP have id-map from MIG-302; others resolve via INN search.
 - 1 row (`2310181417`) is `isOurCompany` — email belongs to Organization, not Counterparty.
-- Person.email backfill only when `contactPersonId` set and Person.email empty (script ready).
+- Person.email backfill only when `contactPersonId` set and Person.email empty.
