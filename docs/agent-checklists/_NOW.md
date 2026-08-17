@@ -5,8 +5,8 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T21:05:00+03:00
-hygiene: MIG-304 PARTIAL closed; queue empty
+updated_at: 2026-08-17T23:15:00+03:00
+hygiene: live = empty; кати SALES-379 + email
 
 ## ACTIVE
 
@@ -14,11 +14,20 @@ _(none)_
 
 ## NEXT (PO)
 
-1. Re-run email load when LAN up: `python data/from-kp3/_mig304_cp_email_load.py`
-2. Deploy BE when скажешь «кати» (VPN off)
-3. Smoke: поле «Почта» в карточке контрагента
+1. **«кати»** (VPN off): SALES-379 Chromium PDF + email field (`da01f1e5`)
+2. Smoke PDF КП + load 9 почт
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-SALES-379 DONE — Chromium Docker PDF
+
+- Archive: `tasks/_archive/2026-08/TZ-SALES-379.done.md`; Docker build PASS; deploy **NOT** done.
+- Next: PO «кати», then live KP PDF smoke.
+
+## [2026-08-17] — TZ-MIG-307 BLOCKED — email load needs deploy
+
+- Archive: `TZ-MIG-307.done.md`; SHA `266c1cd6`; prod login OK; PATCH 400 `email should not exist`; **0/9**.
+- Next: PO «кати» ≥ `da01f1e5`, then re-run load script.
 
 ## [2026-08-17] — TZ-MIG-304 PARTIAL — Counterparty.email + KP3 load blocked
 

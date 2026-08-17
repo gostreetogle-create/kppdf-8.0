@@ -49,13 +49,13 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
-| `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE** (бейдж «временный» ИНН); **PARTY-303 DONE** (FullEditor kind C + CRUD, роли из справочника); объекты/площадки → **ORDERS-303**; **UX-314 READY** pager+limit=10 |
+| `/counterparties` | counterparties.page.md | **NAV-301** thin list; **PARTY-301 DONE**; **PARTY-303 DONE**; **MIG-304** поле «Почта» (git); **MIG-307 BLOCKED** до кати `da01f1e5` |
 | `/design`, `/design/combine`, `/supply`, `/shipping` | **design.page.md**; **design-combine.page.md**; supply.page.md; shipping.page.md | **NAV-303/305** Комбайн в Проект; **COMBINE-401…411** boardLane/product-rows; **412** fuse; **414** name→expand / pencil-edit; **415** readable order № + text-ink; метод [`combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md); **supply** live; **shipping** stub; **SWEEP-401** ship |
 | `/` , `/dashboard` | **dashboard.page.md** | **NAV-303 DONE** home = «Обзор» (`DashboardStatsPage`); **TZ-DASHBOARD-401 DONE** KPI заказов + pulse склада; **UX-331 DONE** shell brand = home chip; Канбан на `/design/combine` |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **377** backlog (не брать без PO) continuation bg+table; **UX-318** columns stay-open; **UX-316 READY** edit→builder+return; **368 READY** output gates; **UX-342 DONE** KP rail PAGE_SIZE=10; **320** PARK |
+| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **SALES-379 DONE** Chromium Docker PDF; **377** backlog; **320** PARK |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 

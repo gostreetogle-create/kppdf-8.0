@@ -17,6 +17,17 @@ RUN pnpm run build
 FROM node:20-alpine AS prod
 WORKDIR /app
 ENV NODE_ENV=production
+# Quotation PDF (puppeteer-core): Chromium + Cyrillic fonts in prod image.
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-dejavu \
+    font-noto \
+    font-noto-cjk
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 # prod stage doesn't need pnpm or corepack — CMD invokes `node`, not pnpm scripts.
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules

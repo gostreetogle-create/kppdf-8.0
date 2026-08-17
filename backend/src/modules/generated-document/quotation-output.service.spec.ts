@@ -1,6 +1,15 @@
+jest.mock('node:fs', () => ({
+  ...jest.requireActual<typeof import('node:fs')>('node:fs'),
+  existsSync: jest.fn(),
+}));
+
 import { Types } from 'mongoose';
+import { existsSync } from 'node:fs';
+import { ServiceUnavailableException } from '@nestjs/common';
 import puppeteer from 'puppeteer-core';
 import { QuotationOutputService } from './quotation-output.service';
+
+const mockedExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 
 const quotationId = new Types.ObjectId();
 const organizationId = new Types.ObjectId();
@@ -43,6 +52,9 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    mockedExistsSync.mockImplementation(
+      jest.requireActual<typeof import('node:fs')>('node:fs').existsSync,
+    );
     if (originalExecutable === undefined)
       delete process.env.PUPPETEER_EXECUTABLE_PATH;
     else process.env.PUPPETEER_EXECUTABLE_PATH = originalExecutable;
@@ -84,11 +96,43 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
     expect(first.buffer).toEqual(Buffer.from([37, 80, 68, 70]));
     expect(second.buffer).toEqual(first.buffer);
     expect(puppeteer.launch).toHaveBeenCalledTimes(1);
+    expect(puppeteer.launch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        executablePath: 'chrome-for-test',
+        args: expect.arrayContaining([
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ]),
+      }),
+    );
     expect(page.setContent).toHaveBeenCalledWith(
       expect.stringContaining('КП'),
       expect.objectContaining({ timeout: 15_000 }),
     );
     expect(templateService.build).not.toHaveBeenCalled();
+  });
+
+  it('returns 503 when no Chromium binary is available', async () => {
+    delete process.env.PUPPETEER_EXECUTABLE_PATH;
+    mockedExistsSync.mockReturnValue(false);
+    const model = {
+      findById: jest.fn(() => ({
+        exec: jest.fn().mockResolvedValue(quotationFixture()),
+      })),
+    };
+    const service = new QuotationOutputService(
+      model as never,
+      { findById: jest.fn(), build: jest.fn() } as never,
+      { archiveRendered: jest.fn() } as never,
+    );
+
+    await expect(
+      service.renderPdf(quotationId.toString(), {
+        organizationId: organizationId.toString(),
+      }),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
   it('archives a new final quotation document without overwriting history', async () => {
