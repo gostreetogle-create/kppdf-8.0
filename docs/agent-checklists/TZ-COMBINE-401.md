@@ -1,6 +1,6 @@
 # TZ-COMBINE-401 checklist
 
-> Status: **IN PROGRESS**
+> Status: **DONE** (archive TZ-COMBINE-401.done.md)
 > Spec: `tasks/TZ-COMBINE-401-combine-boardlane-canon.md`
 
 ## Claim

@@ -2,28 +2,24 @@
 
 | Папка / файл | Что здесь |
 |--------------|-----------|
-| **`PROMPT-RESUME-ANY.md`** | Единственный промпт «продолжи / новый чат Buffy» |
-| **`PROMPT-UNIVERSAL-CONTINUOUS.md`** | Полный канон исполнителя (редко; обычно хватает RESUME-ANY) |
-| **`_active/`** | Сейчас в работе (0–1 claim) |
-| **`_backlog/`** | Живая очередь: незакрытые TZ + WAVE |
+| **`PROMPT-RESUME-ANY.md`** | Обрыв / новый чат |
+| **`PROMPT-UNIVERSAL-CONTINUOUS.md`** | Полный канон исполнителя |
+| **`PROMPT-FREEBUFF-TASKS-DRAIN.md`** | Слить живую очередь (после drain — spent) |
+| **`_active/`** | 0–1 claim |
+| **`_backlog/`** | Только незакрытое (см. `QUEUE.md`) |
 | **`_park/`** | Отложено; не брать без PO |
-| **`_archive/`** | Сделано / отработанные промпты / старые волны |
+| **`_archive/`** | DONE + specs-dup + prompts-spent + waves-done |
 
-**Шпаргалка PO:** [`docs/PO-AGENT-FLOW.md`](../docs/PO-AGENT-FLOW.md)  
-**Опасные ops:** [`docs/ops/DANGEROUS-OPS.md`](../docs/ops/DANGEROUS-OPS.md)
+**Шпаргалка:** [`docs/PO-AGENT-FLOW.md`](../docs/PO-AGENT-FLOW.md)  
+**Аудит гигиены:** [`docs/audits/2026-08-16-tasks-hygiene-drain-audit.md`](../docs/audits/2026-08-16-tasks-hygiene-drain-audit.md)
 
-## Правила гигиены
+## Правила
 
-1. В **корне `tasks/`** не хранить одноразовые `PROMPT-*` и копии уже закрытых TZ.  
-2. Отработанный промпт волны → `_archive/YYYY-MM/prompts-spent/`.  
-3. Закрытая TZ → `_archive/YYYY-MM/<TZ>.done.md` (+ lock); исходный spec можно убрать в `waves-done/` или `specs-dup-root/`.  
-4. Папки `tasks/prompts/` **нет** — не возрождать; живые промпты только: корень (2 файла) или рядом с живой WAVE в `_backlog/`.  
-5. Пустые папки не оставлять.
+1. В корне не копить DONE specs / spent PROMPT.  
+2. Закрытая TZ → `_archive/YYYY-MM/<ID>.done.md` + lock; исходник → `specs-dup-root/`.  
+3. Spent wave prompt → `prompts-spent/`; закрытая WAVE → `waves-done/`.  
+4. `_park` не «чистить ради пустоты» — это память отложенного.
 
-## Сейчас в `_backlog/` (ожидаемо тонко)
+## Сейчас живо
 
-- `QUEUE.md` — карта  
-- В корне `tasks/`: **TZ-AUTH-306→303→304→305→307 READY** — owner invariant, вход по именованному компьютеру, безопасный cutover и cleanup; wave/prompt в `_backlog/WAVE-AUTH-DEVICE-ACCESS.md`.
-- `kp-vitrine/` — **WAVE-KP-SHAME-POLISH** (350→354) + spent COMPLETE specs; continuous `PROMPT-KP-SHAME-CONTINUOUS.md`  
-- `ops/` — OPS-310 / AUTH-302 (DONE, specs may remain as history)  
-- `perf/` — WAVE-PERF-PHOTOS DONE (история)
+См. `_backlog/QUEUE.md`: живых TZ нет; ждём **«кати»** (почта + PDF Chromium). `_park` не трогать.

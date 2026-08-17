@@ -10,7 +10,7 @@
   validate_product + domain schema product; apply_plan entity ветка. Gates: BE tsc; jest 27/27; MCP 58/58.
 - Known limits: BOM из Excel — не эта волна; КП/Order kinds — future.
 
-> Status: **READY** · Source: `tasks/_backlog/desktop/TZD-27-journal-product-writes.md`
+> Status: **PARKED** · Source: `tasks/_park/desktop/TZD-27-journal-product-writes.md`
 
 ## Claim slot
 - agent_id:

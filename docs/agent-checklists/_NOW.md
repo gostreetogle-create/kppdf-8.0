@@ -5,8 +5,8 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T23:15:00+03:00
-hygiene: live = empty; кати SALES-379 + email
+updated_at: 2026-08-17T23:20:00+03:00
+hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
 
 ## ACTIVE
 
@@ -14,8 +14,16 @@ _(none)_
 
 ## NEXT (PO)
 
-1. **«кати»** (VPN off): SALES-379 Chromium PDF + email field (`da01f1e5`)
-2. Smoke PDF КП + load 9 почт
+1. Smoke: КП → PDF (не тост) · карточка контрагента «Почта»
+2. Завтра на работе: тот же ПК, новая ссылка не нужна
+
+## DONE / LANDED (recent)
+
+## [2026-08-17] — Warm deploy OK
+
+- SHA `ddd2cade` · Auth login OK · Frontend 200 · WIPE=false
+- Chromium `/usr/bin/chromium-browser` in kppdf-backend
+- CP email load: **5 written**, 1 skip our-company, 4 no_cp (не были в MIG-302)
 
 ## DONE / LANDED (recent)
 

@@ -37,15 +37,15 @@ Loose wording PO → код:
 | # | TZ | Суть | Статус |
 |---|-----|------|--------|
 | 1 | MIG-301 extract+map | dump + audit | **DONE** `e264ff4c` |
-| 2 | [`TZ-MIG-302`](./TZ-MIG-302-kp3-mcp-load.md) | MCP/REST load scoped (no photo/email/brand) | **LOADED** prod LAN — report `2026-08-12-kp3-mcp-load-report.md` |
-| 2b | [`TZ-MIG-306`](./TZ-MIG-306-fix-category-filter.md) | category filter API/UI (данные уже привязаны) | **NEXT** |
-| 3 | [`TZD-47`](../desktop/TZD-47-mcp-photo-upload.md) | MCP photo upload tool | после 306 |
-| 4 | [`TZ-MIG-303`](./TZ-MIG-303-attach-kp3-photos.md) | bulk attach photos | после TZD-47 |
-| 5 | [`TZ-MIG-304`](./TZ-MIG-304-cp-email-via-person.md) | email → Person | после 302 |
-| — | [`TZ-MIG-305`](./TZ-MIG-305-kp3-branding-park.md) | branding | **PARK** |
+| 2 | TZ-MIG-302 | MCP/REST load scoped | **DONE** `833c12c5` (load 2026-08-12) |
+| 2b | TZ-MIG-306 | category filter `$in` ObjectId\|string | **DONE** `bceb1762` (live GET BLOCKED) |
+| 3 | TZD-47 | MCP photo upload HITL | **DONE** `d158c112` |
+| 4 | TZ-MIG-303 | bulk attach photos | **DONE** `5895e552` (661/661 already on prod; 0 uploads) |
+| 5 | TZ-MIG-304 | `Counterparty.email` schema+UI | **PARTIAL** `da01f1e5` |
+| 5b | TZ-MIG-307 | долить 9 почт prod REST | **BLOCKED** `266c1cd6` — ждёт «кати» |
+| — | TZ-MIG-305 | branding | **PARK** |
 
-Промпт (категории+фото): [`PROMPT-KP3-CAT-FILTER-AND-PHOTOS.md`](./PROMPT-KP3-CAT-FILTER-AND-PHOTOS.md)  
-Промпт load: [`PROMPT-KP3-MIG-302.md`](./PROMPT-KP3-MIG-302.md)
+Spent prompts: `tasks/_archive/2026-08/prompts-spent/PROMPT-KP3-*`
 
 ## Staging
 

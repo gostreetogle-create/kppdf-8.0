@@ -1,6 +1,6 @@
 # WAVE — Комбайн: изделие-ряд (accordion mini-kanban)
 
-**Статус:** READY  
+**Статус:** IN WORK (409 DONE → 410)  
 **Дата:** 2026-08-16  
 **Аудит:** `docs/audits/2026-08-16-combine-product-row-ia.md`  
 **Route:** `/design/combine`  
@@ -13,10 +13,10 @@
 
 ## Порядок
 
-| # | ID | Суть |
-|---|-----|------|
-| 1 | **TZ-COMBINE-409** | Shell: product rows + sticky stage header + expand + indicators + modules in cells + DnD внутри ряда |
-| 2 | **TZ-COMBINE-410** | Без модулей «целиком»; polish collapse; a11y; KPI sync if needed |
+| # | ID | Суть | Статус |
+|---|-----|------|--------|
+| 1 | **TZ-COMBINE-409** | Shell: product rows + sticky stage header + expand + indicators + modules + DnD | **DONE** `26103f3a` |
+| 2 | **TZ-COMBINE-410** | Без модулей «целиком»; polish collapse; a11y | READY / in flight |
 
 ## DoD волны
 

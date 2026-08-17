@@ -1,6 +1,6 @@
 # TZ-ORDERS-305 checklist
 
-> Status: **READY** · Wave: SHOP-NORTH-B
+> Status: **DONE** · archived 2026-08 (stale READY cleared)
 > Source: `tasks/_backlog/shop-north-b/`
 
 ## Claim slot

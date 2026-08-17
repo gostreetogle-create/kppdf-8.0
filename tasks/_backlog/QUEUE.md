@@ -1,23 +1,15 @@
 # Очередь (тонкая)
 
-**Живое только это.** Остальное DONE → `_archive`. `_park` не чистить.
+**Живых TZ нет.** `_park` не чистить.
 
-## Живое
+## Сейчас
 
-| # | ID | Суть | Блокер |
-|---|-----|------|--------|
-| 1 | **TZ-MIG-304** | Почта **фирмы** (`Counterparty.email`) + 10 адресов КП3; Person.email уже есть | SoT для заливки |
+Warm deploy **OK** `ddd2cade` (WIPE=false). Auth + frontend 200. Chromium в контейнере.
 
-MIG-303 DONE → `tasks/_archive/2026-08/TZ-MIG-303.done.md` (661/661 photos, 2026-08-17).
+Почты КП3: **5 записаны** на фирмы; 1 наша Organization skip; 4 контрагента не было в SoT (демо-ИНН).
 
-## Гигиена 2026-08-17
-
-Сняты висячки (уже DONE, specs → `specs-dup-root`): UX-371, MIG-306, PROMPT-302. Stale `_active/TZD-56` убран. TZD-47/56/MIG-302 backlog specs уже были сняты при closeout.
+Smoke PO: PDF в КП · поле «Почта» у контрагента.
 
 ## Park (не брать)
 
 AUTH-307, SALES-377, UTF8, паспорта, TZD-49, MIG-305 branding, …
-
-## Deploy
-
-Только «кати» + VPN off.

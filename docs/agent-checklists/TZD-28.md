@@ -10,7 +10,7 @@
   notes [AI-DRAFT], без set-default); MCP.md doc-draft protocol. Gates: MCP tsc; MCP test 60/60.
 - Known limits: наполнение блоков — руками менеджера (TZD-29 todo).
 
-> Status: **READY** · Source: `tasks/_backlog/desktop/TZD-28-doc-constructor-mcp.md`
+> Status: **PARKED** · Source: `tasks/_park/desktop/TZD-28-doc-constructor-mcp.md`
 
 ## Claim slot
 - agent_id:

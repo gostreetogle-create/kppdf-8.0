@@ -1,6 +1,6 @@
 # TZ-COMBINE-408 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE** (archive TZ-COMBINE-408.done.md)
 > Commit/push: по `docs/GIT-POLICY.md`
 
 ## Claim slot

@@ -1,6 +1,6 @@
 # TZ-FRONTEND-302-B-PHOTO checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE** (wave FRONTEND-302 archived)
 > Marker: `tasks/_active/TZ-FRONTEND-302-B-PHOTO.md`
 > Lane: B · Parent: TZ-FRONTEND-302 (umbrella, Lane A-owned — не редактирую)
 > Canon: `docs/audits/2026-08-15-angular-component-integrity.md` @ `405cb71d51f56b21e694a0781ca3f82d30c6702d`

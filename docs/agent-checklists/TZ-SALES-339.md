@@ -1,6 +1,6 @@
 # TZ-SALES-339 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE** (archive TZ-SALES-339.done.md; stale review cleared)
 > Visual gate: visible Save КП + autosave/F5 restore + delete/reload row gone.
 > Marker: `tasks/_active/TZ-SALES-339.md`
 > Source: `tasks/_backlog/kp-vitrine/TZ-SALES-339-kp-save-autosave-delete.md`

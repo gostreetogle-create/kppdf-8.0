@@ -1,6 +1,6 @@
 # TZD-33 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE** (archive TZD-33.done.md; stale CLAIM cleared 2026-08-17)
 > Marker: `tasks/_active/TZD-33.md` (создан при CLAIM)
 > Commit/push: yes after DONE
 

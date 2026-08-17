@@ -1,6 +1,6 @@
 # TZ-COMBINE-407 checklist
 
-> Status: **READY FOR REVIEW**
+> Status: **DONE** (archive TZ-COMBINE-407.done.md)
 > Marker: `tasks/_active/` (не создавался — resume-поток, claim в _NOW)
 > Commit/push: по `docs/GIT-POLICY.md`
 
