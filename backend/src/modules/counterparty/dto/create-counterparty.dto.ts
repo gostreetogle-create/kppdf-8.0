@@ -1,9 +1,10 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayUnique,
   IsArray,
   IsBoolean,
   IsDate,
+  IsEmail,
   IsIn,
   IsInt,
   IsMongoId,
@@ -51,6 +52,16 @@ export class CreateCounterpartyDto {
   @IsOptional() @IsString() website?: string;
   @IsOptional() @IsString() directorName?: string;
   @IsOptional() @IsString() @Length(0, 32) phone?: string;
+
+  /** TZ-MIG-304: optional firm email; not unique across counterparties. */
+  @IsOptional()
+  @IsEmail()
+  @Length(0, 256)
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() || undefined : value,
+  )
+  email?: string;
+
   @IsOptional() @Type(() => Date) @IsDate() registrationDate?: Date;
   @IsOptional() @IsArray() @IsString({ each: true }) partyTypes?: string[];
 

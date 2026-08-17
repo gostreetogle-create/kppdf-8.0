@@ -1,3 +1,13 @@
+## [2026-08-17] — TZ-MIG-304 PARTIAL — Counterparty.email + KP3 email load
+
+**Исполнитель:** composer-executor-mig-304
+**Статус:** PARTIAL DONE — schema+UI shipped; load **BLOCKED** (SoT timeout)
+**Что:** optional `Counterparty.email` schema/DTO/UI «Почта»; load script ready; 0/10 emails written (LAN down).
+**Gates:** BE tsc PASS; counterparty 17/17; FE tsc PASS; editor 9/9.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-304.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-304-cp-email-via-person.lock`
+**Next:** re-run `_mig304_cp_email_load.py` when SoT up; deploy BE on PO «кати».
+
 ## [2026-08-17] — TZ-MIG-303 DONE — KP3 photos attach verify
 
 **Исполнитель:** composer-executor-mig-303

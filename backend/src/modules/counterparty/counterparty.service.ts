@@ -102,7 +102,7 @@ export class CounterpartyService {
       const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(escaped, 'i');
       const searchCond = {
-        $or: [{ name: re }, { shortName: re }, { inn: re }, { phone: re }],
+        $or: [{ name: re }, { shortName: re }, { inn: re }, { phone: re }, { email: re }],
       };
       if (filter.$or) {
         filter.$or = (filter.$or as Record<string, unknown>[]).map((cond) => ({

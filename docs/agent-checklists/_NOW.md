@@ -5,19 +5,25 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T21:00:00+03:00
-hygiene: DONE-висячки в archive; live = MIG-304
+updated_at: 2026-08-17T21:05:00+03:00
+hygiene: MIG-304 PARTIAL closed; queue empty
 
 ## ACTIVE
 
-- **TZ-MIG-304** Counterparty.email + 10 КП3
+_(none)_
 
 ## NEXT (PO)
 
-1. После агентов — проверить карточки контрагентов (поле Почта) и фото в каталоге
-2. «Кати» когда скажешь (VPN off)
+1. Re-run email load when LAN up: `python data/from-kp3/_mig304_cp_email_load.py`
+2. Deploy BE when скажешь «кати» (VPN off)
+3. Smoke: поле «Почта» в карточке контрагента
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZ-MIG-304 PARTIAL — Counterparty.email + KP3 load blocked
+
+- Archive: `tasks/_archive/2026-08/TZ-MIG-304.done.md`; schema+UI DONE; load **0/10** (SoT timeout); BE 17/17 FE 9/9.
+- Next: re-run load script when Synology reachable.
 
 ## [2026-08-17] — TZ-MIG-303 DONE — KP3 photos attach verify
 

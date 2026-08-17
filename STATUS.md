@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-17] — TZ-MIG-304 PARTIAL: Counterparty.email + KP3 load
+**Статус:** PARTIAL DONE; deploy НЕ; load 0/10 BLOCKED
+**Что:** Counterparty.email schema/DTO/UI; REST load script; SoT timeout.
+**Archive:** `tasks/_archive/2026-08/TZ-MIG-304.done.md`
+**Lock:** `.mimocode/locks/TZ-MIG-304-cp-email-via-person.lock`
+**Gates:** BE tsc + 17/17; FE tsc + editor 9/9.
+
 ## [2026-08-17] — TZ-MIG-303 DONE: KP3 photos attach verify
 **Статус:** DONE; deploy НЕ; uploaded this run 0
 **Что:** REST readback prod — 661/661 products with photoIds (100%); idempotent loader script; orphans 35 logged; MCP offline.

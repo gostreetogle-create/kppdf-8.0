@@ -138,6 +138,17 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
                 />
               </app-pi-form-field>
 
+              <app-pi-form-field label="Почта" htmlFor="cp-email" [error]="errorFor('email')">
+                <app-pi-input
+                  id="cp-email"
+                  formControlName="email"
+                  type="email"
+                  placeholder="info@example.ru"
+                  [invalid]="hasError('email')"
+                  data-test="cp-email"
+                />
+              </app-pi-form-field>
+
               <app-pi-form-field label="Юридический тип" htmlFor="cp-legalType">
                 <app-pi-overflow-select
                   [items]="legalTypeItems"
@@ -413,6 +424,7 @@ export class CounterpartyFullEditorDialogComponent {
     name: this.fb.control('', [Validators.required, Validators.maxLength(256)]),
     shortName: this.fb.control('', [Validators.maxLength(128)]),
     phone: this.fb.control('', [Validators.maxLength(32)]),
+    email: this.fb.control('', [Validators.email, Validators.maxLength(256)]),
     legalForm: this.fb.control(''),
     legalType: this.fb.control<LegalType | ''>(''),
     website: this.fb.control(''),
@@ -453,6 +465,7 @@ export class CounterpartyFullEditorDialogComponent {
       name: cp.name,
       shortName: cp.shortName ?? '',
       phone: cp.phone ?? '',
+      email: cp.email ?? '',
       legalForm: cp.legalForm ?? '',
       legalType: cp.legalType ?? '',
       website: cp.website ?? '',
@@ -514,6 +527,7 @@ export class CounterpartyFullEditorDialogComponent {
     const c = this.form.controls[name];
     if (!c.invalid || (!c.dirty && !c.touched)) return '';
     if (c.errors?.['required']) return 'Обязательное поле';
+    if (c.errors?.['email']) return 'Некорректный адрес почты';
     if (c.errors?.['pattern']) return 'Некорректный формат';
     if (c.errors?.['min']) return `Минимум ${c.errors['min'].min}`;
     if (c.errors?.['max']) return `Максимум ${c.errors['max'].max}`;
@@ -566,6 +580,7 @@ export class CounterpartyFullEditorDialogComponent {
     const text: [keyof Counterparty, string][] = [
       ['shortName', v.shortName],
       ['phone', v.phone],
+      ['email', v.email],
       ['legalForm', v.legalForm],
       ['website', v.website],
       ['kpp', v.kpp],

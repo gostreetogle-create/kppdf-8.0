@@ -74,6 +74,10 @@ export class Counterparty {
   @Prop()
   phone?: string;
 
+  /** TZ-MIG-304: корпоративная почта фирмы (отдельно от Person.email). */
+  @Prop()
+  email?: string;
+
   @Prop()
   registrationDate?: Date;
 

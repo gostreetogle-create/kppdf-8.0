@@ -44,6 +44,7 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
     kpp: '770101001',
     ogrn: '1027700012345',
     phone: '+7 900 111-22-33',
+    email: 'info@romashka.ru',
     roles: ['customer', 'supplier'],
     bankName: 'ПАО Сбербанк',
     bankBik: '044525225',
@@ -102,6 +103,7 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
       inn: '7701234567',
       kpp: '770101001',
       phone: '+7 900 111-22-33',
+      email: 'info@romashka.ru',
       bankBik: '044525225',
       signerPosition: 'Генеральный директор',
       legalType: 'ooo',
@@ -171,6 +173,16 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
       'contractor',
       'manufacturer',
     ]);
+  });
+
+  it('includes email in update payload when set (TZ-MIG-304)', async () => {
+    const editor = await build(existing);
+    editor.form.controls.email.setValue('billing@romashka.ru');
+    editor.onSubmit();
+
+    const [, payload] = update.mock.calls[0] as [string, Record<string, unknown>];
+    expect(payload.email).toBe('billing@romashka.ru');
+    expect(fixture.nativeElement.querySelector('[data-test="cp-email"]')).toBeTruthy();
   });
 
   it('warns that a quick-created INN is temporary', async () => {

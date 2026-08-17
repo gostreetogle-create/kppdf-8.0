@@ -46,6 +46,8 @@ export interface Counterparty {
   website?: string;
   directorName?: string;
   phone?: string;
+  /** TZ-MIG-304: firm email (distinct from contact Person.email). */
+  email?: string;
   registrationDate?: string;
   partyTypes?: string[];
   photoIds?: string[];

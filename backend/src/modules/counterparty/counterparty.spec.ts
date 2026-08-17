@@ -281,6 +281,38 @@ describe('CounterpartyService (TZ-PARTY-301 tenant hygiene)', () => {
     expect(update.$set.deletedAt).toBeInstanceOf(Date);
   });
 
+  it('create accepts optional email (TZ-MIG-304)', async () => {
+    const model = makeModel(null);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.create(
+      {
+        name: 'ООО Ромашка',
+        roles: ['customer'],
+        inn: '7701234567',
+        email: 'info@example.ru',
+      } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    const payload = model.create.mock.calls[0][0] as Record<string, unknown>;
+    expect(payload.email).toBe('info@example.ru');
+  });
+
+  it('update persists email (TZ-MIG-304)', async () => {
+    const doc = makeDoc(ownOrgId);
+    const model = makeModel(doc);
+    const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
+
+    await service.update(
+      new Types.ObjectId().toString(),
+      { email: 'sales@firm.ru' } as any,
+      { organizationId: ownOrgId, role: 'manager' },
+    );
+
+    expect((doc as unknown as Record<string, unknown>).email).toBe('sales@firm.ru');
+  });
+
   it('remove refuses another tenant counterparty', async () => {
     const model = makeModel(makeDoc(otherOrgId));
     const service = new CounterpartyService(model as any, { create: jest.fn() } as any);
