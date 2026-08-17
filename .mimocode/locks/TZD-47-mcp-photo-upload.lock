@@ -1,0 +1,4 @@
+TZD-47-mcp-photo-upload
+locked: 2026-08-17
+zone: desktop/mcp/src/photo-tools.ts ; desktop/mcp/src/backend.ts ; desktop/mcp/src/tools.ts
+note: HITL propose+confirm userOk → POST /api/photos/upload + optional Product.photoIds; CP bind REST absent; deploy DEFERRED

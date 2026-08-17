@@ -26,9 +26,9 @@ const cfg: McpRuntimeConfig = {
 };
 
 describe('MCP tool registry (TZD-31)', () => {
-  it('registry count matches all current tools (93 incl. aliases and kppdf_ping)', () => {
+  it('registry count matches all current tools (95 incl. aliases and kppdf_ping)', () => {
     const names = listRegisteredToolNames();
-    assert.equal(names.length, 93);
+    assert.equal(names.length, 95);
     for (const name of [
       'kppdf_list_doc_types',
       'kppdf_doc_types_list',
@@ -38,6 +38,8 @@ describe('MCP tool registry (TZD-31)', () => {
       'kppdf_text_block_categories_list',
       'kppdf_find_duplicates',
       'kppdf_cleanup_test_data',
+      'kppdf_propose_photo_upload',
+      'kppdf_confirm_photo_upload',
     ]) {
       assert.ok(names.includes(name), `${name} missing`);
     }

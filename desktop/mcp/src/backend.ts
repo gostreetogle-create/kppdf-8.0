@@ -97,6 +97,33 @@ export async function backendPostJson(
   return backendRequest(apiBaseUrl, apiKey, 'POST', path, body);
 }
 
+/**
+ * Multipart POST. Do not set Content-Type — fetch adds the boundary.
+ * Used by TZD-47 photo upload (`POST /api/photos/upload`, field `file`).
+ */
+export async function backendPostMultipart(
+  apiBaseUrl: string,
+  apiKey: string,
+  path: string,
+  form: FormData,
+): Promise<unknown> {
+  const url = `${apiBaseUrl.replace(/\/+$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
+  const auth = authFromEnvOrKey(apiKey);
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: buildHeaders(auth, false),
+    body: form,
+  });
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '');
+    throw new BackendError(
+      `Backend POST ${path} → ${res.status}${errBody ? `: ${errBody.slice(0, 200)}` : ''}`,
+      res.status,
+    );
+  }
+  return parseJson(res);
+}
+
 export async function backendPatchJson(
   apiBaseUrl: string,
   apiKey: string,

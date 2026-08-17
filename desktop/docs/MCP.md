@@ -90,7 +90,7 @@ Excel-формы работают без модели и без MCP.
   "ok": true,
   "service": "kppdf-desktop-mcp",
   "port": 9743,
-  "toolCount": 93,
+  "toolCount": 95,
   "packageVersion": "0.1.0",
   "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
   "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
@@ -459,6 +459,27 @@ criteria, normalized value, and candidate ids.
 4. Production cleanup is **not** performed by this executor. A PO must explicitly
    say `да, чисти Тест*` before any live cleanup; use this tool first as dry-run.
 
+## Tools — photo upload (TZD-47)
+
+Один файл за вызов. SoT = существующий `Photo` (`POST /api/photos/upload`, поле `file`).
+Второго хранилища нет. Массовая заливка 690 файлов — **не** эта TZ (→ MIG-303).
+
+| Tool | Effect |
+|------|--------|
+| `kppdf_propose_photo_upload` | Inspect local file (path, MIME, size ≤ 10 МБ). **0** backend writes |
+| `kppdf_confirm_photo_upload` | `userOk:true` → multipart upload → Photo id; опц. bind `Product.photoIds` |
+
+### Photo HITL protocol
+
+1. `kppdf_propose_photo_upload` `{ filePath, productId?, counterpartyId? }` — черновик с MIME/size. Файл не уходит на сервер.
+2. Человек говорит «ок».
+3. `kppdf_confirm_photo_upload` с теми же полями и `userOk: true`:
+   - `POST /api/photos/upload` (multipart field `file`) → сущность `Photo`, id в envelope.
+   - если передан `productId` → `POST /api/products/:id/photos` `{ photoId }` (канон `Product.photoIds`, не join `ProductPhoto`).
+   - если передан `counterpartyId` → Photo создаётся; **привязка к CP пропускается** (нет REST attach) + RU-подсказка.
+4. Без `userOk:true` → toolFail, 0 запросов к backend.
+5. MIME: jpeg / png / webp / gif / avif / svg. Ошибки — по-русски.
+
 ## Tools — write safety (TZD-13)
 
 **Никогда** не пишем в SoT из «голого» create-tool. Только:
@@ -476,6 +497,8 @@ criteria, normalized value, and candidate ids.
 | `kppdf_propose_material_batch` | TZD-18 — `POST /api/mutation-journal/propose-batch` (50–500 items одним вызовом; all-or-nothing best-effort — при ошибке откат; опц. `idempotencyKey`); **0** SoT. TZD-32: items принимают те же поля, что `_create` (цена/kind/description/dimensions) |
 | `kppdf_confirm_batch` | TZD-18 — `POST /api/mutation-journal/confirm-batch` (SoT write шаг) |
 | `kppdf_cancel_batch` | TZD-18 — `POST /api/mutation-journal/cancel-batch` (без SoT) |
+| `kppdf_propose_photo_upload` | TZD-47 — inspect 1 local image; **0** SoT |
+| `kppdf_confirm_photo_upload` | TZD-47 — `userOk:true` → `POST /api/photos/upload` + опц. `POST /api/products/:id/photos` `{ photoId }` |
 
 ## Tools — import task / AI assembly (TZD-22 + TZD-23)
 

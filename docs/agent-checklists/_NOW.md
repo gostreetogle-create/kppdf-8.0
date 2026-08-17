@@ -5,20 +5,26 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T19:45:00+03:00
-hygiene: swarm DONE; warm deploy OK @ 61dd144e
+updated_at: 2026-08-17T19:40:00+03:00
+hygiene: TZD-47 DONE; next chat = MIG-302 one-TZ; MCP live was offline
 
 ## ACTIVE
 
-- TZD-56 DONE — archive created; next = TZD-47 (new chat; deploy запрещён)
-- Промпт: `tasks/PROMPT-SEQUENTIAL-DRAIN-NOW.md`
+- _(idle)_ next = **TZ-MIG-302** · одна TZ в следующем чате
+- Deploy запрещён. Live MCP :9743 был offline на closeout 47.
 
 ## NEXT (PO)
 
-1. Вставить `PROMPT-SEQUENTIAL-DRAIN-NOW.md` агенту (одна TZ до конца, потом next)
-2. Hard-refresh `/production` «По рабочим» — проверить tint + баннер
+1. Новый чат: **MIG-302** (тот же стиль: одна TZ)
+2. Перед живым photo smoke / MIG-303: **подключи MCP**
+3. Deploy только по слову «кати»
 
 ## DONE / LANDED (recent)
+
+## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
+
+- Archive: `tasks/_archive/2026-08/TZD-47.done.md`; mcp tsc 0; tests 121/121; registry 95; live MCP offline.
+- Next: `TZ-MIG-302` in the next chat; no deploy.
 
 ## [2026-08-17] — TZD-56 DONE — NSIS AI runner bundle
 

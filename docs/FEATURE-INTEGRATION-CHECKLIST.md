@@ -98,6 +98,7 @@
 - [x] Windows install/update docs + NSIS preinstall stop Desktop/MCP — `desktop/docs/INSTALL.md` + `src-tauri/windows/hooks.nsh` (нет locked `esbuild.exe` при update) ✅
 - [x] Desktop pairing keys (TTL / multi / revoke) — **TZD-21**: opaque `kppd_…` + `/api/desktop/pairing-keys`; session JWT больше не в пакете; PAIRING.md / MCP.md ✅
 - [x] Desktop AI runner NSIS resource — **TZD-56**: `bundle-ai-runner.mjs` → `src-tauri/resources/ai-runner/ai-runner.mjs` + `node-llama-cpp` (win-x64 CPU); `tauri.conf.json` resources; `aiRunner.ts` bundled vs dev tsx; bump **0.5.6**; MCP sidecar **не** в этом TZ; INSTALL.md ✅
+- [x] MCP photo upload — **TZD-47**: `kppdf_propose_photo_upload` + `kppdf_confirm_photo_upload` (`userOk:true`); SoT = `POST /api/photos/upload` + bind `POST /api/products/:id/photos` → `Product.photoIds`; CP bind нет REST (RU skip); не bulk 690 ✅
 - [ ] Ops: демо-данные на стенде — опц. `node scripts/seed-demo-five.mjs --base http://HOST:3000` (префикс «Тест ·»); локально для Ганта/каталога — `node scripts/seed-local-demo.mjs` (маркер `DEMO-LOCAL`, пишет в Mongo через API; boot-seed `LocalDemoSeed`, off: `LOCAL_DEMO_SEED=0`)
 
 ## F. Общее поле / статус (coupling)

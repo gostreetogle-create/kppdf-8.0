@@ -47,6 +47,7 @@
 | Work types (₽/час) under Цех | included | Меню: Виды работ под Цех, не Settings/Каталог. |
 | Production cockpit / Gantt | available | Shell/MVP; не бухгалтерия и не fine ACL. |
 | Desktop app + MCP pairing | available | Basic Auth + `X-Access-Token`; version gate — backlog. |
+| MCP photo upload (Photo SoT) | included | TZD-47 HITL 1 file → `POST /api/photos/upload` + optional `Product.photoIds`; CP bind REST отсутствует; bulk → MIG-303. |
 | Fine-grained warehouse ACL (worker = свой склад) | absent | Vision; не импровизировать. |
 | Full accounting / CRM / tender mega | removed | Вне scope product-vision-lite; не возвращать без PO. |
 | Microservices split / extra brokers | removed | Монолит Nest; новый брокер только после measured limit + строка в ledger. |
@@ -66,4 +67,5 @@
 
 | Дата | Что |
 |------|-----|
+| 2026-08-17 | TZD-47: MCP photo upload HITL → Photo SoT + optional Product.photoIds. |
 | 2026-08-11 | Первый ledger: adopt vibe capability idea; seed из SECTION-READINESS + vision. |

@@ -1,5 +1,12 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-17] — TZD-47 DONE: MCP photo upload HITL
+**Статус:** DONE; deploy НЕ; live MCP offline
+**Что:** propose/confirm photo → `POST /api/photos/upload` + optional `Product.photoIds`; registry 95.
+**Archive:** `tasks/_archive/2026-08/TZD-47.done.md`
+**Lock:** `.mimocode/locks/TZD-47-mcp-photo-upload.lock`
+**Gates:** mcp tsc PASS; tests 121/121.
+
 ## [2026-08-17] — TZD-56 DONE: NSIS AI runner bundle
 **Статус:** DONE; bump 0.5.6; deploy НЕ
 **Что:** `ai-runner.mjs` + `node-llama-cpp` win-x64 как Tauri resource; dev tsx сохранён; hooks.nsh taskkill Desktop.

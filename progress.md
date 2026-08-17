@@ -1,3 +1,13 @@
+## [2026-08-17] — TZD-47 DONE — MCP photo upload HITL
+
+**Исполнитель:** composer-executor-tzd-47
+**Статус:** DONE; deploy НЕ; live MCP :9743 offline (smoke = mocked REST)
+**Что:** `kppdf_propose_photo_upload` + `kppdf_confirm_photo_upload` (`userOk`); SoT `POST /api/photos/upload`; bind `POST /api/products/:id/photos` → `Product.photoIds`; CP bind REST нет.
+**Gates:** mcp tsc PASS; tests **121/121**; registry **95**.
+**Archive:** `tasks/_archive/2026-08/TZD-47.done.md`
+**Lock:** `.mimocode/locks/TZD-47-mcp-photo-upload.lock`
+**Next:** TZ-MIG-302 one-chat; deploy запрещён. PO: подключи MCP для live 1-file.
+
 ## [2026-08-17] — TZD-56 DONE — NSIS AI runner sidecar/bundle
 
 **Исполнитель:** composer-executor-tzd-56
