@@ -245,6 +245,16 @@ export class ProductModulesService {
     return silentGet<ProductModule>(this.http, `${this.baseUrl}/modules/${id}`);
   }
 
+  findByIds(ids: string[]): Observable<SilentResult<ProductModule[]>> {
+    if (ids.length === 0)
+      return new Observable((sub) => {
+        sub.next({ ok: true, data: [] });
+        sub.complete();
+      });
+    const params = new HttpParams().set('ids', ids.join(','));
+    return silentGet<ProductModule[]>(this.http, `${this.baseUrl}/modules/bulk`, { params });
+  }
+
   /** TZ-COST-302: GET /modules/:id/cost-preview — read-only rollup, no journal. */
   getCostPreview(id: string): Observable<SilentResult<ModuleCostPreview>> {
     return silentGet<ModuleCostPreview>(this.http, `${this.baseUrl}/modules/${id}/cost-preview`);

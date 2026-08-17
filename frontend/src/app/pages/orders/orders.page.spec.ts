@@ -344,6 +344,12 @@ describe('OrdersPage', () => {
     fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test="expanded-content"]')).toBeTruthy();
+    const expandToggle = fixture.nativeElement.querySelector(
+      '[data-test="table-expand-toggle"]',
+    ) as HTMLButtonElement;
+    expect(expandToggle).toBeTruthy();
+    expect(expandToggle.classList).toContain('bg-gold');
+    expect(expandToggle.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector('[data-test="order-deal-block"]')).toBeFalsy();
     expect(
       fixture.nativeElement.querySelector('[data-test="order-composition-block"]'),
@@ -380,6 +386,7 @@ describe('OrdersPage', () => {
     row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
     fixture.detectChanges();
     expect(row.getAttribute('aria-expanded')).toBe('false');
+    expect(expandToggle.classList).not.toContain('bg-gold');
   });
 
   it('HUB-303 lazy-loads supply counters on expand and links supply/production/docs', async () => {

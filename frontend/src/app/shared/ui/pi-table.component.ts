@@ -170,6 +170,25 @@ export type SelectionMode = 'none' | 'single' | 'multi';
                     [class.pi-table-sticky-bg]="col.sticky"
                     [class]="col.cellClass ?? ''"
                   >
+                    @if ($first && expandedRow()) {
+                      <button
+                        type="button"
+                        class="mr-2 inline-flex h-6 w-6 items-center justify-center shrink-0 pi-focus-ring rounded-sm transition-colors"
+                        [class.bg-gold]="isExpandedRow(row)"
+                        [class.text-ink]="true"
+                        [class.opacity-80]="!isExpandedRow(row)"
+                        [class.hover:opacity-100]="!isExpandedRow(row)"
+                        [class.hover:bg-gold-soft]="!isExpandedRow(row)"
+                        [attr.aria-expanded]="isExpandedRow(row)"
+                        [attr.aria-label]="
+                          isExpandedRow(row) ? 'Свернуть строку' : 'Раскрыть строку'
+                        "
+                        data-test="table-expand-toggle"
+                        (click)="onRowClick(row); $event.stopPropagation()"
+                      >
+                        <span aria-hidden="true">{{ isExpandedRow(row) ? '▾' : '▸' }}</span>
+                      </button>
+                    }
                     @if (cellTemplates()[col.key]; as tpl) {
                       <ng-container *ngTemplateOutlet="tpl; context: { $implicit: row }" />
                     } @else {

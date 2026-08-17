@@ -25,9 +25,12 @@ import { Site, SiteDocument } from '../../modules/site/site.schema';
 const MARK = 'DEMO-LOCAL';
 const PREFIX = 'Демо · ';
 /** Opt-out: LOCAL_DEMO_SEED=0|false skips even in non-production. */
-const ENABLED =
-  process.env.NODE_ENV !== 'production' &&
-  !['0', 'false', 'no'].includes(String(process.env.LOCAL_DEMO_SEED ?? '').toLowerCase());
+function isEnabled(): boolean {
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    !['0', 'false', 'no'].includes(String(process.env.LOCAL_DEMO_SEED ?? '').toLowerCase())
+  );
+}
 
 function daysFromToday(offset: number): Date {
   const d = new Date();
@@ -54,7 +57,7 @@ export class LocalDemoSeed implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    if (!ENABLED) {
+    if (!isEnabled()) {
       this.logger.debug('LocalDemoSeed: skipped');
       return;
     }

@@ -125,6 +125,16 @@ export class ProductsService {
     return silentGet<Product>(this.http, `${this.baseUrl}/products/${id}`);
   }
 
+  findByIds(ids: string[]): Observable<SilentResult<Product[]>> {
+    if (ids.length === 0)
+      return new Observable((sub) => {
+        sub.next({ ok: true, data: [] });
+        sub.complete();
+      });
+    const params = new HttpParams().set('ids', ids.join(','));
+    return silentGet<Product[]>(this.http, `${this.baseUrl}/products/bulk`, { params });
+  }
+
   create(payload: Partial<Product>): Observable<SilentResult<Product>> {
     return silentPost<Product>(this.http, `${this.baseUrl}/products`, payload);
   }

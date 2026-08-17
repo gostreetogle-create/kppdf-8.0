@@ -57,6 +57,22 @@ export class ProductModuleService {
     return this.model.find(activeFilter).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).sort({ sortOrder: 1 }).exec();
   }
 
+  async findByIds(ids: string[]): Promise<ProductModuleDocument[]> {
+    const validIds = ids.filter(id => Types.ObjectId.isValid(id)).map(id => new Types.ObjectId(id));
+    if (validIds.length === 0) return [];
+    
+    return this.model.find({ 
+      _id: { $in: validIds }, 
+      deletedAt: null 
+    })
+    .populate('workTypes.workTypeId')
+    .populate({ 
+      path: 'materials.materialId', 
+      select: 'name photoIds unit dimensions materialKind' 
+    })
+    .exec();
+  }
+
   async findById(id: string): Promise<ProductModuleDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`ProductModule ${id} not found`);
     const doc = await this.model.findById(id).populate('workTypes.workTypeId').populate({ path: 'materials.materialId', select: 'name photoIds unit dimensions materialKind' }).exec();

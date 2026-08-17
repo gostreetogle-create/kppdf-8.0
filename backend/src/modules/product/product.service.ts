@@ -68,6 +68,37 @@ export class ProductService {
     return { items, total, page, limit };
   }
 
+  async findByIds(ids: string[], organizationId?: string | null): Promise<(ProductDocument & { attributes?: Record<string, unknown>; isComplex?: boolean })[]> {
+    const validIds = ids.filter(id => Types.ObjectId.isValid(id)).map(id => new Types.ObjectId(id));
+    if (validIds.length === 0) return [];
+    
+    const populated = await this.model.find({ 
+      _id: { $in: validIds }, 
+      deletedAt: null, 
+      ...this.organizationFilter(organizationId) 
+    })
+    .populate('categoryId')
+    .populate('photoIds')
+    .populate({ 
+      path: 'productModuleIds', 
+      populate: [
+        { path: 'workTypes.workTypeId', model: 'WorkType' }, 
+        { path: 'materials.materialId', model: 'Material', select: 'name photoIds unit materialKind' }
+      ] 
+    })
+    .exec();
+
+    return Promise.all(populated.map(async (doc) => {
+      if (!doc.name?.trim()) doc.name = doc.sku;
+      const composition = (doc.composition ?? []) as unknown as CompositionLineDocumentShape[]; 
+      const isComplex = composition.some((line) => line.lineType === 'product');
+      return Object.assign(doc, { 
+        attributes: await this.eav.loadAttributes('Product', doc._id), 
+        isComplex 
+      });
+    }));
+  }
+
   async findById(id: string, organizationId?: string | null): Promise<ProductDocument & { attributes?: Record<string, unknown>; isComplex?: boolean }> {
     const doc = await this.findActive(id, organizationId);
     const populated = await this.model.findOne({ _id: doc._id, deletedAt: null, ...this.organizationFilter(organizationId) }).populate('categoryId').populate('photoIds').populate({ path: 'productModuleIds', populate: [{ path: 'workTypes.workTypeId', model: 'WorkType' }, { path: 'materials.materialId', model: 'Material', select: 'name photoIds unit materialKind' }] }).exec();

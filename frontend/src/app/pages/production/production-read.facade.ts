@@ -45,22 +45,6 @@ export const PREFETCH_CONCURRENCY = 3;
 /** Backoff delays (ms) between 429/503 retries — TZ-PRODUCTION-341. */
 const RETRY_BACKOFF_MS = [300, 800, 1500] as const;
 
-/** Run `fn` over `items` with at most `limit` promises in flight at once. */
-async function runBounded<T>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<void>,
-): Promise<void> {
-  let index = 0;
-  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (index < items.length) {
-      const i = index++;
-      await fn(items[i]!);
-    }
-  });
-  await Promise.all(workers);
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -274,27 +258,66 @@ export class ProductionReadFacade {
     for (const order of orders) {
       for (const item of order.items ?? []) {
         const productId = item.productId;
-        if (productId) productIds.add(productId);
+        if (productId && !this.productCache.has(productId)) productIds.add(productId);
       }
     }
-    if (productIds.size === 0) return;
 
-    await runBounded([...productIds], PREFETCH_CONCURRENCY, async (id) => {
-      await this.getProduct(id, warnings);
-    });
+    if (productIds.size > 0) {
+      const ids = [...productIds];
+      // Chunk by 50 to avoid URL length limits on GET requests
+      for (let i = 0; i < ids.length; i += 50) {
+        const chunk = ids.slice(i, i + 50);
+        const res = await this.fetchWithThrottleRetry(() =>
+          firstValueFrom(this.productsApi.findByIds(chunk)),
+        );
+        if (res.ok && res.data) {
+          for (const product of res.data) {
+            this.productCache.set(product._id, product);
+          }
+        }
+      }
+      for (const id of ids) {
+        if (!this.productCache.has(id)) {
+          warnings.push(`Изделие ${id} недоступно`);
+          this.productCache.set(id, null);
+        }
+      }
+    }
 
     const moduleIds = new Set<string>();
-    for (const productId of productIds) {
-      const product = this.productCache.get(productId) ?? null;
-      if (!product) continue;
-      const { moduleIds: ids } = extractDirectModuleIds(product);
-      for (const id of ids) moduleIds.add(id);
+    for (const order of orders) {
+      for (const item of order.items ?? []) {
+        const productId = item.productId;
+        if (!productId) continue;
+        const product = this.productCache.get(productId) ?? null;
+        if (!product) continue;
+        const { moduleIds: ids } = extractDirectModuleIds(product);
+        for (const id of ids) {
+          if (!this.moduleCache.has(id)) moduleIds.add(id);
+        }
+      }
     }
-    if (moduleIds.size === 0) return;
 
-    await runBounded([...moduleIds], PREFETCH_CONCURRENCY, async (id) => {
-      await this.getModule(id, warnings);
-    });
+    if (moduleIds.size > 0) {
+      const ids = [...moduleIds];
+      for (let i = 0; i < ids.length; i += 50) {
+        const chunk = ids.slice(i, i + 50);
+        const res = await this.fetchWithThrottleRetry(() =>
+          firstValueFrom(this.modulesApi.findByIds(chunk)),
+        );
+        if (res.ok && res.data) {
+          for (const mod of res.data) {
+            this.moduleCache.set(mod._id, mod);
+          }
+        }
+      }
+      for (const id of ids) {
+        if (!this.moduleCache.has(id)) {
+          warnings.push(`Модуль ${id} недоступен`);
+          this.moduleCache.set(id, null);
+        }
+      }
+    }
   }
 
   /** First product photo per order (for collapsed rail icons). */

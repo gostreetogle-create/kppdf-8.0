@@ -18,6 +18,17 @@ export class ProductModuleController {
   @Roles('admin', 'director', 'manager')
   list(@Query('productId') productId?: string) { return this.service.findAll(productId); }
 
+  @Get('bulk')
+  @Roles('admin', 'director', 'manager', 'user')
+  @ApiOperation({ summary: 'Get multiple modules by IDs' })
+  @ApiQuery({ name: 'ids', required: true, description: 'Comma-separated list of module IDs' })
+  async findByIds(@Query('ids') ids: string) {
+    if (!ids) return [];
+    const idArray = ids.split(',').filter(Boolean);
+    if (idArray.length === 0) return [];
+    return this.service.findByIds(idArray);
+  }
+
   @Get(':id/where-used')
   @Roles('admin', 'director', 'manager', 'user')
   @ApiOperation({ summary: 'List catalog parents that use this module' })

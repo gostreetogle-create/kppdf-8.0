@@ -156,6 +156,11 @@ export class DevFixturesSeed implements OnModuleInit {
       this.logger.debug('DevFixturesSeed: skipped (NODE_ENV=production)');
       return;
     }
+    // Opt-out: DEV_FIXTURES_SEED=0|false skips even in non-production.
+    if (['0', 'false', 'no'].includes(String(process.env.DEV_FIXTURES_SEED ?? '').toLowerCase())) {
+      this.logger.debug('DevFixturesSeed: skipped (DEV_FIXTURES_SEED)');
+      return;
+    }
 
     await this.seedOrganizations();
     await this.seedCounterparties();
