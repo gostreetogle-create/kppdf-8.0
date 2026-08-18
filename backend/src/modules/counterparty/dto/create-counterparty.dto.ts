@@ -67,8 +67,8 @@ export class CreateCounterpartyDto {
 
   @IsOptional() @IsMongoId() contactPersonId?: string;
 
-  @IsOptional() @IsInt() @Min(0) @Max(365) paymentTermDays?: number;
-  @IsOptional() @IsInt() @Min(0) @Max(100) vatRate?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(365) paymentTermDays?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) vatRate?: number;
 
   @IsOptional() @IsMongoId() organizationId?: string;
 

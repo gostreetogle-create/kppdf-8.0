@@ -10,7 +10,7 @@ hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
 
 ## ACTIVE
 
-_(none)_ — TZ-FORMS-316 archived; next TZ-FORMS-317
+_(none)_ — WAVE-FORMS-NUMBER 314→317 archived; deploy НЕ
 
 ## NEXT (PO)
 
@@ -18,6 +18,11 @@ _(none)_ — TZ-FORMS-316 archived; next TZ-FORMS-317
 2. Завтра на работе: тот же ПК, новая ссылка не нужна
 
 ## DONE / LANDED (recent)
+
+## [2026-08-18] — TZ-FORMS-317 DONE — DTO numeric transforms
+
+- Archive: `tasks/_archive/2026-08/TZ-FORMS-317.done.md`; backend tsc/work-type 9/9/product-module 10/10/ESLint PASS; deploy НЕ
+- Wave complete; next action is PO deploy command only
 
 ## [2026-08-18] — TZ-FORMS-316 DONE — counterparty/org/proposal numeric payloads
 

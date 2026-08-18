@@ -5,18 +5,21 @@ import { IsArray, IsNumber, IsObject, IsOptional, IsString, Length, Min, Validat
 class ModuleDimensionsDto {
   @ApiPropertyOptional({ description: 'Ширина' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   width?: number;
 
   @ApiPropertyOptional({ description: 'Высота' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   height?: number;
 
   @ApiPropertyOptional({ description: 'Глубина' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   depth?: number;
@@ -49,12 +52,14 @@ export class CreateProductModuleDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   weight?: number;
 
   @ApiPropertyOptional()
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   sortOrder?: number;
 

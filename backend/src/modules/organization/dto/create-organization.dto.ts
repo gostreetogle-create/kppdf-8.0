@@ -70,9 +70,9 @@ export class CreateOrganizationDto {
   @IsOptional() @IsString() signerPosition?: string;
 
   @ApiPropertyOptional({ description: 'Срок оплаты (дней)' })
-  @IsOptional() @IsInt() @Min(0) @Max(365) paymentTermDays?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(365) paymentTermDays?: number;
   @ApiPropertyOptional({ description: 'Ставка НДС (%)' })
-  @IsOptional() @IsInt() @Min(0) @Max(100) vatRate?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) vatRate?: number;
   @ApiPropertyOptional({ description: 'Активна ли организация' })
   @IsOptional() @IsBoolean() isActive?: boolean;
 

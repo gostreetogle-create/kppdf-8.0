@@ -147,8 +147,8 @@ export class CreateQuotationDto {
   @IsIn(['none', 'percent', 'amount'])
   discountType?: 'none' | 'percent' | 'amount';
 
-  @IsOptional() @IsNumber() @Min(0) discountPercent?: number;
-  @IsOptional() @IsNumber() @Min(0) discountAmount?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) discountPercent?: number;
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) discountAmount?: number;
 
   @IsOptional() @IsString() notes?: string;
 

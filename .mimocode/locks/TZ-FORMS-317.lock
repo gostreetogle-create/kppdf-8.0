@@ -1,0 +1,15 @@
+# TZ-FORMS-317 — DONE lock
+TASK: TZ-FORMS-317
+OWNER: Buffy/openai-gpt-5.6-luna
+CLOSED_AT: 2026-08-18
+ARCHIVE: tasks/_archive/2026-08/TZ-FORMS-317.done.md
+PROTECTED_FILES:
+  - backend/src/modules/work-type/dto/create-work-type.dto.ts
+  - backend/src/modules/product-module/dto/create-product-module.dto.ts
+  - backend/src/modules/counterparty/dto/create-counterparty.dto.ts
+  - backend/src/modules/organization/dto/create-organization.dto.ts
+  - backend/src/modules/quotation/dto/create-quotation.dto.ts
+  - backend/src/modules/work-type/work-type.service.spec.ts
+SUCCESSOR: none (WAVE-FORMS-NUMBER complete)
+GATES: backend tsc PASS; work-type Jest 9/9 PASS; product-module Jest 10/10 PASS; focused ESLint exit 0; diff-check PASS
+NOTES: main.ts, global ValidationPipe, frontend, unrelated DTOs, deploy, and foreign WIP untouched.

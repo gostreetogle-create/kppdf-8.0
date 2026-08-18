@@ -2,6 +2,9 @@ import { Test } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { CreateWorkTypeDto } from './dto/create-work-type.dto';
 import { WorkTypeService } from './work-type.service';
 import { WorkType } from './work-type.schema';
 
@@ -86,6 +89,19 @@ describe('WorkTypeService (TZ-PRODUCTION-302)', () => {
       ],
     }).compile();
     service = moduleRef.get(WorkTypeService);
+  });
+
+  it('transforms a numeric string before validation', async () => {
+    const dto = plainToInstance(CreateWorkTypeDto, {
+      name: 'Покраска',
+      hourlyRate: '150',
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors).toHaveLength(0);
+    expect(dto.hourlyRate).toBe(150);
+    expect(typeof dto.hourlyRate).toBe('number');
   });
 
   describe('days round-trip', () => {
