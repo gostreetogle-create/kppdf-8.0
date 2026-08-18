@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildSpecificationPreview, hasSpecificationHierarchy } from './specification-import';
+import {
+  buildSpecificationPreview,
+  hasSpecificationHierarchy,
+  parseSpecificationPhysical,
+  specificationBlockingIssues,
+} from './specification-import';
 
 test('detects hierarchy columns and builds product → module → materials tree', () => {
   const rows = [
@@ -106,6 +111,12 @@ test('CAD/PDM headers: позиция → level, обозначение → arti
   assert.equal(preview.lines[1].name, 'Труба, 57х3,5 мм, ГОСТ 10704-91');
   assert.equal(preview.lines[1].parentArticle, '0000.0001.0000');
   assert.equal(preview.roots[0]?.children.length, 2);
+  assert.equal(preview.lines[0].name, '0000.0001.0000');
+  assert.equal(preview.lines[0].nameFromArticle, true);
+  assert.ok(preview.issues.some((issue) => issue.code === 'name_from_article' && issue.severity === 'warning'));
+  assert.equal(specificationBlockingIssues(preview.issues).length, 0);
+  assert.deepEqual(preview.lines[0].dimensions, { depth: 627, width: 109, height: 80, unit: 'мм' });
+  assert.equal(preview.lines[0].weight, 3.13);
 });
 
 test('module roots are allowed for CAD exports where the product is not listed', () => {
@@ -125,4 +136,33 @@ test('plain integer levels keep 0-based semantics (non-positional files)', () =>
   ]);
   assert.equal(preview.lines[0].level, 0);
   assert.equal(preview.lines[1].level, 1);
+});
+
+test('empty module name falls back to article with warning, not blocking missing_name', () => {
+  const preview = buildSpecificationPreview([
+    { 'Позиция': '1', 'Обозначение': 'MOD-ROOT', 'Вид изделия': 'Модуль', 'К-во': 1 },
+    { 'Позиция': '1.1', 'Обозначение': 'MAT-1', 'Сортамент, ГОСТ': 'Труба', 'Вид изделия': 'Деталь', 'К-во': 2 },
+  ]);
+  assert.equal(preview.lines[0].name, 'MOD-ROOT');
+  assert.equal(preview.lines[0].nameFromArticle, true);
+  assert.equal(preview.issues.some((issue) => issue.code === 'missing_name'), false);
+  assert.ok(preview.issues.some((issue) => issue.code === 'name_from_article'));
+  assert.equal(specificationBlockingIssues(preview.issues).length, 0);
+});
+
+test('missing name and article stays blocking', () => {
+  const preview = buildSpecificationPreview([{ level: 0, article: '', name: '', qty: 1, kind: 'module' }]);
+  assert.ok(preview.issues.some((issue) => issue.code === 'missing_name'));
+  assert.equal(specificationBlockingIssues(preview.issues).length, 2);
+});
+
+test('parseSpecificationPhysical maps CAD length/width/thickness/mass', () => {
+  const physical = parseSpecificationPhysical({
+    'Длина': '100',
+    'Ширина': 50,
+    'Толщина': '4,5',
+    'Масса': '2.1',
+  });
+  assert.deepEqual(physical.dimensions, { depth: 100, width: 50, height: 4.5, unit: 'мм' });
+  assert.equal(physical.weight, 2.1);
 });

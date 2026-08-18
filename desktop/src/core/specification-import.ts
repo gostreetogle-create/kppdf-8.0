@@ -12,6 +12,14 @@ export const SPECIFICATION_COLUMNS = [
 
 export type SpecificationKind = 'material' | 'module' | 'product';
 
+/** Module DTO uses width/height/depth; CAD «Длина» maps to depth. */
+export interface SpecificationDimensions {
+  width?: number;
+  height?: number;
+  depth?: number;
+  unit?: string;
+}
+
 export interface SpecificationLine {
   rowIndex: number;
   level: number;
@@ -21,6 +29,10 @@ export interface SpecificationLine {
   quantity: number;
   unit: string;
   kind: SpecificationKind;
+  dimensions?: SpecificationDimensions;
+  weight?: number;
+  /** True when display name was copied from article (CAD roots without «Сортамент»). */
+  nameFromArticle?: boolean;
 }
 
 export interface SpecificationTreeNode extends SpecificationLine {
@@ -30,6 +42,7 @@ export interface SpecificationTreeNode extends SpecificationLine {
 export type SpecificationIssueCode =
   | 'missing_article'
   | 'missing_name'
+  | 'name_from_article'
   | 'invalid_quantity'
   | 'invalid_kind'
   | 'missing_parent'
@@ -37,10 +50,13 @@ export type SpecificationIssueCode =
   | 'duplicate_composition_line'
   | 'invalid_root';
 
+export type SpecificationIssueSeverity = 'error' | 'warning';
+
 export interface SpecificationIssue {
   rowIndex: number;
   code: SpecificationIssueCode;
   message: string;
+  severity: SpecificationIssueSeverity;
 }
 
 export interface SpecificationPreview {
@@ -116,6 +132,60 @@ function text(value: unknown): string {
   return value === undefined || value === null ? '' : String(value).trim();
 }
 
+function parseNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null || String(value).trim() === '') return undefined;
+  const n = Number(String(value).replace(',', '.'));
+  return Number.isFinite(n) ? n : undefined;
+}
+
+const dimensionColumnAliases: Record<'depth' | 'width' | 'height' | 'mass', readonly string[]> = {
+  depth: ['длина', 'length'],
+  width: ['ширина', 'width'],
+  height: ['толщина', 'высота', 'height', 'thickness'],
+  mass: ['масса', 'вес', 'weight', 'mass', 'кг'],
+};
+
+function findColumnByAliases(row: RawRow, candidates: readonly string[]): unknown {
+  const direct = Object.entries(row).find(([key]) => candidates.includes(normalizeKey(key)));
+  if (direct) return direct[1];
+  const partial = Object.entries(row).find(([key]) => {
+    const normalized = normalizeKey(key);
+    return candidates.some((candidate) => candidate.length > 2 && normalized.includes(candidate));
+  });
+  return partial?.[1];
+}
+
+/** CAD/PDM габариты из сырых колонок (Длина/Ширина/Толщина/Масса). */
+export function parseSpecificationPhysical(row: RawRow): {
+  dimensions?: SpecificationDimensions;
+  weight?: number;
+} {
+  const depth = parseNumber(findColumnByAliases(row, dimensionColumnAliases.depth));
+  const width = parseNumber(findColumnByAliases(row, dimensionColumnAliases.width));
+  const height = parseNumber(findColumnByAliases(row, dimensionColumnAliases.height));
+  const weight = parseNumber(findColumnByAliases(row, dimensionColumnAliases.mass));
+  const hasDims = depth !== undefined || width !== undefined || height !== undefined;
+  return {
+    dimensions: hasDims ? { depth, width, height, unit: 'мм' } : undefined,
+    weight,
+  };
+}
+
+/** Issues that block «Подтвердить состав» (warnings such as name_from_article are OK). */
+export function specificationBlockingIssues(issues: readonly SpecificationIssue[]): SpecificationIssue[] {
+  return issues.filter((issue) => issue.severity !== 'warning');
+}
+
+function pushIssue(
+  issues: SpecificationIssue[],
+  rowIndex: number,
+  code: SpecificationIssueCode,
+  message: string,
+  severity: SpecificationIssueSeverity = 'error',
+): void {
+  issues.push({ rowIndex, code, message, severity });
+}
+
 export function hasSpecificationHierarchy(headers: readonly string[]): boolean {
   const normalized = headers.map(normalizeKey);
   const hasLevel = normalized.some((header) => aliases.level.includes(header) || header.includes('уровень'));
@@ -134,9 +204,22 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
   const positionNotation = levelValues.some((value) => /^\d+(\.\d+)+$/.test(String(value ?? '').trim()));
   const lines: SpecificationLine[] = rows.map((row, rowIndex) => {
     const article = text(findColumn(row, 'article'));
-    const name = text(findColumn(row, 'name'));
+    let name = text(findColumn(row, 'name'));
     const kind = parseKind(findColumn(row, 'kind'));
     const quantity = parseQuantity(findColumn(row, 'qty'));
+    const physical = parseSpecificationPhysical(row);
+    let nameFromArticle = false;
+    if (!name && article) {
+      name = article;
+      nameFromArticle = true;
+      pushIssue(
+        issues,
+        rowIndex,
+        'name_from_article',
+        `Наименование взято из артикула «${article}»`,
+        'warning',
+      );
+    }
     const line: SpecificationLine = {
       rowIndex,
       level: parseLevel(findColumn(row, 'level'), positionNotation),
@@ -146,13 +229,16 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
       quantity,
       unit: text(findColumn(row, 'unit')) || 'шт',
       kind: kind ?? 'material',
+      dimensions: physical.dimensions,
+      weight: physical.weight,
+      nameFromArticle: nameFromArticle || undefined,
     };
-    if (!article) issues.push({ rowIndex, code: 'missing_article', message: 'Не указан артикул' });
-    if (!name) issues.push({ rowIndex, code: 'missing_name', message: 'Не указано наименование' });
+    if (!article) pushIssue(issues, rowIndex, 'missing_article', 'Не указан артикул');
+    if (!name) pushIssue(issues, rowIndex, 'missing_name', 'Не указано наименование');
     if (!Number.isFinite(quantity) || quantity <= 0) {
-      issues.push({ rowIndex, code: 'invalid_quantity', message: 'Количество должно быть больше нуля' });
+      pushIssue(issues, rowIndex, 'invalid_quantity', 'Количество должно быть больше нуля');
     }
-    if (!kind) issues.push({ rowIndex, code: 'invalid_kind', message: 'Тип должен быть material, module или product' });
+    if (!kind) pushIssue(issues, rowIndex, 'invalid_kind', 'Тип должен быть material, module или product');
     return line;
   });
 
@@ -162,7 +248,7 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
   for (const line of lines) {
     if (!line.article) continue;
     if (byArticle.has(line.article)) {
-      issues.push({ rowIndex: line.rowIndex, code: 'duplicate_article', message: `Артикул «${line.article}» повторяется` });
+      pushIssue(issues, line.rowIndex, 'duplicate_article', `Артикул «${line.article}» повторяется`);
     } else {
       byArticle.set(line.article, line);
     }
@@ -177,12 +263,12 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
     const parentArticle = line.parentArticle ?? inferredParent;
     // В выгрузках CAD/PDM изделие часто не перечислено — корень может быть модулем.
     if (line.level === 0 && line.kind !== 'product' && line.kind !== 'module') {
-      issues.push({ rowIndex: line.rowIndex, code: 'invalid_root', message: 'Корнем спецификации может быть изделие или модуль' });
+      pushIssue(issues, line.rowIndex, 'invalid_root', 'Корнем спецификации может быть изделие или модуль');
     }
     if (line.level > 0 && !parentArticle) {
-      issues.push({ rowIndex: line.rowIndex, code: 'missing_parent', message: 'Не найден родитель строки' });
+      pushIssue(issues, line.rowIndex, 'missing_parent', 'Не найден родитель строки');
     } else if (parentArticle && !byArticle.has(parentArticle)) {
-      issues.push({ rowIndex: line.rowIndex, code: 'missing_parent', message: `Родитель «${parentArticle}» отсутствует в файле` });
+      pushIssue(issues, line.rowIndex, 'missing_parent', `Родитель «${parentArticle}» отсутствует в файле`);
     }
     const node: SpecificationTreeNode = { ...line, parentArticle, children: [] };
     if (!parentArticle) {
@@ -190,7 +276,12 @@ export function buildSpecificationPreview(rows: readonly RawRow[]): Specificatio
     } else {
       const siblings = childrenByParent.get(parentArticle) ?? [];
       if (siblings.some((child) => child.article === node.article)) {
-        issues.push({ rowIndex: line.rowIndex, code: 'duplicate_composition_line', message: `Связь «${parentArticle} → ${node.article}» повторяется` });
+        pushIssue(
+          issues,
+          line.rowIndex,
+          'duplicate_composition_line',
+          `Связь «${parentArticle} → ${node.article}» повторяется`,
+        );
       }
       siblings.push(node);
       childrenByParent.set(parentArticle, siblings);

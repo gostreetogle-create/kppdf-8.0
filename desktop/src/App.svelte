@@ -51,6 +51,8 @@
   import type { RowValidationStatus } from './core/import-mapping';
   import {
     buildSpecificationPreview,
+    specificationBlockingIssues,
+    type SpecificationKind,
     type SpecificationPreview,
     type SpecificationTreeNode,
   } from './core/specification-import';
@@ -1451,6 +1453,83 @@
   }
 
   /**
+   * TZD-49: lookup по артикулу/sku (search API), не blind limit=100.
+   * Модули — полный список /api/modules (кэш по article).
+   */
+  async function lookupSpecificationCatalog(
+    cfg: AppConfig,
+    lines: SpecificationPreview['lines'],
+  ): Promise<Map<string, CatalogRef>> {
+    const api = apiFrom(cfg);
+    const byKind = new Map<string, CatalogRef>();
+    const modules = await apiGet<CatalogRef[]>(api, '/api/modules');
+    for (const item of modules ?? []) {
+      const article = catalogArticle(item);
+      if (article) byKind.set(`module:${article}`, item);
+    }
+    const articlesByKind = new Map<SpecificationKind, Set<string>>();
+    for (const line of lines) {
+      if (!line.article) continue;
+      const set = articlesByKind.get(line.kind) ?? new Set<string>();
+      set.add(line.article);
+      articlesByKind.set(line.kind, set);
+    }
+    for (const [kind, articles] of articlesByKind) {
+      if (kind === 'module') continue;
+      const path = kind === 'product' ? '/api/products' : '/api/materials';
+      for (const article of articles) {
+        const key = `${kind}:${article}`;
+        if (byKind.has(key)) continue;
+        const resp = await apiGet<{ items?: CatalogRef[] }>(
+          api,
+          `${path}?limit=20&search=${encodeURIComponent(article)}`,
+        );
+        const exact = (resp.items ?? []).find((item) => catalogArticle(item) === article);
+        if (exact) byKind.set(key, exact);
+      }
+    }
+    return byKind;
+  }
+
+  function specificationCreateBody(line: SpecificationPreview['lines'][number]): Record<string, unknown> {
+    if (line.kind === 'product') {
+      return {
+        name: line.name,
+        sku: line.article,
+        kind: 'good',
+        unit: line.unit,
+        ...(line.dimensions
+          ? {
+              dimensions: {
+                length: line.dimensions.depth,
+                width: line.dimensions.width,
+                height: line.dimensions.height,
+                unit: line.dimensions.unit,
+              },
+            }
+          : {}),
+        ...(line.weight !== undefined ? { weightKg: line.weight } : {}),
+      };
+    }
+    if (line.kind === 'module') {
+      return {
+        name: line.name,
+        article: line.article,
+        unit: line.unit,
+        ...(line.dimensions ? { dimensions: line.dimensions } : {}),
+        ...(line.weight !== undefined ? { weight: line.weight } : {}),
+      };
+    }
+    return {
+      name: line.name,
+      article: line.article,
+      unit: line.unit,
+      materialKind: 'purchased',
+      ...(line.weight !== undefined ? { weightKg: line.weight } : {}),
+    };
+  }
+
+  /**
    * TZD-38: explicit final confirmation is the only write step. Missing catalog
    * entities are created first, then composition lines use the existing REST
    * composition APIs. No local DB and no silent graph writes.
@@ -1458,7 +1537,8 @@
   async function confirmSpecification() {
     const preview = specificationPreview;
     if (!preview?.hierarchical) return;
-    if (preview.issues.length > 0) {
+    const blocking = specificationBlockingIssues(preview.issues);
+    if (blocking.length > 0) {
       specificationMessage = 'Исправьте конфликты спецификации перед подтверждением.';
       return;
     }
@@ -1470,15 +1550,7 @@
     specificationBusy = true;
     specificationMessage = 'Готовим предложения и проверяем каталог…';
     try {
-      const [productsResponse, materialsResponse, modulesResponse] = await Promise.all([
-        apiGet<{ items?: CatalogRef[] }>(apiFrom(cfg), '/api/products?limit=100&search='),
-        apiGet<{ items?: CatalogRef[] }>(apiFrom(cfg), '/api/materials?limit=100&search='),
-        apiGet<CatalogRef[]>(apiFrom(cfg), '/api/modules'),
-      ]);
-      const byKind = new Map<string, CatalogRef>();
-      for (const item of productsResponse.items ?? []) byKind.set(`product:${catalogArticle(item)}`, item);
-      for (const item of materialsResponse.items ?? []) byKind.set(`material:${catalogArticle(item)}`, item);
-      for (const item of modulesResponse ?? []) byKind.set(`module:${catalogArticle(item)}`, item);
+      const byKind = await lookupSpecificationCatalog(cfg, preview.lines);
 
       const ids = new Map<string, string>();
       for (const line of preview.lines) {
@@ -1489,10 +1561,7 @@
           continue;
         }
         const path = line.kind === 'product' ? '/api/products' : line.kind === 'module' ? '/api/modules' : '/api/materials';
-        const body = line.kind === 'product'
-          ? { name: line.name, sku: line.article, kind: 'good', unit: line.unit }
-          : { name: line.name, article: line.article, unit: line.unit, ...(line.kind === 'material' ? { materialKind: 'purchased' } : {}) };
-        const created = await apiPost<CatalogRef>(apiFrom(cfg), path, body);
+        const created = await apiPost<CatalogRef>(apiFrom(cfg), path, specificationCreateBody(line));
         const createdId = catalogId(created);
         if (!createdId) throw new Error(`Сервер не вернул id для «${line.article}»`);
         ids.set(key, createdId);
@@ -2681,26 +2750,51 @@
         </p>
 
         {#if specificationPreview?.hierarchical}
+          {@const blockingIssues = specificationBlockingIssues(specificationPreview.issues)}
+          {@const warningIssues = specificationPreview.issues.filter((issue) => issue.severity === 'warning')}
           <section class="specification-panel" aria-label="Иерархия спецификации">
             <div class="specification-panel__head">
               <div>
                 <h3>Спецификация: дерево состава</h3>
-                <p class="hint">Проверьте изделие → модули → материалы и количество. До кнопки подтверждения SoT не меняется.</p>
+                <p class="hint">
+                  Проверьте изделие → модули → материалы и количество. Кнопка подтверждения создаёт
+                  изделия, модули и материалы в каталоге сразу (не через журнал предложений).
+                </p>
               </div>
-              <span class:specification-badge--error={specificationPreview.issues.length > 0} class="specification-badge">
-                {specificationPreview.issues.length > 0 ? `Конфликтов: ${specificationPreview.issues.length}` : 'Готово к HITL'}
+              <span
+                class:specification-badge--error={blockingIssues.length > 0}
+                class:specification-badge--warn={blockingIssues.length === 0 && warningIssues.length > 0}
+                class="specification-badge"
+              >
+                {#if blockingIssues.length > 0}
+                  Конфликтов: {blockingIssues.length}
+                {:else if warningIssues.length > 0}
+                  Замечаний: {warningIssues.length}
+                {:else}
+                  Готово к HITL
+                {/if}
               </span>
             </div>
-            {#if specificationPreview.issues.length > 0}
+            {#if blockingIssues.length > 0}
               <ul class="specification-issues" role="alert">
-                {#each specificationPreview.issues.slice(0, 12) as issue (issue.rowIndex + issue.code + issue.message)}
+                {#each blockingIssues.slice(0, 12) as issue (issue.rowIndex + issue.code + issue.message)}
                   <li>#{issue.rowIndex + 1}: {issue.message}</li>
                 {/each}
               </ul>
-              {#if specificationPreview.issues.length > 12}
-                <p class="hint">…и ещё {specificationPreview.issues.length - 12} замечаний — покажите полный список в консоли после доработки файла.</p>
+              {#if blockingIssues.length > 12}
+                <p class="hint">…и ещё {blockingIssues.length - 12} конфликтов — исправьте файл или строки.</p>
               {/if}
             {:else}
+              {#if warningIssues.length > 0}
+                <ul class="specification-warnings" role="status">
+                  {#each warningIssues.slice(0, 12) as issue (issue.rowIndex + issue.code + issue.message)}
+                    <li>#{issue.rowIndex + 1}: {issue.message}</li>
+                  {/each}
+                </ul>
+                {#if warningIssues.length > 12}
+                  <p class="hint">…и ещё {warningIssues.length - 12} замечаний (имя из артикула и т.п.).</p>
+                {/if}
+              {/if}
               <div class="specification-tree">
                 {#each specificationPreview.roots as root (root.article)}
                   {@render SpecificationTree(root)}
@@ -3521,6 +3615,11 @@
     color: #a12b23;
   }
 
+  .specification-badge--warn {
+    background: #fff6e6;
+    color: #8a5a00;
+  }
+
   .specification-issues {
     margin: 0;
     padding: 0.5rem 0.75rem 0.5rem 1.8rem;
@@ -3528,6 +3627,16 @@
     border-radius: 7px;
     background: #fff6f5;
     color: #a12b23;
+    font-size: 0.78rem;
+  }
+
+  .specification-warnings {
+    margin: 0 0 0.5rem;
+    padding: 0.5rem 0.75rem 0.5rem 1.8rem;
+    border: 1px solid #e8d4a8;
+    border-radius: 7px;
+    background: #fffbf0;
+    color: #7a5a10;
     font-size: 0.78rem;
   }
 

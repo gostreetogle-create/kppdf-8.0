@@ -5,24 +5,86 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-18T20:26:03+03:00
-hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
+updated_at: 2026-08-18T22:15:00+03:00
+hygiene: prod still 789487f1; origin DESK-403 (0ce536a4); deploy BLOCKED (VPN off)
 
 ## ACTIVE
 
-_(none)_ — TZ-DESK-405 DONE; 402 blocked until PO «раскладка v2 ok»
+**Freebuff continuous wave — RUNNING** (PO ушёл 20:38; 406/402/412/403 DONE, next 413)  
+Prompt: `tasks/PROMPT-FREEBUFF-DESK-WAVE-CONTINUOUS.md`  
+**no deploy** until VPN + «кати».
 
-## NEXT (PO)
+**Freebuff DESKTOP wave — TZD-49 DONE** (CAD follow-ups)  
+Prompt: `tasks/PROMPT-FREEBUFF-DESKTOP-WAVE-CONTINUOUS.md`  
+Queue: **58** installer (parallel). **57** pairing DONE. Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md`
 
-1. Smoke: КП → PDF (не тост) · карточка контрагента «Почта»
-2. Завтра на работе: тот же ПК, новая ссылка не нужна
+## QUEUE (do not skip order)
+
+1. **413** tray visual IA (cards) — `tasks/TZ-DESK-413.md` **← next**
+2. **410** search/filter — `tasks/TZ-DESK-410.md`
+3. **411** capabilities — `tasks/TZ-DESK-411.md`
+4. **407** view=gantt/combine — `tasks/TZ-DESK-407.md`
+5. **404** deep-link fallback — `tasks/TZ-DESK-404.md`
+6. **408** DeskNote — if time after 1–5
+
+
+
+Gate «раскладка v2 ok» **снят** — PO delegated full desk while away.
+
+## NEXT (PO when back)
+
+1. VPN on → smoke `/desk` + `DESK-SMOKE.md`
+2. «кати» warm deploy if smoke ok
+3. 409 quick-attach — backlog
 
 ## DONE / LANDED (recent)
+
+## [2026-08-18] — TZD-49 DONE — CAD spec import follow-ups
+
+- Archive: `tasks/_archive/2026-08/TZD-49.done.md`; gates PASS 75/75; deploy НЕ
+- name=article fallback (warning); dims/weight on module create; catalog lookup by article/sku
+- PO smoke CAD xlsx — ручной; next desktop: **58** installer
+
+## [2026-08-18] — TZD-57 DONE — pairing download button + version
+
+- Archive: `tasks/_archive/2026-08/TZD-57.done.md`; gates PASS; deploy НЕ
+- Toolbar: «Скачать Desktop v{semver}» напротив «Выпустить ключ»; footer только «Закрыть»
+- Next desktop wave: **58** installer integrity
+
+## [2026-08-18] — TZ-DESK-403 DONE — состав + supply + combine в tray
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-403.done.md`; SHA `0ce536a4`; gates PASS; deploy НЕ
+- tray self-contained: composition-tree + lazy supply + combine-strip; desk BOM без `/orders/:id`
+- Next: 413 (tray visual IA)
+
+## [2026-08-18] — TZ-DESK-412 DONE — shared order-hub-tray
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-412.done.md`; SHA `53c8e75c`; gates PASS; deploy НЕ
+- Один `order-hub-tray` для `/orders` expand + `/desk` tray; `desk-order-tray` удалён; orders.page spec (HUB-302/303/304) без изменений
+- Next: 403 (tree + combine + lazy supply in tray)
+
+## [2026-08-18] — TZ-DESK-402 DONE — live orders + shared form
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-402.done.md`; SHA `99641d90`; gates PASS; deploy НЕ
+- `order-form-panel` shared dialog+desk; desk = live GET /orders; invalid orderId → RU toast + clear query
+- Next: 412 (shared order-hub-tray)
+
+## [2026-08-18] — TZ-DESK-406 DONE — desk chrome parity
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-406.done.md`; SHA `5e83932c`; focused FE gates PASS; deploy НЕ
+- `/desk`: одна group-workspace chip-строка, без «Рабочий стол» и H1; ширина = `/orders`
+- Next: 402 (form + GET /orders)
 
 ## [2026-08-18] — TZ-DESK-405 DONE — desk layout rev.2
 
 - Archive: `tasks/_archive/2026-08/TZ-DESK-405.done.md`; focused FE gates PASS; deploy НЕ
-- `/desk`: page chrome/workflow strip, expand-in-row tray, queue scroll, L/R flyout; 402 ждёт PO «раскладка v2 ok»
+- `/desk`: layout rev.2 DONE (405); 402+ — Freebuff continuous wave _(superseded: «ждёт PO ok»)_
+
+## [2026-08-18] — Manager desk PO review → DESK-405 rev.2
+
+- 401 innards-под-очередью отклонён; expand-in-row + tray-first actions
+- Crumbs вместо header; L flyout для left rail; Gantt via crumbs = 407; блокнот = 408
+- Next: PROMPT-FREEBUFF-DESK-405.md
 
 ## [2026-08-18] — TZ-DESK-401 DONE — fixture manager desk
 
@@ -48,6 +110,16 @@ _(none)_ — TZ-DESK-405 DONE; 402 blocked until PO «раскладка v2 ok»
 
 - Archive: `tasks/_archive/2026-08/TZ-FORMS-314.done.md`; focused tsc/Jest 3/3/ESLint PASS; deploy НЕ
 - Next: `TZ-FORMS-315`
+
+## [2026-08-18] — TZ-MATERIALS-313 DONE — цена материала number
+
+- Archive: `tasks/_archive/2026-08/TZ-MATERIALS-313.done.md`; SHA `e34b015d`; gates PASS; deploy **НЕ**
+- Next: PO «кати»; затем Freebuff FORMS-314…317
+
+## [2026-08-18] — TZ-COMP-401 PARTIAL — Privacy page & enroll notice
+
+- Archive: `tasks/_archive/2026-08/TZ-COMP-401.done.md`; FE code done; deploy BLOCKED (SSH timeout)
+- Next: PO needs to ensure VM is in LAN or VPN is off, then deploy and apply nginx config.
 
 ## [2026-08-17] — Warm deploy OK
 
