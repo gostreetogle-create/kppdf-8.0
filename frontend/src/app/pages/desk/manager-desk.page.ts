@@ -10,7 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   BookOpen,
   Factory,
@@ -23,8 +23,12 @@ import {
 } from 'lucide-angular';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
-import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { DeskOrderTrayComponent } from './desk-order-tray.component';
+import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
 
 type DeskStatus = 'draft' | 'in_production' | 'ready';
 type DeskPanelSide = 'left' | 'right';
@@ -96,72 +100,38 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 /**
  * Manager desk layout fixture. This wave owns no order API or write path:
  * DESK-402 can replace the create stub with the existing order form later.
+ *
+ * TZ-DESK-406: one sticky `app-pi-group-workspace` chip row replaces the old
+ * `app-pi-page-chrome` + custom `<nav>` double chrome. The expanded order
+ * number is a suffix in the workspace tools slot — no «Рабочий стол» label.
  */
 @Component({
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DeskOrderTrayComponent, PiPageChromeComponent, RouterLink],
+  imports: [DeskOrderTrayComponent, PiGroupWorkspaceComponent],
   template: `
     <div class="manager-desk" data-test="manager-desk">
-      <app-pi-page-chrome [crumbs]="pathCrumbs()" data-test="desk-page-chrome" />
+      <app-pi-group-workspace [chips]="workflowChips()" activeId="desk">
+        <div tools class="flex items-center gap-2 flex-wrap w-full">
+          <span class="text-xs text-muted-foreground" data-test="desk-order-count">
+            {{ fixtureOrders.length }} заказа
+          </span>
+          @if (expandedOrder(); as order) {
+            <span class="text-muted-foreground" aria-hidden="true">/</span>
+            <span
+              class="font-display text-base tracking-tight text-ink truncate max-w-[min(40rem,70vw)]"
+              aria-current="page"
+              data-test="desk-order-crumb"
+            >
+              {{ order.number }}
+            </span>
+          }
+        </div>
 
-      <nav
-        class="manager-desk__workflow"
-        data-test="desk-workflow-crumbs"
-        aria-label="Ежедневный поток"
-      >
-        <a routerLink="/desk" data-test="desk-workflow-link" data-workflow="desk" data-route="/desk"
-          >Стол</a
-        >
-        <a
-          routerLink="/proposals/create"
-          data-test="desk-workflow-link"
-          data-workflow="proposal"
-          data-route="/proposals/create"
-          >КП</a
-        >
-        <a
-          routerLink="/design/combine"
-          [queryParams]="expandedOrder() ? { orderId: expandedOrder()!.id } : null"
-          data-test="desk-workflow-link"
-          data-workflow="combine"
-          data-route="/design/combine"
-          >Комбайн</a
-        >
-        <a
-          href="?view=gantt"
-          data-test="desk-workflow-link"
-          data-workflow="gantt"
-          data-route="?view=gantt"
-          aria-disabled="true"
-          title="DESK-407"
-          (click)="$event.preventDefault()"
-          >Гант</a
-        >
-        <a
-          routerLink="/supply"
-          data-test="desk-workflow-link"
-          data-workflow="supply"
-          data-route="/supply"
-          >Снабжение</a
-        >
-        <a
-          routerLink="/shipping"
-          data-test="desk-workflow-link"
-          data-workflow="shipping"
-          data-route="/shipping"
-          >Отгрузка</a
-        >
-      </nav>
-
-      <div class="manager-desk__workspace">
         <main class="manager-desk__center" aria-labelledby="desk-queue-heading">
           <section class="manager-desk__queue" data-test="desk-order-queue">
-            <div class="manager-desk__section-heading">
-              <h1 id="desk-queue-heading">Очередь заказов</h1>
-              <span class="manager-desk__count">{{ fixtureOrders.length }} заказа</span>
-            </div>
+            <h1 id="desk-queue-heading" class="sr-only">Очередь заказов</h1>
 
             <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
               @for (order of fixtureOrders; track order.id) {
@@ -192,7 +162,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
             </div>
           </section>
         </main>
-      </div>
+      </app-pi-group-workspace>
 
       @if (panel()) {
         <button
@@ -248,83 +218,13 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk {
         position: relative;
         min-height: calc(100dvh - 3.5rem);
-        padding: 1rem clamp(1rem, 3vw, 3rem) 2rem;
-        background: var(--color-paper);
       }
-      .manager-desk__workflow,
-      .manager-desk__workspace {
-        max-width: 96rem;
-        margin-inline: auto;
-      }
-      .manager-desk__workflow {
-        display: flex;
-        align-items: center;
-        gap: 0.2rem;
-        margin-bottom: 0.8rem;
-        padding: 0.35rem 0 0.75rem;
-        border-bottom: 1px solid var(--color-rule-strong);
-        overflow-x: auto;
-        white-space: nowrap;
-      }
-      .manager-desk__workflow a {
-        padding: 0.35rem 0.6rem;
-        border: 1px solid transparent;
-        color: var(--color-muted-foreground);
-        font-size: 0.78rem;
-        text-decoration: none;
-      }
-      .manager-desk__workflow a::after {
-        display: inline-block;
-        margin-left: 0.7rem;
-        color: var(--color-rule-strong);
-        content: '·';
-      }
-      .manager-desk__workflow a:last-child::after {
-        display: none;
-      }
-      .manager-desk__workflow a:hover,
-      .manager-desk__workflow a:focus-visible {
-        border-color: var(--color-rule-strong);
-        color: var(--color-ink);
-        outline: none;
-      }
-      .manager-desk__workflow a[aria-disabled='true'] {
-        color: var(--color-muted-foreground);
-        cursor: not-allowed;
-        opacity: 0.58;
-      }
-      .manager-desk__section-heading,
-      .manager-desk__flyout-heading {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 1rem;
+      .manager-desk__center {
+        min-width: 0;
       }
       .manager-desk__queue {
         border: 1px solid var(--color-rule);
         background: var(--color-paper-raised, var(--color-paper));
-      }
-      .manager-desk__section-heading {
-        padding: 1rem 1rem 0.75rem;
-      }
-      .manager-desk__section-heading h1,
-      .manager-desk__flyout h2 {
-        margin: 0;
-        font-family: var(--font-display, inherit);
-        font-weight: 650;
-        letter-spacing: -0.025em;
-      }
-      .manager-desk__section-heading h1 {
-        font-size: 1.05rem;
-      }
-      .manager-desk__flyout h2 {
-        font-size: 1.2rem;
-      }
-      .manager-desk__count,
-      .manager-desk__flyout-note {
-        margin: 0;
-        color: var(--color-muted-foreground);
-        font-size: 0.78rem;
       }
       .manager-desk__orders {
         display: flex;
@@ -332,7 +232,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         flex-direction: column;
         gap: 0.45rem;
         overflow-y: auto;
-        padding: 0 1rem 1rem;
+        padding: 1rem;
       }
       .manager-desk__order-item {
         min-width: 0;
@@ -386,6 +286,24 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         color: var(--color-sunrise-warm, #9b6b1e);
         font-size: 0.78rem;
         white-space: nowrap;
+      }
+      .manager-desk__flyout-heading {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .manager-desk__flyout h2 {
+        margin: 0;
+        font-family: var(--font-display, inherit);
+        font-size: 1.2rem;
+        font-weight: 650;
+        letter-spacing: -0.025em;
+      }
+      .manager-desk__flyout-note {
+        margin: 0;
+        color: var(--color-muted-foreground);
+        font-size: 0.78rem;
       }
       .manager-desk__eyebrow {
         margin: 0 0 0.3rem;
@@ -450,9 +368,6 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         line-height: 1.5;
       }
       @media (max-width: 900px) {
-        .manager-desk {
-          padding-inline: 0.75rem;
-        }
         .manager-desk__order-row {
           grid-template-columns: auto minmax(4.5rem, auto) minmax(0, 1fr);
         }
@@ -479,11 +394,17 @@ export class ManagerDeskPage {
     () => this.fixtureOrders.find((order) => order.id === this.expandedId()) ?? null,
   );
   protected readonly selectedOrder = this.expandedOrder;
-  protected readonly pathCrumbs = computed<readonly PageCrumb[]>(() => {
+  /**
+   * Daily workflow chips. The combine studio keeps its orderId query when a
+   * row is expanded (same deep-link contract as DESK-405); everything else is
+   * the static constant from `desk-workflow-chips.ts`.
+   */
+  protected readonly workflowChips = computed<readonly GroupChip[]>(() => {
     const order = this.expandedOrder();
-    return order
-      ? [{ label: 'Рабочий стол', link: '/desk' }, { label: order.number }]
-      : [{ label: 'Рабочий стол' }];
+    if (!order) return DESK_WORKFLOW_CHIPS;
+    return DESK_WORKFLOW_CHIPS.map((chip) =>
+      chip.id === 'combine' ? { ...chip, queryParams: { orderId: order.id } } : chip,
+    );
   });
   protected readonly panelSide = computed<DeskPanelSide | null>(() => {
     const panel = this.panel();
