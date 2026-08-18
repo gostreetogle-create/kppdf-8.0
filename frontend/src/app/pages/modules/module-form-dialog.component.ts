@@ -23,6 +23,7 @@ import {
   WorkTypeInModule,
 } from '../../shared/services/pi-product-modules.service';
 import { WorkTypesService } from '../../shared/services/pi-work-types.service';
+import { toOptionalNumber } from '../../shared/forms/to-optional-number';
 import { extractErrorMessage } from '../../core/silent-http';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
@@ -429,21 +430,30 @@ export class ModuleFormDialogComponent implements OnDestroy {
     }
     const v = this.form.getRawValue();
     const workTypesRaw = v.workTypes ?? [];
+    const width = toOptionalNumber(v.dimensions.width);
+    const height = toOptionalNumber(v.dimensions.height);
+    const depth = toOptionalNumber(v.dimensions.depth);
+    const weight = toOptionalNumber(v.weight);
+    const dimensions = {
+      ...(width === undefined ? {} : { width }),
+      ...(height === undefined ? {} : { height }),
+      ...(depth === undefined ? {} : { depth }),
+      ...(v.dimensions.unit ? { unit: v.dimensions.unit } : {}),
+    };
     const payload: ProductModuleUpsertDto = {
       name: v.name,
       article: v.article.trim(),
-      dimensions: {
-        width: v.dimensions.width ?? undefined,
-        height: v.dimensions.height ?? undefined,
-        depth: v.dimensions.depth ?? undefined,
-        unit: v.dimensions.unit || undefined,
-      },
-      weight: v.weight ?? undefined,
-      workTypes: workTypesRaw.map((w, i): WorkTypeInModule => ({
-        workTypeId: w.workTypeId,
-        estimatedHours: w.estimatedHours,
-        sortOrder: w.sortOrder ?? i,
-      })),
+      dimensions,
+      ...(weight === undefined ? {} : { weight }),
+      workTypes: workTypesRaw.map((w): WorkTypeInModule => {
+        const estimatedHours = toOptionalNumber(w.estimatedHours);
+        const sortOrder = toOptionalNumber(w.sortOrder);
+        return {
+          workTypeId: w.workTypeId,
+          ...(estimatedHours === undefined ? {} : { estimatedHours }),
+          ...(sortOrder === undefined ? {} : { sortOrder }),
+        } as WorkTypeInModule;
+      }),
     };
     this.submitting.set(true);
     const op = this.isEdit

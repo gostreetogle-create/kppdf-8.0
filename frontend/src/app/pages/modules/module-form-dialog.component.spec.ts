@@ -134,4 +134,34 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
       expect.objectContaining({ dimensions: { width: 10, height: 20, depth: 30, unit: 'мм' } }),
     );
   });
+
+  it('coerces string width and weight to numbers in the module payload', () => {
+    const component = fixture.componentInstance as unknown as {
+      form: {
+        controls: {
+          dimensions: { controls: { width: { setValue: (value: unknown) => void } } };
+          weight: { setValue: (value: unknown) => void };
+        };
+      };
+      onSubmit: () => void;
+    };
+    component.form.controls.dimensions.controls.width.setValue('100');
+    component.form.controls.weight.setValue('1.5');
+
+    component.onSubmit();
+
+    expect(update).toHaveBeenCalledWith(
+      'm1',
+      expect.objectContaining({
+        dimensions: expect.objectContaining({ width: 100 }),
+        weight: 1.5,
+      }),
+    );
+    const payload = update.mock.calls[0][1] as {
+      dimensions: { width: unknown };
+      weight: unknown;
+    };
+    expect(typeof payload.dimensions.width).toBe('number');
+    expect(typeof payload.weight).toBe('number');
+  });
 });
