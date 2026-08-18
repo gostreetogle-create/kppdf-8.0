@@ -92,7 +92,16 @@ export const routes: Routes = [
     canMatch: [authGuard],
     loadComponent: () => import('./layout/app-layout.component').then((m) => m.AppLayoutComponent),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+      { path: '', pathMatch: 'full', redirectTo: 'desk' },
+      {
+        // TZ-DESK-401 — fixture-first manager desk; live order write-path follows in DESK-402.
+        path: 'desk',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'orders' },
+        loadComponent: () =>
+          import('./pages/desk/manager-desk.page').then((m) => m.ManagerDeskPage),
+        title: 'KPPDF — Стол',
+      },
       {
         // TZ-NAV-303: /dashboard = домашняя статистика (stub «Обзор»), НЕ канбан.
         // Полные виджеты — TZ-DASHBOARD-401 (другой TZ). pageKey остаётся orders

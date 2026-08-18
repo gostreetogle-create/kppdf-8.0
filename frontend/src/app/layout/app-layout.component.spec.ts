@@ -80,13 +80,13 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
   const rightRail = (): HTMLElement | null =>
     fixture.nativeElement.querySelector('[data-test="app-chrome-rail-right"]');
 
-  it('TZ-UX-331 + TZ-NAV-303: brand home chip links to / with Обзор aria (не Комбайн)', () => {
+  it('TZ-DESK-401: brand home chip links to / with Рабочий стол aria (не Комбайн)', () => {
     const brand = fixture.nativeElement.querySelector(
       'a[data-test="nav-brand-home"]',
     ) as HTMLAnchorElement | null;
     expect(brand).toBeTruthy();
-    expect(brand!.getAttribute('aria-label') ?? '').toContain('Обзор');
-    expect(brand!.getAttribute('title') ?? '').toContain('Обзор');
+    expect(brand!.getAttribute('aria-label') ?? '').toBe('Рабочий стол — главная');
+    expect(brand!.getAttribute('title') ?? '').toBe('Рабочий стол — главная');
     expect(brand!.textContent ?? '').toContain('KPPDF');
 
     const source = require('fs').readFileSync(
@@ -95,7 +95,8 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     );
     expect(source).toContain('data-test="nav-brand-home"');
     expect(source).toMatch(/routerLink="\/"/);
-    expect(source).toContain('Обзор — главная');
+    expect(source).toContain('Рабочий стол — главная');
+    expect(source).not.toContain('Обзор — главная');
     expect(source).not.toContain('Комбайн заказов — главная');
     expect(source).toContain('bg-sunrise-warm');
     expect(source).toContain('bg-sunrise-soft');

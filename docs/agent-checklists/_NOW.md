@@ -5,12 +5,12 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-17T23:20:00+03:00
+updated_at: 2026-08-18T19:37:14+03:00
 hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
 
 ## ACTIVE
 
-_(none)_ — WAVE-FORMS-NUMBER 314→317 archived; deploy НЕ
+_(none)_ — TZ-DESK-401 DONE; archive + lock + push; DESK-402 waits for PO «раскладка ок»
 
 ## NEXT (PO)
 
@@ -18,6 +18,11 @@ _(none)_ — WAVE-FORMS-NUMBER 314→317 archived; deploy НЕ
 2. Завтра на работе: тот же ПК, новая ссылка не нужна
 
 ## DONE / LANDED (recent)
+
+## [2026-08-18] — TZ-DESK-401 DONE — fixture manager desk
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-401.done.md`; fixture `/desk` gates PASS; deploy НЕ
+- Next: PO посмотреть `/desk` и сказать «раскладка ок»; DESK-402 не брать раньше
 
 ## [2026-08-18] — TZ-FORMS-317 DONE — DTO numeric transforms
 

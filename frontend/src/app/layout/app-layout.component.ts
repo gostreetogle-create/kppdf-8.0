@@ -29,6 +29,7 @@ import {
 } from 'lucide-angular';
 import { AppHistoryStore } from '../shared/navigation/app-history.store';
 import { PiChromeToolsService } from '../shared/chrome/pi-chrome-tools.service';
+import type { PiChromeToolItem } from '../shared/chrome/pi-chrome-tools.types';
 
 /**
  * Lucide icon structural type — `lucide-angular@0.460.0` keeps `LucideIconData`
@@ -333,7 +334,7 @@ export function matchActiveCategoryId(
                  hairline-b pi-edge-bleed shrink-0"
         >
           <div class="h-14 flex items-center justify-between gap-2 min-w-0">
-            <!-- TZ-UX-331 + TZ-NAV-303: brand = visible home chip → / → Обзор (home stats); text stays «KPPDF · 8.0». -->
+            <!-- TZ-DESK-401: brand = visible home chip → / → manager desk; text stays «KPPDF · 8.0». -->
             <a
               routerLink="/"
               class="inline-flex items-center gap-2 min-w-0 shrink-0 max-w-[9.5rem] sm:max-w-none
@@ -341,8 +342,8 @@ export function matchActiveCategoryId(
                      rounded-sm hairline bg-sunrise-soft text-ink
                      hover:bg-sunrise-warm/20 transition-colors pi-focus-ring
                      cursor-pointer no-underline"
-              aria-label="Обзор — главная"
-              title="Обзор — главная"
+              aria-label="Рабочий стол — главная"
+              title="Рабочий стол — главная"
               data-test="nav-brand-home"
             >
               <span
@@ -488,6 +489,8 @@ export function matchActiveCategoryId(
               [attr.title]="tool.title"
               [attr.aria-expanded]="tool.ariaExpanded ?? null"
               [attr.aria-controls]="tool.ariaControls ?? null"
+              [attr.aria-disabled]="isChromeToolDisabled(tool) ? 'true' : null"
+              [disabled]="isChromeToolDisabled(tool)"
               (click)="tool.onClick($event)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
@@ -529,6 +532,8 @@ export function matchActiveCategoryId(
               [attr.title]="tool.title"
               [attr.aria-expanded]="tool.ariaExpanded ?? null"
               [attr.aria-controls]="tool.ariaControls ?? null"
+              [attr.aria-disabled]="isChromeToolDisabled(tool) ? 'true' : null"
+              [disabled]="isChromeToolDisabled(tool)"
               (click)="tool.onClick($event)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
@@ -728,6 +733,11 @@ export class AppLayoutComponent {
     matchActiveCategoryId(this.currentUrl(), this.navCategories()),
   );
 
+  /** DESK-401: projected tools may be visibly present but intentionally disabled until DESK-404. */
+  protected isChromeToolDisabled(tool: PiChromeToolItem): boolean {
+    return (tool as PiChromeToolItem & { disabled?: boolean }).disabled === true;
+  }
+
   protected async onLogout(): Promise<void> {
     await this.auth.logout();
     await this.router.navigateByUrl('/login');
@@ -806,6 +816,7 @@ function isDenseWorkspaceUrl(url: string): boolean {
     '/proposals',
     '/contracts',
     '/orders',
+    '/desk',
     '/design/combine',
     '/production',
     '/inventory',

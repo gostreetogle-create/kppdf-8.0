@@ -1,0 +1,14 @@
+# TZ-DESK-401 — DONE lock
+TASK: TZ-DESK-401
+OWNER: Buffy/openai-gpt-5.6-luna
+CLOSED_AT: 2026-08-18
+ARCHIVE: tasks/_archive/2026-08/TZ-DESK-401.done.md
+PROTECTED_FILES:
+  - frontend/src/app/app.routes.ts
+  - frontend/src/app/pages/desk/manager-desk.page.ts
+  - frontend/src/app/pages/desk/manager-desk.page.spec.ts
+  - frontend/src/app/layout/app-layout.component.ts
+  - frontend/src/app/layout/app-layout.component.spec.ts
+SUCCESSOR: DESK-402 only after PO says «раскладка ок»
+GATES: frontend tsc PASS; focused Jest 3 suites / 20 tests PASS; focused ESLint PASS; diff-check PASS
+NOTES: fixture-only; no orders API, order-form-dialog, production cockpit, dashboard KPI, desktop, deploy, wipe, _park, or foreign WIP touched.
