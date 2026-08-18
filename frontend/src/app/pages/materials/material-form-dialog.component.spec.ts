@@ -731,5 +731,25 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
       expect(payload.weightKg).toBe(0.6);
       expect(payload.standardRef).toBe('ГОСТ 111-2001');
     });
+
+    it('create: pricePerUnit as string "500" becomes number 500 in payload (TZ-MATERIALS-313)', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Стекло');
+      comp.form.controls['unit'].setValue('m2');
+      setFormValue(comp, 'pricePerUnit', '500');
+      comp.onSubmit();
+      const payload = create.mock.calls[0][0];
+      expect(payload.pricePerUnit).toBe(500);
+    });
+
+    it('create: empty pricePerUnit is omitted from payload (TZ-MATERIALS-313)', async () => {
+      const { comp, create } = await setup(null);
+      comp.form.controls['name'].setValue('Стекло');
+      comp.form.controls['unit'].setValue('m2');
+      setFormValue(comp, 'pricePerUnit', '');
+      comp.onSubmit();
+      const payload = create.mock.calls[0][0];
+      expect(payload.pricePerUnit).toBeUndefined();
+    });
   });
 });

@@ -922,11 +922,17 @@ export class MaterialFormDialogComponent implements OnDestroy {
     if (v.materialKind && v.materialKind !== KIND_NULL_SENTINEL) {
       payload.materialKind = v.materialKind as MaterialKind;
     }
-    if (v.weightKg != null) payload.weightKg = Number(v.weightKg);
+    if (v.weightKg != null && String(v.weightKg) !== '') {
+      const parsed = Number(v.weightKg);
+      if (!Number.isNaN(parsed)) payload.weightKg = parsed;
+    }
     if (v.assortment) payload.assortment = v.assortment;
     if (v.standardRef) payload.standardRef = v.standardRef;
     if (v.materialGrade) payload.materialGrade = v.materialGrade;
-    if (v.pricePerUnit != null) payload.pricePerUnit = v.pricePerUnit;
+    if (v.pricePerUnit != null && String(v.pricePerUnit) !== '') {
+      const parsed = Number(v.pricePerUnit);
+      if (!Number.isNaN(parsed)) payload.pricePerUnit = parsed;
+    }
     if (v.supplierId) payload.supplierId = v.supplierId;
     if (dimensions.length > 0) payload.dimensions = dimensions;
     if (photoIds.length > 0) payload.photoIds = photoIds;

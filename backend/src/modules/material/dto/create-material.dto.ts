@@ -86,6 +86,7 @@ export class CreateMaterialDto {
 
   @ApiPropertyOptional({ example: 1.5, description: 'Масса в килограммах' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   weightKg?: number;
@@ -108,6 +109,7 @@ export class CreateMaterialDto {
 
   @ApiPropertyOptional({ description: 'Цена за единицу (RUB)' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(0)
   pricePerUnit?: number;
