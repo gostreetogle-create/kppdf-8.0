@@ -18,11 +18,10 @@ import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.
 import { DEALS_TOC_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import {
-  CompositionTreeComponent,
-  type CompositionTreeExpandEvent,
-  type CompositionTreeSelectEvent,
-  type CompositionTreeEditEvent,
+import type {
+  CompositionTreeExpandEvent,
+  CompositionTreeSelectEvent,
+  CompositionTreeEditEvent,
 } from '../../shared/ui/composition/composition-tree.component';
 import {
   CompositionTreeNode,
@@ -54,27 +53,16 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
 import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
 import {
-  SupplyTask,
-  SupplyTaskService,
-  type SupplyTaskStatus,
-} from '../../shared/services/pi-supply.service';
+  OrderHubTrayComponent,
+  EMPTY_SUPPLY_COUNTERS,
+  EMPTY_RESERVATION_COUNTERS,
+  type SupplyExpandCounters,
+  type ReservationExpandCounters,
+} from './order-hub-tray.component';
+import { SupplyTask, SupplyTaskService } from '../../shared/services/pi-supply.service';
 import { Reservation, ReservationsService } from '../../shared/services/pi-reservations.service';
 
 type SortKey = 'number' | 'date' | 'status';
-
-type SupplyExpandCounters = Record<SupplyTaskStatus, number> & { total: number };
-
-type ReservationExpandCounters = { active: number; total: number };
-
-const EMPTY_SUPPLY_COUNTERS: SupplyExpandCounters = {
-  draft: 0,
-  confirmed: 0,
-  ordered: 0,
-  received: 0,
-  total: 0,
-};
-
-const EMPTY_RESERVATION_COUNTERS: ReservationExpandCounters = { active: 0, total: 0 };
 
 /** Client-side pagination page size for /orders flat-array endpoint. */
 const PAGE_SIZE = 10;
@@ -225,7 +213,7 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
     PiRowActionsComponent,
     ButtonComponent,
     TableComponent,
-    CompositionTreeComponent,
+    OrderHubTrayComponent,
   ],
   template: `
     <app-pi-group-workspace [toc]="dealsToc" tocActiveId="orders" [chips]="emptyChips" activeId="">
@@ -342,302 +330,27 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
 
             <ng-template #expandedTpl let-row>
               @if (expandedId() === row._id) {
-                <div
-                  class="px-4 py-5 bg-paper-2 border-t hairline relative"
-                  data-test="expanded-content"
-                  role="region"
-                  [attr.aria-label]="'Сводка заказа: ' + row.number"
-                >
-                  <div class="absolute left-0 top-0 bottom-0 w-1 bg-gold" aria-hidden="true"></div>
-                  <div class="relative" data-test="expanded-content-body">
-                    <div class="space-y-8" data-test="order-lifecycle-groups">
-                      <section class="min-w-0" data-test="order-group-order">
-                        <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                          <p class="eyebrow m-0">Заказ</p>
-                          <span class="text-xs text-muted-foreground">основной состав</span>
-                        </div>
-                        <section
-                          class="min-w-0 flex flex-col gap-1"
-                          data-test="order-composition-block"
-                        >
-                          <button
-                            type="button"
-                            class="flex items-center justify-between gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm"
-                            [attr.aria-expanded]="compositionExpandedId() === row._id"
-                            [attr.aria-controls]="'order-composition-' + row._id"
-                            (click)="toggleComposition(row); $event.stopPropagation()"
-                            data-test="order-composition-toggle"
-                          >
-                            <span class="font-medium">Состав заказа</span>
-                            <span class="text-xs text-muted-foreground">
-                              {{ row.items?.length ?? 0 }}
-                              {{ itemCountLabel(row.items?.length ?? 0) }}
-                              <span aria-hidden="true">
-                                ·
-                                {{
-                                  compositionExpandedId() === row._id ? 'свернуть' : 'раскрыть'
-                                }}</span
-                              >
-                            </span>
-                          </button>
-                          @if (compositionExpandedId() === row._id) {
-                            <div
-                              class="border-t hairline pt-3 mt-1"
-                              [id]="'order-composition-' + row._id"
-                              data-test="order-composition-panel"
-                            >
-                              @if ((row.items?.length ?? 0) === 0) {
-                                <p class="text-xs text-muted-foreground m-0">
-                                  В заказе нет изделий.
-                                </p>
-                              } @else if (
-                                compositionForestLoading() && compositionForestOrderId() === row._id
-                              ) {
-                                <p
-                                  class="text-sm text-muted-foreground py-3 m-0"
-                                  data-test="order-composition-loading"
-                                >
-                                  Загрузка состава…
-                                </p>
-                              } @else if (compositionForestOrderId() === row._id) {
-                                <div
-                                  class="space-y-3 p-2 hairline rounded-sm bg-paper"
-                                  data-test="order-composition-tree"
-                                >
-                                  @for (
-                                    root of compositionForest();
-                                    track trackCompositionRoot($index, root)
-                                  ) {
-                                    <app-composition-tree
-                                      [root]="root"
-                                      [selectedId]="compositionSelectedId()"
-                                      [showEdit]="true"
-                                      ariaLabel="Состав изделия в заказе"
-                                      (expandedChange)="onCompositionExpand($event)"
-                                      (selectedChange)="onCompositionSelect($event)"
-                                      (editClick)="onCompositionEdit($event)"
-                                    />
-                                  }
-                                </div>
-                              }
-                              <a
-                                [routerLink]="['/orders', row._id]"
-                                class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-3 inline-block"
-                                (click)="$event.stopPropagation()"
-                                >Открыть карточку заказа</a
-                              >
-                            </div>
-                          }
-                        </section>
-                      </section>
-
-                      <section class="min-w-0" data-test="order-group-execution">
-                        <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                          <p class="eyebrow m-0">Исполнение</p>
-                          <span class="text-xs text-muted-foreground">цех и готовность</span>
-                        </div>
-                        <div
-                          class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start"
-                        >
-                          <section
-                            class="min-w-0 flex flex-col gap-1"
-                            data-test="order-supply-block"
-                          >
-                            <div class="flex items-baseline gap-3 flex-wrap">
-                              <p class="eyebrow m-0">Снабжение</p>
-                              <a
-                                routerLink="/supply"
-                                [queryParams]="{ orderId: row._id }"
-                                class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                                data-test="order-supply-link"
-                                (click)="$event.stopPropagation()"
-                                >Открыть снабжение</a
-                              >
-                            </div>
-                            @if (supplyExpandLoading() && supplyExpandOrderId() === row._id) {
-                              <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                            } @else if (supplyExpandError() && supplyExpandOrderId() === row._id) {
-                              <p
-                                class="text-xs text-destructive m-0 mt-1"
-                                role="alert"
-                                data-test="order-supply-error"
-                              >
-                                {{ supplyExpandError() }}
-                              </p>
-                            } @else if (
-                              supplyExpandOrderId() === row._id &&
-                              supplyExpandCounters().total === 0
-                            ) {
-                              <p class="text-xs text-muted-foreground m-0 mt-1">
-                                Нет задач снабжения
-                              </p>
-                            } @else if (supplyExpandOrderId() === row._id) {
-                              <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
-                                Черновик {{ supplyExpandCounters().draft }} · Подтверждено
-                                {{ supplyExpandCounters().confirmed }} · Заказано
-                                {{ supplyExpandCounters().ordered }} · Получено
-                                {{ supplyExpandCounters().received }}
-                                <span class="text-muted-foreground"
-                                  >· всего {{ supplyExpandCounters().total }}</span
-                                >
-                              </p>
-                            }
-                          </section>
-
-                          <section
-                            class="min-w-0 flex flex-col gap-1"
-                            data-test="order-production-block"
-                          >
-                            <p class="eyebrow m-0 mb-1">Производство</p>
-                            <p class="text-sm m-0">Оценка в цехе</p>
-                            <a
-                              routerLink="/production"
-                              [queryParams]="{ orderId: row._id }"
-                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                              data-test="order-production-link"
-                              (click)="$event.stopPropagation()"
-                              >Открыть производство</a
-                            >
-                          </section>
-
-                          <section
-                            class="min-w-0 flex flex-col gap-1"
-                            data-test="order-readiness-block"
-                          >
-                            <div class="flex items-baseline gap-3 flex-wrap">
-                              <p class="eyebrow m-0">Готовность</p>
-                              <a
-                                [routerLink]="['/orders', row._id]"
-                                class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                                data-test="order-readiness-link"
-                                (click)="$event.stopPropagation()"
-                                >Открыть заказ</a
-                              >
-                            </div>
-                            <p class="text-sm m-0 mt-1" data-test="order-readiness-summary">
-                              {{ readinessLabel(row) }}
-                            </p>
-                            @if ((row.items?.length ?? 0) === 0) {
-                              <p class="text-xs text-muted-foreground m-0 mt-1">
-                                Нет линий для готовности.
-                              </p>
-                            } @else {
-                              <ul
-                                class="m-0 mt-1 pl-4 space-y-0.5 text-sm"
-                                data-test="order-readiness-lines"
-                              >
-                                @for (item of row.items; track $index) {
-                                  <li>
-                                    {{
-                                      item.productName ||
-                                        'Изделие ' + item.productId.slice(0, 8) + '…'
-                                    }}
-                                    ·
-                                    <span
-                                      [class.text-muted-foreground]="item.readyForWork !== true"
-                                      [attr.data-test]="
-                                        item.readyForWork === true
-                                          ? 'order-readiness-ready'
-                                          : 'order-readiness-not-ready'
-                                      "
-                                    >
-                                      {{ item.readyForWork === true ? 'готово' : 'не готово' }}
-                                    </span>
-                                  </li>
-                                }
-                              </ul>
-                            }
-                          </section>
-                        </div>
-                      </section>
-
-                      <section class="min-w-0" data-test="order-group-logistics">
-                        <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                          <p class="eyebrow m-0">Логистика</p>
-                          <span class="text-xs text-muted-foreground">склад и отгрузка</span>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                          <section
-                            class="min-w-0 flex flex-col gap-1"
-                            data-test="order-warehouse-block"
-                          >
-                            <div class="flex items-baseline gap-3 flex-wrap">
-                              <p class="eyebrow m-0">Склад</p>
-                              <a
-                                routerLink="/storage-items"
-                                class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                                data-test="order-warehouse-link"
-                                (click)="$event.stopPropagation()"
-                                >Склад</a
-                              >
-                            </div>
-                            @if (
-                              reservationExpandLoading() && reservationExpandOrderId() === row._id
-                            ) {
-                              <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                            } @else if (
-                              reservationExpandError() && reservationExpandOrderId() === row._id
-                            ) {
-                              <p
-                                class="text-xs text-destructive m-0 mt-1"
-                                role="alert"
-                                data-test="order-warehouse-error"
-                              >
-                                {{ reservationExpandError() }}
-                              </p>
-                            } @else if (
-                              reservationExpandOrderId() === row._id &&
-                              reservationExpandCounters().total === 0
-                            ) {
-                              <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
-                            } @else if (reservationExpandOrderId() === row._id) {
-                              <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
-                                Активных {{ reservationExpandCounters().active }} · всего
-                                {{ reservationExpandCounters().total }}
-                              </p>
-                            }
-                          </section>
-
-                          <section
-                            class="min-w-0 flex flex-col gap-1"
-                            data-test="order-shipping-block"
-                          >
-                            <p class="eyebrow m-0 mb-1">Отгрузка</p>
-                            <p class="text-sm m-0" data-test="order-shipping-stub">
-                              Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
-                            </p>
-                            <a
-                              routerLink="/shipping"
-                              class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                              data-test="order-shipping-link"
-                              (click)="$event.stopPropagation()"
-                              >Открыть раздел „Отгрузка“</a
-                            >
-                          </section>
-                        </div>
-                      </section>
-
-                      <section class="min-w-0" data-test="order-group-documents">
-                        <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                          <p class="eyebrow m-0">Документы</p>
-                          <span class="text-xs text-muted-foreground"
-                            >печатные материалы и шаблоны</span
-                          >
-                        </div>
-                        <div class="text-sm">
-                          <a
-                            routerLink="/doc-constructor/templates"
-                            [queryParams]="{ source: 'order', sourceId: row._id }"
-                            class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                            data-test="order-documents-link"
-                            (click)="$event.stopPropagation()"
-                            >Шаблоны документов</a
-                          >
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-                </div>
+                <app-order-hub-tray
+                  [order]="row"
+                  mode="hub"
+                  [compositionExpanded]="compositionExpandedId() === row._id"
+                  [compositionLoading]="compositionForestLoading()"
+                  [compositionActive]="compositionForestOrderId() === row._id"
+                  [compositionForest]="compositionForest()"
+                  [compositionSelectedId]="compositionSelectedId()"
+                  [supplyLoading]="supplyExpandLoading()"
+                  [supplyError]="supplyExpandError()"
+                  [supplyActive]="supplyExpandOrderId() === row._id"
+                  [supplyCounters]="supplyExpandCounters()"
+                  [reservationLoading]="reservationExpandLoading()"
+                  [reservationError]="reservationExpandError()"
+                  [reservationActive]="reservationExpandOrderId() === row._id"
+                  [reservationCounters]="reservationExpandCounters()"
+                  (toggleComposition)="toggleComposition($event)"
+                  (compositionExpand)="onCompositionExpand($event)"
+                  (compositionSelect)="onCompositionSelect($event)"
+                  (compositionEdit)="onCompositionEdit($event)"
+                />
               }
             </ng-template>
           </app-pi-table>
@@ -944,10 +657,6 @@ export class OrdersPage implements OnInit {
     return `${ready} из ${items.length}`;
   }
 
-  protected itemCountLabel(count: number): string {
-    return pluralize(count, ['позиция', 'позиции', 'позиций']);
-  }
-
   protected readonly compositionExpandedId = signal<string | null>(null);
   protected readonly compositionForest = signal<CompositionTreeNode[]>([]);
   protected readonly compositionForestLoading = signal(false);
@@ -967,10 +676,6 @@ export class OrdersPage implements OnInit {
     }
     this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
     this.loadCompositionForest(row);
-  }
-
-  protected trackCompositionRoot(index: number, root: CompositionTreeNode): string {
-    return `${index}:${root._id}`;
   }
 
   protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {

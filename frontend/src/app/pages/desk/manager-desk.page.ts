@@ -37,7 +37,7 @@ import { createLookupTable } from '../../shared/util/lookup-table';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Order, OrderStatus } from '../orders/orders.service';
 import { OrderFormPanelComponent } from '../orders/order-form-panel.component';
-import { DeskOrderTrayComponent } from './desk-order-tray.component';
+import { OrderHubTrayComponent } from '../orders/order-hub-tray.component';
 import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
 
 type DeskPanelSide = 'left' | 'right';
@@ -83,7 +83,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DeskOrderTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
+  imports: [OrderHubTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
   template: `
     <div class="manager-desk" data-test="manager-desk">
       <app-pi-group-workspace [chips]="workflowChips()" activeId="desk">
@@ -130,7 +130,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                     class="manager-desk__order-row"
                     [class.manager-desk__order-row--expanded]="expandedId() === order._id"
                     [attr.aria-expanded]="expandedId() === order._id"
-                    [attr.aria-controls]="'desk-order-tray-' + order._id"
+                    [attr.aria-controls]="'order-hub-tray-' + order._id"
                     [attr.data-status]="order.status"
                     data-test="desk-order-row"
                     (click)="toggleOrder(order._id)"
@@ -144,7 +144,16 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                   </button>
 
                   @if (expandedId() === order._id) {
-                    <app-desk-order-tray [order]="order" [clientLabel]="clientLabel(order)" />
+                    <app-order-hub-tray
+                      [order]="order"
+                      mode="desk"
+                      [clientLabel]="clientLabel(order)"
+                      [compositionExpanded]="compositionExpandedId() === order._id"
+                      (toggleComposition)="toggleComposition($event)"
+                      (primaryCta)="onPrimaryCta()"
+                      (openSupply)="onOpenSupply()"
+                      (openDocs)="onOpenDocs()"
+                    />
                   }
                 </div>
               }
@@ -407,6 +416,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 })
 export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
+  protected readonly compositionExpandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
 
   protected readonly listRes = httpResource<Order[]>(() => ({ url: `${this.baseUrl}/orders` }));
@@ -524,7 +534,25 @@ export class ManagerDeskPage {
     const nextId = this.expandedId() === id ? null : id;
     this.expandedId.set(nextId);
     this.panel.set(null);
+    if (nextId === null) this.compositionExpandedId.set(null);
     this.navigateQuery(nextId, null);
+  }
+
+  /** Toggle the shared tray's composition panel (line list until DESK-403 tree). */
+  protected toggleComposition(order: Order): void {
+    this.compositionExpandedId.update((id) => (id === order._id ? null : order._id));
+  }
+
+  protected onPrimaryCta(): void {
+    this.toast.show('Действие подключится в следующей волне.');
+  }
+
+  protected onOpenSupply(): void {
+    this.toast.show('Снабжение подключится в DESK-403.');
+  }
+
+  protected onOpenDocs(): void {
+    this.toast.show('Документы подключится в DESK-403.');
   }
 
   /** Shared handler for left-rail tools and any future empty-state CTA. */
@@ -542,6 +570,7 @@ export class ManagerDeskPage {
   protected onOrderSaved(order: Order): void {
     this.panel.set(null);
     this.expandedId.set(order._id);
+    this.compositionExpandedId.set(null);
     this.pendingScrollId.set(order._id);
     this.navigateQuery(order._id, null);
     this.listRes.reload();
@@ -569,6 +598,7 @@ export class ManagerDeskPage {
     if (rawId && !validId) {
       this.toast.error('Заказ не найден');
       this.expandedId.set(null);
+      this.compositionExpandedId.set(null);
       this.panel.set(null);
       this.clearOrderIdQuery();
       return;

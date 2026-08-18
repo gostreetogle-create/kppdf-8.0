@@ -33,8 +33,10 @@
 - Dense main (`isDenseWorkspaceUrl`).
 - **Центр:** scrollable queue; **expand tray под строкой** (не блок ниже списка).
 - Tray: группы как `/orders` expand — Заказ, Исполнение, Комбайн-strip, Состав, inline CTA.
+  - **412:** один shared `order-hub-tray` (`mode="desk"`) — та же разметка, что `/orders` expand (`mode="hub"`), без форка шаблона.
 - **L flyout** (create/filter/summary) · **R flyout** (edit/client/bom/docs/supply).
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
+- **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события, tree+combine в 403.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 - **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
 
@@ -54,6 +56,7 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | DESK-405 | layout rev.2 — DONE |
 | **DESK-406** | chrome parity — **DONE** |
 | **DESK-402** | форма + GET /orders — **DONE** |
+| **DESK-412** | shared order-hub-tray — **DONE** |
 | DESK-403 | состав + combine в tray |
 | DESK-404 | deep-link студии |
 | DESK-407 | crumbs + view=gantt/combine |

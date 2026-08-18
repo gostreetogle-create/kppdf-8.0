@@ -182,12 +182,22 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
 
     expect(page().expandedId()).toBe('o1');
     const item = rows[0]!.parentElement!;
-    const tray = item.querySelector('[data-test="desk-order-tray"]');
+    const tray = item.querySelector('[data-test="order-hub-tray"]');
     expect(tray).toBeTruthy();
+    expect(tray?.getAttribute('data-mode')).toBe('desk');
     expect(tray?.textContent).toContain('З-1001');
     expect(tray?.textContent).toContain('Северный свет');
     expect(tray?.textContent).toContain('Черновик');
-    expect(tray?.querySelectorAll('[data-test="desk-composition-row"]')).toHaveLength(2);
+    expect(tray?.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
+
+    const compositionToggle = tray?.querySelector(
+      '[data-test="order-composition-toggle"]',
+    ) as HTMLButtonElement;
+    expect(compositionToggle.getAttribute('aria-expanded')).toBe('false');
+    compositionToggle.click();
+    fixture.detectChanges();
+    expect(compositionToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(tray?.querySelectorAll('[data-test="order-composition-line"]')).toHaveLength(2);
 
     const crumb = fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]');
     expect(crumb?.textContent).toContain('З-1001');
@@ -196,7 +206,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     rows[0]!.click();
     fixture.detectChanges();
     expect(page().expandedId()).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="order-hub-tray"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')).toBeNull();
   });
 
@@ -210,6 +220,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     );
     expect(source).toContain('app-order-form-panel');
     expect(source).toContain('app-pi-group-workspace');
+    expect(source).toContain('app-order-hub-tray');
+    expect(source).not.toContain('app-desk-order-tray');
     expect(source).not.toContain('MANAGER_DESK_FIXTURE');
     expect(source).not.toContain('manager-desk__workflow');
   });
@@ -301,7 +313,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     page().onEscape();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-hub-tray"]')).toBeTruthy();
     expect(page().expandedId()).toBe('o2');
   });
 });
