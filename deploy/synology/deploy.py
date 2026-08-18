@@ -405,10 +405,8 @@ def publish_desktop_installer(project_root, frontend_dir):
     versioned_exe = "kppdf-desktop-setup-v" + semver + ".exe" if semver else None
     versioned_zip = "kppdf-desktop-setup-v" + semver + ".zip" if semver else None
 
-    candidates = [
-        project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe",
-        project_root / "desktop" / "dist-installers" / "kppdf-desktop-setup.exe",
-    ]
+    # Strict order (canon 2026-08-18): never copy stale unversioned exe when semver bumped.
+    candidates = []
     if semver:
         candidates.append(
             project_root
@@ -420,17 +418,10 @@ def publish_desktop_installer(project_root, frontend_dir):
             / "nsis"
             / ("KPPDF Desktop_" + semver + "_x64-setup.exe"),
         )
-    # Legacy hardcoded path — fallback WARN only (canon: do not rely on it).
-    candidates.append(
-        project_root
-        / "desktop"
-        / "src-tauri"
-        / "target"
-        / "release"
-        / "bundle"
-        / "nsis"
-        / "KPPDF Desktop_0.1.0_x64-setup.exe",
-    )
+        candidates.append(
+            project_root / "frontend" / "downloads" / versioned_exe,
+        )
+    candidates.append(project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe")
     src = next((p for p in candidates if p.is_file()), None)
     downloads = frontend_dir / "downloads"
     downloads.mkdir(parents=True, exist_ok=True)
@@ -446,10 +437,9 @@ def publish_desktop_installer(project_root, frontend_dir):
         return
     if semver and src == candidates[-1]:
         warn(
-            "Using legacy NSIS 0.1.0 path as fallback — expected versioned "
-            + "\"KPPDF Desktop_"
-            + semver
-            + "_x64-setup.exe\". Rebuild with tauri build before deploy."
+            "Using unversioned frontend/downloads/kppdf-desktop-setup.exe — "
+            "run `cd desktop && pnpm run release-installer` before deploy so "
+            "filename semver matches embedded app version."
         )
     shutil.copy2(src, dest_exe)
     with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:

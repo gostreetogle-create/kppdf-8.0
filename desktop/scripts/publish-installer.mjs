@@ -2,16 +2,16 @@
  * Publish kppdf-desktop-setup-v{semver}.exe (+ ZIP) into frontend download staging
  * and live browser tree, plus stable unversioned aliases.
  *
- * Usage (from desktop/): pnpm run publish-installer
+ * Usage (from desktop/):
+ *   pnpm run release-installer   — tauri build + publish (recommended)
+ *   pnpm run publish-installer   — publish only (requires fresh NSIS for current semver)
  *
  * Canon (TZD-46): docs/audits/2026-08-12-desktop-download-version-naming-canon.md
- * - Semver SoT: desktop/package.json, asserted equal to tauri.conf.json (FAIL otherwise).
- * - Versioned artifacts:  kppdf-desktop-setup-v{semver}.exe / .zip
- *   ZIP contains a single entry `kppdf-desktop-setup-v{semver}.exe` (no wrapper folder).
- * - Stable aliases (same bytes): kppdf-desktop-setup.exe / .zip — old bookmarks keep working.
- * - Web button → versioned URL (via DESKTOP_DOWNLOAD_URL meta / compat API); alias for legacy links.
+ * Integrity gate (2026-08-18): NEVER relabel a stale exe — source must be
+ * `KPPDF Desktop_{semver}_x64-setup.exe` from `pnpm tauri build`, or verified staging.
  */
 import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync, crc32 } from 'node:zlib';
@@ -48,48 +48,121 @@ function readSemver() {
   return fromPkg;
 }
 
+/** Normalize PE FileVersion / ProductVersion to major.minor.patch for compare. */
+function normalizePeSemver(raw) {
+  const s = String(raw ?? '').trim().replace(/^v/i, '');
+  const m = s.match(/^(\d+)\.(\d+)\.(\d+)/);
+  return m ? `${m[1]}.${m[2]}.${m[3]}` : null;
+}
+
+/** Read embedded file version from a Windows PE (NSIS setup). Returns null if unavailable. */
+function readPeFileVersion(exePath) {
+  if (process.platform !== 'win32') {
+    return null;
+  }
+  try {
+    const escaped = exePath.replace(/'/g, "''");
+    const out = execSync(
+      `powershell -NoProfile -Command "(Get-Item -LiteralPath '${escaped}').VersionInfo.FileVersion"`,
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    ).trim();
+    return normalizePeSemver(out) ?? out || null;
+  } catch {
+    return null;
+  }
+}
+
+function assertEmbeddedSemver(exePath, expectedSemver) {
+  const embedded = readPeFileVersion(exePath);
+  if (!embedded) {
+    return;
+  }
+  if (embedded !== expectedSemver) {
+    console.error(
+      `[publish-installer] FAIL: embedded PE version "${embedded}" ≠ package semver ${expectedSemver} ` +
+        `in ${exePath}. Run: cd desktop && pnpm tauri build — do NOT relabel an old installer.`,
+    );
+    process.exit(1);
+  }
+}
+
+function versionedNsisPath(semver) {
+  return join(
+    desktopRoot,
+    'src-tauri',
+    'target',
+    'release',
+    'bundle',
+    'nsis',
+    `KPPDF Desktop_${semver}_x64-setup.exe`,
+  );
+}
+
+function versionedStagingExe(semver) {
+  return join(repoRoot, 'frontend', 'downloads', `kppdf-desktop-setup-v${semver}.exe`);
+}
+
+/**
+ * Resolve installer source. Strict order — stale unversioned copies are rejected.
+ * Override for emergency only: KPPDF_PUBLISH_ALLOW_STALE=1 (still checks PE version on Windows).
+ */
+function resolveInstallerSource(semver) {
+  const nsis = versionedNsisPath(semver);
+  if (existsSync(nsis)) {
+    assertEmbeddedSemver(nsis, semver);
+    return { src: nsis, label: 'fresh NSIS (tauri build)' };
+  }
+
+  const staging = versionedStagingExe(semver);
+  if (existsSync(staging)) {
+    assertEmbeddedSemver(staging, semver);
+    return { src: staging, label: `verified staging ${staging}` };
+  }
+
+  const allowStale = process.env.KPPDF_PUBLISH_ALLOW_STALE === '1';
+  const distLegacy = join(desktopRoot, 'dist-installers', EXE_NAME);
+  if (allowStale && existsSync(distLegacy)) {
+    assertEmbeddedSemver(distLegacy, semver);
+    console.warn(
+      `[publish-installer] WARN: KPPDF_PUBLISH_ALLOW_STALE=1 — using dist-installers copy. ` +
+        `Prefer pnpm run release-installer next time.`,
+    );
+    return { src: distLegacy, label: 'dist-installers (explicit stale override)' };
+  }
+
+  const staleHints = [];
+  if (existsSync(distLegacy)) {
+    const pe = readPeFileVersion(distLegacy);
+    staleHints.push(
+      `  dist-installers/${EXE_NAME} exists` + (pe ? ` (embedded ${pe})` : '') + ' — NOT used (would mislabel)',
+    );
+  }
+  for (const other of ['0.5.4', '0.5.2', '0.5.1', '0.1.0']) {
+    if (other === semver) continue;
+    const p = versionedNsisPath(other);
+    if (existsSync(p)) {
+      staleHints.push(`  older NSIS: ${p}`);
+    }
+  }
+
+  console.error(
+    `[publish-installer] FAIL: no installer for semver ${semver}.\n` +
+      `Run: cd desktop && pnpm run release-installer\n` +
+      `Expected NSIS: ${nsis}`,
+  );
+  if (staleHints.length) {
+    console.error('Stale artifacts on disk (ignored):\n' + staleHints.join('\n'));
+  }
+  process.exit(1);
+}
+
 const SEMVER = readSemver();
 const V_TAG = `v${SEMVER}`;
 const EXE_VERSIONED = `kppdf-desktop-setup-${V_TAG}.exe`;
 const ZIP_VERSIONED = `kppdf-desktop-setup-${V_TAG}.zip`;
 
-const candidates = [
-  join(desktopRoot, 'dist-installers', EXE_NAME),
-  join(
-    desktopRoot,
-    'src-tauri',
-    'target',
-    'release',
-    'bundle',
-    'nsis',
-    `KPPDF Desktop_${SEMVER}_x64-setup.exe`,
-  ),
-  // Legacy hardcoded path — keep as fallback WARN only (canon: do not rely on it).
-  join(
-    desktopRoot,
-    'src-tauri',
-    'target',
-    'release',
-    'bundle',
-    'nsis',
-    'KPPDF Desktop_0.1.0_x64-setup.exe',
-  ),
-];
-
-const src = candidates.find((p) => existsSync(p));
-if (!src) {
-  console.error(
-    `No setup.exe found for ${SEMVER}. Run: cd desktop && pnpm tauri build\nExpected:`,
-    candidates.join('\n  '),
-  );
-  process.exit(1);
-}
-if (src === candidates[2]) {
-  console.warn(
-    `[publish-installer] WARN: using legacy NSIS 0.1.0 path as fallback — expected versioned ` +
-      `"KPPDF Desktop_${SEMVER}_x64-setup.exe". Rebuild with tauri build to publish the real semver.`,
-  );
-}
+const { src, label } = resolveInstallerSource(SEMVER);
+console.log(`[publish-installer] source: ${label}`);
 
 /**
  * Minimal single-file ZIP (DEFLATE) — no third-party deps.
@@ -166,7 +239,8 @@ for (const dir of downloadRoots) {
   copyFileSync(src, exeDest);
   writeSingleFileZip(exeVerDest, zipVerDest, EXE_VERSIONED);
   copyFileSync(zipVerDest, zipDest); // alias = same bytes
-  console.log('OK', exeVerDest, `(${statSync(exeVerDest).size} bytes)`);
+  const pe = readPeFileVersion(exeVerDest);
+  console.log('OK', exeVerDest, `(${statSync(exeVerDest).size} bytes${pe ? `, PE ${pe}` : ''})`);
   console.log('OK', zipVerDest, `(${statSync(zipVerDest).size} bytes)`);
   console.log('alias', exeDest, `(same bytes as ${EXE_VERSIONED})`);
   console.log('alias', zipDest, `(same bytes as ${ZIP_VERSIONED})`);

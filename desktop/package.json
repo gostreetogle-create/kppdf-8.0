@@ -14,7 +14,8 @@
     "mcp:test": "pnpm --dir mcp test",
     "mcp:check": "pnpm mcp:typecheck && pnpm mcp:test",
     "bundle:ai-runner": "node scripts/bundle-ai-runner.mjs",
-    "publish-installer": "node scripts/publish-installer.mjs"
+    "publish-installer": "node scripts/publish-installer.mjs",
+    "release-installer": "pnpm tauri build && pnpm run publish-installer"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",
