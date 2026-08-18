@@ -1,21 +1,32 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
-import type { ManagerDeskOrderFixture } from './manager-desk.page';
+import type { Order, OrderStatus } from '../orders/orders.service';
 
-type DeskStatus = ManagerDeskOrderFixture['status'];
-
-const STATUS_LABELS: Record<DeskStatus, string> = {
+const STATUS_LABELS: Record<OrderStatus, string> = {
   draft: 'Черновик',
+  confirmed: 'Подтверждён',
   in_production: 'В производстве',
   ready: 'Готов',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
 };
 
-const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
+const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
   draft: 'Подтвердить',
+  confirmed: 'В производство',
   in_production: 'К отгрузке',
   ready: 'Отгрузить',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
 };
 
+/**
+ * Desk expand-in-row tray. TZ-DESK-402: renders a live `Order` (queue is now
+ * `GET /orders`); TZ-DESK-412 will replace this with the shared
+ * `order-hub-tray`. Status/write actions stay disabled until successor TZ.
+ */
 @Component({
   selector: 'app-desk-order-tray',
   standalone: true,
@@ -25,7 +36,7 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
       class="desk-order-tray"
       data-test="desk-order-tray"
       role="region"
-      [attr.id]="'desk-order-tray-' + order().id"
+      [attr.id]="'desk-order-tray-' + order()._id"
       [attr.aria-label]="'Сводка заказа: ' + order().number"
     >
       <span class="desk-order-tray__gold-rail" aria-hidden="true"></span>
@@ -38,7 +49,7 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
           <dl class="desk-order-tray__facts">
             <div>
               <dt>Клиент</dt>
-              <dd>{{ order().clientLabel }}</dd>
+              <dd>{{ clientLabel() || '—' }}</dd>
             </div>
             <div>
               <dt>Статус</dt>
@@ -50,7 +61,7 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
         <section class="desk-order-tray__group" data-test="desk-tray-group-execution">
           <div class="desk-order-tray__group-heading">
             <p class="desk-order-tray__eyebrow">Исполнение</p>
-            <span class="desk-order-tray__muted">fixture / read-only</span>
+            <span class="desk-order-tray__muted">read-only</span>
           </div>
           <div class="desk-order-tray__actions">
             <button
@@ -58,13 +69,15 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
               class="desk-order-tray__primary"
               disabled
               data-test="desk-primary-cta"
-              [attr.aria-label]="primaryCta(order().status) + ' — действие появится после DESK-402'"
-              title="Действие появится после DESK-402"
+              [attr.aria-label]="
+                primaryCta(order().status) + ' — действие появится в следующей волне'
+              "
+              title="Действие появится в следующей волне"
             >
               {{ primaryCta(order().status) }}
             </button>
             <span class="desk-order-tray__disabled-note"
-              >Действия подключатся после одобрения каркаса.</span
+              >Действия подключатся в следующей волне.</span
             >
           </div>
           <div class="desk-order-tray__inline-links" data-test="desk-tray-actions">
@@ -74,7 +87,7 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
               disabled
               data-test="desk-tray-link"
               data-action="supply"
-              title="Подключится в DESK-402"
+              title="Подключится в DESK-403"
             >
               Снабжение
             </button>
@@ -84,7 +97,7 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
               disabled
               data-test="desk-tray-link"
               data-action="docs"
-              title="Подключится в DESK-402"
+              title="Подключится в DESK-403"
             >
               Документы
             </button>
@@ -94,13 +107,13 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
         <section class="desk-order-tray__group" data-test="desk-tray-group-composition">
           <div class="desk-order-tray__group-heading">
             <p class="desk-order-tray__eyebrow">Состав</p>
-            <span class="desk-order-tray__muted">2 строки</span>
+            <span class="desk-order-tray__muted">{{ itemCount() }}</span>
           </div>
           <div class="desk-order-tray__composition" aria-label="Состав заказа">
-            @for (line of order().composition; track $index) {
+            @for (line of order().items ?? []; track trackItem($index, line)) {
               <div class="desk-order-tray__composition-row" data-test="desk-composition-row">
                 <span class="desk-order-tray__composition-mark" aria-hidden="true"></span>
-                <span>{{ line }}</span>
+                <span>{{ lineLabel(line) }}</span>
               </div>
             }
           </div>
@@ -262,13 +275,28 @@ const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
   ],
 })
 export class DeskOrderTrayComponent {
-  readonly order = input.required<ManagerDeskOrderFixture>();
+  readonly order = input.required<Order>();
+  readonly clientLabel = input<string>('');
 
-  protected statusLabel(status: DeskStatus): string {
+  protected statusLabel(status: OrderStatus): string {
     return STATUS_LABELS[status];
   }
 
-  protected primaryCta(status: DeskStatus): string {
+  protected primaryCta(status: OrderStatus): string {
     return PRIMARY_CTA_LABELS[status];
+  }
+
+  protected itemCount(): string {
+    const n = this.order().items?.length ?? 0;
+    if (n === 0) return 'нет позиций';
+    return `${n} ${n === 1 ? 'позиция' : n < 5 ? 'позиции' : 'позиций'}`;
+  }
+
+  protected lineLabel(line: { productName?: string; productId: string }): string {
+    return line.productName || `Изделие ${line.productId.slice(0, 8)}…`;
+  }
+
+  protected trackItem(index: number, line: { productId: string }): string {
+    return `${index}:${line.productId}`;
   }
 }

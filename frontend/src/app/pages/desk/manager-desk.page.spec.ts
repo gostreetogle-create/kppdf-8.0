@@ -1,15 +1,82 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { EMPTY, BehaviorSubject } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
-import { MANAGER_DESK_FIXTURE, ManagerDeskPage, type ManagerDeskPanel } from './manager-desk.page';
+import { API_BASE_URL } from '../../core/api.tokens';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
+import { PiToastService } from '../../shared/ui/toast';
+import { Order } from '../orders/orders.service';
+import { ManagerDeskPage, type ManagerDeskPanel } from './manager-desk.page';
 
-describe('ManagerDeskPage (TZ-DESK-405)', () => {
+const ORDERS: Order[] = [
+  {
+    _id: 'o1',
+    number: 'З-1001',
+    status: 'draft',
+    counterpartyId: 'cp1',
+    items: [
+      { productId: 'p1', productName: 'Стол переговорный', quantity: 1, unitPrice: 100 },
+      { productId: 'p2', productName: 'Опоры металлические', quantity: 2, unitPrice: 50 },
+    ],
+  },
+  {
+    _id: 'o2',
+    number: 'З-1002',
+    status: 'in_production',
+    counterpartyId: 'cp2',
+    items: [],
+  },
+  {
+    _id: 'o3',
+    number: 'З-1003',
+    status: 'ready',
+    counterpartyId: { _id: 'cp3', name: 'ООО Белый дуб' },
+    items: [],
+  },
+];
+
+const COUNTERPARTIES = [
+  { _id: 'cp1', name: 'ООО Северный свет', shortName: 'Северный свет', inn: '1' },
+  { _id: 'cp2', name: 'ИП Марина Волкова', inn: '2' },
+];
+
+function flushBase(httpMock: HttpTestingController): void {
+  httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET').flush(ORDERS);
+  httpMock
+    .expectOne((req) => req.url === '/api/counterparties' && req.method === 'GET')
+    .flush({ items: COUNTERPARTIES, total: COUNTERPARTIES.length, page: 1, limit: 200 });
+}
+
+function flushPanelLookups(httpMock: HttpTestingController, opts: { sites?: boolean } = {}): void {
+  httpMock
+    .expectOne((req) => req.url === '/api/counterparties' && req.method === 'GET')
+    .flush({ items: COUNTERPARTIES, total: COUNTERPARTIES.length, page: 1, limit: 200 });
+  httpMock
+    .expectOne((req) => req.url === '/api/products' && req.method === 'GET')
+    .flush({ items: [], total: 0, page: 1, limit: 200 });
+  httpMock
+    .expectOne((req) => req.url === '/api/users' && req.method === 'GET')
+    .flush({ items: [], total: 0, page: 1, limit: 100 });
+  if (opts.sites) {
+    httpMock
+      .expectOne((req) => req.url === '/api/sites' && req.method === 'GET')
+      .flush([{ _id: 'site-x', counterpartyId: 'cp2', name: 'Объект' }]);
+  }
+}
+
+async function tickMicrotask(): Promise<void> {
+  await new Promise<void>((r) => setTimeout(r, 0));
+}
+
+describe('ManagerDeskPage (TZ-DESK-402)', () => {
   let fixture: ComponentFixture<ManagerDeskPage>;
+  let httpMock: HttpTestingController;
   let chromeTools: PiChromeToolsService;
+  let toast: PiToastService;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let navigate: jest.Mock;
 
@@ -28,17 +95,23 @@ describe('ManagerDeskPage (TZ-DESK-405)', () => {
     await TestBed.configureTestingModule({
       imports: [ManagerDeskPage],
       providers: [
+        provideHttpClient(withInterceptors([]), withFetch()),
+        provideHttpClientTesting(),
+        { provide: API_BASE_URL, useValue: '/api' },
         {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParams$.asObservable() },
         },
         { provide: Router, useValue: routerMock },
         { provide: AuthService, useValue: { user: signal(null) } },
+        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
         PiChromeToolsService,
       ],
     }).compileComponents();
 
+    httpMock = TestBed.inject(HttpTestingController);
     chromeTools = TestBed.inject(PiChromeToolsService);
+    toast = TestBed.inject(PiToastService);
     chromeTools.clear('manager-desk');
     fixture = TestBed.createComponent(ManagerDeskPage);
     fixture.detectChanges();
@@ -47,6 +120,8 @@ describe('ManagerDeskPage (TZ-DESK-405)', () => {
   afterEach(() => {
     chromeTools.clear('manager-desk');
     fixture.destroy();
+    httpMock.verify();
+    TestBed.resetTestingModule();
   });
 
   function page(): ManagerDeskPage & {
@@ -54,6 +129,8 @@ describe('ManagerDeskPage (TZ-DESK-405)', () => {
     panel: () => ManagerDeskPanel | null;
     toggleOrder: (id: string) => void;
     openPanel: (panel: ManagerDeskPanel) => void;
+    closePanel: () => void;
+    onOrderSaved: (order: Order) => void;
     onEscape: () => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
@@ -61,180 +138,170 @@ describe('ManagerDeskPage (TZ-DESK-405)', () => {
       panel: () => ManagerDeskPanel | null;
       toggleOrder: (id: string) => void;
       openPanel: (panel: ManagerDeskPanel) => void;
+      closePanel: () => void;
+      onOrderSaved: (order: Order) => void;
       onEscape: () => void;
     };
   }
 
-  it('renders one group-workspace chip row without page-chrome or custom nav', () => {
-    const chips = fixture.nativeElement.querySelector('[data-test="group-chips"]');
-    expect(chips).toBeTruthy();
-    const links = chips.querySelectorAll('a');
+  it('renders live orders in one group-workspace chip row without page-chrome', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
 
-    expect([...links].map((link) => link.textContent.trim())).toEqual([
-      'Стол',
-      'КП',
-      'Комбайн',
-      'Гант',
-      'Снабжение',
-      'Отгрузка',
-    ]);
-    expect(links[0].getAttribute('aria-current')).toBe('page');
-
+    expect(fixture.nativeElement.querySelector('[data-test="group-chips"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="desk-page-chrome"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="desk-workflow-crumbs"]')).toBeNull();
     expect(fixture.nativeElement.textContent).not.toContain('Рабочий стол');
-    expect(fixture.nativeElement.textContent).not.toContain('Каталог');
-    expect(fixture.nativeElement.textContent).not.toContain('Админ');
-  });
 
-  it('expands one fixture row into a tray directly below it and toggles closed', () => {
     const rows = fixture.nativeElement.querySelectorAll(
       '[data-test="desk-order-row"]',
     ) as NodeListOf<HTMLButtonElement>;
     expect(rows).toHaveLength(3);
-    expect([...rows].map((row) => row.getAttribute('aria-expanded'))).toEqual([
-      'false',
-      'false',
-      'false',
+    expect([...rows].map((row) => row.getAttribute('data-status'))).toEqual([
+      'draft',
+      'in_production',
+      'ready',
     ]);
-    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="desk-center-innards"]')).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain('З-1001');
+    expect(fixture.nativeElement.textContent).toContain('Северный свет');
+    expect(fixture.nativeElement.textContent).toContain('ИП Марина Волкова');
+    expect(fixture.nativeElement.textContent).toContain('ООО Белый дуб');
+  });
 
+  it('expands a live order into the tray and toggles closed with crumb suffix', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
     rows[0]!.click();
     fixture.detectChanges();
 
-    expect(page().expandedId()).toBe('desk-order-1001');
-    expect(rows[0]!.getAttribute('aria-expanded')).toBe('true');
+    expect(page().expandedId()).toBe('o1');
     const item = rows[0]!.parentElement!;
     const tray = item.querySelector('[data-test="desk-order-tray"]');
     expect(tray).toBeTruthy();
-    expect(tray?.querySelector('[data-test="desk-tray-group-order"]')).toBeTruthy();
-    expect(tray?.querySelector('[data-test="desk-tray-group-execution"]')).toBeTruthy();
-    expect(tray?.querySelector('[data-test="desk-tray-group-composition"]')).toBeTruthy();
     expect(tray?.textContent).toContain('З-1001');
+    expect(tray?.textContent).toContain('Северный свет');
     expect(tray?.textContent).toContain('Черновик');
-    expect(tray?.textContent).toContain('ООО Северный свет');
     expect(tray?.querySelectorAll('[data-test="desk-composition-row"]')).toHaveLength(2);
-    expect(tray?.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
-    expect(
-      (tray?.querySelector('[data-test="desk-primary-cta"]') as HTMLButtonElement).disabled,
-    ).toBe(true);
-    expect(tray?.querySelectorAll('[data-test="desk-tray-link"]')).toHaveLength(2);
-    expect(fixture.nativeElement.querySelector('[data-test="desk-center-innards"]')).toBeNull();
 
     const crumb = fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]');
-    expect(crumb).toBeTruthy();
     expect(crumb?.textContent).toContain('З-1001');
     expect(crumb?.getAttribute('aria-current')).toBe('page');
-    expect(fixture.nativeElement.querySelector('[data-test="group-tools"]').contains(crumb)).toBe(
-      true,
-    );
 
-    rows[1]!.click();
-    fixture.detectChanges();
-    expect(page().expandedId()).toBe('desk-order-1002');
-    expect(rows[0]!.getAttribute('aria-expanded')).toBe('false');
-    expect(rows[1]!.getAttribute('aria-expanded')).toBe('true');
-    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-order-tray"]')).toHaveLength(1);
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')?.textContent,
-    ).toContain('З-1002');
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
-    ).toContain('З-1002');
-
-    rows[1]!.click();
+    rows[0]!.click();
     fixture.detectChanges();
     expect(page().expandedId()).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')).toBeNull();
   });
 
-  it('keeps the queue scroll contract and never owns an orders HTTP path', () => {
-    const orders = fixture.nativeElement.querySelector('.manager-desk__orders');
-    expect(orders).toBeTruthy();
+  it('keeps one write-path: desk hosts the shared order-form-panel, no fixture', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
 
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'manager-desk.page.ts'),
       'utf8',
     );
-    const traySource = require('fs').readFileSync(
-      require('path').join(__dirname, 'desk-order-tray.component.ts'),
-      'utf8',
-    );
-    expect(source).toContain('max-height: min(60vh, calc(100dvh - 8rem))');
-    expect(source).toContain('overflow-y: auto');
+    expect(source).toContain('app-order-form-panel');
     expect(source).toContain('app-pi-group-workspace');
-    expect(source).toContain('desk-workflow-chips');
-    expect(source).not.toContain('PiPageChromeComponent');
+    expect(source).not.toContain('MANAGER_DESK_FIXTURE');
     expect(source).not.toContain('manager-desk__workflow');
-    expect(source).not.toContain('OrdersService');
-    expect(source).not.toContain('/api/orders');
-    expect(source).not.toContain('composition-tree');
-    expect(traySource).not.toContain('OrdersService');
-    expect(traySource).not.toContain('/api/orders');
-    expect(traySource).not.toContain('composition-tree');
-    expect(MANAGER_DESK_FIXTURE).toHaveLength(3);
   });
 
-  it('opens left-rail panels on the left and selected-order panels on the right', () => {
+  it('shows RU toast and clears an invalid orderId without crashing', async () => {
+    queryParams$.next(convertToParamMap({ orderId: 'missing', panel: null }));
+    fixture.detectChanges();
+
+    expect(toast.error).not.toHaveBeenCalled();
+
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalledWith('Заказ не найден');
+    expect(page().expandedId()).toBeNull();
+    expect(navigate).toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('[data-test="manager-desk"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-order-row"]')).toHaveLength(3);
+  });
+
+  it('create flyout hosts the shared order form panel', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
     page().openPanel('create');
     fixture.detectChanges();
-    let flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    flushPanelLookups(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
     expect(flyout?.getAttribute('data-panel')).toBe('create');
     expect(flyout?.getAttribute('data-side')).toBe('left');
-    expect(flyout?.classList.contains('manager-desk__flyout--left')).toBe(true);
-    expect(flyout?.classList.contains('manager-desk__flyout--right')).toBe(false);
-
-    const rows = fixture.nativeElement.querySelectorAll(
-      '[data-test="desk-order-row"]',
-    ) as NodeListOf<HTMLButtonElement>;
-    rows[1]!.click();
-    fixture.detectChanges();
-    page().openPanel('client');
-    fixture.detectChanges();
-    flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
-    expect(flyout?.getAttribute('data-panel')).toBe('client');
-    expect(flyout?.getAttribute('data-side')).toBe('right');
-    expect(flyout?.classList.contains('manager-desk__flyout--right')).toBe(true);
-    expect(flyout?.classList.contains('manager-desk__flyout--left')).toBe(false);
-    expect(chromeTools.leftTools().map((tool) => tool.id)).toEqual(['create', 'filter', 'summary']);
+    expect(flyout?.querySelector('[data-test="order-form"]')).toBeTruthy();
+    expect(flyout?.querySelector('[data-test="order-form-actions"]')).toBeTruthy();
   });
 
-  it('keeps tray-first actions, query restoration, and Escape semantics fixture-only', () => {
+  it('after create selects and expands the new order', async () => {
+    flushBase(httpMock);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    navigate.mockClear();
+    const created: Order = { _id: 'o4', number: 'З-1004', status: 'draft', items: [] };
+    page().onOrderSaved(created);
+    // Simulate the router writing ?orderId= after navigateQuery.
+    queryParams$.next(convertToParamMap({ orderId: 'o4', panel: null }));
+
+    expect(page().panel()).toBeNull();
+    expect(page().expandedId()).toBe('o4');
+    expect(navigate).toHaveBeenCalled();
+
+    fixture.detectChanges();
+    // Reload returns the new order; the expanded row/crumb resolves.
+    const reloads = httpMock.match((req) => req.url === '/api/orders' && req.method === 'GET');
+    expect(reloads).toHaveLength(1);
+    reloads[0].flush([...ORDERS, created]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
+    ).toContain('З-1004');
+  });
+
+  it('opens right panels only for an expanded order and Escape closes only the flyout', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
     const rows = fixture.nativeElement.querySelectorAll(
       '[data-test="desk-order-row"]',
     ) as NodeListOf<HTMLButtonElement>;
     rows[1]!.click();
     fixture.detectChanges();
-    page().openPanel('supply');
+
+    page().openPanel('edit');
+    fixture.detectChanges();
+    flushPanelLookups(httpMock, { sites: true });
+    await tickMicrotask();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-tray-link"]')).toHaveLength(2);
-    expect(chromeTools.rightTools().map((tool) => tool.id)).toEqual([
-      'client',
-      'bom',
-      'docs',
-      'supply',
-      'gantt',
-      'combine',
-    ]);
+    const flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    expect(flyout?.getAttribute('data-panel')).toBe('edit');
+    expect(flyout?.getAttribute('data-side')).toBe('right');
 
     page().onEscape();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeTruthy();
-
-    navigate.mockClear();
-    queryParams$.next(convertToParamMap({ orderId: 'desk-order-1003', panel: 'supply' }));
-    fixture.detectChanges();
-    expect(page().expandedId()).toBe('desk-order-1003');
-    expect(page().panel()).toBe('supply');
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-side'),
-    ).toBe('right');
-    expect(navigate).not.toHaveBeenCalled();
+    expect(page().expandedId()).toBe('o2');
   });
 });

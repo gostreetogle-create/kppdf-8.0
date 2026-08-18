@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { httpResource } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BookOpen,
@@ -18,6 +19,7 @@ import {
   Filter,
   LayoutGrid,
   Package,
+  Pencil,
   ShoppingCart,
   Users,
 } from 'lucide-angular';
@@ -27,62 +29,35 @@ import {
   PiGroupWorkspaceComponent,
   type GroupChip,
 } from '../../shared/page/pi-group-workspace.component';
+import { PiToastService } from '../../shared/ui/toast';
+import { extractErrorMessage } from '../../core/silent-http';
+import { API_BASE_URL } from '../../core/api.tokens';
+import { pluralize } from '../../shared/util/format';
+import { createLookupTable } from '../../shared/util/lookup-table';
+import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import { Order, OrderStatus } from '../orders/orders.service';
+import { OrderFormPanelComponent } from '../orders/order-form-panel.component';
 import { DeskOrderTrayComponent } from './desk-order-tray.component';
 import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
 
-type DeskStatus = 'draft' | 'in_production' | 'ready';
 type DeskPanelSide = 'left' | 'right';
 
 export type ManagerDeskPanel =
-  'create' | 'filter' | 'summary' | 'client' | 'bom' | 'docs' | 'supply';
+  'create' | 'edit' | 'filter' | 'summary' | 'client' | 'bom' | 'docs' | 'supply';
 
-export interface ManagerDeskOrderFixture {
-  readonly id: string;
-  readonly number: string;
-  readonly status: DeskStatus;
-  readonly clientLabel: string;
-  readonly composition: readonly [string, string];
-}
-
-/** TZ-DESK-405: local fixture rows only; no orders API or HTTP request. */
-export const MANAGER_DESK_FIXTURE: readonly ManagerDeskOrderFixture[] = [
-  {
-    id: 'desk-order-1001',
-    number: 'З-1001',
-    status: 'draft',
-    clientLabel: 'ООО Северный свет',
-    composition: ['Стол переговорный — строка состава', 'Опоры металлические — строка состава'],
-  },
-  {
-    id: 'desk-order-1002',
-    number: 'З-1002',
-    status: 'in_production',
-    clientLabel: 'ИП Марина Волкова',
-    composition: ['Шкаф архивный — строка состава', 'Фасады окрашенные — строка состава'],
-  },
-  {
-    id: 'desk-order-1003',
-    number: 'З-1003',
-    status: 'ready',
-    clientLabel: 'ООО Белый дуб',
-    composition: ['Ресепшен — строка состава', 'Столешница каменная — строка состава'],
-  },
-] as const;
-
-const STATUS_LABELS: Record<DeskStatus, string> = {
+const STATUS_LABELS: Record<OrderStatus, string> = {
   draft: 'Черновик',
+  confirmed: 'Подтверждён',
   in_production: 'В производстве',
   ready: 'Готов',
-};
-
-const PRIMARY_CTA_LABELS: Record<DeskStatus, string> = {
-  draft: 'Подтвердить',
-  in_production: 'К отгрузке',
-  ready: 'Отгрузить',
+  shipped: 'Отгружен',
+  delivered: 'Доставлен',
+  cancelled: 'Отменён',
 };
 
 const PANEL_LABELS: Record<ManagerDeskPanel, string> = {
   create: 'Создать заказ',
+  edit: 'Редактировать заказ',
   filter: 'Фильтр заказов',
   summary: 'Сводка',
   client: 'Клиент',
@@ -92,30 +67,29 @@ const PANEL_LABELS: Record<ManagerDeskPanel, string> = {
 };
 
 const LEFT_PANELS = new Set<ManagerDeskPanel>(['create', 'filter', 'summary']);
-const RIGHT_PANELS = new Set<ManagerDeskPanel>(['client', 'bom', 'docs', 'supply']);
+const RIGHT_PANELS = new Set<ManagerDeskPanel>(['edit', 'client', 'bom', 'docs', 'supply']);
 const CHROME_OWNER = 'manager-desk';
 
 type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 
 /**
- * Manager desk layout fixture. This wave owns no order API or write path:
- * DESK-402 can replace the create stub with the existing order form later.
+ * Manager desk — live order queue (TZ-DESK-402).
  *
- * TZ-DESK-406: one sticky `app-pi-group-workspace` chip row replaces the old
- * `app-pi-page-chrome` + custom `<nav>` double chrome. The expanded order
- * number is a suffix in the workspace tools slot — no «Рабочий стол» label.
+ * The queue reads `GET /orders` (flat array, same source as `/orders`). Create
+ * and edit reuse `OrderFormPanelComponent` + `OrdersService` — one write-path.
+ * Invalid `?orderId=` shows a RU toast, clears the query, and never crashes.
  */
 @Component({
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DeskOrderTrayComponent, PiGroupWorkspaceComponent],
+  imports: [DeskOrderTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
   template: `
     <div class="manager-desk" data-test="manager-desk">
       <app-pi-group-workspace [chips]="workflowChips()" activeId="desk">
         <div tools class="flex items-center gap-2 flex-wrap w-full">
           <span class="text-xs text-muted-foreground" data-test="desk-order-count">
-            {{ fixtureOrders.length }} заказа
+            {{ orders().length }} {{ totalLabel(orders().length) }}
           </span>
           @if (expandedOrder(); as order) {
             <span class="text-muted-foreground" aria-hidden="true">/</span>
@@ -133,29 +107,44 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           <section class="manager-desk__queue" data-test="desk-order-queue">
             <h1 id="desk-queue-heading" class="sr-only">Очередь заказов</h1>
 
+            @if (listError()) {
+              <p role="alert" class="manager-desk__queue-error" data-test="desk-queue-error">
+                {{ listError() }}
+              </p>
+            }
+
             <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
-              @for (order of fixtureOrders; track order.id) {
-                <div class="manager-desk__order-item" role="listitem">
+              @if (loading() && orders().length === 0) {
+                <p class="manager-desk__empty">Загрузка заказов…</p>
+              } @else if (orders().length === 0) {
+                <p class="manager-desk__empty" data-test="desk-queue-empty">Нет заказов.</p>
+              }
+              @for (order of orders(); track order._id) {
+                <div
+                  class="manager-desk__order-item"
+                  role="listitem"
+                  [attr.id]="'desk-order-' + order._id"
+                >
                   <button
                     type="button"
                     class="manager-desk__order-row"
-                    [class.manager-desk__order-row--expanded]="expandedId() === order.id"
-                    [attr.aria-expanded]="expandedId() === order.id"
-                    [attr.aria-controls]="'desk-order-tray-' + order.id"
+                    [class.manager-desk__order-row--expanded]="expandedId() === order._id"
+                    [attr.aria-expanded]="expandedId() === order._id"
+                    [attr.aria-controls]="'desk-order-tray-' + order._id"
                     [attr.data-status]="order.status"
                     data-test="desk-order-row"
-                    (click)="toggleOrder(order.id)"
+                    (click)="toggleOrder(order._id)"
                   >
                     <span class="manager-desk__order-disclosure" aria-hidden="true">
-                      {{ expandedId() === order.id ? '▾' : '▸' }}
+                      {{ expandedId() === order._id ? '▾' : '▸' }}
                     </span>
                     <span class="manager-desk__order-number">{{ order.number }}</span>
-                    <span class="manager-desk__client">{{ order.clientLabel }}</span>
+                    <span class="manager-desk__client">{{ clientLabel(order) }}</span>
                     <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
                   </button>
 
-                  @if (expandedId() === order.id) {
-                    <app-desk-order-tray [order]="order" />
+                  @if (expandedId() === order._id) {
+                    <app-desk-order-tray [order]="order" [clientLabel]="clientLabel(order)" />
                   }
                 </div>
               }
@@ -176,6 +165,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           class="manager-desk__flyout"
           [class.manager-desk__flyout--left]="panelSide() === 'left'"
           [class.manager-desk__flyout--right]="panelSide() === 'right'"
+          [class.manager-desk__flyout--wide]="panel() === 'create' || panel() === 'edit'"
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
           [attr.data-panel]="panel()"
@@ -200,10 +190,21 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
               Закрыть
             </button>
           </div>
-          <p class="manager-desk__flyout-copy">Здесь будет форма (после одобрения раскладки)</p>
-          <p class="manager-desk__flyout-note">
-            В 405 это только fixture-точка входа: данные и запись появятся в следующей волне.
-          </p>
+
+          @if (panel() === 'create') {
+            <app-order-form-panel (saved)="onOrderSaved($event)" (cancelled)="closePanel()" />
+          } @else if (panel() === 'edit') {
+            <app-order-form-panel
+              [order]="expandedOrder()"
+              (saved)="onOrderSaved($event)"
+              (cancelled)="closePanel()"
+            />
+          } @else {
+            <p class="manager-desk__flyout-copy">Здесь будет панель (в следующей волне)</p>
+            <p class="manager-desk__flyout-note">
+              Каркас готов; данные и действия подключаются дальше.
+            </p>
+          }
         </aside>
       }
     </div>
@@ -226,6 +227,14 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         border: 1px solid var(--color-rule);
         background: var(--color-paper-raised, var(--color-paper));
       }
+      .manager-desk__queue-error {
+        margin: 0;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--color-rule);
+        background: var(--color-destructive-soft, oklch(0.93 0.04 25));
+        color: var(--color-destructive);
+        font-size: 0.82rem;
+      }
       .manager-desk__orders {
         display: flex;
         max-height: min(60vh, calc(100dvh - 8rem));
@@ -233,6 +242,12 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         gap: 0.45rem;
         overflow-y: auto;
         padding: 1rem;
+      }
+      .manager-desk__empty {
+        margin: 0;
+        padding: 0.75rem 0;
+        color: var(--color-muted-foreground);
+        font-size: 0.85rem;
       }
       .manager-desk__order-item {
         min-width: 0;
@@ -336,6 +351,9 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         border: 1px solid var(--color-rule-strong);
         background: var(--color-paper-raised, var(--color-paper));
       }
+      .manager-desk__flyout--wide {
+        width: min(48rem, calc(100vw - 4.5rem));
+      }
       .manager-desk__flyout--right {
         right: 0;
         border-right: 0;
@@ -377,6 +395,9 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         .manager-desk__flyout {
           width: min(25rem, calc(100vw - 1rem));
         }
+        .manager-desk__flyout--wide {
+          width: min(46rem, calc(100vw - 1rem));
+        }
         .manager-desk__flyout--left {
           left: 0.5rem;
         }
@@ -385,27 +406,34 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
   ],
 })
 export class ManagerDeskPage {
-  protected readonly fixtureOrders = MANAGER_DESK_FIXTURE;
   protected readonly expandedId = signal<string | null>(null);
-  /** Compatibility alias for the 401 harness; 405 semantics are expanded-row semantics. */
-  protected readonly selectedId = this.expandedId;
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
+
+  protected readonly listRes = httpResource<Order[]>(() => ({ url: `${this.baseUrl}/orders` }));
+  protected readonly orders = computed<Order[]>(() => this.listRes.value() ?? []);
+  protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
+  protected readonly listError = computed<string | null>(() => {
+    const err = this.listRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
+
   protected readonly expandedOrder = computed(
-    () => this.fixtureOrders.find((order) => order.id === this.expandedId()) ?? null,
+    () => this.orders().find((order) => order._id === this.expandedId()) ?? null,
   );
-  protected readonly selectedOrder = this.expandedOrder;
+
   /**
    * Daily workflow chips. The combine studio keeps its orderId query when a
-   * row is expanded (same deep-link contract as DESK-405); everything else is
-   * the static constant from `desk-workflow-chips.ts`.
+   * row is expanded; everything else is the static constant.
    */
   protected readonly workflowChips = computed<readonly GroupChip[]>(() => {
     const order = this.expandedOrder();
     if (!order) return DESK_WORKFLOW_CHIPS;
     return DESK_WORKFLOW_CHIPS.map((chip) =>
-      chip.id === 'combine' ? { ...chip, queryParams: { orderId: order.id } } : chip,
+      chip.id === 'combine' ? { ...chip, queryParams: { orderId: order._id } } : chip,
     );
   });
+
   protected readonly panelSide = computed<DeskPanelSide | null>(() => {
     const panel = this.panel();
     if (!panel) return null;
@@ -415,17 +443,48 @@ export class ManagerDeskPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly baseUrl = inject(API_BASE_URL);
   private readonly chromeTools = inject(PiChromeToolsService);
+  private readonly toast = inject(PiToastService);
+  private readonly counterpartyService = inject(CounterpartyService);
+  private readonly counterpartiesLookup = createLookupTable<Counterparty>(
+    this.counterpartyService.list({ limit: 200 }),
+  );
+
+  private readonly rawOrderId = signal<string | null>(null);
+  private readonly rawPanel = signal<string | null>(null);
+  private readonly pendingScrollId = signal<string | null>(null);
 
   constructor() {
-    // Query params are the only state source needed for a harmless F5 restore.
+    this.counterpartiesLookup.load();
+
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
-      this.applyQueryState(params.get('orderId'), params.get('panel'));
+      this.rawOrderId.set(params.get('orderId'));
+      this.rawPanel.set(params.get('panel'));
+      this.reconcile();
     });
+
+    // When orders finish loading, reconcile the pending query state.
+    effect(() => {
+      this.orders();
+      untracked(() => this.reconcile());
+    });
+
+    // Scroll the freshly created/expanded row into view once the list has it.
+    effect(() => {
+      const id = this.pendingScrollId();
+      const orders = this.orders();
+      if (id && orders.some((order) => order._id === id)) {
+        untracked(() => {
+          this.pendingScrollId.set(null);
+          this.scrollToOrder(id);
+        });
+      }
+    });
+
     effect(() => {
       this.expandedOrder();
       this.panel();
-      // Keep registry writes outside the effect's dependencies.
       untracked(() => this.syncChromeTools());
     });
   }
@@ -436,12 +495,23 @@ export class ManagerDeskPage {
     this.chromeTools.clear(CHROME_OWNER);
   }
 
-  protected statusLabel(status: DeskStatus): string {
+  protected statusLabel(status: OrderStatus): string {
     return STATUS_LABELS[status];
   }
 
-  protected primaryCta(status: DeskStatus): string {
-    return PRIMARY_CTA_LABELS[status];
+  protected totalLabel(n: number): string {
+    return pluralize(n, ['заказ', 'заказа', 'заказов']);
+  }
+
+  protected clientLabel(order: Order): string {
+    const value = order.counterpartyId;
+    if (value && typeof value !== 'string' && value.name) {
+      return value.name.trim() || '—';
+    }
+    const id = this.counterpartyIdOf(order);
+    if (!id) return '—';
+    const cp = this.counterpartiesLookup.byId()[id];
+    return cp?.shortName ?? cp?.name ?? '—';
   }
 
   protected panelTitle(): string {
@@ -450,16 +520,11 @@ export class ManagerDeskPage {
   }
 
   protected toggleOrder(id: string): void {
-    if (!this.fixtureOrders.some((order) => order.id === id)) return;
+    if (!this.orders().some((order) => order._id === id)) return;
     const nextId = this.expandedId() === id ? null : id;
     this.expandedId.set(nextId);
     this.panel.set(null);
     this.navigateQuery(nextId, null);
-  }
-
-  /** Compatibility handler for callers from the 401 fixture harness. */
-  protected selectOrder(id: string): void {
-    this.toggleOrder(id);
   }
 
   /** Shared handler for left-rail tools and any future empty-state CTA. */
@@ -474,25 +539,64 @@ export class ManagerDeskPage {
     this.navigateQuery(this.expandedId(), null);
   }
 
+  protected onOrderSaved(order: Order): void {
+    this.panel.set(null);
+    this.expandedId.set(order._id);
+    this.pendingScrollId.set(order._id);
+    this.navigateQuery(order._id, null);
+    this.listRes.reload();
+  }
+
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
     // Escape closes a flyout, never the expanded row.
     if (this.panel()) this.closePanel();
   }
 
-  private applyQueryState(rawOrderId: string | null, rawPanel: string | null): void {
-    const orderId = this.fixtureOrders.some((order) => order.id === rawOrderId) ? rawOrderId : null;
-    this.expandedId.set(orderId);
+  private reconcile(): void {
+    const orders = this.orders();
+    const rawId = this.rawOrderId();
+    const rawPanel = this.rawPanel();
 
+    // While loading/reloading, keep the requested expansion and defer
+    // validation — a freshly created order may not be in the list yet.
+    if (this.loading()) {
+      if (rawId) this.expandedId.set(rawId);
+      return;
+    }
+
+    const validId = rawId && orders.some((order) => order._id === rawId) ? rawId : null;
+    if (rawId && !validId) {
+      this.toast.error('Заказ не найден');
+      this.expandedId.set(null);
+      this.panel.set(null);
+      this.clearOrderIdQuery();
+      return;
+    }
+
+    this.expandedId.set(validId);
     const panel = this.isPanel(rawPanel) ? rawPanel : null;
     this.panel.set(panel && this.canOpenPanel(panel) ? panel : null);
+  }
+
+  private clearOrderIdQuery(): void {
+    void Promise.resolve(
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { orderId: null, panel: null },
+        queryParamsHandling: 'merge',
+      }),
+    ).catch(() => undefined);
   }
 
   private canOpenPanel(panel: ManagerDeskPanel): boolean {
     if (LEFT_PANELS.has(panel)) return true;
     const order = this.expandedOrder();
     if (!order || !RIGHT_PANELS.has(panel)) return false;
-    return panel !== 'supply' || order.status === 'in_production' || order.status === 'ready';
+    if (panel === 'supply') {
+      return order.status === 'in_production' || order.status === 'ready';
+    }
+    return true;
   }
 
   private isPanel(value: string | null): value is ManagerDeskPanel {
@@ -507,6 +611,18 @@ export class ManagerDeskPage {
         queryParamsHandling: 'merge',
       }),
     ).catch(() => undefined);
+  }
+
+  private counterpartyIdOf(order: Order): string {
+    const value = order.counterpartyId;
+    if (!value) return '';
+    return typeof value === 'string' ? value : (value._id ?? '');
+  }
+
+  private scrollToOrder(id: string): void {
+    const el = document.getElementById(`desk-order-${id}`);
+    if (!el || typeof el.scrollIntoView !== 'function') return;
+    el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   private syncChromeTools(): void {
@@ -553,14 +669,15 @@ export class ManagerDeskPage {
 
     const right: DeskChromeTool[] = expanded
       ? [
-          this.actionTool('client', 'Клиент', Users, open === 'client', 1),
-          this.actionTool('bom', 'Состав', Package, open === 'bom', 2),
-          this.actionTool('docs', 'Документы', FileText, open === 'docs', 3),
+          this.actionTool('edit', 'Редактировать', Pencil, open === 'edit', 1),
+          this.actionTool('client', 'Клиент', Users, open === 'client', 2),
+          this.actionTool('bom', 'Состав', Package, open === 'bom', 3),
+          this.actionTool('docs', 'Документы', FileText, open === 'docs', 4),
           ...(expanded.status === 'in_production' || expanded.status === 'ready'
-            ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 4)]
+            ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 5)]
             : []),
-          this.actionTool('gantt', 'На Ганте', Factory, false, 5, true),
-          this.actionTool('combine', 'В комбайне', LayoutGrid, false, 6, true),
+          this.actionTool('gantt', 'На Ганте', Factory, false, 6, true),
+          this.actionTool('combine', 'В комбайне', LayoutGrid, false, 7, true),
         ]
       : [];
 

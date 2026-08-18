@@ -1,6 +1,6 @@
 # Страница: Рабочий стол менеджера (`ManagerDeskPage`)
 
-**Краткое описание:** дом после входа — очередь заказов с **expand-in-row** tray
+**Краткое описание:** дом после входа — **живая** очередь заказов (`GET /orders`) с **expand-in-row** tray
 (как `/orders`), icon-rail + **L/R flyout**, одна sticky строка group-workspace chips вместо шапки-простыни.
 Студии Гант/Комбайн — через workflow chips + `?view=` (407) или deep-link (404).
 
@@ -21,7 +21,7 @@
 | Param | Значение |
 |-------|----------|
 | `orderId` | выбранный / раскрытый заказ (F5) |
-| `panel` | flyout: `create` \| `filter` \| `summary` \| `client` \| `bom` \| `docs` \| `supply` \| `notebook` (408) |
+| `panel` | flyout: `create` \| `edit` \| `filter` \| `summary` \| `client` \| `bom` \| `docs` \| `supply` \| `notebook` (408) |
 | `view` | `desk` (default) \| `gantt` \| `combine` (407) |
 
 ## UI (rev.2 + chrome parity 406)
@@ -33,13 +33,14 @@
 - Dense main (`isDenseWorkspaceUrl`).
 - **Центр:** scrollable queue; **expand tray под строкой** (не блок ниже списка).
 - Tray: группы как `/orders` expand — Заказ, Исполнение, Комбайн-strip, Состав, inline CTA.
-- **L flyout** (create/filter/summary) · **R flyout** (client/bom/docs/supply).
+- **L flyout** (create/filter/summary) · **R flyout** (edit/client/bom/docs/supply).
+- **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 - **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
 
-### 401 (legacy, superseded by 405)
+### 401 (legacy, superseded by 405→402)
 
-Fixture, innards под очередью, один R flyout — заменить в 405.
+Fixture удалён в 402; очередь теперь живой `GET /orders`, форма — shared `order-form-panel`.
 
 ## Couplings
 
@@ -52,7 +53,7 @@ Fixture, innards под очередью, один R flyout — заменить
 | DESK-401 | DONE |
 | DESK-405 | layout rev.2 — DONE |
 | **DESK-406** | chrome parity — **DONE** |
-| DESK-402 | форма + API (после PO ok) |
+| **DESK-402** | форма + GET /orders — **DONE** |
 | DESK-403 | состав + combine в tray |
 | DESK-404 | deep-link студии |
 | DESK-407 | crumbs + view=gantt/combine |
