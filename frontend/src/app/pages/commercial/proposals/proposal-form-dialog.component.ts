@@ -31,6 +31,7 @@ import {
   ProposalsService,
 } from '../../../shared/services/pi-proposals.service';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
+import { toOptionalNumber } from '../../../shared/forms/to-optional-number';
 
 type Result = Proposal | null | undefined;
 
@@ -554,13 +555,15 @@ export class ProposalFormDialogComponent {
       unitPrice: Number(i.unitPrice),
     }));
 
+    const discountPercent = toOptionalNumber(v.discountPercent);
+    const discountAmount = toOptionalNumber(v.discountAmount);
     const payload: Partial<Proposal> = {
       organizationId: v.organizationId,
       counterpartyId: v.counterpartyId,
       status: v.status,
       discountType: v.discountType,
-      discountPercent: v.discountPercent,
-      discountAmount: v.discountAmount,
+      ...(discountPercent === undefined ? {} : { discountPercent }),
+      ...(discountAmount === undefined ? {} : { discountAmount }),
       items,
     };
     if (v.number) payload.number = v.number;

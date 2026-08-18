@@ -26,6 +26,7 @@ import {
   type OrgType,
 } from '../../shared/services/organizations.service';
 import { AuthService } from '../../core/auth.service';
+import { toOptionalNumber } from '../../shared/forms/to-optional-number';
 
 type Result = Organization | null | undefined;
 
@@ -754,8 +755,10 @@ export class OrganizationFullEditorDialogComponent {
     }
 
     if (v.legalType) payload.legalType = v.legalType;
-    if (v.paymentTermDays !== null) payload.paymentTermDays = v.paymentTermDays;
-    if (v.vatRate !== null) payload.vatRate = v.vatRate;
+    const paymentTermDays = toOptionalNumber(v.paymentTermDays);
+    const vatRate = toOptionalNumber(v.vatRate);
+    if (paymentTermDays !== undefined) payload.paymentTermDays = paymentTermDays;
+    if (vatRate !== undefined) payload.vatRate = vatRate;
     if (v.registrationDate) payload.registrationDate = toIsoDate(v.registrationDate);
 
     if (v.legalType === 'ip') {

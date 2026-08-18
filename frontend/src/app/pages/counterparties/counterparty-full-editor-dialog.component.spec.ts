@@ -185,6 +185,23 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="cp-email"]')).toBeTruthy();
   });
 
+  it('coerces VAT and payment terms strings to numbers in the payload', async () => {
+    const editor = await build(null);
+    editor.form.patchValue({
+      name: 'ИП Иванов',
+      inn: '123456789047',
+      paymentTermDays: '30',
+      vatRate: '20',
+    });
+    editor.onSubmit();
+
+    const [payload] = create.mock.calls[0] as [Record<string, unknown>];
+    expect(payload.paymentTermDays).toBe(30);
+    expect(payload.vatRate).toBe(20);
+    expect(typeof payload.paymentTermDays).toBe('number');
+    expect(typeof payload.vatRate).toBe('number');
+  });
+
   it('warns that a quick-created INN is temporary', async () => {
     await build({ ...existing, innIsStub: true });
     expect(fixture.nativeElement.querySelector('[data-test="cp-inn-stub-hint"]')).toBeTruthy();

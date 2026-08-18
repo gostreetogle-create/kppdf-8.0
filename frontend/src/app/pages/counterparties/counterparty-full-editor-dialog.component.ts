@@ -26,6 +26,7 @@ import {
   CounterpartyService,
   type CounterpartyRole,
 } from '../../shared/services/pi-counterparty.service';
+import { toOptionalNumber } from '../../shared/forms/to-optional-number';
 
 type Result = Counterparty | null | undefined;
 
@@ -599,8 +600,10 @@ export class CounterpartyFullEditorDialogComponent {
     }
 
     if (v.legalType) payload.legalType = v.legalType;
-    if (v.paymentTermDays !== null) payload.paymentTermDays = v.paymentTermDays;
-    if (v.vatRate !== null) payload.vatRate = v.vatRate;
+    const paymentTermDays = toOptionalNumber(v.paymentTermDays);
+    const vatRate = toOptionalNumber(v.vatRate);
+    if (paymentTermDays !== undefined) payload.paymentTermDays = paymentTermDays;
+    if (vatRate !== undefined) payload.vatRate = vatRate;
     if (v.registrationDate) payload.registrationDate = toIsoDate(v.registrationDate);
 
     return payload;

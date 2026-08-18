@@ -1,0 +1,13 @@
+# TZ-FORMS-316 — DONE lock
+TASK: TZ-FORMS-316
+OWNER: Buffy/openai-gpt-5.6-luna
+CLOSED_AT: 2026-08-18
+ARCHIVE: tasks/_archive/2026-08/TZ-FORMS-316.done.md
+PROTECTED_FILES:
+  - frontend/src/app/pages/counterparties/counterparty-full-editor-dialog.component.ts
+  - frontend/src/app/pages/organizations/organization-full-editor-dialog.component.ts
+  - frontend/src/app/pages/commercial/proposals/proposal-form-dialog.component.ts
+  - frontend/src/app/pages/counterparties/counterparty-full-editor-dialog.component.spec.ts
+SUCCESSOR: TZ-FORMS-317
+GATES: frontend tsc PASS; CP Jest 10/10 PASS; org Jest 14/14 PASS; focused ESLint PASS; diff-check PASS
+NOTES: helper consumed from TZ-FORMS-314; app-pi-input CVA, backend, party schema, proposal table/inspector, deploy, and foreign WIP untouched.
