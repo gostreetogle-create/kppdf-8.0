@@ -205,26 +205,28 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     rows[0]!.click();
     fixture.detectChanges();
     flushSupply(httpMock, 'o1');
+    // 413: desk composition opens by default → tree requests fire on expand.
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
+    fixture.detectChanges();
 
     expect(page().expandedId()).toBe('o1');
     const item = rows[0]!.parentElement!;
     const tray = item.querySelector('[data-test="order-hub-tray"]');
     expect(tray).toBeTruthy();
     expect(tray?.getAttribute('data-mode')).toBe('desk');
-    expect(tray?.textContent).toContain('З-1001');
-    expect(tray?.textContent).toContain('Северный свет');
-    expect(tray?.textContent).toContain('Черновик');
+    expect(tray?.querySelector('[data-test="order-summary-client"]')?.textContent).toContain(
+      'Северный свет',
+    );
+    expect(tray?.querySelector('[data-test="order-summary-status"]')?.textContent).toContain(
+      'Черновик',
+    );
     expect(tray?.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
 
     const compositionToggle = tray?.querySelector(
       '[data-test="order-composition-toggle"]',
     ) as HTMLButtonElement;
-    expect(compositionToggle.getAttribute('aria-expanded')).toBe('false');
-    compositionToggle.click();
-    flushProductTree(httpMock, 'p1', 'Стол переговорный');
-    flushProductTree(httpMock, 'p2', 'Опоры металлические');
-    await tickMicrotask();
-    fixture.detectChanges();
     expect(compositionToggle.getAttribute('aria-expanded')).toBe('true');
     expect(tray?.querySelector('[data-test="order-composition-tree"]')).toBeTruthy();
     expect(tray?.querySelectorAll('[data-test="composition-tree"]')).toHaveLength(2);

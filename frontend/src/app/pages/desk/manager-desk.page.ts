@@ -148,7 +148,6 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                       [order]="order"
                       mode="desk"
                       [clientLabel]="clientLabel(order)"
-                      (primaryCta)="onPrimaryCta()"
                       (openSupply)="onOpenSupply()"
                       (openDocs)="onOpenDocs()"
                       (createDocument)="onCreateDocument($event)"
@@ -534,10 +533,6 @@ export class ManagerDeskPage {
     this.expandedId.set(nextId);
     this.panel.set(null);
     this.navigateQuery(nextId, null);
-  }
-
-  protected onPrimaryCta(): void {
-    this.toast.show('Действие подключится в следующей волне.');
   }
 
   protected onOpenSupply(): void {

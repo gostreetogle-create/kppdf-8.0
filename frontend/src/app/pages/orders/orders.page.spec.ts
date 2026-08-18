@@ -376,6 +376,13 @@ describe('OrdersPage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="composition-tree"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('изд');
     expect(fixture.nativeElement.textContent).toContain('мод');
+    // The material leaf sits under a collapsed module node; expand it to reveal
+    // the 'мат' kind badge (lazy tree contract).
+    const moduleToggle = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] [data-test="composition-tree-toggle"]',
+    ) as HTMLElement;
+    moduleToggle.click();
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('мат');
     expect(
       fixture.nativeElement.querySelector('[data-test="order-composition-panel"] ul'),

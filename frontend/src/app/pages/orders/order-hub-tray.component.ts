@@ -94,16 +94,15 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 };
 
 /**
- * Shared order summary tray (TZ-DESK-412, extended by TZ-DESK-403).
+ * Shared order summary tray (TZ-DESK-412, extended by 403 and 413).
  *
- * One markup for `/orders` expand (`mode="hub"`) and `/desk` row expand
- * (`mode="desk"`). The tray owns the live catalog composition forest
- * (lazy on toggle) and the lazy supply counters (HUB-303 pattern, loaded on
- * expand) — no host copy-paste. Reservations stay hub-hosted via inputs.
+ * 413 layout: a summary bar + two-column card grid (Состав left, stacked
+ * execution/logistics cards right on wide screens). The tray owns the live
+ * catalog composition forest (lazy on toggle; open-by-default on desk) and
+ * the lazy supply counters (HUB-303 pattern). Reservations stay hub-hosted.
  *
  * Data-test contract: the `order-*` selectors mirror orders.page's former
  * `#expandedTpl` 1:1 so HUB-302/303/304 characterization specs keep passing.
- * Desk-only affordances are gated by `mode() === 'desk'`.
  */
 @Component({
   selector: 'app-order-hub-tray',
@@ -125,31 +124,49 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
       >
         <div class="absolute left-0 top-0 bottom-0 w-1 bg-gold" aria-hidden="true"></div>
         <div class="relative" data-test="expanded-content-body">
-          <div class="space-y-8" data-test="order-lifecycle-groups">
-            <!-- ───── Заказ → состав ───── -->
-            <section class="min-w-0" data-test="order-group-order">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                <p class="eyebrow m-0">Заказ</p>
-                @if (mode() === 'desk') {
-                  <span class="text-xs font-display font-semibold">{{ order().number }}</span>
-                } @else {
-                  <span class="text-xs text-muted-foreground">основной состав</span>
-                }
+          <!-- ───── Summary bar ───── -->
+          <div
+            class="flex flex-wrap items-center gap-3 border-b hairline pb-3 mb-4"
+            data-test="order-summary-bar"
+          >
+            <span
+              class="text-xs px-2 py-0.5 rounded-sm hairline bg-paper text-sunrise-warm whitespace-nowrap"
+              data-test="order-summary-status"
+              >{{ statusLabel(order().status) }}</span
+            >
+            @if (mode() === 'desk') {
+              <span
+                class="text-xs text-muted-foreground truncate max-w-[min(28rem,55vw)]"
+                data-test="order-summary-client"
+                >Клиент: {{ clientLabel() || '—' }}</span
+              >
+              <span class="flex-1" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-not-allowed opacity-60"
+                [disabled]="true"
+                title="Действие недоступно — подключится позже"
+                data-test="desk-primary-cta"
+                [attr.aria-label]="primaryCtaLabel()"
+              >
+                {{ primaryCtaLabel() }}
+              </button>
+            }
+          </div>
+
+          <!-- ───── Card grid ───── -->
+          <div
+            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(22rem,40%)] gap-4 items-start"
+            data-test="order-lifecycle-groups"
+          >
+            <!-- Left: Состав -->
+            <section class="min-w-0 hairline rounded-sm bg-paper p-3" data-test="order-group-order">
+              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-3">
+                <h3 class="text-sm font-medium text-ink m-0">Состав</h3>
+                <span class="text-xs text-muted-foreground">{{
+                  itemCountLabel(order().items?.length ?? 0)
+                }}</span>
               </div>
-
-              @if (mode() === 'desk') {
-                <dl class="grid gap-2 mb-4" data-test="order-client-facts">
-                  <div class="flex items-baseline justify-between gap-3">
-                    <dt class="text-xs text-muted-foreground">Клиент</dt>
-                    <dd class="m-0 text-sm text-right truncate">{{ clientLabel() || '—' }}</dd>
-                  </div>
-                  <div class="flex items-baseline justify-between gap-3">
-                    <dt class="text-xs text-muted-foreground">Статус</dt>
-                    <dd class="m-0 text-sm text-right">{{ statusLabel(order().status) }}</dd>
-                  </div>
-                </dl>
-              }
-
               <section class="min-w-0 flex flex-col gap-1" data-test="order-composition-block">
                 <button
                   type="button"
@@ -235,54 +252,99 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               </section>
             </section>
 
-            <!-- ───── Исполнение ───── -->
-            <section class="min-w-0" data-test="order-group-execution">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                <p class="eyebrow m-0">Исполнение</p>
-                <span class="text-xs text-muted-foreground">цех и готовность</span>
-              </div>
+            <!-- Right stack -->
+            <div class="min-w-0 space-y-4">
+              <!-- Исполнение -->
+              <section
+                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                data-test="order-group-execution"
+              >
+                <h3 class="text-sm font-medium text-ink m-0 mb-2">Исполнение</h3>
 
-              @if (mode() === 'desk') {
-                <div
-                  class="flex items-center gap-2 flex-wrap mb-4"
-                  data-test="desk-execution-actions"
-                >
-                  <button
-                    type="button"
-                    class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-pointer"
-                    (click)="primaryCta.emit(order())"
-                    data-test="desk-primary-cta"
-                    [attr.aria-label]="primaryCtaLabel()"
-                  >
-                    {{ primaryCtaLabel() }}
-                  </button>
-                  <span class="text-xs text-muted-foreground"
-                    >Действия подключатся в следующей волне.</span
-                  >
+                <div class="flex flex-wrap gap-1.5 mb-3" data-test="order-combine-strip">
+                  @if ((order().items?.length ?? 0) === 0) {
+                    <span class="text-xs text-muted-foreground">Нет линий.</span>
+                  } @else {
+                    @for (item of order().items ?? []; track trackItem($index, item)) {
+                      <span
+                        class="text-xs px-2 py-0.5 rounded-sm hairline bg-paper-2 text-sunrise-warm whitespace-nowrap"
+                        data-test="order-combine-line"
+                        [attr.title]="lineLabel(item)"
+                      >
+                        {{ boardLaneLabel(item) }}
+                      </span>
+                    }
+                  }
                 </div>
-              }
 
-              <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+                <section
+                  class="min-w-0 flex flex-col gap-1 border-t hairline pt-3"
+                  data-test="order-readiness-block"
+                >
+                  <div class="flex items-baseline gap-3 flex-wrap">
+                    <span class="text-xs text-muted-foreground">Готовность</span>
+                    <span class="text-sm m-0 font-medium" data-test="order-readiness-summary">
+                      {{ readinessLabel() }}
+                    </span>
+                    @if (mode() === 'hub') {
+                      <a
+                        [routerLink]="['/orders', order()._id]"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                        data-test="order-readiness-link"
+                        (click)="$event.stopPropagation()"
+                        >Открыть заказ</a
+                      >
+                    }
+                  </div>
+                  @if ((order().items?.length ?? 0) === 0) {
+                    <p class="text-xs text-muted-foreground m-0 mt-1">Нет линий для готовности.</p>
+                  } @else {
+                    <ul class="m-0 mt-1 pl-4 space-y-0.5 text-sm" data-test="order-readiness-lines">
+                      @for (item of order().items ?? []; track $index) {
+                        <li>
+                          {{ lineLabel(item) }}
+                          ·
+                          <span
+                            [class.text-muted-foreground]="item.readyForWork !== true"
+                            [attr.data-test]="
+                              item.readyForWork === true
+                                ? 'order-readiness-ready'
+                                : 'order-readiness-not-ready'
+                            "
+                          >
+                            {{ item.readyForWork === true ? 'готово' : 'не готово' }}
+                          </span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              </section>
+
+              <!-- Снабжение + Производство -->
+              <section class="min-w-0 hairline rounded-sm bg-paper p-3">
+                <h3 class="text-sm font-medium text-ink m-0 mb-2">Снабжение и производство</h3>
+
                 <section class="min-w-0 flex flex-col gap-1" data-test="order-supply-block">
                   <div class="flex items-baseline gap-3 flex-wrap">
-                    <p class="eyebrow m-0">Снабжение</p>
+                    <span class="text-xs text-muted-foreground">Снабжение</span>
                     @if (mode() === 'desk') {
                       <button
                         type="button"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit ml-auto"
                         (click)="openSupply.emit(order())"
                         data-test="desk-supply-button"
                       >
-                        Снабжение
+                        Открыть
                       </button>
                     } @else {
                       <a
                         routerLink="/supply"
                         [queryParams]="{ orderId: order()._id }"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
                         data-test="order-supply-link"
                         (click)="$event.stopPropagation()"
-                        >Открыть снабжение</a
+                        >Открыть</a
                       >
                     }
                   </div>
@@ -311,176 +373,121 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                   }
                 </section>
 
-                <section class="min-w-0 flex flex-col gap-1" data-test="order-production-block">
-                  <p class="eyebrow m-0 mb-1">Производство</p>
+                <section
+                  class="min-w-0 flex flex-col gap-1 border-t hairline pt-3 mt-3"
+                  data-test="order-production-block"
+                >
+                  <div class="flex items-baseline gap-3 flex-wrap">
+                    <span class="text-xs text-muted-foreground">Производство</span>
+                    <a
+                      routerLink="/production"
+                      [queryParams]="{ orderId: order()._id }"
+                      class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                      data-test="order-production-link"
+                      (click)="$event.stopPropagation()"
+                      >Открыть производство</a
+                    >
+                  </div>
                   <p class="text-sm m-0">Оценка в цехе</p>
-                  <a
-                    routerLink="/production"
-                    [queryParams]="{ orderId: order()._id }"
-                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                    data-test="order-production-link"
-                    (click)="$event.stopPropagation()"
-                    >Открыть производство</a
+                </section>
+              </section>
+
+              <!-- Логистика + Документы -->
+              <section class="min-w-0 hairline rounded-sm bg-paper p-3">
+                <h3 class="text-sm font-medium text-ink m-0 mb-2">Логистика и документы</h3>
+
+                <section class="min-w-0 flex flex-col gap-1" data-test="order-group-logistics">
+                  <section
+                    class="min-w-0 flex flex-col gap-1 border-t hairline pt-2"
+                    data-test="order-warehouse-block"
                   >
+                    <div class="flex items-baseline gap-3 flex-wrap">
+                      <span class="text-xs text-muted-foreground">Склад</span>
+                      <a
+                        routerLink="/storage-items"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                        data-test="order-warehouse-link"
+                        (click)="$event.stopPropagation()"
+                        >Открыть</a
+                      >
+                    </div>
+                    @if (reservationLoading() && reservationActive()) {
+                      <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                    } @else if (reservationError() && reservationActive()) {
+                      <p
+                        class="text-xs text-destructive m-0 mt-1"
+                        role="alert"
+                        data-test="order-warehouse-error"
+                      >
+                        {{ reservationError() }}
+                      </p>
+                    } @else if (reservationActive() && reservationCounters().total === 0) {
+                      <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
+                    } @else if (reservationActive()) {
+                      <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
+                        Активных {{ reservationCounters().active }} · всего
+                        {{ reservationCounters().total }}
+                      </p>
+                    }
+                  </section>
+
+                  <section
+                    class="min-w-0 flex flex-col gap-1 border-t hairline pt-2 mt-2"
+                    data-test="order-shipping-block"
+                  >
+                    <div class="flex items-baseline gap-3 flex-wrap">
+                      <span class="text-xs text-muted-foreground">Отгрузка</span>
+                      <a
+                        routerLink="/shipping"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                        data-test="order-shipping-link"
+                        (click)="$event.stopPropagation()"
+                        >Открыть раздел „Отгрузка“</a
+                      >
+                    </div>
+                    <p class="text-sm m-0" data-test="order-shipping-stub">
+                      Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
+                    </p>
+                  </section>
                 </section>
 
-                <section class="min-w-0 flex flex-col gap-1" data-test="order-readiness-block">
-                  <div class="flex items-baseline gap-3 flex-wrap">
-                    <p class="eyebrow m-0">Готовность</p>
-                    @if (mode() === 'hub') {
+                <section
+                  class="min-w-0 flex flex-col gap-1 border-t hairline pt-2 mt-2"
+                  data-test="order-group-documents"
+                >
+                  <div class="flex items-center gap-4 flex-wrap">
+                    <span class="text-xs text-muted-foreground">Документы</span>
+                    @if (mode() === 'desk') {
+                      <button
+                        type="button"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit ml-auto"
+                        (click)="createDocument.emit(order())"
+                        data-test="desk-create-document-button"
+                      >
+                        Создать документ
+                      </button>
+                      <button
+                        type="button"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
+                        (click)="openDocs.emit(order())"
+                        data-test="desk-docs-button"
+                      >
+                        Шаблоны
+                      </button>
+                    } @else {
                       <a
-                        [routerLink]="['/orders', order()._id]"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                        data-test="order-readiness-link"
+                        routerLink="/doc-constructor/templates"
+                        [queryParams]="{ source: 'order', sourceId: order()._id }"
+                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                        data-test="order-documents-link"
                         (click)="$event.stopPropagation()"
-                        >Открыть заказ</a
+                        >Шаблоны документов</a
                       >
                     }
                   </div>
-                  <p class="text-sm m-0 mt-1" data-test="order-readiness-summary">
-                    {{ readinessLabel() }}
-                  </p>
-                  @if ((order().items?.length ?? 0) === 0) {
-                    <p class="text-xs text-muted-foreground m-0 mt-1">Нет линий для готовности.</p>
-                  } @else {
-                    <ul class="m-0 mt-1 pl-4 space-y-0.5 text-sm" data-test="order-readiness-lines">
-                      @for (item of order().items ?? []; track $index) {
-                        <li>
-                          {{ lineLabel(item) }}
-                          ·
-                          <span
-                            [class.text-muted-foreground]="item.readyForWork !== true"
-                            [attr.data-test]="
-                              item.readyForWork === true
-                                ? 'order-readiness-ready'
-                                : 'order-readiness-not-ready'
-                            "
-                          >
-                            {{ item.readyForWork === true ? 'готово' : 'не готово' }}
-                          </span>
-                        </li>
-                      }
-                    </ul>
-                  }
                 </section>
-              </div>
-            </section>
-
-            <!-- ───── Комбайн-strip ───── -->
-            <section class="min-w-0" data-test="order-group-combine">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                <p class="eyebrow m-0">Комбайн</p>
-                <span class="text-xs text-muted-foreground">колонки линий</span>
-              </div>
-              @if ((order().items?.length ?? 0) === 0) {
-                <p class="text-xs text-muted-foreground m-0">Нет линий.</p>
-              } @else {
-                <ul class="m-0 space-y-1" data-test="order-combine-strip">
-                  @for (item of order().items ?? []; track trackItem($index, item)) {
-                    <li
-                      class="flex items-center justify-between gap-3 text-sm"
-                      data-test="order-combine-line"
-                    >
-                      <span class="min-w-0 truncate">{{ lineLabel(item) }}</span>
-                      <span class="text-xs text-sunrise-warm whitespace-nowrap">{{
-                        boardLaneLabel(item)
-                      }}</span>
-                    </li>
-                  }
-                </ul>
-              }
-            </section>
-
-            <!-- ───── Логистика ───── -->
-            <section class="min-w-0" data-test="order-group-logistics">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                <p class="eyebrow m-0">Логистика</p>
-                <span class="text-xs text-muted-foreground">склад и отгрузка</span>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                <section class="min-w-0 flex flex-col gap-1" data-test="order-warehouse-block">
-                  <div class="flex items-baseline gap-3 flex-wrap">
-                    <p class="eyebrow m-0">Склад</p>
-                    <a
-                      routerLink="/storage-items"
-                      class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                      data-test="order-warehouse-link"
-                      (click)="$event.stopPropagation()"
-                      >Склад</a
-                    >
-                  </div>
-                  @if (reservationLoading() && reservationActive()) {
-                    <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                  } @else if (reservationError() && reservationActive()) {
-                    <p
-                      class="text-xs text-destructive m-0 mt-1"
-                      role="alert"
-                      data-test="order-warehouse-error"
-                    >
-                      {{ reservationError() }}
-                    </p>
-                  } @else if (reservationActive() && reservationCounters().total === 0) {
-                    <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
-                  } @else if (reservationActive()) {
-                    <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
-                      Активных {{ reservationCounters().active }} · всего
-                      {{ reservationCounters().total }}
-                    </p>
-                  }
-                </section>
-
-                <section class="min-w-0 flex flex-col gap-1" data-test="order-shipping-block">
-                  <p class="eyebrow m-0 mb-1">Отгрузка</p>
-                  <p class="text-sm m-0" data-test="order-shipping-stub">
-                    Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
-                  </p>
-                  <a
-                    routerLink="/shipping"
-                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-2 inline-block"
-                    data-test="order-shipping-link"
-                    (click)="$event.stopPropagation()"
-                    >Открыть раздел „Отгрузка“</a
-                  >
-                </section>
-              </div>
-            </section>
-
-            <!-- ───── Документы ───── -->
-            <section class="min-w-0" data-test="order-group-documents">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
-                <p class="eyebrow m-0">Документы</p>
-                <span class="text-xs text-muted-foreground">печатные материалы и шаблоны</span>
-              </div>
-              <div class="text-sm flex items-center gap-4 flex-wrap">
-                @if (mode() === 'desk') {
-                  <button
-                    type="button"
-                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
-                    (click)="createDocument.emit(order())"
-                    data-test="desk-create-document-button"
-                  >
-                    Создать документ
-                  </button>
-                  <button
-                    type="button"
-                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
-                    (click)="openDocs.emit(order())"
-                    data-test="desk-docs-button"
-                  >
-                    Шаблоны документов
-                  </button>
-                } @else {
-                  <a
-                    routerLink="/doc-constructor/templates"
-                    [queryParams]="{ source: 'order', sourceId: order()._id }"
-                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
-                    data-test="order-documents-link"
-                    (click)="$event.stopPropagation()"
-                    >Шаблоны документов</a
-                  >
-                }
-              </div>
-            </section>
+              </section>
+            </div>
           </div>
         </div>
       </div>
@@ -518,7 +525,7 @@ export class OrderHubTrayComponent implements OnInit {
   readonly createDocument = output<Order>();
   readonly addLines = output<Order>();
 
-  // ── Tray-owned composition forest (lazy on toggle) ──
+  // ── Tray-owned composition forest (lazy on toggle; open-by-default desk) ──
   private readonly compositionExpanded = signal(false);
   private readonly compositionLoading = signal(false);
   private readonly compositionForest = signal<CompositionTreeNode[]>([]);
@@ -549,6 +556,11 @@ export class OrderHubTrayComponent implements OnInit {
     // HUB-303 lazy-on-expand load. Runs after the required order input
     // is available (constructor cannot read signal inputs yet).
     this.loadSupply(this.order()._id);
+    // 413: desk shows the composition as the primary surface by default.
+    if (this.mode() === 'desk') {
+      this.compositionExpanded.set(true);
+      this.loadComposition();
+    }
   }
 
   protected statusLabel(status: OrderStatus): string {
