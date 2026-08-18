@@ -87,9 +87,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/admin/users`, `/admin/roles` | **OPS-306 DONE** → `admin-users` / `admin-roles`.page.md | **TZ-AUTH-308 DONE**: users UI redirect→devices; roles KEEP |
 | `/admin/devices` | admin-devices.page.md | **TZ-AUTH-308 DONE** canonical invite UI; AUTH-303/304/305 DONE |
-| `/enroll/:token` | enroll.page.md | **TZ-AUTH-303→304** passwordless named-computer enrollment |
+| `/enroll/:token` | enroll.page.md | **TZ-AUTH-303→304** passwordless named-computer enrollment; **TZ-COMP-401** privacy link |
+| `/legal/privacy` | legal-privacy.page.md | **TZ-COMP-401** public policy (path A) |
 | `/admin` stub | — | **TZ-AUTH-308** redirect → `/admin/devices` |
-| `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305 DONE**; AUTH-307 park |
+| `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305 DONE**; AUTH-307 park; **TZ-COMP-401** formula + privacy link |
 
 ## Cross-cutting UX batch (this sweep)
 

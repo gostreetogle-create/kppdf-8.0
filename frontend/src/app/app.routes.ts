@@ -55,6 +55,11 @@ export const catalogAppearanceAdminGuard: CanMatchFn = () => {
 
 export const routes: Routes = [
   {
+    path: 'legal/privacy',
+    loadComponent: () => import('./pages/legal/privacy.page').then((m) => m.PrivacyPage),
+    title: 'KPPDF — Политика обработки персональных данных',
+  },
+  {
     path: 'login',
     canMatch: [publicOnlyGuard],
     loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),

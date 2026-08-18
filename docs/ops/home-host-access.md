@@ -144,7 +144,7 @@ KPPDF — индивидуальный проект для обучения, э�
    `GET /api/device/auth-check` (TZ-AUTH-303 boolean gate, без персональных данных,
    200/401). Снаружи он недоступен напрямую — только как auth_request.
 3. Public enrollment surface допускает только необходимое:
-   - GET shell `/enroll/*` (SPA-страница, GET не consume invite);
+   - GET shell `/enroll/*` и `/legal/*` (SPA-страницы, GET не consume invite);
    - POST API `device/enroll` / `device/status` / `device/session` (cookie-only);
    - необходимые статические assets (main-бандлы, шрифты, robots.txt при желании).
 4. `/api` **не** получает Basic и **не** получает интерактивный browser challenge

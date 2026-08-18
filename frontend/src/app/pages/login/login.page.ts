@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, isDevMode, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, LogIn, Eye, EyeOff, KeyRound } from 'lucide-angular';
 import { AuthService } from '../../core/auth.service';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -21,7 +21,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
 @Component({
   selector: 'app-login-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent],
+  imports: [LucideAngularModule, ButtonComponent, FormFieldComponent, InputComponent, RouterLink],
   template: `
     <div
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
@@ -51,12 +51,17 @@ import { InputComponent } from '../../shared/ui/input/input.component';
 
         <aside
           class="text-sm text-muted-foreground border-l-2 border-sunrise-warm pl-3 mb-8"
-          data-test="personal-project-notice"
+          data-test="internal-is-notice"
         >
-          <h2 class="font-medium text-ink mb-1">Личный проект для обучения и тестирования</h2>
           <p>
-            KPPDF — индивидуальный проект для обучения, экспериментов и проверки идей. Это не
-            публичный сервис и не коммерческий сайт. Вход — для автора и приглашённых участников.
+            Внутренняя информационная система. Доступ только уполномоченным лицам по приглашению
+            администратора. Не публичный сервис и не рекламная площадка.
+            <br />
+            <a
+              routerLink="/legal/privacy"
+              class="underline hover:text-ink transition-colors mt-1 inline-block"
+              >Политика обработки персональных данных</a
+            >
           </p>
         </aside>
 
