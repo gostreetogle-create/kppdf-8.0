@@ -34,9 +34,11 @@
 - **Центр:** scrollable queue; **expand tray под строкой** (не блок ниже списка).
 - Tray: группы как `/orders` expand — Заказ, Исполнение, Комбайн-strip, Состав, inline CTA.
   - **412:** один shared `order-hub-tray` (`mode="desk"`) — та же разметка, что `/orders` expand (`mode="hub"`), без форка шаблона.
+  - **403:** composition-tree + lazy supply живут в самом tray (self-contained); desk раскрывает живой BOM без маршрута `/orders/:id`, карандаш = `open-catalog-composition-edit`.
 - **L flyout** (create/filter/summary) · **R flyout** (edit/client/bom/docs/supply).
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
-- **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события, tree+combine в 403.
+- **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события.
+- **403:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → «Добавить линию» (edit flyout); «Создать документ» reuse hub-хендлера.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 - **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
 
@@ -57,7 +59,7 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-406** | chrome parity — **DONE** |
 | **DESK-402** | форма + GET /orders — **DONE** |
 | **DESK-412** | shared order-hub-tray — **DONE** |
-| DESK-403 | состав + combine в tray |
+| **DESK-403** | состав + supply + combine в tray — **DONE** |
 | DESK-404 | deep-link студии |
 | DESK-407 | crumbs + view=gantt/combine |
 | DESK-408 | блокнот DeskNote |

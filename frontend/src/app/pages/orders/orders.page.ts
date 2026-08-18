@@ -18,27 +18,6 @@ import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.
 import { DEALS_TOC_CHIPS } from '../commercial/deals-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import type {
-  CompositionTreeExpandEvent,
-  CompositionTreeSelectEvent,
-  CompositionTreeEditEvent,
-} from '../../shared/ui/composition/composition-tree.component';
-import {
-  CompositionTreeNode,
-  ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import { ProductsService } from '../../shared/services/products.service';
-import { MaterialsService } from '../../shared/services/materials.service';
-import {
-  loadOrderCompositionForest,
-  ORDER_TREE_INITIAL_DEPTH,
-  ORDER_TREE_MAX_DEPTH,
-} from './order-composition-forest';
-import {
-  isEmptyCatalogBranch,
-  openCatalogEditFromTree,
-  type CatalogCompositionEditDeps,
-} from './open-catalog-composition-edit';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -54,12 +33,9 @@ import { Order, OrdersService } from './orders.service';
 import { OrderFormDialogComponent } from './order-form-dialog.component';
 import {
   OrderHubTrayComponent,
-  EMPTY_SUPPLY_COUNTERS,
   EMPTY_RESERVATION_COUNTERS,
-  type SupplyExpandCounters,
   type ReservationExpandCounters,
 } from './order-hub-tray.component';
-import { SupplyTask, SupplyTaskService } from '../../shared/services/pi-supply.service';
 import { Reservation, ReservationsService } from '../../shared/services/pi-reservations.service';
 
 type SortKey = 'number' | 'date' | 'status';
@@ -333,23 +309,10 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
                 <app-order-hub-tray
                   [order]="row"
                   mode="hub"
-                  [compositionExpanded]="compositionExpandedId() === row._id"
-                  [compositionLoading]="compositionForestLoading()"
-                  [compositionActive]="compositionForestOrderId() === row._id"
-                  [compositionForest]="compositionForest()"
-                  [compositionSelectedId]="compositionSelectedId()"
-                  [supplyLoading]="supplyExpandLoading()"
-                  [supplyError]="supplyExpandError()"
-                  [supplyActive]="supplyExpandOrderId() === row._id"
-                  [supplyCounters]="supplyExpandCounters()"
                   [reservationLoading]="reservationExpandLoading()"
                   [reservationError]="reservationExpandError()"
                   [reservationActive]="reservationExpandOrderId() === row._id"
                   [reservationCounters]="reservationExpandCounters()"
-                  (toggleComposition)="toggleComposition($event)"
-                  (compositionExpand)="onCompositionExpand($event)"
-                  (compositionSelect)="onCompositionSelect($event)"
-                  (compositionEdit)="onCompositionEdit($event)"
                 />
               }
             </ng-template>
@@ -376,10 +339,6 @@ export class OrdersPage implements OnInit {
   }
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
-  private readonly catalog = inject(ProductModulesService);
-  private readonly products = inject(ProductsService);
-  private readonly materials = inject(MaterialsService);
-  private readonly supply = inject(SupplyTaskService);
   private readonly reservations = inject(ReservationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
@@ -657,132 +616,9 @@ export class OrdersPage implements OnInit {
     return `${ready} из ${items.length}`;
   }
 
-  protected readonly compositionExpandedId = signal<string | null>(null);
-  protected readonly compositionForest = signal<CompositionTreeNode[]>([]);
-  protected readonly compositionForestLoading = signal(false);
-  protected readonly compositionForestOrderId = signal<string | null>(null);
-  protected readonly compositionSelectedId = signal<string | null>(null);
-  private readonly compositionRequestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
-  private compositionLoadSeq = 0;
-  private readonly catalogEditBusy = signal(false);
-  private compositionExpandRow: Order | null = null;
-
-  protected toggleComposition(row: Order): void {
-    const closing = this.compositionExpandedId() === row._id;
-    this.compositionExpandedId.set(closing ? null : row._id);
-    if (closing) {
-      this.clearCompositionForest();
-      return;
-    }
-    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
-    this.loadCompositionForest(row);
-  }
-
-  protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
-    this.compositionSelectedId.set(ev.node._id);
-    if (isEmptyCatalogBranch(ev.node)) {
-      openCatalogEditFromTree(this.catalogEditDeps(), ev);
-    }
-  }
-
-  protected onCompositionEdit(ev: CompositionTreeEditEvent): void {
-    this.compositionSelectedId.set(ev.node._id);
-    openCatalogEditFromTree(this.catalogEditDeps(), ev);
-  }
-
-  protected onCompositionExpand(ev: CompositionTreeExpandEvent): void {
-    if (!ev.expanded) return;
-    const row = this.compositionExpandRow;
-    if (!row) return;
-    const depth = this.depthOfComposition(ev.node);
-    if (depth < 0) return;
-    const need = Math.min(depth + 2, ORDER_TREE_MAX_DEPTH);
-    if (need <= this.compositionRequestedDepth()) return;
-    this.compositionRequestedDepth.set(need);
-    this.loadCompositionForest(row);
-  }
-
-  private catalogEditDeps(): CatalogCompositionEditDeps {
-    return {
-      dialog: this.dialog,
-      products: this.products,
-      modules: this.catalog,
-      materials: this.materials,
-      toast: this.toast,
-      injector: this.injector,
-      destroyRef: this.destroyRef,
-      busy: this.catalogEditBusy,
-      onSaved: () => {
-        const row = this.compositionExpandRow;
-        if (row) this.loadCompositionForest(row);
-      },
-    };
-  }
-
-  private loadCompositionForest(row: Order): void {
-    this.compositionExpandRow = row;
-    this.compositionForestOrderId.set(row._id);
-    const items = row.items ?? [];
-    if (items.length === 0) {
-      this.compositionForest.set([]);
-      this.compositionForestLoading.set(false);
-      return;
-    }
-    const seq = ++this.compositionLoadSeq;
-    this.compositionForestLoading.set(true);
-    loadOrderCompositionForest(this.catalog, items, this.compositionRequestedDepth()).subscribe(
-      (roots) => {
-        if (seq !== this.compositionLoadSeq) return;
-        this.compositionForestLoading.set(false);
-        this.compositionForest.set(roots);
-      },
-    );
-  }
-
-  private clearCompositionForest(): void {
-    this.compositionExpandRow = null;
-    this.compositionForestOrderId.set(null);
-    this.compositionForest.set([]);
-    this.compositionForestLoading.set(false);
-    this.compositionSelectedId.set(null);
-    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
-  }
-
-  private depthOfComposition(
-    target: CompositionTreeNode,
-    roots: CompositionTreeNode[] = this.compositionForest(),
-  ): number {
-    for (const root of roots) {
-      const found = this.depthInComposition(target, root, 0);
-      if (found !== -1) return found;
-    }
-    return -1;
-  }
-
-  private depthInComposition(
-    target: CompositionTreeNode,
-    node: CompositionTreeNode,
-    depth: number,
-  ): number {
-    if (node._id === target._id) return depth;
-    for (const child of node.children) {
-      const found = this.depthInComposition(target, child, depth + 1);
-      if (found !== -1) return found;
-    }
-    return -1;
-  }
-
   protected readonly expandedId = signal<string | null>(null);
   protected readonly isExpandedRow = (row: Order): boolean => this.expandedId() === row._id;
   protected readonly expandedRowLabel = (row: Order): string => `Сводка заказа: ${row.number}`;
-
-  /** HUB-303: lazy supply summary for the currently expanded row only. */
-  protected readonly supplyExpandOrderId = signal<string | null>(null);
-  protected readonly supplyExpandLoading = signal(false);
-  protected readonly supplyExpandError = signal<string | null>(null);
-  protected readonly supplyExpandCounters = signal<SupplyExpandCounters>({
-    ...EMPTY_SUPPLY_COUNTERS,
-  });
 
   /** HUB-304: lazy reservations by Order.number for the expanded row. */
   protected readonly reservationExpandOrderId = signal<string | null>(null);
@@ -796,27 +632,15 @@ export class OrdersPage implements OnInit {
     const closing = this.expandedId() === row._id;
     this.expandedId.update((current) => (current === row._id ? null : row._id));
     if (closing) {
-      this.clearSupplyExpand();
       this.clearReservationExpand();
       return;
     }
-    this.loadSupplyExpand(row._id);
     this.loadReservationExpand(row._id, row.number);
   }
 
   private resetExpansion(): void {
     this.expandedId.set(null);
-    this.compositionExpandedId.set(null);
-    this.clearCompositionForest();
-    this.clearSupplyExpand();
     this.clearReservationExpand();
-  }
-
-  private clearSupplyExpand(): void {
-    this.supplyExpandOrderId.set(null);
-    this.supplyExpandLoading.set(false);
-    this.supplyExpandError.set(null);
-    this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
   }
 
   private clearReservationExpand(): void {
@@ -824,25 +648,6 @@ export class OrdersPage implements OnInit {
     this.reservationExpandLoading.set(false);
     this.reservationExpandError.set(null);
     this.reservationExpandCounters.set({ ...EMPTY_RESERVATION_COUNTERS });
-  }
-
-  private loadSupplyExpand(orderId: string): void {
-    this.supplyExpandOrderId.set(orderId);
-    this.supplyExpandLoading.set(true);
-    this.supplyExpandError.set(null);
-    this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
-    this.supply.list({ orderId }).subscribe((res) => {
-      if (this.expandedId() !== orderId) return;
-      this.supplyExpandLoading.set(false);
-      if (!res.ok) {
-        this.supplyExpandError.set(
-          extractErrorMessage(res.error) || 'Не удалось загрузить задачи снабжения',
-        );
-        this.supplyExpandCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
-        return;
-      }
-      this.supplyExpandCounters.set(this.countSupplyStatuses(res.data ?? []));
-    });
   }
 
   /** Query by business number (`Order.number`), never `reservationIds[]`. */
@@ -863,15 +668,6 @@ export class OrdersPage implements OnInit {
       }
       this.reservationExpandCounters.set(this.countReservations(res.data ?? []));
     });
-  }
-
-  private countSupplyStatuses(tasks: SupplyTask[]): SupplyExpandCounters {
-    const counters: SupplyExpandCounters = { ...EMPTY_SUPPLY_COUNTERS };
-    for (const task of tasks) {
-      counters[task.status] = (counters[task.status] ?? 0) + 1;
-      counters.total += 1;
-    }
-    return counters;
   }
 
   private countReservations(list: Reservation[]): ReservationExpandCounters {

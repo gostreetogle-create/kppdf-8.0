@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
@@ -7,24 +17,35 @@ import {
   type CompositionTreeExpandEvent,
   type CompositionTreeSelectEvent,
 } from '../../shared/ui/composition/composition-tree.component';
-import type { CompositionTreeNode } from '../../shared/services/pi-product-modules.service';
-import type { SupplyTaskStatus } from '../../shared/services/pi-supply.service';
+import {
+  CompositionTreeNode,
+  ProductModulesService,
+} from '../../shared/services/pi-product-modules.service';
+import { ProductsService } from '../../shared/services/products.service';
+import { MaterialsService } from '../../shared/services/materials.service';
+import {
+  SupplyTask,
+  SupplyTaskService,
+  type SupplyTaskStatus,
+} from '../../shared/services/pi-supply.service';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PiToastService } from '../../shared/ui/toast';
+import { extractErrorMessage } from '../../core/silent-http';
 import { pluralize } from '../../shared/util/format';
-import type { Order, OrderItem, OrderStatus } from './orders.service';
+import {
+  loadOrderCompositionForest,
+  ORDER_TREE_INITIAL_DEPTH,
+  ORDER_TREE_MAX_DEPTH,
+} from './order-composition-forest';
+import {
+  isEmptyCatalogBranch,
+  openCatalogEditFromTree,
+  type CatalogCompositionEditDeps,
+} from './open-catalog-composition-edit';
+import type { BoardLane, Order, OrderItem, OrderStatus } from './orders.service';
 
-/** Counters for the lazy supply summary (HUB-303 pattern, host-owned in 412). */
-export type SupplyExpandCounters = Record<SupplyTaskStatus, number> & { total: number };
-
-/** Counters for the lazy reservations summary (HUB-304 pattern, host-owned in 412). */
+/** Counters for the lazy reservations summary (HUB-304 pattern, hub-hosted). */
 export type ReservationExpandCounters = { active: number; total: number };
-
-export const EMPTY_SUPPLY_COUNTERS: SupplyExpandCounters = {
-  draft: 0,
-  confirmed: 0,
-  ordered: 0,
-  received: 0,
-  total: 0,
-};
 
 export const EMPTY_RESERVATION_COUNTERS: ReservationExpandCounters = { active: 0, total: 0 };
 
@@ -48,13 +69,37 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Отменён',
 };
 
+const BOARD_LANE_LABELS: Record<BoardLane, string> = {
+  prep: 'Комплектация',
+  design: 'Проектирование',
+  shop: 'В цехе',
+  to_ship: 'К отгрузке',
+  shipped: 'Отгружены',
+};
+
+/** TZ-COMBINE-402 legacy: OrderItem.status → boardLane when lane missing. */
+const STATUS_TO_BOARD_LANE: Record<NonNullable<OrderItem['status']>, BoardLane> = {
+  pending: 'prep',
+  in_production: 'shop',
+  ready: 'to_ship',
+  shipped: 'shipped',
+};
+
+const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number } = {
+  draft: 0,
+  confirmed: 0,
+  ordered: 0,
+  received: 0,
+  total: 0,
+};
+
 /**
- * Shared order summary tray (TZ-DESK-412).
+ * Shared order summary tray (TZ-DESK-412, extended by TZ-DESK-403).
  *
  * One markup for `/orders` expand (`mode="hub"`) and `/desk` row expand
- * (`mode="desk"`). Dynamic leaves (composition forest, supply counters,
- * reservations) stay host-owned in 412 and flow in through inputs; 403 moves
- * tree + lazy supply into the tray itself, never a second template.
+ * (`mode="desk"`). The tray owns the live catalog composition forest
+ * (lazy on toggle) and the lazy supply counters (HUB-303 pattern, loaded on
+ * expand) — no host copy-paste. Reservations stay hub-hosted via inputs.
  *
  * Data-test contract: the `order-*` selectors mirror orders.page's former
  * `#expandedTpl` 1:1 so HUB-302/303/304 characterization specs keep passing.
@@ -111,7 +156,7 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                   class="flex items-center justify-between gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm"
                   [attr.aria-expanded]="compositionExpanded()"
                   [attr.aria-controls]="'order-composition-' + order()._id"
-                  (click)="toggleComposition.emit(order())"
+                  (click)="toggleComposition()"
                   data-test="order-composition-toggle"
                 >
                   <span class="font-medium">Состав заказа</span>
@@ -130,15 +175,27 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                     data-test="order-composition-panel"
                   >
                     @if ((order().items?.length ?? 0) === 0) {
-                      <p class="text-xs text-muted-foreground m-0">В заказе нет изделий.</p>
-                    } @else if (compositionLoading() && compositionActive()) {
+                      @if (mode() === 'desk') {
+                        <p class="text-xs text-muted-foreground m-0">Нет изделий.</p>
+                        <button
+                          type="button"
+                          class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit mt-2"
+                          (click)="addLines.emit(order())"
+                          data-test="desk-add-line-cta"
+                        >
+                          Добавить линию
+                        </button>
+                      } @else {
+                        <p class="text-xs text-muted-foreground m-0">В заказе нет изделий.</p>
+                      }
+                    } @else if (compositionLoading()) {
                       <p
                         class="text-sm text-muted-foreground py-3 m-0"
                         data-test="order-composition-loading"
                       >
                         Загрузка состава…
                       </p>
-                    } @else if (compositionActive() && compositionForest().length > 0) {
+                    } @else if (compositionForest().length > 0) {
                       <div
                         class="space-y-3 p-2 hairline rounded-sm bg-paper"
                         data-test="order-composition-tree"
@@ -149,9 +206,9 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                             [selectedId]="compositionSelectedId()"
                             [showEdit]="true"
                             ariaLabel="Состав изделия в заказе"
-                            (expandedChange)="compositionExpand.emit($event)"
-                            (selectedChange)="compositionSelect.emit($event)"
-                            (editClick)="compositionEdit.emit($event)"
+                            (expandedChange)="onCompositionExpand($event)"
+                            (selectedChange)="onCompositionSelect($event)"
+                            (editClick)="onCompositionEdit($event)"
                           />
                         }
                       </div>
@@ -229,9 +286,9 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                       >
                     }
                   </div>
-                  @if (supplyLoading() && supplyActive()) {
+                  @if (supplyLoading()) {
                     <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                  } @else if (supplyError() && supplyActive()) {
+                  } @else if (supplyError()) {
                     <p
                       class="text-xs text-destructive m-0 mt-1"
                       role="alert"
@@ -239,9 +296,9 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                     >
                       {{ supplyError() }}
                     </p>
-                  } @else if (supplyActive() && supplyCounters().total === 0) {
+                  } @else if (supplyCounters().total === 0) {
                     <p class="text-xs text-muted-foreground m-0 mt-1">Нет задач снабжения</p>
-                  } @else if (supplyActive()) {
+                  } @else {
                     <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
                       Черновик {{ supplyCounters().draft }} · Подтверждено
                       {{ supplyCounters().confirmed }} · Заказано {{ supplyCounters().ordered }} ·
@@ -309,6 +366,31 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
               </div>
             </section>
 
+            <!-- ───── Комбайн-strip ───── -->
+            <section class="min-w-0" data-test="order-group-combine">
+              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
+                <p class="eyebrow m-0">Комбайн</p>
+                <span class="text-xs text-muted-foreground">колонки линий</span>
+              </div>
+              @if ((order().items?.length ?? 0) === 0) {
+                <p class="text-xs text-muted-foreground m-0">Нет линий.</p>
+              } @else {
+                <ul class="m-0 space-y-1" data-test="order-combine-strip">
+                  @for (item of order().items ?? []; track trackItem($index, item)) {
+                    <li
+                      class="flex items-center justify-between gap-3 text-sm"
+                      data-test="order-combine-line"
+                    >
+                      <span class="min-w-0 truncate">{{ lineLabel(item) }}</span>
+                      <span class="text-xs text-sunrise-warm whitespace-nowrap">{{
+                        boardLaneLabel(item)
+                      }}</span>
+                    </li>
+                  }
+                </ul>
+              }
+            </section>
+
             <!-- ───── Логистика ───── -->
             <section class="min-w-0" data-test="order-group-logistics">
               <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-4">
@@ -369,8 +451,16 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
                 <p class="eyebrow m-0">Документы</p>
                 <span class="text-xs text-muted-foreground">печатные материалы и шаблоны</span>
               </div>
-              <div class="text-sm">
+              <div class="text-sm flex items-center gap-4 flex-wrap">
                 @if (mode() === 'desk') {
+                  <button
+                    type="button"
+                    class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
+                    (click)="createDocument.emit(order())"
+                    data-test="desk-create-document-button"
+                  >
+                    Создать документ
+                  </button>
                   <button
                     type="button"
                     class="text-xs underline underline-offset-2 hover:text-sunrise-warm border-0 p-0 bg-transparent cursor-pointer font-inherit"
@@ -407,26 +497,13 @@ const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
     `,
   ],
 })
-export class OrderHubTrayComponent {
+export class OrderHubTrayComponent implements OnInit {
   readonly order = input.required<Order>();
   readonly mode = input<'hub' | 'desk'>('hub');
   /** Desk-only client fact; host owns the counterparty lookup. */
   readonly clientLabel = input<string>('');
 
-  // ── Host-owned composition state (moves into tray in 403) ──
-  readonly compositionExpanded = input(false);
-  readonly compositionLoading = input(false);
-  readonly compositionActive = input(false);
-  readonly compositionForest = input<CompositionTreeNode[]>([]);
-  readonly compositionSelectedId = input<string | null>(null);
-
-  // ── Host-owned supply state (HUB-303 pattern) ──
-  readonly supplyLoading = input(false);
-  readonly supplyError = input<string | null>(null);
-  readonly supplyActive = input(false);
-  readonly supplyCounters = input<SupplyExpandCounters>({ ...EMPTY_SUPPLY_COUNTERS });
-
-  // ── Host-owned reservation state (HUB-304 pattern) ──
+  // ── Hub-hosted reservation state (HUB-304) ──
   readonly reservationLoading = input(false);
   readonly reservationError = input<string | null>(null);
   readonly reservationActive = input(false);
@@ -434,13 +511,45 @@ export class OrderHubTrayComponent {
     ...EMPTY_RESERVATION_COUNTERS,
   });
 
-  readonly toggleComposition = output<Order>();
-  readonly compositionExpand = output<CompositionTreeExpandEvent>();
-  readonly compositionSelect = output<CompositionTreeSelectEvent>();
-  readonly compositionEdit = output<CompositionTreeEditEvent>();
+  // ── Desk actions (wired by host) ──
   readonly primaryCta = output<Order>();
   readonly openSupply = output<Order>();
   readonly openDocs = output<Order>();
+  readonly createDocument = output<Order>();
+  readonly addLines = output<Order>();
+
+  // ── Tray-owned composition forest (lazy on toggle) ──
+  private readonly compositionExpanded = signal(false);
+  private readonly compositionLoading = signal(false);
+  private readonly compositionForest = signal<CompositionTreeNode[]>([]);
+  private readonly compositionSelectedId = signal<string | null>(null);
+  private readonly compositionRequestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
+  private readonly catalogEditBusy = signal(false);
+  private compositionLoadSeq = 0;
+
+  // ── Tray-owned lazy supply (HUB-303 pattern, load on expand) ──
+  private readonly supplyLoading = signal(false);
+  private readonly supplyError = signal<string | null>(null);
+  private readonly supplyCounters = signal<Record<SupplyTaskStatus, number> & { total: number }>({
+    ...EMPTY_SUPPLY_COUNTERS,
+  });
+  private supplyLoadSeq = 0;
+
+  private readonly catalog = inject(ProductModulesService);
+  private readonly products = inject(ProductsService);
+  private readonly materials = inject(MaterialsService);
+  private readonly supply = inject(SupplyTaskService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
+
+  ngOnInit(): void {
+    // The tray only exists while its row is expanded, so this is the
+    // HUB-303 lazy-on-expand load. Runs after the required order input
+    // is available (constructor cannot read signal inputs yet).
+    this.loadSupply(this.order()._id);
+  }
 
   protected statusLabel(status: OrderStatus): string {
     return STATUS_LABELS[status];
@@ -465,7 +574,141 @@ export class OrderHubTrayComponent {
     return line.productName || `Изделие ${line.productId.slice(0, 8)}…`;
   }
 
+  protected boardLaneLabel(item: OrderItem): string {
+    const lane =
+      item.boardLane ?? (item.status ? STATUS_TO_BOARD_LANE[item.status] : undefined) ?? 'prep';
+    return BOARD_LANE_LABELS[lane];
+  }
+
   protected trackItem(index: number, line: OrderItem): string {
     return `${index}:${line.productId}`;
+  }
+
+  protected toggleComposition(): void {
+    const closing = this.compositionExpanded();
+    this.compositionExpanded.set(!closing);
+    if (closing) {
+      this.clearComposition();
+      return;
+    }
+    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
+    this.loadComposition();
+  }
+
+  protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
+    this.compositionSelectedId.set(ev.node._id);
+    if (isEmptyCatalogBranch(ev.node)) {
+      openCatalogEditFromTree(this.catalogEditDeps(), ev);
+    }
+  }
+
+  protected onCompositionEdit(ev: CompositionTreeEditEvent): void {
+    this.compositionSelectedId.set(ev.node._id);
+    openCatalogEditFromTree(this.catalogEditDeps(), ev);
+  }
+
+  protected onCompositionExpand(ev: CompositionTreeExpandEvent): void {
+    if (!ev.expanded) return;
+    const depth = this.depthOfComposition(ev.node);
+    if (depth < 0) return;
+    const need = Math.min(depth + 2, ORDER_TREE_MAX_DEPTH);
+    if (need <= this.compositionRequestedDepth()) return;
+    this.compositionRequestedDepth.set(need);
+    this.loadComposition();
+  }
+
+  private catalogEditDeps(): CatalogCompositionEditDeps {
+    return {
+      dialog: this.dialog,
+      products: this.products,
+      modules: this.catalog,
+      materials: this.materials,
+      toast: this.toast,
+      injector: this.injector,
+      destroyRef: this.destroyRef,
+      busy: this.catalogEditBusy,
+      onSaved: () => this.loadComposition(),
+    };
+  }
+
+  private loadComposition(): void {
+    const items = this.order().items ?? [];
+    if (items.length === 0) {
+      this.compositionForest.set([]);
+      this.compositionLoading.set(false);
+      return;
+    }
+    const seq = ++this.compositionLoadSeq;
+    this.compositionLoading.set(true);
+    loadOrderCompositionForest(this.catalog, items, this.compositionRequestedDepth()).subscribe(
+      (roots) => {
+        if (seq !== this.compositionLoadSeq) return;
+        this.compositionLoading.set(false);
+        this.compositionForest.set(roots);
+      },
+    );
+  }
+
+  private clearComposition(): void {
+    this.compositionForest.set([]);
+    this.compositionLoading.set(false);
+    this.compositionSelectedId.set(null);
+    this.compositionRequestedDepth.set(ORDER_TREE_INITIAL_DEPTH);
+  }
+
+  private depthOfComposition(
+    target: CompositionTreeNode,
+    roots: CompositionTreeNode[] = this.compositionForest(),
+  ): number {
+    for (const root of roots) {
+      const found = this.depthInComposition(target, root, 0);
+      if (found !== -1) return found;
+    }
+    return -1;
+  }
+
+  private depthInComposition(
+    target: CompositionTreeNode,
+    node: CompositionTreeNode,
+    depth: number,
+  ): number {
+    if (node._id === target._id) return depth;
+    for (const child of node.children) {
+      const found = this.depthInComposition(target, child, depth + 1);
+      if (found !== -1) return found;
+    }
+    return -1;
+  }
+
+  private loadSupply(orderId: string): void {
+    const seq = ++this.supplyLoadSeq;
+    this.supplyLoading.set(true);
+    this.supplyError.set(null);
+    this.supplyCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+    this.supply.list({ orderId }).subscribe((res) => {
+      if (seq !== this.supplyLoadSeq) return;
+      this.supplyLoading.set(false);
+      if (!res.ok) {
+        this.supplyError.set(
+          extractErrorMessage(res.error) || 'Не удалось загрузить задачи снабжения',
+        );
+        this.supplyCounters.set({ ...EMPTY_SUPPLY_COUNTERS });
+        return;
+      }
+      this.supplyCounters.set(this.countSupplyStatuses(res.data ?? []));
+    });
+  }
+
+  private countSupplyStatuses(
+    tasks: SupplyTask[],
+  ): Record<SupplyTaskStatus, number> & { total: number } {
+    const counters: Record<SupplyTaskStatus, number> & { total: number } = {
+      ...EMPTY_SUPPLY_COUNTERS,
+    };
+    for (const task of tasks) {
+      counters[task.status] = (counters[task.status] ?? 0) + 1;
+      counters.total += 1;
+    }
+    return counters;
   }
 }

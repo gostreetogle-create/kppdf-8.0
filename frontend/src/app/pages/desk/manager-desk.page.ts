@@ -148,11 +148,11 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                       [order]="order"
                       mode="desk"
                       [clientLabel]="clientLabel(order)"
-                      [compositionExpanded]="compositionExpandedId() === order._id"
-                      (toggleComposition)="toggleComposition($event)"
                       (primaryCta)="onPrimaryCta()"
                       (openSupply)="onOpenSupply()"
                       (openDocs)="onOpenDocs()"
+                      (createDocument)="onCreateDocument($event)"
+                      (addLines)="onAddLines()"
                     />
                   }
                 </div>
@@ -416,7 +416,6 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 })
 export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
-  protected readonly compositionExpandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
 
   protected readonly listRes = httpResource<Order[]>(() => ({ url: `${this.baseUrl}/orders` }));
@@ -534,13 +533,7 @@ export class ManagerDeskPage {
     const nextId = this.expandedId() === id ? null : id;
     this.expandedId.set(nextId);
     this.panel.set(null);
-    if (nextId === null) this.compositionExpandedId.set(null);
     this.navigateQuery(nextId, null);
-  }
-
-  /** Toggle the shared tray's composition panel (line list until DESK-403 tree). */
-  protected toggleComposition(order: Order): void {
-    this.compositionExpandedId.update((id) => (id === order._id ? null : order._id));
   }
 
   protected onPrimaryCta(): void {
@@ -548,11 +541,23 @@ export class ManagerDeskPage {
   }
 
   protected onOpenSupply(): void {
-    this.toast.show('Снабжение подключится в DESK-403.');
+    this.toast.show('Панель снабжения подключится позже.');
   }
 
   protected onOpenDocs(): void {
-    this.toast.show('Документы подключится в DESK-403.');
+    this.toast.show('Шаблоны документов откроются здесь позже.');
+  }
+
+  /** Reuse the /orders hub handler: documents templates for this order. */
+  protected onCreateDocument(order: Order): void {
+    this.router.navigate(['/doc-constructor/templates'], {
+      queryParams: { source: 'order', sourceId: order._id },
+    });
+  }
+
+  /** Empty-composition CTA: add lines via the existing edit flyout. */
+  protected onAddLines(): void {
+    this.openPanel('edit');
   }
 
   /** Shared handler for left-rail tools and any future empty-state CTA. */
@@ -570,7 +575,6 @@ export class ManagerDeskPage {
   protected onOrderSaved(order: Order): void {
     this.panel.set(null);
     this.expandedId.set(order._id);
-    this.compositionExpandedId.set(null);
     this.pendingScrollId.set(order._id);
     this.navigateQuery(order._id, null);
     this.listRes.reload();
@@ -598,7 +602,6 @@ export class ManagerDeskPage {
     if (rawId && !validId) {
       this.toast.error('Заказ не найден');
       this.expandedId.set(null);
-      this.compositionExpandedId.set(null);
       this.panel.set(null);
       this.clearOrderIdQuery();
       return;

@@ -445,7 +445,6 @@ describe('OrdersPage', () => {
 
     const comp = fixture.componentInstance as unknown as {
       onRowClick: (row: Order) => void;
-      supplyExpandError: () => string | null;
     };
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
@@ -465,7 +464,6 @@ describe('OrdersPage', () => {
     await tickMicrotask();
     await tickMicrotask();
     fixture.detectChanges();
-    expect(comp.supplyExpandError()).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-supply-error"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
   });
@@ -491,7 +489,11 @@ describe('OrdersPage', () => {
     };
 
     comp.onRowClick(row);
-    await flushExpandLoads(httpMock, row);
+    fixture.detectChanges();
+    // Supply now lazy-loads inside the tray (not mounted for an empty list);
+    // onRowClick still owns the HUB-304 reservation fetch.
+    httpMock.expectOne(matchReservationExpand(row.number)).flush([]);
+    await tickMicrotask();
     expect(comp.expandedId()).toBe('o1');
     expect(comp.proposalLabelOf(row)).toBe('№QTN-1 · заглушка');
     comp.onRowClick(row);

@@ -3,12 +3,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { EMPTY, BehaviorSubject } from 'rxjs';
+import { EMPTY, BehaviorSubject, of } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 import { Order } from '../orders/orders.service';
 import { ManagerDeskPage, type ManagerDeskPanel } from './manager-desk.page';
 
@@ -68,6 +69,23 @@ function flushPanelLookups(httpMock: HttpTestingController, opts: { sites?: bool
   }
 }
 
+function flushSupply(httpMock: HttpTestingController, orderId: string): void {
+  httpMock
+    .match(
+      (req) =>
+        req.method === 'GET' &&
+        req.url === '/api/supply-tasks' &&
+        req.params.get('orderId') === orderId,
+    )
+    .forEach((req) => req.flush([]));
+}
+
+function flushProductTree(httpMock: HttpTestingController, productId: string, name: string): void {
+  httpMock
+    .expectOne((req) => req.method === 'GET' && req.url === `/api/products/${productId}/tree`)
+    .flush({ _id: productId, name, kind: 'product', quantity: 1, children: [] });
+}
+
 async function tickMicrotask(): Promise<void> {
   await new Promise<void>((r) => setTimeout(r, 0));
 }
@@ -104,7 +122,14 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
         },
         { provide: Router, useValue: routerMock },
         { provide: AuthService, useValue: { user: signal(null) } },
-        { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        {
+          provide: PiToastService,
+          useValue: { success: jest.fn(), error: jest.fn(), show: jest.fn() },
+        },
+        {
+          provide: CatalogAppearanceService,
+          useValue: { load: () => of(null), palette: () => undefined },
+        },
         PiChromeToolsService,
       ],
     }).compileComponents();
@@ -179,6 +204,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     ) as NodeListOf<HTMLButtonElement>;
     rows[0]!.click();
     fixture.detectChanges();
+    flushSupply(httpMock, 'o1');
 
     expect(page().expandedId()).toBe('o1');
     const item = rows[0]!.parentElement!;
@@ -195,9 +221,13 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     ) as HTMLButtonElement;
     expect(compositionToggle.getAttribute('aria-expanded')).toBe('false');
     compositionToggle.click();
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
     fixture.detectChanges();
     expect(compositionToggle.getAttribute('aria-expanded')).toBe('true');
-    expect(tray?.querySelectorAll('[data-test="order-composition-line"]')).toHaveLength(2);
+    expect(tray?.querySelector('[data-test="order-composition-tree"]')).toBeTruthy();
+    expect(tray?.querySelectorAll('[data-test="composition-tree"]')).toHaveLength(2);
 
     const crumb = fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]');
     expect(crumb?.textContent).toContain('З-1001');
@@ -283,6 +313,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     reloads[0].flush([...ORDERS, created]);
     await tickMicrotask();
     fixture.detectChanges();
+    flushSupply(httpMock, 'o4');
 
     expect(
       fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
@@ -299,6 +330,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     ) as NodeListOf<HTMLButtonElement>;
     rows[1]!.click();
     fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
 
     page().openPanel('edit');
     fixture.detectChanges();
