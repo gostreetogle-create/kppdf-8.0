@@ -1,0 +1,12 @@
+# TZ-FORMS-314 — DONE lock
+TASK: TZ-FORMS-314
+OWNER: Buffy/openai-gpt-5.6-luna
+CLOSED_AT: 2026-08-18
+ARCHIVE: tasks/_archive/2026-08/TZ-FORMS-314.done.md
+PROTECTED_FILES:
+  - frontend/src/app/shared/forms/to-optional-number.ts
+  - frontend/src/app/pages/work-types/work-type-form-dialog.component.ts
+  - frontend/src/app/pages/work-types/work-type-form-dialog.component.spec.ts
+SUCCESSOR: TZ-FORMS-315
+GATES: frontend tsc PASS; focused Jest 3/3 PASS; focused ESLint PASS; diff-check PASS
+NOTES: app-pi-input CVA, backend, ValidationPipe, deploy, and foreign WIP untouched.

@@ -10,7 +10,7 @@ hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
 
 ## ACTIVE
 
-_(none)_
+_(none)_ — TZ-FORMS-314 archived; next TZ-FORMS-315
 
 ## NEXT (PO)
 
@@ -18,6 +18,11 @@ _(none)_
 2. Завтра на работе: тот же ПК, новая ссылка не нужна
 
 ## DONE / LANDED (recent)
+
+## [2026-08-18] — TZ-FORMS-314 DONE — optional numeric submit helper + виды работ
+
+- Archive: `tasks/_archive/2026-08/TZ-FORMS-314.done.md`; focused tsc/Jest 3/3/ESLint PASS; deploy НЕ
+- Next: `TZ-FORMS-315`
 
 ## [2026-08-17] — Warm deploy OK
 
