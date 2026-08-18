@@ -82,8 +82,10 @@ function flushSupply(httpMock: HttpTestingController, orderId: string): void {
 
 function flushProductTree(httpMock: HttpTestingController, productId: string, name: string): void {
   httpMock
-    .expectOne((req) => req.method === 'GET' && req.url === `/api/products/${productId}/tree`)
-    .flush({ _id: productId, name, kind: 'product', quantity: 1, children: [] });
+    .match((req) => req.method === 'GET' && req.url === `/api/products/${productId}/tree`)
+    .forEach((req) =>
+      req.flush({ _id: productId, name, kind: 'product', quantity: 1, children: [] }),
+    );
 }
 
 async function tickMicrotask(): Promise<void> {
@@ -157,6 +159,14 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     closePanel: () => void;
     onOrderSaved: (order: Order) => void;
     onEscape: () => void;
+    onSearchInput: (event: Event) => void;
+    toggleStatus: (status: Order['status']) => void;
+    setStatusPreset: (preset: 'active' | 'all') => void;
+    refresh: () => void;
+    showMore: () => void;
+    statusFilter: () => Set<Order['status']>;
+    visibleOrders: () => Order[];
+    summaryCounts: () => Record<Order['status'], number>;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
       expandedId: () => string | null;
@@ -166,10 +176,19 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       closePanel: () => void;
       onOrderSaved: (order: Order) => void;
       onEscape: () => void;
+      onSearchInput: (event: Event) => void;
+      toggleStatus: (status: Order['status']) => void;
+      setStatusPreset: (preset: 'active' | 'all') => void;
+      refresh: () => void;
+      showMore: () => void;
+      statusFilter: () => Set<Order['status']>;
+      visibleOrders: () => Order[];
+      summaryCounts: () => Record<Order['status'], number>;
     };
   }
 
   it('renders live orders in one group-workspace chip row without page-chrome', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
@@ -195,6 +214,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   });
 
   it('expands a live order into the tray and toggles closed with crumb suffix', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
@@ -259,7 +279,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   });
 
   it('shows RU toast and clears an invalid orderId without crashing', async () => {
-    queryParams$.next(convertToParamMap({ orderId: 'missing', panel: null }));
+    queryParams$.next(convertToParamMap({ orderId: 'missing', panel: null, status: 'all' }));
     fixture.detectChanges();
 
     expect(toast.error).not.toHaveBeenCalled();
@@ -323,6 +343,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   });
 
   it('opens right panels only for an expanded order and Escape closes only the flyout', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
@@ -349,5 +370,128 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="order-hub-tray"]')).toBeTruthy();
     expect(page().expandedId()).toBe('o2');
+  });
+
+  it('410: default view shows only active orders (no draft/shipped/cancelled/delivered)', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(rows).toHaveLength(2);
+    expect([...rows].map((row) => row.getAttribute('data-status'))).toEqual([
+      'in_production',
+      'ready',
+    ]);
+    expect(fixture.nativeElement.textContent).not.toContain('Северный свет');
+    expect(fixture.nativeElement.textContent).toContain('ИП Марина Волкова');
+    expect(fixture.nativeElement.textContent).toContain('ООО Белый дуб');
+  });
+
+  it('410: search filters the queue by client', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector(
+      '[data-test="desk-search-input"]',
+    ) as HTMLInputElement;
+    input.value = 'Северный';
+    input.dispatchEvent(new Event('input'));
+    await new Promise((r) => setTimeout(r, 320));
+    fixture.detectChanges();
+
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o.number),
+    ).toEqual(['З-1001']);
+  });
+
+  it('410: filter flyout toggles statuses and persists ?status=', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    // Default active hides the draft o1.
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o._id),
+    ).toEqual(['o2', 'o3']);
+
+    page().openPanel('filter');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-filter"]')).toBeTruthy();
+
+    navigate.mockClear();
+    page().toggleStatus('draft');
+    fixture.detectChanges();
+
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o._id),
+    ).toEqual(['o1', 'o2', 'o3']);
+    expect(page().statusFilter().has('draft')).toBe(true);
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ status: expect.stringContaining('draft') }),
+        queryParamsHandling: 'merge',
+      }),
+    );
+  });
+
+  it('410: summary flyout shows read-only status counts for the search set', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('summary');
+    fixture.detectChanges();
+
+    const summary = fixture.nativeElement.querySelector('[data-test="desk-summary"]');
+    expect(summary).toBeTruthy();
+    const count = (status: string): string | undefined =>
+      summary.querySelector(`[data-test="desk-summary-count-${status}"]`)?.textContent?.trim();
+    expect(count('draft')).toBe('1');
+    expect(count('in_production')).toBe('1');
+    expect(count('ready')).toBe('1');
+    expect(count('shipped')).toBe('0');
+  });
+
+  it('410: refresh re-fetches orders and preserves the expanded order', async () => {
+    queryParams$.next(convertToParamMap({ orderId: 'o1', status: 'all' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o1');
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(page().expandedId()).toBe('o1');
+
+    page().refresh();
+    fixture.detectChanges();
+    const reloads = httpMock.match((req) => req.url === '/api/orders' && req.method === 'GET');
+    expect(reloads).toHaveLength(1);
+    reloads[0].flush(ORDERS);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o1');
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(page().expandedId()).toBe('o1');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
+    ).toContain('З-1001');
   });
 });

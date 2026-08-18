@@ -34,6 +34,7 @@ import { extractErrorMessage } from '../../core/silent-http';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { pluralize } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
+import { createSearchState } from '../../shared/util/search';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
 import { Order, OrderStatus } from '../orders/orders.service';
 import { OrderFormPanelComponent } from '../orders/order-form-panel.component';
@@ -54,6 +55,55 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   delivered: 'Доставлен',
   cancelled: 'Отменён',
 };
+
+/** Lifecycle order for the filter/summary flyouts. */
+const ALL_STATUSES: OrderStatus[] = [
+  'draft',
+  'confirmed',
+  'in_production',
+  'ready',
+  'shipped',
+  'delivered',
+  'cancelled',
+];
+
+/**
+ * 410: default «Активные» — production ACTIVE minus draft/shipped/
+ * cancelled/delivered (business sense: show the work queue, not history).
+ */
+const ACTIVE_STATUSES: OrderStatus[] = ['confirmed', 'in_production', 'ready'];
+
+const STATUS_ALL_TOKEN = 'all';
+
+const DEFAULT_VISIBLE_LIMIT = 20;
+
+function parseStatusFilter(raw: string | null | undefined): Set<OrderStatus> {
+  if (!raw || raw.trim() === '') return new Set(ACTIVE_STATUSES);
+  const value = raw.trim();
+  if (value === STATUS_ALL_TOKEN) return new Set(ALL_STATUSES);
+  const parsed = value
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s): s is OrderStatus => (ALL_STATUSES as string[]).includes(s));
+  return parsed.length > 0 ? new Set(parsed) : new Set(ACTIVE_STATUSES);
+}
+
+function serializeStatusFilter(set: Set<OrderStatus>): string {
+  if (set.size === ALL_STATUSES.length) return STATUS_ALL_TOKEN;
+  return ALL_STATUSES.filter((s) => set.has(s)).join(',');
+}
+
+/** Date desc (created/updated fallback) — same field family as /orders. */
+function orderDateDesc(a: Order, b: Order): number {
+  const av = a.date ?? a.createdAt ?? a.updatedAt ?? '';
+  const bv = b.date ?? b.createdAt ?? b.updatedAt ?? '';
+  const at = av ? Date.parse(av) : NaN;
+  const bt = bv ? Date.parse(bv) : NaN;
+  if (Number.isNaN(at) && Number.isNaN(bt)) return 0;
+  if (Number.isNaN(at)) return 1;
+  if (Number.isNaN(bt)) return -1;
+  return bt - at;
+}
 
 const PANEL_LABELS: Record<ManagerDeskPanel, string> = {
   create: 'Создать заказ',
@@ -88,8 +138,19 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
     <div class="manager-desk" data-test="manager-desk">
       <app-pi-group-workspace [chips]="workflowChips()" activeId="desk">
         <div tools class="flex items-center gap-2 flex-wrap w-full">
+          <input
+            id="desk-search"
+            type="search"
+            name="desk-search"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            placeholder="Поиск: номер, клиент…"
+            aria-label="Поиск заказов"
+            data-test="desk-search-input"
+            class="pi-input w-64"
+          />
           <span class="text-xs text-muted-foreground" data-test="desk-order-count">
-            {{ orders().length }} {{ totalLabel(orders().length) }}
+            {{ sortedOrders().length }} {{ totalLabel(sortedOrders().length) }}
           </span>
           @if (expandedOrder(); as order) {
             <span class="text-muted-foreground" aria-hidden="true">/</span>
@@ -116,10 +177,12 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
             <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
               @if (loading() && orders().length === 0) {
                 <p class="manager-desk__empty">Загрузка заказов…</p>
-              } @else if (orders().length === 0) {
-                <p class="manager-desk__empty" data-test="desk-queue-empty">Нет заказов.</p>
+              } @else if (visibleOrders().length === 0) {
+                <p class="manager-desk__empty" data-test="desk-queue-empty">
+                  {{ orders().length === 0 ? 'Нет заказов.' : 'Нет заказов по фильтру.' }}
+                </p>
               }
-              @for (order of orders(); track order._id) {
+              @for (order of visibleOrders(); track order._id) {
                 <div
                   class="manager-desk__order-item"
                   role="listitem"
@@ -155,6 +218,16 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                     />
                   }
                 </div>
+              }
+              @if (remainingCount() > 0) {
+                <button
+                  type="button"
+                  class="manager-desk__more"
+                  data-test="desk-show-more"
+                  (click)="showMore()"
+                >
+                  Показать ещё {{ remainingCount() }}
+                </button>
               }
             </div>
           </section>
@@ -207,6 +280,65 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
               (saved)="onOrderSaved($event)"
               (cancelled)="closePanel()"
             />
+          } @else if (panel() === 'filter') {
+            <div class="flex flex-col gap-4" data-test="desk-filter">
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-transparent text-ink text-sm cursor-pointer"
+                  data-test="desk-filter-preset-active"
+                  (click)="setStatusPreset('active')"
+                >
+                  Активные
+                </button>
+                <button
+                  type="button"
+                  class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-transparent text-ink text-sm cursor-pointer"
+                  data-test="desk-filter-preset-all"
+                  (click)="setStatusPreset('all')"
+                >
+                  Все
+                </button>
+              </div>
+              <fieldset class="flex flex-col gap-1.5 border-0 p-0 m-0">
+                <legend class="manager-desk__eyebrow">Статус</legend>
+                @for (status of statuses; track status) {
+                  <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      [checked]="statusFilter().has(status)"
+                      (change)="toggleStatus(status)"
+                      [attr.data-test]="'desk-filter-status-' + status"
+                    />
+                    <span>{{ statusLabel(status) }}</span>
+                  </label>
+                }
+              </fieldset>
+              <button
+                type="button"
+                class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-pointer"
+                data-test="desk-refresh"
+                (click)="refresh()"
+              >
+                Обновить
+              </button>
+            </div>
+          } @else if (panel() === 'summary') {
+            <div class="flex flex-col gap-1" data-test="desk-summary">
+              <p class="manager-desk__flyout-note">
+                Сводка по текущему поиску (без учёта статус-фильтра).
+              </p>
+              @for (status of statuses; track status) {
+                <div
+                  class="flex items-baseline justify-between gap-4 py-1 border-b hairline text-sm"
+                >
+                  <span>{{ statusLabel(status) }}</span>
+                  <span class="font-mono" [attr.data-test]="'desk-summary-count-' + status">
+                    {{ summaryCounts()[status] ?? 0 }}
+                  </span>
+                </div>
+              }
+            </div>
           } @else {
             <p class="manager-desk__flyout-copy">Здесь будет панель (в следующей волне)</p>
             <p class="manager-desk__flyout-note">
@@ -256,6 +388,21 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         padding: 0.75rem 0;
         color: var(--color-muted-foreground);
         font-size: 0.85rem;
+      }
+      .manager-desk__more {
+        min-height: 2.25rem;
+        width: 100%;
+        padding: 0.4rem 0.8rem;
+        border: 1px dashed var(--color-rule-strong);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--color-ink);
+        font: inherit;
+        font-size: 0.82rem;
+        cursor: pointer;
+      }
+      .manager-desk__more:hover {
+        background: var(--color-paper-2, #f2f0ea);
       }
       .manager-desk__order-item {
         min-width: 0;
@@ -417,6 +564,13 @@ export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
 
+  /** 410: debounced search + client-side filter/sort/slice pipeline. */
+  private readonly search = createSearchState(300);
+  protected readonly searchQuery = this.search.searchQuery;
+  protected readonly statusFilter = signal<Set<OrderStatus>>(new Set(ACTIVE_STATUSES));
+  protected readonly visibleLimit = signal(DEFAULT_VISIBLE_LIMIT);
+  protected readonly statuses = ALL_STATUSES;
+
   protected readonly listRes = httpResource<Order[]>(() => ({ url: `${this.baseUrl}/orders` }));
   protected readonly orders = computed<Order[]>(() => this.listRes.value() ?? []);
   protected readonly loading = computed<boolean>(() => this.listRes.isLoading());
@@ -429,6 +583,56 @@ export class ManagerDeskPage {
   protected readonly expandedOrder = computed(
     () => this.orders().find((order) => order._id === this.expandedId()) ?? null,
   );
+
+  /** Search only (number/client/notes/address) — before the status filter. */
+  protected readonly searchedOrders = computed<Order[]>(() => {
+    const rows = this.orders();
+    const q = this.search.debouncedSearch().trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((order) => {
+      const cp = this.counterpartiesLookup.byId()[this.counterpartyIdOf(order)];
+      const hay = [
+        order.number,
+        order.deliveryAddress,
+        order.notes,
+        cp?.name,
+        cp?.shortName,
+        cp?.inn,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  });
+
+  protected readonly filteredOrders = computed<Order[]>(() => {
+    const set = this.statusFilter();
+    return this.searchedOrders().filter((order) => set.has(order.status));
+  });
+
+  /** Default date/created/updated desc — same field family as /orders. */
+  protected readonly sortedOrders = computed<Order[]>(() =>
+    this.filteredOrders().slice().sort(orderDateDesc),
+  );
+
+  protected readonly visibleOrders = computed<Order[]>(() =>
+    this.sortedOrders().slice(0, this.visibleLimit()),
+  );
+
+  protected readonly remainingCount = computed<number>(() =>
+    Math.max(0, this.sortedOrders().length - this.visibleLimit()),
+  );
+
+  /** Read-only status histogram over the search-filtered set (no status filter). */
+  protected readonly summaryCounts = computed<Record<OrderStatus, number>>(() => {
+    const counts = {} as Record<OrderStatus, number>;
+    for (const status of ALL_STATUSES) counts[status] = 0;
+    for (const order of this.searchedOrders()) {
+      counts[order.status] = (counts[order.status] ?? 0) + 1;
+    }
+    return counts;
+  });
 
   /**
    * Daily workflow chips. The combine studio keeps its orderId query when a
@@ -461,14 +665,17 @@ export class ManagerDeskPage {
 
   private readonly rawOrderId = signal<string | null>(null);
   private readonly rawPanel = signal<string | null>(null);
+  private readonly rawStatus = signal<string | null>(null);
   private readonly pendingScrollId = signal<string | null>(null);
 
   constructor() {
     this.counterpartiesLookup.load();
+    this.destroyRef.onDestroy(() => this.search.destroy());
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.rawOrderId.set(params.get('orderId'));
       this.rawPanel.set(params.get('panel'));
+      this.rawStatus.set(params.get('status'));
       this.reconcile();
     });
 
@@ -535,6 +742,34 @@ export class ManagerDeskPage {
     this.navigateQuery(nextId, null);
   }
 
+  protected onSearchInput(event: Event): void {
+    this.search.onSearchInput(event);
+    this.visibleLimit.set(DEFAULT_VISIBLE_LIMIT);
+  }
+
+  protected toggleStatus(status: OrderStatus): void {
+    const next = new Set(this.statusFilter());
+    if (next.has(status)) {
+      if (next.size === 1) return; // keep at least one selected
+      next.delete(status);
+    } else {
+      next.add(status);
+    }
+    this.applyStatusFilter(next);
+  }
+
+  protected setStatusPreset(preset: 'active' | 'all'): void {
+    this.applyStatusFilter(new Set(preset === 'active' ? ACTIVE_STATUSES : ALL_STATUSES));
+  }
+
+  protected refresh(): void {
+    this.listRes.reload();
+  }
+
+  protected showMore(): void {
+    this.visibleLimit.update((n) => n + DEFAULT_VISIBLE_LIMIT);
+  }
+
   protected onOpenSupply(): void {
     this.toast.show('Панель снабжения подключится позже.');
   }
@@ -582,6 +817,11 @@ export class ManagerDeskPage {
   }
 
   private reconcile(): void {
+    const rawStatus = this.rawStatus();
+    if (rawStatus !== null) {
+      this.statusFilter.set(parseStatusFilter(rawStatus));
+    }
+
     const orders = this.orders();
     const rawId = this.rawOrderId();
     const rawPanel = this.rawPanel();
@@ -636,6 +876,22 @@ export class ManagerDeskPage {
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { orderId: orderId ?? null, panel: panel ?? null },
+        queryParamsHandling: 'merge',
+      }),
+    ).catch(() => undefined);
+  }
+
+  private applyStatusFilter(next: Set<OrderStatus>): void {
+    this.statusFilter.set(next);
+    this.visibleLimit.set(DEFAULT_VISIBLE_LIMIT);
+    this.navigateStatus(serializeStatusFilter(next));
+  }
+
+  private navigateStatus(status: string): void {
+    void Promise.resolve(
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { status },
         queryParamsHandling: 'merge',
       }),
     ).catch(() => undefined);
