@@ -6,7 +6,7 @@
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-18T22:15:00+03:00
-hygiene: prod still 789487f1; origin DESK-403 (0ce536a4); deploy BLOCKED (VPN off)
+hygiene: origin `098e0d3b` (TZD-49); desk WIP 413 local; deploy BLOCKED (VPN off)
 
 ## ACTIVE
 
@@ -14,9 +14,9 @@ hygiene: prod still 789487f1; origin DESK-403 (0ce536a4); deploy BLOCKED (VPN of
 Prompt: `tasks/PROMPT-FREEBUFF-DESK-WAVE-CONTINUOUS.md`  
 **no deploy** until VPN + «кати».
 
-**Freebuff DESKTOP wave — TZD-49 DONE** (CAD follow-ups)  
+**Freebuff DESKTOP wave - 58 DONE** (local installer; deploy pending)
 Prompt: `tasks/PROMPT-FREEBUFF-DESKTOP-WAVE-CONTINUOUS.md`  
-Queue: **58** installer (parallel). **57** pairing DONE. Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md`
+Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` (PO: install v0.5.6 from browser/downloads)
 
 ## QUEUE (do not skip order)
 
@@ -39,15 +39,22 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## DONE / LANDED (recent)
 
+
+## [2026-08-18] - TZD-58 DONE - installer integrity 0.5.6
+
+- Archive: `tasks/_archive/2026-08/TZD-58.done.md`; gate + fresh NSIS publish; deploy **нет**
+- exe 45339307 B, PE 0.5.6; publish without NSIS → FAIL
+- Next: PO DESKTOP-SMOKE + deploy when VPN ok
+
 ## [2026-08-18] — TZD-49 DONE — CAD spec import follow-ups
 
-- Archive: `tasks/_archive/2026-08/TZD-49.done.md`; gates PASS 75/75; deploy НЕ
+- Archive: `tasks/_archive/2026-08/TZD-49.done.md`; SHA `098e0d3b`; tests 75/75; deploy НЕ
 - name=article fallback (warning); dims/weight on module create; catalog lookup by article/sku
 - PO smoke CAD xlsx — ручной; next desktop: **58** installer
 
 ## [2026-08-18] — TZD-57 DONE — pairing download button + version
 
-- Archive: `tasks/_archive/2026-08/TZD-57.done.md`; gates PASS; deploy НЕ
+- Archive: `tasks/_archive/2026-08/TZD-57.done.md`; SHA `0f7138a4`; jest 11/11; deploy НЕ
 - Toolbar: «Скачать Desktop v{semver}» напротив «Выпустить ключ»; footer только «Закрыть»
 - Next desktop wave: **58** installer integrity
 

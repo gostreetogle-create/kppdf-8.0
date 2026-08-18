@@ -66,7 +66,7 @@ function readPeFileVersion(exePath) {
       `powershell -NoProfile -Command "(Get-Item -LiteralPath '${escaped}').VersionInfo.FileVersion"`,
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     ).trim();
-    return normalizePeSemver(out) ?? out || null;
+    return normalizePeSemver(out) ?? (out || null);
   } catch {
     return null;
   }
