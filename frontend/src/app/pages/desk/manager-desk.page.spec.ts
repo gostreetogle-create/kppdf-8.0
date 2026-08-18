@@ -1,12 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
+import { EMPTY, BehaviorSubject } from 'rxjs';
 
 import { MANAGER_DESK_FIXTURE, ManagerDeskPage, type ManagerDeskPanel } from './manager-desk.page';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 
-describe('ManagerDeskPage (TZ-DESK-401)', () => {
+describe('ManagerDeskPage (TZ-DESK-405)', () => {
   let fixture: ComponentFixture<ManagerDeskPage>;
   let chromeTools: PiChromeToolsService;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
@@ -16,6 +15,14 @@ describe('ManagerDeskPage (TZ-DESK-401)', () => {
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
     navigate = jest.fn().mockResolvedValue(true);
 
+    const routerMock = {
+      navigate,
+      createUrlTree: jest.fn().mockReturnValue({}),
+      serializeUrl: jest.fn().mockReturnValue('/desk'),
+      events: EMPTY,
+      url: '/desk',
+    } as unknown as Router;
+
     await TestBed.configureTestingModule({
       imports: [ManagerDeskPage],
       providers: [
@@ -23,14 +30,10 @@ describe('ManagerDeskPage (TZ-DESK-401)', () => {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParams$.asObservable() },
         },
-        { provide: Router, useValue: { navigate } },
+        { provide: Router, useValue: routerMock },
         PiChromeToolsService,
       ],
-    })
-      .overrideComponent(ManagerDeskPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
-      })
-      .compileComponents();
+    }).compileComponents();
 
     chromeTools = TestBed.inject(PiChromeToolsService);
     chromeTools.clear('manager-desk');
@@ -44,84 +47,179 @@ describe('ManagerDeskPage (TZ-DESK-401)', () => {
   });
 
   function page(): ManagerDeskPage & {
-    selectedId: () => string | null;
+    expandedId: () => string | null;
     panel: () => ManagerDeskPanel | null;
-    selectOrder: (id: string) => void;
+    toggleOrder: (id: string) => void;
     openPanel: (panel: ManagerDeskPanel) => void;
     onEscape: () => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
-      selectedId: () => string | null;
+      expandedId: () => string | null;
       panel: () => ManagerDeskPanel | null;
-      selectOrder: (id: string) => void;
+      toggleOrder: (id: string) => void;
       openPanel: (panel: ManagerDeskPanel) => void;
       onEscape: () => void;
     };
   }
 
-  it('renders exactly three local fixture rows and never owns an orders HTTP path', () => {
-    const rows = fixture.nativeElement.querySelectorAll('[data-test="desk-order-row"]');
+  it('renders the daily workflow strip and crumbs without list/admin duplicates', () => {
+    const workflow = fixture.nativeElement.querySelector('[data-test="desk-workflow-crumbs"]');
+    const links = workflow.querySelectorAll('[data-test="desk-workflow-link"]');
 
-    expect(rows).toHaveLength(3);
-    expect([...rows].map((row) => row.getAttribute('data-status'))).toEqual([
-      'draft',
-      'in_production',
-      'ready',
+    expect([...links].map((link) => link.textContent.trim())).toEqual([
+      'Стол',
+      'КП',
+      'Комбайн',
+      'Гант',
+      'Снабжение',
+      'Отгрузка',
     ]);
-    expect(fixture.nativeElement.textContent).toContain('З-1001');
-    expect(fixture.nativeElement.textContent).toContain('ООО Северный свет');
-    expect(fixture.nativeElement.textContent).toContain('ИП Марина Волкова');
-    expect(MANAGER_DESK_FIXTURE.every((order) => typeof order.clientLabel === 'string')).toBe(true);
+    expect([...links].map((link) => link.getAttribute('data-workflow'))).toEqual([
+      'desk',
+      'proposal',
+      'combine',
+      'gantt',
+      'supply',
+      'shipping',
+    ]);
+    expect([...links].map((link) => link.getAttribute('data-route'))).toEqual([
+      '/desk',
+      '/proposals/create',
+      '/design/combine',
+      '?view=gantt',
+      '/supply',
+      '/shipping',
+    ]);
+    expect(links[3].getAttribute('title')).toBe('DESK-407');
+    expect(links[3].getAttribute('aria-disabled')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[data-test="page-chrome"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="page-chrome"]').textContent).toContain(
+      'Рабочий стол',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Каталог');
+    expect(fixture.nativeElement.textContent).not.toContain('Админ');
+    expect(fixture.nativeElement.textContent).not.toContain('Заказы');
+  });
+
+  it('expands one fixture row into a tray directly below it and toggles closed', () => {
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(rows).toHaveLength(3);
+    expect([...rows].map((row) => row.getAttribute('aria-expanded'))).toEqual([
+      'false',
+      'false',
+      'false',
+    ]);
+    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-center-innards"]')).toBeNull();
+
+    rows[0]!.click();
+    fixture.detectChanges();
+
+    expect(page().expandedId()).toBe('desk-order-1001');
+    expect(rows[0]!.getAttribute('aria-expanded')).toBe('true');
+    const item = rows[0]!.parentElement!;
+    const tray = item.querySelector('[data-test="desk-order-tray"]');
+    expect(tray).toBeTruthy();
+    expect(tray?.querySelector('[data-test="desk-tray-group-order"]')).toBeTruthy();
+    expect(tray?.querySelector('[data-test="desk-tray-group-execution"]')).toBeTruthy();
+    expect(tray?.querySelector('[data-test="desk-tray-group-composition"]')).toBeTruthy();
+    expect(tray?.textContent).toContain('З-1001');
+    expect(tray?.textContent).toContain('Черновик');
+    expect(tray?.textContent).toContain('ООО Северный свет');
+    expect(tray?.querySelectorAll('[data-test="desk-composition-row"]')).toHaveLength(2);
+    expect(tray?.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
+    expect(
+      (tray?.querySelector('[data-test="desk-primary-cta"]') as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(tray?.querySelectorAll('[data-test="desk-tray-link"]')).toHaveLength(2);
+    expect(fixture.nativeElement.querySelector('[data-test="desk-center-innards"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="page-crumbs"]')?.textContent).toContain(
+      'З-1001',
+    );
+
+    rows[1]!.click();
+    fixture.detectChanges();
+    expect(page().expandedId()).toBe('desk-order-1002');
+    expect(rows[0]!.getAttribute('aria-expanded')).toBe('false');
+    expect(rows[1]!.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-order-tray"]')).toHaveLength(1);
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')?.textContent,
+    ).toContain('З-1002');
+
+    rows[1]!.click();
+    fixture.detectChanges();
+    expect(page().expandedId()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="page-crumbs"]')?.textContent).toContain(
+      'Рабочий стол',
+    );
+    expect(
+      fixture.nativeElement.querySelector('[data-test="page-crumbs"]')?.textContent,
+    ).not.toContain('З-1002');
+  });
+
+  it('keeps the queue scroll contract and never owns an orders HTTP path', () => {
+    const orders = fixture.nativeElement.querySelector('.manager-desk__orders');
+    expect(orders).toBeTruthy();
 
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'manager-desk.page.ts'),
       'utf8',
     );
+    const traySource = require('fs').readFileSync(
+      require('path').join(__dirname, 'desk-order-tray.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('max-height: min(60vh, calc(100dvh - 8rem))');
+    expect(source).toContain('overflow-y: auto');
     expect(source).not.toContain('OrdersService');
     expect(source).not.toContain('/api/orders');
     expect(source).not.toContain('composition-tree');
+    expect(traySource).not.toContain('OrdersService');
+    expect(traySource).not.toContain('/api/orders');
+    expect(traySource).not.toContain('composition-tree');
+    expect(MANAGER_DESK_FIXTURE).toHaveLength(3);
   });
 
-  it('selecting a row renders innards and projects only the selected order actions', () => {
-    const rows = fixture.nativeElement.querySelectorAll(
-      '[data-test="desk-order-row"]',
-    ) as NodeListOf<HTMLButtonElement>;
-    expect(chromeTools.rightTools()).toEqual([]);
-    expect(fixture.nativeElement.querySelector('[data-test="desk-right-tools"]')).toBeNull();
-
-    rows[0]!.click();
+  it('opens left-rail panels on the left and selected-order panels on the right', () => {
+    page().openPanel('create');
     fixture.detectChanges();
+    let flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    expect(flyout?.getAttribute('data-panel')).toBe('create');
+    expect(flyout?.getAttribute('data-side')).toBe('left');
+    expect(flyout?.classList.contains('manager-desk__flyout--left')).toBe(true);
+    expect(flyout?.classList.contains('manager-desk__flyout--right')).toBe(false);
 
-    expect(page().selectedId()).toBe('desk-order-1001');
-    expect(fixture.nativeElement.querySelector('[data-test="desk-center-innards"]')).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelectorAll('[data-test="desk-composition-row"]'),
-    ).toHaveLength(2);
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]')?.textContent,
-    ).toContain('Подтвердить');
-    expect(
-      (fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]') as HTMLButtonElement)
-        .disabled,
-    ).toBe(true);
-    expect(fixture.nativeElement.querySelector('[data-test="desk-right-tools"]')).toBeTruthy();
-    expect(chromeTools.rightTools().map((tool) => tool.id)).toEqual([
-      'client',
-      'bom',
-      'docs',
-      'gantt',
-      'combine',
-    ]);
-    expect(chromeTools.rightTools().find((tool) => tool.id === 'supply')).toBeUndefined();
-  });
-
-  it('shows supply only for production/ready and maps the primary CTA by status', () => {
     const rows = fixture.nativeElement.querySelectorAll(
       '[data-test="desk-order-row"]',
     ) as NodeListOf<HTMLButtonElement>;
-
     rows[1]!.click();
     fixture.detectChanges();
+    page().openPanel('client');
+    fixture.detectChanges();
+    flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    expect(flyout?.getAttribute('data-panel')).toBe('client');
+    expect(flyout?.getAttribute('data-side')).toBe('right');
+    expect(flyout?.classList.contains('manager-desk__flyout--right')).toBe(true);
+    expect(flyout?.classList.contains('manager-desk__flyout--left')).toBe(false);
+    expect(chromeTools.leftTools().map((tool) => tool.id)).toEqual(['create', 'filter', 'summary']);
+  });
+
+  it('keeps tray-first actions, query restoration, and Escape semantics fixture-only', () => {
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    rows[1]!.click();
+    fixture.detectChanges();
+    page().openPanel('supply');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-tray-link"]')).toHaveLength(2);
     expect(chromeTools.rightTools().map((tool) => tool.id)).toEqual([
       'client',
       'bom',
@@ -130,98 +228,20 @@ describe('ManagerDeskPage (TZ-DESK-401)', () => {
       'gantt',
       'combine',
     ]);
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]')?.textContent,
-    ).toContain('К отгрузке');
 
-    rows[2]!.click();
-    fixture.detectChanges();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-primary-cta"]')?.textContent,
-    ).toContain('Отгрузить');
-    expect(chromeTools.rightTools().find((tool) => tool.id === 'supply')).toBeTruthy();
-  });
-
-  it('uses the same create handler for the empty CTA and left chrome tool, with one right flyout', () => {
-    const emptyCreate = fixture.nativeElement.querySelector(
-      '[data-test="desk-empty-create"]',
-    ) as HTMLButtonElement;
-    emptyCreate.click();
-    fixture.detectChanges();
-
-    expect(page().panel()).toBe('create');
-    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-panel'),
-    ).toBe('create');
-    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-flyout"]')).toHaveLength(1);
-    expect(fixture.nativeElement.textContent).toContain(
-      'Здесь будет форма (после одобрения раскладки)',
-    );
-
-    const close = fixture.nativeElement.querySelector(
-      '[data-test="desk-flyout-close"]',
-    ) as HTMLButtonElement;
-    close.click();
-    fixture.detectChanges();
-    expect(page().panel()).toBeNull();
-
-    chromeTools
-      .leftTools()
-      .find((tool) => tool.id === 'summary')!
-      .onClick();
-    fixture.detectChanges();
-    expect(page().panel()).toBe('summary');
-    expect(
-      fixture.nativeElement.querySelector('[data-test="desk-flyout"] h1')?.textContent,
-    ).toContain('Сводка');
-  });
-
-  it('keeps DESK-404 studio actions disabled and closes the overlay on Escape/backdrop', () => {
-    const rows = fixture.nativeElement.querySelectorAll(
-      '[data-test="desk-order-row"]',
-    ) as NodeListOf<HTMLButtonElement>;
-    rows[1]!.click();
-    fixture.detectChanges();
-
-    for (const id of ['gantt', 'combine']) {
-      const tool = chromeTools.rightTools().find((item) => item.id === id);
-      expect(tool?.disabled).toBe(true);
-      expect(tool?.title).toContain('DESK-404');
-      expect(tool?.onClick).toBeDefined();
-    }
-
-    chromeTools
-      .rightTools()
-      .find((tool) => tool.id === 'client')!
-      .onClick();
-    fixture.detectChanges();
-    expect(page().panel()).toBe('client');
     page().onEscape();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-order-tray"]')).toBeTruthy();
 
-    chromeTools
-      .rightTools()
-      .find((tool) => tool.id === 'docs')!
-      .onClick();
-    fixture.detectChanges();
-    (
-      fixture.nativeElement.querySelector('[data-test="desk-flyout-backdrop"]') as HTMLButtonElement
-    ).click();
-    fixture.detectChanges();
-    expect(page().panel()).toBeNull();
-  });
-
-  it('restores a valid order and panel from query params without requesting data', () => {
+    navigate.mockClear();
     queryParams$.next(convertToParamMap({ orderId: 'desk-order-1003', panel: 'supply' }));
     fixture.detectChanges();
-
-    expect(page().selectedId()).toBe('desk-order-1003');
+    expect(page().expandedId()).toBe('desk-order-1003');
     expect(page().panel()).toBe('supply');
     expect(
-      fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-panel'),
-    ).toBe('supply');
+      fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-side'),
+    ).toBe('right');
     expect(navigate).not.toHaveBeenCalled();
   });
 });

@@ -10,22 +10,24 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   BookOpen,
   Factory,
   FileText,
   Filter,
   LayoutGrid,
-  LucideAngularModule,
   Package,
   ShoppingCart,
   Users,
 } from 'lucide-angular';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
+import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
+import { DeskOrderTrayComponent } from './desk-order-tray.component';
 
 type DeskStatus = 'draft' | 'in_production' | 'ready';
+type DeskPanelSide = 'left' | 'right';
 
 export type ManagerDeskPanel =
   'create' | 'filter' | 'summary' | 'client' | 'bom' | 'docs' | 'supply';
@@ -38,7 +40,7 @@ export interface ManagerDeskOrderFixture {
   readonly composition: readonly [string, string];
 }
 
-/** TZ-DESK-401: exactly three local rows; no orders API or HTTP request. */
+/** TZ-DESK-405: local fixture rows only; no orders API or HTTP request. */
 export const MANAGER_DESK_FIXTURE: readonly ManagerDeskOrderFixture[] = [
   {
     id: 'desk-order-1001',
@@ -92,126 +94,103 @@ const CHROME_OWNER = 'manager-desk';
 type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 
 /**
- * TZ-DESK-401 — clickable manager-desk layout only.
- *
- * This wave deliberately owns no order API or write path. DESK-402 can replace
- * the create panel with the existing order form after the PO approves the
- * spatial rhythm.
+ * Manager desk layout fixture. This wave owns no order API or write path:
+ * DESK-402 can replace the create stub with the existing order form later.
  */
 @Component({
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule],
+  imports: [DeskOrderTrayComponent, PiPageChromeComponent, RouterLink],
   template: `
     <div class="manager-desk" data-test="manager-desk">
-      <header class="manager-desk__header">
-        <div>
-          <p class="manager-desk__eyebrow">Ежедневная тетрадь менеджера</p>
-          <h1 class="manager-desk__title">Рабочий стол</h1>
-        </div>
-        <p class="manager-desk__hint">Очередь заказов · fixture для проверки раскладки</p>
-      </header>
+      <app-pi-page-chrome [crumbs]="pathCrumbs()" data-test="desk-page-chrome" />
+
+      <nav
+        class="manager-desk__workflow"
+        data-test="desk-workflow-crumbs"
+        aria-label="Ежедневный поток"
+      >
+        <a routerLink="/desk" data-test="desk-workflow-link" data-workflow="desk" data-route="/desk"
+          >Стол</a
+        >
+        <a
+          routerLink="/proposals/create"
+          data-test="desk-workflow-link"
+          data-workflow="proposal"
+          data-route="/proposals/create"
+          >КП</a
+        >
+        <a
+          routerLink="/design/combine"
+          [queryParams]="expandedOrder() ? { orderId: expandedOrder()!.id } : null"
+          data-test="desk-workflow-link"
+          data-workflow="combine"
+          data-route="/design/combine"
+          >Комбайн</a
+        >
+        <a
+          href="?view=gantt"
+          data-test="desk-workflow-link"
+          data-workflow="gantt"
+          data-route="?view=gantt"
+          aria-disabled="true"
+          title="DESK-407"
+          (click)="$event.preventDefault()"
+          >Гант</a
+        >
+        <a
+          routerLink="/supply"
+          data-test="desk-workflow-link"
+          data-workflow="supply"
+          data-route="/supply"
+          >Снабжение</a
+        >
+        <a
+          routerLink="/shipping"
+          data-test="desk-workflow-link"
+          data-workflow="shipping"
+          data-route="/shipping"
+          >Отгрузка</a
+        >
+      </nav>
 
       <div class="manager-desk__workspace">
         <main class="manager-desk__center" aria-labelledby="desk-queue-heading">
           <section class="manager-desk__queue" data-test="desk-order-queue">
             <div class="manager-desk__section-heading">
-              <div>
-                <p class="manager-desk__eyebrow">Центр работы</p>
-                <h2 id="desk-queue-heading">Очередь заказов</h2>
-              </div>
+              <h1 id="desk-queue-heading">Очередь заказов</h1>
               <span class="manager-desk__count">{{ fixtureOrders.length }} заказа</span>
             </div>
 
             <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
               @for (order of fixtureOrders; track order.id) {
-                <button
-                  type="button"
-                  class="manager-desk__order-row"
-                  [class.manager-desk__order-row--selected]="selectedId() === order.id"
-                  [attr.aria-pressed]="selectedId() === order.id"
-                  [attr.data-status]="order.status"
-                  data-test="desk-order-row"
-                  (click)="selectOrder(order.id)"
-                >
-                  <span class="manager-desk__order-number">{{ order.number }}</span>
-                  <span class="manager-desk__client">{{ order.clientLabel }}</span>
-                  <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
-                </button>
+                <div class="manager-desk__order-item" role="listitem">
+                  <button
+                    type="button"
+                    class="manager-desk__order-row"
+                    [class.manager-desk__order-row--expanded]="expandedId() === order.id"
+                    [attr.aria-expanded]="expandedId() === order.id"
+                    [attr.aria-controls]="'desk-order-tray-' + order.id"
+                    [attr.data-status]="order.status"
+                    data-test="desk-order-row"
+                    (click)="toggleOrder(order.id)"
+                  >
+                    <span class="manager-desk__order-disclosure" aria-hidden="true">
+                      {{ expandedId() === order.id ? '▾' : '▸' }}
+                    </span>
+                    <span class="manager-desk__order-number">{{ order.number }}</span>
+                    <span class="manager-desk__client">{{ order.clientLabel }}</span>
+                    <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
+                  </button>
+
+                  @if (expandedId() === order.id) {
+                    <app-desk-order-tray [order]="order" />
+                  }
+                </div>
               }
             </div>
           </section>
-
-          @if (selectedOrder(); as order) {
-            <section
-              class="manager-desk__innards"
-              data-test="desk-center-innards"
-              [attr.data-status]="order.status"
-              aria-labelledby="desk-innards-heading"
-            >
-              <div class="manager-desk__innards-heading">
-                <div>
-                  <p class="manager-desk__eyebrow">Выбранный заказ</p>
-                  <h2 id="desk-innards-heading">{{ order.number }}</h2>
-                  <p class="manager-desk__client manager-desk__client--large">
-                    {{ order.clientLabel }}
-                  </p>
-                </div>
-                <span class="manager-desk__status manager-desk__status--large">
-                  {{ statusLabel(order.status) }}
-                </span>
-              </div>
-
-              <div class="manager-desk__composition" aria-label="Состав заказа">
-                <p class="manager-desk__eyebrow">Состав</p>
-                @for (line of order.composition; track $index) {
-                  <div class="manager-desk__composition-row" data-test="desk-composition-row">
-                    <span class="manager-desk__composition-mark" aria-hidden="true"></span>
-                    <span>{{ line }}</span>
-                  </div>
-                }
-              </div>
-
-              <div class="manager-desk__primary-action">
-                <button
-                  type="button"
-                  class="manager-desk__cta"
-                  disabled
-                  data-test="desk-primary-cta"
-                  [attr.aria-label]="
-                    primaryCta(order.status) + ' — действие появится после DESK-402'
-                  "
-                  title="Действие появится после DESK-402"
-                >
-                  {{ primaryCta(order.status) }}
-                </button>
-                <span class="manager-desk__disabled-note"
-                  >Действия подключатся после одобрения каркаса.</span
-                >
-              </div>
-            </section>
-          } @else {
-            <section class="manager-desk__empty" data-test="desk-empty-state" role="status">
-              <p class="manager-desk__eyebrow">Нет выбранного заказа</p>
-              <h2>Выберите строку в очереди</h2>
-              <p>Или откройте форму создания — она выедет справа, не сдвигая центр.</p>
-              <button
-                type="button"
-                class="manager-desk__cta manager-desk__cta--empty"
-                data-test="desk-empty-create"
-                (click)="openPanel('create')"
-              >
-                Создать заказ
-              </button>
-            </section>
-          }
-
-          @if (selectedOrder()) {
-            <span class="manager-desk__right-tools-marker" data-test="desk-right-tools">
-              Действия выбранного заказа
-            </span>
-          }
         </main>
       </div>
 
@@ -225,9 +204,12 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         ></button>
         <aside
           class="manager-desk__flyout"
+          [class.manager-desk__flyout--left]="panelSide() === 'left'"
+          [class.manager-desk__flyout--right]="panelSide() === 'right'"
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
           [attr.data-panel]="panel()"
+          [attr.data-side]="panelSide()"
           [attr.aria-label]="panelTitle()"
           aria-modal="true"
           role="dialog"
@@ -235,7 +217,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           <div class="manager-desk__flyout-heading">
             <div>
               <p class="manager-desk__eyebrow">Панель стола</p>
-              <h1>{{ panelTitle() }}</h1>
+              <h2>{{ panelTitle() }}</h2>
             </div>
             <button
               type="button"
@@ -250,7 +232,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           </div>
           <p class="manager-desk__flyout-copy">Здесь будет форма (после одобрения раскладки)</p>
           <p class="manager-desk__flyout-note">
-            В 401 это только точка входа: данные и запись появятся в следующей волне.
+            В 405 это только fixture-точка входа: данные и запись появятся в следующей волне.
           </p>
         </aside>
       }
@@ -266,87 +248,100 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk {
         position: relative;
         min-height: calc(100dvh - 3.5rem);
-        padding: 1.25rem clamp(1rem, 3vw, 3rem) 2rem;
+        padding: 1rem clamp(1rem, 3vw, 3rem) 2rem;
         background: var(--color-paper);
       }
-      .manager-desk__header,
+      .manager-desk__workflow,
+      .manager-desk__workspace {
+        max-width: 96rem;
+        margin-inline: auto;
+      }
+      .manager-desk__workflow {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+        margin-bottom: 0.8rem;
+        padding: 0.35rem 0 0.75rem;
+        border-bottom: 1px solid var(--color-rule-strong);
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+      .manager-desk__workflow a {
+        padding: 0.35rem 0.6rem;
+        border: 1px solid transparent;
+        color: var(--color-muted-foreground);
+        font-size: 0.78rem;
+        text-decoration: none;
+      }
+      .manager-desk__workflow a::after {
+        display: inline-block;
+        margin-left: 0.7rem;
+        color: var(--color-rule-strong);
+        content: '·';
+      }
+      .manager-desk__workflow a:last-child::after {
+        display: none;
+      }
+      .manager-desk__workflow a:hover,
+      .manager-desk__workflow a:focus-visible {
+        border-color: var(--color-rule-strong);
+        color: var(--color-ink);
+        outline: none;
+      }
+      .manager-desk__workflow a[aria-disabled='true'] {
+        color: var(--color-muted-foreground);
+        cursor: not-allowed;
+        opacity: 0.58;
+      }
       .manager-desk__section-heading,
-      .manager-desk__innards-heading,
       .manager-desk__flyout-heading {
         display: flex;
-        align-items: flex-start;
+        align-items: baseline;
         justify-content: space-between;
         gap: 1rem;
       }
-      .manager-desk__header {
-        max-width: 96rem;
-        margin: 0 auto 1.25rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid var(--color-rule-strong);
+      .manager-desk__queue {
+        border: 1px solid var(--color-rule);
+        background: var(--color-paper-raised, var(--color-paper));
       }
-      .manager-desk__eyebrow {
-        margin: 0 0 0.3rem;
-        color: var(--color-muted-foreground);
-        font-size: 0.68rem;
-        letter-spacing: 0.08em;
-        line-height: 1.1;
-        text-transform: uppercase;
+      .manager-desk__section-heading {
+        padding: 1rem 1rem 0.75rem;
       }
-      .manager-desk__title,
-      .manager-desk h2,
-      .manager-desk__flyout h1 {
+      .manager-desk__section-heading h1,
+      .manager-desk__flyout h2 {
         margin: 0;
         font-family: var(--font-display, inherit);
         font-weight: 650;
         letter-spacing: -0.025em;
       }
-      .manager-desk__title {
-        font-size: clamp(1.35rem, 2vw, 1.8rem);
-      }
-      .manager-desk h2 {
+      .manager-desk__section-heading h1 {
         font-size: 1.05rem;
       }
-      .manager-desk__hint,
+      .manager-desk__flyout h2 {
+        font-size: 1.2rem;
+      }
       .manager-desk__count,
-      .manager-desk__disabled-note,
       .manager-desk__flyout-note {
         margin: 0;
         color: var(--color-muted-foreground);
         font-size: 0.78rem;
       }
-      .manager-desk__workspace {
-        max-width: 96rem;
-        margin: 0 auto;
-      }
-      .manager-desk__center {
-        display: flex;
-        min-width: 0;
-        flex-direction: column;
-        gap: 1rem;
-      }
-      .manager-desk__queue,
-      .manager-desk__innards,
-      .manager-desk__empty {
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper-raised, var(--color-paper));
-      }
-      .manager-desk__queue {
-        padding: 1rem;
-      }
-      .manager-desk__section-heading {
-        align-items: baseline;
-        margin-bottom: 0.75rem;
-      }
       .manager-desk__orders {
         display: flex;
+        max-height: min(60vh, calc(100dvh - 8rem));
         flex-direction: column;
         gap: 0.45rem;
+        overflow-y: auto;
+        padding: 0 1rem 1rem;
+      }
+      .manager-desk__order-item {
+        min-width: 0;
       }
       .manager-desk__order-row {
         display: grid;
-        grid-template-columns: minmax(5rem, 0.25fr) minmax(0, 1fr) auto;
+        grid-template-columns: auto minmax(5rem, 0.25fr) minmax(0, 1fr) auto;
         align-items: center;
-        gap: 0.8rem;
+        gap: 0.7rem;
         width: 100%;
         min-height: 3.25rem;
         padding: 0.65rem 0.8rem;
@@ -361,9 +356,20 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           background-color 120ms ease;
       }
       .manager-desk__order-row:hover,
-      .manager-desk__order-row--selected {
+      .manager-desk__order-row--expanded {
         border-color: var(--color-sunrise-warm, #c79542);
         background: var(--color-sunrise-soft, #fff6df);
+      }
+      .manager-desk__order-row--expanded {
+        border-bottom-color: transparent;
+      }
+      .manager-desk__order-disclosure {
+        display: inline-flex;
+        width: 1.2rem;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-sunrise-warm, #9b6b1e);
+        font-size: 0.9rem;
       }
       .manager-desk__order-number {
         font-family: var(--font-display, inherit);
@@ -381,90 +387,17 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         font-size: 0.78rem;
         white-space: nowrap;
       }
-      .manager-desk__innards,
-      .manager-desk__empty {
-        padding: 1.25rem;
-      }
-      .manager-desk__client--large {
-        margin: 0.35rem 0 0;
-      }
-      .manager-desk__status--large {
-        padding: 0.35rem 0.55rem;
-        border: 1px solid var(--color-rule);
-        background: var(--color-sunrise-soft, #fff6df);
-      }
-      .manager-desk__composition {
-        margin-top: 1.4rem;
-        padding: 0.8rem;
-        border: 1px solid var(--color-rule);
-        background: var(--color-paper);
-      }
-      .manager-desk__composition-row {
-        display: flex;
-        align-items: center;
-        gap: 0.65rem;
-        min-height: 2.25rem;
-        border-top: 1px solid var(--color-rule);
-        font-size: 0.88rem;
-      }
-      .manager-desk__composition-mark {
-        width: 0.45rem;
-        height: 0.45rem;
-        flex: 0 0 auto;
-        background: var(--color-sunrise-warm, #c79542);
-      }
-      .manager-desk__primary-action {
-        display: flex;
-        align-items: center;
-        gap: 0.8rem;
-        margin-top: 1.25rem;
-        flex-wrap: wrap;
-      }
-      .manager-desk__cta,
-      .manager-desk__close {
-        min-height: 2.25rem;
-        padding: 0.45rem 0.8rem;
-        border: 1px solid var(--color-rule-strong);
-        border-radius: 2px;
-        background: var(--color-ink);
-        color: var(--color-paper);
-        font: inherit;
-        font-size: 0.82rem;
-        cursor: pointer;
-      }
-      .manager-desk__cta:disabled {
-        cursor: not-allowed;
-        opacity: 0.48;
-      }
-      .manager-desk__cta--empty {
-        background: var(--color-sunrise-warm, #c79542);
-        color: var(--color-ink);
-      }
-      .manager-desk__empty {
-        display: flex;
-        min-height: 12rem;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        gap: 0.5rem;
-      }
-      .manager-desk__empty p:not(.manager-desk__eyebrow) {
-        max-width: 34rem;
-        margin: 0 0 0.5rem;
+      .manager-desk__eyebrow {
+        margin: 0 0 0.3rem;
         color: var(--color-muted-foreground);
-        font-size: 0.88rem;
-      }
-      .manager-desk__right-tools-marker {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0 0 0 0);
-        white-space: nowrap;
+        font-size: 0.68rem;
+        letter-spacing: 0.08em;
+        line-height: 1.1;
+        text-transform: uppercase;
       }
       .manager-desk__backdrop {
         position: fixed;
-        inset: 0;
+        inset: 0 0 0 3.5rem;
         z-index: 40;
         border: 0;
         padding: 0;
@@ -474,25 +407,35 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__flyout {
         position: fixed;
         top: 3.5rem;
-        right: 0;
         bottom: 0;
         z-index: 50;
         display: flex;
-        width: min(25rem, calc(100vw - 1rem));
+        width: min(25rem, calc(100vw - 4.5rem));
         flex-direction: column;
         gap: 1.25rem;
         overflow: auto;
         padding: 1.25rem;
-        border-left: 1px solid var(--color-rule-strong);
+        border: 1px solid var(--color-rule-strong);
         background: var(--color-paper-raised, var(--color-paper));
-        box-shadow: -0.5rem 0 2rem oklch(0.2 0.02 260 / 0.12);
       }
-      .manager-desk__flyout h1 {
-        font-size: 1.2rem;
+      .manager-desk__flyout--right {
+        right: 0;
+        border-right: 0;
+      }
+      .manager-desk__flyout--left {
+        left: 4rem;
+        border-left: 0;
       }
       .manager-desk__close {
+        min-height: 2.25rem;
+        padding: 0.45rem 0.8rem;
+        border: 1px solid var(--color-rule-strong);
+        border-radius: 2px;
         background: transparent;
         color: var(--color-ink);
+        font: inherit;
+        font-size: 0.82rem;
+        cursor: pointer;
         white-space: nowrap;
       }
       .manager-desk__close:hover {
@@ -506,19 +449,21 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         font-size: 0.9rem;
         line-height: 1.5;
       }
-      @media (max-width: 640px) {
+      @media (max-width: 900px) {
         .manager-desk {
           padding-inline: 0.75rem;
         }
-        .manager-desk__header,
-        .manager-desk__innards-heading {
-          flex-direction: column;
-        }
         .manager-desk__order-row {
-          grid-template-columns: minmax(4.5rem, auto) minmax(0, 1fr);
+          grid-template-columns: auto minmax(4.5rem, auto) minmax(0, 1fr);
         }
         .manager-desk__status {
-          grid-column: 2;
+          grid-column: 3;
+        }
+        .manager-desk__flyout {
+          width: min(25rem, calc(100vw - 1rem));
+        }
+        .manager-desk__flyout--left {
+          left: 0.5rem;
         }
       }
     `,
@@ -526,11 +471,25 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 })
 export class ManagerDeskPage {
   protected readonly fixtureOrders = MANAGER_DESK_FIXTURE;
-  protected readonly selectedId = signal<string | null>(null);
+  protected readonly expandedId = signal<string | null>(null);
+  /** Compatibility alias for the 401 harness; 405 semantics are expanded-row semantics. */
+  protected readonly selectedId = this.expandedId;
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
-  protected readonly selectedOrder = computed(
-    () => this.fixtureOrders.find((order) => order.id === this.selectedId()) ?? null,
+  protected readonly expandedOrder = computed(
+    () => this.fixtureOrders.find((order) => order.id === this.expandedId()) ?? null,
   );
+  protected readonly selectedOrder = this.expandedOrder;
+  protected readonly pathCrumbs = computed<readonly PageCrumb[]>(() => {
+    const order = this.expandedOrder();
+    return order
+      ? [{ label: 'Рабочий стол', link: '/desk' }, { label: order.number }]
+      : [{ label: 'Рабочий стол' }];
+  });
+  protected readonly panelSide = computed<DeskPanelSide | null>(() => {
+    const panel = this.panel();
+    if (!panel) return null;
+    return LEFT_PANELS.has(panel) ? 'left' : 'right';
+  });
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -538,19 +497,19 @@ export class ManagerDeskPage {
   private readonly chromeTools = inject(PiChromeToolsService);
 
   constructor() {
-    // ActivatedRoute is the only state source needed for a harmless F5 restore.
+    // Query params are the only state source needed for a harmless F5 restore.
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.applyQueryState(params.get('orderId'), params.get('panel'));
     });
     effect(() => {
-      this.selectedOrder();
+      this.expandedOrder();
       this.panel();
-      // setTools reads/writes the registry signal; keep it outside this effect's dependencies.
+      // Keep registry writes outside the effect's dependencies.
       untracked(() => this.syncChromeTools());
     });
   }
 
-  // This page-owned registry needs an explicit cleanup hook (TZ-DESK-401).
+  // Page-owned registry cleanup for app chrome rails.
   // eslint-disable-next-line @angular-eslint/use-lifecycle-interface
   ngOnDestroy(): void {
     this.chromeTools.clear(CHROME_OWNER);
@@ -569,33 +528,40 @@ export class ManagerDeskPage {
     return panel ? PANEL_LABELS[panel] : '';
   }
 
-  protected selectOrder(id: string): void {
+  protected toggleOrder(id: string): void {
     if (!this.fixtureOrders.some((order) => order.id === id)) return;
-    this.selectedId.set(id);
+    const nextId = this.expandedId() === id ? null : id;
+    this.expandedId.set(nextId);
     this.panel.set(null);
-    this.navigateQuery(id, null);
+    this.navigateQuery(nextId, null);
   }
 
-  /** Shared handler for the left rail «Создать» and the empty-state CTA. */
+  /** Compatibility handler for callers from the 401 fixture harness. */
+  protected selectOrder(id: string): void {
+    this.toggleOrder(id);
+  }
+
+  /** Shared handler for left-rail tools and any future empty-state CTA. */
   protected openPanel(panel: ManagerDeskPanel): void {
     if (!this.canOpenPanel(panel)) return;
     this.panel.set(panel);
-    this.navigateQuery(this.selectedId(), panel);
+    this.navigateQuery(this.expandedId(), panel);
   }
 
   protected closePanel(): void {
     this.panel.set(null);
-    this.navigateQuery(this.selectedId(), null);
+    this.navigateQuery(this.expandedId(), null);
   }
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
+    // Escape closes a flyout, never the expanded row.
     if (this.panel()) this.closePanel();
   }
 
   private applyQueryState(rawOrderId: string | null, rawPanel: string | null): void {
     const orderId = this.fixtureOrders.some((order) => order.id === rawOrderId) ? rawOrderId : null;
-    this.selectedId.set(orderId);
+    this.expandedId.set(orderId);
 
     const panel = this.isPanel(rawPanel) ? rawPanel : null;
     this.panel.set(panel && this.canOpenPanel(panel) ? panel : null);
@@ -603,7 +569,7 @@ export class ManagerDeskPage {
 
   private canOpenPanel(panel: ManagerDeskPanel): boolean {
     if (LEFT_PANELS.has(panel)) return true;
-    const order = this.selectedOrder();
+    const order = this.expandedOrder();
     if (!order || !RIGHT_PANELS.has(panel)) return false;
     return panel !== 'supply' || order.status === 'in_production' || order.status === 'ready';
   }
@@ -623,7 +589,7 @@ export class ManagerDeskPage {
   }
 
   private syncChromeTools(): void {
-    const selected = this.selectedOrder();
+    const expanded = this.expandedOrder();
     const open = this.panel();
     const left: DeskChromeTool[] = [
       {
@@ -664,12 +630,12 @@ export class ManagerDeskPage {
       },
     ];
 
-    const right: DeskChromeTool[] = selected
+    const right: DeskChromeTool[] = expanded
       ? [
           this.actionTool('client', 'Клиент', Users, open === 'client', 1),
           this.actionTool('bom', 'Состав', Package, open === 'bom', 2),
           this.actionTool('docs', 'Документы', FileText, open === 'docs', 3),
-          ...(selected.status === 'in_production' || selected.status === 'ready'
+          ...(expanded.status === 'in_production' || expanded.status === 'ready'
             ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 4)]
             : []),
           this.actionTool('gantt', 'На Ганте', Factory, false, 5, true),

@@ -5,12 +5,12 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-18T19:37:14+03:00
+updated_at: 2026-08-18T20:26:03+03:00
 hygiene: warm deploy OK ddd2cade; 5 CP emails on prod
 
 ## ACTIVE
 
-_(none)_ — TZ-DESK-401 DONE; archive + lock + push; DESK-402 waits for PO «раскладка ок»
+_(none)_ — TZ-DESK-405 DONE; 402 blocked until PO «раскладка v2 ok»
 
 ## NEXT (PO)
 
@@ -18,6 +18,11 @@ _(none)_ — TZ-DESK-401 DONE; archive + lock + push; DESK-402 waits for PO «р
 2. Завтра на работе: тот же ПК, новая ссылка не нужна
 
 ## DONE / LANDED (recent)
+
+## [2026-08-18] — TZ-DESK-405 DONE — desk layout rev.2
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-405.done.md`; focused FE gates PASS; deploy НЕ
+- `/desk`: page chrome/workflow strip, expand-in-row tray, queue scroll, L/R flyout; 402 ждёт PO «раскладка v2 ok»
 
 ## [2026-08-18] — TZ-DESK-401 DONE — fixture manager desk
 
