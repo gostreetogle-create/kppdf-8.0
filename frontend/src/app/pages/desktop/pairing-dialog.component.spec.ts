@@ -1,5 +1,5 @@
 /**
- * TZD-21: pairing dialog — issue key + copy packet (no session JWT in packet).
+ * TZD-21 / TZD-57: pairing dialog — issue key + copy packet + download toolbar.
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
@@ -136,16 +136,57 @@ describe('PairingDialogComponent (TZD-21)', () => {
     );
   });
 
-  it('shows current desktop version hint when compat available', () => {
+  it('shows version subtitle in toolbar when compat available (TZD-57)', () => {
     expect(compatSpy).toHaveBeenCalled();
-    const hint = fixture.nativeElement.querySelector(
-      '[data-test="pairing-compat-hint"]',
-    ) as HTMLElement;
-    expect(hint.textContent).toContain('Актуальная версия Desktop: 0.5.1');
-    expect(hint.textContent).toContain('(мин. 0.1.0)');
+    const toolbar = fixture.nativeElement.querySelector('[data-test="pairing-toolbar"]');
+    expect(toolbar).toBeTruthy();
+    const hint = toolbar.querySelector('[data-test="pairing-compat-hint"]') as HTMLElement;
+    expect(hint.textContent).toContain('Актуальная сборка');
+    expect(hint.textContent).toContain('мин. v0.1.0');
   });
 
-  it('download button uses the configured URL (unversioned alias by default) (TZD-46)', () => {
+  it('download button is in toolbar and label contains version (TZD-57)', () => {
+    const toolbar = fixture.nativeElement.querySelector('[data-test="pairing-toolbar"]');
+    const btn = toolbar.querySelector('[data-test="pairing-download-button"]') as HTMLElement;
+    expect(btn).toBeTruthy();
+    expect(btn.textContent).toContain('Скачать Desktop');
+    expect(btn.textContent).toContain('v0.5.1');
+  });
+
+  it('footer has only close button, no download duplicate (TZD-57)', () => {
+    expect(
+      fixture.nativeElement.querySelectorAll('[data-test="pairing-download-button"]').length,
+    ).toBe(1);
+    expect(fixture.nativeElement.querySelector('[data-test="pairing-close-button"]')).toBeTruthy();
+  });
+
+  it('download button opens compat versioned URL (TZD-57)', () => {
+    const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
+    fixture.nativeElement.querySelector('[data-test="pairing-download-button"]').click();
+    expect(openSpy).toHaveBeenCalledWith(
+      '/downloads/kppdf-desktop-setup-v0.5.1.zip',
+      '_blank',
+      'noopener,noreferrer',
+    );
+    openSpy.mockRestore();
+  });
+
+  it('download button falls back to configured URL when compat has no downloadUrl (TZD-46)', async () => {
+    TestBed.resetTestingModule();
+    compatSpy = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          minDesktopVersion: '0.1.0',
+          recommendedDesktopVersion: '0.5.1',
+          downloadUrl: '',
+          serverBuildId: 'test',
+        },
+      }),
+    );
+    await setupModule(DEFAULT_DESKTOP_DOWNLOAD_URL);
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
     const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null);
     fixture.nativeElement.querySelector('[data-test="pairing-download-button"]').click();
     expect(openSpy).toHaveBeenCalledWith(
@@ -154,6 +195,31 @@ describe('PairingDialogComponent (TZD-21)', () => {
       'noopener,noreferrer',
     );
     openSpy.mockRestore();
+  });
+
+  it('download button disabled with RU hint when no URL available (TZD-57)', async () => {
+    TestBed.resetTestingModule();
+    compatSpy = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          minDesktopVersion: '0.1.0',
+          recommendedDesktopVersion: '0.5.1',
+          downloadUrl: '',
+          serverBuildId: 'test',
+        },
+      }),
+    );
+    await setupModule('');
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement.querySelector('[data-test="pairing-download-button"]');
+    const btn = host.querySelector('button') as HTMLButtonElement;
+    expect(btn.disabled).toBe(true);
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="pairing-download-hint"]',
+    ) as HTMLElement;
+    expect(hint.textContent).toContain('Установщик скоро будет на сервере');
   });
 
   it('download button opens the versioned URL when deploy injects it via token (TZD-46)', async () => {

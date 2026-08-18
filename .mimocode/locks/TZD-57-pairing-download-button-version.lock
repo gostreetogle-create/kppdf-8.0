@@ -1,0 +1,4 @@
+TZD-57-pairing-download-button-version
+locked: 2026-08-18
+zone: frontend/src/app/pages/desktop/pairing-dialog.component.ts ; pairing-dialog.component.spec.ts
+note: toolbar download v{semver}; footer close-only; compat URL preferred

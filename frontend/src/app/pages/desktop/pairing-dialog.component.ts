@@ -27,6 +27,20 @@ function normalizeDownloadUrl(value: string): string {
   return value.trim();
 }
 
+function parseSemverFromDownloadUrl(url: string): string | null {
+  const match = url.match(/-v(\d+\.\d+\.\d+)/i);
+  return match?.[1] ?? null;
+}
+
+function formatVersionLabel(version: string): string {
+  const trimmed = version.trim();
+  return trimmed.startsWith('v') ? trimmed : `v${trimmed}`;
+}
+
+function looksLikeBuildDate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}/.test(value) || /^\d{8}$/.test(value);
+}
+
 function openDownload(url: string): void {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
@@ -85,36 +99,70 @@ function openDownload(url: string): void {
           </p>
         }
 
-        <div class="flex flex-wrap items-center gap-3">
-          <app-pi-button
-            variant="default"
-            type="button"
-            [disabled]="issuing()"
-            (click)="onIssue()"
-            data-test="pairing-issue-button"
-          >
-            {{ issuing() ? 'Выпуск…' : 'Выпустить ключ' }}
-          </app-pi-button>
-          <app-pi-button
-            variant="secondary"
-            type="button"
-            [disabled]="!pairingJson()"
-            (click)="onCopy()"
-            data-test="pairing-copy-button"
-            [attr.aria-label]="copied() ? 'Скопировано' : 'Скопировать пакет в буфер'"
-          >
-            <span class="inline-flex items-center gap-2">
-              <lucide-angular
-                [img]="copied() ? checkIcon : copyIcon"
-                [size]="14"
-                aria-hidden="true"
-              />
-              {{ copied() ? 'Скопировано' : 'Скопировать' }}
-            </span>
-          </app-pi-button>
-          @if (copied()) {
-            <span class="text-xs text-muted-foreground" role="status">✓ в буфере</span>
-          }
+        <div class="flex flex-wrap items-start justify-between gap-3" data-test="pairing-toolbar">
+          <div class="flex flex-wrap items-center gap-3">
+            <app-pi-button
+              variant="default"
+              type="button"
+              [disabled]="issuing()"
+              (click)="onIssue()"
+              data-test="pairing-issue-button"
+            >
+              {{ issuing() ? 'Выпуск…' : 'Выпустить ключ' }}
+            </app-pi-button>
+            <app-pi-button
+              variant="secondary"
+              type="button"
+              [disabled]="!pairingJson()"
+              (click)="onCopy()"
+              data-test="pairing-copy-button"
+              [attr.aria-label]="copied() ? 'Скопировано' : 'Скопировать пакет в буфер'"
+            >
+              <span class="inline-flex items-center gap-2">
+                <lucide-angular
+                  [img]="copied() ? checkIcon : copyIcon"
+                  [size]="14"
+                  aria-hidden="true"
+                />
+                {{ copied() ? 'Скопировано' : 'Скопировать' }}
+              </span>
+            </app-pi-button>
+            @if (copied()) {
+              <span class="text-xs text-muted-foreground" role="status">✓ в буфере</span>
+            }
+          </div>
+          <div class="flex flex-col items-end gap-1 min-w-0">
+            <app-pi-button
+              variant="secondary"
+              type="button"
+              [disabled]="!effectiveDownloadUrl()"
+              (click)="onDownload()"
+              data-test="pairing-download-button"
+              [attr.aria-label]="
+                effectiveDownloadUrl()
+                  ? 'Скачать Desktop ' + desktopVersionLabel()
+                  : installerUnavailableHint
+              "
+            >
+              Скачать Desktop {{ desktopVersionLabel() }}
+            </app-pi-button>
+            @if (versionSubtitle(); as subtitle) {
+              <span
+                class="text-xs text-muted-foreground text-right"
+                data-test="pairing-compat-hint"
+              >
+                {{ subtitle }}
+              </span>
+            }
+            @if (!effectiveDownloadUrl()) {
+              <span
+                class="text-xs text-muted-foreground text-right"
+                data-test="pairing-download-hint"
+              >
+                {{ installerUnavailableHint }}
+              </span>
+            }
+          </div>
         </div>
 
         @if (pairingJson()) {
@@ -174,40 +222,15 @@ function openDownload(url: string): void {
         </div>
       </div>
 
-      <div footer class="flex justify-between items-center w-full gap-3">
-        <div class="flex flex-col gap-1 min-w-0">
-          @if (compat(); as c) {
-            <span class="text-xs text-muted-foreground" data-test="pairing-compat-hint">
-              Актуальная версия Desktop: {{ c.recommendedDesktopVersion }} (мин.
-              {{ c.minDesktopVersion }})
-            </span>
-          }
-          @if (!downloadUrl) {
-            <span class="text-xs text-muted-foreground" data-test="pairing-download-hint">
-              {{ installerUnavailableHint }}
-            </span>
-          }
-        </div>
-        <div class="flex flex-wrap justify-end gap-3">
-          <button
-            type="button"
-            class="pi-btn pi-btn-outline pi-focus-ring"
-            [disabled]="!downloadUrl"
-            [attr.aria-label]="downloadUrl ? 'Скачать приложение' : installerUnavailableHint"
-            (click)="onDownload()"
-            data-test="pairing-download-button"
-          >
-            Скачать приложение
-          </button>
-          <button
-            type="button"
-            class="pi-btn pi-btn-outline pi-focus-ring"
-            (click)="onClose()"
-            data-test="pairing-close-button"
-          >
-            Закрыть
-          </button>
-        </div>
+      <div footer class="flex justify-end w-full">
+        <app-pi-button
+          variant="outline"
+          type="button"
+          (click)="onClose()"
+          data-test="pairing-close-button"
+        >
+          Закрыть
+        </app-pi-button>
       </div>
     </app-pi-dialog>
   `,
@@ -220,9 +243,11 @@ export class PairingDialogComponent implements OnInit {
   private readonly ref = inject<DialogRef<void>>(PI_DIALOG_REF);
   private readonly toast = inject(PiToastService);
   private readonly pairingApi = inject(DesktopPairingService);
-  private readonly configuredDownloadUrl = inject(DESKTOP_DOWNLOAD_URL);
+  private readonly configuredDownloadUrlInjected = inject(DESKTOP_DOWNLOAD_URL);
 
-  protected readonly downloadUrl = normalizeDownloadUrl(this.configuredDownloadUrl);
+  protected readonly configuredDownloadUrl = normalizeDownloadUrl(
+    this.configuredDownloadUrlInjected,
+  );
   protected readonly installerUnavailableHint = DESKTOP_INSTALLER_UNAVAILABLE_HINT;
   protected readonly pairingJson = signal<string>('');
   protected readonly copied = signal(false);
@@ -326,9 +351,35 @@ export class PairingDialogComponent implements OnInit {
       });
   }
 
+  protected effectiveDownloadUrl(): string {
+    const compatUrl = normalizeDownloadUrl(this.compat()?.downloadUrl ?? '');
+    if (compatUrl) return compatUrl;
+    return this.configuredDownloadUrl;
+  }
+
+  protected desktopVersionLabel(): string {
+    const fromUrl = parseSemverFromDownloadUrl(this.effectiveDownloadUrl());
+    if (fromUrl) return formatVersionLabel(fromUrl);
+    const recommended = this.compat()?.recommendedDesktopVersion?.trim();
+    if (recommended) return formatVersionLabel(recommended);
+    return 'v?';
+  }
+
+  protected versionSubtitle(): string | null {
+    const c = this.compat();
+    if (!c) return null;
+    const min = formatVersionLabel(c.minDesktopVersion);
+    const buildId = c.serverBuildId?.trim();
+    if (buildId && looksLikeBuildDate(buildId)) {
+      return `Актуальная сборка · мин. ${min} · от ${buildId}`;
+    }
+    return `Актуальная сборка · мин. ${min}`;
+  }
+
   protected onDownload(): void {
-    if (this.downloadUrl) {
-      openDownload(this.downloadUrl);
+    const url = this.effectiveDownloadUrl();
+    if (url) {
+      openDownload(url);
     }
   }
 
