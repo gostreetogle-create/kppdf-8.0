@@ -5,7 +5,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { EMPTY, BehaviorSubject, of } from 'rxjs';
 
-import { AuthService } from '../../core/auth.service';
+import { AuthService, type AuthUser } from '../../core/auth.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { PiToastService } from '../../shared/ui/toast';
@@ -44,6 +44,8 @@ const COUNTERPARTIES = [
   { _id: 'cp1', name: 'ООО Северный свет', shortName: 'Северный свет', inn: '1' },
   { _id: 'cp2', name: 'ИП Марина Волкова', inn: '2' },
 ];
+
+const authUser = signal<AuthUser | null>(null);
 
 function flushBase(httpMock: HttpTestingController): void {
   httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET').flush(ORDERS);
@@ -101,6 +103,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   let navigate: jest.Mock;
 
   beforeEach(async () => {
+    authUser.set(null);
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
     navigate = jest.fn().mockResolvedValue(true);
 
@@ -123,7 +126,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
           useValue: { queryParamMap: queryParams$.asObservable() },
         },
         { provide: Router, useValue: routerMock },
-        { provide: AuthService, useValue: { user: signal(null) } },
+        { provide: AuthService, useValue: { user: authUser } },
         {
           provide: PiToastService,
           useValue: { success: jest.fn(), error: jest.fn(), show: jest.fn() },
@@ -493,5 +496,43 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
     ).toContain('З-1001');
+  });
+
+  it('411: workflow strip and rail tools respect page ACL', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+      pages: ['orders'],
+    });
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const chips = fixture.nativeElement.querySelector('[data-test="group-chips"]')!;
+    expect(chips.querySelector('[data-test="desk-workflow-desk"]')).toBeTruthy();
+    expect(chips.querySelector('[data-test="desk-workflow-combine"]')).toBeTruthy();
+    expect(chips.querySelector('[data-test="desk-workflow-proposal"]')).toBeNull();
+    expect(chips.querySelector('[data-test="desk-workflow-gantt"]')).toBeNull();
+    expect(chips.querySelector('[data-test="desk-workflow-supply"]')).toBeNull();
+    expect(chips.querySelector('[data-test="desk-workflow-shipping"]')).toBeNull();
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    rows[0]!.click();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const rightIds = chromeTools.rightTools().map((t) => t.id);
+    expect(rightIds).toContain('edit');
+    expect(rightIds).toContain('combine');
+    expect(rightIds).not.toContain('supply');
+    expect(rightIds).not.toContain('gantt');
   });
 });

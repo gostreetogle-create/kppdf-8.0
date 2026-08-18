@@ -82,6 +82,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
             [class.text-ink]="activeId() !== chip.id"
             [class.hover:bg-paper-2]="activeId() !== chip.id"
             [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"
+            [attr.data-test]="dataTestPrefix() ? dataTestPrefix() + '-' + chip.id : null"
             (click)="chipClick.emit(chip.id)"
           >
             {{ chip.label }}
@@ -150,6 +151,9 @@ export class PiGroupWorkspaceComponent {
 
   /** Currently active section chip id (yellow). */
   readonly activeId = input.required<string>();
+
+  /** Optional `data-test` prefix: renders `{prefix}-{chip.id}` per chip link. */
+  readonly dataTestPrefix = input<string | null>(null);
 
   /**
    * No body top gap under chips — for full-bleed studios (Create КП).

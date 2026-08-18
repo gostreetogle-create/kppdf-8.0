@@ -42,6 +42,7 @@
 - **403:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → «Добавить линию» (edit flyout); «Создать документ» reuse hub-хендлера.
 - **413:** tray = summary bar + 2-колонка cards (Состав слева, справа Исполнение/Снабжение+Производство/Логистика+Документы); Комбайн = lane chips в «Исполнение»; desk composition open by default.
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
+- **411:** workflow strip + rail tools скрываются по page ACL (`user.pages`); disabled primary CTA в tray показывает RU-подсказку причины (siteId / статус / freeze).
 - Правый rail — дубль; primary actions предпочтительно в tray.
 - **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
 
@@ -65,6 +66,7 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-403** | состав + supply + combine в tray — **DONE** |
 | **DESK-413** | tray visual IA (summary + cards) — **DONE** |
 | **DESK-410** | search/filter/summary/sort/pagination — **DONE** |
+| **DESK-411** | capabilities + CTA why-disabled — **DONE** |
 | DESK-404 | deep-link студии |
 | DESK-407 | crumbs + view=gantt/combine |
 | DESK-408 | блокнот DeskNote |

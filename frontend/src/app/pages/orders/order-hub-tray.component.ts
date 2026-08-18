@@ -141,16 +141,24 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                 >Клиент: {{ clientLabel() || '—' }}</span
               >
               <span class="flex-1" aria-hidden="true"></span>
-              <button
-                type="button"
-                class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-not-allowed opacity-60"
-                [disabled]="true"
-                title="Действие недоступно — подключится позже"
-                data-test="desk-primary-cta"
-                [attr.aria-label]="primaryCtaLabel()"
-              >
-                {{ primaryCtaLabel() }}
-              </button>
+              <div class="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-not-allowed opacity-60"
+                  [disabled]="true"
+                  [title]="primaryCtaDisabledReason()"
+                  data-test="desk-primary-cta"
+                  [attr.aria-label]="primaryCtaLabel()"
+                >
+                  {{ primaryCtaLabel() }}
+                </button>
+                <span
+                  class="text-[11px] leading-4 text-muted-foreground text-right"
+                  data-test="desk-primary-cta-hint"
+                >
+                  {{ primaryCtaDisabledReason() }}
+                </span>
+              </div>
             }
           </div>
 
@@ -569,6 +577,31 @@ export class OrderHubTrayComponent implements OnInit {
 
   protected primaryCtaLabel(): string {
     return PRIMARY_CTA_LABELS[this.order().status];
+  }
+
+  /** RU why-disabled copy for the desk primary CTA (411). */
+  protected primaryCtaDisabledReason(): string {
+    const order = this.order();
+    const status = this.statusLabel(order.status);
+    switch (order.status) {
+      case 'shipped':
+      case 'delivered':
+      case 'cancelled':
+        return `Заказ в статусе «${status}» — действие недоступно.`;
+      case 'in_production':
+      case 'ready':
+        if (!order.siteId) {
+          return 'У заказа нет площадки (siteId) — создайте объект у контрагента.';
+        }
+        return `Заказ в статусе «${status}» — действие подключится позже.`;
+      case 'draft':
+        if (!order.siteId) return 'Укажите площадку (siteId) — без неё заказ нельзя подтвердить.';
+        if (!(order.items?.length ?? 0)) return 'Добавьте изделия, чтобы подтвердить заказ.';
+        return 'Действие «Подтвердить» подключится позже.';
+      case 'confirmed':
+        if (!(order.items?.length ?? 0)) return 'Добавьте изделия.';
+        return 'Действие «В производство» подключится позже.';
+    }
   }
 
   protected itemCountLabel(count: number): string {

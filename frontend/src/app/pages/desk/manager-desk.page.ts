@@ -31,6 +31,7 @@ import {
 } from '../../shared/page/pi-group-workspace.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
+import { AuthService } from '../../core/auth.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { pluralize } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
@@ -136,7 +137,11 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
   imports: [OrderHubTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
   template: `
     <div class="manager-desk" data-test="manager-desk">
-      <app-pi-group-workspace [chips]="workflowChips()" activeId="desk">
+      <app-pi-group-workspace
+        [chips]="workflowChips()"
+        activeId="desk"
+        dataTestPrefix="desk-workflow"
+      >
         <div tools class="flex items-center gap-2 flex-wrap w-full">
           <input
             id="desk-search"
@@ -658,6 +663,7 @@ export class ManagerDeskPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly chromeTools = inject(PiChromeToolsService);
   private readonly toast = inject(PiToastService);
+  private readonly auth = inject(AuthService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly counterpartiesLookup = createLookupTable<Counterparty>(
     this.counterpartyService.list({ limit: 200 }),
@@ -957,15 +963,26 @@ export class ManagerDeskPage {
           this.actionTool('client', 'Клиент', Users, open === 'client', 2),
           this.actionTool('bom', 'Состав', Package, open === 'bom', 3),
           this.actionTool('docs', 'Документы', FileText, open === 'docs', 4),
-          ...(expanded.status === 'in_production' || expanded.status === 'ready'
+          ...(this.canOpenPage('supply') &&
+          (expanded.status === 'in_production' || expanded.status === 'ready')
             ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 5)]
             : []),
-          this.actionTool('gantt', 'На Ганте', Factory, false, 6, true),
-          this.actionTool('combine', 'В комбайне', LayoutGrid, false, 7, true),
+          ...(this.canOpenPage('production')
+            ? [this.actionTool('gantt', 'На Ганте', Factory, false, 6, true)]
+            : []),
+          ...(this.canOpenPage('orders')
+            ? [this.actionTool('combine', 'В комбайне', LayoutGrid, false, 7, true)]
+            : []),
         ]
       : [];
 
     this.chromeTools.setTools(CHROME_OWNER, [...left, ...right]);
+  }
+
+  /** Page-ACL gate for rail tools; undefined pages (legacy session) → show. */
+  private canOpenPage(pageKey: string): boolean {
+    const pages = this.auth.user()?.pages;
+    return !Array.isArray(pages) || pages.includes(pageKey);
   }
 
   private actionTool(
