@@ -11,6 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { FormsModule } from '@angular/forms';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
@@ -26,7 +28,7 @@ import { Counterparty, CounterpartyService } from '../../shared/services/pi-coun
 import { CounterpartyFullEditorDialogComponent } from './counterparty-full-editor-dialog.component';
 
 /** Server-side list page size (TZ-UX-314). */
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 /**
  * TZ-NAV-301 — thin Заказчики list (Counterparty API).
@@ -45,10 +47,22 @@ const PAGE_SIZE = 10;
     BadgeComponent,
     ButtonComponent,
     PiRowActionsComponent,
+    FormsModule,
   ],
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="counterparties">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <input
+          id="counterparties-search"
+          type="search"
+          name="counterparties-search"
+          [value]="searchQuery()"
+          (input)="onSearchInput($event)"
+          placeholder="Поиск по названию или ИНН"
+          aria-label="Поиск заказчиков"
+          data-test="counterparties-search"
+          class="pi-input w-72 pi-focus-ring"
+        />
         <app-pi-button variant="default" (click)="openCreate()" data-test="counterparty-create">
           + Создать
         </app-pi-button>
@@ -131,6 +145,9 @@ export class CounterpartiesPage implements OnInit {
   protected readonly chips = CLIENTS_SECTION_CHIPS;
   protected readonly PAGE_SIZE = PAGE_SIZE;
   protected readonly page = signal(1);
+  protected readonly searchQuery = signal('');
+
+  private readonly searchInput$ = new Subject<string>();
 
   protected readonly cols: ColumnDef<Counterparty>[] = [
     { key: 'name', label: 'Название', sortable: false },
@@ -168,7 +185,18 @@ export class CounterpartiesPage implements OnInit {
 
   ngOnInit(): void {
     this.rowActionsTplBinding.set(this.rowActionsTpl);
+    this.searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+      .subscribe((q) => {
+        this.searchQuery.set(q);
+        this.page.set(1);
+        this.reload();
+      });
     this.reload();
+  }
+
+  protected onSearchInput(event: Event): void {
+    this.searchInput$.next((event.target as HTMLInputElement).value);
   }
 
   protected openCreate(): void {
@@ -220,8 +248,9 @@ export class CounterpartiesPage implements OnInit {
 
   private reload(): void {
     this.loading.set(true);
+    const q = this.searchQuery().trim();
     this.api
-      .list({ page: this.page(), limit: PAGE_SIZE })
+      .list({ page: this.page(), limit: PAGE_SIZE, ...(q ? { search: q } : {}) })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         this.loading.set(false);
