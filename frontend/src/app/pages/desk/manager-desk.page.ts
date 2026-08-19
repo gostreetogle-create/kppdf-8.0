@@ -82,22 +82,47 @@ const ACTIVE_STATUSES: OrderStatus[] = ['confirmed', 'in_production', 'ready'];
 
 const STATUS_ALL_TOKEN = 'all';
 
+/** TZ-DESK-417: per-user status filter in localStorage. */
+const STATUS_FILTER_STORAGE_PREFIX = 'kppdf.desk.statusFilter.v1:';
+
 const DEFAULT_VISIBLE_LIMIT = 20;
 
+function statusFilterStorageKey(userId: string | null | undefined): string {
+  return `${STATUS_FILTER_STORAGE_PREFIX}${userId ?? 'anonymous'}`;
+}
+
 function parseStatusFilter(raw: string | null | undefined): Set<OrderStatus> {
-  if (!raw || raw.trim() === '') return new Set(ACTIVE_STATUSES);
+  if (!raw || raw.trim() === '') return new Set(ALL_STATUSES);
   const value = raw.trim();
   if (value === STATUS_ALL_TOKEN) return new Set(ALL_STATUSES);
   const parsed = value
     .split(',')
     .map((s) => s.trim())
     .filter((s): s is OrderStatus => (ALL_STATUSES as string[]).includes(s));
-  return parsed.length > 0 ? new Set(parsed) : new Set(ACTIVE_STATUSES);
+  return parsed.length > 0 ? new Set(parsed) : new Set(ALL_STATUSES);
 }
 
 function serializeStatusFilter(set: Set<OrderStatus>): string {
   if (set.size === ALL_STATUSES.length) return STATUS_ALL_TOKEN;
   return ALL_STATUSES.filter((s) => set.has(s)).join(',');
+}
+
+function loadStatusFilterFromStorage(key: string): Set<OrderStatus> | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null) return null;
+    return parseStatusFilter(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveStatusFilterToStorage(key: string, set: Set<OrderStatus>): void {
+  try {
+    localStorage.setItem(key, serializeStatusFilter(set));
+  } catch {
+    // Quota / private mode — filter still works for the session.
+  }
 }
 
 /** Date desc (created/updated fallback) — same field family as /orders. */
@@ -828,7 +853,7 @@ export class ManagerDeskPage {
   /** 410: debounced search + client-side filter/sort/slice pipeline. */
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
-  protected readonly statusFilter = signal<Set<OrderStatus>>(new Set(ACTIVE_STATUSES));
+  protected readonly statusFilter = signal<Set<OrderStatus>>(new Set(ALL_STATUSES));
   protected readonly visibleLimit = signal(DEFAULT_VISIBLE_LIMIT);
   protected readonly statuses = ALL_STATUSES;
 
@@ -1198,6 +1223,10 @@ export class ManagerDeskPage {
     const rawStatus = this.rawStatus();
     if (rawStatus !== null) {
       this.statusFilter.set(parseStatusFilter(rawStatus));
+    } else {
+      const key = statusFilterStorageKey(this.auth.user()?.id);
+      const stored = loadStatusFilterFromStorage(key);
+      this.statusFilter.set(stored ?? new Set(ALL_STATUSES));
     }
 
     const rawView = this.rawView();
@@ -1265,6 +1294,7 @@ export class ManagerDeskPage {
   private applyStatusFilter(next: Set<OrderStatus>): void {
     this.statusFilter.set(next);
     this.visibleLimit.set(DEFAULT_VISIBLE_LIMIT);
+    saveStatusFilterToStorage(statusFilterStorageKey(this.auth.user()?.id), next);
     this.navigateStatus(serializeStatusFilter(next));
   }
 

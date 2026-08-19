@@ -47,6 +47,9 @@ const COUNTERPARTIES = [
 
 const authUser = signal<AuthUser | null>(null);
 
+const STATUS_FILTER_KEY = (userId: string | null | undefined) =>
+  `kppdf.desk.statusFilter.v1:${userId ?? 'anonymous'}`;
+
 function flushBase(httpMock: HttpTestingController): void {
   httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET').flush(ORDERS);
   httpMock
@@ -104,6 +107,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
 
   beforeEach(async () => {
     authUser.set(null);
+    localStorage.clear();
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
 
     await TestBed.configureTestingModule({
@@ -376,7 +380,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(page().expandedId()).toBe('o2');
   });
 
-  it('410: default view shows only active orders (no draft/shipped/cancelled/delivered)', async () => {
+  it('417: default view shows all orders when no ?status= or localStorage', async () => {
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
@@ -384,12 +388,13 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     const rows = fixture.nativeElement.querySelectorAll(
       '[data-test="desk-order-row"]',
     ) as NodeListOf<HTMLButtonElement>;
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect([...rows].map((row) => row.getAttribute('data-status'))).toEqual([
+      'draft',
       'in_production',
       'ready',
     ]);
-    expect(fixture.nativeElement.textContent).not.toContain('Северный свет');
+    expect(fixture.nativeElement.textContent).toContain('Северный свет');
     expect(fixture.nativeElement.textContent).toContain('ИП Марина Волкова');
     expect(fixture.nativeElement.textContent).toContain('ООО Белый дуб');
   });
@@ -415,24 +420,102 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     ).toEqual(['З-1001']);
   });
 
-  it('410: filter flyout toggles statuses and persists ?status=', async () => {
+  it('417: filter flyout toggles statuses, persists ?status= and localStorage', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+    });
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
 
-    // Default active hides the draft o1.
+    // Default all shows every order.
     expect(
       page()
         .visibleOrders()
         .map((o) => o._id),
-    ).toEqual(['o2', 'o3']);
+    ).toEqual(['o1', 'o2', 'o3']);
 
     page().openPanel('filter');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="desk-filter"]')).toBeTruthy();
 
     navigate.mockClear();
-    page().toggleStatus('draft');
+    page().setStatusPreset('active');
+    fixture.detectChanges();
+
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o._id),
+    ).toEqual(['o2', 'o3']);
+    expect(page().statusFilter().has('draft')).toBe(false);
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ status: 'confirmed,in_production,ready' }),
+        queryParamsHandling: 'merge',
+      }),
+    );
+    expect(localStorage.getItem(STATUS_FILTER_KEY('u1'))).toBe('confirmed,in_production,ready');
+  });
+
+  it('417: status filter survives remount via localStorage per user', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+    });
+    localStorage.setItem(STATUS_FILTER_KEY('u1'), 'confirmed,in_production,ready');
+
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o._id),
+    ).toEqual(['o2', 'o3']);
+
+    fixture.destroy();
+    chromeTools.clear('manager-desk');
+    httpMock.verify();
+
+    fixture = TestBed.createComponent(ManagerDeskPage);
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(
+      page()
+        .visibleOrders()
+        .map((o) => o._id),
+    ).toEqual(['o2', 'o3']);
+  });
+
+  it('417: ?status= in URL wins over localStorage (deep-link)', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+    });
+    localStorage.setItem(STATUS_FILTER_KEY('u1'), 'confirmed,in_production,ready');
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+
+    flushBase(httpMock);
+    await tickMicrotask();
     fixture.detectChanges();
 
     expect(
@@ -440,14 +523,6 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
         .visibleOrders()
         .map((o) => o._id),
     ).toEqual(['o1', 'o2', 'o3']);
-    expect(page().statusFilter().has('draft')).toBe(true);
-    expect(navigate).toHaveBeenCalledWith(
-      [],
-      expect.objectContaining({
-        queryParams: expect.objectContaining({ status: expect.stringContaining('draft') }),
-        queryParamsHandling: 'merge',
-      }),
-    );
   });
 
   it('410: summary flyout shows read-only status counts for the search set', async () => {
@@ -524,7 +599,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     const rows = fixture.nativeElement.querySelectorAll(
       '[data-test="desk-order-row"]',
     ) as NodeListOf<HTMLButtonElement>;
-    rows[0]!.click();
+    // o2 (in_production) — default shows all statuses, so draft o1 is rows[0].
+    rows[1]!.click();
     fixture.detectChanges();
     flushSupply(httpMock, 'o2');
     await tickMicrotask();
