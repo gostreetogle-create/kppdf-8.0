@@ -9,9 +9,15 @@
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 
 export const DESK_WORKFLOW_CHIPS: readonly GroupChip[] = [
-  { id: 'desk', label: 'Стол', route: '/desk', pageKey: 'orders' },
+  { id: 'desk', label: 'Стол', route: '/desk', queryParams: { view: 'desk' }, pageKey: 'orders' },
   { id: 'proposal', label: 'КП', route: '/proposals/create', pageKey: 'proposals' },
-  { id: 'combine', label: 'Комбайн', route: '/design/combine', pageKey: 'orders' },
+  {
+    id: 'combine',
+    label: 'Комбайн',
+    route: '/desk',
+    queryParams: { view: 'combine' },
+    pageKey: 'orders',
+  },
   {
     id: 'gantt',
     label: 'Гант',

@@ -121,6 +121,23 @@ const LEFT_PANELS = new Set<ManagerDeskPanel>(['create', 'filter', 'summary']);
 const RIGHT_PANELS = new Set<ManagerDeskPanel>(['edit', 'client', 'bom', 'docs', 'supply']);
 const CHROME_OWNER = 'manager-desk';
 
+type DeskView = 'desk' | 'gantt' | 'combine';
+
+const VIEW_LABELS: Record<DeskView, string> = {
+  desk: 'Стол',
+  gantt: 'Гант',
+  combine: 'Комбайн',
+};
+
+const STUDIO_ROUTES: Record<Exclude<DeskView, 'desk'>, string> = {
+  gantt: '/production',
+  combine: '/design/combine',
+};
+
+function isDeskView(value: string | null): value is DeskView {
+  return value === 'desk' || value === 'gantt' || value === 'combine';
+}
+
 type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 
 /**
@@ -166,76 +183,107 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
             >
               {{ order.number }}
             </span>
+            @if (view() !== 'desk') {
+              <span class="text-muted-foreground" aria-hidden="true">/</span>
+              <span
+                class="font-display text-base tracking-tight text-ink whitespace-nowrap"
+                data-test="desk-view-crumb"
+              >
+                {{ viewLabel() }}
+              </span>
+            }
           }
         </div>
 
         <main class="manager-desk__center" aria-labelledby="desk-queue-heading">
-          <section class="manager-desk__queue" data-test="desk-order-queue">
-            <h1 id="desk-queue-heading" class="sr-only">Очередь заказов</h1>
-
-            @if (listError()) {
-              <p role="alert" class="manager-desk__queue-error" data-test="desk-queue-error">
-                {{ listError() }}
-              </p>
-            }
-
-            <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
-              @if (loading() && orders().length === 0) {
-                <p class="manager-desk__empty">Загрузка заказов…</p>
-              } @else if (visibleOrders().length === 0) {
-                <p class="manager-desk__empty" data-test="desk-queue-empty">
-                  {{ orders().length === 0 ? 'Нет заказов.' : 'Нет заказов по фильтру.' }}
+          <h1 id="desk-queue-heading" class="sr-only">Очередь заказов</h1>
+          @if (view() === 'desk') {
+            <section class="manager-desk__queue" data-test="desk-order-queue">
+              @if (listError()) {
+                <p role="alert" class="manager-desk__queue-error" data-test="desk-queue-error">
+                  {{ listError() }}
                 </p>
               }
-              @for (order of visibleOrders(); track order._id) {
-                <div
-                  class="manager-desk__order-item"
-                  role="listitem"
-                  [attr.id]="'desk-order-' + order._id"
-                >
+
+              <div class="manager-desk__orders" role="list" aria-label="Заказы на столе">
+                @if (loading() && orders().length === 0) {
+                  <p class="manager-desk__empty">Загрузка заказов…</p>
+                } @else if (visibleOrders().length === 0) {
+                  <p class="manager-desk__empty" data-test="desk-queue-empty">
+                    {{ orders().length === 0 ? 'Нет заказов.' : 'Нет заказов по фильтру.' }}
+                  </p>
+                }
+                @for (order of visibleOrders(); track order._id) {
+                  <div
+                    class="manager-desk__order-item"
+                    role="listitem"
+                    [attr.id]="'desk-order-' + order._id"
+                  >
+                    <button
+                      type="button"
+                      class="manager-desk__order-row"
+                      [class.manager-desk__order-row--expanded]="expandedId() === order._id"
+                      [attr.aria-expanded]="expandedId() === order._id"
+                      [attr.aria-controls]="'order-hub-tray-' + order._id"
+                      [attr.data-status]="order.status"
+                      data-test="desk-order-row"
+                      (click)="toggleOrder(order._id)"
+                    >
+                      <span class="manager-desk__order-disclosure" aria-hidden="true">
+                        {{ expandedId() === order._id ? '▾' : '▸' }}
+                      </span>
+                      <span class="manager-desk__order-number">{{ order.number }}</span>
+                      <span class="manager-desk__client">{{ clientLabel(order) }}</span>
+                      <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
+                    </button>
+
+                    @if (expandedId() === order._id) {
+                      <app-order-hub-tray
+                        [order]="order"
+                        mode="desk"
+                        [clientLabel]="clientLabel(order)"
+                        (openSupply)="onOpenSupply()"
+                        (openDocs)="onOpenDocs()"
+                        (createDocument)="onCreateDocument($event)"
+                        (addLines)="onAddLines()"
+                      />
+                    }
+                  </div>
+                }
+                @if (remainingCount() > 0) {
                   <button
                     type="button"
-                    class="manager-desk__order-row"
-                    [class.manager-desk__order-row--expanded]="expandedId() === order._id"
-                    [attr.aria-expanded]="expandedId() === order._id"
-                    [attr.aria-controls]="'order-hub-tray-' + order._id"
-                    [attr.data-status]="order.status"
-                    data-test="desk-order-row"
-                    (click)="toggleOrder(order._id)"
+                    class="manager-desk__more"
+                    data-test="desk-show-more"
+                    (click)="showMore()"
                   >
-                    <span class="manager-desk__order-disclosure" aria-hidden="true">
-                      {{ expandedId() === order._id ? '▾' : '▸' }}
-                    </span>
-                    <span class="manager-desk__order-number">{{ order.number }}</span>
-                    <span class="manager-desk__client">{{ clientLabel(order) }}</span>
-                    <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
+                    Показать ещё {{ remainingCount() }}
                   </button>
-
-                  @if (expandedId() === order._id) {
-                    <app-order-hub-tray
-                      [order]="order"
-                      mode="desk"
-                      [clientLabel]="clientLabel(order)"
-                      (openSupply)="onOpenSupply()"
-                      (openDocs)="onOpenDocs()"
-                      (createDocument)="onCreateDocument($event)"
-                      (addLines)="onAddLines()"
-                    />
-                  }
-                </div>
-              }
-              @if (remainingCount() > 0) {
-                <button
-                  type="button"
-                  class="manager-desk__more"
-                  data-test="desk-show-more"
-                  (click)="showMore()"
+                }
+              </div>
+            </section>
+          } @else {
+            <section class="manager-desk__view" [attr.data-test]="'desk-' + view() + '-view'">
+              <h2 class="manager-desk__view-title">{{ viewLabel() }}</h2>
+              @if (expandedOrder(); as order) {
+                <p class="manager-desk__view-copy">
+                  {{ order.number }} — «{{ viewLabel() }}» откроется в студии (embed отложен).
+                </p>
+                <a
+                  [routerLink]="viewStudioRoute()"
+                  [queryParams]="viewStudioQuery()"
+                  class="manager-desk__view-link"
+                  data-test="desk-view-open-studio"
                 >
-                  Показать ещё {{ remainingCount() }}
-                </button>
+                  Открыть «{{ viewLabel() }}»
+                </a>
+              } @else {
+                <p class="manager-desk__view-copy">
+                  Раскройте заказ в очереди, чтобы открыть «{{ viewLabel() }}» для него.
+                </p>
               }
-            </div>
-          </section>
+            </section>
+          }
         </main>
       </app-pi-group-workspace>
 
@@ -371,6 +419,30 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__queue {
         border: 1px solid var(--color-rule);
         background: var(--color-paper-raised, var(--color-paper));
+      }
+      .manager-desk__view {
+        padding: 1.25rem;
+        border: 1px solid var(--color-rule);
+        background: var(--color-paper-raised, var(--color-paper));
+      }
+      .manager-desk__view-title {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-display, inherit);
+        font-size: 1.2rem;
+        font-weight: 650;
+        letter-spacing: -0.025em;
+      }
+      .manager-desk__view-copy {
+        margin: 0 0 0.75rem;
+        color: var(--color-muted-foreground);
+        font-size: 0.85rem;
+        line-height: 1.5;
+      }
+      .manager-desk__view-link {
+        color: var(--color-sunrise-warm, #9b6b1e);
+        font-size: 0.88rem;
+        text-decoration: underline;
+        text-underline-offset: 2px;
       }
       .manager-desk__queue-error {
         margin: 0;
@@ -568,6 +640,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
 export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
+  protected readonly view = signal<DeskView>('desk');
 
   /** 410: debounced search + client-side filter/sort/slice pipeline. */
   private readonly search = createSearchState(300);
@@ -647,7 +720,9 @@ export class ManagerDeskPage {
     const order = this.expandedOrder();
     if (!order) return DESK_WORKFLOW_CHIPS;
     return DESK_WORKFLOW_CHIPS.map((chip) =>
-      chip.id === 'combine' ? { ...chip, queryParams: { orderId: order._id } } : chip,
+      chip.id === 'combine' || chip.id === 'gantt'
+        ? { ...chip, queryParams: { ...chip.queryParams, orderId: order._id } }
+        : chip,
     );
   });
 
@@ -672,6 +747,7 @@ export class ManagerDeskPage {
   private readonly rawOrderId = signal<string | null>(null);
   private readonly rawPanel = signal<string | null>(null);
   private readonly rawStatus = signal<string | null>(null);
+  private readonly rawView = signal<string | null>(null);
   private readonly pendingScrollId = signal<string | null>(null);
 
   constructor() {
@@ -682,6 +758,7 @@ export class ManagerDeskPage {
       this.rawOrderId.set(params.get('orderId'));
       this.rawPanel.set(params.get('panel'));
       this.rawStatus.set(params.get('status'));
+      this.rawView.set(params.get('view'));
       this.reconcile();
     });
 
@@ -738,6 +815,24 @@ export class ManagerDeskPage {
   protected panelTitle(): string {
     const panel = this.panel();
     return panel ? PANEL_LABELS[panel] : '';
+  }
+
+  protected viewLabel(): string {
+    return VIEW_LABELS[this.view()];
+  }
+
+  protected viewStudioRoute(): string {
+    const view = this.view();
+    return view === 'desk' ? '/production' : STUDIO_ROUTES[view];
+  }
+
+  protected viewStudioQuery(): Record<string, string | null> {
+    return { orderId: this.expandedOrder()?._id ?? null, from: 'desk' };
+  }
+
+  protected openView(view: DeskView): void {
+    this.view.set(view);
+    this.navigateView(this.expandedOrder()?._id ?? null, view);
   }
 
   protected toggleOrder(id: string): void {
@@ -828,6 +923,9 @@ export class ManagerDeskPage {
       this.statusFilter.set(parseStatusFilter(rawStatus));
     }
 
+    const rawView = this.rawView();
+    this.view.set(isDeskView(rawView) ? rawView : 'desk');
+
     const orders = this.orders();
     const rawId = this.rawOrderId();
     const rawPanel = this.rawPanel();
@@ -903,6 +1001,16 @@ export class ManagerDeskPage {
     ).catch(() => undefined);
   }
 
+  private navigateView(orderId: string | null, view: DeskView): void {
+    void Promise.resolve(
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { orderId: orderId ?? null, view: view === 'desk' ? null : view },
+        queryParamsHandling: 'merge',
+      }),
+    ).catch(() => undefined);
+  }
+
   private counterpartyIdOf(order: Order): string {
     const value = order.counterpartyId;
     if (!value) return '';
@@ -968,10 +1076,10 @@ export class ManagerDeskPage {
             ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 5)]
             : []),
           ...(this.canOpenPage('production')
-            ? [this.actionTool('gantt', 'На Ганте', Factory, false, 6, true)]
+            ? [this.viewTool('gantt', 'На Ганте', Factory, 'gantt', 6)]
             : []),
           ...(this.canOpenPage('orders')
-            ? [this.actionTool('combine', 'В комбайне', LayoutGrid, false, 7, true)]
+            ? [this.viewTool('combine', 'В комбайне', LayoutGrid, 'combine', 7)]
             : []),
         ]
       : [];
@@ -983,6 +1091,28 @@ export class ManagerDeskPage {
   private canOpenPage(pageKey: string): boolean {
     const pages = this.auth.user()?.pages;
     return !Array.isArray(pages) || pages.includes(pageKey);
+  }
+
+  private viewTool(
+    id: 'gantt' | 'combine',
+    label: string,
+    icon: PiChromeToolItem['icon'],
+    view: DeskView,
+    order: number,
+  ): DeskChromeTool {
+    return {
+      id,
+      side: 'right',
+      ariaLabel: label,
+      title: label,
+      icon,
+      active: this.view() === view,
+      disabled: false,
+      ariaExpanded: false,
+      ariaControls: `desk-${view}-view`,
+      order,
+      onClick: () => this.openView(view),
+    };
   }
 
   private actionTool(

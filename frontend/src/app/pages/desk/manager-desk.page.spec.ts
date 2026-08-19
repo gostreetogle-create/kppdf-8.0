@@ -170,6 +170,9 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     statusFilter: () => Set<Order['status']>;
     visibleOrders: () => Order[];
     summaryCounts: () => Record<Order['status'], number>;
+    view: () => 'desk' | 'gantt' | 'combine';
+    viewStudioRoute: () => string;
+    openView: (view: 'desk' | 'gantt' | 'combine') => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
       expandedId: () => string | null;
@@ -187,6 +190,9 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       statusFilter: () => Set<Order['status']>;
       visibleOrders: () => Order[];
       summaryCounts: () => Record<Order['status'], number>;
+      view: () => 'desk' | 'gantt' | 'combine';
+      viewStudioRoute: () => string;
+      openView: (view: 'desk' | 'gantt' | 'combine') => void;
     };
   }
 
@@ -534,5 +540,66 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(rightIds).toContain('combine');
     expect(rightIds).not.toContain('supply');
     expect(rightIds).not.toContain('gantt');
+  });
+
+  it('407: ?view=gantt&orderId= renders the gantt studio-link view with crumbs', async () => {
+    queryParams$.next(convertToParamMap({ view: 'gantt', orderId: 'o1' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="desk-gantt-view"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-order-queue"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
+    ).toContain('З-1001');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-view-crumb"]')?.textContent,
+    ).toContain('Гант');
+    const link = fixture.nativeElement.querySelector(
+      '[data-test="desk-view-open-studio"]',
+    ) as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.textContent).toContain('Гант');
+    expect(page().view()).toBe('gantt');
+    expect(page().viewStudioRoute()).toBe('/production');
+    expect(fixture.nativeElement.textContent).not.toContain('Рабочий стол');
+  });
+
+  it('407: view=combine renders the combine studio-link view', async () => {
+    queryParams$.next(convertToParamMap({ view: 'combine', orderId: 'o2' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="desk-combine-view"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-view-crumb"]')?.textContent,
+    ).toContain('Комбайн');
+    expect(page().view()).toBe('combine');
+    expect(page().viewStudioRoute()).toBe('/design/combine');
+  });
+
+  it('407: openView returns to desk view via view=desk', async () => {
+    queryParams$.next(convertToParamMap({ view: 'gantt', orderId: 'o1' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(page().view()).toBe('gantt');
+
+    navigate.mockClear();
+    page().openView('desk');
+    fixture.detectChanges();
+    expect(page().view()).toBe('desk');
+    expect(navigate).toHaveBeenCalledWith(
+      [],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ view: null }),
+        queryParamsHandling: 'merge',
+      }),
+    );
   });
 });

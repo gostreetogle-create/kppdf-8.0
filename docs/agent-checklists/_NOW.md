@@ -5,27 +5,22 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-18T22:15:00+03:00
-hygiene: origin `098e0d3b` (TZD-49); desk WIP 413 local; deploy BLOCKED (VPN off)
+updated_at: 2026-08-18T23:05:00+03:00
+hygiene: origin `18d0af00`; desk 406/402/412/403/413/410/411/407 DONE; deploy BLOCKED (VPN off)
 
 ## ACTIVE
 
-**Freebuff continuous wave — RUNNING** (PO ушёл 20:38; 406/402/412/403 DONE, next 413)  
+**Freebuff continuous wave — RUNNING** (PO ушёл 20:38; 406/402/412/403/413/410/411/407 DONE, next 404)  
 Prompt: `tasks/PROMPT-FREEBUFF-DESK-WAVE-CONTINUOUS.md`  
 **no deploy** until VPN + «кати».
 
-**Freebuff DESKTOP wave - 58 DONE** (local installer; deploy pending)
-Prompt: `tasks/PROMPT-FREEBUFF-DESKTOP-WAVE-CONTINUOUS.md`  
-Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` (PO: install v0.5.6 from browser/downloads)
+**Desktop wave — COMPLETE (local)** 57+49+58 on `02534d0e`; prod `/downloads/` after deploy  
+Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` — PO: reinstall from `frontend/browser/downloads/kppdf-desktop-setup-v0.5.6.zip`
 
 ## QUEUE (do not skip order)
 
-1. **413** tray visual IA (cards) — `tasks/TZ-DESK-413.md` **← next**
-2. **410** search/filter — `tasks/TZ-DESK-410.md`
-3. **411** capabilities — `tasks/TZ-DESK-411.md`
-4. **407** view=gantt/combine — `tasks/TZ-DESK-407.md`
-5. **404** deep-link fallback — `tasks/TZ-DESK-404.md`
-6. **408** DeskNote — if time after 1–5
+1. **404** deep-link fallback — `tasks/TZ-DESK-404.md` **← next**
+2. **408** DeskNote — if time after 1
 
 
 
@@ -33,30 +28,51 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## NEXT (PO when back)
 
-1. VPN on → smoke `/desk` + `DESK-SMOKE.md`
-2. «кати» warm deploy if smoke ok
-3. 409 quick-attach — backlog
+1. VPN on → smoke `/desk` + `DESK-SMOKE.md` + `DESKTOP-SMOKE.md`
+2. Переустановить Desktop с локального `kppdf-desktop-setup-v0.5.6.zip` (PE 0.5.6, ~45 MB)
+3. «кати» warm deploy if smoke ok
 
 ## DONE / LANDED (recent)
 
 
-## [2026-08-18] - TZD-58 DONE - installer integrity 0.5.6
+## [2026-08-18] — TZ-DESK-407 DONE — view=gantt/combine stub
 
-- Archive: `tasks/_archive/2026-08/TZD-58.done.md`; gate + fresh NSIS publish; deploy **нет**
-- exe 45339307 B, PE 0.5.6; publish without NSIS → FAIL
+- Archive: `tasks/_archive/2026-08/TZ-DESK-407.done.md`; gates PASS; deploy НЕ
+- `?view=` query → stub views (crumbs + studio-link) для gantt/combine; chips/tools ведут на /desk?view=; embed отложен
+- Next: 404 (deep-link fallback)
+
+- Archive: `tasks/_archive/2026-08/TZD-58.done.md`; SHA `02534d0e`; exe 45339307 B PE 0.5.6; deploy **нет**
 - Next: PO DESKTOP-SMOKE + deploy when VPN ok
 
 ## [2026-08-18] — TZD-49 DONE — CAD spec import follow-ups
 
 - Archive: `tasks/_archive/2026-08/TZD-49.done.md`; SHA `098e0d3b`; tests 75/75; deploy НЕ
 - name=article fallback (warning); dims/weight on module create; catalog lookup by article/sku
-- PO smoke CAD xlsx — ручной; next desktop: **58** installer
+- PO smoke CAD xlsx — после reinstall Desktop 0.5.6
 
 ## [2026-08-18] — TZD-57 DONE — pairing download button + version
 
 - Archive: `tasks/_archive/2026-08/TZD-57.done.md`; SHA `0f7138a4`; jest 11/11; deploy НЕ
 - Toolbar: «Скачать Desktop v{semver}» напротив «Выпустить ключ»; footer только «Закрыть»
 - Next desktop wave: **58** installer integrity
+
+## [2026-08-18] — TZ-DESK-411 DONE — capabilities + CTA why-disabled
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-411.done.md`; SHA `18d0af00`; gates PASS; deploy НЕ
+- workflow strip + rail tools по page ACL; disabled CTA — RU-подсказка причины
+- Next: 407 (view=gantt/combine)
+
+## [2026-08-18] — TZ-DESK-410 DONE — search/filter/summary/sort
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-410.done.md`; SHA `deb0fbce`; gates PASS; deploy НЕ
+- toolbar debounced search; filter flyout («Активные» default, `?status=`); summary flyout; sort date desc; «ещё N»
+- Next: 411 (capabilities)
+
+## [2026-08-18] — TZ-DESK-413 DONE — tray visual IA (summary + cards)
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-413.done.md`; SHA `4dff6012`; gates PASS; deploy НЕ
+- summary bar + 2-col card grid; combine = lane chips в Исполнение; desk composition open by default
+- Next: 410 (search/filter)
 
 ## [2026-08-18] — TZ-DESK-403 DONE — состав + supply + combine в tray
 
