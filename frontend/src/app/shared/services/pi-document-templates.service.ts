@@ -52,6 +52,12 @@ export interface DocumentTemplate {
   orientation: 'portrait' | 'landscape';
   /** Show page numbers in the generated document. */
   pageNumbering?: boolean;
+
+  defaultSheetLayout?: {
+    rowsFirstPage?: number;
+    rowsNextPage?: number;
+  };
+
   /**
    * TZ-DOC-311: LEGACY — not used by the builder UI anymore.
    * Kept in the type (and DB schema) for backward compatibility with

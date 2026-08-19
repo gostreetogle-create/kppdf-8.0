@@ -225,6 +225,7 @@ export class DocumentTemplateService {
       backgroundOpacity: dto.backgroundOpacity ?? 0.3,
       orientation: dto.orientation ?? 'portrait',
       pageNumbering: dto.pageNumbering ?? false,
+      defaultSheetLayout: dto.defaultSheetLayout ?? { rowsFirstPage: 0, rowsNextPage: 0 },
       version: dto.version ?? 1,
       notes: dto.notes,
       createdBy:
@@ -316,6 +317,7 @@ export class DocumentTemplateService {
     if (dto.backgroundOpacity !== undefined)
       doc.backgroundOpacity = dto.backgroundOpacity;
     if (dto.pageNumbering !== undefined) doc.pageNumbering = dto.pageNumbering;
+    if (dto.defaultSheetLayout !== undefined) doc.defaultSheetLayout = dto.defaultSheetLayout;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
     if (dto.categoryId !== undefined) {
@@ -395,6 +397,7 @@ export class DocumentTemplateService {
       footerText: src.footerText,
       pageNumbering: src.pageNumbering,
       tableOfContents: src.tableOfContents,
+      defaultSheetLayout: src.defaultSheetLayout,
       version: 1,
       notes: src.notes,
       createdBy:
@@ -670,6 +673,33 @@ export class DocumentTemplateService {
         blocks.map(async (b) => {
           const settings = b.settings as { role?: string } | undefined;
           if (settings?.role === 'terms' && !isLastPage) return null;
+
+          // TZ-SALES-377: Continuation pages
+          // On intermediate pages (pageIndex > 0 && !isLastPage), drop all blocks except line-items tables.
+          // On the last page (pageIndex > 0 && isLastPage), we also want to drop top decorative blocks 
+          // (like headers/logos) so they don't repeat, but keep bottom blocks (signatures, terms).
+          // We approximate "top blocks" as any non-table block that is positioned above the table.
+          // For MVP, the TZ explicitly asks to drop non-line-items on `!isLastPage`.
+          if (pageIndex > 0) {
+            const isLineItems = lineItemsTargetIds.has(String(b._id));
+            if (!isLastPage) {
+              if (!isLineItems) return null;
+            } else {
+              // On the last page, drop blocks that are purely decorative and likely from page 1 header.
+              // We'll keep terms, signatures, and blocks positioned below the table.
+              // If layout is missing, keep it to be safe.
+              if (!isLineItems && settings?.role !== 'terms' && b.type !== 'signature') {
+                // Find the line-items table to compare Y position
+                const tableBlock = blocks.find(tb => lineItemsTargetIds.has(String(tb._id)));
+                const tableY = tableBlock?.layout?.y ?? 0;
+                const thisY = b.layout?.y ?? 0;
+                if (thisY < tableY) {
+                  return null; // Drop header blocks on the last page too
+                }
+              }
+            }
+          }
+
           const withBinding = await this.resolveBlockContent(b, bag);
           const rendered = await this.resolveTableBlock(
             withBinding,

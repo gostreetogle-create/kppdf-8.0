@@ -1,6 +1,6 @@
 # TZ-MATERIALS-313 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE** git `e34b015d` (prod ещё не катили)
 
 ## Claim slot
 
@@ -17,10 +17,12 @@
 
 ## Acceptance
 
-- [ ] pricePerUnit в POST — number
-- [ ] пустая цена не шлёт `""`
-- [ ] focused tsc + spec PASS
+- [x] pricePerUnit в POST — number
+- [x] пустая цена не шлёт `""`
+- [x] focused tsc + spec PASS
 
 ## Executor report (auto)
 
-_(после)_
+- commit: e34b015d
+- archive: tasks/_archive/2026-08/TZ-MATERIALS-313.done.md
+- next: PO «кати»; волна FORMS-314…317 на Freebuff

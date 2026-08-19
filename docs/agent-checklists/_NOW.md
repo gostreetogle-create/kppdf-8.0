@@ -6,7 +6,8 @@
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-19T05:46:00+03:00
-hygiene: origin `1306424c`; **414 DONE**; **415 DONE** DeskNote ACL `1306424c`; **416 DONE** tray from=desk
+updated_at: 2026-08-19T06:00:00+03:00
+hygiene: origin `5b4a3268`; desk **414–416 DONE**; KP **380→377 IN PROGRESS** (PO away — full pipeline)
 
 ## ACTIVE
 

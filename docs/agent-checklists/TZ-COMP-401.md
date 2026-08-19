@@ -35,8 +35,15 @@
 
 ## Gates
 
-- (заполнит executor)
+- tsc: PASS
+- tests: PASS (privacy.page.spec.ts)
+- build: PASS
+- deploy: BLOCKED (SSH 192.168.1.103 unreachable)
+- nginx/robots: BLOCKED (VPS unreachable via VM jump)
 
 ## Executor report (auto)
 
-_(после работы)_
+- outcome: PARTIAL / BLOCKED
+- verification: local gates PASS, live smoke BLOCKED due to SSH timeout.
+- files: frontend/src/app/app.routes.ts, frontend/src/app/pages/enroll/enroll.page.ts, frontend/src/app/pages/login/login.page.ts, frontend/src/app/pages/legal/privacy.page.ts, frontend/src/app/pages/legal/privacy.page.spec.ts, docs/pages/legal-privacy.page.md, docs/pages/enroll.page.md, docs/pages/PAGE-TZ-INDEX.md, docs/ops/home-host-access.md
+- next_steps: PO needs to ensure VM is in LAN or VPN is off, then deploy and apply nginx config.

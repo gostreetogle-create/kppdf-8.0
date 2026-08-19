@@ -69,6 +69,18 @@ export class DocumentTemplate {
   @Prop({ default: 1 })
   version!: number;
 
+  @Prop({
+    type: {
+      rowsFirstPage: { type: Number, default: 0, min: 0, max: 200 },
+      rowsNextPage: { type: Number, default: 0, min: 0, max: 200 },
+    },
+    default: { rowsFirstPage: 0, rowsNextPage: 0 },
+  })
+  defaultSheetLayout?: {
+    rowsFirstPage?: number;
+    rowsNextPage?: number;
+  };
+
   @Prop()
   notes?: string;
 

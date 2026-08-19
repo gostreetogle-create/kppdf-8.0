@@ -1,5 +1,11 @@
-import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
+
+export class DefaultSheetLayoutDto {
+  @IsOptional() @IsNumber() @Min(0) rowsFirstPage?: number;
+  @IsOptional() @IsNumber() @Min(0) rowsNextPage?: number;
+}
 
 export class CreateDocumentTemplateDto {
   @IsString() @IsNotEmpty()
@@ -39,5 +45,11 @@ export class CreateDocumentTemplateDto {
   @IsOptional() @IsBoolean()
   pageNumbering?: boolean;
   @IsOptional() @IsNumber() @Min(1) version?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DefaultSheetLayoutDto)
+  defaultSheetLayout?: DefaultSheetLayoutDto;
+
   @IsOptional() @IsString() notes?: string;
 }

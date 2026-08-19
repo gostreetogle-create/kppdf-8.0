@@ -1,14 +1,13 @@
 # Страница: Обзор — домашняя статистика (`DashboardStatsPage`)
 
-**Краткое описание:** первая страница сайта — **сводка (home stats)**, НЕ канбан.
-Виджеты обзора (**TZ-DASHBOARD-401**): KPI заказов + pulse склада. Канбан — только
-на `/design/combine`.
+**Краткое описание:** сводка KPI (**не** дом после TZ-DESK-401). Канбан — только
+на `/design/combine`. Ежедневная работа менеджера — [`manager-desk.page.md`](./manager-desk.page.md).
 
 ## Routes
 
 ```
-/            — redirect → /dashboard
-/dashboard   — «KPPDF — Обзор» (UI-лейбл: «Обзор»)
+/            — redirect → /desk (стол менеджера, TZ-DESK-401)
+/dashboard   — «KPPDF — Обзор» (KPI; не дом)
 ```
 
 `pageKey`: `orders` (как было у Комбайна — без новой pageKey на backend; грант не менялся).
@@ -51,9 +50,9 @@
 
 ## Навигация
 
-- **Бренд в шапке** «KPPDF · 8.0» — кнопка домой (`routerLink="/"`, aria «Обзор — главная»)
-  → сюда. Оформление: soft-gold chip (**TZ-UX-331**), не plain text. Не «Комбайн» (**TZ-NAV-303**).
-- Login / `/` → сюда же.
+- **Бренд в шапке** «KPPDF · 8.0» — chip на `/` → **стол** `/desk` (aria «Рабочий стол — главная»).
+  Сводка KPI — этот экран `/dashboard`. Не «Комбайн» (**TZ-NAV-303**).
+- Login / `/` → стол `/desk`. Сюда — явно `/dashboard` или flyout «Сводка».
 - Комбайн заказов — раздел **Проект** → `/design/combine` (не Сделки).
 
 ## Связанные TZ

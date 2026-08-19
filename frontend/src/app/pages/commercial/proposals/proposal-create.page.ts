@@ -1106,7 +1106,18 @@ export class ProposalCreatePage implements OnInit {
     this.selectedTableTargetId.set(null);
     this.tableTargetLayouts.set({});
     this.kpTableLayout.set(DEFAULT_KP_TABLE_LAYOUT.map((column) => ({ ...column })));
-    this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT });
+
+    const current = this.sheetLayout();
+    const rowsFirstPage =
+      current.rowsFirstPage === 0 && tpl?.defaultSheetLayout?.rowsFirstPage
+        ? tpl.defaultSheetLayout.rowsFirstPage
+        : current.rowsFirstPage;
+    const rowsNextPage =
+      current.rowsNextPage === 0 && tpl?.defaultSheetLayout?.rowsNextPage
+        ? tpl.defaultSheetLayout.rowsNextPage
+        : current.rowsNextPage;
+
+    this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, rowsFirstPage, rowsNextPage });
     this.kpTableChrome.set({ ...DEFAULT_KP_TABLE_CHROME });
     if (tpl) {
       this.previewStatus.set('loading');
@@ -1455,7 +1466,18 @@ export class ProposalCreatePage implements OnInit {
           return;
         }
         this.onTemplateChange(res.data);
-        this.sheetLayout.set({ ...DEFAULT_KP_SHEET_LAYOUT, ...(draft.sheetLayout ?? {}) });
+
+        const current = this.sheetLayout();
+        const draftRowsFirst = draft.sheetLayout?.rowsFirstPage ?? 0;
+        const draftRowsNext = draft.sheetLayout?.rowsNextPage ?? 0;
+
+        this.sheetLayout.set({
+          ...DEFAULT_KP_SHEET_LAYOUT,
+          ...(draft.sheetLayout ?? {}),
+          rowsFirstPage: draftRowsFirst === 0 ? current.rowsFirstPage : draftRowsFirst,
+          rowsNextPage: draftRowsNext === 0 ? current.rowsNextPage : draftRowsNext,
+        });
+
         this.rebuildPreview$.next();
       });
     } else {

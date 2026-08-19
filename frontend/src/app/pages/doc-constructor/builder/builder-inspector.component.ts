@@ -275,9 +275,7 @@ type Orientation = 'portrait' | 'landscape';
                         [img]="StarIcon"
                         [size]="14"
                         [class.bg-grid__star--on]="effectiveDefaultBgIndex(t) === i"
-                        [attr.data-star-fill]="
-                          effectiveDefaultBgIndex(t) === i ? 'gold' : null
-                        "
+                        [attr.data-star-fill]="effectiveDefaultBgIndex(t) === i ? 'gold' : null"
                       ></lucide-icon>
                     </button>
                     <button
@@ -695,6 +693,40 @@ type Orientation = 'portrait' | 'landscape';
           }
         </section>
 
+        @if (b.type === 'table' && isLineItemsTable()) {
+          <section class="insp-section" data-test="insp-section-pagination">
+            <h3 class="insp-section__title" data-test="insp-section-header">Перенос на страницы</h3>
+            <label class="field">
+              <span class="field__label">Строк на 1-й странице</span>
+              <input
+                type="number"
+                class="field__input w-full pi-focus-ring"
+                min="0"
+                max="200"
+                [value]="rowsFirstPage()"
+                (change)="onRowsFirstPageChange($event)"
+                [disabled]="selectionLocked()"
+              />
+            </label>
+            <label class="field">
+              <span class="field__label">Строк на следующих</span>
+              <input
+                type="number"
+                class="field__input w-full pi-focus-ring"
+                min="0"
+                max="200"
+                [value]="rowsNextPage()"
+                (change)="onRowsNextPageChange($event)"
+                [disabled]="selectionLocked()"
+              />
+            </label>
+            <p class="insp-hint">
+              0 — автоматически по высоте рамки; явное число — override для всех новых КП с этим
+              бланком.
+            </p>
+          </section>
+        }
+
         <section class="insp-section" data-test="insp-section-content">
           <h3 class="insp-section__title" data-test="insp-section-header">Содержимое</h3>
           @if (b.type === 'text' || b.type === 'header') {
@@ -749,6 +781,39 @@ type Orientation = 'portrait' | 'landscape';
                 <span class="badge__value">{{ tid }}</span>
               </div>
               <p class="field__hint">Для смены шаблона — удалите блок и добавьте заново.</p>
+            </div>
+          }
+          @if (isLineItemsTable()) {
+            <div class="field">
+              <span class="field__label">Перенос на страницы</span>
+              <label class="field field--row">
+                <span class="field__label">Строк на 1-й странице</span>
+                <input
+                  class="field__input field__input--small pi-focus-ring"
+                  type="number"
+                  min="0"
+                  max="200"
+                  [value]="rowsFirstPage()"
+                  (input)="onRowsFirstPageChange($event)"
+                  [disabled]="selectionLocked()"
+                />
+              </label>
+              <label class="field field--row">
+                <span class="field__label">Строк на следующих</span>
+                <input
+                  class="field__input field__input--small pi-focus-ring"
+                  type="number"
+                  min="0"
+                  max="200"
+                  [value]="rowsNextPage()"
+                  (input)="onRowsNextPageChange($event)"
+                  [disabled]="selectionLocked()"
+                />
+              </label>
+              <p class="field__hint">
+                0 — автоматически по высоте рамки; явное число — override для всех новых КП с этим
+                бланком.
+              </p>
             </div>
           }
           @if (b.dataBinding; as db) {
@@ -1776,6 +1841,51 @@ export class BuilderInspectorComponent implements OnInit {
   protected readonly imageOverlay = signal<boolean>(false);
   protected readonly overlayLeft = signal<number>(0);
   protected readonly overlayTop = signal<number>(0);
+
+  protected isLineItemsTable(): boolean {
+    const b = this.block();
+    if (b?.type !== 'table') return false;
+    const settings = b.settings as { kpLineItems?: boolean; role?: string } | undefined;
+    if (settings?.role === 'line-items' || settings?.kpLineItems === true) return true;
+
+    const liveTables = this.allBlocks().filter((block) => {
+      if (block.type !== 'table') return false;
+      if (block.source?.kind === 'table-template' && block.source.mode === 'snapshot') {
+        return false;
+      }
+      const s = block.settings as { tableTemplateId?: string } | undefined;
+      return block.source?.kind === 'table-template'
+        ? Boolean(block.source.refId)
+        : Boolean(s?.tableTemplateId);
+    });
+    return liveTables.length === 1 && liveTables[0]._id === b._id;
+  }
+
+  protected readonly rowsFirstPage = computed(() => {
+    return this.template()?.defaultSheetLayout?.rowsFirstPage ?? 0;
+  });
+
+  protected readonly rowsNextPage = computed(() => {
+    return this.template()?.defaultSheetLayout?.rowsNextPage ?? 0;
+  });
+
+  protected onRowsFirstPageChange(event: Event): void {
+    if (this.selectionLocked()) return;
+    const val = Number((event.target as HTMLInputElement).value) || 0;
+    const current = this.template()?.defaultSheetLayout ?? {};
+    this.templateUpdate.emit({
+      defaultSheetLayout: { ...current, rowsFirstPage: Math.max(0, Math.min(200, val)) },
+    });
+  }
+
+  protected onRowsNextPageChange(event: Event): void {
+    if (this.selectionLocked()) return;
+    const val = Number((event.target as HTMLInputElement).value) || 0;
+    const current = this.template()?.defaultSheetLayout ?? {};
+    this.templateUpdate.emit({
+      defaultSheetLayout: { ...current, rowsNextPage: Math.max(0, Math.min(200, val)) },
+    });
+  }
 
   // TZ-259.4: canonical layout geometry (px) for positioned blocks.
   protected readonly layoutXpx = signal<number>(0);

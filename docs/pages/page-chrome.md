@@ -8,10 +8,10 @@
 ## Brand home (TZ-UX-331 + TZ-NAV-303)
 
 Левый бренд шапки `KPPDF · 8.0` — **кликабельный chip** (`data-test="nav-brand-home"`)
-на `/` → домашняя статистика «Обзор» (`/dashboard`). Soft sunrise/gold + золотой маркер;
-aria/title **«Обзор — главная»** (не «Комбайн»). Комбайн заказов живёт в разделе
-**Проект** — `/design/combine` (TZ-NAV-305: entry «Проект» и первый flyout-пункт =
-Комбайн, затем Очередь). Не путать с entry «Сделки» (Создать КП).
+на `/` → **рабочий стол** `/desk` (**TZ-DESK-401**). Soft sunrise/gold + золотой маркер;
+aria/title **«Рабочий стол — главная»** (не «Комбайн», не «Обзор» как дом).
+Обзор KPI остаётся на `/dashboard`. Комбайн — **Проект** `/design/combine` (TZ-NAV-305).
+Не путать с entry «Сделки» (Создать КП).
 
 
 ## Компоненты
@@ -59,12 +59,27 @@ aria/title **«Обзор — главная»** (не «Комбайн»). Ко
 />
 ```
 
+## Рабочий стол `/desk` (TZ-DESK-406+)
+
+Стол — **дом** после входа; раздел уже в brand-home («Рабочий стол — главная»).
+**Не** дублировать label «Рабочий стол» в body chrome.
+
+| Правило | Деталь |
+|---------|--------|
+| Shell | **`app-pi-group-workspace`** — одна sticky chip-row (daily workflow: Стол · КП · Комбайн · …), как peers на `/orders` |
+| Запрет | Отдельный `<nav>` под `app-pi-page-chrome`; вторая crumb-строка «Рабочий стол / …» |
+| Expand | Номер заказа — **suffix в той же** chip-row (`aria-current="page"`), не второй header |
+| Ширина | Без своего `max-width`/padding поверх `.pi-page-frame` — контент = ширина ERP-списков |
+| H1 | Нет видимого «Очередь заказов»; sr-only / aria ok |
+| Эталон | `orders.page.ts` (group-workspace) + chips-константа `desk-workflow-chips.ts` |
+
 ## Карта разделов
 
 | Раздел | SoT (топ-меню) / первый crumb | Страницы |
 |--------|-------------------------------|----------|
 | Каталог | `Каталог` | products, modules, materials, people, work-types + details |
 | Сделки | `Сделки` | proposals, orders, contracts, organizations, production |
+| Рабочий стол | brand-home → `/desk` | `/desk` — chips-only chrome, см. выше |
 | Документы | `Документы` | documents, templates, texts, tables |
 | Справочники | `Справочники` | dictionary group-workspace |
 | Склад | `Склад` | inventory group-workspace |
@@ -191,4 +206,4 @@ app-chrome-rail-left          app-chrome-rail-right
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-15 (chrome page-tools canon + gap/audit TZ)._
+_Создано: 2026-08-07. Обновлено: 2026-08-18 (desk chrome parity TZ-DESK-406)._

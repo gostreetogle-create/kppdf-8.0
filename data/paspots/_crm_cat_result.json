@@ -1,0 +1,12 @@
+{
+    "name":  "Паспорта",
+    "slug":  "pasporta",
+    "isActive":  true,
+    "isSystem":  false,
+    "isDefault":  false,
+    "sortOrder":  0,
+    "_id":  "6a806abb01e9660e1ad62e82",
+    "createdAt":  "2026-08-15T13:33:47.195Z",
+    "updatedAt":  "2026-08-15T13:33:47.194Z",
+    "__v":  0
+}

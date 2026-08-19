@@ -4,7 +4,7 @@
 > Warm deploy (`WIPE=false`). Wipe запрещён.
 
 updated_at: 2026-08-19T06:10:00+03:00
-deploy_sha_target: (после push 416+deploy)
+deploy_sha_target: ab33c780
 
 ## A. Git / гигиена
 

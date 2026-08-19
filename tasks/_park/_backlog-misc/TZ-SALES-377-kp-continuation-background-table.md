@@ -1,6 +1,8 @@
-# TZ-SALES-377: Continuation pages — фон + таблица (PARK)
+# TZ-SALES-377: Continuation pages — фон + таблица
 
-> **PARK** — не выдавать исполнителю, пока PO не подтвердит после SALES-376.
+> **UNPARKED** 2026-08-19 → executable copy:
+> `tasks/_backlog/kp-vitrine/TZ-SALES-377-kp-continuation-background-table.md`
+> Wave: `WAVE-KP-PAGE-MODE-FINISH.md`
 
 РОЛЬ: Full-stack DocumentTemplate continuation mode  
 DEPENDENCIES: TZ-SALES-376 DONE + PO PASS on real КП overflow

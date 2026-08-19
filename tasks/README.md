@@ -5,6 +5,9 @@
 | **`PROMPT-RESUME-ANY.md`** | Обрыв / новый чат |
 | **`PROMPT-UNIVERSAL-CONTINUOUS.md`** | Полный канон исполнителя |
 | **`PROMPT-FREEBUFF-TASKS-DRAIN.md`** | Слить живую очередь (после drain — spent) |
+| **`PROMPT-FREEBUFF-FORMS-NUMBER.md`** | Волна форм 314–317 (spent, archive after) |
+| **`PROMPT-FREEBUFF-DESK-401.md`** | Каркас стола (spent — 401 DONE) |
+| **`PROMPT-FREEBUFF-DESK-405.md`** | Раскладка rev.2 стола — **следующий** |
 | **`_active/`** | 0–1 claim |
 | **`_backlog/`** | Только незакрытое (см. `QUEUE.md`) |
 | **`_park/`** | Отложено; не брать без PO |
@@ -22,4 +25,4 @@
 
 ## Сейчас живо
 
-См. `_backlog/QUEUE.md`: живых TZ нет; ждём **«кати»** (почта + PDF Chromium). `_park` не трогать.
+См. `_backlog/WAVE-MANAGER-DESK.md`: **405** layout rev.2 → 402+ наполнение. `_park` не трогать.
