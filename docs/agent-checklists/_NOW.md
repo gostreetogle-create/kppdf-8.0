@@ -5,24 +5,31 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-18T23:05:00+03:00
-hygiene: origin `18d0af00`; desk 406/402/412/403/413/410/411/407 DONE; deploy BLOCKED (VPN off)
+updated_at: 2026-08-18T23:55:00+03:00
+hygiene: origin `1e67c6f5`; **DESK WAVE COMPLETE** (406/402/412/403/413/410/411/407/404/408); deploy BLOCKED (VPN off)
 
 ## ACTIVE
 
-**Freebuff continuous wave — RUNNING** (PO ушёл 20:38; 406/402/412/403/413/410/411/407 DONE, next 404)  
+**Freebuff desk wave — COMPLETE (local)** — очередь исчерпана, idle.  
 Prompt: `tasks/PROMPT-FREEBUFF-DESK-WAVE-CONTINUOUS.md`  
 **no deploy** until VPN + «кати».
 
 **Desktop wave — COMPLETE (local)** 57+49+58 on `02534d0e`; prod `/downloads/` after deploy  
 Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` — PO: reinstall from `frontend/browser/downloads/kppdf-desktop-setup-v0.5.6.zip`
 
-## QUEUE (do not skip order)
+## QUEUE
 
-1. **404** deep-link fallback — `tasks/TZ-DESK-404.md` **← next**
-2. **408** DeskNote — if time after 1
+Пусто — все TZ волны DONE (409 — backlog, не брать).
 
+## DESK WAVE checkpoint (PO)
 
+- Done: 406 `5e83932c`, 402 `99641d90`, 412 `53c8e75c`, 403 `0ce536a4`, 413 `4dff6012`, 410 `deb0fbce`, 411 `18d0af00`, 407 `91e33ee6`, 404 `e29fae3f`, 408 `1e67c6f5`
+- Failed/Deferred: нет. known_limitation: Комбайн-возврат = назад браузера (общий DashboardPage); module-якорь блокнота — API only.
+- HEAD: `1e67c6f5` == origin/main ✓
+- Gates: FE tsc OK; FE jest 45/45 (manager-desk 18, orders.page, order-form-panel, hub-tray); BE tsc OK; BE desk-note 8/8; eslint 0 err.
+- Smoke DESK-SMOKE: **0/13 local** — dev-серверы не запущены (backend требует БД/VPN); автоматические тесты покрывают очередь/form/tray/ACL/404/408. PO: пройти DESK-SMOKE после VPN.
+- Deploy: **НЕ ЗАПУЩЕН** (VPN). PO: «кати» когда вернётся.
+- Критичные файлы: `manager-desk.page.ts`, `order-hub-tray.component.ts`, `order-form-panel.component.ts`, `desk-workflow-chips.ts`, `desk-notes.service.ts`, `backend/src/modules/desk-note/`
 
 Gate «раскладка v2 ok» **снят** — PO delegated full desk while away.
 
@@ -34,6 +41,18 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## DONE / LANDED (recent)
 
+
+## [2026-08-18] — TZ-DESK-408 DONE — DeskNote (BE + FE)
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-408.done.md`; SHA `1e67c6f5`; gates PASS; deploy НЕ
+- BE `desk-note` module (schema + GET/POST/PATCH/DELETE /desk-notes, hard delete, indexes); FE `panel=notebook` на /desk (список + форма, kind/якорь, checklist, delete)
+- **DESK WAVE COMPLETE** — очередь исчерпана; см. checkpoint выше
+
+## [2026-08-18] — TZ-DESK-404 DONE — deep-link студии + «На стол»
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-404.done.md`; SHA `e29fae3f`; gates PASS; deploy НЕ
+- rail «На Ганте»/«В комбайне» → реальные студии с orderId&from=desk; на /production from=desk — RU «На стол» → /desk?orderId=; Комбайн — назад браузера (known_limitation)
+- Next: 408 (DeskNote)
 
 ## [2026-08-18] — TZ-DESK-407 DONE — view=gantt/combine stub
 
