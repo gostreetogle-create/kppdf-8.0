@@ -156,6 +156,8 @@ vendor/
 
 # Local PO data dumps (never commit)
 tasks/Данные/
+data/paspots/
+data/products/
 
 
 # Ruflo local secrets and runtime data
