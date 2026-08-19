@@ -58,6 +58,7 @@ import { CurrencyModule } from './modules/currency/currency.module';
 import { PurchaseRequestModule } from './modules/purchase-request/purchase-request.module';
 import { PurchaseOrderModule } from './modules/purchase-order/purchase-order.module';
 import { SupplyModule } from './modules/supply/supply.module';
+import { DeskNoteModule } from './modules/desk-note/desk-note.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { TenderModule } from './modules/tender/tender.module';
 import { RppModule } from './modules/rpp/rpp.module';
@@ -219,6 +220,7 @@ import { RequestMethod } from '@nestjs/common';
     PurchaseRequestModule,
     PurchaseOrderModule,
     SupplyModule, // TZ-SUPPLY-301: задачи закупки + confirm
+    DeskNoteModule, // TZ-DESK-408: заметки стола (anchor order/line/module)
     InvoiceModule,
     TenderModule,
     RppModule,

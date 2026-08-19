@@ -67,6 +67,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | `items.readyForWork` | `/orders/:id` | список «X из Y» hub | Не колонка Комбайна |
 | `Reservation.orderId` | reserve | reservations | **строка = `Order.number`** |
 | `SupplyTask.orderId` | снабжение | `/supply` | ObjectId |
+| `DeskNote.anchorOrderId` | `/desk` блокнот (408) | `/desk` блокнот | ObjectId → Order; anchorLineId — строка (productId/lineId), anchorModuleId — ObjectId → ProductModule; hard delete |
 | composition / BOM | каталог | Гант | live каталог |
 | остаток qty | movements | склад | SoT = `StorageItem` |
 
@@ -75,6 +76,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | Экран | Route | Поля |
 |-------|-------|------|
 | Комбайн | `/design/combine` | `boardLane`, `lineId`, rollup `Order.status` |
+| Стол менеджера | `/desk` | `Order.status` (CTA рейла); не `boardLane`; `DeskNote.anchorOrderId` (блокнот) |
 | Заказы | `/orders` | `Order.status`, `readyForWork` |
 | Цех | `/production` | `Order.status` ACTIVE, estimate |
 | Снабжение / КП / Склад | … | без изменений §3 |

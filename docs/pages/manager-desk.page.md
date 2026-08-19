@@ -45,8 +45,9 @@
 - **411:** workflow strip + rail tools скрываются по page ACL (`user.pages`); disabled primary CTA в tray показывает RU-подсказку причины (siteId / статус / freeze).
 - **407:** `?view=gantt|combine` — stub-вью с crumbs + «Открыть в студии» (`/production` | `/design/combine` + `orderId&from=desk`); embed отложен.
 - **404:** rail tools «На Ганте»/«В комбайне» — deep-link в студии с `orderId&from=desk` (не stub); на `/production` при `from=desk` — кнопка RU **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=`. Комбайн (общий DashboardPage) — known_limitation: назад браузера.
+- **408:** L-flyout `panel=notebook` — блокнот заказа (`GET/POST/PATCH/DELETE /desk-notes`, BE `backend/src/modules/desk-note`); список compact (текст, anchor badge, автор, дата), «+ заметка» с picker якоря (Заказ / линия изделия) и kind (note/checklist/reminder); checklist — чекбокс «готово», delete hard. Фильтр по текущему expand. Module-якорь — только API (picker v2).
 - Правый rail — дубль; primary actions предпочтительно в tray.
-- **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
+
 
 ### 401 (legacy, superseded by 405→402)
 
@@ -71,4 +72,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-411** | capabilities + CTA why-disabled — **DONE** |
 | **DESK-407** | crumbs + view=gantt/combine — **DONE** |
 | **DESK-404** | deep-link студии + «На стол» — **DONE** |
-| DESK-408 | блокнот DeskNote |
+| **DESK-408** | блокнот DeskNote (BE + FE) — **DONE** |

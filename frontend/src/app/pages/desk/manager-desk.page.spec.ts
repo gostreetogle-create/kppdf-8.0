@@ -618,4 +618,108 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       }),
     );
   });
+
+  it('408: notebook without expanded order shows a hint', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('notebook');
+    fixture.detectChanges();
+
+    const notebook = fixture.nativeElement.querySelector('[data-test="desk-notebook"]');
+    expect(notebook).toBeTruthy();
+    expect(notebook.textContent).toContain('Раскройте заказ');
+    expect(fixture.nativeElement.querySelector('[data-test="desk-note-form"]')).toBeNull();
+  });
+
+  it('408: notebook lists, creates and deletes notes for the expanded order', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    rows[1]!.click(); // o2 (in_production, no items → no tree requests)
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('notebook');
+    fixture.detectChanges();
+    httpMock.expectOne((req) => req.url === '/api/desk-notes' && req.method === 'GET').flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const notebook = fixture.nativeElement.querySelector('[data-test="desk-notebook"]');
+    expect(notebook).toBeTruthy();
+    expect(notebook.textContent).toContain('Заметок у заказа пока нет.');
+
+    const textarea = fixture.nativeElement.querySelector(
+      '[data-test="desk-note-text"]',
+    ) as HTMLTextAreaElement;
+    textarea.value = 'Позвонить клиенту';
+    textarea.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const submit = fixture.nativeElement.querySelector(
+      '[data-test="desk-note-submit"]',
+    ) as HTMLButtonElement;
+    submit.click();
+    fixture.detectChanges();
+
+    const post = httpMock.expectOne(
+      (req) => req.url === '/api/desk-notes' && req.method === 'POST',
+    );
+    expect(post.request.body).toEqual(
+      expect.objectContaining({ text: 'Позвонить клиенту', kind: 'note', anchorOrderId: 'o2' }),
+    );
+    post.flush({
+      _id: 'n1',
+      text: 'Позвонить клиенту',
+      kind: 'note',
+      anchorOrderId: 'o2',
+      authorId: 'u1',
+      createdAt: '2026-08-18T12:00:00.000Z',
+    });
+    await tickMicrotask();
+    fixture.detectChanges();
+    httpMock
+      .expectOne((req) => req.url === '/api/desk-notes' && req.method === 'GET')
+      .flush([
+        {
+          _id: 'n1',
+          text: 'Позвонить клиенту',
+          kind: 'note',
+          anchorOrderId: 'o2',
+          authorId: 'u1',
+          createdAt: '2026-08-18T12:00:00.000Z',
+        },
+      ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(1);
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-note-anchor"]')?.textContent,
+    ).toContain('Заказ');
+
+    const del = fixture.nativeElement.querySelector(
+      '[data-test="desk-note-delete"]',
+    ) as HTMLButtonElement;
+    del.click();
+    fixture.detectChanges();
+    httpMock
+      .expectOne((req) => req.url === '/api/desk-notes/n1' && req.method === 'DELETE')
+      .flush(null);
+    await tickMicrotask();
+    fixture.detectChanges();
+    httpMock.expectOne((req) => req.url === '/api/desk-notes' && req.method === 'GET').flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(0);
+  });
 });

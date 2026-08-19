@@ -18,6 +18,7 @@ import {
   FileText,
   Filter,
   LayoutGrid,
+  Notebook,
   Package,
   Pencil,
   ShoppingCart,
@@ -37,6 +38,11 @@ import { pluralize } from '../../shared/util/format';
 import { createLookupTable } from '../../shared/util/lookup-table';
 import { createSearchState } from '../../shared/util/search';
 import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
+import {
+  DeskNotesService,
+  type DeskNote,
+  type DeskNoteKind,
+} from '../../shared/services/desk-notes.service';
 import { Order, OrderStatus } from '../orders/orders.service';
 import { OrderFormPanelComponent } from '../orders/order-form-panel.component';
 import { OrderHubTrayComponent } from '../orders/order-hub-tray.component';
@@ -45,7 +51,7 @@ import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
 type DeskPanelSide = 'left' | 'right';
 
 export type ManagerDeskPanel =
-  'create' | 'edit' | 'filter' | 'summary' | 'client' | 'bom' | 'docs' | 'supply';
+  'create' | 'edit' | 'filter' | 'summary' | 'client' | 'bom' | 'docs' | 'supply' | 'notebook';
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   draft: 'Черновик',
@@ -115,9 +121,10 @@ const PANEL_LABELS: Record<ManagerDeskPanel, string> = {
   bom: 'Состав',
   docs: 'Документы',
   supply: 'Снабжение',
+  notebook: 'Блокнот',
 };
 
-const LEFT_PANELS = new Set<ManagerDeskPanel>(['create', 'filter', 'summary']);
+const LEFT_PANELS = new Set<ManagerDeskPanel>(['create', 'filter', 'summary', 'notebook']);
 const RIGHT_PANELS = new Set<ManagerDeskPanel>(['edit', 'client', 'bom', 'docs', 'supply']);
 const CHROME_OWNER = 'manager-desk';
 
@@ -392,6 +399,110 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                 </div>
               }
             </div>
+          } @else if (panel() === 'notebook') {
+            <div class="flex flex-col gap-4" data-test="desk-notebook">
+              @if (expandedOrder(); as order) {
+                @if (notesError()) {
+                  <p role="alert" class="manager-desk__queue-error" data-test="desk-notebook-error">
+                    {{ notesError() }}
+                  </p>
+                }
+                <div class="flex flex-col gap-2" data-test="desk-notebook-list">
+                  @if (notes().length === 0) {
+                    <p class="manager-desk__flyout-note">Заметок у заказа пока нет.</p>
+                  }
+                  @for (note of notes(); track note._id) {
+                    <div
+                      class="manager-desk__note"
+                      [class.manager-desk__note--done]="!!note.isDone"
+                      data-test="desk-note"
+                    >
+                      <div class="manager-desk__note-top">
+                        <span class="manager-desk__note-anchor" data-test="desk-note-anchor">
+                          {{ noteAnchorLabel(note) }}
+                        </span>
+                        <span class="manager-desk__note-meta">
+                          {{ noteAuthorLabel(note) }} · {{ noteDateLabel(note) }}
+                        </span>
+                      </div>
+                      <p class="manager-desk__note-text">{{ note.text }}</p>
+                      <div class="manager-desk__note-actions">
+                        @if (note.kind === 'checklist') {
+                          <label class="manager-desk__note-done">
+                            <input
+                              type="checkbox"
+                              [checked]="!!note.isDone"
+                              (change)="onNoteToggleDone(note)"
+                              data-test="desk-note-toggle"
+                            />
+                            готово
+                          </label>
+                        }
+                        <button
+                          type="button"
+                          class="manager-desk__note-delete"
+                          data-test="desk-note-delete"
+                          (click)="onNoteDelete(note)"
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                  }
+                </div>
+                <div class="flex flex-col gap-2" data-test="desk-note-form">
+                  <textarea
+                    class="pi-input w-full"
+                    rows="3"
+                    [value]="noteText()"
+                    (input)="onNoteTextInput($event)"
+                    placeholder="Заметка к заказу…"
+                    aria-label="Текст заметки"
+                    data-test="desk-note-text"
+                  ></textarea>
+                  <div class="flex gap-2 flex-wrap">
+                    <select
+                      class="pi-input"
+                      [value]="noteKind()"
+                      (change)="onNoteKindChange($event)"
+                      aria-label="Тип заметки"
+                      data-test="desk-note-kind"
+                    >
+                      <option value="note">Заметка</option>
+                      <option value="checklist">Чек-лист</option>
+                      <option value="reminder">Напоминание</option>
+                    </select>
+                    <select
+                      class="pi-input"
+                      [value]="noteLineId() ?? ''"
+                      (change)="onNoteLineChange($event)"
+                      aria-label="Якорь заметки"
+                      data-test="desk-note-anchor-select"
+                    >
+                      <option value="">Заказ</option>
+                      @for (item of order.items ?? []; track item.lineId ?? item.productId) {
+                        <option [value]="item.lineId ?? item.productId">
+                          {{ item.productName ?? 'Линия' }}
+                        </option>
+                      }
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-pointer disabled:opacity-50"
+                    [disabled]="!noteText().trim()"
+                    data-test="desk-note-submit"
+                    (click)="onNoteCreate()"
+                  >
+                    Добавить
+                  </button>
+                </div>
+              } @else {
+                <p class="manager-desk__flyout-note">
+                  Раскройте заказ в очереди, чтобы видеть и добавлять его заметки.
+                </p>
+              }
+            </div>
           } @else {
             <p class="manager-desk__flyout-copy">Здесь будет панель (в следующей волне)</p>
             <p class="manager-desk__flyout-note">
@@ -617,6 +728,71 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         font-size: 0.9rem;
         line-height: 1.5;
       }
+      .manager-desk__note {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.6rem 0.7rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper);
+      }
+      .manager-desk__note--done {
+        opacity: 0.62;
+      }
+      .manager-desk__note--done .manager-desk__note-text {
+        text-decoration: line-through;
+      }
+      .manager-desk__note-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .manager-desk__note-anchor {
+        color: var(--color-sunrise-warm, #9b6b1e);
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .manager-desk__note-meta {
+        color: var(--color-muted-foreground);
+        font-size: 0.68rem;
+        white-space: nowrap;
+      }
+      .manager-desk__note-text {
+        margin: 0;
+        font-size: 0.85rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .manager-desk__note-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+      .manager-desk__note-done {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--color-muted-foreground);
+        font-size: 0.72rem;
+        cursor: pointer;
+      }
+      .manager-desk__note-delete {
+        border: 0;
+        padding: 0;
+        background: transparent;
+        color: var(--color-destructive, #b3261e);
+        font: inherit;
+        font-size: 0.72rem;
+        cursor: pointer;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
       @media (max-width: 900px) {
         .manager-desk__order-row {
           grid-template-columns: auto minmax(4.5rem, auto) minmax(0, 1fr);
@@ -641,6 +817,13 @@ export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
   protected readonly view = signal<DeskView>('desk');
+
+  /** 408: блокнот — заметки к раскрытому заказу (anchor order/line). */
+  protected readonly notes = signal<DeskNote[]>([]);
+  protected readonly notesError = signal<string | null>(null);
+  protected readonly noteText = signal('');
+  protected readonly noteKind = signal<DeskNoteKind>('note');
+  protected readonly noteLineId = signal<string | null>(null);
 
   /** 410: debounced search + client-side filter/sort/slice pipeline. */
   private readonly search = createSearchState(300);
@@ -739,6 +922,7 @@ export class ManagerDeskPage {
   private readonly chromeTools = inject(PiChromeToolsService);
   private readonly toast = inject(PiToastService);
   private readonly auth = inject(AuthService);
+  private readonly notesService = inject(DeskNotesService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly counterpartiesLookup = createLookupTable<Counterparty>(
     this.counterpartyService.list({ limit: 200 }),
@@ -784,6 +968,15 @@ export class ManagerDeskPage {
       this.expandedOrder();
       this.panel();
       untracked(() => this.syncChromeTools());
+    });
+
+    // 408: when the notebook is open, load notes for the expanded order.
+    effect(() => {
+      const panel = this.panel();
+      const order = this.expandedOrder();
+      if (panel === 'notebook' && order) {
+        untracked(() => this.loadNotes(order._id));
+      }
     });
   }
 
@@ -884,6 +1077,93 @@ export class ManagerDeskPage {
   /** Empty-composition CTA: add lines via the existing edit flyout. */
   protected onAddLines(): void {
     this.openPanel('edit');
+  }
+
+  /** 408: load notes for the given order (one write-path via DeskNotesService). */
+  private loadNotes(orderId: string): void {
+    this.notesError.set(null);
+    this.notesService.list({ orderId }).subscribe((res) => {
+      if (res.ok) {
+        this.notes.set(res.data);
+      } else {
+        this.notesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected onNoteTextInput(event: Event): void {
+    this.noteText.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected onNoteKindChange(event: Event): void {
+    this.noteKind.set((event.target as HTMLSelectElement).value as DeskNoteKind);
+  }
+
+  protected onNoteLineChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.noteLineId.set(value || null);
+  }
+
+  protected onNoteCreate(): void {
+    const order = this.expandedOrder();
+    const text = this.noteText().trim();
+    if (!order || !text) return;
+    this.notesService
+      .create({
+        text,
+        kind: this.noteKind(),
+        anchorOrderId: order._id,
+        anchorLineId: this.noteLineId() ?? undefined,
+      })
+      .subscribe((res) => {
+        if (res.ok) {
+          this.noteText.set('');
+          this.noteLineId.set(null);
+          this.loadNotes(order._id);
+        } else {
+          this.notesError.set(extractErrorMessage(res.error));
+        }
+      });
+  }
+
+  protected onNoteToggleDone(note: DeskNote): void {
+    this.notesService.update(note._id, { isDone: !note.isDone }).subscribe((res) => {
+      if (res.ok) this.loadNotes(this.expandedOrder()?._id ?? note.anchorOrderId);
+    });
+  }
+
+  protected onNoteDelete(note: DeskNote): void {
+    this.notesService.remove(note._id).subscribe((res) => {
+      if (res.ok) this.loadNotes(this.expandedOrder()?._id ?? note.anchorOrderId);
+    });
+  }
+
+  protected noteAnchorLabel(note: DeskNote): string {
+    if (note.anchorLineId) {
+      const item = this.expandedOrder()?.items?.find(
+        (i) => (i.lineId ?? i.productId) === note.anchorLineId,
+      );
+      return item?.productName ?? 'Линия';
+    }
+    return 'Заказ';
+  }
+
+  protected noteAuthorLabel(note: DeskNote): string {
+    const me = this.auth.user();
+    if (me && note.authorId === me.id) return me.displayName ?? me.username ?? 'Я';
+    return note.authorId.slice(0, 6);
+  }
+
+  protected noteDateLabel(note: DeskNote): string {
+    if (!note.createdAt) return '';
+    const d = new Date(note.createdAt);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 
   /** Shared handler for left-rail tools and any future empty-state CTA. */
@@ -1047,6 +1327,18 @@ export class ManagerDeskPage {
         ariaControls: 'desk-flyout-summary',
         order: 3,
         onClick: () => this.openPanel('summary'),
+      },
+      {
+        id: 'notebook',
+        side: 'left',
+        ariaLabel: 'Блокнот',
+        title: 'Блокнот',
+        icon: Notebook,
+        active: open === 'notebook',
+        ariaExpanded: open === 'notebook',
+        ariaControls: 'desk-flyout-notebook',
+        order: 4,
+        onClick: () => this.openPanel('notebook'),
       },
     ];
 
