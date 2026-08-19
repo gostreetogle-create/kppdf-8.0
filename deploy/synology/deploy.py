@@ -421,7 +421,11 @@ def publish_desktop_installer(project_root, frontend_dir):
         candidates.append(
             project_root / "frontend" / "downloads" / versioned_exe,
         )
-    candidates.append(project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe")
+        candidates.append(
+            project_root / "frontend" / "browser" / "downloads" / versioned_exe,
+        )
+    unversioned = project_root / "frontend" / "downloads" / "kppdf-desktop-setup.exe"
+    candidates.append(unversioned)
     src = next((p for p in candidates if p.is_file()), None)
     downloads = frontend_dir / "downloads"
     downloads.mkdir(parents=True, exist_ok=True)
@@ -435,12 +439,14 @@ def publish_desktop_installer(project_root, frontend_dir):
             "(canon: versioned kppdf-desktop-setup-v{semver}.zip + aliases)"
         )
         return
-    if semver and src == candidates[-1]:
+    if semver and src == unversioned:
         warn(
-            "Using unversioned frontend/downloads/kppdf-desktop-setup.exe — "
-            "run `cd desktop && pnpm run release-installer` before deploy so "
-            "filename semver matches embedded app version."
+            "FAIL: only unversioned kppdf-desktop-setup.exe found — refusing to "
+            "relabel it as v"
+            + semver
+            + ". Run `cd desktop && pnpm run release-installer` before deploy."
         )
+        return
     shutil.copy2(src, dest_exe)
     with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(dest_exe, arcname="kppdf-desktop-setup.exe")
