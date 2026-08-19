@@ -5,18 +5,21 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-19T05:46:00+03:00
-updated_at: 2026-08-19T06:10:00+03:00
-hygiene: origin `404832c8`; desk 414–416; KP **380+377 DONE**; **warm deploy OK** 2026-08-19
+updated_at: 2026-08-19T18:45:00+03:00
+hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ACTIVE
 
-**Desktop wave — COMPLETE (local)** 57+49+58 on `02534d0e`; prod `/downloads/` after deploy  
-Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` — PO: reinstall from `frontend/browser/downloads/kppdf-desktop-setup-v0.5.6.zip`
+**PO reminders wave** — код на `main`, prod не обновлён:
+- PARTY-304 `e41dec0d` — пагинация контрагентов
+- DESK-417 `cda4417b` — фильтр стола persist + default all
+- ORDERS-308 `ba98a4a5` — PATCH номера + soft-delete в списке
+
+Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-Пусто — все TZ волны DONE (409 — backlog, не брать).
+Backlog (не брать без PO): PARTY-305, ORDERS-307, UI-344, SUPPLY-304/305
 
 ## DESK WAVE checkpoint (PO)
 
@@ -37,6 +40,20 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 3. «кати» warm deploy if smoke ok
 
 ## DONE / LANDED (recent)
+
+## [2026-08-19] — TZ-ORDERS-308 DONE — PATCH number + soft-delete list filter
+
+- Archive: `tasks/_archive/2026-08/TZ-ORDERS-308.done.md`; SHA `ba98a4a5`; BE jest **78/78**; deploy **НЕ**
+- Root cause: `update()` ignored `number`; `findAll()` не фильтровал `deletedAt`
+- PO smoke после deploy: смена номера + удаление на `/orders`
+
+## [2026-08-19] — TZ-DESK-417 DONE — desk filter persist per user
+
+- SHA `cda4417b`; default all statuses; localStorage per userId; deploy **НЕ**
+
+## [2026-08-19] — TZ-PARTY-304 DONE — counterparties pagination
+
+- SHA `e41dec0d`; BE `$and` tenant+search; «Показано X–Y из Z»; deploy **НЕ**
 
 ## [2026-08-19] — TZ-DESK-416 DONE — tray «Открыть производство» from=desk
 

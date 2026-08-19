@@ -1085,7 +1085,13 @@ export class ManagerDeskPage {
   }
 
   protected onOpenSupply(): void {
-    this.toast.show('Панель снабжения подключится позже.');
+    const orderId = this.expandedId();
+    void this.router.navigate(['/supply'], {
+      queryParams: {
+        view: 'quick',
+        ...(orderId ? { orderId } : {}),
+      },
+    });
   }
 
   protected onOpenDocs(): void {

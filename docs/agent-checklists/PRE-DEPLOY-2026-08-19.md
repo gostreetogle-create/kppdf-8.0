@@ -3,14 +3,14 @@
 > Заполнять только по evidence. Пустая галочка = не проверено.  
 > Warm deploy (`WIPE=false`). Wipe запрещён.
 
-updated_at: 2026-08-19T06:10:00+03:00
-deploy_sha_target: 404832c8
+updated_at: 2026-08-19T18:45:00+03:00
+deploy_sha_target: ba98a4a5
 
 ## A. Git / гигиена
 
 - [x] `_active/` пуст
 - [x] OPS-310 archive + evidence
-- [x] `main` == `origin/main` после push (`404832c8`)
+- [x] `main` == `origin/main` после push (`ba98a4a5`)
 - [ ] Нет secrets в staged
 - [ ] Не staged: `data/paspots/`, `data/products/`, exe/zip
 - [ ] Docs/TZ волны закоммичены и запушены
@@ -20,6 +20,7 @@ deploy_sha_target: 404832c8
 - [x] Desk 10/10: 406, 402, 412, 403, 413, 410, 411, 407, 404, 408
 - [x] Desktop: TZD-57, 49, 58
 - [x] OPS-310 archive существует
+- [x] PO wave 2026-08-19: **PARTY-304** `e41dec0d`, **DESK-417** `cda4417b`, **ORDERS-308** `ba98a4a5`
 
 ## C. Gates (свежий прогон)
 
@@ -27,6 +28,7 @@ deploy_sha_target: 404832c8
 - [x] FE jest focused — **58/58** (manager-desk 20, order-hub-tray+orders 19, pairing, order-form-panel)
 - [x] BE `tsc -p tsconfig.build.json --noEmit` — exit 0
 - [x] BE jest `desk-note` — **10/10** (`pnpm exec jest`, TZ-DESK-415)
+- [x] BE jest `order.service.spec` — **78/78** (TZ-ORDERS-308)
 - [x] Desktop `tsc --noEmit` — exit 0
 - [x] Review swarm: P1/P2 hotfixes 414–416 on main; нет открытого P0
 
@@ -44,17 +46,23 @@ deploy_sha_target: 404832c8
 
 ## F. Deploy (только если A–E PASS)
 
-- [x] Preflight OK, SSH `192.168.1.103` reachable (VPN off)
-- [x] `.\deploy\synology\deploy.ps1` (WIPE=false) — 2026-08-19
-- [x] Блок `=== Deploy complete ===`
-- [x] Auth login OK
-- [x] Frontend HTTP 200
-- [x] `/api/health/ready` ok (200)
+> Предыдущий warm deploy: `404832c8` (KP 380+377). Ниже — **новый** deploy для PO wave.
+
+- [ ] Preflight OK, SSH `192.168.1.103` reachable (VPN off)
+- [ ] `.\deploy\synology\deploy.ps1` (WIPE=false) — target `ba98a4a5`
+- [ ] Блок `=== Deploy complete ===`
+- [ ] Auth login OK
+- [ ] Frontend HTTP 200
+- [ ] `/api/health/ready` ok (200)
 - [ ] `/downloads/kppdf-desktop-setup-v0.5.6.zip` свежий
 - [ ] `/desk` не 404 (после login)
 
 ## G. После деплоя (PO / агент)
 
+- [ ] `/orders`: PATCH номера сохраняется после reload
+- [ ] `/orders`: DELETE — строка исчезает из списка
+- [ ] `/counterparties`: пагинация «Показано X–Y из Z»
+- [ ] `/desk`: фильтр статуса по умолчанию «Все», persist после F5
 - [ ] `DESK-SMOKE.md` на проде (хотя бы очередь + expand + create)
 - [ ] `DESKTOP-SMOKE.md` install с прод-кнопки **или** локального ZIP
 - [ ] `_NOW.md`: SHA prod + warm deploy OK

@@ -37,7 +37,7 @@ deploy/kp3-data-copy/kppdf8-kp3-data-copy
 !deploy/kp3-data-copy/CREDENTIALS.example.md
 !deploy/kp3-data-copy/README.md
 
-# KP3 migration staging dumps (JSON + media binaries) — keep local only
+# KP3 migration staging dumps (JSON + media binaries) пїЅ keep local only
 data/from-kp3/raw/
 data/from-kp3/media/
 data/from-kp3/**/*.bson
@@ -155,7 +155,7 @@ vendor/
 !docs/**
 
 # Local PO data dumps (never commit)
-tasks/Данные/
+tasks/пїЅпїЅпїЅпїЅпїЅпїЅ/
 data/paspots/
 data/products/
 

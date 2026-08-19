@@ -25,6 +25,12 @@ export const DESK_WORKFLOW_CHIPS: readonly GroupChip[] = [
     queryParams: { view: 'gantt' },
     pageKey: 'production',
   },
-  { id: 'supply', label: 'Снабжение', route: '/supply', pageKey: 'supply' },
+  {
+    id: 'supply',
+    label: 'Снабжение',
+    route: '/supply',
+    queryParams: { view: 'quick' },
+    pageKey: 'supply',
+  },
   { id: 'shipping', label: 'Отгрузка', route: '/shipping', pageKey: 'shipping' },
 ];
