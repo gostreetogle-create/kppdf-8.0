@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { OrderService } from './order.service';
 import { OrderStatus } from './order.schema';
@@ -116,6 +116,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   const model = jest.fn() as jest.Mock & {
     find: jest.Mock;
     findById: jest.Mock;
+    findOne: jest.Mock;
     updateOne: jest.Mock;
   };
   // `new this.model(payload)` must APPLY the payload onto a fresh doc
@@ -129,6 +130,7 @@ function createService(overrides: Record<string, unknown> = {}) {
   }));
   model.find = jest.fn();
   model.findById = jest.fn();
+  model.findOne = jest.fn();
   model.updateOne = jest.fn();
   const counter = { next: jest.fn().mockResolvedValue('ORD-0001') };
   const shipmentModel = { create: jest.fn() };
@@ -195,6 +197,7 @@ function createService(overrides: Record<string, unknown> = {}) {
     model: dependencies.model as jest.Mock & {
       find: jest.Mock;
       findById: jest.Mock;
+      findOne: jest.Mock;
       updateOne: jest.Mock;
     },
     counter: dependencies.counter as { next: jest.Mock },
@@ -371,10 +374,21 @@ describe('OrderService — TZ-ORDERS-301', () => {
 
       const result = await service.findAll(COUNTERPARTY, 'confirmed');
       expect(model.find).toHaveBeenCalledWith({
+        deletedAt: null,
         counterpartyId: new Types.ObjectId(COUNTERPARTY),
         status: 'confirmed',
       });
       expect(result).toBe(docs);
+    });
+
+    it('findById throws 404 when the order is soft-deleted (TZ-ORDERS-308)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ deletedAt: new Date() });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await expect(service.findById(doc._id.toString())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('findById throws 404 on an invalid id before any query', async () => {
@@ -492,6 +506,46 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(doc.priority).toBe('urgent');
       expect(doc.save).toHaveBeenCalled();
       expect(result).toBe(doc);
+    });
+
+    it('PATCH number updates doc.number when unique (TZ-ORDERS-308)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', number: 'ORD-0001' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      model.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      await service.update(doc._id.toString(), { number: 'ORD-0099' } as never);
+      expect(doc.number).toBe('ORD-0099');
+      expect(model.findOne).toHaveBeenCalledWith({
+        number: 'ORD-0099',
+        _id: { $ne: doc._id },
+        deletedAt: null,
+      });
+      expect(doc.save).toHaveBeenCalled();
+    });
+
+    it('PATCH number rejects duplicate with 409 Conflict (TZ-ORDERS-308)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', number: 'ORD-0001' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      model.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(orderDoc({ number: 'ORD-0099' })),
+      });
+
+      await expect(
+        service.update(doc._id.toString(), { number: 'ORD-0099' } as never),
+      ).rejects.toBeInstanceOf(ConflictException);
+      expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('allows number change in in_production (TZ-ORDERS-308)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'in_production', number: 'ORD-0001' });
+      model.findById.mockReturnValue(mockQuery(doc));
+      model.findOne.mockReturnValue({ exec: jest.fn().mockResolvedValue(null) });
+
+      await service.update(doc._id.toString(), { number: 'ORD-0099' } as never);
+      expect(doc.number).toBe('ORD-0099');
     });
   });
 
@@ -1069,8 +1123,22 @@ describe('OrderService — TZ-ORDERS-301', () => {
       await service.remove(doc._id.toString());
       expect(model.updateOne).toHaveBeenCalledWith(
         { _id: doc._id },
-        { $set: { deletedAt: expect.any(Date) } },
+        { $set: { deletedAt: expect.any(Date), isActive: false } },
       );
+    });
+
+    it('findAll excludes soft-deleted orders (TZ-ORDERS-308)', async () => {
+      const { service, model } = createService();
+      const active = orderDoc({});
+      model.find.mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([active]),
+      });
+
+      const result = await service.findAll();
+      expect(model.find).toHaveBeenCalledWith({ deletedAt: null });
+      expect(result).toEqual([active]);
     });
   });
 

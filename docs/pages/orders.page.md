@@ -71,7 +71,7 @@ Read-only expand на списке `/orders`:
 | GET        | `/api/users?limit=100`             | Список пользователей для «Ответственный» на линии            |
 | GET        | `/api/products/:id/tree?maxDepth=` | Live BOM линии (каталог)                                     |
 | POST       | `/api/orders/:id/stub-proposal`    | Черновик КП для прямого заказа; идемпотентно (TZ-ORDERS-306) |
-| DELETE     | `/api/orders/:id`                  | Удаление (soft delete)                                       |
+| DELETE     | `/api/orders/:id`                  | Soft delete — заказ исчезает из списка (`deletedAt` + `isActive: false`) |
 
 Ответ GET list: `Order[]` (flat array, НЕ пагинированный envelope)
 
@@ -140,7 +140,7 @@ Read-only expand на списке `/orders`:
 - **Быстрый заказчик:** имя + телефон + адрес → `POST /counterparties/quick` → подставить `counterpartyId`+`siteId`.
 - На линии: изделие (`productId` обязателен; picker пишет id, не только имя); опционально **Ответственный** и **Отгрузка** (`plannedShipDate`, дефолт = дата заказа или сегодня).
 - Шапка **Планируемая дата** — `type="date"` (не required).
-- Freeze: `in_production`/`ready` — состав/заказчик/объект/статус read-only; Save шлёт только `plannedDate`+`priority`. `shipped`/`delivered`/`cancelled` — только просмотр.
+- Freeze: `in_production`/`ready` — состав/заказчик/объект/статус read-only; Save шлёт только `plannedDate`+`priority`+`number`. `shipped`/`delivered`/`cancelled` — только просмотр.
 - `unitPrice` пока остаётся в форме (не strip в этом TZ).
 
 ## Computed chain (список)

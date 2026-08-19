@@ -1,4 +1,12 @@
-﻿## [2026-08-19] — TZ-DESK-416 — tray production link from=desk
+﻿## [2026-08-19] — TZ-ORDERS-308 — PATCH number + soft-delete list filter
+
+**Исполнитель:** executor
+**Статус:** DONE
+**Суть:** `update()` присваивает `number` (unique 409); `findAll`/`findById`/`findByIdRaw` скрывают soft-deleted; schema `deletedAt`.
+**Process note:** любой soft-delete → все list/find + schema field + test «удалённый не в списке».
+**Gates:** BE tsc PASS; order.service.spec PASS.
+
+## [2026-08-19] — TZ-DESK-416 — tray production link from=desk
 
 **Исполнитель:** composer-executor-desk-416
 **Статус:** DONE

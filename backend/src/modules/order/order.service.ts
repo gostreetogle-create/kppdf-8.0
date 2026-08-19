@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { randomUUID } from 'node:crypto';
 import { ClientSession, Model, Types } from 'mongoose';
@@ -36,7 +42,7 @@ export interface OrderActor {
   role?: string;
 }
 
-const PLAN_UPDATE_KEYS = new Set(['plannedDate', 'priority', 'materialsSource']);
+const PLAN_UPDATE_KEYS = new Set(['plannedDate', 'priority', 'materialsSource', 'number']);
 const PLAN_EDITABLE_FROZEN = new Set(['in_production', 'ready']);
 const HARD_FROZEN = new Set(['shipped', 'delivered', 'cancelled']);
 /** TZ-OPS-315 — статусы, в которых заказ МОЖЕТ быть создан (всегда через workflow). */
@@ -295,7 +301,7 @@ export class OrderService {
     status?: string,
     managerId?: string,
   ): Promise<OrderDocument[]> {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = { deletedAt: null };
     if (counterpartyId) {
       if (!Types.ObjectId.isValid(counterpartyId)) return [];
       filter.counterpartyId = new Types.ObjectId(counterpartyId);
@@ -331,7 +337,7 @@ export class OrderService {
       .populate('contractId')
       .populate('items.ownerUserId', 'displayName username fullName')
       .exec();
-    if (!doc) throw new NotFoundException(`Order ${id} not found`);
+    if (!doc || doc.deletedAt) throw new NotFoundException(`Order ${id} not found`);
     await this.persistLineBoardFieldsIfNeeded(doc);
     return doc;
   }
@@ -341,7 +347,7 @@ export class OrderService {
       throw new NotFoundException(`Order ${id} not found`);
     }
     const doc = await this.model.findById(id).exec();
-    if (!doc) throw new NotFoundException(`Order ${id} not found`);
+    if (!doc || doc.deletedAt) throw new NotFoundException(`Order ${id} not found`);
     this.ensureLineBoardFields(doc);
     return doc;
   }
@@ -797,6 +803,21 @@ export class OrderService {
         );
       }
     }
+    if (dto.number !== undefined) {
+      const trimmed = dto.number.trim();
+      if (!trimmed) {
+        throw new BadRequestException('Номер заказа не может быть пустым');
+      }
+      if (trimmed !== doc.number) {
+        const taken = await this.model
+          .findOne({ number: trimmed, _id: { $ne: doc._id }, deletedAt: null })
+          .exec();
+        if (taken) {
+          throw new ConflictException('Номер уже занят');
+        }
+        doc.number = trimmed;
+      }
+    }
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.materialsSource !== undefined) doc.materialsSource = dto.materialsSource;
     if (dto.status !== undefined) doc.status = dto.status;
@@ -826,7 +847,14 @@ export class OrderService {
       doc.items = this.mapItems(dto.items, doc.items);
       doc.total = doc.items.reduce((s, i) => s + i.total, 0);
     }
-    return doc.save();
+    try {
+      return await doc.save();
+    } catch (err: unknown) {
+      if ((err as { code?: number })?.code === 11000) {
+        throw new ConflictException('Номер уже занят');
+      }
+      throw err;
+    }
   }
 
   /** TZ-PRODUCTION-331 — legacy orders without siteId fail mongoose required on any save. */
@@ -967,7 +995,10 @@ export class OrderService {
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
     await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+      .updateOne(
+        { _id: doc._id },
+        { $set: { deletedAt: new Date(), isActive: false } },
+      )
       .exec();
   }
 }

@@ -223,6 +223,13 @@ export class Order {
   /** TZ-PRODUCTION-316: per-bar start offset from visualAnchor (parallel OK). */
   @Prop({ type: [EstimateStartOffsetSchema], default: [] })
   estimateStartOffsets!: EstimateStartOffset[];
+
+  /**
+   * TZ-ORDERS-308: soft-delete marker. Was written by `remove()` before this TZ
+   * without a schema field, so strict mode silently dropped it.
+   */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
