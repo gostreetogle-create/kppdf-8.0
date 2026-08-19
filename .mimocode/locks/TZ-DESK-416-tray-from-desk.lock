@@ -1,0 +1,7 @@
+# Lock: TZ-DESK-416 — tray «Открыть производство» from=desk
+
+- claimed: 2026-08-19T05:38:32+03:00
+- released: 2026-08-19
+- owner: composer-executor-desk-416
+- conflict keys: order-hub-tray.component.ts, order-hub-tray.component.spec.ts
+- status: DONE (archive `tasks/_archive/2026-08/TZ-DESK-416.done.md`)

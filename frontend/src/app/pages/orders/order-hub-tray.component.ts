@@ -389,7 +389,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     <span class="text-xs text-muted-foreground">Производство</span>
                     <a
                       routerLink="/production"
-                      [queryParams]="{ orderId: order()._id }"
+                      [queryParams]="productionQueryParams()"
                       class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
                       data-test="order-production-link"
                       (click)="$event.stopPropagation()"
@@ -569,6 +569,12 @@ export class OrderHubTrayComponent implements OnInit {
       this.compositionExpanded.set(true);
       this.loadComposition();
     }
+  }
+
+  /** Desk host: `/production` shows «На стол». Hub stays `{ orderId }` only (HUB-303). */
+  protected productionQueryParams(): { orderId: string; from?: 'desk' } {
+    const orderId = this.order()._id;
+    return this.mode() === 'desk' ? { orderId, from: 'desk' } : { orderId };
   }
 
   protected statusLabel(status: OrderStatus): string {
