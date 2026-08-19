@@ -87,31 +87,32 @@ export class CounterpartyService {
     user?: CounterpartyActor,
   ) {
     const page = Math.max(1, q.page ?? 1);
-    const limit = Math.min(100, Math.max(1, q.limit ?? 20));
+    const limit = Math.min(200, Math.max(1, q.limit ?? 50));
     const filter: Record<string, unknown> = { deletedAt: null };
 
+    const tenantScope: Record<string, unknown>[] = [];
     if (user?.organizationId) {
-      filter.$or = [
+      tenantScope.push(
         { organizationId: new Types.ObjectId(user.organizationId) },
         { organizationId: null, isSystem: true },
         { organizationId: { $exists: false } },
-      ];
+      );
     }
 
     if (q.search) {
       const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const re = new RegExp(escaped, 'i');
-      const searchCond = {
+      const searchScope = {
         $or: [{ name: re }, { shortName: re }, { inn: re }, { phone: re }, { email: re }],
       };
-      if (filter.$or) {
-        filter.$or = (filter.$or as Record<string, unknown>[]).map((cond) => ({
-          ...cond,
-          ...searchCond,
-        }));
+      if (tenantScope.length > 0) {
+        // Search AND (own org OR system OR legacy) — same filter for find + count.
+        filter.$and = [{ $or: tenantScope }, searchScope];
       } else {
-        filter.$or = [searchCond];
+        filter.$or = searchScope.$or;
       }
+    } else if (tenantScope.length > 0) {
+      filter.$or = tenantScope;
     }
 
     if (q.role) filter.roles = q.role;

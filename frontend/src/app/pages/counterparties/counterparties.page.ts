@@ -66,7 +66,9 @@ const PAGE_SIZE = 50;
         <app-pi-button variant="default" (click)="openCreate()" data-test="counterparty-create">
           + Создать
         </app-pi-button>
-        <span class="text-xs text-muted-foreground">{{ total() }} заказчик{{ totalLabel() }}</span>
+        <span class="text-xs text-muted-foreground tabular-nums" data-test="counterparties-range">
+          Показано {{ rangeStart() }}–{{ rangeEnd() }} из {{ total() }}
+        </span>
         @if (stubCount() > 0) {
           <span class="text-xs text-muted-foreground" data-test="counterparties-stub-count">
             · {{ stubCount() }} с временным ИНН
@@ -174,13 +176,16 @@ export class CounterpartiesPage implements OnInit {
 
   protected readonly stubCount = computed(() => this.rows().filter((r) => r.innIsStub).length);
 
-  protected readonly totalLabel = computed(() => {
-    const n = this.total();
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return '';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'а';
-    return 'ов';
+  protected readonly rangeStart = computed(() => {
+    const total = this.total();
+    if (total <= 0) return 0;
+    return (this.page() - 1) * PAGE_SIZE + 1;
+  });
+
+  protected readonly rangeEnd = computed(() => {
+    const total = this.total();
+    if (total <= 0) return 0;
+    return Math.min(this.page() * PAGE_SIZE, total);
   });
 
   ngOnInit(): void {

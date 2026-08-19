@@ -90,11 +90,12 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
     );
 
     const findCall = mockModel.find.mock.calls[0][0];
-    expect(findCall.$or).toBeDefined();
-    const orConditions = findCall.$or as Record<string, unknown>[];
-    for (const cond of orConditions) {
-      expect((cond as Record<string, unknown>).$or).toBeDefined();
-    }
+    expect(findCall.$and).toBeDefined();
+    const andConditions = findCall.$and as Record<string, unknown>[];
+    expect(andConditions).toHaveLength(2);
+    expect((andConditions[0] as Record<string, unknown>).$or).toBeDefined();
+    expect((andConditions[1] as Record<string, unknown>).$or).toBeDefined();
+    expect(mockModel.countDocuments).toHaveBeenCalledWith(findCall);
   });
 
   it('findAll without org scope does not add org-scoping to $or', async () => {
@@ -112,6 +113,20 @@ describe('CounterpartyService (TZ-241 org-scoping)', () => {
       expect((cond as Record<string, unknown>).organizationId).toBeUndefined();
       expect((cond as Record<string, unknown>).isSystem).toBeUndefined();
     }
+    expect(findCall.$and).toBeUndefined();
+  });
+
+  it('findAll defaults limit to 50 and clamps to 200', async () => {
+    const mockModel = makeMockModel();
+    service = new CounterpartyService(mockModel as any, { create: jest.fn() } as any);
+    mockModel._findExec.mockResolvedValue([]);
+    mockModel._countExec.mockResolvedValue(0);
+
+    const defaulted = await service.findAll();
+    expect(defaulted.limit).toBe(50);
+
+    const clamped = await service.findAll({ limit: 500 });
+    expect(clamped.limit).toBe(200);
   });
 });
 

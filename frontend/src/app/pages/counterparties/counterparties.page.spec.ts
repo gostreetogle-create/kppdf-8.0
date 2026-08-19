@@ -16,7 +16,10 @@ type Page = CounterpartiesPage & {
   openCreate: () => void;
   openEdit: (row: Counterparty) => void;
   onDelete: (row: Counterparty) => void;
+  onPageChange: (page: number) => void;
   rows: () => Counterparty[];
+  total: () => number;
+  page: () => number;
 };
 
 /**
@@ -135,5 +138,49 @@ describe('CounterpartiesPage (TZ-PARTY-301 stub INN · TZ-PARTY-303 CRUD)', () =
     await fixture.whenStable();
 
     expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('page 2 requests page=2 and preserves total from the API (TZ-PARTY-304)', async () => {
+    list = jest
+      .fn()
+      .mockReturnValue(of({ ok: true, data: { items: rows, total: 120, page: 1, limit: 50 } }));
+    remove = jest.fn().mockReturnValue(of({ ok: true, data: undefined }));
+    open = jest.fn().mockReturnValue(dialogRef<unknown>(undefined));
+
+    await TestBed.resetTestingModule()
+      .configureTestingModule({
+        providers: [
+          { provide: CounterpartyService, useValue: { list, remove, listRoles: () => of([]) } },
+          { provide: PiDialogService, useValue: { open } },
+          { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        ],
+      })
+      .overrideComponent(CounterpartiesPage, {
+        set: {
+          imports: [TableComponent, BadgeComponent, PiRowActionsComponent],
+          schemas: [NO_ERRORS_SCHEMA],
+        },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(CounterpartiesPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const page = fixture.componentInstance as Page;
+    expect(page.total()).toBe(120);
+
+    page.onPageChange(2);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(list).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2, limit: 50 }));
+    expect(page.total()).toBe(120);
+    expect(page.page()).toBe(2);
+
+    const range = fixture.nativeElement.querySelector(
+      '[data-test="counterparties-range"]',
+    ) as HTMLElement | null;
+    expect(range?.textContent).toContain('Показано 51–100 из 120');
   });
 });
