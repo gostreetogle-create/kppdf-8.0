@@ -89,8 +89,6 @@ describe('DocumentTemplateService - Continuation Pages', () => {
     });
 
     const pageMatches = html.match(/<section class="doc-page">([\s\S]*?)<\/section>/g);
-    console.log('PAGES COUNT:', pageMatches?.length);
-    console.log('PAGE 2 HTML:', pageMatches?.[1]);
     expect(pageMatches).toBeDefined();
     expect(pageMatches!.length).toBeGreaterThan(1);
     
