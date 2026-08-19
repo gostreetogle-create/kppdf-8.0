@@ -6,8 +6,8 @@
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
 updated_at: 2026-08-19T05:46:00+03:00
-updated_at: 2026-08-19T06:00:00+03:00
-hygiene: origin `5b4a3268`; desk **414–416 DONE**; KP **380→377 IN PROGRESS** (PO away — full pipeline)
+updated_at: 2026-08-19T06:10:00+03:00
+hygiene: origin `404832c8`; desk 414–416; KP **380+377 DONE**; **warm deploy OK** 2026-08-19
 
 ## ACTIVE
 

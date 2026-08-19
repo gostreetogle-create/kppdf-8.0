@@ -4,13 +4,13 @@
 > Warm deploy (`WIPE=false`). Wipe запрещён.
 
 updated_at: 2026-08-19T06:10:00+03:00
-deploy_sha_target: ab33c780
+deploy_sha_target: 404832c8
 
 ## A. Git / гигиена
 
 - [x] `_active/` пуст
 - [x] OPS-310 archive + evidence
-- [ ] `main` == `origin/main` после docs push
+- [x] `main` == `origin/main` после push (`404832c8`)
 - [ ] Нет secrets в staged
 - [ ] Не staged: `data/paspots/`, `data/products/`, exe/zip
 - [ ] Docs/TZ волны закоммичены и запушены
@@ -45,11 +45,11 @@ deploy_sha_target: ab33c780
 ## F. Deploy (только если A–E PASS)
 
 - [x] Preflight OK, SSH `192.168.1.103` reachable (VPN off)
-- [ ] `.\deploy\synology\deploy.ps1` (WIPE=false)
-- [ ] Блок `=== Deploy complete ===`
-- [ ] Auth login OK
-- [ ] Frontend HTTP 200
-- [ ] `/api/health/ready` ok
+- [x] `.\deploy\synology\deploy.ps1` (WIPE=false) — 2026-08-19
+- [x] Блок `=== Deploy complete ===`
+- [x] Auth login OK
+- [x] Frontend HTTP 200
+- [x] `/api/health/ready` ok (200)
 - [ ] `/downloads/kppdf-desktop-setup-v0.5.6.zip` свежий
 - [ ] `/desk` не 404 (после login)
 
