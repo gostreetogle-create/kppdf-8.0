@@ -49,15 +49,22 @@ export class DeskNoteController {
   @Patch(':id')
   @Roles('admin', 'director', 'manager', 'user')
   @AuditAction({ action: 'update', entityType: 'DeskNote', idParam: 'id' })
-  update(@Param('id') id: string, @Body() dto: UpdateDeskNoteDto) {
-    return this.service.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateDeskNoteDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.update(id, dto, { id: user.id, role: user.role });
   }
 
   @Delete(':id')
   @Roles('admin', 'director', 'manager', 'user')
   @AuditAction({ action: 'delete', entityType: 'DeskNote', idParam: 'id' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.remove(id, { id: user.id, role: user.role });
   }
 }

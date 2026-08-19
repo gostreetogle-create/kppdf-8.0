@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,9 +18,16 @@ export interface DeskNoteListFilters {
   moduleId?: string;
 }
 
+export interface DeskNoteActor {
+  id: string;
+  role: string;
+}
+
+const PRIVILEGED_ROLES = new Set(['admin', 'director', 'manager']);
+
 /**
  * TZ-DESK-408 — CRUD заметок стола. Один write-path; hard delete (PO: compact).
- * Заметка видна только в контексте заказа/линии/модуля (anchor-фильтры).
+ * TZ-DESK-415 — list только с валидным orderId; PATCH/DELETE — автор или privileged.
  */
 @Injectable()
 export class DeskNoteService {
@@ -29,10 +37,13 @@ export class DeskNoteService {
   ) {}
 
   async findAll(filters: DeskNoteListFilters): Promise<DeskNoteDocument[]> {
-    const q: Record<string, unknown> = {};
-    if (filters.orderId && Types.ObjectId.isValid(filters.orderId)) {
-      q.anchorOrderId = new Types.ObjectId(filters.orderId);
+    const orderId = filters.orderId?.trim();
+    if (!orderId || !Types.ObjectId.isValid(orderId)) {
+      throw new BadRequestException('orderId is required');
     }
+    const q: Record<string, unknown> = {
+      anchorOrderId: new Types.ObjectId(orderId),
+    };
     if (filters.lineId?.trim()) {
       q.anchorLineId = filters.lineId.trim();
     }
@@ -71,22 +82,29 @@ export class DeskNoteService {
   async update(
     id: string,
     dto: UpdateDeskNoteDto,
+    actor: DeskNoteActor,
   ): Promise<DeskNoteDocument> {
     const doc = await this.findById(id);
+    this.assertCanMutate(doc, actor);
     if (dto.text !== undefined) doc.text = dto.text.trim();
     if (dto.kind !== undefined) doc.kind = dto.kind;
     if (dto.isDone !== undefined) doc.isDone = dto.isDone;
     return doc.save();
   }
 
-  async remove(id: string): Promise<void> {
-    if (!Types.ObjectId.isValid(id)) {
-      throw new NotFoundException(`DeskNote ${id} not found`);
-    }
-    const res = await this.model.deleteOne({ _id: new Types.ObjectId(id) }).exec();
+  async remove(id: string, actor: DeskNoteActor): Promise<void> {
+    const doc = await this.findById(id);
+    this.assertCanMutate(doc, actor);
+    const res = await this.model.deleteOne({ _id: doc._id }).exec();
     if (res.deletedCount === 0) {
       throw new NotFoundException(`DeskNote ${id} not found`);
     }
+  }
+
+  private assertCanMutate(note: DeskNoteDocument, actor: DeskNoteActor): void {
+    if (String(note.authorId) === actor.id) return;
+    if (PRIVILEGED_ROLES.has(actor.role)) return;
+    throw new ForbiddenException('Not your desk note');
   }
 
   private async findById(id: string): Promise<DeskNoteDocument> {

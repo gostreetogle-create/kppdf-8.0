@@ -1,5 +1,20 @@
 # STATUS — KPPDF ERP Project Status
 
+## [2026-08-19] — TZ-DESK-416 DONE: tray production from=desk
+**Статус:** DONE; deploy НЕ
+**Что:** desk tray «Открыть производство» → `/production?orderId=&from=desk`; hub без `from`.
+**Archive:** `tasks/_archive/2026-08/TZ-DESK-416.done.md`
+**Lock:** `.mimocode/locks/TZ-DESK-416-tray-from-desk.lock`
+**Gates:** FE tsc + tray/orders jest 19/19 + eslint PASS.
+
+## [2026-08-19] — TZ-DESK-415 DONE: DeskNote orderId + author ACL
+**Статус:** DONE; deploy НЕ
+**Что:** GET `/desk-notes` требует валидный orderId (400 иначе); PATCH/DELETE — автор или admin|director|manager (403 иначе).
+**Archive:** `tasks/_archive/2026-08/TZ-DESK-415.done.md`
+**Lock:** `.mimocode/locks/TZ-DESK-415-desknote-acl.lock`
+**Gates:** BE tsc PASS; desk-note jest 10/10.
+
+
 ## [2026-08-17] — TZ-MIG-304 PARTIAL: Counterparty.email + KP3 load
 **Статус:** PARTIAL DONE; deploy НЕ; load 0/10 BLOCKED
 **Что:** Counterparty.email schema/DTO/UI; REST load script; SoT timeout.
