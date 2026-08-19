@@ -830,11 +830,6 @@ export class ManagerDeskPage {
     return { orderId: this.expandedOrder()?._id ?? null, from: 'desk' };
   }
 
-  protected openView(view: DeskView): void {
-    this.view.set(view);
-    this.navigateView(this.expandedOrder()?._id ?? null, view);
-  }
-
   protected toggleOrder(id: string): void {
     if (!this.orders().some((order) => order._id === id)) return;
     const nextId = this.expandedId() === id ? null : id;
@@ -1001,16 +996,6 @@ export class ManagerDeskPage {
     ).catch(() => undefined);
   }
 
-  private navigateView(orderId: string | null, view: DeskView): void {
-    void Promise.resolve(
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { orderId: orderId ?? null, view: view === 'desk' ? null : view },
-        queryParamsHandling: 'merge',
-      }),
-    ).catch(() => undefined);
-  }
-
   private counterpartyIdOf(order: Order): string {
     const value = order.counterpartyId;
     if (!value) return '';
@@ -1076,10 +1061,10 @@ export class ManagerDeskPage {
             ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 5)]
             : []),
           ...(this.canOpenPage('production')
-            ? [this.viewTool('gantt', 'На Ганте', Factory, 'gantt', 6)]
+            ? [this.studioTool('gantt', 'На Ганте', Factory, 'gantt', 6)]
             : []),
           ...(this.canOpenPage('orders')
-            ? [this.viewTool('combine', 'В комбайне', LayoutGrid, 'combine', 7)]
+            ? [this.studioTool('combine', 'В комбайне', LayoutGrid, 'combine', 7)]
             : []),
         ]
       : [];
@@ -1093,11 +1078,15 @@ export class ManagerDeskPage {
     return !Array.isArray(pages) || pages.includes(pageKey);
   }
 
-  private viewTool(
+  /**
+   * 404: rail tools deep-link into the real studios with orderId&from=desk
+   * (deep-link fallback; the ?view= stub stays for the workflow chips).
+   */
+  private studioTool(
     id: 'gantt' | 'combine',
     label: string,
     icon: PiChromeToolItem['icon'],
-    view: DeskView,
+    view: Exclude<DeskView, 'desk'>,
     order: number,
   ): DeskChromeTool {
     return {
@@ -1106,13 +1095,22 @@ export class ManagerDeskPage {
       ariaLabel: label,
       title: label,
       icon,
-      active: this.view() === view,
+      active: false,
       disabled: false,
       ariaExpanded: false,
-      ariaControls: `desk-${view}-view`,
       order,
-      onClick: () => this.openView(view),
+      onClick: () => this.openStudio(view),
     };
+  }
+
+  private openStudio(view: Exclude<DeskView, 'desk'>): void {
+    const orderId = this.expandedOrder()?._id ?? null;
+    if (!orderId) return;
+    void Promise.resolve(
+      this.router.navigate([STUDIO_ROUTES[view]], {
+        queryParams: { orderId, from: 'desk' },
+      }),
+    ).catch(() => undefined);
   }
 
   private actionTool(

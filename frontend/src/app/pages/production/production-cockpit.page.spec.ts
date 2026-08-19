@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, provideRouter } from '@angular/router';
+import { ActivatedRoute, RouterLink, provideRouter } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 
 import { ProductionCockpitPage } from './production-cockpit.page';
@@ -105,6 +105,7 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
             OrdersRailComponent,
             ProductionScaleControlsComponent,
             GanttBarsComponent,
+            RouterLink,
           ],
           providers: [
             ProductionCockpitContext,
@@ -158,6 +159,35 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect((page as unknown as { orderIdHint: () => string | null }).orderIdHint()).toContain(
       'не найден',
     );
+  });
+
+  it('404: from=desk renders «На стол» return link with orderId', async () => {
+    queryParamSubject.next({
+      get: (key: string) => (key === 'orderId' ? 'o1' : key === 'from' ? 'desk' : null),
+    });
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    const { page } = await waitUntil(fixture, (_p, c) => c.selectedOrderId() === 'o1');
+    fixture.detectChanges();
+
+    const bar = fixture.nativeElement.querySelector('[data-test="desk-return-bar"]');
+    expect(bar).toBeTruthy();
+    const link = fixture.nativeElement.querySelector(
+      '[data-test="desk-return"]',
+    ) as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.textContent).toContain('На стол');
+    expect(link.getAttribute('href')).toContain('/desk');
+    expect((page as unknown as { returnOrderId: () => string | null }).returnOrderId()).toBe('o1');
+  });
+
+  it('404: no «На стол» bar without from=desk', async () => {
+    queryParamSubject.next({
+      get: (key: string) => (key === 'orderId' ? 'o1' : null),
+    });
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    await waitUntil(fixture, (_p, c) => c.selectedOrderId() === 'o1');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-return-bar"]')).toBeNull();
   });
 
   it('TZ-UX-323: full-width studio body; no local rails; tools in chrome service', () => {

@@ -2,7 +2,7 @@
 
 **Краткое описание:** дом после входа — **живая** очередь заказов (`GET /orders`) с **expand-in-row** tray
 (как `/orders`), icon-rail + **L/R flyout**, одна sticky строка group-workspace chips вместо шапки-простыни.
-Студии Гант/Комбайн — через workflow chips + `?view=` (407) или deep-link (404).
+Студии Гант/Комбайн — workflow chips → `?view=`-stub (407) с «Открыть в студии», rail tools → прямой deep-link (404) `?orderId&from=desk`; возврат «На стол» в студии.
 
 Канон IA: [`docs/superpowers/specs/2026-08-18-manager-desk-design.md`](../superpowers/specs/2026-08-18-manager-desk-design.md).
 
@@ -43,6 +43,8 @@
 - **413:** tray = summary bar + 2-колонка cards (Состав слева, справа Исполнение/Снабжение+Производство/Логистика+Документы); Комбайн = lane chips в «Исполнение»; desk composition open by default.
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
 - **411:** workflow strip + rail tools скрываются по page ACL (`user.pages`); disabled primary CTA в tray показывает RU-подсказку причины (siteId / статус / freeze).
+- **407:** `?view=gantt|combine` — stub-вью с crumbs + «Открыть в студии» (`/production` | `/design/combine` + `orderId&from=desk`); embed отложен.
+- **404:** rail tools «На Ганте»/«В комбайне» — deep-link в студии с `orderId&from=desk` (не stub); на `/production` при `from=desk` — кнопка RU **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=`. Комбайн (общий DashboardPage) — known_limitation: назад браузера.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 - **Блокнот** (408): колонка или `panel=notebook`; anchor order/line/module.
 
@@ -67,6 +69,6 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-413** | tray visual IA (summary + cards) — **DONE** |
 | **DESK-410** | search/filter/summary/sort/pagination — **DONE** |
 | **DESK-411** | capabilities + CTA why-disabled — **DONE** |
-| DESK-404 | deep-link студии |
-| DESK-407 | crumbs + view=gantt/combine |
+| **DESK-407** | crumbs + view=gantt/combine — **DONE** |
+| **DESK-404** | deep-link студии + «На стол» — **DONE** |
 | DESK-408 | блокнот DeskNote |

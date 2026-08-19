@@ -10,8 +10,9 @@ import {
   effect,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom, type Observable } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../core/auth.service';
 import { OrdersRailComponent } from './blocks/orders-rail.component';
 import {
@@ -93,6 +94,7 @@ const CHROME_OWNER = 'production-cockpit';
     LucideAngularModule,
     OrdersRailComponent,
     GanttBarsComponent,
+    RouterLink,
   ],
   template: `
     <app-pi-group-workspace [chips]="chips" activeId="production" [flushBody]="true">
@@ -110,6 +112,23 @@ const CHROME_OWNER = 'production-cockpit';
             data-test="production-order-id-hint"
           >
             {{ orderIdHint() }}
+          </div>
+        }
+
+        @if (returnLink(); as ret) {
+          <div
+            class="px-4 py-2 text-sm border-b hairline flex items-center justify-between gap-3"
+            data-test="desk-return-bar"
+          >
+            <span class="text-muted-foreground">Вы перешли со стола</span>
+            <a
+              [routerLink]="['/desk']"
+              [queryParams]="ret"
+              class="min-h-touch inline-flex items-center gap-1.5 px-3 py-1 border border-rule-strong rounded-sm text-ink no-underline hover:bg-paper-2"
+              data-test="desk-return"
+            >
+              ← На стол
+            </a>
           </div>
         }
 
@@ -320,6 +339,12 @@ export class ProductionCockpitPage implements OnInit {
   protected readonly orderThumbs = signal<ReadonlyMap<string, string>>(new Map());
   /** HUB-303: RU hint when ?orderId= is unknown. */
   protected readonly orderIdHint = signal<string | null>(null);
+  /** 404: deep-link return — visible only when arriving from the desk. */
+  private readonly fromDesk = signal(false);
+  protected readonly returnOrderId = signal<string | null>(null);
+  protected readonly returnLink = computed<Record<string, string> | null>(() =>
+    this.fromDesk() && this.returnOrderId() ? { orderId: this.returnOrderId() as string } : null,
+  );
   /** Monotonic command for the Gantt to scroll after a range change. */
   protected readonly scrollRequest = signal<{
     target: 'today' | 'start';
@@ -373,6 +398,10 @@ export class ProductionCockpitPage implements OnInit {
       void this.ctx.filtersDirty();
       // setTools reads+writes chrome byOwner — must not be effect-tracked (infinite loop).
       untracked(() => this.syncChromeTools());
+    });
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      this.fromDesk.set(params.get('from') === 'desk');
+      this.returnOrderId.set(params.get('orderId'));
     });
     this.destroyRef.onDestroy(() => {
       this.chromeTools.clear(CHROME_OWNER);

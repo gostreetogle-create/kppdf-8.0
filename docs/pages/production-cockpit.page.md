@@ -36,6 +36,7 @@ Prompt/archive: [`PROMPT-PRODUCTION-COCKPIT-HARDEN.md`](../../tasks/_backlog/PRO
 | Параметр | Тип | Назначение |
 |----------|-----|-----------|
 | `orderId` | `string` (sales Order._id) | **HUB-303 / 322:** после загрузки orders → `ctx.selectOrder(id)` + открыть order-meta strip; unknown id — RU hint + fallback «все активные» |
+| `from` | `string` (`desk`) | **DESK-404:** при `from=desk` + валидном `orderId` — видимая RU-кнопка **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=` |
 | `q` | `string` | Deep-link из инспектора: открывает `/orders?q=<номер>` (сам `/production` `q` не читает) |
 
 Ручной select в rail URL не обязан обновлять.

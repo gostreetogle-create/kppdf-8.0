@@ -172,7 +172,6 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     summaryCounts: () => Record<Order['status'], number>;
     view: () => 'desk' | 'gantt' | 'combine';
     viewStudioRoute: () => string;
-    openView: (view: 'desk' | 'gantt' | 'combine') => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
       expandedId: () => string | null;
@@ -192,7 +191,6 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       summaryCounts: () => Record<Order['status'], number>;
       view: () => 'desk' | 'gantt' | 'combine';
       viewStudioRoute: () => string;
-      openView: (view: 'desk' | 'gantt' | 'combine') => void;
     };
   }
 
@@ -582,23 +580,41 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(page().viewStudioRoute()).toBe('/design/combine');
   });
 
-  it('407: openView returns to desk view via view=desk', async () => {
-    queryParams$.next(convertToParamMap({ view: 'gantt', orderId: 'o1' }));
-    fixture.detectChanges();
+  it('404: rail tools deep-link into studios with orderId&from=desk', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
     await tickMicrotask();
     fixture.detectChanges();
-    expect(page().view()).toBe('gantt');
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    // o2 (in_production) — supply page default-open, no tree needed.
+    rows[1]!.click();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
+    await tickMicrotask();
+    fixture.detectChanges();
 
     navigate.mockClear();
-    page().openView('desk');
-    fixture.detectChanges();
-    expect(page().view()).toBe('desk');
+    const gantt = chromeTools.rightTools().find((t) => t.id === 'gantt');
+    expect(gantt).toBeTruthy();
+    gantt!.onClick();
     expect(navigate).toHaveBeenCalledWith(
-      [],
+      ['/production'],
       expect.objectContaining({
-        queryParams: expect.objectContaining({ view: null }),
-        queryParamsHandling: 'merge',
+        queryParams: expect.objectContaining({ orderId: 'o2', from: 'desk' }),
+      }),
+    );
+
+    navigate.mockClear();
+    const combine = chromeTools.rightTools().find((t) => t.id === 'combine');
+    expect(combine).toBeTruthy();
+    combine!.onClick();
+    expect(navigate).toHaveBeenCalledWith(
+      ['/design/combine'],
+      expect.objectContaining({
+        queryParams: expect.objectContaining({ orderId: 'o2', from: 'desk' }),
       }),
     );
   });
