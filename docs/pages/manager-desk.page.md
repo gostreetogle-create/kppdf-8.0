@@ -44,8 +44,11 @@
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
 - **411:** workflow strip + rail tools скрываются по page ACL (`user.pages`); disabled primary CTA в tray показывает RU-подсказку причины (siteId / статус / freeze).
 - **407:** `?view=gantt|combine` — stub-вью с crumbs + «Открыть в студии» (`/production` | `/design/combine` + `orderId&from=desk`); embed отложен.
+- **414:** `RouterLink` на studio-link; `loadNotes` сбрасывает список и игнорит stale GET при смене expand; `[activeId]="view()"` — чип Гант/Комбайн подсвечивается на stub.
 - **404:** rail tools «На Ганте»/«В комбайне» — deep-link в студии с `orderId&from=desk` (не stub); на `/production` при `from=desk` — кнопка RU **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=`. Комбайн (общий DashboardPage) — known_limitation: назад браузера.
+- **416:** tray «Открыть производство» в `mode="desk"` → `/production?orderId=&from=desk` (hub `mode="hub"` остаётся `{ orderId }` only).
 - **408:** L-flyout `panel=notebook` — блокнот заказа (`GET/POST/PATCH/DELETE /desk-notes`, BE `backend/src/modules/desk-note`); список compact (текст, anchor badge, автор, дата), «+ заметка» с picker якоря (Заказ / линия изделия) и kind (note/checklist/reminder); checklist — чекбокс «готово», delete hard. Фильтр по текущему expand. Module-якорь — только API (picker v2).
+- **415:** `GET /desk-notes` без валидного `orderId` → 400 (не dump всех заметок); PATCH/DELETE — только автор или role `admin|director|manager`, иначе 403. FE notebook уже шлёт orderId.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 
 
@@ -73,3 +76,6 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-407** | crumbs + view=gantt/combine — **DONE** |
 | **DESK-404** | deep-link студии + «На стол» — **DONE** |
 | **DESK-408** | блокнот DeskNote (BE + FE) — **DONE** |
+| **DESK-416** | tray «Открыть производство» `from=desk` — **DONE** |
+| **DESK-415** | GET orderId обязателен + PATCH/DELETE author check — **DONE** |
+| **DESK-414** | hotfix RouterLink + stale notes + chip activeId — **DONE** |

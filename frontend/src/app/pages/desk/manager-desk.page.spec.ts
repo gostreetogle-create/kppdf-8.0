@@ -2,8 +2,8 @@ import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
-import { EMPTY, BehaviorSubject, of } from 'rxjs';
+import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject, of } from 'rxjs';
 
 import { AuthService, type AuthUser } from '../../core/auth.service';
 import { API_BASE_URL } from '../../core/api.tokens';
@@ -100,32 +100,28 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   let chromeTools: PiChromeToolsService;
   let toast: PiToastService;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
-  let navigate: jest.Mock;
+  let navigate: jest.SpyInstance;
 
   beforeEach(async () => {
     authUser.set(null);
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
-    navigate = jest.fn().mockResolvedValue(true);
-
-    const routerMock = {
-      navigate,
-      createUrlTree: jest.fn().mockReturnValue({}),
-      serializeUrl: jest.fn().mockReturnValue('/desk'),
-      events: EMPTY,
-      url: '/desk',
-    } as unknown as Router;
 
     await TestBed.configureTestingModule({
       imports: [ManagerDeskPage],
       providers: [
         provideHttpClient(withInterceptors([]), withFetch()),
         provideHttpClientTesting(),
+        provideRouter([
+          { path: 'production', children: [] },
+          { path: 'design', children: [{ path: 'combine', children: [] }] },
+          { path: 'desk', children: [] },
+          { path: 'doc-constructor/templates', children: [] },
+        ]),
         { provide: API_BASE_URL, useValue: '/api' },
         {
           provide: ActivatedRoute,
           useValue: { queryParamMap: queryParams$.asObservable() },
         },
-        { provide: Router, useValue: routerMock },
         { provide: AuthService, useValue: { user: authUser } },
         {
           provide: PiToastService,
@@ -142,6 +138,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     httpMock = TestBed.inject(HttpTestingController);
     chromeTools = TestBed.inject(PiChromeToolsService);
     toast = TestBed.inject(PiToastService);
+    navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     chromeTools.clear('manager-desk');
     fixture = TestBed.createComponent(ManagerDeskPage);
     fixture.detectChanges();
@@ -563,6 +560,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(page().view()).toBe('gantt');
     expect(page().viewStudioRoute()).toBe('/production');
     expect(fixture.nativeElement.textContent).not.toContain('Рабочий стол');
+    expect(link.getAttribute('href')).toContain('/production');
+    expect(link.getAttribute('href')).toContain('from=desk');
   });
 
   it('407: view=combine renders the combine studio-link view', async () => {
@@ -721,5 +720,90 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(0);
+  });
+
+  it('414: ?view=gantt with expanded order compiles studio link and highlights gantt chip', async () => {
+    expect(() => {
+      queryParams$.next(convertToParamMap({ view: 'gantt', orderId: 'o1' }));
+      fixture.detectChanges();
+    }).not.toThrow();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector(
+      '[data-test="desk-view-open-studio"]',
+    ) as HTMLAnchorElement;
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toContain('/production');
+    expect(link.getAttribute('href')).toContain('from=desk');
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="desk-workflow-gantt"]')
+        ?.getAttribute('aria-current'),
+    ).toBe('page');
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="desk-workflow-desk"]')
+        ?.getAttribute('aria-current'),
+    ).toBeNull();
+  });
+
+  it('414: switching expanded order with notebook open drops stale notes', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all', orderId: 'o2', panel: 'notebook' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
+
+    const first = httpMock.expectOne(
+      (req) =>
+        req.url === '/api/desk-notes' && req.method === 'GET' && req.params.get('orderId') === 'o2',
+    );
+
+    queryParams$.next(convertToParamMap({ status: 'all', orderId: 'o3', panel: 'notebook' }));
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o3');
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(0);
+
+    const second = httpMock.expectOne(
+      (req) =>
+        req.url === '/api/desk-notes' && req.method === 'GET' && req.params.get('orderId') === 'o3',
+    );
+
+    first.flush([
+      {
+        _id: 'n-old',
+        text: 'Старая заметка o2',
+        kind: 'note',
+        anchorOrderId: 'o2',
+        authorId: 'u1',
+        createdAt: '2026-08-18T12:00:00.000Z',
+      },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Старая заметка o2');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(0);
+
+    second.flush([
+      {
+        _id: 'n-new',
+        text: 'Новая заметка o3',
+        kind: 'note',
+        anchorOrderId: 'o3',
+        authorId: 'u1',
+        createdAt: '2026-08-18T12:00:00.000Z',
+      },
+    ]);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Новая заметка o3');
+    expect(fixture.nativeElement.textContent).not.toContain('Старая заметка o2');
+    expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(1);
   });
 });

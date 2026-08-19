@@ -5,14 +5,10 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-18T23:55:00+03:00
-hygiene: origin `1e67c6f5`; **DESK WAVE COMPLETE** (406/402/412/403/413/410/411/407/404/408); deploy BLOCKED (VPN off)
+updated_at: 2026-08-19T05:45:00+03:00
+hygiene: origin `387b04d0`; **414 DONE (local)**; **415** BE archive pending push; **416 DONE** tray from=desk
 
 ## ACTIVE
-
-**Freebuff desk wave — COMPLETE (local)** — очередь исчерпана, idle.  
-Prompt: `tasks/PROMPT-FREEBUFF-DESK-WAVE-CONTINUOUS.md`  
-**no deploy** until VPN + «кати».
 
 **Desktop wave — COMPLETE (local)** 57+49+58 on `02534d0e`; prod `/downloads/` after deploy  
 Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` — PO: reinstall from `frontend/browser/downloads/kppdf-desktop-setup-v0.5.6.zip`
@@ -23,9 +19,9 @@ Smoke: `docs/agent-checklists/DESKTOP-SMOKE.md` — PO: reinstall from `frontend
 
 ## DESK WAVE checkpoint (PO)
 
-- Done: 406 `5e83932c`, 402 `99641d90`, 412 `53c8e75c`, 403 `0ce536a4`, 413 `4dff6012`, 410 `deb0fbce`, 411 `18d0af00`, 407 `91e33ee6`, 404 `e29fae3f`, 408 `1e67c6f5`
+- Done: 406 `5e83932c`, 402 `99641d90`, 412 `53c8e75c`, 403 `0ce536a4`, 413 `4dff6012`, 410 `deb0fbce`, 411 `18d0af00`, 407 `91e33ee6`, 404 `e29fae3f`, 408 `1e67c6f5`, 414 (local), 416 tray from=desk
 - Failed/Deferred: нет. known_limitation: Комбайн-возврат = назад браузера (общий DashboardPage); module-якорь блокнота — API only.
-- HEAD: `1e67c6f5` == origin/main ✓
+- HEAD: `387b04d0` == origin/main ✓ (code 408 = `1e67c6f5`)
 - Gates: FE tsc OK; FE jest 45/45 (manager-desk 18, orders.page, order-form-panel, hub-tray); BE tsc OK; BE desk-note 8/8; eslint 0 err.
 - Smoke DESK-SMOKE: **0/13 local** — dev-серверы не запущены (backend требует БД/VPN); автоматические тесты покрывают очередь/form/tray/ACL/404/408. PO: пройти DESK-SMOKE после VPN.
 - Deploy: **НЕ ЗАПУЩЕН** (VPN). PO: «кати» когда вернётся.
@@ -41,6 +37,20 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## DONE / LANDED (recent)
 
+## [2026-08-19] — TZ-DESK-416 DONE — tray «Открыть производство» from=desk
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-416.done.md`; gates PASS (FE tsc, tray+orders jest 19/19, eslint); deploy НЕ
+- Desk tray → `/production?orderId=&from=desk`; hub без `from`
+
+## [2026-08-19] — TZ-DESK-414 DONE — RouterLink + stale notes + chip activeId
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-414.done.md`; gates PASS (FE tsc, jest 20/20, eslint); deploy НЕ
+- `RouterLink` на gantt/combine stub; `loadNotes` clear + drop stale GET; `[activeId]="view()"`
+
+## [2026-08-19] — TZ-DESK-415 DONE — DeskNote orderId + author ACL
+
+- Archive: `tasks/_archive/2026-08/TZ-DESK-415.done.md`; gates PASS (tsc + jest 10/10); deploy НЕ
+- GET `/desk-notes` без валидного `orderId` → 400; PATCH/DELETE — автор или admin|director|manager, иначе 403
 
 ## [2026-08-18] — TZ-DESK-408 DONE — DeskNote (BE + FE)
 
@@ -59,6 +69,8 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 - Archive: `tasks/_archive/2026-08/TZ-DESK-407.done.md`; gates PASS; deploy НЕ
 - `?view=` query → stub views (crumbs + studio-link) для gantt/combine; chips/tools ведут на /desk?view=; embed отложен
 - Next: 404 (deep-link fallback)
+
+## [2026-08-18] — TZD-58 DONE — installer integrity 0.5.6
 
 - Archive: `tasks/_archive/2026-08/TZD-58.done.md`; SHA `02534d0e`; exe 45339307 B PE 0.5.6; deploy **нет**
 - Next: PO DESKTOP-SMOKE + deploy when VPN ok

@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { httpResource } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   BookOpen,
   Factory,
@@ -158,12 +158,12 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [OrderHubTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
+  imports: [RouterLink, OrderHubTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
   template: `
     <div class="manager-desk" data-test="manager-desk">
       <app-pi-group-workspace
         [chips]="workflowChips()"
-        activeId="desk"
+        [activeId]="view()"
         dataTestPrefix="desk-workflow"
       >
         <div tools class="flex items-center gap-2 flex-wrap w-full">
@@ -1079,10 +1079,12 @@ export class ManagerDeskPage {
     this.openPanel('edit');
   }
 
-  /** 408: load notes for the given order (one write-path via DeskNotesService). */
+  /** 408/414: load notes for the given order; drop stale HTTP after order switch. */
   private loadNotes(orderId: string): void {
     this.notesError.set(null);
+    this.notes.set([]);
     this.notesService.list({ orderId }).subscribe((res) => {
+      if (this.expandedOrder()?._id !== orderId) return;
       if (res.ok) {
         this.notes.set(res.data);
       } else {
