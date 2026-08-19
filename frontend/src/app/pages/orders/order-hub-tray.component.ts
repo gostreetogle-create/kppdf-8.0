@@ -534,18 +534,18 @@ export class OrderHubTrayComponent implements OnInit {
   readonly addLines = output<Order>();
 
   // ── Tray-owned composition forest (lazy on toggle; open-by-default desk) ──
-  private readonly compositionExpanded = signal(false);
-  private readonly compositionLoading = signal(false);
-  private readonly compositionForest = signal<CompositionTreeNode[]>([]);
-  private readonly compositionSelectedId = signal<string | null>(null);
-  private readonly compositionRequestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
-  private readonly catalogEditBusy = signal(false);
+  protected readonly compositionExpanded = signal(false);
+  protected readonly compositionLoading = signal(false);
+  protected readonly compositionForest = signal<CompositionTreeNode[]>([]);
+  protected readonly compositionSelectedId = signal<string | null>(null);
+  protected readonly compositionRequestedDepth = signal(ORDER_TREE_INITIAL_DEPTH);
+  protected readonly catalogEditBusy = signal(false);
   private compositionLoadSeq = 0;
 
   // ── Tray-owned lazy supply (HUB-303 pattern, load on expand) ──
-  private readonly supplyLoading = signal(false);
-  private readonly supplyError = signal<string | null>(null);
-  private readonly supplyCounters = signal<Record<SupplyTaskStatus, number> & { total: number }>({
+  protected readonly supplyLoading = signal(false);
+  protected readonly supplyError = signal<string | null>(null);
+  protected readonly supplyCounters = signal<Record<SupplyTaskStatus, number> & { total: number }>({
     ...EMPTY_SUPPLY_COUNTERS,
   });
   private supplyLoadSeq = 0;
