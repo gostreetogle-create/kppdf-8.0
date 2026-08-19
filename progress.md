@@ -1,4 +1,24 @@
-﻿## [2026-08-18] — TZ-MATERIALS-313 — pricePerUnit type fix
+﻿## [2026-08-19] — TZ-DESK-416 — tray production link from=desk
+
+**Исполнитель:** composer-executor-desk-416
+**Статус:** DONE
+**Суть:** В `order-hub-tray` desk-mode ссылка «Открыть производство» шлёт `from=desk`, чтобы `/production` показал «На стол». Hub mode без `from`.
+**Gates:** FE tsc PASS, jest 19/19 (tray 2 + orders.page 17), eslint PASS.
+**Archive:** tasks/_archive/2026-08/TZ-DESK-416.done.md
+**Lock:** .mimocode/locks/TZ-DESK-416-tray-from-desk.lock
+
+## [2026-08-19] — TZ-DESK-415 DONE — DeskNote orderId + author ACL
+
+**Исполнитель:** Gemini
+**Статус:** DONE
+**Суть:** GET `/desk-notes` без валидного orderId → 400 (не dump). PATCH/DELETE — автор или role admin|director|manager, иначе 403.
+**Gates:** BE tsc PASS; desk-note jest 10/10; eslint PASS.
+**Archive:** tasks/_archive/2026-08/TZ-DESK-415.done.md
+**Lock:** .mimocode/locks/TZ-DESK-415-desknote-acl.lock
+**Deploy:** НЕ
+
+## [2026-08-18] — TZ-MATERIALS-313 — pricePerUnit type fix
+
 
 **Исполнитель:** Gemini
 **Статус:** DONE
