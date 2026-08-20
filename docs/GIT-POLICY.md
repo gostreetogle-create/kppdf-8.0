@@ -26,6 +26,10 @@
 
 ## Общее
 
+- **GitHub = только хранилище репозитория** (fetch/push). GitHub Actions и
+  dependabot запрещены (решение PO, 2026-08-21): не добавлять
+  `.github/workflows/*` и `.github/dependabot.yml`. Все проверки — локально
+  (pre-commit гейт, smoke-скрипты, jest); никаких прогонов на GitHub.
 - Никогда не использовать `git add .` или `git add -A`; stage только свои пути.
 - Никогда не включать чужой dirty WIP, secrets, dumps, `ruvector.db`, `__pycache__`.
 - Не amend/rewrite чужих или уже pushed commits; не force-push main.

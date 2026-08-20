@@ -145,7 +145,9 @@ python -u deploy/synology/deploy.py --wipe --seed         # чистая БД
 2. Скопировать `config.env.example` → `config.env`, `CREDENTIALS.example.md` → `CREDENTIALS.md`, заполнить.
 3. VPN off → `.\deploy\synology\deploy.ps1`
 
-Деплой только с ПК в домашней сети (LAN к VM). **GitHub Actions / облачный CI не используем.**
+Деплой только с ПК в домашней сети (LAN к VM). **GitHub Actions / облачный CI не
+используем** — GitHub хранит только репозиторий: ни Actions, ни dependabot
+(решение PO 2026-08-21, канон: `docs/GIT-POLICY.md`).
 
 ---
 

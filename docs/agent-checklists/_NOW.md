@@ -5,8 +5,14 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-19T18:45:00+03:00
+updated_at: 2026-08-21T00:30:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
+
+## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
+
+Никаких GitHub Actions и dependabot — `.github/` удалён, не возвращать.
+Проверки только локальные: pre-commit гейт + smoke-скрипты. Канон:
+`docs/GIT-POLICY.md`; политика деплоя: `deploy/synology/README.md`.
 
 ## ACTIVE
 

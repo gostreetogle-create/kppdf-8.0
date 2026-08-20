@@ -50,6 +50,8 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 - Package manager: только `pnpm`.
 - Не добавляй `any`, raw `HttpClient` в компоненты, секреты или неподтверждённые зависимости.
 - Git/commit/push — только по `docs/GIT-POLICY.md`; deploy/wipe имеют отдельные gates.
+- GitHub = только хранилище (push/fetch); **не добавлять** GitHub Actions и
+  dependabot (решение PO 2026-08-21) — проверки только локальные.
 
 ## Skill routing
 
