@@ -419,7 +419,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                 >
                   <span>{{ statusLabel(status) }}</span>
                   <span class="font-mono" [attr.data-test]="'desk-summary-count-' + status">
-                    {{ summaryCounts()[status] ?? 0 }}
+                    {{ summaryCounts()[status] }}
                   </span>
                 </div>
               }
