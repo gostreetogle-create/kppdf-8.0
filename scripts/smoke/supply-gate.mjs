@@ -12,7 +12,8 @@
  *     гоняем полный scripts/smoke/supply-smoke.mjs (auth, Mongo, склад,
  *     upload-хранилище, быстрый заказ → реестр → отгрузка) как жёсткий гейт.
  *     Если стенда нет — жёлтое предупреждение, не блокируем: полный smoke
- *     гарантированно выполняется в CI (.github/workflows/supply-smoke.yml).
+ *     запускается вручную (node scripts/smoke/supply-smoke.mjs). GitHub
+ *     Actions не используется — политика проекта (GitHub = хранилище).
  *
  * Usage:
  *   node scripts/smoke/supply-gate.mjs            # pre-commit hook
@@ -102,7 +103,6 @@ async function main() {
     console.log(green('SUPPLY-GATE: стендовый smoke PASS.'));
   } else {
     console.log(yellow('SUPPLY-GATE: стенд на :3000 не поднят — полный smoke пропущен (не блокер).'));
-    console.log(yellow('  Полный smoke гарантированно выполнится в CI (.github/workflows/supply-smoke.yml).'));
     console.log(yellow('  Локально: node scripts/smoke/supply-smoke.mjs'));
   }
 
