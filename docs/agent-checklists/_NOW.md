@@ -24,7 +24,8 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
   Чек-лист: `docs/agent-checklists/SUPPLY-SMOKE.md`; браузерный проход PO после deploy.
 - Найдено и исправлено 2 бага storage-item: partial unique index (`$exists` →
   `$type: 'objectId'`, `zoneName: null`) и silent no-op `remove()` → hard delete.
-- Legacy PurchaseRequest/PurchaseOrder → стратегия в backlog `TZ-SUPPLY-313` (решение PO A/B).
+- Legacy PurchaseRequest/PurchaseOrder → **TZ-SUPPLY-313 DONE, вариант A** (официальный
+  legacy-режим: read-only + MCP, без UI). Ledger + DOMAIN-MAP обновлены; удаление (B) — successor.
 
 ## QUEUE
 

@@ -1,5 +1,9 @@
 pnpm run lint-staged
 
+# SUPPLY-GATE: быстрый focused Jest + (если стенд :3000 поднят) полный
+# supply-smoke по затронутым файлам контура снабжения/склада.
+node scripts/smoke/supply-gate.mjs
+
 # Полная проверка (tsc + ng build + jest) — НЕ в hot-path pre-commit:
 # слишком медленно. Запускается вручную / в CI:
 #   pnpm --dir frontend build:dev

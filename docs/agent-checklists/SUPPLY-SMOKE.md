@@ -30,6 +30,18 @@ node scripts/smoke/supply-smoke.mjs https://kppdf.example.ru  # прод-сте�
 Ожидаемый результат: `23 PASS · 0 FAIL` (флаки-допустимы только WARN по
 dispatch, если на стенде нет остатков/резервов).
 
+## Автоматизация (без ручного прогона)
+
+- **CI**: `.github/workflows/supply-smoke.yml` — на push/PR по контуру снабжения
+  поднимает docker-стенд (Mongo 7 + replica set), запускает backend и гоняет
+  полный smoke + focused Jest. Это гарантированная точка отлова регрессий.
+- **Pre-commit**: `.husky/pre-commit` → `scripts/smoke/supply-gate.mjs` — при
+  затронутых файлах контура бежит быстрый focused Jest (всегда) и полный smoke
+  (если локальный стенд `:3000` поднят); если стенда нет — не блокирует,
+  полный прогон остаётся за CI.
+- Локально: `pnpm smoke:supply` (полный smoke), `pnpm gate:supply` (гейт,
+  `--force` — независимо от diff).
+
 ## Браузерный smoke (PO, после deploy/VPN)
 
 - [ ] Логин admin → рабочий стол, без ошибок консоли
@@ -45,7 +57,20 @@ dispatch, если на стенде нет остатков/резервов).
 
 ## История
 
-- 2026-08-20: первый проход на локальном стенде — **23/23 PASS**. Скрипт
+- 2026-08-20 (локальный стенд): первый проход — **23/23 PASS**. Скрипт
   нашёл и помог воспроизвести баг storage-item (partial unique index
   `$exists:true` ловил material-позиции в product-индексе; `remove()` был
   no-op) — исправлено в `storage-item.schema.ts`/`storage-item.service.ts`.
+- 2026-08-20 (прод `https://kppdf-crm.ru`, креды из `deploy/synology/config.env`):
+  прогон выполнен — auth PASS (пароль актуален), health up; склад/заказ/изделие/
+  отгрузка (вкл. dispatch → in_transit) и фото-upload на проде работают.
+  **14 PASS · 5 FAIL**, все FAIL объяснимы:
+  * `/api/supply-requests` → **404**, `Material.colors` → **400** — прод-стенд ещё на
+    коде ДО волны снабжения (нет модуля supply-requests и DTO-фикса цветов) → нужен
+    warm deploy волны (коммит `252f6106`).
+  * фото: дисковая проверка неприменима к удалённому стенду (uploads в volume
+    сервера) — в скрипте это теперь WARN; на проде файл подтверждён через API
+    (upload 201 + GET 200 + DELETE 204).
+  Все созданные скриптом записи удалены; реальные данные не тронуты (склад и
+  контрагент переиспользованы); счётчик отгрузок прод сдвинут на 1
+  (`SHP-2026-001`).

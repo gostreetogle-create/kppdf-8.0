@@ -46,6 +46,8 @@
 | People / workers | available | People page; связка склад/производство позже. |
 | Work types (₽/час) under Цех | included | Меню: Виды работ под Цех, не Settings/Каталог. |
 | Production cockpit / Gantt | available | Shell/MVP; не бухгалтерия и не fine ACL. |
+| Supply: quick order + registry + shipping | included | TZ-SUPPLY-305..312: `SupplyRequest` → «Заказано» → `SupplyTask` реестр; отгрузка из заказа (dispatch в транзакции). Stand smoke `scripts/smoke/supply-smoke.mjs` 23/23; браузерный проход PO после deploy. |
+| Procurement legacy: PurchaseRequest/PurchaseOrder | available | **LEGACY (TZ-SUPPLY-313, вариант A)**: read-only API + MCP (`kppdf_list/get_purchase_*`), без UI, не расширять; новые закупки — через `SupplyRequest`/`SupplyTask`. Удаление — отдельная волна после развязки MCP (вариант B, successor). |
 | Desktop app + MCP pairing | available | Basic Auth + `X-Access-Token`; version gate — backlog. |
 | MCP photo upload (Photo SoT) | included | TZD-47 HITL 1 file → `POST /api/photos/upload` + optional `Product.photoIds`; CP bind REST отсутствует; bulk → MIG-303. |
 | Fine-grained warehouse ACL (worker = свой склад) | absent | Vision; не импровизировать. |
@@ -67,5 +69,6 @@
 
 | Дата | Что |
 |------|-----|
+| 2026-08-20 | TZ-SUPPLY-313: legacy PurchaseRequest/PurchaseOrder → официальный legacy-режим (вариант A); Supply quick order + registry + shipping → included. |
 | 2026-08-17 | TZD-47: MCP photo upload HITL → Photo SoT + optional Product.photoIds. |
 | 2026-08-11 | Первый ledger: adopt vibe capability idea; seed из SECTION-READINESS + vision. |

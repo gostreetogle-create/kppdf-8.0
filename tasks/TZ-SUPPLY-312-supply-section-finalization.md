@@ -46,15 +46,15 @@
 - По ходу smoke исправлены 2 бага storage-item: partial unique index
   (`$exists: true` → `$type: 'objectId'`) и silent no-op `remove()` → hard delete.
   Backend tsc PASS; supply/shipment/storage-item/material focused **50/50**.
-- Legacy-контур `PurchaseRequest/PurchaseOrder`: стратегия вынесена в
-  `tasks/_backlog/TZ-SUPPLY-313-legacy-purchase-contour-strategy.md` (A/B,
-  ждёт решения PO); на стенде данных в legacy-коллекциях **0**.
+- Legacy-контур `PurchaseRequest/PurchaseOrder`: **TZ-SUPPLY-313 DONE, вариант A**
+  (официальный legacy-режим: read-only API + MCP, без UI; ledger и DOMAIN-MAP
+  обновлены). Данных в legacy-коллекциях на локальном стенде **0**.
 
 ## Осталось вне текущего безопасного скоупа
 
 1. Браузерный проход PO по `docs/agent-checklists/SUPPLY-SMOKE.md` после deploy/VPN (API-контур уже пройден).
 2. Backfill `organizationId` для старых документов перед жёстким tenant enforcement.
-3. Решение PO по legacy-контуру (TZ-SUPPLY-313: A — официальный legacy-режим, B — удаление после развязки MCP).
+3. ~~Решение PO по legacy-контуру~~ — принято: **A** (TZ-SUPPLY-313 done); successor **B** — удаление после развязки MCP, отдельной волной.
 4. Debounce автосохранения и отдельная cleanup-политика orphan-фото на сервере.
 
 ## Acceptance criteria
@@ -73,7 +73,6 @@
 
 Решения Q1–Q6 получены 2026-08-20. Реализация MVP завершена; стендовый
 smoke/e2e (auth, Mongo, склад, upload) пройден 23/23 на локальном стенде;
-стратегия legacy-контура зафиксирована в TZ-SUPPLY-313 (ожидает решения PO
-по варианту A/B). До production-статуса остаётся только браузерный проход PO
-и решение по legacy; необратимые миграции старого `PurchaseRequest` контура не
-выполнялись.
+legacy-контур зафиксирован как официальный legacy-режим (TZ-SUPPLY-313,
+вариант A). До production-статуса остаётся только браузерный проход PO;
+необратимые миграции старого `PurchaseRequest` контура не выполнялись.

@@ -18,6 +18,8 @@
     "start:no-browser": "node start.mjs --no-browser",
     "start:prod": "node start.mjs --prod",
     "check:page-docs": "npx tsx scripts/check-page-docs.ts",
+    "smoke:supply": "node scripts/smoke/supply-smoke.mjs",
+    "gate:supply": "node scripts/smoke/supply-gate.mjs",
     "architecture:check": "node scripts/architecture-check.mjs",
     "architecture:check:write-baseline": "node scripts/architecture-check.mjs --write-baseline",
     "prepare": "husky",

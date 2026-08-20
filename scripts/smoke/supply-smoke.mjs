@@ -22,6 +22,9 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const baseUrl = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
+// Дисковую проверку upload-хранилища можно делать только на локальном стенде:
+// на удалённом стенде файлы лежат в volume сервера, недоступном отсюда.
+const isLocalStand = /localhost|127\.0\.0\.1|0\.0\.0\.0|::1/.test(baseUrl);
 
 // ---- .env (без зависимостей) -------------------------------------------------
 function loadEnv(file) {
@@ -315,8 +318,12 @@ async function main() {
       const p = join(dir, name);
       if (existsSync(p) && statSync(p).size > 0) { photoPath = p; break; }
     }
-    check('photos: файл реально лежит в upload-хранилище', Boolean(photoPath),
-      photoPath ? photoPath.replace(root, '.') : 'файл не найден на диске');
+    if (isLocalStand) {
+      check('photos: файл реально лежит в upload-хранилище', Boolean(photoPath),
+        photoPath ? photoPath.replace(root, '.') : 'файл не найден на диске');
+    } else {
+      warn('photos: файл на диске', `удалённый стенд — файл подтверждён через API (upload ${up.status} + GET ниже); дисковая проверка возможна только локально`);
+    }
   }
 
   if (photo?._id) {
