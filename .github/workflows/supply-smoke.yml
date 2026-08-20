@@ -70,14 +70,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # В репо несколько pnpm-lock.yaml (root/backend/desktop/frontend):
-      # setup-node с cache: pnpm без cache-dependency-path падает
-      # с «Multiple lockfiles found». Ставим путь к backend-локфайлу.
+      # cache: pnpm у setup-node требует ПРЕДУСТАНОВЛЕННЫЙ pnpm, а в образе
+      # ubuntu-24.04 (ubuntu-latest) его нет (только npm/yarn) — шаг падает.
+      # Кэш опционален; pnpm ставится ниже через corepack с пином версии.
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
-          cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Enable pnpm (corepack, pinned)
         run: |
