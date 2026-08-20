@@ -43,9 +43,9 @@ import {
   type DeskNote,
   type DeskNoteKind,
 } from '../../shared/services/desk-notes.service';
-import { Order, OrderStatus } from '../orders/orders.service';
-import { OrderFormPanelComponent } from '../orders/order-form-panel.component';
-import { OrderHubTrayComponent } from '../orders/order-hub-tray.component';
+import { Order, OrderStatus } from '../../shared/services/orders.service';
+import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
+import { OrderHubTrayComponent } from '../../shared/orders/order-hub-tray.component';
 import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
 
 type DeskPanelSide = 'left' | 'right';

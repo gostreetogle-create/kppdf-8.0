@@ -3,13 +3,13 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { OrderHubTrayComponent } from './order-hub-tray.component';
-import type { Order } from './orders.service';
-import { SupplyTaskService } from '../../shared/services/pi-supply.service';
-import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
-import { ProductsService } from '../../shared/services/products.service';
-import { MaterialsService } from '../../shared/services/materials.service';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { PiToastService } from '../../shared/ui/toast';
+import type { Order } from '../services/orders.service';
+import { SupplyTaskService } from '../services/pi-supply.service';
+import { ProductModulesService } from '../services/pi-product-modules.service';
+import { ProductsService } from '../services/products.service';
+import { MaterialsService } from '../services/materials.service';
+import { PiDialogService } from '../ui/dialog/pi-dialog.service';
+import { PiToastService } from '../ui/toast';
 
 const ORDER: Order = {
   _id: 'o1',

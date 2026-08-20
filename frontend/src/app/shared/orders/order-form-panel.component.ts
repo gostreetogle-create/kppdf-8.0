@@ -16,20 +16,26 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
-import { InputComponent } from '../../shared/ui/input/input.component';
-import { TextareaComponent } from '../../shared/ui/textarea/textarea.component';
-import { PiFormSectionComponent } from '../../shared/ui/form-section';
-import { PiToastService } from '../../shared/ui/toast';
+import { ButtonComponent } from '../ui/button/button.component';
+import { FormFieldComponent } from '../ui/form-field/form-field.component';
+import { InputComponent } from '../ui/input/input.component';
+import { TextareaComponent } from '../ui/textarea/textarea.component';
+import { PiFormSectionComponent } from '../ui/form-section';
+import { PiToastService } from '../ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import type { HttpErrorResponse } from '@angular/common/http';
-import { Counterparty, CounterpartyService } from '../../shared/services/pi-counterparty.service';
-import { Product, ProductsService } from '../../shared/services/products.service';
-import { Site, SiteService } from '../../shared/services/pi-site.service';
-import { Order, OrderItem, OrdersService, OrderPriority, OrderStatus } from './orders.service';
-import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
-import { Users } from '../users/users.entity';
+import { Counterparty, CounterpartyService } from '../services/pi-counterparty.service';
+import { Product, ProductsService } from '../services/products.service';
+import { Site, SiteService } from '../services/pi-site.service';
+import {
+  Order,
+  OrderItem,
+  OrdersService,
+  OrderPriority,
+  OrderStatus,
+} from '../services/orders.service';
+import { PiOverflowSelectComponent } from '../ui/overflow-select/pi-overflow-select.component';
+import { Users } from '../models/users';
 
 type FreezeMode = 'none' | 'plan' | 'hard';
 

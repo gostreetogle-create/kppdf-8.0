@@ -16,22 +16,19 @@ import {
   type CompositionTreeEditEvent,
   type CompositionTreeExpandEvent,
   type CompositionTreeSelectEvent,
-} from '../../shared/ui/composition/composition-tree.component';
-import {
-  CompositionTreeNode,
-  ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import { ProductsService } from '../../shared/services/products.service';
-import { MaterialsService } from '../../shared/services/materials.service';
+} from '../ui/composition/composition-tree.component';
+import { CompositionTreeNode, ProductModulesService } from '../services/pi-product-modules.service';
+import { ProductsService } from '../services/products.service';
+import { MaterialsService } from '../services/materials.service';
 import {
   SupplyTask,
   SupplyTaskService,
   type SupplyTaskStatus,
-} from '../../shared/services/pi-supply.service';
-import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { PiToastService } from '../../shared/ui/toast';
+} from '../services/pi-supply.service';
+import { PiDialogService } from '../ui/dialog/pi-dialog.service';
+import { PiToastService } from '../ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
-import { pluralize } from '../../shared/util/format';
+import { pluralize } from '../util/format';
 import {
   loadOrderCompositionForest,
   ORDER_TREE_INITIAL_DEPTH,
@@ -42,7 +39,7 @@ import {
   openCatalogEditFromTree,
   type CatalogCompositionEditDeps,
 } from './open-catalog-composition-edit';
-import type { BoardLane, Order, OrderItem, OrderStatus } from './orders.service';
+import type { BoardLane, Order, OrderItem, OrderStatus } from '../services/orders.service';
 
 /** Counters for the lazy reservations summary (HUB-304 pattern, hub-hosted). */
 export type ReservationExpandCounters = { active: number; total: number };

@@ -1,5 +1,5 @@
 import { of } from 'rxjs';
-import type { CompositionTreeNode } from '../../shared/services/pi-product-modules.service';
+import type { CompositionTreeNode } from '../services/pi-product-modules.service';
 import { loadOrderCompositionForest } from './order-composition-forest';
 import { isCatalogCompositionId, isEmptyCatalogBranch } from './open-catalog-composition-edit';
 

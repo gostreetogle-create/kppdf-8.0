@@ -2,8 +2,8 @@ import { forkJoin, map, of, type Observable } from 'rxjs';
 import type {
   CompositionTreeNode,
   ProductModulesService,
-} from '../../shared/services/pi-product-modules.service';
-import type { OrderItem } from './orders.service';
+} from '../services/pi-product-modules.service';
+import type { OrderItem } from '../services/orders.service';
 
 /** Same depth ladder as order-detail (TZ-ORDERS-302). */
 export const ORDER_TREE_MAX_DEPTH = 8;

@@ -28,3 +28,5 @@ export type {
   WorkTypeInModule,
   ProductModuleUpsertDto,
 } from './modules';
+export { Users } from './users';
+export type { User } from './users';

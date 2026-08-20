@@ -1,13 +1,13 @@
 import type { DestroyRef, Injector, WritableSignal } from '@angular/core';
-import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import { onDialogCloseOnce } from '../util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
-import type { CompositionTreeNode } from '../../shared/services/pi-product-modules.service';
-import type { ProductModulesService } from '../../shared/services/pi-product-modules.service';
-import type { ProductsService } from '../../shared/services/products.service';
-import type { MaterialsService } from '../../shared/services/materials.service';
-import type { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import type { PiToastService } from '../../shared/ui/toast';
-import type { CompositionTreeEditEvent } from '../../shared/ui/composition/composition-tree.component';
+import type { CompositionTreeNode } from '../services/pi-product-modules.service';
+import type { ProductModulesService } from '../services/pi-product-modules.service';
+import type { ProductsService } from '../services/products.service';
+import type { MaterialsService } from '../services/materials.service';
+import type { PiDialogService } from '../ui/dialog/pi-dialog.service';
+import type { PiToastService } from '../ui/toast';
+import type { CompositionTreeEditEvent } from '../ui/composition/composition-tree.component';
 
 export interface CatalogCompositionEditDeps {
   dialog: PiDialogService;
@@ -59,7 +59,7 @@ export function openCatalogCompositionEdit(
         deps.toast?.error(res.ok ? 'Модуль не найден' : extractErrorMessage(res.error));
         return;
       }
-      void import('../modules/module-form-dialog.component')
+      void import('../../pages/modules/module-form-dialog.component')
         .then(({ ModuleFormDialogComponent }) => {
           const ref = deps.dialog.open(ModuleFormDialogComponent, {
             data: res.data,
@@ -83,7 +83,7 @@ export function openCatalogCompositionEdit(
         deps.toast?.error(res.ok ? 'Изделие не найдено' : extractErrorMessage(res.error));
         return;
       }
-      void import('../products/product-form-dialog.component')
+      void import('../../pages/products/product-form-dialog.component')
         .then(({ ProductFormDialogComponent }) => {
           const ref = deps.dialog.open(ProductFormDialogComponent, {
             data: res.data,
@@ -106,7 +106,7 @@ export function openCatalogCompositionEdit(
       deps.toast?.error(res.ok ? 'Материал не найден' : extractErrorMessage(res.error));
       return;
     }
-    void import('../materials/material-form-dialog.component')
+    void import('../../pages/materials/material-form-dialog.component')
       .then(({ MaterialFormDialogComponent }) => {
         const ref = deps.dialog.open(MaterialFormDialogComponent, {
           data: res.data,

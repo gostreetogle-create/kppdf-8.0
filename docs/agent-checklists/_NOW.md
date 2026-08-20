@@ -16,6 +16,8 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZ-STRAT-01A** — READY FOR REVIEW: `/desk`/`/orders` cross-page boundary перенесена в shared order layer; gates PASS, local commit разрешён, push не выполняется.
+
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов
 - DESK-417 `cda4417b` — фильтр стола persist + default all

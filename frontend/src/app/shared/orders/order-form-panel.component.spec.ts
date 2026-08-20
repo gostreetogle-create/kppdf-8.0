@@ -3,8 +3,8 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { PiToastService } from '../../shared/ui/toast';
-import { Order, OrderStatus } from './orders.service';
+import { PiToastService } from '../ui/toast';
+import { Order, OrderStatus } from '../services/orders.service';
 import { OrderFormPanelComponent } from './order-form-panel.component';
 
 interface Control<T> {

@@ -35,7 +35,7 @@ import {
   OrderHubTrayComponent,
   EMPTY_RESERVATION_COUNTERS,
   type ReservationExpandCounters,
-} from './order-hub-tray.component';
+} from '../../shared/orders/order-hub-tray.component';
 import { Reservation, ReservationsService } from '../../shared/services/pi-reservations.service';
 
 type SortKey = 'number' | 'date' | 'status';

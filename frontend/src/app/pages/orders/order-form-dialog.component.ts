@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import type { DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
-import { Order } from './orders.service';
-import { OrderFormPanelComponent } from './order-form-panel.component';
+import { Order } from '../../shared/services/orders.service';
+import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
 
 type Result = Order | null | undefined;
 

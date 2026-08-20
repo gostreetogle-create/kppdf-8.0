@@ -33,6 +33,20 @@ export type {
 export { WorkTypesService } from './pi-work-types.service';
 export type { WorkType } from './pi-work-types.service';
 export { PiWorkersService, personDisplayName } from './pi-workers.service';
+export { OrdersService } from './orders.service';
+export type {
+  BoardLane,
+  EstimateDayOverride,
+  EstimateStartOffset,
+  ModuleLane,
+  Order,
+  OrderItem,
+  OrderPriority,
+  OrderProposalRef,
+  OrderStatus,
+  PatchEstimateDaysPayload,
+  PatchEstimateStartPayload,
+} from './orders.service';
 export type {
   Person,
   CreatePersonPayload,

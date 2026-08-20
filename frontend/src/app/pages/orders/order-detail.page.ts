@@ -24,7 +24,7 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { formatDate } from '../../shared/util/format';
-import { Order, OrdersService } from './orders.service';
+import { Order, OrdersService } from '../../shared/services/orders.service';
 import { SupplyTaskService } from '../../shared/services/pi-supply.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
@@ -35,12 +35,12 @@ import {
   loadOrderCompositionForest,
   ORDER_TREE_INITIAL_DEPTH,
   ORDER_TREE_MAX_DEPTH,
-} from './order-composition-forest';
+} from '../../shared/orders/order-composition-forest';
 import {
   isEmptyCatalogBranch,
   openCatalogEditFromTree,
   type CatalogCompositionEditDeps,
-} from './open-catalog-composition-edit';
+} from '../../shared/orders/open-catalog-composition-edit';
 
 const ORDER_STATUS_LABELS: Record<Order['status'], string> = {
   draft: 'Черновик',
