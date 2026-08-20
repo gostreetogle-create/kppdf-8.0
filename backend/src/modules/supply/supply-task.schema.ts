@@ -13,6 +13,10 @@ export class SupplyTask {
   @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
   orderId!: Types.ObjectId;
 
+  /** TZ-SUPPLY-312 — owning organization; new writes are always scoped. */
+  @Prop({ type: Types.ObjectId, ref: 'Organization', required: false, index: true })
+  organizationId?: Types.ObjectId;
+
   /** Идентификатор линии заказа (productId или индекс как строка) — P0 без subdoc _id. */
   @Prop({ trim: true })
   orderLineId?: string;
@@ -51,9 +55,7 @@ export class SupplyTask {
   deletedAt?: Date | null;
 }
 
-export const SupplyTaskSchema = SchemaFactory.createForClass(SupplyTask);
-SupplyTaskSchema.index(
-  { orderId: 1, materialId: 1 },
+export const SupplyTaskSchema = SchemaFactory.createForClass(SupplyTask);SupplyTaskSchema.index({ organizationId: 1, orderId: 1, materialId: 1 },
   {
     name: 'supplytasks_open_order_material_unique',
     unique: true,
@@ -64,5 +66,5 @@ SupplyTaskSchema.index(
     },
   },
 );
-SupplyTaskSchema.index({ orderId: 1, status: 1 });
-SupplyTaskSchema.index({ status: 1, createdAt: -1 });
+SupplyTaskSchema.index({ organizationId: 1, orderId: 1, status: 1 });
+SupplyTaskSchema.index({ organizationId: 1, status: 1, createdAt: -1 });

@@ -71,6 +71,14 @@ export class Material {
   @Prop({ type: [DimensionSchema], default: [] })
   dimensions!: Dimension[];
 
+  /**
+   * TZ-SUPPLY-305 — цвета, в которых материал можно заказать (свободный список).
+   * Строка быстрого заказа выбирает одно из этих значений (`SupplyRequest.color`).
+   * Дедупликация — на сервисе/UI; unique индекс не нужен.
+   */
+  @Prop({ type: [String], default: [] })
+  colors?: string[];
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Photo' }], default: [] })
   photoIds!: Types.ObjectId[];
 

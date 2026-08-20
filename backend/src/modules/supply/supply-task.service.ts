@@ -37,7 +37,11 @@ export class SupplyTaskService {
     private readonly model: Model<SupplyTaskDocument>,
   ) {}
 
-  async create(dto: CreateSupplyTaskDto): Promise<SupplyTaskDocument> {
+  async create(
+    dto: CreateSupplyTaskDto,
+    organizationId?: string | null,
+    initialStatus: SupplyTaskStatus = 'draft',
+  ): Promise<SupplyTaskDocument> {
     if (!Types.ObjectId.isValid(dto.orderId)) {
       throw new BadRequestException('Invalid orderId');
     }
@@ -55,6 +59,7 @@ export class SupplyTaskService {
 
     return this.model.create({
       orderId: new Types.ObjectId(dto.orderId),
+      ...this.organizationWrite(organizationId),
       orderLineId: dto.orderLineId?.trim() || undefined,
       materialId: dto.materialId
         ? new Types.ObjectId(dto.materialId)
@@ -63,7 +68,7 @@ export class SupplyTaskService {
       qty: dto.qty,
       notes: dto.notes?.trim() || undefined,
       title: dto.title?.trim() || undefined,
-      status: 'draft' as SupplyTaskStatus,
+      status: initialStatus,
     });
   }
 
@@ -73,6 +78,7 @@ export class SupplyTaskService {
    */
   async explode(
     dto: ExplodeSupplyTasksDto,
+    organizationId?: string | null,
   ): Promise<{ created: SupplyTaskDocument[]; skipped: number }> {
     if (!Types.ObjectId.isValid(dto.orderId)) {
       throw new BadRequestException('Invalid orderId');
@@ -186,6 +192,7 @@ export class SupplyTaskService {
         .findOne({
           orderId: new Types.ObjectId(dto.orderId),
           materialId: new Types.ObjectId(row.materialId),
+          ...this.organizationFilter(organizationId),
           status: { $in: ['draft', 'confirmed', 'ordered'] },
           deletedAt: null,
         })
@@ -197,6 +204,7 @@ export class SupplyTaskService {
       try {
         const doc = await this.model.create({
           orderId: new Types.ObjectId(dto.orderId),
+          ...this.organizationWrite(organizationId),
           materialId: new Types.ObjectId(row.materialId),
           moduleId: row.moduleId ? new Types.ObjectId(row.moduleId) : undefined,
           qty: row.qty,
@@ -215,11 +223,14 @@ export class SupplyTaskService {
     return { created, skipped };
   }
 
-  async findAll(filters: {
-    orderId?: string;
-    status?: string;
-  }): Promise<SupplyTaskDocument[]> {
-    const q: Record<string, unknown> = { deletedAt: null };
+  async findAll(
+    filters: { orderId?: string; status?: string },
+    organizationId?: string | null,
+  ): Promise<SupplyTaskDocument[]> {
+    const q: Record<string, unknown> = {
+      deletedAt: null,
+      ...this.organizationFilter(organizationId),
+    };
     if (filters.orderId && Types.ObjectId.isValid(filters.orderId)) {
       q.orderId = new Types.ObjectId(filters.orderId);
     }
@@ -232,11 +243,32 @@ export class SupplyTaskService {
     return this.model.find(q).sort({ createdAt: -1 }).limit(500).exec();
   }
 
-  async findById(id: string): Promise<SupplyTaskDocument> {
+  async findOpenByOrderMaterial(
+    orderId: string,
+    materialId: string,
+    organizationId?: string | null,
+  ): Promise<SupplyTaskDocument | null> {
+    if (!Types.ObjectId.isValid(orderId) || !Types.ObjectId.isValid(materialId)) {
+      return null;
+    }
+    return this.model
+      .findOne({
+        orderId: new Types.ObjectId(orderId),
+        materialId: new Types.ObjectId(materialId),
+        status: { $in: ['draft', 'confirmed', 'ordered'] },
+        deletedAt: null,
+        ...this.organizationFilter(organizationId),
+      })
+      .exec();
+  }
+
+  async findById(id: string, organizationId?: string | null): Promise<SupplyTaskDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`SupplyTask ${id} not found`);
     }
-    const doc = await this.model.findOne({ _id: id, deletedAt: null }).exec();
+    const doc = await this.model
+      .findOne({ _id: id, deletedAt: null, ...this.organizationFilter(organizationId) })
+      .exec();
     if (!doc) throw new NotFoundException(`SupplyTask ${id} not found`);
     return doc;
   }
@@ -244,8 +276,9 @@ export class SupplyTaskService {
   async update(
     id: string,
     dto: UpdateSupplyTaskDto,
+    organizationId?: string | null,
   ): Promise<SupplyTaskDocument> {
-    const doc = await this.findById(id);
+    const doc = await this.findById(id, organizationId);
     if (dto.qty !== undefined) doc.qty = dto.qty;
     if (dto.notes !== undefined) doc.notes = dto.notes.trim();
     if (dto.title !== undefined) doc.title = dto.title.trim();
@@ -256,8 +289,9 @@ export class SupplyTaskService {
   async confirm(
     id: string,
     userId: string,
+    organizationId?: string | null,
   ): Promise<SupplyTaskDocument> {
-    const doc = await this.findById(id);
+    const doc = await this.findById(id, organizationId);
     this.assertTransition(doc.status, 'confirmed');
     if (!Types.ObjectId.isValid(userId)) {
       throw new BadRequestException('Invalid userId for confirm');
@@ -268,25 +302,46 @@ export class SupplyTaskService {
     return doc.save();
   }
 
-  async markOrdered(id: string): Promise<SupplyTaskDocument> {
-    const doc = await this.findById(id);
+  async markOrdered(
+    id: string,
+    organizationId?: string | null,
+  ): Promise<SupplyTaskDocument> {
+    const doc = await this.findById(id, organizationId);
     this.assertTransition(doc.status, 'ordered');
     doc.status = 'ordered';
     return doc.save();
   }
 
-  async markReceived(id: string): Promise<SupplyTaskDocument> {
-    const doc = await this.findById(id);
+  async markReceived(
+    id: string,
+    organizationId?: string | null,
+  ): Promise<SupplyTaskDocument> {
+    const doc = await this.findById(id, organizationId);
     this.assertTransition(doc.status, 'received');
     doc.status = 'received';
     return doc.save();
   }
 
-  async remove(id: string): Promise<void> {
-    const doc = await this.findById(id);
+  async remove(id: string, organizationId?: string | null): Promise<void> {
+    const doc = await this.findById(id, organizationId);
     await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+      .updateOne(
+        { _id: doc._id, ...this.organizationFilter(organizationId) },
+        { $set: { deletedAt: new Date() } },
+      )
       .exec();
+  }
+
+  private organizationFilter(organizationId?: string | null): Record<string, unknown> {
+    if (!organizationId) return {};
+    if (!Types.ObjectId.isValid(organizationId)) {
+      throw new BadRequestException('Invalid organization scope');
+    }
+    return { organizationId: new Types.ObjectId(organizationId) };
+  }
+
+  private organizationWrite(organizationId?: string | null): Record<string, unknown> {
+    return organizationId ? this.organizationFilter(organizationId) : {};
   }
 
   private isDuplicateKeyError(error: unknown): boolean {

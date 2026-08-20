@@ -109,6 +109,10 @@ export class Organization {
   @Prop()
   website?: string;
 
+  /** Общая почта организации; для поставщика — адрес заявок. */
+  @Prop({ trim: true })
+  email?: string;
+
   @Prop()
   directorName?: string;
 

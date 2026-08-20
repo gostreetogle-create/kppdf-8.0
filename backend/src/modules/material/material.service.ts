@@ -27,7 +27,18 @@ export class MaterialService {
       if (!category.skuPrefix) throw new BadRequestException(`У категории «${category.name}» не настроен префикс внутреннего кода материала`);
       sku = await this.counter.next('Material', category.skuPrefix);
     }
-    try { return await this.model.create({ ...dto, article, sku, ...this.organizationWrite(organizationId) }); } catch (err) { this.rethrowDuplicate(err); }
+    const colors = this.normalizeColors(dto.colors);
+    try {
+      return await this.model.create({
+        ...dto,
+        article,
+        sku,
+        ...(colors !== undefined ? { colors } : {}),
+        ...this.organizationWrite(organizationId),
+      });
+    } catch (err) {
+      this.rethrowDuplicate(err);
+    }
   }
 
   async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; supplierId?: string; materialKind?: CreateMaterialDto['materialKind'] } = {}, organizationId?: string | null) {
@@ -60,6 +71,7 @@ export class MaterialService {
     if (dto.categoryId) await this.loadAssignableMaterialCategory(dto.categoryId, organizationId);
     if (dto.article !== undefined) dto.article = this.normalizeRequiredArticle(dto.article);
     if (dto.dimensions !== undefined) this.assertUniqueDimensionTypes(dto.dimensions);
+    const colors = this.normalizeColors(dto.colors);
     const doc = organizationId
       ? await this.model.findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.organizationFilter(organizationId) }).exec()
       : await this.model.findById(id).exec();
@@ -70,6 +82,7 @@ export class MaterialService {
     for (const [key, value] of Object.entries(dto as Record<string, unknown>)) {
       if (value !== undefined) $set[key] = value;
     }
+    if (colors !== undefined) $set.colors = colors;
     if (Array.isArray(dto.photoIds)) {
       $set.photoIds = dto.photoIds.map((pid) => new Types.ObjectId(String(pid)));
     }
@@ -106,6 +119,21 @@ export class MaterialService {
     const article = value?.trim() ?? '';
     if (!article) throw new BadRequestException('Артикул материала обязателен');
     return article;
+  }
+
+  /** Keep the material color picker deterministic: trim blanks and dedupe case-insensitively. */
+  private normalizeColors(value: string[] | undefined): string[] | undefined {
+    if (value === undefined) return undefined;
+    const result: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of value) {
+      const color = raw.trim();
+      const key = color.toLocaleLowerCase();
+      if (!color || seen.has(key)) continue;
+      seen.add(key);
+      result.push(color);
+    }
+    return result;
   }
 
   private rethrowDuplicate(err: unknown): never {

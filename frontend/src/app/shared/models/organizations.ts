@@ -30,6 +30,7 @@ export interface Organization {
   type?: OrgType[];
   legalType?: 'ooo' | 'ip' | 'pao' | 'ao' | 'other';
   website?: string;
+  email?: string;
   directorName?: string;
   registrationDate?: string;
   partyTypes?: string[];

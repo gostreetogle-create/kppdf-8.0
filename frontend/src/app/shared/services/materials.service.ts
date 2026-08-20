@@ -44,8 +44,10 @@ export interface Material {
   pricePerUnit?: number;
   stockQty?: number;
   dimensions?: MaterialDimension[];
-  photoIds?: string[];
+  photoIds?: Array<string | Photo>;
   mainPhotoId?: string | Photo;
+  /** TZ-SUPPLY-305/311 — цвета, в которых материал можно заказать. */
+  colors?: string[];
   supplierId?: string;
   notes?: string;
   /**

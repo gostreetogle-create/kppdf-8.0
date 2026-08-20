@@ -27,6 +27,7 @@ import {
 import { WorkType, WorkTypeDocument } from '../work-type/work-type.schema';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { ShipOrderItemDto } from './dto/ship-order.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
 import { CounterService } from '../counter/counter.service';
@@ -910,8 +911,10 @@ export class OrderService {
     address?: string,
     warehouseId?: string,
     driverInfo?: string,
+    partialItems?: ShipOrderItemDto[],
+    organizationId?: string | null,
   ): Promise<{ order: OrderDocument; shipmentId: string }> {
-    // Z-001: shipment creation + order.status update must be atomic.
+    // Z-001 / TZ-SUPPLY-312: shipment creation + order update are atomic.
     return this.sessionRunner.run(async (session) => {
       const order = await this.model.findById(id).session(session).exec();
       if (!order) throw new NotFoundException(`Order ${id} not found`);
@@ -922,23 +925,102 @@ export class OrderService {
       ) {
         throw new NotFoundException(`Cannot ship order in status ${order.status}`);
       }
+      if (warehouseId && !Types.ObjectId.isValid(warehouseId)) {
+        throw new BadRequestException('Invalid warehouseId');
+      }
+
+      const isPartial = partialItems !== undefined;
+      let shipmentItems: Array<{
+        lineId: string;
+        productId: Types.ObjectId;
+        productName?: string;
+        quantity: number;
+        unit?: string;
+      }>;
+
+      if (isPartial) {
+        if (partialItems.length === 0) {
+          throw new BadRequestException('Выберите хотя бы одну позицию для отгрузки');
+        }
+        const existing = await this.shipmentModel
+          .find({ orderId: order._id, status: { $ne: 'cancelled' } })
+          .session(session)
+          .exec();
+        const shippedByLine = new Map<string, number>();
+        for (const shipment of existing) {
+          for (const item of shipment.items ?? []) {
+            if (item.lineId) {
+              shippedByLine.set(
+                item.lineId,
+                (shippedByLine.get(item.lineId) ?? 0) + item.quantity,
+              );
+            }
+          }
+        }
+        const lines = new Map<string, OrderItem>();
+        for (let index = 0; index < order.items.length; index++) {
+          const line = order.items[index];
+          line.lineId ??= `legacy-${index}-${order._id.toString()}`;
+          lines.set(line.lineId, line);
+        }
+        shipmentItems = partialItems.map((requested) => {
+          const line = lines.get(requested.lineId);
+          if (!line) throw new NotFoundException(`Order line ${requested.lineId} not found`);
+          if (!(requested.quantity > 0)) {
+            throw new BadRequestException('Количество отгружаемой позиции должно быть больше нуля');
+          }
+          const alreadyShipped = shippedByLine.get(requested.lineId) ?? 0;
+          if (alreadyShipped + requested.quantity > line.quantity) {
+            throw new BadRequestException(
+              `Нельзя отгрузить больше остатка позиции «${line.productName ?? requested.lineId}»`,
+            );
+          }
+          return {
+            lineId: requested.lineId,
+            productId: line.productId,
+            productName: line.productName,
+            quantity: requested.quantity,
+            unit: line.unit,
+          };
+        });
+
+        const allComplete = order.items.every((line) => {
+          const lineId = line.lineId!;
+          const inRequest = shipmentItems
+            .filter((item) => item.lineId === lineId)
+            .reduce((sum, item) => sum + item.quantity, 0);
+          return (shippedByLine.get(lineId) ?? 0) + inRequest >= line.quantity;
+        });
+        if (allComplete) {
+          order.status = 'shipped';
+        }
+      } else {
+        shipmentItems = order.items.map((line, index) => ({
+          lineId: line.lineId ?? `legacy-${index}-${order._id.toString()}`,
+          productId: line.productId,
+          productName: line.productName,
+          quantity: line.quantity,
+          unit: line.unit,
+        }));
+        order.status = 'shipped';
+      }
+
+      const number = isPartial
+        ? await this.counter.next('Shipment', 'SHP')
+        : `SHP-${order.number}`;
       const [shipment] = await this.shipmentModel.create(
         [
           {
-            number: `SHP-${order.number}`,
+            number,
             orderId: order._id,
+            organizationId: organizationId ? new Types.ObjectId(organizationId) : undefined,
             counterpartyId: order.counterpartyId,
             recipient,
             address,
             warehouseId: warehouseId ? new Types.ObjectId(warehouseId) : undefined,
             driverInfo,
             status: 'scheduled',
-            items: order.items.map((i) => ({
-              productId: i.productId,
-              productName: i.productName,
-              quantity: i.quantity,
-              unit: i.unit,
-            })),
+            items: shipmentItems,
           },
         ],
         { session },
@@ -948,15 +1030,11 @@ export class OrderService {
         ...(order.shipmentIds ?? []),
         new Types.ObjectId(shipment._id.toString()),
       ];
-      order.status = 'shipped';
-      // TZ-SWEEP-401: отгрузка заказа = отгрузка всех линий (item.status — ход
-      // изделия; readyForWork не трогаем). Старые линии без поля получают значение.
-      for (let i = 0; i < order.items.length; i++) {
-        const item = order.items[i];
-        item.status = 'shipped';
-        item.boardLane = 'shipped';
-        if (!item.lineId) {
-          item.lineId = `legacy-${i}-${order._id.toString()}`;
+      if (order.status === 'shipped') {
+        // TZ-SWEEP-401: only a fully shipped order moves every line to shipped.
+        for (const item of order.items) {
+          item.status = 'shipped';
+          item.boardLane = 'shipped';
         }
       }
       const saved = await order.save({ session });

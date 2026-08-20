@@ -17,6 +17,15 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
+## SUPPLY WAVE 2026-08-20 (TZ-SUPPLY-312 READY_FOR_ACCEPTANCE)
+
+- Стендовый smoke выполнен: `node scripts/smoke/supply-smoke.mjs` → **23/23 PASS**
+  (auth, Mongo, склад, upload-хранилище, быстрый заказ→реестр→отгрузка).
+  Чек-лист: `docs/agent-checklists/SUPPLY-SMOKE.md`; браузерный проход PO после deploy.
+- Найдено и исправлено 2 бага storage-item: partial unique index (`$exists` →
+  `$type: 'objectId'`, `zoneName: null`) и silent no-op `remove()` → hard delete.
+- Legacy PurchaseRequest/PurchaseOrder → стратегия в backlog `TZ-SUPPLY-313` (решение PO A/B).
+
 ## QUEUE
 
 Backlog (не брать без PO): PARTY-305, ORDERS-307, UI-344, SUPPLY-304/305

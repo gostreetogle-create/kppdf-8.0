@@ -3,6 +3,10 @@ import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ _id: false })
 export class ShipmentItem {
+  /** Stable OrderItem.lineId; legacy shipments may omit it. */
+  @Prop()
+  lineId?: string;
+
   @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
   productId!: Types.ObjectId;
 
@@ -55,6 +59,10 @@ export class Shipment {
   @Prop({ type: Types.ObjectId, ref: 'Order', required: true, index: true })
   orderId!: Types.ObjectId;
 
+  /** TZ-SUPPLY-312 — owning organization for cross-tenant isolation. */
+  @Prop({ type: Types.ObjectId, ref: 'Organization', required: false, index: true })
+  organizationId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'Counterparty', required: true, index: true })
   counterpartyId!: Types.ObjectId;
 
@@ -86,6 +94,10 @@ export class Shipment {
   @Prop({ default: true, index: true })
   isActive!: boolean;
 
+  /** Soft-delete marker; removed shipments must not reappear in the registry. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
+
   @Prop({ type: [ShipmentItemSchema], default: [] })
   items!: ShipmentItem[];
 
@@ -103,5 +115,5 @@ export class Shipment {
 }
 
 export const ShipmentSchema = SchemaFactory.createForClass(Shipment);
-ShipmentSchema.index({ orderId: 1, date: -1 });
-ShipmentSchema.index({ status: 1, date: -1 });
+ShipmentSchema.index({ organizationId: 1, orderId: 1, date: -1, deletedAt: 1 });
+ShipmentSchema.index({ organizationId: 1, status: 1, date: -1, deletedAt: 1 });

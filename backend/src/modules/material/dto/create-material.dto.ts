@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayUnique,
   IsArray,
   IsBoolean,
   IsIn,
@@ -126,6 +127,13 @@ export class CreateMaterialDto {
   @ValidateNested({ each: true })
   @Type(() => DimensionDto)
   dimensions?: DimensionDto[];
+
+  @ApiPropertyOptional({ type: [String], description: 'Цвета, доступные для заказа у материала' })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsString({ each: true })
+  colors?: string[];
 
   @ApiPropertyOptional({ type: [String], description: 'ID фотографий' })
   @IsOptional()

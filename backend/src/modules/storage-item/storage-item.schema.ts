@@ -59,31 +59,37 @@ export class StorageItem {
 export const StorageItemSchema = SchemaFactory.createForClass(StorageItem);
 
 // Keep existing product uniqueness semantics and add the same semantics for materials.
+//
+// Discriminator uses `$type: 'objectId'`, NOT `$exists: true`: in a partial
+// index filter MongoDB treats a missing field as `null` and `$exists: true`
+// still indexes the document, so two material storage-items in one zone would
+// collide on the product-side unique index (500 on the second create).
+// Reproduced 2026-08-20 on the local stand via scripts/smoke/supply-smoke.mjs.
 StorageItemSchema.index(
   { warehouseId: 1, productId: 1, zoneName: 1 },
   {
     unique: true,
-    partialFilterExpression: { productId: { $exists: true }, zoneName: { $type: 'string' } },
+    partialFilterExpression: { productId: { $type: 'objectId' }, zoneName: { $type: 'string' } },
   },
 );
 StorageItemSchema.index(
   { warehouseId: 1, productId: 1 },
   {
     unique: true,
-    partialFilterExpression: { productId: { $exists: true }, zoneName: { $exists: false } },
+    partialFilterExpression: { productId: { $type: 'objectId' }, zoneName: null },
   },
 );
 StorageItemSchema.index(
   { warehouseId: 1, materialId: 1, zoneName: 1 },
   {
     unique: true,
-    partialFilterExpression: { materialId: { $exists: true }, zoneName: { $type: 'string' } },
+    partialFilterExpression: { materialId: { $type: 'objectId' }, zoneName: { $type: 'string' } },
   },
 );
 StorageItemSchema.index(
   { warehouseId: 1, materialId: 1 },
   {
     unique: true,
-    partialFilterExpression: { materialId: { $exists: true }, zoneName: { $exists: false } },
+    partialFilterExpression: { materialId: { $type: 'objectId' }, zoneName: null },
   },
 );

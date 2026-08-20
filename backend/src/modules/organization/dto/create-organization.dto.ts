@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsDate,
+  IsEmail,
   IsIn,
   IsInt,
   IsMongoId,
@@ -93,6 +94,10 @@ export class CreateOrganizationDto {
 
   @ApiPropertyOptional({ description: 'Веб-сайт' })
   @IsOptional() @IsString() website?: string;
+
+  @ApiPropertyOptional({ example: 'zakaz@example.ru', description: 'Общая почта организации' })
+  @IsOptional() @IsEmail() email?: string;
+
   @ApiPropertyOptional({ description: 'ФИО директора' })
   @IsOptional() @IsString() directorName?: string;
 

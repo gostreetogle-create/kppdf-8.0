@@ -157,7 +157,7 @@ export type SupplyViewMode = 'quick' | 'registry';
       @if (viewMode() === 'quick') {
         <app-supply-quick-order #quickOrder [prefillOrderId]="orderFilterId()" />
       } @else {
-        <div class="flex flex-col gap-6 max-w-6xl">
+        <div class="flex flex-col gap-6 w-full min-w-0">
           @if (showCreate()) {
             <form
               class="pi-dashed-panel p-4 flex flex-col gap-3"

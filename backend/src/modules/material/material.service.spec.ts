@@ -189,6 +189,18 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
       await expect(service.create(dto())).rejects.toThrow('network down');
     });
 
+    it('normalizes material colors before persistence', async () => {
+      const { service, create } = buildService({
+        create: jest.fn().mockResolvedValue(doc()),
+      });
+
+      await service.create(dto({ colors: [' Чёрный ', 'белый', 'чёрный', '   '] }));
+
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({ colors: ['Чёрный', 'белый'] }),
+      );
+    });
+
     it('rejects duplicate dimension types on create', async () => {
       const { service, create } = buildService();
       await expect(
@@ -222,6 +234,28 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
         } as UpdateMaterialDto),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(save).not.toHaveBeenCalled();
+    });
+
+    it('normalizes colors on update while preserving an explicit empty list', async () => {
+      const findOneAndUpdate = jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(doc()),
+      });
+      const { service } = buildService({
+        findById: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue(doc()),
+        }),
+        findOneAndUpdate,
+      });
+
+      await service.update('507f1f77bcf86cd799439011', {
+        colors: [' Красный ', 'красный', 'синий'],
+      });
+
+      expect(findOneAndUpdate).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ $set: expect.objectContaining({ colors: ['Красный', 'синий'] }) }),
+        expect.anything(),
+      );
     });
 
     it('maps an E11000 raised by findOneAndUpdate to 409 Conflict (TZ-CATALOG-339)', async () => {

@@ -16,6 +16,7 @@ import { AuthenticatedUser, CurrentUser } from '../../common/decorators/current-
 import { OrderService } from './order.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { ShipOrderDto } from './dto/ship-order.dto';
 import { SetOrderLineReadyDto } from './dto/set-order-line-ready.dto';
 import { PatchEstimateDaysDto } from './dto/patch-estimate-days.dto';
 import { PatchEstimateStartDto } from './dto/patch-estimate-start.dto';
@@ -223,9 +224,18 @@ export class OrderController {
   @ApiResponse({ status: 404, description: 'Order not found' })
   ship(
     @Param('id') id: string,
-    @Body() body: { recipient?: string; address?: string; warehouseId?: string; driverInfo?: string },
+    @Body() body: ShipOrderDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.service.ship(id, body?.recipient, body?.address, body?.warehouseId, body?.driverInfo);
+    return this.service.ship(
+      id,
+      body?.recipient,
+      body?.address,
+      body?.warehouseId,
+      body?.driverInfo,
+      body?.items,
+      user.organizationId,
+    );
   }
 
   @Post(':id/cancel')

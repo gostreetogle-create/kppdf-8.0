@@ -149,7 +149,7 @@ describe('SupplyPage TZ-SUPPLY-304 quick order view', () => {
       fixture.nativeElement.querySelector('[data-test="supply-quick-tile-expanded"]'),
     ).toBeTruthy();
     expect(
-      fixture.nativeElement.querySelector('[data-test="supply-quick-title-input"]'),
+      fixture.nativeElement.querySelector('[data-test="supply-quick-material-select"]'),
     ).toBeTruthy();
     expect(
       fixture.nativeElement.querySelectorAll('[data-test^="supply-quick-tile-qo-"]').length,

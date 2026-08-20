@@ -21,8 +21,10 @@ export interface Material {
   pricePerUnit?: number;
   stockQty?: number;
   dimensions?: MaterialDimension[];
-  photoIds?: string[];
+  photoIds?: Array<string | Photo>;
   mainPhotoId?: string | Photo;
+  /** TZ-SUPPLY-312 — allowed order colors for this material. */
+  colors?: string[];
   supplierId?: string;
   notes?: string;
   createdAt?: string;

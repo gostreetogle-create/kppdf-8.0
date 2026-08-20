@@ -133,8 +133,11 @@ export class StorageItemService {
   }
 
   async remove(id: string): Promise<void> {
+    // Schema has no `deletedAt` — soft-delete via $set was a silent no-op
+    // (Mongoose strict strips the unknown path), leaving rows behind and
+    // blocking unique partial indexes. Hard delete matches the collection.
     const doc = await this.findById(id);
-    await this.model.updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } }).exec();
+    await this.model.deleteOne({ _id: doc._id }).exec();
   }
 
   private resolveTarget(dto: Pick<CreateStorageItemDto, 'productId' | 'materialId'>): {

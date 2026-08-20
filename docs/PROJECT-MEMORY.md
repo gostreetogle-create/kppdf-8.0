@@ -6,6 +6,7 @@
 ## 1. Зачем
 
 Этот файл — **стартовый пакет агента**: где правда, что не потерять, куда идти по задаче.
+Для полной ежедневной стратегии lifecycle TZ, аудитов и prompt-файлов см. `docs/PROJECT-OPERATING-STRATEGY.md`.
 Читай его после CLAIM и **до** ARCHITECTURE — не нужно читать весь репозиторий, чтобы не сломать систему.
 Если задача уже сделана в другом месте — не делай повторно; сверь `_NOW.md`.
 
@@ -32,6 +33,7 @@
 | Готовность раздела | `docs/SECTION-READINESS.md` |
 | Способности (included/absent/removed) | `docs/CAPABILITY-LEDGER.md` |
 | Режим задачи / primary signal | `docs/AGENT-TASK-MODES.md` |
+| Ежедневная стратегия TZ/audit/prompt | `docs/PROJECT-OPERATING-STRATEGY.md` |
 | «Не забыть списки» | `docs/FEATURE-INTEGRATION-CHECKLIST.md` (FIC) |
 | Очередь агентов / бронь | `docs/agent-checklists/_NOW.md` + `tasks/_active/` |
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |

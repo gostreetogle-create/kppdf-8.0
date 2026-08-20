@@ -1,7 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Shipment, ShipmentDocument, ShipmentItem, ShippingDoc } from './shipment.schema';
+import {
+  Shipment,
+  ShipmentDocument,
+  ShipmentItem,
+  ShippingDoc,
+  ShipmentStatus,
+} from './shipment.schema';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { AddDocDto } from './dto/add-doc.dto';
@@ -21,7 +27,10 @@ export class ShipmentService {
     private readonly sessionRunner: SessionRunner,
   ) {}
 
-  async create(dto: CreateShipmentDto): Promise<ShipmentDocument> {
+  async create(
+    dto: CreateShipmentDto,
+    organizationId?: string | null,
+  ): Promise<ShipmentDocument> {
     const number = dto.number ?? (await this.counter.next('Shipment', 'SHP'));
     const items: ShipmentItem[] = dto.items.map((i) => ({
       productId: new Types.ObjectId(i.productId),
@@ -32,6 +41,7 @@ export class ShipmentService {
     return this.model.create({
       number,
       orderId: new Types.ObjectId(dto.orderId),
+      ...this.organizationWrite(organizationId),
       counterpartyId: new Types.ObjectId(dto.counterpartyId),
       date: dto.date ? new Date(dto.date) : new Date(),
       recipient: dto.recipient,
@@ -48,8 +58,12 @@ export class ShipmentService {
     orderId?: string,
     status?: string,
     date?: Date,
+    organizationId?: string | null,
   ): Promise<ShipmentDocument[]> {
-    const filter: Record<string, unknown> = {};
+    const filter: Record<string, unknown> = {
+      deletedAt: null,
+      ...this.organizationFilter(organizationId),
+    };
     if (orderId) {
       if (!Types.ObjectId.isValid(orderId)) return [];
       filter.orderId = new Types.ObjectId(orderId);
@@ -70,12 +84,12 @@ export class ShipmentService {
       .exec();
   }
 
-  async findById(id: string): Promise<ShipmentDocument> {
+  async findById(id: string, organizationId?: string | null): Promise<ShipmentDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`Shipment ${id} not found`);
     }
     const doc = await this.model
-      .findById(id)
+      .findOne({ _id: id, deletedAt: null, ...this.organizationFilter(organizationId) })
       .populate('orderId')
       .populate('counterpartyId')
       .exec();
@@ -83,11 +97,18 @@ export class ShipmentService {
     return doc;
   }
 
-  async update(id: string, dto: UpdateShipmentDto): Promise<ShipmentDocument> {
-    const doc = await this.findById(id);
+  async update(
+    id: string,
+    dto: UpdateShipmentDto,
+    organizationId?: string | null,
+  ): Promise<ShipmentDocument> {
+    const doc = await this.findById(id, organizationId);
     if (dto.recipient !== undefined) doc.recipient = dto.recipient;
     if (dto.address !== undefined) doc.address = dto.address;
-    if (dto.status !== undefined) doc.status = dto.status;
+    if (dto.status !== undefined) {
+      this.assertStatusTransition(doc.status, dto.status);
+      doc.status = dto.status;
+    }
     if (dto.driverInfo !== undefined) doc.driverInfo = dto.driverInfo;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.warehouseId !== undefined) {
@@ -98,10 +119,13 @@ export class ShipmentService {
     return doc.save();
   }
 
-  async dispatch(id: string): Promise<ShipmentDocument> {
+  async dispatch(id: string, organizationId?: string | null): Promise<ShipmentDocument> {
     // Z-001: wrap entire write-graph in a single Mongo transaction.
     return this.sessionRunner.run(async (session) => {
-      const doc = await this.model.findById(id).session(session).exec();
+      const doc = await this.model
+        .findOne({ _id: id, deletedAt: null, ...this.organizationFilter(organizationId) })
+        .session(session)
+        .exec();
       if (!doc) throw new NotFoundException(`Shipment ${id} not found`);
       if (!doc.warehouseId) {
         throw new NotFoundException(`Shipment has no warehouseId; cannot dispatch`);
@@ -136,8 +160,12 @@ export class ShipmentService {
     });
   }
 
-  async addDoc(id: string, dto: AddDocDto): Promise<ShipmentDocument> {
-    const doc = await this.findById(id);
+  async addDoc(
+    id: string,
+    dto: AddDocDto,
+    organizationId?: string | null,
+  ): Promise<ShipmentDocument> {
+    const doc = await this.findById(id, organizationId);
     const docEntry: ShippingDoc = {
       number: dto.number ?? `${doc.number}-${(doc.docs?.length ?? 0) + 1}`,
       date: dto.date ? new Date(dto.date) : new Date(),
@@ -151,10 +179,39 @@ export class ShipmentService {
     return doc.save();
   }
 
-  async remove(id: string): Promise<void> {
-    const doc = await this.findById(id);
+  async remove(id: string, organizationId?: string | null): Promise<void> {
+    const doc = await this.findById(id, organizationId);
     await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
+      .updateOne(
+        { _id: doc._id, ...this.organizationFilter(organizationId) },
+        { $set: { deletedAt: new Date(), isActive: false } },
+      )
       .exec();
+  }
+
+  private assertStatusTransition(from: ShipmentStatus, to: ShipmentStatus): void {
+    if (from === to) return;
+    const allowed: Record<ShipmentStatus, ShipmentStatus[]> = {
+      draft: ['scheduled', 'cancelled'],
+      scheduled: ['in_transit', 'cancelled'],
+      in_transit: ['delivered'],
+      delivered: [],
+      cancelled: [],
+    };
+    if (!allowed[from]?.includes(to)) {
+      throw new BadRequestException(`Нельзя перевести отгрузку из «${from}» в «${to}»`);
+    }
+  }
+
+  private organizationFilter(organizationId?: string | null): Record<string, unknown> {
+    if (!organizationId) return {};
+    if (!Types.ObjectId.isValid(organizationId)) {
+      throw new BadRequestException('Invalid organization scope');
+    }
+    return { organizationId: new Types.ObjectId(organizationId) };
+  }
+
+  private organizationWrite(organizationId?: string | null): Record<string, unknown> {
+    return organizationId ? this.organizationFilter(organizationId) : {};
   }
 }

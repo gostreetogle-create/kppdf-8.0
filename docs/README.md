@@ -10,6 +10,7 @@ docs/
 ├── README.md                      ← этот файл (индекс docs/)
 ├── AI-AGENT-GUIDE.md              ← онбординг ИИ-агента
 ├── PO-DIARY.md                    ← [канон] кто PO, планка качества, лог сессий
+├── PROJECT-OPERATING-STRATEGY.md  ← [канон] ежедневный lifecycle TZ, audit и prompt strategy
 ├── SECTION-READINESS.md           ← [канон] какие разделы READY TO USE / что осталось
 ├── TZ-AUTHORING.md                ← [канон] как писать техзадачи (domain preflight)
 ├── AUDIT-METHODOLOGY.md           ← [канон] методика инженерного аудита → child-TZ
@@ -63,6 +64,7 @@ docs/
 | Категория | Файлы | Назначение |
 |-----------|-------|-----------|
 | **AI Agent Guide** | `AI-AGENT-GUIDE.md` | **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ** — онбординг AI-агента: паттерны, запреты, чек-лист |
+| **Operating strategy** | `PROJECT-OPERATING-STRATEGY.md` | Ежедневный процесс: audit → TZ → claim → gates → archive; стратегия prompt-файлов |
 | **TZ Authoring** | `TZ-AUTHORING.md` | **Как писать TZ** — канон имён (Counterparty≠Organization), unique, preflight; skill: `.agents/skills/tz-authoring` |
 | **Audit methodology** | `AUDIT-METHODOLOGY.md` | **Как аудитить** перед крупными миграциями/TZ: режимы, preflight, evidence, P0–P3 → child-TZ; отчёты в `docs/audits/` |
 | **Архитектура** | `architecture-audit-2026-07.md` | Полный срез архитектуры |
@@ -79,6 +81,7 @@ docs/
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 
 1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
+1a. `docs/PROJECT-OPERATING-STRATEGY.md` — если ведёшь волну, аудит или пишешь prompt
 1b. `docs/TZ-AUTHORING.md` — **если пишешь TZ** (канон имён / unique / preflight)
 1c. `docs/AUDIT-METHODOLOGY.md` — **если аудитишь** домен / миграцию / чужой diff (не путать с реализацией)
 2. `ARCHITECTURE.md` (корень проекта) — общая архитектура

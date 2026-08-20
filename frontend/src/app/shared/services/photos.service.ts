@@ -35,6 +35,8 @@ export interface Photo {
   /** Прямоугольный кадр показа (TZ-PHOTO-304); отсутствует = contain/center. */
   frame?: PhotoFrame;
   createdAt?: string;
+  /** Multipart upload response may include the generated list thumbnail. */
+  variants?: { thumb?: PhotoLike };
 }
 
 export interface PhotoLike {

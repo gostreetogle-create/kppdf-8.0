@@ -64,6 +64,8 @@ export interface Organization {
   type?: OrgType[];
   legalType?: 'ooo' | 'ip' | 'pao' | 'ao' | 'other';
   website?: string;
+  /** Общая почта организации; для поставщика — адрес заявок. */
+  email?: string;
   directorName?: string;
   registrationDate?: string;
   partyTypes?: string[];
@@ -90,6 +92,26 @@ export interface OrganizationsListResponse {
   total: number;
   page: number;
   limit: number;
+}
+
+/** TZ-SUPPLY-311 — контакт организации (менеджер поставщика). */
+export interface OrganizationContactPerson {
+  _id: string;
+  lastName: string;
+  firstName?: string;
+  patronymic?: string;
+  position?: string;
+  phone?: string;
+  email?: string;
+}
+
+export interface OrganizationContact {
+  _id: string;
+  organizationId: string;
+  /** The API may return a raw ObjectId or a populated Person. */
+  personId: string | OrganizationContactPerson;
+  isPrimary?: boolean;
+  role?: string;
 }
 
 export interface OrganizationsListParams {
@@ -134,6 +156,27 @@ export class OrganizationsService {
 
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/organizations/${id}`);
+  }
+
+  /** TZ-SUPPLY-311 — контактные лица организации (менеджеры поставщика). */
+  listContacts(id: string): Observable<SilentResult<OrganizationContact[]>> {
+    return silentGet<OrganizationContact[]>(
+      this.http,
+      `${this.baseUrl}/organizations/${id}/contacts`,
+    );
+  }
+
+  /** TZ-SUPPLY-311 — привязать Person к организации как контакт. */
+  addContact(
+    id: string,
+    personId: string,
+    role?: string,
+  ): Observable<SilentResult<OrganizationContact>> {
+    return silentPost<OrganizationContact>(
+      this.http,
+      `${this.baseUrl}/organizations/${id}/contacts`,
+      { personId, ...(role ? { role } : {}) },
+    );
   }
 
   /**
