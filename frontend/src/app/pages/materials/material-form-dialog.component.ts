@@ -139,12 +139,14 @@ interface DimensionFormGroup extends FormGroup {
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
           <!-- ─── LEFT: обязательные основные данные ─── -->
           <app-pi-form-section title="Основные данные" headingId="mat-sec-basics" tone="gold">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+            <!-- TZ-UX-FORM-311: 12-col → name lg (8) + article sm (4), not 50/50. -->
+            <div class="grid md:grid-cols-12 gap-form-field">
               <app-pi-form-field
                 label="Название"
                 htmlFor="mat-name"
                 [required]="true"
                 [error]="errorFor('name')"
+                class="md:col-span-8"
               >
                 <app-pi-input
                   id="mat-name"
@@ -160,6 +162,7 @@ interface DimensionFormGroup extends FormGroup {
                 htmlFor="mat-article"
                 [required]="true"
                 [error]="errorFor('article')"
+                class="md:col-span-4"
               >
                 <app-pi-input
                   id="mat-article"
@@ -174,6 +177,7 @@ interface DimensionFormGroup extends FormGroup {
                 htmlFor="mat-unit"
                 [required]="true"
                 [error]="errorFor('unit')"
+                class="md:col-span-2"
               >
                 <select
                   id="mat-unit"
@@ -202,19 +206,22 @@ interface DimensionFormGroup extends FormGroup {
                 </select>
               </app-pi-form-field>
 
+              <!-- TZ-UX-FORM-311: SKU = sm (4-col). -->
               <app-pi-form-field
                 label="Внутренний код материала"
                 htmlFor="mat-sku"
                 [error]="errorFor('sku')"
+                class="md:col-span-4"
               >
                 <app-pi-input id="mat-sku" formControlName="sku" placeholder="M-0001" />
               </app-pi-form-field>
 
-              <!-- ─── TZ-CATALOG-301 / 316: catalog-leaf classification ─── -->
+              <!-- TZ-UX-FORM-311: Kind = sm (4-col). -->
               <app-pi-form-field
                 label="Тип материала"
                 htmlFor="mat-materialKind"
                 hint="Сырьё, деталь, метиз, покупное — для классификации и фильтра."
+                class="md:col-span-4"
               >
                 <select
                   id="mat-materialKind"
@@ -229,10 +236,12 @@ interface DimensionFormGroup extends FormGroup {
               </app-pi-form-field>
 
               <!-- ─── TZ-CATALOG-301 / 316: масса в кг (≥ 0) ─── -->
+              <!-- TZ-UX-FORM-311: Weight = nano (2-col) + max-w + tabular-nums. -->
               <app-pi-form-field
                 label="Масса, кг"
                 htmlFor="mat-weightKg"
                 [error]="errorFor('weightKg')"
+                class="md:col-span-2"
               >
                 <app-pi-input
                   id="mat-weightKg"
@@ -243,13 +252,16 @@ interface DimensionFormGroup extends FormGroup {
                   min="0"
                   [invalid]="hasError('weightKg')"
                   ariaLabel="Масса в килограммах"
+                  style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                 />
               </app-pi-form-field>
 
+              <!-- TZ-UX-FORM-311: Price = xs (2-col) + max-w + tabular-nums. -->
               <app-pi-form-field
                 label="Цена, ₽"
                 htmlFor="mat-price"
                 [error]="errorFor('pricePerUnit')"
+                class="md:col-span-2"
               >
                 <app-pi-input
                   id="mat-price"
@@ -257,10 +269,11 @@ interface DimensionFormGroup extends FormGroup {
                   formControlName="pricePerUnit"
                   placeholder="0.00"
                   [invalid]="hasError('pricePerUnit')"
+                  style="max-width: 7rem; text-align: right; font-variant-numeric: tabular-nums"
                 />
               </app-pi-form-field>
 
-              <p class="sm:col-span-2 text-[11px] text-muted-foreground leading-snug">
+              <p class="md:col-span-4 text-[11px] text-muted-foreground leading-snug">
                 Остаток — в разделе «Склад».
               </p>
             </div>
@@ -268,13 +281,14 @@ interface DimensionFormGroup extends FormGroup {
 
           <!-- ─── RIGHT: необязательные данные ─── -->
           <app-pi-form-section title="Дополнительно" headingId="mat-sec-extra" tone="neutral">
-            <!-- ─── TZ-CATALOG-301 / 316: технические справочные поля ─── -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
+            <!-- TZ-UX-FORM-311: assortment/standard/grade = sm (4-col each) in 12-col grid. -->
+            <div class="grid md:grid-cols-12 gap-form-field">
               <app-pi-form-field
                 label="Сортамент"
                 htmlFor="mat-assortment"
                 [error]="errorFor('assortment')"
                 hint="Профиль: труба, лист, уголок…"
+                class="md:col-span-4"
               >
                 <app-pi-input
                   id="mat-assortment"
@@ -288,6 +302,7 @@ interface DimensionFormGroup extends FormGroup {
                 htmlFor="mat-standardRef"
                 [error]="errorFor('standardRef')"
                 hint="ГОСТ, ASTM, DIN…"
+                class="md:col-span-4"
               >
                 <app-pi-input
                   id="mat-standardRef"
@@ -301,6 +316,7 @@ interface DimensionFormGroup extends FormGroup {
                 htmlFor="mat-materialGrade"
                 [error]="errorFor('materialGrade')"
                 hint="Ст 3, AISI 304…"
+                class="md:col-span-4"
               >
                 <app-pi-input
                   id="mat-materialGrade"
@@ -451,6 +467,7 @@ interface DimensionFormGroup extends FormGroup {
                       <option [value]="opt.value">{{ opt.label }}</option>
                     }
                   </select>
+                  <!-- TZ-UX-FORM-311: dim value = nano max-w + tabular-nums. -->
                   <app-pi-input
                     [attr.id]="'mat-dim-value-' + i"
                     type="number"
@@ -459,6 +476,7 @@ interface DimensionFormGroup extends FormGroup {
                     size="sm"
                     [attr.aria-label]="'Значение ' + (i + 1)"
                     class="col-span-3"
+                    style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                   />
                   <label
                     class="col-span-4 inline-flex items-center gap-2 min-h-touch px-control-x text-sm cursor-pointer"

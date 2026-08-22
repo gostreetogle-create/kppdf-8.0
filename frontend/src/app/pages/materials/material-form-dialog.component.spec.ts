@@ -206,6 +206,26 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     expect(fixture.nativeElement.textContent).toContain('Габариты');
   });
 
+  it('TZ-UX-FORM-311: name/article uses 12-col (not 50/50); weight/price have max-w + tabular-nums', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'material-form-dialog.component.ts'),
+      'utf8',
+    );
+    // Name/article: 12-col grid with col-span-8 + col-span-4, NOT sm:grid-cols-2
+    expect(source).toContain('md:grid-cols-12');
+    expect(source).toContain('md:col-span-8');
+    expect(source).toContain('md:col-span-4');
+    expect(source).not.toMatch(/grid grid-cols-1 sm:grid-cols-2/);
+    // Weight + price: max-w constraints + tabular-nums
+    expect(source).toContain('max-width: 5.5rem');
+    expect(source).toContain('max-width: 7rem');
+    expect(source).toContain('font-variant-numeric: tabular-nums');
+    // Assortment/standard/grade: form section uses md:grid-cols-12 (not sm:grid-cols-3)
+    expect(source).toContain('assortment/standard/grade = sm');
+    // data-test preserved
+    expect(source).toContain('data-test="material-form"');
+  });
+
   it('instantiates in edit mode and prefills required fields', async () => {
     const material: Material = {
       _id: 'm1',
