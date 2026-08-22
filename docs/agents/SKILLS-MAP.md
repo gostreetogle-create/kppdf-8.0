@@ -17,6 +17,8 @@
 | improve-codebase-architecture | `architecture-review.mdc` + Mode A review текстом |
 | caveman / кратко | `PO-CANON` п.0 |
 | implement | Freebuff / Gemini / Claude CLI по `GEMINI.md` |
+| peer Claude | MCP `claude_code` из Cursor: архитектура, идеи, review; **не** grind |
+| web article | MCP Perplexity (выжимка) → выводы Cursor; конфиг `.cursor/mcp.json` |
 
 ## Запрещено копировать
 

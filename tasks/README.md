@@ -25,10 +25,8 @@
 
 ## Сейчас живо
 
-Очередь агентов **пуста.** Волна B (UI-412…417), CORE-303, DEPLOY-303 — DONE на origin.
-Промпты `PROMPT-FREEBUFF-*WAVE*` / `PROMPT-CLAUDE-PREDEPLOY*` / `PROMPT-FREEBUFF-CORE-303*` — **не копировать**.
-
-Дальше: PO `git pull` + `./start.sh`. Кати — только слово PO в чат Cursor.
-`_park` / TZD-60 / COMP-402 — не без PO.
+1. **Схемы на origin не полные:** [`PROMPT-FREEBUFF-CORE-304-LAND-SOFTDELETE-2026-08-22.md`](PROMPT-FREEBUFF-CORE-304-LAND-SOFTDELETE-2026-08-22.md) — запушить leftover `deletedAt` (CORE-302 Group B).
+2. После CORE-304: дерево = origin, новые фичи можно. Кати — слово PO.
+`_park` / TZD-60 — не без PO.
 
 `_park` не трогать.

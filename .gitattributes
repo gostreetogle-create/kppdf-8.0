@@ -1,0 +1,26 @@
+# TZ-OPS-317: Normalize all text files to LF line endings.
+# This prevents the ~3000 false-positive "modified" entries in git status
+# caused by CRLF/LF mismatches on Windows.
+* text=auto eol=lf
+
+# Binary files — never normalize
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.exe binary
+*.gguf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.db binary
+*.bin binary
+*.tar binary
+*.gz binary

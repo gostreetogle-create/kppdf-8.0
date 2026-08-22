@@ -133,6 +133,39 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-22 — Гайд Claude Code: дух да, шаблон нет
+- PO принёс разбор: контракт + мало MCP + доказательства + skills. Это уже `GEMINI.md` / Claim / TZ.
+- Не копировать `/init`, `pnpm dev`, GitHub/Figma/Postgres MCP, пачку `.claude/skills/`, вечный skip-permissions.
+- Закреплено: `docs/agents/CLAUDE-CODE.md` § «Как читать внешний гайд».
+
+### 2026-08-22 — Сайт сначала Perplexity MCP, выводы — Cursor
+- PO: Cursor не «лазит» по статьям сам — выжимка через Perplexity, потом решение что брать в канон.
+- Cursor MCP: `.cursor/mcp.json` удалённый `https://api.perplexity.ai/mcp` + User-env ключ, не npx в этом клиенте.
+- Claude Code CLI — свой `.mcp.json` (npx); ключ один. Подписка perplexity.ai ≠ доступ MCP.
+- Стабильно: `PO-CANON` п.8; `docs/agents/CLAUDE-CODE.md`.
+
+### 2026-08-22 — Слайд: Cursor + 2 Freebuff + Claude terminal; идеи — через MCP
+- PO копирует промпт из файла в три чата; Cursor даёт пути, не молчит «жди».
+- Типичный такт: Freebuff на Angular (разные keys), Claude terminal на desktop/ops; кати — только после DONE и слова PO.
+- Сложное и новые идеи Cursor **обязан** обсудить с Claude по MCP `claude_code` (analysis-only), не выдумывать TZ в одиночку.
+- Стабильно: `PO-CANON.md` п.6–8; `docs/agents/SKILLS-MAP.md`; шпаргалка PO: `PO-AGENT-FLOW.md`.
+
+### 2026-08-22 — Бесплатная облачная модель в Desktop — поля, не четвёртая вкладка
+- PO принёс TokenRouter (`qwen/qwen3.8-max-free`, OpenAI `/v1/chat/completions`): хочет место для временных бесплатных API.
+- Канон UX: карточка на вкладке AI (URL + ключ + id модели + «Проверить»). Вставка питон-примера — разбор в поля, не «окно кода как IDE».
+- Remote в конфиге уже был, UI не было; клеить `base/v1` + `/v1/chat/completions` нельзя. ПДн клиентов в такой чат не класть (баннер). TZ: `TZD-65`.
+
+### 2026-08-22 — Desktop AI должен быть чатом, не «модель в фоне»
+- PO снова: нажал чат → модель грузится; нет файла → открыть папку (флешка) и/или скачать с сайта; настройки под проект сами.
+- В коде уже TZD-54…56 (GGUF + папка + NSIS). Дыра — чата нет; TZD-61 даже написал «это не чат». Черновик Ollama отменён.
+- Канон: `docs/superpowers/specs/2026-08-22-desktop-local-ai-onboarding.md`. Очередь TZD-62→64, промпт `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md`.
+- Локальная модель остаётся LIMITED_HELPER (не executor). TZD-60 (инсталлятор) — не этот вертикаль.
+
+### 2026-08-22 — Сообщение в чат Cursor прерывает, не параллелит
+- PO думал, что новое сообщение учитывается «сбоку», а текущая сборка волны идёт дальше. На деле ход останавливается и берётся новая просьба — так оборвалась первая сборка Freebuff-волны.
+- Правило: пока архитектор собирает TZ/промпт — в первом ответе предупредить «не кидай сюда, пока не дам файл». Нужно и то и другое → «сначала допиши волну, потом аудит».
+- Стабильно в `PO-CANON.md` п.2.
+
 ### 2026-08-22 — Skills: ритуалы Pocock, не вторая операционка
 - Аудит `docs/audits/2026-08-22-matt-pocock-skills-source.md` / mattpocock/skills: брать grilling, глоссарий, TDD/diagnose у исполнителя, architecture review текстом.
 - Не ставить Claude plugin и `/setup-matt-pocock-skills` (GitHub/Linear Issues). Не плодить `AGENTS.md` / `docs/prd` / `docs/issues`.

@@ -20,6 +20,7 @@ description: >-
 
 Если PO описал фичу расплывчато — **grilling до TZ** (правило `planning-grilling.mdc`):
 цель, не-цели, 3–7 вопросов, термины в `docs/CONTEXT.md`. Не PRD и не GitHub Issue.
+Сложное / новая идея / архитектура — **MCP `claude_code` analysis-only до черновика TZ**.
 
 ## Шаблон и эталон
 

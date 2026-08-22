@@ -11,8 +11,10 @@
 
 | Роль | Кто | Делает | Не делает |
 |------|-----|--------|-----------|
-| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, grilling, executable TZ, UX-smell → TZ, review текстом; git по `docs/GIT-POLICY.md` | Код продукта, длинные build/test, archive closeout как исполнитель |
-| **Исполнитель** | Gemini / Freebuff / Claude CLI | Код по TZ, TDD по AC, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO; GitHub Issues |
+| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, grilling, MCP peer Claude на сложное/идеи, executable TZ, UX-smell → TZ, review текстом; git по `docs/GIT-POLICY.md` | Код продукта, длинные build/test, archive closeout как исполнитель |
+| **Исполнитель** | до **2 Freebuff** + **1 Claude CLI** (разные conflict keys) | Код по TZ, TDD по AC, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO; GitHub Issues |
+| **Peer Claude** | MCP `claude_code` из Cursor | Архитектура, идеи, альтернативы, review; analysis-only | Grind, product files, archive |
+| **Perplexity** | MCP: Cursor `.cursor/mcp.json` (HTTP); CLI `.mcp.json` (npx) | Выжимка сайта/статьи | Канон репо, TZ, код |
 | **Локальный draft (LIMITED_HELPER)** | LM Studio Qwen via `pnpm lmstudio` | Черновики мелкого кода / объяснения сниппетов | Security review, TZ, archive, deploy, Layer-3 alone |
 | **Оркестрация** | OrchestratorKit | STATUS, `_active`/`_archive`, verify-status | Бизнес-логика ERP |
 

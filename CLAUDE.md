@@ -3,6 +3,7 @@
 ## Режим вызова
 
 1. **Peer (из Cursor через MCP `claude_code`)** — обсуждение, альтернатива, review.
+   Cursor **обязан** звать MCP на сложное / новую идею / архитектуру **до TZ**.
    Если промпт говорит analysis-only / не менять файлы — **не** писать product-код.
 2. **Executor (этот CLI как исполнитель)** — тот же контракт, что `GEMINI.md`,
    `agent_id: claude`. Deploy only on explicit PO.
@@ -14,7 +15,9 @@
 Карта: `docs/agents/SKILLS-MAP.md`.
 
 Полный executor-контракт — корневой `GEMINI.md`, без исключений. Не дублируй его.
+Не запускай `/init`, если он перезапишет этот файл шаблоном `pnpm dev`.
 Разница в Claim slot: `agent_id: claude` (не `gemini`).
+CLI/MCP гигиена (не дублировать сюда): @docs/agents/CLAUDE-CODE.md
 
 ## Порядок старта (обязательно, в этом порядке)
 

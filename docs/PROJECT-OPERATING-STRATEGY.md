@@ -265,9 +265,11 @@ DANGEROUS-OPS или явное решение PO.
 ### Выбор модели
 
 - Freebuff/local helper: механическая рутина, узкий CRUD/form, focused tests,
-  docs sync по готовой TZ.
+  docs sync по готовой TZ. Параллель: до **2 Freebuff + 1 Claude terminal**,
+  разные conflict keys; Cursor отдаёт `tasks/PROMPT-*.md`.
 - Cursor/архитектор: domain preflight, UX/business smell, decomposition,
-  review, final verdict, новые TZ.
+  review, final verdict, новые TZ. Сложное / новая идея — MCP `claude_code`
+  analysis-only **до TZ**.
 - Сильная модель: security, 152-ФЗ, необратимая schema/data migration,
   неизвестный cross-domain баг.
 

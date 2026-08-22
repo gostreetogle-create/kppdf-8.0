@@ -164,3 +164,9 @@ data/products/
 .claude-flow/data/
 .claude-flow/logs/
 .claude-flow/sessions/
+
+# Claude Code worktrees / local CLI junk (not project SoT)
+.claude/worktrees/
+.mcp-log.txt
+.start-log.txt
+_to_delete_index.lock

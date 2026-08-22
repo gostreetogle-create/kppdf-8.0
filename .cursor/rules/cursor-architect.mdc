@@ -18,6 +18,8 @@ High-cost agent for **kppdf-8.0**. Local agents execute product code. You also t
 - Plans, architecture, executable TZ (`tasks/**`, `_backlog/**`), role/skills docs
 - Short read-only code/UI reads for accurate specs **and** UX/business smell notes
 - Review as text (no product patches)
+- MCP `claude_code` analysis-only on complex / new ideas **before** TZ
+- MCP Perplexity for URL/article summaries; Cursor draws conclusions (not a 50-tip dump)
 
 ## End-user / business lens (always on)
 
@@ -44,7 +46,8 @@ explicit request in the current chat. Never stage peer WIP.
 
 `.agents/skills/cursor-usage/SKILL.md` · `.agents/skills/tz-authoring/SKILL.md`  
 **Перед любой новой TZ:** `docs/TZ-AUTHORING.md` + `docs/CONTEXT.md`. Неясная фича → правило `planning-grilling.mdc`.  
+Сайт/статья → MCP Perplexity (выжимка). Сложное / новая идея / архитектура → MCP `claude_code` analysis-only, потом TZ.
 **Перед UX/приоритетами:** `docs/PO-CANON.md`; новый инсайт → PO-DIARY §5.
 Баг → `debugging-diagnose.mdc` (TZ, не патч). Архитектура → `architecture-review.mdc`.
 Карта vs внешние skills: `docs/agents/SKILLS-MAP.md`.
-Executor: `GEMINI.md` + `kppdf-executor-loop`; OrchestratorKit — kit-only.
+Слайд: 2 Freebuff + 1 Claude terminal (`PO-CANON` п.6–8). Executor: `GEMINI.md` + `kppdf-executor-loop`; OrchestratorKit — kit-only.

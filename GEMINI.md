@@ -50,6 +50,9 @@ Backend: Module → Controller → Service → Schema, DTO validation, JwtAuthGu
 - Новое поведение / фикс бага: **red-green-refactor** (skill `tdd`): сначала failing test из AC TZ, минимальный код, рефактор после green.
 - Неясный баг: skill `systematic-debugging` — reproduce → minimize → 1–3 гипотезы → причина → фикс → regression test. Не чинить «на глаз».
 - Не ставить внешние skill-packs (mattpocock plugin, GitHub Issues). Карта: `docs/agents/SKILLS-MAP.md`.
+- Архитектурная развилка / новая capability / 152-ФЗ: **STOP**, не изобретай схему.
+  Эскалация: PO / Cursor. Cursor зовёт MCP `claude_code` (analysis-only), потом TZ.
+  Рутина (10px, CRUD, coerce числа) в MCP **не** эскалировать.
 
 ## Обязательный цикл перед реализацией
 

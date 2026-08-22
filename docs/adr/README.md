@@ -15,5 +15,6 @@
 | Снабжение: каталог = SoT строки | `docs/audits/2026-08-19-supply-quick-order-design-canon.md` |
 | Опасные ops / wipe | `docs/ops/DANGEROUS-OPS.md` |
 | Ритуалы агентов vs mattpocock/skills | `docs/agents/SKILLS-MAP.md` |
+| Desktop локальная LLM = GGUF llama.cpp, не Ollama | `docs/superpowers/specs/2026-08-22-desktop-local-ai-onboarding.md` |
 
 Не создавать `docs/prd/` и `docs/issues/`: спека = `tasks/TZ-*.md`, тикет = `tasks/_active/`.

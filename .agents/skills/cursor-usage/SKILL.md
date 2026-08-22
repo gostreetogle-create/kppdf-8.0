@@ -21,8 +21,10 @@ description: >-
 ## Когда использовать
 
 - Архитектурная оценка и P0 спеки (напр. Z-001 — уточнить/выдать, **не** кодить).
-- Executable TZ + one-liner для исполнителя.
+- Executable TZ + путь к `tasks/PROMPT-*.md` (PO копирует в Freebuff / Claude terminal).
 - UX/business smell → короткая TZ с AC и conflict keys.
+- Сложное, развилка, новая идея — **MCP `claude_code` analysis-only**, потом TZ.
+- URL/статья — **MCP Perplexity** (выжимка), выводы и TZ — Cursor. Нет сервера в чате → сказать PO перезапустить Cursor.
 - Review текстом (без патчей в `*.ts`).
 
 ## Когда НЕ
@@ -40,6 +42,9 @@ description: >-
 
 Короткий контекст; не читать весь репо; не гонять полный jest/ng build.
 Рутина (форма 400, `Number()`, CRUD) → TZ для **Freebuff**, не Gemini Pro / Opus.
+Слайд: до **2 Freebuff + 1 Claude terminal**, разные conflict keys; Cursor не ждёт.
+Сайт → Perplexity. Сложное / идеи — MCP `claude_code` (analysis-only), потом TZ.
+Шпаргалка CLI: `docs/agents/CLAUDE-CODE.md`.
 Дорогая модель — только архитектура, 152-ФЗ, неизвестный сложный баг.
 
 ## Чтение
@@ -55,7 +60,7 @@ description: >-
 
 ## Цикл
 
-1. Цель PO → 2. Спека / smell-note → 3. One-liner исполнителю → 4. Git по `GIT-POLICY`.
+1. Цель PO → 1a. если сложно/идея: MCP Claude → 2. Спека → 3. путь к PROMPT → 4. Git.
 5. Новое понимание PO → `PO-DIARY.md` §5; стабильное → `PO-CANON.md`.
 
 Mode A: product code запрещён workspace rule; executor получает готовый TZ.

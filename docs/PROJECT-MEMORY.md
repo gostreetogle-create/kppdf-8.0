@@ -30,6 +30,8 @@
 | Индекс решений (ADR) | `docs/adr/README.md` |
 | Внешние agent-skills | `docs/agents/SKILLS-MAP.md` (mattpocock plugin не ставить) |
 | PO, планка качества, вкус | `docs/PO-CANON.md`; история — `PO-DIARY.md` |
+| Параллель 2 Freebuff + Claude; идеи через MCP | `PO-CANON` п.6–8; сайт → Perplexity; идеи → `claude_code` |
+| Claude CLI / Cursor MCP гигиена | `docs/agents/CLAUDE-CODE.md` (не startup) |
 | Архитектура / конвенции | `ARCHITECTURE.md` — только при нужде зоны |
 | Домен сущности (схема) | `docs/data-model.md` + **живая schema** в `backend/src/modules/<x>/` (схема побеждает) |
 | UI-страница | `docs/pages/<name>.page.md` |

@@ -40,7 +40,7 @@ git status --short                          # посмотреть чужие н
 
 ## Запреты
 
-- ❌ НЕ создавай самодельный worktree вне explicit Cursor Isolated flow.
+- ❌ НЕ создавай самодельный worktree вне explicit Cursor Isolated flow (`claude --worktree` тоже нельзя).
 - ❌ НЕ работай в `.freebuff/worktrees/*`.
 - ❌ НЕ нарушай `docs/GIT-POLICY.md`.
 - ❌ НЕ коммить чужие незакоммиченные файлы и не используй `git add -A` / `git add .`.

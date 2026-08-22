@@ -15,7 +15,9 @@ description: >-
 |---|---|---|
 | **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; git по `docs/GIT-POLICY.md`; **не** код продукта |
 | **Gemini / локальные** | корневой `GEMINI.md` + этот skill + **`kppdf-executor-loop`** | Executor: код, gates, archive, continuous queue; deploy only on explicit PO |
-| **Claude Code** | корневой `CLAUDE.md` → тот же контракт, что `GEMINI.md` (agent_id: `claude`) + этот skill + **`kppdf-executor-loop`** | Executor: тот же цикл, gates, archive, что у Gemini; deploy only on explicit PO |
+| **Claude Code (MCP peer)** | `CLAUDE.md` режим Peer; Cursor зовёт MCP `claude_code` | Analysis-only: архитектура, идеи, review; **не** grind, **не** product files |
+| **Perplexity (MCP)** | `.cursor/mcp.json` `perplexity` | Выжимка сайта/статьи для Cursor; **не** TZ и не код |
+| **Claude Code (CLI)** | корневой `CLAUDE.md` → тот же контракт, что `GEMINI.md` (`agent_id: claude`) + этот skill + **`kppdf-executor-loop`** | Executor: цикл/gates/archive как у Gemini; deploy only on explicit PO |
 | **LM Studio (Qwen local)** | `docs/agents/LM-STUDIO-AGENT.md` + `scripts/lmstudio-agent/run.mjs` | Draft helper only; **LIMITED_HELPER** — не archive/deploy/security review alone |
 
 Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.
@@ -143,18 +145,17 @@ bash OrchestratorKit/verify-status.sh
 
 ## Внешние MCP-инструменты (веб-исследование)
 
-Perplexity MCP (`@perplexity-ai/mcp-server`, root `.mcp.json`) — не executor и не
-заменяет Cursor/Gemini/Claude Code роли из таблицы выше. Это инструмент внешнего
-веб-поиска для уже подключённого executor-агента (Gemini/Claude Code), когда нужны
-данные вне репозитория/докладов (актуальные версии библиотек, внешние API, доки
-сторонних сервисов).
+Perplexity — не executor и не заменяет роли из таблицы выше. Только внешние
+факты (статьи, доки библиотек). Канон продукта — `PROJECT-MEMORY` / `PO-CANON` / TZ.
 
-- `perplexity_search` — быстрый веб-поиск со ссылками.
-- `perplexity_ask` — короткий ответ с поиском.
-- `perplexity_research` — глубокое исследование с цитированием источников.
-- `perplexity_reason` — рассуждение поверх найденного.
+Два клиента, один ключ `PERPLEXITY_API_KEY` (User env, не git):
 
-Требует `PERPLEXITY_API_KEY` в окружении процесса, где запущен Claude Code CLI
-(см. `.env.example`). Не используй для решений, которые должны браться из
-`docs/PROJECT-MEMORY.md` / `PO-CANON.md` / TZ — только для внешних фактов, и
-всегда указывай источники в отчёте по задаче.
+| Клиент | Конфиг | Транспорт |
+|--------|--------|-----------|
+| **Cursor** | `.cursor/mcp.json` | HTTP `https://api.perplexity.ai/mcp`, `Authorization: Bearer ${env:PERPLEXITY_API_KEY}` |
+| **Claude Code CLI** | root `.mcp.json` | stdio `npx @perplexity-ai/mcp-server`, env `${PERPLEXITY_API_KEY}` |
+
+Cursor: сайт/статья → выжимка Perplexity → выводы Cursor → сложное ещё MCP `claude_code`.
+Allowlist MCP: `claude_code` + Perplexity. Не GitHub Issues / Figma / Postgres / Notion.
+Нет сервера `perplexity` в чате → полный перезапуск Cursor (Settings → Tools & MCP).
+Не используй Perplexity вместо канона репо.
