@@ -456,215 +456,255 @@ class SupplyQuickOrderDialogComponent {
                   </div>
                 </div>
 
-                <div class="supply-quick-order__strip supply-quick-order__strip--where">
-                  <span class="supply-quick-order__strip-label">Поставщик</span>
-                  <div class="supply-quick-order__fields">
-                    <div
-                      class="supply-quick-order__subgroup supply-quick-order__subgroup--supplier"
-                    >
-                      <span class="supply-quick-order__subgroup-label">Организация</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--grow">
-                          <app-pi-overflow-select
-                            [items]="supplierOptions(row.categoryId)"
-                            [value]="row.supplierId ?? ''"
-                            (valueChange)="onSupplierChange(row.id, $event)"
-                            [disabled]="!row.categoryId"
-                            searchable="auto"
-                            [placeholder]="row.categoryId ? '—' : '— сначала категория —'"
-                            ariaLabel="Поставщик"
-                            dataTest="supply-quick-supplier-select"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          class="supply-quick-order__add-btn"
-                          (click)="openNewSupplier(row.id)"
-                          [disabled]="!row.categoryId"
-                          [title]="row.categoryId ? 'Новый поставщик' : '— сначала категория —'"
-                          aria-label="Новый поставщик"
-                          data-test="supply-quick-supplier-add"
-                        >
-                          +
-                        </button>
-                        <label class="supply-quick-order__field supply-quick-order__field--site">
-                          <span class="supply-quick-order__field-label">Сайт</span>
-                          <input
-                            class="pi-input"
-                            [ngModel]="supplierWebsite(row.supplierId)"
-                            (ngModelChange)="patchSupplier(row.supplierId, { website: $event })"
-                            [disabled]="!row.supplierId"
-                            placeholder="https://…"
-                            data-test="supply-quick-supplier-website"
-                          />
-                        </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--email">
-                          <span class="supply-quick-order__field-label">Почта поставщика</span>
-                          <input
-                            class="pi-input"
-                            [ngModel]="supplierEmail(row.supplierId)"
-                            (ngModelChange)="patchSupplier(row.supplierId, { email: $event })"
-                            [disabled]="!row.supplierId"
-                            placeholder="zakaz@…"
-                            data-test="supply-quick-supplier-email"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    <div class="supply-quick-order__subgroup supply-quick-order__subgroup--manager">
-                      <span class="supply-quick-order__subgroup-label">Контакт</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--manager">
-                          <select
-                            class="pi-input"
-                            [ngModel]="row.supplierContactId ?? ''"
-                            (ngModelChange)="
-                              patchRow(row.id, { supplierContactId: $event || null })
-                            "
-                            [disabled]="!row.supplierId"
-                            data-test="supply-quick-manager-select"
-                          >
-                            <option value="">
-                              {{ row.supplierId ? '—' : '— сначала поставщик —' }}
-                            </option>
-                            @for (c of contactsFor(row.supplierId); track c.id) {
-                              <option [value]="c.id">{{ contactLabel(c) }}</option>
-                            }
-                          </select>
-                        </label>
-                        <button
-                          type="button"
-                          class="supply-quick-order__add-btn"
-                          (click)="openNewManager(row.id)"
-                          [disabled]="!row.supplierId"
-                          [title]="row.supplierId ? 'Новый менеджер' : '— сначала поставщик —'"
-                          aria-label="Новый менеджер"
-                          data-test="supply-quick-manager-add"
-                        >
-                          +
-                        </button>
-                        <label class="supply-quick-order__field supply-quick-order__field--phone">
-                          <span class="supply-quick-order__field-label">Телефон менеджера</span>
-                          <input
-                            class="pi-input"
-                            [ngModel]="contactPhone(row.supplierContactId)"
-                            (ngModelChange)="patchContact(row.supplierContactId, { phone: $event })"
-                            [disabled]="!row.supplierContactId"
-                            placeholder="+7 …"
-                            data-test="supply-quick-manager-phone"
-                          />
-                        </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--email">
-                          <span class="supply-quick-order__field-label">Почта менеджера</span>
-                          <input
-                            class="pi-input"
-                            [ngModel]="contactEmail(row.supplierContactId)"
-                            (ngModelChange)="patchContact(row.supplierContactId, { email: $event })"
-                            [disabled]="!row.supplierContactId"
-                            placeholder="manager@…"
-                            data-test="supply-quick-manager-email"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  class="supply-quick-order__more-toggle"
+                  [attr.aria-expanded]="whereExpanded()"
+                  (click)="whereExpanded.set(!whereExpanded())"
+                  data-test="supply-quick-where-toggle"
+                >
+                  {{ whereExpanded() ? '▾' : '▸' }} Поставщик
+                </button>
 
-                <div class="supply-quick-order__strip supply-quick-order__strip--details">
-                  <span class="supply-quick-order__strip-label">Детали и статус</span>
-                  <div class="supply-quick-order__fields supply-quick-order__fields--details">
-                    <div class="supply-quick-order__subgroup supply-quick-order__subgroup--context">
-                      <span class="supply-quick-order__subgroup-label">Контекст</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--company">
-                          <span class="supply-quick-order__field-label">Наша компания</span>
-                          <select
-                            class="pi-input"
-                            [ngModel]="row.companyId"
-                            (ngModelChange)="patchRow(row.id, { companyId: $event })"
+                @if (whereExpanded()) {
+                  <div class="supply-quick-order__strip supply-quick-order__strip--where">
+                    <span class="supply-quick-order__strip-label">Поставщик</span>
+                    <div class="supply-quick-order__fields">
+                      <div
+                        class="supply-quick-order__subgroup supply-quick-order__subgroup--supplier"
+                      >
+                        <span class="supply-quick-order__subgroup-label">Организация</span>
+                        <div class="supply-quick-order__subgroup-fields">
+                          <label class="supply-quick-order__field supply-quick-order__field--grow">
+                            <app-pi-overflow-select
+                              [items]="supplierOptions(row.categoryId)"
+                              [value]="row.supplierId ?? ''"
+                              (valueChange)="onSupplierChange(row.id, $event)"
+                              [disabled]="!row.categoryId"
+                              searchable="auto"
+                              [placeholder]="row.categoryId ? '—' : '— сначала категория —'"
+                              ariaLabel="Поставщик"
+                              dataTest="supply-quick-supplier-select"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            class="supply-quick-order__add-btn"
+                            (click)="openNewSupplier(row.id)"
+                            [disabled]="!row.categoryId"
+                            [title]="row.categoryId ? 'Новый поставщик' : '— сначала категория —'"
+                            aria-label="Новый поставщик"
+                            data-test="supply-quick-supplier-add"
                           >
-                            @for (c of companies; track c.id) {
-                              <option [value]="c.id">{{ c.name }}</option>
-                            }
-                          </select>
-                        </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--who">
-                          <span class="supply-quick-order__field-label">Кто просил</span>
-                          <select
-                            class="pi-input"
-                            [ngModel]="row.requestedBy"
-                            (ngModelChange)="patchRow(row.id, { requestedBy: $event })"
+                            +
+                          </button>
+                          <label class="supply-quick-order__field supply-quick-order__field--site">
+                            <span class="supply-quick-order__field-label">Сайт</span>
+                            <input
+                              class="pi-input"
+                              [ngModel]="supplierWebsite(row.supplierId)"
+                              (ngModelChange)="patchSupplier(row.supplierId, { website: $event })"
+                              [disabled]="!row.supplierId"
+                              placeholder="https://…"
+                              data-test="supply-quick-supplier-website"
+                            />
+                          </label>
+                          <label class="supply-quick-order__field supply-quick-order__field--email">
+                            <span class="supply-quick-order__field-label">Почта поставщика</span>
+                            <input
+                              class="pi-input"
+                              [ngModel]="supplierEmail(row.supplierId)"
+                              (ngModelChange)="patchSupplier(row.supplierId, { email: $event })"
+                              [disabled]="!row.supplierId"
+                              placeholder="zakaz@…"
+                              data-test="supply-quick-supplier-email"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div
+                        class="supply-quick-order__subgroup supply-quick-order__subgroup--manager"
+                      >
+                        <span class="supply-quick-order__subgroup-label">Контакт</span>
+                        <div class="supply-quick-order__subgroup-fields">
+                          <label
+                            class="supply-quick-order__field supply-quick-order__field--manager"
                           >
-                            @for (r of requestedBy; track r) {
-                              <option [value]="r">{{ r }}</option>
-                            }
-                          </select>
-                        </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--grow">
-                          <span class="supply-quick-order__field-label">Связь с заказом</span>
-                          <input
-                            class="pi-input"
-                            [ngModel]="row.orderId ?? ''"
-                            (ngModelChange)="patchRow(row.id, { orderId: $event || null })"
-                            placeholder="Необязательно"
-                          />
-                        </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--date">
-                          <span class="supply-quick-order__field-label">Нужно к</span>
-                          <input
-                            class="pi-input"
-                            type="date"
-                            [ngModel]="row.neededBy"
-                            (ngModelChange)="patchRow(row.id, { neededBy: $event })"
-                          />
-                        </label>
+                            <select
+                              class="pi-input"
+                              [ngModel]="row.supplierContactId ?? ''"
+                              (ngModelChange)="
+                                patchRow(row.id, { supplierContactId: $event || null })
+                              "
+                              [disabled]="!row.supplierId"
+                              data-test="supply-quick-manager-select"
+                            >
+                              <option value="">
+                                {{ row.supplierId ? '—' : '— сначала поставщик —' }}
+                              </option>
+                              @for (c of contactsFor(row.supplierId); track c.id) {
+                                <option [value]="c.id">{{ contactLabel(c) }}</option>
+                              }
+                            </select>
+                          </label>
+                          <button
+                            type="button"
+                            class="supply-quick-order__add-btn"
+                            (click)="openNewManager(row.id)"
+                            [disabled]="!row.supplierId"
+                            [title]="row.supplierId ? 'Новый менеджер' : '— сначала поставщик —'"
+                            aria-label="Новый менеджер"
+                            data-test="supply-quick-manager-add"
+                          >
+                            +
+                          </button>
+                          <label class="supply-quick-order__field supply-quick-order__field--phone">
+                            <span class="supply-quick-order__field-label">Телефон менеджера</span>
+                            <input
+                              class="pi-input"
+                              [ngModel]="contactPhone(row.supplierContactId)"
+                              (ngModelChange)="
+                                patchContact(row.supplierContactId, { phone: $event })
+                              "
+                              [disabled]="!row.supplierContactId"
+                              placeholder="+7 …"
+                              data-test="supply-quick-manager-phone"
+                            />
+                          </label>
+                          <label class="supply-quick-order__field supply-quick-order__field--email">
+                            <span class="supply-quick-order__field-label">Почта менеджера</span>
+                            <input
+                              class="pi-input"
+                              [ngModel]="contactEmail(row.supplierContactId)"
+                              (ngModelChange)="
+                                patchContact(row.supplierContactId, { email: $event })
+                              "
+                              [disabled]="!row.supplierContactId"
+                              placeholder="manager@…"
+                              data-test="supply-quick-manager-email"
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
-                    <div class="supply-quick-order__subgroup supply-quick-order__subgroup--status">
-                      <span class="supply-quick-order__subgroup-label">Статус</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--status">
-                          <span class="supply-quick-order__field-label">Состояние</span>
-                          <select
-                            class="pi-input"
-                            [ngModel]="row.status"
-                            (ngModelChange)="onStatusChange(row.id, $event)"
-                            data-test="supply-quick-status-select"
-                          >
-                            @for (s of statuses; track s.value) {
-                              <option [value]="s.value">{{ s.label }}</option>
-                            }
-                          </select>
-                        </label>
-                        <label
-                          class="supply-quick-order__field supply-quick-order__field--priority"
-                        >
-                          <span class="supply-quick-order__field-label">Приоритет</span>
-                          <select
-                            class="pi-input"
-                            [ngModel]="row.priority"
-                            (ngModelChange)="patchRow(row.id, { priority: $event })"
-                            data-test="supply-quick-priority-select"
-                          >
-                            @for (p of priorities; track p.value) {
-                              <option [value]="p.value">{{ p.label }}</option>
-                            }
-                          </select>
-                        </label>
-                      </div>
-                    </div>
-                    <label class="supply-quick-order__field supply-quick-order__field--grow">
-                      <span class="supply-quick-order__field-label">Примечание</span>
-                      <input
-                        class="pi-input"
-                        [ngModel]="row.notes"
-                        (ngModelChange)="patchRow(row.id, { notes: $event })"
-                        [attr.title]="row.notes || null"
-                        placeholder="Одной строкой"
-                      />
-                    </label>
                   </div>
-                </div>
+                }
+
+                <button
+                  type="button"
+                  class="supply-quick-order__more-toggle"
+                  [attr.aria-expanded]="detailsExpanded()"
+                  (click)="detailsExpanded.set(!detailsExpanded())"
+                  data-test="supply-quick-details-toggle"
+                >
+                  {{ detailsExpanded() ? '▾' : '▸' }} Детали и статус
+                </button>
+
+                @if (detailsExpanded()) {
+                  <div class="supply-quick-order__strip supply-quick-order__strip--details">
+                    <span class="supply-quick-order__strip-label">Детали и статус</span>
+                    <div class="supply-quick-order__fields supply-quick-order__fields--details">
+                      <div
+                        class="supply-quick-order__subgroup supply-quick-order__subgroup--context"
+                      >
+                        <span class="supply-quick-order__subgroup-label">Контекст</span>
+                        <div class="supply-quick-order__subgroup-fields">
+                          <label
+                            class="supply-quick-order__field supply-quick-order__field--company"
+                          >
+                            <span class="supply-quick-order__field-label">Наша компания</span>
+                            <select
+                              class="pi-input"
+                              [ngModel]="row.companyId"
+                              (ngModelChange)="patchRow(row.id, { companyId: $event })"
+                            >
+                              @for (c of companies; track c.id) {
+                                <option [value]="c.id">{{ c.name }}</option>
+                              }
+                            </select>
+                          </label>
+                          <label class="supply-quick-order__field supply-quick-order__field--who">
+                            <span class="supply-quick-order__field-label">Кто просил</span>
+                            <select
+                              class="pi-input"
+                              [ngModel]="row.requestedBy"
+                              (ngModelChange)="patchRow(row.id, { requestedBy: $event })"
+                            >
+                              @for (r of requestedBy; track r) {
+                                <option [value]="r">{{ r }}</option>
+                              }
+                            </select>
+                          </label>
+                          <label class="supply-quick-order__field supply-quick-order__field--grow">
+                            <span class="supply-quick-order__field-label">Связь с заказом</span>
+                            <input
+                              class="pi-input"
+                              [ngModel]="row.orderId ?? ''"
+                              (ngModelChange)="patchRow(row.id, { orderId: $event || null })"
+                              placeholder="Необязательно"
+                            />
+                          </label>
+                          <label class="supply-quick-order__field supply-quick-order__field--date">
+                            <span class="supply-quick-order__field-label">Нужно к</span>
+                            <input
+                              class="pi-input"
+                              type="date"
+                              [ngModel]="row.neededBy"
+                              (ngModelChange)="patchRow(row.id, { neededBy: $event })"
+                            />
+                          </label>
+                        </div>
+                      </div>
+                      <div
+                        class="supply-quick-order__subgroup supply-quick-order__subgroup--status"
+                      >
+                        <span class="supply-quick-order__subgroup-label">Статус</span>
+                        <div class="supply-quick-order__subgroup-fields">
+                          <label
+                            class="supply-quick-order__field supply-quick-order__field--status"
+                          >
+                            <span class="supply-quick-order__field-label">Состояние</span>
+                            <select
+                              class="pi-input"
+                              [ngModel]="row.status"
+                              (ngModelChange)="onStatusChange(row.id, $event)"
+                              data-test="supply-quick-status-select"
+                            >
+                              @for (s of statuses; track s.value) {
+                                <option [value]="s.value">{{ s.label }}</option>
+                              }
+                            </select>
+                          </label>
+                          <label
+                            class="supply-quick-order__field supply-quick-order__field--priority"
+                          >
+                            <span class="supply-quick-order__field-label">Приоритет</span>
+                            <select
+                              class="pi-input"
+                              [ngModel]="row.priority"
+                              (ngModelChange)="patchRow(row.id, { priority: $event })"
+                              data-test="supply-quick-priority-select"
+                            >
+                              @for (p of priorities; track p.value) {
+                                <option [value]="p.value">{{ p.label }}</option>
+                              }
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                      <label class="supply-quick-order__field supply-quick-order__field--grow">
+                        <span class="supply-quick-order__field-label">Примечание</span>
+                        <input
+                          class="pi-input"
+                          [ngModel]="row.notes"
+                          (ngModelChange)="patchRow(row.id, { notes: $event })"
+                          [attr.title]="row.notes || null"
+                          placeholder="Одной строкой"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                }
 
                 <button
                   type="button"
@@ -1740,6 +1780,10 @@ export class SupplyQuickOrderComponent {
   protected readonly priorityFilter = signal<QuickOrderPriority | ''>('');
   protected readonly moreExpanded = signal(false);
 
+  /** TZ-SUPPLY-314 — guided-flow block visibility (per-expanded-row). */
+  protected readonly whereExpanded = signal(false);
+  protected readonly detailsExpanded = signal(false);
+
   protected readonly showNewSupplier = signal(false);
   protected readonly newSupplierName = signal('');
   protected readonly newSupplierInn = signal('');
@@ -2050,7 +2094,11 @@ export class SupplyQuickOrderComponent {
     const next = this.expandedId() === id ? null : id;
     this.expandedId.set(next);
     this.closePanels();
-    if (next) this.moreExpanded.set(false);
+    if (next) {
+      this.moreExpanded.set(false);
+      this.whereExpanded.set(false);
+      this.detailsExpanded.set(false);
+    }
   }
 
   private openPanelDialog(title: string): void {
@@ -2073,6 +2121,8 @@ export class SupplyQuickOrderComponent {
     this.rows.update((rows) => [row, ...rows]);
     this.expandedId.set(row.id);
     this.moreExpanded.set(false);
+    this.whereExpanded.set(false);
+    this.detailsExpanded.set(false);
 
     // TZ-SUPPLY-311: оптимистично создаём локально, затем заменяем id на серверный.
     this.supplySvc
@@ -2358,6 +2408,14 @@ export class SupplyQuickOrderComponent {
     this.closePanels();
   }
 
+  private maybeAutoExpandWhere(rowId: string): void {
+    if (this.expandedId() !== rowId) return;
+    const row = this.rows().find((r) => r.id === rowId);
+    if (row?.categoryId && row.materialId) {
+      this.whereExpanded.set(true);
+    }
+  }
+
   protected onMaterialChange(rowId: string, materialId: string): void {
     if (!materialId) {
       this.patchRow(rowId, { materialId: null, color: '' });
@@ -2369,6 +2427,7 @@ export class SupplyQuickOrderComponent {
       color: '',
       ...(material ? { unit: material.unit } : {}),
     });
+    this.maybeAutoExpandWhere(rowId);
   }
 
   protected onColorChange(rowId: string, color: string): void {
