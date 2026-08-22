@@ -71,7 +71,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
-sha: (см. следующий docs-commit «record TZ-DESK-424 SHA»)
+sha: 78045f26
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS
