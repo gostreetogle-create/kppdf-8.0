@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-23
 closed_by: claude
-sha: pending
+sha: 546daf65
 
 ## Outcome
 

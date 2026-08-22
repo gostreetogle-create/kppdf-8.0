@@ -66,4 +66,4 @@
 - [x] archive + lock + checklist обновлены
 - [x] Status = DONE
 - closed_at: 2026-08-23
-- sha: pending
+- sha: 546daf65
