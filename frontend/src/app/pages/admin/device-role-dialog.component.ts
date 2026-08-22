@@ -109,8 +109,8 @@ const DEVICE_TTL_OPTIONS = [
         gap: 6px;
       }
       .field__label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.1em;

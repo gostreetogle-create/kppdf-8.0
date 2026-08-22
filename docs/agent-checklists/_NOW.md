@@ -71,7 +71,7 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-**Desktop AI-чат** — `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md`; TZD-62 DONE, **TZD-63 READY** (`tasks/TZD-63-desktop-model-folder-any-gguf.md`) → TZD-64. Не `App.svelte` параллельно. Deploy не.
+**Desktop AI-чат** — TZD-62 DONE; 63→64 затем **TZD-65** API (`tasks/PROMPT-DESKTOP-AI-API-2026-08-22.md`). Не `App.svelte` параллельно. Deploy не.
 
 **Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
 (OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.

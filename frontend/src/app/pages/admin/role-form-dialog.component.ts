@@ -409,8 +409,8 @@ const SECTION_TO_GROUP: Record<string, string> = {
       }
 
       .field__label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.1em;
@@ -526,7 +526,7 @@ const SECTION_TO_GROUP: Record<string, string> = {
 
       .role-form__select-all {
         font-size: 11px;
-        font-family: 'JetBrains Mono', monospace;
+        font-family: var(--font-mono);
         color: var(--color-muted-foreground);
         background: none;
         border: none;
@@ -601,8 +601,8 @@ const SECTION_TO_GROUP: Record<string, string> = {
       }
 
       .role-form__perm-meta {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
+        font-family: var(--font-mono);
+        font-size: 11px;
         letter-spacing: 0.04em;
         color: var(--color-muted-foreground);
       }
