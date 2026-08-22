@@ -18,4 +18,5 @@
 2. Dense form → **шире**, не выше без нужды; body scroll ≤ ~70vh; footer не уезжает.
 3. Не плодить ad-hoc `width: 360px` / свои Overlay.
 4. Не переписывать все FullEditor одним TZ — successors по outliers table в audit.
-5. Внутри kind B — ещё **ёмкость полей** (Д/Ш/В не на полширины): [`ui-form-field-capacity.md`](./ui-form-field-capacity.md).
+5. Ёмкость полей (Д/Ш/В не на полширины) — kind **B и C**: [`ui-form-field-capacity.md`](./ui-form-field-capacity.md).
+6. Kind C на 1440: identity-блок без body-scroll после packing. Не раздувать maxWidth. Страница — крайний случай per-editor, не отмена kind C.

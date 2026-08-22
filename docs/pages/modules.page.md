@@ -60,6 +60,8 @@
 |-----------|-------|--------|
 | `QuickCreateDialogComponent` | **create** (TZ-DICT-316) | `{ entity: 'module', size?: 'S'\|'M'\|'L' }` — default M; profile from `/form-profiles` |
 | `ModuleFormDialogComponent` | **edit** (FullEditor) | `ProductModule` |
+
+**TZ-UX-FORM-310:** FullEditor пакует 12-col (имя 8 / артикул 4, не 50/50); габариты+вес одна узкая лента, числа `text-right`. Канон: [`ui-form-field-capacity.md`](./ui-form-field-capacity.md).
 | `AlertDialogComponent` | confirm delete | `{ title, description, confirmLabel, variant }` |
 
 ## Services

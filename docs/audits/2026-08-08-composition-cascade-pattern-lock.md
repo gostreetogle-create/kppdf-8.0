@@ -15,10 +15,10 @@
 
 ## Обязательные черты паттерна
 
-1. Card-within-card + left **kind rail** + qty справа  
+1. Kind **rail** + qty справа (не забор вложенных hairline-карточек; канон 2026-08-22)  
 2. Клик по **всей строке** (select/expand), без text-selection  
 3. Kind только бейдж + rail (не заливка nest)  
-4. Depth cascade (nest surfaces) — в dark добить → **TZ-CATALOG-335**  
+4. Depth cascade (nest surfaces) — dark: лестница заливок, не `box-shadow`  
 5. Переиспользование = **тот же компонент**, не форк стилей
 
 ## Следующие TZ

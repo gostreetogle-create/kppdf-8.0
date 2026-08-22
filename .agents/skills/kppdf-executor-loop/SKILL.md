@@ -13,6 +13,8 @@ Continuous: **`D:\kppdf-8.0`/main**. Explicit Cursor Isolated:
 
 Прочитай: `GEMINI.md`, `docs/PO-CANON.md`, `_NOW.md`, свой TZ/checklist.
 
+**Плотность форм (2026-08-22):** любая правка диалога / flyout / FullEditor → `docs/DIALOG-COOKBOOK.md` + `docs/pages/ui-form-field-capacity.md`. Не увеличивать ширину/высоту окна вместо упаковки полей. Kind C: identity на 1440 без body-scroll.
+
 ## Главное правило PO (2026-08-05)
 
 **Не останавливайся** mid-queue, чтобы PO написал «поехали», «ок», «продолжай».
@@ -25,7 +27,7 @@ Continuous: **`D:\kppdf-8.0`/main**. Explicit Cursor Isolated:
 3. gates (tsc/tests по зоне)  
 4. archive + lock  
 5. **commit + push** на целевую ветку по `docs/GIT-POLICY.md`
-6. следующий TZ из `_NOW.md` / очереди
+6. следующий TZ из `tasks/QUEUE-LIVE.md` (потом `_NOW.md`)
 7. пока очередь не пуста — **не спрашивай разрешения**
 
 Стоп **только** на реальном выборе PO (архитектура, wipe, prod secrets, «делать ли 304», конфликт данных).  

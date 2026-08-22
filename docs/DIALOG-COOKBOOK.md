@@ -44,7 +44,7 @@ const ref = dialogs.open<Result, Data>(MyDialogComponent, {
 
 **Правило плотности:** для dense forms **prefer width over height** — лучше добавить колонку/ширину, чем небоскрёб без скролла body. Body: `max-h ~70vh` + `overflow-auto`; footer sticky / `shrink-0` (shell).
 
-**Ёмкость полей (внутри kind B):** наивная сетка «всем 50%» запрещена для коротких чисел (Д/Ш/В/вес). Канон span/упаковки: [`pages/ui-form-field-capacity.md`](./pages/ui-form-field-capacity.md) · аудит [`audits/2026-08-08-form-field-capacity-canon.md`](./audits/2026-08-08-form-field-capacity-canon.md) · TZ-UX-FORM-301.
+**Ёмкость полей (kind B и C):** наивная сетка «всем 50%» / три вертикальных стека запрещена для коротких чисел (Д/Ш/В/вес). Ширина окна ≠ ширина поля. Канон: [`pages/ui-form-field-capacity.md`](./pages/ui-form-field-capacity.md). Kind C на 1440: identity без body-scroll; состав/фото могут быть ниже. Не раздувать maxWidth вместо packing.
 
 **Секции формы:** эталон — диалог материала (Основные данные / Дополнительно / Габариты). Канон: [`pages/ui-form-sections-canon.md`](./pages/ui-form-sections-canon.md). Shared-примитив — `app-pi-form-section` (`PiFormSectionComponent`); сначала он и QuickCreate (FORM-302), потом sweep всех окон (FORM-305).
 

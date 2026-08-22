@@ -26,7 +26,7 @@
 - Page-tools на широком экране — в `app-chrome-rail` под ←→ (не локальная колонка 48px); history ≠ действия страницы (зазор + лёгкий visual split).
 - Не создавать функции «на будущее» без сценария реального сотрудника.
 - Комбайн: **ряд = изделие** (OrderItem); стадии внутри ряда; метод: `docs/methods/combine-product-row-kanban.md`; отгрузка целым заказом.
-- Стол `/desk`: expand-in-row, workflow chips (КП·Комбайн·Гант·Снабж·Отгрузка), reuse-first host; chrome = **одна** group-workspace row (`page-chrome.md`), не второй nav.
+- Стол `/desk`: expand-in-row (не две колонки список|карточка — выбранный уезжает), workflow chips (КП·Комбайн·Гант·Снабж·Отгрузка), reuse-first host; chrome = **одна** group-workspace row (`page-chrome.md`), не второй nav.
 - Reuse-first: баги чинить в источнике до копии на стол; не второй write-path.
 
 ## Север продукта
@@ -52,7 +52,8 @@
 4. Деплой = warm (`WIPE=false`); wipe — только отдельная русская фраза по DANGEROUS-OPS.
 5. Коммиты и push — строго по `docs/GIT-POLICY.md`.
 6. Параллель: до **2 Freebuff + 1 Claude terminal**, разные conflict keys.
-   Cursor отдаёт путь к `tasks/PROMPT-*.md`. Не ждать Claude, если файлы не те же.
+   Cursor пишет `tasks/QUEUE-LIVE.md`. В агента — **один** промпт на сессию
+   (`PROMPT-FOLLOW-QUEUE.md`), не код и не каждую TZ. «Освободился» → в этот чат.
 7. **Freebuff** = рутина (форма, 10px, CRUD): короткие шаги, жёсткий НЕ.
 8. Сайт/статья → MCP **Perplexity** (выжимка), выводы — Cursor. Сложное / идеи /
    архитектура / 152-ФЗ → MCP `claude_code` analysis-only, потом TZ. Токены кончились = стоп.

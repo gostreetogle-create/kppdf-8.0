@@ -5,9 +5,9 @@
 
 ## Слайд (как работаем сейчас)
 
-Cursor пишет TZ + `tasks/PROMPT-*.md`. Вы копируете промпт в чаты исполнителей.
-Параллель: **до 2 Freebuff + 1 Claude в терминале**, разные conflict keys.
-Сложное и новые идеи Cursor **сам** обсуждает с Claude по MCP — вам копировать не надо.
+Cursor пишет TZ + `tasks/QUEUE-LIVE.md`. Вы **один раз** копируете
+[`tasks/PROMPT-FOLLOW-QUEUE.md`](../tasks/PROMPT-FOLLOW-QUEUE.md) в чат исполнителя.
+Дальше агент сам берёт следующую TZ из очереди. Сложное Cursor обсуждает с Claude по MCP — копировать не надо.
 Статью/сайт Cursor снимает через **Perplexity MCP**, выводы пишет сам.
 Кати / деплой — только ваше слово после DONE.
 
@@ -19,7 +19,7 @@ Perplexity в этом чате: ключ `PERPLEXITY_API_KEY` в **User** env W
 
 | Кто | Делает | Не делает |
 |-----|--------|-----------|
-| **Вы (PO)** | «Старт / продолжи / кати»; копируете путь к промпту | Не разбираете английские простыни агента |
+| **Вы (PO)** | «Старт / освободился / кати»; один раз FOLLOW-QUEUE | Не курьер TZ и не копипаст кода |
 | **Cursor · архитектор** (этот тип чата) | TZ, очередь, `PROMPT-*.md`, MCP Claude на сложное | Не кодит продукт |
 | **Freebuff ×2 + Claude terminal** | Код по TZ до archive | Не выдумывает фичи вне очереди |
 
@@ -31,16 +31,14 @@ Perplexity в этом чате: ключ `PERPLEXITY_API_KEY` в **User** env W
 
 ---
 
-## Что копировать агенту (всего 3 кнопки)
+## Что копировать агенту
 
-### 1) Старт / продолжение любой волны (Cursor Agent)
-Файл для стыда КП сейчас:  
-[`tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md`](../tasks/_backlog/kp-vitrine/PROMPT-KP-SHAME-CONTINUOUS.md)  
-→ вставьте блок `text` **целиком** в Cursor Agent.
+### 1) Слот исполнителя (Freebuff / Claude terminal)
+Один раз на сессию: [`tasks/PROMPT-FOLLOW-QUEUE.md`](../tasks/PROMPT-FOLLOW-QUEUE.md).  
+Очередь TZ: [`tasks/QUEUE-LIVE.md`](../tasks/QUEUE-LIVE.md) — её двигает Cursor.  
+Обрыв: [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md).
 
-По-человечески: *«Дожми подтверждённую волну без деплоя; состояние возьми из `_NOW.md` и git.»*
-
-Универсальный resume: [`tasks/PROMPT-RESUME-ANY.md`](../tasks/PROMPT-RESUME-ANY.md).
+По-человечески: *«Читай QUEUE-LIVE, не жди новый копипаст.»*
 
 ### 2) Только гигиена серверов (параллель, VPN OFF)
 Файл: [`tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`](../tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md)

@@ -50,6 +50,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 - Backend: NestJS 10, TypeScript strict, Mongoose 8, MongoDB 7 Replica Set.
 - Frontend: Angular 20 standalone, Signals, OnPush, strict TypeScript.
 - UI: Paper & Ink, OKLCH, hairline borders, `pi-focus-ring`, WCAG.
+- Формы/диалоги: `docs/DIALOG-COOKBOOK.md` + `docs/pages/ui-form-field-capacity.md` (ёмкость B и C; поле ≠ ширина окна).
 - Package manager: только `pnpm`.
 - Не добавляй `any`, raw `HttpClient` в компоненты, секреты или неподтверждённые зависимости.
 - Git/commit/push — только по `docs/GIT-POLICY.md`; deploy/wipe имеют отдельные gates.

@@ -125,11 +125,10 @@ body со скроллом и всегда видимый sticky footer («Со�
 
 **TZ-UX-332:** режим редактирования = есть `Product._id` (не «data != null»). Дашборд (`DashboardDialogService.openProductEdit`) сначала грузит карточку через `ProductsService.findById` и открывает диалог с полным Product. Голый `{ id }` без `_id` не уходит в `PATCH /products/undefined`; Save показывает русское «открыто без идентификатора». 404 `Product … not found` в UI — по-русски (BE `HttpExceptionFilter` + FE `extractErrorMessage`). Кириллица в `Photo.originalFilename` декодируется с latin1 Multer.
 
-На desktop основные блоки стоят в три колонки: «Основные» (name/sku/kind/status/
-isActive), «Цена и учёт» (listPrice/category/subcategory), «Габариты и цвет»
-(Д/Ш/В, единицы, вес и RAL). На mobile колонки складываются в стек. Поля
-габаритов, веса, единиц и цвета ограничены по ширине; описание, заметки и фото
-остаются полноширинными ниже. В режиме редактирования ниже паспорта встроен тот
+На desktop цель packing (**TZ-UX-FORM-309**): 12-col, не три вертикальных стека
+`lg:grid-cols-3`. Identity (имя, артикул, цена, габариты, описание) на 1440 без
+охоты за «Сохранить». Числа Д/Ш/В/вес/цена — `max-w` + `text-right`. Состав/фото
+ниже fold с внутренним scroll. Канон: [`ui-form-field-capacity.md`](./ui-form-field-capacity.md). В режиме редактирования ниже паспорта встроен тот
 же `ProductBomPanel`, что и на карточке, в bounded scrollable panel; create mode
 показывает подсказку «Сначала сохраните изделие — затем откройте редактирование,
 чтобы собрать состав.» Паспортный payload и composition write-path разделены. Nested-редактирование изделия из состава загружает `ProductFormDialogComponent` динамически, чтобы не возвращать статический цикл с `ProductBomPanel` (`ɵcmp`).

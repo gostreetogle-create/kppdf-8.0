@@ -21,7 +21,7 @@ description: >-
 ## Когда использовать
 
 - Архитектурная оценка и P0 спеки (напр. Z-001 — уточнить/выдать, **не** кодить).
-- Executable TZ + путь к `tasks/PROMPT-*.md` (PO копирует в Freebuff / Claude terminal).
+- Executable TZ + `tasks/QUEUE-LIVE.md`; PO копирует `PROMPT-FOLLOW-QUEUE.md` **один раз на сессию**
 - UX/business smell → короткая TZ с AC и conflict keys.
 - Сложное, развилка, новая идея — **MCP `claude_code` analysis-only**, потом TZ.
 - URL/статья — **MCP Perplexity** (выжимка), выводы и TZ — Cursor. Нет сервера в чате → сказать PO перезапустить Cursor.

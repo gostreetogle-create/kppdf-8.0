@@ -25,8 +25,10 @@
 
 ## Сейчас живо
 
-1. **Схемы на origin не полные:** [`PROMPT-FREEBUFF-CORE-304-LAND-SOFTDELETE-2026-08-22.md`](PROMPT-FREEBUFF-CORE-304-LAND-SOFTDELETE-2026-08-22.md) — запушить leftover `deletedAt` (CORE-302 Group B).
-2. После CORE-304: дерево = origin, новые фичи можно. Кати — слово PO.
+Очередь: [`QUEUE-LIVE.md`](QUEUE-LIVE.md). Промпт на сессию: [`PROMPT-FOLLOW-QUEUE.md`](PROMPT-FOLLOW-QUEUE.md).
+
+1. Очередь пуста. Агентам ничего не давать (иначе схватят хвосты `_active`).
+2. Кати — только слово PO после взгляда на 1440.
 `_park` / TZD-60 — не без PO.
 
 `_park` не трогать.
