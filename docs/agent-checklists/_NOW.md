@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T11:28:00+03:00
+updated_at: 2026-08-22T11:36:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -23,7 +23,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZ-SUPPLY-314** — DONE by `freebuff` (2026-08-22T10:52:01+03:00): гид-режим раскрытия блоков (whereExpanded/detailsExpanded), auto-expand по categoryId+materialId, gates PASS (tsc, jest 28/28, lint, smoke 23/23); archive `tasks/_archive/2026-08/TZ-SUPPLY-314.done.md`.
 **TZ-DESK-419** — DONE by `claude` (2026-08-22T11:07:00+03:00); commits `2c6f840a` + `bdbbbc87`; archive `tasks/_archive/2026-08/TZ-DESK-419.done.md`; CSS queue height `calc(100dvh - 9.5rem)`; gates/browser PASS.
 **TZ-DESK-421** — DONE by `claude` (2026-08-22T11:20:00+03:00); commit `d2f3e6a3`; docs-only audit `docs/audits/2026-08-22-desk-order-tray-execution-panel-audit.md`; archive `tasks/_archive/2026-08/TZ-DESK-421.done.md`; successor `TZ-DESK-422`.
-**TZ-DESK-420** — CLAIMED / IN PROGRESS by `claude` (2026-08-22T11:28:00+03:00); conflict key `frontend/src/app/shared/orders/order-hub-tray.component.ts`.
+**TZ-DESK-420** — DONE by `claude` (2026-08-22T11:36:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-DESK-420.done.md`; label cleanup + shipping duplicate removal; gates/browser PASS.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов

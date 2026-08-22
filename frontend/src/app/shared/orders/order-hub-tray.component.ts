@@ -166,12 +166,6 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
           >
             <!-- Left: Состав -->
             <section class="min-w-0 hairline rounded-sm bg-paper p-3" data-test="order-group-order">
-              <div class="flex items-baseline gap-2 border-b hairline pb-2 mb-3">
-                <h3 class="text-sm font-medium text-ink m-0">Состав</h3>
-                <span class="text-xs text-muted-foreground">{{
-                  itemCountLabel(order().items?.length ?? 0)
-                }}</span>
-              </div>
               <section class="min-w-0 flex flex-col gap-1" data-test="order-composition-block">
                 <button
                   type="button"
@@ -451,7 +445,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                       >
                     </div>
                     <p class="text-sm m-0" data-test="order-shipping-stub">
-                      Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.
+                      Отгрузка пока не ведётся в интерфейсе.
                     </p>
                   </section>
                 </section>
