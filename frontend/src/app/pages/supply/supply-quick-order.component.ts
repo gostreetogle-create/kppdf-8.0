@@ -95,12 +95,7 @@ class SupplyQuickOrderDialogComponent {
   selector: 'app-supply-quick-order',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [
-    FormsModule,
-    ButtonComponent,
-    PiOverflowSelectComponent,
-    SupplyQuickOrderDialogComponent,
-  ],
+  imports: [FormsModule, ButtonComponent, PiOverflowSelectComponent],
   template: `
     <ng-template #toolbarTemplate>
       <div

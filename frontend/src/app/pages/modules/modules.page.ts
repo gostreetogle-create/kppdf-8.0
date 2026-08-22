@@ -179,7 +179,6 @@ function moduleHasComposition(row: ProductModule): boolean {
     TableComponent,
     PaginationComponent,
     PiShowcaseCardComponent,
-    PiPhotoLightboxComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],

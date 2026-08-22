@@ -147,7 +147,6 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     TableComponent,
     PaginationComponent,
     PiShowcaseCardComponent,
-    PiPhotoLightboxComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
