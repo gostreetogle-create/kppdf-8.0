@@ -4,6 +4,7 @@
  */
 
 import type { ChatRequest, ChatResponse } from './types';
+import { normalizeChatCompletionsUrl } from './chat-url';
 
 export interface ChatClientOptions {
   baseUrl: string;
@@ -11,12 +12,22 @@ export interface ChatClientOptions {
   timeoutMs?: number;
 }
 
-/** TODO(ai-import): обработка не-200 (401/404/429) с русскими сообщениями. */
+/** Ошибка не-200 от чат-API — несёт `status`, чтобы вызывающий код мог дать RU-текст (401/429/…). */
+export class ChatApiError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ChatApiError';
+    this.status = status;
+  }
+}
+
 export async function chatCompletion(
   options: ChatClientOptions,
   request: ChatRequest,
 ): Promise<ChatResponse> {
-  const url = `${options.baseUrl.replace(/\/+$/, '')}/v1/chat/completions`;
+  const url = normalizeChatCompletionsUrl(options.baseUrl);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (options.apiKey) {
     headers['Authorization'] = `Bearer ${options.apiKey}`;
@@ -30,7 +41,7 @@ export async function chatCompletion(
   });
 
   if (!res.ok) {
-    throw new Error(`Chat API вернул ${res.status} (${url})`);
+    throw new ChatApiError(res.status, `Chat API вернул ${res.status} (${url})`);
   }
   return (await res.json()) as ChatResponse;
 }

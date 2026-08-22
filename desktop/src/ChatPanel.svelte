@@ -1,20 +1,26 @@
 <script lang="ts">
   /**
    * Чат вкладки AI (TZD-62): история + textarea + отправка через уже
-   * запущенный встроенный раннер (`chatCompletion` + `aiEndpoint(port)`).
-   * Персона — `buildDesktopChatSystemPrompt()` (LIMITED_HELPER, TZD-64 расширит).
+   * готовый endpoint — встроенный раннер (`aiEndpoint(port)`, локальный
+   * `.gguf`) **или** внешний OpenAI-совместимый API (TZD-65, `apiKey`
+   * заполнен). Обе ветки — один и тот же `chatCompletion`, endpoint
+   * резолвит родитель (`App.svelte`), панель ничего не знает про режим.
+   * Персона — `buildDesktopChatSystemPrompt()` (LIMITED_HELPER, TZD-64 расширил глоссарием).
    */
   import { chatCompletion, type ChatMessage } from './core/ai';
-  import { aiEndpoint } from './core/aiRunner';
 
   let {
-    port,
+    baseUrl,
+    apiKey,
     modelName,
     systemPrompt,
     ready,
     disabledReason,
   }: {
-    port: number | undefined;
+    /** Готовый endpoint чат-API: `aiEndpoint(port)` (локально) или API `baseUrl` (TZD-65). */
+    baseUrl: string | undefined;
+    /** Ключ внешнего API-провайдера; `undefined` для локального раннера. */
+    apiKey: string | undefined;
     modelName: string | undefined;
     systemPrompt: string;
     ready: boolean;
@@ -28,7 +34,7 @@
 
   async function send() {
     const text = draft.trim();
-    if (!text || sending || !ready || !port) return;
+    if (!text || sending || !ready || !baseUrl) return;
     error = '';
     const nextHistory = [...history, { role: 'user', content: text } satisfies ChatMessage];
     history = nextHistory;
@@ -36,7 +42,7 @@
     sending = true;
     try {
       const res = await chatCompletion(
-        { baseUrl: aiEndpoint(port), timeoutMs: 120_000 },
+        { baseUrl, apiKey, timeoutMs: 120_000 },
         {
           model: modelName ?? 'local',
           messages: [{ role: 'system', content: systemPrompt }, ...nextHistory],

@@ -22,8 +22,18 @@
 > внешних клиентов (Cursor, LM Studio), не для этого чата. Порядок всех шагов
 > подключения — раздел «С чего начать» в [`INSTALL.md`](./INSTALL.md).
 >
-> Разделы ниже (Ollama / удалённый endpoint) описывают отдельную абстракцию
-> `providers.ts` для remote-провайдеров — не встроенный чат-раннер выше.
+> **TZD-65 (Модель по API):** карточка «Модель по API» на той же вкладке
+> (не четвёртая дверь) переключает чат на внешний OpenAI-совместимый шлюз —
+> три поля (URL, ключ, id модели) вместо скачивания `.gguf`. Пресет
+> **TokenRouter · Qwen 3.8 Max Free** заполняет URL+model; ключ вводится
+> вручную и не хардкодится. «Проверить» — короткий ping (20с) с RU-ошибками
+> (401 «ключ не принят», 429 «лимит бесплатного», сеть «нет связи»); успех
+> включает чат без локального раннера. Баннер `data-test="ai-api-privacy"`
+> предупреждает: сообщения уходят на сервер провайдера — не вставлять данные
+> клиентов. Ключ ЭТОГО API — не `pairedApiKey` (pairing-токен сайта kppdf,
+> вкладка «Подключение») — разные секреты, разные назначения. Раздел
+> «Вариант 2» ниже — тот же remote-провайдер, TokenRouter лишь один из
+> примеров, не единственный вариант.
 
 ---
 
@@ -64,7 +74,9 @@ API-ключ не нужен.
 
 ## Вариант 2. Удалённый OpenAI-совместимый endpoint
 
-Любой провайдер с API `/v1/chat/completions`: OpenAI, OpenRouter, Mistral, YandexGPT (OpenAI-режим) и др.
+Любой провайдер с API `/v1/chat/completions`: OpenAI, OpenRouter, Mistral, YandexGPT (OpenAI-режим),
+TokenRouter (бесплатный слот, пресет в UI: `qwen/qwen3.8-max-free`, `base_url` уже с `/v1`) и др. —
+TokenRouter не единственный, просто удобный бесплатный пример для проверки без GGUF.
 
 ```json
 {
@@ -78,7 +90,10 @@ API-ключ не нужен.
 ```
 
 Десктоп шлёт `POST {baseUrl}/v1/chat/completions` с `Authorization: Bearer <apiKey>` —
-тот же контракт, что у Ollama (см. `core/ai/client.ts`).
+тот же контракт, что у Ollama (см. `core/ai/client.ts`). URL строит
+`normalizeChatCompletionsUrl()` (`core/ai/chat-url.ts`, TZD-65): если
+`baseUrl` уже кончается на `/v1` (как у TokenRouter), `/v1` не дублируется —
+результат всегда `…/v1/chat/completions`, не `…/v1/v1/chat/completions`.
 
 ## Вариант 3 (будущее): Freebuff / Buffy через OpenAI-совместимый шлюз
 

@@ -16,6 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZD-65** — DONE by `claude` (2026-08-22): Desktop вкладка AI — карточка «Модель по API» (`data-test="ai-api-card"`, НЕ четвёртая дверь) после «Локальной модели»: переключатель «На этом компьютере»/«По API», пресет TokenRouter · Qwen 3.8 Max Free (URL+model, ключ вручную), «Проверить» (короткий ping 20с, RU-ошибки 401/429/сеть), баннер `ai-api-privacy`, парсер примера (`core/ai/snippet-parse.ts`, regex only). Новый `core/ai/chat-url.ts` `normalizeChatCompletionsUrl()` чинит двойной `/v1` (TokenRouter даёт `base_url` уже с `/v1`); `ChatApiError` несёt `status`. `ChatPanel.svelte` prop `port` → `baseUrl`/`apiKey` (работает и от локального раннера, и от внешнего API). Ключ API не спутан с pairing `apiKey` сайта (разные переменные, откомментировано). Архив `tasks/_archive/2026-08/TZD-65-desktop-openai-compat-api.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 11/11 + regression 25/25); живой smoke с реальным ключом — PO/dev (ключ не вставлялся в headless-сессию); deploy НЕ. Desktop AI-чат очередь (62→65) полностью закрыта.
 **TZD-64** — DONE by `claude` (2026-08-22), SHA `04e14368`: Desktop вкладка AI — `desktop/ai/system-prompts/desktop-chat.md` расширен глоссарием `docs/CONTEXT.md` (Counterparty ≠ Organization, Quotation/Order/Contract, Worker/User, StorageItem, /desk); `core/ai/prompts.ts` получил `loadDesktopChatSystemPrompt()` (async, читает файл через `resolveDesktopDir()` + `readTextFile`, fallback на встроенный текст, если исходников нет — прод-бандл); `App.svelte` подгружает его в `onMount` поверх синхронного `buildDesktopChatSystemPrompt()`; `AI-PROVIDERS.md` — строка про LIMITED_HELPER; архив `tasks/_archive/2026-08/TZD-64-desktop-ai-project-prompt.done.md`; gates PASS (desktop tsc, svelte-check 0/0, regression tsx --test 25/25); живой desktop smoke — PO/dev; deploy НЕ. Desktop AI-чат очередь (62→64) закрыта; next в очереди — TZD-65 (OpenAI-compat API, другой prompt-файл).
 **TZD-63** — DONE by `claude` (2026-08-22), SHA `6fabc329`: Desktop вкладка AI — новый `core/gguf-scan.ts` (+8 тестов) сканирует папку моделей на любой `.gguf` (отсев <200 МБ/>20 ГБ и без magic `GGUF`); select «Файл на диске» + «Обновить список» (`data-test="ai-rescan-models"`/`ai-disk-model-select"`) — выбранный файл с диска побеждает каталог для «Открыть чат» и «Запустить»; «Скачать модель» больше не требует раньше жать «Запустить» — сама поднимает раннер без модели, качает, перезапускает с файлом; capabilities/default.json + `fs:allow-read-dir/open/read/stat`; архив `tasks/_archive/2026-08/TZD-63-desktop-model-folder-any-gguf.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 18/18 + regression 7/7); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-64 (промпт проекта).
 **TZD-62** — DONE by `claude` (2026-08-22), SHA `3ee42820`: Desktop вкладка AI — «Открыть чат» (`data-test="ai-open-chat"`) один клик, если `.gguf` выбранной модели уже на диске (старт/рестарт раннера этим файлом, ждёт `modelLoaded`, фокус чата); новый `ChatPanel.svelte` (disabled + причина, пока раннер/модель не готовы); минимальный LIMITED_HELPER промпт `desktop/ai/system-prompts/desktop-chat.md` + `buildDesktopChatSystemPrompt()`; `ai-runner/index.ts` теперь грузит модель сразу после старта (не лениво на первый чат-запрос); блок «Это не чат» удалён (снимает TZD-61); архив `tasks/_archive/2026-08/TZD-62-desktop-ai-chat.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 11/11 + regression 6/6); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-63 (любой .gguf в папке + скачать без ручного Start/Restart).
@@ -78,10 +79,13 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-**Desktop AI-чат** — TZD-62/63/64 DONE (очередь `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md` закрыта). Next: **TZD-65 READY** OpenAI-compat API (`tasks/PROMPT-DESKTOP-AI-API-2026-08-22.md`). Не `App.svelte` параллельно. Deploy не.
+**TZD-65** — Claude IN WORK (`PROMPT-DESKTOP-AI-API-2026-08-22.md`). Не `App.svelte` параллельно.
 
-**Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
-(OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.
+**Freebuff агент 1 волна B READY** — `tasks/PROMPT-FREEBUFF-AGENT1-WAVE-B-2026-08-22.md` (UI-412→414). Можно параллельно 65.
+
+**Freebuff агент 2 волна B READY** — `tasks/PROMPT-FREEBUFF-AGENT2-WAVE-B-2026-08-22.md` (UI-415→417). Можно параллельно 65.
+
+Старая Freebuff wave 2026-08-22 (OPS-320…UI-408) — DONE, не копировать.
 
 Backlog (не брать без PO):
 - `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md` — блокировка парольного входа из WAN (требует deploy)

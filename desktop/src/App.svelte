@@ -99,7 +99,16 @@
   } from './core/aiRunner';
   import { LOCAL_MODELS, recommendModel, modelById, formatBytes, formatRamGb } from './core/model-catalog';
   import { scanGgufModelsInDir, type ScannedGgufModel, type RejectedGgufFile } from './core/gguf-scan';
-  import { chatCompletion, buildDesktopChatSystemPrompt, loadDesktopChatSystemPrompt } from './core/ai';
+  import {
+    chatCompletion,
+    buildDesktopChatSystemPrompt,
+    loadDesktopChatSystemPrompt,
+    ChatApiError,
+    API_PRESETS,
+    apiPresetById,
+    parseApiSnippet,
+    isEmptySnippetResult,
+  } from './core/ai';
   import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
   import ChatPanel from './ChatPanel.svelte';
 
@@ -140,15 +149,50 @@
   let diskModelsRejected = $state<RejectedGgufFile[]>([]);
   /** Пусто — использовать файл из каталога (`selectedModelId`) ниже. */
   let selectedDiskFileName = $state('');
-  /** TZD-62: чат жив, только когда раннер работает и модель в памяти. */
-  let chatReady = $derived(aiState.status === 'running' && aiState.modelLoaded && !!aiState.port);
-  let chatDisabledReason = $derived.by(() => {
+  /**
+   * TZD-65: источник модели для чата — локальный GGUF-раннер («На этом
+   * компьютере») или внешний OpenAI-совместимый API («По API», TokenRouter
+   * и др.). `providerApiKey` — ключ ВНЕШНЕГО шлюза; не путать с `pairedApiKey`
+   * (pairing-токен сайта kppdf) — разные ключи, разные секреты.
+   */
+  type ChatProviderMode = 'local' | 'api';
+  let providerMode = $state<ChatProviderMode>('local');
+  let providerApiUrl = $state('');
+  let providerApiKey = $state('');
+  let providerApiModel = $state('');
+  let providerReady = $state(false);
+  let providerCheckMessage = $state('');
+  let providerCheckError = $state(false);
+  let providerSnippetText = $state('');
+  let providerSnippetMessage = $state('');
+
+  /** TZD-62: чат по локальному раннеру жив, только когда раннер работает и модель в памяти. */
+  let localChatReady = $derived(aiState.status === 'running' && aiState.modelLoaded && !!aiState.port);
+  let localChatDisabledReason = $derived.by(() => {
     if (aiState.status === 'starting') return 'Раннер запускается — подождите…';
     if (aiState.status === 'stopping') return 'Раннер останавливается — подождите…';
     if (aiState.status !== 'running') return 'Раннер не запущен. Нажмите «Открыть чат».';
     if (!aiState.modelLoaded) return 'Модель ещё не загружена в память.';
     return '';
   });
+  let apiChatDisabledReason = $derived.by(() => {
+    if (!providerApiUrl.trim() || !providerApiModel.trim()) {
+      return 'Заполните URL и id модели в карточке «Модель по API», затем нажмите «Проверить».';
+    }
+    if (!providerReady) return 'Нажмите «Проверить», чтобы включить чат по API.';
+    return '';
+  });
+  let chatReady = $derived(
+    providerMode === 'api'
+      ? providerReady && !!providerApiUrl.trim() && !!providerApiModel.trim()
+      : localChatReady,
+  );
+  let chatDisabledReason = $derived(providerMode === 'api' ? apiChatDisabledReason : localChatDisabledReason);
+  let chatBaseUrl = $derived(
+    providerMode === 'api' ? providerApiUrl.trim() || undefined : aiState.port ? aiEndpoint(aiState.port) : undefined,
+  );
+  let chatApiKey = $derived(providerMode === 'api' ? providerApiKey.trim() || undefined : undefined);
+  let chatModelName = $derived(providerMode === 'api' ? providerApiModel.trim() : aiState.modelName);
   /** Синхронный fallback сразу; onMount заменит на текст из desktop-chat.md, если исходники доступны (TZD-64). */
   let desktopChatSystemPrompt = $state(buildDesktopChatSystemPrompt());
   const AI_STATUS_LABEL: Record<AiRunnerStatus, string> = {
@@ -420,6 +464,96 @@
       diskModels = [];
       diskModelsRejected = [];
     }
+  }
+
+  /** TZD-65: восстанавливает `aiProvider: 'remote'` из конфига (URL/ключ/модель), если сохранён. */
+  async function loadProviderSettings() {
+    const cfg = await loadConfig();
+    if (cfg.aiProvider?.type === 'remote') {
+      providerMode = 'api';
+      providerApiUrl = cfg.aiProvider.baseUrl || '';
+      providerApiKey = cfg.aiProvider.apiKey || '';
+      providerApiModel = cfg.aiProvider.model || '';
+    }
+  }
+
+  function setProviderMode(mode: ChatProviderMode) {
+    providerMode = mode;
+    providerCheckMessage = '';
+    providerCheckError = false;
+  }
+
+  function markProviderUnchecked() {
+    providerReady = false;
+    providerCheckMessage = '';
+    providerCheckError = false;
+  }
+
+  /** TZD-65 ШАГ 2: пресет заполняет только URL+model — ключ всегда вводится вручную. */
+  function applyApiPreset(id: string) {
+    const preset = apiPresetById(id);
+    if (!preset) return;
+    providerApiUrl = preset.baseUrl;
+    providerApiModel = preset.model;
+    markProviderUnchecked();
+  }
+
+  /**
+   * TZD-65 ШАГ 3: короткий ping внешнего API (20с) — успех включает чат без
+   * локального раннера. RU: 401 «ключ не принят», 429 «лимит бесплатного»,
+   * сеть — «нет связи». Не логирует ключ в сообщении.
+   */
+  async function checkApiProvider() {
+    if (aiBusy) return;
+    const url = providerApiUrl.trim();
+    const model = providerApiModel.trim();
+    if (!url || !model) {
+      providerCheckMessage = 'Заполните URL и id модели.';
+      providerCheckError = true;
+      return;
+    }
+    aiBusy = true;
+    providerReady = false;
+    providerCheckError = false;
+    providerCheckMessage = 'Проверяем…';
+    const key = providerApiKey.trim() || undefined;
+    try {
+      await chatCompletion(
+        { baseUrl: url, apiKey: key, timeoutMs: 20_000 },
+        { model, messages: [{ role: 'user', content: 'ping' }], temperature: 0 },
+      );
+      providerReady = true;
+      providerCheckMessage = 'Готово — можно писать в чат выше, локальный раннер не нужен.';
+      const cfg = await loadConfig();
+      await saveConfig({ ...cfg, aiProvider: { type: 'remote', baseUrl: url, apiKey: key, model } });
+    } catch (err) {
+      providerReady = false;
+      providerCheckError = true;
+      if (err instanceof ChatApiError) {
+        if (err.status === 401) providerCheckMessage = 'Ключ не принят (401) — проверьте API-ключ.';
+        else if (err.status === 429) {
+          providerCheckMessage = 'Лимит бесплатного тарифа исчерпан (429) — попробуйте позже.';
+        } else providerCheckMessage = `Сервер ответил ${err.status} — проверьте URL и id модели.`;
+      } else {
+        providerCheckMessage = 'Нет связи с сервером — проверьте URL и интернет.';
+      }
+    } finally {
+      aiBusy = false;
+    }
+  }
+
+  /** TZD-65 ШАГ 5: разбор вставленного примера (не eval) — заполняет поля, не заменяет их насильно. */
+  function parseAndApplySnippet() {
+    const parsed = parseApiSnippet(providerSnippetText);
+    if (isEmptySnippetResult(parsed)) {
+      providerSnippetMessage = 'Не разобрал пример — впиши три поля вручную.';
+      return;
+    }
+    if (parsed.baseUrl) providerApiUrl = parsed.baseUrl;
+    if (parsed.apiKey) providerApiKey = parsed.apiKey;
+    if (parsed.model) providerApiModel = parsed.model;
+    markProviderUnchecked();
+    providerSnippetMessage = 'Поля заполнены из примера — проверьте и нажмите «Проверить».';
   }
 
   /** Автоопределение ПК → рекомендация + восстановление выбранной модели из конфига. */
@@ -1765,6 +1899,7 @@
     });
     await loadAiSettings();
     await rescanModels();
+    await loadProviderSettings();
     desktopChatSystemPrompt = await loadDesktopChatSystemPrompt();
     // Закрытие по крестику (Tauri 2): listener + destroy ACL.
     // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
@@ -2263,29 +2398,41 @@
 
     <article class="card">
       <h2>Чат</h2>
-      <p class="hint">
-        Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
-        Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: блок «MCP для агентов» ниже на этой же вкладке.
-      </p>
-      <button
-        class="btn btn--primary"
-        type="button"
-        data-test="ai-open-chat"
-        onclick={openChat}
-        disabled={aiBusy}
-        onmouseenter={() => showHint(HINTS.openChat)}
-        onmouseleave={clearHint}
-        onfocus={() => showHint(HINTS.openChat)}
-        onblur={clearHint}
-      >
-        {aiBusy ? 'Открываем…' : 'Открыть чат'}
-      </button>
-      {#if aiMessage}
-        <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
+      {#if providerMode === 'local'}
+        <p class="hint">
+          Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
+          Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: блок «MCP для агентов» ниже на этой же вкладке.
+        </p>
+        <button
+          class="btn btn--primary"
+          type="button"
+          data-test="ai-open-chat"
+          onclick={openChat}
+          disabled={aiBusy}
+          onmouseenter={() => showHint(HINTS.openChat)}
+          onmouseleave={clearHint}
+          onfocus={() => showHint(HINTS.openChat)}
+          onblur={clearHint}
+        >
+          {aiBusy ? 'Открываем…' : 'Открыть чат'}
+        </button>
+        {#if aiMessage}
+          <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
+        {/if}
+      {:else}
+        <p class="hint" data-test="ai-api-privacy">
+          Режим «По API»: сообщения чата уходят на сервер внешнего провайдера (не на этот ПК и не на kppdf).
+          Бесплатный слот может обрываться. Не вставляйте ФИО, ИНН и другие данные клиентов — настройте
+          ключ и проверьте связь в карточке «Модель по API» ниже.
+        </p>
+        {#if providerCheckMessage}
+          <p class="hint" role="status">{providerCheckMessage}</p>
+        {/if}
       {/if}
       <ChatPanel
-        port={aiState.port}
-        modelName={aiState.modelName}
+        baseUrl={chatBaseUrl}
+        apiKey={chatApiKey}
+        modelName={chatModelName}
         systemPrompt={desktopChatSystemPrompt}
         ready={chatReady}
         disabledReason={chatDisabledReason}
@@ -2450,6 +2597,141 @@
         скопировать `.gguf` с флешки в папку моделей и нажать «Обновить список» — обязательного порядка
         «Запустить → Скачать → Перезапустить» больше нет: «Открыть чат» выше делает всё сама.
       </p>
+    </article>
+
+    <article class="card" data-test="ai-api-card">
+      <h2>Модель по API</h2>
+      <p class="hint">
+        OpenAI-совместимый шлюз (например TokenRouter) — проверить чат без скачивания GGUF.
+        Ключ этого API — не ключ подключения к сайту kppdf (тот вводится на вкладке «Подключение»).
+      </p>
+
+      <div class="mcp-actions">
+        <button
+          class="btn{providerMode === 'local' ? ' btn--primary' : ''}"
+          type="button"
+          data-test="ai-api-mode-local"
+          onclick={() => setProviderMode('local')}
+        >
+          На этом компьютере
+        </button>
+        <button
+          class="btn{providerMode === 'api' ? ' btn--primary' : ''}"
+          type="button"
+          data-test="ai-api-mode-api"
+          onclick={() => setProviderMode('api')}
+        >
+          По API
+        </button>
+      </div>
+
+      {#if providerMode === 'api'}
+        <div class="mcp-actions">
+          {#each API_PRESETS as preset (preset.id)}
+            <button
+              class="btn btn--small"
+              type="button"
+              data-test="ai-api-preset-{preset.id}"
+              onclick={() => applyApiPreset(preset.id)}
+              onmouseenter={() => showHint(preset.keyHint)}
+              onmouseleave={clearHint}
+              onfocus={() => showHint(preset.keyHint)}
+              onblur={clearHint}
+            >
+              {preset.label}
+            </button>
+          {/each}
+        </div>
+
+        <label class="field">
+          <span>URL (base_url)</span>
+          <input
+            class="input"
+            type="text"
+            data-test="ai-api-url"
+            bind:value={providerApiUrl}
+            oninput={markProviderUnchecked}
+            placeholder="https://api.tokenrouter.com/v1"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </label>
+        <label class="field">
+          <span>Ключ API</span>
+          <input
+            class="input"
+            type="password"
+            data-test="ai-api-key"
+            bind:value={providerApiKey}
+            oninput={markProviderUnchecked}
+            placeholder="sk-…"
+            autocomplete="off"
+          />
+        </label>
+        <label class="field">
+          <span>Id модели</span>
+          <input
+            class="input"
+            type="text"
+            data-test="ai-api-model"
+            bind:value={providerApiModel}
+            oninput={markProviderUnchecked}
+            placeholder="qwen/qwen3.8-max-free"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </label>
+
+        <div class="mcp-actions">
+          <button
+            class="btn btn--primary"
+            type="button"
+            data-test="ai-api-check"
+            onclick={checkApiProvider}
+            disabled={aiBusy}
+          >
+            {aiBusy ? 'Проверяем…' : 'Проверить'}
+          </button>
+          {#if providerReady}
+            <span class="mcp-badge mcp-badge--running">готово</span>
+          {/if}
+        </div>
+        {#if providerCheckMessage}
+          <p
+            class={providerCheckError ? 'errors' : 'hint'}
+            role={providerCheckError ? 'alert' : 'status'}
+            data-test="ai-api-check-message"
+          >
+            {providerCheckMessage}
+          </p>
+        {/if}
+
+        <details class="mcp-advanced">
+          <summary>Вставить пример подключения с сайта провайдера</summary>
+          <label class="field">
+            <span>Пример (Python / JSON / curl)</span>
+            <textarea
+              class="input"
+              data-test="ai-api-snippet-input"
+              bind:value={providerSnippetText}
+              rows="4"
+              placeholder={'client = OpenAI(base_url="…", api_key="…")\nmodel="…"'}
+            ></textarea>
+          </label>
+          <button
+            class="btn btn--small"
+            type="button"
+            data-test="ai-api-snippet-parse"
+            onclick={parseAndApplySnippet}
+            disabled={!providerSnippetText.trim()}
+          >
+            Разобрать
+          </button>
+          {#if providerSnippetMessage}
+            <p class="hint" role="status" data-test="ai-api-snippet-message">{providerSnippetMessage}</p>
+          {/if}
+        </details>
+      {/if}
     </article>
 
     <article class="card">
