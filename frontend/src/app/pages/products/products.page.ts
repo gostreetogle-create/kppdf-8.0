@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   Injector,
   TemplateRef,
   ViewChild,
@@ -244,7 +245,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
             id="products-flyout-filters"
             class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
             data-test="filters-rail-panel"
-            role="dialog"
+            role="region"
             aria-label="Фильтры каталога"
             (pointerdown)="$event.stopPropagation()"
             (click)="$event.stopPropagation()"
@@ -263,7 +264,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
             </div>
             <div class="flex flex-col gap-3">
               <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] uppercase tracking-wide text-muted-foreground"
                 for="rail-status"
                 >Статус</label
               >
@@ -280,7 +281,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 }
               </select>
               <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] uppercase tracking-wide text-muted-foreground"
                 for="rail-active"
                 >Активность</label
               >
@@ -296,7 +297,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 <option value="false">Неактивные</option>
               </select>
               <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] uppercase tracking-wide text-muted-foreground"
                 for="rail-category"
                 >Категория</label
               >
@@ -313,7 +314,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 }
               </select>
               <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] uppercase tracking-wide text-muted-foreground"
                 for="rail-sort"
                 >Сортировка</label
               >
@@ -730,6 +731,11 @@ export class ProductsPage implements OnInit {
 
   protected closeFilters(): void {
     this.filtersOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.filtersOpen()) this.closeFilters();
   }
 
   private syncChromeTools(): void {

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   Injector,
   TemplateRef,
   ViewChild,
@@ -219,7 +220,7 @@ const CHROME_OWNER = 'materials-page';
             id="materials-flyout-filters"
             class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
             data-test="filters-rail-panel"
-            role="dialog"
+            role="region"
             aria-label="Фильтры каталога"
             (pointerdown)="$event.stopPropagation()"
             (click)="$event.stopPropagation()"
@@ -239,7 +240,7 @@ const CHROME_OWNER = 'materials-page';
             <div class="flex flex-col gap-3">
               <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
               <label
-                class="text-[10px] uppercase tracking-wide text-muted-foreground"
+                class="text-[11px] uppercase tracking-wide text-muted-foreground"
                 for="rail-kind"
                 >Тип</label
               >
@@ -678,6 +679,11 @@ export class MaterialsPage implements OnInit {
 
   protected closeFilters(): void {
     this.filtersOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscape(): void {
+    if (this.filtersOpen()) this.closeFilters();
   }
 
   private syncChromeTools(): void {
