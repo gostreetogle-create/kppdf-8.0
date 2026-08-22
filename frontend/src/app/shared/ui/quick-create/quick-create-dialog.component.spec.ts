@@ -207,17 +207,22 @@ describe('QuickCreateDialogComponent (TZ-DICT-316 / TZ-UX-FORM-301)', () => {
     TestBed.resetTestingModule();
   });
 
-  it('FIELD_CAPACITY covers all product/module allowlisted keys (TZ-UX-FORM-301)', () => {
+  it('FIELD_CAPACITY covers all product/module allowlisted keys (TZ-UX-FORM-301/308)', () => {
     for (const key of PRODUCT_FIELD_KEYS) {
       expect(FIELD_CAPACITY[key]).toBeDefined();
     }
     for (const key of MODULE_FIELD_KEYS) {
       expect(FIELD_CAPACITY[key]).toBeDefined();
     }
+    // TZ-UX-FORM-308: one registry now serves QuickCreate (kind B, the two
+    // allowlists above) *and* FullEditor (kind C) — a handful of keys only
+    // exist in the product FullEditor, not in the QuickCreate allowlist.
+    const fullEditorOnlyKeys: readonly string[] = ['subcategory', 'ralCode'];
     for (const key of Object.keys(FIELD_CAPACITY)) {
       expect(
         (PRODUCT_FIELD_KEYS as readonly string[]).includes(key) ||
-          (MODULE_FIELD_KEYS as readonly string[]).includes(key),
+          (MODULE_FIELD_KEYS as readonly string[]).includes(key) ||
+          fullEditorOnlyKeys.includes(key),
       ).toBe(true);
     }
     expect(spanForKey('dimLength')).toBe(2);

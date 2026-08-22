@@ -1,7 +1,9 @@
 /**
- * TZ-UX-FORM-301 — Field Capacity for QuickCreate (kind B).
+ * TZ-UX-FORM-301/308 — Field Capacity registry for QuickCreate (kind B)
+ * **and** FullEditor (kind C). One table, not two — dialogs pick the same
+ * `capacityFor`/`colSpanClass`/`controlMaxClass` regardless of dialog kind.
  * Span table: docs/pages/ui-form-field-capacity.md
- * Only allowlisted FieldKeys (PRODUCT / MODULE).
+ * Only allowlisted FieldKeys (PRODUCT / MODULE / MATERIAL).
  */
 
 export type FieldCapacity = 'nano' | 'xs' | 'sm' | 'md' | 'lg' | 'full';
@@ -19,7 +21,12 @@ export const CAPACITY_SPAN: Record<FieldCapacity, number> = {
   full: 12,
 };
 
-/** Control max-width for short numeric / unit fields (cell may be wider). */
+/**
+ * Control max-width for short numeric / unit fields (cell may be wider than
+ * the value needs — a 2-col grid cell is not the same as `w-full`).
+ * nano ≈ 5–6 digits (GOV.UK input width-5: dims, weight); xs ≈ unit / short
+ * price. Never `w-full` — that defeats the point of a fixed max-width.
+ */
 export const CAPACITY_CONTROL_MAX_CLASS: Partial<Record<FieldCapacity, string>> = {
   nano: 'max-w-[5.5rem]',
   xs: 'max-w-[7rem]',
@@ -27,8 +34,9 @@ export const CAPACITY_CONTROL_MAX_CLASS: Partial<Record<FieldCapacity, string>> 
 
 /**
  * Capacity per allowlisted FieldKey (audit §4).
- * Keys must stay inside PRODUCT_FIELD_KEYS ∪ MODULE_FIELD_KEYS.
- * isActive=lg so isActive+status fill a row (8+4) and do not steal dim-band columns.
+ * Keys must stay inside PRODUCT_FIELD_KEYS ∪ MODULE_FIELD_KEYS ∪ MATERIAL_FIELD_KEYS.
+ * isActive=lg so isActive+status fill a row (8+4) and do not steal dim-band
+ * columns — this is a QuickCreate (kind B) layout lock, keep it lg for FullEditor too.
  */
 export const FIELD_CAPACITY: Record<string, FieldCapacity> = {
   // product
@@ -47,6 +55,9 @@ export const FIELD_CAPACITY: Record<string, FieldCapacity> = {
   weightKg: 'nano',
   description: 'full',
   notes: 'full',
+  // product FullEditor (kind C) — subcategory/color, no QuickCreate equivalent
+  subcategory: 'sm',
+  ralCode: 'sm',
   // module (unit/notes shared keys already set)
   article: 'sm',
   width: 'nano',
