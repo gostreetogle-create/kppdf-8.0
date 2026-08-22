@@ -15,7 +15,10 @@ import {
 import { httpResource } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
@@ -188,7 +191,7 @@ function moduleHasComposition(row: ProductModule): boolean {
     }
   `,
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="modules">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="modules" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="modules-search"
@@ -633,7 +636,8 @@ export class ModulesPage implements OnInit {
       untracked(() => this.syncChromeTools());
     });
   }
-  protected readonly chips = CATALOG_SECTION_CHIPS;
+  protected readonly toc = CATALOG_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   private readonly service = inject(ProductModulesService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

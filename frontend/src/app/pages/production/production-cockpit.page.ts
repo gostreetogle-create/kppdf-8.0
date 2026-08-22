@@ -48,7 +48,10 @@ import { WorkTypesService } from '../../shared/services/pi-work-types.service';
 import { CapabilitiesService } from '../../core/capabilities/capabilities.service';
 import { extractErrorMessage } from '../../core/silent-http';
 import { PiToastService } from '../../shared/ui/toast';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import {
@@ -97,7 +100,13 @@ const CHROME_OWNER = 'production-cockpit';
     RouterLink,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="production" [flushBody]="true">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="production"
+      [chips]="emptyChips"
+      activeId=""
+      [flushBody]="true"
+    >
       <div class="production-cockpit" data-test="production-cockpit">
         @if (facade.state().error) {
           <div role="alert" class="px-4 py-2 text-sm text-destructive border-b hairline">
@@ -306,7 +315,8 @@ const CHROME_OWNER = 'production-cockpit';
   ],
 })
 export class ProductionCockpitPage implements OnInit {
-  protected readonly chips = PRODUCTION_SECTION_CHIPS;
+  protected readonly toc = PRODUCTION_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly ordersIcon = List;
   protected readonly filtersIcon = SlidersHorizontal;
   protected readonly refreshIcon = RefreshCw;

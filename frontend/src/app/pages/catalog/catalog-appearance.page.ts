@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiAccentHueFieldComponent } from '../../shared/ui/accent-hue/pi-accent-hue-field.component';
 import { CATALOG_SECTION_CHIPS } from './catalog-group-chips';
 import {
@@ -38,7 +41,12 @@ interface KindRow {
     PiAccentHueFieldComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="catalog-appearance">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="catalog-appearance"
+      [chips]="emptyChips"
+      activeId=""
+    >
       <div class="space-y-5 max-w-4xl" data-test="catalog-appearance-page">
         <header class="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -141,10 +149,11 @@ interface KindRow {
   `,
 })
 export class CatalogAppearancePage implements OnInit {
-  protected readonly chips = [
+  protected readonly toc = [
     ...CATALOG_SECTION_CHIPS,
     { id: 'catalog-appearance', label: 'Оформление', route: '/catalog/appearance' },
   ] as const;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly rows: readonly KindRow[] = [
     { key: 'productHue', kind: 'product', label: 'Изделие', hint: 'Товар и комплекс в составе' },
     { key: 'moduleHue', kind: 'module', label: 'Модуль', hint: 'Узел, который можно раскрыть' },

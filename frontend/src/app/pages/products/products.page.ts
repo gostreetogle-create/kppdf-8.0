@@ -15,7 +15,10 @@ import {
 import { httpResource } from '@angular/common/http';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
@@ -156,7 +159,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     }
   `,
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="products">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="products" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="products-search"
@@ -677,7 +680,8 @@ export class ProductsPage implements OnInit {
       untracked(() => this.syncChromeTools());
     });
   }
-  protected readonly chips = CATALOG_SECTION_CHIPS;
+  protected readonly toc = CATALOG_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly STATUS_LABELS = STATUS_LABELS;
   protected readonly STATUS_OPTIONS = STATUS_OPTIONS;
   private readonly service = inject(ProductsService);

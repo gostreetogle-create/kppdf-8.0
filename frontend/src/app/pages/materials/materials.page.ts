@@ -15,7 +15,10 @@ import {
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { LucideAngularModule, Filter, LayoutGrid, List, RefreshCw } from 'lucide-angular';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import { CATALOG_SECTION_CHIPS } from '../catalog/catalog-group-chips';
@@ -113,7 +116,7 @@ const CHROME_OWNER = 'materials-page';
     }
   `,
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="materials">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="materials" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="materials-search"
@@ -626,7 +629,8 @@ export class MaterialsPage implements OnInit {
       untracked(() => this.syncChromeTools());
     });
   }
-  protected readonly chips = CATALOG_SECTION_CHIPS;
+  protected readonly toc = CATALOG_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   private readonly service = inject(MaterialsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

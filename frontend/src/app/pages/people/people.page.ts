@@ -11,7 +11,10 @@ import {
   signal,
 } from '@angular/core';
 import { LucideAngularModule, RefreshCw } from 'lucide-angular';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
 import { PiRowActionsComponent } from '../../shared/ui/pi-row-actions/pi-row-actions.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -49,7 +52,7 @@ const PAGE_SIZE = 10;
     TableComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="people">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="people" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="people-search"
@@ -128,7 +131,8 @@ const PAGE_SIZE = 10;
   `,
 })
 export class PeoplePage implements OnInit {
-  protected readonly chips = CLIENTS_SECTION_CHIPS;
+  protected readonly toc = CLIENTS_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   private readonly service = inject(PiWorkersService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);

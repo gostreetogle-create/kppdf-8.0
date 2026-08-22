@@ -1,6 +1,8 @@
 /**
- * Catalog Group Chip Workspace — section chips (single family, no TOC row).
- * Top-nav «Каталог» enters at /products; chips switch peers.
+ * Catalog Group Chip Workspace — Продукция | Модули | Материалы (+ Оформление).
+ * Top-nav «Каталог» enters at /products.
+ * TZ-UI-404: this is the dark TOC row (sibling identity), not the gold chips row —
+ * the family currently has no second-level gold chips.
  */
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 

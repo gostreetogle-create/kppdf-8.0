@@ -1,5 +1,6 @@
 /**
  * Logistics sibling chips — supply + shipping (TZ-UX-309).
+ * TZ-UI-404: siblings of one family → dark TOC row, not the gold chips row.
  */
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
 

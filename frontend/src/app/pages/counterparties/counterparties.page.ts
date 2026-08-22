@@ -13,7 +13,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { CLIENTS_SECTION_CHIPS } from '../clients/clients-group-chips';
 import { BadgeComponent } from '../../shared/ui/badge/badge.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -50,7 +53,12 @@ const PAGE_SIZE = 50;
     FormsModule,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="counterparties">
+    <app-pi-group-workspace
+      [toc]="toc"
+      tocActiveId="counterparties"
+      [chips]="emptyChips"
+      activeId=""
+    >
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           id="counterparties-search"
@@ -144,7 +152,8 @@ export class CounterpartiesPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
 
-  protected readonly chips = CLIENTS_SECTION_CHIPS;
+  protected readonly toc = CLIENTS_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly PAGE_SIZE = PAGE_SIZE;
   protected readonly page = signal(1);
   protected readonly searchQuery = signal('');

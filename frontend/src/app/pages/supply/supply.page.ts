@@ -14,7 +14,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { ColumnDef, TableComponent } from '../../shared/ui/pi-table.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -55,7 +58,7 @@ export type SupplyViewMode = 'quick' | 'registry';
     SupplyQuickOrderComponent,
   ],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="supply">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="supply" [chips]="emptyChips" activeId="">
       <div tools class="flex flex-col gap-2 w-full min-w-0">
         <div
           class="flex items-center gap-1 flex-wrap min-w-0 hairline-b pb-1"
@@ -375,7 +378,8 @@ export class SupplyPage implements AfterViewInit {
 
   protected readonly quickToolbarTemplate = signal<TemplateRef<void> | null>(null);
 
-  protected readonly chips = LOGISTICS_SECTION_CHIPS;
+  protected readonly toc = LOGISTICS_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
 
   protected readonly viewMode = signal<SupplyViewMode>('quick');
   protected readonly orderFilterId = signal<string | null>(null);

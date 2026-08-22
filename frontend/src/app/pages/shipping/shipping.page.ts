@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -27,7 +30,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, PiGroupWorkspaceComponent, ButtonComponent],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="shipping">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="shipping" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <select
           class="pi-input w-44"
@@ -422,7 +425,8 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   ],
 })
 export class ShippingPage {
-  protected readonly chips = LOGISTICS_SECTION_CHIPS;
+  protected readonly toc = LOGISTICS_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly statuses: ShipmentStatus[] = [
     'draft',
     'scheduled',
