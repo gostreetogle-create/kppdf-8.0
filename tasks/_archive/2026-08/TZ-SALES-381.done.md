@@ -4,6 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
+sha: 4ee24fec
 
 ## Outcome
 
@@ -24,7 +25,7 @@ closed_by: claude
 - browser/UI: N/A (backend-only scope)
 - checklist: ADDED
 - page docs: N/A (no UI change required)
-- status synchronization: PENDING SHA closeout
+- status synchronization: PASS (`docs/agent-checklists/_NOW.md`, SHA `4ee24fec`)
 - review diff: PASS
 - deploy: NOT RUN
 
