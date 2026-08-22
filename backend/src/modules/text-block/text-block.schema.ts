@@ -84,6 +84,10 @@ export class TextBlock {
   /** Manual reordering in picker (low → high). */
   @Prop({ default: 0 })
   sortOrder!: number;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const TextBlockSchema = SchemaFactory.createForClass(TextBlock);

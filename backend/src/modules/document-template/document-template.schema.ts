@@ -99,6 +99,10 @@ export class DocumentTemplate {
    */
   @Prop({ type: Types.ObjectId, ref: 'User', index: true })
   createdBy?: Types.ObjectId;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const DocumentTemplateSchema = SchemaFactory.createForClass(DocumentTemplate);

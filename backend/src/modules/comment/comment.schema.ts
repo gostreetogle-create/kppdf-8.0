@@ -19,6 +19,10 @@ export class Comment {
 
   @Prop({ default: false, index: true })
   isArchived!: boolean;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);

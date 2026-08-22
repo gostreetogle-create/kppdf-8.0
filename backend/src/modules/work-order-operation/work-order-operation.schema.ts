@@ -42,6 +42,10 @@ export class WorkOrderOperation {
 
   @Prop()
   notes?: string;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const WorkOrderOperationSchema = SchemaFactory.createForClass(WorkOrderOperation);

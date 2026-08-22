@@ -17,6 +17,10 @@ export class EntityAttributeValue {
   /** Mixed: string | number | boolean | Date | string[] (enum). */
   @Prop({ type: Object, required: true })
   value!: unknown;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const EntityAttributeValueSchema = SchemaFactory.createForClass(EntityAttributeValue);

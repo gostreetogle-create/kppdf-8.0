@@ -33,6 +33,10 @@ export class Interaction {
 
   @Prop({ type: [String], default: [] })
   tags!: string[];
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const InteractionSchema = SchemaFactory.createForClass(Interaction);

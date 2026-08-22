@@ -61,6 +61,10 @@ export class TextBlockCategory {
   /** TZ-240 convention: undefined/null = system (global) record. */
   @Prop({ required: false, sparse: true, index: true })
   organizationId?: Types.ObjectId;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const TextBlockCategorySchema =

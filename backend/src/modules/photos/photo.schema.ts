@@ -59,6 +59,10 @@ export class Photo {
    * Multipart uploads persist the original and a separate `thumb` child;
    * JSON registration remains available for pre-uploaded external URLs.
    */
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const PhotoSchema = SchemaFactory.createForClass(Photo);

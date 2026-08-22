@@ -32,6 +32,10 @@ export class StockMovement {
   @Prop() orderId?: string;
   @Prop() documentRef?: string;
   @Prop({ type: Types.ObjectId, ref: 'User' }) createdBy?: Types.ObjectId;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const StockMovementSchema = SchemaFactory.createForClass(StockMovement);

@@ -33,6 +33,10 @@ export class TechProcess {
 
   @Prop({ type: [TechProcessOperationSchema], default: [] })
   operations!: TechProcessOperation[];
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const TechProcessSchema = SchemaFactory.createForClass(TechProcess);

@@ -142,6 +142,10 @@ export class ImportTask {
 
   @Prop()
   errorMessage?: string;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const ImportTaskSchema = SchemaFactory.createForClass(ImportTask);

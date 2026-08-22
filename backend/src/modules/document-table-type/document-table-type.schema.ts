@@ -48,6 +48,10 @@ export class DocumentTableType {
 
   @Prop({ default: true, index: true })
   isActive!: boolean;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const DocumentTableTypeSchema = SchemaFactory.createForClass(DocumentTableType);

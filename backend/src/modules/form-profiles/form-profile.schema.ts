@@ -22,6 +22,10 @@ export class FormProfile {
   /** Visible FieldKeys; must always include LockedRequired for entity. */
   @Prop({ type: [String], required: true, default: [] })
   visibleFieldKeys!: string[];
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const FormProfileSchema = SchemaFactory.createForClass(FormProfile);

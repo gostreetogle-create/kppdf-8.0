@@ -25,6 +25,10 @@ export class RoutingStep {
 
   @Prop({ type: Types.ObjectId, ref: 'WorkType', index: true })
   workTypeId?: Types.ObjectId;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const RoutingStepSchema = SchemaFactory.createForClass(RoutingStep);

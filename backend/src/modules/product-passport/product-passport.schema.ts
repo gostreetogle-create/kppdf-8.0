@@ -55,6 +55,10 @@ export class ProductPassport {
 
   @Prop({ default: true })
   isActive!: boolean;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const ProductPassportSchema = SchemaFactory.createForClass(ProductPassport);

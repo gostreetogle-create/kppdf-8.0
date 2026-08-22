@@ -36,6 +36,10 @@ export class ImportTodo {
 
   @Prop({ required: true, enum: IMPORT_TODO_STATUSES, default: 'open', index: true })
   status!: ImportTodoStatus;
+
+  /** TZ-CORE-302: soft-delete timestamp; null = active. */
+  @Prop({ type: Date, default: null, index: true })
+  deletedAt?: Date | null;
 }
 
 export const ImportTodoSchema = SchemaFactory.createForClass(ImportTodo);
