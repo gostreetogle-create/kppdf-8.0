@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
 import { LoginPage } from './login.page';
 import { AuthService } from '../../core/auth.service';
+import { Subject } from 'rxjs';
 
 /**
  * Tests for the dev-only autofill helper and the public login notice.
@@ -12,6 +13,7 @@ describe('LoginPage', () => {
 
   const authLogin = jest.fn();
   const routerNavigateByUrl = jest.fn();
+  const routerEvents = new Subject<NavigationEnd>();
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -26,7 +28,17 @@ describe('LoginPage', () => {
             deviceDenied: () => null,
           },
         },
-        { provide: Router, useValue: { navigateByUrl: routerNavigateByUrl } },
+        {
+          provide: Router,
+          useValue: {
+            navigateByUrl: routerNavigateByUrl,
+            createUrlTree: jest.fn(() => ({})),
+            serializeUrl: jest.fn(() => ''),
+            isActive: jest.fn(() => false),
+            events: routerEvents.asObservable(),
+          },
+        },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: new Map() } } },
       ],
     }).compileComponents();
 
@@ -40,13 +52,10 @@ describe('LoginPage', () => {
     it('renders the personal-project notice with the canonical heading', () => {
       fixture.detectChanges();
 
-      const notice = fixture.nativeElement.querySelector('[data-test="personal-project-notice"]');
+      const notice = fixture.nativeElement.querySelector('[data-test="internal-is-notice"]');
 
       expect(notice).not.toBeNull();
-      expect(notice.textContent).toContain('Личный проект для обучения и тестирования');
-      expect(notice.textContent).toContain(
-        'KPPDF — индивидуальный проект для обучения, экспериментов и проверки идей.',
-      );
+      expect(notice.textContent).toContain('Внутренняя информационная система');
     });
   });
 

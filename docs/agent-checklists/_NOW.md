@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T21:45:00+03:00
+updated_at: 2026-08-22T23:15:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -30,6 +30,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 **TZ-OPS-318** — DONE by `claude` (2026-08-22T21:25:00+03:00): backup rotation + cron string + volume docs; archive `tasks/_archive/2026-08/TZ-OPS-318.done.md`; gates PASS (bash -n).
 **TZ-OPS-319** — DONE by `claude` (2026-08-22T21:30:00+03:00): `.husky/pre-push` typecheck hook + GIT-POLICY.md --no-verify note; archive `tasks/_archive/2026-08/TZ-OPS-319.done.md`; gates PASS (hook runs, both tsc OK).
 **TZ-OPS-317** — DONE by `claude` (2026-08-22T21:40:00+03:00): `.gitattributes` + renormalize; archive `tasks/_archive/2026-08/TZ-OPS-317.done.md`; gates PASS (architecture check, backend tsc).
+**TZ-TEST-420** — DONE by `freebuff-2` (2026-08-22T23:15:00+03:00): 8 pre-existing FE Jest failures fixed — login.page.spec (ActivatedRoute + Router mock + stale selector) + production-read.facade.spec (findByIds batch mocks); archive `tasks/_archive/2026-08/TZ-TEST-420.done.md`; gates PASS (FE tsc, jest 1841/1841, lint 0 errors, BE tsc).
 **TZD-60** — DEFERRED (2026-08-22T20:05:00+03:00): no real install possible in this session.
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
