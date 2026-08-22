@@ -166,7 +166,17 @@ data/products/
 .claude-flow/sessions/
 
 # Claude Code worktrees / local CLI junk (not project SoT)
-.claude/worktrees/
+.claude/
 .mcp-log.txt
 .start-log.txt
 _to_delete_index.lock
+
+# Accidental local Python / screenshot junk (not product)
+.python-version
+/pyproject.toml
+/uv.lock
+/src/kppdf_8_0/
+frontend/.tmp-*
+reports/full-route-crash-sweep.json
+reports/TZ-UI-404-counterparties-toc.png
+reports/TZ-UI-404-toc-parity-smoke.json
