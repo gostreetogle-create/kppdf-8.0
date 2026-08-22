@@ -174,7 +174,7 @@ function counterpartyIdOf(row: Proposal): string {
         }
 
         <div class="overflow-x-auto hairline rounded-sm">
-          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+          <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
             ← Таблица широкая — прокручивайте горизонтально →
           </p>
           <app-pi-table
@@ -265,7 +265,7 @@ function counterpartyIdOf(row: Proposal): string {
                 @if ((row.currentVersion ?? 0) > 0) {
                   <button
                     type="button"
-                    class="text-[10px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
+                    class="text-[11px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
                     [attr.data-test]="'versions-button-' + row._id"
                     (click)="toggleVersions(row)"
                   >
@@ -279,7 +279,7 @@ function counterpartyIdOf(row: Proposal): string {
                 @if (expandedVersionsId() === row._id) {
                   <div class="text-right space-y-0.5" data-test="version-list">
                     @for (version of versionsFor(row._id); track version.version) {
-                      <span class="block text-[10px] font-mono text-muted-foreground">
+                      <span class="block text-[11px] font-mono text-muted-foreground">
                         v{{ version.version }} · {{ formatVersionDate(version.frozenAt) }}
                       </span>
                     }
@@ -295,7 +295,7 @@ function counterpartyIdOf(row: Proposal): string {
               >
                 <button
                   type="button"
-                  class="text-[10px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
+                  class="text-[11px] underline underline-offset-2 text-muted-foreground pi-focus-ring"
                   [attr.data-test]="'family-button-' + row._id"
                   (click)="toggleFamily(row)"
                 >
@@ -306,7 +306,7 @@ function counterpartyIdOf(row: Proposal): string {
                     @for (member of familyVariantsFor(row._id); track member.id) {
                       <button
                         type="button"
-                        class="block w-full text-left text-[10px] pi-focus-ring underline underline-offset-2"
+                        class="block w-full text-left text-[11px] pi-focus-ring underline underline-offset-2"
                         [attr.data-test]="'family-variant-' + member.id"
                         (click)="openVariantView(member)"
                       >
@@ -317,7 +317,7 @@ function counterpartyIdOf(row: Proposal): string {
                       </button>
                     }
                     @if (familyVariantsFor(row._id).length === 0) {
-                      <span class="block text-[10px] text-muted-foreground"
+                      <span class="block text-[11px] text-muted-foreground"
                         >Нет вариантов фирм</span
                       >
                     }

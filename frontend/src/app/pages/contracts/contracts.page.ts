@@ -217,7 +217,7 @@ function organizationIdOf(row: Contract): string {
         }
 
         <div class="overflow-x-auto hairline rounded-sm">
-          <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+          <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
             ← Таблица широкая — прокручивайте горизонтально →
           </p>
           <app-pi-table

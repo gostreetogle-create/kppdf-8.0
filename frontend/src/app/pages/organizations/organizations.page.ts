@@ -95,7 +95,7 @@ const PAGE_SIZE = 10;
         </div>
       }
 
-      <p data-test="sort-disclosure" class="text-[10px] text-muted-foreground mb-2">
+      <p data-test="sort-disclosure" class="text-[11px] text-muted-foreground mb-2">
         Сортировка применяется только к текущей странице ({{ PAGE_SIZE }} записей).
       </p>
 
@@ -132,7 +132,7 @@ const PAGE_SIZE = 10;
           <ng-template #typeTpl let-row>
             <div class="flex flex-wrap gap-1">
               @for (t of row.type || []; track t) {
-                <span class="eyebrow text-[10px] px-2 py-1 hairline rounded-sm">
+                <span class="eyebrow text-[11px] px-2 py-1 hairline rounded-sm">
                   {{ orgTypeLabel(t) }}
                 </span>
               }
