@@ -14,6 +14,7 @@
 |------|------|
 | [`.agents/skills/tz-authoring/SKILL.md`](../.agents/skills/tz-authoring/SKILL.md) | Skill Cursor: поля, split, archive |
 | [`OrchestratorKit/_templates/TZ-template.txt`](../OrchestratorKit/_templates/TZ-template.txt) | Скелет секций |
+| [`docs/CONTEXT.md`](./CONTEXT.md) | Короткий доменный язык |
 | [`docs/AI-AGENT-GUIDE.md`](./AI-AGENT-GUIDE.md) | Онбординг агента |
 | [`docs/data-model.md`](./data-model.md) | Сущности (осторожно: наследие + дубли) |
 | [`docs/product-vision-lite.md`](./product-vision-lite.md) | Канон цеха ~10 чел, поток |
@@ -34,7 +35,7 @@
 |---------|-----------------------------------|-------------|
 | Клиент / покупатель / контрагент сделки | **`Counterparty`** (`counterpartyId`) | `Organization` |
 | Наша фирма / юрлицо продавца / поставщик-склад | **`Organization`** (`organizationId`, type) | Counterparty |
-| КП / коммерческое предложение | UI: **«КП»**; сущность: **одна** из уже bootstrapped (`Proposal` / `Quotation` — выбрать audit’ом и **зафиксировать**) | Три дубля в data-model без выбора |
+| КП / коммерческое предложение | UI: **«КП»**; сущность: **`Quotation`** (историческое `proposalId` в коде) | отдельный `Proposal` / `CommercialProposal` |
 | Заказ | **`Order`** (`orders`, `counterpartyId`) | Contract как «то же самое» |
 | Договор | **`Contract`** (optional legal) | КП |
 | Люди / сотрудники | **`Worker` / People page** (см. WORKERS-*) | User (аккаунт login) |

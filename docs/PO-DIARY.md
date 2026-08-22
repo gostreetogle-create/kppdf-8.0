@@ -133,6 +133,12 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-22 — Skills: ритуалы Pocock, не вторая операционка
+- Аудит `docs/audits/2026-08-22-matt-pocock-skills-source.md` / mattpocock/skills: брать grilling, глоссарий, TDD/diagnose у исполнителя, architecture review текстом.
+- Не ставить Claude plugin и `/setup-matt-pocock-skills` (GitHub/Linear Issues). Не плодить `AGENTS.md` / `docs/prd` / `docs/issues`.
+- Внедрено: `docs/CONTEXT.md`, `docs/adr/README.md`, `docs/agents/SKILLS-MAP.md`, три `.cursor/rules` (grilling/diagnose/architecture).
+- КП в коде = `Quotation`. Карта для PO: что перезапустить / что вставить в User Rules.
+
 ### 2026-08-19 (волна 2) — Справочник = SoT, свободный ввод = мусор
 - PO отклонил свободное «Наименование» в снабжении: заказывать можно только то, что есть в каталоге — иначе база засоряется дублями одной и той же фрезы.
 - Путь ввода канон: **категория → материал из списка этой категории**; артикул/цвет/фото — свойства материала, им не место в строке заявки.

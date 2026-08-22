@@ -15,6 +15,7 @@ description: >-
 |---|---|---|
 | **Cursor** | `.cursor/rules/cursor-architect.mdc` + `cursor-usage` + `tz-authoring` + **`docs/TZ-AUTHORING.md`** | Mode A: TZ/планы/UX-smell notes/review; git по `docs/GIT-POLICY.md`; **не** код продукта |
 | **Gemini / локальные** | корневой `GEMINI.md` + этот skill + **`kppdf-executor-loop`** | Executor: код, gates, archive, continuous queue; deploy only on explicit PO |
+| **Claude Code** | корневой `CLAUDE.md` → тот же контракт, что `GEMINI.md` (agent_id: `claude`) + этот skill + **`kppdf-executor-loop`** | Executor: тот же цикл, gates, archive, что у Gemini; deploy only on explicit PO |
 | **LM Studio (Qwen local)** | `docs/agents/LM-STUDIO-AGENT.md` + `scripts/lmstudio-agent/run.mjs` | Draft helper only; **LIMITED_HELPER** — не archive/deploy/security review alone |
 
 Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `executing-plans` / `tdd` / `run-project-checks` / `verification-before-completion` для собственной имплементации.
@@ -60,14 +61,18 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | Ситуация | Skill |
 |---|---|
 | Любая сессия Cursor на репо | `cursor-usage` |
-| Написать/уточнить TZ, спеку, AC | `tz-authoring` + **обязательно** `docs/TZ-AUTHORING.md` |
+| Написать/уточнить TZ, спеку, AC | `tz-authoring` + **обязательно** `docs/TZ-AUTHORING.md` + `docs/CONTEXT.md` |
+| Фича расплывчатая / поток PO | правило `planning-grilling.mdc` (потом TZ, не код) |
+| Баг: найти причину, не патчить | правило `debugging-diagnose.mdc` → TZ |
+| Архитектурный обзор текстом | правило `architecture-review.mdc` |
 | Новый feature / поведение (дизайн) | `brainstorming` |
 | План без кода | `writing-plans` |
 | Текстовый review чужого diff | `requesting-code-review` / `receiving-code-review` (без патчей) |
+| Карта внешних skills (Pocock и др.) | `docs/agents/SKILLS-MAP.md` — **не** ставить mattpocock plugin |
 
-### Исполнитель (Gemini / локальные)
+### Исполнитель (Gemini / Claude Code / локальные)
 
-Подключай skills из `C:\Users\User\.agents\skills` только по необходимости:
+Общие skills — из `C:\Users\User\.agents\skills` (глобально, по необходимости):
 
 | Ситуация | Skill |
 |---|---|
@@ -75,8 +80,8 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | TypeScript DSL/generics | `typescript-advanced-types` |
 | NestJS/API/database | `nodejs-backend-patterns` |
 | REST/GraphQL design | `api-design-principles` |
-| Новая функциональность test-first | `tdd` |
-| Bug/build/test failure | `systematic-debugging` |
+| Новая функциональность test-first | `tdd` (red-green-refactor; не Cursor) |
+| Bug/build/test failure | `systematic-debugging` (reproduce → гипотезы → фикс → регресс) |
 | Accessibility/WCAG/keyboard | `accessibility` |
 | Performance/Lighthouse | `performance` |
 | Angular/browser verification | `webapp-testing` |
@@ -85,6 +90,22 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | Работа с PDF | `pdf` |
 | Project gates | `run-project-checks` |
 | Local Qwen via LM Studio | `docs/agents/LM-STUDIO-AGENT.md` (`node scripts/lmstudio-agent/run.mjs`) |
+
+Проектные skills — репо-локальные, `.agents/skills/*` в этом репозитории
+(установлены `npx skills`, отслеживаются в `skills-lock.json`):
+
+| Ситуация | Skill |
+|---|---|
+| Angular-компонент, signals, formы, DI, роутинг, a11y | `angular-developer` |
+| Создание нового Angular-приложения/шаблона | `angular-new-app` |
+| Дизайн/ревью MongoDB-схемы, embed vs reference, миграция | `mongodb-schema-design` |
+| Медленный запрос, индексация, explain-план | `mongodb-query-optimizer` |
+| Настройка connection pool / таймауты Mongoose-клиента | `mongodb-connection` |
+
+`mongodb-mcp-setup`, `mongodb-natural-language-querying`, `mongodb-search-and-ai`,
+`mongodb-atlas-stream-processing` из офиц. набора MongoDB **намеренно не ставили** —
+требуют MongoDB MCP Server / Atlas, которых в проекте нет (self-hosted Replica Set).
+При необходимости: `npx skills add mongodb/agent-skills`.
 
 ## Проверки
 
@@ -119,3 +140,21 @@ pnpm architecture:check
 ```bash
 bash OrchestratorKit/verify-status.sh
 ```
+
+## Внешние MCP-инструменты (веб-исследование)
+
+Perplexity MCP (`@perplexity-ai/mcp-server`, root `.mcp.json`) — не executor и не
+заменяет Cursor/Gemini/Claude Code роли из таблицы выше. Это инструмент внешнего
+веб-поиска для уже подключённого executor-агента (Gemini/Claude Code), когда нужны
+данные вне репозитория/докладов (актуальные версии библиотек, внешние API, доки
+сторонних сервисов).
+
+- `perplexity_search` — быстрый веб-поиск со ссылками.
+- `perplexity_ask` — короткий ответ с поиском.
+- `perplexity_research` — глубокое исследование с цитированием источников.
+- `perplexity_reason` — рассуждение поверх найденного.
+
+Требует `PERPLEXITY_API_KEY` в окружении процесса, где запущен Claude Code CLI
+(см. `.env.example`). Не используй для решений, которые должны браться из
+`docs/PROJECT-MEMORY.md` / `PO-CANON.md` / TZ — только для внешних фактов, и
+всегда указывай источники в отчёте по задаче.

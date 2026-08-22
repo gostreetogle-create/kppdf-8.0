@@ -1,0 +1,25 @@
+---
+description: Architecture review as text; incremental deepening, no rewrites
+alwaysApply: false
+---
+
+# Architecture review
+
+Только текст. Product-код не патчить. Сначала `docs/CONTEXT.md`, `docs/adr/README.md`, живая schema.
+
+Смотри:
+
+- мелкие модули с толстым интерфейсом / утечка слоя
+- второй write-path, дубль сущности (Counterparty vs Organization)
+- shared god-file без DEFER
+- FE без согласованного BE
+
+Выход:
+
+1. Current shape (доменными словами)
+2. Risks (P0–P2)
+3. Incremental moves (не rewrite)
+4. Порядок TZ + conflict keys
+5. Нужен ли апдейт `docs/adr/README.md`
+
+Эталон узкой спеки: `tasks/_backlog/z-series/backend/inventory/Z-001-inventory-write-transactions.md`.

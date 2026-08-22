@@ -45,8 +45,9 @@ description: >-
 ## Чтение
 
 1. `docs/PO-CANON.md` — кто PO и планка качества
+1a. `docs/CONTEXT.md` — короткий доменный язык
 2. `docs/agent-checklists/_NOW.md` — только если нужен текущий поток
-3. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`
+3. **Если пишешь TZ:** `docs/TZ-AUTHORING.md` (обязательно) + skill `tz-authoring`; неясность → grilling (`.cursor/rules/planning-grilling.mdc`)
 4. Целевой `tasks/<TZ>.md`
 5. Релевантный page/domain canon
 6. Эталон спеки: `tasks/Z-001-inventory-write-transactions.md` /

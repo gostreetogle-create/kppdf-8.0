@@ -1,0 +1,21 @@
+---
+description: Clarify ambiguous features before TZ; grilling, domain terms, ADR candidates
+alwaysApply: false
+---
+
+# Planning / grilling
+
+Не коди продукт. Сначала выравнивание, потом TZ (`tz-authoring` + `docs/TZ-AUTHORING.md`).
+Канон Cursor: `.cursor/rules/cursor-architect.mdc`. Язык: `docs/CONTEXT.md`.
+
+Когда задача расплывчатая или PO говорит потоком:
+
+1. Цель (кто пользователь, какой экран, что станет можно).
+2. Ограничения и **не-цели** (Гант, PDF, wipe, второй write-path).
+3. 3–7 узких вопросов, если после кода/экрана всё ещё развилка.
+4. Новые термины → строка в `docs/CONTEXT.md` (и §1.1 TZ-AUTHORING, если канон имён).
+5. Необратимое (schema, unique, 152-ФЗ) → кандидат в `docs/adr/README.md`.
+6. Самый тонкий vertical slice → executable TZ в `tasks/`, не PRD и не GitHub Issue.
+
+Выход: Goal · Constraints · Open questions · Domain terms · ADR? · TZ path.
+Не ждать «поехали» между шагами одной подтверждённой волны.

@@ -26,6 +26,9 @@
 | Вопрос | Куда смотреть |
 |--------|---------------|
 | Онбординг / роли / запреты | `docs/AI-AGENT-GUIDE.md` |
+| Общий язык домена | `docs/CONTEXT.md` |
+| Индекс решений (ADR) | `docs/adr/README.md` |
+| Внешние agent-skills | `docs/agents/SKILLS-MAP.md` (mattpocock plugin не ставить) |
 | PO, планка качества, вкус | `docs/PO-CANON.md`; история — `PO-DIARY.md` |
 | Архитектура / конвенции | `ARCHITECTURE.md` — только при нужде зоны |
 | Домен сущности (схема) | `docs/data-model.md` + **живая schema** в `backend/src/modules/<x>/` (схема побеждает) |
@@ -72,7 +75,7 @@
 - **КП / сделки** → `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` + `proposals*.page.md`; КП ≠ Order.
 - **Конструктор документов / builder** → `builder*.page.md`; не трогать чужие DOC-* ключи.
 - **Desktop import / MCP** → `desktop/docs/MCP.md` + journal; FIC §E.
-- **Не уверен в каноне имён** → `docs/TZ-AUTHORING.md` §1.1 (1 термин = 1 сущность).
+- **Не уверен в каноне имён** → `docs/CONTEXT.md`, затем `docs/TZ-AUTHORING.md` §1.1.
 - **Домен вообще** → сначала `docs/DOMAIN-MAP.md`, затем модуль в `backend/src/modules/`.
 - **Статус / фильтр «активные» / канбан / freeze / FK** → `docs/COUPLING-MAP.md`, потом свой page.md. Соседний экран того же поля — обязателен.
 

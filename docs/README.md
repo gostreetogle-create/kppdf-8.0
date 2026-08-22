@@ -82,6 +82,7 @@ docs/
 
 1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
 1a. `docs/PROJECT-OPERATING-STRATEGY.md` — если ведёшь волну, аудит или пишешь prompt
+1a2. `docs/CONTEXT.md` — доменный язык; `docs/agents/SKILLS-MAP.md` — внешние skills
 1b. `docs/TZ-AUTHORING.md` — **если пишешь TZ** (канон имён / unique / preflight)
 1c. `docs/AUDIT-METHODOLOGY.md` — **если аудитишь** домен / миграцию / чужой diff (не путать с реализацией)
 2. `ARCHITECTURE.md` (корень проекта) — общая архитектура
@@ -106,3 +107,6 @@ docs/
 - **`DARK-THEME.md`** — канон светлой и тёмной темы (Cool Graphite & Gold)
 - **`SESSION-2026-08-02-DEPLOY.md`** — карта вечернего деплоя / фиксов / завтрашний чеклист
 - **`agents/LM-STUDIO-AGENT.md`** — локальный Qwen helper (LIMITED_HELPER)
+- **`agents/SKILLS-MAP.md`** — mattpocock/skills → наши файлы (plugin не ставить)
+- **`CONTEXT.md`** — короткий доменный язык
+- **`adr/README.md`** — индекс решений

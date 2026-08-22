@@ -21,7 +21,7 @@ Continuous: **`D:\kppdf-8.0`/main**. Explicit Cursor Isolated:
 Цикл сам:
 
 1. checklist → CLAIM (`tasks/_active/` + claim slot)  
-2. код  
+2. если TZ меняет поведение — failing test (skill `tdd`), потом минимальный код  
 3. gates (tsc/tests по зоне)  
 4. archive + lock  
 5. **commit + push** на целевую ветку по `docs/GIT-POLICY.md`

@@ -1,0 +1,20 @@
+---
+description: Structured diagnosis for bugs; write a TZ, do not patch product code
+alwaysApply: false
+---
+
+# Diagnose (Cursor)
+
+Баг чинит исполнитель. Ты фиксируешь причину и TZ. Mode A: `.cursor/rules/cursor-architect.mdc`.
+
+Цикл:
+
+1. Symptom — что видит оператор (экран, RU-текст, шаг).
+2. Reproduce — точный путь; если нельзя — limitation, не выдуманный фикс.
+3. Minimize — один экран / один API.
+4. 1–3 гипотезы; факты отдельно от догадок (`path:line`).
+5. Root cause подтверждён кодом или runtime — только тогда TZ.
+6. В TZ: regression test в AC + conflict keys + НЕ.
+
+Не прыгать к патчу. Не «починить заодно» соседнее.
+Исполнителю в промпте: skill `systematic-debugging`, затем `tdd` на регресс.

@@ -11,8 +11,8 @@
 
 | Роль | Кто | Делает | Не делает |
 |------|-----|--------|-----------|
-| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, планы, executable TZ, UX/business smell → TZ, review текстом; git по `docs/GIT-POLICY.md` | Код продукта, длинные build/test, archive closeout как исполнитель |
-| **Исполнитель** | Gemini / локальные агенты | Код по TZ, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO |
+| **Архитектор / TZ-author / future user (Mode A)** | Cursor | Оценка, grilling, executable TZ, UX-smell → TZ, review текстом; git по `docs/GIT-POLICY.md` | Код продукта, длинные build/test, archive closeout как исполнитель |
+| **Исполнитель** | Gemini / Freebuff / Claude CLI | Код по TZ, TDD по AC, gates, checklist, archive | Выбор roadmap «улучшить всё» без PO; GitHub Issues |
 | **Локальный draft (LIMITED_HELPER)** | LM Studio Qwen via `pnpm lmstudio` | Черновики мелкого кода / объяснения сниппетов | Security review, TZ, archive, deploy, Layer-3 alone |
 | **Оркестрация** | OrchestratorKit | STATUS, `_active`/`_archive`, verify-status | Бизнес-логика ERP |
 
@@ -24,9 +24,10 @@ LM Studio: `docs/agents/LM-STUDIO-AGENT.md` · `node scripts/lmstudio-agent/run.
 
 Контракты:
 
-- Cursor: `.cursor/rules/cursor-architect.mdc`, `.cursor/rules/po-diary.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**, **`docs/PO-DIARY.md`**
+- Cursor: `.cursor/rules/cursor-architect.mdc`, `.cursor/rules/po-diary.mdc`, `.cursor/rules/planning-grilling.mdc`, `.agents/skills/cursor-usage/SKILL.md`, `.agents/skills/tz-authoring/SKILL.md`, **`docs/TZ-AUTHORING.md`**, **`docs/CONTEXT.md`**, **`docs/PO-DIARY.md`**
 - Исполнитель: `GEMINI.md`, `.agents/skills/kppdf-executor-loop/SKILL.md`;
   при kit `TZ-NN.txt` — `OrchestratorKit/AGENTS.md`
+- Внешние packs: `docs/agents/SKILLS-MAP.md` (mattpocock plugin не ставить)
 
 Если ты Cursor и тебя просят имплементировать — отказ по Mode A + путь/черновик TZ для локального агента.
 

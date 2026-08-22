@@ -1,7 +1,7 @@
 # GEMINI.md — рабочий контракт Gemini для kppdf-8.0
 
 Ты работаешь в репозитории `kppdf-8.0`. Минимальный startup:
-`docs/PROJECT-MEMORY.md` → `docs/PO-CANON.md` →
+`docs/PROJECT-MEMORY.md` → `docs/PO-CANON.md` → `docs/CONTEXT.md` →
 `docs/agent-checklists/_NOW.md` + `tasks/_active/` → собственные TZ/checklist →
 релевантный `page.md`/domain doc. `ARCHITECTURE.md`, `progress.md`, root `STATUS.md`
 и `_active-map.md` — история/справочники, не читать целиком. `OrchestratorKit/AGENTS.md`
@@ -42,6 +42,14 @@ Frontend: канон `docs/ANGULAR-GUIDE.md`: Angular 20 standalone, explicit `O
 запрещённые UI-паттерны и неподтверждённые зависимости.
 
 Backend: Module → Controller → Service → Schema, DTO validation, JwtAuthGuard/RolesGuard, audit/user context, soft delete, ObjectId validation и Mongo transactions через Replica Set. Не раскрывай секреты.
+
+Доменный язык: `docs/CONTEXT.md`. Индекс решений: `docs/adr/README.md`.
+
+## Feedback loops (поведение и баги)
+
+- Новое поведение / фикс бага: **red-green-refactor** (skill `tdd`): сначала failing test из AC TZ, минимальный код, рефактор после green.
+- Неясный баг: skill `systematic-debugging` — reproduce → minimize → 1–3 гипотезы → причина → фикс → regression test. Не чинить «на глаз».
+- Не ставить внешние skill-packs (mattpocock plugin, GitHub Issues). Карта: `docs/agents/SKILLS-MAP.md`.
 
 ## Обязательный цикл перед реализацией
 
@@ -98,6 +106,8 @@ cd backend && pnpm lint
 ## Архивация
 
 Root task из `tasks/` архивируй в `tasks/_archive/YYYY-MM/<TASK-ID>.done.md`. Для невозможности завершения используй `.blocked.md`, `.failed.md` или `.deferred.md`. Не перезаписывай исторические или superseded-архивы.
+
+Если задача запускалась через `tasks/PROMPT-FREEBUFF-*.md` и вся волна, которую он описывает, закрыта (DONE) — тот же PROMPT-файл переносится в `tasks/_archive/YYYY-MM/prompts-spent/` **в том же шаге**, что и архивация последней TZ волны, а не отдельным разовым «drain». Корень `tasks/` должен постоянно оставаться чистым: только `README.md`, `PROMPT-RESUME-ANY.md`, `PROMPT-UNIVERSAL-CONTINUOUS.md`, `PROMPT-FREEBUFF-TASKS-DRAIN.md` и LIVE TZ/PROMPT (ещё не все TZ волны которых DONE).
 
 Для DONE добавь:
 

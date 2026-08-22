@@ -43,6 +43,8 @@ explicit request in the current chat. Never stage peer WIP.
 ## Skills
 
 `.agents/skills/cursor-usage/SKILL.md` · `.agents/skills/tz-authoring/SKILL.md`  
-**Перед любой новой TZ:** `docs/TZ-AUTHORING.md` (канон имён / unique / preflight).  
+**Перед любой новой TZ:** `docs/TZ-AUTHORING.md` + `docs/CONTEXT.md`. Неясная фича → правило `planning-grilling.mdc`.  
 **Перед UX/приоритетами:** `docs/PO-CANON.md`; новый инсайт → PO-DIARY §5.
+Баг → `debugging-diagnose.mdc` (TZ, не патч). Архитектура → `architecture-review.mdc`.
+Карта vs внешние skills: `docs/agents/SKILLS-MAP.md`.
 Executor: `GEMINI.md` + `kppdf-executor-loop`; OrchestratorKit — kit-only.
