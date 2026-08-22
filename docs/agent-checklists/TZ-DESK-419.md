@@ -1,7 +1,7 @@
 # TZ-DESK-419 checklist
 
 > Status: **DONE**
-> Marker: `tasks/_active/TZ-DESK-419-queue-list-fill-height.md`
+> Marker: archived `tasks/_archive/2026-08/TZ-DESK-419.done.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor: после gates/review обязательно)
 
 ## Claim slot (ОБЯЗАТЕЛЬНО до кода)
@@ -17,7 +17,7 @@
 - [x] Прочитал `_NOW.md` + `tasks/_active/` — нет чужого CLAIM на `manager-desk.page.ts`; TZ-SUPPLY-314 не трогаю
 - [x] TZ / канон / deps прочитаны
 - [x] Claim slot заполнен; Status = CLAIMED / IN PROGRESS
-- [x] `tasks/_active/TZ-DESK-419-queue-list-fill-height.md` на месте
+- [x] `tasks/_active/TZ-DESK-419-queue-list-fill-height.md` был на месте до archive
 
 ## Acceptance
 

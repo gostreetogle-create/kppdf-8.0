@@ -1,0 +1,6 @@
+TZ-DESK-419
+status: DONE
+closed_at: 2026-08-22T11:07:00+03:00
+closed_by: claude
+protected_files:
+  - frontend/src/app/pages/desk/manager-desk.page.ts
