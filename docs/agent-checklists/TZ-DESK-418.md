@@ -61,3 +61,4 @@
 - [x] archive + lock + checklist + page docs + `_NOW` обновлены
 - [x] Status = DONE
 - closed_at: 2026-08-22
+- sha: 5a56c942

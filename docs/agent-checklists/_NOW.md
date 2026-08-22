@@ -16,7 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
-**TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
+**TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; SHA `5a56c942`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
 **TZ-OPS-320** — DONE by `claude` (2026-08-22): spent TZ/PROMPT moved from `tasks/` root to `tasks/_archive/2026-08/specs-dup-root/` and `prompts-spent/`; deploy НЕ.
 **TZ-CORE-302** — DONE by `claude` (2026-08-22T21:15:00+03:00): soft-delete coverage — 53 schemas resolved (17 softDelete:false + 36 deletedAt + 1 subdoc skipped); regression test `soft-delete-coverage.spec.ts` added; archive `tasks/_archive/2026-08/TZ-CORE-302.done.md`; gates PASS (backend tsc, regression test 1/1, jest 958/960 pre-existing, lint 47 pre-existing).
 **TZ-OPS-318** — DONE by `freebuff` (2026-08-22T19:11:51+03:00): backup.sh rotation + cron docs + volume-survives-deploy docs; commit `12178c2c`; archive `tasks/_archive/2026-08/TZ-OPS-318.done.md`; gates: bash -n PASS, supply-gate 50/50.
@@ -67,6 +67,8 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
   legacy-режим: read-only + MCP, без UI). Ledger + DOMAIN-MAP обновлены; удаление (B) — successor.
 
 ## QUEUE
+
+**Desktop AI-чат READY** — `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md` (TZD-62→64). Не `App.svelte` параллельно. Deploy не.
 
 **Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
 (OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.
