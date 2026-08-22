@@ -99,7 +99,7 @@ const SEVERITY_DOT: Record<NotificationSeverity, string> = {
                   @if (n.body) {
                     <p class="m-0 text-xs text-muted-foreground break-words">{{ n.body }}</p>
                   }
-                  <p class="m-0 text-[10px] font-mono text-muted-foreground tabular-nums">
+                  <p class="m-0 text-[11px] font-mono text-muted-foreground tabular-nums">
                     {{ n.createdAt | date: 'HH:mm:ss' }}
                     @if (n.source) {
                       <span> · {{ n.source }}</span>

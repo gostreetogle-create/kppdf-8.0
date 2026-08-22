@@ -35,6 +35,9 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 **TZ-UI-409** — DONE by `freebuff-2` (2026-08-22T23:30:00+03:00): text-[10px] → text-[11px] on contracts/orders/organizations/proposals; archive `tasks/_archive/2026-08/TZ-UI-409.done.md`; gates PASS (FE tsc, 0 occurrences of text-[10px]).
 **TZ-UI-410** — DONE by `freebuff-2` (2026-08-22T23:35:00+03:00): notification bell badge text-[9px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-410.done.md`; gates PASS (FE tsc, 0 occurrences of text-[9px]).
 **TZ-UI-411** — DONE by `freebuff-2` (2026-08-22T23:40:00+03:00): color-ref hex preview text-[10px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-411.done.md`; gates PASS (FE tsc).
+**TZ-UI-415** — DONE by `freebuff-2` (2026-08-22T23:50:00+03:00): login+enroll eyebrow text-[10px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-415.done.md`; gates PASS (FE tsc, 0x text-[10px]).
+**TZ-UI-416** — DONE by `freebuff-2` (2026-08-22T23:52:00+03:00): shared chrome overflow-select/select-trigger/bell timestamp text-[10px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-416.done.md`; gates PASS (FE tsc, 0x text-[10px]).
+**TZ-UI-417** — DONE by `freebuff-2` (2026-08-22T23:54:00+03:00): table-template-dialog counter text-[10px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-417.done.md`; gates PASS (FE tsc, 0x text-[10px]).
 **TZD-60** — DEFERRED (2026-08-22T20:05:00+03:00): no real install possible in this session.
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
@@ -79,13 +82,12 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-**TZD-65** — DONE, SHA `e0a49a75` (см. ACTIVE выше). Desktop AI-чат очередь (62→65) закрыта.
+**Отдать сейчас (3 параллели, потом PO «кати»):**
+- Freebuff 1: `tasks/PROMPT-FREEBUFF-AGENT1-WAVE-B-2026-08-22.md`
+- Freebuff 2: `tasks/PROMPT-FREEBUFF-AGENT2-WAVE-B-2026-08-22.md`
+- Claude: `tasks/PROMPT-CLAUDE-PREDEPLOY-2026-08-22.md` (TZ-DEPLOY-303, без deploy.ps1)
 
-**Freebuff агент 1 волна B READY** — `tasks/PROMPT-FREEBUFF-AGENT1-WAVE-B-2026-08-22.md` (UI-412→414). Можно параллельно 65.
-
-**Freebuff агент 2 волна B READY** — `tasks/PROMPT-FREEBUFF-AGENT2-WAVE-B-2026-08-22.md` (UI-415→417). Можно параллельно 65.
-
-Старая Freebuff wave 2026-08-22 (OPS-320…UI-408) — DONE, не копировать.
+TZD-65 DONE `e0a49a75`. Старые волны A — не копировать.
 
 Backlog (не брать без PO):
 - `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md` — блокировка парольного входа из WAN (требует deploy)

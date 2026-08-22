@@ -218,7 +218,7 @@ interface ClientPreviewModel {
                 <div class="ttd-field ttd-field--fields">
                   <div class="ttd-field-header">
                     <span class="eyebrow text-muted-foreground">Поля источника</span>
-                    <span class="text-[10px] text-muted-foreground"
+                    <span class="text-[11px] text-muted-foreground"
                       >{{ selectedFields().length }}/{{ src.fields.length }} выбрано</span
                     >
                   </div>

@@ -23,7 +23,7 @@ import { SelectSize } from './select.types';
       <span class="truncate flex-1 text-left text-ink">
         <ng-content />
       </span>
-      <span aria-hidden="true" class="ml-2 text-muted-foreground mono text-[10px]">▾</span>
+      <span aria-hidden="true" class="ml-2 text-muted-foreground mono text-[11px]">▾</span>
     </button>
   `,
 })

@@ -115,7 +115,7 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
                 <span class="flex items-center gap-2">
                   @if (multiple()) {
                     <span
-                      class="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-rule text-[10px] leading-none"
+                      class="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-rule text-[11px] leading-none"
                       [class.bg-ink]="selectedValues().includes(item.id)"
                       [class.text-paper]="selectedValues().includes(item.id)"
                       aria-hidden="true"

@@ -91,7 +91,7 @@ import { InputComponent } from '../../shared/ui/input/input.component';
           </p>
         </form>
 
-        <p class="eyebrow text-[10px] text-muted-foreground mt-10 text-center">kppdf-8.0 · 2026</p>
+        <p class="eyebrow text-[11px] text-muted-foreground mt-10 text-center">kppdf-8.0 · 2026</p>
       </main>
     </div>
   `,
