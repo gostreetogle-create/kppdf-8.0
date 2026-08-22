@@ -189,7 +189,7 @@ function parseRalName(name: string | undefined): ParsedRalName {
                     aria-label="Выбрать цвет"
                     data-test="hex-color-input"
                   />
-                  <span class="text-[10px] font-mono text-paper mix-blend-difference">#</span>
+                  <span class="text-[11px] font-mono text-paper mix-blend-difference">#</span>
                 </label>
                 <app-pi-input
                   formControlName="hex"
