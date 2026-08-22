@@ -135,103 +135,120 @@ interface ItemFormGroup extends FormGroup {
       @if (variant() === 'full') {
         <app-pi-form-section title="Основные данные" headingId="order-sec-basics" tone="gold">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
-          <app-pi-form-field
-            label="Заказчик"
-            htmlFor="ord-cp"
-            [required]="true"
-            [error]="errorFor('counterpartyId')"
-          >
-            <app-pi-overflow-select
-              [items]="counterpartyItems()"
-              [value]="form.controls.counterpartyId.value"
-              (valueChange)="onCounterpartyChange($event)"
-              searchable="auto"
-              placeholder="— выберите —"
-              ariaLabel="Заказчик"
-              [disabled]="isCompositionLocked()"
-              dataTest="ord-cp"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field
-            label="Объект"
-            htmlFor="ord-site"
-            [required]="true"
-            [error]="errorFor('siteId')"
-          >
-            <app-pi-overflow-select
-              [items]="siteItems()"
-              [value]="form.controls.siteId.value"
-              (valueChange)="onSiteChange($event)"
-              searchable="auto"
-              [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
-              [placeholder]="
-                form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
-              "
-              ariaLabel="Объект"
-              dataTest="ord-site"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field
-            label="Исполнитель (наша фирма)"
-            htmlFor="ord-org"
-            hint="Какая организация исполняет заказ."
-          >
-            <app-pi-overflow-select
-              [items]="organizationItems()"
-              [value]="form.controls.organizationId.value"
-              (valueChange)="onOrganizationChange($event)"
-              searchable="auto"
-              placeholder="— выберите —"
-              ariaLabel="Исполнитель"
-              dataTest="ord-org"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field
-            label="Номер"
-            htmlFor="ord-number"
-            hint="Если не задан — генерируется автоматически"
-          >
-            <app-pi-input id="ord-number" formControlName="number" placeholder="Номер заказа" />
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
-            <input
-              id="ord-plannedDate"
-              type="date"
-              formControlName="plannedDate"
-              class="h-10 px-3 text-sm hairline rounded-sm bg-paper pi-focus-ring w-full"
-              data-test="ord-plannedDate"
-            />
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Приоритет" htmlFor="ord-priority">
-            <select id="ord-priority" formControlName="priority" class="pi-input w-full">
-              @for (opt of PRIORITY_OPTIONS; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
-
-          <app-pi-form-field label="Статус" htmlFor="ord-status">
-            <select id="ord-status" formControlName="status" class="pi-input w-full">
-              @for (opt of statusOptions(); track opt.value) {
-                <option [value]="opt.value" [disabled]="opt.disabled">{{ opt.label }}</option>
-              }
-            </select>
-          </app-pi-form-field>
-
-          <div class="sm:col-span-2">
-            <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
-              <app-pi-input
-                id="ord-address"
-                formControlName="deliveryAddress"
-                placeholder="Адрес доставки"
+            <app-pi-form-field
+              label="Заказчик"
+              htmlFor="ord-cp"
+              [required]="true"
+              [error]="errorFor('counterpartyId')"
+            >
+              <app-pi-overflow-select
+                [items]="counterpartyItems()"
+                [value]="form.controls.counterpartyId.value"
+                (valueChange)="onCounterpartyChange($event)"
+                searchable="auto"
+                placeholder="— выберите —"
+                ariaLabel="Заказчик"
+                [disabled]="isCompositionLocked()"
+                dataTest="ord-cp"
               />
             </app-pi-form-field>
-          </div>
+
+            <app-pi-form-field
+              label="Объект"
+              htmlFor="ord-site"
+              [required]="true"
+              [error]="errorFor('siteId')"
+            >
+              <app-pi-overflow-select
+                [items]="siteItems()"
+                [value]="form.controls.siteId.value"
+                (valueChange)="onSiteChange($event)"
+                searchable="auto"
+                [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
+                [placeholder]="
+                  form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
+                "
+                ariaLabel="Объект"
+                dataTest="ord-site"
+              />
+            </app-pi-form-field>
+
+            <app-pi-form-field
+              label="Исполнитель (наша фирма)"
+              htmlFor="ord-org"
+              hint="Какая организация исполняет заказ."
+            >
+              <app-pi-overflow-select
+                [items]="organizationItems()"
+                [value]="form.controls.organizationId.value"
+                (valueChange)="onOrganizationChange($event)"
+                searchable="auto"
+                placeholder="— выберите —"
+                ariaLabel="Исполнитель"
+                dataTest="ord-org"
+              />
+            </app-pi-form-field>
+
+            <!-- TZ-UX-FORM-313: short fields get max-w, not full flyout width. -->
+            <app-pi-form-field
+              label="Номер"
+              htmlFor="ord-number"
+              hint="Если не задан — генерируется автоматически"
+            >
+              <app-pi-input
+                id="ord-number"
+                formControlName="number"
+                placeholder="Номер заказа"
+                style="max-width: 16rem"
+              />
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Планируемая дата" htmlFor="ord-plannedDate">
+              <input
+                id="ord-plannedDate"
+                type="date"
+                formControlName="plannedDate"
+                class="h-10 px-3 text-sm hairline rounded-sm bg-paper pi-focus-ring"
+                style="max-width: 11rem"
+                data-test="ord-plannedDate"
+              />
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Приоритет" htmlFor="ord-priority">
+              <select
+                id="ord-priority"
+                formControlName="priority"
+                class="pi-input"
+                style="max-width: 12rem"
+              >
+                @for (opt of PRIORITY_OPTIONS; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
+
+            <app-pi-form-field label="Статус" htmlFor="ord-status">
+              <select
+                id="ord-status"
+                formControlName="status"
+                class="pi-input"
+                style="max-width: 12rem"
+              >
+                @for (opt of statusOptions(); track opt.value) {
+                  <option [value]="opt.value" [disabled]="opt.disabled">{{ opt.label }}</option>
+                }
+              </select>
+            </app-pi-form-field>
+
+            <div class="sm:col-span-2">
+              <app-pi-form-field label="Адрес доставки" htmlFor="ord-address">
+                <app-pi-input
+                  id="ord-address"
+                  formControlName="deliveryAddress"
+                  placeholder="Адрес доставки"
+                />
+              </app-pi-form-field>
+            </div>
           </div>
         </app-pi-form-section>
       }
@@ -251,14 +268,30 @@ interface ItemFormGroup extends FormGroup {
             <p class="text-xs text-muted-foreground m-0">
               Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
             </p>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-form-field">
-              <app-pi-form-field label="Имя" htmlFor="ord-qc-name" [required]="true">
+            <!-- TZ-UX-FORM-313: phone narrow, name/address wider (not three equal). -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-form-field">
+              <app-pi-form-field
+                label="Имя"
+                htmlFor="ord-qc-name"
+                [required]="true"
+                class="sm:col-span-5"
+              >
                 <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
               </app-pi-form-field>
-              <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone">
-                <app-pi-input id="ord-qc-phone" formControlName="phone" placeholder="+7 …" />
+              <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone" class="sm:col-span-3">
+                <app-pi-input
+                  id="ord-qc-phone"
+                  formControlName="phone"
+                  placeholder="+7 …"
+                  style="max-width: 14rem"
+                />
               </app-pi-form-field>
-              <app-pi-form-field label="Адрес объекта" htmlFor="ord-qc-address" [required]="true">
+              <app-pi-form-field
+                label="Адрес объекта"
+                htmlFor="ord-qc-address"
+                [required]="true"
+                class="sm:col-span-4"
+              >
                 <app-pi-input
                   id="ord-qc-address"
                   formControlName="address"
@@ -332,6 +365,7 @@ interface ItemFormGroup extends FormGroup {
                   }
                 </label>
 
+                <!-- TZ-UX-FORM-313: qty/price = nano max-w + tabular-nums. -->
                 <label class="col-span-6 sm:col-span-2 block">
                   <span class="eyebrow block mb-1.5">Кол-во</span>
                   <app-pi-input
@@ -340,6 +374,7 @@ interface ItemFormGroup extends FormGroup {
                     size="sm"
                     placeholder="0"
                     [attr.aria-label]="'Количество ' + (i + 1)"
+                    style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                   />
                 </label>
 
@@ -351,6 +386,7 @@ interface ItemFormGroup extends FormGroup {
                     size="sm"
                     placeholder="0"
                     [attr.aria-label]="'Цена за единицу ' + (i + 1)"
+                    style="max-width: 7rem; text-align: right; font-variant-numeric: tabular-nums"
                   />
                 </label>
 
@@ -435,7 +471,9 @@ interface ItemFormGroup extends FormGroup {
           [disabled]="submitting() || freezeMode() === 'hard'"
           (click)="onSubmit()"
         >
-          {{ submitting() ? 'Сохранение…' : variant() === 'items' ? 'Сохранить состав' : 'Сохранить' }}
+          {{
+            submitting() ? 'Сохранение…' : variant() === 'items' ? 'Сохранить состав' : 'Сохранить'
+          }}
         </app-pi-button>
         <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>

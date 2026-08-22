@@ -145,6 +145,28 @@ describe('OrderFormPanelComponent A2 characterization', () => {
     expect(component).toBeTruthy();
   });
 
+  it('TZ-UX-FORM-313: number/date/priority/status have max-w; qty/price have tabular-nums', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'order-form-panel.component.ts'),
+      'utf8',
+    );
+    // Number: max-w 16rem, not w-full in half-column
+    expect(source).toContain('max-width: 16rem');
+    // Date: max-w 11rem
+    expect(source).toContain('max-width: 11rem');
+    // Priority/status: max-w selects
+    expect(source).toContain('max-width: 12rem');
+    // Qty: nano max-w + tabular-nums
+    expect(source).toContain('max-width: 5.5rem');
+    expect(source).toContain('font-variant-numeric: tabular-nums');
+    // Price: xs max-w + tabular-nums
+    expect(source).toContain('max-width: 7rem');
+    // Quick party: phone max-w 14rem, name/address in 12-col
+    expect(source).toContain('max-width: 14rem');
+    expect(source).toContain('sm:col-span-5');
+    expect(source).toContain('sm:col-span-4');
+  });
+
   it('items variant renders only composition controls and changes submit label', () => {
     const fixture = TestBed.createComponent(OrderFormPanelComponent);
     fixture.componentRef.setInput('order', sampleOrder('draft'));
@@ -152,11 +174,13 @@ describe('OrderFormPanelComponent A2 characterization', () => {
     fixture.detectChanges();
     flushLookups(httpMock, [PRODUCT]);
     httpMock.expectOne((req) => req.url === '/api/sites').flush([]);
-    httpMock.expectOne((req) => req.url === '/api/sites/ensure-default').flush({
-      _id: 'site-default',
-      counterpartyId: 'cp1',
-      name: 'Объект по умолчанию',
-    });
+    httpMock
+      .expectOne((req) => req.url === '/api/sites/ensure-default')
+      .flush({
+        _id: 'site-default',
+        counterpartyId: 'cp1',
+        name: 'Объект по умолчанию',
+      });
     fixture.detectChanges();
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('#order-sec-basics')).toBeNull();
