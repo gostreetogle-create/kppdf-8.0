@@ -66,6 +66,9 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
+**Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
+(OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.
+
 Backlog (не брать без PO):
 - `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md` — блокировка парольного входа из WAN (требует deploy)
 - `tasks/_backlog/TZ-ORDERS-307` — организация-исполнитель заказа (in-progress by other agent)

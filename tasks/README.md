@@ -25,4 +25,7 @@
 
 ## Сейчас живо
 
-См. `_backlog/WAVE-MANAGER-DESK.md`: **405** layout rev.2 → 402+ наполнение. `_park` не трогать.
+Волна Freebuff: [`PROMPT-FREEBUFF-WAVE-2026-08-22.md`](PROMPT-FREEBUFF-WAVE-2026-08-22.md)  
+(OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Старые PROMPT-FREEBUFF-* — spent, не копировать.
+
+`_park` не трогать.
