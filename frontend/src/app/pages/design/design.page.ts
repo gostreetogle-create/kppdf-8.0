@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
 import { DESIGN_SECTION_CHIPS } from './design-group-chips';
 
 /**
@@ -12,7 +15,7 @@ import { DESIGN_SECTION_CHIPS } from './design-group-chips';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PiGroupWorkspaceComponent],
   template: `
-    <app-pi-group-workspace [chips]="chips" activeId="design">
+    <app-pi-group-workspace [toc]="toc" tocActiveId="design" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <span class="text-xs text-muted-foreground">Очередь доукомплектования</span>
       </div>
@@ -31,5 +34,6 @@ import { DESIGN_SECTION_CHIPS } from './design-group-chips';
   `,
 })
 export class DesignPage {
-  protected readonly chips = DESIGN_SECTION_CHIPS;
+  protected readonly toc = DESIGN_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
 }

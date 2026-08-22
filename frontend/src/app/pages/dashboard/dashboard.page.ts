@@ -18,7 +18,11 @@ import {
   ChevronRight,
   GripVertical,
 } from 'lucide-angular';
-import { PiPageChromeComponent, PageCrumb } from '../../shared/page/pi-page-chrome.component';
+import {
+  PiGroupWorkspaceComponent,
+  type GroupChip,
+} from '../../shared/page/pi-group-workspace.component';
+import { DESIGN_SECTION_CHIPS } from '../design/design-group-chips';
 import { BoardLane, ModuleLane, Order, OrderItem, OrdersService } from '../orders/orders.service';
 import {
   ProductModule,
@@ -105,7 +109,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
 @Component({
   selector: 'app-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, PiPageChromeComponent, CdkDropList, CdkDrag],
+  imports: [LucideAngularModule, PiGroupWorkspaceComponent, CdkDropList, CdkDrag],
   styles: `
     /* TZ-COMBINE-413 — solid grab feel; CDK always uses preview+placeholder */
     .combine-chip-drag-preview,
@@ -136,277 +140,280 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
     }
   `,
   template: `
-    <app-pi-page-chrome [crumbs]="crumbs" title="Комбайн заказов" />
+    <app-pi-group-workspace [toc]="toc" tocActiveId="combine" [chips]="emptyChips" activeId="">
+      <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        <span class="text-xs text-muted-foreground">Комбайн заказов</span>
+      </div>
 
-    <!-- Analytics Panel -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.75_0.02_160)] transition-colors"
-      >
-        <span
-          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+      <!-- Analytics Panel -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div
+          class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.75_0.02_160)] transition-colors"
         >
-          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.75_0.02_160)]"></span> Новые
-        </span>
-        <span class="text-2xl font-display">{{ stats().new }}</span>
-      </div>
-      <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.65_0.02_160)] transition-colors"
-      >
-        <span
-          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
-        >
-          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.65_0.02_160)]"></span> В работе
-        </span>
-        <span class="text-2xl font-display">{{ stats().inProgress }}</span>
-      </div>
-      <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.55_0.02_160)] transition-colors"
-      >
-        <span
-          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
-        >
-          <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.55_0.02_160)]"></span> Готовы
-        </span>
-        <span class="text-2xl font-display">{{ stats().ready }}</span>
-      </div>
-      <div
-        class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-destructive transition-colors"
-      >
-        <span
-          class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
-        >
-          <span class="w-1.5 h-1.5 rounded-sm bg-destructive"></span> Просрочены
-        </span>
-        <span class="text-2xl font-display">{{ stats().overdue }}</span>
-      </div>
-    </div>
-
-    @if (error()) {
-      <div
-        class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-      >
-        {{ error() }}
-      </div>
-    }
-
-    <div class="mb-4 flex items-center gap-3">
-      <label class="text-sm text-muted-foreground" for="combine-order-filter">Заказ</label>
-      <select
-        id="combine-order-filter"
-        class="border hairline rounded-sm bg-paper px-3 py-1.5 text-sm min-w-[12rem]"
-        [value]="filterOrderId()"
-        (change)="onFilterChange($event)"
-      >
-        <option value="">Все заказы</option>
-        @for (order of data(); track order._id) {
-          <option [value]="order._id">№{{ order.number }}</option>
-        }
-      </select>
-    </div>
-
-    <!-- TZ-COMBINE-409: sticky stage headers + OrderItem rows (expand = mini-kanban). -->
-    <div class="min-h-[60vh] pb-4">
-      <div
-        class="sticky top-0 z-10 grid grid-cols-5 gap-0 border hairline rounded-sm bg-paper-raised mb-3 shadow-sm"
-        role="row"
-        aria-label="Стадии комбайна"
-      >
-        @for (col of columns; track col.id) {
-          <div class="px-3 py-2.5 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
-            <div class="text-xs font-medium text-ink truncate flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-sm" [class]="laneDotClass(col.id)"></span>
-              {{ col.title }}
-            </div>
-            <div class="text-[10px] text-muted-foreground truncate leading-snug mt-0.5">
-              {{ col.helper }}
-            </div>
-          </div>
-        }
-      </div>
-
-      <div class="flex flex-col gap-0" data-testid="combine-product-rows">
-        @for (card of itemCards(); track card.key; let i = $index) {
-          <div
-            class="border border-rule-strong bg-paper overflow-hidden group hover:border-ink/40 transition-colors"
-            [class.mt-3]="isOrderBoundary(card, i)"
-            [class.rounded-t-sm]="isOrderGroupStart(card, i)"
-            [class.rounded-b-sm]="isOrderGroupEnd(card, i)"
-            [class.border-t-0]="!isOrderGroupStart(card, i)"
-            [attr.data-order-boundary]="isOrderBoundary(card, i) ? 'true' : null"
-            [attr.data-line-key]="card.key"
-            [attr.data-testid]="'combine-product-row'"
+          <span
+            class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
           >
-            <div class="flex items-center gap-3 px-3 py-2.5">
-              <button
-                type="button"
-                class="w-6 h-6 flex items-center justify-center shrink-0 pi-focus-ring rounded-sm transition-colors"
-                [class.bg-gold]="isExpanded(card)"
-                [class.text-ink]="isExpanded(card)"
-                [class.text-muted-foreground]="!isExpanded(card)"
-                [class.hover:text-ink]="!isExpanded(card)"
-                [class.hover:bg-gold-soft]="!isExpanded(card)"
-                data-testid="combine-row-expand"
-                [attr.aria-expanded]="isExpanded(card)"
-                [attr.aria-controls]="expandPanelId(card)"
-                [attr.aria-label]="isExpanded(card) ? 'Свернуть изделие' : 'Раскрыть изделие'"
-                (click)="toggleExpand(card)"
-              >
-                <lucide-icon
-                  [img]="isExpanded(card) ? ChevronDownIcon : ChevronRightIcon"
-                  [size]="16"
-                ></lucide-icon>
-              </button>
-
-              <button
-                type="button"
-                class="font-mono text-xs font-medium text-ink hover:underline shrink-0 pi-focus-ring rounded-sm px-1.5 py-0.5 bg-paper-2"
-                data-testid="combine-row-order-number"
-                (click)="openOrder(card.order); $event.stopPropagation()"
-                title="Открыть заказ"
-              >
-                №{{ card.orderNumber }}
-              </button>
-
-              <button
-                type="button"
-                class="text-sm font-medium text-ink text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
-                data-testid="combine-row-product-name"
-                [title]="card.productName"
-                [attr.aria-expanded]="isExpanded(card)"
-                [attr.aria-controls]="expandPanelId(card)"
-                (click)="toggleExpand(card)"
-              >
-                {{ card.productName }}
-              </button>
-
-              <button
-                type="button"
-                class="text-xs text-muted-foreground shrink-0 bg-paper-2 px-1.5 py-0.5 rounded-sm pi-focus-ring"
-                data-testid="combine-row-qty"
-                [attr.aria-expanded]="isExpanded(card)"
-                [attr.aria-controls]="expandPanelId(card)"
-                [attr.aria-label]="
-                  'Количество ' + card.quantity + ' ' + (card.unit || 'шт') + '. Раскрыть стадии'
-                "
-                (click)="toggleExpand(card)"
-              >
-                {{ card.quantity }} {{ card.unit || 'шт' }}
-              </button>
-
-              <button
-                type="button"
-                class="flex gap-1 shrink-0 w-32 pi-focus-ring rounded-sm"
-                data-testid="combine-lane-indicators"
-                [attr.aria-expanded]="isExpanded(card)"
-                [attr.aria-controls]="expandPanelId(card)"
-                [attr.aria-label]="'Стадии: ' + activeLaneSummary(card) + '. Раскрыть'"
-                (click)="toggleExpand(card)"
-              >
-                @for (col of columns; track col.id) {
-                  <span
-                    class="h-1.5 flex-1 rounded-sm transition-colors"
-                    [class]="laneIndicatorClass(card, col.id)"
-                    [attr.data-lane]="col.id"
-                    [attr.data-active]="laneIndicatorActive(card, col.id) ? 'true' : null"
-                    [title]="col.title"
-                  ></span>
-                }
-              </button>
-
-              <button
-                type="button"
-                class="text-muted-foreground hover:text-gold-deep p-1.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
-                data-testid="combine-row-product-edit"
-                (click)="editProduct(card.item.productId); $event.stopPropagation()"
-                title="Редактировать изделие"
-              >
-                <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
-              </button>
-            </div>
-
-            @if (isExpanded(card)) {
-              <div
-                class="grid grid-cols-5 gap-0 border-t hairline min-h-[4.5rem]"
-                role="region"
-                [attr.id]="expandPanelId(card)"
-                [attr.aria-label]="'Стадии изделия ' + card.productName"
-                data-testid="combine-mini-kanban"
-              >
-                @for (col of columns; track col.id) {
-                  <div
-                    class="border-r hairline last:border-r-0 p-1.5 flex flex-col gap-1.5 min-h-[4.5rem] min-w-0 bg-paper-2/50"
-                    cdkDropList
-                    [id]="rowDropListId(card, col.id)"
-                    [cdkDropListData]="col.id"
-                    [cdkDropListConnectedTo]="rowConnectedLists(card)"
-                    (cdkDropListDropped)="dropItem($event)"
-                  >
-                    @for (row of modulesInLane(card, col.id); track row.moduleId) {
-                      <div
-                        cdkDrag
-                        [cdkDragData]="moduleDrag(card, row)"
-                        [cdkDragPreviewClass]="chipDragPreviewClass"
-                        class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
-                        data-testid="combine-module-chip"
-                        [title]="row.name"
-                      >
-                        <lucide-icon
-                          [img]="GripVerticalIcon"
-                          [size]="12"
-                          class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
-                        ></lucide-icon>
-                        <span class="truncate flex-1 min-w-0">{{ row.name }}</span>
-                        <button
-                          type="button"
-                          class="text-muted-foreground hover:text-gold-deep p-0.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover/chip:opacity-100 focus-visible:opacity-100 transition-opacity"
-                          data-testid="combine-module-edit"
-                          (click)="editModule(row.moduleId); $event.stopPropagation()"
-                          (pointerdown)="$event.stopPropagation()"
-                          title="Редактировать модуль"
-                        >
-                          <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
-                        </button>
-                      </div>
-                    }
-                    @if (showWholeProductChip(card, col.id)) {
-                      <div
-                        cdkDrag
-                        [cdkDragData]="card"
-                        [cdkDragPreviewClass]="chipDragPreviewClass"
-                        data-testid="combine-whole-product-chip"
-                        class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing font-medium flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
-                        title="Изделие целиком — перетащите по стадиям"
-                      >
-                        <lucide-icon
-                          [img]="GripVerticalIcon"
-                          [size]="12"
-                          class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
-                        ></lucide-icon>
-                        <span>целиком</span>
-                      </div>
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-        }
-        @if (itemCards().length === 0) {
-          <div class="text-sm text-muted-foreground text-center py-10 border hairline rounded-sm">
-            Нет изделий
-          </div>
-        }
+            <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.75_0.02_160)]"></span> Новые
+          </span>
+          <span class="text-2xl font-display">{{ stats().new }}</span>
+        </div>
+        <div
+          class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.65_0.02_160)] transition-colors"
+        >
+          <span
+            class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+          >
+            <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.65_0.02_160)]"></span> В работе
+          </span>
+          <span class="text-2xl font-display">{{ stats().inProgress }}</span>
+        </div>
+        <div
+          class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-[oklch(0.55_0.02_160)] transition-colors"
+        >
+          <span
+            class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+          >
+            <span class="w-1.5 h-1.5 rounded-sm bg-[oklch(0.55_0.02_160)]"></span> Готовы
+          </span>
+          <span class="text-2xl font-display">{{ stats().ready }}</span>
+        </div>
+        <div
+          class="p-4 rounded-sm border hairline bg-paper flex flex-col gap-1 hover:border-destructive transition-colors"
+        >
+          <span
+            class="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-2"
+          >
+            <span class="w-1.5 h-1.5 rounded-sm bg-destructive"></span> Просрочены
+          </span>
+          <span class="text-2xl font-display">{{ stats().overdue }}</span>
+        </div>
       </div>
-    </div>
+
+      @if (error()) {
+        <div
+          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+        >
+          {{ error() }}
+        </div>
+      }
+
+      <div class="mb-4 flex items-center gap-3">
+        <label class="text-sm text-muted-foreground" for="combine-order-filter">Заказ</label>
+        <select
+          id="combine-order-filter"
+          class="border hairline rounded-sm bg-paper px-3 py-1.5 text-sm min-w-[12rem]"
+          [value]="filterOrderId()"
+          (change)="onFilterChange($event)"
+        >
+          <option value="">Все заказы</option>
+          @for (order of data(); track order._id) {
+            <option [value]="order._id">№{{ order.number }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- TZ-COMBINE-409: sticky stage headers + OrderItem rows (expand = mini-kanban). -->
+      <div class="min-h-[60vh] pb-4">
+        <div
+          class="sticky top-0 z-10 grid grid-cols-5 gap-0 border hairline rounded-sm bg-paper-raised mb-3 shadow-sm"
+          role="row"
+          aria-label="Стадии комбайна"
+        >
+          @for (col of columns; track col.id) {
+            <div class="px-3 py-2.5 border-r hairline last:border-r-0 min-w-0" [title]="col.helper">
+              <div class="text-xs font-medium text-ink truncate flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-sm" [class]="laneDotClass(col.id)"></span>
+                {{ col.title }}
+              </div>
+              <div class="text-[10px] text-muted-foreground truncate leading-snug mt-0.5">
+                {{ col.helper }}
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-col gap-0" data-testid="combine-product-rows">
+          @for (card of itemCards(); track card.key; let i = $index) {
+            <div
+              class="border border-rule-strong bg-paper overflow-hidden group hover:border-ink/40 transition-colors"
+              [class.mt-3]="isOrderBoundary(card, i)"
+              [class.rounded-t-sm]="isOrderGroupStart(card, i)"
+              [class.rounded-b-sm]="isOrderGroupEnd(card, i)"
+              [class.border-t-0]="!isOrderGroupStart(card, i)"
+              [attr.data-order-boundary]="isOrderBoundary(card, i) ? 'true' : null"
+              [attr.data-line-key]="card.key"
+              [attr.data-testid]="'combine-product-row'"
+            >
+              <div class="flex items-center gap-3 px-3 py-2.5">
+                <button
+                  type="button"
+                  class="w-6 h-6 flex items-center justify-center shrink-0 pi-focus-ring rounded-sm transition-colors"
+                  [class.bg-gold]="isExpanded(card)"
+                  [class.text-ink]="isExpanded(card)"
+                  [class.text-muted-foreground]="!isExpanded(card)"
+                  [class.hover:text-ink]="!isExpanded(card)"
+                  [class.hover:bg-gold-soft]="!isExpanded(card)"
+                  data-testid="combine-row-expand"
+                  [attr.aria-expanded]="isExpanded(card)"
+                  [attr.aria-controls]="expandPanelId(card)"
+                  [attr.aria-label]="isExpanded(card) ? 'Свернуть изделие' : 'Раскрыть изделие'"
+                  (click)="toggleExpand(card)"
+                >
+                  <lucide-icon
+                    [img]="isExpanded(card) ? ChevronDownIcon : ChevronRightIcon"
+                    [size]="16"
+                  ></lucide-icon>
+                </button>
+
+                <button
+                  type="button"
+                  class="font-mono text-xs font-medium text-ink hover:underline shrink-0 pi-focus-ring rounded-sm px-1.5 py-0.5 bg-paper-2"
+                  data-testid="combine-row-order-number"
+                  (click)="openOrder(card.order); $event.stopPropagation()"
+                  title="Открыть заказ"
+                >
+                  №{{ card.orderNumber }}
+                </button>
+
+                <button
+                  type="button"
+                  class="text-sm font-medium text-ink text-left flex-1 min-w-0 truncate hover:underline pi-focus-ring rounded-sm"
+                  data-testid="combine-row-product-name"
+                  [title]="card.productName"
+                  [attr.aria-expanded]="isExpanded(card)"
+                  [attr.aria-controls]="expandPanelId(card)"
+                  (click)="toggleExpand(card)"
+                >
+                  {{ card.productName }}
+                </button>
+
+                <button
+                  type="button"
+                  class="text-xs text-muted-foreground shrink-0 bg-paper-2 px-1.5 py-0.5 rounded-sm pi-focus-ring"
+                  data-testid="combine-row-qty"
+                  [attr.aria-expanded]="isExpanded(card)"
+                  [attr.aria-controls]="expandPanelId(card)"
+                  [attr.aria-label]="
+                    'Количество ' + card.quantity + ' ' + (card.unit || 'шт') + '. Раскрыть стадии'
+                  "
+                  (click)="toggleExpand(card)"
+                >
+                  {{ card.quantity }} {{ card.unit || 'шт' }}
+                </button>
+
+                <button
+                  type="button"
+                  class="flex gap-1 shrink-0 w-32 pi-focus-ring rounded-sm"
+                  data-testid="combine-lane-indicators"
+                  [attr.aria-expanded]="isExpanded(card)"
+                  [attr.aria-controls]="expandPanelId(card)"
+                  [attr.aria-label]="'Стадии: ' + activeLaneSummary(card) + '. Раскрыть'"
+                  (click)="toggleExpand(card)"
+                >
+                  @for (col of columns; track col.id) {
+                    <span
+                      class="h-1.5 flex-1 rounded-sm transition-colors"
+                      [class]="laneIndicatorClass(card, col.id)"
+                      [attr.data-lane]="col.id"
+                      [attr.data-active]="laneIndicatorActive(card, col.id) ? 'true' : null"
+                      [title]="col.title"
+                    ></span>
+                  }
+                </button>
+
+                <button
+                  type="button"
+                  class="text-muted-foreground hover:text-gold-deep p-1.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-all"
+                  data-testid="combine-row-product-edit"
+                  (click)="editProduct(card.item.productId); $event.stopPropagation()"
+                  title="Редактировать изделие"
+                >
+                  <lucide-icon [img]="PencilIcon" [size]="14"></lucide-icon>
+                </button>
+              </div>
+
+              @if (isExpanded(card)) {
+                <div
+                  class="grid grid-cols-5 gap-0 border-t hairline min-h-[4.5rem]"
+                  role="region"
+                  [attr.id]="expandPanelId(card)"
+                  [attr.aria-label]="'Стадии изделия ' + card.productName"
+                  data-testid="combine-mini-kanban"
+                >
+                  @for (col of columns; track col.id) {
+                    <div
+                      class="border-r hairline last:border-r-0 p-1.5 flex flex-col gap-1.5 min-h-[4.5rem] min-w-0 bg-paper-2/50"
+                      cdkDropList
+                      [id]="rowDropListId(card, col.id)"
+                      [cdkDropListData]="col.id"
+                      [cdkDropListConnectedTo]="rowConnectedLists(card)"
+                      (cdkDropListDropped)="dropItem($event)"
+                    >
+                      @for (row of modulesInLane(card, col.id); track row.moduleId) {
+                        <div
+                          cdkDrag
+                          [cdkDragData]="moduleDrag(card, row)"
+                          [cdkDragPreviewClass]="chipDragPreviewClass"
+                          class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
+                          data-testid="combine-module-chip"
+                          [title]="row.name"
+                        >
+                          <lucide-icon
+                            [img]="GripVerticalIcon"
+                            [size]="12"
+                            class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
+                          ></lucide-icon>
+                          <span class="truncate flex-1 min-w-0">{{ row.name }}</span>
+                          <button
+                            type="button"
+                            class="text-muted-foreground hover:text-gold-deep p-0.5 rounded-sm hover:bg-gold-soft shrink-0 pi-focus-ring opacity-0 group-hover/chip:opacity-100 focus-visible:opacity-100 transition-opacity"
+                            data-testid="combine-module-edit"
+                            (click)="editModule(row.moduleId); $event.stopPropagation()"
+                            (pointerdown)="$event.stopPropagation()"
+                            title="Редактировать модуль"
+                          >
+                            <lucide-icon [img]="PencilIcon" [size]="12"></lucide-icon>
+                          </button>
+                        </div>
+                      }
+                      @if (showWholeProductChip(card, col.id)) {
+                        <div
+                          cdkDrag
+                          [cdkDragData]="card"
+                          [cdkDragPreviewClass]="chipDragPreviewClass"
+                          data-testid="combine-whole-product-chip"
+                          class="text-[11px] border hairline rounded-sm px-2 py-2 bg-paper cursor-grab active:cursor-grabbing font-medium flex items-center gap-1.5 group/chip hover:border-gold-deep transition-colors shadow-sm"
+                          title="Изделие целиком — перетащите по стадиям"
+                        >
+                          <lucide-icon
+                            [img]="GripVerticalIcon"
+                            [size]="12"
+                            class="text-muted-foreground opacity-40 group-hover/chip:opacity-100 shrink-0"
+                          ></lucide-icon>
+                          <span>целиком</span>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+          @if (itemCards().length === 0) {
+            <div class="text-sm text-muted-foreground text-center py-10 border hairline rounded-sm">
+              Нет изделий
+            </div>
+          }
+        </div>
+      </div>
+    </app-pi-group-workspace>
   `,
 })
 export class DashboardPage {
   // TZ-NAV-303: Комбайн переехал под Проект — /design/combine.
-  protected readonly crumbs: PageCrumb[] = [
-    { label: 'Проектирование', link: '/design' },
-    { label: 'Комбайн' },
-  ];
+  // TZ-UI-406: TOC row shared with /design (DesignPage) — same family.
+  protected readonly toc = DESIGN_SECTION_CHIPS;
+  protected readonly emptyChips: readonly GroupChip[] = [];
   protected readonly PencilIcon = Pencil;
   protected readonly ChevronDownIcon = ChevronDown;
   protected readonly ChevronRightIcon = ChevronRight;
