@@ -795,10 +795,17 @@ export class DocumentTemplateService {
 
       if (!result[pageIndex]) result[pageIndex] = [];
       result[pageIndex].push(line);
-      rowsOnPage += 1;
+      rowsOnPage += this.previewLineWeight(line);
     }
 
     return result;
+  }
+
+  /** Conservative table-row budget for product name + description wrapping. */
+  private previewLineWeight(line: BuildPreviewLineDto): number {
+    const textLength = `${line.productName ?? ''}${line.description ?? ''}`.length;
+    const extraWrap = Math.min(3, Math.max(0, Math.ceil(textLength / 36) - 1));
+    return 1 + extraWrap;
   }
 
   /**

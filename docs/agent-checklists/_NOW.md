@@ -16,6 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZ-SALES-381** — DONE by `claude` (2026-08-22): backend preview rows now use conservative weighted wrap capacity for productName+description; archive `tasks/_archive/2026-08/TZ-SALES-381.done.md`; gates backend tsc, continuation Jest 3/3 PASS; deploy НЕ.
 **TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; SHA `5a56c942`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
 **TZ-OPS-320** — DONE by `claude` (2026-08-22): spent TZ/PROMPT moved from `tasks/` root to `tasks/_archive/2026-08/specs-dup-root/` and `prompts-spent/`; deploy НЕ.
 **TZ-CORE-302** — DONE by `claude` (2026-08-22T21:15:00+03:00): soft-delete coverage — 53 schemas resolved (17 softDelete:false + 36 deletedAt + 1 subdoc skipped); regression test `soft-delete-coverage.spec.ts` added; archive `tasks/_archive/2026-08/TZ-CORE-302.done.md`; gates PASS (backend tsc, regression test 1/1, jest 958/960 pre-existing, lint 47 pre-existing).

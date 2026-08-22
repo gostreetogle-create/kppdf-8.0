@@ -54,6 +54,65 @@ describe('DocumentTemplateService - Continuation Pages', () => {
     service = module.get<DocumentTemplateService>(DocumentTemplateService);
   });
 
+  function setupTemplateWithLineItems(): void {
+    mockTemplateModel.findById.mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue({
+        _id: '000000000000000000000001',
+        name: 'Test',
+        backgroundOpacity: 0.5,
+      }),
+    });
+    mockBlockModel.find.mockReturnValue({
+      sort: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue([
+        {
+          _id: '000000000000000000000003',
+          type: 'table',
+          settings: { role: 'line-items', tableTemplateId: 'tbl-1' },
+          layout: { y: 100, height: 50 },
+        },
+      ]),
+    });
+  }
+
+  function pageCount(html: string): number {
+    return html.match(/<section class="doc-page">/g)?.length ?? 1;
+  }
+
+  it('keeps eight short lines on one manually sized page', async () => {
+    setupTemplateWithLineItems();
+    const lines = Array.from({ length: 8 }, (_, index) => ({
+      productName: `Item ${index}`,
+      quantity: 1,
+      unitPrice: 100,
+    }));
+
+    const html = await service.build('000000000000000000000001', {
+      previewLines: lines,
+      sheetLayout: { rowsFirstPage: 8, rowsNextPage: 8 },
+    });
+
+    expect(pageCount(html)).toBe(1);
+  });
+
+  it('moves eight long lines to multiple pages using wrapped row capacity', async () => {
+    setupTemplateWithLineItems();
+    const longName = 'L'.repeat(120);
+    const lines = Array.from({ length: 8 }, () => ({
+      productName: longName,
+      quantity: 1,
+      unitPrice: 100,
+    }));
+
+    const html = await service.build('000000000000000000000001', {
+      previewLines: lines,
+      sheetLayout: { rowsFirstPage: 8, rowsNextPage: 8 },
+    });
+
+    expect(pageCount(html)).toBeGreaterThan(1);
+  });
+
   it('should drop header blocks on continuation pages', async () => {
     const template = {
       _id: '000000000000000000000001',
