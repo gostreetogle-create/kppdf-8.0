@@ -14,4 +14,4 @@
 - `git diff --check` — PASS
 - deploy — NOT RUN
 
-- commit SHA: pending functional commit
+- commit SHA: `cd738de2`
