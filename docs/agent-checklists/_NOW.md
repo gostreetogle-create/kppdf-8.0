@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T10:23:51+03:00
+updated_at: 2026-08-22T11:07:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -18,9 +18,10 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
-**TZ-STRAT-01A** — READY FOR REVIEW: `/desk`/`/orders` cross-page boundary перенесена в shared order layer; gates PASS, local commit разрешён, push не выполняется.
+**TZ-STRAT-01A** — DONE by `claude` (2026-08-22T11:05:00+03:00): PO/Cursor review PASS relayed; re-gate перед closeout (tsc + focused Jest 66/66) без расхождений; archive `tasks/_archive/2026-08/TZ-STRAT-01A.done.md`; deploy НЕ.
 **TZ-SUPPLY-315** — DONE by `claude` (2026-08-22T10:20:00+03:00), commit `df4cd1fd` pushed: PiDialogService/app-pi-overflow-select/token conformance; archive `tasks/_archive/2026-08/TZ-SUPPLY-315.done.md`; target gates PASS (FE tsc, jest 28/28, lint, supply-smoke 23/23); browser pass PASS (Puppeteer 5/5 dialogs + catalogs, light/dark); unscoped FE Jest has 8 unrelated failures; deploy НЕ.
-**TZ-SUPPLY-314** — CLAIMED / IN PROGRESS by `freebuff` (2026-08-22T10:11:18+03:00); conflict key `frontend/src/app/pages/supply/supply-quick-order.component.ts`.
+**TZ-SUPPLY-314** — DONE by `freebuff` (2026-08-22T10:52:01+03:00): гид-режим раскрытия блоков (whereExpanded/detailsExpanded), auto-expand по categoryId+materialId, gates PASS (tsc, jest 28/28, lint, smoke 23/23); archive `tasks/_archive/2026-08/TZ-SUPPLY-314.done.md`.
+**TZ-DESK-419** — DONE by `claude` (2026-08-22T11:07:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-DESK-419.done.md`; CSS queue height `calc(100dvh - 9.5rem)`; gates/browser PASS.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов

@@ -1,8 +1,8 @@
 # TZ-STRAT-01A checklist
 
-> Status: **READY FOR REVIEW**
-> Marker: `tasks/_active/TZ-STRAT-01A-desk-order-boundary.md`
-> Commit/push: локальный commit разрешён PO; push запрещён/не выполняется
+> Status: **DONE**
+> Marker: было `tasks/_active/TZ-STRAT-01A-desk-order-boundary.md` (удалён после archive)
+> Commit/push: локальный commit; push по `docs/GIT-POLICY.md`
 
 ## Claim slot
 
@@ -65,9 +65,15 @@
 - [x] READY FOR REVIEW
 - [x] Do not archive until orchestrator/PO review
 
+## Re-gate before closeout (2026-08-22)
+
+- `pnpm --dir frontend exec tsc -p tsconfig.app.json --noEmit` → PASS (0 errors)
+- Focused Jest (order-form-panel, order-hub-tray, orders.service, orders.page, manager-desk, order-composition-forest) → PASS, 66/66 (6 suites) — unchanged from original run
+- Gates did not drift; safe to close
+
 ## Closeout
 
-- [ ] Cursor/PO review PASS
-- [ ] archive + lock + progress + remove `_active`
-- [ ] Status = DONE
-- closed_at:
+- [x] Cursor/PO review PASS (PO verdict relayed by user)
+- [x] archive + lock + progress + remove `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-22T11:05:00+03:00

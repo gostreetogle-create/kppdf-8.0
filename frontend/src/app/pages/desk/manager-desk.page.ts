@@ -590,7 +590,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       }
       .manager-desk__orders {
         display: flex;
-        max-height: min(60vh, calc(100dvh - 8rem));
+        max-height: calc(100dvh - 9.5rem);
         flex-direction: column;
         gap: 0.45rem;
         overflow-y: auto;
