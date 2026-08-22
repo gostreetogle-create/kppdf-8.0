@@ -1,0 +1,7 @@
+# TZ-OPS-319: typecheck backend + frontend before push
+echo "[pre-push] typecheck backend + frontend…"
+
+(cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit) || exit 1
+(cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit) || exit 1
+
+echo "[pre-push] OK"

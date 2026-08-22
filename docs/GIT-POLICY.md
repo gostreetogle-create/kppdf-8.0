@@ -37,3 +37,6 @@
 - Production deploy и git push — разные разрешения. Push не разрешает deploy.
 - Wipe/удаление данных не разрешается никаким commit/deploy prompt без отдельной
   русской фразы PO по `docs/ops/DANGEROUS-OPS.md`.
+- **pre-push hook** (TZ-OPS-319): typecheck backend + frontend. Если hook блокирует
+  экстренный push — `git push --no-verify`, но такой push обязателен к
+  самопроверке потом вручную (не молчаливая практика по умолчанию).
