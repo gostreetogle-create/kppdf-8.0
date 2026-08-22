@@ -81,6 +81,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
+sha: 3ee42820
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS
