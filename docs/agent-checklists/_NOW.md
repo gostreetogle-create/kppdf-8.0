@@ -16,7 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
-**TZ-DEPLOY-303** — DONE by `claude` (2026-08-22): `docs/agent-checklists/PRE-DEPLOY-2026-08-19.md` обновлён под текущий `origin/main` — target SHA `08ae164e931b2d17bdcbe203df031ea4468da736` (67 коммитов с `ba98a4a5`, §B суммирует темы: Desktop AI 57→65, стол/заказы, снабжение, каталог/UI, backend hygiene, TEST-420); §C свежие гейты PASS (FE/BE/Desktop tsc; FE focused jest 74/74 desk+orders; BE focused jest 88/88 desk-note+order; desktop tsx --test 11/11 chat-url+snippet-parse); §D installer 0.5.6 найден, но STALE — собран до TZD-62→65, нужен republish перед выдачей ссылки на кати; §E review-рой не прогонялся (только docs-refresh); §F Deploy — **деплой не выполнялся**, ничего не запускалось (`deploy.ps1`/SSH/wipe). Архив `tasks/_archive/2026-08/TZ-DEPLOY-303.done.md`; deploy НЕ.
+**TZ-DEPLOY-303** — DONE by `claude` (2026-08-22): `docs/agent-checklists/PRE-DEPLOY-2026-08-19.md` обновлён под текущий `origin/main` — target SHA `832eeab66f25e1cefa080f8a5a4fa99be896a3c3` (69 коммитов с `ba98a4a5`, §B суммирует темы: Desktop AI 57→65, стол/заказы, снабжение, каталог/UI, backend hygiene, TEST-420, вся micro-type волна UI-408…417 DONE); §C свежие гейты PASS (FE/BE/Desktop tsc — FE перепрогнан на финальном SHA после того, как Freebuff волна B landing дважды во время сборки таблицы; FE focused jest 74/74 desk+orders; BE focused jest 88/88 desk-note+order; desktop tsx --test 11/11 chat-url+snippet-parse); §D installer 0.5.6 найден, но STALE — собран до TZD-62→65, нужен republish перед выдачей ссылки на кати; §E review-рой не прогонялся (только docs-refresh); §F Deploy — **деплой не выполнялся**, ничего не запускалось (`deploy.ps1`/SSH/wipe). Архив `tasks/_archive/2026-08/TZ-DEPLOY-303.done.md`; deploy НЕ.
 **TZD-65** — DONE by `claude` (2026-08-22), SHA `e0a49a75`: Desktop вкладка AI — карточка «Модель по API» (`data-test="ai-api-card"`, НЕ четвёртая дверь) после «Локальной модели»: переключатель «На этом компьютере»/«По API», пресет TokenRouter · Qwen 3.8 Max Free (URL+model, ключ вручную), «Проверить» (короткий ping 20с, RU-ошибки 401/429/сеть), баннер `ai-api-privacy`, парсер примера (`core/ai/snippet-parse.ts`, regex only). Новый `core/ai/chat-url.ts` `normalizeChatCompletionsUrl()` чинит двойной `/v1` (TokenRouter даёт `base_url` уже с `/v1`); `ChatApiError` несёt `status`. `ChatPanel.svelte` prop `port` → `baseUrl`/`apiKey` (работает и от локального раннера, и от внешнего API). Ключ API не спутан с pairing `apiKey` сайта (разные переменные, откомментировано). Архив `tasks/_archive/2026-08/TZD-65-desktop-openai-compat-api.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 11/11 + regression 25/25); живой smoke с реальным ключом — PO/dev (ключ не вставлялся в headless-сессию); deploy НЕ. Desktop AI-чат очередь (62→65) полностью закрыта.
 **TZD-64** — DONE by `claude` (2026-08-22), SHA `04e14368`: Desktop вкладка AI — `desktop/ai/system-prompts/desktop-chat.md` расширен глоссарием `docs/CONTEXT.md` (Counterparty ≠ Organization, Quotation/Order/Contract, Worker/User, StorageItem, /desk); `core/ai/prompts.ts` получил `loadDesktopChatSystemPrompt()` (async, читает файл через `resolveDesktopDir()` + `readTextFile`, fallback на встроенный текст, если исходников нет — прод-бандл); `App.svelte` подгружает его в `onMount` поверх синхронного `buildDesktopChatSystemPrompt()`; `AI-PROVIDERS.md` — строка про LIMITED_HELPER; архив `tasks/_archive/2026-08/TZD-64-desktop-ai-project-prompt.done.md`; gates PASS (desktop tsc, svelte-check 0/0, regression tsx --test 25/25); живой desktop smoke — PO/dev; deploy НЕ. Desktop AI-чат очередь (62→64) закрыта; next в очереди — TZD-65 (OpenAI-compat API, другой prompt-файл).
 **TZD-63** — DONE by `claude` (2026-08-22), SHA `6fabc329`: Desktop вкладка AI — новый `core/gguf-scan.ts` (+8 тестов) сканирует папку моделей на любой `.gguf` (отсев <200 МБ/>20 ГБ и без magic `GGUF`); select «Файл на диске» + «Обновить список» (`data-test="ai-rescan-models"`/`ai-disk-model-select"`) — выбранный файл с диска побеждает каталог для «Открыть чат» и «Запустить»; «Скачать модель» больше не требует раньше жать «Запустить» — сама поднимает раннер без модели, качает, перезапускает с файлом; capabilities/default.json + `fs:allow-read-dir/open/read/stat`; архив `tasks/_archive/2026-08/TZD-63-desktop-model-folder-any-gguf.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 18/18 + regression 7/7); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-64 (промпт проекта).
@@ -24,7 +24,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 **TZ-UI-407** — DONE by `claude` (2026-08-22): catalog filter flyouts on products/modules/materials close on Escape, use `role="region"`, and labels use 11px; archive `tasks/_archive/2026-08/TZ-UI-407.done.md`; SHA `7a5d813b`; gates FE tsc/lint PASS; deploy НЕ.
 **TZ-UI-408** — DONE by `claude` (2026-08-23): six admin dialog field labels use `var(--font-mono)` and 11px; archive `tasks/_archive/2026-08/TZ-UI-408.done.md`; SHA `546daf65`; gates FE tsc/lint + scoped static AC PASS; deploy НЕ.
 **TZ-UI-412** — DONE by `freebuff-1` (2026-08-22): remaining `text-[10px]` catalog micro-type in products/modules/materials raised to `text-[11px]`; archive `tasks/_archive/2026-08/TZ-UI-412.done.md`; SHA `46aeb16e`; gates FE tsc + scoped search PASS; deploy НЕ.
-**TZ-UI-413** — DONE by `freebuff-1` (2026-08-22): material form photo label `text-[10px]` raised to `text-[11px]`; archive `tasks/_archive/2026-08/TZ-UI-413.done.md`; SHA pending; gates FE tsc + scoped search PASS; deploy НЕ.
+**TZ-UI-413** — DONE by `freebuff-1` (2026-08-22): material form photo label `text-[10px]` raised to `text-[11px]`; archive `tasks/_archive/2026-08/TZ-UI-413.done.md`; SHA `cd738de2`; gates FE tsc + scoped search PASS; deploy НЕ.
 **TZ-SALES-381** — DONE by `claude` (2026-08-22): backend preview rows now use conservative weighted wrap capacity for productName+description; archive `tasks/_archive/2026-08/TZ-SALES-381.done.md`; SHA `4ee24fec`; gates backend tsc, continuation Jest 3/3 PASS; deploy НЕ.
 **TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; SHA `5a56c942`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
 **TZ-OPS-320** — DONE by `claude` (2026-08-22): spent TZ/PROMPT moved from `tasks/` root to `tasks/_archive/2026-08/specs-dup-root/` and `prompts-spent/`; deploy НЕ.
@@ -69,7 +69,8 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов
 - DESK-417 `cda4417b` — фильтр стола persist + default all
-- ORDERS-308 `ba98a4a5` — PATCH номера + soft-delete в списке
+- ORDERS-308 `ba98a4a5` —
+ номера + soft-delete в списке
 
 Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
@@ -90,7 +91,7 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 - Freebuff 2: `tasks/PROMPT-FREEBUFF-AGENT2-WAVE-B-2026-08-22.md`
 - Claude: `tasks/PROMPT-CLAUDE-PREDEPLOY-2026-08-22.md` (TZ-DEPLOY-303, без deploy.ps1)
 
-**TZ-DEPLOY-303 DONE** by `claude` (2026-08-22): PRE-DEPLOY обновлён, target SHA `08ae164e931b2d17bdcbe203df031ea4468da736`, кати только по слову PO.
+**TZ-DEPLOY-303 DONE** by `claude` (2026-08-22): PRE-DEPLOY обновлён, target SHA `832eeab66f25e1cefa080f8a5a4fa99be896a3c3`, кати только по слову PO.
 
 TZD-65 DONE `e0a49a75`. Старые волны A — не копировать.
 
@@ -121,7 +122,8 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## DONE / LANDED (recent)
 
-## [2026-08-19] — TZ-ORDERS-308 DONE — PATCH number + soft-delete list filter
+## [2026-08-19] — TZ-ORDERS-308 DONE —
+ number + soft-delete list filter
 
 - Archive: `tasks/_archive/2026-08/TZ-ORDERS-308.done.md`; SHA `ba98a4a5`; BE jest **78/78**; deploy **НЕ**
 - Root cause: `update()` ignored `number`; `findAll()` не фильтровал `deletedAt`
@@ -148,7 +150,8 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 ## [2026-08-19] — TZ-DESK-415 DONE — DeskNote orderId + author ACL
 
 - Archive: `tasks/_archive/2026-08/TZ-DESK-415.done.md`; gates PASS (tsc + jest 10/10); deploy НЕ
-- GET `/desk-notes` без валидного `orderId` → 400; PATCH/DELETE — автор или admin|director|manager, иначе 403
+- GET `/desk-notes` без валидного `orderId` → 400;
+/DELETE — автор или admin|director|manager, иначе 403
 
 ## [2026-08-18] — TZ-DESK-408 DONE — DeskNote (BE + FE)
 
@@ -288,7 +291,8 @@ Gate «раскладка v2 ok» **снят** — PO delegated full desk while 
 
 ## [2026-08-17] — TZ-MIG-307 BLOCKED — email load needs deploy
 
-- Archive: `TZ-MIG-307.done.md`; SHA `266c1cd6`; prod login OK; PATCH 400 `email should not exist`; **0/9**.
+- Archive: `TZ-MIG-307.done.md`; SHA `266c1cd6`; prod login OK;
+ 400 `email should not exist`; **0/9**.
 - Next: PO «кати» ≥ `da01f1e5`, then re-run load script.
 
 ## [2026-08-17] — TZ-MIG-304 PARTIAL — Counterparty.email + KP3 load blocked
