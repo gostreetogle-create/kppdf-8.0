@@ -87,6 +87,13 @@ const STATUS_FILTER_STORAGE_PREFIX = 'kppdf.desk.statusFilter.v1:';
 
 const DEFAULT_VISIBLE_LIMIT = 20;
 
+/** TZ-DESK-422 — один группировочный блок для списка стола. */
+interface DeskOrderGroup {
+  key: string;
+  label: string;
+  orders: Order[];
+}
+
 function statusFilterStorageKey(userId: string | null | undefined): string {
   return `${STATUS_FILTER_STORAGE_PREFIX}${userId ?? 'anonymous'}`;
 }
@@ -245,42 +252,53 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                     {{ orders().length === 0 ? 'Нет заказов.' : 'Нет заказов по фильтру.' }}
                   </p>
                 }
-                @for (order of visibleOrders(); track order._id) {
-                  <div
-                    class="manager-desk__order-item"
-                    role="listitem"
-                    [attr.id]="'desk-order-' + order._id"
-                  >
-                    <button
-                      type="button"
-                      class="manager-desk__order-row"
-                      [class.manager-desk__order-row--expanded]="expandedId() === order._id"
-                      [attr.aria-expanded]="expandedId() === order._id"
-                      [attr.aria-controls]="'order-hub-tray-' + order._id"
-                      [attr.data-status]="order.status"
-                      data-test="desk-order-row"
-                      (click)="toggleOrder(order._id)"
+                @for (group of groupedOrders(); track group.key) {
+                  @if (group.label) {
+                    <div
+                      class="manager-desk__customer-sep"
+                      role="separator"
+                      data-test="desk-queue-customer-sep"
                     >
-                      <span class="manager-desk__order-disclosure" aria-hidden="true">
-                        {{ expandedId() === order._id ? '▾' : '▸' }}
-                      </span>
-                      <span class="manager-desk__order-number">{{ order.number }}</span>
-                      <span class="manager-desk__client">{{ clientLabel(order) }}</span>
-                      <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
-                    </button>
+                      {{ group.label }}
+                    </div>
+                  }
+                  @for (order of group.orders; track order._id) {
+                    <div
+                      class="manager-desk__order-item"
+                      role="listitem"
+                      [attr.id]="'desk-order-' + order._id"
+                    >
+                      <button
+                        type="button"
+                        class="manager-desk__order-row"
+                        [class.manager-desk__order-row--expanded]="expandedId() === order._id"
+                        [attr.aria-expanded]="expandedId() === order._id"
+                        [attr.aria-controls]="'order-hub-tray-' + order._id"
+                        [attr.data-status]="order.status"
+                        data-test="desk-order-row"
+                        (click)="toggleOrder(order._id)"
+                      >
+                        <span class="manager-desk__order-disclosure" aria-hidden="true">
+                          {{ expandedId() === order._id ? '▾' : '▸' }}
+                        </span>
+                        <span class="manager-desk__order-number">{{ order.number }}</span>
+                        <span class="manager-desk__client">{{ clientLabel(order) }}</span>
+                        <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
+                      </button>
 
-                    @if (expandedId() === order._id) {
-                      <app-order-hub-tray
-                        [order]="order"
-                        mode="desk"
-                        [clientLabel]="clientLabel(order)"
-                        (openSupply)="onOpenSupply()"
-                        (openDocs)="onOpenDocs()"
-                        (createDocument)="onCreateDocument($event)"
-                        (addLines)="onAddLines()"
-                      />
-                    }
-                  </div>
+                      @if (expandedId() === order._id) {
+                        <app-order-hub-tray
+                          [order]="order"
+                          mode="desk"
+                          [clientLabel]="clientLabel(order)"
+                          (openSupply)="onOpenSupply()"
+                          (openDocs)="onOpenDocs()"
+                          (createDocument)="onCreateDocument($event)"
+                          (addLines)="onAddLines()"
+                        />
+                      }
+                    </div>
+                  }
                 }
                 @if (remainingCount() > 0) {
                   <button
@@ -617,6 +635,19 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__more:hover {
         background: var(--color-paper-2, #f2f0ea);
       }
+      .manager-desk__customer-sep {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        min-height: 1.25rem;
+        padding: 0.1rem 0.25rem;
+        color: var(--color-muted-foreground);
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
       .manager-desk__order-item {
         min-width: 0;
       }
@@ -905,6 +936,28 @@ export class ManagerDeskPage {
   protected readonly visibleOrders = computed<Order[]>(() =>
     this.sortedOrders().slice(0, this.visibleLimit()),
   );
+
+  /**
+   * TZ-DESK-422 — stable client-side groupBy over the already sorted/filtered
+   * list. Group order = first appearance of the counterparty; within-group
+   * order unchanged. Never mutates the source. Empty groups cannot occur
+   * because groups are built only from present orders.
+   */
+  protected readonly groupedOrders = computed<DeskOrderGroup[]>(() => {
+    const groups: DeskOrderGroup[] = [];
+    const byKey = new Map<string, DeskOrderGroup>();
+    for (const order of this.visibleOrders()) {
+      const key = this.counterpartyIdOf(order);
+      let group = byKey.get(key);
+      if (!group) {
+        group = { key, label: this.clientLabel(order), orders: [] };
+        byKey.set(key, group);
+        groups.push(group);
+      }
+      group.orders.push(order);
+    }
+    return groups;
+  });
 
   protected readonly remainingCount = computed<number>(() =>
     Math.max(0, this.sortedOrders().length - this.visibleLimit()),

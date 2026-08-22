@@ -882,4 +882,49 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Старая заметка o2');
     expect(fixture.nativeElement.querySelectorAll('[data-test="desk-note"]')).toHaveLength(1);
   });
+
+  it('422: groups orders by customer with separator labels', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const seps = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-queue-customer-sep"]',
+    ) as NodeListOf<HTMLElement>;
+    expect(seps).toHaveLength(3);
+    expect(seps[0]!.textContent!.trim()).toBe('Северный свет');
+    expect(seps[1]!.textContent!.trim()).toBe('ИП Марина Волкова');
+    expect(seps[2]!.textContent!.trim()).toBe('ООО Белый дуб');
+  });
+
+  it('422: consecutive orders from same customer appear under one separator', async () => {
+    const MIXED = [
+      { ...ORDERS[0]!, _id: 'o1', number: 'З-1001', counterpartyId: 'cp1' },
+      { ...ORDERS[1]!, _id: 'o2', number: 'З-1002', counterpartyId: 'cp2' },
+      { ...ORDERS[0]!, _id: 'o4', number: 'З-1004', counterpartyId: 'cp1' },
+    ];
+    httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET').flush(MIXED);
+    httpMock
+      .expectOne((req) => req.url === '/api/counterparties' && req.method === 'GET')
+      .flush({ items: COUNTERPARTIES, total: COUNTERPARTIES.length, page: 1, limit: 200 });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const seps = fixture.nativeElement.querySelectorAll('[data-test="desk-queue-customer-sep"]');
+    expect(seps).toHaveLength(2);
+    expect(seps[0]!.textContent!.trim()).toBe('Северный свет');
+    expect(seps[1]!.textContent!.trim()).toBe('ИП Марина Волкова');
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    expect(rows).toHaveLength(3);
+    expect(rows[0]!.getAttribute('data-status')).toBe('draft');
+    expect(rows[1]!.getAttribute('data-status')).toBe('draft');
+    expect(rows[2]!.getAttribute('data-status')).toBe('in_production');
+
+    // Verify group order: cp1 orders (o1, o4) come before cp2 (o2).
+    const numbers = [...rows].map((r) => r.textContent!.match(/З-\d+/)![0]);
+    expect(numbers).toEqual(['З-1001', 'З-1004', 'З-1002']);
+  });
 });
