@@ -55,4 +55,4 @@
 - [x] active marker removed after staging
 - Status = DONE
 - closed_at: 2026-08-22T20:20:00Z
-- functional commit SHA: pending
+- functional commit SHA: `57b6a7fa`

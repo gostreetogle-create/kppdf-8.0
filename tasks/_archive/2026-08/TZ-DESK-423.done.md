@@ -20,4 +20,4 @@
 - Production/shipping APIs and Gantt/Combine writes remain unchanged.
 - Full browser smoke was not run; local focused Angular coverage is green.
 
-- functional commit SHA: pending
+- functional commit SHA: `57b6a7fa`
