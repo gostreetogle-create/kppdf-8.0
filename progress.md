@@ -3849,3 +3849,4 @@ BOM inspector вЂ” РІРєР»Р°Рґ СЃС‚СЂРѕРєРё material/mo
  -   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 7 7   ( C o n t i n u a t i o n   p a g e s      D>=  +   B01;8F0)  
  
 - 2026-08-22 TZD-59 (desktop compat version failsafe) - DONE by claude-computer; commit 7bb76150 (local, push blocked - no git credentials in session); archive tasks/_archive/2026-08/TZD-59.done.md; gates: FE tsc PASS, jest focused 14/14 PASS, eslint 0; full FE suite 1832/1840 (8 pre-existing failures out of scope).
+- 2026-08-22 TZD-61 (desktop onboarding clarity) - DONE by claude-computer; copy/docs-only: AI tab not-a-chat hint + INSTALL.md getting-started sequence + tab naming sync in MCP/PAIRING/AI-PROVIDERS; archive tasks/_archive/2026-08/TZD-61.done.md; gates: desktop tsc PASS, svelte-check 0 errors (Linux slice; Windows host spawn EPERM).

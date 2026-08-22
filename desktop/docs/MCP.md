@@ -13,6 +13,9 @@ Local MCP host so **any** MCP-capable client can call KPPDF tools with the same
 **AI → «MCP для агентов»**; паринг — во вкладке «Подключение». Импорт и
 Excel-формы работают без модели и без MCP.
 
+Весь порядок подключения по шагам (сайт → паринг → MCP → локальная модель) —
+раздел «С чего начать» в [`INSTALL.md`](./INSTALL.md).
+
 Установка / обновление Windows (NSIS, AppData, stop MCP перед update):  
 **[INSTALL.md](./INSTALL.md)**. Паринг-пакет: **[PAIRING.md](./PAIRING.md)**.
 

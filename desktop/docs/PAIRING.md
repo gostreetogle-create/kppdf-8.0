@@ -5,6 +5,9 @@
 > (`kppd_…`), не session JWT (~15m).
 > **2026-08-11:** после HTTP Basic Auth («подъезд») на nginx pairing key идёт
 > в `X-Access-Token`; `Authorization` может быть Basic.
+>
+> Куда вставлять пакет в Desktop: вкладка **«Подключение»** (это её фактическая подпись
+> в UI). Порядок всех шагов — раздел «С чего начать» в [`INSTALL.md`](./INSTALL.md).
 
 ---
 
