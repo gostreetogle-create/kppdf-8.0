@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type DocTypeDocument = HydratedDocument<DocType>;
 
-@Schema({ collection: 'doc_types', timestamps: true })
+@Schema({ softDelete: false,  collection: 'doc_types', timestamps: true })
 export class DocType {
   @Prop({ required: true })
   name!: string;

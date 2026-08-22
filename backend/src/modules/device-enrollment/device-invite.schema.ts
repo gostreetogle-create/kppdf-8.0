@@ -17,7 +17,7 @@ export type DeviceInviteDocument = HydratedDocument<DeviceInvite>;
  * Only `secretHash` (SHA-256) and a display-only `secretPrefix` are stored —
  * the raw secret is returned exactly once at creation time.
  */
-@Schema({ collection: 'deviceinvites', timestamps: true })
+@Schema({ softDelete: false,  collection: 'deviceinvites', timestamps: true })
 export class DeviceInvite {
   @Prop({ required: true, unique: true, index: true })
   secretHash!: string;

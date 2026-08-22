@@ -14,7 +14,7 @@ export type RuleOperator =
 export type RuleSeverity = 'info' | 'warning' | 'error';
 export type ComplianceRuleDocument = HydratedDocument<ComplianceRule>;
 
-@Schema({ collection: 'compliancerules', timestamps: true })
+@Schema({ softDelete: false,  collection: 'compliancerules', timestamps: true })
 export class ComplianceRule {
   @Prop({ required: true })
   name!: string;

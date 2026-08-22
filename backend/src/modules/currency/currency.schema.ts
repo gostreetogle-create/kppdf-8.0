@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type CurrencyDocument = HydratedDocument<Currency>;
 
-@Schema({ collection: 'currencies', timestamps: true })
+@Schema({ softDelete: false,  collection: 'currencies', timestamps: true })
 export class Currency {
   @Prop({ required: true, unique: true, index: true })
   key!: string;

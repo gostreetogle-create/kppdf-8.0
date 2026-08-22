@@ -5,7 +5,7 @@ export type DesktopPairingKeyDocument = HydratedDocument<DesktopPairingKey>;
 
 export type DesktopPairingTtl = '1d' | '7d' | '30d' | '90d' | 'never';
 
-@Schema({ collection: 'desktop_pairing_keys', timestamps: true })
+@Schema({ softDelete: false,  collection: 'desktop_pairing_keys', timestamps: true })
 export class DesktopPairingKey {
   @Prop({ type: Types.ObjectId, required: true, index: true })
   userId!: Types.ObjectId;

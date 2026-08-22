@@ -6,7 +6,7 @@ export type DictionaryLabelScope = (typeof DICTIONARY_LABEL_SCOPES)[number];
 
 export type DictionaryLabelDocument = HydratedDocument<DictionaryLabel>;
 
-@Schema({ collection: 'dictionary_labels', timestamps: true })
+@Schema({ softDelete: false,  collection: 'dictionary_labels', timestamps: true })
 export class DictionaryLabel {
   @Prop({ required: true, enum: DICTIONARY_LABEL_SCOPES, index: true })
   scope!: DictionaryLabelScope;

@@ -3,7 +3,7 @@ import { HydratedDocument, Types } from 'mongoose';
 
 export type UserDocument = HydratedDocument<User>;
 
-@Schema({ collection: 'users', timestamps: true })
+@Schema({ softDelete: false,  collection: 'users', timestamps: true })
 export class User {
   @Prop({ required: true, unique: true, index: true })
   username!: string;

@@ -30,7 +30,7 @@ export type DataBindingSource =
 
 export type DataBindingFormat = 'text' | 'date' | 'currency' | 'number';
 
-@Schema({ _id: false })
+@Schema({ softDelete: false,  _id: false })
 export class DataBinding {
   @Prop({
     type: String,
@@ -83,7 +83,7 @@ export const DataBindingSchema = SchemaFactory.createForClass(DataBinding);
  *
  * `_id: false` — like `DataBinding`, we don't need a Mongoose subdoc _id.
  */
-@Schema({ _id: false })
+@Schema({ softDelete: false,  _id: false })
 export class TemplateBlockColumn {
   /** UUID-shaped stable id (matches TextBlockColumn.id on the front-end). */
   @Prop({ required: true })
@@ -113,7 +113,7 @@ export const TemplateBlockColumnSchema = SchemaFactory.createForClass(TemplateBl
 
 export type TemplateBlockDocument = HydratedDocument<TemplateBlock>;
 
-@Schema({ collection: 'template_blocks', timestamps: true })
+@Schema({ softDelete: false,  collection: 'template_blocks', timestamps: true })
 export class TemplateBlock {
   @Prop({ type: Types.ObjectId, ref: 'DocumentTemplate', required: true, index: true })
   templateId!: Types.ObjectId;

@@ -16,7 +16,7 @@ export type BrowserDeviceGrantDocument = HydratedDocument<BrowserDeviceGrant>;
  * `deviceName` is 1–80 chars after trim and is intentionally NOT unique —
  * multiple shared workshop PCs may carry the same label.
  */
-@Schema({ collection: 'browserdevicegrants', timestamps: true })
+@Schema({ softDelete: false,  collection: 'browserdevicegrants', timestamps: true })
 export class BrowserDeviceGrant {
   @Prop({ required: true, unique: true, index: true })
   tokenHash!: string;

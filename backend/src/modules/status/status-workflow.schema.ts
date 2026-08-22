@@ -7,7 +7,7 @@ export type Transition = {
   roles: string[];
 };
 
-@Schema({ _id: false })
+@Schema({ softDelete: false,  _id: false })
 class TransitionSchema {
   @Prop({ required: true })
   fromStatus!: string;
@@ -23,7 +23,7 @@ const TransitionSchemaFactory = SchemaFactory.createForClass(TransitionSchema);
 
 export type StatusWorkflowDocument = HydratedDocument<StatusWorkflow>;
 
-@Schema({ collection: 'statusworkflows', timestamps: true })
+@Schema({ softDelete: false,  collection: 'statusworkflows', timestamps: true })
 export class StatusWorkflow {
   @Prop({ required: true, index: true })
   entityType!: string;

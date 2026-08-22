@@ -5,7 +5,7 @@ export type OrderClosingType = 'final' | 'partial' | 'corrective';
 export type OrderClosingStatus = 'draft' | 'signed' | 'cancelled';
 export type OrderClosingDocument = HydratedDocument<OrderClosing>;
 
-@Schema({ collection: 'orderclosings', timestamps: true })
+@Schema({ softDelete: false,  collection: 'orderclosings', timestamps: true })
 export class OrderClosing {
   @Prop({ type: Types.ObjectId, ref: 'ProductionOrder', required: true, index: true })
   productionOrderId!: Types.ObjectId;

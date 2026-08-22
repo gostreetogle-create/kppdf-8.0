@@ -16,7 +16,7 @@ export interface ImportMappingTable {
 
 export type ImportMappingProfileDocument = HydratedDocument<ImportMappingProfile>;
 
-@Schema({ collection: 'import_mapping_profiles', timestamps: true })
+@Schema({ softDelete: false,  collection: 'import_mapping_profiles', timestamps: true })
 export class ImportMappingProfile {
   @Prop({ required: true, trim: true, index: true })
   name!: string;

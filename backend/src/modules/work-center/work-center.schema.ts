@@ -4,7 +4,7 @@ import { HydratedDocument } from 'mongoose';
 export type WorkCenterType = 'machine' | 'line' | 'area' | 'workshop' | 'other';
 export type WorkCenterDocument = HydratedDocument<WorkCenter>;
 
-@Schema({ collection: 'workcenters', timestamps: true })
+@Schema({ softDelete: false,  collection: 'workcenters', timestamps: true })
 export class WorkCenter {
   @Prop({ required: true, index: true })
   name!: string;

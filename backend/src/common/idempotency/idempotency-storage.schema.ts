@@ -17,7 +17,7 @@ import { HydratedDocument } from 'mongoose';
  */
 export type IdempotencyDocument = HydratedDocument<Idempotency>;
 
-@Schema({ collection: 'idempotency_records', timestamps: false })
+@Schema({ softDelete: false,  collection: 'idempotency_records', timestamps: false })
 export class Idempotency {
   @Prop({ required: true, unique: true, index: true })
   idempotencyKey!: string;

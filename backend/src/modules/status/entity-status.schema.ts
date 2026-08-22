@@ -3,7 +3,7 @@ import { HydratedDocument } from 'mongoose';
 
 export type EntityStatusDocument = HydratedDocument<EntityStatus>;
 
-@Schema({ collection: 'entitystatuses', timestamps: true })
+@Schema({ softDelete: false,  collection: 'entitystatuses', timestamps: true })
 export class EntityStatus {
   @Prop({ required: true, index: true })
   entityType!: string;

@@ -14,7 +14,7 @@ export type UnitDocument = HydratedDocument<Unit>;
  * deletion — once these are baked into existing rows, removing them
  * would silently break form dropdowns.
  */
-@Schema({ collection: 'units', timestamps: true })
+@Schema({ softDelete: false,  collection: 'units', timestamps: true })
 export class Unit {
   @Prop({ required: true, unique: true, index: true })
   key!: string;

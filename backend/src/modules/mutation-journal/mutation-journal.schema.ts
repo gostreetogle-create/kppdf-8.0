@@ -29,7 +29,7 @@ export type MutationKind = (typeof MUTATION_KINDS)[number];
  * Ring buffer keeps last N applied/undone batches (default 50).
  * Proposals do not mutate SoT until confirm.
  */
-@Schema({ collection: 'mutation_journal', timestamps: true })
+@Schema({ softDelete: false,  collection: 'mutation_journal', timestamps: true })
 export class MutationJournal {
   @Prop({ required: true, enum: MUTATION_STATUSES, index: true })
   status!: MutationStatus;
