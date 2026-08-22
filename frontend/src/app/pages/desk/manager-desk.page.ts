@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   HostListener,
+  Injector,
   computed,
   effect,
   inject,
@@ -30,6 +31,9 @@ import {
   PiGroupWorkspaceComponent,
   type GroupChip,
 } from '../../shared/page/pi-group-workspace.component';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import { AuthService } from '../../core/auth.service';
@@ -43,7 +47,7 @@ import {
   type DeskNote,
   type DeskNoteKind,
 } from '../../shared/services/desk-notes.service';
-import { Order, OrderStatus } from '../../shared/services/orders.service';
+import { Order, OrderStatus, OrdersService } from '../../shared/services/orders.service';
 import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
 import { OrderHubTrayComponent } from '../../shared/orders/order-hub-tray.component';
 import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
@@ -268,23 +272,34 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                       role="listitem"
                       [attr.id]="'desk-order-' + order._id"
                     >
-                      <button
-                        type="button"
-                        class="manager-desk__order-row"
-                        [class.manager-desk__order-row--expanded]="expandedId() === order._id"
-                        [attr.aria-expanded]="expandedId() === order._id"
-                        [attr.aria-controls]="'order-hub-tray-' + order._id"
-                        [attr.data-status]="order.status"
-                        data-test="desk-order-row"
-                        (click)="toggleOrder(order._id)"
-                      >
-                        <span class="manager-desk__order-disclosure" aria-hidden="true">
-                          {{ expandedId() === order._id ? '▾' : '▸' }}
-                        </span>
-                        <span class="manager-desk__order-number">{{ order.number }}</span>
-                        <span class="manager-desk__client">{{ clientLabel(order) }}</span>
-                        <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
-                      </button>
+                      <div class="manager-desk__order-actions">
+                        <button
+                          type="button"
+                          class="manager-desk__order-row"
+                          [class.manager-desk__order-row--expanded]="expandedId() === order._id"
+                          [attr.aria-expanded]="expandedId() === order._id"
+                          [attr.aria-controls]="'order-hub-tray-' + order._id"
+                          [attr.data-status]="order.status"
+                          data-test="desk-order-row"
+                          (click)="toggleOrder(order._id)"
+                        >
+                          <span class="manager-desk__order-disclosure" aria-hidden="true">
+                            {{ expandedId() === order._id ? '▾' : '▸' }}
+                          </span>
+                          <span class="manager-desk__order-number">{{ order.number }}</span>
+                          <span class="manager-desk__client">{{ clientLabel(order) }}</span>
+                          <span class="manager-desk__status">{{ statusLabel(order.status) }}</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="manager-desk__order-delete"
+                          data-test="desk-order-delete"
+                          aria-label="Удалить заказ"
+                          (click)="$event.stopPropagation(); onDelete(order)"
+                        >
+                          Удалить
+                        </button>
+                      </div>
 
                       @if (expandedId() === order._id) {
                         <app-order-hub-tray
@@ -651,8 +666,26 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__order-item {
         min-width: 0;
       }
+      .manager-desk__order-actions {
+        display: flex;
+        align-items: stretch;
+        gap: 0.5rem;
+      }
+      .manager-desk__order-actions .manager-desk__order-row {
+        flex: 1;
+      }
+      .manager-desk__order-delete {
+        flex: 0 0 auto;
+        align-self: stretch;
+        border: 1px solid var(--pi-rule-strong);
+        background: transparent;
+        color: var(--pi-danger, #a33);
+        padding: 0 0.75rem;
+        cursor: pointer;
+      }
       .manager-desk__order-row {
         display: grid;
+
         grid-template-columns: auto minmax(5rem, 0.25fr) minmax(0, 1fr) auto;
         align-items: center;
         gap: 0.7rem;
@@ -995,10 +1028,13 @@ export class ManagerDeskPage {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly chromeTools = inject(PiChromeToolsService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly ordersService = inject(OrdersService);
   private readonly auth = inject(AuthService);
   private readonly notesService = inject(DeskNotesService);
   private readonly counterpartyService = inject(CounterpartyService);
@@ -1107,6 +1143,35 @@ export class ManagerDeskPage {
     this.expandedId.set(nextId);
     this.panel.set(null);
     this.navigateQuery(nextId, null);
+  }
+
+  protected onDelete(order: Order): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Удалить заказ?',
+        description: `Удалить «${order.number}»? Это действие нельзя отменить.`,
+        confirmLabel: 'Удалить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.ordersService.remove(order._id).subscribe((res) => {
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error));
+          return;
+        }
+        this.toast.success('Заказ удалён');
+        if (this.expandedId() === order._id) {
+          this.expandedId.set(null);
+          this.panel.set(null);
+          this.navigateQuery(null, null);
+        }
+        this.listRes.reload();
+      });
+    });
   }
 
   protected onSearchInput(event: Event): void {

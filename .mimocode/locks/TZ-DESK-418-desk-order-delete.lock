@@ -1,0 +1,7 @@
+task_id: TZ-DESK-418
+outcome: DONE
+closed_at: 2026-08-22
+closed_by: claude
+workspace: D:\kppdf-8.0
+archive: tasks/_archive/2026-08/TZ-DESK-418.done.md
+scope: frontend desk order delete with shared confirm/write-path

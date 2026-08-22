@@ -9,6 +9,8 @@ import { AuthService, type AuthUser } from '../../core/auth.service';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
 import { Order } from '../orders/orders.service';
 import { ManagerDeskPage, type ManagerDeskPanel } from './manager-desk.page';
@@ -67,6 +69,9 @@ function flushPanelLookups(httpMock: HttpTestingController, opts: { sites?: bool
   httpMock
     .expectOne((req) => req.url === '/api/users' && req.method === 'GET')
     .flush({ items: [], total: 0, page: 1, limit: 100 });
+  httpMock
+    .expectOne((req) => req.url === '/api/organizations' && req.method === 'GET')
+    .flush({ items: [], total: 0, page: 1, limit: 200 });
   if (opts.sites) {
     httpMock
       .expectOne((req) => req.url === '/api/sites' && req.method === 'GET')
@@ -104,11 +109,18 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
   let toast: PiToastService;
   let queryParams$: BehaviorSubject<ReturnType<typeof convertToParamMap>>;
   let navigate: jest.SpyInstance;
+  let dialogClosed: ReturnType<typeof signal<boolean | undefined>>;
+  let dialogOpen: jest.Mock;
 
   beforeEach(async () => {
     authUser.set(null);
     localStorage.clear();
     queryParams$ = new BehaviorSubject(convertToParamMap({}));
+    dialogClosed = signal<boolean | undefined>(undefined);
+    dialogOpen = jest.fn(() => {
+      dialogClosed = signal<boolean | undefined>(undefined);
+      return { closed: dialogClosed, close: jest.fn() };
+    });
 
     await TestBed.configureTestingModule({
       imports: [ManagerDeskPage],
@@ -131,6 +143,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
           provide: PiToastService,
           useValue: { success: jest.fn(), error: jest.fn(), show: jest.fn() },
         },
+        { provide: PiDialogService, useValue: { open: dialogOpen } },
         {
           provide: CatalogAppearanceService,
           useValue: { load: () => of(null), palette: () => undefined },
@@ -221,6 +234,61 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(fixture.nativeElement.textContent).toContain('ООО Белый дуб');
   });
 
+  it('deletes an order only after confirmation and does not toggle the row', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const rows = fixture.nativeElement.querySelectorAll(
+      '[data-test="desk-order-row"]',
+    ) as NodeListOf<HTMLButtonElement>;
+    const deleteButton = fixture.nativeElement.querySelector(
+      '[data-test="desk-order-delete"]',
+    ) as HTMLButtonElement;
+    deleteButton.click();
+    fixture.detectChanges();
+
+    expect(page().expandedId()).toBeNull();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      AlertDialogComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'Удалить заказ?', variant: 'destructive' }),
+      }),
+    );
+    dialogClosed.set(false);
+    await tickMicrotask();
+    httpMock.expectNone((req) => req.url === '/api/orders/o1' && req.method === 'DELETE');
+
+    rows[0]!.click();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o1');
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
+    fixture.detectChanges();
+    const expandedDelete = fixture.nativeElement.querySelector(
+      '[data-test="desk-order-delete"]',
+    ) as HTMLButtonElement;
+    expandedDelete.click();
+    dialogClosed.set(true);
+    fixture.detectChanges();
+    await tickMicrotask();
+    const remove = httpMock.expectOne(
+      (req) => req.url === '/api/orders/o1' && req.method === 'DELETE',
+    );
+    remove.flush(null);
+    await tickMicrotask();
+    fixture.detectChanges();
+    const reload = httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET');
+    reload.flush(ORDERS.filter((order) => order._id !== 'o1'));
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(page().expandedId()).toBeNull();
+    expect(toast.success).toHaveBeenCalledWith('Заказ удалён');
+  });
+
   it('expands a live order into the tray and toggles closed with crumb suffix', async () => {
     queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
@@ -240,7 +308,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     fixture.detectChanges();
 
     expect(page().expandedId()).toBe('o1');
-    const item = rows[0]!.parentElement!;
+    const item = rows[0]!.parentElement!.parentElement!;
     const tray = item.querySelector('[data-test="order-hub-tray"]');
     expect(tray).toBeTruthy();
     expect(tray?.getAttribute('data-mode')).toBe('desk');

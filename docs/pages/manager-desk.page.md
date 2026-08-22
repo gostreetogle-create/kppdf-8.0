@@ -49,6 +49,7 @@
 - **416:** tray «Открыть производство» в `mode="desk"` → `/production?orderId=&from=desk` (hub `mode="hub"` остаётся `{ orderId }` only).
 - **408:** L-flyout `panel=notebook` — блокнот заказа (`GET/POST/PATCH/DELETE /desk-notes`, BE `backend/src/modules/desk-note`); список compact (текст, anchor badge, автор, дата), «+ заметка» с picker якоря (Заказ / линия изделия) и kind (note/checklist/reminder); checklist — чекбокс «готово», delete hard. Фильтр по текущему expand. Module-якорь — только API (picker v2).
 - **415:** `GET /desk-notes` без валидного `orderId` → 400 (не dump всех заметок); PATCH/DELETE — только автор или role `admin|director|manager`, иначе 403. FE notebook уже шлёт orderId.
+- **418:** в каждой строке очереди есть destructive «Удалить»; клик не раскрывает заказ; перед общим `OrdersService.remove` открывается обязательный `AlertDialogComponent`; после успеха список перезагружается и раскрытие сбрасывается для удалённого заказа.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 
 
@@ -79,3 +80,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-416** | tray «Открыть производство» `from=desk` — **DONE** |
 | **DESK-415** | GET orderId обязателен + PATCH/DELETE author check — **DONE** |
 | **DESK-414** | hotfix RouterLink + stale notes + chip activeId — **DONE** |
+| **DESK-418** | delete заказа со стола с confirm — **DONE** |
