@@ -31,6 +31,8 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 **TZ-OPS-319** — DONE by `claude` (2026-08-22T21:30:00+03:00): `.husky/pre-push` typecheck hook + GIT-POLICY.md --no-verify note; archive `tasks/_archive/2026-08/TZ-OPS-319.done.md`; gates PASS (hook runs, both tsc OK).
 **TZ-OPS-317** — DONE by `claude` (2026-08-22T21:40:00+03:00): `.gitattributes` + renormalize; archive `tasks/_archive/2026-08/TZ-OPS-317.done.md`; gates PASS (architecture check, backend tsc).
 **TZ-TEST-420** — DONE by `freebuff-2` (2026-08-22T23:15:00+03:00): 8 pre-existing FE Jest failures fixed — login.page.spec (ActivatedRoute + Router mock + stale selector) + production-read.facade.spec (findByIds batch mocks); archive `tasks/_archive/2026-08/TZ-TEST-420.done.md`; gates PASS (FE tsc, jest 1841/1841, lint 0 errors, BE tsc).
+**TZ-UI-409** — DONE by `freebuff-2` (2026-08-22T23:30:00+03:00): text-[10px] → text-[11px] on contracts/orders/organizations/proposals; archive `tasks/_archive/2026-08/TZ-UI-409.done.md`; gates PASS (FE tsc, 0 occurrences of text-[10px]).
+**TZ-UI-410** — DONE by `freebuff-2` (2026-08-22T23:35:00+03:00): notification bell badge text-[9px] → text-[11px]; archive `tasks/_archive/2026-08/TZ-UI-410.done.md`; gates PASS (FE tsc, 0 occurrences of text-[9px]).
 **TZD-60** — DEFERRED (2026-08-22T20:05:00+03:00): no real install possible in this session.
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
