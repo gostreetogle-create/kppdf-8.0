@@ -27,6 +27,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZ-UI-344** — DONE by `claude` (2026-08-22T11:58:00+03:00); archive `tasks/_archive/2026-08/TZ-UI-344.done.md`; shared lightbox + product/module catalog/detail wiring; focused Jest 90/90, shared dialog 23/23, FE tsc/lint/Prettier, architecture PASS; live browser BLOCKED by missing helper/auth session.
 **TZD-ORDER-IMPORT-01** — DONE by `claude` / closeout `freebuff` (2026-08-22T11:41:42+03:00); archive `tasks/_archive/2026-08/TZD-ORDER-IMPORT-01.done.md`; Order.source desktop-import + mutation-journal kinds (order.create/counterparty.create/site.create) + row-level proposalId + kppdf_import_task_finalize_order + MCP tools; gates PASS (backend tsc, jest 958/960, desktop 122/122, architecture).
 **TZ-UI-403** — DONE by `claude` (2026-08-22T12:35:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-UI-403.done.md`; docs-only audit `docs/audits/2026-08-22-breadcrumb-consistency-audit.md`; duplicate `data-test="back-button"` on module/product/material-detail, kit-only `app-pi-breadcrumb` vs used `page-chrome[crumbs]`, inconsistent crumb depth, builder/:id has no crumbs (UNCERTAIN); 4 open questions, successor `TZ-UI-404`.
+**tasks/ cleanup** — DONE by `freebuff` (2026-08-22T12:45:00+03:00): удалены фантомные черновики уже archived TZ из корня tasks/ (SUPPLY-304/305/306/307/308/311/312 git rm; SUPPLY-314/UI-401/UI-402 untracked rm).
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов
@@ -47,7 +48,13 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-Backlog (не брать без PO): PARTY-305, ORDERS-307, SUPPLY-304/305
+Backlog (не брать без PO):
+- `tasks/_backlog/TZ-PARTY-305-counterparty-contact-person.md` — контактное лицо контрагента
+- `tasks/_backlog/TZ-ORDERS-307-order-executor-organization.md` — организация-исполнитель заказа
+- `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md` — блокировка парольного входа из WAN (требует deploy)
+
+SUPPLY-304/305 — DONE (транзитивно закрыты: 304 archived 2026-08-19, 305→311→312→313→314→315 DONE; smoke 23/23).
+TZ-SUPPLY-312 — READY_FOR_ACCEPTANCE: все gates/smoke PASS, остался только браузерный проход PO после deploy. Не блокирует новые TZ.
 
 ## DESK WAVE checkpoint (PO)
 
