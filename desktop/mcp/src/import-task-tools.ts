@@ -26,6 +26,7 @@ export const IMPORT_TASK_TOOL_NAMES = [
   'kppdf_import_task_set_report',
   'kppdf_import_task_apply_plan',
   'kppdf_import_task_reshape',
+  'kppdf_import_task_finalize_order',
 ] as const;
 
 // ── TZD-23 apply_plan core (deps-injected for tests) ─────────────────────────
@@ -45,7 +46,11 @@ export interface AiPlanRow {
     notes?: string;
     /** TZD-27: required for product.new rows. */
     kind?: 'good' | 'service' | 'work';
+    /** TZD-ORDER-IMPORT-01: carried to order.create items[].quantity via finalize_order. */
+    quantity?: number;
   };
+  /** TZD-ORDER-IMPORT-01: mutation-journal proposalId linked back after apply_plan. */
+  proposalId?: string;
 }
 
 export interface ApplyPlanDeps {
@@ -57,7 +62,12 @@ export interface ApplyPlanDeps {
   proposeBatch(
     chunk: BatchProposalItem[],
   ): Promise<{ proposalIds: string[]; errors?: Array<{ index: number; error: string }> }>;
-  setProposals(taskId: string, proposalIds: string[]): Promise<unknown>;
+  /** rowProposals (TZD-ORDER-IMPORT-01) — rowIndex→proposalId, for finalize_order. */
+  setProposals(
+    taskId: string,
+    proposalIds: string[],
+    rowProposals?: Array<{ rowIndex: number; proposalId: string }>,
+  ): Promise<unknown>;
 }
 
 export type BatchProposalKind =
@@ -221,6 +231,7 @@ export async function applyImportTaskPlan(
   }
 
   const proposalIds: string[] = [];
+  const rowProposals: Array<{ rowIndex: number; proposalId: string }> = [];
   let batchCalls = 0;
   for (let i = 0; i < items.length; i += APPLY_PLAN_CHUNK_SIZE) {
     const chunk = items.slice(i, i + APPLY_PLAN_CHUNK_SIZE);
@@ -236,7 +247,13 @@ export async function applyImportTaskPlan(
         note: `propose-batch chunk ${batchCalls} failed (${res.errors.length} error(s)) — nothing linked, task stays awaiting_user`,
       };
     }
-    for (const p of res.proposalIds ?? []) proposalIds.push(p);
+    const ids = res.proposalIds ?? [];
+    for (let j = 0; j < ids.length; j++) {
+      const proposalId = ids[j]!;
+      proposalIds.push(proposalId);
+      const rowIndex = chunk[j]?.rowIndex;
+      if (rowIndex !== undefined) rowProposals.push({ rowIndex, proposalId });
+    }
   }
 
   if (!proposalIds.length) {
@@ -249,7 +266,7 @@ export async function applyImportTaskPlan(
     };
   }
 
-  const taskAfter = await deps.setProposals(args.id, proposalIds);
+  const taskAfter = await deps.setProposals(args.id, proposalIds, rowProposals);
   return {
     ok: true,
     proposed: proposalIds.length,
@@ -308,12 +325,16 @@ export function createApplyPlanBackendDeps(
       )) as { proposalIds: string[]; errors?: Array<{ index: number; error: string }> };
       return { proposalIds: result.proposalIds ?? [], errors: result.errors };
     },
-    setProposals: async (taskId, proposalIds) =>
+    setProposals: async (taskId, proposalIds, rowProposals) =>
       backendPatchJson(
         cfg.apiBaseUrl,
         cfg.apiKey,
         `/api/import-tasks/${encodeURIComponent(taskId)}/proposals`,
-        { proposalIds, status: 'applying' },
+        {
+          proposalIds,
+          status: 'applying',
+          ...(rowProposals?.length ? { rowProposals } : {}),
+        },
       ),
   };
 }
@@ -339,6 +360,8 @@ const rowSchema = z.object({
   article: z.string().optional(),
   sku: z.string().optional(),
   notes: z.string().optional(),
+  /** TZD-ORDER-IMPORT-01 — canonical qty (was lost before, see live-test audit). */
+  quantity: z.number().min(0).optional(),
 });
 
 export function registerImportTaskTools(
@@ -420,6 +443,13 @@ export function registerImportTaskTools(
         summary: z.string().optional(),
         contentHash: z.string().optional(),
         inboxPath: z.string().optional(),
+        customerNameRaw: z
+          .string()
+          .optional()
+          .describe(
+            'TZD-ORDER-IMPORT-01: raw «ЗАКАЗЧИК: ...» text from the source file — trace-only, ' +
+              'not parsed by backend. Use it yourself to match/propose Counterparty+Site before finalize_order.',
+          ),
       },
     },
     async (args) => {
@@ -434,6 +464,7 @@ export function registerImportTaskTools(
               fileType: args.fileType,
               ...(args.contentHash ? { contentHash: args.contentHash } : {}),
               ...(args.inboxPath ? { inboxPath: args.inboxPath } : {}),
+              ...(args.customerNameRaw ? { customerNameRaw: args.customerNameRaw } : {}),
             },
             rows: args.rows,
             ...(args.summary ? { summary: args.summary } : {}),
@@ -517,6 +548,11 @@ export function registerImportTaskTools(
                   .enum(['good', 'service', 'work'])
                   .optional()
                   .describe('Required for product.new rows'),
+                quantity: z
+                  .number()
+                  .min(0)
+                  .optional()
+                  .describe('TZD-ORDER-IMPORT-01: carried to order.create items[].quantity via finalize_order'),
               })
               .optional()
               .describe('Canonical values to propose for new/update rows'),
@@ -614,6 +650,146 @@ export function registerImportTaskTools(
         });
       } catch (err) {
         return toolFail('kppdf_import_task_reshape', err);
+      }
+    },
+  );
+
+  // ── TZD-ORDER-IMPORT-01: finalize order from confirmed product rows ────────
+
+  server.registerTool(
+    'kppdf_import_task_finalize_order',
+    {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
+      title: 'Finalize order from ImportTask (order import, phase 2)',
+      description:
+        'TZD-ORDER-IMPORT-01: only from status=applying (after apply_plan). Reads aiReport.rows, ' +
+        'resolves each row to a real Product id — «new» rows via their linked proposalId ' +
+        '(must already be kppdf_confirm_batch\'d, status=applied), «update» rows via their existing ' +
+        'materialId — and requires proposed.quantity > 0 per row. Rows missing quantity/confirmation ' +
+        'are excluded (reported, never silently dropped). Creates ONE order.create mutation-journal ' +
+        'proposal (0 SoT write) — confirm via kppdf_confirm_proposal. counterpartyId/siteId must be ' +
+        'matched or proposed→confirmed by the agent first (kppdf_list_counterparties/_sites, or ' +
+        'kppdf_propose_counterparty_create/kppdf_propose_site_create).',
+      inputSchema: {
+        id: z.string().min(1).describe('ImportTask id'),
+        counterpartyId: z.string().min(1),
+        siteId: z.string().min(1),
+        number: z.string().optional(),
+        notes: z.string().optional(),
+      },
+    },
+    async ({ id, counterpartyId, siteId, number, notes }) => {
+      try {
+        const task = (await backendGetJson(
+          cfg.apiBaseUrl,
+          cfg.apiKey,
+          `/api/import-tasks/${encodeURIComponent(id)}`,
+        )) as { status?: string; aiReport?: { rows?: AiPlanRow[] } | null };
+
+        if (task?.status !== 'applying') {
+          return toolFail(
+            'kppdf_import_task_finalize_order',
+            new Error(
+              `ImportTask ${id} is «${task?.status ?? 'unknown'}» — finalize_order only allowed from ` +
+                'applying (run apply_plan with userOk:true first)',
+            ),
+          );
+        }
+
+        const rows = Array.isArray(task?.aiReport?.rows) ? task.aiReport!.rows! : [];
+        const items: Array<{ productId: string; quantity: number; unit?: string; productName?: string }> = [];
+        const excludedRows: Array<{ rowIndex: number; reason: string }> = [];
+
+        for (const row of rows) {
+          if (row.decision === 'skip' || row.decision === 'doubt') {
+            excludedRows.push({ rowIndex: row.rowIndex, reason: `decision=${row.decision}` });
+            continue;
+          }
+          const quantity = row.proposed?.quantity;
+          if (!quantity || quantity <= 0) {
+            excludedRows.push({ rowIndex: row.rowIndex, reason: 'missing/zero proposed.quantity' });
+            continue;
+          }
+
+          let productId: string | undefined;
+          if (row.decision === 'update') {
+            productId = row.materialId;
+            if (!productId) {
+              excludedRows.push({ rowIndex: row.rowIndex, reason: 'update row missing materialId' });
+              continue;
+            }
+          } else {
+            // decision === 'new'
+            if (!row.proposalId) {
+              excludedRows.push({
+                rowIndex: row.rowIndex,
+                reason: 'no proposalId linked — run apply_plan first',
+              });
+              continue;
+            }
+            let mutation: { status?: string; entityId?: string } | undefined;
+            try {
+              mutation = (await backendGetJson(
+                cfg.apiBaseUrl,
+                cfg.apiKey,
+                `/api/mutation-journal/${encodeURIComponent(row.proposalId)}`,
+              )) as { status?: string; entityId?: string };
+            } catch (err) {
+              excludedRows.push({
+                rowIndex: row.rowIndex,
+                reason: `proposal ${row.proposalId} lookup failed: ${err instanceof Error ? err.message : String(err)}`,
+              });
+              continue;
+            }
+            if (mutation?.status !== 'applied' || !mutation.entityId) {
+              excludedRows.push({
+                rowIndex: row.rowIndex,
+                reason: `proposal ${row.proposalId} not confirmed yet (status=${mutation?.status ?? 'unknown'}) — kppdf_confirm_batch first`,
+              });
+              continue;
+            }
+            productId = mutation.entityId;
+          }
+
+          items.push({
+            productId,
+            quantity,
+            unit: row.proposed?.unit,
+            productName: row.proposed?.name,
+          });
+        }
+
+        if (!items.length) {
+          return toolFail(
+            'kppdf_import_task_finalize_order',
+            new Error(
+              'No confirmed product rows with quantity found — confirm product proposals first ' +
+                '(kppdf_confirm_batch) and make sure rows carry proposed.quantity',
+            ),
+          );
+        }
+
+        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, '/api/mutation-journal/proposals', {
+          kind: 'order.create',
+          toolName: 'kppdf_import_task_finalize_order',
+          orderCreate: {
+            counterpartyId,
+            siteId,
+            items,
+            importTaskId: id,
+            ...(number ? { number } : {}),
+            ...(notes ? { notes } : {}),
+          },
+        });
+
+        return toolOk({
+          ok: true,
+          proposal: result,
+          itemCount: items.length,
+          excludedRows,
+        });
+      } catch (err) {
+        return toolFail('kppdf_import_task_finalize_order', err);
       }
     },
   );

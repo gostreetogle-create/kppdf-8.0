@@ -182,6 +182,14 @@ export class ImportTaskService {
       throw new BadRequestException('proposalIds must be valid ObjectIds');
     }
     doc.proposalIds = dto.proposalIds.map((p) => new Types.ObjectId(p));
+    if (dto.rowProposals?.length && doc.aiReport?.rows?.length) {
+      const byRowIndex = new Map(dto.rowProposals.map((r) => [r.rowIndex, r.proposalId]));
+      doc.aiReport.rows = doc.aiReport.rows.map((row) => {
+        const proposalId = byRowIndex.get(row.rowIndex);
+        return proposalId ? { ...row, proposalId } : row;
+      });
+      doc.markModified('aiReport');
+    }
     if (dto.status) {
       const to = dto.status as ImportTaskStatus;
       this.assertTransition(doc.status as ImportTaskStatus, to);

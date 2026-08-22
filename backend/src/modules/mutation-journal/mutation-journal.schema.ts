@@ -17,6 +17,10 @@ export const MUTATION_KINDS = [
   'material.update',
   'product.create',
   'product.update',
+  // TZD-ORDER-IMPORT-01 — order import HITL chain.
+  'counterparty.create',
+  'site.create',
+  'order.create',
 ] as const;
 export type MutationKind = (typeof MUTATION_KINDS)[number];
 

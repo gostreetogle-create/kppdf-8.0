@@ -284,6 +284,7 @@ export class OrderService {
       total,
       notes: dto.notes,
       materialsSource: dto.materialsSource ?? 'own',
+      source: dto.source ?? 'manual',
       deliveryAddress: dto.deliveryAddress,
       managerId: dto.managerId ? new Types.ObjectId(dto.managerId) : undefined,
       priority: dto.priority ?? 'normal',

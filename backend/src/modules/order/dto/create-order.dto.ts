@@ -83,6 +83,16 @@ export class CreateOrderDto {
   @ApiPropertyOptional({ enum: ['own', 'customer'], description: 'Источник материалов' })
   @IsOptional() @IsIn(['own', 'customer'])
   materialsSource?: 'own' | 'customer';
+
+  @ApiPropertyOptional({
+    enum: ['manual', 'desktop-import'],
+    description:
+      'Провенанс заказа (TZD-ORDER-IMPORT-01). Default manual. mutation-journal ' +
+      'order.create всегда форсит desktop-import — этот вход не даёт вызывающему через ' +
+      'REST выдать чужой заказ за импорт.',
+  })
+  @IsOptional() @IsIn(['manual', 'desktop-import'])
+  source?: 'manual' | 'desktop-import';
   @ApiPropertyOptional({ description: 'Адрес доставки' })
   @IsOptional() @IsString() deliveryAddress?: string;
   @ApiPropertyOptional({ description: 'ID менеджера' })

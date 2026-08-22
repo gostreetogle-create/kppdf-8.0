@@ -14,6 +14,12 @@ import { UpdateMaterialDto } from '../material/dto/update-material.dto';
 import { ProductService } from '../product/product.service';
 import { CreateProductDto } from '../product/dto/create-product.dto';
 import { UpdateProductDto } from '../product/dto/update-product.dto';
+import { CounterpartyService } from '../counterparty/counterparty.service';
+import { CreateCounterpartyDto } from '../counterparty/dto/create-counterparty.dto';
+import { SiteService } from '../site/site.service';
+import { CreateSiteDto } from '../site/dto/create-site.dto';
+import { OrderService } from '../order/order.service';
+import { CreateOrderDto } from '../order/dto/create-order.dto';
 import {
   CreateProposalDto,
   ProposeBatchDto,
@@ -45,6 +51,9 @@ export class MutationJournalService {
     private readonly model: Model<MutationJournalDocument>,
     private readonly materials: MaterialService,
     private readonly products: ProductService,
+    private readonly counterparties: CounterpartyService,
+    private readonly sites: SiteService,
+    private readonly orders: OrderService,
   ) {
     const raw = Number(process.env.MUTATION_JOURNAL_RING_SIZE ?? DEFAULT_RING);
     this.ringSize = Number.isFinite(raw) && raw >= 1 ? Math.min(200, Math.floor(raw)) : DEFAULT_RING;
@@ -172,6 +181,119 @@ export class MutationJournalService {
         entityId: new Types.ObjectId(dto.productUpdate.id),
         payload: { id: dto.productUpdate.id, patch: dto.productUpdate.patch },
         before,
+        after: null,
+        expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      return this.toProposalView(doc);
+    }
+
+    // ── TZD-ORDER-IMPORT-01: order import HITL chain ──────────────────────────
+    if (dto.kind === 'counterparty.create') {
+      const c = dto.counterpartyCreate;
+      if (!c?.name?.trim()) {
+        throw new BadRequestException('counterpartyCreate.name is required for counterparty.create');
+      }
+      if (!c.inn?.trim()) {
+        throw new BadRequestException('counterpartyCreate.inn is required for counterparty.create');
+      }
+      if (!c.roles?.length) {
+        throw new BadRequestException('counterpartyCreate.roles is required for counterparty.create');
+      }
+      const payload = {
+        name: c.name.trim(),
+        inn: c.inn.trim(),
+        roles: c.roles,
+        ...(c.shortName ? { shortName: c.shortName } : {}),
+        ...(c.legalForm ? { legalForm: c.legalForm } : {}),
+        ...(c.legalType ? { legalType: c.legalType } : {}),
+        ...(c.type ? { type: c.type } : {}),
+        ...(c.partyTypes ? { partyTypes: c.partyTypes } : {}),
+        ...(c.phone ? { phone: c.phone } : {}),
+        ...(c.paymentTermDays !== undefined ? { paymentTermDays: c.paymentTermDays } : {}),
+        ...(c.vatRate !== undefined ? { vatRate: c.vatRate } : {}),
+      };
+      const doc = await this.model.create({
+        status: 'proposed',
+        kind: dto.kind,
+        toolName,
+        actorUserId: new Types.ObjectId(user.id),
+        organizationId: orgId,
+        entityType: 'Counterparty',
+        payload,
+        before: null,
+        after: null,
+        expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      return this.toProposalView(doc);
+    }
+
+    if (dto.kind === 'site.create') {
+      const s = dto.siteCreate;
+      if (!s?.counterpartyId || !Types.ObjectId.isValid(s.counterpartyId)) {
+        throw new BadRequestException('siteCreate.counterpartyId (valid ObjectId) is required for site.create');
+      }
+      if (!s.name?.trim() || !s.address?.trim()) {
+        throw new BadRequestException('siteCreate.name and siteCreate.address are required for site.create');
+      }
+      const payload = {
+        counterpartyId: s.counterpartyId,
+        name: s.name.trim(),
+        address: s.address.trim(),
+      };
+      const doc = await this.model.create({
+        status: 'proposed',
+        kind: dto.kind,
+        toolName,
+        actorUserId: new Types.ObjectId(user.id),
+        organizationId: orgId,
+        entityType: 'Site',
+        payload,
+        before: null,
+        after: null,
+        expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
+        ...(idempotencyKey ? { idempotencyKey } : {}),
+      });
+      return this.toProposalView(doc);
+    }
+
+    if (dto.kind === 'order.create') {
+      const o = dto.orderCreate;
+      if (!o?.counterpartyId || !Types.ObjectId.isValid(o.counterpartyId)) {
+        throw new BadRequestException('orderCreate.counterpartyId (valid ObjectId) is required for order.create');
+      }
+      if (!o.siteId || !Types.ObjectId.isValid(o.siteId)) {
+        throw new BadRequestException('orderCreate.siteId (valid ObjectId) is required for order.create');
+      }
+      if (!o.items?.length) {
+        throw new BadRequestException('orderCreate.items (min 1) is required for order.create');
+      }
+      for (const item of o.items) {
+        if (!Types.ObjectId.isValid(item.productId)) {
+          throw new BadRequestException(`orderCreate.items[].productId is not a valid ObjectId: ${item.productId}`);
+        }
+        if (!(item.quantity > 0)) {
+          throw new BadRequestException(`orderCreate.items[].quantity must be > 0 for productId ${item.productId}`);
+        }
+      }
+      const payload = {
+        counterpartyId: o.counterpartyId,
+        siteId: o.siteId,
+        items: o.items,
+        ...(o.number ? { number: o.number } : {}),
+        ...(o.notes ? { notes: o.notes } : {}),
+        ...(o.importTaskId ? { importTaskId: o.importTaskId } : {}),
+      };
+      const doc = await this.model.create({
+        status: 'proposed',
+        kind: dto.kind,
+        toolName,
+        actorUserId: new Types.ObjectId(user.id),
+        organizationId: orgId,
+        entityType: 'Order',
+        payload,
+        before: null,
         after: null,
         expiresAt: new Date(Date.now() + PROPOSAL_TTL_MS),
         ...(idempotencyKey ? { idempotencyKey } : {}),
@@ -328,6 +450,30 @@ export class MutationJournalService {
       const updated = await this.products.update(payload.id, payload.patch, org);
       doc.entityId = updated._id as Types.ObjectId;
       doc.after = leanMaterial(updated);
+    } else if (doc.kind === 'counterparty.create') {
+      const payload = (doc.payload ?? {}) as unknown as CreateCounterpartyDto;
+      const created = await this.counterparties.create(payload, {
+        organizationId: this.orgIdString(doc),
+      });
+      doc.entityId = created._id as Types.ObjectId;
+      doc.after = leanMaterial(created);
+      doc.before = null;
+    } else if (doc.kind === 'site.create') {
+      const payload = (doc.payload ?? {}) as unknown as CreateSiteDto;
+      const created = await this.sites.create(payload);
+      doc.entityId = created._id as Types.ObjectId;
+      doc.after = leanMaterial(created);
+      doc.before = null;
+    } else if (doc.kind === 'order.create') {
+      const payload = (doc.payload ?? {}) as unknown as CreateOrderDto;
+      const created = await this.orders.create({
+        ...payload,
+        source: 'desktop-import',
+        managerId: String(doc.actorUserId),
+      });
+      doc.entityId = created._id as Types.ObjectId;
+      doc.after = leanMaterial(created);
+      doc.before = null;
     } else {
       throw new BadRequestException(`Unsupported kind: ${doc.kind}`);
     }
@@ -363,6 +509,15 @@ export class MutationJournalService {
       }
       const restore = this.pickRestorable(doc.before);
       await this.products.update(String(doc.entityId), restore as UpdateProductDto, this.orgIdString(doc));
+    } else if (doc.kind === 'counterparty.create') {
+      if (!doc.entityId) throw new BadRequestException('Missing entityId for create undo');
+      await this.counterparties.remove(String(doc.entityId), { organizationId: this.orgIdString(doc) });
+    } else if (doc.kind === 'site.create') {
+      if (!doc.entityId) throw new BadRequestException('Missing entityId for create undo');
+      await this.sites.remove(String(doc.entityId));
+    } else if (doc.kind === 'order.create') {
+      if (!doc.entityId) throw new BadRequestException('Missing entityId for create undo');
+      await this.orders.remove(String(doc.entityId));
     } else {
       throw new BadRequestException(`Unsupported kind: ${doc.kind}`);
     }

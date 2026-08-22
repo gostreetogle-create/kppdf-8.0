@@ -7,6 +7,7 @@ import {
   IsIn,
   IsInt,
   IsMongoId,
+  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -40,6 +41,17 @@ export class ImportTaskSourceDto {
   @IsString()
   @Length(0, 1024)
   inboxPath?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'TZD-ORDER-IMPORT-01: raw customer/header text (e.g. «ЗАКАЗЧИК: ООО «X»») — ' +
+      'trace-only metadata, not parsed by backend. Counterparty/Site matching is agent-driven.',
+    example: 'ЗАКАЗЧИК: ООО «Дортранссервис»',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(0, 512)
+  customerNameRaw?: string;
 }
 
 export class ImportTaskRowDto {
@@ -81,6 +93,12 @@ export class ImportTaskRowDto {
   @IsString()
   @Length(0, 512)
   notes?: string;
+
+  @ApiPropertyOptional({ description: 'TZD-ORDER-IMPORT-01 — canonical qty (was lost before)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  quantity?: number;
 }
 
 export class CreateImportTaskDto {
@@ -158,6 +176,12 @@ export class AiReportProposedDto {
   @IsOptional()
   @IsIn(['good', 'service', 'work'])
   kind?: 'good' | 'service' | 'work';
+
+  @ApiPropertyOptional({ description: 'TZD-ORDER-IMPORT-01 — carried to order.create items[].quantity' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  quantity?: number;
 }
 
 export class AiReportRowDto {
@@ -262,6 +286,18 @@ export class PatchImportTaskReportDto {
   status!: 'analyzing' | 'awaiting_user';
 }
 
+/** TZD-ORDER-IMPORT-01 — rowIndex → proposalId link, written by apply_plan. */
+export class RowProposalLinkDto {
+  @ApiProperty({ example: 0 })
+  @IsInt()
+  @Min(0)
+  rowIndex!: number;
+
+  @ApiProperty()
+  @IsMongoId()
+  proposalId!: string;
+}
+
 /**
  * PATCH /api/import-tasks/:id/proposals (TZD-23).
  * Links created proposal ids to the task and moves it to applying/done/failed.
@@ -276,6 +312,19 @@ export class PatchImportTaskProposalsDto {
   @IsOptional()
   @IsIn(['applying', 'done', 'failed'])
   status?: 'applying' | 'done' | 'failed';
+
+  @ApiPropertyOptional({
+    type: [RowProposalLinkDto],
+    description:
+      'TZD-ORDER-IMPORT-01 — per-row proposalId (rowIndex→proposalId), written onto ' +
+      'aiReport.rows[]. Optional, backward compatible with flat proposalIds.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(2000)
+  @ValidateNested({ each: true })
+  @Type(() => RowProposalLinkDto)
+  rowProposals?: RowProposalLinkDto[];
 }
 
 /**

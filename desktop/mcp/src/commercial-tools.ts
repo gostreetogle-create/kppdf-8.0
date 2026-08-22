@@ -33,6 +33,9 @@ export const COMMERCIAL_TOOL_NAMES = [
   'kppdf_list_contracts',
   'kppdf_counterparty_create',
   'kppdf_site_create',
+  // TZD-ORDER-IMPORT-01 — propose→confirm variant (journal-backed, undo-able).
+  'kppdf_propose_counterparty_create',
+  'kppdf_propose_site_create',
   'kppdf_quotation_create_draft',
   'kppdf_order_create_draft',
   'kppdf_quotation_set_status',
@@ -503,6 +506,67 @@ export function registerCommercialTools(server: McpServer, cfg: McpRuntimeConfig
         return toolOk({ ok: true, result });
       } catch (err) {
         return toolFail('kppdf_site_create', err);
+      }
+    },
+  );
+
+  // ── TZD-ORDER-IMPORT-01: propose→confirm variant of counterparty/site create ──
+  // Same whitelist as kppdf_counterparty_create/kppdf_site_create, but goes
+  // through mutation-journal (0 SoT write until kppdf_confirm_proposal) — for
+  // the order-import HITL chain, where PO asked for "тот же propose→confirm
+  // принцип, что уже работает для материалов" instead of the direct-write tools above.
+
+  server.registerTool(
+    'kppdf_propose_counterparty_create',
+    {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
+      title: 'Propose counterparty create (journal, order import)',
+      description:
+        'TZD-ORDER-IMPORT-01: POST /api/mutation-journal/propose kind=counterparty.create — ' +
+        '0 SoT write. Confirm via kppdf_confirm_proposal (undo-able), unlike kppdf_counterparty_create ' +
+        'which writes SoT immediately. Same whitelist: name*, inn*, roles*, shortName, legalForm, ' +
+        'legalType, type, partyTypes, phone, paymentTermDays, vatRate.',
+      inputSchema: counterpartyCreateInput,
+    },
+    async (args) => {
+      try {
+        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, '/api/mutation-journal/proposals', {
+          kind: 'counterparty.create',
+          toolName: 'kppdf_propose_counterparty_create',
+          counterpartyCreate: buildCounterpartyCreateBody(args),
+        });
+        return toolOk({ ok: true, proposal: result });
+      } catch (err) {
+        return toolFail('kppdf_propose_counterparty_create', err);
+      }
+    },
+  );
+
+  server.registerTool(
+    'kppdf_propose_site_create',
+    {
+      outputSchema: TOOL_OUTPUT_SCHEMA,
+      title: 'Propose site create (journal, order import)',
+      description:
+        'TZD-ORDER-IMPORT-01: POST /api/mutation-journal/propose kind=site.create — 0 SoT write. ' +
+        'Confirm via kppdf_confirm_proposal (undo-able). counterpartyId may be the entityId of a ' +
+        'just-confirmed counterparty.create proposal.',
+      inputSchema: {
+        counterpartyId: z.string().min(1).describe('Counterparty id'),
+        name: z.string().min(1).max(256).describe('Site name'),
+        address: z.string().min(1).max(512).describe('Site address'),
+      },
+    },
+    async (args) => {
+      try {
+        const result = await backendPostJson(cfg.apiBaseUrl, cfg.apiKey, '/api/mutation-journal/proposals', {
+          kind: 'site.create',
+          toolName: 'kppdf_propose_site_create',
+          siteCreate: args,
+        });
+        return toolOk({ ok: true, proposal: result });
+      } catch (err) {
+        return toolFail('kppdf_propose_site_create', err);
       }
     },
   );

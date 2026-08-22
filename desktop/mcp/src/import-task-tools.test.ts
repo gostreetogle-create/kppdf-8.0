@@ -18,6 +18,7 @@ describe('import-task tools (TZD-22 + TZD-23)', () => {
       'kppdf_import_task_set_report',
       'kppdf_import_task_apply_plan',
       'kppdf_import_task_reshape',
+      'kppdf_import_task_finalize_order',
     ]);
   });
 
@@ -293,6 +294,38 @@ describe('applyImportTaskPlan (TZD-23 HITL gate + TZD-18 chunks)', () => {
       { taskId: 't1', ids: ['p-1', 'p-2', 'p-3'] },
     ]);
     assert.equal((result.task as { status?: string })?.status, 'applying');
+  });
+
+  it('TZD-ORDER-IMPORT-01: links rowIndex→proposalId via setProposals rowProposals[]', async () => {
+    const rowProposalsCalls: unknown[] = [];
+    const { deps } = makeDeps({
+      getTask: async () => ({
+        status: 'awaiting_user',
+        aiReport: {
+          rows: [
+            { rowIndex: 0, decision: 'new', entity: 'product', proposed: { name: 'Стойка', kind: 'good' } },
+            { rowIndex: 1, decision: 'skip', reason: 'duplicate' },
+            { rowIndex: 2, decision: 'new', entity: 'product', proposed: { name: 'Ворота', kind: 'good' } },
+          ],
+        },
+      }),
+      setProposals: async (taskId, ids, rowProposals) => {
+        rowProposalsCalls.push(rowProposals);
+        return { id: taskId, status: 'applying', proposalIds: ids };
+      },
+    });
+
+    const result = await applyImportTaskPlan(deps, { id: 't1', userOk: true });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.proposed, 2);
+    // proposeBatch mock assigns ids in call order → row 0 gets p-1, row 2 gets p-2 (row 1 skipped).
+    assert.deepEqual(rowProposalsCalls, [
+      [
+        { rowIndex: 0, proposalId: 'p-1' },
+        { rowIndex: 2, proposalId: 'p-2' },
+      ],
+    ]);
   });
 
   it('120-row plan → ≤3 batch calls (chunk 100) (TZD-18)', async () => {

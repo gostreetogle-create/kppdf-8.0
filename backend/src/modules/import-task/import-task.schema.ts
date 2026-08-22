@@ -37,6 +37,9 @@ export interface ImportTaskSource {
   fileType: ImportTaskFileType;
   contentHash?: string;
   inboxPath?: string;
+  /** TZD-ORDER-IMPORT-01: raw «ЗАКАЗЧИК: ...» text (или аналог) — трассировка,
+   *  backend/схема НЕ парсит это поле; матчинг Counterparty/Site делает агент. */
+  customerNameRaw?: string;
 }
 
 export interface ImportTaskRow {
@@ -47,6 +50,8 @@ export interface ImportTaskRow {
   article?: string;
   sku?: string;
   notes?: string;
+  /** TZD-ORDER-IMPORT-01: канон для «Кол-во» — раньше терялось (см. live-test аудит). */
+  quantity?: number;
 }
 
 export type AiReportDecision = 'new' | 'skip' | 'update' | 'doubt';
@@ -59,6 +64,8 @@ export interface AiReportProposed {
   notes?: string;
   /** TZD-27 — required for product.new rows (good|service|work). */
   kind?: 'good' | 'service' | 'work';
+  /** TZD-ORDER-IMPORT-01 — carried through to order.create items[].quantity. */
+  quantity?: number;
 }
 
 export interface AiReportRow {
@@ -69,6 +76,12 @@ export interface AiReportRow {
   materialId?: string;
   reason?: string;
   proposed?: AiReportProposed;
+  /**
+   * TZD-ORDER-IMPORT-01 — mutation-journal proposal id created for this row by
+   * apply_plan. Written by PATCH .../proposals (rowProposals[]); used by
+   * kppdf_import_task_finalize_order to resolve the confirmed productId.
+   */
+  proposalId?: string;
 }
 
 /**

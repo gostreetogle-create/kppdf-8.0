@@ -17,8 +17,8 @@ import {
 } from './commercial-tools.js';
 
 describe('commercial tools (TZD-33)', () => {
-  it('registers 17 tool names', () => {
-    assert.equal(COMMERCIAL_TOOL_NAMES.length, 17);
+  it('registers 19 tool names', () => {
+    assert.equal(COMMERCIAL_TOOL_NAMES.length, 19);
     for (const name of [
       'kppdf_list_counterparties',
       'kppdf_list_quotations',
@@ -26,6 +26,8 @@ describe('commercial tools (TZD-33)', () => {
       'kppdf_list_contracts',
       'kppdf_counterparty_create',
       'kppdf_site_create',
+      'kppdf_propose_counterparty_create',
+      'kppdf_propose_site_create',
       'kppdf_quotation_create_draft',
       'kppdf_order_create_draft',
       'kppdf_quotation_set_status',

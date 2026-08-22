@@ -90,7 +90,7 @@ Excel-формы работают без модели и без MCP.
   "ok": true,
   "service": "kppdf-desktop-mcp",
   "port": 9743,
-  "toolCount": 95,
+  "toolCount": 98,
   "packageVersion": "0.1.0",
   "hostDir": "D:\\kppdf-8.0\\desktop\\mcp",
   "toolsSample": ["kppdf_list_categories", "kppdf_propose_product_create", "…"]
@@ -417,6 +417,8 @@ BE-волна): reads везде; writes — только **draft** (или crea
 |------|------|-----------|
 | `kppdf_counterparty_create` | `POST /api/counterparties` | whitelist: name\*, inn\*, roles\*, shortName, legalForm, legalType, type, partyTypes, phone, paymentTermDays, vatRate. **Пишет SoT сразу** (нет journal) |
 | `kppdf_site_create` | `POST /api/sites` | `{ counterpartyId, name, address }` — SoT сразу |
+| `kppdf_propose_counterparty_create` | `POST /api/mutation-journal/proposals` (kind `counterparty.create`) | TZD-ORDER-IMPORT-01 — тот же whitelist, но propose→confirm (0 SoT до `kppdf_confirm_proposal`, undo-able); для order-import HITL |
+| `kppdf_propose_site_create` | `POST /api/mutation-journal/proposals` (kind `site.create`) | TZD-ORDER-IMPORT-01 — propose→confirm вариант `kppdf_site_create` |
 | `kppdf_quotation_create_draft` | `POST /api/quotations` | **force `status: 'draft'`**; required `organizationId` + `items[]`; optional counterpartyId/title/notes/discount\* |
 | `kppdf_order_create_draft` | `POST /api/orders` | **force `status: 'draft'`**; required `counterpartyId`, `siteId`, `items[]` |
 
@@ -550,6 +552,49 @@ proposals (0 journal) и не пишет SoT.
 не порождают proposals. `set_report` сам ничего не пишет в журнал.
 Ограничение: matching best-effort; reshape (TZD-26), batch (TZD-18), products (TZD-27) — следующие TZ волны.
 
+### Order import (TZD-ORDER-IMPORT-01) — phase 2 поверх product-строк
+
+Живой тест 2026-08-22 (`docs/audits/2026-08-22-desktop-import-live-test.md`)
+показал: конвейер выше пишет только в каталог, `Кол-во` терялось. Для реального
+заказа клиента (не формы каталога) добавлена **вторая фаза** поверх той же
+Variant C цепочки — только для строк `entity: 'product'`:
+
+1. `ImportTaskRow`/`AiReportProposed` теперь несут канонический `quantity`.
+2. `kppdf_import_task_apply_plan` (без изменений в вызове) дополнительно
+   линкует `rowIndex → proposalId` на `aiReport.rows[]` (через
+   `PATCH .../proposals { rowProposals: [...] }`) — нужно для шага 4.
+3. Человек/агент подтверждает product-proposals как обычно:
+   `kppdf_confirm_batch` по `proposalIds` из ответа `apply_plan`.
+4. **Матчинг заказчика** — агент сам ищет Counterparty/Site по свободному
+   тексту файла (например «ЗАКАЗЧИК: ООО «X»», передайте его как
+   `customerNameRaw` в `kppdf_import_task_create` — трассировка, backend его
+   не парсит) через `kppdf_list_counterparties`/`kppdf_list_sites`. Не нашли —
+   HITL propose→confirm (не тихий SoT-write, в отличие от
+   `kppdf_counterparty_create`/`kppdf_site_create` выше):
+   `kppdf_propose_counterparty_create` → `kppdf_confirm_proposal` →
+   `kppdf_propose_site_create` (с `counterpartyId` = `entityId` подтверждённого
+   контрагента) → `kppdf_confirm_proposal`.
+5. `kppdf_import_task_finalize_order` — только из статуса `applying`. Резолвит
+   каждую `new`-строку через её `proposalId` (требует `status: applied` в
+   mutation-journal — иначе строка попадает в `excludedRows` с причиной, не
+   молча теряется), каждую `update`-строку — через уже существующий
+   `materialId`; требует `proposed.quantity > 0`. Собирает **один**
+   `order.create` proposal (`items[]` с `productId`+`quantity`+`unit`). 0 SoT.
+6. `kppdf_confirm_proposal` на `proposalId` из шага 5 → реальный `Order`
+   (`OrderService.create`, те же инварианты: `assertBelongsTo(siteId,
+   counterpartyId)`, номер через `CounterService`). `Order.source` форсится в
+   `'desktop-import'` (не принимается от вызывающего), `Order.managerId` =
+   актор mutation-journal (тот же пользователь, что подтверждал). Undo —
+   soft-delete заказа (`kppdf_undo_mutation`).
+7. `kppdf_import_task_set_status` → `done`, как в обычном протоколе.
+
+**Почему не material:** `Order.items[].productId` ссылается на `Product`, не
+`Material` — строки заказа (товары/изделия) матчатся/создаются как
+`entity: 'product'`, ровно как TZD-27.
+**Запрет:** `finalize_order` никогда не строит заказ из неподтверждённых
+proposals и никогда не выдумывает `counterpartyId`/`siteId` сам — оба обязательны
+во входе и должны быть реальными id.
+
 Desktop UI: after **Разобрать** — button **«Создать задачу для ИИ»** (Import Task) vs **«Предложить строки»** (expert proposals, без сверки с базой).
 
 ## Tools — inbox (TZD-15 + TZD-17)
@@ -574,6 +619,14 @@ Inbox-папка настраивается в десктоп-приложени
 
 ## Follow-ups
 
+- **TZD-ORDER-IMPORT-01** (2026-08-22) — order import phase 2: `mutation-journal`
+  kinds `counterparty.create`/`site.create`/`order.create`; `Order.source`
+  (`manual|desktop-import`, forced on this path); `ImportTaskRow`/`AiReportProposed.quantity`;
+  row-level `proposalId` link (`PATCH .../proposals { rowProposals }`);
+  `kppdf_import_task_finalize_order`; `kppdf_propose_counterparty_create`/`kppdf_propose_site_create`.
+  См. Order import protocol выше. Не в скоупе: именованные шаблоны сопоставления,
+  dropdown «куда льём», кнопка «Отправить в ИИ» на issues (см.
+  `docs/superpowers/specs/2026-08-22-universal-import-mapping-templates.md`).
 - **TZD-29** ✅ DONE (2026-08-08, wave #7 — волна завершена) — import todos: BE `import-todo` module (POST/GET/PATCH, admin|manager, org-scope); MCP `kppdf_import_todo_create|list|set_status`; todo protocol выше; FE тонкая `/import-todos` страница.
 - **TZD-28** ✅ DONE (2026-08-08, wave #6) — doc-constructor MCP: canonical `kppdf_list_doc_types` / `kppdf_list_doc_template_categories` / `kppdf_list_doc_templates` plus one-wave aliases and `kppdf_doc_template_create_draft` (isActive=false, isDefault=false, notes `[AI-DRAFT]`; никогда set-default); protocol doc-draft → TZD-29 todo.
 - **TZD-38** ✅ DONE (2026-08-10, Excel Studio wave #3) — hierarchical specification preview and conflict gate; explicit confirm creates missing catalog entities and writes Product/Module composition through existing REST endpoints; MCP draft/confirm tools; flat TZD-37 path unchanged. TZD-35 PARK closed.

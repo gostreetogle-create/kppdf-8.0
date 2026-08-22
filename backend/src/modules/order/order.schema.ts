@@ -144,6 +144,8 @@ const EstimateStartOffsetSchema = SchemaFactory.createForClass(EstimateStartOffs
 
 export type OrderStatus = 'draft' | 'confirmed' | 'in_production' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 export type OrderPriority = 'low' | 'normal' | 'high' | 'urgent';
+/** TZD-ORDER-IMPORT-01: провенанс заказа — вручную в вебе или через Excel/MCP импорт. */
+export type OrderSource = 'manual' | 'desktop-import';
 export type OrderDocument = HydratedDocument<Order>;
 
 @Schema({ collection: 'orders', timestamps: true })
@@ -190,6 +192,10 @@ export class Order {
   /** TZ-ORDERS-305 D19: source of materials for the order. */
   @Prop({ enum: ['own', 'customer'], default: 'own', index: true })
   materialsSource!: 'own' | 'customer';
+
+  /** TZD-ORDER-IMPORT-01: провенанс — кто/что создало заказ. */
+  @Prop({ enum: ['manual', 'desktop-import'], default: 'manual', index: true })
+  source!: OrderSource;
 
   @Prop({ default: true, index: true })
   isActive!: boolean;

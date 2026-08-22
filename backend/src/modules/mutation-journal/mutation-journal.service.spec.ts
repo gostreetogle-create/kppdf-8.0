@@ -20,6 +20,12 @@ function buildService(opts: {
   productsUpdate?: jest.Mock;
   productsRemove?: jest.Mock;
   productsFindById?: jest.Mock;
+  counterpartiesCreate?: jest.Mock;
+  counterpartiesRemove?: jest.Mock;
+  sitesCreate?: jest.Mock;
+  sitesRemove?: jest.Mock;
+  ordersCreate?: jest.Mock;
+  ordersRemove?: jest.Mock;
   ringSize?: number;
 } = {}) {
   const create = opts.create ?? jest.fn();
@@ -67,9 +73,38 @@ function buildService(opts: {
     findById: opts.productsFindById ?? jest.fn(),
   } as any;
 
+  const counterparties = {
+    create: opts.counterpartiesCreate ?? jest.fn(),
+    remove: opts.counterpartiesRemove ?? jest.fn(),
+  } as any;
+
+  const sites = {
+    create: opts.sitesCreate ?? jest.fn(),
+    remove: opts.sitesRemove ?? jest.fn(),
+  } as any;
+
+  const orders = {
+    create: opts.ordersCreate ?? jest.fn(),
+    remove: opts.ordersRemove ?? jest.fn(),
+  } as any;
+
   process.env.MUTATION_JOURNAL_RING_SIZE = String(opts.ringSize ?? 50);
-  const service = new MutationJournalService(model, materials, products);
-  return { service, create, findById, findOne, materials, products, model, leanChain, countDocuments, deleteMany };
+  const service = new MutationJournalService(model, materials, products, counterparties, sites, orders);
+  return {
+    service,
+    create,
+    findById,
+    findOne,
+    materials,
+    products,
+    counterparties,
+    sites,
+    orders,
+    model,
+    leanChain,
+    countDocuments,
+    deleteMany,
+  };
 }
 
 const user = {
@@ -688,6 +723,190 @@ describe('MutationJournalService (TZD-13)', () => {
       user.organizationId,
     );
     expect(doc.status).toBe('applied');
+  });
+
+  // ── TZD-ORDER-IMPORT-01 ─────────────────────────────────────────────────────
+
+  it('propose counterparty.create → journal row, CounterpartyService.create not called', async () => {
+    const { service, create, counterparties } = buildService({
+      create: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439055',
+        status: 'proposed',
+        kind: 'counterparty.create',
+        toolName: 'kppdf_propose_counterparty_create',
+        payload: { name: 'ООО «Дортранссервис»', inn: '7701234567', roles: ['customer'] },
+      }),
+    });
+
+    const view = await service.propose(
+      {
+        kind: 'counterparty.create',
+        counterpartyCreate: { name: 'ООО «Дортранссервис»', inn: '7701234567', roles: ['customer'] },
+      } as any,
+      user,
+    );
+
+    expect(counterparties.create).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'proposed', kind: 'counterparty.create', entityType: 'Counterparty' }),
+    );
+    expect(view.proposalId).toBe('507f1f77bcf86cd799439055');
+  });
+
+  it('propose counterparty.create rejects missing inn', async () => {
+    const { service } = buildService();
+    await expect(
+      service.propose(
+        { kind: 'counterparty.create', counterpartyCreate: { name: 'X', roles: ['customer'] } as any } as any,
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('confirm counterparty.create → CounterpartyService.create + applied', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439055',
+      status: 'proposed',
+      kind: 'counterparty.create',
+      toolName: 't',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Counterparty',
+      payload: { name: 'ООО «Дортранссервис»', inn: '7701234567', roles: ['customer'] },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, counterparties } = buildService({
+      findByIdDoc: doc,
+      counterpartiesCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439066',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439066', name: 'ООО «Дортранссервис»' }),
+      }),
+    });
+
+    const view = await service.confirm('507f1f77bcf86cd799439055', user);
+    expect(counterparties.create).toHaveBeenCalledWith(doc.payload, { organizationId: user.organizationId });
+    expect(doc.status).toBe('applied');
+    expect(view.mutationId).toBe('507f1f77bcf86cd799439055');
+  });
+
+  it('undo counterparty.create → CounterpartyService.remove', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439055',
+      status: 'applied',
+      kind: 'counterparty.create',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Counterparty',
+      entityId: '507f1f77bcf86cd799439066',
+      save,
+    };
+    const { service, counterparties } = buildService({ findByIdDoc: doc });
+    await service.undo('507f1f77bcf86cd799439055', user);
+    expect(counterparties.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439066', {
+      organizationId: user.organizationId,
+    });
+    expect(doc.status).toBe('undone');
+  });
+
+  it('confirm site.create → SiteService.create + applied', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439077',
+      status: 'proposed',
+      kind: 'site.create',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Site',
+      payload: { counterpartyId: '507f1f77bcf86cd799439066', name: 'Объект', address: 'г. Москва' },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, sites } = buildService({
+      findByIdDoc: doc,
+      sitesCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439088',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439088', name: 'Объект' }),
+      }),
+    });
+
+    await service.confirm('507f1f77bcf86cd799439077', user);
+    expect(sites.create).toHaveBeenCalledWith(doc.payload);
+    expect(doc.status).toBe('applied');
+  });
+
+  it('propose order.create rejects item with quantity <= 0', async () => {
+    const { service } = buildService();
+    await expect(
+      service.propose(
+        {
+          kind: 'order.create',
+          orderCreate: {
+            counterpartyId: '507f1f77bcf86cd799439066',
+            siteId: '507f1f77bcf86cd799439088',
+            items: [{ productId: '507f1f77bcf86cd799439099', quantity: 0 }],
+          } as any,
+        } as any,
+        user,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('confirm order.create → OrderService.create with source=desktop-import + managerId=actor', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439100',
+      status: 'proposed',
+      kind: 'order.create',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Order',
+      payload: {
+        counterpartyId: '507f1f77bcf86cd799439066',
+        siteId: '507f1f77bcf86cd799439088',
+        items: [{ productId: '507f1f77bcf86cd799439099', quantity: 4, unit: 'шт' }],
+      },
+      expiresAt: new Date(Date.now() + 60_000),
+      save,
+    };
+    const { service, orders } = buildService({
+      findByIdDoc: doc,
+      ordersCreate: jest.fn().mockResolvedValue({
+        _id: '507f1f77bcf86cd799439111',
+        toObject: () => ({ _id: '507f1f77bcf86cd799439111', number: 'ORD-0099' }),
+      }),
+    });
+
+    await service.confirm('507f1f77bcf86cd799439100', user);
+    expect(orders.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        counterpartyId: '507f1f77bcf86cd799439066',
+        siteId: '507f1f77bcf86cd799439088',
+        source: 'desktop-import',
+        managerId: user.id,
+      }),
+    );
+    expect(doc.status).toBe('applied');
+  });
+
+  it('undo order.create → OrderService.remove', async () => {
+    const save = jest.fn().mockResolvedValue(undefined);
+    const doc: any = {
+      _id: '507f1f77bcf86cd799439100',
+      status: 'applied',
+      kind: 'order.create',
+      actorUserId: user.id,
+      organizationId: user.organizationId,
+      entityType: 'Order',
+      entityId: '507f1f77bcf86cd799439111',
+      save,
+    };
+    const { service, orders } = buildService({ findByIdDoc: doc });
+    await service.undo('507f1f77bcf86cd799439100', user);
+    expect(orders.remove).toHaveBeenCalledWith('507f1f77bcf86cd799439111');
+    expect(doc.status).toBe('undone');
   });
 
   it('enforceRing deletes overflow', async () => {
