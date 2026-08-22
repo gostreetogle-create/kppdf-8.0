@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T20:05:00+03:00
+updated_at: 2026-08-22T21:45:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -16,6 +16,13 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZ-CORE-302** — DONE by `claude` (2026-08-22T21:15:00+03:00): soft-delete coverage — 53 schemas resolved (17 softDelete:false + 36 deletedAt + 1 subdoc skipped); regression test `soft-delete-coverage.spec.ts` added; archive `tasks/_archive/2026-08/TZ-CORE-302.done.md`; gates PASS (backend tsc, regression test 1/1, jest 958/960 pre-existing, lint 47 pre-existing).
+**TZ-OPS-318** — DONE by `freebuff` (2026-08-22T19:11:51+03:00): backup.sh rotation + cron docs + volume-survives-deploy docs; commit `12178c2c`; archive `tasks/_archive/2026-08/TZ-OPS-318.done.md`; gates: bash -n PASS, supply-gate 50/50.
+**TZ-OPS-319** — DONE by `freebuff` (2026-08-22T19:11:51+03:00): .husky/pre-push typecheck hook + GIT-POLICY --no-verify doc; commit `13810896`; archive `tasks/_archive/2026-08/TZ-OPS-319.done.md`; gates: bash -n PASS, pre-push hook live-tested during push (tsc both PASS).
+**TZ-OPS-318** — DONE by `claude` (2026-08-22T21:25:00+03:00): backup rotation + cron string + volume docs; archive `tasks/_archive/2026-08/TZ-OPS-318.done.md`; gates PASS (bash -n).
+**TZ-OPS-319** — DONE by `claude` (2026-08-22T21:30:00+03:00): `.husky/pre-push` typecheck hook + GIT-POLICY.md --no-verify note; archive `tasks/_archive/2026-08/TZ-OPS-319.done.md`; gates PASS (hook runs, both tsc OK).
+**TZ-OPS-317** — DONE by `claude` (2026-08-22T21:40:00+03:00): `.gitattributes` + renormalize; archive `tasks/_archive/2026-08/TZ-OPS-317.done.md`; gates PASS (architecture check, backend tsc).
+**TZD-60** — DEFERRED (2026-08-22T20:05:00+03:00): no real install possible in this session.
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
 **TZ-STRAT-01A** — DONE by `claude` (2026-08-22T11:05:00+03:00): PO/Cursor review PASS relayed; re-gate перед closeout (tsc + focused Jest 66/66) без расхождений; archive `tasks/_archive/2026-08/TZ-STRAT-01A.done.md`; deploy НЕ.
@@ -60,9 +67,8 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 ## QUEUE
 
 Backlog (не брать без PO):
-- `tasks/_backlog/TZ-PARTY-305-counterparty-contact-person.md` — контактное лицо контрагента
-- `tasks/_backlog/TZ-ORDERS-307-order-executor-organization.md` — организация-исполнитель заказа
 - `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md` — блокировка парольного входа из WAN (требует deploy)
+- `tasks/_backlog/TZ-ORDERS-307` — организация-исполнитель заказа (in-progress by other agent)
 
 SUPPLY-304/305 — DONE (транзитивно закрыты: 304 archived 2026-08-19, 305→311→312→313→314→315 DONE; smoke 23/23).
 TZ-SUPPLY-312 — READY_FOR_ACCEPTANCE: все gates/smoke PASS, остался только браузерный проход PO после deploy. Не блокирует новые TZ.
