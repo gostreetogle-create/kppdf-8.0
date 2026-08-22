@@ -110,7 +110,7 @@ const CHROME_OWNER = 'materials-page';
     CatalogKindMarkerComponent,
   ],
   styles: `
-    @media (min-width: 1680px) {
+    @media (min-width: 1024px) {
       .materials-chrome-fallback {
         display: none;
       }
@@ -163,7 +163,7 @@ const CHROME_OWNER = 'materials-page';
           <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
             <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
           </app-pi-button>
-          <!-- TZ-CATALOG-373 / TZ-UX-328: view toggle (&lt;1680 fallback; chrome ≥1680) -->
+          <!-- TZ-CATALOG-373 / TZ-UX-328: view toggle (<1024 fallback; chrome ≥1024) -->
           <div
             class="flex items-center gap-0.5 hairline rounded-sm p-0.5"
             role="group"

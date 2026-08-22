@@ -152,7 +152,7 @@ function moduleHasComposition(row: ProductModule): boolean {
  *     и имя-ссылка на `/modules/:id`;
  *   - Toolbar: поиск · «Состав» · «+ Создать» · счётчик; view/refresh/filters
  *     → PiChromeToolsService (TZ-UX-327, эталон products TZ-UX-326); fallback
- *     &lt;1680 в toolbar без локальной w-12 колонки.
+ *     &lt;1024 в toolbar без локальной w-12 колонки.
  *   - Filters flyout (канон products): absolute left overlay + backdrop на
  *     контенте; Состав · Сортировка (name↑↓ / article↑↓) · Сбросить · Закрыть;
  *   - Grid: `PiShowcaseCard` md в сетке 1/2/3, клик → `/modules/:id`,
@@ -184,7 +184,7 @@ function moduleHasComposition(row: ProductModule): boolean {
     CatalogKindMarkerComponent,
   ],
   styles: `
-    @media (min-width: 1680px) {
+    @media (min-width: 1024px) {
       .modules-chrome-fallback {
         display: none;
       }

@@ -152,7 +152,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     CatalogKindMarkerComponent,
   ],
   styles: `
-    @media (min-width: 1680px) {
+    @media (min-width: 1024px) {
       .products-chrome-fallback {
         display: none;
       }

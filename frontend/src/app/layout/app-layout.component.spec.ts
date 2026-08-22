@@ -164,7 +164,7 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     expect(source).not.toContain('right: 64px');
     expect(source).not.toContain('left: 14px');
     expect(source).not.toContain('right: 14px');
-    expect(source).toContain('@media (min-width: 1680px)');
+    expect(source).toContain('@media (min-width: 1024px)');
     expect(source).toContain('display: flex');
   });
 

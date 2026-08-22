@@ -449,7 +449,7 @@ export function matchActiveCategoryId(
 
         <!--
           TZ-UX-321-FIX: two transparent chrome rails anchored to .pi-page-frame
-          (position:relative). ← left rail, → right rail. Visible ≥1680px only.
+          (position:relative). ← left rail, → right rail. Visible ≥1024px (=lg padding 64px).
           TZ-UX-322: page tools under history via PiChromeToolsService.
           TZ-UX-324: ~1-button spacer + muted page-tool visual vs history.
         -->
@@ -581,9 +581,13 @@ export function matchActiveCategoryId(
     }
     .app-chrome-rail-left {
       left: 0;
+      background: var(--color-paper-2);
+      border-right: 1px solid var(--color-rule);
     }
     .app-chrome-rail-right {
       right: 0;
+      background: var(--color-paper-2);
+      border-left: 1px solid var(--color-rule);
     }
     .app-nav-rail-button {
       display: inline-flex;
@@ -631,7 +635,7 @@ export function matchActiveCategoryId(
       background: var(--color-paper-3);
       border-color: var(--color-rule-strong);
     }
-    @media (min-width: 1680px) {
+    @media (min-width: 1024px) {
       .app-chrome-rail {
         display: flex;
       }

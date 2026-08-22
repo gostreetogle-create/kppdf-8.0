@@ -132,8 +132,9 @@ interface ItemFormGroup extends FormGroup {
         </p>
       }
       <!-- ─── Header ─── -->
-      <app-pi-form-section title="Основные данные" headingId="order-sec-basics" tone="gold">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
+      @if (variant() === 'full') {
+        <app-pi-form-section title="Основные данные" headingId="order-sec-basics" tone="gold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
           <app-pi-form-field
             label="Заказчик"
             htmlFor="ord-cp"
@@ -231,11 +232,12 @@ interface ItemFormGroup extends FormGroup {
               />
             </app-pi-form-field>
           </div>
-        </div>
-      </app-pi-form-section>
+          </div>
+        </app-pi-form-section>
+      }
 
       <!-- ─── Quick-create заказчик ─── -->
-      @if (!isCompositionLocked()) {
+      @if (variant() === 'full' && !isCompositionLocked()) {
         <app-pi-form-section
           title="Быстрый заказчик"
           headingId="order-sec-quick-party"
@@ -405,17 +407,19 @@ interface ItemFormGroup extends FormGroup {
       </app-pi-form-section>
 
       <!-- ─── Notes ─── -->
-      <app-pi-form-section title="Заметки" headingId="order-sec-notes" tone="neutral">
-        <app-pi-form-field label="Заметки" htmlFor="ord-notes">
-          <app-pi-textarea
-            id="ord-notes"
-            formControlName="notes"
-            [rows]="2"
-            [maxLength]="2000"
-            ariaLabel="Заметки"
-          />
-        </app-pi-form-field>
-      </app-pi-form-section>
+      @if (variant() === 'full') {
+        <app-pi-form-section title="Заметки" headingId="order-sec-notes" tone="neutral">
+          <app-pi-form-field label="Заметки" htmlFor="ord-notes">
+            <app-pi-textarea
+              id="ord-notes"
+              formControlName="notes"
+              [rows]="2"
+              [maxLength]="2000"
+              ariaLabel="Заметки"
+            />
+          </app-pi-form-field>
+        </app-pi-form-section>
+      }
 
       @if (errorMessage()) {
         <p role="alert" class="text-xs text-destructive">{{ errorMessage() }}</p>
@@ -431,7 +435,7 @@ interface ItemFormGroup extends FormGroup {
           [disabled]="submitting() || freezeMode() === 'hard'"
           (click)="onSubmit()"
         >
-          {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
+          {{ submitting() ? 'Сохранение…' : variant() === 'items' ? 'Сохранить состав' : 'Сохранить' }}
         </app-pi-button>
         <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
@@ -441,6 +445,8 @@ interface ItemFormGroup extends FormGroup {
 export class OrderFormPanelComponent implements OnInit {
   /** Заказ для edit; null — create. */
   readonly order = input<Order | null>(null);
+  /** Items-only mode for the desk tray; keeps the same submit/write path. */
+  readonly variant = input<'full' | 'items'>('full');
   /** Испускается после успешного create/update. */
   readonly saved = output<Order>();
   /** Испускается при отмене. */
@@ -455,6 +461,7 @@ export class OrderFormPanelComponent implements OnInit {
     const order = this.order();
     if (order) {
       this.patchFromData(order);
+      if (this.variant() === 'items' && this.itemsArray.length === 0) this.addItem();
     } else {
       // Fresh order — start with one empty item to satisfy CreateOrderDto.required.
       this.addItem();

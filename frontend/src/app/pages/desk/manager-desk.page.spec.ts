@@ -186,6 +186,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     summaryCounts: () => Record<Order['status'], number>;
     view: () => 'desk' | 'gantt' | 'combine';
     viewStudioRoute: () => string;
+    onAddLines: (order?: Order) => void;
+    onPrimaryCta: (order: Order) => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
       expandedId: () => string | null;
@@ -205,6 +207,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       summaryCounts: () => Record<Order['status'], number>;
       view: () => 'desk' | 'gantt' | 'combine';
       viewStudioRoute: () => string;
+      onAddLines: (order?: Order) => void;
+      onPrimaryCta: (order: Order) => void;
     };
   }
 
@@ -416,6 +420,41 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="desk-order-crumb"]')?.textContent,
     ).toContain('З-1004');
+  });
+
+  it('DESK-423 opens the shared items form in bom panel and confirms only from desk', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const emptyOrder = ORDERS[1]!;
+    page().onAddLines(emptyOrder);
+    fixture.detectChanges();
+    expect(page().panel()).toBe('bom');
+    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-panel')).toBe('bom');
+    expect(fixture.nativeElement.querySelector('[data-test="order-form"]')).toBeTruthy();
+    flushPanelLookups(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#order-sec-basics')).toBeNull();
+
+    const confirmable = { ...ORDERS[0]!, siteId: 'site1' };
+    page().onAddLines(confirmable);
+    fixture.detectChanges();
+    page().onPrimaryCta(confirmable);
+    const request = httpMock.expectOne((req) => req.url === '/api/orders/o1' && req.method === 'PATCH');
+    expect(request.request.body).toEqual({ status: 'confirmed' });
+    request.flush({ ...confirmable, status: 'confirmed' });
+    expect(toast.success).toHaveBeenCalledWith('Заказ подтверждён');
+    httpMock.match((req) => req.url === '/api/supply-tasks').forEach((req) => req.flush([]));
+    httpMock.match((req) => req.url === '/api/sites').forEach((req) => req.flush([]));
+    httpMock.match((req) => req.url.includes('/api/products/') && req.url.endsWith('/tree')).forEach((req) =>
+      req.flush({ _id: 'p1', name: 'Изделие', kind: 'product', quantity: 1, children: [] }),
+    );
+    httpMock.match((req) => req.url === '/api/sites/ensure-default').forEach((req) =>
+      req.flush({ _id: 'site-default', counterpartyId: 'cp1', name: 'Объект' }),
+    );
   });
 
   it('opens right panels only for an expanded order and Escape closes only the flyout', async () => {

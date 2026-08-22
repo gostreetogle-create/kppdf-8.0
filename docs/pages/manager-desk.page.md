@@ -36,13 +36,14 @@
 - Tray: группы как `/orders` expand — Заказ, Исполнение, Комбайн-strip, Состав, inline CTA.
   - **412:** один shared `order-hub-tray` (`mode="desk"`) — та же разметка, что `/orders` expand (`mode="hub"`), без форка шаблона.
   - **403:** composition-tree + lazy supply живут в самом tray (self-contained); desk раскрывает живой BOM без маршрута `/orders/:id`, карандаш = `open-catalog-composition-edit`.
-- **L flyout** (create/filter/summary) · **R flyout** (edit/client/bom/docs/supply).
+  - **423:** операторское место: «Добавить изделие» → `panel=bom` + `OrderFormPanel variant=items` (не `edit`); hint CTA только по клику; правые CTA — кнопки + disclosure; desk PATCH `draft→confirmed`; спека `docs/superpowers/specs/2026-08-22-desk-order-tray-operator.md`.
+- **L flyout** (create/filter/summary/notebook) · **R flyout** (edit/client/**bom=позиции**/docs/supply).
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
 - **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события.
-- **403:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → «Добавить линию» (edit flyout); «Создать документ» reuse hub-хендлера.
-- **413:** tray = summary bar + 2-колонка cards (Состав слева, справа Исполнение/Снабжение+Производство/Логистика+Документы); Комбайн = lane chips в «Исполнение»; desk composition open by default.
+  - **403 / 423:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → кнопка «Добавить изделие» (`panel=bom`, не edit); «Создать документ» reuse hub-хендлера.
+  - **413 / 423:** tray = summary bar + 2-колонка (Состав слева; справа Исполнение открыто, снабжение/логистика disclosure); Комбайн = lane chips в «Исполнение»; desk composition open by default; без вечных helper-подписей.
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
-- **411:** workflow strip + rail tools скрываются по page ACL (`user.pages`); disabled primary CTA в tray показывает RU-подсказку причины (siteId / статус / freeze).
+- **411 / 423:** workflow strip + rail tools скрываются по page ACL (`user.pages`); primary CTA: причина недоступности — toast/status **по клику**, не вечная подпись.
 - **407:** `?view=gantt|combine` — stub-вью с crumbs + «Открыть в студии» (`/production` | `/design/combine` + `orderId&from=desk`); embed отложен.
 - **414:** `RouterLink` на studio-link; `loadNotes` сбрасывает список и игнорит stale GET при смене expand; `[activeId]="view()"` — чип Гант/Комбайн подсвечивается на stub.
 - **404:** rail tools «На Ганте»/«В комбайне» — deep-link в студии с `orderId&from=desk` (не stub); на `/production` при `from=desk` — кнопка RU **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=`. Комбайн (общий DashboardPage) — known_limitation: назад браузера.
@@ -81,3 +82,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-415** | GET orderId обязателен + PATCH/DELETE author check — **DONE** |
 | **DESK-414** | hotfix RouterLink + stale notes + chip activeId — **DONE** |
 | **DESK-418** | delete заказа со стола с confirm — **DONE** |
+| **DESK-423** | операторский tray (изделие / confirm-on-press / disclosure) — **DONE** |

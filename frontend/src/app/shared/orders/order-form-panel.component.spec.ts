@@ -145,6 +145,29 @@ describe('OrderFormPanelComponent A2 characterization', () => {
     expect(component).toBeTruthy();
   });
 
+  it('items variant renders only composition controls and changes submit label', () => {
+    const fixture = TestBed.createComponent(OrderFormPanelComponent);
+    fixture.componentRef.setInput('order', sampleOrder('draft'));
+    fixture.componentRef.setInput('variant', 'items');
+    fixture.detectChanges();
+    flushLookups(httpMock, [PRODUCT]);
+    httpMock.expectOne((req) => req.url === '/api/sites').flush([]);
+    httpMock.expectOne((req) => req.url === '/api/sites/ensure-default').flush({
+      _id: 'site-default',
+      counterpartyId: 'cp1',
+      name: 'Объект по умолчанию',
+    });
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('#order-sec-basics')).toBeNull();
+    expect(root.querySelector('[data-test="order-quick-party"]')).toBeNull();
+    expect(root.querySelector('#order-sec-notes')).toBeNull();
+    expect(root.textContent).toContain('Позиции');
+    expect(root.querySelector('[data-test="order-form-actions"]')?.textContent).toContain(
+      'Сохранить состав',
+    );
+  });
+
   it('does not submit twice while the first order request is pending', () => {
     const component = createPanel() as unknown as OrderFormHarness;
     flushLookups(httpMock);

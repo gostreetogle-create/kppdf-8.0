@@ -306,10 +306,12 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                           [order]="order"
                           mode="desk"
                           [clientLabel]="clientLabel(order)"
+                          (primaryCta)="onPrimaryCta($event)"
                           (openSupply)="onOpenSupply()"
                           (openDocs)="onOpenDocs()"
                           (createDocument)="onCreateDocument($event)"
-                          (addLines)="onAddLines()"
+                          (openNotebook)="onOpenNotebook($event)"
+                          (addLines)="onAddLines($event)"
                         />
                       }
                     </div>
@@ -364,7 +366,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           class="manager-desk__flyout"
           [class.manager-desk__flyout--left]="panelSide() === 'left'"
           [class.manager-desk__flyout--right]="panelSide() === 'right'"
-          [class.manager-desk__flyout--wide]="panel() === 'create' || panel() === 'edit'"
+          [class.manager-desk__flyout--wide]="panel() === 'create' || panel() === 'edit' || panel() === 'bom'"
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
           [attr.data-panel]="panel()"
@@ -395,6 +397,13 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           } @else if (panel() === 'edit') {
             <app-order-form-panel
               [order]="expandedOrder()"
+              (saved)="onOrderSaved($event)"
+              (cancelled)="closePanel()"
+            />
+          } @else if (panel() === 'bom') {
+            <app-order-form-panel
+              [order]="expandedOrder()"
+              variant="items"
               (saved)="onOrderSaved($event)"
               (cancelled)="closePanel()"
             />
@@ -1223,9 +1232,31 @@ export class ManagerDeskPage {
     });
   }
 
-  /** Empty-composition CTA: add lines via the existing edit flyout. */
-  protected onAddLines(): void {
-    this.openPanel('edit');
+  /** Empty/composition CTA: add order items in the shared items-only panel. */
+  protected onAddLines(order?: Order): void {
+    if (order && this.expandedId() !== order._id) this.expandedId.set(order._id);
+    this.openPanel('bom');
+  }
+
+  protected onOpenNotebook(order: Order): void {
+    if (this.expandedId() !== order._id) this.expandedId.set(order._id);
+    this.openPanel('notebook');
+  }
+
+  protected onPrimaryCta(order: Order): void {
+    if (this.expandedId() !== order._id) return;
+    if (order.status !== 'draft' || !order.siteId || !(order.items?.length ?? 0)) {
+      this.toast.show('Для подтверждения нужны площадка и хотя бы одно изделие.');
+      return;
+    }
+    this.ordersService.update(order._id, { status: 'confirmed' }).subscribe((res) => {
+      if (res.ok) {
+        this.toast.success('Заказ подтверждён');
+        this.listRes.reload();
+      } else {
+        this.toast.error(extractErrorMessage(res.error));
+      }
+    });
   }
 
   /** 408/414: load notes for the given order; drop stale HTTP after order switch. */
