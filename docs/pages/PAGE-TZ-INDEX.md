@@ -124,7 +124,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | Desktop API keys | PAIRING.md | **TZD-21** READY |
 | Desktop Form Studio (Excel формы) | WAVE `WAVE-DESKTOP-EXCEL-FORMS` | TZD-50→52 DONE; TZD-53 0.5.5 code (deploy deferred) |
 | Desktop IA shell (3 двери) | WAVE `WAVE-DESKTOP-IA-SHELL` | **TZD-54/55/56 DONE**; **TZD-61 DONE** (копирайт «не чат» — снимает TZD-62) |
-| Desktop AI-чат | `desktop/docs/AI-PROVIDERS.md` | **TZD-62 DONE**; **TZD-63 DONE** (любой .gguf + скачать без ритуала); **TZD-64** промпт; **TZD-65 READY** OpenAI-compat API |
+| Desktop AI-чат | `desktop/docs/AI-PROVIDERS.md` | **TZD-62/63/64 DONE** (чат + любой .gguf + kppdf-глоссарий в промпте); **TZD-65 READY** OpenAI-compat API |
 
 ## Cost / состав
 

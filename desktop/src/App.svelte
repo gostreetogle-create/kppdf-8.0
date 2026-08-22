@@ -99,7 +99,7 @@
   } from './core/aiRunner';
   import { LOCAL_MODELS, recommendModel, modelById, formatBytes, formatRamGb } from './core/model-catalog';
   import { scanGgufModelsInDir, type ScannedGgufModel, type RejectedGgufFile } from './core/gguf-scan';
-  import { chatCompletion, buildDesktopChatSystemPrompt } from './core/ai';
+  import { chatCompletion, buildDesktopChatSystemPrompt, loadDesktopChatSystemPrompt } from './core/ai';
   import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
   import ChatPanel from './ChatPanel.svelte';
 
@@ -149,7 +149,8 @@
     if (!aiState.modelLoaded) return 'Модель ещё не загружена в память.';
     return '';
   });
-  const desktopChatSystemPrompt = buildDesktopChatSystemPrompt();
+  /** Синхронный fallback сразу; onMount заменит на текст из desktop-chat.md, если исходники доступны (TZD-64). */
+  let desktopChatSystemPrompt = $state(buildDesktopChatSystemPrompt());
   const AI_STATUS_LABEL: Record<AiRunnerStatus, string> = {
     stopped: 'остановлен',
     starting: 'запускается…',
@@ -1764,6 +1765,7 @@
     });
     await loadAiSettings();
     await rescanModels();
+    desktopChatSystemPrompt = await loadDesktopChatSystemPrompt();
     // Закрытие по крестику (Tauri 2): listener + destroy ACL.
     // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
     await getCurrentWindow().onCloseRequested(async (event) => {
