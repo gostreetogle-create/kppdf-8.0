@@ -123,6 +123,20 @@ function copyNative() {
   if (!fs.existsSync(path.join(destNm, 'node-llama-cpp', 'package.json'))) {
     throw new Error('bundle-ai-runner: node-llama-cpp не скопирован');
   }
+
+  // ── prune build-only deps with deep node_modules chains (MAX_PATH safety) ──
+  // cmake-js is listed as a dependency but only used for source builds;
+  // the prebuilt @node-llama-cpp/win-x64 binary needs no build tools at runtime.
+  // Its nested dep chain (cmake-js→yargs→cliui→wrap-ansi→ansi-styles→
+  // color-convert→color-name) pushes Windows paths past MAX_PATH.
+  const pruneList = ['cmake-js', 'typescript', 'simple-git'];
+  for (const pkg of pruneList) {
+    const p = path.join(destNm, 'node-llama-cpp', 'node_modules', pkg);
+    if (fs.existsSync(p)) {
+      rmrf(p);
+      console.log(`bundle-ai-runner: pruned ${pkg} (build-only, MAX_PATH safety)`);
+    }
+  }
   const winCpu = path.join(destNm, 'node-llama-cpp', 'node_modules', '@node-llama-cpp', 'win-x64');
   if (!fs.existsSync(winCpu)) {
     console.warn('bundle-ai-runner: нет @node-llama-cpp/win-x64 — модель на CPU в install может не загрузиться');
