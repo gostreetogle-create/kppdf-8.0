@@ -2,6 +2,7 @@ import {
   ApplicationConfig,
   ErrorHandler,
   inject,
+  importProvidersFrom,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
@@ -9,6 +10,7 @@ import {
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { LucideAngularModule, Check, Minus, ArrowUpRight } from 'lucide-angular';
 
 import { routes } from './app.routes';
 import { idempotencyInterceptor } from './core/idempotency.interceptor';
@@ -65,5 +67,9 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor])),
     provideAnimationsAsync(),
     provideAppInitializer(() => inject(AuthService).bootstrap()),
+    // TZ-CRASH-401: string-name `<lucide-icon name="...">`/`<i-lucide>` lookups (checkbox
+    // check/minus, card arrow-up-right) throw "icon has not been provided by any available
+    // icon providers" without a global `.pick()` registration — there was none before this.
+    importProvidersFrom(LucideAngularModule.pick({ Check, Minus, ArrowUpRight })),
   ],
 };

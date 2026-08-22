@@ -49,6 +49,7 @@
 | Supply: quick order + registry + shipping | included | TZ-SUPPLY-305..312: `SupplyRequest` → «Заказано» → `SupplyTask` реестр; отгрузка из заказа (dispatch в транзакции). Stand smoke `scripts/smoke/supply-smoke.mjs` 23/23; браузерный проход PO после deploy. |
 | Procurement legacy: PurchaseRequest/PurchaseOrder | available | **LEGACY (TZ-SUPPLY-313, вариант A)**: read-only API + MCP (`kppdf_list/get_purchase_*`), без UI, не расширять; новые закупки — через `SupplyRequest`/`SupplyTask`. Удаление — отдельная волна после развязки MCP (вариант B, successor). |
 | Desktop app + MCP pairing | available | Basic Auth + `X-Access-Token`; version gate — backlog. |
+| Desktop order import (Excel → mutation-journal → Order) | included | TZD-ORDER-IMPORT-01: `Order.source: desktop-import` + journal kinds (`order.create`/`counterparty.create`/`site.create`) + row-level `proposalId` + `kppdf_import_task_finalize_order` MCP tool; backend gates PASS (jest 958/960, desktop 122/122); live desktop→prod smoke — PO after deploy. |
 | MCP photo upload (Photo SoT) | included | TZD-47 HITL 1 file → `POST /api/photos/upload` + optional `Product.photoIds`; CP bind REST отсутствует; bulk → MIG-303. |
 | Fine-grained warehouse ACL (worker = свой склад) | absent | Vision; не импровизировать. |
 | Full accounting / CRM / tender mega | removed | Вне scope product-vision-lite; не возвращать без PO. |
@@ -69,6 +70,7 @@
 
 | Дата | Что |
 |------|-----|
+| 2026-08-22 | TZD-ORDER-IMPORT-01: desktop Excel-импорт заказов через mutation-journal → included. Breadcrumb/TOC unification (TZ-UI-403..406), catalog photo lightbox (TZ-UI-344) — UI-only, capability state не меняют. |
 | 2026-08-20 | TZ-SUPPLY-313: legacy PurchaseRequest/PurchaseOrder → официальный legacy-режим (вариант A); Supply quick order + registry + shipping → included. |
 | 2026-08-17 | TZD-47: MCP photo upload HITL → Photo SoT + optional Product.photoIds. |
 | 2026-08-11 | Первый ledger: adopt vibe capability idea; seed из SECTION-READINESS + vision. |

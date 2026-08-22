@@ -21,10 +21,10 @@ export type CheckboxSize = 'sm' | 'md';
  * - checked → unchecked
  * - indeterminate → unchecked  (W3C ARIA APG standard)
  *
- * Uses global `<i-lucide>` web-component selector for `check` / `minus`
- * icons. The selector resolves once LucideAngularModule is included in
- * any component's imports (we import it project-wide in KitLayout for
- * this reason — single load registers `<i-lucide>` globally).
+ * Uses the `<i-lucide name="...">` string-lookup form for `check` / `minus`
+ * icons. That lookup requires the icon to be registered via
+ * `LucideAngularModule.pick({...})` — see `app.config.ts` — not merely
+ * imported; a new icon name here must be added to that pick list too.
  */
 @Component({
   selector: 'app-pi-checkbox',

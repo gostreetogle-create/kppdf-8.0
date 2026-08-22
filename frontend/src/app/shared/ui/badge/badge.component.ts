@@ -22,10 +22,13 @@ const BASE_CLASS =
 
 /**
  * Paper & Ink editorial Badge.
- * 4 variants × 2 sizes. Optional Lucide icon (left via <i-lucide global>)
- * and pulsing dot. `icon` is default '' (never null) so the template
- * binding [name]="icon()" stays string-compatible with i-lucide's input
- * type without nullable coercion.
+ * 4 variants × 2 sizes. Optional Lucide icon (left via `<i-lucide name="...">`
+ * string lookup) and pulsing dot. `icon` is default '' (never null) so the
+ * template binding [name]="icon()" stays string-compatible with i-lucide's
+ * input type without nullable coercion. The string-lookup form requires the
+ * icon name to be registered via `LucideAngularModule.pick({...})` in
+ * `app.config.ts` — currently only `Check` is registered; passing any other
+ * `icon` value will throw at render time until it's added there too.
  *
  * TZ-94 §C.2 alignment: all 4 variants use `bg-transparent hairline`
  * (no solid fills). The variant color decides emphasis through BORDER +

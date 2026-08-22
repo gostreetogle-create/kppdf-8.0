@@ -6,8 +6,8 @@ import { LucideAngularModule } from 'lucide-angular';
  *
  * Slots: eyebrow, title, description. Default is static; `interactive`
  * flips on hover and renders `arrow-up-right` lucide icon via the
- * `<i-lucide>` global selector (auto-registered once LucideAngularModule
- * is imported anywhere — single load registers it project-wide for free).
+ * `<i-lucide name="arrow-up-right">` string lookup — registered via
+ * `LucideAngularModule.pick({ ArrowUpRight })` in `app.config.ts`.
  */
 @Component({
   selector: 'app-pi-card',
