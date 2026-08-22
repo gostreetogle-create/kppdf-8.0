@@ -389,7 +389,7 @@ interface DimensionFormGroup extends FormGroup {
                     />
                     <div class="flex items-center justify-between p-1 hairline-t">
                       <label
-                        class="inline-flex items-center gap-1 text-[10px] cursor-pointer min-h-touch px-1"
+                        class="inline-flex items-center gap-1 text-[11px] cursor-pointer min-h-touch px-1"
                       >
                         <input
                           type="radio"
