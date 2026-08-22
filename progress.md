@@ -1,4 +1,16 @@
-﻿## [2026-08-19] — TZ-ORDERS-308 — PATCH number + soft-delete list filter
+﻿## [2026-08-22] — TZ-UI-405 — detail-страницы: один back + 2-уровневые крошки
+
+**Исполнитель:** claude (executor)
+**Статус:** DONE
+**Суть:** module/material/order-detail — крошки 2 уровня (убран дублирующий route-сегмент);
+ghost «← Назад» (UX-313) убрана с module/product/material-detail (back = первая крошка
+page-chrome, `onBack()`/`backLabel()` оставлены для loadError-блока);
+`pi-breadcrumb*` помечены `@deprecated` (kit showcase); builder/:id — intentional exception (комментарий).
+**Gates:** FE tsc PASS; jest 23/23 (4 detail-specs, +регресс-ассерт одного back-button); eslint 0.
+**Browser primary:** env-BLOCKED (FE :4200 чужой контур упал; BE auth OK) — покрыто jest.
+**Archive:** tasks/_archive/2026-08/TZ-UI-405.done.md
+
+## [2026-08-19] — TZ-ORDERS-308 — PATCH number + soft-delete list filter
 
 **Исполнитель:** executor
 **Статус:** DONE

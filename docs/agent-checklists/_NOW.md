@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T11:58:00+03:00
+updated_at: 2026-08-22T14:15:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -28,6 +28,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZD-ORDER-IMPORT-01** — DONE by `claude` / closeout `freebuff` (2026-08-22T11:41:42+03:00); archive `tasks/_archive/2026-08/TZD-ORDER-IMPORT-01.done.md`; Order.source desktop-import + mutation-journal kinds (order.create/counterparty.create/site.create) + row-level proposalId + kppdf_import_task_finalize_order + MCP tools; gates PASS (backend tsc, jest 958/960, desktop 122/122, architecture).
 **TZ-UI-403** — DONE by `claude` (2026-08-22T12:35:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-UI-403.done.md`; docs-only audit `docs/audits/2026-08-22-breadcrumb-consistency-audit.md`; duplicate `data-test="back-button"` on module/product/material-detail, kit-only `app-pi-breadcrumb` vs used `page-chrome[crumbs]`, inconsistent crumb depth, builder/:id has no crumbs (UNCERTAIN); 4 open questions, successor `TZ-UI-404`.
 **tasks/ cleanup** — DONE by `freebuff` (2026-08-22T12:45:00+03:00): удалены фантомные черновики уже archived TZ из корня tasks/ (SUPPLY-304/305/306/307/308/311/312 git rm; SUPPLY-314/UI-401/UI-402 untracked rm).
+**TZ-UI-405** — DONE by `claude` (2026-08-22T14:15:00+03:00); commit `HEAD` после archive: detail-страницы — 2-уровневые крошки + один back (B-01..B-04 PO-решения из TZ); archive `tasks/_archive/2026-08/TZ-UI-405.done.md`; gates PASS (FE tsc, jest 23/23, eslint 0); browser primary env-BLOCKED (FE :4200 чужой контур упал, BE auth работает); deploy НЕ.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов

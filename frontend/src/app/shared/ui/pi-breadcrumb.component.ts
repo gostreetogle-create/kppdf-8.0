@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Paper & Ink Breadcrumb container — mono typographic path.
+ *
+ * @deprecated unused outside /navigation kit showcase, real pages use
+ * PiPageChromeComponent[crumbs] — see TZ-UI-405 B-03.
  */
 @Component({
   selector: 'app-pi-breadcrumb',

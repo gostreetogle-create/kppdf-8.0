@@ -4,6 +4,9 @@ import { RouterLink } from '@angular/router';
 /**
  * Paper & Ink BreadcrumbItem — single segment in <app-pi-breadcrumb>.
  * Prefer routerLink over href (SPA navigation).
+ *
+ * @deprecated unused outside /navigation kit showcase, real pages use
+ * PiPageChromeComponent[crumbs] — see TZ-UI-405 B-03.
  */
 @Component({
   selector: 'app-pi-breadcrumb-item',

@@ -78,9 +78,6 @@ interface WhereUsedPage {
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="material-detail-nav">
       <span actions>
-        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          {{ backLabel() }}
-        </app-pi-button>
         @if (material()) {
           <app-pi-button
             variant="default"
@@ -415,9 +412,9 @@ export class MaterialDetailPage {
     return err ? extractErrorMessage(err) : null;
   });
 
+  /** TZ-UI-405 B-02: two-level crumbs («Раздел → имя»), no duplicate-route segment. */
   protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
     { label: 'Каталог', link: '/materials' },
-    { label: 'Материалы', link: '/materials' },
     { label: this.material()?.name ?? 'Материал' },
   ]);
 

@@ -314,13 +314,10 @@ export class OrderDetailPage {
     });
   });
 
+  /** TZ-UI-405 B-02: two-level crumbs («Раздел → номер»), no duplicate-route segment. */
   protected readonly crumbs = computed<PageCrumb[]>(() => {
     const o = this.order();
-    return [
-      { label: 'Сделки', link: '/orders' },
-      { label: 'Заказы', link: '/orders' },
-      { label: o ? `Заказ №${o.number}` : 'Заказ' },
-    ];
+    return [{ label: 'Сделки', link: '/orders' }, { label: o ? `Заказ №${o.number}` : 'Заказ' }];
   });
 
   constructor() {

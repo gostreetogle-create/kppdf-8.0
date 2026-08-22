@@ -115,7 +115,14 @@ describe('MaterialDetailPage', () => {
     expect(el.querySelector('[data-test="material-detail-aside"]')).toBeTruthy();
     expect(el.querySelector('[data-test="material-detail-main"]')).toBeTruthy();
     expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).toContain('Каталог');
-    expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).toContain('Материалы');
+    expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).toContain(
+      'Стальной лист 2мм',
+    );
+    // TZ-UI-405 B-02: two-level crumbs — no duplicate route segment («Материалы»).
+    expect(el.querySelector('[data-test="page-crumbs"]')?.textContent).not.toContain('Материалы');
+    // TZ-UI-405 B-01/AC-3: exactly one back-affordance (first page-chrome crumb),
+    // ghost «← Назад» button removed.
+    expect(el.querySelectorAll('[data-test="back-button"]')).toHaveLength(1);
     expect(el.querySelector('app-product-bom-panel')).toBeNull();
     httpMock.verify();
   }));

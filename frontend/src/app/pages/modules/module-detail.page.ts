@@ -75,9 +75,6 @@ interface ModuleCostPreview {
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="module-detail-nav">
       <span actions>
-        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          {{ backLabel() }}
-        </app-pi-button>
         <app-pi-button variant="default" type="button" (click)="openEdit()" data-test="edit-button">
           Редактировать
         </app-pi-button>
@@ -410,9 +407,9 @@ export class ModuleDetailPage {
     ),
   );
 
+  /** TZ-UI-405 B-02: two-level crumbs («Раздел → имя»), no duplicate-route segment. */
   protected readonly detailCrumbs = computed<PageCrumb[]>(() => [
     { label: 'Каталог', link: '/modules' },
-    { label: 'Модули', link: '/modules' },
     { label: this.module()?.name ?? 'Модуль' },
   ]);
 

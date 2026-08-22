@@ -94,6 +94,8 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
       The empty-state template picker is gone — registry CRUD lives at
       /doc-constructor/templates (TemplatesPage). /doc-constructor/builder
       exact path redirects there (see app.routes.ts).
+      TZ-UI-405 B-04: no breadcrumbs here is a confirmed intentional exception
+      (canvas-first editor), do not add page-chrome crumbs.
     -->
     <!-- Builder toolbar — title + editor/preview (add blocks: left palette rail) -->
     <div class="builder-toolbar">

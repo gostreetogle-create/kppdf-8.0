@@ -84,9 +84,6 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
       <span actions>
-        <app-pi-button variant="ghost" type="button" (click)="onBack()" data-test="back-button">
-          {{ backLabel() }}
-        </app-pi-button>
         @if (product()) {
           <app-pi-button
             variant="default"
