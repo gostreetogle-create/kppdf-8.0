@@ -26,6 +26,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZ-DESK-420** — DONE by `claude` (2026-08-22T11:36:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-DESK-420.done.md`; label cleanup + shipping duplicate removal; gates/browser PASS.
 **TZ-UI-344** — DONE by `claude` (2026-08-22T11:58:00+03:00); archive `tasks/_archive/2026-08/TZ-UI-344.done.md`; shared lightbox + product/module catalog/detail wiring; focused Jest 90/90, shared dialog 23/23, FE tsc/lint/Prettier, architecture PASS; live browser BLOCKED by missing helper/auth session.
 **TZD-ORDER-IMPORT-01** — DONE by `claude` / closeout `freebuff` (2026-08-22T11:41:42+03:00); archive `tasks/_archive/2026-08/TZD-ORDER-IMPORT-01.done.md`; Order.source desktop-import + mutation-journal kinds (order.create/counterparty.create/site.create) + row-level proposalId + kppdf_import_task_finalize_order + MCP tools; gates PASS (backend tsc, jest 958/960, desktop 122/122, architecture).
+**TZ-UI-403** — DONE by `claude` (2026-08-22T12:35:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-UI-403.done.md`; docs-only audit `docs/audits/2026-08-22-breadcrumb-consistency-audit.md`; duplicate `data-test="back-button"` on module/product/material-detail, kit-only `app-pi-breadcrumb` vs used `page-chrome[crumbs]`, inconsistent crumb depth, builder/:id has no crumbs (UNCERTAIN); 4 open questions, successor `TZ-UI-404`.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов
