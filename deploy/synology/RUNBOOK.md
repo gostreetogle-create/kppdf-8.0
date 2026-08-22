@@ -144,6 +144,26 @@ cd /opt/kppdf-8.0 && sudo bash backup.sh
 # → /var/lib/kppdf80/backups/...
 ```
 
+### Автоматическое расписание (cron)
+
+Установить на VM (от root или docker-пользователя):
+
+```bash
+# crontab -e (на самом VM):
+0 3 * * * cd /opt/kppdf-8.0 && bash deploy/synology/backup.sh >> /var/log/kppdf-backup.log 2>&1
+```
+
+Каждую ночь в 03:00. Ротация: старше `BACKUP_RETENTION_DAYS` (дефолт 14) удаляются автоматически.
+Настроить в `deploy/synology/.env`: `BACKUP_RETENTION_DAYS=14` (или 0 для отключения ротации).
+
+###uploads и mongodb — volume на хосте
+
+`docker-compose.prod.yml` монтирует `${KPPDF_DATA_DIR}/mongodb` и `${KPPDF_DATA_DIR}/uploads`
+как **volume на хосте**, вне контейнеров. Обычный `docker compose up -d --build`
+**не удаляет** данные — база и загруженные файлы переживают передеплой.
+Удаляет **только** явный `--wipe` (`deploy.py wipe_remote()`), что уже задокументировано
+как опасная операция с требованием явного разрешения PO.
+
 > Когда начнёте **реальную работу** — wipe/удаление данных запрещены без явного указания PO.  
 > Канон вопроса PO по-русски + бэкап перед wipe: [`docs/ops/DANGEROUS-OPS.md`](../../docs/ops/DANGEROUS-OPS.md).
 

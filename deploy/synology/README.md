@@ -177,6 +177,16 @@ Node.js on the client until sidecar bundling lands.
 4. Warm `deploy.ps1` — если WARN «Desktop installer .exe not found» → для Desktop-потока считать деплой **неполным**.
 5. Smoke: скачанный файл содержит `v{semver}` в имени; футер Desktop = тот же semver.
 
+## Данные переживают деплой
+
+`docker-compose.prod.yml` монтирует `${KPPDF_DATA_DIR}/mongodb` и `${KPPDF_DATA_DIR}/uploads`
+как **volume на хосте** (вне контейнеров). Обычный `docker compose up -d --build`
+**не удаляет** данные — база и файлы переживают передеплой.
+Удаляет **только** явный `--wipe` (`deploy.py`), что уже задокументировано
+как опасная операция (разрешение PO + бэкап).
+
+---
+
 ## После деплоя — проверка
 
 ```

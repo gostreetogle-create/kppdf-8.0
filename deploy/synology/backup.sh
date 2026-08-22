@@ -22,4 +22,19 @@ if [[ -d "${DATA_DIR}/uploads" ]]; then
   cp -a "${DATA_DIR}/uploads" "${BACKUP_ROOT}/uploads-${DATE}"
 fi
 
+# --- Rotation: remove backups older than BACKUP_RETENTION_DAYS ---
+RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+if [[ "$RETENTION_DAYS" -gt 0 ]]; then
+  echo "=== Rotation: removing backups older than ${RETENTION_DAYS} days ==="
+  DELETED=0
+  while IFS= read -r dir; do
+    echo "  removing: $(basename "$dir")"
+    rm -rf "$dir"
+    DELETED=$((DELETED + 1))
+  done < <(find "$BACKUP_ROOT" -maxdepth 1 -type d \( -name 'mongo-*' -o -name 'uploads-*' \) -mtime "+${RETENTION_DAYS}")
+  echo "  removed ${DELETED} old backup(s)"
+else
+  echo "=== Rotation disabled (BACKUP_RETENTION_DAYS=0) ==="
+fi
+
 echo "Done: ${BACKUP_ROOT}"
