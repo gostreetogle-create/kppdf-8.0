@@ -1,9 +1,10 @@
 /**
  * TZD-21 / TZD-57: pairing dialog — issue key + copy packet + download toolbar.
+ * TZD-59: version label never renders the literal `v?` (loading / error / no data).
  */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 
 import { PairingDialogComponent } from './pairing-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
@@ -235,6 +236,65 @@ describe('PairingDialogComponent (TZD-21)', () => {
       'noopener,noreferrer',
     );
     openSpy.mockRestore();
+  });
+
+  it('shows no "v?" placeholder while compat is still loading (TZD-59)', async () => {
+    TestBed.resetTestingModule();
+    compatSpy = jest.fn().mockReturnValue(NEVER);
+    await setupModule(DEFAULT_DESKTOP_DOWNLOAD_URL);
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector(
+      '[data-test="pairing-download-button"]',
+    ) as HTMLElement;
+    expect(btn.textContent).toContain('Скачать Desktop');
+    expect(btn.textContent).not.toContain('v?');
+    expect(btn.textContent).not.toMatch(/v\d/);
+    expect(fixture.nativeElement.textContent).not.toContain('v?');
+    expect(fixture.nativeElement.querySelector('[data-test="pairing-compat-hint"]')).toBeNull();
+  });
+
+  it('shows an explaining hint and no "v?" when compat request fails (TZD-59)', async () => {
+    TestBed.resetTestingModule();
+    compatSpy = jest
+      .fn()
+      .mockReturnValue(of({ ok: false, error: { status: 500, message: 'boom' } }));
+    await setupModule(DEFAULT_DESKTOP_DOWNLOAD_URL);
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector(
+      '[data-test="pairing-download-button"]',
+    ) as HTMLElement;
+    expect(btn.textContent).toContain('Скачать Desktop');
+    expect(btn.textContent).not.toContain('v?');
+    expect(fixture.nativeElement.textContent).not.toContain('v?');
+    const hint = fixture.nativeElement.querySelector(
+      '[data-test="pairing-compat-hint"]',
+    ) as HTMLElement;
+    expect(hint.textContent).toContain('Не удалось проверить версию');
+  });
+
+  it('shows no "v?" when compat has neither version nor versioned URL (TZD-59)', async () => {
+    TestBed.resetTestingModule();
+    compatSpy = jest.fn().mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          minDesktopVersion: '0.1.0',
+          recommendedDesktopVersion: '',
+          downloadUrl: '',
+          serverBuildId: 'test',
+        },
+      }),
+    );
+    await setupModule(DEFAULT_DESKTOP_DOWNLOAD_URL);
+    fixture = TestBed.createComponent(PairingDialogComponent);
+    fixture.detectChanges();
+    const btn = fixture.nativeElement.querySelector(
+      '[data-test="pairing-download-button"]',
+    ) as HTMLElement;
+    expect(btn.textContent?.trim()).toBe('Скачать Desktop');
+    expect(fixture.nativeElement.textContent).not.toContain('v?');
   });
 
   it('close calls dialog ref', () => {

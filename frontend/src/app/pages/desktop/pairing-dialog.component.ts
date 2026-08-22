@@ -17,6 +17,12 @@ import {
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 
 const DESKTOP_INSTALLER_UNAVAILABLE_HINT = 'Установщик скоро будет на сервере';
+const DESKTOP_DOWNLOAD_LABEL = 'Скачать Desktop';
+/** TZD-59: shown instead of a meaningless version placeholder when compat lookup failed. */
+const DESKTOP_COMPAT_UNAVAILABLE_HINT = 'Не удалось проверить версию';
+
+/** TZD-59: request state of `GET /desktop/compat`, so loading/error/no-data are distinguishable. */
+type DesktopCompatStatus = 'loading' | 'ready' | 'error';
 
 export interface PairingDialogData {
   apiBaseUrl: string;
@@ -139,12 +145,10 @@ function openDownload(url: string): void {
               (click)="onDownload()"
               data-test="pairing-download-button"
               [attr.aria-label]="
-                effectiveDownloadUrl()
-                  ? 'Скачать Desktop ' + desktopVersionLabel()
-                  : installerUnavailableHint
+                effectiveDownloadUrl() ? downloadButtonLabel() : installerUnavailableHint
               "
             >
-              Скачать Desktop {{ desktopVersionLabel() }}
+              {{ downloadButtonLabel() }}
             </app-pi-button>
             @if (versionSubtitle(); as subtitle) {
               <span
@@ -255,6 +259,7 @@ export class PairingDialogComponent implements OnInit {
   protected readonly issuing = signal(false);
   protected readonly keys = signal<DesktopPairingKeyMeta[]>([]);
   protected readonly compat = signal<DesktopCompatInfo | null>(null);
+  protected readonly compatStatus = signal<DesktopCompatStatus>('loading');
 
   protected ttl: DesktopPairingTtl = '30d';
   protected label = '';
@@ -357,15 +362,26 @@ export class PairingDialogComponent implements OnInit {
     return this.configuredDownloadUrl;
   }
 
+  /**
+   * TZD-59: empty string when the version is genuinely unknown (still loading, request
+   * failed, or server sent no version) — never a literal placeholder like `v?`.
+   */
   protected desktopVersionLabel(): string {
     const fromUrl = parseSemverFromDownloadUrl(this.effectiveDownloadUrl());
     if (fromUrl) return formatVersionLabel(fromUrl);
     const recommended = this.compat()?.recommendedDesktopVersion?.trim();
     if (recommended) return formatVersionLabel(recommended);
-    return 'v?';
+    return '';
+  }
+
+  /** TZD-59: version suffix appears only when the version is actually known. */
+  protected downloadButtonLabel(): string {
+    const version = this.desktopVersionLabel();
+    return version ? `${DESKTOP_DOWNLOAD_LABEL} ${version}` : DESKTOP_DOWNLOAD_LABEL;
   }
 
   protected versionSubtitle(): string | null {
+    if (this.compatStatus() === 'error') return DESKTOP_COMPAT_UNAVAILABLE_HINT;
     const c = this.compat();
     if (!c) return null;
     const min = formatVersionLabel(c.minDesktopVersion);
@@ -403,8 +419,21 @@ export class PairingDialogComponent implements OnInit {
   }
 
   private reloadCompat(): void {
-    this.pairingApi.compat().subscribe((res) => {
-      if (res.ok) this.compat.set(res.data);
+    this.compatStatus.set('loading');
+    this.pairingApi.compat().subscribe({
+      next: (res) => {
+        if (res.ok) {
+          this.compat.set(res.data);
+          this.compatStatus.set('ready');
+          return;
+        }
+        this.compat.set(null);
+        this.compatStatus.set('error');
+      },
+      error: () => {
+        this.compat.set(null);
+        this.compatStatus.set('error');
+      },
     });
   }
 }
