@@ -16,7 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
-**TZ-UI-407** — DONE by `claude` (2026-08-22): catalog filter flyouts on products/modules/materials close on Escape, use `role="region"`, and labels use 11px; archive `tasks/_archive/2026-08/TZ-UI-407.done.md`; gates FE tsc/lint PASS; deploy НЕ.
+**TZ-UI-407** — DONE by `claude` (2026-08-22): catalog filter flyouts on products/modules/materials close on Escape, use `role="region"`, and labels use 11px; archive `tasks/_archive/2026-08/TZ-UI-407.done.md`; SHA `7a5d813b`; gates FE tsc/lint PASS; deploy НЕ.
 **TZ-SALES-381** — DONE by `claude` (2026-08-22): backend preview rows now use conservative weighted wrap capacity for productName+description; archive `tasks/_archive/2026-08/TZ-SALES-381.done.md`; SHA `4ee24fec`; gates backend tsc, continuation Jest 3/3 PASS; deploy НЕ.
 **TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; SHA `5a56c942`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
 **TZ-OPS-320** — DONE by `claude` (2026-08-22): spent TZ/PROMPT moved from `tasks/` root to `tasks/_archive/2026-08/specs-dup-root/` and `prompts-spent/`; deploy НЕ.

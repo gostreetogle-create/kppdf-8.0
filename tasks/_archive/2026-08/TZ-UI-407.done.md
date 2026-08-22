@@ -4,6 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
+sha: 7a5d813b
 
 ## Outcome
 
@@ -22,7 +23,7 @@ closed_by: claude
 - browser live: N/A (no server/session available)
 - checklist: ADDED
 - PAGE-TZ-INDEX: UPDATED
-- status synchronization: PENDING SHA closeout
+- status synchronization: PASS (`docs/agent-checklists/_NOW.md`, SHA `7a5d813b`)
 - review diff: PASS
 - deploy: NOT RUN
 
