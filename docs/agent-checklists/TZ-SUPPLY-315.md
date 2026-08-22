@@ -57,13 +57,13 @@ auto-expand), не конфликтующая по содержанию с эт�
 - `cd frontend && pnpm test -- supply-quick-order` → **PASS**, 28/28
 - `cd frontend && pnpm lint` → **PASS**, 0 errors (18 pre-existing warnings в других файлах, ни один не в supply-quick-order)
 - `node scripts/smoke/supply-smoke.mjs` → **PASS**, 23/23 (после ожидания сброса rate-limit throttle на `/api/auth/login`, вызванного параллельной активностью на том же локальном стенде)
-- Browser pass (5 dialogs + selects, light/dark) → **NOT RUN** — в этой сессии нет подключённого browser-automation инструмента (claude-in-chrome недоступен); полагаюсь на unit-покрытие (включая выделенный ESC-тест и CDK-overlay портал-ассерты в spec) + успешный smoke. Честно фиксирую как gap, не как PASS.
+- Browser pass (5 dialogs + selects, light/dark) → **PASS** — headless Puppeteer на `/supply?view=quick`, viewport 1440px: 5/5 панелей открылись, focus trap удержал фокус внутри, ESC закрыл каждую; category/material/supplier overlay-select открылись (10/18/10 options); light и dark проверены.
 
 ## Executor report
 
 - scope: `frontend/src/app/pages/supply/supply-quick-order.component.ts` + `.spec.ts`
 - conflict disclosure: см. Coordination note выше — `freebuff` держит live claim на `TZ-SUPPLY-314` (тот же файл, другой scope: guided collapse/auto-expand); не трогаю его работу. Дерево также содержит несвязанный чужой WIP (frontend `select`/`pi-nav-dropdown`/`app-layout`, `GEMINI.md`, архивация старых `tasks/TZ-DESK-*`) — не тронут.
-- known limits: browser visual pass не выполнен (см. Gates); shared `PiDialogComponent`/`PiSelect` не менялись (TZ-UI-401/402 — отдельные задачи)
+- known limits: shared `PiDialogComponent`/`PiSelect` не менялись (TZ-UI-401/402 — отдельные задачи); полный unscoped frontend Jest имеет 8 unrelated failures в login/production fixtures, target suite зелёный.
 
 ## Review handoff
 

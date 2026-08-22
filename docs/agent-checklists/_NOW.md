@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T10:06:13+03:00
+updated_at: 2026-08-22T10:23:51+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -19,7 +19,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
 AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
 **TZ-STRAT-01A** — READY FOR REVIEW: `/desk`/`/orders` cross-page boundary перенесена в shared order layer; gates PASS, local commit разрешён, push не выполняется.
-**TZ-SUPPLY-315** — DONE by `claude` (2026-08-22T10:20:00+03:00): PiDialogService/app-pi-overflow-select/token conformance; archive `tasks/_archive/2026-08/TZ-SUPPLY-315.done.md`; gates PASS (FE tsc, jest 28/28, lint, supply-smoke 23/23); browser pass NOT RUN (no browser tool this session); deploy НЕ.
+**TZ-SUPPLY-315** — DONE by `claude` (2026-08-22T10:20:00+03:00), commit `df4cd1fd` pushed: PiDialogService/app-pi-overflow-select/token conformance; archive `tasks/_archive/2026-08/TZ-SUPPLY-315.done.md`; target gates PASS (FE tsc, jest 28/28, lint, supply-smoke 23/23); browser pass PASS (Puppeteer 5/5 dialogs + catalogs, light/dark); unscoped FE Jest has 8 unrelated failures; deploy НЕ.
 **TZ-SUPPLY-314** — CLAIMED / IN PROGRESS by `freebuff` (2026-08-22T10:11:18+03:00); conflict key `frontend/src/app/pages/supply/supply-quick-order.component.ts`.
 
 **PO reminders wave** — код на `main`, prod не обновлён:

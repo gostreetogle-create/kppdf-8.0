@@ -14,7 +14,7 @@ verification:
   - tests: PASS (28/28)
   - lint: PASS (0 errors)
   - supply-smoke: PASS (23/23)
-  - browser visual pass: NOT RUN (no browser-automation tool in this session — disclosed, not claimed)
+  - browser visual pass: PASS (headless Puppeteer, /supply?view=quick, 1440px; 5/5 dialogs + 3 catalog overlays; light/dark)
   - checklist: ADDED (docs/agent-checklists/TZ-SUPPLY-315.md)
   - progress.md: not touched (page-level frontend change, no architectural shift)
   - status synchronization: docs/agent-checklists/_NOW.md updated
@@ -66,9 +66,11 @@ verification:
 
 ## Не сделано / известные ограничения
 
-- Browser visual pass (5 dialogs + selects, light/dark) не выполнен — нет
-  подключённого browser-automation инструмента в этой сессии. Полагаюсь на
-  unit-покрытие (включая выделенный ESC-тест и CDK-overlay portal-ассерты).
+- Unscoped `pnpm test --runInBand --silent` после закрытия дал 8 failures в
+  чужих `login.page.spec.ts`/`production-read.facade.spec.ts` (ActivatedRoute и
+  facade fixtures); target suite `supply-quick-order` остаётся 28/28 PASS.
+- Browser pass выполнен отдельно: headless Puppeteer подтвердил 5/5 dialogs,
+  3 каталожных overlay-select и light/dark переключение.
 - `PiDialogComponent`/`PiSelect` shared-компоненты не менялись (по scope TZ) —
   `aria-labelledby` буквально не добавлен, вместо него используется уже
   существующий `aria-label` контракт `PiDialogComponent`.
