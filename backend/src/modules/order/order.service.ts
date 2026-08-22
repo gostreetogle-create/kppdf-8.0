@@ -272,6 +272,20 @@ export class OrderService {
     const number = dto.number ?? (await this.counter.next('Order', 'ORD'));
     const items = this.mapItems(dto.items);
     const total = items.reduce((s, i) => s + i.total, 0);
+
+    // TZ-ORDERS-307: default org = isOurCompany; existing orders without org get this on create.
+    let organizationId: Types.ObjectId | undefined;
+    if (dto.organizationId) {
+      organizationId = new Types.ObjectId(dto.organizationId);
+    } else {
+      try {
+        const current = await this.organizations.findCurrent();
+        organizationId = current._id;
+      } catch {
+        // org not set up yet — leave blank (migration-safe)
+      }
+    }
+
     const doc = new this.model({
       number,
       counterpartyId: new Types.ObjectId(dto.counterpartyId),
@@ -289,6 +303,7 @@ export class OrderService {
       managerId: dto.managerId ? new Types.ObjectId(dto.managerId) : undefined,
       priority: dto.priority ?? 'normal',
       items,
+      organizationId,
     });
     if (session) {
       await doc.save({ session });

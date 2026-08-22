@@ -90,6 +90,8 @@ export interface Order {
   moduleLanes?: ModuleLane[];
   deliveryAddress?: string;
   managerId?: string;
+  /** TZ-ORDERS-307: какая наша фирма исполняет заказ. */
+  organizationId?: string | { _id: string; name?: string; shortName?: string };
   priority?: OrderPriority;
   shipmentIds?: string[];
   reservationIds?: string[];

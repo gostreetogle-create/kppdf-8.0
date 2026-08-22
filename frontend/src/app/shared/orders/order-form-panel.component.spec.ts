@@ -74,6 +74,14 @@ const flushLookups = (
       page: 1,
       limit: 100,
     });
+  httpMock
+    .expectOne((req) => req.url === '/api/organizations')
+    .flush({
+      items: [{ _id: 'org1', name: 'Наша фирма', shortName: 'КППДФ', isOurCompany: true }],
+      total: 1,
+      page: 1,
+      limit: 200,
+    });
 };
 
 const flushSites = (httpMock: HttpTestingController, sites: unknown[] = []): void => {

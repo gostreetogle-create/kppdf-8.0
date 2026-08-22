@@ -236,6 +236,10 @@ export class Order {
    */
   @Prop({ type: Date, default: null, index: true })
   deletedAt?: Date | null;
+
+  /** TZ-ORDERS-307: какая наша фирма (Organization) исполняет заказ. */
+  @Prop({ type: Types.ObjectId, ref: 'Organization', index: true })
+  organizationId?: Types.ObjectId;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

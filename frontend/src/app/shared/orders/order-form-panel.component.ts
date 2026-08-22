@@ -34,8 +34,12 @@ import {
   OrderPriority,
   OrderStatus,
 } from '../services/orders.service';
-import { PiOverflowSelectComponent } from '../ui/overflow-select/pi-overflow-select.component';
+import {
+  PiOverflowSelectComponent,
+  type PiOverflowSelectItem,
+} from '../ui/overflow-select/pi-overflow-select.component';
 import { Users } from '../models/users';
+import { OrganizationsService, type Organization } from '../services/organizations.service';
 
 type FreezeMode = 'none' | 'plan' | 'hard';
 
@@ -165,6 +169,22 @@ interface ItemFormGroup extends FormGroup {
               "
               ariaLabel="Объект"
               dataTest="ord-site"
+            />
+          </app-pi-form-field>
+
+          <app-pi-form-field
+            label="Исполнитель (наша фирма)"
+            htmlFor="ord-org"
+            hint="Какая организация исполняет заказ."
+          >
+            <app-pi-overflow-select
+              [items]="organizationItems()"
+              [value]="form.controls.organizationId.value"
+              (valueChange)="onOrganizationChange($event)"
+              searchable="auto"
+              placeholder="— выберите —"
+              ariaLabel="Исполнитель"
+              dataTest="ord-org"
             />
           </app-pi-form-field>
 
@@ -463,6 +483,7 @@ export class OrderFormPanelComponent implements OnInit {
   private readonly service = inject(OrdersService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly siteService = inject(SiteService);
+  private readonly organizationsService = inject(OrganizationsService);
   private readonly productsService = inject(ProductsService);
   private readonly usersService = Users.inject();
   private readonly toast = inject(PiToastService);
@@ -498,6 +519,8 @@ export class OrderFormPanelComponent implements OnInit {
       label: `${site.name}${site.address ? ' · ' + site.address : ''}`,
     })),
   );
+
+  protected readonly organizationItems = signal<PiOverflowSelectItem[]>([]);
   protected readonly productItems = computed(() =>
     this.products().map((product) => ({
       id: product._id,
@@ -509,6 +532,7 @@ export class OrderFormPanelComponent implements OnInit {
     number: this.fb.control<string | null>(null),
     counterpartyId: this.fb.control('', [Validators.required]),
     siteId: this.fb.control('', [Validators.required]),
+    organizationId: this.fb.control(''),
     plannedDate: this.fb.control<string | null>(null),
     priority: this.fb.control<OrderPriority>('normal'),
     status: this.fb.control<OrderStatus>('draft'),
@@ -552,6 +576,19 @@ export class OrderFormPanelComponent implements OnInit {
         return;
       }
       this.users.set(res.data.items);
+    });
+
+    // TZ-ORDERS-307: загружаем организации для выпадающего списка «Исполнитель».
+    this.organizationsService.list({ limit: 200 }).subscribe((res) => {
+      if (res.ok && Array.isArray(res.data?.items)) {
+        this.organizationItems.set(
+          res.data.items.map((org: Organization) => ({
+            id: org._id,
+            label: org.shortName || org.name,
+            meta: org.isOurCompany ? 'наша фирма' : undefined,
+          })),
+        );
+      }
     });
   }
 
@@ -600,6 +637,11 @@ export class OrderFormPanelComponent implements OnInit {
     this.form.controls.siteId.markAsDirty();
   }
 
+  protected onOrganizationChange(organizationId: string): void {
+    this.form.controls.organizationId.setValue(organizationId);
+    this.form.controls.organizationId.markAsDirty();
+  }
+
   private unwrapId(value: string | { _id: string } | undefined | null): string {
     if (!value) return '';
     return typeof value === 'string' ? value : (value._id ?? '');
@@ -616,6 +658,7 @@ export class OrderFormPanelComponent implements OnInit {
       number: o.number,
       counterpartyId: cpId,
       siteId,
+      organizationId: this.unwrapId(o.organizationId),
       plannedDate: o.plannedDate ? o.plannedDate.slice(0, 10) : null,
       priority: o.priority ?? 'normal',
       status: o.status ?? 'draft',
@@ -853,6 +896,7 @@ export class OrderFormPanelComponent implements OnInit {
     if (v.plannedDate) payload.plannedDate = v.plannedDate;
     if (v.deliveryAddress) payload.deliveryAddress = v.deliveryAddress;
     if (v.notes) payload.notes = v.notes;
+    if (v.organizationId) payload.organizationId = v.organizationId;
 
     this.sendPayload(payload);
   }

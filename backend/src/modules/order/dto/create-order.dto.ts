@@ -106,6 +106,10 @@ export class CreateOrderDto {
   @IsIn(['low', 'normal', 'high', 'urgent'])
   priority?: 'low' | 'normal' | 'high' | 'urgent';
 
+  @ApiPropertyOptional({ description: 'ID организации-исполнителя (наша фирма)' })
+  @IsOptional() @IsObjectId()
+  organizationId?: string;
+
   @ApiProperty({ type: [OrderItemDto], description: 'Позиции заказа' })
   @IsArray()
   @ValidateNested({ each: true })
