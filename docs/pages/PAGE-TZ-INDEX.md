@@ -123,7 +123,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | Pairing dialog «Скачать» | `desktop/docs/INSTALL.md`, PAIRING.md | TZD-16 done; **TZD-24 done** (ZIP + SPA skip `/downloads`) |
 | Desktop API keys | PAIRING.md | **TZD-21** READY |
 | Desktop Form Studio (Excel формы) | WAVE `WAVE-DESKTOP-EXCEL-FORMS` | TZD-50→52 DONE; TZD-53 0.5.5 code (deploy deferred) |
-| Desktop IA shell (3 двери) | WAVE `WAVE-DESKTOP-IA-SHELL` | **TZD-54** → **TZD-55** READY |
+| Desktop IA shell (3 двери) | WAVE `WAVE-DESKTOP-IA-SHELL` | **TZD-54/55/56 DONE**; **TZD-61 DONE** (копирайт «не чат» — снимает TZD-62) |
+| Desktop AI-чат | `desktop/docs/AI-PROVIDERS.md` | **TZD-62 DONE** («Открыть чат» одним кликом); **TZD-63** любой .gguf; **TZD-64** промпт проекта |
 
 ## Cost / состав
 

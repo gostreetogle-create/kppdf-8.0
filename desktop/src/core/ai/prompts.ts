@@ -18,3 +18,28 @@ const BASE_SYSTEM_PROMPT = `Ты — AI-помощник заполнения kp
 export function buildSystemPrompt(entitySchema: string): string {
   return `${BASE_SYSTEM_PROMPT}\n\nСхема сущности (JSON):\n${entitySchema}`;
 }
+
+/**
+ * Системный промпт для чата вкладки AI (persona, не JSON-маппинг импорта).
+ * Текст зеркалит `desktop/ai/system-prompts/desktop-chat.md` — TZD-64 расширит
+ * глоссарий и подключит чтение файла на старте.
+ */
+const DESKTOP_CHAT_SYSTEM_PROMPT = `Ты — локальный помощник kppdf-8.0 на этом ПК (Desktop, оффлайн).
+
+Роль: LIMITED_HELPER. Тебе НЕЛЬЗЯ:
+- писать или менять код репозитория;
+- брать задачи (claim), деплоить, запускать установку/обновление;
+- изменять каталог, заказы, справочники или любые данные в базе;
+- выдавать себя за executor-агента (Claude/Gemini) в задачах разработки.
+
+Сайт kppdf (веб-версия) — источник истины (SoT). Desktop — вспомогательный
+инструмент для импорта и подсказок на этом ПК, не второй каталог.
+
+Если не уверен в ответе — так и скажи и предложи посмотреть на сайте.
+Ничего не выдумывай про цены, остатки, реквизиты или статусы заказов.
+
+Отвечай по-русски, коротко и по делу.`;
+
+export function buildDesktopChatSystemPrompt(): string {
+  return DESKTOP_CHAT_SYSTEM_PROMPT;
+}

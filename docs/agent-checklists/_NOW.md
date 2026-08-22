@@ -16,6 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZD-62** — DONE by `claude` (2026-08-22): Desktop вкладка AI — «Открыть чат» (`data-test="ai-open-chat"`) один клик, если `.gguf` выбранной модели уже на диске (старт/рестарт раннера этим файлом, ждёт `modelLoaded`, фокус чата); новый `ChatPanel.svelte` (disabled + причина, пока раннер/модель не готовы); минимальный LIMITED_HELPER промпт `desktop/ai/system-prompts/desktop-chat.md` + `buildDesktopChatSystemPrompt()`; `ai-runner/index.ts` теперь грузит модель сразу после старта (не лениво на первый чат-запрос); блок «Это не чат» удалён (снимает TZD-61); архив `tasks/_archive/2026-08/TZD-62-desktop-ai-chat.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 11/11 + regression 6/6); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-63 (любой .gguf в папке + скачать без ручного Start/Restart).
 **TZ-UI-407** — DONE by `claude` (2026-08-22): catalog filter flyouts on products/modules/materials close on Escape, use `role="region"`, and labels use 11px; archive `tasks/_archive/2026-08/TZ-UI-407.done.md`; SHA `7a5d813b`; gates FE tsc/lint PASS; deploy НЕ.
 **TZ-SALES-381** — DONE by `claude` (2026-08-22): backend preview rows now use conservative weighted wrap capacity for productName+description; archive `tasks/_archive/2026-08/TZ-SALES-381.done.md`; SHA `4ee24fec`; gates backend tsc, continuation Jest 3/3 PASS; deploy НЕ.
 **TZ-DESK-418** — DONE by `claude` (2026-08-22): `/desk` delete action uses shared `AlertDialogComponent` + `OrdersService.remove`, stops row toggle, reloads list and clears expansion; archive `tasks/_archive/2026-08/TZ-DESK-418.done.md`; SHA `5a56c942`; gates FE tsc, focused Jest 25/25, lint PASS; deploy НЕ.
@@ -70,7 +71,7 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-**Desktop AI-чат READY** — `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md` (TZD-62→64). Не `App.svelte` параллельно. Deploy не.
+**Desktop AI-чат** — `tasks/PROMPT-DESKTOP-AI-CHAT-2026-08-22.md`; TZD-62 DONE, **TZD-63 READY** (`tasks/TZD-63-desktop-model-folder-any-gguf.md`) → TZD-64. Не `App.svelte` параллельно. Deploy не.
 
 **Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
 (OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.

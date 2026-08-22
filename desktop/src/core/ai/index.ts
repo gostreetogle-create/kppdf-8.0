@@ -6,4 +6,4 @@ export { chatCompletion } from './client';
 export type { ChatClientOptions } from './client';
 export { resolveProvider, pingProvider, OLLAMA_DEFAULT } from './providers';
 export type { ResolvedProvider } from './providers';
-export { buildSystemPrompt } from './prompts';
+export { buildSystemPrompt, buildDesktopChatSystemPrompt } from './prompts';

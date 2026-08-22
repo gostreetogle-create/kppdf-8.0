@@ -64,6 +64,8 @@ let session: LlamaChatSessionLike | null = null;
 let modelLoadError: string | null = null;
 /** sticky только для реальных ошибок загрузки; «файл не скачан» — перепроверяемо. */
 let modelLoadErrorSticky = false;
+/** Дедупликация конкурентных вызовов (eager-load при старте + первый чат-запрос). */
+let modelLoadPromise: Promise<void> | null = null;
 
 async function ensureModel(): Promise<void> {
   if (session) return;
@@ -71,26 +73,32 @@ async function ensureModel(): Promise<void> {
   if (modelLoadError && modelLoadErrorSticky) return;
   // «Файл не скачан» — перепроверяем: файл мог появиться после download.
   if (modelLoadError && !modelLoadErrorSticky && !fs.existsSync(MODEL_PATH)) return;
-  modelLoadError = null;
-  modelLoadErrorSticky = false;
-  try {
-    llamaModule = await import('node-llama-cpp');
-    if (!MODEL_PATH || !fs.existsSync(MODEL_PATH)) {
-      modelLoadError = 'Модель не скачана — сначала скачайте модель во вкладке «AI».';
-      modelLoadErrorSticky = false;
-      return;
+  if (modelLoadPromise) return modelLoadPromise;
+  modelLoadPromise = (async () => {
+    modelLoadError = null;
+    modelLoadErrorSticky = false;
+    try {
+      llamaModule = await import('node-llama-cpp');
+      if (!MODEL_PATH || !fs.existsSync(MODEL_PATH)) {
+        modelLoadError = 'Модель не скачана — сначала скачайте модель во вкладке «AI».';
+        modelLoadErrorSticky = false;
+        return;
+      }
+      const { getLlama } = llamaModule;
+      const llama = await getLlama();
+      model = await llama.loadModel({ modelPath: MODEL_PATH });
+      const context = await model.createContext({ contextSize: 4096 });
+      session = new llamaModule.LlamaChatSession({ contextSequence: context.getSequence() });
+      process.stdout.write(`[kppdf-ai] model loaded ${MODEL_FILE}\n`);
+    } catch (err) {
+      modelLoadError = err instanceof Error ? err.message : 'Не удалось загрузить модель';
+      modelLoadErrorSticky = true;
+      process.stdout.write(`[kppdf-ai] model error: ${modelLoadError}\n`);
+    } finally {
+      modelLoadPromise = null;
     }
-    const { getLlama } = llamaModule;
-    const llama = await getLlama();
-    model = await llama.loadModel({ modelPath: MODEL_PATH });
-    const context = await model.createContext({ contextSize: 4096 });
-    session = new llamaModule.LlamaChatSession({ contextSequence: context.getSequence() });
-    process.stdout.write(`[kppdf-ai] model loaded ${MODEL_FILE}\n`);
-  } catch (err) {
-    modelLoadError = err instanceof Error ? err.message : 'Не удалось загрузить модель';
-    modelLoadErrorSticky = true;
-    process.stdout.write(`[kppdf-ai] model error: ${modelLoadError}\n`);
-  }
+  })();
+  return modelLoadPromise;
 }
 
 /** Файл появился после успешного скачивания — снимаем «файл не скачан». */
@@ -334,6 +342,9 @@ function listen(): void {
   const tryPort = (port: number): void => {
     const srv = server.listen(port, '127.0.0.1', () => {
       process.stdout.write(`[kppdf-ai] listening ${port}\n`);
+      // TZD-62: грузим модель сразу, не дожидаясь первого чат-запроса — иначе
+      // «Открыть чат» → modelLoaded никогда не станет true без лишнего клика.
+      if (MODEL_PATH) void ensureModel();
     });
     srv.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && port < PORT_START + 20) {

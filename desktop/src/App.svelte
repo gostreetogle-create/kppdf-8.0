@@ -1,11 +1,11 @@
 <script lang="ts">
   // v0.2 — «Подключение» (паринг + /auth/me). v0.3 — «Импорт» (excel/csv → таблица).
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { getVersion } from '@tauri-apps/api/app';
   import { open } from '@tauri-apps/plugin-dialog';
   import { open as openExternal } from '@tauri-apps/plugin-shell';
-  import { mkdir, readFile } from '@tauri-apps/plugin-fs';
+  import { exists, mkdir, readFile } from '@tauri-apps/plugin-fs';
   import { apiGet, apiPost, ApiError, type ApiClientOptions, type HttpBasicAuth } from './core/api';
   import { loadConfig, saveConfig, type AppConfig } from './core/config';
   import {
@@ -98,8 +98,9 @@
     type AiRunnerStatus,
   } from './core/aiRunner';
   import { LOCAL_MODELS, recommendModel, modelById, formatBytes, formatRamGb } from './core/model-catalog';
-  import { chatCompletion } from './core/ai';
+  import { chatCompletion, buildDesktopChatSystemPrompt } from './core/ai';
   import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
+  import ChatPanel from './ChatPanel.svelte';
 
   // Placeholder вынесен в JS: фигурные скобки в атрибуте Svelte парсит как выражение.
   const pairingPlaceholder =
@@ -133,6 +134,16 @@
   let aiBusy = $state(false);
   let aiMessage = $state('');
   let aiModelDir = $state('');
+  /** TZD-62: чат жив, только когда раннер работает и модель в памяти. */
+  let chatReady = $derived(aiState.status === 'running' && aiState.modelLoaded && !!aiState.port);
+  let chatDisabledReason = $derived.by(() => {
+    if (aiState.status === 'starting') return 'Раннер запускается — подождите…';
+    if (aiState.status === 'stopping') return 'Раннер останавливается — подождите…';
+    if (aiState.status !== 'running') return 'Раннер не запущен. Нажмите «Открыть чат».';
+    if (!aiState.modelLoaded) return 'Модель ещё не загружена в память.';
+    return '';
+  });
+  const desktopChatSystemPrompt = buildDesktopChatSystemPrompt();
   const AI_STATUS_LABEL: Record<AiRunnerStatus, string> = {
     stopped: 'остановлен',
     starting: 'запускается…',
@@ -195,6 +206,8 @@
     downloadModel: 'Скачает выбранную модель (~2 ГБ) в папку приложения один раз. Нужен запущенный раннер.',
     openModelFolder:
       'Откроет папку с моделями. Сюда кладётся файл .gguf (~2 ГБ): можно скачать кнопкой или положить вручную с тем же именем, что в списке.',
+    openChat:
+      'Если файл выбранной модели уже на диске — запустит раннер (если нужно) и откроет чат. Если файла нет — подскажет скачать или открыть папку моделей.',
   } as const;
 
   const MCP_STATUS_LABEL: Record<McpHostStatus, string> = {
@@ -378,6 +391,74 @@
     } catch {
       // ПК определить не удалось — рекомендация остаётся прежней (Qwen 3B).
       selectedModelId = selectedModelId || LOCAL_MODELS[0].id;
+    }
+  }
+
+  /** Ждёт `modelLoaded` через опрос `/health` (модель грузится в фоне после старта раннера). */
+  async function waitForModelLoaded(timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      await aiRunner.refreshHealth();
+      const st = aiRunner.getState();
+      if (st.modelLoaded) return true;
+      if (st.modelError) return false;
+      if (st.status !== 'running') return false;
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
+    return false;
+  }
+
+  /** Фокусирует поле ввода чата (после того как он стал доступен). */
+  async function focusChatInput() {
+    await tick();
+    document.querySelector<HTMLTextAreaElement>('[data-test="ai-chat-input"]')?.focus();
+  }
+
+  /**
+   * TZD-62 ШАГ 3: «Открыть чат» одним кликом, если `.gguf` выбранной модели уже
+   * на диске — запускает (или перезапускает) раннер с этим файлом, ждёт
+   * `modelLoaded`, фокусирует чат. Если файла нет — не падает: RU-подсказка,
+   * «Открыть папку моделей» и «Скачать модель» уже есть в карточке ниже.
+   */
+  async function openChat() {
+    if (aiBusy) return;
+    aiBusy = true;
+    try {
+      aiMessage = '';
+      const model = selectedModelId ? modelById(selectedModelId) : undefined;
+      if (!model) {
+        aiMessage = 'Выберите модель из списка.';
+        return;
+      }
+      aiModelDir = aiModelDir || (await defaultModelDir());
+      const { join: joinPath } = await import('@tauri-apps/api/path');
+      const modelPath = await joinPath(aiModelDir, model.fileName);
+      if (!(await exists(modelPath))) {
+        aiMessage = 'Модели нет в папке — скачайте её кнопкой ниже или скопируйте .gguf с флешки в папку моделей.';
+        return;
+      }
+
+      const alreadyReady =
+        aiState.status === 'running' && aiState.modelLoaded && aiState.modelName === model.fileName;
+      if (!alreadyReady) {
+        const cfg = await loadConfig();
+        await aiRunner.start({ modelDir: aiModelDir, modelFile: model.fileName });
+        if (aiRunner.getState().status === 'running') {
+          await saveConfig({ ...cfg, modelId: selectedModelId });
+        }
+      }
+      if (aiRunner.getState().status !== 'running') {
+        aiMessage = aiState.lastError || 'Не удалось запустить AI-раннер.';
+        return;
+      }
+      const loaded = await waitForModelLoaded(60_000);
+      if (!loaded) {
+        aiMessage = aiState.modelError || 'Модель не загрузилась за отведённое время — попробуйте ещё раз.';
+        return;
+      }
+      await focusChatInput();
+    } finally {
+      aiBusy = false;
     }
   }
 
@@ -2121,10 +2202,36 @@
       Импорт и Excel-формы работают без модели и без MCP.
     </div>
 
-    <p class="hint" data-test="ai-not-a-chat">
-      Это не чат: модель работает в фоне и подсказывает сопоставление колонок на вкладке «Импорт».
-      Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: блок «MCP для агентов» ниже на этой же вкладке.
-    </p>
+    <article class="card">
+      <h2>Чат</h2>
+      <p class="hint">
+        Нажмите «Открыть чат» — если модель уже на диске, она загрузится в память и можно сразу писать.
+        Внешние AI-клиенты (Cursor, LM Studio) — отдельный контур: блок «MCP для агентов» ниже на этой же вкладке.
+      </p>
+      <button
+        class="btn btn--primary"
+        type="button"
+        data-test="ai-open-chat"
+        onclick={openChat}
+        disabled={aiBusy}
+        onmouseenter={() => showHint(HINTS.openChat)}
+        onmouseleave={clearHint}
+        onfocus={() => showHint(HINTS.openChat)}
+        onblur={clearHint}
+      >
+        {aiBusy ? 'Открываем…' : 'Открыть чат'}
+      </button>
+      {#if aiMessage}
+        <p class="hint" role="status" data-test="ai-open-chat-message">{aiMessage}</p>
+      {/if}
+      <ChatPanel
+        port={aiState.port}
+        modelName={aiState.modelName}
+        systemPrompt={desktopChatSystemPrompt}
+        ready={chatReady}
+        disabledReason={chatDisabledReason}
+      />
+    </article>
 
     <article class="card">
       <h2>Локальная модель</h2>
