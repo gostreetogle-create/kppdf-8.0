@@ -109,7 +109,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
-sha: (см. следующий docs-commit «record TZD-65 SHA»)
+sha: e0a49a75
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS
