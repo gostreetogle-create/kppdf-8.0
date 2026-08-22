@@ -14,4 +14,4 @@
 - `git diff --check` on scoped files — PASS
 - deploy — NOT RUN
 
-- commit SHA: pending functional commit
+- commit SHA: `46aeb16e`
