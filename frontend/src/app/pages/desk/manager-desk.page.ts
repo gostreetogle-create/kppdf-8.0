@@ -366,7 +366,9 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           class="manager-desk__flyout"
           [class.manager-desk__flyout--left]="panelSide() === 'left'"
           [class.manager-desk__flyout--right]="panelSide() === 'right'"
-          [class.manager-desk__flyout--wide]="panel() === 'create' || panel() === 'edit' || panel() === 'bom'"
+          [class.manager-desk__flyout--wide]="
+            panel() === 'create' || panel() === 'edit' || panel() === 'bom'
+          "
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
           [attr.data-panel]="panel()"
@@ -675,16 +677,19 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__order-item {
         min-width: 0;
       }
+      /* TZ-DESK-424: delete is a real grid column (last, auto width), not a
+         separate flex strip outside the row's own grid — same row height via
+         align-items: stretch, same grid the row lays disclosure/number/client/status in. */
       .manager-desk__order-actions {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr auto;
         align-items: stretch;
         gap: 0.5rem;
       }
       .manager-desk__order-actions .manager-desk__order-row {
-        flex: 1;
+        min-width: 0;
       }
       .manager-desk__order-delete {
-        flex: 0 0 auto;
         align-self: stretch;
         border: 1px solid var(--pi-rule-strong);
         background: transparent;
@@ -738,10 +743,17 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      /* TZ-DESK-424: badge, not a colored traffic light — one accent color
+         for every status, letter-spacing + hairline outline instead of hue. */
       .manager-desk__status {
         color: var(--color-sunrise-warm, #9b6b1e);
         font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         white-space: nowrap;
+        padding: 0.15rem 0.5rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
       }
       .manager-desk__flyout-heading {
         display: flex;

@@ -132,18 +132,13 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               >{{ statusLabel(order().status) }}</span
             >
             @if (mode() === 'desk') {
-              <span
-                class="text-xs text-muted-foreground truncate max-w-[min(28rem,55vw)]"
-                data-test="order-summary-client"
-                >Клиент: {{ clientLabel() || '—' }}</span
-              >
               <span class="flex-1" aria-hidden="true"></span>
               <div class="flex flex-col items-end gap-1">
                 <button
                   type="button"
                   class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm text-sm"
-                  [class.bg-ink]="canConfirm()"
-                  [class.text-paper]="canConfirm()"
+                  [class.bg-gold]="canConfirm()"
+                  [class.text-ink]="canConfirm()"
                   [class.bg-paper]="!canConfirm()"
                   [class.text-muted-foreground]="!canConfirm()"
                   [attr.aria-disabled]="!canConfirm()"
@@ -210,15 +205,37 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                         Загрузка состава…
                       </p>
                     } @else if (compositionForest().length > 0) {
-                      <div
-                        class="space-y-3 p-2 hairline rounded-sm bg-paper"
-                        data-test="order-composition-tree"
-                      >
+                      <div class="space-y-3" data-test="order-composition-tree">
                         @for (root of compositionForest(); track $index) {
-                          <div class="text-xs text-muted-foreground mb-1" data-test="order-item-fact">
-                            {{ lineLabel(order().items?.[$index] ?? { productId: root._id, quantity: 1, unitPrice: 0 }) }}
-                            · {{ boardLaneLabel(order().items?.[$index] ?? { productId: root._id, quantity: 1, unitPrice: 0 }) }}
-                            · {{ order().items?.[$index]?.readyForWork === true ? 'готово' : 'не готово' }}
+                          <div
+                            class="text-xs text-muted-foreground mb-1"
+                            data-test="order-item-fact"
+                          >
+                            {{
+                              lineLabel(
+                                order().items?.[$index] ?? {
+                                  productId: root._id,
+                                  quantity: 1,
+                                  unitPrice: 0,
+                                }
+                              )
+                            }}
+                            ·
+                            {{
+                              boardLaneLabel(
+                                order().items?.[$index] ?? {
+                                  productId: root._id,
+                                  quantity: 1,
+                                  unitPrice: 0,
+                                }
+                              )
+                            }}
+                            ·
+                            {{
+                              order().items?.[$index]?.readyForWork === true
+                                ? 'готово'
+                                : 'не готово'
+                            }}
                           </div>
                           <app-composition-tree
                             [root]="root"
@@ -253,7 +270,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     } @else {
                       <a
                         [routerLink]="['/orders', order()._id]"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm mt-3 inline-block"
+                        class="min-h-touch px-3 py-1.5 mt-3 inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-sm"
                         (click)="$event.stopPropagation()"
                         >Открыть карточку заказа</a
                       >
@@ -300,7 +317,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     @if (mode() === 'hub') {
                       <a
                         [routerLink]="['/orders', order()._id]"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
+                        class="min-h-touch px-2 py-1 ml-auto inline-flex items-center border border-rule-strong rounded-sm bg-transparent text-xs"
                         data-test="order-readiness-link"
                         (click)="$event.stopPropagation()"
                         >Открыть заказ</a
@@ -331,7 +348,10 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               </section>
 
               <!-- Снабжение + Производство -->
-              <section class="min-w-0 hairline rounded-sm bg-paper p-3" data-test="order-group-supply">
+              <section
+                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                data-test="order-group-supply"
+              >
                 <button
                   type="button"
                   class="flex items-center justify-between w-full min-h-touch text-left text-sm font-medium text-ink"
@@ -346,60 +366,67 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                 </button>
                 @if (supplyExpanded()) {
                   <div id="order-supply-content" class="pt-3">
-                    <section class="min-w-0 flex flex-col gap-1" data-test="order-supply-block">
-                      <div class="flex items-center gap-3 flex-wrap">
-                        <span class="text-xs text-muted-foreground">Снабжение</span>
-                        @if (mode() === 'desk') {
-                          <button
-                            type="button"
-                            class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                            (click)="openSupply.emit(order())"
-                            data-test="desk-supply-button"
-                          >
-                            Снабжение
-                          </button>
-                        } @else {
-                          <a
-                            routerLink="/supply"
-                            [queryParams]="{ orderId: order()._id }"
-                            class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                            data-test="order-supply-link"
-                            (click)="$event.stopPropagation()"
-                            >Снабжение</a
-                          >
-                        }
-                      </div>
+                    <section class="min-w-0 flex flex-col gap-1.5" data-test="order-supply-block">
+                      <span class="text-xs text-muted-foreground">Снабжение</span>
+                      @if (mode() === 'desk') {
+                        <button
+                          type="button"
+                          class="w-full min-h-touch px-2 py-1.5 border border-rule-strong rounded-sm bg-transparent text-xs"
+                          (click)="openSupply.emit(order())"
+                          data-test="desk-supply-button"
+                        >
+                          Снабжение
+                        </button>
+                      } @else {
+                        <a
+                          routerLink="/supply"
+                          [queryParams]="{ orderId: order()._id }"
+                          class="w-full min-h-touch px-2 py-1.5 inline-flex items-center justify-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                          data-test="order-supply-link"
+                          (click)="$event.stopPropagation()"
+                          >Снабжение</a
+                        >
+                      }
                       @if (supplyLoading()) {
                         <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
                       } @else if (supplyError()) {
-                        <p class="text-xs text-destructive m-0 mt-1" role="alert" data-test="order-supply-error">
+                        <p
+                          class="text-xs text-destructive m-0 mt-1"
+                          role="alert"
+                          data-test="order-supply-error"
+                        >
                           {{ supplyError() }}
                         </p>
                       } @else if (supplyCounters().total > 0) {
                         <p class="text-xs m-0 mt-1" data-test="order-supply-counters">
-                          Заказано {{ supplyCounters().ordered }} · Получено {{ supplyCounters().received }} · всего {{ supplyCounters().total }}
+                          Заказано {{ supplyCounters().ordered }} · Получено
+                          {{ supplyCounters().received }} · всего {{ supplyCounters().total }}
                         </p>
                       }
                     </section>
-                    <section class="min-w-0 flex flex-col gap-1 border-t hairline pt-3 mt-3" data-test="order-production-block">
-                      <div class="flex items-center gap-3 flex-wrap">
-                        <span class="text-xs text-muted-foreground">Производство</span>
-                        <a
-                          routerLink="/production"
-                          [queryParams]="productionQueryParams()"
-                          class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                          data-test="order-production-link"
-                          (click)="$event.stopPropagation()"
-                          >Производство</a
-                        >
-                      </div>
+                    <section
+                      class="min-w-0 flex flex-col gap-1.5 border-t hairline pt-3 mt-3"
+                      data-test="order-production-block"
+                    >
+                      <span class="text-xs text-muted-foreground">Производство</span>
+                      <a
+                        routerLink="/production"
+                        [queryParams]="productionQueryParams()"
+                        class="w-full min-h-touch px-2 py-1.5 inline-flex items-center justify-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                        data-test="order-production-link"
+                        (click)="$event.stopPropagation()"
+                        >Производство</a
+                      >
                     </section>
                   </div>
                 }
               </section>
 
               <!-- Логистика + Документы -->
-              <section class="min-w-0 hairline rounded-sm bg-paper p-3" data-test="order-group-logistics">
+              <section
+                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                data-test="order-group-logistics"
+              >
                 <button
                   type="button"
                   class="flex items-center justify-between w-full min-h-touch text-left text-sm font-medium text-ink"
@@ -415,66 +442,64 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                 @if (logisticsExpanded()) {
                   <div id="order-logistics-content" class="pt-3">
                     <section class="min-w-0 flex flex-col gap-1" data-test="order-warehouse-block">
-
-                    <div class="flex items-baseline gap-3 flex-wrap">
-                      <span class="text-xs text-muted-foreground">Склад</span>
-                      <a
-                        routerLink="/storage-items"
-                        class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                        data-test="order-warehouse-link"
-                        (click)="$event.stopPropagation()"
-                        >Открыть</a
-                      >
-                    </div>
-                    @if (reservationLoading() && reservationActive()) {
-                      <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
-                    } @else if (reservationError() && reservationActive()) {
-                      <p
-                        class="text-xs text-destructive m-0 mt-1"
-                        role="alert"
-                        data-test="order-warehouse-error"
-                      >
-                        {{ reservationError() }}
-                      </p>
-                    } @else if (reservationActive() && reservationCounters().total === 0) {
-                      <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
-                    } @else if (reservationActive()) {
-                      <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
-                        Активных {{ reservationCounters().active }} · всего
-                        {{ reservationCounters().total }}
-                      </p>
-                    }
+                      <div class="flex items-baseline gap-3 flex-wrap">
+                        <span class="text-xs text-muted-foreground">Склад</span>
+                        <a
+                          routerLink="/storage-items"
+                          class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
+                          data-test="order-warehouse-link"
+                          (click)="$event.stopPropagation()"
+                          >Открыть</a
+                        >
+                      </div>
+                      @if (reservationLoading() && reservationActive()) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                      } @else if (reservationError() && reservationActive()) {
+                        <p
+                          class="text-xs text-destructive m-0 mt-1"
+                          role="alert"
+                          data-test="order-warehouse-error"
+                        >
+                          {{ reservationError() }}
+                        </p>
+                      } @else if (reservationActive() && reservationCounters().total === 0) {
+                        <p class="text-xs text-muted-foreground m-0 mt-1">Нет броней</p>
+                      } @else if (reservationActive()) {
+                        <p class="text-xs m-0 mt-1" data-test="order-warehouse-counters">
+                          Активных {{ reservationCounters().active }} · всего
+                          {{ reservationCounters().total }}
+                        </p>
+                      }
                     </section>
 
                     <section
                       class="min-w-0 flex flex-col gap-1 border-t hairline pt-2 mt-2"
                       data-test="order-shipping-block"
-                  >
-                    <div class="flex items-baseline gap-3 flex-wrap">
-                      <span class="text-xs text-muted-foreground">Отгрузка</span>
-                      <a
-                        routerLink="/shipping"
-                        class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                        data-test="order-shipping-link"
-                        (click)="$event.stopPropagation()"
-                        >Открыть раздел „Отгрузка“</a
-                      >
-                    </div>
-
+                    >
+                      <div class="flex items-baseline gap-3 flex-wrap">
+                        <span class="text-xs text-muted-foreground">Отгрузка</span>
+                        <a
+                          routerLink="/shipping"
+                          class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
+                          data-test="order-shipping-link"
+                          (click)="$event.stopPropagation()"
+                          >Открыть раздел „Отгрузка“</a
+                        >
+                      </div>
                     </section>
                   </div>
                 }
 
                 <section
-                  class="min-w-0 flex flex-col gap-1 border-t hairline pt-2 mt-2"
+                  class="min-w-0 flex flex-col gap-1.5 border-t hairline pt-2 mt-2"
                   data-test="order-group-documents"
                 >
-                  <div class="flex items-center gap-4 flex-wrap">
-                    <span class="text-xs text-muted-foreground">Документы</span>
-                    @if (mode() === 'desk') {
+                  <span class="text-xs text-muted-foreground">Документы</span>
+                  @if (mode() === 'desk') {
+                    <div class="flex flex-col gap-1.5">
                       <button
                         type="button"
-                        class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
+                        class="w-full min-h-touch px-2 py-1.5 border border-rule-strong rounded-sm bg-transparent text-xs"
                         (click)="createDocument.emit(order())"
                         data-test="desk-create-document-button"
                       >
@@ -482,7 +507,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                       </button>
                       <button
                         type="button"
-                        class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                        class="w-full min-h-touch px-2 py-1.5 border border-rule-strong rounded-sm bg-transparent text-xs"
                         (click)="openDocs.emit(order())"
                         data-test="desk-docs-button"
                       >
@@ -490,23 +515,23 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                       </button>
                       <button
                         type="button"
-                        class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                        class="w-full min-h-touch px-2 py-1.5 border border-rule-strong rounded-sm bg-transparent text-xs"
                         (click)="openNotebook.emit(order())"
                         data-test="desk-notebook-button"
                       >
                         Блокнот
                       </button>
-                    } @else {
-                      <a
-                        routerLink="/doc-constructor/templates"
-                        [queryParams]="{ source: 'order', sourceId: order()._id }"
-                        class="text-xs underline underline-offset-2 hover:text-sunrise-warm ml-auto"
-                        data-test="order-documents-link"
-                        (click)="$event.stopPropagation()"
-                        >Шаблоны документов</a
-                      >
-                    }
-                  </div>
+                    </div>
+                  } @else {
+                    <a
+                      routerLink="/doc-constructor/templates"
+                      [queryParams]="{ source: 'order', sourceId: order()._id }"
+                      class="text-xs underline underline-offset-2 hover:text-sunrise-warm"
+                      data-test="order-documents-link"
+                      (click)="$event.stopPropagation()"
+                      >Шаблоны документов</a
+                    >
+                  }
                 </section>
               </section>
             </div>
@@ -588,7 +613,8 @@ export class OrderHubTrayComponent implements OnInit {
       this.compositionExpanded.set(true);
       this.loadComposition();
     }
-    if (          this.reservationError() ||
+    if (
+      this.reservationError() ||
       this.supplyError() ||
       this.order().status === 'ready' ||
       this.order().status === 'shipped'

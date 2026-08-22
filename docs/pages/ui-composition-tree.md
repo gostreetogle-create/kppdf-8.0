@@ -42,9 +42,7 @@
 8. **Цвет по kind (TZ-330):** только бейдж ИЗД/МОД/МАТ (текст + рамка) и
    left rail nest — **строка/карточка белая** (`--color-paper`), без kind-wash.
    Не RAL. Persist пресетов → TZ-331.
-9. **Containment:** раскрытый узел = **одна карточка** (шапка + nest без зазора
-   `mt-0`; общая hairline-рамка на node). Nest — мягкий каскад Paper & Ink
-   (~4/8/13/18%), rail 5px. Kind — бейдж + rail. Свёрнуто → nest нет в DOM.
+9. **Containment:** глубина = `padding-left` + **kind rail** `border-l-[5px]` на nest (не RAL). Строки делит `border-bottom`, не карточка-в-карточке. Запрещены: вторая hairline-рамка вокруг каждого раскрытого узла, `box-shadow` / inset ring на nest (в т.ч. dark). Корень раскрытой ветки может иметь лёгкий `paper-2` / ink-muted wash; потомки — прозрачные / лестница поверхностей без рамки. Свёрнуто → nest нет в DOM.
 10. **Пачки:** sibling gap (`mb-3` на раскрытом node), `space-y-3` внутри nest.
 11. **Thumb + имя (TZ-UX-311/312):** после бейджа ИЗД/МОД/МАТ — превью
     **≥36px** (`w-9 h-9`; `photoUrl` → `<img object-cover>`; иначе Lucide Image
@@ -76,7 +74,7 @@
 | Режим | Стратегия |
 |-------|-----------|
 | **Light** | без изменений 334: ink 4/8/13/18% + мягкий rule mid-stop |
-| **Dark** | (A)+(B)+(C): ink **12/22/34/46%**, rule chroma mid-stop 10–28%, inset edge shadow по depth |
+| **Dark** | ink **12/22/34/46%**, rule chroma mid-stop 10–28%. **Без** inset shadow: слои = заливка ± hairline строки |
 
 Kind по-прежнему только бейдж + left rail. Строки — `paper`, не tinted wash.
 

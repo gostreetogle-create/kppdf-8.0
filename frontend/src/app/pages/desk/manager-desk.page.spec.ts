@@ -293,6 +293,25 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(toast.success).toHaveBeenCalledWith('Заказ удалён');
   });
 
+  it('TZ-DESK-424: delete sits in the same grid row as the order row, not a separate flex column', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    // `.manager-desk__order-actions` is `display: grid` (see component styles) with
+    // `grid-template-columns: 1fr auto` — row fills the row, delete is the last
+    // column, both direct children of the same grid, not a separate flex strip.
+    const actions = fixture.nativeElement.querySelector(
+      '.manager-desk__order-actions',
+    ) as HTMLElement;
+    const row = actions.querySelector('[data-test="desk-order-row"]') as HTMLElement;
+    const deleteButton = actions.querySelector('[data-test="desk-order-delete"]') as HTMLElement;
+    expect(row.parentElement).toBe(actions);
+    expect(deleteButton.parentElement).toBe(actions);
+    expect(Array.from(actions.children)).toEqual([row, deleteButton]);
+  });
+
   it('expands a live order into the tray and toggles closed with crumb suffix', async () => {
     queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
@@ -316,9 +335,10 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     const tray = item.querySelector('[data-test="order-hub-tray"]');
     expect(tray).toBeTruthy();
     expect(tray?.getAttribute('data-mode')).toBe('desk');
-    expect(tray?.querySelector('[data-test="order-summary-client"]')?.textContent).toContain(
-      'Северный свет',
-    );
+    // TZ-DESK-424: the tray summary bar no longer repeats "Клиент: …" — the
+    // name is already shown once in the queue row/group separator above it.
+    expect(tray?.querySelector('[data-test="order-summary-client"]')).toBeNull();
+    expect(item.textContent).toContain('Северный свет');
     expect(tray?.querySelector('[data-test="order-summary-status"]')?.textContent).toContain(
       'Черновик',
     );
@@ -432,7 +452,9 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     page().onAddLines(emptyOrder);
     fixture.detectChanges();
     expect(page().panel()).toBe('bom');
-    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-panel')).toBe('bom');
+    expect(
+      fixture.nativeElement.querySelector('[data-test="desk-flyout"]')?.getAttribute('data-panel'),
+    ).toBe('bom');
     expect(fixture.nativeElement.querySelector('[data-test="order-form"]')).toBeTruthy();
     flushPanelLookups(httpMock);
     await tickMicrotask();
@@ -443,18 +465,22 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     page().onAddLines(confirmable);
     fixture.detectChanges();
     page().onPrimaryCta(confirmable);
-    const request = httpMock.expectOne((req) => req.url === '/api/orders/o1' && req.method === 'PATCH');
+    const request = httpMock.expectOne(
+      (req) => req.url === '/api/orders/o1' && req.method === 'PATCH',
+    );
     expect(request.request.body).toEqual({ status: 'confirmed' });
     request.flush({ ...confirmable, status: 'confirmed' });
     expect(toast.success).toHaveBeenCalledWith('Заказ подтверждён');
     httpMock.match((req) => req.url === '/api/supply-tasks').forEach((req) => req.flush([]));
     httpMock.match((req) => req.url === '/api/sites').forEach((req) => req.flush([]));
-    httpMock.match((req) => req.url.includes('/api/products/') && req.url.endsWith('/tree')).forEach((req) =>
-      req.flush({ _id: 'p1', name: 'Изделие', kind: 'product', quantity: 1, children: [] }),
-    );
-    httpMock.match((req) => req.url === '/api/sites/ensure-default').forEach((req) =>
-      req.flush({ _id: 'site-default', counterpartyId: 'cp1', name: 'Объект' }),
-    );
+    httpMock
+      .match((req) => req.url.includes('/api/products/') && req.url.endsWith('/tree'))
+      .forEach((req) =>
+        req.flush({ _id: 'p1', name: 'Изделие', kind: 'product', quantity: 1, children: [] }),
+      );
+    httpMock
+      .match((req) => req.url === '/api/sites/ensure-default')
+      .forEach((req) => req.flush({ _id: 'site-default', counterpartyId: 'cp1', name: 'Объект' }));
   });
 
   it('opens right panels only for an expanded order and Escape closes only the flyout', async () => {

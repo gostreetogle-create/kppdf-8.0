@@ -32,7 +32,7 @@
   - При expand: suffix `/ З-1001` в tools-слоте **той же** sticky chrome-строки — **без** «Рабочий стол» (brand-home уже SoT).
   - Канон: [`page-chrome.md`](./page-chrome.md) § Рабочий стол.
 - Dense main (`isDenseWorkspaceUrl`).
-- **Центр:** scrollable queue; **expand tray под строкой** (не блок ниже списка).
+- **Центр:** scrollable queue; **expand tray под строкой** (не блок ниже списка; не master-detail две колонки — это отклонённый 401).
 - Tray: группы как `/orders` expand — Заказ, Исполнение, Комбайн-strip, Состав, inline CTA.
   - **412:** один shared `order-hub-tray` (`mode="desk"`) — та же разметка, что `/orders` expand (`mode="hub"`), без форка шаблона.
   - **403:** composition-tree + lazy supply живут в самом tray (self-contained); desk раскрывает живой BOM без маршрута `/orders/:id`, карандаш = `open-catalog-composition-edit`.
@@ -83,3 +83,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-414** | hotfix RouterLink + stale notes + chip activeId — **DONE** |
 | **DESK-418** | delete заказа со стола с confirm — **DONE** |
 | **DESK-423** | операторский tray (изделие / confirm-on-press / disclosure) — **DONE** |
+| **DESK-424** | tray declutter: no card-in-card composition tree (border-b, kind rail only), tray drops the client-name repeat + inner composition wrapper, desk primary CTA is `bg-gold`/`text-ink` (not black), hub «Открыть заказ»/«Открыть карточку заказа» are outline buttons not underline, right-column Снабжение/Производство/Документы/Блокнот buttons are `w-full`, delete lives in the row's own grid (not a separate flex strip) — **DONE** |

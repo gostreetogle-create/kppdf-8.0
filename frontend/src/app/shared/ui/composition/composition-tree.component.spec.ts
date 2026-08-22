@@ -136,8 +136,15 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
       '[data-test="composition-tree-node-m1"]',
     ) as HTMLElement;
     expect(pack.classList.contains('mb-3')).toBe(true);
-    expect(pack.classList.contains('hairline')).toBe(true);
+    // TZ-DESK-424: no card-in-card — the node wrapper never gets a hairline;
+    // rows are split by border-b instead (see the row-level assertion below).
+    expect(pack.classList.contains('hairline')).toBe(false);
     expect(pack.classList.contains('overflow-hidden')).toBe(true);
+    const moduleRowEl = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    expect(moduleRowEl.classList.contains('border-b')).toBe(true);
+    expect(moduleRowEl.classList.contains('hairline')).toBe(false);
     expect(moduleNest!.getAttribute('data-nest-depth')).toBe('1');
     // Both materials inside the same nest
     expect(moduleNest!.querySelector('[data-test="composition-tree-node-mat1"]')).toBeTruthy();
@@ -239,11 +246,29 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     expect(dark2).toContain('34%');
     expect(dark3).toContain('46%');
     expect(dark0).not.toBe(light0);
-    expect(comp.nestShadow(1)).toContain('inset');
-    expect(comp.nestShadow(1)).not.toBeNull();
+  });
+
+  it('TZ-DESK-424: no inset box-shadow on the nest, light or dark', () => {
+    const theme = TestBed.inject(ThemeService);
+    fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    const moduleRow = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    moduleRow.click();
+    fixture.detectChanges();
+    const moduleNest = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-m1"] > [data-test="composition-tree-nest"]',
+    ) as HTMLElement;
 
     theme.set('light');
-    expect(comp.nestShadow(1)).toBeNull();
+    fixture.detectChanges();
+    expect(moduleNest.style.boxShadow).toBe('');
+
+    theme.set('dark');
+    fixture.detectChanges();
+    expect(moduleNest.style.boxShadow).toBe('');
   });
 
   it('TZ-UX-311: name uses line-clamp-2 (not truncate); placeholder thumb without photoUrl', () => {

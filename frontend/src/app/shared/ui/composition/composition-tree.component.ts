@@ -33,6 +33,9 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
  * Containment nest: docs/audits/2026-08-08-composition-containment-outline.md (TZ-333).
  * Nest cohesion (gap/rail/indent): docs/audits/2026-08-08-composition-block-cohesion-visual.md (TZ-334).
  * Thumb + wrap name: TZ-UX-311. Density (36px thumb, tight row): TZ-UX-312.
+ * TZ-DESK-424 (2026-08-22): no card-in-card — rows split by border-b, kind
+ * rail stays; dropped the inset nestShadow (dark used it too) per updated
+ * ui-composition-tree.md AC9.
  */
 @Component({
   selector: 'app-composition-tree',
@@ -63,7 +66,6 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
     <ng-template #nodeTemplate let-node let-depth="depth" let-parent="parent">
       <div
         class="rounded-md transition-colors"
-        [class.hairline]="isExpanded(node) && node.children.length > 0"
         [class.overflow-hidden]="isExpanded(node) && node.children.length > 0"
         [class.mb-3]="isExpanded(node) && node.children.length > 0"
         [attr.data-test]="'composition-tree-node-' + node._id"
@@ -76,16 +78,8 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
         [attr.aria-selected]="selectedId() === node._id"
       >
         <div
-          class="flex items-center gap-1 px-1.5 py-1 min-h-11 cursor-pointer select-none pi-focus-ring"
-          [class.hairline]="!(isExpanded(node) && node.children.length > 0)"
-          [class.rounded-sm]="!(isExpanded(node) && node.children.length > 0)"
-          [class.rounded-none]="isExpanded(node) && node.children.length > 0"
-          [class.border-b]="isExpanded(node) && node.children.length > 0"
-          [style.border-bottom-color]="
-            isExpanded(node) && node.children.length > 0
-              ? 'color-mix(in oklch, var(--color-rule) 45%, transparent)'
-              : null
-          "
+          class="flex items-center gap-1 px-1.5 py-1 min-h-11 cursor-pointer select-none pi-focus-ring border-b"
+          [style.border-bottom-color]="'color-mix(in oklch, var(--color-rule) 45%, transparent)'"
           [style.padding-left.rem]="depth * 1.1 + 0.5"
           [style.background]="rowWash(node)"
           [class.ring-1]="selectedId() === node._id"
@@ -191,7 +185,6 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
             [class.comp-tree__nest--dark]="theme.isDark()"
             [style.background]="nestSurface(depth)"
             [style.border-left-color]="kindBorder(node)"
-            [style.box-shadow]="nestShadow(depth)"
             role="group"
             data-test="composition-tree-nest"
             [attr.data-parent-kind]="node.kind"
@@ -287,13 +280,6 @@ export class CompositionTreeComponent {
     const from = inkPct[step]!;
     const to = from + 4;
     return `linear-gradient(165deg, color-mix(in oklch, var(--color-ink) ${from}%, var(--color-paper)) 0%, color-mix(in oklch, var(--color-rule) ${Math.min(from + 6, 22)}%, var(--color-paper)) 55%, color-mix(in oklch, var(--color-ink) ${to}%, var(--color-paper)) 100%)`;
-  }
-
-  /** TZ-CATALOG-335 (C): subtle inset edge between nest levels on dark only. */
-  protected nestShadow(depth: number): string | null {
-    if (!this.theme.isDark()) return null;
-    const a = 0.14 + Math.min(depth, 3) * 0.05;
-    return `inset 0 0 0 1px color-mix(in oklch, var(--color-ink) ${Math.round(a * 100)}%, transparent)`;
   }
 
   protected onRowMouseDown(event: MouseEvent): void {
