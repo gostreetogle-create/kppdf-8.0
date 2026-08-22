@@ -47,7 +47,7 @@ import { SELECT_PARENT, SelectParent } from './select-parent.interface';
       }
       button[aria-selected='true'] {
         background: var(--color-sunrise-warm);
-        color: var(--color-paper);
+        color: var(--color-on-gold);
       }
     `,
   ],

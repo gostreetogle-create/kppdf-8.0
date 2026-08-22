@@ -78,7 +78,6 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
                    pi-focus-ring cursor-pointer no-underline"
             [class.bg-sunrise-warm]="activeId() === chip.id"
             [class.text-on-gold]="activeId() === chip.id"
-            [class.text-paper]="activeId() === chip.id"
             [class.text-ink]="activeId() !== chip.id"
             [class.hover:bg-paper-2]="activeId() !== chip.id"
             [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"

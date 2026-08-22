@@ -375,7 +375,6 @@ export function matchActiveCategoryId(
                              cursor-pointer no-underline"
                       [class.bg-sunrise-warm]="activeCategoryId() === cat.id"
                       [class.text-on-gold]="activeCategoryId() === cat.id"
-                      [class.text-paper]="activeCategoryId() === cat.id"
                       [class.border-sunrise-warm]="activeCategoryId() === cat.id"
                       [class.text-ink]="activeCategoryId() !== cat.id"
                       [class.hover:bg-paper-2]="activeCategoryId() !== cat.id"

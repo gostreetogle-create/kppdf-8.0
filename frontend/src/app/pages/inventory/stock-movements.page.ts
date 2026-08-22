@@ -97,7 +97,6 @@ function populatedName(
                 class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5 text-xs leading-5 rounded-sm transition-colors pi-focus-ring cursor-pointer no-underline"
                 [class.bg-sunrise-warm]="activeWarehouseChipId() === chip.id"
                 [class.text-on-gold]="activeWarehouseChipId() === chip.id"
-                [class.text-paper]="activeWarehouseChipId() === chip.id"
                 [class.text-ink]="activeWarehouseChipId() !== chip.id"
                 [class.hover:bg-paper-2]="activeWarehouseChipId() !== chip.id"
                 [attr.aria-current]="activeWarehouseChipId() === chip.id ? 'page' : undefined"

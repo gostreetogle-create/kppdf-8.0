@@ -16,6 +16,8 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+AUDIT (read-only): data-model refresh — Freebuff, 2026-08-22T08:36:56+03:00 — DONE
+AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DONE
 **TZ-STRAT-01A** — READY FOR REVIEW: `/desk`/`/orders` cross-page boundary перенесена в shared order layer; gates PASS, local commit разрешён, push не выполняется.
 
 **PO reminders wave** — код на `main`, prod не обновлён:

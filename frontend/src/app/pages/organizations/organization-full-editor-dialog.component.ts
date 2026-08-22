@@ -155,7 +155,6 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
                       class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
                       [class.bg-sunrise-warm]="isTypeSelected(t)"
                       [class.text-on-gold]="isTypeSelected(t)"
-                      [class.text-paper]="isTypeSelected(t)"
                       [class.border-ink]="isTypeSelected(t)"
                     >
                       <input

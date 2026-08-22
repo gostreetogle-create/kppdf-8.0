@@ -190,7 +190,6 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
                       class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
                       [class.bg-sunrise-warm]="isRoleSelected(role.slug)"
                       [class.text-on-gold]="isRoleSelected(role.slug)"
-                      [class.text-paper]="isRoleSelected(role.slug)"
                       [class.border-ink]="isRoleSelected(role.slug)"
                     >
                       <input

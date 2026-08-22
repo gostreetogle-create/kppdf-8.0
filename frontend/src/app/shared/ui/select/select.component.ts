@@ -2,7 +2,9 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  HostListener,
   forwardRef,
   inject,
   input,
@@ -48,16 +50,23 @@ import { SELECT_PARENT, SelectParent } from './select-parent.interface';
       class="flex flex-col gap-1 w-full"
       (keydown)="onKeydown($event)"
     >
-      <app-pi-select-trigger [size]="size()" [ariaLabel]="ariaLabel()">
+      <app-pi-select-trigger
+        [size]="size()"
+        [ariaLabel]="ariaLabel()"
+        [open]="open()"
+        (toggle)="toggleOpen()"
+      >
         <ng-content select="[selected-label]" />
       </app-pi-select-trigger>
-      <div
-        class="bg-paper hairline rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
-        role="listbox"
-        [attr.aria-label]="ariaLabel()"
-      >
-        <ng-content />
-      </div>
+      @if (open()) {
+        <div
+          class="bg-paper hairline rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
+          role="listbox"
+          [attr.aria-label]="ariaLabel()"
+        >
+          <ng-content />
+        </div>
+      }
     </div>
   `,
 })
@@ -70,7 +79,9 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
 
   readonly valueChange = output<string | null>();
 
-  private readonly hostEl = inject(ElementRef<HTMLElement>);
+  protected readonly open = signal(false);
+  private readonly hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly destroyRef = inject(DestroyRef);
   readonly options = viewChildren(SelectOptionComponent);
   private readonly focusedIndex = signal<number>(-1);
 
@@ -78,6 +89,10 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
   private onChange: (value: string | null) => void = () => {};
   private onTouched: () => void = () => {};
   protected readonly isDisabledFromForm = signal<boolean>(false);
+
+  constructor() {
+    this.destroyRef.onDestroy(() => this.open.set(false));
+  }
 
   writeValue(value: string | null): void {
     this.value.set(value);
@@ -99,12 +114,11 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
     queueMicrotask(() => this.focusInitial());
   }
 
-  private focusInitial(): void {
-    const opts = this.options();
-    if (opts.length === 0) return;
-    const valueIdx = opts.findIndex((o) => !o.disabled() && o.value() === this.value());
-    const idx = valueIdx >= 0 ? valueIdx : opts.findIndex((o) => !o.disabled());
-    if (idx >= 0) this.focusedIndex.set(idx);
+  protected toggleOpen(): void {
+    this.open.update((v) => !v);
+    if (this.open()) {
+      this.focusInitial();
+    }
   }
 
   selectOption(value: string): void {
@@ -113,15 +127,38 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
     this.onChange(value);
     this.onTouched();
     this.valueChange.emit(value);
+    this.open.set(false);
+  }
+
+  private focusInitial(): void {
+    const opts = this.options();
+    if (opts.length === 0) return;
+    const valueIdx = opts.findIndex((o) => !o.disabled() && o.value() === this.value());
+    const idx = valueIdx >= 0 ? valueIdx : opts.findIndex((o) => !o.disabled());
+    if (idx >= 0) this.focusedIndex.set(idx);
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.open()) return;
+    const target = event.target as Node | null;
+    if (!target) return;
+    if (!this.hostEl.nativeElement.contains(target)) {
+      this.open.set(false);
+    }
   }
 
   onKeydown(event: KeyboardEvent): void {
     if (this.disabled()) return;
+    if (event.key === 'Escape') {
+      this.open.set(false);
+      event.preventDefault();
+      return;
+    }
     const opts = this.options().filter((o) => !o.disabled());
     if (opts.length === 0) return;
     const currentIdx = this.focusedIndex() >= 0 ? this.focusedIndex() : 0;
-    // eslint-disable-next-line no-useless-assignment
-    let nextIdx = currentIdx;
+    let nextIdx: number;
     switch (event.key) {
       case 'ArrowDown':
       case 'ArrowRight':
@@ -142,12 +179,6 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
         if (this.focusedIndex() >= 0) {
           const focused = this.options()[this.focusedIndex()];
           if (focused) this.selectOption(focused.value());
-          event.preventDefault();
-        }
-        return;
-      case 'Escape':
-        if (this.focusedIndex() >= 0) {
-          this.focusedIndex.set(-1);
           event.preventDefault();
         }
         return;

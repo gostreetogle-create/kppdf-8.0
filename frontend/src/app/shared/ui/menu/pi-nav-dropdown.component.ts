@@ -99,7 +99,6 @@ export interface PiNavDropdownItem {
       [class.text-sm]="!compact()"
       [class.bg-sunrise-warm]="active()"
       [class.text-on-gold]="active()"
-      [class.text-paper]="active()"
       [class.border-sunrise-warm]="active()"
       [class.text-ink]="!active()"
       [class.hover:bg-paper-2]="!active()"

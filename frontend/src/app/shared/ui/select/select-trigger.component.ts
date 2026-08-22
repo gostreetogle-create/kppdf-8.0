@@ -1,15 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { SelectSize } from './select.types';
 
 /**
  * SelectTrigger — Paper & Ink select button face.
- * Pure visual; reads selection through `<ng-content selected-label>` projection
- * from parent Select. Pressing the trigger is handled by SelectComponent's
- * native `listbox` div.
- *
- * A11y: `aria-haspopup="listbox"` declares the popup pattern. `aria-label`
- * is propagated from the parent SelectComponent so the trigger has an
- * accessible name when no visible text is rendered yet (no option selected).
+ * Emits `toggle` on click so the parent SelectComponent can open/close the
+ * listbox panel. ARIA: aria-haspopup="listbox" + aria-expanded propagate the
+ * popup pattern.
  */
 @Component({
   selector: 'app-pi-select-trigger',
@@ -20,7 +16,9 @@ import { SelectSize } from './select.types';
       type="button"
       [class]="computedClass()"
       aria-haspopup="listbox"
+      [attr.aria-expanded]="open()"
       [attr.aria-label]="ariaLabel()"
+      (click)="toggle.emit()"
     >
       <span class="truncate flex-1 text-left text-ink">
         <ng-content />
@@ -31,9 +29,14 @@ import { SelectSize } from './select.types';
 })
 export class SelectTriggerComponent {
   readonly size = input<SelectSize>('md');
+  /** Whether the parent listbox panel is open (used for aria-expanded). */
+  readonly open = input<boolean>(false);
   /** Accessible name for the trigger button (axe button-name). Falls through
    *  from parent <app-pi-select ariaLabel="...">. */
   readonly ariaLabel = input<string | null>(null);
+
+  /** Parent listens to close the open/close loop. */
+  readonly toggle = output<void>();
 
   readonly computedClass = computed(() => {
     const isMd = this.size() === 'md';
