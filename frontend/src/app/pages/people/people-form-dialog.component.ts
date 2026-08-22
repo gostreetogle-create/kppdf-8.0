@@ -58,8 +58,9 @@ import { extractErrorMessage } from '../../core/silent-http';
         }
 
         <app-pi-form-section title="Основные данные" headingId="people-sec-basics" tone="gold">
-          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-3">
+          <div class="grid grid-cols-1 gap-form-field md:grid-cols-12 md:gap-x-3 md:gap-y-2">
             <app-pi-form-field
+              class="md:col-span-4"
               label="Фамилия"
               htmlFor="p-last"
               [required]="true"
@@ -78,6 +79,7 @@ import { extractErrorMessage } from '../../core/silent-http';
               />
             </app-pi-form-field>
             <app-pi-form-field
+              class="md:col-span-4"
               label="Имя"
               htmlFor="p-first"
               [required]="true"
@@ -95,7 +97,7 @@ import { extractErrorMessage } from '../../core/silent-http';
                 data-test="first-name-input"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Отчество" htmlFor="p-patronymic">
+            <app-pi-form-field class="md:col-span-4" label="Отчество" htmlFor="p-patronymic">
               <app-pi-input
                 id="p-patronymic"
                 formControlName="patronymic"
@@ -111,8 +113,8 @@ import { extractErrorMessage } from '../../core/silent-http';
           headingId="people-sec-contact"
           tone="neutral"
         >
-          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
-            <app-pi-form-field label="Должность" htmlFor="p-position">
+          <div class="grid grid-cols-1 gap-form-field md:grid-cols-12 md:gap-x-3 md:gap-y-2">
+            <app-pi-form-field class="md:col-span-8" label="Должность" htmlFor="p-position">
               <app-pi-input
                 id="p-position"
                 formControlName="position"
@@ -120,7 +122,7 @@ import { extractErrorMessage } from '../../core/silent-http';
                 data-test="position-input"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Отдел" htmlFor="p-department">
+            <app-pi-form-field class="md:col-span-4" label="Отдел" htmlFor="p-department">
               <app-pi-input
                 id="p-department"
                 formControlName="department"
@@ -128,10 +130,8 @@ import { extractErrorMessage } from '../../core/silent-http';
                 data-test="department-input"
               />
             </app-pi-form-field>
-          </div>
 
-          <div class="grid grid-cols-1 gap-form-field sm:grid-cols-2">
-            <app-pi-form-field label="Email" htmlFor="p-email">
+            <app-pi-form-field class="md:col-span-8" label="Email" htmlFor="p-email">
               <app-pi-input
                 id="p-email"
                 type="email"
@@ -140,13 +140,15 @@ import { extractErrorMessage } from '../../core/silent-http';
                 data-test="email-input"
               />
             </app-pi-form-field>
-            <app-pi-form-field label="Телефон" htmlFor="p-phone">
-              <app-pi-input
-                id="p-phone"
-                formControlName="phone"
-                placeholder="+7 …"
-                data-test="phone-input"
-              />
+            <app-pi-form-field class="md:col-span-4" label="Телефон" htmlFor="p-phone">
+              <div class="max-w-[14rem]">
+                <app-pi-input
+                  id="p-phone"
+                  formControlName="phone"
+                  placeholder="+7 …"
+                  data-test="phone-input"
+                />
+              </div>
             </app-pi-form-field>
           </div>
         </app-pi-form-section>
