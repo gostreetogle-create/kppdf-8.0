@@ -16,7 +16,7 @@ import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { AccordionComponent } from '../../shared/ui/pi-accordion.component';
 import { AccordionItemComponent } from '../../shared/ui/pi-accordion-item.component';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
-import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
+import { PiPhotoDropzoneComponent, PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -119,12 +119,20 @@ interface ModuleCostPreview {
               data-test="module-hero-photo"
             >
               @if (coverPhotoSrc(); as cover) {
-                <img
-                  [src]="cover"
-                  [alt]="m.name"
-                  class="absolute inset-0 block w-full h-full object-cover"
-                  loading="lazy"
-                />
+                <button
+                  type="button"
+                  class="absolute inset-0 block w-full h-full cursor-zoom-in pi-focus-ring"
+                  [attr.aria-label]="'Открыть фото: ' + m.name"
+                  (click)="openPhotoUrl(cover, m.name)"
+                  data-test="module-hero-photo-button"
+                >
+                  <img
+                    [src]="cover"
+                    [alt]="m.name"
+                    class="block w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
               } @else {
                 <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
               }
@@ -172,12 +180,20 @@ interface ModuleCostPreview {
                 @for (p of photos(); track p._id) {
                   <figure class="relative m-0">
                     @if (photoSrc(p); as src) {
-                      <img
-                        [src]="src"
-                        [alt]="p.caption ?? 'фото модуля'"
-                        class="block w-full max-w-[9rem] aspect-square object-cover hairline rounded-sm bg-paper-2"
-                        loading="lazy"
-                      />
+                      <button
+                        type="button"
+                        class="block w-full max-w-[9rem] aspect-square cursor-zoom-in pi-focus-ring"
+                        [attr.aria-label]="'Открыть фото: ' + (p.caption ?? m.name)"
+                        (click)="openPhotoUrl(src, p.caption ?? m.name)"
+                        data-test="module-gallery-photo-button"
+                      >
+                        <img
+                          [src]="src"
+                          [alt]="p.caption ?? 'фото модуля'"
+                          class="block w-full h-full object-cover hairline rounded-sm bg-paper-2"
+                          loading="lazy"
+                        />
+                      </button>
                     } @else {
                       <app-pi-empty-tile [sizePx]="144" />
                     }
@@ -437,6 +453,14 @@ export class ModuleDetailPage {
 
   protected onBack(): void {
     this.catalogReturn.navigateBackOr('/modules');
+  }
+
+  protected openPhotoUrl(src: string, label: string): void {
+    if (!src) return;
+    this.dialog.open(PiPhotoLightboxComponent, {
+      data: { src, alt: label, filename: label },
+      parentDestroyRef: this.destroyRef,
+    });
   }
 
   protected onBomChanged(): void {

@@ -40,6 +40,7 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos.service';
 import { PiShowcaseCardComponent } from '../../shared/ui/card/pi-showcase-card.component';
+import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { PiEmptyTileComponent } from '../../shared/ui/pi-empty-tile/pi-empty-tile.component';
 import { ModuleFormDialogComponent } from './module-form-dialog.component';
 import {
@@ -175,6 +176,7 @@ function moduleHasComposition(row: ProductModule): boolean {
     TableComponent,
     PaginationComponent,
     PiShowcaseCardComponent,
+    PiPhotoLightboxComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
@@ -377,20 +379,26 @@ function moduleHasComposition(row: ProductModule): boolean {
                   data-test="modules-grid"
                 >
                   @for (row of paginatedRows(); track row._id) {
-                    <a
-                      [routerLink]="['/modules', row._id]"
-                      class="block min-w-0 h-full"
-                      [attr.aria-label]="'Открыть ' + row.name"
+                    <div
+                      class="relative block min-w-0 h-full"
                       [attr.data-test]="'showcase-cell-' + row._id"
                     >
+                      <a
+                        [routerLink]="['/modules', row._id]"
+                        class="absolute inset-0 z-0 rounded-sm pi-focus-ring"
+                        [attr.aria-label]="'Открыть ' + row.name"
+                        [attr.data-test]="'showcase-link-' + row._id"
+                      ></a>
                       <app-pi-showcase-card
-                        class="h-full"
+                        class="relative z-1 h-full pointer-events-none"
                         size="md"
                         [title]="row.name"
                         [description]="gridDescription(row)"
                         [eyebrow]="gridEyebrow(row)"
                         [mediaUrl]="mainPhotoUrl(row)"
                         [interactive]="true"
+                        [mediaInteractive]="true"
+                        (mediaActivate)="openPhoto(row)"
                         [arrow]="false"
                       >
                         <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
@@ -399,7 +407,7 @@ function moduleHasComposition(row: ProductModule): boolean {
                           >
                         </span>
                       </app-pi-showcase-card>
-                    </a>
+                    </div>
                   }
                 </div>
                 <div class="mt-4 flex justify-end" data-test="grid-pager">
@@ -909,6 +917,19 @@ export class ModulesPage implements OnInit {
   protected mainPhotoUrl(row: ProductModule): string {
     const photo = this.mainPhotoOf(row);
     return photo ? photoListUrl(photo, Object.values(this.photosLookup.byId())) : '';
+  }
+
+  protected openPhoto(row: ProductModule): void {
+    const photo = this.mainPhotoOf(row);
+    const src = this.mainPhotoUrl(row);
+    if (!photo || !src) return;
+    this.dialog.open(PiPhotoLightboxComponent, {
+      data: {
+        src,
+        alt: photo.originalFilename || row.name,
+        filename: photo.originalFilename || row.name,
+      },
+    });
   }
 
   protected gridEyebrow(row: ProductModule): string {

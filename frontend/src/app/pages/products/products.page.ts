@@ -47,6 +47,7 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { CategoriesService, type Category } from '../../shared/services/categories.service';
 import { photoListUrl, type Photo } from '../../shared/services/photos.service';
+import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import {
   QuickCreateDialogComponent,
@@ -143,6 +144,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
     TableComponent,
     PaginationComponent,
     PiShowcaseCardComponent,
+    PiPhotoLightboxComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
   ],
@@ -365,20 +367,26 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                   data-test="products-grid"
                 >
                   @for (row of data(); track row._id) {
-                    <a
-                      [routerLink]="['/products', row._id]"
-                      class="block min-w-0 h-full"
-                      [attr.aria-label]="'Открыть ' + row.name"
+                    <div
+                      class="relative block min-w-0 h-full"
                       [attr.data-test]="'showcase-cell-' + row._id"
                     >
+                      <a
+                        [routerLink]="['/products', row._id]"
+                        class="absolute inset-0 z-0 rounded-sm pi-focus-ring"
+                        [attr.aria-label]="'Открыть ' + row.name"
+                        [attr.data-test]="'showcase-link-' + row._id"
+                      ></a>
                       <app-pi-showcase-card
-                        class="h-full"
+                        class="relative z-1 h-full pointer-events-none"
                         size="md"
                         [title]="row.name"
                         [description]="gridDescription(row)"
                         [eyebrow]="gridEyebrow(row)"
                         [mediaUrl]="mainPhotoUrl(row)"
                         [interactive]="true"
+                        [mediaInteractive]="true"
+                        (mediaActivate)="openPhoto(row)"
                         [arrow]="false"
                       >
                         <span sc-actions-md class="flex items-center gap-2 justify-between w-full">
@@ -395,7 +403,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                           <span class="text-xs text-muted-foreground">{{ row.unit }}</span>
                         </span>
                       </app-pi-showcase-card>
-                    </a>
+                    </div>
                   }
                 </div>
                 <div class="mt-4 flex justify-end" data-test="grid-pager">
@@ -1103,6 +1111,19 @@ export class ProductsPage implements OnInit {
       (candidate): candidate is Photo => typeof candidate !== 'string',
     );
     return photoListUrl(photo, allPhotos);
+  }
+
+  protected openPhoto(row: Product): void {
+    const photo = this.mainPhotoOf(row);
+    const src = this.mainPhotoUrl(row);
+    if (!photo || !src) return;
+    this.dialog.open(PiPhotoLightboxComponent, {
+      data: {
+        src,
+        alt: photo.originalFilename || row.name,
+        filename: photo.originalFilename || row.name,
+      },
+    });
   }
 
   protected gridEyebrow(row: Product): string {

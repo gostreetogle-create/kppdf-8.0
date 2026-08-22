@@ -9,6 +9,8 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { LucideAngularModule, Image as ImageIcon, Pencil } from 'lucide-angular';
+import { PiDialogService } from '../dialog/pi-dialog.service';
+import { PiPhotoLightboxComponent } from '../photo';
 import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { catalogKindBorder, catalogKindOklch } from '../catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
@@ -119,27 +121,35 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
             [style.border-color]="kindAccent(node)"
             >{{ kindShort(node) }}</span
           >
-          <span
-            class="shrink-0 w-9 h-9 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground"
-            aria-hidden="true"
-            data-test="composition-tree-thumb"
-          >
-            @if (node.photoUrl) {
+          @if (node.photoUrl) {
+            <button
+              type="button"
+              class="shrink-0 w-9 h-9 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground pi-focus-ring cursor-zoom-in"
+              [attr.aria-label]="'Открыть фото: ' + node.name"
+              (click)="onThumbClick($event, node)"
+              data-test="composition-tree-thumb"
+            >
               <img
                 [src]="node.photoUrl"
-                alt=""
+                [alt]="'Фото: ' + node.name"
                 class="w-full h-full object-cover"
                 data-test="composition-tree-thumb-img"
               />
-            } @else {
+            </button>
+          } @else {
+            <span
+              class="shrink-0 w-9 h-9 rounded-sm overflow-hidden inline-flex items-center justify-center bg-muted/40 text-muted-foreground"
+              aria-hidden="true"
+              data-test="composition-tree-thumb"
+            >
               <lucide-icon
                 [img]="ImageIconSvg"
                 [size]="18"
                 class="opacity-45"
                 data-test="composition-tree-thumb-placeholder"
               />
-            }
-          </span>
+            </span>
+          }
           <span class="min-w-0 flex-1 flex items-start gap-1.5">
             <span
               class="min-w-0 flex-1 line-clamp-2 break-words font-medium text-sm"
@@ -214,6 +224,7 @@ export class CompositionTreeComponent {
   protected readonly ImageIconSvg = ImageIcon;
   protected readonly PencilIconSvg = Pencil;
 
+  private readonly dialog = inject(PiDialogService);
   private readonly expanded = signal(new Set<string>());
   private lastRootId: string | null = null;
   private readonly appearance = inject(CatalogAppearanceService);
@@ -287,6 +298,15 @@ export class CompositionTreeComponent {
 
   protected onRowMouseDown(event: MouseEvent): void {
     event.preventDefault();
+  }
+
+  protected onThumbClick(event: MouseEvent, node: CompositionTreeNode): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!node.photoUrl) return;
+    this.dialog.open(PiPhotoLightboxComponent, {
+      data: { src: node.photoUrl, alt: `Фото: ${node.name}`, filename: node.name },
+    });
   }
 
   protected onEditClick(

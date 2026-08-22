@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T11:36:00+03:00
+updated_at: 2026-08-22T11:58:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -24,6 +24,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZ-DESK-419** — DONE by `claude` (2026-08-22T11:07:00+03:00); commits `2c6f840a` + `bdbbbc87`; archive `tasks/_archive/2026-08/TZ-DESK-419.done.md`; CSS queue height `calc(100dvh - 9.5rem)`; gates/browser PASS.
 **TZ-DESK-421** — DONE by `claude` (2026-08-22T11:20:00+03:00); commit `d2f3e6a3`; docs-only audit `docs/audits/2026-08-22-desk-order-tray-execution-panel-audit.md`; archive `tasks/_archive/2026-08/TZ-DESK-421.done.md`; successor `TZ-DESK-422`.
 **TZ-DESK-420** — DONE by `claude` (2026-08-22T11:36:00+03:00); commit pending; archive `tasks/_archive/2026-08/TZ-DESK-420.done.md`; label cleanup + shipping duplicate removal; gates/browser PASS.
+**TZ-UI-344** — DONE by `claude` (2026-08-22T11:58:00+03:00); archive `tasks/_archive/2026-08/TZ-UI-344.done.md`; shared lightbox + product/module catalog/detail wiring; focused Jest 90/90, shared dialog 23/23, FE tsc/lint/Prettier, architecture PASS; live browser BLOCKED by missing helper/auth session.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов
@@ -44,7 +45,7 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-Backlog (не брать без PO): PARTY-305, ORDERS-307, UI-344, SUPPLY-304/305
+Backlog (не брать без PO): PARTY-305, ORDERS-307, SUPPLY-304/305
 
 ## DESK WAVE checkpoint (PO)
 

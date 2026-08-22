@@ -31,6 +31,7 @@ import {
 } from '../../shared/services/pi-product-modules.service';
 import { PhotosService } from '../../shared/services/photos.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
@@ -78,6 +79,7 @@ describe('ModulesPage', () => {
   };
 
   const getModuleTree = jest.fn().mockReturnValue(of({ ok: true, data: moduleTreePm1 }));
+  const photosList = jest.fn().mockReturnValue(of({ ok: true, data: [] }));
 
   const fakeModules: ProductModule[] = [
     {
@@ -109,6 +111,8 @@ describe('ModulesPage', () => {
     dialogSpy.open.mockClear();
     getModuleTree.mockClear();
     getModuleTree.mockReturnValue(of({ ok: true, data: moduleTreePm1 }));
+    photosList.mockClear();
+    photosList.mockReturnValue(of({ ok: true, data: [] }));
     localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [ModulesPage],
@@ -130,7 +134,7 @@ describe('ModulesPage', () => {
         },
         {
           provide: PhotosService,
-          useValue: { list: () => of({ ok: true, data: [] }) },
+          useValue: { list: photosList },
         },
         { provide: PiDialogService, useValue: dialogSpy },
         { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
@@ -265,6 +269,31 @@ describe('ModulesPage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="showcase-cost"]')).toBeTruthy();
   });
 
+  it('grid card image opens the photo lightbox without following the module link', async () => {
+    const photo = {
+      _id: 'photo-1',
+      storageUrl: '/uploads/module.jpg',
+      originalFilename: 'module.jpg',
+    };
+    photosList.mockReturnValue(of({ ok: true, data: [photo] }));
+    const fixture = TestBed.createComponent(ModulesPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([{ ...fakeModules[0], mainPhotoId: 'photo-1' }]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-test="view-grid-button"]') as HTMLElement).click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-test="showcase-media"]') as HTMLElement).click();
+
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      PiPhotoLightboxComponent,
+      expect.objectContaining({
+        data: { src: '/uploads/module.jpg', alt: 'module.jpg', filename: 'module.jpg' },
+      }),
+    );
+  });
+
   it('grid card routerLink points to /modules/:id', async () => {
     const fixture = TestBed.createComponent(ModulesPage);
     fixture.detectChanges();
@@ -278,10 +307,10 @@ describe('ModulesPage', () => {
     gridBtn.click();
     fixture.detectChanges();
 
-    const cell = fixture.nativeElement.querySelector(
-      '[data-test="showcase-cell-pm1"]',
+    const link = fixture.nativeElement.querySelector(
+      '[data-test="showcase-link-pm1"]',
     ) as HTMLAnchorElement;
-    expect(cell.getAttribute('href')).toBe('/modules/pm1');
+    expect(link.getAttribute('href')).toBe('/modules/pm1');
   });
 
   it('grid view is persisted to localStorage on toggle', async () => {

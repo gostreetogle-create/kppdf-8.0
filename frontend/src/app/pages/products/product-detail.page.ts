@@ -38,6 +38,7 @@ import {
 import { CostCalculationDetailDialogComponent } from './cost-calculation-detail-dialog.component';
 import { Photo } from '../../shared/services/photos.service';
 import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bom-panel.component';
+import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { Product, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
@@ -132,12 +133,20 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
               data-test="product-hero-photo"
             >
               @if (mainPhotos()[0]; as cover) {
-                <img
-                  [src]="cover.storageUrl"
-                  [alt]="cover.originalFilename ?? p.name"
-                  class="absolute inset-0 block w-full h-full object-cover"
-                  loading="lazy"
-                />
+                <button
+                  type="button"
+                  class="absolute inset-0 block w-full h-full cursor-zoom-in pi-focus-ring"
+                  [attr.aria-label]="'Открыть фото: ' + (cover.originalFilename ?? p.name)"
+                  (click)="openPhoto(cover, p.name)"
+                  data-test="product-hero-photo-button"
+                >
+                  <img
+                    [src]="cover.storageUrl"
+                    [alt]="cover.originalFilename ?? p.name"
+                    class="block w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
               } @else {
                 <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
               }
@@ -223,12 +232,20 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
               <div class="flex flex-wrap gap-3" data-test="product-photo-gallery">
                 @for (ph of mainPhotos(); track ph._id) {
                   <figure class="m-0">
-                    <img
-                      [src]="ph.storageUrl"
-                      [alt]="ph.originalFilename ?? 'фото'"
-                      class="block w-full max-w-[9rem] aspect-square object-cover hairline rounded-sm bg-paper-2"
-                      loading="lazy"
-                    />
+                    <button
+                      type="button"
+                      class="block w-full max-w-[9rem] aspect-square cursor-zoom-in pi-focus-ring"
+                      [attr.aria-label]="'Открыть фото: ' + (ph.originalFilename ?? p.name)"
+                      (click)="openPhoto(ph, p.name)"
+                      data-test="product-gallery-photo-button"
+                    >
+                      <img
+                        [src]="ph.storageUrl"
+                        [alt]="ph.originalFilename ?? 'фото'"
+                        class="block w-full h-full object-cover hairline rounded-sm bg-paper-2"
+                        loading="lazy"
+                      />
+                    </button>
                   </figure>
                 } @empty {
                   <p class="text-sm text-muted-foreground">Нет фото у этого товара.</p>
@@ -549,6 +566,17 @@ export class ProductDetailPage {
 
   protected onBack(): void {
     this.catalogReturn.navigateBackOr('/products');
+  }
+
+  protected openPhoto(photo: Photo, productName: string): void {
+    this.dialog.open(PiPhotoLightboxComponent, {
+      data: {
+        src: photo.storageUrl,
+        alt: photo.originalFilename ?? productName,
+        filename: photo.originalFilename ?? productName,
+      },
+      parentDestroyRef: this.destroyRef,
+    });
   }
 
   /** TZ-CATALOG-DEDUP-304: same FullEditor as products list. */

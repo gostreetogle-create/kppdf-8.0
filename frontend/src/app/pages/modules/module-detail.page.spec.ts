@@ -177,6 +177,22 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
     expect(el.textContent).toContain('Добавить по ссылке');
   });
 
+  it('opens the module hero photo through the shared lightbox', () => {
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    const page = fixture.componentInstance as unknown as {
+      openPhotoUrl: (src: string, label: string) => void;
+    };
+
+    page.openPhotoUrl('/uploads/module.jpg', 'Каркас');
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: { src: '/uploads/module.jpg', alt: 'Каркас', filename: 'Каркас' },
+      }),
+    );
+  });
+
   it('passes rootKind=module to BOM panel', () => {
     const panelDe = fixture.debugElement.query(By.directive(ProductBomPanelComponent));
     expect(panelDe).toBeTruthy();

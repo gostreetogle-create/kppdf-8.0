@@ -4,9 +4,11 @@ import { CompositionTreeNode } from '../../services/pi-product-modules.service';
 import { CatalogAppearanceService } from '../catalog/catalog-appearance.service';
 import { ThemeService } from '../../theme/theme.service';
 import { of } from 'rxjs';
+import { PiDialogService } from '../dialog/pi-dialog.service';
 
 describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
   let fixture: ComponentFixture<CompositionTreeComponent>;
+  const dialog = { open: jest.fn() };
 
   const tree: CompositionTreeNode = {
     _id: 'p1',
@@ -77,6 +79,7 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
   };
 
   beforeEach(async () => {
+    dialog.open.mockClear();
     await TestBed.configureTestingModule({
       imports: [CompositionTreeComponent],
       providers: [
@@ -87,6 +90,7 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
             palette: () => undefined,
           },
         },
+        { provide: PiDialogService, useValue: dialog },
       ],
     }).compileComponents();
 
@@ -278,11 +282,43 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     ) as HTMLImageElement;
     expect(img).toBeTruthy();
     expect(img.getAttribute('src')).toBe('/uploads/demo-thumb.jpg');
+    expect(img.closest('button')?.getAttribute('aria-label')).toBe('Открыть фото: Изделие');
     expect(
       fixture.nativeElement.querySelector(
         '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb-placeholder"]',
       ),
     ).toBeNull();
+  });
+
+  it('TZ-UI-344: thumbnail opens lightbox without selecting or expanding the row', () => {
+    const withPhoto: CompositionTreeNode = {
+      ...tree,
+      photoUrl: '/uploads/demo-thumb.jpg',
+    };
+    fixture.componentRef.setInput('root', withPhoto);
+    fixture.detectChanges();
+    const thumb = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"] [data-test="composition-tree-thumb"]',
+    ) as HTMLButtonElement;
+
+    thumb.click();
+    fixture.detectChanges();
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        data: {
+          src: '/uploads/demo-thumb.jpg',
+          alt: 'Фото: Изделие',
+          filename: 'Изделие',
+        },
+      }),
+    );
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="composition-tree-node-p1"]')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('true');
   });
 
   it('TZ-UX-312: thumb ≥36px (w-9 h-9); denser row (min-h-11, tight pad)', () => {

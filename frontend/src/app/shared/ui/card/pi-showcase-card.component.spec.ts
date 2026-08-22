@@ -35,6 +35,8 @@ import { PiShowcaseCardComponent } from './pi-showcase-card.component';
       [mediaUrl]="mediaUrl()"
       [badge]="badge()"
       [interactive]="interactive()"
+      [mediaInteractive]="mediaInteractive()"
+      (mediaActivate)="onMediaActivate()"
       [arrow]="arrow()"
       data-test="card"
     >
@@ -52,8 +54,14 @@ class FixtureHostComponent {
   readonly mediaUrl = signal<string>('');
   readonly badge = signal<string>('');
   readonly interactive = signal<boolean>(false);
+  readonly mediaInteractive = signal<boolean>(false);
   readonly arrow = signal<boolean>(true);
+  readonly mediaActivated = jest.fn();
   @ViewChild(PiShowcaseCardComponent) card!: PiShowcaseCardComponent;
+
+  onMediaActivate(): void {
+    this.mediaActivated();
+  }
 }
 
 describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
@@ -185,6 +193,26 @@ describe('PiShowcaseCardComponent — TZ-PRODUCTS-305', () => {
     fixture.detectChanges();
     const img = fixture.nativeElement.querySelector('article[data-test="showcase-card"] img');
     expect(img).toBeNull();
+  });
+
+  it('mediaInteractive exposes an image-only keyboard activation without navigating', () => {
+    host.size.set('md');
+    host.title.set('Фото изделия');
+    host.mediaUrl.set('/img.png');
+    host.mediaInteractive.set(true);
+    fixture.detectChanges();
+
+    const media = fixture.nativeElement.querySelector(
+      '[data-test="showcase-media"]',
+    ) as HTMLElement;
+    expect(media.getAttribute('role')).toBe('button');
+    expect(media.getAttribute('tabindex')).toBe('0');
+    expect(media.getAttribute('aria-label')).toBe('Открыть фото: Фото изделия');
+    media.click();
+    media.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(host.mediaActivated).toHaveBeenCalledTimes(2);
   });
 
   it('body content projects through default slot (sc-body-lg contains body span)', () => {

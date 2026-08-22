@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 
 /**
@@ -34,7 +34,17 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         <article [class]="hostClass()" data-test="showcase-card" data-size="sm">
           <div class="sc-row">
             @if (mediaUrl()) {
-              <div class="sc-media sc-media--sm">
+              <div
+                class="sc-media sc-media--sm"
+                [class.sc-media--interactive]="mediaInteractive() && !!mediaUrl()"
+                [attr.role]="mediaInteractive() && mediaUrl() ? 'button' : null"
+                [attr.tabindex]="mediaInteractive() && mediaUrl() ? 0 : null"
+                [attr.aria-label]="
+                  mediaInteractive() && mediaUrl() ? 'Открыть фото: ' + title() : null
+                "
+                (click)="onMediaActivate($event)"
+                (keydown)="onMediaKeydown($event)"
+              >
                 <img [src]="mediaUrl()" [alt]="title() || ''" loading="lazy" />
               </div>
             }
@@ -81,6 +91,12 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
           <div
             class="sc-media sc-media--md"
             [class.sc-media--empty]="!mediaUrl()"
+            [class.sc-media--interactive]="mediaInteractive() && !!mediaUrl()"
+            [attr.role]="mediaInteractive() && mediaUrl() ? 'button' : null"
+            [attr.tabindex]="mediaInteractive() && mediaUrl() ? 0 : null"
+            [attr.aria-label]="mediaInteractive() && mediaUrl() ? 'Открыть фото: ' + title() : null"
+            (click)="onMediaActivate($event)"
+            (keydown)="onMediaKeydown($event)"
             data-test="showcase-media"
           >
             @if (mediaUrl()) {
@@ -124,7 +140,17 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
             <h2 class="sc-title-lg font-display" data-test="title">{{ title() }}</h2>
           }
           @if (mediaUrl()) {
-            <div class="sc-media sc-media--lg">
+            <div
+              class="sc-media sc-media--lg"
+              [class.sc-media--interactive]="mediaInteractive() && !!mediaUrl()"
+              [attr.role]="mediaInteractive() && mediaUrl() ? 'button' : null"
+              [attr.tabindex]="mediaInteractive() && mediaUrl() ? 0 : null"
+              [attr.aria-label]="
+                mediaInteractive() && mediaUrl() ? 'Открыть фото: ' + title() : null
+              "
+              (click)="onMediaActivate($event)"
+              (keydown)="onMediaKeydown($event)"
+            >
               <img [src]="mediaUrl()" [alt]="title() || ''" loading="lazy" />
             </div>
           }
@@ -205,6 +231,10 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         object-fit: contain;
         object-position: center;
         display: block;
+      }
+      .sc-media--interactive {
+        cursor: zoom-in;
+        pointer-events: auto;
       }
 
       /* sm */
@@ -424,6 +454,9 @@ export class PiShowcaseCardComponent {
   readonly mediaUrl = input<string>('');
   readonly badge = input<string>('');
   readonly interactive = input<boolean>(false);
+  /** Enables keyboard-accessible photo activation on the media region only. */
+  readonly mediaInteractive = input<boolean>(false);
+  readonly mediaActivate = output<void>();
   readonly arrow = input<boolean>(true);
 
   readonly hostClass = computed(() => {
@@ -435,4 +468,16 @@ export class PiShowcaseCardComponent {
 
   readonly hasActionsMd = computed(() => true);
   readonly hasActionsLg = computed(() => true);
+
+  protected onMediaActivate(event: Event): void {
+    if (!this.mediaInteractive() || !this.mediaUrl()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.mediaActivate.emit();
+  }
+
+  protected onMediaKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    this.onMediaActivate(event);
+  }
 }

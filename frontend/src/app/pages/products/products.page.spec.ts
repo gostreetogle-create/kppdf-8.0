@@ -24,6 +24,7 @@ import { ProductsService } from '../../shared/services/products.service';
 import { ProductModulesService } from '../../shared/services/pi-product-modules.service';
 import { CategoriesService } from '../../shared/services/categories.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { PiToastService } from '../../shared/ui/toast';
 import { API_BASE_URL } from '../../core/api.tokens';
 import type { Product } from '../../shared/services/products.service';
@@ -434,6 +435,44 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     expect(fixture.nativeElement.querySelector('[data-test="showcase-price"]')).toBeTruthy();
   });
 
+  it('grid card image opens the photo lightbox without following the product link', async () => {
+    const fixture = TestBed.createComponent(ProductsPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush({
+      items: [
+        {
+          ...PRODUCTS[0],
+          photoIds: [
+            { _id: 'photo-1', storageUrl: '/uploads/front.jpg', originalFilename: 'front.jpg' },
+          ],
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 10,
+    });
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushDictionaryLabels(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector('[data-test="view-grid-button"]') as HTMLElement).click();
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector('[data-test="showcase-media"]') as HTMLElement).click();
+
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      PiPhotoLightboxComponent,
+      expect.objectContaining({
+        data: {
+          src: '/uploads/front.jpg',
+          alt: 'front.jpg',
+          filename: 'front.jpg',
+        },
+      }),
+    );
+  });
+
   it('table keeps photo+name and hides sku/status/stock/kind', async () => {
     const fixture = await renderPage();
     const comp = fixture.componentInstance as unknown as { cols: { key: string }[] };
@@ -592,10 +631,10 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     gridBtn.click();
     fixture.detectChanges();
 
-    const cell = fixture.nativeElement.querySelector(
-      '[data-test="showcase-cell-p1"]',
+    const link = fixture.nativeElement.querySelector(
+      '[data-test="showcase-link-p1"]',
     ) as HTMLAnchorElement;
-    expect(cell.getAttribute('href')).toBe('/products/p1');
+    expect(link.getAttribute('href')).toBe('/products/p1');
   });
 
   it('grid view is persisted to localStorage on toggle', async () => {
