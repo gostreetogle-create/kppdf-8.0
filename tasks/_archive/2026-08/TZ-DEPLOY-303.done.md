@@ -88,7 +88,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-22
 closed_by: claude
-sha: (см. следующий docs-commit «record TZ-DEPLOY-303 SHA»)
+sha: f2a720f6
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS (frontend/backend/desktop, все exit 0)
