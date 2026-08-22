@@ -421,7 +421,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                 </div>
               }
             } @else {
-              <p class="text-[10px] text-muted-foreground mb-1 sm:hidden">
+              <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
                 ← Таблица широкая — прокручивайте горизонтально →
               </p>
               <app-pi-table
@@ -520,7 +520,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                       [attr.data-test]="'module-card-' + m._id"
                     >
                       <span
-                        class="w-8 h-8 rounded-sm hairline bg-paper-2 flex items-center justify-center text-[10px] font-mono uppercase tracking-wide shrink-0"
+                        class="w-8 h-8 rounded-sm hairline bg-paper-2 flex items-center justify-center text-[11px] font-mono uppercase tracking-wide shrink-0"
                         [style.color]="moduleAccent()"
                         [style.border-color]="moduleAccent()"
                         aria-hidden="true"
