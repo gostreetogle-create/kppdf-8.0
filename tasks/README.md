@@ -25,7 +25,10 @@
 
 ## Сейчас живо
 
-Волна Freebuff: [`PROMPT-FREEBUFF-WAVE-2026-08-22.md`](PROMPT-FREEBUFF-WAVE-2026-08-22.md)  
-(OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Старые PROMPT-FREEBUFF-* — spent, не копировать.
+Очередь агентов **пуста.** Волна B (UI-412…417), CORE-303, DEPLOY-303 — DONE на origin.
+Промпты `PROMPT-FREEBUFF-*WAVE*` / `PROMPT-CLAUDE-PREDEPLOY*` / `PROMPT-FREEBUFF-CORE-303*` — **не копировать**.
+
+Дальше: PO `git pull` + `./start.sh`. Кати — только слово PO в чат Cursor.
+`_park` / TZD-60 / COMP-402 — не без PO.
 
 `_park` не трогать.
