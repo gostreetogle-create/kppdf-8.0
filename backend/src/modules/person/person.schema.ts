@@ -5,8 +5,9 @@ export type PersonDocument = HydratedDocument<Person>;
 
 @Schema({ collection: 'persons', timestamps: true })
 export class Person {
-  @Prop({ required: true, index: true })
-  lastName!: string;
+  /** TZ-PARTY-305: фамилия необязательна (имя+телефон достаточно). */
+  @Prop({ index: true })
+  lastName?: string;
 
   @Prop({ required: true })
   firstName!: string;
@@ -14,7 +15,7 @@ export class Person {
   @Prop()
   patronymic?: string;
 
-  @Prop({ index: true })
+  @Prop()
   phone?: string;
 
   @Prop({ index: true })
@@ -29,3 +30,5 @@ export class Person {
 
 export const PersonSchema = SchemaFactory.createForClass(Person);
 PersonSchema.index({ lastName: 1, firstName: 1, patronymic: 1 });
+/** TZ-PARTY-305: дубли телефона запрещены (sparse — null/undefined пропускаются). */
+PersonSchema.index({ phone: 1 }, { unique: true, sparse: true });

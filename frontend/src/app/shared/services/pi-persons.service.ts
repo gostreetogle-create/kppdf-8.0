@@ -6,7 +6,8 @@ import { silentGet, silentPatch, silentPost, SilentResult } from '../../core/sil
 
 export interface Person {
   _id: string;
-  lastName: string;
+  /** TZ-PARTY-305: фамилия необязательна. */
+  lastName?: string;
   firstName: string;
   patronymic?: string;
   position?: string;
@@ -19,8 +20,9 @@ export class PersonsService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
-  list(): Observable<SilentResult<{ items: Person[] }>> {
-    const params = new HttpParams().set('page', '1').set('limit', '200');
+  list(search?: string): Observable<SilentResult<{ items: Person[] }>> {
+    let params = new HttpParams().set('page', '1').set('limit', '200');
+    if (search) params = params.set('search', search);
     return silentGet<{ items: Person[] }>(this.http, `${this.baseUrl}/persons`, { params });
   }
 

@@ -24,7 +24,7 @@ export interface QuickOrderSupplierContact {
   /** Live contacts retain the Person id so edits persist through PersonsService. */
   personId?: string;
   supplierId: string;
-  lastName: string;
+  lastName?: string;
   firstName?: string;
   patronymic?: string;
   phone?: string;
@@ -447,11 +447,12 @@ export function contactsForSupplier(
 
 /** «Ковалёв И. П.» — enough to recognise the manager inside a 10rem select. */
 export function contactLabel(contact: QuickOrderSupplierContact): string {
+  const lastName = contact.lastName ?? '';
   const initials = [contact.firstName, contact.patronymic]
     .filter((part): part is string => !!part && part.trim().length > 0)
     .map((part) => `${part.trim()[0]!.toUpperCase()}.`)
     .join(' ');
-  return initials ? `${contact.lastName} ${initials}` : contact.lastName;
+  return initials ? `${lastName} ${initials}` : lastName || contact.firstName || '—';
 }
 
 export function supplierShortLabel(

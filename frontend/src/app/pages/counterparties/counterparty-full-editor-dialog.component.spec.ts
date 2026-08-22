@@ -9,6 +9,7 @@ import {
   type Counterparty,
   type CounterpartyRole,
 } from '../../shared/services/pi-counterparty.service';
+import { PersonsService } from '../../shared/services/pi-persons.service';
 import { PiToastService } from '../../shared/ui/toast';
 
 type Editor = CounterpartyFullEditorDialogComponent & {
@@ -62,10 +63,13 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
     return { closed: signal<T | undefined>(undefined), close: jest.fn() } as DialogRef<T>;
   }
 
+  let listPersons: jest.Mock;
+
   async function build(data: Counterparty | null, rolesResult = { ok: true, data: roles }) {
     create = jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'new' } }));
     update = jest.fn().mockReturnValue(of({ ok: true, data: existing }));
     listRoles = jest.fn().mockReturnValue(of(rolesResult));
+    listPersons = jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } }));
     await TestBed.resetTestingModule()
       .configureTestingModule({
         imports: [CounterpartyFullEditorDialogComponent],
@@ -74,6 +78,7 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
           { provide: PI_DIALOG_DATA, useValue: data },
           { provide: PI_DIALOG_REF, useValue: dialogRef() },
           { provide: CounterpartyService, useValue: { create, update, listRoles } },
+          { provide: PersonsService, useValue: { list: listPersons } },
           { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
         ],
       })

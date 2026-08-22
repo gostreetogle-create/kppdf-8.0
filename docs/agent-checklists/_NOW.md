@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T14:15:00+03:00
+updated_at: 2026-08-22T19:15:00+03:00
 hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
@@ -34,6 +34,7 @@ AUDIT (read-only): UI consistency — Freebuff, 2026-08-22T08:44:13+03:00 — DO
 **TZ-UI-404** — DONE by `claude` (2026-08-22T13:35:00+03:00); commit `6f6b1362`; archive `tasks/_archive/2026-08/TZ-UI-404.done.md`; Клиенты/Каталог/Снабжение/Цех (10 маршрутов) переведены `[chips]`→`[toc]` по канону contracts/proposal-create; gates PASS (FE tsc, jest 420/424, lint, architecture); browser primary PASS (CDP smoke, `reports/TZ-UI-404-toc-parity-smoke.json`); deploy НЕ.
 **TZ-UI-406** — DONE by `claude` (2026-08-22T14:45:00+03:00); commit `790e2fff`; archive `tasks/_archive/2026-08/TZ-UI-406.done.md`; Проект (`/design`+`/design/combine`) — два разных nav shell унифицированы под `[toc]`; gates PASS (tsc, jest 29/29, eslint); browser primary PASS (CDP smoke); deploy НЕ.
 **TZ-CRASH-401** — DONE by `claude` (2026-08-22T15:20:00+03:00); commit `cd5241a4`; archive `tasks/_archive/2026-08/TZ-CRASH-401.done.md`; новый `scripts/full-route-crash-sweep.mjs` (CDP 50 routes) нашёл реальный краш `/dictionaries/form-profiles`; fix: `app.config.ts` `LucideAngularModule.pick({Check,Minus,ArrowUpRight})`; sweep 1/50→0/50; gates PASS (tsc, jest 60/60, eslint); deploy НЕ.
+**TZD-59** — DONE by `claude-computer` (2026-08-22T19:10:00+03:00); commit `7bb76150` **local only — push BLOCKED** (нет git-credentials в этой сессии: профиль `C:\Users\User` недоступен, schannel SEC_E_NO_CREDENTIALS — PO нужно запушить `main` вручную); archive `tasks/_archive/2026-08/TZD-59.done.md`; литерал `v?` убран, `compatStatus` + объясняющий текст при ошибке `/desktop/compat`; gates PASS (FE tsc, jest focused 14/14 вкл. 3 новых, eslint 0; full FE suite 1832/1840 — 8 падений pre-existing в login.page.spec/production-read.facade.spec, вне scope); jest/eslint прогнаны в Linux-срезе (на Windows-хосте `spawn EPERM` на любой бинарь); pre-commit hook не смог запуститься (env.exe Win32 error 5) — гейты прогнаны вручную; deploy НЕ.
 
 **PO reminders wave** — код на `main`, prod не обновлён:
 - PARTY-304 `e41dec0d` — пагинация контрагентов

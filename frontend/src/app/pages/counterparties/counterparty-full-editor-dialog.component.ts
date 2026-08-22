@@ -26,6 +26,7 @@ import {
   CounterpartyService,
   type CounterpartyRole,
 } from '../../shared/services/pi-counterparty.service';
+import { PersonsService, type Person } from '../../shared/services/pi-persons.service';
 import { toOptionalNumber } from '../../shared/forms/to-optional-number';
 
 type Result = Counterparty | null | undefined;
@@ -358,7 +359,7 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
             </div>
           </app-pi-form-section>
 
-          <app-pi-form-section title="Подписант" headingId="cp-sec-signer" tone="neutral">
+          <app-pi-form-section title="Подписант и контакт" headingId="cp-sec-signer" tone="neutral">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
               <app-pi-form-field label="ФИО подписанта" htmlFor="cp-signerName">
                 <app-pi-input
@@ -376,6 +377,24 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
                 />
               </app-pi-form-field>
             </div>
+
+            <app-pi-form-field
+              label="Контактное лицо"
+              htmlFor="cp-contactPerson"
+              hint="Выберите человека из справочника контактов."
+            >
+              <app-pi-overflow-select
+                [items]="personItems()"
+                [value]="form.controls.contactPersonId.value"
+                (valueChange)="onContactPersonChange($event)"
+                placeholder="— не выбран —"
+                ariaLabel="Контактное лицо"
+                dataTest="cp-contact-person"
+                [searchable]="'auto'"
+                searchPlaceholder="Поиск по имени или телефону…"
+              />
+            </app-pi-form-field>
+
             <p class="text-[11px] text-muted-foreground leading-snug">
               Объекты (площадки) заказчика — карточка заказчика, волна ORDERS-303.
             </p>
@@ -446,6 +465,8 @@ export class CounterpartyFullEditorDialogComponent {
 
     signerName: this.fb.control(''),
     signerPosition: this.fb.control(''),
+
+    contactPersonId: this.fb.control(''),
   });
 
   private readonly selectedRoles = signal<string[]>(['customer']);
@@ -454,8 +475,13 @@ export class CounterpartyFullEditorDialogComponent {
     this.selectedRoles().length === 0 ? 'Выберите хотя бы одну роль' : '',
   );
 
+  private readonly personsService = inject(PersonsService);
+  protected readonly personItems = signal<PiOverflowSelectItem[]>([]);
+  protected readonly personsLoading = signal(false);
+
   constructor() {
     this.loadRoles();
+    this.loadPersons();
 
     const cp = this.data;
     if (!cp) return;
@@ -487,6 +513,8 @@ export class CounterpartyFullEditorDialogComponent {
 
       signerName: cp.signerName ?? '',
       signerPosition: cp.signerPosition ?? '',
+
+      contactPersonId: cp.contactPersonId ?? '',
     });
     this.selectedRoles.set(roles);
   }
@@ -502,8 +530,29 @@ export class CounterpartyFullEditorDialogComponent {
     });
   }
 
+  /** TZ-PARTY-305: загружаем список контактных лиц для выпадающего списка. */
+  protected loadPersons(search?: string): void {
+    this.personsLoading.set(true);
+    this.personsService.list(search).subscribe((res) => {
+      this.personsLoading.set(false);
+      if (res.ok && Array.isArray(res.data?.items)) {
+        this.personItems.set(
+          res.data.items.map((p: Person) => ({
+            id: p._id,
+            label: [p.lastName, p.firstName, p.patronymic].filter(Boolean).join(' ') || '—',
+            meta: p.phone || p.email || undefined,
+          })),
+        );
+      }
+    });
+  }
+
   protected onLegalTypeChange(value: string): void {
     this.form.controls.legalType.setValue((value || '') as LegalType | '');
+  }
+
+  protected onContactPersonChange(value: string): void {
+    this.form.controls.contactPersonId.setValue(value);
   }
 
   protected isRoleSelected(slug: string): boolean {
@@ -604,6 +653,9 @@ export class CounterpartyFullEditorDialogComponent {
     if (paymentTermDays !== undefined) payload.paymentTermDays = paymentTermDays;
     if (vatRate !== undefined) payload.vatRate = vatRate;
     if (v.registrationDate) payload.registrationDate = toIsoDate(v.registrationDate);
+
+    const contactPersonId = v.contactPersonId.trim();
+    if (contactPersonId) payload.contactPersonId = contactPersonId;
 
     return payload;
   }

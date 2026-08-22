@@ -1,9 +1,11 @@
 import { IsEmail, IsOptional, IsString, Length } from 'class-validator';
 
 export class CreatePersonDto {
+  /** TZ-PARTY-305: фамилия необязательна. */
+  @IsOptional()
   @IsString()
-  @Length(1, 64)
-  lastName!: string;
+  @Length(0, 64)
+  lastName?: string;
 
   @IsString()
   @Length(1, 64)

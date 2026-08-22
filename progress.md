@@ -3848,3 +3848,4 @@ BOM inspector вЂ” РІРєР»Р°Рґ СЃС‚СЂРѕРєРё material/mo
  2 0 2 6 - 0 8 - 1 9 :   025@H5=>  T Z - S A L E S - 3 8 0   ( k p - t e m p l a t e - p a g e - b r e a k - d e f a u l t s )      45D>;B=K5  =0AB@>9:8  p a g e   b r e a k s   =0  C@>2=5  1;0=:0.  
  -   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 7 7   ( C o n t i n u a t i o n   p a g e s      D>=  +   B01;8F0)  
  
+- 2026-08-22 TZD-59 (desktop compat version failsafe) - DONE by claude-computer; commit 7bb76150 (local, push blocked - no git credentials in session); archive tasks/_archive/2026-08/TZD-59.done.md; gates: FE tsc PASS, jest focused 14/14 PASS, eslint 0; full FE suite 1832/1840 (8 pre-existing failures out of scope).
