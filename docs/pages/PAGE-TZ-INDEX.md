@@ -6,6 +6,12 @@
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
 
+## Overview
+
+| Route | Page doc | TZs |
+|-------|----------|-----|
+| `/dashboard` | dashboard.page.md | **TZ-UI-414 DONE** dashboard lane helper micro-type 10px→11px |
+
 ## Doc-constructor
 
 | Route | Page doc | TZs |

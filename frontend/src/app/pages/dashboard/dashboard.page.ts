@@ -225,7 +225,7 @@ const SHOP_ENTERED_LANES: ReadonlySet<BoardLane> = new Set(['shop', 'to_ship', '
                 <span class="w-1.5 h-1.5 rounded-sm" [class]="laneDotClass(col.id)"></span>
                 {{ col.title }}
               </div>
-              <div class="text-[10px] text-muted-foreground truncate leading-snug mt-0.5">
+              <div class="text-[11px] text-muted-foreground truncate leading-snug mt-0.5">
                 {{ col.helper }}
               </div>
             </div>
