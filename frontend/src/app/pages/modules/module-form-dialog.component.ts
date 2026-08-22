@@ -77,7 +77,8 @@ import { forkJoin } from 'rxjs';
         data-test="module-form"
       >
         <app-pi-form-section title="Основные данные" headingId="module-sec-basics" tone="gold">
-          <div class="grid grid-cols-2 gap-form-field">
+          <!-- TZ-UX-FORM-310: 12-col → name lg (8) + article sm (4), not 50/50. -->
+          <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field
               label="Название"
               htmlFor="mod-name"
@@ -85,6 +86,7 @@ import { forkJoin } from 'rxjs';
               [error]="
                 form.controls.name.invalid && form.controls.name.touched ? 'Обязательное поле' : ''
               "
+              class="md:col-span-8"
             >
               <app-pi-input
                 id="mod-name"
@@ -104,6 +106,7 @@ import { forkJoin } from 'rxjs';
                   ? 'Обязательное поле'
                   : ''
               "
+              class="md:col-span-4"
             >
               <app-pi-input
                 id="mod-article"
@@ -116,59 +119,68 @@ import { forkJoin } from 'rxjs';
           </div>
         </app-pi-form-section>
 
-        <app-pi-form-section title="Габариты" headingId="module-sec-dimensions" tone="dimensions">
-          <div formGroupName="dimensions">
-            <div class="grid grid-cols-4 gap-form-field">
-              <app-pi-form-field label="Ширина" htmlFor="mod-width">
+        <!-- TZ-UX-FORM-310: Dimensions + weight = single band (6 fields, not 4+1 separate). -->
+        <app-pi-form-section
+          title="Габариты и вес"
+          headingId="module-sec-dimensions"
+          tone="dimensions"
+        >
+          <div class="grid md:grid-cols-12 gap-form-field items-end">
+            <div formGroupName="dimensions" class="contents">
+              <app-pi-form-field label="Ширина" htmlFor="mod-width" class="md:col-span-2">
                 <app-pi-input
                   id="mod-width"
                   type="number"
                   formControlName="width"
                   placeholder="0"
+                  style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                   data-test="dim-width"
                 />
               </app-pi-form-field>
-              <app-pi-form-field label="Высота" htmlFor="mod-height">
+              <app-pi-form-field label="Высота" htmlFor="mod-height" class="md:col-span-2">
                 <app-pi-input
                   id="mod-height"
                   type="number"
                   formControlName="height"
                   placeholder="0"
+                  style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                   data-test="dim-height"
                 />
               </app-pi-form-field>
-              <app-pi-form-field label="Глубина" htmlFor="mod-depth">
+              <app-pi-form-field label="Глубина" htmlFor="mod-depth" class="md:col-span-2">
                 <app-pi-input
                   id="mod-depth"
                   type="number"
                   formControlName="depth"
                   placeholder="0"
+                  style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
                   data-test="dim-depth"
                 />
               </app-pi-form-field>
-              <app-pi-form-field label="Ед." htmlFor="mod-dim-unit">
+              <app-pi-form-field label="Ед." htmlFor="mod-dim-unit" class="md:col-span-2">
                 <app-pi-input
                   id="mod-dim-unit"
                   formControlName="unit"
                   placeholder="мм"
+                  style="max-width: 7rem"
                   data-test="dim-unit"
                 />
               </app-pi-form-field>
             </div>
+            <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight" class="md:col-span-4">
+              <app-pi-input
+                id="mod-weight"
+                type="number"
+                formControlName="weight"
+                placeholder="0"
+                style="max-width: 5.5rem; text-align: right; font-variant-numeric: tabular-nums"
+                data-test="weight-input"
+              />
+            </app-pi-form-field>
           </div>
         </app-pi-form-section>
 
         <app-pi-form-section title="Дополнительно" headingId="module-sec-extra" tone="neutral">
-          <app-pi-form-field label="Вес (кг)" htmlFor="mod-weight">
-            <app-pi-input
-              id="mod-weight"
-              type="number"
-              formControlName="weight"
-              placeholder="0"
-              data-test="weight-input"
-            />
-          </app-pi-form-field>
-
           <app-pi-form-field label="Заметки / описание" htmlFor="mod-notes">
             <app-pi-textarea
               id="mod-notes"

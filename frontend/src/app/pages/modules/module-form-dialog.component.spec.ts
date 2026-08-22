@@ -68,6 +68,30 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
     expect(dialog).toBeTruthy();
   });
 
+  it('TZ-UX-FORM-310: name/article uses 12-col grid (not 50/50); dimensions+weight in one band', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'module-form-dialog.component.ts'),
+      'utf8',
+    );
+    // Name/article: 12-col grid with col-span-8 + col-span-4, NOT grid-cols-2
+    expect(source).toContain('md:grid-cols-12');
+    expect(source).toContain('md:col-span-8');
+    expect(source).toContain('md:col-span-4');
+    expect(source).not.toMatch(/grid grid-cols-2.*gap-form-field/);
+    // Dimensions band: W/H/Depth have max-w constraint; weight is in same band
+    expect(source).toContain('max-width: 5.5rem');
+    expect(source).toContain('font-variant-numeric: tabular-nums');
+    expect(source).toContain('text-align: right');
+    // Weight in the same dimensions section, not separate
+    expect(source).toContain('Габариты и вес');
+    // data-test preserved
+    expect(source).toContain('data-test="dim-width"');
+    expect(source).toContain('data-test="dim-height"');
+    expect(source).toContain('data-test="dim-depth"');
+    expect(source).toContain('data-test="dim-unit"');
+    expect(source).toContain('data-test="weight-input"');
+  });
+
   it('TZ-UX-COMPOSE-301: shows composition hint (состав на карточке / QC L)', () => {
     const hint = fixture.nativeElement.querySelector(
       '[data-test="composition-hint"]',
