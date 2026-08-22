@@ -16,6 +16,7 @@ hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older
 
 ## ACTIVE
 
+**TZD-63** — DONE by `claude` (2026-08-22): Desktop вкладка AI — новый `core/gguf-scan.ts` (+8 тестов) сканирует папку моделей на любой `.gguf` (отсев <200 МБ/>20 ГБ и без magic `GGUF`); select «Файл на диске» + «Обновить список» (`data-test="ai-rescan-models"`/`ai-disk-model-select"`) — выбранный файл с диска побеждает каталог для «Открыть чат» и «Запустить»; «Скачать модель» больше не требует раньше жать «Запустить» — сама поднимает раннер без модели, качает, перезапускает с файлом; capabilities/default.json + `fs:allow-read-dir/open/read/stat`; архив `tasks/_archive/2026-08/TZD-63-desktop-model-folder-any-gguf.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 18/18 + regression 7/7); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-64 (промпт проекта).
 **TZD-62** — DONE by `claude` (2026-08-22), SHA `3ee42820`: Desktop вкладка AI — «Открыть чат» (`data-test="ai-open-chat"`) один клик, если `.gguf` выбранной модели уже на диске (старт/рестарт раннера этим файлом, ждёт `modelLoaded`, фокус чата); новый `ChatPanel.svelte` (disabled + причина, пока раннер/модель не готовы); минимальный LIMITED_HELPER промпт `desktop/ai/system-prompts/desktop-chat.md` + `buildDesktopChatSystemPrompt()`; `ai-runner/index.ts` теперь грузит модель сразу после старта (не лениво на первый чат-запрос); блок «Это не чат» удалён (снимает TZD-61); архив `tasks/_archive/2026-08/TZD-62-desktop-ai-chat.done.md`; gates PASS (desktop tsc, svelte-check 0/0, targeted tsx --test 11/11 + regression 6/6); живой desktop smoke — PO/dev; deploy НЕ. Next: TZD-63 (любой .gguf в папке + скачать без ручного Start/Restart).
 **TZ-UI-407** — DONE by `claude` (2026-08-22): catalog filter flyouts on products/modules/materials close on Escape, use `role="region"`, and labels use 11px; archive `tasks/_archive/2026-08/TZ-UI-407.done.md`; SHA `7a5d813b`; gates FE tsc/lint PASS; deploy НЕ.
 **TZ-UI-408** — DONE by `claude` (2026-08-23): six admin dialog field labels use `var(--font-mono)` and 11px; archive `tasks/_archive/2026-08/TZ-UI-408.done.md`; SHA `546daf65`; gates FE tsc/lint + scoped static AC PASS; deploy НЕ.
@@ -72,7 +73,7 @@ Deploy: PO «кати» → `PRE-DEPLOY-2026-08-19.md` target `ba98a4a5`
 
 ## QUEUE
 
-**Desktop AI-чат** — TZD-62 DONE; 63→64 затем **TZD-65** API (`tasks/PROMPT-DESKTOP-AI-API-2026-08-22.md`). Не `App.svelte` параллельно. Deploy не.
+**Desktop AI-чат** — TZD-62/63 DONE; **TZD-64 READY** (`tasks/TZD-64-desktop-ai-project-prompt.md`) затем **TZD-65** API (`tasks/PROMPT-DESKTOP-AI-API-2026-08-22.md`). Не `App.svelte` параллельно. Deploy не.
 
 **Freebuff wave 2026-08-22 READY** — промпт `tasks/PROMPT-FREEBUFF-WAVE-2026-08-22.md`
 (OPS-320 → DESK-418 → SALES-381 → UI-407 → UI-408). Deploy не.

@@ -98,6 +98,7 @@
     type AiRunnerStatus,
   } from './core/aiRunner';
   import { LOCAL_MODELS, recommendModel, modelById, formatBytes, formatRamGb } from './core/model-catalog';
+  import { scanGgufModelsInDir, type ScannedGgufModel, type RejectedGgufFile } from './core/gguf-scan';
   import { chatCompletion, buildDesktopChatSystemPrompt } from './core/ai';
   import { buildMappingPrompt, parseMappingJson } from './core/ai/suggest-mapping';
   import ChatPanel from './ChatPanel.svelte';
@@ -134,6 +135,11 @@
   let aiBusy = $state(false);
   let aiMessage = $state('');
   let aiModelDir = $state('');
+  /** TZD-63: любые `.gguf`, найденные в папке моделей (не только каталог скачивания). */
+  let diskModels = $state<ScannedGgufModel[]>([]);
+  let diskModelsRejected = $state<RejectedGgufFile[]>([]);
+  /** Пусто — использовать файл из каталога (`selectedModelId`) ниже. */
+  let selectedDiskFileName = $state('');
   /** TZD-62: чат жив, только когда раннер работает и модель в памяти. */
   let chatReady = $derived(aiState.status === 'running' && aiState.modelLoaded && !!aiState.port);
   let chatDisabledReason = $derived.by(() => {
@@ -333,9 +339,10 @@
     try {
       const cfg = await loadConfig();
       aiModelDir = await defaultModelDir();
-      const model = selectedModelId ? modelById(selectedModelId) : undefined;
+      // TZD-63: файл с диска (любое имя) побеждает каталог скачивания, если выбран.
+      const fileName = selectedDiskFileName || modelById(selectedModelId)?.fileName;
       aiMessage = '';
-      await aiRunner.start({ modelDir: aiModelDir, modelFile: model?.fileName });
+      await aiRunner.start({ modelDir: aiModelDir, modelFile: fileName });
       const st = aiRunner.getState();
       if (st.status === 'running') {
         await saveConfig({ ...cfg, modelId: selectedModelId || undefined });
@@ -356,6 +363,11 @@
     }
   }
 
+  /**
+   * TZD-63 ШАГ 3: «Скачать» работает даже на остановленном раннере — сам
+   * поднимает его без модели, качает, затем перезапускает уже с этим файлом.
+   * Без ручного «Перезапустить» третьим кликом.
+   */
   async function downloadSelectedModel() {
     if (aiBusy) return;
     const model = modelById(selectedModelId);
@@ -366,15 +378,46 @@
     aiBusy = true;
     try {
       aiMessage = '';
-      const ok = await aiRunner.downloadModel(model);
-      if (ok) {
-        aiMessage = `Модель ${model.name} скачана. Нажмите «Перезапустить», чтобы загрузить её в память.`;
-        await aiRunner.refreshHealth();
-      } else {
-        aiMessage = aiState.download.error ?? 'Не удалось скачать модель.';
+      aiModelDir = aiModelDir || (await defaultModelDir());
+      if (aiState.status !== 'running') {
+        await aiRunner.start({ modelDir: aiModelDir });
+        if (aiRunner.getState().status !== 'running') {
+          aiMessage = aiState.lastError || 'Не удалось запустить AI-раннер для скачивания.';
+          return;
+        }
       }
+      const ok = await aiRunner.downloadModel(model);
+      if (!ok) {
+        aiMessage = aiState.download.error ?? 'Не удалось скачать модель.';
+        return;
+      }
+      await aiRunner.start({ modelDir: aiModelDir, modelFile: model.fileName });
+      const cfg = await loadConfig();
+      await saveConfig({ ...cfg, modelId: selectedModelId });
+      await rescanModels();
+      selectedDiskFileName = model.fileName;
+      const loaded = await waitForModelLoaded(60_000);
+      aiMessage = loaded
+        ? `Модель ${model.name} скачана и загружена — можно писать в чат.`
+        : aiState.modelError || 'Модель скачана, но не загрузилась за отведённое время — попробуйте ещё раз.';
     } finally {
       aiBusy = false;
+    }
+  }
+
+  /** TZD-63 ШАГ 1–2: скан папки моделей на любые `.gguf` (не только каталог). */
+  async function rescanModels() {
+    aiModelDir = aiModelDir || (await defaultModelDir());
+    try {
+      const { models, rejected } = await scanGgufModelsInDir(aiModelDir);
+      diskModels = models;
+      diskModelsRejected = rejected;
+      if (selectedDiskFileName && !models.some((m) => m.fileName === selectedDiskFileName)) {
+        selectedDiskFileName = '';
+      }
+    } catch {
+      diskModels = [];
+      diskModelsRejected = [];
     }
   }
 
@@ -415,8 +458,27 @@
   }
 
   /**
-   * TZD-62 ШАГ 3: «Открыть чат» одним кликом, если `.gguf` выбранной модели уже
-   * на диске — запускает (или перезапускает) раннер с этим файлом, ждёт
+   * TZD-63: какой файл использовать для чата/раннера — сначала выбранный файл
+   * с диска (любое имя, из `rescanModels()`), иначе файл выбранной модели
+   * каталога, если он реально лежит в папке моделей. `null`, если нечем стартовать.
+   */
+  async function resolveChatModelFile(): Promise<{ fileName: string } | null> {
+    if (selectedDiskFileName && diskModels.some((m) => m.fileName === selectedDiskFileName)) {
+      return { fileName: selectedDiskFileName };
+    }
+    const model = selectedModelId ? modelById(selectedModelId) : undefined;
+    if (!model) return null;
+    aiModelDir = aiModelDir || (await defaultModelDir());
+    const { join: joinPath } = await import('@tauri-apps/api/path');
+    const modelPath = await joinPath(aiModelDir, model.fileName);
+    if (!(await exists(modelPath))) return null;
+    return { fileName: model.fileName };
+  }
+
+  /**
+   * TZD-62 ШАГ 3 / TZD-63 ШАГ 2: «Открыть чат» одним кликом — пересканирует
+   * папку моделей, берёт выбранный файл с диска или файл выбранной модели
+   * каталога, запускает (или перезапускает) раннер этим файлом, ждёт
    * `modelLoaded`, фокусирует чат. Если файла нет — не падает: RU-подсказка,
    * «Открыть папку моделей» и «Скачать модель» уже есть в карточке ниже.
    */
@@ -425,25 +487,19 @@
     aiBusy = true;
     try {
       aiMessage = '';
-      const model = selectedModelId ? modelById(selectedModelId) : undefined;
-      if (!model) {
-        aiMessage = 'Выберите модель из списка.';
-        return;
-      }
-      aiModelDir = aiModelDir || (await defaultModelDir());
-      const { join: joinPath } = await import('@tauri-apps/api/path');
-      const modelPath = await joinPath(aiModelDir, model.fileName);
-      if (!(await exists(modelPath))) {
+      await rescanModels();
+      const target = await resolveChatModelFile();
+      if (!target) {
         aiMessage = 'Модели нет в папке — скачайте её кнопкой ниже или скопируйте .gguf с флешки в папку моделей.';
         return;
       }
 
       const alreadyReady =
-        aiState.status === 'running' && aiState.modelLoaded && aiState.modelName === model.fileName;
+        aiState.status === 'running' && aiState.modelLoaded && aiState.modelName === target.fileName;
       if (!alreadyReady) {
         const cfg = await loadConfig();
-        await aiRunner.start({ modelDir: aiModelDir, modelFile: model.fileName });
-        if (aiRunner.getState().status === 'running') {
+        await aiRunner.start({ modelDir: aiModelDir, modelFile: target.fileName });
+        if (aiRunner.getState().status === 'running' && selectedModelId) {
           await saveConfig({ ...cfg, modelId: selectedModelId });
         }
       }
@@ -1707,6 +1763,7 @@
       aiState = state;
     });
     await loadAiSettings();
+    await rescanModels();
     // Закрытие по крестику (Tauri 2): listener + destroy ACL.
     // Без preventDefault→destroy и без core:window:allow-destroy крестик «молчит».
     await getCurrentWindow().onCloseRequested(async (event) => {
@@ -2274,7 +2331,7 @@
       {/if}
 
       <label class="field">
-        <span>Модель</span>
+        <span>Модель из каталога (для «Скачать»)</span>
         <select class="input" bind:value={selectedModelId} aria-label="Выбор модели">
           {#each LOCAL_MODELS as model (model.id)}
             <option value={model.id}>
@@ -2283,6 +2340,41 @@
           {/each}
         </select>
       </label>
+
+      <div class="mcp-status">
+        <span class="hint">Файлы .gguf в папке моделей: {diskModels.length}</span>
+        <button
+          class="btn btn--small"
+          type="button"
+          data-test="ai-rescan-models"
+          onclick={rescanModels}
+          disabled={aiBusy}
+        >
+          Обновить список
+        </button>
+      </div>
+      {#if diskModels.length > 0}
+        <label class="field">
+          <span>Файл на диске (любое имя — с флешки тоже)</span>
+          <select
+            class="input"
+            bind:value={selectedDiskFileName}
+            aria-label="Выбор файла модели с диска"
+            data-test="ai-disk-model-select"
+          >
+            <option value="">— взять из каталога выше —</option>
+            {#each diskModels as diskModel (diskModel.fileName)}
+              <option value={diskModel.fileName}>{diskModel.fileName} — {formatBytes(diskModel.sizeBytes)}</option>
+            {/each}
+          </select>
+        </label>
+      {/if}
+      {#if diskModelsRejected.length > 0}
+        <p class="hint" data-test="ai-disk-models-rejected">
+          Пропущено (не похоже на модель):
+          {#each diskModelsRejected as rej, i (rej.fileName)}{i > 0 ? '; ' : ' '}{rej.fileName} — {rej.reason}{/each}
+        </p>
+      {/if}
 
       <div class="mcp-actions">
         {#if aiState.status === 'running' || aiState.status === 'starting'}
@@ -2331,7 +2423,7 @@
           class="btn btn--small"
           type="button"
           onclick={downloadSelectedModel}
-          disabled={aiState.status !== 'running' || aiState.download.active || aiBusy}
+          disabled={aiState.download.active || aiBusy}
           onmouseenter={() => showHint(HINTS.downloadModel)}
           onmouseleave={clearHint}
           onfocus={() => showHint(HINTS.downloadModel)}
@@ -2352,9 +2444,9 @@
         </button>
       </div>
       <p class="hint">
-        Порядок: <strong>Запустить</strong> → <strong>Скачать модель</strong> → <strong>Перезапустить</strong>.
-        После «Перезапустить» модель загрузится в память, и кнопка «Предложить сопоставление» во вкладке
-        «Импорт» начнёт использовать её для нестандартных колонок.
+        Можно скачать кнопкой «Скачать модель» (раннер поднимется сам, если ещё не запущен) или
+        скопировать `.gguf` с флешки в папку моделей и нажать «Обновить список» — обязательного порядка
+        «Запустить → Скачать → Перезапустить» больше нет: «Открыть чат» выше делает всё сама.
       </p>
     </article>
 
