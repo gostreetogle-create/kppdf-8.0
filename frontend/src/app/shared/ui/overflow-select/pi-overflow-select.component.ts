@@ -40,6 +40,12 @@ export const PI_OVERFLOW_SELECT_SEARCH_THRESHOLD = 10;
   selector: 'app-pi-overflow-select',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styles: `
+    :host {
+      display: block;
+      min-width: 0;
+    }
+  `,
   template: `
     <div class="min-w-0 w-full" [attr.data-test]="dataTest()">
       <button

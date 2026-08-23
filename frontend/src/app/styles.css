@@ -137,55 +137,64 @@
   }
 }
 
-/* TZ-PARTY-306 — overflow-select row with inline + create (supply-quick-order canon). */
-@layer components {
-  .pi-select-add-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 0.5rem;
-    min-width: 0;
-  }
-  .pi-select-add-row > :first-child {
-    flex: 1 1 12rem;
-    min-width: 0;
-  }
-  .pi-select-add-btn {
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 2.4rem;
-    height: 2.25rem;
-    border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
-    border-radius: 4px;
-    background: var(--color-sunrise-soft);
-    color: var(--color-success);
-    font: inherit;
-    font-size: var(--text-title);
-    font-weight: 700;
-    line-height: 1;
-    cursor: pointer;
-    transition:
-      background-color 120ms ease,
-      border-color 120ms ease,
-      color 120ms ease;
-  }
-  .pi-select-add-btn:hover {
-    border-color: color-mix(in oklch, var(--color-sunrise-warm) 80%, var(--color-gold-deep));
-    background: color-mix(in oklch, var(--color-sunrise-soft) 55%, var(--color-sunrise-warm));
-    color: color-mix(in oklch, var(--color-success) 82%, #000000);
-  }
-  .pi-select-add-btn:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-ring-shadow);
-  }
-  .pi-select-add-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-  .pi-select-add-btn:disabled:hover {
-    border-color: color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
-    background: var(--color-sunrise-soft);
-  }
+/* TZ-PARTY-306 / TZ-UI-PLUS-601 — overflow-select row with inline + create.
+   Unlayered (not @layer components): supply-quick-order__add-btn lives in
+   component styles; layered globals lost to preflight/encapsulation cascade. */
+.pi-select-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  align-items: end;
+  min-width: 0;
+}
+.pi-select-add-row > app-pi-overflow-select,
+.pi-select-add-row > :first-child {
+  grid-column: 1;
+  min-width: 0;
+}
+.pi-select-add-row > .pi-select-add-btn {
+  grid-column: 2;
+  align-self: end;
+}
+.pi-select-add-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.25rem;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
+  border-radius: 4px;
+  background: var(--color-sunrise-soft);
+  color: var(--color-success);
+  font: inherit;
+  font-size: var(--text-title);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+.pi-select-add-btn:hover {
+  border-color: color-mix(in oklch, var(--color-sunrise-warm) 80%, var(--color-gold-deep));
+  background: color-mix(in oklch, var(--color-sunrise-soft) 55%, var(--color-sunrise-warm));
+  color: color-mix(in oklch, var(--color-success) 82%, #000000);
+}
+.pi-select-add-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+.pi-select-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pi-select-add-btn:disabled:hover {
+  border-color: color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
+  background: var(--color-sunrise-soft);
 }

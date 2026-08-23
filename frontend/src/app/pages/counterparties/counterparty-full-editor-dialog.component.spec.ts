@@ -238,4 +238,16 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
       expect.objectContaining({ width: 'sm' }),
     );
   });
+
+  it('keeps contact + on same row as overflow-select with supply add-btn class (TZ-UI-PLUS-601)', async () => {
+    await build(existing);
+    const row = fixture.nativeElement.querySelector('.pi-select-add-row') as HTMLElement;
+    const select = row?.querySelector('app-pi-overflow-select');
+    const btn = row?.querySelector('[data-test="cp-contact-person-add"]') as HTMLButtonElement;
+    expect(row).toBeTruthy();
+    expect(select).toBeTruthy();
+    expect(btn?.classList.contains('pi-select-add-btn')).toBe(true);
+    expect(row.children[0]).toBe(select);
+    expect(row.children[1]).toBe(btn);
+  });
 });
