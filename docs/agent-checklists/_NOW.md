@@ -5,26 +5,31 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T15:55:00+03:00
+updated_at: 2026-08-23T16:25:00+03:00
 
 ## ACTIVE — WAVE-UI-DENSITY
 
-**DONE** — DEN wave closed (`590` `b1b6442e`, `512` `d25cb1f4`). **552 WAIT KP-WS-409**. PO: 5-route sign-off in [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md).
+**DONE** — DEN closed (`599` `2885c036`, `590` `b1b6442e`, `512` `d25cb1f4`). **552 WAIT KP-WS-409**. PO: 5-route sign-off [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md).
 
 ---
 
 ## ACTIVE — WAVE-KP-SINGLE-WORKSPACE (401→409)
 
-**TZ-KP-WS-400** — DONE full (A claude · B freebuff-1 · C freebuff-2). Archive: `TZ-KP-WS-400-full.done.md`.
+**DONE:** 400–405, 407 · archives in `tasks/_archive/2026-08/TZ-KP-WS-*.done.md`
 
-**IN PROGRESS (PO ушёл, оркестратор Cursor):**
-- **freebuff-1** — `PROMPT-FREEBUFF-KP-EXECUTOR-1.md` → 401…409 main chain
-- **freebuff-2** — `PROMPT-FREEBUFF-KP-EXECUTOR-2.md` → 407 после `405.done`
-- **claude (MCP)** — peer review на гейтах; PO не трогает
+**IN PROGRESS (PO back):**
+- **freebuff-1** — [`PROMPT-FREEBUFF-KP-EXECUTOR-1.md`](../../tasks/PROMPT-FREEBUFF-KP-EXECUTOR-1.md) → **406 → 408 → 409**
+- **freebuff-2** — [`PROMPT-FREEBUFF-KP-EXECUTOR-2.md`](../../tasks/PROMPT-FREEBUFF-KP-EXECUTOR-2.md) → DESK-432 if needed + KP-E2E smoke after 408
 
-**NEXT gate PO:** после **408** — smoke `/proposals/create` + KP-E2E-SMOKE перед 409/deploy.
+**NEXT gate PO:** после **408** — smoke `/proposals/create` + [`KP-E2E-SMOKE.md`](KP-E2E-SMOKE.md) перед 409/deploy.
 
-HEAD orchestrator: `a5cfa827` · `_active/`: ждём claim 401 от freebuff-1
+HEAD: `2885c036` · `_active/` KP: пуст (stale claims cleared)
+
+---
+
+## ACTIVE — DESK wave 425–430
+
+**DONE** — 425–430 archived. Optional: **DESK-432** hotfix (`tasks/TZ-DESK-432-hotfix-workflow-chips-queryparams.md`) — Freebuff-2 if tsc fails.
 
 ---
 
