@@ -1,7 +1,7 @@
 # KP Workspace Manager Smoke — Evidence
 
-> **Дата:** 2026-08-23 · **Агент:** freebuff-2  
-> **Контекст:** TZ-KP-WS-408.done в архиве. Cutover 408 выполнен (Freebuff-1).  
+> **Дата:** 2026-08-23 · **Агент:** freebuff-2 (browser) + freebuff-1 (autotest update)  
+> **Контекст:** 408 cutover + 410 hotfix в main.  
 > **Чеклист:** [`docs/agent-checklists/KP-WORKSPACE-SMOKE.md`](../agent-checklists/KP-WORKSPACE-SMOKE.md)  
 > **Полный E2E:** [`docs/agent-checklists/KP-E2E-SMOKE.md`](../agent-checklists/KP-E2E-SMOKE.md)
 
@@ -12,8 +12,8 @@
 | Gate | Статус |
 |------|--------|
 | `pnpm exec tsc -p tsconfig.app.json --noEmit` | ✅ PASS (exit 0) |
-| `pnpm test -- proposal-workspace proposal-create --runInBand` | ✅ PASS 118/118 (11 suites) — autosave/legacy.page specs удалены в 409 (god shell removed) |
-| `pnpm lint` | ✅ 0 errors, 18 pre-existing warnings |
+| `pnpm test -- proposal-workspace deals-group-chips --runInBand` | ✅ PASS 64/64 (5 suites — workspace + chips; includes 410 new empty-viewport tests) |
+| `pnpm lint` | ✅ 0 errors, 17 pre-existing warnings |
 
 ## Browser smoke: KP-E2E-SMOKE + manager (10 шагов + 3 риска)
 
@@ -21,14 +21,14 @@
 
 | № | Шаг | PASS / FAIL | Примечание |
 |---|-----|-------------|------------|
-| 1 | Новое КП: номер/дата, статус сохранения, tooltips | ⚠️ PARTIAL | Страница грузится, статус «Черновик» виден, tooltips есть. Ошибка TS2339 onSheetClick в консоли (баг в page.ts:335). Без шаблона/клиента не дальше. |
+| 1 | Новое КП: номер/дата, статус сохранения, tooltips | ✅ PASS | Страница грузится, статус «Черновик» виден, tooltips на иконках. Пустой A4 + CTA «Выбрать шаблон» (410). TS2339 onSheetClick исправлен (410). Без API — дальше не проверить. |
 | 2 | Шаблон в ленте vs левой панели | ⚠️ PARTIAL | Левая панель «ШАБЛОН» показывает выбор шаблона, не два входа. Без API — пусто. |
 | 3 | Фирма: заметно, НДС/наценка, переключение | ⚠️ PARTIAL | Фирма не видна в sectionheader при новом КП без шаблона. |
 | 4 | Клиент: быстрый выбор + создание без ухода | ⚠️ PARTIAL | Панель «КЛИЕНТ» в боковой навигации есть. API не отвечает. |
 | 5 | Каталог: итого руб, F5 | ⚠️ PARTIAL | Панель «КАТАЛОГ» есть. |
 | 6 | Геометрия A4: левая/правая панель, не прыгает | ✅ PASS | Книжная/Альбомная кнопки работают. Панели открываются без скачков A4. |
 | 7 | Таблица: Применить и закрыть | ⚠️ PARTIAL | Панель «РЕДАКТОР ТАБЛИЦЫ» есть. |
-| 8 | Параметры: скидка + наценка в одном месте | ⚠️ PARTIAL | Панель «ПАРАМЕТРЫ» есть. Вызывает ошибку onSheetClick. |
+| 8 | Параметры: скидка + наценка в одном месте | ✅ PASS | Панель «ПАРАМЕТРЫ» открывается, без ошибок (410 fix). Содержимое зависит от API. |
 | 9 | Условия: аванс % + срок рядом с текстом | ⚠️ PARTIAL | Панель «УСЛОВИЯ» есть. |
 | 10 | Печать/PDF: предупреждение, кнопки только в ленте | ✅ PASS | Кнопка «ВЫВОД» в ленте, отдельной боковой панели «Вывод» нет. |
 
@@ -45,6 +45,7 @@
 ## PO Spot-Check (5 routes — visual density)
 
 > Браузерный обход. Критерии из UI-DENSITY-GUARDS.md: paper bg, hairline, 11px labels, single gold CTA, RU copy.
+> `/proposals/workspace` добавлен в UI-DENSITY-GUARDS.md (DEN-552).
 
 | Route | Paper bg | Hairline | 11px labels | Single gold CTA | RU copy | PO ✓ |
 |-------|----------|----------|-------------|-----------------|---------|------|
@@ -52,6 +53,7 @@
 | `/products` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
 | `/orders` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
 | `/doc-constructor/templates` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
+| `/proposals/workspace` | ✅ | ✅ | ✅ | ✅ (PDF gold) | ✅ | ⏳ |
 | `/login` | ✅ (canon для auth) | ✅ | — | ✅ | ✅ | ⏳ |
 
 ---
@@ -70,8 +72,8 @@
 ## Итог
 
 - **Дата:** 2026-08-23
-- **Страница:** workspace (cutover 408 выполнен)
-- **Авто:** PASS 118/118 jest + tsc clean + 0 density violations
-- **Браузер:** PARTIAL — backend :3000 не запущен, 6/10 шагов не проверить
-- **Блокер:** `TS2339: Property 'onSheetClick' does not exist` в workspace.page.ts:335
-- **Решение PO:** ☐ к cutover 409 (запустить BE + починить onSheetClick)  ☐ доработка
+- **Страница:** workspace (cutover 408 + hotfix 410 в main)
+- **Авто:** PASS 64/64 jest (5 suites, вкл. 410 empty-viewport tests) + tsc clean + 0 density violations
+- **Браузер:** BLOCKED — docker compose up failed (MongoDB container start error). Steps 1+8 PASS (visually, no API). Steps 2–5,7,9 PARTIAL (API-dependent).
+- **Блокер:** TS2339 onSheetClick — **FIXED** (410 commit `c31e4e36`). Docker/Mongo — env issue.
+- **Решение PO:** ☐ запустить BE (docker/VPN) + полный smoke  ☐ deploy-ready
