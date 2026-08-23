@@ -5,7 +5,7 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T06:30:00+03:00
+updated_at: 2026-08-23T07:11:00+03:00
 hygiene: prod `c8ebdeb6` (2026-08-11); **DEPLOY-READY = INVALID** — TEST-421 → «подготовь к деплою» → «сделай деплой по документации»
 deploy_ready: `docs/agent-checklists/DEPLOY-READY.md`
 deploy_docs: `deploy/synology/README.md` (единственный вход для фразы «деплой по документации»)
@@ -17,6 +17,16 @@ deploy_docs: `deploy/synology/README.md` (единственный вход дл
 `docs/GIT-POLICY.md`; политика деплоя: `deploy/synology/README.md`.
 
 ## ACTIVE
+
+**UI-WR Agent B** — DONE (2026-08-23): WR-505 `c7eafe9b` + WR-506 `fce705d2` (архив). Consumer ErrorBanner → WR-507. C: 507 только после 501.
+
+**UI-WR Agent A — ВСЯ ОЧЕРЕДЬ DONE** (freebuff-wr-a, 2026-08-23): 500 `e21b4696` → 501 `a3532a34` → 503 `ee115111` → 509 `2dbfd036`+`a235b3ee` → 510 `1d2d131f`; Proof of adoption в каждом `.done.md`; PROMPT-FREEBUFF-UI-WR-A.md → prompts-spent.
+- **500** — canon rules + Proof of adoption (`AI-AGENT-GUIDE.md` §3.1–3.2), stale audit patch (S-01/C-02 DONE TZ-UI-401), PAGE-TZ-INDEX WR-50x.
+- **501** (ex-502) — overlay platform: return-focus Dialog/Drawer/Sheet, drawer `block()`, drawer/sheet trap bugfix (querySelector null), `--z-*` scale в styles.css (dialog 80/sheet 70/drawer 60/popover 50/dropdown 40/toast 90) + panel-классы un-layered, toast/bell на токены. Docs: paper-and-ink z-table + ui-dialog-canon contract. Tests 16/16 + соседи 27/27.
+- **503** — builder flyout: Esc + pointerdown-outside close, `aria-modal`, `z-index: var(--z-popover)`, return-focus на rail-кнопку. Spec +4 (10/10).
+- **509** — desk flyout harden (путь B, workspace sheet): CDK trap, return-focus на любой close-path, body scroll-lock, `--z-sheet` (backdrop −10), aria-labelledby на h2. Spec +2 (29/29).
+- **510** — KP catalog-review: formal exception **KP-CATALOG-REVIEW-NO-ESC** (Esc=B, ui-dialog-canon + war-room), CDK trap + return-focus + `z-index: var(--z-dialog)`. Spec +2 (47/47).
+- Gates: FE tsc 0, focused jest green, eslint своих файлов 0 err. Global lint: 1 error в `menu/pi-dropdown-menu.component.ts` — чужой WIP агента C (WR-508, не трогал).
 
 **TZ-CORE-304** — DONE by `claude` (2026-08-22), SHA `c4322e4b`: запушен leftover CORE-302 — все 44 `*.schema.ts` + `soft-delete-coverage.spec.ts` (было на диске, не в git). Заодно найден и исправлен дефект того же класса, что TZ предупреждала про `ContractItem`: 5 файлов (`contract`, `document-table-type`, `purchase-order`, `purchase-request`, `tech-process`) несли `deletedAt` на вложенном `_id: false` line-item subdoc вместо коллекции — перенесено на родительский класс (как уже было верно в `bom`/`storage-item`). Архив `tasks/_archive/2026-08/TZ-CORE-304.done.md`; gates PASS (BE tsc, soft-delete-coverage 1/1); `git status` без `M` на этих schema после push; deploy НЕ.
 **TZ-DESK-424** — DONE by `claude` (2026-08-22), SHA `78045f26`: стол — убран «забор рамок» в составе: `composition-tree.component.ts` теряет `nestShadow()`/inset и hairline-обёртку раскрытого узла (карточка-в-карточке), строки делит `border-b` вместо hairline+rounded «коробки» на каждом листе, kind rail 5px остаётся; tray снимает внутреннюю рамку вокруг дерева и дубль «Клиент:» (input `clientLabel` оставлен); «Подтвердить» — `bg-gold`/`text-ink` (не чёрная дыра); hub «Открыть заказ»/«Открыть карточку заказа» — compact outline-кнопки вместо underline (маршруты не менялись); правая колонка Снабжение/Производство/Документы/Блокнот — `w-full min-h-touch` одна колонка; `.manager-desk__order-actions` — `flex`→`grid` (`1fr auto`), «Удалить» — последняя grid-колонка той же высоты, не отдельная flex-полоса; статус — `font-weight:600`+letter-spacing+hairline outline (один акцент, без светофора). `manager-desk.page.md` DESK-424 → DONE; канон `ui-composition-tree.md` (уже обновлён до старта TZ) закоммичен в этом же коммите. Архив `tasks/_archive/2026-08/TZ-DESK-424.done.md`; gates PASS (FE tsc, composition-tree+order-hub-tray+manager-desk 46/46, lint 0 err); живой browser 1440 `/desk` — PO/dev; deploy НЕ.
