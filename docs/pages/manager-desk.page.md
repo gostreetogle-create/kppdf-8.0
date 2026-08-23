@@ -54,6 +54,15 @@
 - **408:** L-flyout `panel=notebook` — блокнот заказа (`GET/POST/PATCH/DELETE /desk-notes`, BE `backend/src/modules/desk-note`); список compact (текст, anchor badge, автор, дата), «+ заметка» с picker якоря (Заказ / линия изделия) и kind (note/checklist/reminder); checklist — чекбокс «готово», delete hard. Фильтр по текущему expand. Module-якорь — только API (picker v2).
 - **415:** `GET /desk-notes` без валидного `orderId` → 400 (не dump всех заметок); PATCH/DELETE — только автор или role `admin|director|manager`, иначе 403. FE notebook уже шлёт orderId.
 - **418:** в каждой строке очереди есть destructive «Удалить»; клик не раскрывает заказ; перед общим `OrdersService.remove` открывается обязательный `AlertDialogComponent`; после успеха список перезагружается и раскрытие сбрасывается для удалённого заказа.
+- **425:** tray = рабочее место, без прыжков со страницы `/desk` в `mode="desk"`.
+  Производство/Склад/Отгрузка — read-only сводка (`readinessLabel()` / статус),
+  без `routerLink`; `data-test="order-production-link"` отсутствует в desk DOM
+  (hub — без регрессии, DESK-416 desk-behaviour superseded). Снабжение —
+  R-flyout `panel=supply` хостит `<app-supply-quick-order [prefillOrderId]>`
+  вместо `router.navigate(['/supply'])`. Документы — R-flyout `panel=docs`:
+  список шаблонов (`DocumentTemplatesService.list()`), «Создать» у шаблона —
+  единственная неизбежная навигация в builder (`/doc-constructor/builder/:id
+  ?source=order&sourceId=`), сам список остаётся на `/desk`.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 
 
@@ -88,3 +97,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-423** | операторский tray (изделие / confirm-on-press / disclosure) — **DONE** |
 | **DESK-424** | tray declutter: no card-in-card composition tree (border-b, kind rail only), tray drops the client-name repeat + inner composition wrapper, desk primary CTA is `bg-gold`/`text-ink` (not black), hub «Открыть заказ»/«Открыть карточку заказа» are outline buttons not underline, right-column Снабжение/Производство/Документы/Блокнот buttons are `w-full`, delete lives in the row's own grid (not a separate flex strip) — **DONE** |
 | **DESK-426** | chips = cross-page SoT с контекстом заказа: `deskWorkflowChips(orderId)` (Стол/КП/Комбайн/Гант/Снабжение/Отгрузка), КП prefill из заказа (`source=order&sourceId`), supply/shipping фильтр заказа + «На стол» (`from=desk`) — **DONE** |
+| **DESK-425** | tray = workspace без route jumps: supply/docs R-flyout вместо navigate; Производство/Склад/Отгрузка — read-only сводка вместо ссылок в `mode="desk"` — **DONE** |

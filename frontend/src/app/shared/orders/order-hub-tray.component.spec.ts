@@ -44,7 +44,7 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     }).compileComponents();
   });
 
-  function productionHref(mode: 'hub' | 'desk'): string {
+  function expandSupply(mode: 'hub' | 'desk') {
     const fixture = TestBed.createComponent(OrderHubTrayComponent);
     fixture.componentRef.setInput('order', ORDER);
     fixture.componentRef.setInput('mode', mode);
@@ -54,17 +54,23 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     ) as HTMLButtonElement;
     supplyToggle?.click();
     fixture.detectChanges();
+    return fixture;
+  }
+
+  function productionHref(mode: 'hub' | 'desk'): string {
+    const fixture = expandSupply(mode);
     const link = fixture.nativeElement.querySelector(
       '[data-test="order-production-link"]',
     ) as HTMLAnchorElement;
     return link?.getAttribute('href') ?? '';
   }
 
-  it('desk-mode production link contains from=desk', () => {
-    const href = productionHref('desk');
-    expect(href).toContain('/production');
-    expect(href).toContain('orderId=o1');
-    expect(href).toContain('from=desk');
+  it('DESK-425: desk mode has no production link — superseded by inline summary', () => {
+    const fixture = expandSupply('desk');
+    expect(fixture.nativeElement.querySelector('[data-test="order-production-link"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="order-production-summary"]'),
+    ).not.toBeNull();
   });
 
   it('hub-mode production link has orderId only (no from)', () => {

@@ -409,14 +409,23 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                       data-test="order-production-block"
                     >
                       <span class="text-xs text-muted-foreground">Производство</span>
-                      <a
-                        routerLink="/production"
-                        [queryParams]="productionQueryParams()"
-                        class="w-full min-h-touch px-2 py-1.5 inline-flex items-center justify-center border border-rule-strong rounded-sm bg-transparent text-xs"
-                        data-test="order-production-link"
-                        (click)="$event.stopPropagation()"
-                        >Производство</a
-                      >
+                      @if (mode() === 'desk') {
+                        <p
+                          class="text-xs text-muted-foreground m-0"
+                          data-test="order-production-summary"
+                        >
+                          {{ readinessLabel() }} · подробнее — chip «Гант»
+                        </p>
+                      } @else {
+                        <a
+                          routerLink="/production"
+                          [queryParams]="productionQueryParams()"
+                          class="w-full min-h-touch px-2 py-1.5 inline-flex items-center justify-center border border-rule-strong rounded-sm bg-transparent text-xs"
+                          data-test="order-production-link"
+                          (click)="$event.stopPropagation()"
+                          >Производство</a
+                        >
+                      }
                     </section>
                   </div>
                 }
@@ -444,13 +453,15 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     <section class="min-w-0 flex flex-col gap-1" data-test="order-warehouse-block">
                       <div class="flex items-baseline gap-3 flex-wrap">
                         <span class="text-xs text-muted-foreground">Склад</span>
-                        <a
-                          routerLink="/storage-items"
-                          class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                          data-test="order-warehouse-link"
-                          (click)="$event.stopPropagation()"
-                          >Открыть</a
-                        >
+                        @if (mode() !== 'desk') {
+                          <a
+                            routerLink="/storage-items"
+                            class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
+                            data-test="order-warehouse-link"
+                            (click)="$event.stopPropagation()"
+                            >Открыть</a
+                          >
+                        }
                       </div>
                       @if (reservationLoading() && reservationActive()) {
                         <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
@@ -478,13 +489,19 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     >
                       <div class="flex items-baseline gap-3 flex-wrap">
                         <span class="text-xs text-muted-foreground">Отгрузка</span>
-                        <a
-                          routerLink="/shipping"
-                          class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
-                          data-test="order-shipping-link"
-                          (click)="$event.stopPropagation()"
-                          >Открыть раздел „Отгрузка“</a
-                        >
+                        @if (mode() === 'desk') {
+                          <span class="text-xs ml-auto" data-test="order-shipping-summary">
+                            {{ statusLabel(order().status) }}
+                          </span>
+                        } @else {
+                          <a
+                            routerLink="/shipping"
+                            class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
+                            data-test="order-shipping-link"
+                            (click)="$event.stopPropagation()"
+                            >Открыть раздел „Отгрузка“</a
+                          >
+                        }
                       </div>
                     </section>
                   </div>
