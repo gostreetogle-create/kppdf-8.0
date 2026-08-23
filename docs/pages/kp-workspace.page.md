@@ -120,7 +120,9 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 |-----|----------|--------|
 | Tools panel | shell absolute overlay | секции L/R |
 | Catalog review | modal (create reuse) **TZ-404 DONE** | exit table editor с dirty catalog fields; Esc НЕ закрывает (formal exception KP-CATALOG-REVIEW-NO-ESC) |
-| Table preset / text edit | `PiDialog` / `PiSheet` | Wave 405 inline |
+| Table preset | `PiDialog` (`TableTemplateFormDialogComponent`) | **TZ-405 DONE** — edit from table panel, без route change; save → `kpTableLayout` sync |
+| Text block | `PiDialog` (`TextBlockEditorComponent` host) | **TZ-405 DONE** — create/edit from terms panel; save → `libraryRefresh` bump |
+| Template mini (rename/дубликат/фон) | inline + `PiDialog` | **TZ-405 DONE** — full canvas остаётся builder `?returnUrl=` |
 | Pairing desktop | existing pairing dialog | Wave 406 CTA |
 | Family attach | existing family dialog | Wave 407 |
 
@@ -160,7 +162,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **402** | store + chrome rails — **DONE** (L3+R4, unique Lucide, Esc/close) |
 | **403** | left: catalog / template / recipient — **DONE** (mount + hydration + autosave + preview) |
 | **404** | right: params / table / terms / output — **DONE** (inspector/table-editor/terms/output mounted; catalog review на exit; output gates 368; tier-L overlay без A4 reflow) |
-| **405** | embedded table/text/template settings |
+| **405** | embedded doc settings — **DONE** (table preset inline PiDialog; text block inline dialog + library refresh; template mini: rename/duplicate/фон; full builder через returnUrl) |
 | **406** | MCP AI-draft bridge |
 | **407** | multi-supplier UX |
 | **408** | cutover create → workspace |

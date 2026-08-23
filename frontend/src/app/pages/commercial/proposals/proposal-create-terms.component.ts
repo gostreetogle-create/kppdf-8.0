@@ -4,6 +4,7 @@ import {
   ElementRef,
   QueryList,
   ViewChildren,
+  effect,
   inject,
   input,
   output,
@@ -153,9 +154,7 @@ const TERM_VARIABLES = [
       }
 
       @if (terms().length === 0) {
-        <p class="terms__empty" data-test="kp-terms-empty">
-          Добавьте первое условие.
-        </p>
+        <p class="terms__empty" data-test="kp-terms-empty">Добавьте первое условие.</p>
       }
       <app-pi-button
         type="button"
@@ -256,6 +255,8 @@ const TERM_VARIABLES = [
 export class ProposalCreateTermsComponent {
   readonly terms = input<ProposalTerm[]>([]);
   readonly readOnly = input(false);
+  /** TZ-KP-WS-405 — bump to reload the text-block library after an inline create/edit. */
+  readonly libraryRefresh = input(0);
   readonly termsChange = output<ProposalTerm[]>();
 
   protected readonly libraryOpen = signal(false);
@@ -273,7 +274,10 @@ export class ProposalCreateTermsComponent {
     this.textCategories.list({ activeOnly: true }).subscribe((res) => {
       if (res.ok) this.categories.set(res.data ?? []);
     });
-    this.loadBlocks();
+    effect(() => {
+      void this.libraryRefresh();
+      this.loadBlocks();
+    });
   }
 
   protected selectCategory(categoryId: string): void {

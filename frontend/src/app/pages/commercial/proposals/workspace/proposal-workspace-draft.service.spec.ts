@@ -49,9 +49,12 @@ describe('ProposalWorkspaceDraftService', () => {
   const proposalsDownloadPdfMock = jest.fn();
   const templatesFindMock = jest.fn();
   const buildMock = jest.fn();
+  const tableFindMock = jest.fn();
   const toastError = jest.fn();
   const toastSuccess = jest.fn();
   const toastWarning = jest.fn();
+  const dialogOpenMock = jest.fn();
+  let dialogCloseValue: unknown = undefined;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -61,7 +64,23 @@ describe('ProposalWorkspaceDraftService', () => {
     proposalsCreateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-new' } }));
     proposalsUpdateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1', status: 'draft' } }));
     proposalsDownloadPdfMock.mockReturnValue(of(new Blob(['pdf'])));
+    dialogCloseValue = undefined;
     templatesFindMock.mockReturnValue(of({ ok: true, data: TEMPLATE }));
+    tableFindMock.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'tbl-1',
+          name: 'Спецификация',
+          sortOrder: 0,
+          isActive: true,
+          columns: [
+            { key: 'productName', label: 'Наименование', type: 'text', width: 260, align: 'left' },
+            { key: 'quantity', label: 'Кол-во', type: 'number', width: 88, align: 'right' },
+          ],
+        },
+      }),
+    );
     buildMock.mockReturnValue(
       of({ ok: true, data: '<html><body><div class="doc-page">A4</div></body></html>' }),
     );
@@ -100,7 +119,7 @@ describe('ProposalWorkspaceDraftService', () => {
           provide: TemplateBlocksService,
           useValue: { listByTemplate: jest.fn(() => of({ ok: true, data: [] })) },
         },
-        { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
+        { provide: TableTemplatesService, useValue: { findById: tableFindMock } },
         {
           provide: GeneratedDocumentsService,
           useValue: { archiveQuotation: jest.fn(() => of({ ok: true })) },
@@ -108,8 +127,8 @@ describe('ProposalWorkspaceDraftService', () => {
         {
           provide: PiDialogService,
           useValue: {
-            open: jest.fn(() => ({
-              closed: computed(() => undefined),
+            open: dialogOpenMock.mockImplementation(() => ({
+              closed: computed(() => dialogCloseValue),
               close: jest.fn(),
             })),
           },
@@ -287,6 +306,64 @@ describe('ProposalWorkspaceDraftService', () => {
     tick();
     expect(proposalsDownloadPdfMock).toHaveBeenCalledWith('q-1');
     expect(toastSuccess).toHaveBeenCalledWith('PDF подготовлен');
+    tick(5000);
+  }));
+
+  it('opens the table preset dialog inline without a route change (TZ-405)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    service.tableTemplateId.set('tbl-1');
+
+    service.openTableTemplatePreset();
+    tick();
+
+    expect(tableFindMock).toHaveBeenCalledWith('tbl-1');
+    expect(dialogOpenMock).toHaveBeenCalled();
+    const [component, config] = dialogOpenMock.mock.calls[0];
+    expect(component.name).toContain('TableTemplateFormDialog');
+    expect(config.data.template._id).toBe('tbl-1');
+    tick(5000);
+  }));
+
+  it('errors when opening the table preset without a selected preset (TZ-405)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    service.tableTemplateId.set(null);
+
+    service.openTableTemplatePreset();
+    tick();
+
+    expect(tableFindMock).not.toHaveBeenCalled();
+    expect(dialogOpenMock).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledWith(expect.stringContaining('шаблон'));
+    tick(5000);
+  }));
+
+  it('saving the preset syncs kpTableLayout from its columns and schedules autosave (TZ-405)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    service.tableTemplateId.set('tbl-1');
+    dialogCloseValue = {
+      _id: 'tbl-1',
+      name: 'Спецификация (новая)',
+      sortOrder: 0,
+      isActive: true,
+      columns: [
+        { key: 'productName', label: 'Наименование', type: 'text', width: 260, align: 'left' },
+        { key: 'unitPrice', label: 'Цена', type: 'currency', width: 120, align: 'right' },
+      ],
+    };
+
+    service.openTableTemplatePreset();
+    tick();
+    tick(2000);
+
+    expect(service.tableTemplateId()).toBe('tbl-1');
+    const layout = service.kpTableLayout();
+    expect(layout.some((c) => c.key === 'productName')).toBe(true);
+    expect(layout.some((c) => c.key === 'unitPrice')).toBe(true);
+    expect(layout.every((c) => c.visible)).toBe(true);
+    expect(proposalsUpdateMock).toHaveBeenCalled();
     tick(5000);
   }));
 

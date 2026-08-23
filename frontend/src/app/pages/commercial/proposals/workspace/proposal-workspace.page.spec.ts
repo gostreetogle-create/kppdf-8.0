@@ -42,6 +42,8 @@ const EMPTY_LIST = () => of({ ok: true, data: { items: [], total: 0 } });
 describe('ProposalWorkspacePage', () => {
   let fixture: ComponentFixture<ProposalWorkspacePage>;
   let chromeTools: PiChromeToolsService;
+  const dialogOpenMock = jest.fn();
+  const dialogCloseValue = signal<unknown>(undefined);
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -109,8 +111,8 @@ describe('ProposalWorkspacePage', () => {
         {
           provide: PiDialogService,
           useValue: {
-            open: jest.fn(() => ({
-              closed: computed(() => undefined),
+            open: dialogOpenMock.mockImplementation(() => ({
+              closed: computed(() => dialogCloseValue()),
               close: jest.fn(),
             })),
           },
@@ -129,6 +131,7 @@ describe('ProposalWorkspacePage', () => {
 
   afterEach(() => {
     chromeTools.clear('proposal-workspace');
+    dialogCloseValue.set(undefined);
   });
 
   it('registers left rail: Каталог · Шаблон · Клиент with unique Lucide icons and RU labels', () => {
@@ -276,6 +279,40 @@ describe('ProposalWorkspacePage', () => {
     libToggle.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="kp-terms-library"]')).not.toBeNull();
+  });
+
+  it('terms panel mounts the inline text-block create action (TZ-405)', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('terms');
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-ws-text-block-create"]'),
+    ).not.toBeNull();
+  });
+
+  it('clicking Создать текстовый блок opens the editor dialog and bumps library refresh on save (TZ-405)', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    const page = fixture.componentInstance as unknown as {
+      textBlocksVersion: { (): number; update: (fn: (v: number) => number) => void };
+    };
+    store.openSection('terms');
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector(
+      '[data-test="kp-ws-text-block-create"]',
+    ) as HTMLElement;
+    const before = page.textBlocksVersion();
+    button.click();
+    fixture.detectChanges();
+
+    expect(dialogOpenMock).toHaveBeenCalled();
+    const [component] = dialogOpenMock.mock.calls.at(-1);
+    expect(component.name).toContain('WorkspaceTextBlockDialog');
+    expect(page.textBlocksVersion()).toBe(before); // no refresh until save closes
+
+    dialogCloseValue.set({ _id: 'tb-1', name: 'Новый блок' });
+    fixture.detectChanges();
+    expect(page.textBlocksVersion()).toBe(before + 1);
   });
 
   it('output panel mounts print/PDF/archive gates matching create (canon 368)', () => {
