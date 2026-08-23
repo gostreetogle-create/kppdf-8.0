@@ -4,7 +4,7 @@
 - **agent_id:** freebuff-1
 - **claimed_at:** 2026-08-23T16:34:26+0300
 - **closed_at:** 2026-08-23T17:00:00+0300
-- **SHA:** _(fill after commit)_
+- **SHA:** `92c458e7`
 - **Deploy:** НЕ
 
 ## Что сделано
