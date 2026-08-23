@@ -39,6 +39,7 @@
   - **423:** операторское место: «Добавить изделие» → `panel=bom` + `OrderFormPanel variant=items` (не `edit`); hint CTA только по клику; правые CTA — кнопки + disclosure; desk PATCH `draft→confirmed`; спека `docs/superpowers/specs/2026-08-22-desk-order-tray-operator.md`.
 - **L flyout** (create/filter/summary/notebook) · **R flyout** (edit/client/**bom=позиции**/docs/supply).
 - **509:** flyout = workspace sheet (НЕ modal center): CDK focus trap на `.manager-desk__flyout`, return-focus на trigger при закрытии (любым путём), body scroll-lock на время открытия, `z-index: var(--z-sheet)` (backdrop — на шаг ниже), `aria-labelledby` на видимый h2. Миграция на `PiSheetService` — successor (широкие create/edit/bom не покрываются size-шкалой).
+- **523:** dirty-close guard: `closePanel()` (Esc/backdrop/X/`cancelled`) при dirty `OrderFormPanel` открывает discard-confirm (`PiDialogService`+`AlertDialog`, «Закрыть без сохранения?» / «Закрыть» / «Остаться»); confirm закрывает, cancel оставляет панель. Esc-хендлер — на host (не document): при открытом диалоге фокус в CDK-overlay, guard не переоткрывается.
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
 - **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события.
   - **403 / 423:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → кнопка «Добавить изделие» (`panel=bom`, не edit); «Создать документ» reuse hub-хендлера.

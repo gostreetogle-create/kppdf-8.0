@@ -47,6 +47,16 @@ type SortDir = 'asc' | 'desc';
  *   Anti-use: не для пустых состояний (EmptyState), не для ошибок.
  *   Keyboard: не интерактивен.
  *   Статус: experimental (компонент не создан, заменяется текстом «Загрузка…»).
+ *
+ * Native &lt;select&gt;
+ *   Назначение: короткий enum ≤~20 опций без поиска — официальный Paper & Ink
+ *     fallback. Класс `.pi-native-select` в styles.css подгоняет border/radius/
+ *     height/color под токены form-control (как app-pi-input).
+ *   Anti-use: не для каталогов / поиска по 1000+ (PiOverflowSelect),
+ *             не для меню действий (DropdownMenu), не Material MatSelect.
+ *   Keyboard: стандартная клавиатура браузера — Tab/Shift-Tab, пробел раскрыть,
+ *     стрелки ↑↓, Enter выбрать, Esc закрыть.
+ *   Статус: canonical (TZ-UI-ROI-521).
  */
 @Component({
   selector: 'app-forms-page',

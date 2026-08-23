@@ -10,6 +10,7 @@ import {
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -934,6 +935,8 @@ export class ManagerDeskPage {
 
   /** TZ-UI-WR-509: flyout a11y shell (path B — hardened local, не PiSheet). */
   private readonly focusTrapFactory = inject(ConfigurableFocusTrapFactory);
+  /** ROI-523: the rendered order form (create/edit/bom) to read dirty state. */
+  private readonly orderFormPanel = viewChild(OrderFormPanelComponent);
   private readonly hostEl = inject(ElementRef<HTMLElement>);
   private activeFocusTrap: ConfigurableFocusTrap | null = null;
   private previousActiveElement: HTMLElement | null = null;
@@ -1423,7 +1426,32 @@ export class ManagerDeskPage {
     this.navigateQuery(this.expandedId(), panel);
   }
 
+  /**
+   * ROI-523 dirty-close guard: Esc / backdrop / X / form-cancel all funnel
+   * through here. A dirty OrderFormPanel gets a discard confirm via the same
+   * PiDialogService+AlertDialog as delete — confirm closes, cancel keeps the
+   * panel (focus stays where the dialog put it back — the form).
+   */
   protected closePanel(): void {
+    const formPanel = this.orderFormPanel();
+    if (formPanel?.isDirty) {
+      const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+        data: {
+          title: 'Закрыть без сохранения?',
+          description: 'Есть несохранённые данные.',
+          confirmLabel: 'Закрыть',
+          cancelLabel: 'Остаться',
+        },
+        width: 'sm',
+        parentDestroyRef: this.destroyRef,
+      });
+      onDialogCloseOnce(ref, this.injector, () => this.performClose());
+      return;
+    }
+    this.performClose();
+  }
+
+  private performClose(): void {
     this.panel.set(null);
     this.navigateQuery(this.expandedId(), null);
   }
@@ -1436,9 +1464,15 @@ export class ManagerDeskPage {
     this.listRes.reload();
   }
 
-  @HostListener('document:keydown.escape')
+  /**
+   * Escape closes a flyout, never the expanded row.
+   * ROI-523: listens on the host, not document. While the dirty-confirm dialog
+   * is open, focus lives in its CDK overlay, so Esc reaches only the dialog
+   * (CDK dispatches on body-keydown without stopPropagation) and never
+   * re-triggers this guard — otherwise Esc in the dialog would reopen it.
+   */
+  @HostListener('keydown.escape')
   protected onEscape(): void {
-    // Escape closes a flyout, never the expanded row.
     if (this.panel()) this.closePanel();
   }
 

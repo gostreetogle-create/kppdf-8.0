@@ -268,6 +268,22 @@ describe('OrderFormPanelComponent A2 characterization', () => {
     component.addItem();
     expect(component.itemsArray.at(1).controls.plannedShipDate.value).toBe('2026-09-01');
   });
+
+  it('ROI-523: isDirty is false on open and true only after a user edit', () => {
+    const component = createPanel() as unknown as OrderFormHarness & { isDirty: boolean };
+    flushLookups(httpMock);
+
+    // Fresh create form (with one empty item) is clean.
+    expect(component.isDirty).toBe(false);
+
+    // Programmatic setValue is not user input → still clean (dirty-close guard off).
+    component.form.controls.counterpartyId.setValue('cp1');
+    expect(component.isDirty).toBe(false);
+
+    // CVA-driven edits mark the control dirty → dirty-close guard must trigger.
+    (component.form.controls.counterpartyId as unknown as { markAsDirty(): void }).markAsDirty();
+    expect(component.isDirty).toBe(true);
+  });
 });
 
 describe('OrderFormPanelComponent edit freeze (TZ-ORDERS-336)', () => {

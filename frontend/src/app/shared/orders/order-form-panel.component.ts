@@ -490,6 +490,15 @@ export class OrderFormPanelComponent implements OnInit {
   /** Испускается при отмене. */
   readonly cancelled = output<void>();
 
+  /**
+   * ROI-523: true when the operator changed anything — the main order form or
+   * the quick-create counterparty subform. Hosts (desk flyout) read this to
+   * guard dirty-close (Esc / backdrop / X / cancelled).
+   */
+  get isDirty(): boolean {
+    return this.form.dirty || this.quickForm.dirty;
+  }
+
   constructor() {
     // Inputs are bound before ngOnInit; lookups/patch/freeze run there.
   }

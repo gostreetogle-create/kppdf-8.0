@@ -374,3 +374,26 @@ Magic `z-40` / `z-50` / `z-index: 100` на shared overlays запрещён —
 (диалог выше sheet, sheet выше drawer, popover выше dropdown, toast выше всего).
 Page-local canvas z в builder/gantt/desk вынесены за токены (503/507/509) — их
 магия чинится своими TZ, не этой шкалой.
+
+---
+
+## Native `<select>` как официальный fallback (TZ-UI-ROI-521)
+
+Три селект-примитива, не изобретать четвёртый:
+
+| Примитив | Когда | Импорт |
+|----------|-------|--------|
+| **Native `<select>`** | Короткий enum ≤~20 опций без поиска (статус, приоритет, роль) | HTML `<select class="pi-native-select">` — CSS-класс в `styles.css` |
+| **PiOverflowSelect** | Длинный/поисковый список (каталог, контрагент, >20 опций) | `shared/ui/overflow-select/pi-overflow-select.component.ts` |
+| **PiSelect** | Статический список в форме с кастомной вёрсткой опций | `shared/ui/select/select.component.ts` |
+
+**Правила:**
+- Нативный `<select>` — **официальный approved fallback**, а не «времянка».
+  PO-CANON: native select ок, пока нет поиска по 1000+.
+- Класс `.pi-native-select` (border/radius/height/color = form-control tokens)
+  визуально матчит `<select>` с `app-pi-input`.
+- **ЗАПРЕТ:** массовая миграция native→PiSelect без PO.
+- **ЗАПРЕТ:** кастомный `absolute` dropdown в feature-page «вместо select».
+- **ЗАПРЕТ:** Material `MatSelect` — не наш стек.
+
+Живой пример: `/kit/forms` (passport-комментарий в `forms.page.ts`).

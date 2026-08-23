@@ -513,6 +513,89 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(page().expandedId()).toBe('o2');
   });
 
+  it('ROI-523: dirty create form asks discard confirm on Escape; cancel keeps panel, confirm closes + restores focus', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const trigger = document.createElement('button');
+    trigger.textContent = 'trigger';
+    document.body.appendChild(trigger);
+    trigger.focus();
+
+    page().openPanel('create');
+    fixture.detectChanges();
+    flushPanelLookups(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    // Make the order form dirty through the real CVA input path.
+    const numberInput = fixture.nativeElement.querySelector(
+      '#ord-number input',
+    ) as HTMLInputElement;
+    numberInput.value = 'З-9999';
+    numberInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    // Escape on a dirty form → discard confirm via the same PiDialogService as delete.
+    page().onEscape();
+    fixture.detectChanges();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      AlertDialogComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Закрыть без сохранения?',
+          description: 'Есть несохранённые данные.',
+          confirmLabel: 'Закрыть',
+          cancelLabel: 'Остаться',
+        }),
+        width: 'sm',
+      }),
+    );
+    expect(page().panel()).toBe('create');
+    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeTruthy();
+
+    // «Остаться» keeps the panel open (no close, no navigation).
+    dialogClosed.set(false);
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(page().panel()).toBe('create');
+
+    // Confirm «Закрыть» closes the panel and return-focus goes to the trigger (WR-509).
+    dialogOpen.mockClear();
+    page().onEscape();
+    fixture.detectChanges();
+    expect(dialogOpen).toHaveBeenCalledTimes(1);
+    dialogClosed.set(true);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(page().panel()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+  });
+
+  it('ROI-523: clean create form closes on Escape without a confirm dialog', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('create');
+    fixture.detectChanges();
+    flushPanelLookups(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().onEscape();
+    fixture.detectChanges();
+
+    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(page().panel()).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="desk-flyout"]')).toBeNull();
+  });
+
   it('417: default view shows all orders when no ?status= or localStorage', async () => {
     flushBase(httpMock);
     await tickMicrotask();

@@ -273,6 +273,7 @@ SoT: [`docs/audits/2026-08-23-ui-war-room-program.md`](./audits/2026-08-23-ui-wa
 - Новый `shared/ui` primitive в той же TZ получает пример в `/kit` (после STD-506 роутинга).
 - Inline «Загрузка…» / raw error `<p class="text-destructive">` — только с явным исключением в TZ.
 - Dead primitive (0 consumers) = red flag: adopt **или** deprecate TZ, не третий путь.
+- Короткий enum ≤~20 опций без поиска → **native `<select>`** (класс `.pi-native-select` из `styles.css`). Массовая миграция native→PiSelect без PO запрещена — native = официальный approved fallback, не «времянка». Канон: `docs/paper-and-ink.md` § Native select.
 - Обход неудобного primitive молча запрещён → adoption mini-TZ в `tasks/` (не GitHub Issue).
 
 ### 3.2 Proof of adoption (обязателен для canonical UI TZ)

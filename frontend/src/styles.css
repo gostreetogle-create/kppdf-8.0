@@ -640,6 +640,51 @@
 }
 
 /* =============================================================================
+ * NATIVE <SELECT> — Paper & Ink form-control fallback (TZ-UI-ROI-521)
+ *
+ * Короткий enum / ≤~20 опций без поиска = native <select> с этим классом.
+ * Border/radius/height/color матчатся с app-pi-input (md).
+ *
+ * Когда:
+ *   - статус, приоритет, роль, вид — без поиска
+ *   - любое поле выбора в quick-create / form-dialog где не нужен search
+ *
+ * НЕ когда:
+ *   - каталог / поиск по 1000+ записей → PiOverflowSelect
+ *   - меню действий / навигация → DropdownMenu
+ *   - статический список в форме где нужна кастомизация → PiSelect
+ *
+ * ЗАПРЕТ:
+ *   - массовая миграция native→PiSelect без PO
+ *   - кастомный absolute dropdown в feature-page «вместо select»
+ *   - Material MatSelect
+ * ============================================================================= */
+.pi-native-select {
+  height: 2.5rem; /* h-10 = 40px, matches app-pi-input md */
+  padding-inline: var(--space-control-x); /* 12px */
+  background-color: var(--color-paper-raised);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: 0.375rem; /* rounded-sm */
+  outline: none;
+  transition: border-color 0.15s;
+  cursor: pointer;
+  /* appearance: auto — сохраняем нативную стрелку браузера (простота) */
+}
+
+.pi-native-select:focus-visible {
+  outline: 2px solid var(--color-gold-deep);
+  outline-offset: 2px;
+}
+
+.pi-native-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =============================================================================
  * CUSTOM SCROLLBAR (Logomock — TZ-210.B)
  *
  * Sleek 6px thin scrollbar for technical/editorial feel.
