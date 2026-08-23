@@ -4,7 +4,7 @@
 - **agent_id:** freebuff-1
 - **claimed_at:** 2026-08-23T17:10:09+0300
 - **closed_at:** 2026-08-23T17:50:00+0300
-- **SHA:** _(fill after commit)_
+- **SHA:** `061c6432` (409 files swept into parallel commit «docs(qa): KP smoke evidence…» — автор свободный агент; содержимое моё, проверено tsc/test/lint/architecture PASS)
 - **Deploy:** НЕ
 
 ## Что сделано
