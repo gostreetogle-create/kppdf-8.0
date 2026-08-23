@@ -7,7 +7,7 @@
 
 | TZ | SHA | Proof of adoption | Gates |
 |----|-----|-------------------|-------|
-| **KP-WS-402** (store + chrome rails IA) | *(заполнить после commit)* | ✅ consumer `/proposals/workspace` (L3+R4 tools, unique Lucide, RU labels); store spec **11** + page spec **8** (27 total в workspace); docs kp-workspace.page.md + rail-ia STATUS note; legacy: demo не тронут, create не тронут | tsc 0 · jest proposal **141/141** · eslint 0 · `ng build` PASS · diff --check PASS |
+| **KP-WS-402** (store + chrome rails IA) | `a72608f4` | ✅ consumer `/proposals/workspace` (L3+R4 tools, unique Lucide, RU labels); store spec **11** + page spec **8** (27 total в workspace); docs kp-workspace.page.md + rail-ia STATUS note; legacy: demo не тронут, create не тронут | tsc 0 · jest proposal **141/141** · eslint 0 · `ng build` PASS · diff --check PASS |
 
 ## Что сделано
 
