@@ -5,7 +5,18 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T14:10:00+03:00
+updated_at: 2026-08-23T15:05:00+03:00
+
+## ACTIVE — WAVE-UI-DENSITY (DEN) + KP-WS parallel
+
+**Orchestrator:** DEN foundations **501–504·510·580 DONE** (`bde452b2`, `a1a6478d`, `1ded0439`) · **511** committing · page sweeps queued
+
+**DEN STOP keys:** `proposals/workspace/**`, `proposal-create.page.ts`  
+**DEN next after foundations:** 520 catalog lists, 512 desk (after desk wave quiet)
+
+**MCP claude_code:** timeout on long prompt — work delegated to local subagents.
+
+---
 
 ## ACTIVE — WAVE-KP-SINGLE-WORKSPACE (401→409)
 

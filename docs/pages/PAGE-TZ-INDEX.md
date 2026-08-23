@@ -12,9 +12,8 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 
 | Scope | DEN TZ | Note |
 |-------|--------|------|
-| Global tokens | **501·502 DONE** · **503 in flight** · 504 READY | styles, FormField, shared/ui, button canon |
-| Desktop Import | **580 DONE** | `fd9bc8c9` |
-| App shell | **510–512 READY** | layout, page-chrome, desk (512 after desk wave) |
+| Global tokens | **501–504 DONE** | `b14dd93f` … `bde452b2` — styles, FormField, shared/ui, button canon |
+| App shell | **510 DONE** · **511 in flight** | `a1a6478d` layout; page-chrome pending commit |
 | Catalog | **520–522 READY** | materials/products/modules, party, dictionaries |
 | Forms | **530–531 READY** | FullEditor dialogs |
 | Doc-constructor | **540–541 READY** | lists + builder panes |
