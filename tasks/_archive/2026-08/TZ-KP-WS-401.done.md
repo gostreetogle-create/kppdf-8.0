@@ -7,7 +7,7 @@
 
 | TZ | SHA | Proof of adoption | Gates |
 |----|-----|-------------------|-------|
-| **KP-WS-401** (shell из demo + `/proposals/workspace`) | *(заполнить после commit)* | ✅ consumer: `/proposals/workspace` (route, adminOnly) + demo wrapper над shell; тесты shell **8/8**; docs geometry § Files + kp-workspace.page.md + PAGE-TZ-INDEX + dummy README; migration: геометрия только в shell.css (dummy = reference); legacy: `proposal-create.page.ts` не тронут | tsc 0 · jest proposal 122/122 · eslint 0 (touched) · `ng build` PASS · diff --check PASS |
+| **KP-WS-401** (shell из demo + `/proposals/workspace`) | `97780365` | ✅ consumer: `/proposals/workspace` (route, adminOnly) + demo wrapper над shell; тесты shell **8/8**; docs geometry § Files + kp-workspace.page.md + PAGE-TZ-INDEX + dummy README; migration: геометрия только в shell.css (dummy = reference); legacy: `proposal-create.page.ts` не тронут | tsc 0 · jest proposal 122/122 · eslint 0 (touched) · `ng build` PASS · diff --check PASS |
 
 ## Что сделано
 
