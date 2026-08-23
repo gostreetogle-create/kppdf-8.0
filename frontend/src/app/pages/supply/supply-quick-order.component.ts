@@ -6,6 +6,7 @@ import {
   ViewChild,
   computed,
   inject,
+  Injector,
   input,
   signal,
 } from '@angular/core';
@@ -34,6 +35,8 @@ import {
 } from '../../shared/services/supply-requests.service';
 import { PhotosService } from '../../shared/services/photos.service';
 import { formatDate } from '../../shared/util/format';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
+import { MaterialFormDialogComponent } from '../materials/material-form-dialog.component';
 import {
   MOCK_CATEGORIES,
   MOCK_COMPANIES,
@@ -1822,6 +1825,7 @@ export class SupplyQuickOrderComponent {
   private readonly supplySvc = inject(SupplyRequestsService);
   private readonly photosSvc = inject(PhotosService);
   private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private modalRef: DialogRef<unknown> | null = null;
 
@@ -1853,6 +1857,8 @@ export class SupplyQuickOrderComponent {
     this.categories().map((category) => ({ id: category.id, label: category.label })),
   );
   protected readonly materials = signal<QuickOrderMaterial[]>([...MOCK_MATERIALS]);
+  /** Live categories: picker reads ONLY this cache (API ?categoryId=), not the global bulk list. */
+  private readonly materialsByCategory = signal<Record<string, QuickOrderMaterial[]>>({});
   protected readonly suppliers = signal<QuickOrderSupplier[]>([...MOCK_SUPPLIERS]);
   protected readonly contacts = signal<QuickOrderSupplierContact[]>([...MOCK_SUPPLIER_CONTACTS]);
   protected readonly persons = signal<Person[]>([]);
@@ -2052,6 +2058,10 @@ export class SupplyQuickOrderComponent {
   }
 
   protected materialsFor(categoryId: string): QuickOrderMaterial[] {
+    if (!categoryId) return [];
+    if (OBJECT_ID_RE.test(categoryId)) {
+      return this.materialsByCategory()[categoryId] ?? [];
+    }
     return materialsForCategory(this.materials(), categoryId);
   }
 
@@ -2070,14 +2080,11 @@ export class SupplyQuickOrderComponent {
     }));
   }
 
-  /** TZ-SUPPLY-316 — hint when picker shows orphans / fallback / empty. */
   protected materialPickerPlaceholder(categoryId: string): string {
-    const options = this.materialOptions(categoryId);
-    if (options.length === 0) return '— нет материалов —';
-    const hasMatched = this.materials().some((m) => m.categoryId === categoryId);
-    const hasOrphanInView = this.materialsFor(categoryId).some((m) => !m.categoryId);
-    if (hasOrphanInView && !hasMatched) return '— все / без категории —';
-    return '— выберите материал —';
+    if (!categoryId) return '— сначала категория —';
+    return this.materialOptions(categoryId).length === 0
+      ? '— нет материалов в категории —'
+      : '— выберите материал —';
   }
 
   /** Merge live catalog rows without dropping mock rows still used in tests. */
@@ -2097,8 +2104,9 @@ export class SupplyQuickOrderComponent {
       .list({ categoryId, limit: 500 })
       .pipe(take(1))
       .subscribe((res) => {
-        if (!res.ok) return;
-        this.mergeMaterials((res.data?.items ?? []).map(mapMaterial));
+        const items = res.ok ? (res.data?.items ?? []).map(mapMaterial) : [];
+        this.materialsByCategory.update((cache) => ({ ...cache, [categoryId]: items }));
+        if (items.length > 0) this.mergeMaterials(items);
       });
   }
 
@@ -2912,7 +2920,34 @@ export class SupplyQuickOrderComponent {
 
   protected openEditMaterial(rowId: string, materialId: string | null): void {
     const material = this.materialById(materialId);
-    if (!material) return;
+    if (!material || !materialId) return;
+
+    if (OBJECT_ID_RE.test(materialId)) {
+      this.materialsSvc
+        .findById(materialId)
+        .pipe(take(1))
+        .subscribe((res) => {
+          if (!res.ok || !res.data) return;
+          const ref = this.dialog.open(MaterialFormDialogComponent, {
+            data: res.data,
+            width: 'lg',
+            parentDestroyRef: this.destroyRef,
+          }) as DialogRef<Material>;
+          onDialogCloseOnce(ref, this.injector, (saved) => {
+            const mapped = mapMaterial(saved);
+            this.mergeMaterials([mapped]);
+            this.patchRow(rowId, {
+              materialId: mapped.id,
+              unit: mapped.unit,
+              color: '',
+            });
+            const categoryId = this.rows().find((r) => r.id === rowId)?.categoryId;
+            if (categoryId) this.refreshMaterialsForCategory(categoryId);
+          });
+        });
+      return;
+    }
+
     this.closePanels();
     this.activeRowId.set(rowId);
     this.editingMaterialId.set(material.id);

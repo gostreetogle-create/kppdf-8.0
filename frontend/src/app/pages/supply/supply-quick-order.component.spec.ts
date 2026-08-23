@@ -209,7 +209,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     expect(comp.visibleRows().find((r) => r.id === rowId)?.materialId).toBeNull();
   });
 
-  it('TZ-SUPPLY-316: orphan materials appear alongside matched category materials', () => {
+  it('TZ-SUPPLY-318: orphan materials are excluded from category picker', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
@@ -236,12 +236,12 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     const options = openOverflowOptions(root, 'supply-quick-material-select');
-    expect(options).toContain('Без категории в каталоге');
+    expect(options).not.toContain('Без категории в каталоге');
     expect(options).toContain('Болт М8×40');
     expect(options).not.toContain('Подшипник 6205');
   });
 
-  it('TZ-SUPPLY-316: empty matched shows orphans; no orphans falls back to all', () => {
+  it('TZ-SUPPLY-318: mock category with no matched materials shows empty picker', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
@@ -256,16 +256,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       { id: 'mat-other', categoryId: 'cat-prochee', name: 'Чужая категория', unit: 'шт' },
       { id: 'mat-orphan', categoryId: '', name: 'Осиротевший', unit: 'шт' },
     ]);
-    expect(comp.materialOptions('cat-metizy').map((o) => o.label)).toEqual(['Осиротевший']);
-
-    comp.materials.set([
-      { id: 'mat-a', categoryId: 'cat-prochee', name: 'Материал А', unit: 'шт' },
-      { id: 'mat-b', categoryId: 'cat-rashodniki', name: 'Материал Б', unit: 'шт' },
-    ]);
-    expect(comp.materialOptions('cat-metizy').map((o) => o.label)).toEqual([
-      'Материал А',
-      'Материал Б',
-    ]);
+    expect(comp.materialOptions('cat-metizy').map((o) => o.label)).toEqual([]);
   });
 
   it('TZ-SUPPLY-311: onCategoryChange loads materials filtered by categoryId from API', () => {
@@ -301,6 +292,9 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     expect(comp.materialOptions(liveCategoryId).map((item) => item.label)).toContain(
       'Лист стальной 2 мм',
+    );
+    expect(comp.materialOptions(liveCategoryId).map((item) => item.label)).not.toContain(
+      'Замок врезной',
     );
   });
 

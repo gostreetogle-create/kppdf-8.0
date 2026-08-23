@@ -39,6 +39,7 @@ import {
   type Photo,
 } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
+import { CategoriesService, type Category } from '../../shared/services/categories.service';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
@@ -238,6 +239,23 @@ interface DimensionFormGroup extends FormGroup {
                     <option [value]="opt.value">{{ opt.label }}</option>
                   }
                 </select>
+              </app-pi-form-field>
+
+              <app-pi-form-field
+                label="Категория"
+                htmlFor="mat-category"
+                hint="Из справочника категорий (тип «материал»)."
+                class="md:col-span-8"
+              >
+                <app-pi-overflow-select
+                  [items]="categoryItems()"
+                  [value]="form.controls.categoryId.value ?? ''"
+                  (valueChange)="onCategoryChange($event)"
+                  searchable="auto"
+                  placeholder="— без категории —"
+                  ariaLabel="Категория материала"
+                  dataTest="mat-category"
+                />
               </app-pi-form-field>
 
               <!-- ─── TZ-CATALOG-301 / 316: масса в кг (≥ 0) ─── -->
@@ -554,6 +572,7 @@ interface DimensionFormGroup extends FormGroup {
 export class MaterialFormDialogComponent implements OnDestroy {
   constructor() {
     this.loadSuppliers();
+    this.loadCategories();
     this.loadKindLabels();
     this.loadUnits();
     if (this.data) {
@@ -571,6 +590,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly service = inject(MaterialsService);
   private readonly orgs = inject(OrganizationsService);
+  private readonly categoriesService = inject(CategoriesService);
   private readonly unitsService = inject(UnitsService);
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly photosService = inject(PhotosService);
@@ -591,6 +611,13 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected readonly suppliers = signal<Organization[]>([]);
   protected readonly suppliersLoading = signal<boolean>(false);
   protected readonly suppliersError = signal<string | null>(null);
+  protected readonly categories = signal<Category[]>([]);
+  protected readonly categoriesLoading = signal(false);
+  protected readonly categoriesError = signal<string | null>(null);
+  protected readonly categoryItems = computed(() => [
+    { id: '', label: '— без категории —' },
+    ...this.categories().map((c) => ({ id: c._id, label: c.name })),
+  ]);
   protected readonly supplierItems = computed(() => [
     { id: '', label: '— не указан —' },
     ...this.suppliers().map((s) => ({
@@ -639,6 +666,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
     // pasting a too-long ГОСТ number is caught at save with a red
     // border + sr-only error rather than a round-trip 400.
     materialKind: this.fb.control<string>(KIND_NULL_SENTINEL),
+    categoryId: this.fb.control<string | null>(null),
     weightKg: this.fb.control<number | null>(null, [Validators.min(0)]),
     assortment: this.fb.control<string | null>(null, [Validators.maxLength(256)]),
     standardRef: this.fb.control<string | null>(null, [Validators.maxLength(256)]),
@@ -690,6 +718,24 @@ export class MaterialFormDialogComponent implements OnDestroy {
       );
       this.onSupplierChange(org._id);
     });
+  }
+
+  private loadCategories(): void {
+    this.categoriesLoading.set(true);
+    this.categoriesService.list('material').subscribe((res) => {
+      this.categoriesLoading.set(false);
+      if (res.ok) {
+        this.categories.set(res.data ?? []);
+      } else {
+        this.categories.set([]);
+        this.categoriesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected onCategoryChange(categoryId: string): void {
+    this.form.controls.categoryId.setValue(categoryId || null);
+    this.form.controls.categoryId.markAsDirty();
   }
 
   private loadSuppliers(): void {
@@ -757,6 +803,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
         m.materialKind && (MATERIAL_KINDS as readonly string[]).includes(m.materialKind)
           ? m.materialKind
           : KIND_NULL_SENTINEL,
+      categoryId: this.refId(m.categoryId),
       weightKg: m.weightKg ?? null,
       assortment: m.assortment ?? null,
       standardRef: m.standardRef ?? null,
@@ -988,6 +1035,8 @@ export class MaterialFormDialogComponent implements OnDestroy {
       if (!Number.isNaN(parsed)) payload.pricePerUnit = parsed;
     }
     if (v.supplierId) payload.supplierId = v.supplierId;
+    const categoryId = this.refId(v.categoryId);
+    if (categoryId) payload.categoryId = categoryId;
     if (dimensions.length > 0) payload.dimensions = dimensions;
     if (photoIds.length > 0) payload.photoIds = photoIds;
     if (mainPhotoId) payload.mainPhotoId = mainPhotoId;
@@ -1027,6 +1076,7 @@ export class MaterialFormDialogComponent implements OnDestroy {
       unit: '',
       sku: null,
       materialKind: KIND_NULL_SENTINEL,
+      categoryId: null,
       weightKg: null,
       assortment: null,
       standardRef: null,
@@ -1069,5 +1119,14 @@ export class MaterialFormDialogComponent implements OnDestroy {
       });
     });
     this.newlyUploadedIds.set([]);
+  }
+
+  private refId(value: unknown): string | null {
+    if (value == null || value === '') return null;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null && '_id' in value) {
+      return this.refId((value as { _id: unknown })._id);
+    }
+    return null;
   }
 }
