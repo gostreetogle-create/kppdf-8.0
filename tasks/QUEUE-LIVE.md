@@ -1,24 +1,24 @@
 # QUEUE-LIVE — кто что берёт
 
-> Cursor обновляет. FOLLOW-QUEUE: если «Следующие» пусто — **СТОП**, не resume хвостов `_active`.
-> Обновлено: 2026-08-23 06:30
+> Обновлено: 2026-08-23 (tasks hygiene)
 
-## Занято
+## Статус
 
-Пусто. Все три слота свободны.
+| Волна | Status |
+|-------|--------|
+| UI-WR 500–510 | **DONE** |
+| ROI 520–523 | **DONE** |
+| TEST-421 | **DONE** |
+| UX-FORM 309–313 | **DONE** |
 
-## Следующие
+`tasks/` корень чистый; `_active/` пусто.
 
-1. **TZ-TEST-421** — `tasks/TZ-TEST-421-orders-page-desk423-canon.md`  
-   Промт: `tasks/PROMPT-FREEBUFF-TEST-421.md`
-2. После DONE → Cursor: **«подготовь к деплою»** (штамп READY)
-3. Потом любому ИИ: **«сделай деплой по документации»** (`deploy/synology/README.md`)
+## Следующее
 
-## Не брать (DONE, в т.ч. хвосты `_active`)
+1. Cursor: **«подготовь к деплою»** (`PROMPT-DEPLOY-READY.md`)
+2. PO: keyboard-only `docs/qa/keyboard-only-pass.md`
+3. Деплой: «сделай деплой по документации» при `DEPLOY-READY` = READY
 
-FORM-308…313, CORE-304, DESK-424, UX-345.  
-`TZ-UX-345` уже в archive; дубль `_active` снят 2026-08-23.
+## Freebuff
 
-## PO
-
-Не ищи промпты для деплоя. Подготовка → Cursor. Деплой → «по документации».
+Сейчас **нет** LIVE TZ в корне. Новое — только из `_backlog/` по решению PO.
