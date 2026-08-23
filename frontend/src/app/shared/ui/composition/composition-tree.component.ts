@@ -65,7 +65,7 @@ export type CompositionTreeEditEvent = CompositionTreeSelectEvent;
 
     <ng-template #nodeTemplate let-node let-depth="depth" let-parent="parent">
       <div
-        class="rounded-md transition-colors"
+        class="rounded-sm transition-colors"
         [class.overflow-hidden]="isExpanded(node) && node.children.length > 0"
         [class.mb-3]="isExpanded(node) && node.children.length > 0"
         [attr.data-test]="'composition-tree-node-' + node._id"

@@ -23,7 +23,7 @@ import { ChangeDetectionStrategy, Component, HostListener, input, output } from 
   template: `
     @if (open()) {
       <div
-        class="absolute left-0 top-0 z-[var(--z-dropdown)] w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
+        class="absolute left-0 top-0 z-[var(--z-dropdown)] w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4"
         role="region"
         [attr.aria-label]="ariaLabel()"
         data-test="filters-rail-panel"

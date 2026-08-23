@@ -46,7 +46,7 @@ import type { DialogRef } from './pi-dialog.service';
           @if (showClose()) {
             <button
               type="button"
-              class="inline-flex items-center justify-center w-8 h-8 rounded-lg hairline bg-paper hover:bg-paper-2 pi-focus-ring shrink-0 ml-2"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-sm hairline bg-paper hover:bg-paper-2 pi-focus-ring shrink-0 ml-2"
               (click)="onUserClose()"
               aria-label="Закрыть"
             >
@@ -111,7 +111,7 @@ export class PiDialogComponent {
   readonly panelClass = computed<string>(() => {
     // The shell owns the viewport boundary. Header/footer are non-shrinking;
     // the body receives the remaining height and becomes the only scroll region.
-    const base = 'bg-paper hairline rounded-lg overflow-hidden flex flex-col max-h-[90vh] min-h-0';
+    const base = 'bg-paper hairline rounded-sm overflow-hidden flex flex-col max-h-[90vh] min-h-0';
     return `${base} ${this.dimensionClass()}`;
   });
 

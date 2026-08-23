@@ -81,6 +81,16 @@ import { RouterLink } from '@angular/router';
       </div>
 
       <div class="mt-8 hairline-t pt-6">
+        <h3 class="eyebrow mb-3">Density migration (TZ-UI-DEN-503)</h3>
+        <p class="text-xs text-muted-foreground max-w-prose">
+          Anti-patterns fixed in DEN-503: card shells, filter panel, notification dropdown, and
+          overflow-select popover no longer use
+          <code class="font-mono text-[11px]">shadow-*</code> or
+          <code class="font-mono text-[11px]">rounded-md+</code> — hairline + rounded-sm only.
+        </p>
+      </div>
+
+      <div class="mt-8 hairline-t pt-6">
         <h3 class="eyebrow mb-3">Неполные секции (leftover)</h3>
         <ul class="space-y-1 text-sm text-muted-foreground">
           <li>

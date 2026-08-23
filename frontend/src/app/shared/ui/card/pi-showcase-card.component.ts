@@ -16,8 +16,8 @@ import { LucideAngularModule } from 'lucide-angular';
  *   [sc-actions] / [sc-actions-md] / [sc-actions-sm] → кнопки в footer
  *   [sc-related] → связанные сущности (только lg)
  *
- * Дизайн-токены: hairline border (var(--color-rule)), rounded-md,
- * Paper & Ink палитра, executive-shadow при hover (если interactive).
+ * Дизайн-токены: hairline border (var(--color-rule)), rounded-sm,
+ * Paper & Ink палитра, no shadow on card shells (TZ-UI-DEN-503).
  *
  * TZ-PRODUCTS-305 — самостоятельный UI Kit; переиспользуется в TZ-PRODUCTS-302/303/304.
  */
@@ -185,21 +185,18 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       article {
         background: var(--color-paper, #fafafa);
         border: 1px solid var(--color-rule, #e7e3da);
-        border-radius: var(--radius-md, 8px);
+        border-radius: var(--radius-sm, 2px);
         position: relative;
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.02);
       }
       article.is-hoverable {
         cursor: pointer;
         transition:
           transform 200ms cubic-bezier(0.4, 0, 0.2, 1),
-          box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
           border-color 200ms ease,
           background-color 200ms ease;
       }
       article.is-hoverable:hover {
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px -8px rgba(15, 15, 15, 0.12);
       }
 
       .sc-eyebrow {
@@ -292,7 +289,6 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
           var(--color-rule, #e7e3da) 85%,
           var(--color-ink, #1a1815)
         );
-        box-shadow: inset 0 1px 0 color-mix(in oklab, var(--color-paper, #fafafa) 55%, transparent);
       }
       article.size-md.is-hoverable:hover {
         background: var(--color-paper, #fafafa);
@@ -301,7 +297,6 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
           var(--color-rule, #e7e3da) 60%,
           var(--color-ink, #1a1815)
         );
-        box-shadow: 0 8px 20px -12px color-mix(in oklab, var(--color-ink, #1a1815) 28%, transparent);
       }
       .sc-head-md {
         display: flex;

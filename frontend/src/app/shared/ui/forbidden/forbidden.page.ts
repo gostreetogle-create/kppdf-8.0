@@ -45,7 +45,7 @@ import { AuthService } from '../../../core/auth.service';
       <div class="flex gap-3 pt-2">
         <a
           [routerLink]="['/']"
-          class="inline-flex items-center rounded-md border border-[var(--pi-border)] bg-[var(--pi-surface)] px-3 py-2 text-sm font-medium hover:bg-[var(--pi-surface-hover)]"
+          class="inline-flex items-center rounded-sm border border-[var(--pi-border)] bg-[var(--pi-surface)] px-3 py-2 text-sm font-medium hover:bg-[var(--pi-surface-hover)]"
         >
           {{ copy().ctaLabel }}
         </a>
