@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-23 (UI War Room WR-500…512; **WAVE-UI-DENSITY DEN-501…599 READY**)
+**Updated:** 2026-08-23 (UI War Room WR-500…512; **WAVE-UI-DENSITY DEN closeout DONE** — 552 WAIT 409, 512 deferred)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -13,15 +13,17 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Scope | DEN TZ | Note |
 |-------|--------|------|
 | Global tokens | **501–504 DONE** | `b14dd93f` … `bde452b2` — styles, FormField, shared/ui, button canon |
-| App shell | **510 DONE** · **511 in flight** | `a1a6478d` layout; page-chrome pending commit |
-| Catalog | **520–522 READY** | materials/products/modules, party, dictionaries |
-| Forms | **530–531 READY** | FullEditor dialogs |
-| Doc-constructor | **540–541 READY** | lists + builder panes |
-| Deals | **550–552 READY** | orders/supply/shipping, proposals list; **552 WAIT 409** |
-| Production | **560–561 READY** | cockpit chrome only, work-types, people |
-| Auth/Admin | **570–571 READY** | login, admin |
-| Desktop Import | **580 READY** | electron tab |
-| Closeout | **590–599 READY** | RU copy + guards + PO sign-off |
+| App shell | **510·511 DONE** | `a1a6478d`, `4c4a79d4` |
+| Desktop Import | **580 DONE** | `1ded0439` |
+| Catalog | **520–522 DONE** | `cfb30fe9`, `2d3b21d8`, `a21356e8` — pi-table `[compact]` |
+| Forms | **530·531 DONE** | `21533019`, `cdcd8866` |
+| Doc-constructor | **540–541 DONE** | bundled `cfb30fe9` / `a21356e8` |
+| Deals | **550·551 DONE** · **552 WAIT 409** | `d5454914`, `6b1e554f` |
+| Production | **560·561 DONE** | `a7c50d2d`, `5cb571c7` |
+| Auth/Admin | **570·571 DONE** | `d306586c`, `21533019` |
+| Closeout | **590 DONE** · **599 DONE** | `b1b6442e` RU humanizer; guards in `UI-DENSITY-GUARDS.md` |
+| `/desk` density | **512 DONE** | `d25cb1f4` |
+| `/proposals/workspace` | **552 WAIT 409** | blocked until `TZ-KP-WS-409.done` |
 
 ## Overview
 
