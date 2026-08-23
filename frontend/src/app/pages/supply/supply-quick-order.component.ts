@@ -1263,7 +1263,7 @@ class SupplyQuickOrderDialogComponent {
       .supply-quick-order__priority--urgent {
         padding: 0.05rem 0.5rem;
         border: 1px solid var(--color-destructive);
-        border-radius: 999px;
+        border-radius: 2px;
         background: var(--color-destructive-soft, #fdeaea);
         color: var(--color-destructive);
       }
@@ -1296,18 +1296,14 @@ class SupplyQuickOrderDialogComponent {
         width: 100%;
         min-width: 0;
         border: 1px solid var(--color-rule);
-        border-radius: 4px;
+        border-radius: 2px;
         background: var(--color-paper);
         overflow: hidden;
       }
-      .supply-quick-order__strip--what {
-        background: color-mix(in oklch, var(--color-sunrise-warm) 9%, var(--color-paper));
-      }
-      .supply-quick-order__strip--where {
-        background: color-mix(in oklch, var(--color-info) 8%, var(--color-paper));
-      }
+      .supply-quick-order__strip--what,
+      .supply-quick-order__strip--where,
       .supply-quick-order__strip--details {
-        background: color-mix(in oklch, var(--color-success) 8%, var(--color-paper));
+        background: var(--color-paper);
       }
       .supply-quick-order__strip--more {
         background: var(--color-paper-2);
@@ -1318,7 +1314,7 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__strip-label {
         display: block;
-        padding: 0.75rem 1rem;
+        padding: 0.5rem 0.75rem;
         border-bottom: 1px solid var(--color-rule);
         background: var(--color-paper-2);
         color: var(--color-ink);
@@ -1333,15 +1329,14 @@ class SupplyQuickOrderDialogComponent {
         flex: 1;
         flex-wrap: wrap;
         align-items: stretch;
-        gap: 1rem;
+        gap: 0.5rem;
         min-width: 0;
-        /* DESK-431: ≥16px — текст не прилипает к hairline. */
-        padding: 1rem;
+        padding: 0.5rem 0.75rem;
       }
       .supply-quick-order__subgroup {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 0.5rem;
         min-width: 0;
       }
       .supply-quick-order__subgroup-label {
@@ -1429,16 +1424,14 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__strip .pi-input {
         width: 100%;
-        /* DESK-431: единая touch-высота ~40px (--touch-comfortable). */
-        height: var(--touch-comfortable, 2.5rem);
-        min-height: var(--touch-comfortable, 2.5rem);
+        height: 1.875rem;
+        min-height: 1.875rem;
         min-width: 0;
-        padding-inline: var(--space-control-x, 0.75rem);
-        border-radius: 4px;
-        font-size: var(--text-label);
+        padding-inline: 0.5rem;
+        border-radius: 2px;
+        font-size: 0.8125rem;
       }
-      /* DESK-431: overflow-select host выравнен с pi-input по высоте.
-         Его триггер сам использует .pi-input → получает ту же min-height. */
+      /* overflow-select host aligned with compact pi-input height. */
       .supply-quick-order__strip app-pi-overflow-select {
         display: block;
         width: 100%;
@@ -1485,8 +1478,8 @@ class SupplyQuickOrderDialogComponent {
       .supply-quick-order__readonly {
         display: flex;
         align-items: center;
-        height: 2.25rem;
-        font-size: var(--text-label);
+        height: 1.875rem;
+        font-size: 0.8125rem;
       }
       .supply-quick-order__readonly--truncate {
         overflow: hidden;
@@ -1501,10 +1494,10 @@ class SupplyQuickOrderDialogComponent {
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        width: 2.4rem;
-        height: 2.25rem;
+        width: 1.875rem;
+        height: 1.875rem;
         border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
-        border-radius: 4px;
+        border-radius: 2px;
         background: var(--color-sunrise-soft);
         color: var(--color-success);
         font: inherit;
@@ -1539,10 +1532,10 @@ class SupplyQuickOrderDialogComponent {
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 1.875rem;
+        height: 1.875rem;
         border: 1px solid var(--color-rule-strong);
-        border-radius: 4px;
+        border-radius: 2px;
         background: var(--color-paper-raised);
         color: var(--color-muted-foreground);
         font: inherit;
@@ -1616,17 +1609,17 @@ class SupplyQuickOrderDialogComponent {
         flex-wrap: wrap;
         align-items: center;
         gap: 0.25rem;
-        min-height: 2.25rem;
+        min-height: 1.875rem;
       }
       .supply-quick-order__photo-thumb {
         position: relative;
         display: inline-flex;
         align-items: center;
         gap: 0.2rem;
-        height: 2.25rem;
+        height: 1.875rem;
         padding: 0.15rem 0.4rem;
         border: 1px solid var(--color-rule);
-        border-radius: 4px;
+        border-radius: 2px;
         background: var(--color-paper-raised);
         color: var(--color-ink);
         font: inherit;
@@ -1680,10 +1673,10 @@ class SupplyQuickOrderDialogComponent {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 2.25rem;
-        height: 2.25rem;
+        width: 1.875rem;
+        height: 1.875rem;
         border: 1px solid var(--color-rule-strong);
-        border-radius: 4px;
+        border-radius: 2px;
         background: var(--color-paper-raised);
         color: var(--color-muted-foreground);
         font: inherit;
@@ -1705,8 +1698,7 @@ class SupplyQuickOrderDialogComponent {
         flex-wrap: wrap;
         align-items: flex-end;
         gap: 0.4rem 0.5rem;
-        /* DESK-431: ≥16px — panel-блоки (color/category/material/supplier). */
-        padding: 1rem;
+        padding: 0.5rem 0.75rem;
         border: 1px dashed var(--color-rule);
         border-radius: 2px;
         background: var(--color-paper-raised);
