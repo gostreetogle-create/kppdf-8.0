@@ -38,6 +38,7 @@
   - **403:** composition-tree + lazy supply живут в самом tray (self-contained); desk раскрывает живой BOM без маршрута `/orders/:id`, карандаш = `open-catalog-composition-edit`.
   - **423:** операторское место: «Добавить изделие» → `panel=bom` + `OrderFormPanel variant=items` (не `edit`); hint CTA только по клику; правые CTA — кнопки + disclosure; desk PATCH `draft→confirmed`; спека `docs/superpowers/specs/2026-08-22-desk-order-tray-operator.md`.
 - **L flyout** (create/filter/summary/notebook) · **R flyout** (edit/client/**bom=позиции**/docs/supply).
+- **509:** flyout = workspace sheet (НЕ modal center): CDK focus trap на `.manager-desk__flyout`, return-focus на trigger при закрытии (любым путём), body scroll-lock на время открытия, `z-index: var(--z-sheet)` (backdrop — на шаг ниже), `aria-labelledby` на видимый h2. Миграция на `PiSheetService` — successor (широкие create/edit/bom не покрываются size-шкалой).
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
 - **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события.
   - **403 / 423:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → кнопка «Добавить изделие» (`panel=bom`, не edit); «Создать документ» reuse hub-хендлера.

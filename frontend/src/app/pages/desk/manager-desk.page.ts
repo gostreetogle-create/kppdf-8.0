@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   HostListener,
   Injector,
   computed,
@@ -10,6 +11,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { httpResource } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -373,14 +375,14 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           data-test="desk-flyout"
           [attr.data-panel]="panel()"
           [attr.data-side]="panelSide()"
-          [attr.aria-label]="panelTitle()"
+          [attr.aria-labelledby]="'desk-flyout-title-' + panel()"
           aria-modal="true"
           role="dialog"
         >
           <div class="manager-desk__flyout-heading">
             <div>
               <p class="manager-desk__eyebrow">Панель стола</p>
-              <h2>{{ panelTitle() }}</h2>
+              <h2 [id]="'desk-flyout-title-' + panel()">{{ panelTitle() }}</h2>
             </div>
             <button
               type="button"
@@ -784,7 +786,8 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       .manager-desk__backdrop {
         position: fixed;
         inset: 0 0 0 3.5rem;
-        z-index: 40;
+        /* TZ-UI-WR-509: one step below the flyout on the WR-501 --z-* scale. */
+        z-index: calc(var(--z-sheet) - 10);
         border: 0;
         padding: 0;
         background: oklch(0.22 0.02 260 / 0.18);
@@ -794,7 +797,8 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         position: fixed;
         top: 3.5rem;
         bottom: 0;
-        z-index: 50;
+        /* TZ-UI-WR-509: workspace side panel = sheet level (WR-501 --z-* scale). */
+        z-index: var(--z-sheet);
         display: flex;
         width: min(25rem, calc(100vw - 4.5rem));
         flex-direction: column;
@@ -927,6 +931,13 @@ export class ManagerDeskPage {
   protected readonly expandedId = signal<string | null>(null);
   protected readonly panel = signal<ManagerDeskPanel | null>(null);
   protected readonly view = signal<DeskView>('desk');
+
+  /** TZ-UI-WR-509: flyout a11y shell (path B — hardened local, не PiSheet). */
+  private readonly focusTrapFactory = inject(ConfigurableFocusTrapFactory);
+  private readonly hostEl = inject(ElementRef<HTMLElement>);
+  private activeFocusTrap: ConfigurableFocusTrap | null = null;
+  private previousActiveElement: HTMLElement | null = null;
+  private previousBodyOverflow = '';
 
   /** 408: блокнот — заметки к раскрытому заказу (anchor order/line). */
   protected readonly notes = signal<DeskNote[]>([]);
@@ -1113,6 +1124,48 @@ export class ManagerDeskPage {
         untracked(() => this.loadNotes(order._id));
       }
     });
+
+    // TZ-UI-WR-509: flyout a11y contract — CDK focus trap + body scroll lock
+    // while a panel is open; teardown + return-focus on close (any path:
+    // close button, backdrop, Esc, onOrderSaved, query-param reconcile).
+    effect(() => {
+      if (this.panel()) {
+        queueMicrotask(() => {
+          if (!this.panel()) return; // closed before the microtask ran
+          const el = this.hostEl.nativeElement.querySelector(
+            '.manager-desk__flyout',
+          ) as HTMLElement | null;
+          if (el && !this.activeFocusTrap) {
+            this.activeFocusTrap = this.focusTrapFactory.create(el);
+            this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
+          }
+        });
+        this.lockBodyScroll(true);
+      } else {
+        this.activeFocusTrap?.destroy();
+        this.activeFocusTrap = null;
+        this.lockBodyScroll(false);
+        const prev = this.previousActiveElement;
+        this.previousActiveElement = null;
+        if (prev && prev.isConnected) {
+          prev.focus({ preventScroll: true });
+        }
+      }
+    });
+  }
+
+  /** TZ-UI-WR-509: page scroll lock while the flyout is open (like CDK block()). */
+  private lockBodyScroll(locked: boolean): void {
+    const body = document.body;
+    if (locked) {
+      if (this.previousBodyOverflow === '') {
+        this.previousBodyOverflow = body.style.overflow;
+        body.style.overflow = 'hidden';
+      }
+    } else if (this.previousBodyOverflow !== '') {
+      body.style.overflow = this.previousBodyOverflow;
+      this.previousBodyOverflow = '';
+    }
   }
 
   // Page-owned registry cleanup for app chrome rails.
@@ -1363,6 +1416,9 @@ export class ManagerDeskPage {
   /** Shared handler for left-rail tools and any future empty-state CTA. */
   protected openPanel(panel: ManagerDeskPanel): void {
     if (!this.canOpenPanel(panel)) return;
+    // TZ-UI-WR-509: remember the trigger so close() can return focus to it.
+    this.previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     this.panel.set(panel);
     this.navigateQuery(this.expandedId(), panel);
   }

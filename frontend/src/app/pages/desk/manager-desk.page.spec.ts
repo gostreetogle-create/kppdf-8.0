@@ -1060,4 +1060,59 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     const numbers = [...rows].map((r) => r.textContent!.match(/З-\d+/)![0]);
     expect(numbers).toEqual(['З-1001', 'З-1004', 'З-1002']);
   });
+
+  it('509: flyout is labelled by its visible heading (aria-labelledby, not only aria-label)', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('filter');
+    fixture.detectChanges();
+
+    const flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    expect(flyout).toBeTruthy();
+    expect(flyout!.getAttribute('aria-label')).toBeNull();
+    const labelledby = flyout!.getAttribute('aria-labelledby');
+    expect(labelledby).toBeTruthy();
+    const h2 = flyout!.querySelector(`#${labelledby}`);
+    expect(h2?.tagName).toBe('H2');
+    expect(flyout!.getAttribute('role')).toBe('dialog');
+    expect(flyout!.getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('509: flyout traps focus inside and returns it to the trigger on close', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Open panel';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    page().openPanel('filter');
+    fixture.detectChanges();
+    await tickMicrotask(); // effect → queueMicrotask → focus trap creation
+    fixture.detectChanges();
+
+    const flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]') as HTMLElement;
+    expect(flyout).toBeTruthy();
+    // CDK focus trap engaged on the flyout shell (anchors are created in the
+    // trap constructor; before WR-509 the flyout had no trap at all).
+    expect(document.querySelector('.cdk-focus-trap-anchor')).toBeTruthy();
+
+    // Simulate the trap: focus a control inside the flyout.
+    const inside = document.createElement('button');
+    inside.textContent = 'inside';
+    flyout.appendChild(inside);
+    inside.focus();
+    expect(document.activeElement).toBe(inside);
+
+    page().closePanel();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+  });
 });
