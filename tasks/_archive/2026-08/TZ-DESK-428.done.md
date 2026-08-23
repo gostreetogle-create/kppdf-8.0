@@ -53,4 +53,4 @@ pre-push hook: PASS
 
 ## SHA
 
-- Код: `TBD` (заполняется после push)
+- Код: `f5ea82f0` (коммит TZ-DESK-428, запушен в origin/main)
