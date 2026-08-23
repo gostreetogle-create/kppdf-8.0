@@ -102,7 +102,9 @@ function accessorFor(key: Exclude<SortKey, null>): (row: WorkType) => unknown {
           <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
         </app-pi-button>
         <span class="flex-1"></span>
-        <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
+        <span class="text-[11px] text-muted-foreground"
+          >Показано {{ total() }} {{ totalLabel(total()) }}</span
+        >
       </div>
 
       @if (error()) {
@@ -225,9 +227,9 @@ export class WorkTypesPage implements OnInit {
   );
 
   protected readonly cols: ColumnDef<WorkType>[] = [
-    { key: 'name', label: 'Название', sortable: true, sticky: 'left' },
-    { key: 'section', label: 'Секция', sortable: true, cellClass: 'empty-cell' },
-    { key: 'department', label: 'Отдел', sortable: true, cellClass: 'empty-cell' },
+    { key: 'name', label: 'Название', sortable: true, sticky: 'left', cellClass: 'text-xs' },
+    { key: 'section', label: 'Секция', sortable: true, cellClass: 'empty-cell text-xs' },
+    { key: 'department', label: 'Отдел', sortable: true, cellClass: 'empty-cell text-xs' },
     {
       key: 'hourlyRate',
       label: '₽/час',
@@ -242,7 +244,7 @@ export class WorkTypesPage implements OnInit {
       align: 'right',
       cellClass: 'empty-cell font-mono text-xs',
     },
-    { key: 'isActive', label: 'Активен', cellClass: 'text-center' },
+    { key: 'isActive', label: 'Активен', cellClass: 'text-center text-xs' },
   ];
 
   @ViewChild('rowActionsTpl', { static: true })
