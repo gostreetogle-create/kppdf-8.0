@@ -54,6 +54,15 @@ class PathLabelHostComponent {
 @Component({
   standalone: true,
   imports: [PiGroupWorkspaceComponent],
+  template: ` <app-pi-group-workspace [chips]="chips" activeId="first" /> `,
+})
+class EmptyChipsHostComponent {
+  readonly chips: readonly { id: string; label: string; route: string }[] = [];
+}
+
+@Component({
+  standalone: true,
+  imports: [PiGroupWorkspaceComponent],
   template: ` <app-pi-group-workspace [chips]="chips" activeId="from-data" /> `,
 })
 class QueryParamsHostComponent {
@@ -91,6 +100,7 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
         PathLabelHostComponent,
         QueryParamsHostComponent,
         AclHostComponent,
+        EmptyChipsHostComponent,
       ],
       providers: [
         provideRouter([]),
@@ -155,6 +165,16 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
     expect(root.querySelector('[data-test="tools-slot"]')).toBeTruthy();
     expect(root.querySelector('[data-test="create-category-button"]')).toBeTruthy();
     expect(root.querySelector('[data-test="workspace-body"]')).toBeTruthy();
+  });
+
+  it('does not render the chips row at all when chips is empty (DESK-429 ghost row)', () => {
+    const fixture = TestBed.createComponent(EmptyChipsHostComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    expect(root.querySelector('[data-test="group-chips"]')).toBeFalsy();
+    expect(root.querySelector('.group-chrome')).toBeTruthy();
+    // tools slot still rendered when projected
+    expect(root.querySelector('[data-test="group-tools"]')).toBeTruthy();
   });
 
   it('hides empty tools strip so body sits under chips', () => {

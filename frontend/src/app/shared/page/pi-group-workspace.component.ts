@@ -20,7 +20,8 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
  *
  * Chrome (sticky under app header):
  *   1) Optional TOC row — dictionary groups (Классификация / Измерения / …)
- *   2) Section chips — siblings inside the active group
+ *   2) Section chips — siblings inside the active group (**hidden when empty** —
+ *      DESK-429: no ghost gold strip on pages like /supply passing [])
  *   3) Tools slot — search / filters / CTA (**hidden when empty** — no ghost strip)
  *   4) Body — table / tree / studio
  *
@@ -63,31 +64,33 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
         </nav>
       }
 
-      <div
-        class="group-chips flex items-center gap-1 flex-wrap
-               pt-0.5 pb-1 min-w-0 hairline-b"
-        [class.pt-0]="visibleToc().length === 0"
-        data-test="group-chips"
-      >
-        @for (chip of visibleChips(); track chip.id) {
-          <a
-            [routerLink]="chip.route"
-            [queryParams]="chip.queryParams"
-            class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
-                   text-xs leading-5 rounded-sm transition-colors
-                   pi-focus-ring cursor-pointer no-underline"
-            [class.bg-sunrise-warm]="activeId() === chip.id"
-            [class.text-on-gold]="activeId() === chip.id"
-            [class.text-ink]="activeId() !== chip.id"
-            [class.hover:bg-paper-2]="activeId() !== chip.id"
-            [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"
-            [attr.data-test]="dataTestPrefix() ? dataTestPrefix() + '-' + chip.id : null"
-            (click)="chipClick.emit(chip.id)"
-          >
-            {{ chip.label }}
-          </a>
-        }
-      </div>
+      @if (visibleChips().length > 0) {
+        <div
+          class="group-chips flex items-center gap-1 flex-wrap
+                 pt-0.5 pb-1 min-w-0 hairline-b"
+          [class.pt-0]="visibleToc().length === 0"
+          data-test="group-chips"
+        >
+          @for (chip of visibleChips(); track chip.id) {
+            <a
+              [routerLink]="chip.route"
+              [queryParams]="chip.queryParams"
+              class="group-chip inline-flex items-center gap-1 px-2.5 py-0.5
+                     text-xs leading-5 rounded-sm transition-colors
+                     pi-focus-ring cursor-pointer no-underline"
+              [class.bg-sunrise-warm]="activeId() === chip.id"
+              [class.text-on-gold]="activeId() === chip.id"
+              [class.text-ink]="activeId() !== chip.id"
+              [class.hover:bg-paper-2]="activeId() !== chip.id"
+              [attr.aria-current]="activeId() === chip.id ? 'page' : undefined"
+              [attr.data-test]="dataTestPrefix() ? dataTestPrefix() + '-' + chip.id : null"
+              (click)="chipClick.emit(chip.id)"
+            >
+              {{ chip.label }}
+            </a>
+          }
+        </div>
+      }
 
       <div
         class="group-tools flex items-center gap-form-field flex-wrap py-2 min-w-0"
