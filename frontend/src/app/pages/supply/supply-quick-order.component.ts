@@ -328,13 +328,8 @@ class SupplyQuickOrderDialogComponent {
                             [items]="materialOptions(row.categoryId, row.materialId)"
                             [value]="row.materialId ?? ''"
                             (valueChange)="onMaterialChange(row.id, $event)"
-                            [disabled]="!row.categoryId"
                             searchable="auto"
-                            [placeholder]="
-                              row.categoryId
-                                ? materialPickerPlaceholder(row.categoryId)
-                                : '— сначала категория —'
-                            "
+                            [placeholder]="materialPickerPlaceholder(row.categoryId)"
                             ariaLabel="Материал"
                             dataTest="supply-quick-material-select"
                           />
@@ -343,8 +338,7 @@ class SupplyQuickOrderDialogComponent {
                           type="button"
                           class="supply-quick-order__add-btn"
                           (click)="openNewMaterial(row.id, row.categoryId)"
-                          [disabled]="!row.categoryId"
-                          [title]="row.categoryId ? 'Новый материал' : '— сначала категория —'"
+                          title="Новый материал"
                           aria-label="Новый материал"
                           data-test="supply-quick-material-add"
                         >
@@ -482,9 +476,8 @@ class SupplyQuickOrderDialogComponent {
                               [items]="supplierOptions(row.categoryId)"
                               [value]="row.supplierId ?? ''"
                               (valueChange)="onSupplierChange(row.id, $event)"
-                              [disabled]="!row.categoryId"
                               searchable="auto"
-                              [placeholder]="row.categoryId ? '—' : '— сначала категория —'"
+                              placeholder="—"
                               ariaLabel="Поставщик"
                               dataTest="supply-quick-supplier-select"
                             />
@@ -493,8 +486,7 @@ class SupplyQuickOrderDialogComponent {
                             type="button"
                             class="supply-quick-order__add-btn"
                             (click)="openNewSupplier(row.id)"
-                            [disabled]="!row.categoryId"
-                            [title]="row.categoryId ? 'Новый поставщик' : '— сначала категория —'"
+                            title="Новый поставщик"
                             aria-label="Новый поставщик"
                             data-test="supply-quick-supplier-add"
                           >
@@ -1853,9 +1845,10 @@ export class SupplyQuickOrderComponent {
 
   protected readonly rows = signal<SupplyQuickOrderRow[]>(createQuickOrderSeedRows());
   protected readonly categories = signal<QuickOrderCategory[]>([...MOCK_CATEGORIES]);
-  protected readonly categoryOptions = computed(() =>
-    this.categories().map((category) => ({ id: category.id, label: category.label })),
-  );
+  protected readonly categoryOptions = computed(() => [
+    { id: '', label: '— все материалы —' },
+    ...this.categories().map((category) => ({ id: category.id, label: category.label })),
+  ]);
   protected readonly materials = signal<QuickOrderMaterial[]>([...MOCK_MATERIALS]);
   /** Live categories: picker reads ONLY this cache (API ?categoryId=), not the global bulk list. */
   private readonly materialsByCategory = signal<Record<string, QuickOrderMaterial[]>>({});
@@ -2058,7 +2051,8 @@ export class SupplyQuickOrderComponent {
   }
 
   protected materialsFor(categoryId: string): QuickOrderMaterial[] {
-    if (!categoryId) return [];
+    // Empty category = full catalog (materials in DB often have no categoryId yet).
+    if (!categoryId) return this.materials();
     if (OBJECT_ID_RE.test(categoryId)) {
       return this.materialsByCategory()[categoryId] ?? [];
     }
@@ -2081,9 +2075,9 @@ export class SupplyQuickOrderComponent {
   }
 
   protected materialPickerPlaceholder(categoryId: string): string {
-    if (!categoryId) return '— сначала категория —';
+    if (!categoryId) return '— все материалы —';
     return this.materialOptions(categoryId).length === 0
-      ? '— нет материалов в категории —'
+      ? '— в категории пусто (✎ назначьте категорию) —'
       : '— выберите материал —';
   }
 
@@ -2142,6 +2136,7 @@ export class SupplyQuickOrderComponent {
   }
 
   protected suppliersFor(categoryId: string): QuickOrderSupplier[] {
+    if (!categoryId) return this.suppliers();
     return suppliersForCategory(this.suppliers(), categoryId);
   }
 
@@ -2457,7 +2452,8 @@ export class SupplyQuickOrderComponent {
 
   protected onCreate(): void {
     const row = createEmptyQuickOrderRow(this.prefillOrderId());
-    row.categoryId = this.categories()[0]?.id ?? row.categoryId;
+    // Empty category → material picker shows full catalog (SUPPLY-319).
+    row.categoryId = '';
     this.rows.update((rows) => [row, ...rows]);
     this.expandedId.set(row.id);
     this.moreExpanded.set(false);
@@ -2789,7 +2785,7 @@ export class SupplyQuickOrderComponent {
   private maybeAutoExpandWhere(rowId: string): void {
     if (this.expandedId() !== rowId) return;
     const row = this.rows().find((r) => r.id === rowId);
-    if (row?.categoryId && row.materialId) {
+    if (row?.materialId) {
       this.whereExpanded.set(true);
     }
   }

@@ -447,6 +447,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
+    // SUPPLY-319: empty category = all materials/suppliers; pickers stay enabled.
     expect(comp.visibleRows().find((r) => r.id === 'qo-1')?.supplierId).toBeNull();
     expect(
       (
@@ -454,10 +455,42 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
           '[data-test="supply-quick-supplier-select"] button[data-test="pi-overflow-select-trigger"]',
         ) as HTMLButtonElement
       ).disabled,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       (root.querySelector('[data-test="supply-quick-supplier-add"]') as HTMLButtonElement).disabled,
-    ).toBe(true);
+    ).toBe(false);
+    const allSuppliers = openOverflowOptions(root, 'supply-quick-supplier-select');
+    expect(allSuppliers).toContain('Кубаньподшипник');
+    expect(allSuppliers).toContain('profrezi.ru');
+  });
+
+  it('TZ-SUPPLY-319: empty category shows all materials; clear via «— все материалы —»', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      toggleExpand: (id: string) => void;
+      onCategoryChange: (rowId: string, categoryId: string) => void;
+      materialOptions: (categoryId: string) => { id: string; label: string }[];
+      categoryOptions: () => { id: string; label: string }[];
+      visibleRows: () => { id: string; categoryId: string }[];
+    };
+
+    expect(comp.categoryOptions().some((o) => o.id === '' && o.label.includes('все'))).toBe(true);
+
+    const allLabels = comp.materialOptions('').map((o) => o.label);
+    expect(allLabels).toContain('Подшипник 6205');
+    expect(allLabels).toContain('Болт М8×40');
+    expect(allLabels).toContain('Фреза D6 твердосплавная');
+
+    comp.toggleExpand(comp.visibleRows()[0].id);
+    comp.onCategoryChange(comp.visibleRows()[0].id, '');
+    fixture.detectChanges();
+    expect(comp.visibleRows()[0].categoryId).toBe('');
+    const root = fixture.nativeElement as HTMLElement;
+    const options = openOverflowOptions(root, 'supply-quick-material-select');
+    expect(options.length).toBeGreaterThan(5);
+    expect(options).toContain('Подшипник 6205');
   });
 
   it('TZ-SUPPLY-308: manager select and + stay disabled until a supplier is chosen', async () => {
