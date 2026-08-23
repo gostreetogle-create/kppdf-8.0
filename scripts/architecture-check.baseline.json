@@ -1,16 +1,22 @@
 {
-  "generatedAt": "2026-08-23T14:17:08.214Z",
-  "fileCount": 992,
+  "generatedAt": "2026-08-23T20:18:25.487Z",
+  "fileCount": 999,
   "keys": [
+    "frontend/src/app/pages/commercial/proposals/proposal-create-inspector.component.ts:17:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/proposal-create-recipient.component.ts:14:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/proposal-form-dialog.component.ts:42:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/proposal-form-dialog.component.ts:43:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:23:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:24:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/proposal-product-rail.component.ts:25:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-ai-draft.component.ts:10:fe-page-cross-component",
-    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:46:fe-page-cross-component",
-    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:47:fe-page-cross-component",
-    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:48:fe-page-cross-component",
-    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:49:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:55:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:56:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:57:fe-page-cross-component",
+    "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:58:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-text-block-dialog.component.ts:4:fe-page-cross-component",
-    "frontend/src/app/pages/desk/manager-desk.page.ts:50:fe-page-cross-component"
+    "frontend/src/app/pages/desk/manager-desk.page.ts:50:fe-page-cross-component",
+    "frontend/src/app/pages/materials/material-form-dialog.component.ts:51:fe-page-cross-component",
+    "frontend/src/app/pages/products/product-form-dialog.component.ts:52:fe-page-cross-component"
   ]
 }
