@@ -18,11 +18,8 @@ import {
   FileText,
   List,
   LucideAngularModule,
-  Maximize2,
   Package,
   Printer,
-  RectangleHorizontal,
-  RectangleVertical,
   ScrollText,
   Settings,
   User,
@@ -32,9 +29,13 @@ import type { PiChromeToolItem } from '../../../../shared/chrome/pi-chrome-tools
 import type { GroupChip } from '../../../../shared/page/pi-group-workspace.component';
 import { PiGroupWorkspaceComponent } from '../../../../shared/page/pi-group-workspace.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../../deals-group-chips';
+import {
+  ProposalWorkspaceShellComponent,
+  type WsOrientation,
+  type WsRailItem,
+} from '../workspace/proposal-workspace-shell.component';
 
 type WorkspaceSection = 'catalog' | 'template' | 'composition' | 'params' | 'client' | 'terms';
-type SheetOrientation = 'portrait' | 'landscape';
 
 const CHROME_OWNER = 'proposal-workspace-demo';
 
@@ -57,11 +58,17 @@ const SECTION_TITLES: Record<WorkspaceSection, string> = {
   terms: 'Условия',
 };
 
+/**
+ * TZ-KP-WS-401 — demo page is now a thin wrapper over
+ * `ProposalWorkspaceShellComponent`: layout frame (ribbon / panel / viewport /
+ * status) lives in the shell; here only dummy content + chrome-rail
+ * registration (geometry law #5) remain. Visually identical to pre-401.
+ */
 @Component({
   selector: 'app-proposal-workspace-demo-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, LucideAngularModule],
+  imports: [PiGroupWorkspaceComponent, LucideAngularModule, ProposalWorkspaceShellComponent],
   templateUrl: './proposal-workspace-demo.page.html',
   styleUrl: './proposal-workspace-demo.page.css',
 })
@@ -78,33 +85,27 @@ export class ProposalWorkspaceDemoPage {
   protected readonly settingsIcon = Settings;
   protected readonly userIcon = User;
   protected readonly scrollTextIcon = ScrollText;
-  protected readonly rectVerticalIcon = RectangleVertical;
-  protected readonly rectHorizontalIcon = RectangleHorizontal;
   protected readonly chevronDownIcon = ChevronDown;
   protected readonly printerIcon = Printer;
   protected readonly downloadIcon = Download;
   protected readonly ellipsisIcon = Ellipsis;
-  protected readonly maximizeIcon = Maximize2;
 
-  protected readonly railItems = [
-    { id: 'catalog' as const, title: 'Каталог', short: 'Кат', icon: this.packageIcon },
-    { id: 'template' as const, title: 'Шаблон', short: 'Шаб', icon: this.fileTextIcon },
-    { id: 'composition' as const, title: 'Состав', short: 'Сост', icon: this.listIcon },
-    { id: 'params' as const, title: 'Параметры', short: 'Пар', icon: this.settingsIcon },
-    { id: 'client' as const, title: 'Клиент', short: 'Кл', icon: this.userIcon },
-    { id: 'terms' as const, title: 'Условия', short: 'Усл', icon: this.scrollTextIcon },
+  protected readonly railItems: readonly WsRailItem[] = [
+    { id: 'catalog', title: 'Каталог', short: 'Кат', icon: this.packageIcon },
+    { id: 'template', title: 'Шаблон', short: 'Шаб', icon: this.fileTextIcon },
+    { id: 'composition', title: 'Состав', short: 'Сост', icon: this.listIcon },
+    { id: 'params', title: 'Параметры', short: 'Пар', icon: this.settingsIcon },
+    { id: 'client', title: 'Клиент', short: 'Кл', icon: this.userIcon },
+    { id: 'terms', title: 'Условия', short: 'Усл', icon: this.scrollTextIcon },
   ];
 
-  protected readonly orientation = signal<SheetOrientation>('portrait');
+  protected readonly orientation = signal<WsOrientation>('portrait');
   protected readonly activeSection = signal<WorkspaceSection>('catalog');
   protected readonly panelCollapsed = signal(false);
   protected readonly panelTitle = computed(() => SECTION_TITLES[this.activeSection()]);
   protected readonly debugMetrics = signal('—');
 
-  private readonly stageRef = viewChild<ElementRef<HTMLElement>>('viewportStage');
-  private readonly sheetRef = viewChild<ElementRef<HTMLElement>>('a4Sheet');
-  private readonly shellRef = viewChild<ElementRef<HTMLElement>>('workspaceShell');
-  private readonly bodyRef = viewChild<ElementRef<HTMLElement>>('workspaceBody');
+  private readonly shellRef = viewChild(ProposalWorkspaceShellComponent, { read: ElementRef });
 
   constructor() {
     effect(() => {
@@ -120,37 +121,41 @@ export class ProposalWorkspaceDemoPage {
       const update = (): void => this.refreshMetrics();
       update();
       const ro = new ResizeObserver(() => update());
-      const stage = this.stageRef()?.nativeElement;
-      const shell = this.shellRef()?.nativeElement;
-      const sheet = this.sheetRef()?.nativeElement;
-      const body = this.bodyRef()?.nativeElement;
-      if (stage) ro.observe(stage);
-      if (shell) ro.observe(shell);
-      if (sheet) ro.observe(sheet);
-      if (body) ro.observe(body);
+      const root = this.shellRef()?.nativeElement as HTMLElement | undefined;
+      if (root) ro.observe(root);
       this.destroyRef.onDestroy(() => ro.disconnect());
     });
   }
 
-  protected setOrientation(next: SheetOrientation): void {
+  protected setOrientation(next: WsOrientation): void {
     if (this.orientation() === next) return;
     this.orientation.set(next);
     this.refreshMetrics();
   }
 
-  protected onRailClick(id: WorkspaceSection): void {
-    if (this.activeSection() === id && !this.panelCollapsed()) {
-      this.panelCollapsed.set(true);
-    } else {
-      this.activeSection.set(id);
-      this.panelCollapsed.set(false);
-    }
+  protected onSectionChange(id: string): void {
+    this.activeSection.set(id as WorkspaceSection);
+    this.panelCollapsed.set(false);
+    this.refreshMetrics();
+  }
+
+  protected onPanelToggle(): void {
+    this.panelCollapsed.set(true);
     this.refreshMetrics();
   }
 
   protected onSheetClick(): void {
     this.panelCollapsed.set(true);
     this.refreshMetrics();
+  }
+
+  /** Same toggle used by chrome-rail tools (demo keeps rail registration here). */
+  private onRailClick(id: WorkspaceSection): void {
+    if (this.activeSection() === id && !this.panelCollapsed()) {
+      this.onPanelToggle();
+    } else {
+      this.onSectionChange(id);
+    }
   }
 
   private syncChromeTools(): void {
@@ -164,7 +169,7 @@ export class ProposalWorkspaceDemoPage {
       icon: item.icon,
       active: !collapsed && section === item.id,
       order: index + 1,
-      onClick: () => this.onRailClick(item.id),
+      onClick: () => this.onRailClick(item.id as WorkspaceSection),
     }));
 
     this.chromeTools.setTools(CHROME_OWNER, items);
@@ -172,9 +177,11 @@ export class ProposalWorkspaceDemoPage {
 
   private refreshMetrics(): void {
     requestAnimationFrame(() => {
-      const stage = this.stageRef()?.nativeElement;
-      const sheet = this.sheetRef()?.nativeElement;
-      if (!stage || !sheet) return;
+      const root = this.shellRef()?.nativeElement as HTMLElement | undefined;
+      if (!root) return;
+      const sheet = root.querySelector('[data-test="kp-a4-sheet"]');
+      const stage = root.querySelector('.kp-ws-viewport__stage');
+      if (!sheet || !stage) return;
       const rect = sheet.getBoundingClientRect();
       const stageRect = stage.getBoundingClientRect();
       const fillPct = Math.round((rect.height / stageRect.height) * 100);

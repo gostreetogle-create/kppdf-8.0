@@ -1,0 +1,121 @@
+<div
+  class="kp-ws-shell"
+  [class.kp-ws-shell--portrait]="orientation() === 'portrait'"
+  [class.kp-ws-shell--landscape]="orientation() === 'landscape'"
+  data-test="kp-workspace-shell"
+>
+  <div class="kp-ws">
+    <header class="kp-ws-ribbon" data-test="kp-workspace-ribbon">
+      <div class="kp-ws-ribbon__group">
+        <div
+          class="kp-ws-segment"
+          role="group"
+          aria-label="Ориентация листа"
+          data-test="kp-orient-toggle"
+        >
+          <button
+            type="button"
+            class="kp-ws-segment__btn pi-focus-ring"
+            [class.kp-ws-segment__btn--active]="orientation() === 'portrait'"
+            title="Книжная"
+            [attr.aria-pressed]="orientation() === 'portrait'"
+            (click)="setOrientation('portrait')"
+          >
+            <lucide-angular [img]="rectVerticalIcon" [size]="12" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="kp-ws-segment__btn pi-focus-ring"
+            [class.kp-ws-segment__btn--active]="orientation() === 'landscape'"
+            title="Альбомная"
+            [attr.aria-pressed]="orientation() === 'landscape'"
+            (click)="setOrientation('landscape')"
+          >
+            <lucide-angular [img]="rectHorizontalIcon" [size]="12" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Mid ribbon: selectors / fields projected by consumer -->
+      <ng-content select="[kpWsRibbonExtra]" />
+
+      <div class="kp-ws-ribbon__group kp-ws-ribbon__group--grow">
+        @if (badgeText()) {
+          <span class="kp-ws-badge">{{ badgeText() }}</span>
+        }
+        @if (totalText()) {
+          <span class="kp-ws-total">{{ totalText() }}</span>
+        }
+      </div>
+
+      <!-- End ribbon: output actions projected by consumer -->
+      <ng-content select="[kpWsRibbonActions]" />
+    </header>
+
+    @if (railItems().length > 0) {
+      <nav
+        class="kp-ws-rail kp-ws-rail--horizontal"
+        data-test="kp-icon-rail-horizontal"
+        aria-label="Разделы КП"
+      >
+        @for (item of railItems(); track item.id) {
+          <button
+            type="button"
+            class="kp-ws-rail-btn pi-focus-ring"
+            [class.kp-ws-rail-btn--active]="activeSection() === item.id"
+            [title]="item.title"
+            (click)="onSectionClick(item.id)"
+          >
+            <lucide-angular [img]="item.icon" [size]="14" aria-hidden="true" />
+            <span class="kp-ws-rail-btn__label">{{ item.title }}</span>
+          </button>
+        }
+      </nav>
+    }
+
+    <div
+      class="kp-ws-body"
+      data-test="kp-workspace-body"
+      [class.kp-ws-body--collapsed]="panelCollapsed()"
+    >
+      <aside
+        class="kp-ws-panel"
+        data-test="kp-tools-panel"
+        [attr.data-active-section]="activeSection() ?? ''"
+      >
+        <div class="kp-ws-panel__head">{{ panelTitle() }}</div>
+        <div class="kp-ws-panel__body">
+          <ng-content select="[kpWsPanel]" />
+        </div>
+      </aside>
+
+      <main class="kp-ws-viewport" data-test="kp-viewport" tabindex="0">
+        <div class="kp-ws-viewport__stage" #viewportStage>
+          <div
+            class="kp-ws-sheet"
+            data-test="kp-a4-sheet"
+            aria-label="Превью A4"
+            (click)="onSheetClick()"
+          >
+            <ng-content select="[kpWsSheet]" />
+          </div>
+        </div>
+        <div class="kp-ws-viewport__toolbar">
+          <button type="button" class="kp-ws-ribbon-btn">
+            <lucide-angular [img]="maximizeIcon" [size]="10" aria-hidden="true" />
+            Fit
+          </button>
+          <button type="button" class="kp-ws-ribbon-btn">100%</button>
+          <button type="button" class="kp-ws-ribbon-btn">1 / 1</button>
+        </div>
+      </main>
+    </div>
+
+    <footer class="kp-ws-status" data-test="kp-workspace-status">
+      <span>{{ statusText() }}</span>
+      @if (debugText()) {
+        <span class="kp-ws-status__debug">{{ debugText() }}</span>
+      }
+    </footer>
+  </div>
+</div>

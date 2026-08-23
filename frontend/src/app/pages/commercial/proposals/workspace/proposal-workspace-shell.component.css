@@ -1,0 +1,395 @@
+/* TZ-KP-WS-401 — workspace geometry frame (single source; extracted from demo page css).
+   Projected dummy content (kpWsPanel / kpWsRibbonExtra) keeps its own styles in the
+   consumer — see demo/proposal-workspace-demo.page.css. */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  --kp-ribbon-h: 32px;
+  --kp-status-h: 22px;
+  --kp-tools-h: 36px;
+  --kp-panel-w: 480px;
+  --kp-panel-content-max: 272px;
+}
+
+:host button {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.kp-ws-shell {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-paper);
+}
+
+.kp-ws {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.kp-ws-shell--portrait .kp-ws,
+.kp-ws-shell--landscape .kp-ws {
+  grid-template-rows: var(--kp-ribbon-h) minmax(0, 1fr) var(--kp-status-h);
+}
+
+.kp-ws-ribbon {
+  display: flex;
+  align-items: center;
+  height: var(--kp-ribbon-h);
+  min-height: var(--kp-ribbon-h);
+  padding: 0 var(--space-1, 4px);
+  border-bottom: 1px solid var(--color-rule);
+  background: var(--color-paper-raised);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.kp-ws-ribbon__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  padding: 0 var(--space-2, 8px);
+  height: 100%;
+  flex-shrink: 0;
+}
+
+.kp-ws-ribbon__group + .kp-ws-ribbon__group {
+  border-left: 1px solid var(--color-rule);
+}
+
+.kp-ws-ribbon__group--grow {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.kp-ws-ribbon__group--end {
+  margin-left: auto;
+}
+
+.kp-ws-ribbon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1, 4px);
+  height: 22px;
+  padding: 0 var(--space-2, 8px);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-paper-raised);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.kp-ws-ribbon-btn:hover {
+  background: var(--color-paper-2);
+}
+
+.kp-ws-ribbon-btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-muted-foreground);
+}
+
+.kp-ws-ribbon-btn--compact {
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.kp-ws-segment {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 1px;
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-paper-2);
+  gap: 1px;
+}
+
+.kp-ws-segment__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 1px;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+}
+
+.kp-ws-segment__btn:hover {
+  color: var(--color-ink);
+  background: color-mix(in oklch, var(--color-paper-raised) 85%, transparent);
+}
+
+.kp-ws-segment__btn--active {
+  color: var(--color-on-gold);
+  background: var(--color-gold);
+  box-shadow: inset 0 0 0 1px var(--color-gold-deep);
+}
+
+.kp-ws-segment__btn:focus-visible,
+.kp-ws-ribbon-btn:focus-visible,
+.kp-ws-rail-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+.kp-ws-badge {
+  padding: 1px var(--space-2, 8px);
+  font-size: 10px;
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  color: var(--color-muted-foreground);
+}
+
+.kp-ws-total {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Horizontal icon strip: mobile only (<lg), when app chrome rail is hidden */
+.kp-ws-rail--horizontal {
+  display: none;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  height: var(--kp-tools-h);
+  min-height: var(--kp-tools-h);
+  padding: 0 var(--space-2, 8px);
+  border-bottom: 1px solid var(--color-rule);
+  background: var(--color-paper-2);
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
+.kp-ws-rail-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 2px);
+  background: transparent;
+  color: var(--color-muted-foreground);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.kp-ws-rail--horizontal .kp-ws-rail-btn {
+  flex-direction: row;
+  gap: var(--space-1, 4px);
+  height: 26px;
+  padding: 0 var(--space-2, 8px);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.kp-ws-rail-btn:hover {
+  color: var(--color-ink);
+  border-color: var(--color-rule);
+  background: var(--color-paper-raised);
+}
+
+.kp-ws-rail-btn--active {
+  color: var(--color-on-gold);
+  background: var(--color-gold);
+  border-color: var(--color-gold-deep);
+}
+
+.kp-ws-rail-btn--active:hover {
+  color: var(--color-on-gold);
+  background: var(--color-gold);
+}
+
+/* Body = full A4 stage; tools panel overlays left (does not reflow sheet) */
+.kp-ws-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'viewport';
+  min-height: 0;
+  overflow: hidden;
+}
+
+.kp-ws-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 5;
+  width: var(--kp-panel-w);
+  max-width: var(--kp-panel-w);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--color-rule);
+  background: var(--color-paper-raised);
+  box-shadow: var(--shadow-executive);
+  transform: translateX(0);
+  opacity: 1;
+  transition:
+    transform 0.16s ease,
+    opacity 0.14s ease;
+}
+
+.kp-ws-body--collapsed .kp-ws-panel {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.kp-ws-panel__head {
+  flex-shrink: 0;
+  padding: var(--space-2, 8px) var(--space-control-x, 12px);
+  border-bottom: 1px solid var(--color-rule);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.kp-ws-panel__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-2, 8px);
+}
+
+/* A4 viewport — portrait: height-first center; landscape: width-first full bleed */
+.kp-ws-viewport {
+  grid-area: viewport;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-paper-2);
+}
+
+.kp-ws-viewport__stage {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--space-2, 8px);
+}
+
+.kp-ws-sheet {
+  flex-shrink: 0;
+  background: var(--color-paper-raised);
+  border: 1px solid var(--color-rule-strong);
+  box-shadow: var(--shadow-executive);
+  cursor: pointer;
+}
+
+.kp-ws-shell--portrait .kp-ws-viewport__stage {
+  justify-content: flex-end;
+  padding-right: var(--space-2, 8px);
+  padding-left: var(--space-1, 4px);
+}
+
+.kp-ws-shell--portrait .kp-ws-sheet {
+  height: min(calc(100% - var(--space-2, 8px)), 100%);
+  width: auto;
+  aspect-ratio: 210 / 297;
+  max-width: calc(100% - var(--space-4, 16px));
+  max-height: 100%;
+}
+
+.kp-ws-shell--landscape .kp-ws-viewport__stage {
+  justify-content: flex-end;
+  padding-right: var(--space-2, 8px);
+  padding-left: var(--space-1, 4px);
+}
+
+.kp-ws-shell--landscape .kp-ws-sheet {
+  width: min(calc(100% - var(--space-2, 8px)), 100%);
+  height: auto;
+  aspect-ratio: 297 / 210;
+  max-width: 100%;
+  max-height: calc(100% - var(--space-2, 8px));
+}
+
+.kp-ws-viewport__toolbar {
+  position: absolute;
+  right: var(--space-2, 8px);
+  bottom: var(--space-1, 4px);
+  display: flex;
+  gap: var(--space-1, 4px);
+  z-index: 2;
+}
+
+.kp-ws-viewport__toolbar .kp-ws-ribbon-btn {
+  height: 20px;
+  padding: 0 var(--space-2, 8px);
+  font-size: 9px;
+  background: color-mix(in oklch, var(--color-paper-raised) 94%, transparent);
+}
+
+.kp-ws-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--kp-status-h);
+  min-height: var(--kp-status-h);
+  padding: 0 var(--space-2, 8px);
+  border-top: 1px solid var(--color-rule);
+  background: var(--color-paper-raised);
+  font-size: 10px;
+  color: var(--color-muted-foreground);
+  flex-shrink: 0;
+}
+
+.kp-ws-status__debug {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1023px) {
+  .kp-ws-shell--portrait .kp-ws,
+  .kp-ws-shell--landscape .kp-ws {
+    grid-template-rows: var(--kp-ribbon-h) var(--kp-tools-h) minmax(0, 1fr) var(--kp-status-h);
+  }
+
+  .kp-ws-rail--horizontal {
+    display: flex;
+  }
+}

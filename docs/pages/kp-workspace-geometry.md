@@ -38,10 +38,12 @@
 | Зона | Путь |
 |------|------|
 | **Page SoT** | [`kp-workspace.page.md`](./kp-workspace.page.md) — устройство страницы; обновлять вместе с TZ |
-| Demo (эталон) | `frontend/src/app/pages/commercial/proposals/demo/proposal-workspace-demo.page.*` |
-| Dummy sync | `tasks/kp-workspace-dummy/kp-workspace-shell.css` |
-| Wave 1 target | `ProposalWorkspaceShellComponent` → `/proposals/workspace` |
+| **Shell (SoT геометрии)** | `frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-shell.component.*` (TZ-KP-WS-401) |
+| Demo (эталон) | `frontend/src/app/pages/commercial/proposals/demo/proposal-workspace-demo.page.*` (тонкий wrapper над shell) |
+| Production route | `frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace.page.ts` (`/proposals/workspace`) |
+| Dummy sync (reference only) | `tasks/kp-workspace-dummy/kp-workspace-shell.css` (снапшот shell-стилей; правки — в компонент) |
 
 ## История
 
 - 2026-08-23: зафиксировано после регрессии «landscape panel shrink sheet» — PO: меню **поверх**, не двигает лист.
+- 2026-08-23 (TZ-KP-WS-401): геометрия вынесена из demo в `ProposalWorkspaceShellComponent`; demo — тонкий wrapper; добавлен `/proposals/workspace` (placeholder-панель).

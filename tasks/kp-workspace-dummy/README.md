@@ -46,13 +46,13 @@
 
 | `preview.html` | Standalone просмотр с fake AppLayout |
 
-| `kp-workspace-shell.css` | Стили (токены Paper & Ink) |
+| `kp-workspace-shell.css` | **Reference only** — снапшот стилей из `ProposalWorkspaceShellComponent` (TZ-KP-WS-401). Правки геометрии — в компонент, не сюда |
 
-| `kp-workspace-shell.html` | Разметка shell (фрагмент) |
+| `kp-workspace-shell.html` | Разметка shell (фрагмент, reference only) |
 
 | `lucide-icons.svg` | SVG-sprite для фрагмента вне preview |
 
-| `proposal-workspace-shell.dummy.component.ts` | Angular stub (Wave 1+) |
+| `proposal-workspace-shell.dummy.component.ts` | Angular stub (superseded by `workspace/proposal-workspace-shell.component.ts`, TZ-401) |
 
 
 

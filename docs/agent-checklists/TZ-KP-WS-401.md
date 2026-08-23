@@ -1,32 +1,49 @@
-# TZ-KP-WS-401 checklist — ProposalWorkspaceShellComponent
+# TZ-KP-WS-401 — Checklist
 
-**Status:** IN PROGRESS (freebuff-1)  
-**Wave:** WAVE-KP-SINGLE-WORKSPACE
+**Status:** IN PROGRESS
 
-## Claim
+## Claim slot
 
-- [ ] `tasks/_active/TZ-KP-WS-401.md` · agent_id: freebuff-1
+| Поле | Значение |
+|------|----------|
+| agent_id | freebuff-1 |
+| claimed_at | 2026-08-23T14:09:09+0300 |
+| workspace | D:\kppdf-8.0 |
+| team_room_claim | unavailable |
 
-## Implementation
+## Задача
 
-- [ ] `ProposalWorkspaceShellComponent` extracted from demo
-- [ ] Demo page = thin wrapper
-- [ ] Route `/proposals/workspace` (adminOnly)
-- [ ] Geometry checklist PASS on demo + workspace
-- [ ] Shell unit tests ≥6
+ProposalWorkspaceShellComponent (из demo) + route `/proposals/workspace`.
 
-## Gates
+**CONFLICT KEYS:** `frontend/src/app/pages/commercial/proposals/demo/*`; `frontend/src/app/shared/**/proposal-workspace*`; `frontend/src/app/app.routes.ts`
 
-- [ ] `cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit`
-- [ ] `pnpm test -- proposal-workspace`
-- [ ] `pnpm lint` (touched)
+Проверка `_active-map`: `_active/` пуст (TZ-400 archived). `app.routes.ts` — WIP demo-route (Wave 0, свой слот не нужен: это база задачи).
 
-## Docs
+## Шаги
 
-- [ ] `kp-workspace.page.md` § Files updated if paths changed
+- [x] CLAIM `tasks/_active/TZ-KP-WS-401.md` + checklist
+- [x] Прочитано: geometry.md, rail-ia.md, implementation-audit.md, kp-workspace.page.md, AI-AGENT-Guide.md
+- [x] Shell ts/html/css извлечены из demo (frame → shell; dummy content остаётся в demo)
+- [x] Shell spec ≥6 тестов
+- [x] `/proposals/workspace` route + page с placeholder «подключение позже»
+- [x] Demo page → thin wrapper (chrome tools + placeholders в проекциях)
+- [x] Gates: tsc · jest proposal · lint
+- [x] Geometry checklist (demo + workspace)
+- [x] Docs: geometry § Files, kp-workspace.page.md, dummy README
+- [ ] Archive `tasks/_archive/2026-08/TZ-KP-WS-401.done.md` + commit + push
 
-## Executor report (auto)
+## AC (из TZ)
 
-- commit:
-- outcome:
-- archive:
+- [ ] `/proposals/demo-workspace` визуально идентичен pre-TZ
+- [ ] `/proposals/workspace` открывается, shell + empty panel
+- [ ] Shell unit tests ≥6 PASS
+- [ ] No rule shrinking A4 on panel open (landscape)
+- [ ] tsc PASS · jest proposal-workspace PASS · lint PASS (touched)
+
+## Proof of adoption
+
+1. Routed: `/proposals/workspace` + demo wrapper
+2. Tests: shell spec
+3. Docs: kp-workspace-geometry.md § Files
+4. Migration: demo CSS не дублируется долгосрочно (frame → shell.css)
+5. Legacy: `proposal-create.page.ts` не тронут

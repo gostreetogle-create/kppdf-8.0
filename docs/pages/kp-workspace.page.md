@@ -18,8 +18,8 @@
 
 | Route | Статус | Title / роль |
 |-------|--------|----------------|
-| `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout |
-| `/proposals/workspace` | **цель Wave 1+** | Production shell + реальные панели (`?id=` / `?new=1`) |
+| `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout (тонкий wrapper над shell, TZ-KP-WS-401) |
+| `/proposals/workspace` | **TZ-KP-WS-401 DONE** | Shell + placeholder-панель; реальные панели — TZ-402/403/404 (`?id=` / `?new=1` с TZ-402) |
 | `/proposals/create` | legacy до **TZ-KP-WS-408** | Текущая студия; после cutover → workspace (или redirect) |
 | `/proposals` | list | Lifecycle (статус, копия, заказ) — **не** в workspace ribbon (канон 367) |
 
@@ -139,10 +139,11 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 
 ## Файлы кода (эволюция)
 
-| Сейчас (Wave 0) | Цель |
+| Сейчас (Wave 1) | Цель |
 |-----------------|------|
-| `.../demo/proposal-workspace-demo.page.*` | thin wrapper над shell |
-| — | `ProposalWorkspaceShellComponent` (401) |
+| `.../demo/proposal-workspace-demo.page.*` | **тонкий wrapper над shell** (TZ-401 DONE) |
+| `.../workspace/proposal-workspace-shell.component.*` | **SoT геометрии** (TZ-401 DONE); rails/store — TZ-402 |
+| `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + placeholder (TZ-401 DONE) |
 | — | `ProposalWorkspaceStore` (402) |
 | `proposal-create.page.ts` + `proposal-create-*` / `proposal-product-rail` | reuse в панелях; god-page снять в 409 |
 | `tasks/kp-workspace-dummy/*` | reference only после 401 |
@@ -153,7 +154,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 |----|-----|
 | Wave 0 | geometry PASS — demo |
 | **KP-WS-400** | audit + rail IA docs |
-| **401** | shell component + `/proposals/workspace` |
+| **401** | shell component + `/proposals/workspace` — **DONE** |
 | **402** | store + chrome rails |
 | **403** | left: catalog / template / recipient |
 | **404** | right: params / table / terms / output |
