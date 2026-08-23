@@ -85,4 +85,4 @@ pre-push hook: PASS
 
 ## SHA
 
-- Код: `TBD` (заполняется после push)
+- Код: `a1dae406` (коммит TZ-SHIP-433, запушен в origin/main)
