@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import {
   LucideAngularModule,
   Maximize2,
@@ -18,6 +18,9 @@ export interface WsRailItem {
   short?: string;
   icon: PiChromeLucideIcon;
 }
+
+/** Right chrome-rail sections — panel anchors to the matching edge. */
+const RIGHT_PANEL_SECTIONS = new Set(['params', 'table', 'terms', 'output']);
 
 /**
  * TZ-KP-WS-401 — Proposal workspace layout shell (extracted from demo page).
@@ -45,6 +48,8 @@ export interface WsRailItem {
 export class ProposalWorkspaceShellComponent {
   readonly orientation = input<WsOrientation>('portrait');
   readonly panelCollapsed = input(false);
+  /** Optional override; when omitted, derived from `activeSection` (right rail ids). */
+  readonly panelSide = input<'left' | 'right' | null>(null);
   readonly activeSection = input<string | null>(null);
   readonly panelTitle = input('');
   readonly railItems = input<readonly WsRailItem[]>([]);
@@ -56,6 +61,13 @@ export class ProposalWorkspaceShellComponent {
   readonly panelWide = input(false);
   /** Sheet slot acts as a transparent host (consumer renders its own A4 pages). */
   readonly sheetHost = input(false);
+
+  protected readonly resolvedPanelSide = computed<'left' | 'right'>(() => {
+    const explicit = this.panelSide();
+    if (explicit === 'left' || explicit === 'right') return explicit;
+    const section = this.activeSection();
+    return section && RIGHT_PANEL_SECTIONS.has(section) ? 'right' : 'left';
+  });
 
   readonly orientationChange = output<WsOrientation>();
   readonly sectionChange = output<string>();

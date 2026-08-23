@@ -46,6 +46,8 @@ export class ProposalWorkspaceStore {
    */
   readonly templateDraftId = signal<string | null>(null);
 
+  readonly panelSide = computed<'left' | 'right'>(() => (this.activeRight() ? 'right' : 'left'));
+
   readonly activeSection = computed<WsSection | null>(
     () => this.activeLeft() ?? this.activeRight(),
   );

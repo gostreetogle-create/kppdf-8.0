@@ -32,6 +32,7 @@ import type {
   ProposalTableLayoutColumn,
   ProposalTableTarget,
 } from './proposal-create-inspector.component';
+import { isPhotoColumnKey } from './proposal-table-layout.util';
 
 export interface ProposalCompositionLineChange {
   index: number;
@@ -456,7 +457,7 @@ type ColumnWidths = Record<string, number>;
                       @switch (col.key) {
                         @case ('productName') {
                           <div class="editor__name-cell">
-                            @if (line.photoUrl) {
+                            @if (line.photoUrl && !hasDedicatedPhotoColumn()) {
                               <img
                                 [src]="line.photoUrl"
                                 [alt]=""
@@ -468,7 +469,7 @@ type ColumnWidths = Record<string, number>;
                                   resolvedPresentation(line).photoFit === 'cover'
                                 "
                               />
-                            } @else {
+                            } @else if (!hasDedicatedPhotoColumn()) {
                               <span class="editor__photo editor__photo--empty" aria-hidden="true"
                                 >Нет фото</span
                               >
@@ -602,29 +603,30 @@ type ColumnWidths = Record<string, number>;
                             aria-label="Единица"
                           />
                         }
-                        @case ('photo') {
-                          @if (line.photoUrl) {
-                            <img
-                              [src]="line.photoUrl"
-                              [alt]=""
-                              class="editor__photo-cell"
-                              [class.editor__photo-cell--contain]="
-                                resolvedPresentation(line).photoFit === 'contain'
-                              "
-                              [class.editor__photo-cell--cover]="
-                                resolvedPresentation(line).photoFit === 'cover'
-                              "
-                            />
-                          } @else {
-                            <span
-                              class="editor__photo-cell editor__photo-cell--empty"
-                              aria-label="Нет фото"
-                              >Нет фото</span
-                            >
-                          }
-                        }
                         @default {
-                          <span class="editor__cell-value">{{ columnValue(line, col.key) }}</span>
+                          @if (isPhotoColumn(col.key)) {
+                            @if (line.photoUrl) {
+                              <img
+                                [src]="line.photoUrl"
+                                [alt]=""
+                                class="editor__photo-cell"
+                                [class.editor__photo-cell--contain]="
+                                  resolvedPresentation(line).photoFit === 'contain'
+                                "
+                                [class.editor__photo-cell--cover]="
+                                  resolvedPresentation(line).photoFit === 'cover'
+                                "
+                              />
+                            } @else {
+                              <span
+                                class="editor__photo-cell editor__photo-cell--empty"
+                                aria-label="Нет фото"
+                                >Нет фото</span
+                              >
+                            }
+                          } @else {
+                            <span class="editor__cell-value">{{ columnValue(line, col.key) }}</span>
+                          }
                         }
                       }
                     </td>
@@ -1842,6 +1844,14 @@ export class ProposalCreateTableEditorComponent {
   protected readonly visibleLayoutColumns = computed(() =>
     this.tableLayout().filter((c) => c.visible || this.isEssentialColumn(c.key)),
   );
+
+  protected readonly hasDedicatedPhotoColumn = computed(() =>
+    this.visibleLayoutColumns().some((column) => isPhotoColumnKey(column.key)),
+  );
+
+  protected isPhotoColumn(key: string): boolean {
+    return isPhotoColumnKey(key);
+  }
 
   protected readonly hiddenColumns = computed(() =>
     this.tableLayout().filter((c) => !c.visible && !this.isEssentialColumn(c.key)),

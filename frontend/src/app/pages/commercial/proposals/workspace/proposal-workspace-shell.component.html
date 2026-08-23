@@ -80,8 +80,11 @@
     >
       <aside
         class="kp-ws-panel"
+        [class.kp-ws-panel--left]="resolvedPanelSide() === 'left'"
+        [class.kp-ws-panel--right]="resolvedPanelSide() === 'right'"
         [class.kp-ws-panel--wide]="panelWide()"
         data-test="kp-tools-panel"
+        [attr.data-panel-side]="resolvedPanelSide()"
         [attr.data-active-section]="activeSection() ?? ''"
       >
         <div class="kp-ws-panel__head">{{ panelTitle() }}</div>

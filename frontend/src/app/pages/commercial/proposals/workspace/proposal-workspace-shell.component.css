@@ -249,7 +249,6 @@
 .kp-ws-panel {
   position: absolute;
   top: 0;
-  left: 0;
   bottom: 0;
   z-index: 5;
   width: var(--kp-panel-w);
@@ -259,7 +258,6 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  border-right: 1px solid var(--color-rule);
   background: var(--color-paper-raised);
   transform: translateX(0);
   opacity: 1;
@@ -268,10 +266,26 @@
     opacity 0.14s ease;
 }
 
+.kp-ws-panel--left {
+  left: 0;
+  right: auto;
+  border-right: 1px solid var(--color-rule);
+}
+
+.kp-ws-panel--right {
+  left: auto;
+  right: 0;
+  border-left: 1px solid var(--color-rule);
+}
+
 .kp-ws-body--collapsed .kp-ws-panel {
   transform: translateX(-100%);
   opacity: 0;
   pointer-events: none;
+}
+
+.kp-ws-body--collapsed .kp-ws-panel--right {
+  transform: translateX(100%);
 }
 
 /* Tier-L panel (catalog vitrine): wider overlay, same absolute positioning. */

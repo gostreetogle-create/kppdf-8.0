@@ -70,6 +70,26 @@ describe('ProposalWorkspaceShellComponent', () => {
     expect(body.classList.contains('kp-ws-body--collapsed')).toBe(true);
   });
 
+  it('anchors the tools panel on the right when panelSide is right', () => {
+    fixture.componentRef.setInput('panelSide', 'right');
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector(
+      '[data-test="kp-tools-panel"]',
+    ) as HTMLElement;
+    expect(panel.classList.contains('kp-ws-panel--right')).toBe(true);
+    expect(panel.getAttribute('data-panel-side')).toBe('right');
+  });
+
+  it('derives right anchor from activeSection when panelSide is omitted', () => {
+    fixture.componentRef.setInput('activeSection', 'params');
+    fixture.detectChanges();
+    const panel = fixture.nativeElement.querySelector(
+      '[data-test="kp-tools-panel"]',
+    ) as HTMLElement;
+    expect(panel.getAttribute('data-panel-side')).toBe('right');
+    expect(panel.classList.contains('kp-ws-panel--left')).toBe(false);
+  });
+
   it('renders rail strip buttons; different section emits sectionChange, same open section emits panelToggle', () => {
     fixture.componentRef.setInput('railItems', RAIL);
     fixture.componentRef.setInput('activeSection', 'catalog');

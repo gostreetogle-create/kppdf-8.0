@@ -23,6 +23,7 @@ describe('ProposalWorkspaceStore', () => {
     expect(store.panelOpen()).toBe(true);
     expect(store.activeSection()).toBe('catalog');
     expect(store.panelTitle()).toBe('Каталог');
+    expect(store.panelSide()).toBe('left');
   });
 
   it('openSection on a right section activates it, opens panel, clears left', () => {
@@ -31,6 +32,7 @@ describe('ProposalWorkspaceStore', () => {
     expect(store.activeLeft()).toBeNull();
     expect(store.panelOpen()).toBe(true);
     expect(store.panelTitle()).toBe('Редактор таблицы');
+    expect(store.panelSide()).toBe('right');
   });
 
   it('switching sections keeps panel open and moves active', () => {
