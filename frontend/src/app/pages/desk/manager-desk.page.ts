@@ -375,7 +375,11 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           [class.manager-desk__flyout--left]="panelSide() === 'left'"
           [class.manager-desk__flyout--right]="panelSide() === 'right'"
           [class.manager-desk__flyout--wide]="
-            panel() === 'create' || panel() === 'edit' || panel() === 'bom' || panel() === 'supply'
+            panel() === 'create' ||
+            panel() === 'edit' ||
+            panel() === 'bom' ||
+            panel() === 'supply' ||
+            panel() === 'docs'
           "
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
