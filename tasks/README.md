@@ -3,6 +3,8 @@
 | Папка / файл | Что здесь |
 |--------------|-----------|
 | **`PROMPT-RESUME-ANY.md`** | Обрыв / новый чат |
+| **`PROMPT-DEPLOY-READY.md`** | Чек-лист Cursor «подготовь к деплою» (не копипаст PO) |
+| **`PROMPT-FREEBUFF-TEST-421.md`** | Stale HUB-303/304 → DESK-423 |
 | **`PROMPT-UNIVERSAL-CONTINUOUS.md`** | Полный канон исполнителя |
 | **`PROMPT-FREEBUFF-TASKS-DRAIN.md`** | Слить живую очередь (после drain — spent) |
 | **`PROMPT-FREEBUFF-FORMS-NUMBER.md`** | Волна форм 314–317 (spent, archive after) |
@@ -27,8 +29,8 @@
 
 Очередь: [`QUEUE-LIVE.md`](QUEUE-LIVE.md). Промпт на сессию: [`PROMPT-FOLLOW-QUEUE.md`](PROMPT-FOLLOW-QUEUE.md).
 
-1. Очередь пуста. Агентам ничего не давать (иначе схватят хвосты `_active`).
-2. Кати — только слово PO после взгляда на 1440.
-`_park` / TZD-60 — не без PO.
+1. Перед деплоем: **TEST-421** → Cursor **«подготовь к деплою»** → штамп READY.
+2. Деплой: любому ИИ **«сделай деплой по документации»** (`deploy/synology/README.md`).
+   Без READY агент STOP. `_park` / TZD-60 — не без PO.
 
 `_park` не трогать.

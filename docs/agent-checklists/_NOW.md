@@ -5,8 +5,10 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-22T23:15:00+03:00
-hygiene: origin `ba98a4a5`; PO wave **304+417+308** on main; prod still on older SHA — **warm deploy pending**
+updated_at: 2026-08-23T06:30:00+03:00
+hygiene: prod `c8ebdeb6` (2026-08-11); **DEPLOY-READY = INVALID** — TEST-421 → «подготовь к деплою» → «сделай деплой по документации»
+deploy_ready: `docs/agent-checklists/DEPLOY-READY.md`
+deploy_docs: `deploy/synology/README.md` (единственный вход для фразы «деплой по документации»)
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
 

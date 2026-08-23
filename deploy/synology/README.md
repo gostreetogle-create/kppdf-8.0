@@ -1,111 +1,84 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
-> **Одна точка входа.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
-> **Последний успешный warm deploy:** 2026-08-11 · код `c8ebdeb6` (AUTH-302 CSP meta + SALES-348 + OPS-310) · prod `https://kppdf-crm.ru` health/ready = ok · Auth login OK.
+> **Одна точка входа для деплоя.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
+> **Последний успешный warm deploy:** 2026-08-11 · код `c8ebdeb6` · prod `https://kppdf-crm.ru`.
+
+---
+
+## Если PO сказал: «сделай деплой по документации»
+
+Сделай **только** это. Не ищи другие промпты. Не гоняй jest/tsc. Не чини код.
+
+1. Папка проекта: `D:\kppdf-8.0`, ветка `main`.
+2. Открой [`docs/agent-checklists/DEPLOY-READY.md`](../../docs/agent-checklists/DEPLOY-READY.md).
+   - Если `status` **не** `READY` → **STOP**. Напиши PO: «штамп не READY — нужна подготовка к деплою».
+   - Если `READY` → `git fetch origin` и проверь: `HEAD` = `deploy_sha_target` (полный SHA). Не совпало → **STOP** (тот же ответ).
+3. VPN **выключен**. Секреты уже в `deploy/synology/config.env` + `CREDENTIALS.md` (не коммитить, пароли не печатать).
+4. Warm deploy (данные не трогать, **без** wipe):
+
+```powershell
+cd D:\kppdf-8.0
+$env:PYTHONUTF8='1'
+$env:PYTHONIOENCODING='utf-8'
+.\deploy\synology\deploy.ps1
+```
+
+5. Жди блок `=== Deploy complete ===` (~10–15 мин).
+6. Smoke (логин/пароль из `CREDENTIALS.md`, в чат не писать):
+
+```powershell
+curl.exe -sf http://192.168.1.103:3000/api/health/ready
+curl.exe -sf -u "LOGIN:PASS" https://kppdf-crm.ru/api/health/ready
+curl.exe -sf -u "LOGIN:PASS" -o NUL -w "%{http_code}" https://kppdf-crm.ru/
+```
+
+7. Отчёт PO: SHA + «warm deploy OK» + health. В `DEPLOY-READY.md` поставь `status: INVALID` и `why_invalid: deployed <sha> <date>`, закоммить штамп.
+
+Запрещено: wipe, второй параллельный deploy, коммит секретов, «заодно» новые TZ.  
+Wipe / стереть базу — **не** обычный деплой. Спроси PO по-русски (`docs/ops/DANGEROUS-OPS.md`).
+
+---
+
+## Подготовка (это не деплой)
+
+PO говорит Cursor: **«подготовь к деплою»**.  
+Полные гейты, фиксы stale-тестов, гигиена → штамп `DEPLOY-READY = READY`. Прод не трогают.  
+Чек-лист: `tasks/PROMPT-DEPLOY-READY.md`. Постмортем: `docs/audits/2026-08-23-deploy-block-desk423-stale-specs.md`.
 
 | Файл | Зачем |
 |------|--------|
 | **`deploy.ps1`** / **`deploy.sh`** | Запуск деплоя одной командой |
 | **`deploy.py`** | Реальная логика (build → SSH → docker) |
-| **`config.env.example`** | Шаблон → скопировать в `config.env` |
+| **`config.env.example`** | Шаблон → `config.env` |
 | **`CREDENTIALS.example.md`** | Шаблон → `CREDENTIALS.md` |
-| **`RUNBOOK.md`** | Короткий чеклист (502, бэкап, VPN) |
-| **`DEPLOY.md`** | Архитектура (VPS + tunnel + VM) |
+| **`RUNBOOK.md`** | 502, бэкап, VPN |
+| **`DEPLOY.md`** | Архитектура |
 | **`INSTALL.md`** | Установка с нуля |
-| **`preflight.ps1`** | Проверки до деплоя (+ gate **TZ-OPS-310**) |
+| **`preflight.ps1`** | Проверки (+ OPS-310) |
 | **`backup.sh`** | Бэкап Mongo на VM |
-| **`reset-admin-password.py`** | Сброс пароля admin (опционально) |
-| **Ops harden** | `tasks/_backlog/ops/TZ-OPS-310-…` · evidence `docs/ops/server-harden-evidence.md` |
 
----
-
-## Для ИИ-агента (прочитай и сделай так)
-
-Канон **обычного** обновления продакшена (то, что реально проходит):
-
-1. Workspace: `D:\kppdf-8.0`, ветка `main`, `git pull --ff-only`.  
-   Перед деплоем: `git status` чист и `main` = `origin/main` (иначе сначала commit+push — иначе завтра на работе будет асинхрон).
-2. **Gate гигиены серверов (TZ-OPS-310):**  
-   должен существовать `tasks/_archive/2026-08/TZ-OPS-310.done.md` + заполненный `docs/ops/server-harden-evidence.md`.  
-   Если нет — **сначала** выполни `tasks/_backlog/ops/TZ-OPS-310-server-harden-before-deploy.md`  
-   (промпт `tasks/_backlog/ops/PROMPT-OPS-310-HARDEN.md`, VPN OFF), **потом** деплой.  
-   `preflight.ps1` тоже проверяет этот archive.
-3. Секреты уже лежат локально (gitignore): `deploy/synology/config.env` + `CREDENTIALS.md`.  
-   **Не** коммитить их. **Не** печатать пароли в чат.
-4. **VPN OFF.** SSH на `192.168.1.103` из домашней LAN.
-5. **Без wipe**, если PO отдельно не сказал wipe:
-   ```powershell
-   cd D:\kppdf-8.0
-   $env:PYTHONUTF8='1'
-   $env:PYTHONIOENCODING='utf-8'
-   .\deploy\synology\deploy.ps1
-   ```
-6. Ждать до ~10–15 мин (Angular build + docker). Успех = блок `=== Deploy complete ===` + Auth login OK + Frontend HTTP 200.  
-   Учти: снаружи корень/`/api` могут требовать **HTTP Basic Auth** (подъездный пароль из `CREDENTIALS.md`) — для curl используй `-u`.
-7. Smoke:
-   ```powershell
-   curl.exe -sf -u "LOGIN:PASS" https://kppdf-crm.ru/api/health/ready
-   curl.exe -sf -u "LOGIN:PASS" -o NUL -w "%{http_code}" https://kppdf-crm.ru/
-   curl.exe -sf http://192.168.1.103:3000/api/health/ready
-   ```
-8. Отчёт PO: SHA git + «warm deploy OK» + health. **Не** стартовать wipe / COMPLETE / новые TZ без команды.
-
-### Опасные операции (обязательно)
-
-Перед wipe / удалением БД / `rm` прод-данных агент **останавливается** и спрашивает PO **по-русски**  
-(«Осторожно, опасность…»). Канон: [`docs/ops/DANGEROUS-OPS.md`](../../docs/ops/DANGEROUS-OPS.md).  
-«деплой» ≠ wipe. Если wipe всё же нужен: сначала `backup.sh`, потом явное «да, разрешаю wipe после бэкапа».
-
-Запреты: параллельный второй `deploy.ps1`; `--wipe` без явного PO; коммит `config.env`/`CREDENTIALS.md`; деплой из freebuff worktree «на глаз».
-
----
-
-## Обычный update (то, что нужно 99% времени)
-
-С **Windows** (из корня репо, **VPN выключен**):
+Скрипт: `pnpm` build FE → архив → SSH на VM → `docker compose` → health.  
+Данные Mongo **не** трогает (`WIPE=false`).
 
 ```powershell
 .\deploy\synology\deploy.ps1
+# или: ./deploy/synology/deploy.sh
+# или: python deploy/synology/deploy.py
 ```
-
-С **Linux / macOS / Git Bash**:
-
-```bash
-./deploy/synology/deploy.sh
-```
-
-Или напрямую:
-
-```powershell
-python deploy/synology/deploy.py
-```
-
-Скрипт: `pnpm` build FE → архив → SSH на VM → `docker compose` → health + login check.  
-Данные Mongo **не** трогает (`WIPE=false`).
 
 ---
 
 ## Первый раз на этой машине (5 минут)
 
 ```powershell
-# 1) зависимости
 pip install -r deploy/synology/requirements.txt
-
-# 2) секреты (gitignore)
 copy deploy\synology\config.env.example deploy\synology\config.env
 copy deploy\synology\CREDENTIALS.example.md deploy\synology\CREDENTIALS.md
-# заполнить config.env + CREDENTIALS.md (пароли SSH, JWT, ADMIN_PASSWORD, ключ)
-
-# 3) SSH-ключ на VM (один раз)
-# ssh-keygen -t ed25519 -f $env:USERPROFILE\.ssh\kppdf80-vm -N ""
-# затем pubkey в ~/.ssh/authorized_keys на VM; в config.env:
-# DEPLOY_SSH_KEY=C:\Users\YOU\.ssh\kppdf80-vm
-
-# 4) деплой
+# заполнить config.env + CREDENTIALS.md; SSH-ключ в config.env
 .\deploy\synology\deploy.ps1
 ```
 
-Preflight (опционально): `.\deploy\synology\preflight.ps1`
+Preflight: `.\deploy\synology\preflight.ps1`
 
 ---
 
@@ -116,74 +89,45 @@ Preflight (опционально): `.\deploy\synology\preflight.ps1`
 | `.\deploy\synology\deploy.ps1` | Update (без wipe) |
 | `.\deploy\synology\deploy.ps1 -Seed` | Update + restart bootstrap seeds |
 | `.\deploy\synology\deploy.ps1 -Wipe -Seed` | **Снос** app+mongo и чистая установка |
-| `.\deploy\synology\deploy.ps1 -SkipBuild` | Без пересборки Angular (уже есть `frontend/browser/`) |
-
-Эквивалент Python:
-
-```powershell
-python -u deploy/synology/deploy.py --skip-build          # быстрый update
-python -u deploy/synology/deploy.py --no-cache            # полный docker rebuild (медленно)
-python -u deploy/synology/deploy.py --wipe --seed         # чистая БД
-```
+| `.\deploy\synology\deploy.ps1 -SkipBuild` | Без пересборки Angular |
 
 > **`-Wipe` только пока система не в реальной работе.** Когда PO скажет «работаем» — wipe запрещён.
 
 ### Как устроен быстрый путь (канон)
 
 1. **Angular собирается локально** (`pnpm --dir frontend build` → `frontend/browser/`).
-2. В tar уходит: `backend/` (исходники) + `frontend/browser/` + `docker-compose.prod.yml`.
-3. На VM: `docker compose build backend` **с кэшем слоёв** (по умолчанию) → `up -d`.
-4. **Не** запускать два деплоя параллельно и **не** злоупотреблять `--no-cache` — на маленькой VM два `--no-cache` зависают и душат CPU.
-
-`--no-cache` нужен только если менялись `backend/Dockerfile` / lockfile / базовый image.
+2. В tar уходит: `backend/` + `frontend/browser/` + `docker-compose.prod.yml`.
+3. На VM: `docker compose build backend` **с кэшем** → `up -d`.
+4. **Не** два деплоя параллельно; `--no-cache` — исключение.
 
 ---
 
 ## После клона репо
 
 1. `pip install -r deploy/synology/requirements.txt`
-2. Скопировать `config.env.example` → `config.env`, `CREDENTIALS.example.md` → `CREDENTIALS.md`, заполнить.
-3. VPN off → `.\deploy\synology\deploy.ps1`
+2. Скопировать `config.env.example` → `config.env`, `CREDENTIALS.example.md` → `CREDENTIALS.md`.
+3. VPN off → после штампа READY: `.\deploy\synology\deploy.ps1`
 
-Деплой только с ПК в домашней сети (LAN к VM). **GitHub Actions / облачный CI не
-используем** — GitHub хранит только репозиторий: ни Actions, ни dependabot
-(решение PO 2026-08-21, канон: `docs/GIT-POLICY.md`).
+Деплой только с ПК в домашней LAN. GitHub = только хранилище (`docs/GIT-POLICY.md`).
 
 ---
 
 ## Desktop installer (TZD-16 / TZD-24 / TZD-46)
 
-Windows installer is published as **ZIP** (preferred) plus optional `.exe` alongside.
-After `cd desktop && pnpm tauri build`, run `pnpm run publish-installer` (copies
-`.exe` and builds zip into `frontend/downloads/` and `frontend/browser/downloads/`).
+После `cd desktop && pnpm tauri build` → `pnpm run publish-installer`  
+(в `frontend/downloads/`). Имена: `kppdf-desktop-setup-v{semver}.zip` + alias.  
+Канон: `docs/audits/2026-08-12-desktop-download-version-naming-canon.md`.  
+Не коммитить `.exe`/`.zip`. Свежесть zip проверяется на подготовке к деплою.
 
-**Имена файлов (канон 2026-08-12):** versioned  
-`kppdf-desktop-setup-v{semver}.zip` (+ alias `kppdf-desktop-setup.zip` на тот же билд).  
-Полный канон + почему на сайте ещё «старое»:  
-`docs/audits/2026-08-12-desktop-download-version-naming-canon.md` · TZ: `tasks/_backlog/desktop/TZD-46-desktop-zip-versioned-filename.md`.
+### На warm с актуальным Desktop AI
 
-Deploy `build_frontend` делает publish через `zipfile`. Backend mounts that folder at
-`/downloads/` and **never** SPA-falls back those paths. Default pairing button:
-versioned URL via compat/`DESKTOP_DOWNLOAD_URL`, alias unversioned для старых закладок.
-Set `DESKTOP_DOWNLOAD_URL` in `deploy/synology/config.env`; `deploy.py` injects it
-into the SPA. Do not commit the `.exe`/`.msi`/`.zip`. MCP host still needs
-Node.js on the client until sidecar bundling lands.
-
-### Обязательно на следующем warm deploy (VPN off + слово PO)
-
-1. TZD-46 в `main` (versioned zip).
-2. На build-ПК: `cd desktop && pnpm tauri build && pnpm run publish-installer`.
-3. `config.env`: `DESKTOP_MIN_VERSION` / `DESKTOP_RECOMMENDED_VERSION` / `DESKTOP_DOWNLOAD_URL=…-v{semver}.zip`.
-4. Warm `deploy.ps1` — если WARN «Desktop installer .exe not found» → для Desktop-потока считать деплой **неполным**.
-5. Smoke: скачанный файл содержит `v{semver}` в имени; футер Desktop = тот же semver.
+1. Свежий `tauri build` + `publish-installer` (если штамп требует).
+2. `config.env`: `DESKTOP_*` / `DESKTOP_DOWNLOAD_URL`.
+3. Smoke: имя zip содержит `v{semver}`.
 
 ## Данные переживают деплой
 
-`docker-compose.prod.yml` монтирует `${KPPDF_DATA_DIR}/mongodb` и `${KPPDF_DATA_DIR}/uploads`
-как **volume на хосте** (вне контейнеров). Обычный `docker compose up -d --build`
-**не удаляет** данные — база и файлы переживают передеплой.
-Удаляет **только** явный `--wipe` (`deploy.py`), что уже задокументировано
-как опасная операция (разрешение PO + бэкап).
+Volumes на хосте. Удаляет **только** явный `--wipe` + разрешение PO + бэкап.
 
 ---
 
@@ -194,57 +138,30 @@ https://kppdf-crm.ru/
 https://kppdf-crm.ru/api/health/ready
 ```
 
-Логин admin — **только** из `CREDENTIALS.md` (не `admin123`).
-
-Если стили «голые» — Ctrl+F5 (кэш). Если 401 — неверный пароль или softlock после 5 ошибок (~15 мин / restart backend).
+Логин admin — только из `CREDENTIALS.md`. Стили «голые» → Ctrl+F5. 401 → пароль/softlock.
 
 ---
 
-## Уроки первого деплоя (2026-08-02)
+## Уроки деплоев (сжато)
 
-1. **VPN off** перед SSH на `192.168.1.103`.
-2. Канон домена: **`kppdf-crm.ru`**.
-3. Auth: login JSON = `{ access, refresh, user }` (FE хранит refresh).
-4. Prod: сильный `ADMIN_PASSWORD` в `.env` (не demo-default) — иначе boot fail.
-5. После wipe Mongo нужен **replica set rs0** (`mongo-init` в compose уже исправлен).
-6. Не коммитить `config.env` / `CREDENTIALS.md`.
+1. VPN off перед SSH `192.168.1.103`. Домен: `kppdf-crm.ru`.
+2. `main == origin/main`, дерево чистое.
+3. Windows: `$env:PYTHONUTF8='1'` перед `deploy.ps1`.
+4. Один деплой за раз; кэшированный docker build по умолчанию.
+5. Не коммитить `config.env` / `CREDENTIALS.md`.
+6. После wipe нужен replica set (уже в compose).
 
-## Уроки вечернего деплоя (2026-08-02, post-wipe)
-
-7. **Один деплой за раз.** Два параллельных `docker build --no-cache` на VM = зависание; на сервере не должно крутиться ничего лишнего кроме compose-стека kppdf (`kppdf-backend`, `kppdf-mongo`; `mongo-init` — one-shot Exited 0).
-8. По умолчанию **кэшированный** `docker compose build backend` (минуты). Полный `--no-cache` — исключение.
-9. После wipe/ротации JWT: краткий **401 на `/api/auth/me`** нормален (stale access) → refresh/re-login. Пароль только из `CREDENTIALS.md`.
-10. **ИНН обязателен** для `POST /organizations`. Автосоздание «Основной организации» из шаблонов документов шлёт валидный ИНН `7707083893` (не убирать `@IsINN()`).
-11. ValidationPipe должен кидать **`BadRequestException`** (400), не голый `Error` (иначе 500 на валидации).
-12. **`TextBlockCategoriesSeed` обязан быть в `AppModule.providers`** + `TextBlockCategoryModule` в `imports`. Без этого: `Default text-block category unavailable` (slug `obshchee`). Seed сам чинит inactive/non-default system row.
-13. DevFixturesSeed в `NODE_ENV=production` **не** создаёт demo-org — на проде org появляется через UI/шаблоны или admin.
-14. Локальный LM Studio agent: `docs/agents/LM-STUDIO-AGENT.md`, trust **LIMITED_HELPER**, `pnpm lmstudio:check`.
-
-## Уроки деплоя 2026-08-09 (warm, post WAVE-KP-USABLE)
-
-15. Перед деплоем **local `main` == `origin/main`** и working tree clean — иначе на работе завтра другая версия.
-16. Windows консоль **cp1251**: лог с символом `→` ронял `deploy.py` (`UnicodeEncodeError`). Канон: `_safe_print` в `deploy.py` + перед запуском `$env:PYTHONUTF8='1'`.
-17. Desktop installer в tar (~9–10 MB `.exe`/`.zip` в `frontend/browser/downloads/`) — норма; отсутствие `.exe` = WARN, деплой продолжается, кнопка pair может 404.
-18. Compose WARN «output may contain errors» при усечённом логе build — не стоп; ждать health/replica set.
-19. Prod smoke после up: `https://kppdf-crm.ru/api/health/ready` и root `200`; LAN `http://192.168.1.103:3000/api/health/ready`.
-20. Локальный второй Nest на `:3000` (EADDRINUSE) **не мешает** prod-деплою — это только локальный стек.
-
-### Smoke после деплоя
+### Smoke
 
 ```powershell
 curl.exe -sf http://192.168.1.103:3000/api/health/ready
-# UI: https://kppdf-crm.ru/  — Ctrl+F5, login admin / CREDENTIALS.md
-# Создать шаблон документа (пустое org → авто-org с ИНН)
-# Создать текстовый блок без categoryId → должен взять «Общее» (obshchee)
+# UI: https://kppdf-crm.ru/ — Ctrl+F5, login из CREDENTIALS.md
 ```
 
-### Если VM «мёртвая» (нет контейнеров, крутятся build)
+### Если VM «мёртвая»
 
 ```powershell
-# с ПК (VPN off), один процесс:
 $env:PYTHONUNBUFFERED='1'
 python -u deploy/synology/deploy.py --skip-build   # если FE уже собран
-# или полный: .\deploy\synology\deploy.ps1
+# или: .\deploy\synology\deploy.ps1
 ```
-
-На VM ожидаемо только: `kppdf-backend`, `kppdf-mongo` (+ exited `mongo-init`).
