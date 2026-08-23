@@ -55,7 +55,7 @@ type TypeFilter = 'all' | Category['type'];
       @if (error()) {
         <div
           role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           {{ error() }}
         </div>
@@ -85,6 +85,7 @@ type TypeFilter = 'all' | Category['type'];
         <app-pi-button variant="default" (click)="openCreate()">+ Создать</app-pi-button>
       </div>
       <app-pi-table-tree
+        [compact]="true"
         [data]="treeData()"
         [columns]="columns"
         [childRows]="childrenOf"
@@ -100,7 +101,7 @@ type TypeFilter = 'all' | Category['type'];
         data-test="categories-tree"
       />
       <ng-template #nameTpl let-c
-        ><span class="text-sm font-medium text-ink truncate">{{ c.name }}</span></ng-template
+        ><span class="text-xs font-medium text-ink truncate">{{ c.name }}</span></ng-template
       >
       <ng-template #typeTpl let-c
         ><span

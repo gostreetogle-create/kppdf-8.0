@@ -89,7 +89,7 @@ const PAGE_SIZE = 10;
       @if (error()) {
         <div
           role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           {{ error() }}
         </div>
@@ -99,8 +99,9 @@ const PAGE_SIZE = 10;
         Сортировка применяется только к текущей странице ({{ PAGE_SIZE }} записей).
       </p>
 
-      <div class="overflow-x-auto hairline rounded-sm">
+      <div class="overflow-x-auto hairline rounded-sm bg-paper-raised">
         <app-pi-table
+          [compact]="true"
           [data]="data()"
           [columns]="cols"
           [loading]="loading()"

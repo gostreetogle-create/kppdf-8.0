@@ -87,7 +87,7 @@ const PAGE_SIZE = 50;
       @if (error()) {
         <div
           role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
           data-test="counterparties-error"
         >
           {{ error() }}
@@ -121,11 +121,9 @@ const PAGE_SIZE = 50;
         />
       </ng-template>
 
-      <div
-        class="pi-table-surface hairline rounded-sm overflow-hidden"
-        data-test="counterparties-page"
-      >
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
         <app-pi-table
+          [compact]="true"
           [data]="rows()"
           [columns]="cols"
           [cellTemplates]="cellTemplates()"
@@ -139,7 +137,7 @@ const PAGE_SIZE = 50;
         />
       </div>
 
-      <p class="mt-3 text-sm text-muted-foreground" data-test="counterparties-sites-note">
+      <p class="mt-3 text-xs text-muted-foreground" data-test="counterparties-sites-note">
         Объекты / площадки — в волне ORDERS-303 (карточка заказчика).
       </p>
     </app-pi-group-workspace>
