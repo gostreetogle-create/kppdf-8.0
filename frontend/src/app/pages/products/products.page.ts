@@ -253,7 +253,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
           >
           <select
             id="rail-status"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="statusFilter() ?? ''"
             (change)="onStatusFilterChange($event)"
             data-test="status-filter"
@@ -268,7 +268,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
           >
           <select
             id="rail-active"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="activeFilterValue()"
             (change)="onActiveFilterChange($event)"
             data-test="active-filter"
@@ -284,7 +284,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
           >
           <select
             id="rail-category"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="categoryFilter() ?? ''"
             (change)="onCategoryFilterChange($event)"
             data-test="category-filter"
@@ -299,7 +299,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
           >
           <select
             id="rail-sort"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="sortSelectValue()"
             (change)="onRailSortChange($event)"
             data-test="rail-sort"
@@ -331,7 +331,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                   data-test="grid-loading"
                 />
               } @else if (data().length === 0) {
-                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                <p class="text-xs text-muted-foreground py-8 text-center" data-test="grid-empty">
                   {{ emptyMessage() }}
                 </p>
               } @else {
@@ -394,28 +394,31 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
               <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
                 ← Таблица широкая — прокручивайте горизонтально →
               </p>
-              <app-pi-table
-                [data]="data()"
-                [columns]="cols"
-                [loading]="loading()"
-                [total]="total()"
-                [page]="page()"
-                [pageSize]="pageSize()"
-                [emptyMessage]="emptyMessage()"
-                [ariaLabel]="'Список продукции'"
-                [cellTemplates]="cellTemplates"
-                [rowActions]="rowActionsTplBinding"
-                [localSort]="false"
-                [initialSortKey]="'name'"
-                [initialSortDir]="'asc'"
-                (pageChange)="onPageChange($event)"
-                (pageSizeChange)="onPageSizeChange($event)"
-                (sortChange)="onSortChange($event)"
-                (rowClick)="onRowClick($event)"
-                [expandedRow]="expandedTpl"
-                [expandedRowWhen]="isExpandedRow"
-                [expandedRowLabel]="expandedRowLabel"
-              ></app-pi-table>
+              <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+                <app-pi-table
+                  [compact]="true"
+                  [data]="data()"
+                  [columns]="cols"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [page]="page()"
+                  [pageSize]="pageSize()"
+                  [emptyMessage]="emptyMessage()"
+                  [ariaLabel]="'Список продукции'"
+                  [cellTemplates]="cellTemplates"
+                  [rowActions]="rowActionsTplBinding"
+                  [localSort]="false"
+                  [initialSortKey]="'name'"
+                  [initialSortDir]="'asc'"
+                  (pageChange)="onPageChange($event)"
+                  (pageSizeChange)="onPageSizeChange($event)"
+                  (sortChange)="onSortChange($event)"
+                  (rowClick)="onRowClick($event)"
+                  [expandedRow]="expandedTpl"
+                  [expandedRowWhen]="isExpandedRow"
+                  [expandedRowLabel]="expandedRowLabel"
+                ></app-pi-table>
+              </div>
             }
           </div>
         </div>
@@ -485,7 +488,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                   @for (m of modulesOf(row); track m._id) {
                     <a
                       [routerLink]="['/modules', m._id]"
-                      class="flex items-start gap-2.5 min-h-touch p-3 text-sm hairline rounded-sm bg-paper hover:bg-paper-2 transition-colors"
+                      class="flex items-start gap-2.5 min-h-touch p-3 text-xs hairline rounded-sm bg-paper-raised hover:bg-paper-2 transition-colors"
                       [attr.aria-label]="'Открыть модуль ' + m.name"
                       [attr.data-test]="'module-card-' + m._id"
                     >
@@ -538,7 +541,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
                       class="grid grid-cols-1 md:grid-cols-[minmax(12rem,0.8fr)_minmax(0,1.2fr)] gap-3 items-start"
                       [attr.data-test]="'preview-module-' + module._id"
                     >
-                      <div class="min-w-0 p-3 hairline rounded-sm bg-paper">
+                      <div class="min-w-0 p-3 hairline rounded-sm bg-paper-raised">
                         <a
                           [routerLink]="['/modules', module._id]"
                           class="block font-medium line-clamp-2 break-words hover:text-sunrise-warm hover:underline"

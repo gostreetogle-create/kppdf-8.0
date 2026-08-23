@@ -58,6 +58,9 @@ export type SelectionMode = 'none' | 'single' | 'multi';
   selector: 'app-pi-table',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.pi-table--compact]': 'compact()',
+  },
   imports: [NgTemplateOutlet, PaginationComponent],
   template: `
     <div class="pi-table-surface overflow-x-auto" data-test="pi-table-surface">
@@ -242,7 +245,7 @@ export type SelectionMode = 'none' | 'single' | 'multi';
           }
         </tbody>
       </table>
-      <div class="hairline-t px-3 py-3 flex items-center justify-between gap-2">
+      <div class="pi-table-footer hairline-t px-3 py-3 flex items-center justify-between gap-2">
         <div class="text-xs text-muted-foreground">
           <ng-content select="[caption]" />
         </div>
@@ -291,10 +294,27 @@ export type SelectionMode = 'none' | 'single' | 'multi';
         border-right: 1.5px solid var(--color-ink);
         border-bottom: 1.5px solid var(--color-ink);
       }
+
+      /* TZ-UI-DEN-520 — list density: 12px cells, tighter row padding */
+      :host(.pi-table--compact) table {
+        font-size: 0.75rem;
+        line-height: 1rem;
+      }
+
+      :host(.pi-table--compact) th,
+      :host(.pi-table--compact) td {
+        padding: 0.5rem;
+      }
+
+      :host(.pi-table--compact) .pi-table-footer {
+        padding: 0.5rem 0.75rem;
+      }
     `,
   ],
 })
 export class TableComponent<T> implements OnInit {
+  /** TZ-UI-DEN-520 — 12px table cells for catalog/party/dictionary lists. */
+  readonly compact = input(false);
   readonly data = input<T[]>([]);
   readonly columns = input.required<ColumnDef<T>[]>();
   readonly selectionMode = input<SelectionMode>('none');

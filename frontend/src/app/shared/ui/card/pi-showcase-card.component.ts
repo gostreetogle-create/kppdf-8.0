@@ -183,7 +183,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       }
 
       article {
-        background: var(--color-paper, #fafafa);
+        background: var(--color-paper-raised, #ffffff);
         border: 1px solid var(--color-rule, #e7e3da);
         border-radius: var(--radius-sm, 2px);
         position: relative;

@@ -93,8 +93,8 @@ type SortDir = 'asc' | 'desc';
           <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
             + Новый блок
           </app-pi-button>
-          <span class="text-xs text-muted-foreground"
-            >{{ data().length }} {{ totalLabel(data().length) }}</span
+          <span class="text-[11px] text-muted-foreground"
+            >Показано {{ data().length }} {{ totalLabel(data().length) }}</span
           >
         </div>
       }
@@ -113,7 +113,7 @@ type SortDir = 'asc' | 'desc';
         }
       </ng-template>
       <ng-template #statusTpl let-row>
-        <span class="inline-flex items-center gap-2 text-sm">
+        <span class="inline-flex items-center gap-2 text-xs">
           <span
             class="inline-block h-2 w-2 rounded-full shrink-0"
             [class.bg-accent-cool]="row.isActive"
@@ -233,15 +233,20 @@ export class TextsPage {
   protected readonly sortDir = signal<SortDir>('asc');
 
   protected readonly columns: ColumnDef<TextBlock>[] = [
-    { key: 'name', label: 'Название', cellClass: 'font-medium' },
-    { key: 'categoryId', label: 'Категория', accessor: (row) => row.categoryId ?? '—' },
+    { key: 'name', label: 'Название', cellClass: 'font-medium text-xs' },
+    {
+      key: 'categoryId',
+      label: 'Категория',
+      accessor: (row) => row.categoryId ?? '—',
+      cellClass: 'text-xs',
+    },
     {
       key: 'columns',
       label: 'Конфигурация',
       accessor: (row) => this.columnConfigUpper(row.columns?.length || 1),
       cellClass: 'font-mono text-xs text-muted-foreground',
     },
-    { key: 'isActive', label: 'Статус' },
+    { key: 'isActive', label: 'Статус', cellClass: 'text-xs' },
   ];
   @ViewChild('rowActionsTpl', { static: true })
   protected readonly rowActionsTpl!: TemplateRef<{ $implicit: TextBlock }>;

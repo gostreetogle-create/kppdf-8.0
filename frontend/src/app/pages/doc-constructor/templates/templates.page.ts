@@ -88,8 +88,8 @@ const PAGE_SIZE = 10;
         >
           {{ creating() ? 'Создание…' : '+ Создать шаблон' }}
         </app-pi-button>
-        <span class="text-xs text-muted-foreground"
-          >{{ filtered().length }} {{ totalLabel(filtered().length) }}</span
+        <span class="text-[11px] text-muted-foreground"
+          >Показано {{ filtered().length }} {{ totalLabel(filtered().length) }}</span
         >
       </div>
 
@@ -189,12 +189,22 @@ export class TemplatesPage {
   protected readonly pageIndex = signal(0);
 
   protected readonly columns: ColumnDef<DocumentTemplate>[] = [
-    { key: 'name', label: 'Название', cellClass: 'font-medium' },
-    { key: 'categoryId', label: 'Категория', accessor: (row) => this.categoryName(row) },
-    { key: 'docTypeId', label: 'Тип документа', accessor: (row) => this.docTypeName(row) },
+    { key: 'name', label: 'Название', cellClass: 'font-medium text-xs' },
+    {
+      key: 'categoryId',
+      label: 'Категория',
+      accessor: (row) => this.categoryName(row),
+      cellClass: 'text-xs',
+    },
+    {
+      key: 'docTypeId',
+      label: 'Тип документа',
+      accessor: (row) => this.docTypeName(row),
+      cellClass: 'text-xs',
+    },
     { key: 'pageSize', label: 'Формат', cellClass: 'font-mono text-xs' },
-    { key: 'isActive', label: 'Активен', align: 'center' },
-    { key: 'isDefault', label: 'По умолчанию', align: 'center' },
+    { key: 'isActive', label: 'Активен', align: 'center', cellClass: 'text-xs' },
+    { key: 'isDefault', label: 'По умолчанию', align: 'center', cellClass: 'text-xs' },
   ];
   @ViewChild('activeTpl', { static: true }) private readonly activeTpl!: TemplateRef<{
     $implicit: DocumentTemplate;

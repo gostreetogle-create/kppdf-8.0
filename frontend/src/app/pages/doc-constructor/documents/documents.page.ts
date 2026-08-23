@@ -57,7 +57,7 @@ const PAGE_SIZE = 10;
           (change)="onPeriodChange($event)"
           aria-label="Фильтр по периоду"
         />
-        <span class="text-xs text-muted-foreground">{{ filtered().length }} записей</span>
+        <span class="text-[11px] text-muted-foreground">Показано {{ filtered().length }} записей</span>
       </div>
 
       <ng-template #statusTpl let-doc>
@@ -148,7 +148,7 @@ export class DocumentsPage {
       key: 'templateName',
       label: 'Название шаблона',
       accessor: (doc) => this.displayTemplateName(doc),
-      cellClass: 'font-medium',
+      cellClass: 'font-medium text-xs',
     },
     {
       key: 'createdAt',
@@ -156,7 +156,7 @@ export class DocumentsPage {
       accessor: (doc) => this.formatDate(doc.createdAt),
       cellClass: 'font-mono text-xs text-muted-foreground',
     },
-    { key: 'status', label: 'Статус' },
+    { key: 'status', label: 'Статус', cellClass: 'text-xs' },
   ];
   @ViewChild('statusTpl', { static: true }) private readonly statusTpl!: TemplateRef<{
     $implicit: GeneratedDocument;

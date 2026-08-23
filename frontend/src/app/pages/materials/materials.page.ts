@@ -229,7 +229,7 @@ const CHROME_OWNER = 'materials-page';
           >
           <select
             id="rail-kind"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="kindFilter() ?? ''"
             (change)="onKindFilterChange($event)"
             data-test="rail-kind"
@@ -264,12 +264,12 @@ const CHROME_OWNER = 'materials-page';
                   data-test="grid-loading"
                 />
               } @else if (data().length === 0) {
-                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                <p class="text-xs text-muted-foreground py-8 text-center" data-test="grid-empty">
                   {{ emptyMessage() }}
                 </p>
               } @else {
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 items-stretch"
                   data-test="materials-grid"
                 >
                   @for (row of data(); track row._id) {
@@ -321,24 +321,27 @@ const CHROME_OWNER = 'materials-page';
               <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
                 ← Таблица широкая — прокручивайте горизонтально →
               </p>
-              <app-pi-table
-                [data]="data()"
-                [columns]="cols"
-                [loading]="loading()"
-                [total]="total()"
-                [page]="page()"
-                [pageSize]="pageSize()"
-                [emptyMessage]="emptyMessage()"
-                [ariaLabel]="'Список материалов'"
-                [cellTemplates]="cellTemplates"
-                [rowActions]="rowActionsTplBinding"
-                (pageChange)="onPageChange($event)"
-                (pageSizeChange)="onPageSizeChange($event)"
-                (rowClick)="onRowClick($event)"
-                [expandedRow]="expandedTpl"
-                [expandedRowWhen]="isExpandedRow"
-                [expandedRowLabel]="expandedRowLabel"
-              ></app-pi-table>
+              <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+                <app-pi-table
+                  [compact]="true"
+                  [data]="data()"
+                  [columns]="cols"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [page]="page()"
+                  [pageSize]="pageSize()"
+                  [emptyMessage]="emptyMessage()"
+                  [ariaLabel]="'Список материалов'"
+                  [cellTemplates]="cellTemplates"
+                  [rowActions]="rowActionsTplBinding"
+                  (pageChange)="onPageChange($event)"
+                  (pageSizeChange)="onPageSizeChange($event)"
+                  (rowClick)="onRowClick($event)"
+                  [expandedRow]="expandedTpl"
+                  [expandedRowWhen]="isExpandedRow"
+                  [expandedRowLabel]="expandedRowLabel"
+                ></app-pi-table>
+              </div>
             }
           </div>
         </div>

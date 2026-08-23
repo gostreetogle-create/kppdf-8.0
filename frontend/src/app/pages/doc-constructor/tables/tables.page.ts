@@ -81,8 +81,8 @@ type SortDir = 'asc' | 'desc';
             + Новая таблица
           </app-pi-button>
         }
-        <span class="text-xs text-muted-foreground"
-          >{{ data().length }} {{ totalLabel(data().length) }}</span
+        <span class="text-[11px] text-muted-foreground"
+          >Показано {{ data().length }} {{ totalLabel(data().length) }}</span
         >
       </div>
 
@@ -213,12 +213,13 @@ export class TablesPage {
   protected readonly sortDir = signal<SortDir>('asc');
 
   protected readonly columns: ColumnDef<TableTemplate>[] = [
-    { key: 'name', label: 'Название', sortable: true, cellClass: 'font-medium' },
+    { key: 'name', label: 'Название', sortable: true, cellClass: 'font-medium text-xs' },
     {
       key: 'category',
       label: 'Категория',
       sortable: true,
       accessor: (row) => this.categoryLabel(row.category),
+      cellClass: 'text-xs',
     },
     {
       key: 'columns',
@@ -226,6 +227,7 @@ export class TablesPage {
       accessor: (row) => row.columns.length,
       numeric: true,
       align: 'center',
+      cellClass: 'text-xs',
     },
     {
       key: 'sampleRows',
@@ -233,9 +235,17 @@ export class TablesPage {
       accessor: (row) => row.sampleRows?.length ?? 0,
       numeric: true,
       align: 'center',
+      cellClass: 'text-xs',
     },
-    { key: 'sortOrder', label: 'Порядок', sortable: true, numeric: true, align: 'center' },
-    { key: 'isActive', label: 'Активен', align: 'center' },
+    {
+      key: 'sortOrder',
+      label: 'Порядок',
+      sortable: true,
+      numeric: true,
+      align: 'center',
+      cellClass: 'text-xs',
+    },
+    { key: 'isActive', label: 'Активен', align: 'center', cellClass: 'text-xs' },
   ];
   @ViewChild('activeTpl', { static: true }) private readonly activeTpl!: TemplateRef<{
     $implicit: TableTemplate;

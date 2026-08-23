@@ -301,7 +301,7 @@ function moduleHasComposition(row: ProductModule): boolean {
           >
           <select
             id="rail-composition"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="compositionFilter()"
             (change)="onCompositionFilterChange($event)"
             data-test="rail-composition"
@@ -315,7 +315,7 @@ function moduleHasComposition(row: ProductModule): boolean {
           >
           <select
             id="rail-sort"
-            class="pi-input w-full text-sm"
+            class="pi-input w-full text-xs"
             [value]="sortSelectValue()"
             (change)="onRailSortChange($event)"
             data-test="rail-sort"
@@ -347,12 +347,12 @@ function moduleHasComposition(row: ProductModule): boolean {
                   data-test="grid-loading"
                 />
               } @else if (data().length === 0) {
-                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
+                <p class="text-xs text-muted-foreground py-8 text-center" data-test="grid-empty">
                   {{ emptyMessage() }}
                 </p>
               } @else {
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch"
+                  class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 items-stretch"
                   data-test="modules-grid"
                 >
                   @for (row of paginatedRows(); track row._id) {
@@ -402,28 +402,31 @@ function moduleHasComposition(row: ProductModule): boolean {
               <p class="text-[11px] text-muted-foreground mb-1 sm:hidden">
                 ← Таблица широкая — прокручивайте горизонтально →
               </p>
-              <app-pi-table
-                [data]="paginatedRows()"
-                [columns]="cols"
-                [loading]="loading()"
-                [total]="total()"
-                [page]="page()"
-                [pageSize]="pageSize()"
-                [emptyMessage]="emptyMessage()"
-                [ariaLabel]="'Список модулей'"
-                [cellTemplates]="cellTemplates"
-                [rowActions]="rowActionsTplBinding"
-                [localSort]="false"
-                [initialSortKey]="'name'"
-                [initialSortDir]="'asc'"
-                (pageChange)="onPageChange($event)"
-                (pageSizeChange)="onPageSizeChange($event)"
-                (sortChange)="onSortChange($event)"
-                (rowClick)="onRowClick($event)"
-                [expandedRow]="expandedTpl"
-                [expandedRowWhen]="isExpandedRow"
-                [expandedRowLabel]="expandedRowLabel"
-              ></app-pi-table>
+              <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+                <app-pi-table
+                  [compact]="true"
+                  [data]="paginatedRows()"
+                  [columns]="cols"
+                  [loading]="loading()"
+                  [total]="total()"
+                  [page]="page()"
+                  [pageSize]="pageSize()"
+                  [emptyMessage]="emptyMessage()"
+                  [ariaLabel]="'Список модулей'"
+                  [cellTemplates]="cellTemplates"
+                  [rowActions]="rowActionsTplBinding"
+                  [localSort]="false"
+                  [initialSortKey]="'name'"
+                  [initialSortDir]="'asc'"
+                  (pageChange)="onPageChange($event)"
+                  (pageSizeChange)="onPageSizeChange($event)"
+                  (sortChange)="onSortChange($event)"
+                  (rowClick)="onRowClick($event)"
+                  [expandedRow]="expandedTpl"
+                  [expandedRowWhen]="isExpandedRow"
+                  [expandedRowLabel]="expandedRowLabel"
+                ></app-pi-table>
+              </div>
             }
           </div>
         </div>
