@@ -3,7 +3,7 @@
 **agent_id:** freebuff-desk-wave
 **claimed_at:** 2026-08-23T12:06:16+0300
 **closed_at:** 2026-08-23
-**SHA:** (заполнить после commit)
+**SHA:** `03d2c37d`
 
 ARCHIVE_MARKER
 outcome: DONE
