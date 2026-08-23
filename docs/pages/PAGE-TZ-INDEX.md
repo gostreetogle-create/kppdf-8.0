@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-22 (FORM-308…310 density + desk two-panel reject)
+**Updated:** 2026-08-23 (UI War Room WR-500…512)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -98,6 +98,26 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/legal/privacy` | legal-privacy.page.md | **TZ-COMP-401** public policy (path A) |
 | `/admin` stub | — | **TZ-AUTH-308** redirect → `/admin/devices` |
 | `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305 DONE**; AUTH-307 park; **TZ-COMP-401** formula + privacy link; **TZ-UI-415 READY** footer 11px |
+
+## UI War Room / WR-50x (2026-08-23)
+
+Program SoT: [`docs/audits/2026-08-23-ui-war-room-program.md`](../audits/2026-08-23-ui-war-room-program.md).
+Prompt: `tasks/PROMPT-FREEBUFF-UI-WR-WAR-ROOM.md` → A/B/C.
+Closeout: **Proof of adoption** обязателен (`docs/TZ-AUTHORING.md`).
+Merged: 502→501, 511→507, 512→506.
+
+| TZ | Agent | One-liner |
+|----|-------|-----------|
+| TZ-UI-WR-500 | A | Canon rules + proof process |
+| TZ-UI-WR-501 | A | Return-focus + z-* (ex-502) |
+| TZ-UI-WR-503 | A | Builder flyout a11y |
+| TZ-UI-WR-504 | C | Gold/on-gold |
+| TZ-UI-WR-505 | B | ErrorBanner string API |
+| TZ-UI-WR-506 | B | /kit routes + passports (ex-512) |
+| TZ-UI-WR-507 | C | Filter + skeleton/error (ex-511) |
+| TZ-UI-WR-508 | C | Dropdown portal + nav |
+| TZ-UI-WR-509 | A | Desk flyout a11y |
+| TZ-UI-WR-510 | A | KP review Esc=B exception |
 
 ## Cross-cutting UX batch (this sweep)
 

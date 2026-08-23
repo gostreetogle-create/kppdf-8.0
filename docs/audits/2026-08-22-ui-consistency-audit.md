@@ -52,6 +52,8 @@ Flyout имеет `role="dialog" aria-modal="true"`, отдельный backdrop
 
 ### S-01 — HIGH — shared `PiSelect` фактически всегда показывает options
 
+**STATUS 2026-08-23: FIXED by TZ-UI-401** (`@if (open())`, toggle, Esc, click-outside).
+
 `frontend/src/app/shared/ui/select/select.component.ts:51-58`
 
 В шаблоне listbox не связан ни с `open` signal, ни с условным `@if`; он всегда присутствует сразу под trigger. `SelectTriggerComponent` (`select-trigger.component.ts:22-29`) не эмитит toggle и не вызывает parent open/close. Единственное production-like использование — `frontend/src/app/pages/forms/forms.page.ts:96-100`; значит общий компонент не реализует ожидаемый закрытый dropdown-контракт и визуально расходится с `PiOverflowSelect`.
@@ -182,6 +184,8 @@ The canon requires `text-on-gold` over `bg-sunrise-warm`; `text-paper` is not th
 The literal grep `bg-sunrise-warm text-paper` is empty because Angular class bindings are on separate lines, but the rendered state adds both classes. In several places `text-on-gold` is also present, making the final cascade/order fragile and violating the explicit anti-goal.
 
 ### C-02 — HIGH — shared select has a dark-unsafe paper color on selected gold option
+
+**STATUS 2026-08-23: FIXED by TZ-UI-401** (`color: var(--color-on-gold)`).
 
 `frontend/src/app/shared/ui/select/select-option.component.ts:47-51`
 

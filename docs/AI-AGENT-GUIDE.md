@@ -261,6 +261,30 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 | Vector DB / semantic search | TZ-105.1 verdict — запрещено | MongoDB regex indexes |
 | Англ. слова в UI (`draft`, `Save`, `Estimate`, `placeholder` как подсказка пользователю) | PO: сайт русскоязычный; стыд на показе коллегам | RU: «черновик», «Сохранить», «оценка»; API enum `draft` в коде ок |
 
+### 3.1 UI overlay canon (War Room 2026-08-23)
+
+SoT: [`docs/audits/2026-08-23-ui-war-room-program.md`](./audits/2026-08-23-ui-war-room-program.md) · промт волны: `tasks/PROMPT-FREEBUFF-UI-WR-WAR-ROOM.md`.
+
+- Новый dropdown/menu/dialog/flyout **вручную запрещён**, если есть `PiDialogService` / `PiSheet` / `PiDrawer` / `pi-dropdown-menu` / `piPopover` — сначала проверь `/kit`.
+- Overlay обязан: Esc (если modal), focus trap (modal), **return-focus**, корректный role/aria — через CDK a11y, не сырой `@HostListener` без restore.
+- Новый `shared/ui` primitive в той же TZ получает пример в `/kit` (после STD-506 роутинга).
+- Inline «Загрузка…» / raw error `<p class="text-destructive">` — только с явным исключением в TZ.
+- Dead primitive (0 consumers) = red flag: adopt **или** deprecate TZ, не третий путь.
+- Обход неудобного primitive молча запрещён → adoption mini-TZ в `tasks/` (не GitHub Issue).
+
+### 3.2 Proof of adoption (обязателен для canonical UI TZ)
+
+Каждая TZ, которая чинит/вводит canonical UI-компонент, **не DONE**, пока в
+`.done.md` / Executor report нет блока `## Proof of adoption` с пятью пунктами:
+
+1. **Routed production consumer** — минимум один реальный маршрут (не только `/kit`).
+2. **Test** — Jest (или scoped gate) на важное поведение фикса.
+3. **Kit или Markdown** — обновлён `/kit/*` и/или passport/page.md.
+4. **Migration note** — что теперь запрещено делать вручную (1–3 строки).
+5. **Legacy leftover** — какие места ещё на старом паттерне (список или «none»).
+
+Исключение — docs-only TZ: пункты 1–2 N/A; 3–5 = `AI-AGENT-GUIDE.md` + audits.
+
 ---
 
 ## 4. 🌐 Paper & Ink Design System (кратко)
