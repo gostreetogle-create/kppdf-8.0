@@ -188,4 +188,13 @@ describe('ModuleFormDialogComponent (TZ-CATALOG-320)', () => {
     expect(typeof payload.dimensions.width).toBe('number');
     expect(typeof payload.weight).toBe('number');
   });
+
+  it('uses compact Paper & Ink footer density (TZ-UI-DEN-531)', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'module-form-dialog.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('variant="outline"');
+    expect(source).not.toContain('variant="ghost"');
+  });
 });

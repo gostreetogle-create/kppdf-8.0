@@ -132,7 +132,7 @@ interface DimensionFormGroup extends FormGroup {
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-5"
+        class="space-y-4"
         data-test="material-form"
       >
         <!-- ─── Two-column layout: basics (left) + optional (right) ─── -->
@@ -434,7 +434,7 @@ interface DimensionFormGroup extends FormGroup {
         </div>
 
         <!-- ─── Dimensions: half-width on desktop, full-width on mobile ─── -->
-        <div class="w-full lg:w-1/2 max-w-xl" data-test="dimensions-section-wrap">
+        <div class="w-full lg:w-1/2 max-w-xl hairline-t pt-4" data-test="dimensions-section-wrap">
           <app-pi-form-section title="Габариты" headingId="mat-sec-dims" tone="dimensions">
             <div class="flex items-baseline justify-between mb-form-row">
               <app-pi-button
@@ -528,7 +528,7 @@ interface DimensionFormGroup extends FormGroup {
         >
           {{ uploading() ? 'Загрузка фото…' : submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
+        <app-pi-button type="button" variant="outline" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

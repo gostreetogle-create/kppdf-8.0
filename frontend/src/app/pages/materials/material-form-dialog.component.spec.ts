@@ -638,6 +638,16 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     expect(close).toHaveBeenCalledWith(null);
   });
 
+  it('uses compact Paper & Ink form density (TZ-UI-DEN-531)', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'material-form-dialog.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('space-y-4');
+    expect(source).toContain('variant="outline"');
+    expect(source).not.toContain('variant="ghost"');
+  });
+
   // ─────────────────────────────────────────────────────────────────
   // TZ-CATALOG-316 — FE Material 301 fields
   //

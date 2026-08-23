@@ -286,9 +286,6 @@ import { forkJoin } from 'rxjs';
         <span class="text-[11px] text-muted-foreground mr-auto" data-test="save-continue-hint">
           Ctrl+Enter — сохранить и создать ещё
         </span>
-        <app-pi-button variant="ghost" type="button" (click)="onCancel()" data-test="cancel-button">
-          Отмена
-        </app-pi-button>
         <app-pi-button
           variant="default"
           type="submit"
@@ -296,6 +293,14 @@ import { forkJoin } from 'rxjs';
           data-test="submit-button"
         >
           {{ submitting() ? 'Сохранение…' : isEdit ? 'Сохранить' : 'Создать' }}
+        </app-pi-button>
+        <app-pi-button
+          variant="outline"
+          type="button"
+          (click)="onCancel()"
+          data-test="cancel-button"
+        >
+          Отмена
         </app-pi-button>
       </div>
     </app-pi-dialog>

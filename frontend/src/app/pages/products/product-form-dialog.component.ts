@@ -118,6 +118,10 @@ function usableProductId(value: unknown): string | null {
         text-align: right;
         font-variant-numeric: tabular-nums;
       }
+      :host ::ng-deep [data-test='product-composition-editor'] .text-sm {
+        font-size: 0.75rem;
+        line-height: 1rem;
+      }
     `,
   ],
   imports: [
@@ -386,7 +390,7 @@ function usableProductId(value: unknown): string | null {
 
                 @if (colorOpen()) {
                   <div
-                    class="absolute left-0 right-0 z-30 mt-1 bg-paper hairline rounded-sm shadow-sm max-h-64 overflow-y-auto"
+                    class="absolute left-0 right-0 z-30 mt-1 bg-paper hairline rounded-sm max-h-64 overflow-y-auto"
                     role="listbox"
                     [attr.aria-label]="'Выбор цвета RAL'"
                     data-test="color-dropdown-panel"
@@ -506,7 +510,7 @@ function usableProductId(value: unknown): string | null {
 
         @if (editProductId(); as productId) {
           <section
-            class="max-h-[34rem] overflow-y-auto hairline rounded-sm bg-paper-2/30"
+            class="max-h-[34rem] overflow-y-auto hairline rounded-sm bg-paper-raised text-xs hairline-t pt-4"
             data-test="product-composition-editor"
           >
             <app-product-bom-panel
@@ -517,10 +521,10 @@ function usableProductId(value: unknown): string | null {
           </section>
         } @else {
           <section
-            class="hairline rounded-sm bg-paper-2/30 px-3 py-3"
+            class="hairline rounded-sm bg-paper-raised px-4 py-3 text-xs"
             data-test="composition-create-hint"
           >
-            <p class="text-sm text-muted-foreground m-0">
+            <p class="text-xs text-muted-foreground m-0">
               Сначала сохраните изделие — затем откройте редактирование, чтобы собрать состав.
             </p>
           </section>
@@ -547,7 +551,7 @@ function usableProductId(value: unknown): string | null {
         >
           {{ uploading() ? 'Загрузка фото…' : submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()"> Отмена </app-pi-button>
+        <app-pi-button type="button" variant="outline" (click)="onCancel()"> Отмена </app-pi-button>
       </div>
     </app-pi-dialog>
   `,

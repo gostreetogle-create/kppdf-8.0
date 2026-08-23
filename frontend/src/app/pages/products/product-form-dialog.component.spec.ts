@@ -555,4 +555,15 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(payload.productModuleIds).toBeUndefined();
     expect(close).toHaveBeenCalled();
   });
+
+  it('uses compact Paper & Ink form density (TZ-UI-DEN-531)', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'product-form-dialog.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('space-y-form-field');
+    expect(source).toContain('variant="outline"');
+    expect(source).not.toContain('shadow-sm');
+    expect(source).toContain('bg-paper-raised');
+  });
 });
