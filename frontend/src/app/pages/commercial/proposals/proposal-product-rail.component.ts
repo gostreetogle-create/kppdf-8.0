@@ -109,6 +109,9 @@ const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
         <div>
           <p class="eyebrow m-0">Каталог</p>
           <h2 class="rail__title">Товары</h2>
+          <p class="text-xs text-muted-foreground m-0 mt-1" data-test="kp-hint-catalog">
+            Добавление в состав — только это КП. Карточку изделия правьте через строку таблицы.
+          </p>
         </div>
         <app-pi-button
           type="button"

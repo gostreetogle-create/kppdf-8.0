@@ -136,6 +136,11 @@ describe('ProposalProductRailComponent (TZ-SALES-328/348)', () => {
     added.mockReset();
   });
 
+  it('TZ-KP-MECH-502: shows catalog IA hint in the heading', () => {
+    const hint = fixture.nativeElement.querySelector('[data-test="kp-hint-catalog"]');
+    expect(hint?.textContent).toContain('Добавление в состав — только это КП');
+  });
+
   it('renders md showcase cards with photo, add/edit actions, and pager', () => {
     expect(listMock).toHaveBeenCalledWith({ page: 1, limit: 10 });
     expect(fixture.nativeElement.querySelector('[data-size="md"]')).toBeTruthy();

@@ -106,6 +106,9 @@ export type ProposalCreateStatus = ProposalStatus;
   template: `
     <div class="inspector" data-test="kp-create-inspector">
       @if (!tableOnly()) {
+        <p class="text-xs text-muted-foreground m-0" data-test="kp-hint-params">
+          Параметры этого коммерческого предложения. Каталог и шаблон не меняются.
+        </p>
         <div class="inspector__lock" data-test="kp-status-lock">
           <span class="text-xs" [class.text-destructive]="readOnly()">
             {{ statusLabel() }} ·

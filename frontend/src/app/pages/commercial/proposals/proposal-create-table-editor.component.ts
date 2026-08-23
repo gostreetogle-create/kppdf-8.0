@@ -83,6 +83,10 @@ type ColumnWidths = Record<string, number>;
         </div>
       </header>
 
+      <p class="text-xs text-muted-foreground m-0 px-0.5" data-test="kp-hint-table">
+        Состав и цены — это КП. «Пресет таблицы» — общий шаблон колонок для других документов.
+      </p>
+
       <!-- Toolbar -->
       @if (lines().length > 0) {
         <div class="editor__toolbar" data-test="kp-table-editor-toolbar">

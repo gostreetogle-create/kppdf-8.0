@@ -29,6 +29,9 @@ import { extractErrorMessage } from '../../../../core/silent-http';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ButtonComponent, LucideAngularModule],
   template: `
+    <p class="text-xs text-muted-foreground m-0 px-4 pt-3" data-test="kp-hint-template">
+      Эталон бланка. Переименование, фон и дубликат сохраняются для будущих КП.
+    </p>
     <div class="kp-ws-tpl-actions" data-test="kp-ws-template-actions">
       <app-pi-button
         variant="outline"

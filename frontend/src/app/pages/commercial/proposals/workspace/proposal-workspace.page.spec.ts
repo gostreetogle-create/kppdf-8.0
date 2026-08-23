@@ -606,4 +606,30 @@ describe('ProposalWorkspacePage', () => {
     expect(draft.catalogReviewOpen()).toBe(true);
     expect(fixture.nativeElement.querySelector('.kp-catalog-review')).not.toBeNull();
   });
+
+  it('TZ-KP-MECH-502: template and params panels show IA hint lines', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+
+    store.openSection('template');
+    fixture.detectChanges();
+    const templateHint = fixture.nativeElement.querySelector('[data-test="kp-hint-template"]');
+    expect(templateHint).not.toBeNull();
+    expect(templateHint.textContent).toContain('Эталон бланка');
+
+    store.openSection('params');
+    fixture.detectChanges();
+    const paramsHint = fixture.nativeElement.querySelector('[data-test="kp-hint-params"]');
+    expect(paramsHint).not.toBeNull();
+    expect(paramsHint.textContent).toContain('Параметры этого коммерческого предложения');
+  });
+
+  it('TZ-KP-MECH-502: table panel shows IA hint line', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('table');
+    fixture.detectChanges();
+
+    const tableHint = fixture.nativeElement.querySelector('[data-test="kp-hint-table"]');
+    expect(tableHint).not.toBeNull();
+    expect(tableHint.textContent).toContain('Пресет таблицы');
+  });
 });

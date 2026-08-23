@@ -44,7 +44,9 @@ const TERM_VARIABLES = [
       <div class="terms__heading">
         <div>
           <h3>Условия</h3>
-          <p>Текст только в этом КП</p>
+          <p class="text-xs text-muted-foreground m-0" data-test="kp-hint-terms">
+            Тексты условий — в это КП. «Библиотека» — общие блоки на будущее.
+          </p>
         </div>
         <app-pi-button
           type="button"
