@@ -62,6 +62,7 @@ import {
   type Proposal,
   type ProposalVersionSummary,
 } from '../../../shared/services/pi-proposals.service';
+import { OrdersService, type Order } from '../../../shared/services/orders.service';
 import { PiToastService } from '../../../shared/ui/toast';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../deals-group-chips';
@@ -824,6 +825,7 @@ export class ProposalCreatePage implements OnInit {
   private readonly router = inject(Router);
   private readonly proposalsSvc = inject(ProposalsService);
   private readonly generatedDocumentsSvc = inject(GeneratedDocumentsService);
+  private readonly ordersSvc = inject(OrdersService);
   private readonly toast = inject(PiToastService);
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly blocksSvc = inject(TemplateBlocksService);
@@ -1073,8 +1075,14 @@ export class ProposalCreatePage implements OnInit {
     this.pendingRoutePrint = this.route?.snapshot.queryParamMap.get('action') === 'print';
     const queryId = this.route?.snapshot.queryParamMap.get('id')?.trim();
     const isNew = this.route?.snapshot.queryParamMap.get('new') === '1';
+    const source = this.route?.snapshot.queryParamMap.get('source')?.trim();
+    const sourceId = this.route?.snapshot.queryParamMap.get('sourceId')?.trim();
     if (queryId) {
       this.resumeDraftById(queryId);
+    } else if (source === 'order' && sourceId) {
+      // DESK-426: chip «КП» carries the order into a prefilled proposal.
+      this.clearLocalDraftPointers();
+      this.prefillFromOrder(sourceId);
     } else if (isNew) {
       this.clearLocalDraftPointers();
     } else {
@@ -1420,6 +1428,36 @@ export class ProposalCreatePage implements OnInit {
     }
     // No draft pointer: empty studio (do not auto-pick a lonely template).
     this.removeStorage('kp.create.lastTemplateId');
+  }
+
+  /**
+   * DESK-426 — КП из заказа (chip «КП» с expand): данные заказа наследуются
+   * в новый КП (контрагент + позиции), не пустой лист. Один write-path —
+   * draftLines/recipient signals, как и при гидрации черновика.
+   */
+  private prefillFromOrder(orderId: string): void {
+    this.ordersSvc.findById(orderId).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error) || 'Не удалось загрузить заказ');
+        return;
+      }
+      const order: Order = res.data;
+      this.counterpartyId.set(this.refId(order.counterpartyId) ?? '');
+      this.siteId.set(this.refId(order.siteId) ?? '');
+      this.draftLines.set(
+        (order.items ?? []).map((item) => ({
+          lineKind: 'catalog',
+          productId: item.productId,
+          ...(item.productSku ? { productSku: item.productSku } : {}),
+          productName: item.productName ?? 'Позиция',
+          quantity: item.quantity,
+          ...(item.unit ? { unit: item.unit } : {}),
+          unitPrice: item.unitPrice ?? 0,
+        })),
+      );
+      this.refreshComposition();
+      this.rebuildPreview$.next();
+    });
   }
 
   private clearLocalDraftPointers(): void {

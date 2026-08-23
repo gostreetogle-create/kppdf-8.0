@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   PiGroupWorkspaceComponent,
   type GroupChip,
@@ -28,10 +29,40 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
   selector: 'app-shipping-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, PiGroupWorkspaceComponent, ButtonComponent],
+  imports: [FormsModule, RouterLink, PiGroupWorkspaceComponent, ButtonComponent],
   template: `
     <app-pi-group-workspace [toc]="toc" tocActiveId="shipping" [chips]="emptyChips" activeId="">
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
+        @if (orderFilter() || fromDesk()) {
+          <span class="flex items-center gap-2 flex-wrap">
+            @if (fromDesk()) {
+              <a
+                [routerLink]="['/desk']"
+                [queryParams]="{ orderId: orderFilter(), view: 'desk' }"
+                class="inline-flex items-center gap-1.5 px-3 py-1 border border-rule-strong rounded-sm text-ink no-underline hover:bg-paper-2 text-sm"
+                data-test="shipping-desk-return"
+              >
+                ← На стол
+              </a>
+            }
+            @if (orderFilter()) {
+              <span
+                class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
+                data-test="shipping-order-filter-chip"
+              >
+                <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
+                <button
+                  type="button"
+                  class="underline underline-offset-2 hover:text-sunrise-warm"
+                  (click)="clearOrderFilter()"
+                  data-test="shipping-order-filter-clear"
+                >
+                  Сбросить
+                </button>
+              </span>
+            }
+          </span>
+        }
         <select
           class="pi-input w-44"
           [ngModel]="statusFilter()"
@@ -459,19 +490,31 @@ export class ShippingPage {
   protected docAmount = 0;
   protected docNotes = '';
 
+  /** DESK-426: chip «Отгрузка» приходит с orderId + from=desk. */
+  protected readonly fromDesk = signal(false);
+
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly ordersSvc = inject(OrdersService);
   private readonly shipmentsSvc = inject(ShipmentsService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const rawOrderId = (params.get('orderId') ?? '').trim();
+      this.orderFilter.set(rawOrderId || '');
+      this.fromDesk.set(params.get('from') === 'desk');
+      this.reload();
+    });
     this.ordersSvc
       .list()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (res.ok) this.orders.set(res.data ?? []);
       });
-    this.reload();
+    // Первичная загрузка: queryParamMap эмитит текущее значение сразу,
+    // поэтому reload() вызывается подпиской — отдельный вызов не нужен.
   }
 
   protected statusLabel(status: ShipmentStatus): string {
@@ -486,6 +529,19 @@ export class ShippingPage {
     return typeof orderId === 'string'
       ? (this.orders().find((order) => order._id === orderId)?.number ?? orderId.slice(-6))
       : (orderId.number ?? orderId._id.slice(-6));
+  }
+
+  protected orderFilterLabel(): string {
+    const id = this.orderFilter();
+    return id ? this.orderLabel(id) : '';
+  }
+
+  protected clearOrderFilter(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { orderId: null, from: null },
+      queryParamsHandling: 'merge',
+    });
   }
 
   protected shippableOrders(): Order[] {

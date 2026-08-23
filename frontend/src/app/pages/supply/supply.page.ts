@@ -99,6 +99,36 @@ export type SupplyViewMode = 'quick' | 'registry';
         </div>
 
         @if (viewMode() === 'quick') {
+          @if (orderFilterId() || fromDesk()) {
+            <div class="flex items-center gap-2 flex-wrap w-full">
+              @if (fromDesk()) {
+                <a
+                  [routerLink]="['/desk']"
+                  [queryParams]="{ orderId: orderFilterId(), view: 'desk' }"
+                  class="inline-flex items-center gap-1.5 px-3 py-1 border border-rule-strong rounded-sm text-ink no-underline hover:bg-paper-2 text-sm"
+                  data-test="supply-desk-return"
+                >
+                  ← На стол
+                </a>
+              }
+              @if (orderFilterId()) {
+                <span
+                  class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
+                  data-test="supply-order-filter-chip"
+                >
+                  <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
+                  <button
+                    type="button"
+                    class="underline underline-offset-2 hover:text-sunrise-warm"
+                    (click)="clearOrderFilter()"
+                    data-test="supply-order-filter-clear"
+                  >
+                    Сбросить
+                  </button>
+                </span>
+              }
+            </div>
+          }
           @if (quickToolbarTemplate(); as toolbarTpl) {
             <ng-container *ngTemplateOutlet="toolbarTpl" />
           }
@@ -117,20 +147,34 @@ export type SupplyViewMode = 'quick' | 'registry';
               <option value="ordered">Заказано</option>
               <option value="received">Получено</option>
             </select>
-            @if (orderFilterId()) {
-              <span
-                class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
-                data-test="supply-order-filter-chip"
-              >
-                <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
-                <button
-                  type="button"
-                  class="underline underline-offset-2 hover:text-sunrise-warm"
-                  (click)="clearOrderFilter()"
-                  data-test="supply-order-filter-clear"
-                >
-                  Сбросить
-                </button>
+            @if (orderFilterId() || fromDesk()) {
+              <span class="flex items-center gap-2 flex-wrap">
+                @if (fromDesk()) {
+                  <a
+                    [routerLink]="['/desk']"
+                    [queryParams]="{ orderId: orderFilterId(), view: 'desk' }"
+                    class="inline-flex items-center gap-1.5 px-3 py-1 border border-rule-strong rounded-sm text-ink no-underline hover:bg-paper-2 text-sm"
+                    data-test="supply-desk-return"
+                  >
+                    ← На стол
+                  </a>
+                }
+                @if (orderFilterId()) {
+                  <span
+                    class="inline-flex items-center gap-2 text-xs px-2 py-1 rounded-sm bg-paper-2 border hairline"
+                    data-test="supply-order-filter-chip"
+                  >
+                    <span>Фильтр: заказ {{ orderFilterLabel() }}</span>
+                    <button
+                      type="button"
+                      class="underline underline-offset-2 hover:text-sunrise-warm"
+                      (click)="clearOrderFilter()"
+                      data-test="supply-order-filter-clear"
+                    >
+                      Сбросить
+                    </button>
+                  </span>
+                }
               </span>
             }
             <span class="text-sm text-muted-foreground">{{ tasks().length }} задач</span>
@@ -383,6 +427,8 @@ export class SupplyPage implements AfterViewInit {
 
   protected readonly viewMode = signal<SupplyViewMode>('quick');
   protected readonly orderFilterId = signal<string | null>(null);
+  /** DESK-426: chip «Снабжение» приходит с from=desk → «На стол» возврат. */
+  protected readonly fromDesk = signal(false);
 
   protected readonly tasks = signal<SupplyTask[]>([]);
   protected readonly orders = signal<Order[]>([]);
@@ -442,6 +488,7 @@ export class SupplyPage implements AfterViewInit {
 
       const rawOrderId = (params.get('orderId') ?? '').trim();
       this.orderFilterId.set(rawOrderId || null);
+      this.fromDesk.set(params.get('from') === 'desk');
 
       if (this.viewMode() === 'registry') {
         this.reload();
@@ -491,7 +538,7 @@ export class SupplyPage implements AfterViewInit {
   protected clearOrderFilter(): void {
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { orderId: null },
+      queryParams: { orderId: null, from: null },
       queryParamsHandling: 'merge',
     });
   }

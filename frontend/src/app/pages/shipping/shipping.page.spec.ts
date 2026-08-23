@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { BehaviorSubject } from 'rxjs';
 import { of } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiToastService } from '../../shared/ui/toast';
@@ -53,6 +54,45 @@ describe('ShippingPage TZ-SUPPLY-312', () => {
     expect(fixture.nativeElement.querySelector('[data-test="shipping-empty"]')).toBeTruthy();
     expect(
       fixture.nativeElement.querySelector('[data-test="shipping-create-toggle"]'),
+    ).toBeTruthy();
+  });
+
+  it('426: orderId+from=desk query renders the filter chip and «На стол»', async () => {
+    setup();
+    const params$ = new BehaviorSubject(convertToParamMap({ orderId: 'order-1', from: 'desk' }));
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { queryParamMap: params$.asObservable() },
+    });
+    const fixture = TestBed.createComponent(ShippingPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="shipping-order-filter-chip"]'),
+    ).toBeTruthy();
+    const ret = fixture.nativeElement.querySelector(
+      '[data-test="shipping-desk-return"]',
+    ) as HTMLAnchorElement | null;
+    expect(ret).toBeTruthy();
+    expect(ret?.getAttribute('href')).toContain('/desk');
+    expect(ret?.getAttribute('href')).toContain('orderId=order-1');
+  });
+
+  it('426: no «На стол» bar without from=desk', async () => {
+    setup();
+    const params$ = new BehaviorSubject(convertToParamMap({ orderId: 'order-1' }));
+    TestBed.overrideProvider(ActivatedRoute, {
+      useValue: { queryParamMap: params$.asObservable() },
+    });
+    const fixture = TestBed.createComponent(ShippingPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="shipping-desk-return"]')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="shipping-order-filter-chip"]'),
     ).toBeTruthy();
   });
 

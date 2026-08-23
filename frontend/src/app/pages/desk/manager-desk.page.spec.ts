@@ -856,6 +856,83 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(link.getAttribute('href')).toContain('from=desk');
   });
 
+  it('426: expanded order merges orderId+from=desk into workflow chips (deep-links)', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+      pages: ['orders', 'proposals', 'supply', 'shipping', 'production'],
+    });
+    queryParams$.next(convertToParamMap({ orderId: 'o1', status: 'all' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o1');
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
+    fixture.detectChanges();
+    expect(page().expandedId()).toBe('o1');
+
+    const href = (testId: string): string =>
+      (
+        fixture.nativeElement.querySelector(`[data-test="${testId}"]`) as HTMLAnchorElement | null
+      )?.getAttribute('href') ?? '';
+
+    // Стол сохраняет expand.
+    expect(href('desk-workflow-desk')).toContain('/desk');
+    expect(href('desk-workflow-desk')).toContain('orderId=o1');
+    expect(href('desk-workflow-desk')).toContain('view=desk');
+    // КП — source=order.
+    expect(href('desk-workflow-proposal')).toContain('/proposals/create');
+    expect(href('desk-workflow-proposal')).toContain('source=order');
+    expect(href('desk-workflow-proposal')).toContain('sourceId=o1');
+    // Снабжение — фильтр заказа + from=desk.
+    expect(href('desk-workflow-supply')).toContain('/supply');
+    expect(href('desk-workflow-supply')).toContain('orderId=o1');
+    expect(href('desk-workflow-supply')).toContain('from=desk');
+    // Отгрузка — фильтр заказа + from=desk.
+    expect(href('desk-workflow-shipping')).toContain('/shipping');
+    expect(href('desk-workflow-shipping')).toContain('orderId=o1');
+    expect(href('desk-workflow-shipping')).toContain('from=desk');
+    // Комбайн/Гант сохраняют desk-stub view + orderId.
+    expect(href('desk-workflow-combine')).toContain('view=combine');
+    expect(href('desk-workflow-combine')).toContain('orderId=o1');
+    expect(href('desk-workflow-gantt')).toContain('view=gantt');
+    expect(href('desk-workflow-gantt')).toContain('orderId=o1');
+  });
+
+  it('426: workflow chips stay static without an expanded order', async () => {
+    authUser.set({
+      id: 'u1',
+      username: 'manager',
+      email: 'm@kppdf.local',
+      displayName: 'Менеджер',
+      role: 'manager',
+      permissions: [],
+      pages: ['orders', 'proposals', 'supply', 'shipping', 'production'],
+    });
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const href = (testId: string): string =>
+      (
+        fixture.nativeElement.querySelector(`[data-test="${testId}"]`) as HTMLAnchorElement | null
+      )?.getAttribute('href') ?? '';
+    expect(href('desk-workflow-desk')).not.toContain('orderId');
+    expect(href('desk-workflow-proposal')).not.toContain('source=order');
+    expect(href('desk-workflow-supply')).not.toContain('orderId');
+    expect(href('desk-workflow-supply')).not.toContain('from=desk');
+    expect(href('desk-workflow-shipping')).not.toContain('orderId');
+  });
+
   it('407: view=combine renders the combine studio-link view', async () => {
     queryParams$.next(convertToParamMap({ view: 'combine', orderId: 'o2' }));
     fixture.detectChanges();

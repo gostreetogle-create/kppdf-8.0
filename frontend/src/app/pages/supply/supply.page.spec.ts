@@ -44,6 +44,25 @@ describe('SupplyPage HUB-303 orderId filter', () => {
     httpMock.verify();
   });
 
+  /** Quick-order component loads lookups when prefillOrderId is set. */
+  function flushQuickOrderLookups(mock: HttpTestingController): void {
+    mock
+      .expectOne((r) => r.url === `${baseUrl}/categories` && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    mock
+      .expectOne((r) => r.url.startsWith(`${baseUrl}/materials`) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    mock
+      .expectOne((r) => r.url.startsWith(`${baseUrl}/organizations`) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    mock
+      .expectOne((r) => r.url.startsWith(`${baseUrl}/persons`) && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+    mock
+      .expectOne((r) => r.url === `${baseUrl}/supply-requests` && r.method === 'GET')
+      .flush({ items: [], total: 0 });
+  }
+
   it('passes ?orderId= to GET /supply-tasks and shows filter chip', async () => {
     queryParamSubject.next({
       get: (key: string) => {
@@ -70,6 +89,45 @@ describe('SupplyPage HUB-303 orderId filter', () => {
     expect(fixture.nativeElement.textContent).toContain('Фильтр: заказ');
   });
 
+  it('426: quick view shows the order filter chip and «На стол» when from=desk', async () => {
+    queryParamSubject.next({
+      get: (key: string) => {
+        if (key === 'orderId') return 'o1';
+        if (key === 'from') return 'desk';
+        return null;
+      },
+    });
+    const fixture = TestBed.createComponent(SupplyPage);
+    fixture.detectChanges();
+    flushQuickOrderLookups(httpMock);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('[data-test="supply-order-filter-chip"]'),
+    ).toBeTruthy();
+    const ret = fixture.nativeElement.querySelector(
+      '[data-test="supply-desk-return"]',
+    ) as HTMLAnchorElement | null;
+    expect(ret).toBeTruthy();
+    expect(ret?.getAttribute('href')).toContain('/desk');
+    expect(ret?.getAttribute('href')).toContain('orderId=o1');
+  });
+
+  it('426: no «На стол» bar without from=desk', async () => {
+    queryParamSubject.next({
+      get: (key: string) => {
+        if (key === 'orderId') return 'o1';
+        return null;
+      },
+    });
+    const fixture = TestBed.createComponent(SupplyPage);
+    fixture.detectChanges();
+    flushQuickOrderLookups(httpMock);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="supply-desk-return"]')).toBeNull();
+  });
+
   it('clearOrderFilter removes orderId query param', async () => {
     queryParamSubject.next({
       get: (key: string) => {
@@ -89,7 +147,7 @@ describe('SupplyPage HUB-303 orderId filter', () => {
     comp.clearOrderFilter();
     expect(navSpy).toHaveBeenCalled();
     const args = navSpy.mock.calls[0]!;
-    expect(args[1]?.queryParams).toEqual({ orderId: null });
+    expect(args[1]?.queryParams).toEqual({ orderId: null, from: null });
   });
 });
 

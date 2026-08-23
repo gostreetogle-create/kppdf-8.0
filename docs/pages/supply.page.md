@@ -55,8 +55,8 @@ Query `orderId` **сохраняется** при переключении Бы�
 
 | Откуда | Куда |
 |--------|------|
-| Desk chip «Снабжение» | `/supply?view=quick` |
-| Desk tray «Открыть снабжение» | `/supply?view=quick&orderId=` (если строка раскрыта) |
+| Desk chip «Снабжение» | `/supply?view=quick` (без expand); с expand — `/supply?view=quick&orderId=&from=desk` (**426**, фильтр + «На стол») |
+| Desk tray «Открыть снабжение» | flyout `panel=supply` на столе (425), без смены path |
 | Chip «Реестр» на странице | `/supply?view=registry` |
 
 ## TZ reference

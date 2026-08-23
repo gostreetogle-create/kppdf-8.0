@@ -21,6 +21,7 @@ import { GeneratedDocumentsService } from '../../../shared/services/pi-generated
 import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
 import { TextBlockCategoriesService } from '../../../shared/services/pi-text-block-categories.service';
 import { PiToastService } from '../../../shared/ui/toast';
+import { OrdersService } from '../../../shared/services/orders.service';
 import { ProposalDraftLine } from './proposal-product-rail.component';
 import type { DocumentTemplate } from '../../../shared/services/pi-document-templates.service';
 
@@ -33,6 +34,7 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
   const quotationCreateMock = jest.fn();
   const quotationUpdateMock = jest.fn();
   const quotationFindMock = jest.fn();
+  const orderFindByIdMock = jest.fn();
   const productFindByIdMock = jest.fn();
   const productUpdateMock = jest.fn();
   const productDuplicateMock = jest.fn();
@@ -47,6 +49,28 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     quotationCreateMock.mockReset();
     quotationUpdateMock.mockReset();
     quotationFindMock.mockReset();
+    orderFindByIdMock.mockReset();
+    orderFindByIdMock.mockReturnValue(
+      of({
+        ok: true,
+        data: {
+          _id: 'o1',
+          number: 'З-1001',
+          counterpartyId: 'cp-1',
+          siteId: 'site-1',
+          items: [
+            {
+              productId: 'prod-1',
+              productName: 'Стенд',
+              productSku: 'ST-1',
+              quantity: 2,
+              unit: 'шт',
+              unitPrice: 5000,
+            },
+          ],
+        },
+      }),
+    );
     productFindByIdMock.mockReset();
     productUpdateMock.mockReset();
     productDuplicateMock.mockReset();
@@ -250,6 +274,10 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         {
           provide: TableTemplatesService,
           useValue: { findById: tableFindMock },
+        },
+        {
+          provide: OrdersService,
+          useValue: { findById: orderFindByIdMock },
         },
       ],
     }).compileComponents();
@@ -740,6 +768,31 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
         ],
       }),
     );
+  }));
+
+  it('426: source=order&sourceId prefills the КП from the order (client + items)', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      prefillFromOrder: (orderId: string) => void;
+      counterpartyId: () => string;
+      siteId: () => string;
+      draftLines: () => ProposalDraftLine[];
+    };
+    page.prefillFromOrder('o1');
+    tick();
+
+    expect(orderFindByIdMock).toHaveBeenCalledWith('o1');
+    expect(page.counterpartyId()).toBe('cp-1');
+    expect(page.siteId()).toBe('site-1');
+    expect(page.draftLines()).toEqual([
+      expect.objectContaining({
+        productId: 'prod-1',
+        productName: 'Стенд',
+        productSku: 'ST-1',
+        quantity: 2,
+        unit: 'шт',
+        unitPrice: 5000,
+      }),
+    ]);
   }));
 
   it('saves a draft with template snapshot and updates the same draft on repeat Save', fakeAsync(() => {

@@ -53,7 +53,12 @@ import {
 import { Order, OrderStatus, OrdersService } from '../../shared/services/orders.service';
 import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
 import { OrderHubTrayComponent } from '../../shared/orders/order-hub-tray.component';
-import { DESK_WORKFLOW_CHIPS } from './desk-workflow-chips';
+import { deskWorkflowChips } from './desk-workflow-chips';
+import { SupplyQuickOrderComponent } from '../supply/supply-quick-order.component';
+import {
+  DocumentTemplatesService,
+  type DocumentTemplate,
+} from '../../shared/services/pi-document-templates.service';
 
 type DeskPanelSide = 'left' | 'right';
 
@@ -197,7 +202,13 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
   selector: 'app-manager-desk-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, OrderHubTrayComponent, OrderFormPanelComponent, PiGroupWorkspaceComponent],
+  imports: [
+    RouterLink,
+    OrderHubTrayComponent,
+    OrderFormPanelComponent,
+    PiGroupWorkspaceComponent,
+    SupplyQuickOrderComponent,
+  ],
   template: `
     <div class="manager-desk" data-test="manager-desk">
       <app-pi-group-workspace
@@ -370,7 +381,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
           [class.manager-desk__flyout--left]="panelSide() === 'left'"
           [class.manager-desk__flyout--right]="panelSide() === 'right'"
           [class.manager-desk__flyout--wide]="
-            panel() === 'create' || panel() === 'edit' || panel() === 'bom'
+            panel() === 'create' || panel() === 'edit' || panel() === 'bom' || panel() === 'supply'
           "
           [attr.id]="'desk-flyout-' + panel()"
           data-test="desk-flyout"
@@ -573,6 +584,32 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                 <p class="manager-desk__flyout-note">
                   Раскройте заказ в очереди, чтобы видеть и добавлять его заметки.
                 </p>
+              }
+            </div>
+          } @else if (panel() === 'supply') {
+            <app-supply-quick-order [prefillOrderId]="expandedId()" />
+          } @else if (panel() === 'docs') {
+            <div class="flex flex-col gap-2" data-test="desk-docs">
+              @if (templatesLoading()) {
+                <p class="manager-desk__flyout-note">Загрузка шаблонов…</p>
+              } @else if (templatesError()) {
+                <p role="alert" class="manager-desk__queue-error" data-test="desk-docs-error">
+                  {{ templatesError() }}
+                </p>
+              } @else if (templates().length === 0) {
+                <p class="manager-desk__flyout-note">Шаблонов документов пока нет.</p>
+              } @else {
+                @for (t of templates(); track t._id) {
+                  <button
+                    type="button"
+                    class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-transparent text-sm text-left flex items-center justify-between gap-2"
+                    data-test="desk-docs-template"
+                    (click)="onCreateFromTemplate(t)"
+                  >
+                    <span>{{ t.name }}</span>
+                    <span class="text-xs text-muted-foreground">Создать</span>
+                  </button>
+                }
               }
             </div>
           } @else {
@@ -945,6 +982,12 @@ export class ManagerDeskPage {
   /** 408: блокнот — заметки к раскрытому заказу (anchor order/line). */
   protected readonly notes = signal<DeskNote[]>([]);
   protected readonly notesError = signal<string | null>(null);
+
+  // DESK-425: templates list for the docs R-flyout (lazy on panel open).
+  protected readonly templates = signal<DocumentTemplate[]>([]);
+  protected readonly templatesLoading = signal(false);
+  protected readonly templatesError = signal<string | null>(null);
+  private templatesLoaded = false;
   protected readonly noteText = signal('');
   protected readonly noteKind = signal<DeskNoteKind>('note');
   protected readonly noteLineId = signal<string | null>(null);
@@ -1042,18 +1085,14 @@ export class ManagerDeskPage {
   });
 
   /**
-   * Daily workflow chips. The combine studio keeps its orderId query when a
-   * row is expanded; everything else is the static constant.
+   * DESK-426 — daily workflow chips. Without an expanded row the static
+   * constant is used; with one, `deskWorkflowChips(orderId)` merges the order
+   * context into every chip (Стол keeps expand, КП prefills from the order,
+   * supply/shipping filter + from=desk). Chips are the only cross-page path.
    */
-  protected readonly workflowChips = computed<readonly GroupChip[]>(() => {
-    const order = this.expandedOrder();
-    if (!order) return DESK_WORKFLOW_CHIPS;
-    return DESK_WORKFLOW_CHIPS.map((chip) =>
-      chip.id === 'combine' || chip.id === 'gantt'
-        ? { ...chip, queryParams: { ...chip.queryParams, orderId: order._id } }
-        : chip,
-    );
-  });
+  protected readonly workflowChips = computed<readonly GroupChip[]>(() =>
+    deskWorkflowChips(this.expandedOrder()?._id ?? null),
+  );
 
   protected readonly panelSide = computed<DeskPanelSide | null>(() => {
     const panel = this.panel();
@@ -1072,6 +1111,7 @@ export class ManagerDeskPage {
   private readonly ordersService = inject(OrdersService);
   private readonly auth = inject(AuthService);
   private readonly notesService = inject(DeskNotesService);
+  private readonly templatesService = inject(DocumentTemplatesService);
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly counterpartiesLookup = createLookupTable<Counterparty>(
     this.counterpartyService.list({ limit: 200 }),
@@ -1117,6 +1157,14 @@ export class ManagerDeskPage {
       this.expandedOrder();
       this.panel();
       untracked(() => this.syncChromeTools());
+    });
+
+    // DESK-425: when the docs flyout opens, lazy-load the templates list once.
+    effect(() => {
+      const panel = this.panel();
+      if (panel === 'docs' && !this.templatesLoaded) {
+        untracked(() => this.loadTemplates());
+      }
     });
 
     // 408: when the notebook is open, load notes for the expanded order.
@@ -1279,25 +1327,21 @@ export class ManagerDeskPage {
     this.visibleLimit.update((n) => n + DEFAULT_VISIBLE_LIMIT);
   }
 
+  /** DESK-425: supply is an in-place R-flyout on /desk, not a route jump. */
   protected onOpenSupply(): void {
-    const orderId = this.expandedId();
-    void this.router.navigate(['/supply'], {
-      queryParams: {
-        view: 'quick',
-        ...(orderId ? { orderId } : {}),
-      },
-    });
+    this.openPanel('supply');
   }
 
+  /** DESK-425: templates list is an in-place R-flyout on /desk. */
   protected onOpenDocs(): void {
-    this.toast.show('Шаблоны документов откроются здесь позже.');
+    this.openPanel('docs');
   }
 
-  /** Reuse the /orders hub handler: documents templates for this order. */
+  /** DESK-425: same docs flyout as onOpenDocs; kept as a separate handler
+   *  because the tray emits `createDocument` with the order payload. */
   protected onCreateDocument(order: Order): void {
-    this.router.navigate(['/doc-constructor/templates'], {
-      queryParams: { source: 'order', sourceId: order._id },
-    });
+    if (this.expandedId() !== order._id) this.expandedId.set(order._id);
+    this.openPanel('docs');
   }
 
   /** Empty/composition CTA: add order items in the shared items-only panel. */
@@ -1338,6 +1382,30 @@ export class ManagerDeskPage {
       } else {
         this.notesError.set(extractErrorMessage(res.error));
       }
+    });
+  }
+
+  /** DESK-425: templates list for the docs R-flyout; loaded once per session. */
+  private loadTemplates(): void {
+    this.templatesLoading.set(true);
+    this.templatesError.set(null);
+    this.templatesService.list().subscribe((res) => {
+      this.templatesLoading.set(false);
+      if (res.ok) {
+        this.templatesLoaded = true;
+        this.templates.set(res.data.items);
+      } else {
+        this.templatesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  /** DESK-425: generating a document needs the builder — the only nav that
+   *  survives (browsing the template list itself stays on /desk). */
+  protected onCreateFromTemplate(template: DocumentTemplate): void {
+    const order = this.expandedOrder();
+    void this.router.navigate(['/doc-constructor/builder', template._id], {
+      queryParams: order ? { source: 'order', sourceId: order._id } : {},
     });
   }
 

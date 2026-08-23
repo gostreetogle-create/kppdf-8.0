@@ -29,6 +29,7 @@
 
 - **Одна** sticky строка `app-pi-group-workspace` + `desk-workflow-chips`:
   - Chips: **Стол** · **КП** · **Комбайн** · **Гант** · **Снабжение** · **Отгрузка** (без Каталог/Клиенты/Справ./Админ/Документы/список Заказов); Гант — stub `?view=gantt` до 407.
+  - **426:** при expand `deskWorkflowChips(orderId)` — единственный cross-page путь с контекстом заказа: Стол `view=desk&orderId`, КП `source=order&sourceId` (prefill клиент+позиции), Снабжение/Отгрузка `orderId&from=desk` (фильтр + «На стол»), Комбайн/Гант desk-stub `view&orderId`.
   - При expand: suffix `/ З-1001` в tools-слоте **той же** sticky chrome-строки — **без** «Рабочий стол» (brand-home уже SoT).
   - Канон: [`page-chrome.md`](./page-chrome.md) § Рабочий стол.
 - Dense main (`isDenseWorkspaceUrl`).
@@ -86,3 +87,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-418** | delete заказа со стола с confirm — **DONE** |
 | **DESK-423** | операторский tray (изделие / confirm-on-press / disclosure) — **DONE** |
 | **DESK-424** | tray declutter: no card-in-card composition tree (border-b, kind rail only), tray drops the client-name repeat + inner composition wrapper, desk primary CTA is `bg-gold`/`text-ink` (not black), hub «Открыть заказ»/«Открыть карточку заказа» are outline buttons not underline, right-column Снабжение/Производство/Документы/Блокнот buttons are `w-full`, delete lives in the row's own grid (not a separate flex strip) — **DONE** |
+| **DESK-426** | chips = cross-page SoT с контекстом заказа: `deskWorkflowChips(orderId)` (Стол/КП/Комбайн/Гант/Снабжение/Отгрузка), КП prefill из заказа (`source=order&sourceId`), supply/shipping фильтр заказа + «На стол» (`from=desk`) — **DONE** |
