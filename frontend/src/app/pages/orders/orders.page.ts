@@ -212,8 +212,8 @@ function refId(value: PopulatedOrderRef | null | undefined): string {
           <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
         </app-pi-button>
         <span class="flex-1"></span>
-        <span class="text-xs text-muted-foreground"
-          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
+        <span class="text-[11px] text-muted-foreground"
+          >Показано {{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
         >
       </div>
 
@@ -486,52 +486,57 @@ export class OrdersPage implements OnInit {
       label: 'Номер',
       sortable: true,
       sticky: 'left',
+      cellClass: 'text-xs',
     },
     {
       key: 'date',
       label: 'Дата',
       sortable: true,
-      cellClass: 'empty-cell',
+      cellClass: 'empty-cell text-xs',
       format: (r) => formatDate(r.date),
     },
     {
       key: 'counterpartyId',
       label: 'Заказчик',
       width: '180px',
+      cellClass: 'text-xs',
     },
     {
       key: 'siteId',
       label: 'Объект',
       width: '190px',
+      cellClass: 'text-xs',
     },
     {
       key: 'status',
       label: 'Статус',
       sortable: true,
-      cellClass: 'empty-cell',
+      cellClass: 'empty-cell text-xs',
       format: (r) => ORDER_STATUS_LABELS[r.status] ?? r.status,
     },
     {
       key: 'priority',
       label: 'Приоритет',
-      cellClass: 'empty-cell',
+      cellClass: 'empty-cell text-xs',
       format: (r) => (r.priority ? (PRIORITY_LABELS[r.priority] ?? r.priority) : '—'),
     },
     {
       key: 'items',
       label: 'Позиций',
-      cellClass: 'text-muted-foreground',
+      cellClass: 'text-muted-foreground text-xs',
       format: (r) => String(r.items?.length ?? 0),
     },
     {
       key: 'quotationId',
       label: 'КП',
       width: '150px',
+      cellClass: 'text-xs',
     },
     {
       key: 'readyForWork',
       label: 'Готовность',
       width: '112px',
+      cellClass: 'text-xs',
       format: (r) => this.readinessLabel(r),
     },
   ];

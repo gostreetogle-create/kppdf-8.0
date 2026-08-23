@@ -474,11 +474,11 @@ export class SupplyPage implements AfterViewInit {
   });
 
   protected readonly columns: ColumnDef<SupplyTask>[] = [
-    { key: 'title', label: 'Позиция', sortable: true },
-    { key: 'orderId', label: 'Заказ', sortable: true },
-    { key: 'qty', label: 'Кол-во', sortable: true, numeric: true },
-    { key: 'status', label: 'Статус', sortable: true },
-    { key: 'confirmedAt', label: 'Подтверждено', sortable: true },
+    { key: 'title', label: 'Позиция', sortable: true, cellClass: 'text-xs' },
+    { key: 'orderId', label: 'Заказ', sortable: true, cellClass: 'text-xs' },
+    { key: 'qty', label: 'Кол-во', sortable: true, numeric: true, cellClass: 'text-xs' },
+    { key: 'status', label: 'Статус', sortable: true, cellClass: 'text-xs' },
+    { key: 'confirmedAt', label: 'Подтверждено', sortable: true, cellClass: 'text-xs' },
   ];
 
   constructor() {

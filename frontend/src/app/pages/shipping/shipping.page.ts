@@ -97,7 +97,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
             <option [value]="order._id">{{ order.number }}</option>
           }
         </select>
-        <span class="text-sm text-muted-foreground">{{ shipments().length }} отгрузок</span>
+        <span class="text-[11px] text-muted-foreground">{{ shipments().length }} отгрузок</span>
         <span class="flex-1"></span>
         <app-pi-button variant="outline" size="sm" (click)="reload()" data-test="shipping-refresh">
           Обновить
@@ -416,6 +416,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
       }
       .shipping-page__status {
         white-space: nowrap;
+        font-size: 0.75rem;
         color: var(--color-muted-foreground);
       }
       .shipping-page__status[data-status='in_transit'] {
