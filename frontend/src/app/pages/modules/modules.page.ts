@@ -54,6 +54,9 @@ import {
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
 import { catalogKindOklch } from '../../shared/ui/catalog/catalog-kind-oklch';
 import { CatalogAppearanceService } from '../../shared/ui/catalog/catalog-appearance.service';
+import { PiSkeletonComponent } from '../../shared/ui/skeleton/pi-skeleton.component';
+import { ErrorBannerComponent } from '../../shared/ui/error-banner/error-banner.component';
+import { PiFilterPanelComponent } from '../../shared/ui/filter-panel/pi-filter-panel.component';
 
 const CHROME_OWNER = 'modules-page';
 
@@ -182,6 +185,9 @@ function moduleHasComposition(row: ProductModule): boolean {
     PiShowcaseCardComponent,
     PiEmptyTileComponent,
     CatalogKindMarkerComponent,
+    PiSkeletonComponent,
+    ErrorBannerComponent,
+    PiFilterPanelComponent,
   ],
   styles: `
     @media (min-width: 1024px) {
@@ -276,102 +282,71 @@ function moduleHasComposition(row: ProductModule): boolean {
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
       </div>
 
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      }
+      <app-error-banner
+        [error]="error()"
+        [canRetry]="true"
+        data-test="modules-error-banner"
+        (retry)="reload()"
+      />
 
       <div class="relative" data-test="modules-layout">
-        @if (filtersOpen()) {
-          <div
-            id="modules-flyout-filters"
-            class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
-            data-test="filters-rail-panel"
-            role="region"
-            aria-label="Фильтры каталога"
-            (pointerdown)="$event.stopPropagation()"
-            (click)="$event.stopPropagation()"
+        <app-pi-filter-panel
+          [open]="filtersOpen()"
+          (openChange)="closeFilters()"
+          [ariaLabel]="'Фильтры каталога'"
+        >
+          <label
+            class="text-[11px] uppercase tracking-wide text-muted-foreground"
+            for="rail-composition"
+            >Состав</label
           >
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div class="text-sm font-medium text-ink">Фильтры</div>
-              <button
-                type="button"
-                class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
-                (click)="closeFilters()"
-                aria-label="Закрыть"
-                data-test="filters-panel-close"
-              >
-                Закрыть
-              </button>
-            </div>
-            <div class="flex flex-col gap-3">
-              <label
-                class="text-[11px] uppercase tracking-wide text-muted-foreground"
-                for="rail-composition"
-                >Состав</label
-              >
-              <select
-                id="rail-composition"
-                class="pi-input w-full text-sm"
-                [value]="compositionFilter()"
-                (change)="onCompositionFilterChange($event)"
-                data-test="rail-composition"
-              >
-                <option value="all">Все</option>
-                <option value="with-materials">С материалами</option>
-                <option value="empty">Пустые</option>
-              </select>
-              <label
-                class="text-[11px] uppercase tracking-wide text-muted-foreground"
-                for="rail-sort"
-                >Сортировка</label
-              >
-              <select
-                id="rail-sort"
-                class="pi-input w-full text-sm"
-                [value]="sortSelectValue()"
-                (change)="onRailSortChange($event)"
-                data-test="rail-sort"
-              >
-                <option value="name:asc">Название ↑</option>
-                <option value="name:desc">Название ↓</option>
-                <option value="article:asc">Артикул ↑</option>
-                <option value="article:desc">Артикул ↓</option>
-              </select>
-              <button
-                type="button"
-                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
-                (click)="clearFilters()"
-                data-test="clear-filters"
-              >
-                Сбросить
-              </button>
-            </div>
-          </div>
-        }
+          <select
+            id="rail-composition"
+            class="pi-input w-full text-sm"
+            [value]="compositionFilter()"
+            (change)="onCompositionFilterChange($event)"
+            data-test="rail-composition"
+          >
+            <option value="all">Все</option>
+            <option value="with-materials">С материалами</option>
+            <option value="empty">Пустые</option>
+          </select>
+          <label class="text-[11px] uppercase tracking-wide text-muted-foreground" for="rail-sort"
+            >Сортировка</label
+          >
+          <select
+            id="rail-sort"
+            class="pi-input w-full text-sm"
+            [value]="sortSelectValue()"
+            (change)="onRailSortChange($event)"
+            data-test="rail-sort"
+          >
+            <option value="name:asc">Название ↑</option>
+            <option value="name:desc">Название ↓</option>
+            <option value="article:asc">Артикул ↑</option>
+            <option value="article:desc">Артикул ↓</option>
+          </select>
+          <button
+            type="button"
+            class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+            (click)="clearFilters()"
+            data-test="clear-filters"
+          >
+            Сбросить
+          </button>
+        </app-pi-filter-panel>
 
         <div class="relative min-w-0">
-          @if (filtersOpen()) {
-            <button
-              type="button"
-              class="absolute inset-0 z-20 border-0 cursor-default bg-ink/20 dark:bg-ink/40"
-              aria-label="Закрыть фильтры"
-              data-test="filters-backdrop"
-              (pointerdown)="closeFilters()"
-              (click)="closeFilters()"
-            ></button>
-          }
-
           <div class="relative z-0">
             @if (viewMode() === 'grid') {
               @if (loading()) {
-                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
-                  Загрузка…
-                </p>
+                <app-pi-skeleton
+                  [count]="3"
+                  width="100%"
+                  height="1.25rem"
+                  ariaLabel="Загрузка списка модулей"
+                  data-test="grid-loading"
+                />
               } @else if (data().length === 0) {
                 <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
                   {{ emptyMessage() }}

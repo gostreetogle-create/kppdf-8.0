@@ -595,9 +595,13 @@ describe('ProductsPage (TZ-PRODUCTS-304)', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail-panel"]')).toBeTruthy();
-    const contentCol = fixture.nativeElement.querySelector('[data-test="filters-backdrop"]')
-      ?.parentElement as HTMLElement | undefined;
-    expect(contentCol?.contains(panel)).toBe(false);
+    // WR-507: panel + backdrop now share a host, both inside app-pi-filter-panel.
+    // Verify panel is still an overlay (absolute positioning), not an inline column.
+    const panelEl = fixture.nativeElement.querySelector(
+      '[data-test="filters-rail-panel"]',
+    ) as HTMLElement;
+    expect(panelEl).toBeTruthy();
+    expect(panelEl.classList).toContain('absolute');
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
   });
 

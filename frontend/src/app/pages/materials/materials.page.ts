@@ -50,6 +50,9 @@ import { photoListUrl, Photo, PhotosService } from '../../shared/services/photos
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { CatalogKindMarkerComponent } from '../../shared/ui/catalog/catalog-kind-marker.component';
+import { PiSkeletonComponent } from '../../shared/ui/skeleton/pi-skeleton.component';
+import { ErrorBannerComponent } from '../../shared/ui/error-banner/error-banner.component';
+import { PiFilterPanelComponent } from '../../shared/ui/filter-panel/pi-filter-panel.component';
 import {
   dictionaryLabelOptions,
   PiDictionaryLabelsService,
@@ -108,6 +111,9 @@ const CHROME_OWNER = 'materials-page';
     PaginationComponent,
     RouterLink,
     CatalogKindMarkerComponent,
+    PiSkeletonComponent,
+    ErrorBannerComponent,
+    PiFilterPanelComponent,
   ],
   styles: `
     @media (min-width: 1024px) {
@@ -204,91 +210,60 @@ const CHROME_OWNER = 'materials-page';
         <span class="text-xs text-muted-foreground">{{ total() }} {{ totalLabel(total()) }}</span>
       </div>
 
-      @if (error()) {
-        <div
-          role="alert"
-          class="mb-6 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
-        >
-          {{ error() }}
-        </div>
-      }
+      <app-error-banner
+        [error]="error()"
+        [canRetry]="true"
+        data-test="materials-error-banner"
+        (retry)="reload()"
+      />
 
       <!-- TZ-UX-328: flyout overlay (no w-12 rail) — mirror products TZ-UX-326 -->
       <div class="relative" data-test="materials-layout">
-        @if (filtersOpen()) {
-          <div
-            id="materials-flyout-filters"
-            class="absolute left-0 top-0 z-40 w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4 shadow-lg"
-            data-test="filters-rail-panel"
-            role="region"
-            aria-label="Фильтры каталога"
-            (pointerdown)="$event.stopPropagation()"
-            (click)="$event.stopPropagation()"
+        <app-pi-filter-panel
+          [open]="filtersOpen()"
+          (openChange)="closeFilters()"
+          [ariaLabel]="'Фильтры каталога'"
+        >
+          <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
+          <label class="text-[11px] uppercase tracking-wide text-muted-foreground" for="rail-kind"
+            >Тип</label
           >
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <div class="text-sm font-medium text-ink">Фильтры</div>
-              <button
-                type="button"
-                class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"
-                (click)="closeFilters()"
-                aria-label="Закрыть"
-                data-test="filters-panel-close"
-              >
-                Закрыть
-              </button>
-            </div>
-            <div class="flex flex-col gap-3">
-              <!-- Тот же сигнал, что у toolbar-селекта → ?materialKind= (TZ-CATALOG-316) -->
-              <label
-                class="text-[11px] uppercase tracking-wide text-muted-foreground"
-                for="rail-kind"
-                >Тип</label
-              >
-              <select
-                id="rail-kind"
-                class="pi-input w-full text-sm"
-                [value]="kindFilter() ?? ''"
-                (change)="onKindFilterChange($event)"
-                data-test="rail-kind"
-              >
-                <option value="">Все типы</option>
-                @for (k of kindOptions(); track k.value) {
-                  <option [value]="k.value">{{ k.label }}</option>
-                }
-              </select>
-              <!-- TZ-CATALOG-373 known_limitation: backend GET /materials не умеет
-                   sortBy/sortOrder (всегда sort({name:1}), см. MaterialService.findAll) —
-                   rail sort НЕ добавляем (фейковый client-sort page slice запрещён). -->
-              <button
-                type="button"
-                class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
-                (click)="clearFilters()"
-                data-test="clear-filters"
-              >
-                Сбросить
-              </button>
-            </div>
-          </div>
-        }
+          <select
+            id="rail-kind"
+            class="pi-input w-full text-sm"
+            [value]="kindFilter() ?? ''"
+            (change)="onKindFilterChange($event)"
+            data-test="rail-kind"
+          >
+            <option value="">Все типы</option>
+            @for (k of kindOptions(); track k.value) {
+              <option [value]="k.value">{{ k.label }}</option>
+            }
+          </select>
+          <!-- TZ-CATALOG-373 known_limitation: backend GET /materials не умеет
+               sortBy/sortOrder (всегда sort({name:1}), см. MaterialService.findAll) —
+               rail sort НЕ добавляем (фейковый client-sort page slice запрещён). -->
+          <button
+            type="button"
+            class="text-xs text-muted-foreground hover:text-ink underline decoration-dotted min-h-touch self-start"
+            (click)="clearFilters()"
+            data-test="clear-filters"
+          >
+            Сбросить
+          </button>
+        </app-pi-filter-panel>
 
         <div class="relative min-w-0">
-          @if (filtersOpen()) {
-            <button
-              type="button"
-              class="absolute inset-0 z-20 border-0 cursor-default bg-ink/20 dark:bg-ink/40"
-              aria-label="Закрыть фильтры"
-              data-test="filters-backdrop"
-              (pointerdown)="closeFilters()"
-              (click)="closeFilters()"
-            ></button>
-          }
-
           <div class="relative z-0">
             @if (viewMode() === 'grid') {
               @if (loading()) {
-                <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-loading">
-                  Загрузка…
-                </p>
+                <app-pi-skeleton
+                  [count]="3"
+                  width="100%"
+                  height="1.25rem"
+                  ariaLabel="Загрузка списка материалов"
+                  data-test="grid-loading"
+                />
               } @else if (data().length === 0) {
                 <p class="text-sm text-muted-foreground py-8 text-center" data-test="grid-empty">
                   {{ emptyMessage() }}
