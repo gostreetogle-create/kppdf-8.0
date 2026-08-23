@@ -17,7 +17,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import {
   ContactRound,
+  Download,
   FileText,
+  LucideAngularModule,
   Package,
   Printer,
   ScrollText,
@@ -102,6 +104,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
     ProposalWorkspaceAiDraftComponent,
     ProposalWorkspaceTextBlockDialogComponent,
     ButtonComponent,
+    LucideAngularModule,
     RouterLink,
   ],
   providers: [ProposalWorkspaceStore, ProposalWorkspaceDraftService],
@@ -290,6 +293,43 @@ const SECTION_DEFS: readonly SectionDef[] = [
         padding-top: 0.65rem;
       }
 
+      /* Projected into the shell ribbon — consumer owns the styles (shell CSS is scoped). */
+      .kp-ws-ribbon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-1, 4px);
+        height: 26px;
+        padding: 0 var(--space-2, 8px);
+        margin-right: var(--space-1, 4px);
+        border: 1px solid var(--color-rule-strong);
+        border-radius: var(--radius-sm, 2px);
+        background: var(--color-paper-raised);
+        font-family: var(--font-mono, ui-monospace, monospace);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-ink);
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      .kp-ws-ribbon-btn:hover {
+        background: var(--color-paper-2);
+      }
+
+      .kp-ws-ribbon-btn--gold {
+        background: var(--color-gold);
+        border-color: var(--color-gold-deep);
+        color: var(--color-on-gold);
+      }
+
+      .kp-ws-ribbon-btn--gold:hover {
+        background: var(--color-gold-deep);
+      }
+
       .kp-create-output {
         display: flex;
         flex-direction: column;
@@ -322,16 +362,6 @@ const SECTION_DEFS: readonly SectionDef[] = [
 
       .kp-create-output__btn:hover {
         background: var(--color-paper-2);
-      }
-
-      .kp-create-output__btn--gold {
-        background: var(--color-gold);
-        border-color: var(--color-gold-deep);
-        color: var(--color-on-gold);
-      }
-
-      .kp-create-output__btn--gold:hover {
-        background: var(--color-gold-deep);
       }
 
       .kp-ws-org-hint {
@@ -380,6 +410,29 @@ const SECTION_DEFS: readonly SectionDef[] = [
         (panelToggle)="store.closePanel()"
         (sheetClick)="onSheetClick()"
       >
+        <button
+          kpWsRibbonActions
+          type="button"
+          class="kp-ws-ribbon-btn pi-focus-ring"
+          title="Печать"
+          data-test="kp-ribbon-print"
+          (click)="draft.requestOutput('print')"
+        >
+          <lucide-angular [img]="printerIcon" [size]="14" aria-hidden="true" />
+          Печать
+        </button>
+        <button
+          kpWsRibbonActions
+          type="button"
+          class="kp-ws-ribbon-btn kp-ws-ribbon-btn--gold pi-focus-ring"
+          title="Скачать PDF"
+          data-test="kp-ribbon-pdf"
+          (click)="draft.requestOutput('pdf')"
+        >
+          <lucide-angular [img]="downloadIcon" [size]="14" aria-hidden="true" />
+          PDF
+        </button>
+
         <div kpWsPanel>
           @switch (store.activeSection()) {
             @case ('catalog') {
@@ -501,7 +554,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 </button>
                 <button
                   type="button"
-                  class="kp-create-output__btn kp-create-output__btn--gold pi-focus-ring"
+                  class="kp-create-output__btn pi-focus-ring"
                   data-test="kp-output-pdf"
                   (click)="draft.requestOutput('pdf')"
                 >
@@ -639,6 +692,8 @@ export class ProposalWorkspacePage {
     title: def.title,
     icon: def.icon,
   }));
+  protected readonly printerIcon = Printer;
+  protected readonly downloadIcon = Download;
 
   private readonly chromeTools = inject(PiChromeToolsService);
   private readonly destroyRef = inject(DestroyRef);

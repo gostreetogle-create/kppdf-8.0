@@ -1,50 +1,102 @@
 # KP Workspace — полный прогон (QA evidence)
 
-> Автоматизировано: 2026-08-23. Ручной browser-pass — PO.
+> Автоматизировано: 2026-08-23. Браузерный прогон: 2026-08-23 (headless Chrome,
+> FE :4200 + BE :3000 подняты, вход `admin`, 2 шаблона в базе).
+
+## Как снимались браузерные доказательства
+
+MCP `cursor-ide-browser` в этой сессии не поднимал вкладку (`No browser tab available`),
+поэтому прогон выполнен headless-Chrome через `puppeteer` (уже в devDeps frontend):
+логин → `/proposals/workspace?new=1` → клики по чеклисту, замеры `getBoundingClientRect`,
+сбор `console.error` / `pageerror` / HTTP ≥400 на каждом шаге. Временные скрипты удалены
+после прогона.
+
+## Браузерный чеклист (2026-08-23)
+
+| № | Проверка | Вердикт | Доказательство |
+|---|----------|---------|----------------|
+| 1 | Пустой A4 + CTA «Выбрать шаблон» | ✅ PASS | empty-state есть, соотношение листа 0.707 (= 210/297) |
+| 2 | «Создать черновик шаблона» → диалог, не `/import-todos` | ✅ PASS | открылся `[role=dialog]` с инструкцией Desktop → «Импорт»; URL не менялся |
+| 3 | «Создать шаблон вручную» → `/doc-constructor/templates` | ✅ PASS | href и фактический переход совпали |
+| 4 | «Фон» без шаблона → тост | ✅ PASS | тост «Сначала выберите шаблон в списке ниже» |
+| 5 | Picker выбирает шаблон → превью A4 | ✅ PASS | опции `КП`, `Шаблон 09.08.2026`; после выбора смонтирован `template-center` («Страница 1»), empty-state ушёл |
+| 6 | «Переименовать» / «Дублировать» активны при шаблоне | ✅ PASS | до выбора `disabled`, после — активны; форма переименования открывается с текущим именем |
+| 7 | Левый рельс: Каталог · Шаблон · Клиент | ✅ PASS | панель открывается, заголовок совпадает, контент непустой, console-ошибок нет |
+| 8 | Правый рельс: Параметры · Редактор таблицы · Условия · Вывод | ✅ PASS | то же для 4 секций |
+| 9 | Книжная / Альбомная | ✅ PASS | portrait 0.707 → landscape 1.523 → возврат в portrait |
+| 10 | PDF / Печать в ленте | ❌ FAIL → ✅ FIXED | слот `kpWsRibbonActions` был пуст (лента = только ориентация + бейдж). Исправлено — см. ниже |
+| 11 | Ссылки чипов и TOC | ✅ PASS | КП→`/proposals/create`, Договоры→`/contracts`, Заказы→`/orders`, Коммерческое предложение→`/proposals/workspace`, Создать КП→`/proposals/create`, Все КП→`/proposals` (href + фактический переход) |
+| 12 | Нет лишнего вертикального зазора в рядах чипов | ✅ PASS | зазор TOC→chips = 0px, chips→shell = 0px, `group-chrome--flush`, `padding-bottom: 0` |
+| 13 | A4 не прыгает при открытии панелей | ✅ PASS | 7 секций × 2 ориентации: смещение бокса листа 0px (панель — `position: absolute` overlay) |
+| — | Console / network sweep | ✅ PASS | 0 `console.error`, 0 `pageerror`, 0 ответов API ≥400 за весь прогон |
+
+## Исправленный баг
+
+**№10 — в ленте не было вывода (`kpWsRibbonActions` пустой).**
+Канон ленты (`demo/proposal-workspace-demo.page.html`) и строка «PDF gold CTA · Печать»
+этого аудита требуют Печать + PDF в ленте, но боевая страница ничего не проецировала:
+единственный путь к выводу — открыть правый рельс «Вывод». Менеджер, не знающий рельс,
+упирался в тупик.
+
+Правка (`proposal-workspace.page.ts`):
+
+- в ленту спроецированы `kp-ribbon-print` («Печать») и `kp-ribbon-pdf` («PDF», золотой),
+  оба через тот же гейт `draft.requestOutput()`, что и панель;
+- стили кнопок ленты добавлены в консьюмер (CSS шелла scoped, на проекцию не действует);
+- золотая заливка у PDF в панели «Вывод» снята — единственный gold CTA теперь в ленте
+  (канон UI-DENSITY: один золотой CTA на экран).
+
+Покрытие: 2 новых теста в `proposal-workspace.page.spec.ts` (наличие + золото в ленте,
+делегирование `requestOutput('print'|'pdf')`).
 
 ## Маршруты и chips
 
 - [x] `/proposals/create` = workspace (тот же компонент) — _spec: ProposalWorkspacePage mounts_
-- [x] Chip «Коммерческое предложение» → `/proposals/workspace` — _deals-group-chips.spec PASS_
-- [x] Chip «Создать КП» → `/proposals/create?new=1` — _deals-group-chips.spec PASS_
-- [x] Chip «Все КП» → `/proposals` — _deals-group-chips.spec PASS_
-- [ ] TOC КП / Договоры / Заказы — корректные переходы — **manual PO**
+- [x] Chip «Коммерческое предложение» → `/proposals/workspace` — _spec + браузер_
+- [x] Chip «Создать КП» → `/proposals/create` — _spec + браузер_
+- [x] Chip «Все КП» → `/proposals` — _spec + браузер_
+- [x] TOC КП / Договоры / Заказы — корректные переходы — _браузер_
 
 ## Панель «Шаблон»
 
-- [x] Без шаблона: empty A4 + CTA «Выбрать шаблон» — _proposal-workspace.page.spec PASS_
-- [ ] Picker выбирает шаблон → превью на листе — **manual PO**
-- [ ] «Переименовать» / «Дублировать» работают при выбранном шаблоне — **manual PO**
-- [x] «Фон» — toast «Сначала выберите шаблон» без выбранного шаблона — _proposal-workspace.page.spec PASS_
-- [x] «Создать черновик шаблона» — диалог с инструкциями (не пустой `/import-todos`) — _proposal-workspace.page.spec PASS_
-- [x] «Создать шаблон вручную» → `/doc-constructor/templates` — _spec DOM presence PASS_
-- [ ] «Редактировать» в picker → builder с returnUrl — **manual PO**
+- [x] Без шаблона: empty A4 + CTA «Выбрать шаблон» — _spec + браузер_
+- [x] Picker выбирает шаблон → превью на листе — _браузер_
+- [x] «Переименовать» / «Дублировать» работают при выбранном шаблоне — _браузер_
+- [x] «Фон» — toast «Сначала выберите шаблон» без выбранного шаблона — _spec + браузер_
+- [x] «Создать черновик шаблона» — диалог с инструкциями (не пустой `/import-todos`) — _spec + браузер_
+- [x] «Создать шаблон вручную» → `/doc-constructor/templates` — _браузер_
+- [ ] «Редактировать» в picker → builder с returnUrl — **manual PO** (кнопка появляется при выбранном шаблоне)
 
 ## Rails L/R
 
-- [x] Каталог · Шаблон · Клиент (L) — _proposal-workspace.page.spec PASS_
-- [x] Параметры · Таблица · Условия · Вывод (R) — _proposal-workspace.page.spec PASS_
-- [ ] Панель overlay не двигает A4 (portrait + landscape) — **manual PO**
+- [x] Каталог · Шаблон · Клиент (L) — _spec + браузер_
+- [x] Параметры · Таблица · Условия · Вывод (R) — _spec + браузер_
+- [x] Панель overlay не двигает A4 (portrait + landscape) — _браузер, дрейф 0px_
 
 ## Ribbon
 
-- [ ] Ориентация · сумма · статус сохранения — **manual PO**
-- [ ] PDF gold CTA · Печать — **manual PO**
+- [x] Ориентация · сумма · статус сохранения — _браузер_
+- [x] PDF gold CTA · Печать — _исправлено в этом прогоне_
 
 ## Регрессии PO
 
-- [x] Chrome chips без лишнего вертикального зазора (`group-chrome--flush`) — _pi-group-workspace CSS fix_
+- [x] Chrome chips без лишнего вертикального зазора (`group-chrome--flush`) — _браузер, 0px_
 - [x] `/import-todos` empty state объясняет Desktop → Импорт / Конструктор — _import-todos.page.ts_
 - [x] Нет dead-end экранов без объяснения — _AI draft dialog + import-todos copy_
 
-## Gates (2026-08-23)
+## Что осталось на PO (нужен живой сценарий, не проверяется автоматом)
+
+- Реальная выгрузка PDF и печать (скачивание файла / системный диалог).
+- «Редактировать шаблон» → builder и возврат по `returnUrl`.
+- Прайс-риски: правка цены в строке vs справочник, быстрый клиент без ухода из КП,
+  масштаб фото и шрифт таблицы под A4.
+
+## Gates (2026-08-23, после правки №10)
 
 ```
-cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
-pnpm test -- proposal-workspace deals-group-chips proposal-workspace-ai --runInBand
-pnpm lint
+cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit   # exit 0
+pnpm test -- proposal-workspace --runInBand                   # 4 suites, 64 tests PASS
+pnpm lint                                                     # 0 errors, 17 pre-existing warnings
 ```
 
-_Заполнить SHA после commit._
-
-**Commit:** `ea95e13a` — gates PASS (tsc, 65 tests, lint).
+**Предыдущий commit:** `ea95e13a` — gates PASS (tsc, 65 tests, lint).

@@ -521,6 +521,29 @@ describe('ProposalWorkspacePage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="kp-output-archive"]')).not.toBeNull();
   });
 
+  it('ribbon exposes Печать and PDF without opening the Вывод panel (canon: demo ribbon)', () => {
+    const ribbon = fixture.nativeElement.querySelector('[data-test="kp-workspace-ribbon"]');
+    const print = ribbon.querySelector('[data-test="kp-ribbon-print"]');
+    const pdf = ribbon.querySelector('[data-test="kp-ribbon-pdf"]');
+    expect(print).not.toBeNull();
+    expect(pdf).not.toBeNull();
+    // Single gold CTA: gold lives in the ribbon, the panel copy stays neutral.
+    expect(pdf.className).toContain('kp-ws-ribbon-btn--gold');
+  });
+
+  it('ribbon PDF/Печать delegate to the same output gate as the panel', () => {
+    const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
+    const spy = jest.spyOn(draft, 'requestOutput').mockImplementation(() => {});
+    const ribbon = fixture.nativeElement.querySelector('[data-test="kp-workspace-ribbon"]');
+
+    (ribbon.querySelector('[data-test="kp-ribbon-print"]') as HTMLElement).click();
+    (ribbon.querySelector('[data-test="kp-ribbon-pdf"]') as HTMLElement).click();
+
+    expect(spy).toHaveBeenNthCalledWith(1, 'print');
+    expect(spy).toHaveBeenNthCalledWith(2, 'pdf');
+    spy.mockRestore();
+  });
+
   it('catalog review modal opens on table exit with dirty rows and resumes on resolve', () => {
     const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
     draft.draftLines.set([
