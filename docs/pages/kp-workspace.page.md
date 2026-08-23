@@ -109,7 +109,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 
 | Сигнал / store | Назначение |
 |----------------|------------|
-| `ProposalWorkspaceStore` | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId` |
+| `ProposalWorkspaceStore` (TZ-402 DONE) | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId`; actions `openSection`/`toggleSection`/`closePanel`/`setOrientation` |
 | draft lines / templateId / org / recipient / terms / sheetLayout / kpTableLayout | как create — один autosave path |
 | `panelCollapsed` | overlay hide; A4 неизменен |
 
@@ -143,8 +143,8 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 |-----------------|------|
 | `.../demo/proposal-workspace-demo.page.*` | **тонкий wrapper над shell** (TZ-401 DONE) |
 | `.../workspace/proposal-workspace-shell.component.*` | **SoT геометрии** (TZ-401 DONE); rails/store — TZ-402 |
-| `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + placeholder (TZ-401 DONE) |
-| — | `ProposalWorkspaceStore` (402) |
+| `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + chrome rails L/R + placeholder (TZ-401/402 DONE) |
+| `.../workspace/proposal-workspace.store.ts` | store state machine (TZ-402 DONE) |
 | `proposal-create.page.ts` + `proposal-create-*` / `proposal-product-rail` | reuse в панелях; god-page снять в 409 |
 | `tasks/kp-workspace-dummy/*` | reference only после 401 |
 
@@ -155,7 +155,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | Wave 0 | geometry PASS — demo |
 | **KP-WS-400** | audit + rail IA docs |
 | **401** | shell component + `/proposals/workspace` — **DONE** |
-| **402** | store + chrome rails |
+| **402** | store + chrome rails — **DONE** (L3+R4, unique Lucide, Esc/close) |
 | **403** | left: catalog / template / recipient |
 | **404** | right: params / table / terms / output |
 | **405** | embedded table/text/template settings |

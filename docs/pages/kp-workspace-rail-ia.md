@@ -46,6 +46,10 @@
 **Вывод (п. 7 программы):** отдельная rail-кнопка «Вывод» упраздняется — Печать/PDF/Архив
 переезжают в ribbon (всегда видимы, не reflow). Это единственный rail-→ribbon перенос.
 
+> **STATUS 2026-08-23 (TZ-KP-WS-402):** «Вывод» временно зарегистрирован в правом rail
+> (`chrome-tool-output`, иконка `Printer`) до прихода панелей/ribbon-действий (TZ-403/404);
+> ribbon-перенос — по мере ввода ribbon-кнопок в TZ-404.
+
 ## 2. Сверка demo ↔ create (data-test parity)
 
 Demo rail рендерится chrome-ралем (`chrome-tool-{id}`, side left, 6 секций); create имеет
