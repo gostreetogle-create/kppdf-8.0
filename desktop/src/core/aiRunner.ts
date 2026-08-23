@@ -14,6 +14,7 @@ import { appDataDir, dirname, join, resourceDir } from '@tauri-apps/api/path';
 import { exists, readTextFile } from '@tauri-apps/plugin-fs';
 import type { LocalModelEntry } from './model-catalog';
 import { formatBytes } from './model-catalog';
+import { describeRunnerFetchError } from './ai/error-messages';
 
 export const DEFAULT_AI_PORT = 9744;
 const HEALTHZ_WAIT_MS = 45_000;
@@ -483,8 +484,22 @@ export class AiRunnerController {
       this.setState({ download: { ...this.state.download, error: 'Превышено время скачивания.' } });
       return false;
     } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
+      const message = describeRunnerFetchError(err);
       this.setState({ download: { active: false, fileName: '', received: 0, total: 0, error: message } });
+      // TZD-67: a raw fetch failure here can mean the runner truly stopped
+      // responding on this port (e.g. it restarted internally and picked a
+      // different port after EADDRINUSE) even though `status` still reads
+      // "running" from the last stdout listen-line. Re-probe health once so
+      // the badge doesn't keep claiming healthy against a request that just
+      // failed to connect at all.
+      try {
+        await this.fetchJson(aiHealthzUrl(port));
+      } catch {
+        this.setState({
+          status: 'error',
+          lastError: 'Раннер перестал отвечать на этом порту. Нажмите «Перезапустить».',
+        });
+      }
       return false;
     }
   }

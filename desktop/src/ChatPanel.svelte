@@ -7,7 +7,7 @@
    * резолвит родитель (`App.svelte`), панель ничего не знает про режим.
    * Персона — `buildDesktopChatSystemPrompt()` (LIMITED_HELPER, TZD-64 расширил глоссарием).
    */
-  import { chatCompletion, type ChatMessage } from './core/ai';
+  import { chatCompletion, describeChatError, type ChatMessage } from './core/ai';
 
   let {
     baseUrl,
@@ -52,7 +52,7 @@
       const reply = res.choices?.[0]?.message?.content?.trim() || '(пустой ответ модели)';
       history = [...nextHistory, { role: 'assistant', content: reply }];
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Не удалось получить ответ от модели.';
+      error = describeChatError(err);
     } finally {
       sending = false;
     }

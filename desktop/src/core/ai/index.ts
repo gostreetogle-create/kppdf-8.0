@@ -12,3 +12,4 @@ export { API_PRESETS, apiPresetById } from './api-presets';
 export type { ApiPreset } from './api-presets';
 export { parseApiSnippet, isEmptySnippetResult } from './snippet-parse';
 export type { ParsedApiSnippet } from './snippet-parse';
+export { describeChatError, describeRunnerFetchError } from './error-messages';

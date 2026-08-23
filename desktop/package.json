@@ -1,7 +1,7 @@
 {
   "name": "kppdf-desktop",
   "private": true,
-  "version": "0.5.6",
+  "version": "0.5.7",
   "type": "module",
   "description": "KPPDF Desktop — десктоп-компаньон kppdf-8.0: массовый ввод данных через AI (скелет, фичи — будущие TZ)",
   "scripts": {

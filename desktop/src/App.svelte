@@ -2405,7 +2405,8 @@
       Импорт и Excel-формы работают без модели и без MCP.
     </div>
 
-    <article class="card">
+    <article class="card card--chat" data-test="ai-chat-card">
+      <p class="card--chat__eyebrow">Начните здесь</p>
       <h2>Чат</h2>
       {#if providerMode === 'local'}
         <p class="hint">
@@ -2473,6 +2474,14 @@
       {/if}
       {#if aiState.modelError}
         <p class="errors" role="alert">{aiState.modelError}</p>
+      {/if}
+      {#if aiState.download.active}
+        <progress
+          class="ai-download-bar"
+          data-test="ai-download-progress"
+          value={aiState.download.total > 0 ? aiState.download.received : undefined}
+          max={aiState.download.total > 0 ? aiState.download.total : undefined}
+        ></progress>
       {/if}
       {#if formatDownload(aiState.download)}
         <p class="hint" role="status">{formatDownload(aiState.download)}</p>
@@ -3703,6 +3712,32 @@
   .card h2 {
     margin: 0 0 0.4rem;
     font-size: 1rem;
+  }
+
+  /* TZD-67: "Чат" looked identical to "Локальная модель" below it and got
+     mistaken for absent — give it a visible accent + "start here" eyebrow. */
+  .card--chat {
+    background: #eef2f6;
+    border: 1px solid #1c2733;
+    border-left: 4px solid #1c2733;
+  }
+
+  /* TZD-67: download progress was text-only ("N%") — add a visible bar. */
+  .ai-download-bar {
+    width: 100%;
+    height: 0.5rem;
+    margin: 0 0 0.4rem;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .card--chat__eyebrow {
+    margin: 0 0 0.2rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #1c2733;
   }
 
   .card p,
