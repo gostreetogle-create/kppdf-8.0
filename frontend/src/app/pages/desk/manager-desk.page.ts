@@ -585,7 +585,9 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
               }
             </div>
           } @else if (panel() === 'supply') {
-            <app-supply-quick-order [prefillOrderId]="expandedId()" />
+            <div class="w-full min-w-0">
+              <app-supply-quick-order [prefillOrderId]="expandedId()" />
+            </div>
           } @else if (panel() === 'docs') {
             <div class="flex flex-col gap-2" data-test="desk-docs">
               @if (templatesLoading()) {

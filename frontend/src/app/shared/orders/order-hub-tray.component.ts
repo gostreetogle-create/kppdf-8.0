@@ -169,7 +169,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
             data-test="order-lifecycle-groups"
           >
             <!-- Left: Состав -->
-            <section class="min-w-0 hairline rounded-sm bg-paper p-3" data-test="order-group-order">
+            <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="order-group-order">
               <section class="min-w-0 flex flex-col gap-1" data-test="order-composition-block">
                 <button
                   type="button"
@@ -285,7 +285,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
             <div class="min-w-0 space-y-4">
               <!-- Исполнение -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                class="min-w-0 hairline rounded-sm bg-paper p-4"
                 data-test="order-group-execution"
               >
                 <h3 class="text-sm font-medium text-ink m-0 mb-2">Исполнение</h3>
@@ -350,7 +350,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
               <!-- Снабжение + Производство -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                class="min-w-0 hairline rounded-sm bg-paper p-4"
                 data-test="order-group-supply"
               >
                 <button
@@ -434,7 +434,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
               <!-- Логистика + Документы -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-3"
+                class="min-w-0 hairline rounded-sm bg-paper p-4"
                 data-test="order-group-logistics"
               >
                 <button
@@ -553,7 +553,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                 >
                   <span class="text-xs text-muted-foreground">Документы</span>
                   @if (mode() === 'desk') {
-                    <div class="flex flex-col gap-1.5">
+                    <div class="flex flex-col gap-2">
                       <button
                         type="button"
                         class="w-full min-h-touch px-2 py-1.5 border border-rule-strong rounded-sm bg-transparent text-xs"

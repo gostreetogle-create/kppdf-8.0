@@ -46,21 +46,13 @@ describe('SupplyPage HUB-303 orderId filter', () => {
 
   /** Quick-order component loads lookups when prefillOrderId is set. */
   function flushQuickOrderLookups(mock: HttpTestingController): void {
-    mock
-      .expectOne((r) => r.url === `${baseUrl}/categories` && r.method === 'GET')
-      .flush({ items: [], total: 0 });
-    mock
-      .expectOne((r) => r.url.startsWith(`${baseUrl}/materials`) && r.method === 'GET')
-      .flush({ items: [], total: 0 });
+    mock.expectOne((r) => r.url === `${baseUrl}/categories` && r.method === 'GET').flush([]);
+    mock.expectOne((r) => r.url.startsWith(`${baseUrl}/materials`) && r.method === 'GET').flush([]);
     mock
       .expectOne((r) => r.url.startsWith(`${baseUrl}/organizations`) && r.method === 'GET')
       .flush({ items: [], total: 0 });
-    mock
-      .expectOne((r) => r.url.startsWith(`${baseUrl}/persons`) && r.method === 'GET')
-      .flush({ items: [], total: 0 });
-    mock
-      .expectOne((r) => r.url === `${baseUrl}/supply-requests` && r.method === 'GET')
-      .flush({ items: [], total: 0 });
+    mock.expectOne((r) => r.url.startsWith(`${baseUrl}/persons`) && r.method === 'GET').flush([]);
+    mock.expectOne((r) => r.url === `${baseUrl}/supply-requests` && r.method === 'GET').flush([]);
   }
 
   it('passes ?orderId= to GET /supply-tasks and shows filter chip', async () => {

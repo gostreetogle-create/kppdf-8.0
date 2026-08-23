@@ -1271,6 +1271,9 @@ class SupplyQuickOrderDialogComponent {
         color: var(--color-success, #2d6a4f);
       }
       .supply-quick-order__expanded {
+        /* DESK-431: container grid — strips layout reacts to the flyout
+           width, not the viewport (wide monitor + narrow flyout = 1 col). */
+        container-type: inline-size;
         padding: 0 0.5rem 0.5rem;
         border: 1px solid var(--color-sunrise-warm, #c79542);
         border-top: none;
@@ -1278,11 +1281,14 @@ class SupplyQuickOrderDialogComponent {
         background: var(--color-paper);
       }
 
-      /* ---- three white cards (TZ-SUPPLY-306): label above controls, 8px grid ---- */
+      /* ---- three white cards (TZ-SUPPLY-306): label above controls, 8px grid ----
+         DESK-431: container query instead of viewport breakpoint — the
+         supply flyout on /desk is ~48rem, but on a narrow column the strips
+         must stack full-width (no side voids). */
       .supply-quick-order__strips {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.75rem;
+        gap: 1rem;
         align-items: stretch;
       }
       .supply-quick-order__strip {
@@ -1315,7 +1321,7 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__strip-label {
         display: block;
-        padding: 0.55rem 0.75rem;
+        padding: 0.75rem 1rem;
         border-bottom: 1px solid var(--color-rule);
         background: var(--color-paper-2);
         color: var(--color-ink);
@@ -1332,6 +1338,7 @@ class SupplyQuickOrderDialogComponent {
         align-items: stretch;
         gap: 1rem;
         min-width: 0;
+        /* DESK-431: ≥16px — текст не прилипает к hairline. */
         padding: 1rem;
       }
       .supply-quick-order__subgroup {
@@ -1394,11 +1401,20 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__strip .pi-input {
         width: 100%;
-        height: 2.25rem;
+        /* DESK-431: единая touch-высота ~40px (--touch-comfortable). */
+        height: var(--touch-comfortable, 2.5rem);
+        min-height: var(--touch-comfortable, 2.5rem);
         min-width: 0;
-        padding-inline: 0.6rem;
+        padding-inline: var(--space-control-x, 0.75rem);
         border-radius: 4px;
         font-size: var(--text-label);
+      }
+      /* DESK-431: overflow-select host выравнен с pi-input по высоте.
+         Его триггер сам использует .pi-input → получает ту же min-height. */
+      .supply-quick-order__strip app-pi-overflow-select {
+        display: block;
+        width: 100%;
+        min-width: 0;
       }
       .supply-quick-order__field--grow,
       .supply-quick-order__field--link,
@@ -1660,7 +1676,8 @@ class SupplyQuickOrderDialogComponent {
         flex-wrap: wrap;
         align-items: flex-end;
         gap: 0.4rem 0.5rem;
-        padding: 0.35rem 0.4rem;
+        /* DESK-431: ≥16px — panel-блоки (color/category/material/supplier). */
+        padding: 1rem;
         border: 1px dashed var(--color-rule);
         border-radius: 2px;
         background: var(--color-paper-raised);
@@ -1701,7 +1718,11 @@ class SupplyQuickOrderDialogComponent {
         color: var(--color-ink);
       }
 
-      @media (max-width: 1100px) {
+      /* DESK-431: container-query layout — replaces the viewport-only
+         breakpoint so the flyout column (or full page) decides the grid.
+         ≥36rem: 3 equal columns; <36rem: strips stack full-width, and the
+         subgroup fields inside a strip wrap 2-col on sm to avoid voids. */
+      @container (max-width: 35.99rem) {
         .supply-quick-order__strips {
           display: flex;
           flex-direction: column;
@@ -1716,6 +1737,17 @@ class SupplyQuickOrderDialogComponent {
         }
         .supply-quick-order__more-toggle {
           margin-top: -0.5rem;
+        }
+        .supply-quick-order__subgroup-fields {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+        }
+      }
+      @container (min-width: 36rem) {
+        .supply-quick-order__strips {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1rem;
         }
       }
 

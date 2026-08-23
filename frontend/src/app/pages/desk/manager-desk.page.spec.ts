@@ -423,6 +423,44 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(flyout?.querySelector('[data-test="order-form-actions"]')).toBeTruthy();
   });
 
+  it('431: supply flyout is wide (48rem) so the quick-order strips fit', async () => {
+    queryParams$.next(convertToParamMap({ orderId: 'o2', status: 'all' }));
+    fixture.detectChanges();
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+    flushSupply(httpMock, 'o2');
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().openPanel('supply');
+    fixture.detectChanges();
+    await tickMicrotask();
+    // SupplyQuickOrderComponent (hosted in the flyout) loads its lookups.
+    // res.data — plain arrays for categories/materials/persons/supply-requests.
+    httpMock
+      .match((req) => req.url.startsWith('/api/categories') && req.method === 'GET')
+      .forEach((req) => req.flush([]));
+    httpMock
+      .match((req) => req.url.startsWith('/api/materials') && req.method === 'GET')
+      .forEach((req) => req.flush([]));
+    httpMock
+      .match((req) => req.url.startsWith('/api/organizations') && req.method === 'GET')
+      .forEach((req) => req.flush({ items: [], total: 0 }));
+    httpMock
+      .match((req) => req.url.startsWith('/api/persons') && req.method === 'GET')
+      .forEach((req) => req.flush([]));
+    httpMock
+      .match((req) => req.url === '/api/supply-requests' && req.method === 'GET')
+      .forEach((req) => req.flush([]));
+    fixture.detectChanges();
+
+    const flyout = fixture.nativeElement.querySelector('[data-test="desk-flyout"]');
+    expect(flyout?.getAttribute('data-panel')).toBe('supply');
+    expect(flyout?.className).toContain('manager-desk__flyout--wide');
+    expect(flyout?.querySelector('[data-test="supply-quick-order"]')).toBeTruthy();
+  });
+
   it('after create selects and expands the new order', async () => {
     flushBase(httpMock);
     await fixture.whenStable();
