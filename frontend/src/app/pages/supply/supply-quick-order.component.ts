@@ -11,7 +11,9 @@ import {
 } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { EMPTY, Subject, switchMap, take } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { extractErrorMessage } from '../../core/silent-http';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
@@ -320,13 +322,15 @@ class SupplyQuickOrderDialogComponent {
                       <div class="supply-quick-order__subgroup-fields">
                         <label class="supply-quick-order__field supply-quick-order__field--grow">
                           <app-pi-overflow-select
-                            [items]="materialOptions(row.categoryId)"
+                            [items]="materialOptions(row.categoryId, row.materialId)"
                             [value]="row.materialId ?? ''"
                             (valueChange)="onMaterialChange(row.id, $event)"
                             [disabled]="!row.categoryId"
                             searchable="auto"
                             [placeholder]="
-                              row.categoryId ? '— выберите материал —' : '— сначала категория —'
+                              row.categoryId
+                                ? materialPickerPlaceholder(row.categoryId)
+                                : '— сначала категория —'
                             "
                             ariaLabel="Материал"
                             dataTest="supply-quick-material-select"
@@ -498,9 +502,13 @@ class SupplyQuickOrderDialogComponent {
                             <input
                               class="pi-input"
                               [ngModel]="supplierWebsite(row.supplierId)"
-                              (ngModelChange)="patchSupplier(row.supplierId, { website: $event })"
+                              (ngModelChange)="
+                                onSupplierFieldInput(row.supplierId, 'website', $event)
+                              "
+                              (blur)="onSupplierFieldBlur(row.supplierId, 'website')"
                               [disabled]="!row.supplierId"
                               placeholder="https://…"
+                              title="Сайт и почта сохраняются в карточке поставщика"
                               data-test="supply-quick-supplier-website"
                             />
                           </label>
@@ -509,12 +517,33 @@ class SupplyQuickOrderDialogComponent {
                             <input
                               class="pi-input"
                               [ngModel]="supplierEmail(row.supplierId)"
-                              (ngModelChange)="patchSupplier(row.supplierId, { email: $event })"
+                              (ngModelChange)="
+                                onSupplierFieldInput(row.supplierId, 'email', $event)
+                              "
+                              (blur)="onSupplierFieldBlur(row.supplierId, 'email')"
                               [disabled]="!row.supplierId"
                               placeholder="zakaz@…"
+                              title="Сайт и почта сохраняются в карточке поставщика"
                               data-test="supply-quick-supplier-email"
                             />
                           </label>
+                          <p
+                            class="supply-quick-order__persist-hint text-xs text-muted-foreground m-0"
+                            data-test="supply-quick-supplier-persist-hint"
+                          >
+                            Сайт и почта сохраняются в карточке поставщика
+                            @if (supplierSaveError()) {
+                              <span
+                                class="text-destructive"
+                                role="alert"
+                                data-test="supply-quick-supplier-save-error"
+                              >
+                                — {{ supplierSaveError() }}
+                              </span>
+                            } @else if (supplierSavedHint()) {
+                              <span data-test="supply-quick-supplier-saved"> — сохранено</span>
+                            }
+                          </p>
                         </div>
                       </div>
                       <div
@@ -559,10 +588,12 @@ class SupplyQuickOrderDialogComponent {
                               class="pi-input"
                               [ngModel]="contactPhone(row.supplierContactId)"
                               (ngModelChange)="
-                                patchContact(row.supplierContactId, { phone: $event })
+                                onContactFieldInput(row.supplierContactId, 'phone', $event)
                               "
+                              (blur)="onContactFieldBlur(row.supplierContactId, 'phone')"
                               [disabled]="!row.supplierContactId"
                               placeholder="+7 …"
+                              title="Контакты сохраняются у менеджера"
                               data-test="supply-quick-manager-phone"
                             />
                           </label>
@@ -572,13 +603,32 @@ class SupplyQuickOrderDialogComponent {
                               class="pi-input"
                               [ngModel]="contactEmail(row.supplierContactId)"
                               (ngModelChange)="
-                                patchContact(row.supplierContactId, { email: $event })
+                                onContactFieldInput(row.supplierContactId, 'email', $event)
                               "
+                              (blur)="onContactFieldBlur(row.supplierContactId, 'email')"
                               [disabled]="!row.supplierContactId"
                               placeholder="manager@…"
+                              title="Контакты сохраняются у менеджера"
                               data-test="supply-quick-manager-email"
                             />
                           </label>
+                          <p
+                            class="supply-quick-order__persist-hint text-xs text-muted-foreground m-0"
+                            data-test="supply-quick-manager-persist-hint"
+                          >
+                            Контакты сохраняются у менеджера
+                            @if (contactSaveError()) {
+                              <span
+                                class="text-destructive"
+                                role="alert"
+                                data-test="supply-quick-supplier-save-error"
+                              >
+                                — {{ contactSaveError() }}
+                              </span>
+                            } @else if (contactSavedHint()) {
+                              <span data-test="supply-quick-supplier-saved"> — сохранено</span>
+                            }
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1405,7 +1455,8 @@ class SupplyQuickOrderDialogComponent {
       .supply-quick-order__subgroup--supplier .supply-quick-order__field--email,
       .supply-quick-order__subgroup--manager .supply-quick-order__field--phone,
       .supply-quick-order__subgroup--manager .supply-quick-order__field--email,
-      .supply-quick-order__strip--more .supply-quick-order__field--grow {
+      .supply-quick-order__strip--more .supply-quick-order__field--grow,
+      .supply-quick-order__persist-hint {
         grid-column: 1 / -1;
       }
       .supply-quick-order__field {
@@ -1774,6 +1825,16 @@ export class SupplyQuickOrderComponent {
   private readonly destroyRef = inject(DestroyRef);
   private modalRef: DialogRef<unknown> | null = null;
 
+  /** TZ-SUPPLY-317 — blur/debounce commit streams (cancel in-flight per id+field). */
+  private readonly supplierFieldCommits = new Map<string, Subject<string>>();
+  private readonly contactFieldCommits = new Map<string, Subject<string>>();
+  private readonly supplierFieldDebounce = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly contactFieldDebounce = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly supplierFieldBaseline = new Map<string, string | undefined>();
+  private readonly contactFieldBaseline = new Map<string, string | undefined>();
+  private supplierSavedTimer: ReturnType<typeof setTimeout> | null = null;
+  private contactSavedTimer: ReturnType<typeof setTimeout> | null = null;
+
   @ViewChild('toolbarTemplate', { static: true })
   readonly toolbarTemplate!: TemplateRef<void>;
 
@@ -1809,6 +1870,12 @@ export class SupplyQuickOrderComponent {
   /** TZ-SUPPLY-314 / 308R — guided-flow block visibility (per expanded row). */
   protected readonly whereExpanded = signal(false);
   protected readonly detailsExpanded = signal(false);
+
+  /** TZ-SUPPLY-317 — visible persist feedback for org / person card edits. */
+  protected readonly supplierSaveError = signal<string | null>(null);
+  protected readonly supplierSavedHint = signal(false);
+  protected readonly contactSaveError = signal<string | null>(null);
+  protected readonly contactSavedHint = signal(false);
 
   protected readonly showNewSupplier = signal(false);
   protected readonly newSupplierName = signal('');
@@ -1988,11 +2055,51 @@ export class SupplyQuickOrderComponent {
     return materialsForCategory(this.materials(), categoryId);
   }
 
-  protected materialOptions(categoryId: string): { id: string; label: string }[] {
-    return this.materialsFor(categoryId).map((material) => ({
+  protected materialOptions(
+    categoryId: string,
+    selectedMaterialId?: string | null,
+  ): { id: string; label: string }[] {
+    const filtered = this.materialsFor(categoryId);
+    const list =
+      selectedMaterialId && !filtered.some((m) => m.id === selectedMaterialId)
+        ? [...filtered, ...this.materials().filter((m) => m.id === selectedMaterialId)]
+        : filtered;
+    return list.map((material) => ({
       id: material.id,
       label: material.name,
     }));
+  }
+
+  /** TZ-SUPPLY-316 — hint when picker shows orphans / fallback / empty. */
+  protected materialPickerPlaceholder(categoryId: string): string {
+    const options = this.materialOptions(categoryId);
+    if (options.length === 0) return '— нет материалов —';
+    const hasMatched = this.materials().some((m) => m.categoryId === categoryId);
+    const hasOrphanInView = this.materialsFor(categoryId).some((m) => !m.categoryId);
+    if (hasOrphanInView && !hasMatched) return '— все / без категории —';
+    return '— выберите материал —';
+  }
+
+  /** Merge live catalog rows without dropping mock rows still used in tests. */
+  private mergeMaterials(incoming: QuickOrderMaterial[]): void {
+    if (incoming.length === 0) return;
+    this.materials.update((list) => {
+      const byId = new Map(list.map((material) => [material.id, material]));
+      for (const material of incoming) byId.set(material.id, material);
+      return [...byId.values()];
+    });
+  }
+
+  /** Server-side category filter keeps the picker accurate for live ObjectIds. */
+  private refreshMaterialsForCategory(categoryId: string): void {
+    if (!categoryId || !OBJECT_ID_RE.test(categoryId)) return;
+    this.materialsSvc
+      .list({ categoryId, limit: 500 })
+      .pipe(take(1))
+      .subscribe((res) => {
+        if (!res.ok) return;
+        this.mergeMaterials((res.data?.items ?? []).map(mapMaterial));
+      });
   }
 
   /**
@@ -2066,25 +2173,16 @@ export class SupplyQuickOrderComponent {
     return this.contacts().find((c) => c.id === contactId)?.phone ?? '';
   }
 
+  /** Local-only draft while typing; PATCH goes through commit* on blur/debounce. */
   protected patchContact(
     contactId: string | null,
     patch: Partial<Omit<QuickOrderSupplierContact, 'id' | 'supplierId' | 'personId'>>,
   ): void {
     if (!contactId) return;
-    const contact = this.contacts().find((candidate) => candidate.id === contactId);
     this.contacts.update((list) => list.map((c) => (c.id === contactId ? { ...c, ...patch } : c)));
-
-    // Mock contacts have no Person id. Live OrganizationContact rows do, so
-    // phone/email edits must update the shared Person record as well.
-    if (contact?.personId && OBJECT_ID_RE.test(contact.personId)) {
-      this.personsSvc
-        .update(contact.personId, patch)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe();
-    }
   }
 
-  /** Site / org mail live on the org, so the strip edits the supplier itself. */
+  /** Local-only draft while typing; PATCH goes through commitSupplierField. */
   protected patchSupplier(
     supplierId: string | null,
     patch: Partial<Omit<QuickOrderSupplier, 'id'>>,
@@ -2093,19 +2191,225 @@ export class SupplyQuickOrderComponent {
     this.suppliers.update((list) =>
       list.map((s) => (s.id === supplierId ? { ...s, ...patch } : s)),
     );
+  }
 
-    // Почта и сайт — поля Organization, а не только состояние строки.
-    if (OBJECT_ID_RE.test(supplierId)) {
-      const payload: Partial<Organization> = {};
-      if (patch.website !== undefined) payload.website = patch.website;
-      if (patch.email !== undefined) payload.email = patch.email;
-      if (Object.keys(payload).length > 0) {
-        this.orgsSvc
-          .update(supplierId, payload)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe();
-      }
+  protected onSupplierFieldInput(
+    supplierId: string | null,
+    field: 'website' | 'email',
+    value: string,
+  ): void {
+    if (!supplierId) return;
+    const key = `${supplierId}:${field}`;
+    if (!this.supplierFieldBaseline.has(key)) {
+      const current = this.suppliers().find((s) => s.id === supplierId);
+      this.supplierFieldBaseline.set(key, current?.[field]);
     }
+    this.patchSupplier(supplierId, { [field]: value });
+    this.scheduleSupplierFieldCommit(supplierId, field);
+  }
+
+  protected onSupplierFieldBlur(supplierId: string | null, field: 'website' | 'email'): void {
+    if (!supplierId) return;
+    this.clearSupplierFieldDebounce(`${supplierId}:${field}`);
+    this.commitSupplierField(supplierId, {
+      [field]: this.suppliers().find((s) => s.id === supplierId)?.[field] ?? '',
+    });
+  }
+
+  protected onContactFieldInput(
+    contactId: string | null,
+    field: 'phone' | 'email',
+    value: string,
+  ): void {
+    if (!contactId) return;
+    const key = `${contactId}:${field}`;
+    if (!this.contactFieldBaseline.has(key)) {
+      const current = this.contacts().find((c) => c.id === contactId);
+      this.contactFieldBaseline.set(key, current?.[field]);
+    }
+    this.patchContact(contactId, { [field]: value });
+    this.scheduleContactFieldCommit(contactId, field);
+  }
+
+  protected onContactFieldBlur(contactId: string | null, field: 'phone' | 'email'): void {
+    if (!contactId) return;
+    this.clearContactFieldDebounce(`${contactId}:${field}`);
+    this.commitContactField(contactId, {
+      [field]: this.contacts().find((c) => c.id === contactId)?.[field] ?? '',
+    });
+  }
+
+  /** TZ-SUPPLY-317 — Organization PATCH for website/email (omit empty strings). */
+  protected commitSupplierField(
+    supplierId: string,
+    patch: { website?: string; email?: string },
+  ): void {
+    if (!supplierId) return;
+    const fields = (['website', 'email'] as const).filter((f) => patch[f] !== undefined);
+    for (const field of fields) {
+      const key = `${supplierId}:${field}`;
+      this.clearSupplierFieldDebounce(key);
+      const raw = patch[field] ?? '';
+      this.ensureSupplierCommitStream(supplierId, field).next(raw);
+    }
+  }
+
+  /** TZ-SUPPLY-317 — Person PATCH for manager phone/email (omit empty email). */
+  protected commitContactField(contactId: string, patch: { phone?: string; email?: string }): void {
+    if (!contactId) return;
+    const fields = (['phone', 'email'] as const).filter((f) => patch[f] !== undefined);
+    for (const field of fields) {
+      const key = `${contactId}:${field}`;
+      this.clearContactFieldDebounce(key);
+      const raw = patch[field] ?? '';
+      this.ensureContactCommitStream(contactId, field).next(raw);
+    }
+  }
+
+  private scheduleSupplierFieldCommit(supplierId: string, field: 'website' | 'email'): void {
+    const key = `${supplierId}:${field}`;
+    this.clearSupplierFieldDebounce(key);
+    this.supplierFieldDebounce.set(
+      key,
+      setTimeout(() => {
+        this.supplierFieldDebounce.delete(key);
+        this.commitSupplierField(supplierId, {
+          [field]: this.suppliers().find((s) => s.id === supplierId)?.[field] ?? '',
+        });
+      }, 500),
+    );
+  }
+
+  private scheduleContactFieldCommit(contactId: string, field: 'phone' | 'email'): void {
+    const key = `${contactId}:${field}`;
+    this.clearContactFieldDebounce(key);
+    this.contactFieldDebounce.set(
+      key,
+      setTimeout(() => {
+        this.contactFieldDebounce.delete(key);
+        this.commitContactField(contactId, {
+          [field]: this.contacts().find((c) => c.id === contactId)?.[field] ?? '',
+        });
+      }, 500),
+    );
+  }
+
+  private clearSupplierFieldDebounce(key: string): void {
+    const timer = this.supplierFieldDebounce.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.supplierFieldDebounce.delete(key);
+    }
+  }
+
+  private clearContactFieldDebounce(key: string): void {
+    const timer = this.contactFieldDebounce.get(key);
+    if (timer) {
+      clearTimeout(timer);
+      this.contactFieldDebounce.delete(key);
+    }
+  }
+
+  private ensureSupplierCommitStream(
+    supplierId: string,
+    field: 'website' | 'email',
+  ): Subject<string> {
+    const key = `${supplierId}:${field}`;
+    let subject = this.supplierFieldCommits.get(key);
+    if (subject) return subject;
+    subject = new Subject<string>();
+    this.supplierFieldCommits.set(key, subject);
+    subject
+      .pipe(
+        switchMap((raw) => {
+          const trimmed = raw.trim();
+          const payload: Partial<Organization> = {};
+          if (trimmed) payload[field] = trimmed;
+          // Empty → omit (do not send ''), so @IsEmail is not fed ''.
+          if (!OBJECT_ID_RE.test(supplierId) || Object.keys(payload).length === 0) {
+            this.supplierFieldBaseline.delete(key);
+            return EMPTY;
+          }
+          return this.orgsSvc.update(supplierId, payload);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) {
+          this.supplierFieldBaseline.delete(key);
+          this.supplierSaveError.set(null);
+          this.flashSupplierSaved();
+          return;
+        }
+        const baseline = this.supplierFieldBaseline.get(key);
+        this.supplierFieldBaseline.delete(key);
+        this.patchSupplier(supplierId, {
+          [field]: baseline,
+        });
+        this.supplierSaveError.set(extractErrorMessage(res.error));
+        this.supplierSavedHint.set(false);
+      });
+    return subject;
+  }
+
+  private ensureContactCommitStream(contactId: string, field: 'phone' | 'email'): Subject<string> {
+    const key = `${contactId}:${field}`;
+    let subject = this.contactFieldCommits.get(key);
+    if (subject) return subject;
+    subject = new Subject<string>();
+    this.contactFieldCommits.set(key, subject);
+    subject
+      .pipe(
+        switchMap((raw) => {
+          const contact = this.contacts().find((c) => c.id === contactId);
+          const personId = contact?.personId;
+          const trimmed = raw.trim();
+          const body: Partial<Person> = {};
+          if (field === 'phone') {
+            if (trimmed) body.phone = trimmed;
+          } else if (trimmed) {
+            body.email = trimmed;
+          }
+          if (!personId || !OBJECT_ID_RE.test(personId) || Object.keys(body).length === 0) {
+            this.contactFieldBaseline.delete(key);
+            return EMPTY;
+          }
+          return this.personsSvc.update(personId, body);
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((res) => {
+        if (res.ok) {
+          this.contactFieldBaseline.delete(key);
+          this.contactSaveError.set(null);
+          this.flashContactSaved();
+          return;
+        }
+        const baseline = this.contactFieldBaseline.get(key);
+        this.contactFieldBaseline.delete(key);
+        this.patchContact(contactId, { [field]: baseline });
+        this.contactSaveError.set(extractErrorMessage(res.error));
+        this.contactSavedHint.set(false);
+      });
+    return subject;
+  }
+
+  private flashSupplierSaved(): void {
+    this.supplierSavedHint.set(true);
+    if (this.supplierSavedTimer) clearTimeout(this.supplierSavedTimer);
+    this.supplierSavedTimer = setTimeout(() => {
+      this.supplierSavedHint.set(false);
+      this.supplierSavedTimer = null;
+    }, 1500);
+  }
+
+  private flashContactSaved(): void {
+    this.contactSavedHint.set(true);
+    if (this.contactSavedTimer) clearTimeout(this.contactSavedTimer);
+    this.contactSavedTimer = setTimeout(() => {
+      this.contactSavedHint.set(false);
+      this.contactSavedTimer = null;
+    }, 1500);
   }
 
   protected onStatusFilter(v: string): void {
@@ -2124,6 +2428,8 @@ export class SupplyQuickOrderComponent {
       this.moreExpanded.set(false);
       this.whereExpanded.set(false);
       this.detailsExpanded.set(false);
+      const categoryId = this.rows().find((row) => row.id === next)?.categoryId;
+      if (categoryId) this.refreshMaterialsForCategory(categoryId);
     }
   }
 
@@ -2215,7 +2521,30 @@ export class SupplyQuickOrderComponent {
     });
     this.cancelNewManager();
 
-    if (id && OBJECT_ID_RE.test(id)) this.loadSupplierContacts(id);
+    if (id && OBJECT_ID_RE.test(id)) {
+      this.loadSupplierContacts(id);
+      const found = this.suppliers().find((s) => s.id === id);
+      const sparse = !found || (!found.website && !found.email);
+      if (sparse) this.hydrateSupplierCard(id);
+    }
+  }
+
+  /** TZ-SUPPLY-317 — when live list is sparse/missing, pull Organization by id. */
+  private hydrateSupplierCard(supplierId: string): void {
+    this.orgsSvc
+      .findById(supplierId)
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok || !res.data) return;
+        const mapped = mapSupplier(res.data);
+        this.suppliers.update((list) => {
+          const idx = list.findIndex((s) => s.id === supplierId);
+          if (idx < 0) return [...list, mapped];
+          const next = [...list];
+          next[idx] = { ...next[idx]!, ...mapped, categoryIds: next[idx]!.categoryIds };
+          return next;
+        });
+      });
   }
 
   /** TZ-SUPPLY-311 — контакты живого поставщика (OrganizationContact + Person join). */
@@ -2431,6 +2760,7 @@ export class SupplyQuickOrderComponent {
       color: '',
       ...(keepsSupplier ? {} : { supplierId: null, supplierContactId: null }),
     });
+    this.refreshMaterialsForCategory(categoryId);
     this.closePanels();
   }
 

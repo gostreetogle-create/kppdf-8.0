@@ -209,6 +209,101 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     expect(comp.visibleRows().find((r) => r.id === rowId)?.materialId).toBeNull();
   });
 
+  it('TZ-SUPPLY-316: orphan materials appear alongside matched category materials', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      toggleExpand: (id: string) => void;
+      onCategoryChange: (rowId: string, categoryId: string) => void;
+      visibleRows: () => { id: string }[];
+      materials: {
+        update: (
+          fn: (
+            list: { id: string; categoryId: string; name: string; unit: string }[],
+          ) => { id: string; categoryId: string; name: string; unit: string }[],
+        ) => void;
+      };
+    };
+    comp.materials.update((list) => [
+      ...list,
+      { id: 'mat-orphan', categoryId: '', name: 'Без категории в каталоге', unit: 'шт' },
+    ]);
+    const rowId = comp.visibleRows()[0].id;
+    comp.toggleExpand(rowId);
+    comp.onCategoryChange(rowId, 'cat-metizy');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const options = openOverflowOptions(root, 'supply-quick-material-select');
+    expect(options).toContain('Без категории в каталоге');
+    expect(options).toContain('Болт М8×40');
+    expect(options).not.toContain('Подшипник 6205');
+  });
+
+  it('TZ-SUPPLY-316: empty matched shows orphans; no orphans falls back to all', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      materialOptions: (categoryId: string) => { id: string; label: string }[];
+      materials: {
+        set: (list: { id: string; categoryId: string; name: string; unit: string }[]) => void;
+      };
+    };
+
+    comp.materials.set([
+      { id: 'mat-other', categoryId: 'cat-prochee', name: 'Чужая категория', unit: 'шт' },
+      { id: 'mat-orphan', categoryId: '', name: 'Осиротевший', unit: 'шт' },
+    ]);
+    expect(comp.materialOptions('cat-metizy').map((o) => o.label)).toEqual(['Осиротевший']);
+
+    comp.materials.set([
+      { id: 'mat-a', categoryId: 'cat-prochee', name: 'Материал А', unit: 'шт' },
+      { id: 'mat-b', categoryId: 'cat-rashodniki', name: 'Материал Б', unit: 'шт' },
+    ]);
+    expect(comp.materialOptions('cat-metizy').map((o) => o.label)).toEqual([
+      'Материал А',
+      'Материал Б',
+    ]);
+  });
+
+  it('TZ-SUPPLY-311: onCategoryChange loads materials filtered by categoryId from API', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onCategoryChange: (rowId: string, categoryId: string) => void;
+      materialOptions: (categoryId: string) => { id: string; label: string }[];
+    };
+    const liveCategoryId = '507f1f77bcf86cd799439011';
+    comp.onCategoryChange('qo-1', liveCategoryId);
+    fixture.detectChanges();
+
+    const materialsReq = httpMock.expectOne(
+      (req) => req.url.includes('/materials') && req.params.get('categoryId') === liveCategoryId,
+    );
+    materialsReq.flush({
+      items: [
+        {
+          _id: '507f1f77bcf86cd799439012',
+          categoryId: liveCategoryId,
+          name: 'Лист стальной 2 мм',
+          unit: 'м²',
+        },
+      ],
+      total: 1,
+      page: 1,
+      limit: 500,
+    });
+    fixture.detectChanges();
+
+    expect(comp.materialOptions(liveCategoryId).map((item) => item.label)).toContain(
+      'Лист стальной 2 мм',
+    );
+  });
+
   it('TZ-SUPPLY-307: add panel saves a material, auto-selects it and closes', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
@@ -889,26 +984,282 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
           ) => { id: string; personId?: string }[],
         ) => void;
       };
-      patchContact: (contactId: string, patch: { phone?: string; email?: string }) => void;
+      onContactFieldInput: (contactId: string, field: 'phone' | 'email', value: string) => void;
+      commitContactField: (contactId: string, patch: { phone?: string; email?: string }) => void;
     };
     const personId = 'eeeeeeeeeeeeeeeeeeeeeeee';
     comp.contacts.update((contacts) =>
       contacts.map((contact) => (contact.id === 'sc-kuban-1' ? { ...contact, personId } : contact)),
     );
 
-    comp.patchContact('sc-kuban-1', { phone: '+7 900 123-45-67', email: 'new@example.ru' });
+    comp.onContactFieldInput('sc-kuban-1', 'phone', '+7 900 123-45-67');
+    comp.onContactFieldInput('sc-kuban-1', 'email', 'new@example.ru');
+    httpMock.expectNone((r) => r.method === 'PATCH' && r.url === `/api/persons/${personId}`);
 
-    const request = httpMock.expectOne(
-      (r) => r.method === 'PATCH' && r.url === `/api/persons/${personId}`,
-    );
-    expect(request.request.body).toEqual({ phone: '+7 900 123-45-67', email: 'new@example.ru' });
-    request.flush({
-      _id: personId,
-      lastName: 'Ковалёв',
-      firstName: 'Игорь',
+    comp.commitContactField('sc-kuban-1', {
       phone: '+7 900 123-45-67',
       email: 'new@example.ru',
     });
+
+    const requests = httpMock.match(
+      (r) => r.method === 'PATCH' && r.url === `/api/persons/${personId}`,
+    );
+    expect(requests.length).toBe(2);
+    const bodies = requests.map((r) => r.request.body);
+    expect(bodies).toContainEqual({ phone: '+7 900 123-45-67' });
+    expect(bodies).toContainEqual({ email: 'new@example.ru' });
+    for (const request of requests) {
+      request.flush({
+        _id: personId,
+        lastName: 'Ковалёв',
+        firstName: 'Игорь',
+        phone: '+7 900 123-45-67',
+        email: 'new@example.ru',
+      });
+    }
+  });
+
+  it('TZ-SUPPLY-317: selecting mock supplier fills website and email inputs', async () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      toggleExpand: (id: string) => void;
+      onCategoryChange: (rowId: string, categoryId: string) => void;
+      onSupplierChange: (rowId: string, supplierId: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
+    };
+    comp.toggleExpand('qo-2');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
+    fixture.detectChanges();
+    comp.onCategoryChange('qo-2', 'cat-osnastka');
+    fixture.detectChanges();
+    comp.onSupplierChange('qo-2', 'sup-profrezi');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(
+      (root.querySelector('[data-test="supply-quick-supplier-website"]') as HTMLInputElement).value,
+    ).toBe('https://profrezi.ru');
+    expect(
+      (root.querySelector('[data-test="supply-quick-supplier-email"]') as HTMLInputElement).value,
+    ).toBe('sales@profrezi.ru');
+    expect(
+      root.querySelector('[data-test="supply-quick-supplier-persist-hint"]')?.textContent,
+    ).toContain('Сайт и почта сохраняются в карточке поставщика');
+    expect(
+      root.querySelector('[data-test="supply-quick-manager-persist-hint"]')?.textContent,
+    ).toContain('Контакты сохраняются у менеджера');
+  });
+
+  it('TZ-SUPPLY-317: valid email commits one Organization PATCH on blur', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const supplierId = 'aaaaaaaaaaaaaaaaaaaaaaaa';
+    const comp = fixture.componentInstance as unknown as {
+      suppliers: {
+        update: (
+          fn: (
+            list: {
+              id: string;
+              name: string;
+              categoryIds: string[];
+              website?: string;
+              email?: string;
+            }[],
+          ) => {
+            id: string;
+            name: string;
+            categoryIds: string[];
+            website?: string;
+            email?: string;
+          }[],
+        ) => void;
+      };
+      onSupplierFieldInput: (supplierId: string, field: 'website' | 'email', value: string) => void;
+      onSupplierFieldBlur: (supplierId: string, field: 'website' | 'email') => void;
+    };
+    comp.suppliers.update((list) => [
+      ...list,
+      { id: supplierId, name: 'Live Org', categoryIds: [], email: 'old@example.ru' },
+    ]);
+
+    comp.onSupplierFieldInput(supplierId, 'email', 'a');
+    comp.onSupplierFieldInput(supplierId, 'email', 'a@');
+    comp.onSupplierFieldInput(supplierId, 'email', 'a@b.ru');
+    httpMock.expectNone(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
+    );
+
+    comp.onSupplierFieldBlur(supplierId, 'email');
+    const request = httpMock.expectOne(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
+    );
+    expect(request.request.body).toEqual({ email: 'a@b.ru' });
+    request.flush({
+      _id: supplierId,
+      name: 'Live Org',
+      inn: '1234567890',
+      email: 'a@b.ru',
+    });
+    expect(
+      (
+        fixture.componentInstance as unknown as { supplierSavedHint: () => boolean }
+      ).supplierSavedHint(),
+    ).toBe(true);
+  });
+
+  it('TZ-SUPPLY-317: partial email mid-type does not PATCH every keystroke', () => {
+    jest.useFakeTimers();
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const supplierId = 'bbbbbbbbbbbbbbbbbbbbbbbb';
+    const comp = fixture.componentInstance as unknown as {
+      suppliers: {
+        update: (
+          fn: (
+            list: { id: string; name: string; categoryIds: string[] }[],
+          ) => { id: string; name: string; categoryIds: string[] }[],
+        ) => void;
+      };
+      onSupplierFieldInput: (supplierId: string, field: 'website' | 'email', value: string) => void;
+    };
+    comp.suppliers.update((list) => [
+      ...list,
+      { id: supplierId, name: 'Debounce Org', categoryIds: [] },
+    ]);
+
+    comp.onSupplierFieldInput(supplierId, 'email', 'a');
+    comp.onSupplierFieldInput(supplierId, 'email', 'a@');
+    comp.onSupplierFieldInput(supplierId, 'email', 'a@b');
+    httpMock.expectNone(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
+    );
+
+    jest.advanceTimersByTime(500);
+    const requests = httpMock.match(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
+    );
+    expect(requests.length).toBeLessThanOrEqual(1);
+    if (requests.length === 1) {
+      expect(requests[0]!.request.body).toEqual({ email: 'a@b' });
+      requests[0]!.flush({
+        _id: supplierId,
+        name: 'Debounce Org',
+        inn: '1',
+        email: 'a@b',
+      });
+    }
+    jest.useRealTimers();
+  });
+
+  it('TZ-SUPPLY-317: findById hydrates sparse supplier on select', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const supplierId = 'cccccccccccccccccccccccc';
+    const comp = fixture.componentInstance as unknown as {
+      suppliers: {
+        update: (
+          fn: (
+            list: {
+              id: string;
+              name: string;
+              categoryIds: string[];
+              website?: string;
+              email?: string;
+            }[],
+          ) => {
+            id: string;
+            name: string;
+            categoryIds: string[];
+            website?: string;
+            email?: string;
+          }[],
+        ) => void;
+      };
+      onSupplierChange: (rowId: string, supplierId: string) => void;
+      supplierWebsite: (id: string | null) => string;
+      supplierEmail: (id: string | null) => string;
+    };
+    comp.suppliers.update((list) => [
+      ...list,
+      { id: supplierId, name: 'Sparse Live', categoryIds: [] },
+    ]);
+
+    comp.onSupplierChange('qo-1', supplierId);
+
+    const findReq = httpMock.expectOne(
+      (r) => r.method === 'GET' && r.url === `/api/organizations/${supplierId}`,
+    );
+    findReq.flush({
+      _id: supplierId,
+      name: 'Sparse Live',
+      inn: '123',
+      website: 'https://sparse.example',
+      email: 'orders@sparse.example',
+    });
+    // contacts list may also fire
+    const contactReqs = httpMock.match(
+      (r) => r.method === 'GET' && r.url === `/api/organizations/${supplierId}/contacts`,
+    );
+    for (const req of contactReqs) req.flush([]);
+
+    expect(comp.supplierWebsite(supplierId)).toBe('https://sparse.example');
+    expect(comp.supplierEmail(supplierId)).toBe('orders@sparse.example');
+  });
+
+  it('TZ-SUPPLY-317: PATCH fail shows error hook and reverts local email', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const supplierId = 'dddddddddddddddddddddddd';
+    const comp = fixture.componentInstance as unknown as {
+      suppliers: {
+        update: (
+          fn: (
+            list: { id: string; name: string; categoryIds: string[]; email?: string }[],
+          ) => { id: string; name: string; categoryIds: string[]; email?: string }[],
+        ) => void;
+      };
+      onSupplierFieldInput: (supplierId: string, field: 'website' | 'email', value: string) => void;
+      onSupplierFieldBlur: (supplierId: string, field: 'website' | 'email') => void;
+      supplierEmail: (id: string | null) => string;
+      toggleExpand: (id: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
+      visibleRows: () => { id: string }[];
+    };
+    comp.suppliers.update((list) => [
+      ...list,
+      { id: supplierId, name: 'Fail Org', categoryIds: [], email: 'keep@example.ru' },
+    ]);
+    const rowId = comp.visibleRows()[0]!.id;
+    comp.toggleExpand(rowId);
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
+    fixture.detectChanges();
+
+    comp.onSupplierFieldInput(supplierId, 'email', 'bad@');
+    comp.onSupplierFieldBlur(supplierId, 'email');
+    const request = httpMock.expectOne(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
+    );
+    request.flush(
+      { message: 'email must be an email' },
+      { status: 400, statusText: 'Bad Request' },
+    );
+    fixture.detectChanges();
+
+    expect(comp.supplierEmail(supplierId)).toBe('keep@example.ru');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector(
+        '[data-test="supply-quick-supplier-save-error"]',
+      ),
+    ).toBeTruthy();
   });
 
   it('TZ-SUPPLY-312: supplier modal sends its email to Organization API', () => {

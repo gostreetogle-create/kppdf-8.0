@@ -393,10 +393,15 @@ export function materialsForCategory(
   categoryId: string,
 ): QuickOrderMaterial[] {
   if (!categoryId) return [];
-  // Legacy/live catalog rows may have no categoryId yet. Keep them selectable
-  // instead of rendering an empty material picker; the audit task records the
-  // required backend data backfill separately.
-  return materials.filter((m) => !m.categoryId || m.categoryId === categoryId);
+  const matched = materials.filter((m) => m.categoryId === categoryId);
+  if (matched.length > 0) {
+    // Категория «живая»: свои + безкатегорийные (чтобы старый каталог не пропал)
+    const orphan = materials.filter((m) => !m.categoryId);
+    return [...matched, ...orphan];
+  }
+  // Нет ни одного с этой категорией → показать безкатегорийные; если и их нет — все
+  const orphan = materials.filter((m) => !m.categoryId);
+  return orphan.length > 0 ? orphan : materials;
 }
 
 export function materialLabel(materials: QuickOrderMaterial[], materialId: string | null): string {
