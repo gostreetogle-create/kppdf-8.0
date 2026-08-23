@@ -22,11 +22,31 @@ type SortKey = 'name' | 'qty' | 'status' | null;
 type SortDir = 'asc' | 'desc';
 
 /**
- * Forms page (/forms) — TZ-72.
+ * Forms page (/kit/forms) — TZ-72, TZ-UI-WR-506.
  *
- * Validated reactive form + sortable paginated raw-HTML data-table
- * (TableComponent + PaginationComponent не используются — реализованы
- * inline для совместимости с Paper & Ink эстетикой) + form variants.
+ * Validated reactive form + sortable paginated data-table
+ * (TableComponent) + form variants (inline, stacked, architectural).
+ *
+ * ── Паспорта примитивов ──
+ *
+ * PiSelect
+ *   Назначение: выбор из статического списка опций в форме.
+ *   Anti-use: не для динамических/поисковых списков (OverflowSelect),
+ *             не для навигации, не для меню.
+ *   Keyboard: ↑↓ стрелки, Enter выбрать, Esc закрыть.
+ *   Статус: canonical.
+ *
+ * FormField
+ *   Назначение: обёртка label + error + hint для form-контролов.
+ *   Anti-use: не standalone, всегда с Input/Select/Checkbox.
+ *   Keyboard: label кликабелен (htmlFor).
+ *   Статус: canonical.
+ *
+ * Skeleton
+ *   Назначение: placeholder-анимация загрузки контента (заглушка).
+ *   Anti-use: не для пустых состояний (EmptyState), не для ошибок.
+ *   Keyboard: не интерактивен.
+ *   Статус: experimental (компонент не создан, заменяется текстом «Загрузка…»).
  */
 @Component({
   selector: 'app-forms-page',

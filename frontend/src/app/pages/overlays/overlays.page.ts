@@ -7,7 +7,7 @@ import { PiToastService } from '../../shared/ui/toast';
 import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
 
 /**
- * Overlays page (/overlays) — TZ-73.
+ * Overlays page (/kit/overlays) — TZ-73, TZ-UI-WR-506.
  *
  * Showcase 10 overlay primitives: Dialog, AlertDialog, Sheet, Drawer,
  * Tooltip, Popover, HoverCard, DropdownMenu, ContextMenu, Toast.
@@ -15,6 +15,44 @@ import { LucideAngularModule, User, ChevronDown } from 'lucide-angular';
  * Note: PiDialogService.open() signature — `(component, config)`. Для
  * demo-целей мы используем toast-вызовы (которые дают мгновенный
  * визуальный feedback без сложной CDK-механики).
+ *
+ * ── Паспорта примитивов ──
+ *
+ * Dialog
+ *   Назначение: модальное окно с затемнением фона, подтверждение действий.
+ *   Anti-use: не для inline-редактирования, не для навигации.
+ *   Keyboard: Esc закрывает, фокус заперт внутри.
+ *   Статус: canonical.
+ *
+ * Sheet
+ *   Назначение: боковая панель (right/left) для фильтров, состава, заметок.
+ *   Anti-use: не для основного контента, не на мобильных (Drawer).
+ *   Keyboard: Esc закрывает.
+ *   Статус: canonical.
+ *
+ * Drawer
+ *   Назначение: нижняя панель на мобильных, быстрые действия.
+ *   Anti-use: не на десктопе (Sheet).
+ *   Keyboard: Esc закрывает.
+ *   Статус: canonical.
+ *
+ * DropdownMenu
+ *   Назначение: выпадающее меню действий (три точки / контекст).
+ *   Anti-use: не для навигации (используй OverflowSelect), не для форм.
+ *   Keyboard: ↑↓ стрелки, Enter выбор, Esc закрыть.
+ *   Статус: canonical.
+ *
+ * OverflowSelect
+ *   Назначение: выбор из выпадающего списка с overflow-поведением.
+ *   Anti-use: не для меню действий (DropdownMenu).
+ *   Keyboard: ↑↓ стрелки, Enter выбрать, Esc закрыть.
+ *   Статус: canonical (см. app-pi-overflow-select).
+ *
+ * Toast
+ *   Назначение: краткое уведомление (success, error, warning) — Sonner-style.
+ *   Anti-use: не для долгих сообщений, не для confirm-диалогов.
+ *   Keyboard: автоисчезновение, не фокусируется.
+ *   Статус: canonical.
  */
 @Component({
   selector: 'app-overlays-page',

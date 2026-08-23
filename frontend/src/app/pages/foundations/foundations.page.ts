@@ -5,11 +5,20 @@ import { PiDemoComponent } from '../../shared/page/pi-demo.component';
 import { CardComponent } from '../../shared/ui/card/card.component';
 
 /**
- * Foundations page (/foundations) — TZ-70.
+ * Foundations page (/kit/foundations) — TZ-70, TZ-UI-WR-506.
  *
- * Styleguide reference: палитра (8 OKLCH swatches), типографика
- * (4 samples), spacing & radius scale, grid-paper utility demo.
+ * Styleguide reference: палитра (13 OKLCH swatches), типографика
+ * (4 samples), spacing & radius scale, grid-paper utility demo,
+ * pi-tech-label и pi-dashed-panel.
  * Каждый swatch показывает oklch value строкой (Paper & Ink — oklch-first).
+ *
+ * ── Паспорта примитивов ──
+ *
+ * error-banner
+ *   Назначение: баннер ошибки (role="alert") — string | {message, canRetry?} | null.
+ *   Anti-use: не для успеха/предупреждений (Toast), не для валидации полей.
+ *   Keyboard: кнопка «Повторить» доступна с клавиатуры.
+ *   Статус: canonical (см. shared/ui/error-banner).
  */
 @Component({
   selector: 'app-foundations-page',

@@ -545,6 +545,51 @@ export const routes: Routes = [
         redirectTo: 'admin/devices',
         pathMatch: 'full',
       },
+      // TZ-UI-WR-506 — /kit/* showcase (Paper & Ink UI Kit).
+      // Auth как /design; kit-layout = sticky header + sidebar + footer.
+      // Неполные секции: basics, navigation, playground — перечислены в kit-overview.
+      {
+        path: 'kit',
+        loadComponent: () =>
+          import('./layout/kit-layout.component').then((m) => m.KitLayoutComponent),
+        children: [
+          { path: '', redirectTo: 'overview', pathMatch: 'full' },
+          {
+            path: 'overview',
+            loadComponent: () =>
+              import('./pages/kit/kit-overview.page').then((m) => m.KitOverviewPage),
+            title: 'KPPDF — UI Kit · Обзор',
+          },
+          {
+            path: 'foundations',
+            loadComponent: () =>
+              import('./pages/foundations/foundations.page').then((m) => m.FoundationsPage),
+            title: 'KPPDF — UI Kit · Основы',
+          },
+          {
+            path: 'forms',
+            loadComponent: () => import('./pages/forms/forms.page').then((m) => m.FormsPage),
+            title: 'KPPDF — UI Kit · Формы',
+          },
+          {
+            path: 'overlays',
+            loadComponent: () =>
+              import('./pages/overlays/overlays.page').then((m) => m.OverlaysPage),
+            title: 'KPPDF — UI Kit · Оверлеи',
+          },
+          {
+            path: 'basics',
+            loadComponent: () => import('./pages/kit/kit-basics.page').then((m) => m.KitBasicsPage),
+            title: 'KPPDF — UI Kit · Базовые',
+          },
+          {
+            path: 'navigation',
+            loadComponent: () =>
+              import('./pages/kit/kit-navigation.page').then((m) => m.KitNavigationPage),
+            title: 'KPPDF — UI Kit · Навигация',
+          },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: '' },

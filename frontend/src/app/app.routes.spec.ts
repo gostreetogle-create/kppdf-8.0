@@ -15,8 +15,12 @@ describe('app.routes', () => {
     router = TestBed.inject(Router);
   });
 
-  it('does not register /kit showcase routes', () => {
-    expect(router.config.find((r) => r.path === 'kit')).toBeUndefined();
+  it('TZ-UI-WR-506: registers /kit showcase routes', () => {
+    const operational = router.config.find((r) => r.path === '');
+    const kit = operational?.children?.find((c) => c.path === 'kit');
+    expect(kit).toBeTruthy();
+    expect(kit!.loadComponent).toBeTruthy();
+    expect(kit!.children?.length).toBeGreaterThanOrEqual(4);
   });
 
   it('operational site (/*) still requires authGuard', () => {
