@@ -111,12 +111,16 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
   template: `
     <div
       class="order-hub-tray"
+      [class.order-hub-tray--desk]="mode() === 'desk'"
       data-test="order-hub-tray"
       [attr.id]="'order-hub-tray-' + order()._id"
       [attr.data-mode]="mode()"
     >
       <div
-        class="px-4 py-5 bg-paper-2 border-t hairline relative"
+        class="bg-paper-2 border-t hairline relative"
+        [class.p-4]="mode() === 'desk'"
+        [class.px-4]="mode() !== 'desk'"
+        [class.py-5]="mode() !== 'desk'"
         data-test="expanded-content"
         role="region"
         [attr.aria-label]="'Сводка заказа: ' + order().number"
@@ -125,7 +129,11 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
         <div class="relative" data-test="expanded-content-body">
           <!-- ───── Summary bar ───── -->
           <div
-            class="flex flex-wrap items-center gap-3 border-b hairline pb-4 mb-4"
+            class="flex flex-wrap items-center gap-3 border-b hairline"
+            [class.pb-3]="mode() === 'desk'"
+            [class.mb-3]="mode() === 'desk'"
+            [class.pb-4]="mode() !== 'desk'"
+            [class.mb-4]="mode() !== 'desk'"
             data-test="order-summary-bar"
           >
             <span
@@ -166,11 +174,18 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
           <!-- ───── Card grid ───── -->
           <div
-            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(22rem,40%)] gap-5 items-start"
+            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(22rem,40%)] items-start"
+            [class.gap-5]="mode() !== 'desk'"
+            [class.gap-0]="mode() === 'desk'"
             data-test="order-lifecycle-groups"
           >
             <!-- Left: Состав -->
-            <section class="min-w-0 hairline rounded-sm bg-paper p-4" data-test="order-group-order">
+            <section
+              class="min-w-0 hairline rounded-sm p-4"
+              [class.bg-paper-raised]="mode() === 'desk'"
+              [class.bg-paper]="mode() !== 'desk'"
+              data-test="order-group-order"
+            >
               <section class="min-w-0 flex flex-col gap-1" data-test="order-composition-block">
                 <button
                   type="button"
@@ -291,10 +306,20 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
             </section>
 
             <!-- Right stack -->
-            <div class="min-w-0 space-y-4">
+            <div
+              class="min-w-0"
+              [class.space-y-4]="mode() !== 'desk'"
+              [class.divide-y]="mode() === 'desk'"
+              [class.hairline]="mode() === 'desk'"
+              [class.xl:border-l]="mode() === 'desk'"
+              [class.xl:pl-4]="mode() === 'desk'"
+            >
               <!-- Исполнение -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-4"
+                class="min-w-0 hairline rounded-sm p-4"
+                [class.bg-paper-raised]="mode() === 'desk'"
+                [class.bg-paper]="mode() !== 'desk'"
+                [class.border-0]="mode() === 'desk'"
                 data-test="order-group-execution"
               >
                 <h3 class="text-sm font-medium text-ink m-0 mb-2">Исполнение</h3>
@@ -359,7 +384,10 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
               <!-- Снабжение + Производство -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-4"
+                class="min-w-0 hairline rounded-sm p-4"
+                [class.bg-paper-raised]="mode() === 'desk'"
+                [class.bg-paper]="mode() !== 'desk'"
+                [class.border-0]="mode() === 'desk'"
                 data-test="order-group-supply"
               >
                 <button
@@ -452,7 +480,10 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
               <!-- Логистика + Документы -->
               <section
-                class="min-w-0 hairline rounded-sm bg-paper p-4"
+                class="min-w-0 hairline rounded-sm p-4"
+                [class.bg-paper-raised]="mode() === 'desk'"
+                [class.bg-paper]="mode() !== 'desk'"
+                [class.border-0]="mode() === 'desk'"
                 data-test="order-group-logistics"
               >
                 <button

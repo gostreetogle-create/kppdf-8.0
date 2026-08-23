@@ -459,7 +459,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
               </fieldset>
               <button
                 type="button"
-                class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-pointer"
+                class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-transparent text-ink text-sm cursor-pointer"
                 data-test="desk-refresh"
                 (click)="refresh()"
               >
@@ -572,7 +572,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                   </div>
                   <button
                     type="button"
-                    class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-ink text-paper text-sm cursor-pointer disabled:opacity-50"
+                    class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm bg-transparent text-ink text-sm cursor-pointer disabled:opacity-50"
                     [disabled]="!noteText().trim()"
                     data-test="desk-note-submit"
                     (click)="onNoteCreate()"
@@ -678,9 +678,9 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         display: flex;
         max-height: calc(100dvh - 9.5rem);
         flex-direction: column;
-        gap: 0.45rem;
+        gap: 0;
         overflow-y: auto;
-        padding: 1rem;
+        padding: 0;
       }
       .manager-desk__empty {
         margin: 0;
@@ -692,12 +692,14 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         min-height: 2.25rem;
         width: 100%;
         padding: 0.4rem 0.8rem;
-        border: 1px dashed var(--color-rule-strong);
-        border-radius: 2px;
+        border: 0;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+        border-radius: 0;
         background: transparent;
         color: var(--color-ink);
         font: inherit;
-        font-size: 0.82rem;
+        font-size: 0.8125rem;
         cursor: pointer;
       }
       .manager-desk__more:hover {
@@ -708,7 +710,8 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         align-items: center;
         min-width: 0;
         min-height: 1.25rem;
-        padding: 0.1rem 0.25rem;
+        padding: 0.5rem 1rem 0.25rem;
+        border-bottom: 1px solid var(--color-rule);
         color: var(--color-muted-foreground);
         font-size: 0.75rem;
         font-weight: 700;
@@ -718,6 +721,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       }
       .manager-desk__order-item {
         min-width: 0;
+        border-bottom: 1px solid var(--color-rule);
       }
       /* TZ-DESK-424: delete is a real grid column (last, auto width), not a
          separate flex strip outside the row's own grid — same row height via
@@ -746,11 +750,11 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         align-items: center;
         gap: 0.7rem;
         width: 100%;
-        min-height: 3.25rem;
-        padding: 0.65rem 0.8rem;
-        border: 1px solid var(--color-rule);
-        border-radius: 2px;
-        background: var(--color-paper);
+        min-height: 2.75rem;
+        padding: 0.5rem 1rem;
+        border: 0;
+        border-radius: 0;
+        background: var(--color-paper-raised, var(--color-paper));
         color: inherit;
         cursor: pointer;
         text-align: left;
@@ -760,11 +764,10 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       }
       .manager-desk__order-row:hover,
       .manager-desk__order-row--expanded {
-        border-color: var(--color-sunrise-warm, #c79542);
         background: var(--color-sunrise-soft, #fff6df);
       }
       .manager-desk__order-row--expanded {
-        border-bottom-color: transparent;
+        border-bottom: 0;
       }
       .manager-desk__order-disclosure {
         display: inline-flex;
@@ -782,6 +785,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         min-width: 0;
         overflow: hidden;
         color: var(--color-muted-foreground);
+        font-size: 0.8125rem;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
@@ -789,7 +793,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
          for every status, letter-spacing + hairline outline instead of hue. */
       .manager-desk__status {
         color: var(--color-sunrise-warm, #9b6b1e);
-        font-size: 0.78rem;
+        font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: 0.02em;
         white-space: nowrap;

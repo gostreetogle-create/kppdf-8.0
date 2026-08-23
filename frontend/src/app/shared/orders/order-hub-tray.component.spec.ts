@@ -304,6 +304,27 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(toggle.textContent).toContain('свернуть');
   });
 
+  it('TZ-UI-DEN-512: desk mode uses paper-raised tray cards with 16px padding', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', ORDER);
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const tray = root.querySelector('.order-hub-tray') as HTMLElement;
+    expect(tray.classList.contains('order-hub-tray--desk')).toBe(true);
+    const content = tray.querySelector('[data-test="expanded-content"]') as HTMLElement;
+    expect(content.classList.contains('p-4')).toBe(true);
+    const cards = tray.querySelectorAll(
+      '[data-test="order-group-order"], [data-test="order-group-execution"], [data-test="order-group-supply"], [data-test="order-group-logistics"]',
+    );
+    expect(cards.length).toBeGreaterThan(0);
+    cards.forEach((card) => {
+      expect((card as HTMLElement).classList.contains('bg-paper-raised')).toBe(true);
+    });
+    const grid = tray.querySelector('[data-test="order-lifecycle-groups"]') as HTMLElement;
+    expect(grid.classList.contains('gap-0')).toBe(true);
+  });
+
   it('433: after cancel (only cancelled left) tray shows «Отгружено» again for a ready order', () => {
     TestBed.overrideProvider(ShipmentsService, {
       useValue: {

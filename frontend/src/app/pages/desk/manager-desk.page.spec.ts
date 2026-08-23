@@ -1301,6 +1301,25 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(numbers).toEqual(['З-1001', 'З-1004', 'З-1002']);
   });
 
+  it('TZ-UI-DEN-512: queue rows use hairline separators and 13px meta', async () => {
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.manager-desk__order-item')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.manager-desk__client')).toBeTruthy();
+
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'manager-desk.page.ts'),
+      'utf8',
+    );
+    expect(source).toContain('gap: 0');
+    expect(source).toContain('font-size: 0.8125rem');
+    expect(source).toContain('border-bottom: 1px solid var(--color-rule)');
+    expect(source).not.toMatch(/desk-refresh[\s\S]*bg-ink text-paper/);
+  });
+
   it('509: flyout is labelled by its visible heading (aria-labelledby, not only aria-label)', async () => {
     flushBase(httpMock);
     await tickMicrotask();
