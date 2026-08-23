@@ -1301,6 +1301,42 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(numbers).toEqual(['З-1001', 'З-1004', 'З-1002']);
   });
 
+  it('TZ-UI-DEN-505: queue empty/loading messages align with panel content inset', async () => {
+    const loading = fixture.nativeElement.querySelector(
+      '.manager-desk__empty',
+    ) as HTMLElement | null;
+    expect(loading).toBeTruthy();
+    expect(loading!.textContent).toContain('Загрузка');
+
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'manager-desk.page.ts'),
+      'utf8',
+    );
+    expect(source).toMatch(
+      /\.manager-desk__empty[\s\S]*padding:\s*0\.75rem\s+var\(--panel-content-inset\)/,
+    );
+    expect(source).not.toMatch(/\.manager-desk__empty[\s\S]*padding:\s*0\.75rem\s+0/);
+
+    queryParams$.next(convertToParamMap({ status: 'all' }));
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector(
+      '[data-test="desk-search-input"]',
+    ) as HTMLInputElement;
+    input.value = '___no-match___';
+    input.dispatchEvent(new Event('input'));
+    await new Promise((r) => setTimeout(r, 320));
+    fixture.detectChanges();
+
+    const empty = fixture.nativeElement.querySelector(
+      '[data-test="desk-queue-empty"]',
+    ) as HTMLElement;
+    expect(empty).toBeTruthy();
+    expect(empty.classList.contains('manager-desk__empty')).toBe(true);
+  });
+
   it('TZ-UI-DEN-512: queue rows use hairline separators and 13px meta', async () => {
     queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);

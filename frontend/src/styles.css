@@ -187,6 +187,7 @@
   --space-section: 24px; /* gap between page sections */
   --space-page-x: 24px; /* page horizontal padding */
   --space-page-y: 32px; /* page top padding */
+  --panel-content-inset: 1rem; /* 16px — framed panel/card body (DEN-505) */
   --space-header-y: 32px; /* page-header vertical padding */
   --space-footer-y: 48px; /* footer vertical padding */
 
@@ -1337,6 +1338,14 @@
 @utility text-hint-error {
   font-size: var(--text-micro);
   color: var(--color-hint-error);
+}
+
+/* Framed content inset (TZ-UI-DEN-505) — text inside bordered panels */
+@utility px-panel-inset {
+  padding-inline: var(--panel-content-inset);
+}
+@utility p-panel-inset {
+  padding: var(--panel-content-inset);
 }
 
 /* === executive-shadow (Design Reference — TZ-96) ===

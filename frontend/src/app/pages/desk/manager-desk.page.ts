@@ -684,7 +684,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       }
       .manager-desk__empty {
         margin: 0;
-        padding: 0.75rem 0;
+        padding: 0.75rem var(--panel-content-inset);
         color: var(--color-muted-foreground);
         font-size: 0.85rem;
       }

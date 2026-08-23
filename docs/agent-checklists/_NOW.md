@@ -9,20 +9,16 @@ updated_at: 2026-08-23T17:46:00+03:00
 
 ## ORCHESTRATOR — PO away
 
-| Lane | Agent | TZ | Status |
-|------|-------|-----|--------|
-| A | **Freebuff-1** | KP-WS-410 | IN WORK (`_active`) |
-| B | **Freebuff-2** | PRODUCTION-354 | IN WORK |
-| C | **Cursor** | DEN-505 spec + deploy-prep | ACTIVE |
-| D | Next freebuff | DEN-505 execute | WAIT 410+354 |
+| Lane | TZ | Status |
+|------|-----|--------|
+| KP-WS-410 | **DONE** `c3ca9cd5` | archived |
+| PRODUCTION-354 | **DONE** `f3b027da` | archived |
+| **DEN-505** inset | **DONE** | framed content inset token + desk empty fix |
+| Deploy-prep | WAIT DEN-505 or parallel if keys OK | Cursor |
 
-Промпты: `PROMPT-FREEBUFF-CLOSEOUT-WAVE.md` · `PROMPT-CURSOR-CLOSEOUT-ORCHESTRATOR.md`
-
-PO note: `/desk` empty text flush to frame → **DEN-505** (inset canon).
+PO note: `/desk` empty text flush to frame → **DEN-505**.
 
 ---
-
-## CLOSEOUT — PO away (410 + 354 + deploy-prep)
 
 | Lane | Agent | TZ | Status |
 |------|-------|-----|--------|
