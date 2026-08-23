@@ -1,10 +1,28 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-23 (UI War Room WR-500…512)
+**Updated:** 2026-08-23 (UI War Room WR-500…512; **WAVE-UI-DENSITY DEN-501…599 READY**)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
+
+## UI Density rollout (Paper & Ink — incremental)
+
+> Program: [`WAVE-UI-DENSITY-PAPER-INK.md`](../../tasks/WAVE-UI-DENSITY-PAPER-INK.md) · Canon: [`ui-density-canon.md`](../ui-density-canon.md)
+
+| Scope | DEN TZ | Note |
+|-------|--------|------|
+| Global tokens | **501·502 DONE** · **503 in flight** · 504 READY | styles, FormField, shared/ui, button canon |
+| Desktop Import | **580 DONE** | `fd9bc8c9` |
+| App shell | **510–512 READY** | layout, page-chrome, desk (512 after desk wave) |
+| Catalog | **520–522 READY** | materials/products/modules, party, dictionaries |
+| Forms | **530–531 READY** | FullEditor dialogs |
+| Doc-constructor | **540–541 READY** | lists + builder panes |
+| Deals | **550–552 READY** | orders/supply/shipping, proposals list; **552 WAIT 409** |
+| Production | **560–561 READY** | cockpit chrome only, work-types, people |
+| Auth/Admin | **570–571 READY** | login, admin |
+| Desktop Import | **580 READY** | electron tab |
+| Closeout | **590–599 READY** | RU copy + guards + PO sign-off |
 
 ## Overview
 
