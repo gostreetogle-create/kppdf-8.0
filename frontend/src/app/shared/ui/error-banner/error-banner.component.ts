@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { humanizeEnglishApiError } from '../../../core/silent-http';
 
 /**
  * Coerce an unknown error payload into the shape the banner template expects.
@@ -11,38 +12,35 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
  *   → message extracted from nested `.error`
  * - everything else → `{ message: String(raw) }`
  */
+function bannerMessage(raw: unknown): string {
+  const text = typeof raw === 'string' ? raw : String(raw ?? '');
+  return humanizeEnglishApiError(text);
+}
+
 export function toBannerError(raw: unknown): { message: string; canRetry?: boolean } | null {
   if (raw === null || raw === undefined) return null;
 
-  if (typeof raw === 'string') return { message: raw };
+  if (typeof raw === 'string') return { message: bannerMessage(raw) };
 
   if (typeof raw === 'object' && raw !== null && 'message' in raw) {
     const obj = raw as { message: unknown; canRetry?: unknown };
-    // Already the right shape — pass through (coerce message to string just in case).
-    if (
-      typeof obj.message === 'string' &&
-      (obj.canRetry === undefined || typeof obj.canRetry === 'boolean')
-    ) {
-      return { message: obj.message, canRetry: obj.canRetry };
-    }
-    return {
-      message: typeof obj.message === 'string' ? obj.message : String(obj.message ?? ''),
-      canRetry: typeof obj.canRetry === 'boolean' ? obj.canRetry : undefined,
-    };
+    const message = bannerMessage(obj.message);
+    const canRetry = typeof obj.canRetry === 'boolean' ? obj.canRetry : undefined;
+    return { message, canRetry };
   }
 
-  if (raw instanceof Error) return { message: raw.message };
+  if (raw instanceof Error) return { message: bannerMessage(raw.message) };
 
   // HttpErrorResponse-like: { error: { message } } or { error: 'string' }
   if (typeof raw === 'object' && raw !== null && 'error' in raw) {
     const err = (raw as { error: unknown }).error;
     if (typeof err === 'object' && err !== null && 'message' in err) {
-      return { message: String((err as { message: unknown }).message ?? '') };
+      return { message: bannerMessage((err as { message: unknown }).message) };
     }
-    if (typeof err === 'string') return { message: err };
+    if (typeof err === 'string') return { message: bannerMessage(err) };
   }
 
-  return { message: String(raw) };
+  return { message: bannerMessage(raw) };
 }
 
 @Component({

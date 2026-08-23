@@ -272,19 +272,21 @@ export class BlockRendererStateService {
     if (type === 'bool') return value ? 'Да' : 'Нет';
     if (type === 'number') {
       const n = Number(value);
-      return Number.isFinite(n) ? new Intl.NumberFormat('ru-RU').format(n) : String(value);
+      return Number.isFinite(n) ? new Intl.NumberFormat('ru-RU').format(n) : '—';
     }
     if (type === 'currency') {
       const n = Number(value);
       return Number.isFinite(n)
         ? new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(n)
-        : String(value);
+        : '—';
     }
     if (type === 'date') {
       const d = new Date(String(value));
-      return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('ru-RU');
+      return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('ru-RU');
     }
-    return String(value);
+    const text = String(value);
+    if (/^(null|undefined|NaN)$/i.test(text)) return '—';
+    return text;
   }
 
   // ═══════════════════════════════════════════════════════════

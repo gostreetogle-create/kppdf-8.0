@@ -83,14 +83,33 @@ export function extractErrorMessage(err: HttpErrorResponse): string {
 const HTTP_FAILURE_EN = /^Http failure response/i;
 const ENTITY_NOT_FOUND_EN = /^([A-Za-z][A-Za-z0-9]*)\s+.+\s+not found$/i;
 const HAS_CYRILLIC = /[А-Яа-яЁё]/;
+const NESTJS_EXCEPTION_NAME = /^[A-Za-z]+Exception$/;
+const RAW_EXCEPTION_PREFIX = /^(?:Raw\s+)?Exception\b/i;
+
+/** Replace dev jargon tokens that must never reach the operator UI (DEN-590). */
+function stripDevJargonTokens(message: string): string {
+  return message
+    .replace(/\bunfit\b/gi, 'не сопоставлено')
+    .replace(/\bnull\b/gi, 'пусто')
+    .replace(/\bundefined\b/gi, 'не задано')
+    .replace(/\bNaN\b/g, 'не число');
+}
 
 /** FE safety net: English Nest/Angular leftovers → short Russian. Filter is SoT. */
 export function humanizeEnglishApiError(message: string): string {
   const trimmed = message.trim();
+  if (!trimmed) return 'Неизвестная ошибка';
   if (HTTP_FAILURE_EN.test(trimmed)) return 'Ошибка запроса к серверу';
   if (ENTITY_NOT_FOUND_EN.test(trimmed)) return 'Объект не найден';
   if (/not found/i.test(trimmed) && !HAS_CYRILLIC.test(trimmed)) return 'Объект не найден';
-  return message;
+  if (NESTJS_EXCEPTION_NAME.test(trimmed)) return 'Не удалось выполнить операцию';
+  if (RAW_EXCEPTION_PREFIX.test(trimmed)) return 'Не удалось выполнить операцию';
+  if (/^(null|undefined|NaN)$/i.test(trimmed)) return 'Пусто';
+  if (/\bunfit\b/i.test(trimmed) && !HAS_CYRILLIC.test(trimmed)) return 'Не сопоставлено';
+  if (/\bException\b/.test(trimmed) && !HAS_CYRILLIC.test(trimmed)) {
+    return 'Не удалось выполнить операцию';
+  }
+  return stripDevJargonTokens(trimmed);
 }
 
 /**

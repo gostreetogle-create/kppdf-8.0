@@ -108,4 +108,13 @@ describe('toBannerError', () => {
     expect(toBannerError(42)).toEqual({ message: '42' });
     expect(toBannerError(true)).toEqual({ message: 'true' });
   });
+
+  it('humanizes dev jargon in banner messages (DEN-590)', () => {
+    expect(toBannerError('ThrottlerException')).toEqual({
+      message: 'Не удалось выполнить операцию',
+    });
+    expect(toBannerError({ message: 'value is null' })).toEqual({
+      message: 'value is пусто',
+    });
+  });
 });

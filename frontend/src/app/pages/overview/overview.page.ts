@@ -228,18 +228,18 @@ export class OverviewPage {
   }
 
   triggerDefault(): void {
-    this.toast.show('Default toast', { duration: 0 });
+    this.toast.show('Обычное уведомление', { duration: 0 });
   }
 
   triggerSuccess(): void {
-    this.toast.success('Test welcome', { duration: 0 });
+    this.toast.success('Готово', { duration: 0 });
   }
 
   triggerError(): void {
-    this.toast.error('Something went wrong', { duration: 0 });
+    this.toast.error('Не удалось выполнить операцию', { duration: 0 });
   }
 
   triggerWarning(): void {
-    this.toast.warning('Be careful', { duration: 0 });
+    this.toast.warning('Будьте внимательны', { duration: 0 });
   }
 }

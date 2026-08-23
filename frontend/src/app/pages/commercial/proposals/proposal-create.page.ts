@@ -2550,7 +2550,7 @@ export class ProposalCreatePage implements OnInit {
     this.cancelAutosave();
     this.proposalsSvc.update(draftId, { status }).subscribe((res) => {
       if (!res.ok) {
-        this.toast.error(res.error.message || 'Не удалось изменить статус КП.');
+        this.toast.error(extractErrorMessage(res.error) || 'Не удалось изменить статус КП.');
         return;
       }
       this.proposalStatus.set(res.data.status ?? status);

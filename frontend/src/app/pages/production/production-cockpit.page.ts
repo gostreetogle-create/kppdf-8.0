@@ -70,7 +70,7 @@ function shopOrderWriteError(err: { error?: { message?: unknown }; message?: str
     /siteId is required/i.test(raw)
   ) {
     if (/siteId/i.test(raw)) {
-      return 'У заказа нет площадки (siteId) — создайте объект у контрагента';
+      return 'У заказа нет площадки — создайте объект у контрагента';
     }
     return 'Заказ в этом статусе нельзя менять состав — только план/приоритет в Цехе';
   }
