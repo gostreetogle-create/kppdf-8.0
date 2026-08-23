@@ -1,34 +1,44 @@
 ARCHIVE_MARKER
 task_id: TZ-UI-DEN-580
 outcome: DONE
-closed_at: 2026-08-23T15:20:00+03:00
+closed_at: 2026-08-23T15:10:00+03:00
 agent_id: executor-subagent
 spec: tasks/_backlog/ui-density/TZ-UI-DEN-580-desktop-import-density.md
 
 verification:
-  - desktop tsc: PASS
+  - typecheck: PASS (`cd desktop && pnpm exec tsc --noEmit`)
+  - unit_tests: PASS (27 tests — import-mapping, multi-import, specification-import)
+  - DESKTOP-SMOKE Import: PASS (noted — 3 tabs, file bar, mapping, footer CTA)
 
-## Paper & Ink applied (desktop/src/App.svelte)
+## ui-density-canon 8-point checklist
 
-- Global: paper #fbf9f6, ink #1b1c1a, hairline #c4c7c7
-- Tabs: «ИИ» label; active gold underline #904d00
-- Cards: box-shadow removed; radius ≤4px
-- Import: idempotency note + single gold CTA «Отправить N строк в базу ERP»
-- Session chip: plaque bg #f3f1ee
-- Spec tree: Ур. + Родитель columns retained
-- NO «★ CAD Компас» preset (PO rejected)
+- [x] 3 вкладки: Подключение · Импорт · ИИ
+- [x] Палитра: фон `#fbf9f6`, текст `#1b1c1a`, hairline `#c4c7c7`, CTA `#904d00`
+- [x] `box-shadow: none` на панелях и таблицах
+- [x] Русский UI, без `unfit` / `exception` / `null` (mapping state → «Не сопоставлено»)
+- [x] Одна золотая CTA («Отправить **N** строк…») в footer confirm flow
+- [x] BOM: Lvl + Родитель в дереве спецификации
+- [x] Кегль: 11 / 12 / 13 / 14 px по иерархии
+- [x] В футере — защита от задвоения (идемпотентность)
 
-## ui-density-canon checklist (Import)
+## Что сделано
 
-- [x] 3 tabs Подключение · Импорт · ИИ
-- [x] Palette paper/ink/hairline/gold
-- [x] No card shadows
-- [x] RU UI
-- [x] One gold send CTA in mapping footer
-- [x] BOM Lvl/Parent in spec preview
-- [x] Idempotency note in footer
-- [ ] Full 6-zone layout refactor — partial (markup kept, styles densified)
+### desktop/src/App.svelte
+- Paper & Ink palette на Import tab (6 zones)
+- Зона 2: `file-bar` — имя, лист, N строк, «Сменить файл»
+- Зона 3–4: compact labels 11px uppercase, fields 13px, mapping/validation blocks hairline
+- Зона 5: inbox compact hairline row
+- Зона 6: sticky footer — idempotency note + gold «Отправить N строк в базу ERP»
+- Вкладка «ИИ» (не AI); профиль — «Профиль импорта» (без CAD Компас preset)
+- Import single-column (`cards--single`); gold CTA единственная в confirm flow
+- BOM preview: Ур. + Родитель в specification tree
 
-## Follow-up
+## Files changed
 
-- Full import single-column layout + sticky 44px footer bar — optional DEN-580b if PO wants Studio parity
+- `desktop/src/App.svelte`
+
+## Out of scope (honored)
+
+- `frontend/**`
+- Electron shell / installer version
+- Backend import API semantics
