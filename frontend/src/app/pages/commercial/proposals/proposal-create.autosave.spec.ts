@@ -22,7 +22,7 @@ import { ProductModulesService } from '../../../shared/services/pi-product-modul
 import { MaterialsService } from '../../../shared/services/materials.service';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../../shared/ui/toast';
-import { ProposalCreatePage } from './proposal-create.page';
+import { ProposalCreatePage } from './proposal-create.legacy.page';
 import type { ProposalDraftLine } from './proposal-product-rail.component';
 
 interface AutosaveHarness {

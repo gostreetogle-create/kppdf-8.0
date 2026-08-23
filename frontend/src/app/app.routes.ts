@@ -405,14 +405,17 @@ export const routes: Routes = [
         title: 'KPPDF — КП Workspace',
       },
       {
-        // TZ-SALES-310 — stable create-KP destination; full studio follows in
-        // TZ-SALES-312+ and keeps the existing Quotation API.
+        // TZ-KP-WS-408 — cutover: `/proposals/create` serves the SAME
+        // component as the workspace (query params id/new/source/sourceId/
+        // templateDraft/action=print preserved — the workspace constructor
+        // reads them). Legacy create page kept one release as
+        // proposal-create.legacy.page.ts (rollback path).
         path: 'proposals/create',
         canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
         data: { pageKey: 'proposals' },
         loadComponent: () =>
-          import('./pages/commercial/proposals/proposal-create.page').then(
-            (m) => m.ProposalCreatePage,
+          import('./pages/commercial/proposals/workspace/proposal-workspace.page').then(
+            (m) => m.ProposalWorkspacePage,
           ),
         title: 'KPPDF — Создать КП',
       },

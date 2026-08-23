@@ -58,6 +58,8 @@ export interface ProposalWorkspaceDraftInit {
   new?: boolean;
   source?: string | null;
   sourceId?: string | null;
+  /** TZ-KP-WS-408 — ?action=print: print once when the first preview is ready. */
+  print?: boolean;
 }
 
 /** Same defaults as proposal-create.page.ts (single layout canon). */
@@ -152,6 +154,7 @@ export class ProposalWorkspaceDraftService {
   private pendingTableExit: (() => void) | null = null;
   private pendingOutput: (() => void) | null = null;
   private printCurrent: (() => void) | null = null;
+  private pendingRoutePrint = false;
 
   readonly isReadOnly = computed(
     () =>
@@ -193,6 +196,7 @@ export class ProposalWorkspaceDraftService {
 
   /** Hydration entry — mirrors create ngOnInit (id / new / source=order / resume). */
   init(query: ProposalWorkspaceDraftInit): void {
+    this.pendingRoutePrint = query.print === true;
     if (query.id) {
       this.resumeDraftById(query.id);
     } else if (query.source === 'order' && query.sourceId) {
@@ -1026,6 +1030,14 @@ export class ProposalWorkspaceDraftService {
     this.printCurrent?.();
   }
 
+  /** TZ-KP-WS-408 — ?action=print parity: fire print once when the first
+   *  preview is ready (mirrors create's pendingRoutePrint). */
+  private maybePrintOnReady(): void {
+    if (!this.pendingRoutePrint) return;
+    this.pendingRoutePrint = false;
+    setTimeout(() => this.printCurrentPreview(), 0);
+  }
+
   private archiveCurrentQuotation(): void {
     const id = this.readStorage('kp.create.lastDraftId');
     if (!id) {
@@ -1244,6 +1256,7 @@ export class ProposalWorkspaceDraftService {
           this.setPreviewHtml(res.data);
           this.previewStatus.set('ready');
           this.scheduleAutosave();
+          this.maybePrintOnReady();
         } else if (!keepShowing) {
           this.setPreviewHtml(null);
           this.previewStatus.set('error');
@@ -1445,6 +1458,7 @@ export class ProposalWorkspaceDraftService {
     this.setPreviewHtml(html);
     this.previewStatus.set('ready');
     this.autosaveLabel.set('Сохранено');
+    this.maybePrintOnReady();
     return true;
   }
 

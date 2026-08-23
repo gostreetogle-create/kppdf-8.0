@@ -164,8 +164,8 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **404** | right: params / table / terms / output — **DONE** (inspector/table-editor/terms/output mounted; catalog review на exit; output gates 368; tier-L overlay без A4 reflow) |
 | **405** | embedded doc settings — **DONE** (table preset inline PiDialog; text block inline dialog + library refresh; template mini: rename/duplicate/фон; full builder через returnUrl) |
 | **406** | MCP AI-draft bridge — **DONE** (BE `sourceFileRef`/`draftSource`; MCP `sourceFileRef` + auto import-todo с workspace href; панель «Шаблон» секция «Из файла (AI)» + pairing CTA + badge /import-todos; `?templateDraft=` открывает черновик; picker бейдж `(AI)`) |
-| **407** | multi-supplier UX |
-| **408** | cutover create → workspace |
+| **407** | multi-supplier UX — **DONE** (org-change hint, копия для другой фирмы, family attach) |
+| **408** | cutover — **DONE** (`/proposals/create` → тот же компонент workspace; legacy `proposal-create.legacy.page.ts` один релиз; `?action=print` parity; parity matrix 45 строк PASS/defer в `.done.md`) |
 | **409** | legacy cleanup; этот файл = SoT |
 
 Wave: [`../../tasks/WAVE-KP-SINGLE-WORKSPACE.md`](../../tasks/WAVE-KP-SINGLE-WORKSPACE.md).

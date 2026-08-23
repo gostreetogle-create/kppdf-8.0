@@ -259,7 +259,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
       [toc]="dealsToc"
       tocActiveId="proposals"
       [chips]="sectionChips"
-      activeId="create"
+      activeId="workspace"
       [flushBody]="true"
     >
       <app-proposal-workspace-shell
@@ -541,7 +541,18 @@ export class ProposalWorkspacePage {
     const source = query.get('source')?.trim() || null;
     const sourceId = query.get('sourceId')?.trim() || null;
     if (id) this.store.quotationId.set(id);
-    this.draft.init({ id, new: query.get('new') === '1', source, sourceId });
+    // TZ-KP-WS-408: cutover keeps ?action=print (create parity).
+    this.draft.init({
+      id,
+      new: query.get('new') === '1',
+      source,
+      sourceId,
+      print: query.get('action') === 'print',
+    });
+    afterNextRender(() => {
+      const center = this.templateCenter();
+      if (center) this.draft.attachPrinter(() => center.printPreview());
+    });
 
     // TZ-KP-WS-406: MCP import-todo href → open template panel on the draft.
     const templateDraft = query.get('templateDraft')?.trim() || null;

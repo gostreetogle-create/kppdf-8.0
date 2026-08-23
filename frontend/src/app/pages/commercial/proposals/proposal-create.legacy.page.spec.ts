@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
-import { ProposalCreatePage } from './proposal-create.page';
+import { ProposalCreatePage } from './proposal-create.legacy.page';
 import { calculateKpPreviewScale } from './proposal-create-template-center.component';
 import { AuthService } from '../../../core/auth.service';
 import { API_BASE_URL } from '../../../core/api.tokens';

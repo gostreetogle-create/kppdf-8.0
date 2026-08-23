@@ -390,4 +390,72 @@ describe('ProposalWorkspaceDraftService', () => {
     ).toBe(true);
     tick(5000);
   }));
+
+  it('TZ-KP-WS-408: source=order&sourceId prefills client/site/items (426 parity)', fakeAsync(() => {
+    const ordersFind = jest.fn(() =>
+      of({
+        ok: true,
+        data: {
+          _id: 'ord-9',
+          counterpartyId: 'cp-order',
+          siteId: 'site-order',
+          items: [
+            { productId: 'prod-x', productName: 'Стойка', quantity: 3, unit: 'шт', unitPrice: 700 },
+          ],
+        },
+      }),
+    );
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ProposalWorkspaceDraftService,
+        {
+          provide: ProposalsService,
+          useValue: { findById: jest.fn(), create: jest.fn(), update: jest.fn() },
+        },
+        { provide: DocumentTemplatesService, useValue: { findById: jest.fn(), build: jest.fn() } },
+        { provide: OrdersService, useValue: { findById: ordersFind } },
+        { provide: ProductsService, useValue: { findById: jest.fn() } },
+        { provide: ProductModulesService, useValue: { findById: jest.fn() } },
+        { provide: MaterialsService, useValue: { findById: jest.fn() } },
+        {
+          provide: TemplateBlocksService,
+          useValue: { listByTemplate: jest.fn(() => of({ ok: true, data: [] })) },
+        },
+        { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
+        { provide: GeneratedDocumentsService, useValue: { archiveQuotation: jest.fn() } },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
+        provideRouter([]),
+        {
+          provide: PiToastService,
+          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
+        },
+      ],
+    });
+    const s = TestBed.inject(ProposalWorkspaceDraftService);
+    s.init({ source: 'order', sourceId: 'ord-9' });
+    tick(200);
+
+    expect(ordersFind).toHaveBeenCalledWith('ord-9');
+    expect(s.counterpartyId()).toBe('cp-order');
+    expect(s.siteId()).toBe('site-order');
+    expect(s.draftLines()).toHaveLength(1);
+    expect(s.draftLines()[0].productName).toBe('Стойка');
+    expect(s.draftLines()[0].quantity).toBe(3);
+    expect(s.currentDraftId()).toBeNull();
+    tick(5000);
+  }));
+
+  it('TZ-KP-WS-408: ?action=print fires the printer once when preview is ready', fakeAsync(() => {
+    service.attachPrinter(jest.fn());
+    const printer = (service as unknown as { printCurrent: (() => void) | null }).printCurrent;
+    service.init({ id: 'q-1', print: true });
+    tick(200); // hydrate + first build
+    expect(printer).toHaveBeenCalledTimes(1);
+    // No second print on later rebuilds
+    service.onTemplateChange(TEMPLATE);
+    tick(300);
+    expect(printer).toHaveBeenCalledTimes(1);
+    tick(5000);
+  }));
 });
