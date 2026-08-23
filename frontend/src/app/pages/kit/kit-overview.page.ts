@@ -72,6 +72,15 @@ import { RouterLink } from '@angular/router';
       </div>
 
       <div class="mt-8 hairline-t pt-6">
+        <h3 class="eyebrow mb-3">Агентам</h3>
+        <p class="text-xs text-muted-foreground">
+          Слепок этой карты для промптов:
+          <code class="font-mono text-[11px]">docs/ui-rules.md</code>
+          (таблица примитивов + запрещено + stop rule).
+        </p>
+      </div>
+
+      <div class="mt-8 hairline-t pt-6">
         <h3 class="eyebrow mb-3">Неполные секции (leftover)</h3>
         <ul class="space-y-1 text-sm text-muted-foreground">
           <li>

@@ -265,6 +265,9 @@ provideHttpClient(withInterceptors([idempotencyInterceptor, authInterceptor]))
 
 SoT: [`docs/audits/2026-08-23-ui-war-room-program.md`](./audits/2026-08-23-ui-war-room-program.md) · промт волны: `tasks/PROMPT-FREEBUFF-UI-WR-WAR-ROOM.md`.
 
+Перед UI: прочитай [`docs/ui-rules.md`](./ui-rules.md) — таблица примитивов
+(import/service, когда, anti-use) + stop rule, если примитива нет в таблице.
+
 - Новый dropdown/menu/dialog/flyout **вручную запрещён**, если есть `PiDialogService` / `PiSheet` / `PiDrawer` / `pi-dropdown-menu` / `piPopover` — сначала проверь `/kit`.
 - Overlay обязан: Esc (если modal), focus trap (modal), **return-focus**, корректный role/aria — через CDK a11y, не сырой `@HostListener` без restore.
 - Новый `shared/ui` primitive в той же TZ получает пример в `/kit` (после STD-506 роутинга).

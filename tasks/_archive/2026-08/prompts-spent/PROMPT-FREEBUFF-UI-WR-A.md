@@ -3,6 +3,7 @@
 > Слот 1 из 3. Параллель: B = kit/errors, C = shell/catalog.  
 > SoT: `docs/audits/2026-08-23-ui-war-room-program.md`  
 > Proof of adoption обязателен. Deploy запрещён.
+> Перед UI: прочитай `docs/ui-rules.md`.
 
 ```text
 Ты — Freebuff Agent A · D:\kppdf-8.0 · main
