@@ -45,6 +45,10 @@ Expected after DEN-580: minimal hits, documented in `TZ-UI-DEN-580.done.md`.
 | `/products` | | | | | | |
 | `/orders` | | | | | | |
 | `/doc-constructor/templates` | | | | | | |
+| `/proposals/workspace` (DEN-552) | ✅ panel `#fbf9f6`-adjacent, 16px padding | ✅ hairline `border-right`, no panel shadow | ✅ 12–13px rails | ✅ PDF gold CTA | ✅ RU | |
 | `/login` | | | | | | |
+
+> DEN-552 (2026-08-23): workspace panels 16px padding + hairline (box-shadow removed), ribbon 13px,
+> status 12px, live total in ribbon, PDF = single gold CTA, `kp-create-output` styles restored (409 regression).
 
 Canon: [`docs/ui-density-canon.md`](../ui-density-canon.md) · Program: [`tasks/WAVE-UI-DENSITY-PAPER-INK.md`](../../tasks/WAVE-UI-DENSITY-PAPER-INK.md)

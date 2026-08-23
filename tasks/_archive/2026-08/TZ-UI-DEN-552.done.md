@@ -31,3 +31,9 @@ verification:
 - Table font sizes (already 12px default)
 - Label/value patterns in inspector (already FormField-based)
 - Tooltips (already present on rail buttons)
+
+### Follow-up (freebuff-1, shadow-fix)
+- Panel `box-shadow` removed — canon anti-pattern #1 (hairline only); density values were
+  committed by freebuff-2 in `85afc27a`, this closes the shadow leftover.
+- Wave closeout: WAVE-UI-DENSITY-PAPER-INK 552 → DONE; `UI-DENSITY-GUARDS.md` +
+  `/proposals/workspace` row for PO spot-check; `_NOW.md` wave closed.

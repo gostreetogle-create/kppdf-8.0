@@ -1,6 +1,6 @@
 # WAVE-UI-DENSITY-PAPER-INK
 
-> **Status:** DONE (2026-08-23) — **552 WAIT 409** only  
+> **Status:** DONE (2026-08-23) — все фазы закрыты (552 DONE `85afc27a` + shadow-fix)
 > **Program:** `docs/audits/2026-08-23-ui-density-rollout-program.md`  
 > **Canon:** `docs/ui-density-canon.md`  
 > **Executor prompt:** `tasks/PROMPT-FREEBUFF-UI-DENSITY-WAVE.md`
@@ -56,7 +56,7 @@
 |---|-----|-------|-----|
 | 5.1 | **TZ-UI-DEN-550** | `/orders`, `/supply`, `/shipping` | **DONE** `d5454914` |
 | 5.2 | **TZ-UI-DEN-551** | `/proposals` list | **DONE** `6b1e554f` |
-| 5.3 | **TZ-UI-DEN-552** | `/proposals/workspace` | **WAIT** `TZ-KP-WS-409.done` |
+| 5.3 | **TZ-UI-DEN-552** | `/proposals/workspace` | **DONE** `85afc27a` (+hairline shadow-fix) |
 
 ### Фаза 6 — Production & people
 

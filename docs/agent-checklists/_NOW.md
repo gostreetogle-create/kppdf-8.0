@@ -9,7 +9,9 @@ updated_at: 2026-08-23T17:50:00+03:00
 
 ## ACTIVE — WAVE-UI-DENSITY
 
-**DONE** — DEN closed (`599` `2885c036`, `590` `b1b6442e`, `512` `d25cb1f4`). **552 UNBLOCKED** (KP wave closed 409). PO: 5-route sign-off [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md).
+**DONE — волна закрыта (2026-08-23).** DEN-552 `85afc27a` (+hairline shadow-fix) — `/proposals/workspace`: panels 16px padding + hairline, ribbon 13px, status 12px, live total, PDF gold CTA, `kp-create-output` styles restored. Все фазы 0–9 DONE.
+
+**NEXT (PO):** 5-route sign-off [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md) (+`/proposals/workspace`).
 
 ---
 
@@ -17,7 +19,7 @@ updated_at: 2026-08-23T17:50:00+03:00
 
 **DONE — волна закрыта (TZ-KP-WS-409 archived 2026-08-23).** 400–409 в `tasks/_archive/2026-08/TZ-KP-WS-*.done.md`; wave file → `tasks/_archive/2026-08/waves-done/`. God-page `ProposalCreatePage` удалена; `/proposals/create` = workspace. Ручной smoke — PENDING (VPN/dev-server PO, гейт деплоя).
 
-**NEXT (следующая очередь):** **DEN-552 UNBLOCKED** — density 5-route sign-off.
+**NEXT (следующая очередь):** **DEN-552 DONE** → PO density sign-off (`UI-DENSITY-GUARDS.md`).
 
 ---
 
