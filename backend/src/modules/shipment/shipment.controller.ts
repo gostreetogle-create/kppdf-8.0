@@ -74,6 +74,17 @@ export class ShipmentController {
     return this.service.dispatch(id, user.organizationId);
   }
 
+  /** TZ-SHIP-433 — отмена ошибочной отгрузки до dispatch (400 после списания). */
+  @Post(':id/cancel-shipment')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'cancel_shipment', entityType: 'Shipment' })
+  cancelShipment(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.cancelShipment(id, user.organizationId);
+  }
+
   @Post(':id/add-doc')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'add_doc', entityType: 'Shipment' })

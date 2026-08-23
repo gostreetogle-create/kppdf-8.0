@@ -8,6 +8,7 @@ import {
   ShippingDoc,
   ShipmentStatus,
 } from './shipment.schema';
+import { Order, OrderDocument } from '../order/order.schema';
 import { CreateShipmentDto } from './dto/create-shipment.dto';
 import { UpdateShipmentDto } from './dto/update-shipment.dto';
 import { AddDocDto } from './dto/add-doc.dto';
@@ -21,6 +22,8 @@ export class ShipmentService {
   constructor(
     @InjectModel(Shipment.name)
     private readonly model: Model<ShipmentDocument>,
+    @InjectModel(Order.name)
+    private readonly orderModel: Model<OrderDocument>,
     private readonly counter: CounterService,
     private readonly stockMovementService: StockMovementService,
     private readonly reservationService: ReservationService,
@@ -117,6 +120,64 @@ export class ShipmentService {
         : (undefined as unknown as Types.ObjectId);
     }
     return doc.save();
+  }
+
+  /**
+   * TZ-SHIP-433 — отмена ошибочной отгрузки (до dispatch).
+   *
+   * Один endpoint по shipment id. Транзакция:
+   * 1. Shipment отменяется только из `draft`/`scheduled` и без `dispatchedAt`
+   *    (после списания со склада откат — phase 2, 400 RU).
+   * 2. Если это единственная активная отгрузка заказа и заказ был переведён
+   *    в `shipped` — откатываем whole-order ship: `order.status → ready`,
+   *    линии `boardLane → to_ship`, `item.status → ready` (COUPLING-MAP §2b).
+   * 3. `order.shipmentIds` не чистим (историческая ссылка), статус shipment
+   *    = `cancelled` — читатели фильтруют по статусу.
+   */
+  async cancelShipment(
+    id: string,
+    organizationId?: string | null,
+  ): Promise<ShipmentDocument> {
+    return this.sessionRunner.run(async (session) => {
+      const doc = await this.model
+        .findOne({ _id: id, deletedAt: null, ...this.organizationFilter(organizationId) })
+        .session(session)
+        .exec();
+      if (!doc) throw new NotFoundException(`Shipment ${id} not found`);
+      if (doc.status === 'cancelled') {
+        throw new BadRequestException('Отгрузка уже отменена');
+      }
+      if (doc.dispatchedAt || doc.status === 'in_transit' || doc.status === 'delivered') {
+        throw new BadRequestException(
+          'Отгрузка уже отправлена со склада — отмена через склад/админа',
+        );
+      }
+      doc.status = 'cancelled';
+      await doc.save({ session });
+
+      const order = await this.orderModel.findById(doc.orderId).session(session).exec();
+      if (order && order.status === 'shipped') {
+        const otherActive = await this.model
+          .countDocuments({
+            orderId: order._id,
+            _id: { $ne: doc._id },
+            status: { $nin: ['cancelled'] },
+            deletedAt: null,
+          })
+          .session(session)
+          .exec();
+        if (otherActive === 0) {
+          order.status = 'ready';
+          for (const item of order.items ?? []) {
+            item.boardLane = 'to_ship';
+            item.status = 'ready';
+          }
+          order.markModified('items');
+          await order.save({ session });
+        }
+      }
+      return doc;
+    });
   }
 
   async dispatch(id: string, organizationId?: string | null): Promise<ShipmentDocument> {

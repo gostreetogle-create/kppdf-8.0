@@ -3,7 +3,7 @@
 > Для **агентов и PO**. Не UI для сотрудников.
 > `DOMAIN-MAP` = домен → модуль → страница. Эта карта = **одно поле → все экраны и смысл значения**.
 > Правило: код + эта строка = один TZ. Спорят doc и код → чинить карту в той же TZ.
-> Лимит: ≤160 строк. Обновлено: TZ-COMBINE-408 (shop workType/days gate).
+> Лимит: ≤160 строк. Обновлено: TZ-SHIP-433 (undo отгрузки).
 
 ## 0. Зачем
 
@@ -37,6 +37,8 @@ Write: `PATCH /api/orders/:id {status}` только `draft|confirmed|in_product
 
 \* `?orderId=` rail exception — `filterOrdersForRail`.
 
+**Undo (TZ-SHIP-433):** отмена отгрузки = `POST /shipments/:id/cancel-shipment` — только из `draft`/`scheduled` и без `dispatchedAt`. Если это единственная активная отгрузка и заказ был `shipped` → `order.status → ready`, линии `boardLane → to_ship` / `status → ready` (обратный ход §2b). После dispatch (stock movement `out`) — 400 RU, откат через склад/админа (phase 2).
+
 **Цех ACTIVE (TZ-PRODUCTION-337):** `confirmed` / `in_production` / `ready` (без `draft`).
 
 ## 2b. OrderItem.boardLane (колонки Комбайна)
@@ -67,6 +69,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | `items.readyForWork` | `/orders/:id` | список «X из Y» hub | Не колонка Комбайна |
 | `Reservation.orderId` | reserve | reservations | **строка = `Order.number`** |
 | `SupplyTask.orderId` | снабжение | `/supply` | ObjectId |
+| `Shipment.status` | `ship()` → `scheduled`; `dispatch()` → `in_transit`; `delivered`; **`cancelShipment()` → `cancelled`** (433) | `/shipping`, desk tray | Отмена только до dispatch; отменённые в tray не считаются активной отгрузкой |
 | `DeskNote.anchorOrderId` | `/desk` блокнот (408) | `/desk` блокнот | ObjectId → Order; anchorLineId — строка (productId/lineId), anchorModuleId — ObjectId → ProductModule; hard delete |
 | composition / BOM | каталог | Гант | live каталог |
 | остаток qty | movements | склад | SoT = `StorageItem` |
@@ -76,7 +79,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | Экран | Route | Поля |
 |-------|-------|------|
 | Комбайн | `/design/combine` | `boardLane`, `lineId`, rollup `Order.status` |
-| Стол менеджера | `/desk` | `Order.status` (CTA рейла **и** tray «Подтвердить»: только PATCH `draft→confirmed`); не `boardLane`; `DeskNote.anchorOrderId` (блокнот); DESK-430: «Отгружено» в tray — только POST `/orders/:id/ship` (whole-order, без `items`), метаданные из `Shipment` без обязательного `docs` |
+| Стол менеджера | `/desk` | `Order.status` (CTA рейла **и** tray «Подтвердить»: только PATCH `draft→confirmed`); не `boardLane`; `DeskNote.anchorOrderId` (блокнот); DESK-430: «Отгружено» в tray — только POST `/orders/:id/ship` (whole-order, без `items`), метаданные из `Shipment` без обязательного `docs`; TZ-SHIP-433: «Отменить отгрузку» в tray — тот же `POST /shipments/:id/cancel-shipment`, остаёмся на `/desk` |
 | Заказы | `/orders` | `Order.status`, `readyForWork` |
 | Цех | `/production` | `Order.status` ACTIVE, estimate |
 | Снабжение / КП / Склад | … | без изменений §3 |

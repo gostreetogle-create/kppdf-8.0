@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -5,9 +6,15 @@ import { BehaviorSubject } from 'rxjs';
 import { of } from 'rxjs';
 import { API_BASE_URL } from '../../core/api.tokens';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
 import { OrdersService } from '../orders/orders.service';
 import { ShipmentsService } from '../../shared/services/shipments.service';
 import { ShippingPage } from './shipping.page';
+
+async function tickMicrotask(): Promise<void> {
+  await new Promise<void>((r) => setTimeout(r, 0));
+}
 
 describe('ShippingPage TZ-SUPPLY-312', () => {
   const order = {
@@ -20,6 +27,9 @@ describe('ShippingPage TZ-SUPPLY-312', () => {
     ],
   } as never;
 
+  let dialogClosed: ReturnType<typeof signal<boolean | undefined>>;
+  let dialogOpen: jest.Mock;
+
   function setup() {
     const orders = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: [order] })),
@@ -30,7 +40,15 @@ describe('ShippingPage TZ-SUPPLY-312', () => {
       dispatch: jest.fn(),
       update: jest.fn(),
       addDoc: jest.fn(),
+      cancelShipment: jest
+        .fn()
+        .mockReturnValue(of({ ok: true, data: { _id: 's1', status: 'cancelled' } })),
     };
+    dialogClosed = signal<boolean | undefined>(undefined);
+    dialogOpen = jest.fn(() => {
+      dialogClosed = signal<boolean | undefined>(undefined);
+      return { closed: dialogClosed, close: jest.fn() };
+    });
     TestBed.configureTestingModule({
       imports: [ShippingPage],
       providers: [
@@ -40,6 +58,7 @@ describe('ShippingPage TZ-SUPPLY-312', () => {
         { provide: OrdersService, useValue: orders },
         { provide: ShipmentsService, useValue: shipments },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        { provide: PiDialogService, useValue: { open: dialogOpen } },
       ],
     });
     return { orders, shipments };
@@ -94,6 +113,78 @@ describe('ShippingPage TZ-SUPPLY-312', () => {
     expect(
       fixture.nativeElement.querySelector('[data-test="shipping-order-filter-chip"]'),
     ).toBeTruthy();
+  });
+
+  it('433: «Отменить отгрузку» on a scheduled shipment confirms then calls cancelShipment', async () => {
+    const { shipments } = setup();
+    shipments.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          {
+            _id: 's1',
+            number: 'SHP-1',
+            orderId: 'order-1',
+            status: 'scheduled',
+            date: '2026-08-20T10:00:00.000Z',
+            items: [],
+          },
+        ],
+      }),
+    );
+    const fixture = TestBed.createComponent(ShippingPage);
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const cancel = fixture.nativeElement.querySelector(
+      '[data-test="shipping-cancel-s1"]',
+    ) as HTMLButtonElement;
+    expect(cancel).toBeTruthy();
+    cancel.click();
+    fixture.detectChanges();
+
+    expect(dialogOpen).toHaveBeenCalledWith(
+      AlertDialogComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'Отменить отгрузку?', variant: 'destructive' }),
+        width: 'sm',
+      }),
+    );
+    expect(shipments.cancelShipment).not.toHaveBeenCalled();
+
+    dialogClosed.set(true);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(shipments.cancelShipment).toHaveBeenCalledWith('s1');
+    // reload после успеха + рефреш списка заказов (статус вернулся в ready).
+    expect(shipments.list).toHaveBeenCalled();
+  });
+
+  it('433: no cancel button on in-transit shipment (phase 2 limitation)', async () => {
+    const { shipments } = setup();
+    shipments.list.mockReturnValue(
+      of({
+        ok: true,
+        data: [
+          {
+            _id: 's1',
+            number: 'SHP-1',
+            orderId: 'order-1',
+            status: 'in_transit',
+            date: '2026-08-20T10:00:00.000Z',
+            items: [],
+          },
+        ],
+      }),
+    );
+    const fixture = TestBed.createComponent(ShippingPage);
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="shipping-cancel-s1"]')).toBeNull();
   });
 
   it('creates a partial shipment from selected order lines', () => {

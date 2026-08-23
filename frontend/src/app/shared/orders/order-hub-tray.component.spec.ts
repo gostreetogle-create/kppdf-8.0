@@ -214,4 +214,92 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(tray.textContent).not.toContain('Оценка в цехе');
     expect(tray.textContent).not.toContain('Отгрузка пока не ведётся');
   });
+
+  // ── TZ-SHIP-433: отмена ошибочной отгрузки ──
+
+  function withShipments(shipments: Array<Record<string, unknown>>) {
+    TestBed.overrideProvider(ShipmentsService, {
+      useValue: { list: () => of({ ok: true, data: shipments }) },
+    });
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', { ...ORDER, status: 'shipped' });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('433: cancelled shipment is not the active shipment (summary shows —, no cancel)', () => {
+    const tray = withShipments([
+      {
+        _id: 's1',
+        number: 'SHP-1',
+        status: 'cancelled',
+        date: '2026-08-20T10:00:00.000Z',
+        items: [],
+      },
+    ]);
+    // Активной отгрузки нет — блок показывает «—», а не отменённую SHP-1.
+    expect(tray.querySelector('[data-test="order-shipment-summary"]')?.textContent).not.toContain(
+      'SHP-1',
+    );
+    expect(tray.querySelector('[data-test="desk-cancel-shipment-button"]')).toBeNull();
+  });
+
+  it('433: scheduled shipment shows «Отменить отгрузку»', () => {
+    const tray = withShipments([
+      {
+        _id: 's1',
+        number: 'SHP-1',
+        status: 'scheduled',
+        date: '2026-08-20T10:00:00.000Z',
+        items: [],
+      },
+    ]);
+    const cancel = tray.querySelector('[data-test="desk-cancel-shipment-button"]');
+    expect(cancel).toBeTruthy();
+  });
+
+  it('433: in-transit shipment hides the cancel button (dispatch already happened)', () => {
+    const tray = withShipments([
+      {
+        _id: 's1',
+        number: 'SHP-1',
+        status: 'in_transit',
+        dispatchedAt: '2026-08-20T12:00:00.000Z',
+        date: '2026-08-20T10:00:00.000Z',
+        items: [],
+      },
+    ]);
+    expect(tray.querySelector('[data-test="order-shipment-summary"]')?.textContent).toContain(
+      'SHP-1',
+    );
+    expect(tray.querySelector('[data-test="desk-cancel-shipment-button"]')).toBeNull();
+  });
+
+  it('433: after cancel (only cancelled left) tray shows «Отгружено» again for a ready order', () => {
+    TestBed.overrideProvider(ShipmentsService, {
+      useValue: {
+        list: () =>
+          of({
+            ok: true,
+            data: [
+              {
+                _id: 's1',
+                number: 'SHP-1',
+                status: 'cancelled',
+                date: '2026-08-20T10:00:00.000Z',
+                items: [],
+              },
+            ],
+          }),
+      },
+    });
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', { ...ORDER, status: 'ready' });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const tray = fixture.nativeElement as HTMLElement;
+    expect(tray.querySelector('[data-test="desk-ship-button"]')).toBeTruthy();
+    expect(tray.querySelector('[data-test="order-shipment-block"]')).toBeNull();
+  });
 });

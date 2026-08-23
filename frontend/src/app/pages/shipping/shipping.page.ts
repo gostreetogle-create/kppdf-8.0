@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -8,6 +15,9 @@ import {
 } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { AlertDialogComponent } from '../../shared/ui/dialog/pi-alert-dialog.component';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../core/silent-http';
 import { OrdersService, type Order, type OrderItem } from '../orders/orders.service';
 import {
@@ -254,6 +264,15 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                     >
                       Отправить
                     </app-pi-button>
+                    <button
+                      type="button"
+                      class="shipping-page__text-button"
+                      (click)="cancelShipment(shipment)"
+                      [disabled]="busy()"
+                      [attr.data-test]="'shipping-cancel-' + shipment._id"
+                    >
+                      Отменить отгрузку
+                    </button>
                   }
                   @if (shipment.status === 'in_transit') {
                     <app-pi-button
@@ -495,9 +514,11 @@ export class ShippingPage {
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   private readonly ordersSvc = inject(OrdersService);
   private readonly shipmentsSvc = inject(ShipmentsService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -665,6 +686,43 @@ export class ShippingPage {
         this.toast.success('Отгрузка отправлена');
         this.reload();
       });
+  }
+
+  /** TZ-SHIP-433: «Отменить отгрузку» — confirm, тот же API, reload списка. */
+  protected cancelShipment(shipment: Shipment): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Отменить отгрузку?',
+        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
+        confirmLabel: 'Отменить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.busy.set(true);
+      this.shipmentsSvc
+        .cancelShipment(shipment._id)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe((res) => {
+          this.busy.set(false);
+          if (!res.ok) {
+            this.toast.error(extractErrorMessage(res.error) || 'Не удалось отменить отгрузку');
+            return;
+          }
+          this.toast.success('Отгрузка отменена — заказ вернулся в «Готов»');
+          this.reload();
+          // Заказ снова ready — обновляем список для дропдауна и фильтра.
+          this.ordersSvc
+            .list()
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((orders) => {
+              if (orders.ok) this.orders.set(orders.data ?? []);
+            });
+        });
+    });
   }
 
   protected setStatus(shipment: Shipment, status: ShipmentStatus): void {

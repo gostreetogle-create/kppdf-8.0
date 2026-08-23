@@ -524,6 +524,16 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                                 Документ не оформлен
                               </span>
                             }
+                            @if (shipmentCancellable()) {
+                              <button
+                                type="button"
+                                class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                                (click)="cancelShipment.emit(activeShipment()!)"
+                                data-test="desk-cancel-shipment-button"
+                              >
+                                Отменить отгрузку
+                              </button>
+                            }
                           </div>
                         } @else if (canMarkShipped()) {
                           <button
@@ -631,6 +641,8 @@ export class OrderHubTrayComponent implements OnInit {
   readonly openNotebook = output<Order>();
   /** DESK-430: host opens the ship-confirm dialog and calls OrdersService.ship(). */
   readonly markShipped = output<Order>();
+  /** TZ-SHIP-433: host opens the cancel confirm and calls ShipmentsService.cancelShipment(). */
+  readonly cancelShipment = output<Shipment>();
 
   // ── Tray-owned composition forest (lazy on toggle; open-by-default desk) ──
   protected readonly compositionExpanded = signal(false);
@@ -941,9 +953,17 @@ export class OrderHubTrayComponent implements OnInit {
     this.loadShipments(this.order()._id);
   }
 
+  /**
+   * TZ-SHIP-433 — «активная» отгрузка = не отменённая. Отменённые записи
+   * остаются в реестре, но не должны держать блок «Отгружен» (AC 2).
+   */
+  protected activeShipment(): Shipment | null {
+    return this.shipments().find((shipment) => shipment.status !== 'cancelled') ?? null;
+  }
+
   protected hasShipment(): boolean {
     return (
-      this.shipments().length > 0 ||
+      this.activeShipment() !== null ||
       this.order().status === 'shipped' ||
       this.order().status === 'delivered'
     );
@@ -954,18 +974,27 @@ export class OrderHubTrayComponent implements OnInit {
     return status !== 'shipped' && status !== 'delivered' && status !== 'cancelled';
   }
 
+  /** Отмену показываем только до dispatch: draft/scheduled и без dispatchedAt. */
+  protected shipmentCancellable(): boolean {
+    const shipment = this.activeShipment();
+    if (!shipment) return false;
+    return (
+      (shipment.status === 'draft' || shipment.status === 'scheduled') && !shipment.dispatchedAt
+    );
+  }
+
   protected shipmentNumber(): string {
-    return this.shipments()[0]?.number ?? '—';
+    return this.activeShipment()?.number ?? '—';
   }
 
   protected shipmentDateLabel(): string {
-    const raw = this.shipments()[0]?.date ?? this.shipments()[0]?.createdAt;
+    const raw = this.activeShipment()?.date ?? this.activeShipment()?.createdAt;
     if (!raw) return '—';
     const date = new Date(raw);
     return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ru-RU');
   }
 
   protected shipmentHasDocs(): boolean {
-    return (this.shipments()[0]?.docs?.length ?? 0) > 0;
+    return (this.activeShipment()?.docs?.length ?? 0) > 0;
   }
 }

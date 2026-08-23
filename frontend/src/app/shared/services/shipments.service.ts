@@ -81,6 +81,11 @@ export class ShipmentsService {
     return silentPost<Shipment>(this.http, `${this.baseUrl}/shipments/${id}/dispatch`, {});
   }
 
+  /** TZ-SHIP-433 — отмена ошибочной отгрузки (draft/scheduled, без dispatch). */
+  cancelShipment(id: string): Observable<SilentResult<Shipment>> {
+    return silentPost<Shipment>(this.http, `${this.baseUrl}/shipments/${id}/cancel-shipment`, {});
+  }
+
   addDoc(
     id: string,
     payload: {

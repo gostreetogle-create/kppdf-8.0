@@ -198,6 +198,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     viewStudioRoute: () => string;
     onAddLines: (order?: Order) => void;
     onPrimaryCta: (order: Order) => void;
+    onCancelShipment: (shipment: Record<string, unknown>) => void;
   } {
     return fixture.componentInstance as unknown as ManagerDeskPage & {
       expandedId: () => string | null;
@@ -219,6 +220,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
       viewStudioRoute: () => string;
       onAddLines: (order?: Order) => void;
       onPrimaryCta: (order: Order) => void;
+      onCancelShipment: (shipment: Record<string, unknown>) => void;
     };
   }
 
@@ -624,6 +626,50 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(document.activeElement).toBe(trigger);
 
     trigger.remove();
+  });
+
+  it('433: cancel shipment from tray confirms, POSTs cancel-shipment and reloads desk', async () => {
+    flushBase(httpMock);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    page().onCancelShipment({
+      _id: 's1',
+      number: 'SHP-1',
+      status: 'scheduled',
+      date: '2026-08-20T10:00:00.000Z',
+      items: [],
+    });
+    fixture.detectChanges();
+
+    expect(dialogOpen).toHaveBeenCalledWith(
+      AlertDialogComponent,
+      expect.objectContaining({
+        data: expect.objectContaining({ title: 'Отменить отгрузку?', variant: 'destructive' }),
+        width: 'sm',
+      }),
+    );
+    expect(
+      httpMock.match((req) => req.url.endsWith('/cancel-shipment') && req.method === 'POST'),
+    ).toHaveLength(0);
+
+    dialogClosed.set(true);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const post = httpMock.expectOne(
+      (req) => req.url === '/api/shipments/s1/cancel-shipment' && req.method === 'POST',
+    );
+    post.flush({ _id: 's1', number: 'SHP-1', status: 'cancelled' });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(toast.success).toHaveBeenCalledWith('Отгрузка отменена — заказ снова «Готов»');
+    // listRes.reload() после успеха.
+    const reload = httpMock.expectOne((req) => req.url === '/api/orders' && req.method === 'GET');
+    reload.flush(ORDERS);
+    await tickMicrotask();
+    fixture.detectChanges();
   });
 
   it('ROI-523: clean create form closes on Escape without a confirm dialog', async () => {

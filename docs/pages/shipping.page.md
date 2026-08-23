@@ -1,8 +1,9 @@
-# Страница: Отгрузка (`ShippingPage`) — stub
+# Страница: Отгрузка (`ShippingPage`) — реестр
 
-**Краткое описание:** заглушка «Частичные отгрузки» с привязкой к заказу.
-**Статус: STUB (TZ-NAV-301), не READY-продукт.** Полный SHIPPING — отдельная TZ
-(later). API **не** инвентаризировать — его нет.
+**Краткое описание:** живой реестр отгрузок (`Shipment`): таблица, фильтры по статусу и заказу,
+создание отгрузки из заказа (whole/partial), отправка со склада (dispatch), документы
+и **отмена ошибочной отгрузки** до dispatch.
+**Статус: READY-продукт (TZ-SUPPLY-312, TZ-DESK-426, TZ-SHIP-433).**
 
 ## Route
 
@@ -12,34 +13,48 @@
 
 Group Chip: `LOGISTICS_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `shipping`).
 
-## UI (stub)
+## Данные и API
 
-- Tools-строка: подпись «Частичные отгрузки».
-- Дашборд-панель `data-test="shipping-stub"` `role="status"`: бейдж «скоро» +
-  текст-заглушка (полный поток — отдельная TZ). Никаких данных/API/dialogs.
+- `GET /shipments` (`orderId`, `status`, `date`) — реестр отгрузок.
+- `POST /orders/:id/ship` — создание отгрузки из заказа (whole-order или partial по `items`),
+  статус `scheduled`; whole-order переводит заказ в `shipped`.
+- `POST /shipments/:id/dispatch` — списание со склада (stock movement `out`), статус `in_transit`,
+  проставляет `dispatchedAt`.
+- `PATCH /shipments/:id` — получатель/адрес/склад/водитель/примечание; статус по переходам
+  (`scheduled→cancelled`, `in_transit→delivered`).
+- `POST /shipments/:id/add-doc` — документ (ТТН/УПД/счёт/другое).
+- **`POST /shipments/:id/cancel-shipment`** (TZ-SHIP-433) — отмена `draft`/`scheduled` **без**
+  `dispatchedAt`. Если это единственная активная отгрузка и заказ был `shipped` → заказ снова
+  `ready`, линии `boardLane→to_ship` / `status→ready`. После dispatch — 400 RU
+  «Отгрузка уже отправлена со склада — отмена через склад/админа» (phase 2).
 
-## Hub expand (HUB-304)
+## UI
 
-From `/orders` expand «Отгрузка»:
+- Tools-строка: «← На стол» (при `from=desk`), фильтр-чип заказа со сбросом, селекты
+  «Статус»/«Заказ», счётчик отгрузок, «Обновить», «+ Отгрузка».
+- Таблица: Номер / Заказ / Дата / Позиции / Статус / Действия.
+- Действия строки:
+  - `draft`/`scheduled` — «Отправить» (dispatch) и **«Отменить отгрузку»** (confirm dialog,
+    `data-test="shipping-cancel-{id}"`; после успеха reload + toast);
+  - `in_transit` — «Доставлена»;
+  - не `cancelled`/`delivered` — «Изменить» (форма редактирования), «Документ» (форма добавления).
+- Форма создания: выбор заказа → позиции с количествами (partial) → `ship()`.
 
-- Copy: «Отгрузка пока не ведётся в интерфейсе. Открыть раздел „Отгрузка“.»
-- Link → `/shipping`
-- **Не** вызывать `GET /shipments`, не показывать counts из заказов.
+## Hub expand
+
+From `/orders` tray — блок «Отгрузка» (`order-shipping-block`): номер отгрузки, признак
+«Документ не оформлен», ссылка «Открыть раздел „Отгрузка“» (hub-режим). Desk-режим — кнопка
+«Отгружено» (DESK-430) и «Отменить отгрузку» (TZ-SHIP-433) прямо в tray.
 
 ## TZ reference
 
 | TZ | Что сделано |
-|----|------------|
-| TZ-NAV-301 | Stub-страница (поток L→R в меню цельный) |
-| TZ-UX-309 | PiGroupWorkspace chrome (логистика chips) |
-| **TZ-ORDERS-HUB-304** | Hub expand stub link → `/shipping` (0 HTTP) |
+|----|-------------|
+| TZ-SUPPLY-312 | Живой реестр + dispatch (замена stub) |
+| TZ-DESK-426 | Фильтр `orderId` + `from=desk` (чип «Отгрузка») |
+| TZ-SHIP-433 | Отмена ошибочной отгрузки (cancel-shipment), tray «Отменить отгрузку», page.md — реестр |
 
 ## Особенности
 
-- Только зафиксировать факт: stub «скоро», детальный page.md появится вместе с
-  реальным функционалом (отдельная TZ, не эта волна).
-- Не изобретать API/фичи — продукта пока нет.
-
----
-
-_Создано: 2026-08-09. Последнее обновление: 2026-08-15 (HUB-304)._
+- Списание остатков — только при `dispatch`; до него отмена не двигает склад.
+- Отменённые отгрузки остаются в реестре (не hard delete) и не считаются активными в tray.

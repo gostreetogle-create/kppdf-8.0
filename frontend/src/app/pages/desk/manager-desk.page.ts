@@ -40,6 +40,7 @@ import {
   type DeskNoteKind,
 } from '../../shared/services/desk-notes.service';
 import { Order, OrderStatus, OrdersService } from '../../shared/services/orders.service';
+import { ShipmentsService, type Shipment } from '../../shared/services/shipments.service';
 import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
 import { OrderHubTrayComponent } from '../../shared/orders/order-hub-tray.component';
 import {
@@ -320,6 +321,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                           (openNotebook)="onOpenNotebook($event)"
                           (addLines)="onAddLines($event)"
                           (markShipped)="onMarkShipped($event)"
+                          (cancelShipment)="onCancelShipment($event)"
                         />
                       }
                     </div>
@@ -1110,6 +1112,7 @@ export class ManagerDeskPage {
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly ordersService = inject(OrdersService);
+  private readonly shipmentsService = inject(ShipmentsService);
   private readonly auth = inject(AuthService);
   private readonly notesService = inject(DeskNotesService);
   private readonly templatesService = inject(DocumentTemplatesService);
@@ -1354,6 +1357,35 @@ export class ManagerDeskPage {
   protected onOpenNotebook(order: Order): void {
     if (this.expandedId() !== order._id) this.expandedId.set(order._id);
     this.openPanel('notebook');
+  }
+
+  /**
+   * TZ-SHIP-433: отмена ошибочной отгрузки из tray — тот же confirm-паттерн,
+   * тот же API, что на /shipping. Остаёмся на /desk: reload tray + список.
+   */
+  protected onCancelShipment(shipment: Shipment): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Отменить отгрузку?',
+        description: `Отменить отгрузку «${shipment.number}»? Заказ вернётся в «Готов».`,
+        confirmLabel: 'Отменить',
+        variant: 'destructive',
+      },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed: unknown) => {
+      if (!confirmed) return;
+      this.shipmentsService.cancelShipment(shipment._id).subscribe((res) => {
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error) || 'Не удалось отменить отгрузку');
+          return;
+        }
+        this.toast.success('Отгрузка отменена — заказ снова «Готов»');
+        this.listRes.reload();
+        this.orderHubTray()?.reloadShipments();
+      });
+    });
   }
 
   /** DESK-430: «Отгружено» без документа — confirm dialog, whole-order POST ship. */
