@@ -231,6 +231,32 @@ type SortDir = 'asc' | 'desc';
         </div>
       </div>
     </app-pi-section>
+    <!-- ───── Section V. Footer pattern (single CTA) — TZ-UI-DEN-504 ───── -->
+    <app-pi-section
+      title="Footer pattern (single CTA)"
+      hint="Desktop Import reference · one gold button"
+      eyebrow="V"
+    >
+      <p class="text-xs text-muted-foreground max-w-prose mb-4">
+        На экране — <strong class="font-medium text-ink">одна</strong> золотая залитая кнопка (<code
+          class="font-mono text-[11px]"
+          >variant="default"</code
+        >). Остальные действия — <code class="font-mono text-[11px]">outline</code> или
+        <code class="font-mono text-[11px]">ghost</code>.
+      </p>
+      <div
+        class="hairline-t pt-3 flex items-center justify-between gap-4 min-h-[44px] bg-paper sticky bottom-0"
+        data-test="footer-single-cta"
+      >
+        <p class="text-xs text-muted-foreground font-mono tabular-nums">
+          Идемпотентность: повторная отправка безопасна · 142 строки готовы
+        </p>
+        <div class="flex items-center gap-2 shrink-0">
+          <app-pi-button variant="outline" type="button">Отмена</app-pi-button>
+          <app-pi-button variant="default" type="button">Отправить 142 строки</app-pi-button>
+        </div>
+      </div>
+    </app-pi-section>
   `,
 })
 export class FormsPage {

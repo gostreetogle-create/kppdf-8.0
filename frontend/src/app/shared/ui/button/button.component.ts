@@ -35,8 +35,19 @@ const BASE_CLASS =
 
 /**
  * Paper & Ink editorial Button.
- * 6 variants × 4 sizes, hairline rule, no shadows, mono numerals.
+ * 6 variants × 4 sizes, hairline rule, mono numerals.
  * Renders `<a>` if `href` is set, otherwise native `<button>`.
+ *
+ * **Variant roles (TZ-UI-DEN-504 — density canon):**
+ * - `default` — **one gold filled CTA per view/screen** (primary confirm only).
+ *   Uses sunrise-gold fill + `executive-shadow`. Never place two `default`
+ *   buttons side-by-side in a footer or action row.
+ * - `secondary` — secondary filled neutral action (paper-2 fill).
+ * - `outline` — tertiary / cancel-adjacent actions (paper-raised + hairline).
+ * - `ghost` / `link` — inline or low-emphasis actions.
+ * - `destructive` — irreversible delete/remove.
+ *
+ * Kit reference: `/kit/forms` → section «Footer pattern (single CTA)».
  */
 @Component({
   selector: 'app-pi-button',
