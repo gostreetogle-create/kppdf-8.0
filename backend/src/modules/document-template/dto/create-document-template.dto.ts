@@ -52,4 +52,11 @@ export class CreateDocumentTemplateDto {
   defaultSheetLayout?: DefaultSheetLayoutDto;
 
   @IsOptional() @IsString() notes?: string;
+
+  /** TZ-KP-WS-406 — optional source file reference (MCP/import bridge). */
+  @IsOptional() @IsString() sourceFileRef?: string;
+
+  /** TZ-KP-WS-406 — draft origin; defaults to null (legacy rows). */
+  @IsOptional() @IsIn(['mcp', 'manual', 'import'])
+  draftSource?: 'mcp' | 'manual' | 'import';
 }

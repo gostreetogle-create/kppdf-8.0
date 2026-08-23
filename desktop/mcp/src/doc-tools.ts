@@ -97,10 +97,12 @@ export function registerDocTools(server: McpServer, cfg: McpRuntimeConfig): void
       outputSchema: TOOL_OUTPUT_SCHEMA,
       title: 'Create document template draft (AI-DRAFT)',
       description:
-        'TZD-28: creates a DRAFT template (isActive=false, isDefault=false, ' +
-        'notes «[AI-DRAFT] …») via POST /api/document-templates. ' +
-        'NEVER sets default and never publishes. The manager finishes the draft ' +
-        'in /doc-constructor (pass the returned id to kppdf_import_todo_create — TZD-29).',
+        'TZD-28 / TZ-KP-WS-406: creates a DRAFT template (isActive=false, ' +
+        'isDefault=false, notes «[AI-DRAFT] …», draftSource=mcp) via ' +
+        'POST /api/document-templates. NEVER sets default and never publishes. ' +
+        'When sourceFileRef is given, an import todo is auto-created (TZD-29) ' +
+        'with href to /proposals/workspace?templateDraft=<id> so the manager ' +
+        'finishes the draft in the workspace template panel.',
       inputSchema: {
         name: z.string().min(1).describe('Template name'),
         docTypeId: z.string().min(1).describe('Doc type id (see kppdf_list_doc_types)'),
@@ -110,9 +112,13 @@ export function registerDocTools(server: McpServer, cfg: McpRuntimeConfig): void
           .string()
           .optional()
           .describe('Extra human note appended to «[AI-DRAFT]» marker'),
+        sourceFileRef: z
+          .string()
+          .optional()
+          .describe('Optional source file reference (path/URL token) that produced this draft'),
       },
     },
-    async ({ name, docTypeId, organizationId, categoryId, note }) => {
+    async ({ name, docTypeId, organizationId, categoryId, note, sourceFileRef }) => {
       try {
         const marker = `[AI-DRAFT] ${note?.trim() ?? 'создан агентом при импорте — доделать в /doc-constructor'}`;
         const result = await backendPostJson(
@@ -127,12 +133,34 @@ export function registerDocTools(server: McpServer, cfg: McpRuntimeConfig): void
             isActive: false,
             isDefault: false,
             notes: marker,
+            ...(sourceFileRef ? { sourceFileRef, draftSource: 'mcp' } : {}),
           },
         );
+        const draftResult = result as { _id?: string };
+        const draftId = draftResult?._id;
+        let todo: unknown;
+        if (sourceFileRef && draftId) {
+          // TZ-KP-WS-406: HITL link points at the workspace template panel
+          // (not /doc-constructor) so the manager opens the draft inline.
+          todo = await backendPostJson(
+            cfg.apiBaseUrl,
+            cfg.apiKey,
+            '/api/import-todos',
+            {
+              title: `Доделать шаблон «${name}» из файла`,
+              body: `Черновик создан из файла ${sourceFileRef}. Откройте его в workspace и доведите в конструкторе.`,
+              href: `/proposals/workspace?templateDraft=${encodeURIComponent(draftId)}`,
+              templateId: draftId,
+            },
+          );
+        }
         return toolOk({
           ok: true,
           draft: true,
           note: marker,
+          sourceFileRef: sourceFileRef ?? null,
+          todoCreated: !!todo,
+          todo,
           result,
         });
       } catch (err) {

@@ -120,8 +120,20 @@ export class ProposalCreateTemplatePickerComponent implements OnInit {
     });
   }
 
+  /**
+   * TZ-KP-WS-406 — AI-draft templates (MCP/import origin) are labelled
+   * «(AI)» so the manager can spot drafts pending human finishing.
+   */
   protected templateItems(): { id: string; label: string }[] {
-    return this.all().map((t) => ({ id: t._id, label: t.name }));
+    return this.all().map((t) => ({
+      id: t._id,
+      label: this.isAiDraft(t) ? `${t.name} (AI)` : t.name,
+    }));
+  }
+
+  private isAiDraft(t: DocumentTemplate): boolean {
+    if (t.draftSource === 'mcp' || t.draftSource === 'import') return true;
+    return /\[AI-DRAFT\]/.test(t.notes ?? '');
   }
 
   ngOnInit(): void {

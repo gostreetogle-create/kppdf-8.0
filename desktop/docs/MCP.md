@@ -313,7 +313,7 @@ Order / коммерческое КП kinds — не этот TZ.
 | `kppdf_list_doc_types` (alias `kppdf_doc_types_list`) | `GET /api/doc-types` |
 | `kppdf_list_doc_template_categories` (alias `kppdf_doc_template_categories_list`) | `GET /api/document-template-categories` |
 | `kppdf_list_doc_templates` (alias `kppdf_doc_templates_list`) | `GET /api/document-templates` |
-| `kppdf_doc_template_create_draft` | `POST /api/document-templates` с `isActive=false`, `isDefault=false`, `notes` = `[AI-DRAFT] …` |
+| `kppdf_doc_template_create_draft` | `POST /api/document-templates` с `isActive=false`, `isDefault=false`, `notes` = `[AI-DRAFT] …`; опционально `sourceFileRef` + `draftSource='mcp'` |
 
 ### Doc-draft protocol (TZD-28)
 
@@ -322,6 +322,19 @@ Order / коммерческое КП kinds — не этот TZ.
 2. `kppdf_doc_template_create_draft` → id черновика.
 3. Id → `kppdf_import_todo_create` (TZD-29): «Доделать шаблон {name}»
    + `href /doc-constructor/...` → менеджер доводит в вебе.
+
+### Template-from-file workflow (TZ-KP-WS-406, MVP)
+
+1. Агент получил файл (путь/URL) → `kppdf_doc_template_create_draft`
+   с `sourceFileRef=<file>` → создаётся `[AI-DRAFT]` с `draftSource='mcp'`
+   и **автоматически** import-todo с `href /proposals/workspace?templateDraft=<id>`
+   (todo создаёт сам инструмент — отдельный вызов `kppdf_import_todo_create` не нужен).
+2. Менеджер открывает todo → workspace `/proposals/workspace` → панель «Шаблон»
+   уже открыта на этом черновике → доводит inline (TZ-405 мини-панель) или
+   «Открыть в конструкторе» (полный builder).
+3. Контент файла **не** конвертируется в блоки автоматически — это known
+   limitation (отдельный successor TZ после embedded builder). Человек/MCP
+   завершает шаблон в конструкторе.
 
 **Запрет:** `set-default`, publish, silent overwrite production default —
 инструменты никогда не вызывают `/set-default`.
@@ -343,6 +356,8 @@ Order / коммерческое КП kinds — не этот TZ.
    `kppdf_import_todo_create` «Проверить сомнительные строки» (+ importTaskId).
 2. После `kppdf_doc_template_create_draft` (TZD-28) → todo «Доделать шаблон
    {name}» + `href /doc-constructor/templates` (или builder) + templateId.
+   С `sourceFileRef` (TZ-KP-WS-406) todo создаётся автоматически с
+   `href /proposals/workspace?templateDraft=<id>`.
 3. Менеджер закрывает в вебе кнопкой «Готово»; агент может `set_status done`
    только когда его явно попросили (не silent auto-close).
 

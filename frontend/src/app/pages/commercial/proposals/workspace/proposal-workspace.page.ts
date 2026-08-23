@@ -44,6 +44,7 @@ import { ProposalCreateTemplatePickerComponent } from '../proposal-create-templa
 import { ProposalCreateTermsComponent } from '../proposal-create-terms.component';
 import { ProposalProductRailComponent } from '../proposal-product-rail.component';
 import { ProposalWorkspaceTemplateActionsComponent } from './proposal-workspace-template-actions.component';
+import { ProposalWorkspaceAiDraftComponent } from './proposal-workspace-ai-draft.component';
 import { ProposalWorkspaceTextBlockDialogComponent } from './proposal-workspace-text-block-dialog.component';
 import {
   ProposalWorkspaceShellComponent,
@@ -97,6 +98,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
     ProposalCreateTableEditorComponent,
     ProposalCreateTermsComponent,
     ProposalWorkspaceTemplateActionsComponent,
+    ProposalWorkspaceAiDraftComponent,
     ProposalWorkspaceTextBlockDialogComponent,
     ButtonComponent,
     RouterLink,
@@ -285,12 +287,13 @@ const SECTION_DEFS: readonly SectionDef[] = [
               />
             }
             @case ('template') {
+              <app-workspace-ai-draft />
               <app-workspace-template-actions
                 [template]="draft.selectedTemplate()"
                 [readOnly]="draft.isReadOnly()"
               />
               <app-proposal-create-template-picker
-                [initialId]="draft.selectedTemplate()?._id ?? ''"
+                [initialId]="store.templateDraftId() || (draft.selectedTemplate()?._id ?? '')"
                 (templateChange)="draft.onTemplateChange($event)"
               />
             }
@@ -539,6 +542,13 @@ export class ProposalWorkspacePage {
     const sourceId = query.get('sourceId')?.trim() || null;
     if (id) this.store.quotationId.set(id);
     this.draft.init({ id, new: query.get('new') === '1', source, sourceId });
+
+    // TZ-KP-WS-406: MCP import-todo href → open template panel on the draft.
+    const templateDraft = query.get('templateDraft')?.trim() || null;
+    if (templateDraft) {
+      this.store.templateDraftId.set(templateDraft);
+      this.store.openSection('template');
+    }
 
     effect(() => {
       void this.store.activeLeft();

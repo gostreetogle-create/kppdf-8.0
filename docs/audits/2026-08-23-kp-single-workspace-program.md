@@ -56,14 +56,18 @@ Layer 8  Legacy cleanup + page docs                   TZ-409
 
 ## MCP / AI template-from-file (MVP arch)
 
-| Слой | Сейчас | Wave 406 |
-|------|--------|----------|
-| MCP | `kppdf_doc_template_create_draft` (пустой shell) | + `sourceFileRef`, todo href в workspace |
-| BE | upload background / blocks в builder REST | без парсинга PDF (known_limitation) |
-| Workspace UI | — | «Создать из файла» → Desktop/MCP todo + открыть draft в inline builder |
-| Desktop | PDF import stub | не блокер Wave 406; successor TZ |
+| Слой | Сейчас | Wave 406 | STATUS |
+|------|--------|----------|--------|
+| MCP | `kppdf_doc_template_create_draft` (пустой shell) | + `sourceFileRef`, auto todo href в workspace | ✅ DONE (TZ-406) |
+| BE | DocumentTemplate без меток источника | + `sourceFileRef` + `draftSource` (migration-safe, null default) | ✅ DONE (TZ-406) |
+| Workspace UI | — | секция «Из файла (AI)»: pairing CTA + badge /import-todos + `?templateDraft=` открывает панель «Шаблон» | ✅ DONE (TZ-406) |
+| Desktop | PDF import stub | не блокер Wave 406; successor TZ | не менялся |
 
-Парсинг PDF/vision — **отдельная successor-волна** после embedded builder (405).
+**TZ-406 (2026-08-23):** `kppdf_doc_template_create_draft` принимает опциональный
+`sourceFileRef` и сам создаёт import-todo с `href /proposals/workspace?templateDraft=<id>`
+(отдельный `kppdf_import_todo_create` не нужен). Парсинг PDF/vision — **отдельная
+successor-волна** после embedded builder (405); контент файла не конвертируется
+в блоки автоматически (known_limitation).
 
 ## Multi-supplier (бизнес)
 

@@ -356,4 +356,36 @@ describe('DocumentTemplateService category contract (TZ-DOC-307)', () => {
       expect(categoryService.resolveDefault).not.toHaveBeenCalled();
     });
   });
+
+  describe('TZ-KP-WS-406 MCP/import bridge fields', () => {
+    it('passes sourceFileRef + draftSource through to model.create', async () => {
+      const { service, model, categoryService } = createService();
+      categoryService.resolveDefault.mockResolvedValue({ _id: new Types.ObjectId(CAT_ID) });
+
+      const result = await service.create({
+        ...baseDto,
+        sourceFileRef: 'C:\\imports\\kp\u043e\u0440\u043e\u0431\u043a\u0430.pdf',
+        draftSource: 'mcp',
+      });
+
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceFileRef: 'C:\\imports\\kp\u043e\u0440\u043e\u0431\u043a\u0430.pdf',
+          draftSource: 'mcp',
+        }),
+      );
+      expect(result.sourceFileRef).toBe('C:\\imports\\kp\u043e\u0440\u043e\u0431\u043a\u0430.pdf');
+      expect(result.draftSource).toBe('mcp');
+    });
+
+    it('defaults draftSource to null when omitted (legacy compatibility)', async () => {
+      const { service, model, categoryService } = createService();
+      categoryService.resolveDefault.mockResolvedValue({ _id: new Types.ObjectId(CAT_ID) });
+
+      await service.create(baseDto);
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({ draftSource: null }),
+      );
+    });
+  });
 });

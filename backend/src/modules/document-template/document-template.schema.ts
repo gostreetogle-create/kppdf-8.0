@@ -85,6 +85,23 @@ export class DocumentTemplate {
   notes?: string;
 
   /**
+   * TZ-KP-WS-406 — optional reference to the source file (path/URL token)
+   * that produced this template via the Desktop MCP bridge. Stored for
+   * traceability; file content is NOT auto-converted to blocks (known
+   * limitation — human finishes the draft in the builder).
+   */
+  @Prop()
+  sourceFileRef?: string;
+
+  /**
+   * TZ-KP-WS-406 — origin of the draft: 'mcp' (Desktop agent), 'import'
+   * (non-MCP upload), 'manual' (regular builder/workspace creation).
+   * Defaults to null for backward compatibility with legacy rows.
+   */
+  @Prop({ type: String, enum: ['mcp', 'manual', 'import'], default: null })
+  draftSource?: 'mcp' | 'manual' | 'import';
+
+  /**
    * TZ-251 §ШАГ 1 — Object-level ownership (IDOR).
    *
    * Optional ObjectId of the user who created the template. New templates

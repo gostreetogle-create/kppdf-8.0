@@ -35,7 +35,7 @@ Chips «Сделки»: **КП** · **Договоры** · **Заказы**; с
 | `new=1` | новый черновик (не открывать lastDraft) |
 | `source=order` + `sourceId` | prefill из стола/заказа (DESK-426) |
 | `action=print` | открыть и печать (как create) |
-| `templateDraft` | (Wave 406) открыть AI-draft шаблон / todo |
+| `templateDraft` | открыть панель «Шаблон» на AI-draft (MCP todo href `?templateDraft=<id>`) — **DONE** (406) |
 
 Resume keys localStorage (пока общие с create): `kp.create.lastDraftId`, `kp.create.lastTemplateId`.
 
@@ -69,7 +69,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 
 | Секция | Rail | Содержимое (reuse create components) | Тир |
 |--------|------|--------------------------------------|-----|
-| Шаблон | L | picker + «Редактировать» → builder `?returnUrl=` workspace; фон/AI-draft (405/406) | S |
+| Шаблон | L | секция «Из файла (AI)» (406) + mini-actions (rename/дубликат/фон, 405) + picker с бейджем `(AI)` → «Редактировать» → builder `?returnUrl=` | S |
 | Каталог | L | витрина изделий/модулей/материалов: search, chips, pager, cards, «В КП: N» | S / L* |
 | Получатель | L | Counterparty · контакт · объект | S |
 | Параметры | R | org, деньги, сроки, вид листа | S |
@@ -163,7 +163,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **403** | left: catalog / template / recipient — **DONE** (mount + hydration + autosave + preview) |
 | **404** | right: params / table / terms / output — **DONE** (inspector/table-editor/terms/output mounted; catalog review на exit; output gates 368; tier-L overlay без A4 reflow) |
 | **405** | embedded doc settings — **DONE** (table preset inline PiDialog; text block inline dialog + library refresh; template mini: rename/duplicate/фон; full builder через returnUrl) |
-| **406** | MCP AI-draft bridge |
+| **406** | MCP AI-draft bridge — **DONE** (BE `sourceFileRef`/`draftSource`; MCP `sourceFileRef` + auto import-todo с workspace href; панель «Шаблон» секция «Из файла (AI)» + pairing CTA + badge /import-todos; `?templateDraft=` открывает черновик; picker бейдж `(AI)`) |
 | **407** | multi-supplier UX |
 | **408** | cutover create → workspace |
 | **409** | legacy cleanup; этот файл = SoT |

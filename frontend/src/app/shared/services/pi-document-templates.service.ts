@@ -69,6 +69,13 @@ export interface DocumentTemplate {
   footerText?: string;
   version: number;
   notes?: string;
+
+  /** TZ-KP-WS-406 — optional source file reference (MCP/import bridge). */
+  sourceFileRef?: string;
+
+  /** TZ-KP-WS-406 — draft origin: 'mcp' | 'manual' | 'import' | null. */
+  draftSource?: 'mcp' | 'manual' | 'import' | null;
+
   createdAt?: string;
   updatedAt?: string;
 }

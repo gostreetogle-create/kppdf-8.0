@@ -39,6 +39,13 @@ export class ProposalWorkspaceStore {
   readonly orientation = signal<WsOrientation>('portrait');
   readonly quotationId = signal<string | null>(null);
 
+  /**
+   * TZ-KP-WS-406 — template draft id from the MCP import-todo href
+   * (/proposals/workspace?templateDraft=<id>). Opens the template panel
+   * preselected on that draft so the manager can finish it inline.
+   */
+  readonly templateDraftId = signal<string | null>(null);
+
   readonly activeSection = computed<WsSection | null>(
     () => this.activeLeft() ?? this.activeRight(),
   );

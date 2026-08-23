@@ -228,6 +228,8 @@ export class DocumentTemplateService {
       defaultSheetLayout: dto.defaultSheetLayout ?? { rowsFirstPage: 0, rowsNextPage: 0 },
       version: dto.version ?? 1,
       notes: dto.notes,
+      sourceFileRef: dto.sourceFileRef,
+      draftSource: dto.draftSource ?? null,
       createdBy:
         userId && Types.ObjectId.isValid(userId)
           ? new Types.ObjectId(userId)

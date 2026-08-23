@@ -99,4 +99,147 @@ describe('doc tools (TZD-28)', () => {
       globalThis.fetch = original;
     }
   });
+
+  it('TZ-KP-WS-406: sourceFileRef passes through and auto-creates workspace import todo', async () => {
+    const calls: Array<{ method: string; url: string; body?: unknown }> = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      let body: unknown;
+      if (init?.body) {
+        body = JSON.parse(String(init.body));
+      }
+      calls.push({ method, url, body });
+
+      if (method === 'POST' && url.includes('/api/document-templates')) {
+        const b = body as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({
+            _id: '507f1f77bcf86cd799439602',
+            name: b?.name ?? 'draft',
+            isActive: false,
+            isDefault: false,
+            notes: b?.notes ?? '',
+            sourceFileRef: b?.sourceFileRef ?? null,
+            draftSource: b?.draftSource ?? null,
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (method === 'POST' && url.includes('/api/import-todos')) {
+        const b = body as Record<string, unknown>;
+        return new Response(
+          JSON.stringify({
+            id: '507f1f77bcf86cd799439603',
+            title: b?.title ?? '',
+            href: b?.href ?? '',
+            templateId: b?.templateId ?? '',
+          }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+
+    try {
+      const { createKppdfMcpServer } = await import('./tools.js');
+      const server = createKppdfMcpServer({
+        apiBaseUrl: 'http://127.0.0.1:3000',
+        apiKey: 'test-jwt',
+        host: '127.0.0.1',
+        port: 9743,
+        allowLan: false,
+      }) as unknown as {
+        _registeredTools: Record<
+          string,
+          { handler: (args: Record<string, unknown>) => Promise<{ content: Array<{ type: string; text: string }> }> }
+        >;
+      };
+      const handler = server._registeredTools['kppdf_doc_template_create_draft'].handler;
+      const res = await handler({
+        name: 'КП из файла (draft)',
+        docTypeId: '507f1f77bcf86cd799439700',
+        organizationId: '507f1f77bcf86cd799439022',
+        sourceFileRef: 'C:/imports/kp.pdf',
+      });
+      const payload = JSON.parse(res.content[0].text) as {
+        ok: boolean;
+        draft: boolean;
+        sourceFileRef: string | null;
+        todoCreated?: boolean;
+      };
+
+      assert.equal(payload.ok, true);
+      assert.equal(payload.draft, true);
+      assert.equal(payload.sourceFileRef, 'C:/imports/kp.pdf');
+      assert.equal(payload.todoCreated, true);
+
+      const tplPost = calls.find(
+        (c) => c.method === 'POST' && c.url.includes('/api/document-templates'),
+      );
+      assert.equal((tplPost?.body as Record<string, unknown>)?.draftSource, 'mcp');
+      assert.equal((tplPost?.body as Record<string, unknown>)?.sourceFileRef, 'C:/imports/kp.pdf');
+
+      const todoPost = calls.find(
+        (c) => c.method === 'POST' && c.url.includes('/api/import-todos'),
+      );
+      assert.ok(todoPost, 'import todo must be auto-created when sourceFileRef is present');
+      const todoBody = todoPost?.body as Record<string, unknown>;
+      assert.equal(todoBody?.href, '/proposals/workspace?templateDraft=507f1f77bcf86cd799439602');
+      assert.equal(todoBody?.templateId, '507f1f77bcf86cd799439602');
+      assert.match(String(todoBody?.title ?? ''), /Доделать шаблон/);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it('TZ-KP-WS-406: no sourceFileRef → no import todo', async () => {
+    const calls: Array<{ method: string; url: string }> = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ method: (init?.method ?? 'GET').toUpperCase(), url });
+      if (url.includes('/api/document-templates')) {
+        return new Response(
+          JSON.stringify({ _id: '507f1f77bcf86cd799439604', name: 'draft' }),
+          { status: 201, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response(JSON.stringify({ items: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+
+    try {
+      const { createKppdfMcpServer } = await import('./tools.js');
+      const server = createKppdfMcpServer({
+        apiBaseUrl: 'http://127.0.0.1:3000',
+        apiKey: 'test-jwt',
+        host: '127.0.0.1',
+        port: 9743,
+        allowLan: false,
+      }) as unknown as {
+        _registeredTools: Record<
+          string,
+          { handler: (args: Record<string, unknown>) => Promise<{ content: Array<{ type: string; text: string }> }> }
+        >;
+      };
+      const handler = server._registeredTools['kppdf_doc_template_create_draft'].handler;
+      const res = await handler({
+        name: 'Простой draft',
+        docTypeId: '507f1f77bcf86cd799439700',
+        organizationId: '507f1f77bcf86cd799439022',
+      });
+      const payload = JSON.parse(res.content[0].text) as { ok: boolean; todoCreated?: boolean };
+      assert.equal(payload.ok, true);
+      assert.ok(!calls.some((c) => c.url.includes('/api/import-todos')));
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
 });
