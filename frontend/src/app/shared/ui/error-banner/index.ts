@@ -1,1 +1,1 @@
-export { ErrorBannerComponent } from './error-banner.component';
+export { ErrorBannerComponent, toBannerError } from './error-banner.component';
