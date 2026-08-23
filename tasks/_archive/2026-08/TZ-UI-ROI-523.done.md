@@ -8,7 +8,16 @@ closed_at: 2026-08-23T11:05:00+03:00
 agent_id: freebuff-roi-523 (Buffy, Freebuff ROI-523)
 workspace: D:\kppdf-8.0
 branch: main
+commit: 0cab21b2 (см. Git note ниже)
 ```
+
+> **Git note (cross-agent race):** staged-файлы ROI-523 были захвачены
+> параллельным агентом ROI-521 в этом же worktree (`git add -A`-стиль) и ушли
+> в origin/main внутри его коммита `0cab21b2` вместе с его native-select
+> работой. Содержимое всех 7 файлов ROI-523 проверено по `git show
+> 0cab21b2:…` — целостно, тесты/гейты проходили ДО захвата. История не
+> переписывалась (запушенный общий main с параллельными агентами); SHA
+> ROI-523 = `0cab21b2` + follow-up docs-коммит этой заметки.
 
 ## Что сделано
 
