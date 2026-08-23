@@ -1052,7 +1052,7 @@ type Orientation = 'portrait' | 'landscape';
         border-bottom: 1px solid var(--color-rule);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
 
       .insp-section__title {
@@ -1107,7 +1107,7 @@ type Orientation = 'portrait' | 'landscape';
       .field {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
       }
 
       .field--row {
@@ -1121,7 +1121,7 @@ type Orientation = 'portrait' | 'landscape';
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 10px;
+        font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -1136,7 +1136,7 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .field__value {
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 600;
         letter-spacing: 0.04em;
         color: var(--color-ink);
@@ -1183,7 +1183,7 @@ type Orientation = 'portrait' | 'landscape';
         color: var(--color-ink);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
-        font-size: 12px;
+        font-size: 13px;
         font-family: inherit;
         box-sizing: border-box;
         transition: border-color 100ms ease;
@@ -1673,7 +1673,7 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .summary-item__label {
-        font-size: 10px;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.06em;
         color: var(--color-muted);
@@ -1681,7 +1681,7 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .summary-item__value {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--color-ink);
         font-family: inherit;

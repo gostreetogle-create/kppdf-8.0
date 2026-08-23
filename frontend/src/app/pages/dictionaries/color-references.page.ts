@@ -61,7 +61,7 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
       @if (error()) {
         <div
           role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           <p>{{ error() }}</p>
           <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
@@ -98,23 +98,25 @@ type ActiveFilter = 'all' | 'active' | 'inactive';
         </app-pi-button>
       </div>
 
-      <!-- Data table -->
-      <app-pi-table
-        [data]="visible()"
-        [columns]="columns"
-        [cellTemplates]="tpls()"
-        [rowActions]="rowActionsTpl"
-        [total]="filtered().length"
-        [pageSize]="pageSize"
-        [page]="page()"
-        (pageChange)="onPageChange($event)"
-        [loading]="loading()"
-        [emptyMessage]="emptyMessage()"
-        [initialSortKey]="'name'"
-        [initialSortDir]="'asc'"
-        ariaLabel="Справочник цветов"
-        data-test="colors-table"
-      />
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="visible()"
+          [columns]="columns"
+          [cellTemplates]="tpls()"
+          [rowActions]="rowActionsTpl"
+          [total]="filtered().length"
+          [pageSize]="pageSize"
+          [page]="page()"
+          (pageChange)="onPageChange($event)"
+          [loading]="loading()"
+          [emptyMessage]="emptyMessage()"
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
+          ariaLabel="Справочник цветов"
+          data-test="colors-table"
+        />
+      </div>
 
       <ng-template #rowActionsTpl let-c>
         <app-pi-row-actions

@@ -28,10 +28,24 @@ export interface TreeDropEvent<T> {
   selector: 'app-pi-table-tree',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.pi-table-tree--compact]': 'compact()',
+  },
   imports: [CdkDropList, CdkDrag, CdkDragHandle, NgTemplateOutlet],
   styles: `
     :host {
       display: block;
+    }
+
+    /* TZ-UI-DEN-520/522 — tree list density */
+    :host(.pi-table-tree--compact) [role='table'] {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+
+    :host(.pi-table-tree--compact) [role='row'].grid {
+      padding-top: 0.5rem;
+      padding-bottom: 0.5rem;
     }
 
     .tree-drag-preview {
@@ -234,6 +248,8 @@ export class PiTableTreeComponent<T> {
   readonly loading = input(false);
   readonly emptyMessage = input('Нет данных для отображения.');
   readonly ariaLabel = input('Дерево');
+  /** TZ-UI-DEN-520/522 — 12px tree rows for category/dictionary lists. */
+  readonly compact = input(false);
 
   readonly expandedChange = output<Set<string>>();
   readonly drop = output<TreeDropEvent<T>>();

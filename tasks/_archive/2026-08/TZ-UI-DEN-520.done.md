@@ -15,7 +15,10 @@ verification:
 
 - `pi-table.component.ts`: `[compact]` input — 12px cells, tighter padding
 - `pi-showcase-card.component.ts`: grid cards use `--color-paper-raised` (white on paper)
-- `materials.page.ts`, `products.page.ts`, `modules.page.ts`: `[compact]="true"`, `bg-paper-raised` table surface, grid gap-2.5
+- `materials.page.ts`, `products.page.ts`, `modules.page.ts`: `[compact]="true"`, `bg-paper-raised` table surface, grid gap-2.5, filter rail selects `text-xs`
+- `pi-filter-panel.component.ts`: p-4 outer, `bg-paper-raised`, `hairline-b`, pi-label header
+- `pi-pagination.component.ts`: compact 32px (`h-8`) pager controls
+- `materials.page-373.spec.ts`: flyout DOM assertion aligned with pi-filter-panel siblings
 
 ## Out of scope (honored)
 

@@ -23,15 +23,15 @@ import { ChangeDetectionStrategy, Component, HostListener, input, output } from 
   template: `
     @if (open()) {
       <div
-        class="absolute left-0 top-0 z-[var(--z-dropdown)] w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto hairline rounded-sm bg-paper p-4"
+        class="absolute left-0 top-0 z-[var(--z-dropdown)] w-64 min-h-[22rem] max-h-[min(36rem,80vh)] overflow-y-auto rounded-sm bg-paper-raised p-4 hairline-b"
         role="region"
         [attr.aria-label]="ariaLabel()"
         data-test="filters-rail-panel"
         (pointerdown)="$event.stopPropagation()"
         (click)="$event.stopPropagation()"
       >
-        <div class="flex items-center justify-between gap-2 mb-3">
-          <div class="text-sm font-medium text-ink">Фильтры</div>
+        <div class="flex items-center justify-between gap-2 mb-3 pb-3 hairline-b">
+          <div class="pi-label text-muted-foreground m-0">Фильтры</div>
           <button
             type="button"
             class="text-xs text-muted-foreground hover:text-ink pi-focus-ring rounded-sm px-1 min-h-touch"

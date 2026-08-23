@@ -76,7 +76,7 @@ function pluralGenitive(n: number): string {
       activeId="text-blocks"
     >
       <ng-template #nameTpl let-c>
-        <span class="inline-flex items-center gap-2 font-medium">
+        <span class="inline-flex items-center gap-2 text-xs font-medium">
           {{ c.name }}
           @if (c.isSystem) {
             <span class="eyebrow hairline rounded-sm px-1.5 py-0.5 text-muted-foreground"
@@ -136,7 +136,7 @@ function pluralGenitive(n: number): string {
       } @else if (error()) {
         <div
           role="alert"
-          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           <p>{{ error() }}</p>
           <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
@@ -151,18 +151,21 @@ function pluralGenitive(n: number): string {
           "
         />
       } @else {
-        <app-pi-table
-          [data]="visible()"
-          [columns]="columns"
-          [cellTemplates]="tpls()"
-          [rowActions]="rowActionsTpl"
-          [emptyMessage]="
-            searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'
-          "
-          [loading]="loading()"
-          ariaLabel="Категории текстов"
-          data-test="text-block-categories-table"
-        />
+        <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+          <app-pi-table
+            [compact]="true"
+            [data]="visible()"
+            [columns]="columns"
+            [cellTemplates]="tpls()"
+            [rowActions]="rowActionsTpl"
+            [emptyMessage]="
+              searchQuery() ? 'Ничего не найдено.' : 'Нет категорий текстов. Создайте первую.'
+            "
+            [loading]="loading()"
+            ariaLabel="Категории текстов"
+            data-test="text-block-categories-table"
+          />
+        </div>
       }
     </app-pi-group-workspace>
   `,

@@ -404,7 +404,9 @@ describe('MaterialsPage vitrine (TZ-CATALOG-373)', () => {
     ) as HTMLElement;
     expect(panel).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="filters-rail"]')).toBeNull();
-    expect(backdrop.parentElement?.contains(panel)).toBe(false);
+    // Panel sits above backdrop as a sibling inside pi-filter-panel (not nested under backdrop).
+    expect(backdrop.contains(panel)).toBe(false);
+    expect(panel.parentElement).toBe(backdrop.parentElement);
   });
 
   it('rail kind select refires GET with ?materialKind= (same signal as toolbar)', async () => {

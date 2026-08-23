@@ -50,8 +50,8 @@ import {
       <div class="space-y-5 max-w-3xl" data-test="form-profiles-page">
         <header>
           <p class="eyebrow text-muted-foreground mb-1">Быстрый create</p>
-          <h1 class="font-display text-2xl tracking-tight m-0">Профили быстрых форм</h1>
-          <p class="text-sm text-muted-foreground mt-1 max-w-2xl m-0">
+          <h1 class="font-display text-lg tracking-tight m-0">Профили быстрых форм</h1>
+          <p class="text-xs text-muted-foreground mt-1 max-w-2xl m-0">
             Какие поля показывать в коротком диалоге создания изделия или модуля. Обязательные поля
             нельзя снять — иначе create сломается. Полный редактор не меняется.
           </p>
@@ -60,7 +60,7 @@ import {
         @if (loadError()) {
           <div
             role="alert"
-            class="border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+            class="border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
             data-test="load-error"
           >
             <p class="m-0">{{ loadError() }}</p>
@@ -104,7 +104,7 @@ import {
                 <button
                   type="button"
                   role="tab"
-                  class="pi-input px-3 py-1.5 text-sm font-medium min-w-[2.5rem] cursor-pointer"
+                  class="pi-input px-3 py-1.5 text-xs font-medium min-w-[2.5rem] cursor-pointer"
                   [class.bg-paper-2]="size() === sz"
                   [attr.aria-selected]="size() === sz"
                   [attr.data-test]="'size-' + sz"
@@ -119,11 +119,11 @@ import {
         </div>
 
         @if (loading()) {
-          <p class="text-sm text-muted-foreground" role="status" data-test="loading">Загрузка…</p>
+          <p class="text-xs text-muted-foreground" role="status" data-test="loading">Загрузка…</p>
         } @else if (!loadError()) {
-          <section class="hairline rounded-sm bg-paper" data-test="field-matrix">
+          <section class="hairline rounded-sm bg-paper-raised" data-test="field-matrix">
             <div class="px-4 py-3 hairline-b bg-paper-2/50">
-              <h2 class="font-display text-base m-0">Поля · {{ entityLabel() }} · {{ size() }}</h2>
+              <h2 class="font-display text-sm m-0">Поля · {{ entityLabel() }} · {{ size() }}</h2>
               <p class="text-xs text-muted-foreground mt-1 m-0">
                 Отметьте видимые поля. Обязательные заблокированы.
               </p>
@@ -131,7 +131,7 @@ import {
 
             @if (fieldRows().length === 0) {
               <p
-                class="px-4 py-6 text-sm text-muted-foreground m-0"
+                class="px-4 py-6 text-xs text-muted-foreground m-0"
                 role="status"
                 data-test="empty-fields"
               >
@@ -150,7 +150,7 @@ import {
                       [attr.data-test]="'field-' + row.key"
                     />
                     <div class="min-w-0 flex-1">
-                      <span class="text-sm font-medium">{{ row.label }}</span>
+                      <span class="text-xs font-medium">{{ row.label }}</span>
                       <span class="text-xs text-muted-foreground ml-2 font-mono">{{
                         row.key
                       }}</span>
@@ -185,7 +185,7 @@ import {
         }
 
         @if (saveError()) {
-          <p class="text-sm text-destructive" role="alert" data-test="save-error">
+          <p class="text-xs text-destructive" role="alert" data-test="save-error">
             {{ saveError() }}
           </p>
         }

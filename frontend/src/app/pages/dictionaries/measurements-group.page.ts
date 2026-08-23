@@ -161,7 +161,7 @@ export class UnitFormDialogComponent {
       @if (error()) {
         <div
           role="alert"
-          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           {{ error() }}
         </div>
@@ -233,21 +233,23 @@ export class UnitFormDialogComponent {
         </app-pi-button>
       </div>
 
-      <!-- Data table -->
-      <app-pi-table
-        [data]="filteredUnits()"
-        [columns]="columns"
-        [cellTemplates]="tpls()"
-        [rowActions]="rowActionsTpl"
-        [total]="data().length"
-        [pageSize]="100"
-        [loading]="loading()"
-        [emptyMessage]="'Нет единиц. Добавьте первую.'"
-        [initialSortKey]="'sortOrder'"
-        [initialSortDir]="'asc'"
-        ariaLabel="Единицы измерения"
-        data-test="units-table"
-      />
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="filteredUnits()"
+          [columns]="columns"
+          [cellTemplates]="tpls()"
+          [rowActions]="rowActionsTpl"
+          [total]="data().length"
+          [pageSize]="100"
+          [loading]="loading()"
+          [emptyMessage]="'Нет единиц. Добавьте первую.'"
+          [initialSortKey]="'sortOrder'"
+          [initialSortDir]="'asc'"
+          ariaLabel="Единицы измерения"
+          data-test="units-table"
+        />
+      </div>
 
       <ng-template #rowActionsTpl let-u>
         <app-pi-row-actions

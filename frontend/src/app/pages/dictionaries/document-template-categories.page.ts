@@ -90,7 +90,7 @@ function pluralGenitive(n: number): string {
       @if (error()) {
         <div
           role="alert"
-          class="hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+          class="hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
         >
           <p>{{ error() }}</p>
           <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()">
@@ -99,20 +99,23 @@ function pluralGenitive(n: number): string {
         </div>
       }
 
-      <app-pi-table
-        [data]="visible()"
-        [columns]="columns"
-        [cellTemplates]="tpls()"
-        [rowActions]="rowActionsTpl"
-        [loading]="loading()"
-        [emptyMessage]="
-          searchQuery() ? 'Ничего не найдено.' : 'Нет категорий шаблонов. Создайте первую.'
-        "
-        [initialSortKey]="'name'"
-        [initialSortDir]="'asc'"
-        ariaLabel="Категории шаблонов"
-        data-test="template-categories-table"
-      />
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="visible()"
+          [columns]="columns"
+          [cellTemplates]="tpls()"
+          [rowActions]="rowActionsTpl"
+          [loading]="loading()"
+          [emptyMessage]="
+            searchQuery() ? 'Ничего не найдено.' : 'Нет категорий шаблонов. Создайте первую.'
+          "
+          [initialSortKey]="'name'"
+          [initialSortDir]="'asc'"
+          ariaLabel="Категории шаблонов"
+          data-test="template-categories-table"
+        />
+      </div>
 
       <ng-template #rowActionsTpl let-c>
         <app-pi-row-actions

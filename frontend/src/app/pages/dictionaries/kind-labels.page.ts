@@ -28,8 +28,8 @@ import {
       <div class="space-y-4" data-test="kind-labels-page">
         <header>
           <p class="eyebrow text-muted-foreground mb-1">Классификация</p>
-          <h1 class="font-display text-2xl tracking-tight m-0">Виды изделий и материалов</h1>
-          <p class="text-sm text-muted-foreground mt-1 max-w-2xl m-0">
+          <h1 class="font-display text-lg tracking-tight m-0">Виды изделий и материалов</h1>
+          <p class="text-xs text-muted-foreground mt-1 max-w-2xl m-0">
             Подписи можно менять без изменения ключей, которые хранятся в каталоге.
           </p>
         </header>
@@ -39,7 +39,7 @@ import {
             <button
               type="button"
               role="tab"
-              class="pi-input px-3 py-2 text-sm cursor-pointer"
+              class="pi-input px-3 py-2 text-xs cursor-pointer"
               [class.bg-paper-2]="scope() === tab.scope"
               [attr.aria-selected]="scope() === tab.scope"
               [attr.data-test]="'tab-' + tab.scope"
@@ -53,7 +53,7 @@ import {
         @if (error()) {
           <div
             role="alert"
-            class="border hairline border-destructive rounded-sm px-4 py-3 text-sm text-destructive"
+            class="border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
           >
             {{ error() }}
             <app-pi-button class="mt-3" variant="outline" size="sm" (click)="reload()"
@@ -63,9 +63,9 @@ import {
         }
 
         @if (loading()) {
-          <p class="text-sm text-muted-foreground" role="status">Загрузка…</p>
+          <p class="text-xs text-muted-foreground" role="status">Загрузка…</p>
         } @else {
-          <section class="hairline rounded-sm bg-paper" data-test="kind-labels-table">
+          <section class="hairline rounded-sm bg-paper-raised" data-test="kind-labels-table">
             <div
               class="grid grid-cols-[minmax(7rem,12rem)_minmax(12rem,1fr)_7rem_8rem] gap-3 px-4 py-2 hairline-b bg-paper-2/50 text-xs text-muted-foreground"
             >
@@ -101,7 +101,7 @@ import {
                 </app-pi-button>
               </div>
             } @empty {
-              <p class="px-4 py-6 text-sm text-muted-foreground m-0">Нет подписей.</p>
+              <p class="px-4 py-6 text-xs text-muted-foreground m-0">Нет подписей.</p>
             }
           </section>
         }

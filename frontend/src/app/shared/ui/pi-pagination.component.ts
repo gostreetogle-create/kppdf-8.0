@@ -32,7 +32,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
         <div class="flex items-center gap-1">
           <button
             type="button"
-            class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
+            class="px-2 h-8 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
             [disabled]="currentPage() === 1"
             (click)="goTo(currentPage() - 1)"
             aria-label="Предыдущая страница"
@@ -58,7 +58,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
           }
           <button
             type="button"
-            class="px-2 h-7 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
+            class="px-2 h-8 inline-flex items-center justify-center rounded-sm hairline bg-paper hover:bg-paper-2 disabled:opacity-40 disabled:cursor-not-allowed pi-focus-ring"
             [disabled]="currentPage() === totalPages()"
             (click)="goTo(currentPage() + 1)"
             aria-label="Следующая страница"
@@ -72,7 +72,7 @@ type PageItem = { type: 'page'; n: number } | { type: 'gap'; key: string };
           <label class="inline-flex items-center gap-1 text-muted-foreground">
             <span class="sr-only">Размер страницы</span>
             <select
-              class="h-7 px-1 rounded-sm hairline bg-paper text-ink tabular-nums pi-focus-ring"
+              class="h-8 px-1 rounded-sm hairline bg-paper text-ink tabular-nums pi-focus-ring"
               data-test="pager-page-size"
               [attr.aria-label]="'Строк на странице'"
               [value]="pageSize()"
@@ -175,8 +175,8 @@ export class PaginationComponent {
   activeClass(): string {
     return [
       'px-2.5',
-      'h-7',
-      'min-w-[28px]',
+      'h-8',
+      'min-w-[32px]',
       'inline-flex',
       'items-center',
       'justify-center',
@@ -190,8 +190,8 @@ export class PaginationComponent {
   inactiveClass(): string {
     return [
       'px-2.5',
-      'h-7',
-      'min-w-[28px]',
+      'h-8',
+      'min-w-[32px]',
       'inline-flex',
       'items-center',
       'justify-center',

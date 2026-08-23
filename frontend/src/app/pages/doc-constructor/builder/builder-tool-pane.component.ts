@@ -416,7 +416,6 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         background-size: var(--pi-bg-elevated-size);
         background-blend-mode: var(--pi-bg-elevated-blend);
         border-right: 1px solid var(--color-rule);
-        box-shadow: 8px 0 24px oklch(0.2 0.02 260 / 0.18);
         animation: tool-pane-slide-in 160ms ease-out;
       }
 
