@@ -418,6 +418,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                 [attr.data-module-group-start]="row.moduleGroupStart ? 'true' : null"
                 [attr.data-module-group-end]="row.moduleGroupEnd ? 'true' : null"
                 [attr.data-unassigned-worker]="isUnassignedWorkerSummary(row.bar) ? 'true' : null"
+                [attr.data-label-overlay]="isLabelOverlayOpen(row) ? 'true' : null"
+                [class.gantt-row-label-overlay]="isLabelOverlayOpen(row)"
               >
                 @if (row.isSummary) {
                   <button
@@ -428,7 +430,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     [attr.aria-expanded]="row.expanded"
                     [attr.title]="expandTitle(row.bar, row.expanded)"
                     [attr.aria-label]="expandTitle(row.bar, row.expanded)"
-                    (click)="onToggleExpand($event, expandKey(row.bar))"
+                    (click)="onToggleExpand($event, expandKey(row.bar), row.bar)"
                   >
                     <span aria-hidden="true" class="gantt-chevron font-mono leading-none">{{
                       row.expanded ? '▾' : '▸'
@@ -450,70 +452,89 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
                     }}</span>
                   </button>
                 }
-                <button
-                  type="button"
-                  class="gantt-label-btn flex-1 min-w-0 h-full px-1.5 flex items-center gap-1.5 text-left
-                         hover:bg-paper-2"
-                  [style.background]="workerLabelWash(row)"
-                  (click)="onLabelClick($event, row)"
-                  [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
-                  [attr.aria-label]="
-                    row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
-                  "
-                  [attr.data-worker-tint]="
-                    row.isWorkerSummary && row.bar.accentHue != null
-                      ? 'true'
-                      : isUnassignedWorkerSummary(row.bar)
-                        ? 'unassigned'
-                        : null
-                  "
+                <div
+                  class="gantt-label-wrap flex-1 min-w-0 h-full relative"
+                  [class.gantt-label-wrap--open]="isLabelOverlayOpen(row)"
+                  (mouseenter)="onLabelPeekEnter($event, row)"
+                  (mouseleave)="onLabelPeekLeave()"
                 >
-                  @if (row.isWorkerSummary && row.bar.accentHue != null) {
-                    <span
-                      class="w-1.5 h-5 rounded-sm shrink-0"
-                      [style.background]="workerChipFill(row.bar.accentHue)"
-                      aria-hidden="true"
-                    ></span>
-                  } @else if (isUnassignedWorkerSummary(row.bar)) {
-                    <span
-                      class="w-1.5 h-5 rounded-sm shrink-0 border border-dashed border-amber-700/50 dark:border-amber-400/50"
-                      [style.background]="GANTT_UNASSIGNED_CHIP_FILL"
-                      aria-hidden="true"
-                    ></span>
-                  } @else if (!row.isSummary) {
-                    <span
-                      class="w-1.5 h-5 rounded-sm shrink-0"
-                      [style.background]="
-                        row.bar.noTerm ? 'transparent' : fill(row.bar.workTypeId, row.bar.accentHue)
-                      "
-                      [class.border]="row.bar.noTerm"
-                      [class.border-dashed]="row.bar.noTerm"
-                      [attr.title]="row.bar.workTypeName"
-                      aria-hidden="true"
-                    ></span>
-                  }
-                  <span class="min-w-0 flex-1 truncate text-xs leading-none">
-                    @if (row.isOrderSummary || row.isWorkerSummary) {
-                      <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
-                    } @else if (row.isProductSummary) {
-                      <span class="font-medium text-ink">{{ row.bar.productName }}</span>
-                      @if (row.bar.quantityLabel) {
-                        <span class="font-mono text-muted-foreground">
-                          {{ row.bar.quantityLabel }}</span
-                        >
-                      }
-                    } @else if (row.isModuleSummary) {
-                      <span class="text-ink/85">{{ row.bar.moduleName }}</span>
-                    } @else {
-                      <span class="text-muted-foreground">{{ row.bar.workTypeName }}</span>
-                      @if (row.bar.quantityLabel) {
-                        <span class="font-mono text-muted-foreground">
-                          {{ row.bar.quantityLabel }}</span
-                        >
-                      }
+                  <button
+                    type="button"
+                    class="gantt-label-btn flex-1 min-w-0 w-full h-full px-1.5 flex items-center gap-1.5 text-left
+                           hover:bg-paper-2"
+                    [style.background]="workerLabelWash(row)"
+                    (click)="onLabelClick($event, row)"
+                    [attr.title]="row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)"
+                    [attr.aria-label]="
+                      row.isSummary ? summaryCardTitle(row.bar) : labelTitle(row.bar)
+                    "
+                    [attr.data-worker-tint]="
+                      row.isWorkerSummary && row.bar.accentHue != null
+                        ? 'true'
+                        : isUnassignedWorkerSummary(row.bar)
+                          ? 'unassigned'
+                          : null
+                    "
+                  >
+                    @if (row.isWorkerSummary && row.bar.accentHue != null) {
+                      <span
+                        class="w-1.5 h-5 rounded-sm shrink-0"
+                        [style.background]="workerChipFill(row.bar.accentHue)"
+                        aria-hidden="true"
+                      ></span>
+                    } @else if (isUnassignedWorkerSummary(row.bar)) {
+                      <span
+                        class="w-1.5 h-5 rounded-sm shrink-0 border border-dashed border-amber-700/50 dark:border-amber-400/50"
+                        [style.background]="GANTT_UNASSIGNED_CHIP_FILL"
+                        aria-hidden="true"
+                      ></span>
+                    } @else if (!row.isSummary) {
+                      <span
+                        class="w-1.5 h-5 rounded-sm shrink-0"
+                        [style.background]="
+                          row.bar.noTerm
+                            ? 'transparent'
+                            : fill(row.bar.workTypeId, row.bar.accentHue)
+                        "
+                        [class.border]="row.bar.noTerm"
+                        [class.border-dashed]="row.bar.noTerm"
+                        [attr.title]="row.bar.workTypeName"
+                        aria-hidden="true"
+                      ></span>
                     }
-                  </span>
-                </button>
+                    <span class="gantt-label-text min-w-0 flex-1 truncate text-xs leading-none">
+                      @if (row.isOrderSummary || row.isWorkerSummary) {
+                        <span class="font-medium text-ink">{{ row.bar.orderNumber }}</span>
+                      } @else if (row.isProductSummary) {
+                        <span class="font-medium text-ink">{{ row.bar.productName }}</span>
+                        @if (row.bar.quantityLabel) {
+                          <span class="font-mono text-muted-foreground">
+                            {{ row.bar.quantityLabel }}</span
+                          >
+                        }
+                      } @else if (row.isModuleSummary) {
+                        <span class="text-ink/85">{{ row.bar.moduleName }}</span>
+                      } @else {
+                        <span class="text-muted-foreground">{{ row.bar.workTypeName }}</span>
+                        @if (row.bar.quantityLabel) {
+                          <span class="font-mono text-muted-foreground">
+                            {{ row.bar.quantityLabel }}</span
+                          >
+                        }
+                      }
+                    </span>
+                  </button>
+                  @if (isLabelOverlayOpen(row)) {
+                    <div
+                      class="gantt-label-overlay text-xs leading-none"
+                      [class]="labelOverlayLevelClass(row)"
+                      [attr.data-test]="'gantt-label-overlay-' + row.bar.id"
+                      aria-hidden="true"
+                    >
+                      {{ labelOverlayText(row) }}
+                    </div>
+                  }
+                </div>
               </div>
               @if (row.isOrderSummary && orderMetaFor(row.bar.orderId); as meta) {
                 <div
@@ -926,6 +947,64 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-label-btn:focus-visible {
       background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
     }
+    /* truncated-label-peek — hover / cascade expand when text overflows (see docs/ui-rules.md). */
+    .gantt-row-label-overlay.gantt-row-h {
+      overflow: visible;
+      position: relative;
+      z-index: 50;
+    }
+    .gantt-label-wrap--open {
+      z-index: 50;
+    }
+    .gantt-label-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      min-width: 100%;
+      max-width: 420px;
+      padding: 0 0.5rem 0 0.375rem;
+      white-space: nowrap;
+      border: 1px solid color-mix(in oklch, #8c7853 40%, transparent);
+      border-left: 0;
+      border-radius: 0 0.375rem 0.375rem 0;
+      box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
+      pointer-events: none;
+      animation: gantt-label-overlay-in 140ms ease-out;
+    }
+    @keyframes gantt-label-overlay-in {
+      from {
+        opacity: 0;
+        transform: translateX(-3px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+    .gantt-label-overlay--product {
+      background: var(--gantt-level-product);
+      color: var(--color-ink, inherit);
+      font-weight: 500;
+    }
+    .gantt-label-overlay--module {
+      background: var(--gantt-level-module);
+      color: color-mix(in oklch, var(--color-ink, inherit) 85%, transparent);
+    }
+    [data-nest-depth='1'] .gantt-label-overlay {
+      padding-left: calc(0.375rem + ${GANTT_NEST_INDENT_PX}px);
+    }
+    [data-nest-depth='2'] .gantt-label-overlay {
+      padding-left: calc(0.375rem + ${GANTT_NEST_INDENT_PX * 2}px);
+    }
+    [data-nest-depth='3'] .gantt-label-overlay {
+      padding-left: calc(0.375rem + ${GANTT_NEST_INDENT_PX * 3}px);
+    }
     /* TZ-PRODUCTION-348: cascade indent — labels only (~15px per depth). */
     [data-nest-depth='1'] .gantt-label-btn {
       padding-left: ${GANTT_NEST_INDENT_PX}px;
@@ -1233,6 +1312,7 @@ export class GanttBarsComponent implements AfterViewInit {
   protected readonly emptyPlaceholders = [0, 1, 2, 3, 4, 5] as const;
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly hostRef = inject(ElementRef<HTMLElement>);
   private readonly ganttScroll = viewChild<ElementRef<HTMLElement>>('ganttScroll');
   private readonly todayMarker = viewChild<ElementRef<HTMLElement>>('todayMarker');
   protected readonly overrideHint = ESTIMATE_OVERRIDE_HINT_RU;
@@ -1258,6 +1338,7 @@ export class GanttBarsComponent implements AfterViewInit {
         { injector: this.injector },
       );
     });
+    this.destroyRef.onDestroy(() => this.clearLabelOverlayLeaveTimer());
   }
 
   /** Live right-edge resize preview (null = idle). */
@@ -1286,6 +1367,9 @@ export class GanttBarsComponent implements AfterViewInit {
   );
 
   private readonly timelineViewportWidth = signal(0);
+  /** Open floating label peek (`bar.id`) — hover or cascade expand when truncated. */
+  private readonly labelOverlayKey = signal<string | null>(null);
+  private labelOverlayLeaveTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly pxPerDay = computed(() =>
     calculateGanttPxPerDay(this.zoom(), this.totalDays(), this.timelineViewportWidth()),
@@ -1514,6 +1598,9 @@ export class GanttBarsComponent implements AfterViewInit {
   ngAfterViewInit(): void {
     const scroll = this.ganttScroll()?.nativeElement;
     if (!scroll) return;
+    const onScroll = (): void => this.closeLabelOverlay();
+    scroll.addEventListener('scroll', onScroll, { passive: true });
+    this.destroyRef.onDestroy(() => scroll.removeEventListener('scroll', onScroll));
     const updateViewportWidth = (): void => {
       this.timelineViewportWidth.set(Math.max(0, scroll.clientWidth - GANTT_LABEL_COL_PX));
     };
@@ -1662,10 +1749,20 @@ export class GanttBarsComponent implements AfterViewInit {
     return `${names.slice(0, 4).join(', ')}…`;
   }
 
-  protected onToggleExpand(event: Event, expandId: string): void {
+  protected onToggleExpand(event: Event, expandId: string, bar: GanttBar): void {
     event.stopPropagation();
     event.preventDefault();
+    const expanding = !this.isExpandIdOpen(expandId, bar);
+    this.closeLabelOverlay();
     this.toggleExpand.emit(expandId);
+    if (!expanding) return;
+    if (isProductSummaryBar(bar) || isModuleSummaryBar(bar)) {
+      this.scheduleTruncatedLabelPeek(bar.id);
+      return;
+    }
+    if (isOrderSummaryBar(bar)) {
+      this.scheduleFirstTruncatedChildPeek(bar.orderId);
+    }
   }
 
   /** Expand emit key: orderId | product:… | module:… | worker:… | worker-module:… */
@@ -1685,6 +1782,7 @@ export class GanttBarsComponent implements AfterViewInit {
   protected onChildWorkToggle(event: Event, barId: string): void {
     event.stopPropagation();
     event.preventDefault();
+    this.closeLabelOverlay();
     this.toggleWorkDetail.emit(barId);
   }
 
@@ -1752,30 +1850,157 @@ export class GanttBarsComponent implements AfterViewInit {
         ].join(','),
       )
     ) {
+      if (!t.closest('button.gantt-label-btn')) {
+        this.closeLabelOverlay();
+      }
       return;
     }
+    this.closeLabelOverlay();
     this.dismissCanvas.emit();
   }
 
+  /** Product/module rows — truncated-label-peek (hover + cascade expand). */
+  protected supportsLabelOverlay(row: {
+    isProductSummary: boolean;
+    isModuleSummary: boolean;
+  }): boolean {
+    return row.isProductSummary || row.isModuleSummary;
+  }
+
+  protected isLabelOverlayOpen(row: { bar: GanttBar }): boolean {
+    return this.labelOverlayKey() === row.bar.id;
+  }
+
+  protected closeLabelOverlay(): void {
+    this.clearLabelOverlayLeaveTimer();
+    this.labelOverlayKey.set(null);
+  }
+
+  protected openLabelPeek(barId: string): void {
+    this.clearLabelOverlayLeaveTimer();
+    this.labelOverlayKey.set(barId);
+  }
+
+  protected onLabelPeekEnter(
+    event: MouseEvent,
+    row: { isProductSummary: boolean; isModuleSummary: boolean; bar: GanttBar },
+  ): void {
+    if (!this.supportsLabelOverlay(row)) return;
+    const wrap = event.currentTarget;
+    if (!(wrap instanceof HTMLElement)) return;
+    const textEl = wrap.querySelector('.gantt-label-text');
+    if (!(textEl instanceof HTMLElement) || !this.isTextTruncated(textEl)) return;
+    this.openLabelPeek(row.bar.id);
+  }
+
+  protected onLabelPeekLeave(): void {
+    this.clearLabelOverlayLeaveTimer();
+    this.labelOverlayLeaveTimer = setTimeout(() => this.closeLabelOverlay(), 120);
+  }
+
+  private clearLabelOverlayLeaveTimer(): void {
+    if (this.labelOverlayLeaveTimer == null) return;
+    clearTimeout(this.labelOverlayLeaveTimer);
+    this.labelOverlayLeaveTimer = null;
+  }
+
+  private isTextTruncated(el: HTMLElement): boolean {
+    return el.scrollWidth > el.clientWidth + 1;
+  }
+
+  private isExpandIdOpen(expandId: string, bar: GanttBar): boolean {
+    if (isWorkerSummaryBar(bar)) {
+      return this.expandedWorkerIds().has(workerGroupKeyOf(bar));
+    }
+    if (isProductSummaryBar(bar)) {
+      return this.expandedProductIds().has(expandId);
+    }
+    if (isModuleSummaryBar(bar)) {
+      return this.expandedModuleIds().has(expandId);
+    }
+    return this.expandedOrderIds().has(expandId);
+  }
+
+  private tryOpenTruncatedLabelPeek(barId: string): void {
+    const textEl = this.hostRef.nativeElement.querySelector(
+      `[data-test="gantt-label-${barId}"] .gantt-label-text`,
+    );
+    if (textEl instanceof HTMLElement && this.isTextTruncated(textEl)) {
+      this.openLabelPeek(barId);
+    }
+  }
+
+  private scheduleTruncatedLabelPeek(barId: string): void {
+    afterNextRender(() => this.tryOpenTruncatedLabelPeek(barId), { injector: this.injector });
+  }
+
+  private scheduleFirstTruncatedChildPeek(orderId: string): void {
+    afterNextRender(
+      () => {
+        for (const row of this.rows()) {
+          if (row.bar.orderId !== orderId) continue;
+          if (!row.isProductSummary && !row.isModuleSummary) continue;
+          this.tryOpenTruncatedLabelPeek(row.bar.id);
+          return;
+        }
+      },
+      { injector: this.injector },
+    );
+  }
+
+  protected labelOverlayText(row: {
+    isProductSummary: boolean;
+    isModuleSummary: boolean;
+    bar: GanttBar;
+  }): string {
+    const b = row.bar;
+    if (row.isProductSummary) {
+      return [b.productName, b.quantityLabel].filter(Boolean).join(' ');
+    }
+    if (row.isModuleSummary) {
+      return b.moduleName ?? '';
+    }
+    return '';
+  }
+
+  protected labelOverlayLevelClass(row: { rowKind: string }): string {
+    if (row.rowKind === 'product') return 'gantt-label-overlay--product';
+    if (row.rowKind === 'module') return 'gantt-label-overlay--module';
+    return '';
+  }
+
+  @HostListener('document:click', ['$event'])
+  protected onDocumentClick(event: MouseEvent): void {
+    if (!this.labelOverlayKey()) return;
+    const t = event.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('.gantt-label-wrap')) return;
+    this.closeLabelOverlay();
+  }
+
   /**
-   * Order summary → order-meta; worker/product/module → same expand as ▸; work → detail.
-   * TZ-PRODUCTION-348: label click toggles cascade (not chevron-only).
+   * Order summary → order-meta; worker → expand; product/module → peek via hover/▸ only; work → detail.
    */
-  protected onLabelClick(event: Event, row: { isSummary: boolean; bar: GanttBar }): void {
+  protected onLabelClick(
+    event: Event,
+    row: { isSummary: boolean; bar: GanttBar; isProductSummary: boolean; isModuleSummary: boolean },
+  ): void {
     event.stopPropagation();
     event.preventDefault();
     if (isOrderSummaryBar(row.bar)) {
+      this.closeLabelOverlay();
       if (!this.groupByWorkers()) this.orderLabelClick.emit(row.bar.orderId);
       return;
     }
-    if (
-      isProductSummaryBar(row.bar) ||
-      isModuleSummaryBar(row.bar) ||
-      isWorkerSummaryBar(row.bar)
-    ) {
+    if (isProductSummaryBar(row.bar) || isModuleSummaryBar(row.bar)) {
+      return;
+    }
+    if (isWorkerSummaryBar(row.bar)) {
+      this.closeLabelOverlay();
       this.toggleExpand.emit(this.expandKey(row.bar));
       return;
     }
+    this.closeLabelOverlay();
     this.toggleWorkDetail.emit(row.bar.id);
   }
 
@@ -1916,6 +2141,10 @@ export class GanttBarsComponent implements AfterViewInit {
 
   @HostListener('document:keydown.escape')
   protected onEscapeCancel(): void {
+    if (this.labelOverlayKey()) {
+      this.closeLabelOverlay();
+      return;
+    }
     const move = this.moveSession();
     if (move) {
       this.finishMove(move, /*commit*/ false);

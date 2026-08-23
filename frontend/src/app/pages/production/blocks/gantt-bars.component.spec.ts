@@ -753,6 +753,65 @@ describe('GanttBarsComponent', () => {
     expect(label.classList.contains('gantt-order-expanded')).toBe(false);
   });
 
+  it('truncated-label-peek: hover shows floating badge when text overflows', async () => {
+    const longName = 'Ворота распашные 3000 миллиметров';
+    const longBar: GanttBar = { ...sample, productName: longName };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [longBar]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const productRow = fixture.nativeElement.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"]`,
+    ) as HTMLElement;
+    const labelWrap = productRow.querySelector('.gantt-label-wrap') as HTMLElement;
+    const labelText = productRow.querySelector('.gantt-label-text') as HTMLElement;
+    Object.defineProperty(labelText, 'scrollWidth', { configurable: true, value: 400 });
+    Object.defineProperty(labelText, 'clientWidth', { configurable: true, value: 80 });
+
+    labelWrap.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    fixture.detectChanges();
+    const overlay = fixture.nativeElement.querySelector(
+      `[data-test="gantt-label-overlay-${productKeyO1}"]`,
+    ) as HTMLElement;
+    expect(overlay).toBeTruthy();
+    expect(overlay.textContent).toContain(longName);
+    expect(productRow.classList.contains('gantt-row-label-overlay')).toBe(true);
+
+    labelWrap.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 150));
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(`[data-test="gantt-label-overlay-${productKeyO1}"]`),
+    ).toBeNull();
+  });
+
+  it('truncated-label-peek: opens peek when cascade expand finds truncated text', () => {
+    const longName = 'Пергола «Комфорт» 3000×3000 миллиметров';
+    const longBar: GanttBar = { ...sample, productName: longName };
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', [longBar]);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-10');
+    fixture.componentRef.setInput('expandedOrderIds', new Set(['o1']));
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as {
+      tryOpenTruncatedLabelPeek: (id: string) => void;
+    };
+    const labelText = fixture.nativeElement.querySelector(
+      `[data-test="gantt-label-${productKeyO1}"] .gantt-label-text`,
+    ) as HTMLElement;
+    Object.defineProperty(labelText, 'scrollWidth', { configurable: true, value: 420 });
+    Object.defineProperty(labelText, 'clientWidth', { configurable: true, value: 80 });
+    cmp.tryOpenTruncatedLabelPeek(productKeyO1);
+    fixture.detectChanges();
+    expect(
+      fixture.nativeElement.querySelector(`[data-test="gantt-label-overlay-${productKeyO1}"]`),
+    ).toBeTruthy();
+  });
+
   it('keeps calendar scale visible when no bars', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', []);
@@ -1479,7 +1538,7 @@ describe('GanttBarsComponent', () => {
     expect(toggles).toEqual(['worker:Иванов Иван']);
   });
 
-  it('TZ-PRODUCTION-348: product/module label click emits toggleExpand', () => {
+  it('TZ-PRODUCTION-348: product/module label does not toggle expand (peek via hover/▸)', () => {
     const fixture = TestBed.createComponent(GanttBarsComponent);
     fixture.componentRef.setInput('bars', [sample, samplePaint]);
     fixture.componentRef.setInput('rangeStart', '2026-08-01');
@@ -1489,10 +1548,14 @@ describe('GanttBarsComponent', () => {
     const toggles: string[] = [];
     fixture.componentInstance.toggleExpand.subscribe((id) => toggles.push(id));
     const productLabel = fixture.nativeElement.querySelector(
-      `[data-test="gantt-label-${productKeyO1}"] button.flex-1`,
+      `[data-test="gantt-label-${productKeyO1}"] button.gantt-label-btn`,
     ) as HTMLElement;
     productLabel.click();
-    expect(toggles).toEqual([productKeyO1]);
+    fixture.detectChanges();
+    expect(toggles).toEqual([]);
+    expect(
+      fixture.nativeElement.querySelector(`[data-test="gantt-label-overlay-${productKeyO1}"]`),
+    ).toBeNull();
   });
 
   it('TZ-PRODUCTION-348: header is single word without border-l box', () => {
