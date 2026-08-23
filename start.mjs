@@ -302,23 +302,37 @@ function resolveBin(name) {
 }
 
 /**
- * Определяет, нужен ли `shell: true` для spawn() данного binary.
- * Node 20+ refuses spawn('.cmd'/'.bat') без shell:true (CVE-2024-27980 mitigation).
- * Аргументы во всех наших вызовах spawn — hardcoded whitelisted strings
- * (`['install', '--prefer-offline']`, `['start:dev']`, etc.), no user input →
- * shell injection risk = 0. Поэтому смело включаем shell:true ТОЛЬКО для .cmd/.bat.
+ * Windows .cmd/.bat must run via ComSpec (CVE-2024-27980). Never use shell:true + args[]
+ * together — Node DEP0190. Args are hardcoded whitelisted strings only.
  */
 function needsShell(bin) {
   return isWin && /\.(cmd|bat)$/i.test(bin);
+}
+
+function windowsComSpec() {
+  return process.env.ComSpec || 'cmd.exe';
+}
+
+function spawnProcess(bin, args, options = {}) {
+  if (needsShell(bin)) {
+    return spawn(windowsComSpec(), ['/d', '/s', '/c', bin, ...args], options);
+  }
+  return spawn(bin, args, options);
+}
+
+function spawnProcessSync(bin, args, options = {}) {
+  if (needsShell(bin)) {
+    return spawnSync(windowsComSpec(), ['/d', '/s', '/c', bin, ...args], options);
+  }
+  return spawnSync(bin, args, options);
 }
 
 function getVersion(cmd, args = ['--version']) {
   try {
     const bin = resolveBin(cmd);
     if (!bin) return null;
-    const r = spawnSync(bin, args, {
+    const r = spawnProcessSync(bin, args, {
       encoding: 'utf8',
-      ...(needsShell(bin) ? { shell: true } : {}),
     });
     if (r.status !== 0) return null;
     const v = (r.stdout || r.stderr || '').trim();
@@ -699,11 +713,10 @@ function installDeps(dir, name) {
   // pnpm 10+ blocks build scripts for packages unknown to the project.
   // Always use 'pipe' to capture stderr for ERR_PNPM_IGNORED_BUILDS detection.
   // Captured output is re-printed to console in non-TUI mode below.
-  let r = spawnSync(pnpmBin, ['install', '--prefer-offline'], {
+  let r = spawnProcessSync(pnpmBin, ['install', '--prefer-offline'], {
     cwd: dir,
     stdio: 'pipe',
     encoding: 'utf8',
-    ...(needsShell(pnpmBin) ? { shell: true } : {}),
   });
 
   // In non-TUI mode, pipe captured output back to console
@@ -716,11 +729,10 @@ function installDeps(dir, name) {
     const output = (r.stderr || r.stdout || '').toString();
     if (output.includes('ERR_PNPM_IGNORED_BUILDS')) {
       log.warn(`${name}: обнаружены заблокированные build-скрипты (pnpm 11+), одобряем…`);
-      const approve = spawnSync(pnpmBin, ['approve-builds', '--all'], {
+      const approve = spawnProcessSync(pnpmBin, ['approve-builds', '--all'], {
         cwd: dir,
         stdio: 'pipe',
         encoding: 'utf8',
-        ...(needsShell(pnpmBin) ? { shell: true } : {}),
       });
       if (approve.status !== 0) {
         log.warn(`pnpm approve-builds warn: ${(approve.stderr || '').trim().slice(0, 200)}`);
@@ -729,11 +741,10 @@ function installDeps(dir, name) {
         if (approved) log.dim(`Approved builds: ${approved.slice(0, 300)}`);
       }
       // Retry install after approval
-      r = spawnSync(pnpmBin, ['install', '--prefer-offline'], {
+      r = spawnProcessSync(pnpmBin, ['install', '--prefer-offline'], {
         cwd: dir,
         stdio: 'pipe',
         encoding: 'utf8',
-        ...(needsShell(pnpmBin) ? { shell: true } : {}),
       });
       if (!useTui()) {
         if (r.stdout) process.stdout.write(r.stdout);
@@ -754,16 +765,12 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     log.err(`${cmd} not found in PATH`);
     throw new Error(`${cmd} binary not found`);
   }
-  // DEP0190 fix (TZ-44): без shell для .exe бинарей. Для .cmd/.bat (pnpm.cmd,
-  // npm.cmd и т.п.) добавляем shell:true — Node 20+ требует этого по CVE-2024-27980.
-  // Args hardcoded — shell injection risk = 0.
-  const child = spawn(bin, args, {
+  const child = spawnProcess(bin, args, {
     cwd,
     env: { ...env, ...envExtra, FORCE_COLOR: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: !isWin,
     windowsHide: true,
-    ...(needsShell(bin) ? { shell: true } : {}),
   });
   // Трекаем в state
   if (name && state.services[name]) {
@@ -873,11 +880,10 @@ function buildBackend() {
   } else {
     const pnpmBin = resolveBin('pnpm');
     if (!pnpmBin) throw new Error('pnpm not found in PATH');
-    const r = spawnSync(pnpmBin, ['build'], {
+    const r = spawnProcessSync(pnpmBin, ['build'], {
       cwd: BACKEND_DIR,
       stdio: useTui() ? 'pipe' : 'inherit',
       encoding: 'utf8',
-      ...(needsShell(pnpmBin) ? { shell: true } : {}),
     });
     if (r.status !== 0) throw new Error('backend pnpm build failed');
   }
@@ -896,11 +902,10 @@ function buildFrontend() {
   } else {
     const pnpmBin = resolveBin('pnpm');
     if (!pnpmBin) throw new Error('pnpm not found in PATH');
-    const r = spawnSync(pnpmBin, ['build'], {
+    const r = spawnProcessSync(pnpmBin, ['build'], {
       cwd: FRONTEND_DIR,
       stdio: useTui() ? 'pipe' : 'inherit',
       encoding: 'utf8',
-      ...(needsShell(pnpmBin) ? { shell: true } : {}),
     });
     if (r.status !== 0) throw new Error('frontend pnpm build failed');
   }

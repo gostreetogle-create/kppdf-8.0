@@ -104,6 +104,16 @@ def resolve_settings(args, cfg):
         if "DESKTOP_DOWNLOAD_URL" in cfg
         else os.environ.get("DESKTOP_DOWNLOAD_URL")
     )
+    # TZD-66: explicit config.env overrides only — auto-derived from the
+    # published desktop semver in main() when unset, so these never need
+    # manual upkeep after a normal `pnpm run release-installer` + deploy.
+    desktop_min_version_override = cfg.get("DESKTOP_MIN_VERSION") or os.environ.get(
+        "DESKTOP_MIN_VERSION"
+    )
+    desktop_recommended_version_override = cfg.get(
+        "DESKTOP_RECOMMENDED_VERSION"
+    ) or os.environ.get("DESKTOP_RECOMMENDED_VERSION")
+    app_version = cfg.get("APP_VERSION") or os.environ.get("APP_VERSION")
 
     jwt_secret = cfg.get("JWT_SECRET", "")
     jwt_refresh = cfg.get("JWT_REFRESH_SECRET", "")
@@ -136,6 +146,9 @@ def resolve_settings(args, cfg):
         "no_cache": no_cache,
         "cors": cors,
         "desktop_download_url": desktop_download_url,
+        "desktop_min_version_override": desktop_min_version_override,
+        "desktop_recommended_version_override": desktop_recommended_version_override,
+        "app_version": app_version,
         "jwt_secret": jwt_secret,
         "jwt_refresh": jwt_refresh,
         "admin_password": admin_password,
@@ -307,6 +320,21 @@ class RemoteHost:
 
 # -- Frontend build -----------------------------------------------------
 
+def read_desktop_semver(project_root):
+    """Semver SoT: desktop/package.json (mirrors publish-installer.mjs). None if unresolvable."""
+    pkg_path = project_root / "desktop" / "package.json"
+    if not pkg_path.is_file():
+        return None
+    try:
+        semver = str(json.loads(pkg_path.read_text(encoding="utf-8")).get("version", "") or "")
+    except Exception as e:
+        warn("Cannot read desktop/package.json version (" + str(e) + ")")
+        return None
+    if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", semver):
+        return None
+    return semver
+
+
 def inject_desktop_download_url(project_root, configured_url):
     """Inject DESKTOP_DOWNLOAD_URL into built SPA via CSP-safe meta (no inline script)."""
     index_path = project_root / "frontend" / "browser" / "index.html"
@@ -374,7 +402,7 @@ def build_frontend(project_root):
 
     # Desktop installer (TZD-16/24): ensure /downloads/*.exe + .zip exist
     # even if Angular assets folder was empty during build.
-    publish_desktop_installer(project_root, frontend_dir)
+    return publish_desktop_installer(project_root, frontend_dir)
 
 
 def publish_desktop_installer(project_root, frontend_dir):
@@ -383,24 +411,21 @@ def publish_desktop_installer(project_root, frontend_dir):
     Canon TZD-46: desktop-download-version-naming-canon.md — versioned
     `kppdf-desktop-setup-v{semver}.zip` is the canonical file; unversioned
     aliases are byte copies of the same build for old bookmarks.
+
+    Returns the semver that was actually published as a versioned artifact
+    (None if no versioned zip/exe was published this run) — TZD-66: this is
+    fed into make_env_file() so DESKTOP_MIN/RECOMMENDED_VERSION and
+    DESKTOP_DOWNLOAD_URL can auto-track the real published build instead of
+    silently drifting from a stale config.env value.
     """
     import zipfile
 
-    # Semver SoT: desktop/package.json on the build machine (mirrors publish-installer.mjs).
-    semver = None
-    pkg_path = project_root / "desktop" / "package.json"
-    if pkg_path.is_file():
-        try:
-            semver = str(json.loads(pkg_path.read_text(encoding="utf-8")).get("version", "") or "")
-        except Exception as e:
-            warn("Cannot read desktop/package.json version (" + str(e) + ")")
-    if not semver or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", semver):
+    semver = read_desktop_semver(project_root)
+    if not semver:
         warn(
-            "Desktop semver not resolvable from desktop/package.json ("
-            + repr(semver)
-            + ") — publishing unversioned aliases only"
+            "Desktop semver not resolvable from desktop/package.json — "
+            "publishing unversioned aliases only"
         )
-        semver = None
 
     versioned_exe = "kppdf-desktop-setup-v" + semver + ".exe" if semver else None
     versioned_zip = "kppdf-desktop-setup-v" + semver + ".zip" if semver else None
@@ -438,7 +463,7 @@ def publish_desktop_installer(project_root, frontend_dir):
             "`cd desktop && pnpm tauri build && pnpm run publish-installer` "
             "(canon: versioned kppdf-desktop-setup-v{semver}.zip + aliases)"
         )
-        return
+        return None
     if semver and src == unversioned:
         warn(
             "FAIL: only unversioned kppdf-desktop-setup.exe found — refusing to "
@@ -446,7 +471,7 @@ def publish_desktop_installer(project_root, frontend_dir):
             + semver
             + ". Run `cd desktop && pnpm run release-installer` before deploy."
         )
-        return
+        return None
     shutil.copy2(src, dest_exe)
     with zipfile.ZipFile(dest_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         zf.write(dest_exe, arcname="kppdf-desktop-setup.exe")
@@ -486,6 +511,8 @@ def publish_desktop_installer(project_root, frontend_dir):
             "Versioned zip not published (semver unknown) — set DESKTOP_DOWNLOAD_URL="
             + "...-v{semver}.zip in config.env only after versioned publish"
         )
+
+    return semver
 
 
 # -- Archive creation ---------------------------------------------------
@@ -534,16 +561,48 @@ def create_archive(archive_path, project_root):
     ok("Archive: " + str(size // 1024) + " KB")
 
 
-def make_env_file(settings):
-    """Generate .env for docker compose on remote host."""
-    return (
-        "JWT_SECRET=" + settings["jwt_secret"] + "\n"
-        "JWT_REFRESH_SECRET=" + settings["jwt_refresh"] + "\n"
-        "ADMIN_PASSWORD=" + settings["admin_password"] + "\n"
-        "CORS_ORIGIN=" + settings["cors"] + "\n"
-        "KPPDF_DATA_DIR=" + settings["data_dir"] + "\n"
-        "TRUST_PROXY=1\n"
+def make_env_file(settings, desktop_semver=None):
+    """Generate .env for docker compose on remote host.
+
+    TZD-66: DESKTOP_MIN_VERSION / DESKTOP_RECOMMENDED_VERSION / DESKTOP_DOWNLOAD_URL
+    were previously read from config.env but never forwarded here — the remote
+    backend's DesktopCompatService always fell back to its fail-open '0.0.0'
+    default regardless of what config.env said. Now: explicit config.env
+    overrides win; otherwise auto-derive from the semver actually published
+    this run (desktop_semver, from publish_desktop_installer), so the pairing
+    dialog's version can't silently drift from the real installer again.
+    """
+    min_version = settings.get("desktop_min_version_override") or desktop_semver
+    recommended_version = settings.get("desktop_recommended_version_override") or desktop_semver
+    download_url = settings.get("desktop_download_url") or (
+        "/downloads/kppdf-desktop-setup-v" + desktop_semver + ".zip" if desktop_semver else None
     )
+    app_version = settings.get("app_version") or desktop_semver
+
+    lines = [
+        "JWT_SECRET=" + settings["jwt_secret"],
+        "JWT_REFRESH_SECRET=" + settings["jwt_refresh"],
+        "ADMIN_PASSWORD=" + settings["admin_password"],
+        "CORS_ORIGIN=" + settings["cors"],
+        "KPPDF_DATA_DIR=" + settings["data_dir"],
+        "TRUST_PROXY=1",
+    ]
+    if min_version:
+        lines.append("DESKTOP_MIN_VERSION=" + min_version)
+    if recommended_version:
+        lines.append("DESKTOP_RECOMMENDED_VERSION=" + recommended_version)
+    if download_url:
+        lines.append("DESKTOP_DOWNLOAD_URL=" + download_url)
+    if app_version:
+        lines.append("APP_VERSION=" + app_version)
+    if not min_version and not recommended_version:
+        warn(
+            "DESKTOP_MIN/RECOMMENDED_VERSION not set in remote .env — desktop "
+            "semver unresolved and config.env has no override. Pairing dialog "
+            "will show the fail-open v0.0.0 hint until this deploy publishes "
+            "a versioned installer or config.env sets these explicitly."
+        )
+    return "\n".join(lines) + "\n"
 
 
 def ensure_data_dirs(remote, settings):
@@ -696,12 +755,16 @@ def main():
     if not args.skip_build:
         print()
         print("Step 2/8: Build Angular frontend...")
-        build_frontend(project_root)
+        desktop_semver = build_frontend(project_root)
         inject_desktop_download_url(project_root, settings.get("desktop_download_url"))
     else:
         print()
         print("Step 2/8: Skip frontend build (--skip-build)")
         inject_desktop_download_url(project_root, settings.get("desktop_download_url"))
+        # TZD-66: no fresh publish this run — best-effort semver from
+        # desktop/package.json so DESKTOP_MIN/RECOMMENDED_VERSION still track
+        # whatever installer is already staged in frontend/browser/downloads/.
+        desktop_semver = read_desktop_semver(project_root)
 
     print()
     print("Step 3/8: Create archive...")
@@ -724,7 +787,7 @@ def main():
     remote.upload_file(archive_path, settings["remote_dir"])
     os.remove(archive_path)
 
-    env_content = make_env_file(settings)
+    env_content = make_env_file(settings, desktop_semver)
     remote.upload_text(env_content, settings["remote_dir"] + "/.env")
     ok(".env uploaded (JWT + ADMIN_PASSWORD)")
 
