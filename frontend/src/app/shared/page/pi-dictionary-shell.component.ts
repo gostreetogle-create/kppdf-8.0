@@ -10,7 +10,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
  *   - default content: table or tree below the sticky bar.
  *
  * Key behaviour:
- *   - Tools row is sticky directly under the app-layout header (top-14 = h-14).
+ *   - Tools row is sticky directly under the app-layout header (top-header-h = --header-h).
  *   - Content scrolls under it.
  *   - Hairline bottom border separates tools from content.
  *   - bg-paper prevents content bleed-through on scroll.
@@ -38,7 +38,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
     <!-- Tools: sticky bar — search / filters / sort / CTA -->
     <div
-      class="dictionary-tools sticky top-14 z-20
+      class="dictionary-tools sticky top-header-h z-20
              flex items-center gap-form-field flex-wrap
              hairline-b py-3 bg-paper"
     >

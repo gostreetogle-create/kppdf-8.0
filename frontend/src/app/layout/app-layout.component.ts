@@ -329,11 +329,8 @@ export function matchActiveCategoryId(
   template: `
     <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
       <div class="pi-page-frame w-full flex-1 flex flex-col min-h-0">
-        <header
-          class="sticky top-0 z-30 pi-marble supports-[backdrop-filter]:backdrop-blur-sm
-                 hairline-b pi-edge-bleed shrink-0"
-        >
-          <div class="h-14 flex items-center justify-between gap-2 min-w-0">
+        <header class="sticky top-0 z-30 bg-paper hairline-b pi-edge-bleed shrink-0">
+          <div class="h-header-h flex items-center justify-between gap-2 min-w-0">
             <!-- TZ-DESK-401: brand = visible home chip → / → manager desk; text stays «KPPDF · 8.0». -->
             <a
               routerLink="/"
@@ -541,7 +538,7 @@ export function matchActiveCategoryId(
         </aside>
 
         <main
-          class="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto"
+          class="flex-1 min-w-0 min-h-0 flex flex-col overflow-y-auto bg-paper"
           [class.pt-page-y]="!denseMain()"
           [class.pt-0]="denseMain()"
         >

@@ -49,7 +49,7 @@ describe('PiDictionaryShellComponent', () => {
     const tools = fixture.debugElement.query(By.css('.dictionary-tools'));
     expect(tools).toBeTruthy();
     expect(tools.classes['sticky']).toBe(true);
-    expect(tools.classes['top-14']).toBe(true);
+    expect(tools.classes['top-header-h']).toBe(true);
     expect(tools.classes['z-20']).toBe(true);
     expect(tools.classes['bg-paper']).toBe(true);
     expect(tools.classes['hairline-b']).toBe(true);

@@ -79,8 +79,8 @@
 :root {
   /* Screen max-width — applied via .pi-page-frame utility. */
   --screen-max: 1400px;
-  /* Sticky header height — also drives `--header-h` for inner offsets. */
-  --header-h: 56px;
+  /* Sticky header height — also drives `--header-h` for inner offsets (TZ-UI-DEN-510). */
+  --header-h: 46px;
   /* Sticky app-header background translucency timeout. */
   --header-bg: 95%;
 
@@ -347,6 +347,7 @@
   --spacing-section: var(--space-section);
   --spacing-page-x: var(--space-page-x);
   --spacing-page-y: var(--space-page-y);
+  --spacing-header-h: var(--header-h);
   --spacing-header-y: var(--space-header-y);
   --spacing-footer-y: var(--space-footer-y);
   --spacing-touch: var(--touch-min);

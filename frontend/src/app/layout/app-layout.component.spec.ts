@@ -102,6 +102,20 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     expect(source).toContain('bg-sunrise-soft');
   });
 
+  it('TZ-UI-DEN-510: shell uses paper bg, compact header band, no decorative shadow', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'app-layout.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('bg-paper');
+    expect(source).toContain('h-header-h');
+    expect(source).toContain('hairline-b');
+    expect(source).not.toContain('bg-white');
+    expect(source).not.toMatch(/shadow-(?!none)/);
+    expect(source).not.toContain('backdrop-blur');
+    expect(source).not.toContain('pi-marble');
+  });
+
   it('TZ-UX-317: renders both gutter buttons with the canonical data-test', () => {
     expect(backBtn()).toBeTruthy();
     expect(forwardBtn()).toBeTruthy();
