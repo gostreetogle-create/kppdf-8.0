@@ -15,10 +15,8 @@
 
 | Агент | Промпт | TZ |
 |-------|--------|-----|
-| Freebuff-1 | `PROMPT-FREEBUFF-KP-EXECUTOR-1.md` | **KP-WS-410** | IN WORK |
-| Freebuff-2 | `PROMPT-FREEBUFF-KP-EXECUTOR-2.md` | **PRODUCTION-354** | IN WORK |
-| Cursor | `PROMPT-CURSOR-CLOSEOUT-ORCHESTRATOR.md` | DEN-505 spec + deploy-prep | ACTIVE |
-| Next freebuff | `PROMPT-FREEBUFF-DEN-505.md` | **DEN-505** inset | WAIT 410+354 |
+| Closeout | **DONE** 410+354+505 | `4108d191` |
+| Deploy | **READY** — PO «кати» | `DEPLOY-READY.md` |
 
 Индекс: `tasks/PROMPT-FREEBUFF-CLOSEOUT-WAVE.md`
 

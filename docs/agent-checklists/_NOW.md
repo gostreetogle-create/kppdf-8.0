@@ -5,28 +5,18 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T17:46:00+03:00
+updated_at: 2026-08-23T17:55:00+03:00
 
-## ORCHESTRATOR — PO away
+## ORCHESTRATOR — closeout DONE
 
-| Lane | TZ | Status |
-|------|-----|--------|
-| KP-WS-410 | **DONE** `c3ca9cd5` | archived |
-| PRODUCTION-354 | **DONE** `f3b027da` | archived |
-| **DEN-505** inset | **DONE** | framed content inset token + desk empty fix |
-| Deploy-prep | WAIT DEN-505 or parallel if keys OK | Cursor |
+| TZ | SHA | Status |
+|----|-----|--------|
+| KP-WS-410 | `c3ca9cd5` | DONE |
+| PRODUCTION-354 | `f3b027da` | DONE |
+| DEN-505 inset | `4108d191` | DONE (desk empty padding) |
+| Deploy-prep | `4108d191` | **READY** — `DEPLOY-READY.md` |
 
-PO note: `/desk` empty text flush to frame → **DEN-505**.
-
----
-
-| Lane | Agent | TZ | Status |
-|------|-------|-----|--------|
-| A | Freebuff-1 | **KP-WS-410** (draft.service + chips) → KP smoke → tasks hygiene | READY |
-| B | Freebuff-2 | **PRODUCTION-354** gantt peek → UI-DENSITY grep | READY |
-| C | Cursor | deploy-prep после push A+B | WAIT A+B |
-
-Промпты: `tasks/PROMPT-FREEBUFF-CLOSEOUT-WAVE.md`
+PO вернулся: browser `/desk` `/proposals/workspace` `/production` → «кати» если ок.
 
 ---
 
