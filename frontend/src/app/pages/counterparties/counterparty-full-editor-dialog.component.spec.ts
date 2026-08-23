@@ -11,6 +11,8 @@ import {
 } from '../../shared/services/pi-counterparty.service';
 import { PersonsService } from '../../shared/services/pi-persons.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PersonQuickCreateDialogComponent } from '../../shared/person/person-quick-create-dialog.component';
 
 type Editor = CounterpartyFullEditorDialogComponent & {
   form: {
@@ -23,6 +25,8 @@ type Editor = CounterpartyFullEditorDialogComponent & {
   roleItems: () => { slug: string; label: string }[];
   rolesError: () => string;
   errorMessage: () => string | null;
+  openCreatePerson: () => void;
+  personItems: () => { id: string; label: string }[];
 };
 
 describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
@@ -64,12 +68,14 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
   }
 
   let listPersons: jest.Mock;
+  let dialogOpen: jest.Mock;
 
   async function build(data: Counterparty | null, rolesResult = { ok: true, data: roles }) {
     create = jest.fn().mockReturnValue(of({ ok: true, data: { _id: 'new' } }));
     update = jest.fn().mockReturnValue(of({ ok: true, data: existing }));
     listRoles = jest.fn().mockReturnValue(of(rolesResult));
     listPersons = jest.fn().mockReturnValue(of({ ok: true, data: { items: [] } }));
+    dialogOpen = jest.fn().mockReturnValue({ closed: signal(undefined) });
     await TestBed.resetTestingModule()
       .configureTestingModule({
         imports: [CounterpartyFullEditorDialogComponent],
@@ -80,6 +86,7 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
           { provide: CounterpartyService, useValue: { create, update, listRoles } },
           { provide: PersonsService, useValue: { list: listPersons } },
           { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+          { provide: PiDialogService, useValue: { open: dialogOpen } },
         ],
       })
       .compileComponents();
@@ -220,5 +227,15 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
     const html = (fixture.nativeElement as HTMLElement).innerHTML;
     expect(html).toContain('bg-gold');
     expect(html).not.toContain('bg-sunrise-warm');
+  });
+
+  it('shows + button and opens PersonQuickCreate dialog (TZ-PARTY-306)', async () => {
+    const editor = await build(existing);
+    expect(fixture.nativeElement.querySelector('[data-test="cp-contact-person-add"]')).toBeTruthy();
+    editor.openCreatePerson();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      PersonQuickCreateDialogComponent,
+      expect.objectContaining({ width: 'sm' }),
+    );
   });
 });

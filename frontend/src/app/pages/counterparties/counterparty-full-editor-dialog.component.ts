@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  Injector,
+  signal,
+} from '@angular/core';
 import {
   AbstractControl,
   NonNullableFormBuilder,
@@ -28,6 +36,10 @@ import {
 } from '../../shared/services/pi-counterparty.service';
 import { PersonsService, type Person } from '../../shared/services/pi-persons.service';
 import { toOptionalNumber } from '../../shared/forms/to-optional-number';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PersonQuickCreateDialogComponent } from '../../shared/person/person-quick-create-dialog.component';
+import { personToOverflowItem } from '../../shared/person/person.util';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 
 type Result = Counterparty | null | undefined;
 
@@ -385,16 +397,28 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
               htmlFor="cp-contactPerson"
               hint="Выберите человека из справочника контактов."
             >
-              <app-pi-overflow-select
-                [items]="personItems()"
-                [value]="form.controls.contactPersonId.value"
-                (valueChange)="onContactPersonChange($event)"
-                placeholder="— не выбран —"
-                ariaLabel="Контактное лицо"
-                dataTest="cp-contact-person"
-                [searchable]="'auto'"
-                searchPlaceholder="Поиск по имени или телефону…"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="personItems()"
+                  [value]="form.controls.contactPersonId.value"
+                  (valueChange)="onContactPersonChange($event)"
+                  placeholder="— не выбран —"
+                  ariaLabel="Контактное лицо"
+                  dataTest="cp-contact-person"
+                  [searchable]="'auto'"
+                  searchPlaceholder="Поиск по имени или телефону…"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreatePerson()"
+                  title="Новое контактное лицо"
+                  aria-label="Новое контактное лицо"
+                  data-test="cp-contact-person-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <p class="text-[11px] text-muted-foreground leading-snug">
@@ -478,6 +502,9 @@ export class CounterpartyFullEditorDialogComponent {
   );
 
   private readonly personsService = inject(PersonsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly personItems = signal<PiOverflowSelectItem[]>([]);
   protected readonly personsLoading = signal(false);
 
@@ -538,14 +565,23 @@ export class CounterpartyFullEditorDialogComponent {
     this.personsService.list(search).subscribe((res) => {
       this.personsLoading.set(false);
       if (res.ok && Array.isArray(res.data?.items)) {
-        this.personItems.set(
-          res.data.items.map((p: Person) => ({
-            id: p._id,
-            label: [p.lastName, p.firstName, p.patronymic].filter(Boolean).join(' ') || '—',
-            meta: p.phone || p.email || undefined,
-          })),
-        );
+        this.personItems.set(res.data.items.map((p: Person) => personToOverflowItem(p)));
       }
+    });
+  }
+
+  protected openCreatePerson(): void {
+    const ref = this.dialog.open<Person | null>(PersonQuickCreateDialogComponent, {
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Person | null>(ref, this.injector, (person) => {
+      this.personItems.update((items) => {
+        const next = personToOverflowItem(person);
+        return items.some((item) => item.id === next.id) ? items : [...items, next];
+      });
+      this.form.controls.contactPersonId.setValue(person._id);
+      this.form.controls.contactPersonId.markAsDirty();
     });
   }
 

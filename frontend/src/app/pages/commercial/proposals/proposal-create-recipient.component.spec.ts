@@ -10,10 +10,12 @@ import { CounterpartyService } from '../../../shared/services/pi-counterparty.se
 import { PersonsService } from '../../../shared/services/pi-persons.service';
 import { SiteService } from '../../../shared/services/pi-site.service';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { PersonQuickCreateDialogComponent } from '../../../shared/person/person-quick-create-dialog.component';
 
 interface RecipientHarness {
   selectSite(siteId: string): void;
   openCard(): void;
+  openCreatePerson(): void;
 }
 
 describe('ProposalCreateRecipientComponent A5 characterization', () => {
@@ -98,6 +100,88 @@ describe('ProposalCreateRecipientComponent A5 characterization', () => {
     expect(dialogSpy.open).toHaveBeenCalledWith(
       CounterpartyFullEditorDialogComponent,
       expect.objectContaining({ data: fakeClient }),
+    );
+  });
+});
+
+describe('ProposalCreateRecipientComponent template (TZ-PARTY-306)', () => {
+  let fixture: ComponentFixture<ProposalCreateRecipientComponent>;
+  let dialogSpy: { open: jest.Mock };
+
+  const fakeClient = {
+    _id: 'cp-1',
+    name: 'ООО Клиент',
+    inn: '7700000001',
+    isActive: true,
+    contactPersonId: 'person-old',
+  };
+
+  beforeEach(async () => {
+    dialogSpy = { open: jest.fn().mockReturnValue({}) };
+    await TestBed.configureTestingModule({
+      imports: [ProposalCreateRecipientComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PiDialogService, useValue: dialogSpy },
+        {
+          provide: CounterpartyService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: { items: [fakeClient], total: 1, page: 1, limit: 200 },
+              }),
+          },
+        },
+        {
+          provide: PersonsService,
+          useValue: {
+            list: () =>
+              of({
+                ok: true,
+                data: {
+                  items: [
+                    { _id: 'person-1', firstName: 'Анна', lastName: 'Смирнова' },
+                    { _id: 'person-2', firstName: 'Борис', lastName: 'Козлов' },
+                  ],
+                },
+              }),
+          },
+        },
+        {
+          provide: SiteService,
+          useValue: { listByCounterparty: () => of({ ok: true, data: [] }) },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProposalCreateRecipientComponent);
+  });
+
+  it('lists all persons in overflow-select and shows + button', async () => {
+    fixture.componentRef.setInput('selectedCounterpartyId', 'cp-1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('[data-test="kp-recipient-contact"]')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-recipient-contact-add"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('select[data-test="kp-recipient-contact"]'),
+    ).toBeNull();
+  });
+
+  it('openCreatePerson opens PersonQuickCreate dialog', async () => {
+    fixture.componentRef.setInput('selectedCounterpartyId', 'cp-1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const harness = fixture.componentInstance as unknown as RecipientHarness;
+    harness.openCreatePerson();
+
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      PersonQuickCreateDialogComponent,
+      expect.objectContaining({ width: 'sm' }),
     );
   });
 });

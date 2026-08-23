@@ -24,6 +24,8 @@ import { Person, PersonsService } from '../../../shared/services/pi-persons.serv
 import { Site, SiteService } from '../../../shared/services/pi-site.service';
 import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
+import { PersonQuickCreateDialogComponent } from '../../../shared/person/person-quick-create-dialog.component';
+import { personToOverflowItem } from '../../../shared/person/person.util';
 
 export interface ProposalRecipientState {
   counterpartyId: string;
@@ -81,24 +83,29 @@ export interface ProposalRecipientState {
         </section>
         <label>
           <span>Контактное лицо</span>
-          <select
-            class="pi-input w-full"
-            [ngModel]="selectedContactPersonId()"
-            (ngModelChange)="selectContact($event)"
-            [disabled]="readOnly()"
-            data-test="kp-recipient-contact"
-          >
-            <option value="">— не выбрано —</option>
-            @for (person of availablePersons(); track person._id) {
-              <option [value]="person._id">
-                {{ person.lastName }} {{ person.firstName }} {{ person.patronymic || ''
-                }}{{ person.position ? ' · ' + person.position : '' }}
-              </option>
-            }
-          </select>
-          @if (availablePersons().length === 0) {
-            <span>Для клиента пока не назначено контактное лицо.</span>
-          }
+          <div class="pi-select-add-row">
+            <app-pi-overflow-select
+              [items]="personItems()"
+              [value]="selectedContactPersonId()"
+              (valueChange)="selectContact($event)"
+              searchable="auto"
+              placeholder="— не выбрано —"
+              ariaLabel="Контактное лицо"
+              dataTest="kp-recipient-contact"
+              [disabled]="readOnly()"
+            />
+            <button
+              type="button"
+              class="pi-select-add-btn"
+              (click)="openCreatePerson()"
+              [disabled]="readOnly()"
+              title="Новое контактное лицо"
+              aria-label="Новое контактное лицо"
+              data-test="kp-recipient-contact-add"
+            >
+              +
+            </button>
+          </div>
         </label>
         <label>
           <span>Объект / адрес</span>
@@ -224,10 +231,9 @@ export class ProposalCreateRecipientComponent {
       label: `${item.name} · ИНН ${item.inn}`,
     })),
   );
-  protected readonly availablePersons = computed(() => {
-    const personId = this.selectedCounterparty()?.contactPersonId;
-    return personId ? this.persons().filter((person) => person._id === personId) : [];
-  });
+  protected readonly personItems = computed(() =>
+    this.persons().map((p) => personToOverflowItem(p)),
+  );
 
   constructor() {
     this.counterpartiesService.list({ limit: 200 }).subscribe((res) => {
@@ -309,6 +315,23 @@ export class ProposalCreateRecipientComponent {
       this.counterparties.update((items) =>
         items.map((item) => (item._id === saved._id ? saved : item)),
       );
+    });
+  }
+  protected openCreatePerson(): void {
+    if (this.readOnly()) return;
+    const ref = this.dialog.open<Person | null>(PersonQuickCreateDialogComponent, {
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Person | null>(ref, this.injector, (person) => {
+      this.persons.update((items) =>
+        items.some((item) => item._id === person._id) ? items : [...items, person],
+      );
+      this.emit({
+        counterpartyId: this.selectedCounterpartyId(),
+        contactPersonId: person._id,
+        siteId: this.selectedSiteId(),
+      });
     });
   }
   protected createClient(): void {
