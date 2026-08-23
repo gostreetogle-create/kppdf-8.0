@@ -7,7 +7,7 @@
 
 | TZ | SHA | Proof of adoption | Gates |
 |----|-----|-------------------|-------|
-| **KP-WS-403** (left panels + hydration + autosave + preview) | *(заполнить после commit)* | ✅ consumer `/proposals/workspace?id=` — 3 левые панели (каталог/шаблон/клиент) смонтированы в shell-панель, A4-центр = `ProposalCreateTemplateCenterComponent`; draft-сервис (hydration `?id`/`new`/`source=order`/resume + autosave 1200ms + build) — тесты **9**; page-спека **11** (38 в workspace); product-rail/template-picker/recipient спеки не тронуты и зелёные; docs kp-workspace.page.md | tsc 0 · jest proposal **152/152** · eslint 0 · `ng build` 0 errors · diff --check PASS |
+| **KP-WS-403** (left panels + hydration + autosave + preview) | `1ae0ebd0` | ✅ consumer `/proposals/workspace?id=` — 3 левые панели (каталог/шаблон/клиент) смонтированы в shell-панель, A4-центр = `ProposalCreateTemplateCenterComponent`; draft-сервис (hydration `?id`/`new`/`source=order`/resume + autosave 1200ms + build) — тесты **9**; page-спека **11** (38 в workspace); product-rail/template-picker/recipient спеки не тронуты и зелёные; docs kp-workspace.page.md | tsc 0 · jest proposal **152/152** · eslint 0 · `ng build` 0 errors · diff --check PASS |
 
 ## Что сделано
 
