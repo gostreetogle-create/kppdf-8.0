@@ -42,14 +42,12 @@
 
 1. `git pull` на чистом `main` с TZD-46 (versioned zip) **уже в коде**.
 2. На build-машине: `cd desktop && pnpm tauri build && pnpm run publish-installer` → в `frontend/downloads/` лежат **versioned** zip+exe (+ alias).
-3. `.\deploy\synology\deploy.ps1` (warm) — `deploy.py` копирует installer в `frontend/browser/downloads/`.
-4. В `config.env` на VM (если ещё не):  
-   `DESKTOP_MIN_VERSION=0.5.1` (или политика PO),  
-   `DESKTOP_RECOMMENDED_VERSION=<текущий semver>`,  
-   `DESKTOP_DOWNLOAD_URL=/downloads/kppdf-desktop-setup-v{semver}.zip` (или absolute https).
+3. `.\deploy\synology\deploy.ps1` (warm) — `deploy.py` копирует installer в `frontend/browser/downloads/` **и** (TZD-66, см. ниже) сам пишет `DESKTOP_MIN_VERSION`/`DESKTOP_RECOMMENDED_VERSION`/`DESKTOP_DOWNLOAD_URL`/`APP_VERSION` в remote `.env` из фактического опубликованного semver — шаг 4 (было «руками в config.env») **больше не нужен** при обычном релизе.
+4. ~~В `config.env` на VM руками прописать DESKTOP_MIN/RECOMMENDED_VERSION/DOWNLOAD_URL~~ — только если нужно явно **запинить** версию/URL отличные от текущего semver (см. `config.env.example`).
 5. Smoke: открыть URL ZIP → имя файла в браузере содержит `v0.5.1` (или актуальный); футер Desktop после установки = тот же semver; `/api/desktop/compat` отдаёт тот же downloadUrl.
 6. **Не** считать деплой «FE-only ok», если installer WARN «exe not found» — для Desktop-потока это FAIL по смыслу PO.
 7. **Имя ZIP ≠ билд:** перед publish обязателен свежий `pnpm tauri build` для текущего semver. Переименовать старый exe в `…-v0.5.1.zip` **запрещено** (урок 2026-08-12: PO ставил «0.5.1», футер оставался v0.5, MCP мёртв).
 8. **2026-08-18 (0.5.6):** `publish-installer.mjs` брал **первым** `dist-installers/kppdf-desktop-setup.exe` (остался 0.5.4) и публиковал как `v0.5.6`. **Исправление:** publish только из `KPPDF Desktop_{semver}_x64-setup.exe` (+ PE-check на Windows); команда `pnpm run release-installer` = build + publish.
+9. **2026-08-23 (TZD-66):** PO скачал с сайта — кнопка/подпись показывали `v0.0.0`. Причина: `make_env_file()` в `deploy.py` вообще не прокидывал `DESKTOP_MIN_VERSION`/`DESKTOP_RECOMMENDED_VERSION`/`DESKTOP_DOWNLOAD_URL` в remote `.env` — `DesktopCompatService` fail-open давал `0.0.0` независимо от того, что было в (gitignored, локальном) `config.env` на машине деплоя. **Исправление:** `deploy.py` теперь резолвит semver из `desktop/package.json` при каждом деплое (та же SoT, что `publish-installer.mjs`) и сам пишет все четыре переменные в remote `.env`; `config.env` — только explicit override. См. `tasks/_archive/2026-08/TZD-66.done.md`.
 
-См. executable: `tasks/_archive/2026-08/TZD-46.done.md`; gate в `desktop/scripts/publish-installer.mjs`.
+См. executable: `tasks/_archive/2026-08/TZD-46.done.md`, `tasks/_archive/2026-08/TZD-66.done.md`; gate в `desktop/scripts/publish-installer.mjs` и `deploy/synology/deploy.py::make_env_file`.

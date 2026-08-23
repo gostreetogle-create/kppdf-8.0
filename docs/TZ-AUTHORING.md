@@ -99,7 +99,14 @@
 6. ИЗМЕНЯТЬ / НЕ ИЗМЕНЯТЬ
 7. AC + verification commands
 8. known_limitation
-9. Промпт исполнителю: `GEMINI.md` + путь TZ; checklist до правок
+9. **Proof of adoption** (для UI/canonical primitive TZ — обязательно):
+   - ≥1 routed production consumer (или явное «docs-only / deferred → TZ-…»);
+   - тест на ключевое поведение;
+   - `/kit` или Markdown docs обновлены;
+   - migration note: что запрещено делать вручную;
+   - legacy leftover: где ещё старый путь.
+   Без этого TZ не DONE («готово в shared, 0 consumers» = провал).
+10. Промпт исполнителю: `GEMINI.md` + путь TZ; checklist до правок
 
 >7 шагов → несколько TZ с DEPENDENCIES (`tz-authoring` Split rule).
 

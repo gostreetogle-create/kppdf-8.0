@@ -8,6 +8,7 @@ closed_at: 2026-08-23T21:55:00+03:00
 agent_id: cursor-composer-executor
 workspace: D:\kppdf-8.0
 po_choice: A
+sha: e8c5a54a9b69268380def6546f7e1bc52930a626
 verification:
   - acceptance criteria: PASS
   - typecheck: PASS (frontend tsc)

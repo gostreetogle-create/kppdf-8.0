@@ -24,6 +24,8 @@
 
 **Нет** `TZ-*.md` и spent PROMPT в корне — только в `_archive/`.
 
+**UI Density wave (backlog):** [`WAVE-UI-DENSITY-PAPER-INK.md`](./WAVE-UI-DENSITY-PAPER-INK.md) · TZ в [`_backlog/ui-density/`](./_backlog/ui-density/)
+
 Spent drain: `_archive/2026-08/prompts-spent/PROMPT-FREEBUFF-TASKS-DRAIN.md`
 
 ## Сейчас (2026-08-23)

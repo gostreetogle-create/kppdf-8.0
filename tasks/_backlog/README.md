@@ -2,7 +2,8 @@
 
 | Путь | Статус |
 |------|--------|
-| [`QUEUE.md`](./QUEUE.md) | Что сейчас |
+| [`ui-density/`](./ui-density/) | **WAVE-UI-DENSITY-PAPER-INK** — 22 TZ, READY (старт после PO) |
+| [`QUEUE.md`](./QUEUE.md) | история (устарело) |
 | [`migrate-kp3/`](./migrate-kp3/) | WAVE ждёт «кати» `da01f1e5`, потом load script |
 | [`sales/`](./sales/) | пусто (379 DONE; ждёт «кати») |
 

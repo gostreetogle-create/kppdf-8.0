@@ -1,33 +1,22 @@
-# QUEUE-LIVE — кто что берёт
+# QUEUE-LIVE
 
-> Обновлено: 2026-08-23T17:42+03:00 (closeout wave)
+> 2026-08-23 · качество > скорость · PO: вариант **А** для снабжения
 
-## Статус волн
+## Только что DONE (локально, не push)
 
-| Волна | Status |
-|-------|--------|
-| KP Single Workspace 401–409 | **DONE** |
-| UI Density DEN (incl. 552) | **DONE** |
-| DESK 425–430 | **DONE** |
-| SHIP-433 | **DONE** |
+| TZ | SHA | Что проверить глазом |
+|----|-----|----------------------|
+| PLUS-601 | `a8ef3a22` | Карточка заказчика → контакт → **зелёный квадратный +** в одной строке со списком |
+| SUPPLY-308R | `e8c5a54a` | Снабжение → быстрый заказ → expand → **▸ Поставщик / ▸ Детали** отдельно |
+| PLUS-602 | `a6d8cee` | Изделие: категория + · Материал: поставщик + |
+| PLUS-603 | `a4bd2d19` | Заказ: заказчик + · объект + |
 
-## Closeout (PO away) — 2 параллели + Cursor
+Программа: `docs/audits/2026-08-23-site-ui-quality-wave.md`
 
-| Агент | Промпт | TZ |
-|-------|--------|-----|
-| Closeout | **DONE** 410+354+505 | `4108d191` |
-| Deploy | **READY** — PO «кати» | `DEPLOY-READY.md` |
+## NEXT
 
-Индекс: `tasks/PROMPT-FREEBUFF-CLOSEOUT-WAVE.md`
+- **TZ-SUPPLY-317** — supplier website/email autofill + blur-save to Organization card (`tasks/TZ-SUPPLY-317-supplier-autofill-persist.md`) — IN FLIGHT via executor
+- Done recently: TZ-SUPPLY-316 material orphan/fallback filter
 
-## После closeout (PO)
-
-1. Browser: `/proposals/workspace`, `/production`, `/desk`
-2. `UI-DENSITY-GUARDS.md` — 5-route ✓
-3. `keyboard-only-pass.md` — сценарии A/B (мышь запрещена)
-4. «кати» → только при `DEPLOY-READY` = READY
-
-## Backlog (не брать без PO)
-
-- `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md`
-- `tasks/_backlog/ui-density/*` (волна закрыта кроме PO sign-off)
+- PLUS-604: оставшиеся blocking selects (КП form / pickers)
+- Каталог expand уже есть (products/modules) — не трогать без бага
