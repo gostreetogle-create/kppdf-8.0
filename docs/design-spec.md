@@ -117,6 +117,10 @@ The brand personality is **authoritative, meticulous, and industrial**. It balan
 
 The visual style leans into **Minimalism** with a **Tactile** edge, utilizing hairline borders and a restricted color palette to create a sense of permanence and reliability.
 
+**Compact / high-density screens:** layout zones, field pattern, color roles — [`ui-density-canon.md`](./ui-density-canon.md) (ref: Desktop Import mock, 2026-08-23).
+
+**Density hint tokens (TZ-UI-DEN-501):** `--color-hint-ai` / `--color-hint-warn` / `--color-hint-success` / `--color-hint-error`, `--surface-plaque`, utilities `.text-hint-*`, label→value `--gap-form-field` (4px) → `frontend/src/styles.css` `:root`.
+
 ## Colors
 
 The palette is strictly limited to four functional pillars to ensure visual hierarchy and readability in high-density data environments:

@@ -132,6 +132,13 @@
   --color-warning: #d97706;
   --color-warning-soft: rgba(217, 119, 6, 0.1);
   --color-destructive-soft: rgba(220, 38, 38, 0.1);
+
+  /* === Density hint tokens (TZ-UI-DEN-501 — ui-density-canon.md) === */
+  --color-hint-ai: #904d00;
+  --color-hint-success: #1b6c37;
+  --color-hint-warn: #7c5800;
+  --color-hint-error: #ba1a1a;
+  --surface-plaque: #f3f1ee;
 }
 
 /* =============================================================================
@@ -174,8 +181,9 @@
   --space-control-x: 12px; /* input/button horizontal padding */
   --space-control-y: 8px; /* input/button vertical (small) */
   --space-control-y-md: 10px; /* input/button vertical (medium-large) */
-  --space-form-field: 16px; /* gap between form fields */
-  --space-form-row: 8px; /* gap label→input inside a field */
+  --space-form-field: 16px; /* gap between form fields (grid / toolbar — unchanged) */
+  --gap-form-field: 4px; /* density canon: label→value inside a field */
+  --space-form-row: var(--gap-form-field); /* gap-form-row utility */
   --space-section: 24px; /* gap between page sections */
   --space-page-x: 24px; /* page horizontal padding */
   --space-page-y: 32px; /* page top padding */
@@ -268,6 +276,13 @@
   --color-warning: var(--color-warning);
   --color-warning-soft: var(--color-warning-soft);
   --color-destructive-soft: var(--color-destructive-soft);
+
+  /* === Density hint + plaque (TZ-UI-DEN-501) === */
+  --color-hint-ai: var(--color-hint-ai);
+  --color-hint-success: var(--color-hint-success);
+  --color-hint-warn: var(--color-hint-warn);
+  --color-hint-error: var(--color-hint-error);
+  --color-surface-plaque: var(--surface-plaque);
 
   /* === Gold Hover (Logomock — TZ-210.A) === */
   --color-gold-hover: var(--color-gold-hover);
@@ -1303,6 +1318,24 @@
   letter-spacing: 0.1em;
   color: var(--color-muted-foreground-strong);
   line-height: 1;
+}
+
+/* Density field hints (TZ-UI-DEN-501) — 11px micro + semantic ink */
+@utility text-hint-ai {
+  font-size: var(--text-micro);
+  color: var(--color-hint-ai);
+}
+@utility text-hint-warn {
+  font-size: var(--text-micro);
+  color: var(--color-hint-warn);
+}
+@utility text-hint-success {
+  font-size: var(--text-micro);
+  color: var(--color-hint-success);
+}
+@utility text-hint-error {
+  font-size: var(--text-micro);
+  color: var(--color-hint-error);
 }
 
 /* === executive-shadow (Design Reference — TZ-96) ===
