@@ -7,7 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { LucideAngularModule, ChevronDown } from 'lucide-angular';
 import type { PermissionKey } from '../../../core/capabilities/capabilities.metadata';
@@ -48,7 +48,7 @@ export interface PiNavDropdownItem {
   selector: 'app-pi-nav-dropdown',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, LucideAngularModule, MenuTriggerDirective, DropdownMenuComponent],
+  imports: [LucideAngularModule, MenuTriggerDirective, DropdownMenuComponent],
   host: {
     '[class.contents]': 'compact()',
   },
