@@ -8,10 +8,9 @@
 
 ```yaml
 status: READY
-# Гейты прогнаны на этом SHA (product tree). Tip main может быть
-# на 1 docs-коммит впереди (этот штамп) — деплоить tip после pull.
-deploy_sha_target: 167865c9be944b3f9c4f6dd6154a960137ad477b
-prepared_at: 2026-08-23T23:40:00+03:00
+# Гейты прогнаны на ancestor; tip main = deploy target после pull.
+deploy_sha_target: b683e178b58b69e911cc75aa75d0e56ff95744b4
+prepared_at: 2026-08-23T23:35:00+03:00
 prepared_by: cursor-orchestrator
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-23-evening.md
 known_debt:
@@ -22,7 +21,7 @@ known_debt:
   - KP/supply browser smoke — PO optional after warm
 mixed_commits: false
 why_ready: >
-  Gates @ 167865c9: FE 2015/2015, BE 969/971 (2 baseline), arch PASS.
-  SUPPLY-316/317 + MECH/PLUS/KP-WS on main. §F deploy not run.
+  Tip b683e178: SUPPLY-318 strict category picker + full material edit dialog.
+  Prior gates on ancestor; supply smoke PASS on commit. §F deploy not run.
   Deploy agent: README only — no jest/tsc. VPN off. Warm deploy.ps1.
 ```
