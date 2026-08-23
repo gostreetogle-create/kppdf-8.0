@@ -1,0 +1,240 @@
+<app-pi-group-workspace
+  [toc]="dealsToc"
+  tocActiveId="proposals"
+  [chips]="sectionChips"
+  activeId="demo"
+  [flushBody]="true"
+>
+  <div class="kp-ws-studio">
+    <div
+      class="kp-ws-shell"
+      [class.kp-ws-shell--portrait]="orientation() === 'portrait'"
+      [class.kp-ws-shell--landscape]="orientation() === 'landscape'"
+      data-test="kp-workspace-shell"
+      #workspaceShell
+    >
+      <div class="kp-ws">
+        <header class="kp-ws-ribbon" data-test="kp-workspace-ribbon">
+          <div class="kp-ws-ribbon__group">
+            <div
+              class="kp-ws-segment"
+              role="group"
+              aria-label="Ориентация листа"
+              data-test="kp-orient-toggle"
+            >
+              <button
+                type="button"
+                class="kp-ws-segment__btn"
+                [class.kp-ws-segment__btn--active]="orientation() === 'portrait'"
+                title="Книжная"
+                [attr.aria-pressed]="orientation() === 'portrait'"
+                (click)="setOrientation('portrait')"
+              >
+                <lucide-angular [img]="rectVerticalIcon" [size]="12" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                class="kp-ws-segment__btn"
+                [class.kp-ws-segment__btn--active]="orientation() === 'landscape'"
+                title="Альбомная"
+                [attr.aria-pressed]="orientation() === 'landscape'"
+                (click)="setOrientation('landscape')"
+              >
+                <lucide-angular [img]="rectHorizontalIcon" [size]="12" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <div class="kp-ws-ribbon__group">
+            <button type="button" class="kp-ws-ribbon-btn">
+              Шаблон
+              <lucide-angular [img]="chevronDownIcon" [size]="10" aria-hidden="true" />
+            </button>
+            <button type="button" class="kp-ws-ribbon-btn">
+              Фирма
+              <lucide-angular [img]="chevronDownIcon" [size]="10" aria-hidden="true" />
+            </button>
+            <button type="button" class="kp-ws-ribbon-btn">
+              Клиент
+              <lucide-angular [img]="chevronDownIcon" [size]="10" aria-hidden="true" />
+            </button>
+          </div>
+          <div class="kp-ws-ribbon__group">
+            <label class="kp-ws-field"
+              >№ <input type="text" value="КП-042" readonly tabindex="-1"
+            /></label>
+            <label class="kp-ws-field"
+              >от <input type="text" value="23.08" readonly tabindex="-1"
+            /></label>
+          </div>
+          <div class="kp-ws-ribbon__group kp-ws-ribbon__group--grow">
+            <span class="kp-ws-badge">Черновик</span>
+            <span class="kp-ws-total">≈ 128 400 ₽</span>
+          </div>
+          <div class="kp-ws-ribbon__group kp-ws-ribbon__group--end">
+            <button type="button" class="kp-ws-ribbon-btn">
+              <lucide-angular [img]="printerIcon" [size]="14" aria-hidden="true" />
+              Печать
+            </button>
+            <button type="button" class="kp-ws-ribbon-btn">
+              <lucide-angular [img]="downloadIcon" [size]="14" aria-hidden="true" />
+              PDF
+            </button>
+            <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--ghost" aria-label="Ещё">
+              <lucide-angular [img]="ellipsisIcon" [size]="14" aria-hidden="true" />
+            </button>
+          </div>
+        </header>
+
+        <nav
+          class="kp-ws-rail kp-ws-rail--horizontal"
+          data-test="kp-icon-rail-horizontal"
+          aria-label="Разделы КП"
+        >
+          @for (item of railItems; track item.id) {
+            <button
+              type="button"
+              class="kp-ws-rail-btn"
+              [class.kp-ws-rail-btn--active]="activeSection() === item.id"
+              [title]="item.title"
+              (click)="onRailClick(item.id)"
+            >
+              <lucide-angular [img]="item.icon" [size]="14" aria-hidden="true" />
+              <span class="kp-ws-rail-btn__label">{{ item.title }}</span>
+            </button>
+          }
+        </nav>
+
+        <div
+          class="kp-ws-body"
+          data-test="kp-workspace-body"
+          [class.kp-ws-body--collapsed]="panelCollapsed()"
+          #workspaceBody
+        >
+          <aside class="kp-ws-panel" data-test="kp-tools-panel">
+            <div class="kp-ws-panel__head">{{ panelTitle() }}</div>
+            <div class="kp-ws-panel__body">
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'catalog'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <input type="search" class="kp-ws-search" placeholder="Поиск изделия…" />
+                  <div class="kp-ws-placeholder">Изделия · Модули · Материалы</div>
+                  <div class="kp-ws-placeholder">Карточка · В КП: 0</div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <input type="search" class="kp-ws-search" placeholder="Поиск…" />
+                  <span class="kp-ws-panel__chip kp-ws-panel__chip--active">Изделия</span>
+                  <span class="kp-ws-panel__chip">Модули</span>
+                  <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">
+                    + В КП
+                  </button>
+                </div>
+              </div>
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'template'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <div class="kp-ws-placeholder">Выбор шаблона КП</div>
+                  <div class="kp-ws-placeholder">Редактировать в конструкторе</div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <span class="kp-ws-panel__landscape-hint">Шаблон не выбран</span>
+                  <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">
+                    Выбрать
+                  </button>
+                </div>
+              </div>
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'composition'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <div class="kp-ws-placeholder-row">
+                    <span>Изделие А с длинным названием</span><span>2</span><span>12 000</span>
+                  </div>
+                  <div class="kp-ws-placeholder-row">
+                    <span>Модуль Б</span><span>1</span><span>8 500</span>
+                  </div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <span class="kp-ws-panel__landscape-hint">2 строки · 20 500 ₽</span>
+                  <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">
+                    + Строка
+                  </button>
+                </div>
+              </div>
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'params'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <div class="kp-ws-placeholder">НДС · скидка · наценка</div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <span class="kp-ws-panel__chip">НДС 20%</span>
+                  <span class="kp-ws-panel__chip">Скидка 0%</span>
+                  <span class="kp-ws-panel__chip">Наценка 0%</span>
+                </div>
+              </div>
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'client'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <div class="kp-ws-placeholder">Контрагент · контакт · объект</div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <span class="kp-ws-panel__landscape-hint">Контрагент не выбран</span>
+                  <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">
+                    Выбрать
+                  </button>
+                </div>
+              </div>
+              <div
+                class="kp-ws-panel__section"
+                [class.kp-ws-panel__section--active]="activeSection() === 'terms'"
+              >
+                <div class="kp-ws-panel__portrait-stack">
+                  <div class="kp-ws-placeholder">Условия КП · библиотека блоков</div>
+                </div>
+                <div class="kp-ws-panel__landscape-row">
+                  <span class="kp-ws-panel__landscape-hint">3 блока условий</span>
+                  <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">
+                    Библиотека
+                  </button>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <main class="kp-ws-viewport" data-test="kp-viewport" tabindex="0">
+            <div class="kp-ws-viewport__stage" #viewportStage>
+              <div
+                class="kp-ws-sheet"
+                data-test="kp-a4-sheet"
+                aria-label="Превью A4"
+                #a4Sheet
+                (click)="onSheetClick()"
+              ></div>
+            </div>
+            <div class="kp-ws-viewport__toolbar">
+              <button type="button" class="kp-ws-ribbon-btn">
+                <lucide-angular [img]="maximizeIcon" [size]="10" aria-hidden="true" />
+                Fit
+              </button>
+              <button type="button" class="kp-ws-ribbon-btn">100%</button>
+              <button type="button" class="kp-ws-ribbon-btn">1 / 1</button>
+            </div>
+          </main>
+        </div>
+
+        <footer class="kp-ws-status" data-test="kp-workspace-status">
+          <span>Dummy · клик по A4 сворачивает панель</span>
+          <span class="kp-ws-status__debug">{{ debugMetrics() }}</span>
+        </footer>
+      </div>
+    </div>
+  </div>
+</app-pi-group-workspace>

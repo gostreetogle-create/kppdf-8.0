@@ -15,7 +15,7 @@
 
 ## Следующее
 
-1. **KP Single Workspace** (10 TZ: 400–409) — `tasks/PROMPT-FREEBUFF-KP-WORKSPACE-WAVE.md` · Wave 0 geometry **PASS**
+1. **KP Single Workspace** (401–409 IN PROGRESS) — `PROMPT-FREEBUFF-KP-EXECUTOR-1/2.md` · 400 DONE
 2. **DESK-425 wave** (6 TZ: 425–430) — `tasks/PROMPT-FREEBUFF-DESK-425-WAVE.md`
 2. Cursor: **«подготовь к деплою»** (`PROMPT-DEPLOY-READY.md`)
 3. PO: keyboard-only `docs/qa/keyboard-only-pass.md`

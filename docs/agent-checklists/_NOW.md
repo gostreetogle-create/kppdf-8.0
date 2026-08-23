@@ -5,7 +5,23 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T12:00:00+03:00
+updated_at: 2026-08-23T14:10:00+03:00
+
+## ACTIVE — WAVE-KP-SINGLE-WORKSPACE (401→409)
+
+**TZ-KP-WS-400** — DONE full (A claude · B freebuff-1 · C freebuff-2). Archive: `TZ-KP-WS-400-full.done.md`.
+
+**IN PROGRESS (PO ушёл, оркестратор Cursor):**
+- **freebuff-1** — `PROMPT-FREEBUFF-KP-EXECUTOR-1.md` → 401…409 main chain
+- **freebuff-2** — `PROMPT-FREEBUFF-KP-EXECUTOR-2.md` → 407 после `405.done`
+- **claude (MCP)** — peer review на гейтах; PO не трогает
+
+**NEXT gate PO:** после **408** — smoke `/proposals/create` + KP-E2E-SMOKE перед 409/deploy.
+
+HEAD orchestrator: `a5cfa827` · `_active/`: ждём claim 401 от freebuff-1
+
+---
+
 **TZ-KP-WS-400 part C** — DONE by `freebuff-2` (2026-08-23): `docs/audits/2026-08-23-kp-workspace-mcp-supplier-audit.md` — MCP gaps (15 tools + 5 gaps), embedded settings (4 inline + 2 navigate), multi-supplier flows (3 gaps + 4 fixes), parity test plan (7 groups + 10 smoke rows); SHA `97a053fb`; deploy НЕ.
 hygiene: prod `c8ebdeb6` (2026-08-11); **DEPLOY-READY = INVALID** — PO «кати» → «деплой по документации»
 deploy_ready: `docs/agent-checklists/DEPLOY-READY.md`

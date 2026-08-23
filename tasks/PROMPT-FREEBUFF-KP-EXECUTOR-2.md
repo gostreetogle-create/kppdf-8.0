@@ -11,9 +11,11 @@ git pull
 
 **Не начинай код**, пока нет файла:
 
-`tasks/_archive/2026-08/TZ-KP-WS-407.done.md`
+`tasks/_archive/2026-08/TZ-KP-WS-404.done.md`
 
-Если нет — каждые 5 мин: `git pull`, проверка снова. Когда **404** archived (`TZ-KP-WS-404.done.md`) и Freebuff-1 на 405/406 — **можно стартовать 407**.
+Если нет — каждые 5 мин: `git pull`, проверка снова.
+
+**После 404 archived — подожди ещё**, пока Freebuff-1 не закроет **405** (общий conflict: `proposal-create-inspector.*`). Старт 407 только когда есть `TZ-KP-WS-405.done.md` OR `406` in progress on remote — безопаснее: **жди `405.done`**.
 
 ## CLAIM
 

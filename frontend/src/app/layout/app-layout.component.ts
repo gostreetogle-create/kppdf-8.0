@@ -630,10 +630,18 @@ export function matchActiveCategoryId(
       background: var(--color-paper-2);
       border-color: var(--color-rule);
     }
-    .app-chrome-page-tool:hover:not(:disabled),
-    .app-chrome-page-tool.is-active {
+    .app-chrome-page-tool:hover:not(:disabled):not(.is-active) {
       background: var(--color-paper-3);
       border-color: var(--color-rule-strong);
+    }
+    .app-chrome-page-tool.is-active {
+      color: var(--color-on-gold);
+      background: var(--color-gold);
+      border-color: var(--color-gold-deep);
+    }
+    .app-chrome-page-tool.is-active:hover:not(:disabled) {
+      color: var(--color-on-gold);
+      background: var(--color-gold);
     }
     @media (min-width: 1024px) {
       .app-chrome-rail {

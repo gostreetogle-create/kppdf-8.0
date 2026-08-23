@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KP Workspace — dummy preview v0.1</title>
+  <link rel="stylesheet" href="kp-workspace-shell.css" />
+</head>
+<body>
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+    <symbol id="icon-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.29 7 8.71 5 8.71-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+    <symbol id="icon-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/></symbol>
+    <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="icon-scroll-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2"/></symbol>
+    <symbol id="icon-rect-vertical" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="12" height="18" x="6" y="3" rx="1"/></symbol>
+    <symbol id="icon-rect-horizontal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="1"/></symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="icon-printer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+    <symbol id="icon-ellipsis" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol>
+    <symbol id="icon-maximize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+  </svg>
+
+  <div class="preview-app">
+    <header class="preview-app__header">KPPDF · Сделки</header>
+    <!-- include: kp-workspace-shell.html -->
+    <div class="preview-app__frame kp-ws-shell kp-ws-shell--portrait" data-test="kp-workspace-shell">
+      <aside class="app-chrome-rail" data-test="kp-chrome-rail" aria-label="Разделы КП">
+        <button type="button" class="app-nav-rail-button" title="Назад" aria-label="Назад">
+          <svg class="lucide" aria-hidden="true"><use href="#icon-arrow-left"/></svg>
+        </button>
+        <span class="app-chrome-rail-tools-gap" aria-hidden="true"></span>
+        <nav class="kp-ws-rail kp-ws-rail--vertical" data-test="kp-icon-rail-vertical">
+          <button type="button" class="kp-ws-rail-btn kp-ws-rail-btn--active" data-section="catalog" title="Каталог">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-package"/></svg>
+            <span class="kp-ws-rail-btn__label">Кат</span>
+          </button>
+          <button type="button" class="kp-ws-rail-btn" data-section="template" title="Шаблон">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-file-text"/></svg>
+            <span class="kp-ws-rail-btn__label">Шаб</span>
+          </button>
+          <button type="button" class="kp-ws-rail-btn" data-section="composition" title="Состав">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-list"/></svg>
+            <span class="kp-ws-rail-btn__label">Сост</span>
+          </button>
+          <button type="button" class="kp-ws-rail-btn" data-section="params" title="Параметры">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-settings"/></svg>
+            <span class="kp-ws-rail-btn__label">Пар</span>
+          </button>
+          <button type="button" class="kp-ws-rail-btn" data-section="client" title="Клиент">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-user"/></svg>
+            <span class="kp-ws-rail-btn__label">Кл</span>
+          </button>
+          <button type="button" class="kp-ws-rail-btn" data-section="terms" title="Условия">
+            <svg class="lucide" aria-hidden="true"><use href="#icon-scroll-text"/></svg>
+            <span class="kp-ws-rail-btn__label">Усл</span>
+          </button>
+        </nav>
+      </aside>
+      <div class="preview-app__main">
+        <nav class="preview-group-chrome" aria-label="Chips">
+          <span class="preview-chip preview-chip--active">Создать КП</span>
+          <span class="preview-chip">Все КП</span>
+        </nav>
+        <div class="kp-ws-shell__workspace">
+          <div class="kp-ws">
+            <header class="kp-ws-ribbon" data-test="kp-workspace-ribbon">
+              <div class="kp-ws-ribbon__group">
+                <div class="kp-ws-segment" role="group" aria-label="Ориентация листа" data-test="kp-orient-toggle">
+                  <button type="button" class="kp-ws-segment__btn kp-ws-segment__btn--active" data-orient="portrait" title="Книжная" aria-pressed="true">
+                    <svg class="lucide" aria-hidden="true"><use href="#icon-rect-vertical"/></svg>
+                  </button>
+                  <button type="button" class="kp-ws-segment__btn" data-orient="landscape" title="Альбомная" aria-pressed="false">
+                    <svg class="lucide" aria-hidden="true"><use href="#icon-rect-horizontal"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="kp-ws-ribbon__group">
+                <button type="button" class="kp-ws-ribbon-btn">Шаблон<svg class="lucide lucide--xs" aria-hidden="true"><use href="#icon-chevron-down"/></svg></button>
+                <button type="button" class="kp-ws-ribbon-btn">Фирма<svg class="lucide lucide--xs" aria-hidden="true"><use href="#icon-chevron-down"/></svg></button>
+                <button type="button" class="kp-ws-ribbon-btn">Клиент<svg class="lucide lucide--xs" aria-hidden="true"><use href="#icon-chevron-down"/></svg></button>
+              </div>
+              <div class="kp-ws-ribbon__group">
+                <label class="kp-ws-field">№ <input type="text" value="КП-042" readonly tabindex="-1" /></label>
+                <label class="kp-ws-field">от <input type="text" value="23.08" readonly tabindex="-1" /></label>
+              </div>
+              <div class="kp-ws-ribbon__group kp-ws-ribbon__group--grow">
+                <span class="kp-ws-badge">Черновик</span>
+                <span class="kp-ws-total">≈ 128 400 ₽</span>
+              </div>
+              <div class="kp-ws-ribbon__group kp-ws-ribbon__group--end">
+                <button type="button" class="kp-ws-ribbon-btn"><svg class="lucide lucide--sm" aria-hidden="true"><use href="#icon-printer"/></svg> Печать</button>
+                <button type="button" class="kp-ws-ribbon-btn"><svg class="lucide lucide--sm" aria-hidden="true"><use href="#icon-download"/></svg> PDF</button>
+                <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--ghost" aria-label="Ещё"><svg class="lucide lucide--sm" aria-hidden="true"><use href="#icon-ellipsis"/></svg></button>
+              </div>
+            </header>
+            <nav class="kp-ws-rail kp-ws-rail--horizontal" data-test="kp-icon-rail-horizontal" aria-label="Разделы КП">
+              <button type="button" class="kp-ws-rail-btn kp-ws-rail-btn--active" data-section="catalog" title="Каталог">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-package"/></svg>
+                <span class="kp-ws-rail-btn__label">Каталог</span>
+              </button>
+              <button type="button" class="kp-ws-rail-btn" data-section="template" title="Шаблон">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-file-text"/></svg>
+                <span class="kp-ws-rail-btn__label">Шаблон</span>
+              </button>
+              <button type="button" class="kp-ws-rail-btn" data-section="composition" title="Состав">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-list"/></svg>
+                <span class="kp-ws-rail-btn__label">Состав</span>
+              </button>
+              <button type="button" class="kp-ws-rail-btn" data-section="params" title="Параметры">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-settings"/></svg>
+                <span class="kp-ws-rail-btn__label">Параметры</span>
+              </button>
+              <button type="button" class="kp-ws-rail-btn" data-section="client" title="Клиент">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-user"/></svg>
+                <span class="kp-ws-rail-btn__label">Клиент</span>
+              </button>
+              <button type="button" class="kp-ws-rail-btn" data-section="terms" title="Условия">
+                <svg class="lucide" aria-hidden="true"><use href="#icon-scroll-text"/></svg>
+                <span class="kp-ws-rail-btn__label">Условия</span>
+              </button>
+            </nav>
+            <div class="kp-ws-body" data-test="kp-workspace-body">
+              <aside class="kp-ws-panel" data-test="kp-tools-panel">
+                <div class="kp-ws-panel__head" id="kp-panel-title">Каталог</div>
+                <div class="kp-ws-panel__body">
+                  <div class="kp-ws-panel__section kp-ws-panel__section--active" data-panel="catalog">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <input type="search" class="kp-ws-search" placeholder="Поиск изделия…" />
+                      <div class="kp-ws-placeholder">Изделия · Модули · Материалы</div>
+                      <div class="kp-ws-placeholder">Карточка · В КП: 0</div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <input type="search" class="kp-ws-search" placeholder="Поиск…" />
+                      <span class="kp-ws-panel__chip kp-ws-panel__chip--active">Изделия</span>
+                      <span class="kp-ws-panel__chip">Модули</span>
+                      <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">+ В КП</button>
+                    </div>
+                  </div>
+                  <div class="kp-ws-panel__section" data-panel="template">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <div class="kp-ws-placeholder">Выбор шаблона КП</div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <span class="kp-ws-panel__landscape-hint">Шаблон не выбран</span>
+                      <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">Выбрать</button>
+                    </div>
+                  </div>
+                  <div class="kp-ws-panel__section" data-panel="composition">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <div class="kp-ws-placeholder-row"><span>Изделие А</span><span>2</span><span>12 000</span></div>
+                      <div class="kp-ws-placeholder-row"><span>Модуль Б</span><span>1</span><span>8 500</span></div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <span class="kp-ws-panel__landscape-hint">2 строки · 20 500 ₽</span>
+                      <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">+ Строка</button>
+                    </div>
+                  </div>
+                  <div class="kp-ws-panel__section" data-panel="params">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <div class="kp-ws-placeholder">НДС · скидка · наценка</div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <span class="kp-ws-panel__chip">НДС 20%</span>
+                      <span class="kp-ws-panel__chip">Скидка 0%</span>
+                      <span class="kp-ws-panel__chip">Наценка 0%</span>
+                    </div>
+                  </div>
+                  <div class="kp-ws-panel__section" data-panel="client">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <div class="kp-ws-placeholder">Контрагент · контакт</div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <span class="kp-ws-panel__landscape-hint">Контрагент не выбран</span>
+                      <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">Выбрать</button>
+                    </div>
+                  </div>
+                  <div class="kp-ws-panel__section" data-panel="terms">
+                    <div class="kp-ws-panel__portrait-stack">
+                      <div class="kp-ws-placeholder">Условия КП</div>
+                    </div>
+                    <div class="kp-ws-panel__landscape-row">
+                      <span class="kp-ws-panel__landscape-hint">3 блока условий</span>
+                      <button type="button" class="kp-ws-ribbon-btn kp-ws-ribbon-btn--compact">Библиотека</button>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+              <main class="kp-ws-viewport" data-test="kp-viewport" tabindex="0">
+                <div class="kp-ws-viewport__stage">
+                  <div class="kp-ws-sheet" data-test="kp-a4-sheet" aria-label="Превью A4"></div>
+                </div>
+                <div class="kp-ws-viewport__toolbar">
+                  <button type="button" class="kp-ws-ribbon-btn"><svg class="lucide lucide--xs" aria-hidden="true"><use href="#icon-maximize"/></svg> Fit</button>
+                  <button type="button" class="kp-ws-ribbon-btn">100%</button>
+                  <button type="button" class="kp-ws-ribbon-btn">1 / 1</button>
+                </div>
+              </main>
+            </div>
+            <footer class="kp-ws-status" data-test="kp-workspace-status">
+              <span>Dummy · клик по A4 сворачивает панель</span>
+              <span class="kp-ws-status__debug" id="kp-ws-debug-metrics">—</span>
+            </footer>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var SECTION_TITLES = {
+        catalog: 'Каталог', template: 'Шаблон', composition: 'Состав',
+        params: 'Параметры', client: 'Клиент', terms: 'Условия',
+      };
+      var frame = document.querySelector('.preview-app__frame');
+      var body = document.querySelector('.kp-ws-body');
+      var titleEl = document.getElementById('kp-panel-title');
+      var orientBtns = document.querySelectorAll('.kp-ws-segment__btn[data-orient]');
+      var sections = document.querySelectorAll('.kp-ws-panel__section');
+      var sheet = document.querySelector('.kp-ws-sheet');
+      var orientation = 'portrait';
+
+      function allRailBtns() {
+        return document.querySelectorAll('.kp-ws-rail-btn[data-section]');
+      }
+
+      function setActiveSection(id) {
+        allRailBtns().forEach(function (btn) {
+          btn.classList.toggle('kp-ws-rail-btn--active', btn.getAttribute('data-section') === id);
+        });
+        sections.forEach(function (sec) {
+          sec.classList.toggle('kp-ws-panel__section--active', sec.getAttribute('data-panel') === id);
+        });
+        if (titleEl) titleEl.textContent = SECTION_TITLES[id] || id;
+      }
+
+      function openSection(id) {
+        body.classList.remove('kp-ws-body--collapsed');
+        setActiveSection(id);
+        updateMetrics();
+      }
+
+      function collapsePanel() {
+        body.classList.add('kp-ws-body--collapsed');
+        updateMetrics();
+      }
+
+      function setOrientation(next) {
+        orientation = next;
+        frame.classList.toggle('kp-ws-shell--portrait', orientation === 'portrait');
+        frame.classList.toggle('kp-ws-shell--landscape', orientation === 'landscape');
+        orientBtns.forEach(function (btn) {
+          var active = btn.getAttribute('data-orient') === orientation;
+          btn.classList.toggle('kp-ws-segment__btn--active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        updateMetrics();
+      }
+
+      allRailBtns().forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-section');
+          var isActive = btn.classList.contains('kp-ws-rail-btn--active');
+          var collapsed = body.classList.contains('kp-ws-body--collapsed');
+          if (isActive && !collapsed) collapsePanel();
+          else openSection(id);
+        });
+      });
+
+      orientBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          setOrientation(btn.getAttribute('data-orient'));
+        });
+      });
+
+      if (sheet) sheet.addEventListener('click', collapsePanel);
+
+      function updateMetrics() {
+        var el = document.getElementById('kp-ws-debug-metrics');
+        var stage = document.querySelector('.kp-ws-viewport__stage');
+        if (!sheet || !el || !stage) return;
+        var s = sheet.getBoundingClientRect();
+        var fill = stage.clientHeight ? Math.round(s.height / stage.clientHeight * 100) : 0;
+        var mode = body.classList.contains('kp-ws-body--collapsed') ? 'collapsed' : 'open';
+        el.textContent = orientation + ' · ' + mode + ' · A4 ' +
+          Math.round(s.width) + '×' + Math.round(s.height) + 'px · fill ' + fill + '%';
+      }
+
+      window.addEventListener('resize', updateMetrics);
+      openSection('catalog');
+      requestAnimationFrame(updateMetrics);
+    })();
+  </script>
+</body>
+</html>

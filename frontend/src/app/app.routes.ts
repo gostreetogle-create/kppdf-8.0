@@ -382,6 +382,17 @@ export const routes: Routes = [
         title: 'KPPDF — Производство',
       },
       {
+        // KP Single Workspace — visual dummy (phase 0). Parallel to create; no API.
+        path: 'proposals/demo-workspace',
+        canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
+        data: { pageKey: 'proposals' },
+        loadComponent: () =>
+          import('./pages/commercial/proposals/demo/proposal-workspace-demo.page').then(
+            (m) => m.ProposalWorkspaceDemoPage,
+          ),
+        title: 'KPPDF — КП Demo workspace',
+      },
+      {
         // TZ-SALES-310 — stable create-KP destination; full studio follows in
         // TZ-SALES-312+ and keeps the existing Quotation API.
         path: 'proposals/create',
