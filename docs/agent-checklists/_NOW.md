@@ -5,7 +5,12 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T23:20:00+03:00
+updated_at: 2026-08-23T23:45:00+03:00
+
+## ACTIVE — DEPLOY
+
+**READY** pushed tip `31d9b520` · gates `167865c9`. Штамп `DEPLOY-READY.md`.
+PO любому ИИ: «сделай деплой по документации» (VPN off, без тестов).
 
 ## ACTIVE — WAVE-UI-PLUS (601+)
 
