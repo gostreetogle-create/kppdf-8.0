@@ -5,10 +5,23 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T07:11:00+03:00
-hygiene: prod `c8ebdeb6` (2026-08-11); **DEPLOY-READY = INVALID** — TEST-421 → «подготовь к деплою» → «сделай деплой по документации»
+updated_at: 2026-08-23T10:45:00+03:00
+hygiene: prod `c8ebdeb6` (2026-08-11); **DEPLOY-READY = INVALID** — PO «кати» → «деплой по документации»
 deploy_ready: `docs/agent-checklists/DEPLOY-READY.md`
 deploy_docs: `deploy/synology/README.md` (единственный вход для фразы «деплой по документации»)
+
+## TASKS DRAIN (freebuff, 2026-08-23) — SHA `be2ecec4`
+
+Root `tasks/` clean: README + PROMPT-RESUME-ANY + PROMPT-UNIVERSAL-CONTINUOUS + QUEUE-LIVE.
+_backlog_: только TZ-COMP-402 (live) + PO-REMINDERS/QUEUE/README.
+_active/: пуст.
+
+DONE: 10 TZ specs → specs-dup-root; 16 PROMPTs → prompts-spent;
+4 WAVEs (FORMS-NUMBER, MANAGER-DESK, KP-PAGE-MODE, KP3) → waves-done;
+3 backlog specs (TZD-57, SALES-377, SALES-381) → specs-dup-root.
+
+Все TZ фаз 1-4 (SALES-369, TZD-39/56/47, MIG-302/306/304/303, COMBINE-410)
+уже в архиве — drain не кодил, только гигиена.
 
 ## ПРАВИЛО (PO 2026-08-21): GitHub = только хранилище
 
