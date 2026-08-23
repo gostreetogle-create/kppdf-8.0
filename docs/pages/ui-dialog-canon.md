@@ -42,3 +42,17 @@
 **Migration note (WR-501):** новый overlay вручную (свой backdrop, `@HostListener`
 без restore, `z-40`/`z-index:100`) — запрещён: сначала `PiDialogService` /
 `PiSheetService` / `PiDrawerService`, иначе review reject.
+
+### Formal exception: KP-CATALOG-REVIEW-NO-ESC (TZ-UI-WR-510)
+
+Fullscreen catalog-review на `proposal-create.page.ts` («Изменения в строках КП»)
+— единственное задокументированное отступление от контракта Esc:
+
+- **Esc = B (не закрывает)** — намеренно: никакая Product-мутация не должна
+  произойти неявно по случайному нажатию (`onEscape()` ранний return при
+  открытом review, код-комментарий).
+- **Взамен обязательны:** CDK focus trap на review-оболочке, return-focus на
+  trigger при закрытии (любой путь: Cancel / × / finish-after-last-row),
+  `z-index: var(--z-dialog)`.
+- **Migration note:** новый fullscreen review вручную без этого exception ID —
+  запрещён: либо Esc закрывает, либо формальное исключение с trap/return-focus.

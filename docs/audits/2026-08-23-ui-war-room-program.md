@@ -143,9 +143,27 @@ a11y-дыра в фундаменте.**
 | `manager-desk` hot file (DESK-423/424) | 509 последним; claim check `_NOW` |
 | KP Esc block intentional | **510** formal exception KP-CATALOG-REVIEW-NO-ESC + harden trap |
 | TemplatePortal bug hard | 508 characterization test first |
-| Native select 60+ sites | не в первой волне; после 501+505 |
+| Native select 60+ sites | не в первой волне; после 501+505; **fallback канон** — не массовая миграция |
 | Deploy queue TEST-421 | UI-WR **не блокирует** deploy; стартовать после READY или параллельно без conflict keys TEST-421 |
 | Audit 23-го пометил S-01 open | **ложь** — помечено STALE здесь и в патче аудита |
+
+### Post-WR ROI (PO lock 2026-08-23)
+
+Спеки готовы (не мешают текущему A/C, если не claim’ать 523 раньше 509):
+
+1. `tasks/TZ-UI-ROI-520-keyboard-only-qa.md` — чеклист → PO прогон.
+   Чеклист: `docs/qa/keyboard-only-pass.md`.
+2. `tasks/TZ-UI-ROI-523-desk-dirty-close.md` — **WAIT WR-509**.
+3. `tasks/TZ-UI-ROI-522-ui-rules-kit-snapshot.md` — слепок kit.
+4. `tasks/TZ-UI-ROI-521-native-select-fallback.md` — канон native select.
+5. **Не сейчас:** WebSocket, MF, offline mutation sync.
+
+### Formal exception: KP-CATALOG-REVIEW-NO-ESC (TZ-UI-WR-510)
+
+Esc намеренно **не** закрывает fullscreen catalog-review КП (`proposal-create.page.ts`)
+— никакая Product-мутация неявно (PO/архитектурное решение, зафиксировано в
+`docs/pages/ui-dialog-canon.md`). Взамен review обязан: CDK focus trap +
+return-focus + `z-index: var(--z-dialog)` (реализовано в 510).
 
 ---
 

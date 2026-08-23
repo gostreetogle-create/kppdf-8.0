@@ -7,10 +7,13 @@
   Injector,
   OnInit,
   ViewChild,
+  afterNextRender,
   computed,
+  effect,
   inject,
   signal,
 } from '@angular/core';
+import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -467,6 +470,7 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
 
     @if (catalogReviewOpen()) {
       <div
+        #catalogReview
         class="kp-catalog-review"
         role="dialog"
         aria-modal="true"
@@ -704,7 +708,8 @@ const DEFAULT_KP_TABLE_CHROME: ProposalTableChrome = {
     .kp-catalog-review {
       position: fixed;
       inset: 0;
-      z-index: 100;
+      /* TZ-UI-WR-510: dialog-level stacking (WR-501 --z-* scale). */
+      z-index: var(--z-dialog);
       display: grid;
       place-items: center;
       padding: 1rem;
@@ -905,6 +910,13 @@ export class ProposalCreatePage implements OnInit {
   private pendingOutput: (() => void) | null = null;
   private pendingRoutePrint = false;
   private pendingTableExit: (() => void) | null = null;
+
+  /** TZ-UI-WR-510: formal exception KP-CATALOG-REVIEW-NO-ESC — hardened review shell. */
+  private readonly focusTrapFactory = inject(ConfigurableFocusTrapFactory);
+  private activeCatalogReviewTrap: ConfigurableFocusTrap | null = null;
+  private catalogReviewPreviousFocus: HTMLElement | null = null;
+  @ViewChild('catalogReview') private catalogReviewRef?: ElementRef<HTMLElement>;
+
   protected readonly catalogReviewOpen = signal(false);
   protected readonly catalogReviewError = signal('');
   protected readonly catalogReviewSources = signal<Record<string, Product | null>>({});
@@ -1027,6 +1039,34 @@ export class ProposalCreatePage implements OnInit {
       )
       .subscribe();
     this.destroyRef.onDestroy(() => this.cancelAutosave());
+
+    // TZ-UI-WR-510: formal exception KP-CATALOG-REVIEW-NO-ESC — Esc stays
+    // blocked (see onEscape), but the review gets a focus trap + return-focus
+    // + teardown on every close path (Cancel, ×, finish-after-last-row).
+    // afterNextRender: runs after the @if block renders (in tests it is
+    // flushed by fixture.detectChanges()).
+    effect(() => {
+      if (this.catalogReviewOpen()) {
+        afterNextRender(
+          () => {
+            const el = this.catalogReviewRef?.nativeElement;
+            if (el && !this.activeCatalogReviewTrap) {
+              this.activeCatalogReviewTrap = this.focusTrapFactory.create(el);
+              this.activeCatalogReviewTrap.focusInitialElementWhenReady().catch(() => {});
+            }
+          },
+          { injector: this.injector },
+        );
+      } else {
+        this.activeCatalogReviewTrap?.destroy();
+        this.activeCatalogReviewTrap = null;
+        const prev = this.catalogReviewPreviousFocus;
+        this.catalogReviewPreviousFocus = null;
+        if (prev && prev.isConnected) {
+          prev.focus({ preventScroll: true });
+        }
+      }
+    });
   }
 
   ngOnInit(): void {
@@ -1062,7 +1102,8 @@ export class ProposalCreatePage implements OnInit {
 
   @HostListener('document:keydown.escape')
   protected onEscape(): void {
-    // Keep the review open on Escape; no Product mutation may happen implicitly.
+    // Formal exception KP-CATALOG-REVIEW-NO-ESC (TZ-UI-WR-510): Esc does NOT
+    // close the review — no Product mutation may happen implicitly.
     if (this.catalogReviewOpen()) return;
     this.closeFlyouts();
   }
@@ -2097,6 +2138,9 @@ export class ProposalCreatePage implements OnInit {
     if (rows.length === 0) return;
     this.catalogReviewError.set('');
     this.catalogReviewOpen.set(true);
+    // TZ-UI-WR-510: remember the trigger so any close path returns focus.
+    this.catalogReviewPreviousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     for (const entry of rows) {
       if (index !== undefined && entry.index !== index) continue;
       const id = entry.line.productId;

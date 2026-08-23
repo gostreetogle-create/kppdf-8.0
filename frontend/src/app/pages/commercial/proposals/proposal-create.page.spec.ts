@@ -1292,6 +1292,89 @@ describe('ProposalCreatePage (TZ-SALES-317 shell + TZ-SALES-319 build preview)',
     expect(productUpdateMock.mock.calls[0][1]).not.toHaveProperty('unitPrice');
   }));
 
+  it('510: Escape does NOT close the catalog review (formal exception KP-CATALOG-REVIEW-NO-ESC)', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'table' | 'params') => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+    };
+    page.toggleRightPane('table');
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд новый',
+      productSku: 'ST-2',
+      catalogSourceVersion: 3,
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    page.onCompositionLineChange({ index: 0, patch: { productName: 'Стенд из КП' } });
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.css('.kp-catalog-review'))).toBeTruthy();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    // Esc=B: the review stays open — no Product mutation may happen implicitly.
+    expect(fixture.debugElement.query(By.css('.kp-catalog-review'))).toBeTruthy();
+  }));
+
+  it('510: review traps focus and Cancel returns it to the trigger (return-focus)', fakeAsync(() => {
+    const page = fixture.componentInstance as ProposalCreatePage & {
+      toggleRightPane: (pane: 'table' | 'params') => void;
+      onProductAdd: (line: ProposalDraftLine) => void;
+      onCompositionLineChange: (change: {
+        index: number;
+        patch: Partial<ProposalDraftLine>;
+      }) => void;
+      cancelCatalogReview: () => void;
+    };
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Открыть ревью';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    page.toggleRightPane('table');
+    page.onProductAdd({
+      productId: 'prod-1',
+      productName: 'Стенд новый',
+      productSku: 'ST-2',
+      catalogSourceVersion: 3,
+      quantity: 1,
+      unit: 'шт',
+      unitPrice: 5000,
+    });
+    page.onCompositionLineChange({ index: 0, patch: { productName: 'Стенд из КП' } });
+    page.toggleRightPane('params');
+    fixture.detectChanges();
+    tick(); // effect → setTimeout(0) → focus trap creation
+    fixture.detectChanges();
+
+    const review = fixture.nativeElement.querySelector('.kp-catalog-review') as HTMLElement;
+    expect(review).toBeTruthy();
+    // CDK focus trap engaged on the review shell (anchors from constructor).
+    expect(document.querySelector('.cdk-focus-trap-anchor')).toBeTruthy();
+
+    // Simulate the trap: focus a control inside the review.
+    const inside = document.createElement('button');
+    inside.textContent = 'inside';
+    review.appendChild(inside);
+    inside.focus();
+    expect(document.activeElement).toBe(inside);
+
+    page.cancelCatalogReview();
+    fixture.detectChanges();
+    tick();
+    expect(fixture.debugElement.query(By.css('.kp-catalog-review'))).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
+  }));
+
   it('copies an edited Product into a new row and keeps KP row duplication on the same source', fakeAsync(() => {
     const page = fixture.componentInstance as ProposalCreatePage & {
       onProductAdd: (line: ProposalDraftLine) => void;
