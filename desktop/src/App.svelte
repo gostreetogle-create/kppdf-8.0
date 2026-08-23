@@ -701,6 +701,15 @@
   let hasDirectWriteBlocks = $derived(
     importBlocks.some((block) => block.targetKey !== 'material'),
   );
+  /** Строк, готовых к отправке (новые/обновления) — для копии кнопки CTA. */
+  let sendableRowsCount = $derived(
+    importBlocks.reduce(
+      (sum, block) =>
+        sum +
+        block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update').length,
+      0,
+    ),
+  );
   let mappingBusy = $state(false);
   let mappingMessage = $state('');
   let profileName = $state('');
@@ -2295,12 +2304,12 @@
         aria-selected={activeTab === 'ai'}
         onclick={() => (activeTab = 'ai')}
       >
-        AI
+        ИИ
       </button>
     </div>
   </header>
 
-  <section class="cards">
+  <section class="cards" class:cards--single={activeTab === 'import'}>
     {#if activeTab === 'connection'}
     <article class="card">
       <h2>Подключение</h2>
@@ -2955,7 +2964,7 @@
             </select>
           </label>
           <button
-            class="btn btn--primary"
+            class="btn"
             type="button"
             onclick={downloadExcelForm}
             disabled={!formTable || formBusy}
@@ -2981,7 +2990,7 @@
       </section>
 
       <button
-        class="btn btn--primary"
+        class="btn"
         type="button"
         onclick={pickFile}
         disabled={importing}
@@ -3137,7 +3146,7 @@
                   {/if}
                   {#if file.status === 'audited' && activeInboxFile !== file.name}
                     <button
-                      class="btn btn--small btn--primary"
+                      class="btn btn--small"
                       type="button"
                       onclick={() => createAiTask(file)}
                       disabled={inboxBusy}
@@ -3163,7 +3172,7 @@
                   {/if}
                   {#if file.status === 'proposed'}
                     <button
-                      class="btn btn--small btn--primary"
+                      class="btn btn--small"
                       type="button"
                       onclick={() => confirmFile(file)}
                       disabled={inboxBusy}
@@ -3215,27 +3224,42 @@
         {/if}
       </section>
 
-      {#if importSheets.length > 1}
-        <div class="sheet-picker" aria-label="Листы Excel">
-          <span class="sheet-picker__label">Лист:</span>
-          {#each importSheets as sheet (sheet.name)}
-            <button
-              class:sheet-picker__button--active={sheet.name === activeSheetName}
-              class="sheet-picker__button"
-              type="button"
-              onclick={() => selectImportSheet(sheet.name)}
-            >
-              {sheet.name} <span>({sheet.rows.length})</span>
-            </button>
-          {/each}
-        </div>
-      {/if}
-
       {#if importRows.length > 0}
-        <p class="import-status">
-          {importFileName ? `Файл: ${importFileName}` : 'Файл'} · строк: <strong>{importRows.length}</strong>
-          {#if activeSheetName} · лист: <strong>{activeSheetName}</strong>{/if}
-        </p>
+        <div class="file-bar" aria-label="Загруженный файл">
+          <div class="file-bar__main">
+            <span class="file-bar__name" title={importFileName}>{importFileName || '—'}</span>
+            {#if activeSheetName}
+              <span class="file-bar__meta">Лист: {activeSheetName}</span>
+            {/if}
+            <span class="file-bar__meta">{importRows.length} строк</span>
+          </div>
+          <div class="file-bar__actions">
+            {#if importSheets.length > 1}
+              <div class="sheet-picker sheet-picker--inline" aria-label="Листы Excel">
+                {#each importSheets as sheet (sheet.name)}
+                  <button
+                    class:sheet-picker__button--active={sheet.name === activeSheetName}
+                    class="sheet-picker__button"
+                    type="button"
+                    onclick={() => selectImportSheet(sheet.name)}
+                  >
+                    {sheet.name} <span>({sheet.rows.length})</span>
+                  </button>
+                {/each}
+              </div>
+            {/if}
+            <button
+              class="btn btn--small"
+              type="button"
+              onclick={pickFile}
+              disabled={importing}
+              onmouseenter={() => showHint(HINTS.pickFile)}
+              onmouseleave={clearHint}
+            >
+              Сменить файл
+            </button>
+          </div>
+        </div>
 
         {#if specificationPreview?.hierarchical}
           {@const blockingIssues = specificationBlockingIssues(specificationPreview.issues)}
@@ -3315,8 +3339,8 @@
             </div>
             <p class="hint">
               Подбор работает без подключений (детерминированный классификатор по библиотеке таблиц).
-              Скачайте модель во вкладке «AI» (Запустить → Скачать → Перезапустить) — она поможет
-              с нестандартными колонками. MCP-хост для внешних AI-клиентов — тоже во вкладке «AI».
+              Скачайте модель во вкладке «ИИ» (Запустить → Скачать → Перезапустить) — она поможет
+              с нестандартными колонками. MCP-хост для внешних AI-клиентов — тоже во вкладке «ИИ».
             </p>
             {#if activeInboxFile}
               <p class="hint" role="status">
@@ -3340,7 +3364,7 @@
                     {#each block.mapping.rows as row (row.header)}
                       <div class:mapping-row--bad={row.state !== 'ready'} class="mapping-row">
                         <span class="mapping-row__source">{row.header || 'Без заголовка'}</span>
-                        <span class="mapping-row__state">{row.state === 'ready' ? 'Готово' : row.state === 'conflict' ? 'Конфликт' : row.state === 'ignored' ? 'Игнорировано' : 'Нужно проверить'}</span>
+                        <span class="mapping-row__state">{row.state === 'ready' ? 'Готово' : row.state === 'conflict' ? 'Конфликт' : row.state === 'ignored' ? 'Игнорировано' : row.state === 'unfit' ? 'Не сопоставлено' : 'Нужно проверить'}</span>
                         <select
                           aria-label={`Поле для ${row.header}`}
                           value={row.canonical ?? '__ignore__'}
@@ -3392,7 +3416,7 @@
 
             {#if profiles.length > 0}
               <div class="profiles">
-                <span class="profiles__label">Методы сопоставления:</span>
+                <span class="profiles__label">Профиль импорта:</span>
                 {#each profiles as profile (profile.id)}
                   <button class="profile-chip" type="button" onclick={() => applySavedProfile(profile)}>
                     {profile.isDefault ? '★ ' : ''}{profile.name}
@@ -3442,7 +3466,7 @@
                     {/if}
                   </span>
                   {#if block.targetKey === 'material' && block.proposalIds.length > 0}
-                    <button class="btn btn--primary" type="button" onclick={() => confirmBlockProposals(blockIndex)} disabled={mappingBusy}>
+                    <button class="btn" type="button" onclick={() => confirmBlockProposals(blockIndex)} disabled={mappingBusy}>
                       Подтвердить предложения ({block.proposalIds.length})
                     </button>
                     <button class="btn btn--small" type="button" onclick={() => cancelBlockProposals(blockIndex)} disabled={mappingBusy}>Отменить</button>
@@ -3453,7 +3477,7 @@
                     <div class="validation-row validation-row--{row.status}">
                       <span>#{row.rowIndex + 1}</span>
                       <strong>{String(row.values.name ?? row.values.article ?? row.values.sku ?? 'Строка')}</strong>
-                      <span>{ROW_STATUS_LABEL[row.status] ?? row.status}</span>
+                      <span>{ROW_STATUS_LABEL[row.status] ?? 'Неизвестный статус'}</span>
                       <small>{row.message}</small>
                     </div>
                   {/each}
@@ -3474,14 +3498,17 @@
                 </button>
               </div>
             {/if}
-            <div class="mapping-actions">
+            <div class="mapping-actions mapping-actions--footer">
+              <p class="idempotency-note">
+                Повторная отправка тех же строк не создаст дублей — сверка идёт по артикулу/SKU.
+              </p>
               <button
                 class="btn btn--primary"
                 type="button"
                 onclick={sendBlocks}
-                disabled={mappingBusy || importBlocks.every((block) => block.validated.filter((row) => row.status === 'ok_new' || row.status === 'ok_update').length === 0)}
+                disabled={mappingBusy || sendableRowsCount === 0}
               >
-                {hasDirectWriteBlocks ? 'Записать в каталог' : 'Отправить на подтверждение'}
+                Отправить {sendableRowsCount} строк в базу ERP
               </button>
               <button class="btn btn--small" type="button" onclick={() => prepareMapping(importRows)}>Изменить сопоставление</button>
             </div>
@@ -3503,9 +3530,11 @@
 <!-- Дерево спецификации: recursive preview only, no writes. -->
 {#snippet SpecificationTree(node: SpecificationTreeNode)}
   <div class="specification-node" style={`--spec-level: ${node.level}`}>
+    <span class="specification-node__level" title="Уровень вложенности">Ур. {node.level}</span>
     <span class="specification-node__kind">{node.kind}</span>
     <strong>{node.article}</strong>
     <span>{node.name}</span>
+    <span class="specification-node__parent" title="Родитель">{node.parentArticle ?? '—'}</span>
     <span class="specification-node__qty">× {node.quantity} {node.unit}</span>
   </div>
   {#if node.children.length > 0}
@@ -3559,8 +3588,8 @@
       'Segoe UI',
       Roboto,
       sans-serif;
-    background: #f4f5f7;
-    color: #1c2733;
+    background: #fbf9f6;
+    color: #1b1c1a;
   }
 
   .shell {
@@ -3573,9 +3602,10 @@
   }
 
   .shell__header {
-    border-bottom: 1px solid #d9dee3;
-    padding-bottom: 0.65rem;
-    margin-bottom: 0.85rem;
+    min-height: 46px;
+    border-bottom: 1px solid #c4c7c7;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.65rem;
     flex-shrink: 0;
   }
 
@@ -3592,10 +3622,10 @@
     gap: 0.4rem;
     flex-shrink: 0;
     padding: 0.35rem 0.65rem;
-    border: 1px solid #d9dee3;
-    border-radius: 999px;
-    background: #fbfcfd;
-    color: #44535f;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #f3f1ee;
+    color: #444748;
     font-size: 0.78rem;
   }
 
@@ -3609,7 +3639,7 @@
   .tabs {
     display: flex;
     gap: 0.35rem;
-    margin-top: 0.85rem;
+    margin-top: 0.6rem;
   }
 
   .tabs__button {
@@ -3617,7 +3647,7 @@
     border: 0;
     border-bottom: 2px solid transparent;
     background: transparent;
-    color: #5a6a78;
+    color: #444748;
     cursor: pointer;
     font: inherit;
     font-size: 0.9rem;
@@ -3627,8 +3657,8 @@
 
   .tabs__button:hover,
   .tabs__button--active {
-    border-bottom-color: #1c2733;
-    color: #1c2733;
+    border-bottom-color: #904d00;
+    color: #1b1c1a;
   }
 
   h1 {
@@ -3639,7 +3669,7 @@
 
   .shell__subtitle {
     margin: 0.2rem 0 0;
-    color: #5a6a78;
+    color: #444748;
     font-size: 0.85rem;
   }
 
@@ -3654,12 +3684,16 @@
     overflow: hidden;
   }
 
+  .cards--single {
+    grid-template-columns: 1fr;
+  }
+
   .card {
-    background: #ffffff;
-    border: 1px solid #d9dee3;
-    border-radius: 10px;
+    background: #f3f1ee;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     padding: 0.9rem 1rem;
-    box-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
+    box-shadow: none;
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -3674,7 +3708,7 @@
   .card p,
   .card__lead {
     margin: 0 0 0.65rem;
-    color: #44535f;
+    color: #444748;
     font-size: 0.82rem;
     line-height: 1.4;
   }
@@ -3713,10 +3747,10 @@
     margin: 0 0 0.65rem;
     padding: 0.5rem 0.7rem;
     list-style: none;
-    border-radius: 8px;
+    border-radius: 4px;
     background: #fdf0ef;
-    border: 1px solid #f2c8c4;
-    color: #a12b23;
+    border: 1px solid #ba1a1a;
+    color: #ba1a1a;
     font-size: 0.78rem;
     max-height: 4.5rem;
     overflow: auto;
@@ -3727,10 +3761,10 @@
     font: inherit;
     font-size: 0.85rem;
     padding: 0.6rem;
-    border: 1px solid #b7c0c8;
-    border-radius: 8px;
-    background: #fbfcfd;
-    color: #1c2733;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #1b1c1a;
     resize: vertical;
     margin-bottom: 0.75rem;
     font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
@@ -3742,33 +3776,33 @@
     gap: 0.5rem;
     margin-bottom: 0.75rem;
     padding: 0.65rem 0.75rem;
-    border: 1px solid #d5dde4;
-    border-radius: 8px;
-    background: #f6f8fa;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #f3f1ee;
   }
 
   .basic-auth .hint {
     margin: 0;
     font-size: 0.78rem;
-    color: #5a6a78;
+    color: #444748;
     line-height: 1.35;
   }
 
   .basic-auth .field {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.25rem;
     font-size: 0.8rem;
-    color: #3a4a58;
+    color: #444748;
   }
 
   .basic-auth .input {
     font: inherit;
     padding: 0.45rem 0.55rem;
-    border: 1px solid #b7c0c8;
-    border-radius: 6px;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     background: #fff;
-    color: #1c2733;
+    color: #1b1c1a;
   }
 
   .errors li + li {
@@ -3781,7 +3815,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.6rem 0.75rem;
-    border-radius: 8px;
+    border-radius: 4px;
     margin-bottom: 0.75rem;
     font-size: 0.8rem;
   }
@@ -3793,24 +3827,24 @@
 
   .compat-banner--block {
     background: #fdf0ef;
-    border: 1px solid #f2c8c4;
-    color: #a12b23;
+    border: 1px solid #ba1a1a;
+    color: #ba1a1a;
   }
 
   .compat-banner--warn {
     background: #fdf6e7;
-    border: 1px solid #ecd9a8;
-    color: #7a5c12;
+    border: 1px solid #7c5800;
+    color: #7c5800;
   }
 
   .ai-banner {
     grid-column: 1 / -1;
     padding: 0.6rem 0.75rem;
-    border-radius: 8px;
+    border-radius: 4px;
     font-size: 0.8rem;
-    background: #eef4fb;
-    border: 1px solid #c8d9ee;
-    color: #1e4a76;
+    background: #f3f1ee;
+    border: 1px solid #904d00;
+    color: #904d00;
   }
 
   .status {
@@ -3820,7 +3854,7 @@
   }
 
   .status__url {
-    color: #5a6a78;
+    color: #444748;
     font-size: 0.8rem;
   }
 
@@ -3831,30 +3865,30 @@
   .mcp-badge {
     display: inline-block;
     padding: 0.2rem 0.7rem;
-    border-radius: 999px;
+    border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
   }
 
   .mcp-badge--stopped {
-    background: #eef1f4;
-    color: #5a6a78;
+    background: #f3f1ee;
+    color: #444748;
   }
 
   .mcp-badge--starting,
   .mcp-badge--stopping {
     background: #fdf3dd;
-    color: #8a6d1a;
+    color: #7c5800;
   }
 
   .mcp-badge--running {
     background: #e6f4ea;
-    color: #1e7d43;
+    color: #1b6c37;
   }
 
   .mcp-badge--error {
     background: #fdf0ef;
-    color: #a12b23;
+    color: #ba1a1a;
   }
 
   .mcp-url {
@@ -3868,9 +3902,9 @@
   .mcp-url code {
     font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
     font-size: 0.9rem;
-    background: #fbfcfd;
-    border: 1px solid #d9dee3;
-    border-radius: 6px;
+    background: #ffffff;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     padding: 0.2rem 0.45rem;
   }
 
@@ -3886,13 +3920,13 @@
   }
 
   .hint {
-    color: #7a8794;
+    color: #444748;
     font-size: 0.8rem;
     line-height: 1.5;
   }
 
   .mcp-warn {
-    color: #8a6d1a;
+    color: #7c5800;
   }
 
   .mcp-field {
@@ -3900,15 +3934,15 @@
     align-items: center;
     gap: 0.5rem;
     margin: 0.75rem 0;
-    color: #44535f;
+    color: #444748;
     font-size: 0.9rem;
   }
 
   .mcp-port {
     width: 6rem;
     padding: 0.35rem 0.5rem;
-    border: 1px solid #b7c0c8;
-    border-radius: 8px;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     font: inherit;
   }
 
@@ -3918,7 +3952,7 @@
     gap: 0.5rem;
     margin: 0.35rem 0;
     font-size: 0.82rem;
-    color: #44535f;
+    color: #444748;
     cursor: pointer;
   }
 
@@ -3928,14 +3962,14 @@
   }
 
   .btn--danger {
-    border-color: #e8c4bf;
+    border-color: #ba1a1a;
     background: #fdf0ef;
-    color: #a12b23;
+    color: #ba1a1a;
   }
 
   .btn--danger:hover:not(:disabled) {
     background: #f6dcd8;
-    border-color: #d9a39d;
+    border-color: #ba1a1a;
   }
 
   .card--wide,
@@ -3951,24 +3985,78 @@
   }
 
   .card--studio .dropzone {
-    min-height: 6.5rem;
+    min-height: 5rem;
     display: grid;
     place-items: center;
     border-style: dashed;
-    background: #fbfcfd;
+    background: #ffffff;
+    border-color: #c4c7c7;
+    border-radius: 4px;
+    color: #444748;
+    font-size: 0.8125rem;
+  }
+
+  .file-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 0.5rem 0 0.75rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #f3f1ee;
+  }
+
+  .file-bar__main {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .file-bar__name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #1b1c1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 18rem;
+  }
+
+  .file-bar__meta {
+    font-size: 0.6875rem;
+    color: #444748;
+    white-space: nowrap;
+  }
+
+  .file-bar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .sheet-picker--inline {
+    margin: 0;
+    padding: 0;
+    border: 0;
   }
 
   .form-studio {
     margin: 0.85rem 0;
     padding: 0.9rem 1rem;
-    border: 1px solid #d9dee3;
-    border-radius: 10px;
-    background: #fbfcfd;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #f3f1ee;
   }
 
   .form-studio__head h3 {
     margin: 0 0 0.3rem;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
   }
 
   .form-studio__head .hint {
@@ -3983,30 +4071,35 @@
     margin-top: 0.6rem;
   }
 
-  .form-studio .field {
+  .form-studio .field,
+  .field {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    color: #5a6a78;
-    font-size: 0.78rem;
+    gap: 4px;
+    color: #444748;
+    font-size: 11px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .form-studio .field select.input {
     min-width: 12rem;
-    padding: 0.4rem 0.5rem;
-    border: 1px solid #b7c0c8;
-    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     background: #ffffff;
-    color: #1c2733;
+    color: #1b1c1a;
     font: inherit;
-    font-size: 0.82rem;
+    font-size: 13px;
     font-weight: 400;
+    text-transform: none;
+    letter-spacing: normal;
   }
 
   .form-studio .field select.input:disabled {
-    background: #eef1f4;
-    color: #7a8794;
+    background: #f3f1ee;
+    color: #444748;
   }
 
   .form-studio__steps {
@@ -4015,7 +4108,7 @@
     gap: 0.15rem;
     margin: 0.65rem 0 0;
     padding-left: 1.25rem;
-    color: #44535f;
+    color: #444748;
     font-size: 0.78rem;
   }
 
@@ -4033,22 +4126,24 @@
   .sheet-picker {
     margin: 0.4rem 0 0.75rem;
     padding-bottom: 0.5rem;
-    border-bottom: 1px solid #e4e8ec;
+    border-bottom: 1px solid #c4c7c7;
   }
 
   .sheet-picker__label,
   .profiles__label {
-    color: #5a6a78;
-    font-size: 0.78rem;
+    color: #444748;
+    font-size: 11px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
   }
 
   .sheet-picker__button,
   .profile-chip {
-    border: 1px solid #d9dee3;
-    border-radius: 999px;
-    background: #fbfcfd;
-    color: #44535f;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #444748;
     cursor: pointer;
     font: inherit;
     font-size: 0.76rem;
@@ -4057,12 +4152,12 @@
 
   .sheet-picker__button--active,
   .profile-chip:hover {
-    border-color: #1c2733;
-    color: #1c2733;
+    border-color: #904d00;
+    color: #904d00;
   }
 
   .sheet-picker__button span {
-    color: #7a8794;
+    color: #444748;
   }
 
   .specification-panel {
@@ -4071,9 +4166,9 @@
     gap: 0.65rem;
     margin: 0.65rem 0;
     padding: 0.75rem;
-    border: 1px solid #c9d8e6;
-    border-radius: 8px;
-    background: #f7fbff;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
+    background: #f3f1ee;
   }
 
   .specification-panel__head {
@@ -4091,40 +4186,40 @@
   .specification-badge {
     flex-shrink: 0;
     padding: 0.25rem 0.5rem;
-    border-radius: 999px;
+    border-radius: 4px;
     background: #e6f4eb;
-    color: #1e7d43;
+    color: #1b6c37;
     font-size: 0.72rem;
     font-weight: 700;
   }
 
   .specification-badge--error {
     background: #fdf0ef;
-    color: #a12b23;
+    color: #ba1a1a;
   }
 
   .specification-badge--warn {
     background: #fff6e6;
-    color: #8a5a00;
+    color: #7c5800;
   }
 
   .specification-issues {
     margin: 0;
     padding: 0.5rem 0.75rem 0.5rem 1.8rem;
-    border: 1px solid #efc5bf;
-    border-radius: 7px;
+    border: 1px solid #ba1a1a;
+    border-radius: 4px;
     background: #fff6f5;
-    color: #a12b23;
+    color: #ba1a1a;
     font-size: 0.78rem;
   }
 
   .specification-warnings {
     margin: 0 0 0.5rem;
     padding: 0.5rem 0.75rem 0.5rem 1.8rem;
-    border: 1px solid #e8d4a8;
-    border-radius: 7px;
+    border: 1px solid #7c5800;
+    border-radius: 4px;
     background: #fffbf0;
-    color: #7a5a10;
+    color: #7c5800;
     font-size: 0.78rem;
   }
 
@@ -4138,25 +4233,39 @@
 
   .specification-node {
     display: grid;
-    grid-template-columns: 4.5rem minmax(7rem, 0.8fr) minmax(8rem, 1.5fr) auto;
+    grid-template-columns: 3rem 4.5rem minmax(7rem, 0.8fr) minmax(8rem, 1.2fr) minmax(6rem, 0.9fr) auto;
     align-items: center;
     gap: 0.5rem;
     margin-left: calc(var(--spec-level) * 1rem);
     padding: 0.35rem 0.5rem;
-    border: 1px solid #d9e3ec;
-    border-radius: 6px;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     background: #ffffff;
-    font-size: 0.78rem;
+    font-size: 11px;
+  }
+
+  .specification-node__level {
+    color: #444748;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
   }
 
   .specification-node__kind {
-    color: #5a6a78;
+    color: #444748;
     font-size: 0.7rem;
     text-transform: uppercase;
   }
 
+  .specification-node__parent {
+    color: #444748;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .specification-node__qty {
-    color: #44535f;
+    color: #444748;
     white-space: nowrap;
   }
 
@@ -4187,10 +4296,10 @@
   }
 
   .import-block {
-    border: 1px solid #d0d7de;
-    border-radius: 9px;
+    border: 1px solid #c4c7c7;
+    border-radius: 4px;
     padding: 0.55rem 0.65rem;
-    background: #f7f9fb;
+    background: #f3f1ee;
   }
 
   .import-block__head {
