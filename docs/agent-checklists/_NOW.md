@@ -5,7 +5,11 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T17:55:00+03:00
+updated_at: 2026-08-23T21:55:00+03:00
+
+## ACTIVE — SUPPLY-308R
+
+**DONE** (2026-08-23): Option A — stacked ▸ Поставщик / ▸ Детали; Позиция always open; archive `tasks/_archive/2026-08/TZ-SUPPLY-308R.done.md`.
 
 ## ORCHESTRATOR — closeout DONE
 

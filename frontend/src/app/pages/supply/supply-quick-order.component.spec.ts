@@ -93,8 +93,12 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
       visibleRows: () => { id: string }[];
+      whereExpanded: { set: (v: boolean) => void };
+      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand(comp.visibleRows()[0].id);
+    comp.whereExpanded.set(true);
+    comp.detailsExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -125,24 +129,38 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     }
   });
 
-  it('TZ-SUPPLY-307: expanded row shows three strips without nested toggles', () => {
+  it('TZ-SUPPLY-308R: where/details strips stay gated behind ▸ toggles (Option A)', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
       visibleRows: () => { id: string }[];
+      whereExpanded: { set: (v: boolean) => void };
+      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand(comp.visibleRows()[0].id);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(3);
-    expect(root.querySelector('[data-test="supply-quick-where-toggle"]')).toBeNull();
-    expect(root.querySelector('[data-test="supply-quick-details-toggle"]')).toBeNull();
-    expect(root.querySelector('[data-test="supply-quick-supplier-select"]')).toBeTruthy();
-    expect(root.querySelector('[data-test="supply-quick-status-select"]')).toBeTruthy();
+    // Position strip only — where/details collapsed by default.
+    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(1);
+    expect(root.querySelector('.supply-quick-order__strip--what')).toBeTruthy();
+    expect(root.querySelector('[data-test="supply-quick-where-toggle"]')).toBeTruthy();
+    expect(root.querySelector('[data-test="supply-quick-details-toggle"]')).toBeTruthy();
+    expect(root.querySelector('[data-test="supply-quick-supplier-select"]')).toBeNull();
+    expect(root.querySelector('[data-test="supply-quick-status-select"]')).toBeNull();
     expect(root.querySelector('[data-test="supply-quick-more-toggle"]')).toBeTruthy();
+
+    comp.whereExpanded.set(true);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-test="supply-quick-supplier-select"]')).toBeTruthy();
+    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(2);
+
+    comp.detailsExpanded.set(true);
+    fixture.detectChanges();
+    expect(root.querySelector('[data-test="supply-quick-status-select"]')).toBeTruthy();
+    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(3);
   });
 
   it('TZ-SUPPLY-307: what strip has no free-text title / article inputs', () => {
@@ -272,8 +290,13 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
+      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
+    comp.detailsExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -303,8 +326,11 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       toggleExpand: (id: string) => void;
       onCategoryChange: (rowId: string, categoryId: string) => void;
       visibleRows: () => { id: string; supplierId: string | null }[];
+      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
     // NgModel applies value / disabled state in a microtask, so flush before DOM asserts.
     await fixture.whenStable();
@@ -351,8 +377,11 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-2');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -372,7 +401,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: { set: (v: string) => void };
+      newSupplierName: { set: (v: string) => void; whereExpanded: { set: (v: boolean) => void } };
       newSupplierInn: { set: (v: string) => void };
       newSupplierWebsite: { set: (v: string) => void };
       newContactLastName: { set: (v: string) => void };
@@ -387,6 +416,8 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       }[];
     };
     comp.toggleExpand('qo-2');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -463,12 +494,17 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newContactLastName: { set: (v: string) => void };
+      newContactLastName: {
+        set: (v: string) => void;
+        whereExpanded: { set: (v: boolean) => void };
+      };
       saveNewManager: (rowId: string) => void;
       contactsFor: (supplierId: string | null) => { id: string; position?: string }[];
       visibleRows: () => { id: string; supplierContactId: string | null }[];
     };
     comp.toggleExpand('qo-1');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -499,8 +535,11 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -525,8 +564,11 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
+      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -875,11 +917,16 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     const httpMock = TestBed.inject(HttpTestingController);
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: { set: (value: string) => void };
+      newSupplierName: {
+        set: (value: string) => void;
+        whereExpanded: { set: (v: boolean) => void };
+      };
       newSupplierEmail: { set: (value: string) => void };
       saveNewSupplier: (rowId: string) => void;
     };
     comp.toggleExpand('qo-2');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
     (
       fixture.nativeElement.querySelector(
@@ -915,11 +962,13 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: { set: (v: string) => void };
+      newSupplierName: { set: (v: string) => void; whereExpanded: { set: (v: boolean) => void } };
       newSupplierInn: { set: (v: string) => void };
       visibleRows: () => { id: string; supplierId: string | null }[];
     };
     comp.toggleExpand('qo-2');
+    fixture.detectChanges();
+    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
