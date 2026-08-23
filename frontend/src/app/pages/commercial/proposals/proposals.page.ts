@@ -152,14 +152,14 @@ function counterpartyIdOf(row: Proposal): string {
           class="pi-input w-72"
         />
         <app-pi-button variant="default" (click)="openCreate()" data-test="create-button">
-          + Создать
+          + Создать КП
         </app-pi-button>
         <app-pi-button variant="ghost" size="sm" (click)="reload()" data-test="reload-button">
           <lucide-icon [img]="RefreshIcon" [size]="14"></lucide-icon> Обновить
         </app-pi-button>
         <span class="flex-1"></span>
-        <span class="text-xs text-muted-foreground"
-          >{{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
+        <span class="text-[11px] text-muted-foreground"
+          >Показано {{ visibleCount() }} {{ totalLabel(visibleCount()) }}</span
         >
       </div>
 
@@ -500,20 +500,20 @@ export class ProposalsPage implements OnInit {
 
   // ─── Column definitions ────────────────────────────────────────────
   protected readonly cols: ColumnDef<Proposal>[] = [
-    { key: 'number', label: 'Номер', sortable: true, sticky: 'left' },
+    { key: 'number', label: 'Номер', sortable: true, sticky: 'left', cellClass: 'text-xs' },
     {
       key: 'date',
       label: 'Дата',
       sortable: true,
-      cellClass: 'empty-cell',
+      cellClass: 'empty-cell text-xs',
       format: (r) => formatDate(r.date),
     },
-    { key: 'counterpartyId', label: 'Контрагент', width: '180px' },
-    { key: 'status', label: 'Статус', sortable: true, cellClass: 'empty-cell' },
+    { key: 'counterpartyId', label: 'Контрагент', width: '180px', cellClass: 'text-xs' },
+    { key: 'status', label: 'Статус', sortable: true, cellClass: 'empty-cell text-xs' },
     {
       key: 'items',
       label: 'Позиций',
-      cellClass: 'text-muted-foreground',
+      cellClass: 'text-muted-foreground text-xs',
       format: (r) => String(r.items?.length ?? 0),
     },
     {
@@ -523,6 +523,7 @@ export class ProposalsPage implements OnInit {
       numeric: true,
       align: 'right',
       width: '128px',
+      cellClass: 'text-xs',
       format: (r) => (r.total == null ? '—' : formatPrice(r.total)),
     },
     {
@@ -532,19 +533,19 @@ export class ProposalsPage implements OnInit {
       key: 'convertedOrderId',
       label: '',
       width: '88px',
-      cellClass: 'text-right',
+      cellClass: 'text-right text-xs',
     },
     {
       key: 'currentVersion',
       label: 'Версии',
       width: '150px',
-      cellClass: 'text-right',
+      cellClass: 'text-right text-xs',
     },
     {
       key: 'familyRole',
       label: 'Семья',
       width: '168px',
-      cellClass: 'text-right',
+      cellClass: 'text-right text-xs',
     },
   ];
 
