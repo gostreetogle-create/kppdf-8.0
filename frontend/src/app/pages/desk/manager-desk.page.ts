@@ -42,6 +42,10 @@ import {
 import { Order, OrderStatus, OrdersService } from '../../shared/services/orders.service';
 import { OrderFormPanelComponent } from '../../shared/orders/order-form-panel.component';
 import { OrderHubTrayComponent } from '../../shared/orders/order-hub-tray.component';
+import {
+  ShipConfirmDialogComponent,
+  type ShipConfirmResult,
+} from '../../shared/orders/ship-confirm-dialog.component';
 import { deskWorkflowChips } from './desk-workflow-chips';
 import { SupplyQuickOrderComponent } from '../supply/supply-quick-order.component';
 import {
@@ -315,6 +319,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                           (createDocument)="onCreateDocument($event)"
                           (openNotebook)="onOpenNotebook($event)"
                           (addLines)="onAddLines($event)"
+                          (markShipped)="onMarkShipped($event)"
                         />
                       }
                     </div>
@@ -963,6 +968,7 @@ export class ManagerDeskPage {
   private readonly focusTrapFactory = inject(ConfigurableFocusTrapFactory);
   /** ROI-523: the rendered order form (create/edit/bom) to read dirty state. */
   private readonly orderFormPanel = viewChild(OrderFormPanelComponent);
+  private readonly orderHubTray = viewChild(OrderHubTrayComponent);
   private readonly hostEl = inject(ElementRef<HTMLElement>);
   private activeFocusTrap: ConfigurableFocusTrap | null = null;
   private previousActiveElement: HTMLElement | null = null;
@@ -1342,6 +1348,27 @@ export class ManagerDeskPage {
   protected onOpenNotebook(order: Order): void {
     if (this.expandedId() !== order._id) this.expandedId.set(order._id);
     this.openPanel('notebook');
+  }
+
+  /** DESK-430: «Отгружено» без документа — confirm dialog, whole-order POST ship. */
+  protected onMarkShipped(order: Order): void {
+    const ref = this.dialog.open<ShipConfirmResult>(ShipConfirmDialogComponent, {
+      data: { order },
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result: ShipConfirmResult | undefined) => {
+      if (!result) return;
+      this.ordersService.ship(order._id, { ...result }).subscribe((res) => {
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error));
+          return;
+        }
+        this.toast.success('Заказ отмечен отгруженным');
+        this.listRes.reload();
+        this.orderHubTray()?.reloadShipments();
+      });
+    });
   }
 
   protected onPrimaryCta(order: Order): void {

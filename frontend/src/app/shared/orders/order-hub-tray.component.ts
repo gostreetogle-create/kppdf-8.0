@@ -25,6 +25,7 @@ import {
   SupplyTaskService,
   type SupplyTaskStatus,
 } from '../services/pi-supply.service';
+import { Shipment, ShipmentsService } from '../services/shipments.service';
 import { PiDialogService } from '../ui/dialog/pi-dialog.service';
 import { PiToastService } from '../ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
@@ -489,11 +490,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                     >
                       <div class="flex items-baseline gap-3 flex-wrap">
                         <span class="text-xs text-muted-foreground">Отгрузка</span>
-                        @if (mode() === 'desk') {
-                          <span class="text-xs ml-auto" data-test="order-shipping-summary">
-                            {{ statusLabel(order().status) }}
-                          </span>
-                        } @else {
+                        @if (mode() !== 'desk') {
                           <a
                             routerLink="/shipping"
                             class="min-h-touch px-2 py-1 border border-rule-strong rounded-sm bg-transparent text-xs ml-auto"
@@ -503,6 +500,49 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                           >
                         }
                       </div>
+                      @if (mode() === 'desk') {
+                        @if (shipmentsLoading()) {
+                          <p class="text-xs text-muted-foreground m-0 mt-1">Загрузка…</p>
+                        } @else if (shipmentsError()) {
+                          <p
+                            class="text-xs text-destructive m-0 mt-1"
+                            role="alert"
+                            data-test="order-shipment-error"
+                          >
+                            {{ shipmentsError() }}
+                          </p>
+                        } @else if (hasShipment()) {
+                          <div class="flex flex-col gap-0.5 mt-1" data-test="order-shipment-block">
+                            <span class="text-xs" data-test="order-shipment-summary">
+                              Отгружен: {{ shipmentNumber() }} · {{ shipmentDateLabel() }}
+                            </span>
+                            @if (!shipmentHasDocs()) {
+                              <span
+                                class="text-xs text-muted-foreground"
+                                data-test="order-shipment-no-docs"
+                              >
+                                Документ не оформлен
+                              </span>
+                            }
+                          </div>
+                        } @else if (canMarkShipped()) {
+                          <button
+                            type="button"
+                            class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                            (click)="markShipped.emit(order())"
+                            data-test="desk-ship-button"
+                          >
+                            Отгружено
+                          </button>
+                        } @else {
+                          <span
+                            class="text-xs text-muted-foreground mt-1"
+                            data-test="order-shipping-summary"
+                          >
+                            {{ statusLabel(order().status) }}
+                          </span>
+                        }
+                      }
                     </section>
                   </div>
                 }
@@ -589,6 +629,8 @@ export class OrderHubTrayComponent implements OnInit {
   readonly createDocument = output<Order>();
   readonly addLines = output<Order>();
   readonly openNotebook = output<Order>();
+  /** DESK-430: host opens the ship-confirm dialog and calls OrdersService.ship(). */
+  readonly markShipped = output<Order>();
 
   // ── Tray-owned composition forest (lazy on toggle; open-by-default desk) ──
   protected readonly compositionExpanded = signal(false);
@@ -611,10 +653,17 @@ export class OrderHubTrayComponent implements OnInit {
   });
   private supplyLoadSeq = 0;
 
+  // ── Tray-owned lazy shipments (DESK-430, HUB-303 pattern, load on expand) ──
+  protected readonly shipmentsLoading = signal(false);
+  protected readonly shipmentsError = signal<string | null>(null);
+  protected readonly shipments = signal<Shipment[]>([]);
+  private shipmentsLoadSeq = 0;
+
   private readonly catalog = inject(ProductModulesService);
   private readonly products = inject(ProductsService);
   private readonly materials = inject(MaterialsService);
   private readonly supply = inject(SupplyTaskService);
+  private readonly shipmentsService = inject(ShipmentsService);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -629,6 +678,7 @@ export class OrderHubTrayComponent implements OnInit {
     if (this.mode() === 'desk') {
       this.compositionExpanded.set(true);
       this.loadComposition();
+      this.loadShipments(this.order()._id);
     }
     if (
       this.reservationError() ||
@@ -866,5 +916,56 @@ export class OrderHubTrayComponent implements OnInit {
       counters.total += 1;
     }
     return counters;
+  }
+
+  // ── DESK-430: «Отгружено» без документа ──
+
+  private loadShipments(orderId: string): void {
+    const seq = ++this.shipmentsLoadSeq;
+    this.shipmentsLoading.set(true);
+    this.shipmentsError.set(null);
+    this.shipmentsService.list({ orderId }).subscribe((res) => {
+      if (seq !== this.shipmentsLoadSeq) return;
+      this.shipmentsLoading.set(false);
+      if (!res.ok) {
+        this.shipmentsError.set(extractErrorMessage(res.error) || 'Не удалось загрузить отгрузку');
+        this.shipments.set([]);
+        return;
+      }
+      this.shipments.set(res.data ?? []);
+    });
+  }
+
+  /** Reload after a successful ship() — host calls this once the POST resolves. */
+  reloadShipments(): void {
+    this.loadShipments(this.order()._id);
+  }
+
+  protected hasShipment(): boolean {
+    return (
+      this.shipments().length > 0 ||
+      this.order().status === 'shipped' ||
+      this.order().status === 'delivered'
+    );
+  }
+
+  protected canMarkShipped(): boolean {
+    const status = this.order().status;
+    return status !== 'shipped' && status !== 'delivered' && status !== 'cancelled';
+  }
+
+  protected shipmentNumber(): string {
+    return this.shipments()[0]?.number ?? '—';
+  }
+
+  protected shipmentDateLabel(): string {
+    const raw = this.shipments()[0]?.date ?? this.shipments()[0]?.createdAt;
+    if (!raw) return '—';
+    const date = new Date(raw);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('ru-RU');
+  }
+
+  protected shipmentHasDocs(): boolean {
+    return (this.shipments()[0]?.docs?.length ?? 0) > 0;
   }
 }

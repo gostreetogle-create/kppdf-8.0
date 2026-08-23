@@ -88,6 +88,16 @@ function flushSupply(httpMock: HttpTestingController, orderId: string): void {
         req.params.get('orderId') === orderId,
     )
     .forEach((req) => req.flush([]));
+  // DESK-430: expand also lazy-loads shipments (order-hub-tray ngOnInit,
+  // mode="desk"). `.match()` is a safe no-op when nothing matches yet.
+  httpMock
+    .match(
+      (req) =>
+        req.method === 'GET' &&
+        req.url === '/api/shipments' &&
+        req.params.get('orderId') === orderId,
+    )
+    .forEach((req) => req.flush([]));
 }
 
 function flushProductTree(httpMock: HttpTestingController, productId: string, name: string): void {
@@ -472,6 +482,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     request.flush({ ...confirmable, status: 'confirmed' });
     expect(toast.success).toHaveBeenCalledWith('Заказ подтверждён');
     httpMock.match((req) => req.url === '/api/supply-tasks').forEach((req) => req.flush([]));
+    httpMock.match((req) => req.url === '/api/shipments').forEach((req) => req.flush([]));
     httpMock.match((req) => req.url === '/api/sites').forEach((req) => req.flush([]));
     httpMock
       .match((req) => req.url.includes('/api/products/') && req.url.endsWith('/tree'))

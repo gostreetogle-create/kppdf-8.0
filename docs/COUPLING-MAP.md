@@ -76,7 +76,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | Экран | Route | Поля |
 |-------|-------|------|
 | Комбайн | `/design/combine` | `boardLane`, `lineId`, rollup `Order.status` |
-| Стол менеджера | `/desk` | `Order.status` (CTA рейла **и** tray «Подтвердить»: только PATCH `draft→confirmed`); не `boardLane`; `DeskNote.anchorOrderId` (блокнот) |
+| Стол менеджера | `/desk` | `Order.status` (CTA рейла **и** tray «Подтвердить»: только PATCH `draft→confirmed`); не `boardLane`; `DeskNote.anchorOrderId` (блокнот); DESK-430: «Отгружено» в tray — только POST `/orders/:id/ship` (whole-order, без `items`), метаданные из `Shipment` без обязательного `docs` |
 | Заказы | `/orders` | `Order.status`, `readyForWork` |
 | Цех | `/production` | `Order.status` ACTIVE, estimate |
 | Снабжение / КП / Склад | … | без изменений §3 |

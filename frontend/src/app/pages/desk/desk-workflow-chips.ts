@@ -58,27 +58,26 @@ export const DESK_WORKFLOW_CHIPS: readonly GroupChip[] = [
  */
 export function deskWorkflowChips(orderId: string | null): readonly GroupChip[] {
   if (!orderId) return DESK_WORKFLOW_CHIPS;
+
+  const withQuery = (chip: GroupChip, extra: Record<string, string>): GroupChip => ({
+    ...chip,
+    queryParams: { ...chip.queryParams, ...extra } as Record<string, string>,
+  });
+
   return DESK_WORKFLOW_CHIPS.map((chip): GroupChip => {
     switch (chip.id) {
       case 'desk':
+        return withQuery(chip, { orderId });
+      case 'proposal':
         return {
           ...chip,
-          queryParams: { ...(chip.queryParams ?? {}), orderId },
+          queryParams: { source: 'order', sourceId: orderId } as Record<string, string>,
         };
-      case 'proposal':
-        return { ...chip, queryParams: { source: 'order', sourceId: orderId } };
       case 'supply':
       case 'shipping':
-        return {
-          ...chip,
-          queryParams: { ...(chip.queryParams ?? {}), orderId, from: 'desk' },
-        };
+        return withQuery(chip, { orderId, from: 'desk' });
       default:
-        // combine/gantt keep their desk stub view + the order.
-        return {
-          ...chip,
-          queryParams: { ...(chip.queryParams ?? {}), orderId },
-        };
+        return withQuery(chip, { orderId });
     }
   });
 }

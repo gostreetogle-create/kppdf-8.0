@@ -8,6 +8,7 @@ import { SupplyTaskService } from '../services/pi-supply.service';
 import { ProductModulesService } from '../services/pi-product-modules.service';
 import { ProductsService } from '../services/products.service';
 import { MaterialsService } from '../services/materials.service';
+import { ShipmentsService } from '../services/shipments.service';
 import { PiDialogService } from '../ui/dialog/pi-dialog.service';
 import { PiToastService } from '../ui/toast';
 
@@ -38,6 +39,7 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
         },
         { provide: ProductsService, useValue: {} },
         { provide: MaterialsService, useValue: {} },
+        { provide: ShipmentsService, useValue: { list: () => of({ ok: true, data: [] }) } },
         { provide: PiDialogService, useValue: {} },
         { provide: PiToastService, useValue: {} },
       ],
@@ -143,6 +145,49 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     fixture.componentRef.setInput('clientLabel', 'ООО Северный свет');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="order-summary-client"]')).toBeNull();
+  });
+
+  function expandLogistics(order: Order) {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', order);
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const toggle = fixture.nativeElement.querySelector(
+      '[data-test="order-group-logistics"] > button',
+    ) as HTMLButtonElement;
+    // ready/shipped orders auto-expand logistics in ngOnInit — only toggle if collapsed.
+    if (toggle.getAttribute('aria-expanded') === 'false') {
+      toggle.click();
+      fixture.detectChanges();
+    }
+    return fixture;
+  }
+
+  it('DESK-430: eligible order (confirmed) shows the «Отгружено» button, not a link', () => {
+    const fixture = expandLogistics(ORDER); // status: confirmed
+    const tray = fixture.nativeElement as HTMLElement;
+    expect(tray.querySelector('[data-test="desk-ship-button"]')).toBeTruthy();
+    expect(tray.querySelector('[data-test="order-shipping-link"]')).toBeNull();
+    expect(tray.querySelector('[data-test="order-shipment-block"]')).toBeNull();
+  });
+
+  it('DESK-430: cancelled order shows neither the ship button nor a shipment block', () => {
+    const fixture = expandLogistics({ ...ORDER, status: 'cancelled' });
+    const tray = fixture.nativeElement as HTMLElement;
+    expect(tray.querySelector('[data-test="desk-ship-button"]')).toBeNull();
+    expect(tray.querySelector('[data-test="order-shipping-summary"]')?.textContent).toContain(
+      'Отменён',
+    );
+  });
+
+  it('DESK-430: shipped order shows the shipment block with "Документ не оформлен" (no docs)', () => {
+    const fixture = expandLogistics({ ...ORDER, status: 'shipped' });
+    const tray = fixture.nativeElement as HTMLElement;
+    expect(tray.querySelector('[data-test="desk-ship-button"]')).toBeNull();
+    expect(tray.querySelector('[data-test="order-shipment-block"]')).toBeTruthy();
+    expect(tray.querySelector('[data-test="order-shipment-no-docs"]')?.textContent).toContain(
+      'Документ не оформлен',
+    );
   });
 
   it('desk execution groups start collapsed and use compact actions', () => {
