@@ -122,7 +122,7 @@ describe('ProposalWorkspacePage', () => {
         },
         {
           provide: PiToastService,
-          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
+          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn(), show: jest.fn() },
         },
         {
           provide: DesktopPairingService,
@@ -247,6 +247,20 @@ describe('ProposalWorkspacePage', () => {
     expect(ids).not.toContain('client');
   });
 
+  it('TZ-KP-WS-405: «Фон» without template shows toast instead of silent no-op', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    const toast = TestBed.inject(PiToastService) as { show: jest.Mock };
+    store.openSection('template');
+    fixture.detectChanges();
+
+    const label = fixture.nativeElement.querySelector(
+      '[data-test="kp-ws-template-bg-label"]',
+    ) as HTMLElement;
+    expect(label.classList.contains('kp-ws-tpl-actions__bg--disabled')).toBe(true);
+    label.click();
+    expect(toast.show).toHaveBeenCalledWith('Сначала выберите шаблон в списке ниже');
+  });
+
   it('mounts the template picker in the Шаблон panel', () => {
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
     store.openSection('template');
@@ -266,9 +280,7 @@ describe('ProposalWorkspacePage', () => {
       fixture.nativeElement.querySelector('[data-test="kp-ws-ai-pairing-cta"]'),
     ).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ai-create-cta"]')).toBeNull();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="kp-ws-ai-todos-badge"]'),
-    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ai-todos-badge"]')).toBeNull();
   });
 
   it('TZ-KP-WS-406: ?templateDraft= opens the template panel preselected on the draft', async () => {
@@ -330,18 +342,79 @@ describe('ProposalWorkspacePage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="kp-tpl-picker"]')).not.toBeNull();
   });
 
-  it('TZ-KP-WS-406: paired desktop shows the «Создать черновик шаблона» deep-link instead of pairing CTA', () => {
-    const pairing = TestBed.inject(DesktopPairingService);
-    (pairing.list as jest.Mock).mockReturnValue(
-      of({ ok: true, data: [{ id: 'k1', revokedAt: null }] }),
-    );
+  it('TZ-KP-WS-406: paired desktop shows create-draft button + manual link (not /import-todos dead-end)', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [ProposalWorkspacePage],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        {
+          provide: AuthService,
+          useValue: { user: signal({ pages: ['proposals'] }) },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParamMap: { get: () => null } } },
+        },
+        { provide: ProductsService, useValue: { list: EMPTY_LIST, findById: jest.fn() } },
+        { provide: ProductModulesService, useValue: { list: EMPTY_LIST } },
+        { provide: MaterialsService, useValue: { list: EMPTY_LIST } },
+        { provide: CategoriesService, useValue: { list: EMPTY_LIST } },
+        { provide: CounterpartyService, useValue: { list: EMPTY_LIST } },
+        { provide: PersonsService, useValue: { list: EMPTY_LIST } },
+        { provide: SiteService, useValue: { listByCounterparty: EMPTY_LIST } },
+        {
+          provide: DocumentTemplatesService,
+          useValue: { list: EMPTY_LIST, findById: jest.fn(), build: jest.fn() },
+        },
+        { provide: ProposalsService, useValue: { findById: jest.fn() } },
+        { provide: OrdersService, useValue: { findById: jest.fn() } },
+        { provide: OrganizationsService, useValue: { list: EMPTY_LIST } },
+        { provide: TemplateBlocksService, useValue: { listByTemplate: jest.fn() } },
+        { provide: TextBlocksService, useValue: { list: jest.fn() } },
+        { provide: TextBlockCategoriesService, useValue: { list: jest.fn() } },
+        { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
+        { provide: GeneratedDocumentsService, useValue: { archiveQuotation: jest.fn() } },
+        {
+          provide: PiDialogService,
+          useValue: {
+            open: dialogOpenMock.mockImplementation(() => ({
+              closed: computed(() => dialogCloseValue()),
+              close: jest.fn(),
+            })),
+          },
+        },
+        {
+          provide: PiToastService,
+          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn(), show: jest.fn() },
+        },
+        {
+          provide: DesktopPairingService,
+          useValue: {
+            list: jest.fn(() => of({ ok: true, data: [{ id: 'k1', revokedAt: null }] })),
+          },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(ProposalWorkspacePage);
+    fixture.detectChanges();
 
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
     store.openSection('template');
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ai-pairing-cta"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ai-create-cta"]')).not.toBeNull();
+    const createBtn = fixture.nativeElement.querySelector('[data-test="kp-ws-ai-create-cta"]');
+    expect(createBtn).not.toBeNull();
+    expect(createBtn.tagName).toBe('APP-PI-BUTTON');
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ai-manual-cta"]')).not.toBeNull();
+
+    createBtn.dispatchEvent(new Event('click'));
+    fixture.detectChanges();
+    expect(dialogOpenMock).toHaveBeenCalled();
+    const [component] = dialogOpenMock.mock.calls.at(-1);
+    expect(component.name).toContain('AiDraftDialog');
   });
 
   it('mounts the recipient panel in the Клиент section', () => {

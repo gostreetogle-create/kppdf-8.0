@@ -175,7 +175,12 @@ export class ImportTodosPage {
 
   protected readonly visibleTotal = computed(() => this.filtered().length);
 
+  protected readonly listTotal = computed(() => this.listRes.value()?.total ?? 0);
+
   protected readonly emptyMessage = computed(() => {
+    if (this.listTotal() === 0) {
+      return 'Задачи появляются после импорта из Desktop. Для шаблона КП используйте Desktop → Импорт или создайте шаблон в Конструкторе документов.';
+    }
     if (this.statusFilter() === 'open') {
       return 'Нет открытых задач импорта. Когда агент создаст todo — он появится здесь.';
     }

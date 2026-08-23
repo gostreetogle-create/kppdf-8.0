@@ -10,6 +10,7 @@ import { AuthService } from '../../../../core/auth.service';
 import { DesktopPairingService } from '../../../../shared/services/pi-desktop-pairing.service';
 import { PairingDialogComponent } from '../../../desktop/pairing-dialog.component';
 import { extractErrorMessage } from '../../../../core/silent-http';
+import { ProposalWorkspaceAiDraftDialogComponent } from './proposal-workspace-ai-draft-dialog.component';
 
 interface ImportTodoListResponse {
   items: Array<{ status: 'open' | 'done' }>;
@@ -21,9 +22,9 @@ interface ImportTodoListResponse {
  * Explains the Desktop+MCP path (MVP: file content is NOT auto-converted to
  * blocks — the human finishes the draft in the workspace/builder). CTA logic:
  *  - paired (desktop pairing key exists) → «Создать черновик шаблона»
- *    deep-links to /import-todos instructions;
+ *    opens instructions dialog (not /import-todos dead-end);
  *  - not paired → CTA «Подключить десктоп» reuses the global pairing dialog.
- * Pending import-todos badge links to /import-todos.
+ * Pending import-todos badge links to /import-todos when count > 0.
  */
 @Component({
   selector: 'app-workspace-ai-draft',
@@ -51,16 +52,36 @@ interface ImportTodoListResponse {
           <lucide-angular [img]="monitorIcon" [size]="14" aria-hidden="true" /> Подключить десктоп
         </app-pi-button>
       } @else {
-        <a class="kp-ws-ai-draft__link" routerLink="/import-todos" data-test="kp-ws-ai-create-cta">
-          <lucide-angular [img]="fileUpIcon" [size]="14" aria-hidden="true" />
-          Создать черновик шаблона
-        </a>
+        <div class="kp-ws-ai-draft__actions">
+          <app-pi-button
+            variant="outline"
+            size="sm"
+            (click)="openDraftInstructions()"
+            data-test="kp-ws-ai-create-cta"
+          >
+            <lucide-angular [img]="fileUpIcon" [size]="14" aria-hidden="true" />
+            Создать черновик шаблона
+          </app-pi-button>
+          <a
+            class="kp-ws-ai-draft__manual"
+            routerLink="/doc-constructor/templates"
+            data-test="kp-ws-ai-manual-cta"
+          >
+            Создать шаблон вручную
+          </a>
+        </div>
       }
 
-      <a class="kp-ws-ai-draft__badge" routerLink="/import-todos" data-test="kp-ws-ai-todos-badge">
-        <lucide-angular [img]="inboxIcon" [size]="14" aria-hidden="true" />
-        <span>{{ pendingLabel() }}</span>
-      </a>
+      @if (pendingCount() > 0) {
+        <a
+          class="kp-ws-ai-draft__badge"
+          routerLink="/import-todos"
+          data-test="kp-ws-ai-todos-badge"
+        >
+          <lucide-angular [img]="inboxIcon" [size]="14" aria-hidden="true" />
+          <span>{{ pendingBadgeLabel() }}</span>
+        </a>
+      }
     </div>
   `,
   styles: `
@@ -89,20 +110,20 @@ interface ImportTodoListResponse {
       line-height: 1.4;
       color: var(--color-muted-foreground, #6b7280);
     }
-    .kp-ws-ai-draft__link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      align-self: flex-start;
-      font-size: 0.8rem;
-      color: var(--color-ink);
-      text-decoration: none;
-      border: 1px solid var(--color-rule);
-      border-radius: 0.375rem;
-      padding: 0.35rem 0.6rem;
+    .kp-ws-ai-draft__actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.35rem;
     }
-    .kp-ws-ai-draft__link:hover {
-      border-color: var(--color-ink);
+    .kp-ws-ai-draft__manual {
+      font-size: 0.75rem;
+      color: var(--color-muted-foreground, #6b7280);
+      text-decoration: none;
+      border-bottom: 1px dashed var(--color-rule);
+    }
+    .kp-ws-ai-draft__manual:hover {
+      color: var(--color-ink);
     }
     .kp-ws-ai-draft__badge {
       display: inline-flex;
@@ -142,10 +163,9 @@ export class ProposalWorkspaceAiDraftComponent {
     return (this.todosRes.value()?.items ?? []).filter((t) => t.status === 'open').length;
   });
 
-  protected readonly pendingLabel = computed(() => {
+  protected readonly pendingBadgeLabel = computed(() => {
     const count = this.pendingCount();
-    const base = count > 0 ? `${count} задание(й) на импорт` : 'Заданий на импорт нет';
-    return `${base} · открыть /import-todos`;
+    return `Задачи импорта (${count})`;
   });
 
   constructor() {
@@ -174,6 +194,13 @@ export class ProposalWorkspaceAiDraftComponent {
       },
       width: 'lg',
       ariaLabel: 'Паринг десктопа',
+    });
+  }
+
+  protected openDraftInstructions(): void {
+    this.dialog.open(ProposalWorkspaceAiDraftDialogComponent, {
+      width: 'md',
+      ariaLabel: 'Создать черновик шаблона из файла',
     });
   }
 

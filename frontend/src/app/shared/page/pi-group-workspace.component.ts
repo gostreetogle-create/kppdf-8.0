@@ -36,7 +36,7 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <div class="group-chrome sticky top-0 z-20 bg-paper">
+    <div class="group-chrome sticky top-0 z-20 bg-paper" [class.group-chrome--flush]="flushBody()">
       @if (visibleToc().length > 0) {
         <nav
           class="group-toc flex items-center gap-1 flex-wrap pt-0 pb-0.5 min-w-0"
@@ -127,6 +127,15 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
       }
 
       .group-body--flush {
+        padding-top: 0;
+      }
+
+      /* Flush studios (KP workspace): single tight row between TOC and chips. */
+      .group-chrome--flush .group-toc {
+        padding-bottom: 0;
+      }
+
+      .group-chrome--flush .group-chips {
         padding-top: 0;
       }
     `,

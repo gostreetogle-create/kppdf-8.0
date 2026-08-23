@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  computed,
   inject,
   input,
   signal,
@@ -47,12 +48,17 @@ import { extractErrorMessage } from '../../../../core/silent-http';
       >
         <lucide-angular [img]="copyIcon" [size]="14" aria-hidden="true" /> Дублировать
       </app-pi-button>
-      <label class="kp-ws-tpl-actions__bg">
+      <label
+        class="kp-ws-tpl-actions__bg"
+        [class.kp-ws-tpl-actions__bg--disabled]="bgDisabled()"
+        (click)="onBgLabelClick($event)"
+        data-test="kp-ws-template-bg-label"
+      >
         <lucide-angular [img]="imageIcon" [size]="14" aria-hidden="true" /> Фон
         <input
           type="file"
           accept="image/*"
-          [disabled]="!template() || readOnly()"
+          [disabled]="bgDisabled()"
           (change)="onBackgroundFile($event)"
           data-test="kp-ws-template-bg"
           hidden
@@ -101,6 +107,10 @@ import { extractErrorMessage } from '../../../../core/silent-http';
       font-size: 0.8rem;
       color: var(--color-ink);
     }
+    .kp-ws-tpl-actions__bg--disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
     .kp-ws-tpl-rename {
       display: flex;
       gap: 0.5rem;
@@ -123,9 +133,18 @@ export class ProposalWorkspaceTemplateActionsComponent {
   protected readonly copyIcon = Copy;
   protected readonly imageIcon = ImagePlus;
 
+  protected readonly bgDisabled = computed(() => !this.template() || this.readOnly());
+
   private readonly templatesSvc = inject(DocumentTemplatesService);
   private readonly toast = inject(PiToastService);
   private readonly destroyRef = inject(DestroyRef);
+
+  protected onBgLabelClick(event: MouseEvent): void {
+    if (!this.bgDisabled()) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.toast.show('Сначала выберите шаблон в списке ниже');
+  }
 
   protected startRename(): void {
     const tpl = this.template();
