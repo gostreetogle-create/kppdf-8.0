@@ -164,8 +164,30 @@ type SortDir = 'asc' | 'desc';
       </div>
     </app-pi-section>
 
-    <!-- ───── Section III. Form variants ───── -->
-    <app-pi-section title="Form variants" hint="inline · stacked · architectural" eyebrow="III">
+    <!-- ───── Section III. Hint tones (TZ-UI-DEN-502) ───── -->
+    <app-pi-section title="Hint tones" hint="default · ai · success · warn" eyebrow="III">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field max-w-2xl">
+        <app-pi-form-field label="Default" hint="Muted helper — backward compatible">
+          <app-pi-input type="text" placeholder="Default tone" />
+        </app-pi-form-field>
+        <app-pi-form-field
+          label="AI suggestion"
+          hint="Подсказка от AI — не подтверждение"
+          hintTone="ai"
+        >
+          <app-pi-input type="text" placeholder="AI tone" />
+        </app-pi-form-field>
+        <app-pi-form-field label="Success" hint="Значение сохранено" hintTone="success">
+          <app-pi-input type="text" placeholder="Success tone" />
+        </app-pi-form-field>
+        <app-pi-form-field label="Warning" hint="Проверьте формат" hintTone="warn">
+          <app-pi-input type="text" placeholder="Warn tone" />
+        </app-pi-form-field>
+      </div>
+    </app-pi-section>
+
+    <!-- ───── Section IV. Form variants ───── -->
+    <app-pi-section title="Form variants" hint="inline · stacked · architectural" eyebrow="IV">
       <div class="space-y-section max-w-2xl">
         <div>
           <p class="eyebrow mb-3">Inline (label · input · button в одну строку)</p>
