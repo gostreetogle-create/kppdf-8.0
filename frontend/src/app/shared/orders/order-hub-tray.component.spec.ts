@@ -276,6 +276,34 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(tray.querySelector('[data-test="desk-cancel-shipment-button"]')).toBeNull();
   });
 
+  it('428: disclosure header shows a chevron that rotates and a state badge on toggle', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', ORDER);
+    fixture.componentRef.setInput('mode', 'hub');
+    fixture.detectChanges();
+    const tray = fixture.nativeElement as HTMLElement;
+    const toggle = tray.querySelector(
+      '[data-test="order-composition-toggle"]',
+    ) as HTMLButtonElement;
+    expect(toggle).toBeTruthy();
+
+    // Collapsed: chevron present, not rotated; badge says «раскрыть».
+    const icon = toggle.querySelector('lucide-icon') as HTMLElement;
+    expect(icon).toBeTruthy();
+    expect(icon.classList.contains('rotate-180')).toBe(false);
+    expect(toggle.textContent).toContain('раскрыть');
+    expect(toggle.textContent).not.toContain('свернуть');
+    expect(toggle.classList.contains('hover:bg-paper-2')).toBe(true);
+
+    toggle.click();
+    fixture.detectChanges();
+
+    // Expanded: chevron rotated 180°, badge flips to «свернуть».
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(toggle.querySelector('lucide-icon')?.classList.contains('rotate-180')).toBe(true);
+    expect(toggle.textContent).toContain('свернуть');
+  });
+
   it('433: after cancel (only cancelled left) tray shows «Отгружено» again for a ready order', () => {
     TestBed.overrideProvider(ShipmentsService, {
       useValue: {

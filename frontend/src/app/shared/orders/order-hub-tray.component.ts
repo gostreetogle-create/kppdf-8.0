@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 
 import {
   CompositionTreeComponent,
@@ -106,7 +107,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
   selector: 'app-order-hub-tray',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, CompositionTreeComponent],
+  imports: [RouterLink, LucideAngularModule, CompositionTreeComponent],
   template: `
     <div
       class="order-hub-tray"
@@ -124,7 +125,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
         <div class="relative" data-test="expanded-content-body">
           <!-- ───── Summary bar ───── -->
           <div
-            class="flex flex-wrap items-center gap-3 border-b hairline pb-3 mb-4"
+            class="flex flex-wrap items-center gap-3 border-b hairline pb-4 mb-4"
             data-test="order-summary-bar"
           >
             <span
@@ -165,7 +166,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
 
           <!-- ───── Card grid ───── -->
           <div
-            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(22rem,40%)] gap-4 items-start"
+            class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_min(22rem,40%)] gap-5 items-start"
             data-test="order-lifecycle-groups"
           >
             <!-- Left: Состав -->
@@ -173,19 +174,27 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               <section class="min-w-0 flex flex-col gap-1" data-test="order-composition-block">
                 <button
                   type="button"
-                  class="flex items-center justify-between gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm"
+                  class="flex items-center gap-3 w-full min-h-touch text-left text-sm text-ink pi-focus-ring rounded-sm hover:bg-paper-2 px-2 -mx-2"
                   [attr.aria-expanded]="compositionExpanded()"
                   [attr.aria-controls]="'order-composition-' + order()._id"
                   (click)="toggleComposition()"
                   data-test="order-composition-toggle"
                 >
+                  <lucide-icon
+                    [img]="chevronDownIcon"
+                    [size]="16"
+                    class="shrink-0 transition-transform"
+                    [class.rotate-180]="compositionExpanded()"
+                    aria-hidden="true"
+                  ></lucide-icon>
                   <span class="font-medium">Состав заказа</span>
+                  <span class="flex-1"></span>
                   <span class="text-xs text-muted-foreground">
                     {{ order().items?.length ?? 0 }}
                     {{ itemCountLabel(order().items?.length ?? 0) }}
-                    <span aria-hidden="true">
-                      · {{ compositionExpanded() ? 'свернуть' : 'раскрыть' }}</span
-                    >
+                  </span>
+                  <span class="border hairline px-2 py-0.5 text-xs rounded-sm" aria-hidden="true">
+                    {{ compositionExpanded() ? 'свернуть' : 'раскрыть' }}
                   </span>
                 </button>
                 @if (compositionExpanded()) {
@@ -251,7 +260,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                       </div>
                     } @else {
                       <ul
-                        class="m-0 mt-1 pl-4 space-y-0.5 text-sm"
+                        class="m-0 mt-1 pl-5 space-y-1 text-sm"
                         data-test="order-composition-lines"
                       >
                         @for (line of order().items ?? []; track trackItem($index, line)) {
@@ -355,14 +364,23 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               >
                 <button
                   type="button"
-                  class="flex items-center justify-between w-full min-h-touch text-left text-sm font-medium text-ink"
+                  class="flex items-center gap-3 w-full min-h-touch text-left text-sm font-medium text-ink pi-focus-ring rounded-sm hover:bg-paper-2 px-2 -mx-2"
                   [attr.aria-expanded]="supplyExpanded()"
                   aria-controls="order-supply-content"
                   (click)="toggleSupply()"
                 >
+                  <lucide-icon
+                    [img]="chevronDownIcon"
+                    [size]="16"
+                    class="shrink-0 transition-transform"
+                    [class.rotate-180]="supplyExpanded()"
+                    aria-hidden="true"
+                  ></lucide-icon>
                   <span>Снабжение и производство</span>
-                  <span class="text-xs text-muted-foreground">
-                    {{ supplySummary() }} · {{ supplyExpanded() ? 'свернуть' : 'раскрыть' }}
+                  <span class="flex-1"></span>
+                  <span class="text-xs text-muted-foreground">{{ supplySummary() }}</span>
+                  <span class="border hairline px-2 py-0.5 text-xs rounded-sm" aria-hidden="true">
+                    {{ supplyExpanded() ? 'свернуть' : 'раскрыть' }}
                   </span>
                 </button>
                 @if (supplyExpanded()) {
@@ -439,14 +457,23 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               >
                 <button
                   type="button"
-                  class="flex items-center justify-between w-full min-h-touch text-left text-sm font-medium text-ink"
+                  class="flex items-center gap-3 w-full min-h-touch text-left text-sm font-medium text-ink pi-focus-ring rounded-sm hover:bg-paper-2 px-2 -mx-2"
                   [attr.aria-expanded]="logisticsExpanded()"
                   aria-controls="order-logistics-content"
                   (click)="toggleLogistics()"
                 >
+                  <lucide-icon
+                    [img]="chevronDownIcon"
+                    [size]="16"
+                    class="shrink-0 transition-transform"
+                    [class.rotate-180]="logisticsExpanded()"
+                    aria-hidden="true"
+                  ></lucide-icon>
                   <span>Логистика и документы</span>
-                  <span class="text-xs text-muted-foreground">
-                    {{ logisticsSummary() }} · {{ logisticsExpanded() ? 'свернуть' : 'раскрыть' }}
+                  <span class="flex-1"></span>
+                  <span class="text-xs text-muted-foreground">{{ logisticsSummary() }}</span>
+                  <span class="border hairline px-2 py-0.5 text-xs rounded-sm" aria-hidden="true">
+                    {{ logisticsExpanded() ? 'свернуть' : 'раскрыть' }}
                   </span>
                 </button>
                 @if (logisticsExpanded()) {
@@ -619,6 +646,9 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
   ],
 })
 export class OrderHubTrayComponent implements OnInit {
+  /** TZ-DESK-428: disclosure chevron (rotate when expanded). */
+  protected readonly chevronDownIcon = ChevronDown;
+
   readonly order = input.required<Order>();
   readonly mode = input<'hub' | 'desk'>('hub');
   /** Desk-only client fact; host owns the counterparty lookup. */

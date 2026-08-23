@@ -188,6 +188,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-ORDERS-HUB-302** | Колонки + expand «Состав заказа» (accordion; без «Сделка») — DONE                            |
 | **TZ-ORDERS-HUB-303** | Expand Снабжение/Производство/Документы + `/supply?orderId=` + `/production?orderId=` — DONE |
 | **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — DONE                                                    |
+| **TZ-DESK-428** | Shared tray: spacing `p-4`/`gap-5`/`pb-4` + disclosure chevron (rotate) / hover / бейдж «раскрыть-свернуть» — parity с `/desk` |
 
 ## Особенности
 
