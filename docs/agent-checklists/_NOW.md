@@ -5,25 +5,19 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T16:25:00+03:00
+updated_at: 2026-08-23T17:50:00+03:00
 
 ## ACTIVE — WAVE-UI-DENSITY
 
-**DONE** — DEN closed (`599` `2885c036`, `590` `b1b6442e`, `512` `d25cb1f4`). **552 WAIT KP-WS-409**. PO: 5-route sign-off [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md).
+**DONE** — DEN closed (`599` `2885c036`, `590` `b1b6442e`, `512` `d25cb1f4`). **552 UNBLOCKED** (KP wave closed 409). PO: 5-route sign-off [`UI-DENSITY-GUARDS.md`](UI-DENSITY-GUARDS.md).
 
 ---
 
 ## ACTIVE — WAVE-KP-SINGLE-WORKSPACE (401→409)
 
-**DONE:** 400–405, 407 · archives in `tasks/_archive/2026-08/TZ-KP-WS-*.done.md`
+**DONE — волна закрыта (TZ-KP-WS-409 archived 2026-08-23).** 400–409 в `tasks/_archive/2026-08/TZ-KP-WS-*.done.md`; wave file → `tasks/_archive/2026-08/waves-done/`. God-page `ProposalCreatePage` удалена; `/proposals/create` = workspace. Ручной smoke — PENDING (VPN/dev-server PO, гейт деплоя).
 
-**IN PROGRESS (PO back):**
-- **freebuff-1** — [`PROMPT-FREEBUFF-KP-EXECUTOR-1.md`](../../tasks/PROMPT-FREEBUFF-KP-EXECUTOR-1.md) → **406 → 408 → 409**
-- **freebuff-2** — [`PROMPT-FREEBUFF-KP-EXECUTOR-2.md`](../../tasks/PROMPT-FREEBUFF-KP-EXECUTOR-2.md) → DESK-432 if needed + KP-E2E smoke after 408
-
-**NEXT gate PO:** после **408** — smoke `/proposals/create` + [`KP-E2E-SMOKE.md`](KP-E2E-SMOKE.md) перед 409/deploy.
-
-HEAD: `2885c036` · `_active/` KP: пуст (stale claims cleared)
+**NEXT (следующая очередь):** **DEN-552 UNBLOCKED** — density 5-route sign-off.
 
 ---
 

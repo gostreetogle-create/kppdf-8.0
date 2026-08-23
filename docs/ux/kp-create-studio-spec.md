@@ -1,7 +1,13 @@
-# Создать КП — layout spec (WAVE-KP-VITRINE)
+# Создать КП — layout spec (SUPERSEDED — workspace после 408)
 
-**Route:** `/proposals/create`  
-**Chrome:** `PiGroupWorkspace` — Сделки TOC **КП** + жёлтые **Создать КП** | **Все КП** (SALES-310)  
+> **STATUS 2026-08-23 (TZ-KP-WS-408/409):** студия КП теперь = **Single Workspace**
+> [`kp-workspace.page.md`](../pages/kp-workspace.page.md) (`/proposals/workspace`;
+> `/proposals/create` отдаёт тот же компонент). Этот spec — исторический канон
+> layout god-page `ProposalCreatePage` (удалена в 409). Новые фичи — только в
+> workspace-канон.
+
+**Route (было):** `/proposals/create`  
+**Chrome (было):** `PiGroupWorkspace` — Сделки TOC **КП** + жёлтые **Создать КП** | **Все КП** (SALES-310)  
 **Канон потока:** D13 / D21 в [`sales-to-shop-flow-canon.md`](../audits/2026-08-08-sales-to-shop-flow-canon.md)  
 **Обновлено:** 2026-08-12 · **v2.2 no-savebar LOCK (TZ-SALES-367)**  
 **LOCK (PO PASS visual):** каркас ниже **не ломать** без нового TZ + явного PO.  

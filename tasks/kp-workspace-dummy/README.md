@@ -1,6 +1,10 @@
-# KP Workspace — dummy layout (Wave 0.1)
+# KP Workspace — dummy layout (DEPRECATED — Wave 0.1)
 
-
+> **STATUS 2026-08-23 (TZ-KP-WS-409):** Wave 0 DONE; живой SoT —
+> `ProposalWorkspaceShellComponent` (TZ-401) и страница
+> [`/proposals/workspace`](../../docs/pages/kp-workspace.page.md).
+> Dummy остаётся **только как geometry reference** (CSS-снапшот shell).
+> Правки геометрии — в компонент, не сюда.
 
 Статичный каркас Single Workspace (Inventor-style). **Paper & Ink + Lucide.** Без API/store.
 

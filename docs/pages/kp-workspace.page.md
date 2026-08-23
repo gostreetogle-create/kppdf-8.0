@@ -20,12 +20,12 @@
 |-------|--------|----------------|
 | `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout (тонкий wrapper над shell, TZ-KP-WS-401) |
 | `/proposals/workspace` | **TZ-KP-WS-404 DONE** | Left (каталог/шаблон/клиент) + right (параметры/таблица/условия/вывод) panels; hydration + autosave + preview; catalog review |
-| `/proposals/create` | legacy до **TZ-KP-WS-408** | Текущая студия; после cutover → workspace (или redirect) |
+| `/proposals/create` | **TZ-KP-WS-408 DONE** | **Тот же компонент, что workspace** (query params id/new/source/sourceId/templateDraft/action=print сохраняются) — god-page `ProposalCreatePage` удалена в 409 |
 | `/proposals` | list | Lifecycle (статус, копия, заказ) — **не** в workspace ribbon (канон 367) |
 
 `pageKey` / ACL: как у create (`proposals`, adminOnly до решения PO).
 
-Chips «Сделки»: **КП** · **Договоры** · **Заказы**; секция КП: **Создать КП** → workspace (после 408) · **Все КП** · Demo (временно).
+Chips «Сделки»: **КП** · **Договоры** · **Заказы**; секция КП: **Создать КП** → `/proposals/create` (= workspace после 408) · **Все КП** · Demo (временно).
 
 ## Query params
 
@@ -149,8 +149,9 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + chrome rails L/R + placeholder (TZ-401/402 DONE) |
 | `.../workspace/proposal-workspace.store.ts` | store state machine (TZ-402 DONE) |
 | `.../workspace/proposal-workspace-draft.service.ts` | draft: hydration + autosave + build — один write-path; right-panel методы (TZ-403/404 DONE) |
-| `proposal-create.page.ts` + `proposal-create-*` / `proposal-product-rail` | reuse в панелях; god-page снять в 409 |
-| `tasks/kp-workspace-dummy/*` | reference only после 401 |
+| `proposal-create-*` / `proposal-product-rail` | **reuse в панелях** (subcomponents) |
+| ~~`proposal-create.page.ts`~~ | **удалена в 409** (god shell; recoverable из git history) |
+| `tasks/kp-workspace-dummy/*` | reference only (geometry), deprecated после 401 |
 
 ## Wave / TZ
 
@@ -165,8 +166,8 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **405** | embedded doc settings — **DONE** (table preset inline PiDialog; text block inline dialog + library refresh; template mini: rename/duplicate/фон; full builder через returnUrl) |
 | **406** | MCP AI-draft bridge — **DONE** (BE `sourceFileRef`/`draftSource`; MCP `sourceFileRef` + auto import-todo с workspace href; панель «Шаблон» секция «Из файла (AI)» + pairing CTA + badge /import-todos; `?templateDraft=` открывает черновик; picker бейдж `(AI)`) |
 | **407** | multi-supplier UX — **DONE** (org-change hint, копия для другой фирмы, family attach) |
-| **408** | cutover — **DONE** (`/proposals/create` → тот же компонент workspace; legacy `proposal-create.legacy.page.ts` один релиз; `?action=print` parity; parity matrix 45 строк PASS/defer в `.done.md`) |
-| **409** | legacy cleanup; этот файл = SoT |
+| **408** | cutover — **DONE** (`/proposals/create` → тот же компонент workspace; `?action=print` parity; parity matrix 45 строк PASS/defer в `.done.md`) |
+| **409** | legacy cleanup — **DONE** (god-page `ProposalCreatePage` удалена; subcomponents остались; этот файл = SoT; wave closed) |
 
 Wave: [`../../tasks/WAVE-KP-SINGLE-WORKSPACE.md`](../../tasks/WAVE-KP-SINGLE-WORKSPACE.md).
 

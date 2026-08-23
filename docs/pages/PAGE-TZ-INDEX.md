@@ -23,7 +23,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Auth/Admin | **570·571 DONE** | `d306586c`, `21533019` |
 | Closeout | **590 DONE** · **599 DONE** | `b1b6442e` RU humanizer; guards in `UI-DENSITY-GUARDS.md` |
 | `/desk` density | **512 DONE** | `d25cb1f4` |
-| `/proposals/workspace` | **552 WAIT 409** | blocked until `TZ-KP-WS-409.done` |
+| `/proposals/workspace` | **552 UNBLOCKED** | wave KP-SINGLE-WORKSPACE closed (409 DONE) |
 
 ## Overview
 
@@ -82,8 +82,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
 | `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
-| `/proposals/workspace` | **kp-workspace.page.md** | **WAVE-KP-SINGLE-WORKSPACE** **TZ-KP-WS-400 DONE**, **401 DONE** (shell + placeholder), 402…409 READY; SoT студии; cutover 408 |
-| `/proposals/create` | **proposals-create.page.md** (legacy) | editor 359–378 DONE; после 408 → workspace; см. banner в page doc |
+| `/proposals/workspace` | **kp-workspace.page.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409 archived); SoT студии; cutover 408; god-page удалена 409 |
+| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); legacy-канон до cutover; см. banner в page doc |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 

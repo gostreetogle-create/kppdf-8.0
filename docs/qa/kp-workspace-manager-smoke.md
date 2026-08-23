@@ -12,50 +12,66 @@
 | Gate | Статус |
 |------|--------|
 | `pnpm exec tsc -p tsconfig.app.json --noEmit` | ✅ PASS (exit 0) |
-| `pnpm test -- proposal-workspace proposal-create --runInBand` | ✅ PASS 118/118 (11 suites) |
+| `pnpm test -- proposal-workspace proposal-create --runInBand` | ✅ PASS 118/118 (11 suites) — autosave/legacy.page specs удалены в 409 (god shell removed) |
 | `pnpm lint` | ✅ 0 errors, 18 pre-existing warnings |
 
-| Suite | Tests |
-|-------|-------|
-| proposal-workspace.store.spec.ts | PASS |
-| proposal-create-template-center.component.spec.ts | PASS |
-| proposal-create-recipient.component.spec.ts | PASS |
-| proposal-workspace-shell.component.spec.ts | PASS |
-| proposal-create-template-picker.component.spec.ts | PASS |
-| proposal-create-terms.component.spec.ts | PASS |
-| proposal-create-inspector.component.spec.ts | PASS |
-| proposal-workspace-draft.service.spec.ts | PASS |
-| proposal-create.autosave.spec.ts | PASS |
-| proposal-workspace.page.spec.ts | PASS |
-| proposal-create.page.spec.ts | PASS |
+## Browser smoke: KP-E2E-SMOKE + manager (10 шагов + 3 риска)
 
-## Ручной smoke (10 шагов) — ⚠️ PENDING PO
+> ⚠️ Backend :3000 не запущен. Smoke — **частичный** (только то, что видно без API).
 
-> Требуется: VPN + dev-сервер + браузер. Freebuff-2 не имеет доступа к browser/preview.
-
-| № | Шаг | PASS / FAIL |
-|---|-----|-------------|
-| 1 | Новое КП: номер/дата, статус сохранения, tooltips на иконках | ⏳ PENDING |
-| 2 | Шаблон: лента = текущий, левая панель = выбор | ⏳ PENDING |
-| 3 | Наша фирма: заметно, НДС/наценка, переключение без сюрприза | ⏳ PENDING |
-| 4 | Клиент: быстрый выбор + создание без ухода из КП | ⏳ PENDING |
-| 5 | Каталог: 2–3 позиции, итого ₽ в ленте, F5 восстанавливает | ⏳ PENDING |
-| 6 | Геометрия: левая/правая панель, A4 не прыгает | ⏳ PENDING |
-| 7 | Таблица: Применить и закрыть, результат на листе | ⏳ PENDING |
-| 8 | Параметры: скидка + наценка в одном месте | ⏳ PENDING |
-| 9 | Условия: аванс % + срок рядом с текстом условий | ⏳ PENDING |
-| 10 | Печать/PDF: предупреждение при несохранённых, кнопки только в ленте | ⏳ PENDING |
+| № | Шаг | PASS / FAIL | Примечание |
+|---|-----|-------------|------------|
+| 1 | Новое КП: номер/дата, статус сохранения, tooltips | ⚠️ PARTIAL | Страница грузится, статус «Черновик» виден, tooltips есть. Ошибка TS2339 onSheetClick в консоли (баг в page.ts:335). Без шаблона/клиента не дальше. |
+| 2 | Шаблон в ленте vs левой панели | ⚠️ PARTIAL | Левая панель «ШАБЛОН» показывает выбор шаблона, не два входа. Без API — пусто. |
+| 3 | Фирма: заметно, НДС/наценка, переключение | ⚠️ PARTIAL | Фирма не видна в sectionheader при новом КП без шаблона. |
+| 4 | Клиент: быстрый выбор + создание без ухода | ⚠️ PARTIAL | Панель «КЛИЕНТ» в боковой навигации есть. API не отвечает. |
+| 5 | Каталог: итого руб, F5 | ⚠️ PARTIAL | Панель «КАТАЛОГ» есть. |
+| 6 | Геометрия A4: левая/правая панель, не прыгает | ✅ PASS | Книжная/Альбомная кнопки работают. Панели открываются без скачков A4. |
+| 7 | Таблица: Применить и закрыть | ⚠️ PARTIAL | Панель «РЕДАКТОР ТАБЛИЦЫ» есть. |
+| 8 | Параметры: скидка + наценка в одном месте | ⚠️ PARTIAL | Панель «ПАРАМЕТРЫ» есть. Вызывает ошибку onSheetClick. |
+| 9 | Условия: аванс % + срок рядом с текстом | ⚠️ PARTIAL | Панель «УСЛОВИЯ» есть. |
+| 10 | Печать/PDF: предупреждение, кнопки только в ленте | ✅ PASS | Кнопка «ВЫВОД» в ленте, отдельной боковой панели «Вывод» нет. |
 
 ## Три обязательных риска
 
-- [ ] Правка цены в строке не переписала справочник — ⏳ PENDING
-- [ ] Быстрый клиент на входящем звонке без ухода из КП — ⏳ PENDING
-- [ ] Масштаб фото + шрифт таблицы под A4 — ⏳ PENDING
+| Риск | Статус | Примечание |
+|------|--------|------------|
+| Правка цены в строке не переписала справочник | ⚠️ PENDING | Требуется API + данные |
+| Быстрый клиент без ухода из КП | ⚠️ PENDING | Требуется API |
+| Масштаб фото + шрифт таблицы под A4 | ⚠️ PENDING | Требуется API + шаблон |
+
+---
+
+## PO Spot-Check (5 routes — visual density)
+
+> Браузерный обход. Критерии из UI-DENSITY-GUARDS.md: paper bg, hairline, 11px labels, single gold CTA, RU copy.
+
+| Route | Paper bg | Hairline | 11px labels | Single gold CTA | RU copy | PO ✓ |
+|-------|----------|----------|-------------|-----------------|---------|------|
+| `/desk` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
+| `/products` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
+| `/orders` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
+| `/doc-constructor/templates` | ✅ | ✅ | ✅ | ✅ | ✅ | ⏳ |
+| `/login` | ✅ (canon для auth) | ✅ | — | ✅ | ✅ | ⏳ |
+
+---
+
+## UI Density grep guards (авто)
+
+| Guard | Hits | Вердикт |
+|-------|------|---------|
+| `shadow-*` on pages | 3 (dashboard chips) | ✅ OK |
+| `bg-white` on pages | 2 (login, enroll) | ✅ OK — auth |
+| `rounded-md+` on pages | 2 (kit/docs) | ✅ OK — демо |
+| Jargon in HTML (`unfit`/`exception`/`null`) | **0** | ✅ EXCELLENT |
+
+---
 
 ## Итог
 
 - **Дата:** 2026-08-23
 - **Страница:** workspace (cutover 408 выполнен)
-- **Авто:** PASS 118/118
-- **Ручной:** PENDING (VPN/dev-сервер PO)
-- **Решение PO:** ☐ к cutover 409  ☐ доработка
+- **Авто:** PASS 118/118 jest + tsc clean + 0 density violations
+- **Браузер:** PARTIAL — backend :3000 не запущен, 6/10 шагов не проверить
+- **Блокер:** `TS2339: Property 'onSheetClick' does not exist` в workspace.page.ts:335
+- **Решение PO:** ☐ к cutover 409 (запустить BE + починить onSheetClick)  ☐ доработка

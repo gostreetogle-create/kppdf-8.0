@@ -405,11 +405,11 @@ export const routes: Routes = [
         title: 'KPPDF — КП Workspace',
       },
       {
-        // TZ-KP-WS-408 — cutover: `/proposals/create` serves the SAME
+        // TZ-KP-WS-408/409 — cutover: `/proposals/create` serves the SAME
         // component as the workspace (query params id/new/source/sourceId/
         // templateDraft/action=print preserved — the workspace constructor
-        // reads them). Legacy create page kept one release as
-        // proposal-create.legacy.page.ts (rollback path).
+        // reads them). Legacy ProposalCreatePage god shell removed in 409
+        // (recoverable from git history); subcomponents shared.
         path: 'proposals/create',
         canMatch: [capabilityRouteGuard, adminOnlyRouteGuard],
         data: { pageKey: 'proposals' },

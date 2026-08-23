@@ -1,6 +1,7 @@
 # WAVE-KP-SINGLE-WORKSPACE
 
-> **Status:** READY (Wave 0 geometry PASS 2026-08-23)  
+> **Status: DONE** (2026-08-23 — TZ-KP-WS-409 archived; волна закрыта)  
+> **Архив:** `tasks/_archive/2026-08/waves-done/WAVE-KP-SINGLE-WORKSPACE.md`  
 > **Program:** `docs/audits/2026-08-23-kp-single-workspace-program.md`  
 > **Executor prompt:** `tasks/PROMPT-FREEBUFF-KP-WORKSPACE-WAVE.md`  
 > **Geometry law:** `docs/pages/kp-workspace-geometry.md`
