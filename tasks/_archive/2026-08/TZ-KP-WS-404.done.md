@@ -33,4 +33,4 @@
 
 ## Коммиты
 
-- SHA кода: заполняется после push
+- SHA кода: `5d27f39c` (push PASS, pre-push hook OK)
