@@ -8,6 +8,8 @@
 
 ```yaml
 status: READY
+# Гейты прогнаны на этом SHA (product tree). Tip main может быть
+# на 1 docs-коммит впереди (этот штамп) — деплоить tip после pull.
 deploy_sha_target: 167865c9be944b3f9c4f6dd6154a960137ad477b
 prepared_at: 2026-08-23T23:40:00+03:00
 prepared_by: cursor-orchestrator
@@ -20,7 +22,7 @@ known_debt:
   - KP/supply browser smoke — PO optional after warm
 mixed_commits: false
 why_ready: >
-  HEAD 167865c9: FE 2015/2015, BE 969/971 (2 baseline), arch PASS,
-  SUPPLY-316/317 + MECH/PLUS/KP-WS waves on main. §F deploy not run.
+  Gates @ 167865c9: FE 2015/2015, BE 969/971 (2 baseline), arch PASS.
+  SUPPLY-316/317 + MECH/PLUS/KP-WS on main. §F deploy not run.
   Deploy agent: README only — no jest/tsc. VPN off. Warm deploy.ps1.
 ```

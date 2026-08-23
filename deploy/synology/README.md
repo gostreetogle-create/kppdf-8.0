@@ -12,7 +12,11 @@
 1. Папка проекта: `D:\kppdf-8.0`, ветка `main`.
 2. Открой [`docs/agent-checklists/DEPLOY-READY.md`](../../docs/agent-checklists/DEPLOY-READY.md).
    - Если `status` **не** `READY` → **STOP**. Напиши PO: «штамп не READY — нужна подготовка к деплою».
-   - Если `READY` → `git fetch origin` и проверь: `HEAD` = `deploy_sha_target` (полный SHA). Не совпало → **STOP** (тот же ответ).
+   - Если `READY` → `git fetch origin` && `git checkout main` && `git pull --ff-only`.
+   - Проверка SHA: `deploy_sha_target` должен быть **предком** `HEAD`
+     (`git merge-base --is-ancestor <deploy_sha_target> HEAD`). Обычно tip = target
+     или tip = target + 1 docs-коммит штампа. Иначе **STOP**.
+   - Деплой всегда с **tip `main` (HEAD)**, не detached на старый SHA.
 3. VPN **выключен**. Секреты уже в `deploy/synology/config.env` + `CREDENTIALS.md` (не коммитить, пароли не печатать).
 4. Warm deploy (данные не трогать, **без** wipe):
 
