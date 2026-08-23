@@ -69,6 +69,44 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
     expect(inspector.number()).toBe('server-2');
   });
 
+  it('MECH-503: number input shows autosave placeholder when empty', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [ProposalCreateInspectorComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PiDialogService, useValue: dialogSpy },
+        {
+          provide: OrganizationsService,
+          useValue: {
+            list: () => of({ ok: true, data: { items: [fakeOrg], total: 1 } }),
+            findById: jest.fn(),
+          },
+        },
+        {
+          provide: CounterpartyService,
+          useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
+        },
+      ],
+    }).compileComponents();
+    const fullFixture = TestBed.createComponent(ProposalCreateInspectorComponent);
+    fullFixture.detectChanges();
+    await fullFixture.whenStable();
+
+    const input = fullFixture.nativeElement.querySelector(
+      '[data-test="kp-insp-number"]',
+    ) as HTMLInputElement;
+    expect(input.placeholder).toBe('Присвоится при сохранении');
+    expect(input.value).toBe('');
+
+    fullFixture.componentRef.setInput('initialNumber', 'QTN-001');
+    fullFixture.detectChanges();
+    expect(
+      (fullFixture.nativeElement.querySelector('[data-test="kp-insp-number"]') as HTMLInputElement)
+        .value,
+    ).toBe('QTN-001');
+  });
+
   it('openOrganization opens OrganizationFullEditor in-place without router navigation', async () => {
     fixture.componentRef.setInput('initialOrganizationId', 'org-1');
     fixture.detectChanges();

@@ -242,6 +242,107 @@ describe('ProposalWorkspaceDraftService', () => {
     expect(localStorage.getItem('kp.create.lastDraftId')).toBeNull();
   }));
 
+  it('MECH-503: new draft autosave assigns proposalNumber from create response', fakeAsync(() => {
+    proposalsCreateMock.mockReturnValue(
+      of({ ok: true, data: { _id: 'q-new', number: 'QTN-001', status: 'draft' } }),
+    );
+    service.init({ new: true });
+    tick();
+    expect(service.proposalNumber()).toBe('');
+
+    service.onTemplateChange(TEMPLATE as never);
+    tick(200);
+    service.onInspectorState({
+      organizationId: 'org-1',
+      counterpartyId: '',
+      orgMarkupPercent: 0,
+      dealVatPercent: 20,
+      discountType: 'none',
+      discountPercent: 0,
+      discountAmount: 0,
+      prepaymentPercent: 0,
+      productionDays: 0,
+      deliveryDays: 0,
+      sheetLayout: {
+        rowsFirstPage: 0,
+        rowsNextPage: 0,
+        photoScalePercent: 100,
+        photoCropYPercent: 0,
+        showPhotoColumn: true,
+        tableFontSize: 12,
+        tableHeaderFontSize: 12,
+      },
+    });
+    tick(2000);
+
+    expect(proposalsCreateMock).toHaveBeenCalled();
+    expect(proposalsCreateMock.mock.calls[0][0].number).toBeUndefined();
+    expect(service.proposalNumber()).toBe('QTN-001');
+    expect(service.currentDraftId()).toBe('q-new');
+    tick(5000);
+  }));
+
+  it('MECH-503: manual number edit is sent on subsequent update', fakeAsync(() => {
+    proposalsCreateMock.mockReturnValue(
+      of({ ok: true, data: { _id: 'q-new', number: 'QTN-001', status: 'draft' } }),
+    );
+    service.init({ new: true });
+    service.onTemplateChange(TEMPLATE as never);
+    tick(200);
+    service.onInspectorState({
+      organizationId: 'org-1',
+      counterpartyId: '',
+      orgMarkupPercent: 0,
+      dealVatPercent: 20,
+      discountType: 'none',
+      discountPercent: 0,
+      discountAmount: 0,
+      prepaymentPercent: 0,
+      productionDays: 0,
+      deliveryDays: 0,
+      sheetLayout: {
+        rowsFirstPage: 0,
+        rowsNextPage: 0,
+        photoScalePercent: 100,
+        photoCropYPercent: 0,
+        showPhotoColumn: true,
+        tableFontSize: 12,
+        tableHeaderFontSize: 12,
+      },
+    });
+    tick(2000);
+    expect(service.proposalNumber()).toBe('QTN-001');
+    localStorage.setItem('kp.create.lastDraftId', 'q-new');
+
+    service.onInspectorState({
+      organizationId: 'org-1',
+      counterpartyId: '',
+      number: 'QTN-001-custom',
+      orgMarkupPercent: 0,
+      dealVatPercent: 20,
+      discountType: 'none',
+      discountPercent: 0,
+      discountAmount: 0,
+      prepaymentPercent: 0,
+      productionDays: 0,
+      deliveryDays: 0,
+      sheetLayout: {
+        rowsFirstPage: 0,
+        rowsNextPage: 0,
+        photoScalePercent: 100,
+        photoCropYPercent: 0,
+        showPhotoColumn: true,
+        tableFontSize: 12,
+        tableHeaderFontSize: 12,
+      },
+    });
+    tick(2000);
+
+    expect(proposalsUpdateMock).toHaveBeenCalled();
+    expect(proposalsUpdateMock.mock.calls.at(-1)?.[1].number).toBe('QTN-001-custom');
+    tick(5000);
+  }));
+
   it('composition total reflects lines and markup', fakeAsync(() => {
     service.init({ id: 'q-1' });
     tick(200);
@@ -458,4 +559,17 @@ describe('ProposalWorkspaceDraftService', () => {
     expect(printer).toHaveBeenCalledTimes(1);
     tick(5000);
   }));
+
+  it('normalizes catalog photoIds to a single photo column (no duplicate Фото)', () => {
+    service.onTableLayoutChange([
+      { key: 'sku', label: 'Артикул', visible: true },
+      { key: 'photoIds', label: 'Фото', visible: true },
+      { key: 'name', label: 'Наименование', visible: true },
+      { key: 'listPrice', label: 'Цена', visible: true },
+    ]);
+
+    const layout = service.kpTableLayout();
+    expect(layout.filter((column) => column.key === 'photo')).toHaveLength(1);
+    expect(layout.some((column) => column.key === 'photoIds')).toBe(false);
+  });
 });

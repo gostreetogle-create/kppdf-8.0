@@ -152,6 +152,7 @@ export type ProposalCreateStatus = ProposalStatus;
             ><input
               class="pi-input w-full"
               [value]="number()"
+              placeholder="Присвоится при сохранении"
               (change)="onTextChange('number', $event)"
               [disabled]="readOnly()"
               data-test="kp-insp-number"
