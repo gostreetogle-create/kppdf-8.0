@@ -1,4 +1,5 @@
 import { DestroyRef, Injector, Injectable, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
@@ -177,6 +178,7 @@ export class ProposalWorkspaceDraftService {
   readonly compositionTotal = computed(() => this.calculateDealTotal());
 
   private readonly proposalsSvc = inject(ProposalsService);
+  private readonly router = inject(Router);
   private readonly orgsSvc = inject(OrganizationsService);
   private readonly counterpartiesSvc = inject(CounterpartyService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
@@ -316,6 +318,29 @@ export class ProposalWorkspaceDraftService {
     this.printCurrent = fn;
   }
 
+  /** MECH-505 — duplicate saved KP and open the copy in workspace. */
+  duplicateDraft(): void {
+    const id = this.currentDraftId();
+    if (!id) {
+      this.toast.error('Сначала сохраните КП');
+      return;
+    }
+    if (this.isReadOnly()) {
+      this.toast.error('Дублирование недоступно для принятого или закрытого КП');
+      return;
+    }
+    this.proposalsSvc.duplicate(id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error(extractErrorMessage(res.error));
+        return;
+      }
+      this.toast.success(`Создана копия ${res.data.number}`);
+      void this.router.navigate(['/proposals/workspace'], {
+        queryParams: { id: res.data._id },
+      });
+    });
+  }
+
   onInspectorState(state: ProposalCreateInspectorState): void {
     if (this.isReadOnly()) return;
     const nextOrganization = (state.organizationId ?? '').trim();
@@ -356,6 +381,10 @@ export class ProposalWorkspaceDraftService {
       this.discountTouchedByUser.set(true);
     }
     if (nextUnchanged) return;
+    if (orgChanged && nextOrganization) {
+      this.toast.show('Проверьте шаблон бланка — у другой фирмы может быть другой фон');
+      this.maybeSuggestOrgTemplates(nextOrganization);
+    }
     this.organizationId.set(nextOrganization);
     this.counterpartyId.set(nextCounterparty);
     this.orgMarkupPercent.set(nextMarkup);
@@ -1409,6 +1438,22 @@ export class ProposalWorkspaceDraftService {
   private applyInheritedVat(vatRate: number | undefined): void {
     if (this.vatTouchedByUser()) return;
     this.dealVatPercent.set(this.clampVat(vatRate ?? 20));
+  }
+
+  /** MECH-505 — hint when templates exist for the new org (no silent template swap). */
+  private maybeSuggestOrgTemplates(orgId: string): void {
+    this.templatesSvc
+      .list({ organizationId: orgId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) return;
+        const count = res.data.items?.length ?? 0;
+        if (count > 0) {
+          this.toast.show(
+            `Для выбранной фирмы есть ${count} шаблон(ов) — проверьте раздел «Шаблон»`,
+          );
+        }
+      });
   }
 
   private inheritFromOrganization(orgId: string): void {

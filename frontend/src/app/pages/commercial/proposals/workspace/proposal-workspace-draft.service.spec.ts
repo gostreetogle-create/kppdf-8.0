@@ -1,5 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { computed } from '@angular/core';
 import { of } from 'rxjs';
 
@@ -48,8 +48,10 @@ describe('ProposalWorkspaceDraftService', () => {
   const proposalsFindMock = jest.fn();
   const proposalsCreateMock = jest.fn();
   const proposalsUpdateMock = jest.fn();
+  const proposalsDuplicateMock = jest.fn();
   const proposalsDownloadPdfMock = jest.fn();
   const templatesFindMock = jest.fn();
+  const templatesListMock = jest.fn();
   const buildMock = jest.fn();
   const tableFindMock = jest.fn();
   const toastError = jest.fn();
@@ -59,6 +61,7 @@ describe('ProposalWorkspaceDraftService', () => {
   const dialogOpenMock = jest.fn();
   const orgFindMock = jest.fn();
   const counterpartyFindMock = jest.fn();
+  const routerNavigateMock = jest.fn().mockResolvedValue(true);
   let dialogCloseValue: unknown = undefined;
 
   beforeEach(() => {
@@ -68,7 +71,11 @@ describe('ProposalWorkspaceDraftService', () => {
     proposalsFindMock.mockReturnValue(of({ ok: true, data: DRAFT }));
     proposalsCreateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-new' } }));
     proposalsUpdateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1', status: 'draft' } }));
+    proposalsDuplicateMock.mockReturnValue(
+      of({ ok: true, data: { _id: 'q-copy', number: 'КП-043' } }),
+    );
     proposalsDownloadPdfMock.mockReturnValue(of(new Blob(['pdf'])));
+    templatesListMock.mockReturnValue(of({ ok: true, data: { items: [], total: 0 } }));
     dialogCloseValue = undefined;
     templatesFindMock.mockReturnValue(of({ ok: true, data: TEMPLATE }));
     tableFindMock.mockReturnValue(
@@ -103,12 +110,13 @@ describe('ProposalWorkspaceDraftService', () => {
             findById: proposalsFindMock,
             create: proposalsCreateMock,
             update: proposalsUpdateMock,
+            duplicate: proposalsDuplicateMock,
             downloadPdf: proposalsDownloadPdfMock,
           },
         },
         {
           provide: DocumentTemplatesService,
-          useValue: { findById: templatesFindMock, build: buildMock },
+          useValue: { findById: templatesFindMock, build: buildMock, list: templatesListMock },
         },
         { provide: OrdersService, useValue: { findById: jest.fn() } },
         {
@@ -158,6 +166,7 @@ describe('ProposalWorkspaceDraftService', () => {
             show: toastShow,
           },
         },
+        { provide: Router, useValue: { navigate: routerNavigateMock } },
       ],
     });
     service = TestBed.inject(ProposalWorkspaceDraftService);
@@ -718,6 +727,60 @@ describe('ProposalWorkspaceDraftService', () => {
     });
     tick();
     expect(service.dealVatPercent()).toBe(7);
+    tick(5000);
+  }));
+
+  it('MECH-505: duplicateDraft calls service and navigates to new workspace id', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    expect(service.currentDraftId()).toBe('q-1');
+
+    service.duplicateDraft();
+    tick();
+
+    expect(proposalsDuplicateMock).toHaveBeenCalledWith('q-1');
+    expect(toastSuccess).toHaveBeenCalledWith('Создана копия КП-043');
+    expect(routerNavigateMock).toHaveBeenCalledWith(['/proposals/workspace'], {
+      queryParams: { id: 'q-copy' },
+    });
+    tick(5000);
+  }));
+
+  it('MECH-505: org change shows template background hint toast', fakeAsync(() => {
+    service.init({ new: true });
+    orgFindMock.mockReturnValueOnce(of({ ok: true, data: { _id: 'org-10', vatRate: 10 } }));
+
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-10',
+      counterpartyId: '',
+    });
+    tick();
+
+    expect(toastShow).toHaveBeenCalledWith(
+      'Проверьте шаблон бланка — у другой фирмы может быть другой фон',
+    );
+    tick(5000);
+  }));
+
+  it('MECH-505: org change suggests template picker when org templates exist', fakeAsync(() => {
+    service.init({ new: true });
+    orgFindMock.mockReturnValueOnce(of({ ok: true, data: { _id: 'org-10', vatRate: 10 } }));
+    templatesListMock.mockReturnValueOnce(
+      of({ ok: true, data: { items: [{ _id: 'tpl-org-10', name: 'Бланк B' }], total: 1 } }),
+    );
+
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-10',
+      counterpartyId: '',
+    });
+    tick();
+
+    expect(templatesListMock).toHaveBeenCalledWith({ organizationId: 'org-10' });
+    expect(toastShow).toHaveBeenCalledWith(
+      'Для выбранной фирмы есть 1 шаблон(ов) — проверьте раздел «Шаблон»',
+    );
     tick(5000);
   }));
 });

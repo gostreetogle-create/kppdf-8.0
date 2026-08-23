@@ -90,7 +90,12 @@ describe('ProposalWorkspacePage', () => {
         },
         {
           provide: ProposalsService,
-          useValue: { findById: jest.fn(), create: jest.fn(), update: jest.fn() },
+          useValue: {
+            findById: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            duplicate: jest.fn(),
+          },
         },
         { provide: OrdersService, useValue: { findById: jest.fn() } },
         { provide: OrganizationsService, useValue: { list: EMPTY_LIST } },
@@ -542,6 +547,15 @@ describe('ProposalWorkspacePage', () => {
     expect(spy).toHaveBeenNthCalledWith(1, 'print');
     expect(spy).toHaveBeenNthCalledWith(2, 'pdf');
     spy.mockRestore();
+  });
+
+  it('MECH-505: params panel exposes duplicate action and ribbon has Ещё menu', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('params');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-duplicate"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-ribbon-more"]')).not.toBeNull();
   });
 
   it('catalog review modal opens on table exit with dirty rows and resumes on resolve', () => {

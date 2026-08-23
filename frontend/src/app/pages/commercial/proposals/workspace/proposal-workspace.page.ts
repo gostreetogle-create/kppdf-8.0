@@ -13,11 +13,13 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import {
   ContactRound,
+  Copy,
   Download,
+  Ellipsis,
   FileText,
   LucideAngularModule,
   Package,
@@ -35,6 +37,11 @@ import type {
 import { PiDialogService } from '../../../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../../../shared/ui/toast';
 import { ButtonComponent } from '../../../../shared/ui/button/button.component';
+import { MenuTriggerDirective } from '../../../../shared/ui/menu/pi-menu-trigger.directive';
+import {
+  DropdownMenuComponent,
+  type DropdownMenuItem,
+} from '../../../../shared/ui/menu/pi-dropdown-menu.component';
 import { onDialogCloseOnce } from '../../../../shared/util/on-dialog-close-once';
 import type { TextBlock } from '../../../../shared/services/pi-text-blocks.service';
 import { PiGroupWorkspaceComponent } from '../../../../shared/page/pi-group-workspace.component';
@@ -102,10 +109,10 @@ const SECTION_DEFS: readonly SectionDef[] = [
     ProposalCreateTermsComponent,
     ProposalWorkspaceTemplateActionsComponent,
     ProposalWorkspaceAiDraftComponent,
-    ProposalWorkspaceTextBlockDialogComponent,
     ButtonComponent,
     LucideAngularModule,
-    RouterLink,
+    MenuTriggerDirective,
+    DropdownMenuComponent,
   ],
   providers: [ProposalWorkspaceStore, ProposalWorkspaceDraftService],
   styles: [
@@ -330,6 +337,23 @@ const SECTION_DEFS: readonly SectionDef[] = [
         background: var(--color-gold-deep);
       }
 
+      .kp-ws-ribbon-btn--ghost {
+        background: transparent;
+        border-color: transparent;
+      }
+
+      .kp-ws-ribbon-btn--ghost:hover {
+        background: var(--color-paper-2);
+        border-color: var(--color-rule);
+      }
+
+      .kp-ws-params-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--color-rule);
+      }
+
       .kp-create-output {
         display: flex;
         flex-direction: column;
@@ -432,6 +456,19 @@ const SECTION_DEFS: readonly SectionDef[] = [
           <lucide-angular [img]="downloadIcon" [size]="14" aria-hidden="true" />
           PDF
         </button>
+        <button
+          kpWsRibbonActions
+          type="button"
+          class="kp-ws-ribbon-btn kp-ws-ribbon-btn--ghost pi-focus-ring"
+          piDropdownTrigger
+          aria-label="Ещё"
+          data-test="kp-ws-ribbon-more"
+        >
+          <lucide-angular [img]="ellipsisIcon" [size]="14" aria-hidden="true" />
+          <ng-template #piDropdownContent>
+            <app-pi-dropdown-menu [items]="ribbonMoreItems()" ariaLabel="Ещё" />
+          </ng-template>
+        </button>
 
         <div kpWsPanel>
           @switch (store.activeSection()) {
@@ -463,6 +500,18 @@ const SECTION_DEFS: readonly SectionDef[] = [
               />
             }
             @case ('params') {
+              <div class="kp-ws-params-actions">
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  data-test="kp-ws-duplicate"
+                  [disabled]="!draft.currentDraftId() || draft.isReadOnly()"
+                  [title]="duplicateHint()"
+                  (click)="draft.duplicateDraft()"
+                >
+                  Дублировать КП
+                </app-pi-button>
+              </div>
               <app-proposal-create-inspector
                 [draftLines]="draft.draftLines()"
                 [tableLayout]="draft.kpTableLayout()"
@@ -694,6 +743,25 @@ export class ProposalWorkspacePage {
   }));
   protected readonly printerIcon = Printer;
   protected readonly downloadIcon = Download;
+  protected readonly ellipsisIcon = Ellipsis;
+  protected readonly copyIcon = Copy;
+
+  /** MECH-505 — ribbon «Ещё» duplicate action. */
+  protected readonly ribbonMoreItems = computed<DropdownMenuItem[]>(() => [
+    {
+      label: 'Дублировать КП',
+      icon: this.copyIcon,
+      disabled: !this.draft.currentDraftId() || this.draft.isReadOnly(),
+      dataTest: 'kp-ws-duplicate',
+      handler: () => this.draft.duplicateDraft(),
+    },
+  ]);
+
+  protected duplicateHint(): string {
+    if (this.draft.isReadOnly()) return 'Дублирование недоступно для принятого или закрытого КП';
+    if (!this.draft.currentDraftId()) return 'Сначала сохраните КП';
+    return 'Создать копию этого КП с новым номером';
+  }
 
   private readonly chromeTools = inject(PiChromeToolsService);
   private readonly destroyRef = inject(DestroyRef);
