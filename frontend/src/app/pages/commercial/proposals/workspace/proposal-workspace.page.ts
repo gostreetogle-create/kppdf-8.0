@@ -8,6 +8,7 @@ import {
   afterNextRender,
   effect,
   inject,
+  signal,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -28,6 +29,11 @@ import type {
   PiChromeLucideIcon,
   PiChromeToolItem,
 } from '../../../../shared/chrome/pi-chrome-tools.types';
+import { PiDialogService } from '../../../../shared/ui/dialog/pi-dialog.service';
+import { PiToastService } from '../../../../shared/ui/toast';
+import { ButtonComponent } from '../../../../shared/ui/button/button.component';
+import { onDialogCloseOnce } from '../../../../shared/util/on-dialog-close-once';
+import type { TextBlock } from '../../../../shared/services/pi-text-blocks.service';
 import { PiGroupWorkspaceComponent } from '../../../../shared/page/pi-group-workspace.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../../deals-group-chips';
 import { ProposalCreateInspectorComponent } from '../proposal-create-inspector.component';
@@ -37,6 +43,8 @@ import { ProposalCreateTemplateCenterComponent } from '../proposal-create-templa
 import { ProposalCreateTemplatePickerComponent } from '../proposal-create-template-picker.component';
 import { ProposalCreateTermsComponent } from '../proposal-create-terms.component';
 import { ProposalProductRailComponent } from '../proposal-product-rail.component';
+import { ProposalWorkspaceTemplateActionsComponent } from './proposal-workspace-template-actions.component';
+import { ProposalWorkspaceTextBlockDialogComponent } from './proposal-workspace-text-block-dialog.component';
 import {
   ProposalWorkspaceShellComponent,
   type WsRailItem,
@@ -88,6 +96,9 @@ const SECTION_DEFS: readonly SectionDef[] = [
     ProposalCreateInspectorComponent,
     ProposalCreateTableEditorComponent,
     ProposalCreateTermsComponent,
+    ProposalWorkspaceTemplateActionsComponent,
+    ProposalWorkspaceTextBlockDialogComponent,
+    ButtonComponent,
     RouterLink,
   ],
   providers: [ProposalWorkspaceStore, ProposalWorkspaceDraftService],
@@ -100,6 +111,13 @@ const SECTION_DEFS: readonly SectionDef[] = [
         font-size: 11px;
         color: var(--color-muted-foreground);
         background: var(--color-paper);
+      }
+
+      .kp-ws-terms-head {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid var(--color-rule);
       }
 
       .kp-catalog-review {
@@ -211,6 +229,27 @@ const SECTION_DEFS: readonly SectionDef[] = [
         border-top: 1px solid var(--color-rule);
         padding-top: 0.65rem;
       }
+
+      .kp-ws-org-hint {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.45rem 0.75rem;
+        background: color-mix(in oklch, var(--color-gold) 12%, transparent);
+        border-bottom: 1px solid var(--color-rule);
+        font-size: 0.72rem;
+        color: var(--color-ink);
+      }
+
+      .kp-ws-org-hint__dismiss {
+        border: 0;
+        background: transparent;
+        font-size: 1rem;
+        color: var(--color-muted);
+        cursor: pointer;
+        padding: 0 0.2rem;
+      }
     `,
   ],
   template: `
@@ -246,6 +285,10 @@ const SECTION_DEFS: readonly SectionDef[] = [
               />
             }
             @case ('template') {
+              <app-workspace-template-actions
+                [template]="draft.selectedTemplate()"
+                [readOnly]="draft.isReadOnly()"
+              />
               <app-proposal-create-template-picker
                 [initialId]="draft.selectedTemplate()?._id ?? ''"
                 (templateChange)="draft.onTemplateChange($event)"
@@ -321,9 +364,21 @@ const SECTION_DEFS: readonly SectionDef[] = [
               />
             }
             @case ('terms') {
+              <div class="kp-ws-terms-head">
+                <app-pi-button
+                  variant="outline"
+                  size="sm"
+                  [disabled]="draft.isReadOnly()"
+                  (click)="openTextBlockEditor()"
+                  data-test="kp-ws-text-block-create"
+                >
+                  Создать текстовый блок
+                </app-pi-button>
+              </div>
               <app-proposal-create-terms
                 [terms]="draft.terms()"
                 [readOnly]="draft.isReadOnly()"
+                [libraryRefresh]="textBlocksVersion()"
                 (termsChange)="draft.onTermsChange($event)"
               />
             }
@@ -469,6 +524,9 @@ export class ProposalWorkspacePage {
   private readonly route = inject(ActivatedRoute);
   private readonly focusTrapFactory = inject(ConfigurableFocusTrapFactory);
   private readonly injector = inject(Injector);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  protected readonly textBlocksVersion = signal(0);
   private activeCatalogReviewTrap: ConfigurableFocusTrap | null = null;
   private catalogReviewPreviousFocus: HTMLElement | null = null;
   private readonly catalogReviewRef = viewChild<ElementRef<HTMLElement>>('catalogReview');
@@ -525,6 +583,18 @@ export class ProposalWorkspacePage {
     const apply = (): void => this.store.toggleSection(id);
     if (leavingTable) this.draft.requestTableExit(apply);
     else apply();
+  }
+
+  /** TZ-KP-WS-405 — inline text-block create/edit in a PiDialog (no route change). */
+  protected openTextBlockEditor(): void {
+    if (this.draft.isReadOnly()) return;
+    const ref = this.dialog.open<TextBlock | null>(ProposalWorkspaceTextBlockDialogComponent, {
+      data: { block: null },
+    });
+    onDialogCloseOnce(ref, this.injector, () => {
+      this.textBlocksVersion.update((version) => version + 1);
+      this.toast.success('Текстовый блок создан');
+    });
   }
 
   @HostListener('document:keydown.escape')

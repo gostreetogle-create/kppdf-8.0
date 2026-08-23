@@ -1,6 +1,5 @@
 import { DestroyRef, Injector, Injectable, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
-import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, catchError, debounceTime, forkJoin, map, of, switchMap, tap } from 'rxjs';
 
@@ -48,6 +47,10 @@ import type {
 import { ProductFormDialogComponent } from '../../../products/product-form-dialog.component';
 import { ModuleFormDialogComponent } from '../../../modules/module-form-dialog.component';
 import { MaterialFormDialogComponent } from '../../../materials/material-form-dialog.component';
+import {
+  TableTemplateFormDialogComponent,
+  type TableTemplateDialogConfig,
+} from '../../../doc-constructor/tables/table-template-dialog.component';
 import { buildKpPdfFilename } from '../kp-pdf-filename';
 
 export interface ProposalWorkspaceDraftInit {
@@ -168,7 +171,6 @@ export class ProposalWorkspaceDraftService {
   private readonly tableTemplatesSvc = inject(TableTemplatesService);
   private readonly generatedDocumentsSvc = inject(GeneratedDocumentsService);
   private readonly dialog = inject(PiDialogService);
-  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly toast = inject(PiToastService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -369,11 +371,37 @@ export class ProposalWorkspaceDraftService {
     this.refreshComposition();
   }
 
+  /** TZ-KP-WS-405 — edit the table preset inline (PiDialog), no route change. */
   openTableTemplatePreset(): void {
     if (this.isReadOnly()) return;
     const id = this.tableTemplateId();
-    void this.router.navigate(['/doc-constructor/tables'], {
-      queryParams: id ? { editId: id } : undefined,
+    if (!id) {
+      this.toast.error('Сначала выберите шаблон таблицы.');
+      return;
+    }
+    this.tableTemplatesSvc.findById(id).subscribe((res) => {
+      if (!res.ok) {
+        this.toast.error('Не удалось загрузить шаблон таблицы.');
+        return;
+      }
+      const ref = this.dialog.open<TableTemplate | null>(TableTemplateFormDialogComponent, {
+        data: { template: res.data } as TableTemplateDialogConfig,
+      });
+      onDialogCloseOnce(ref, this.injector, (saved: TableTemplate) => {
+        this.tableTemplateId.set(saved._id);
+        this.kpTableLayout.set(
+          this.ensureEssentialColumns(
+            (saved.columns ?? []).map((column) => ({
+              key: column.key,
+              label: column.label,
+              visible: true,
+            })),
+          ),
+        );
+        this.refreshComposition();
+        this.rebuildPreview$.next();
+        this.scheduleAutosave();
+      });
     });
   }
 
