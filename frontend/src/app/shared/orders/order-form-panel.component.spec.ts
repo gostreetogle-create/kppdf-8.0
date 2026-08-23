@@ -6,6 +6,9 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import { PiToastService } from '../ui/toast';
 import { Order, OrderStatus } from '../services/orders.service';
 import { OrderFormPanelComponent } from './order-form-panel.component';
+import { PiDialogService } from '../ui/dialog/pi-dialog.service';
+import { PartyQuickCreateDialogComponent } from '../counterparty/party-quick-create-dialog.component';
+import { SiteQuickCreateDialogComponent } from '../site/site-quick-create-dialog.component';
 
 interface Control<T> {
   value: T;
@@ -41,6 +44,8 @@ interface OrderFormHarness {
   addItem(): void;
   onSubmit(): void;
   submitting(): boolean;
+  openCreateCounterparty(): void;
+  openCreateSite(): void;
 }
 
 const PRODUCT = { _id: 'p1', name: 'Дверь', sku: 'D-1', unit: 'шт' };
@@ -109,8 +114,10 @@ const sampleOrder = (status: OrderStatus, extra: Partial<Order> = {}): Order => 
 
 describe('OrderFormPanelComponent A2 characterization', () => {
   let httpMock: HttpTestingController;
+  let dialogOpen: jest.Mock;
 
   beforeEach(async () => {
+    dialogOpen = jest.fn().mockReturnValue({ closed: jest.fn() });
     await TestBed.configureTestingModule({
       imports: [OrderFormPanelComponent],
       providers: [
@@ -118,6 +125,7 @@ describe('OrderFormPanelComponent A2 characterization', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: '/api' },
         { provide: PiToastService, useValue: { success: jest.fn(), error: jest.fn() } },
+        { provide: PiDialogService, useValue: { open: dialogOpen } },
       ],
     })
       .overrideComponent(OrderFormPanelComponent, {
@@ -161,10 +169,44 @@ describe('OrderFormPanelComponent A2 characterization', () => {
     expect(source).toContain('font-variant-numeric: tabular-nums');
     // Price: xs max-w + tabular-nums
     expect(source).toContain('max-width: 7rem');
-    // Quick party: phone max-w 14rem, name/address in 12-col
-    expect(source).toContain('max-width: 14rem');
-    expect(source).toContain('sm:col-span-5');
-    expect(source).toContain('sm:col-span-4');
+  });
+
+  it('TZ-UI-PLUS-603: counterparty/site selects use pi-select-add-row with supply add-btn', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'order-form-panel.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('pi-select-add-row');
+    expect(source).toContain('pi-select-add-btn');
+    expect(source).toContain('data-test="ord-cp-add"');
+    expect(source).toContain('data-test="ord-site-add"');
+    expect(source).toContain('openCreateCounterparty()');
+    expect(source).toContain('openCreateSite()');
+    expect(source).not.toContain('order-quick-party');
+  });
+
+  it('TZ-UI-PLUS-603: openCreateCounterparty opens PartyQuickCreate dialog', () => {
+    const component = createPanel() as unknown as OrderFormHarness;
+    flushLookups(httpMock);
+    component.openCreateCounterparty();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      PartyQuickCreateDialogComponent,
+      expect.objectContaining({ width: 'sm' }),
+    );
+  });
+
+  it('TZ-UI-PLUS-603: openCreateSite opens SiteQuickCreate with counterpartyId', () => {
+    const component = createPanel() as unknown as OrderFormHarness;
+    flushLookups(httpMock);
+    component.form.controls.counterpartyId.setValue('cp1');
+    component.openCreateSite();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      SiteQuickCreateDialogComponent,
+      expect.objectContaining({
+        width: 'sm',
+        data: { counterpartyId: 'cp1' },
+      }),
+    );
   });
 
   it('items variant renders only composition controls and changes submit label', () => {

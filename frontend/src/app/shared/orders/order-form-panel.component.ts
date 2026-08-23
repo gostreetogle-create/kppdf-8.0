@@ -1,6 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  Injector,
   OnInit,
   computed,
   inject,
@@ -40,6 +42,16 @@ import {
 } from '../ui/overflow-select/pi-overflow-select.component';
 import { Users } from '../models/users';
 import { OrganizationsService, type Organization } from '../services/organizations.service';
+import { PiDialogService } from '../ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../util/on-dialog-close-once';
+import {
+  PartyQuickCreateDialogComponent,
+  type PartyQuickCreateResult,
+} from '../counterparty/party-quick-create-dialog.component';
+import {
+  SiteQuickCreateDialogComponent,
+  type SiteQuickCreateDialogData,
+} from '../site/site-quick-create-dialog.component';
 
 type FreezeMode = 'none' | 'plan' | 'hard';
 
@@ -141,16 +153,29 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('counterpartyId')"
             >
-              <app-pi-overflow-select
-                [items]="counterpartyItems()"
-                [value]="form.controls.counterpartyId.value"
-                (valueChange)="onCounterpartyChange($event)"
-                searchable="auto"
-                placeholder="— выберите —"
-                ariaLabel="Заказчик"
-                [disabled]="isCompositionLocked()"
-                dataTest="ord-cp"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="counterpartyItems()"
+                  [value]="form.controls.counterpartyId.value"
+                  (valueChange)="onCounterpartyChange($event)"
+                  searchable="auto"
+                  placeholder="— выберите —"
+                  ariaLabel="Заказчик"
+                  [disabled]="isCompositionLocked()"
+                  dataTest="ord-cp"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateCounterparty()"
+                  [disabled]="isCompositionLocked()"
+                  title="Новый заказчик"
+                  aria-label="Новый заказчик"
+                  data-test="ord-cp-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -159,18 +184,31 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('siteId')"
             >
-              <app-pi-overflow-select
-                [items]="siteItems()"
-                [value]="form.controls.siteId.value"
-                (valueChange)="onSiteChange($event)"
-                searchable="auto"
-                [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
-                [placeholder]="
-                  form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
-                "
-                ariaLabel="Объект"
-                dataTest="ord-site"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="siteItems()"
+                  [value]="form.controls.siteId.value"
+                  (valueChange)="onSiteChange($event)"
+                  searchable="auto"
+                  [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
+                  [placeholder]="
+                    form.controls.counterpartyId.value ? '— выберите —' : 'Сначала заказчик'
+                  "
+                  ariaLabel="Объект"
+                  dataTest="ord-site"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateSite()"
+                  [disabled]="!form.controls.counterpartyId.value || isCompositionLocked()"
+                  title="Новый объект"
+                  aria-label="Новый объект"
+                  data-test="ord-site-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -249,69 +287,6 @@ interface ItemFormGroup extends FormGroup {
                 />
               </app-pi-form-field>
             </div>
-          </div>
-        </app-pi-form-section>
-      }
-
-      <!-- ─── Quick-create заказчик ─── -->
-      @if (variant() === 'full' && !isCompositionLocked()) {
-        <app-pi-form-section
-          title="Быстрый заказчик"
-          headingId="order-sec-quick-party"
-          tone="neutral"
-        >
-          <div
-            class="p-3 hairline rounded-sm bg-paper-2/30 space-y-form-field"
-            data-test="order-quick-party"
-            [formGroup]="quickForm"
-          >
-            <p class="text-xs text-muted-foreground m-0">
-              Имя, телефон и адрес объекта — создаст заказчика и объект и подставит в заказ.
-            </p>
-            <!-- TZ-UX-FORM-313: phone narrow, name/address wider (not three equal). -->
-            <div class="grid grid-cols-1 sm:grid-cols-12 gap-form-field">
-              <app-pi-form-field
-                label="Имя"
-                htmlFor="ord-qc-name"
-                [required]="true"
-                class="sm:col-span-5"
-              >
-                <app-pi-input id="ord-qc-name" formControlName="name" placeholder="ООО … / ИП …" />
-              </app-pi-form-field>
-              <app-pi-form-field label="Телефон" htmlFor="ord-qc-phone" class="sm:col-span-3">
-                <app-pi-input
-                  id="ord-qc-phone"
-                  formControlName="phone"
-                  placeholder="+7 …"
-                  style="max-width: 14rem"
-                />
-              </app-pi-form-field>
-              <app-pi-form-field
-                label="Адрес объекта"
-                htmlFor="ord-qc-address"
-                [required]="true"
-                class="sm:col-span-4"
-              >
-                <app-pi-input
-                  id="ord-qc-address"
-                  formControlName="address"
-                  placeholder="Город, улица…"
-                />
-              </app-pi-form-field>
-            </div>
-            <app-pi-button
-              type="button"
-              variant="outline"
-              size="sm"
-              [disabled]="quickSubmitting()"
-              (click)="onQuickCreate()"
-              data-test="order-quick-create"
-            >
-              {{ quickSubmitting() ? 'Создание…' : 'Создать и подставить' }}
-            </app-pi-button>
-            @if (quickError()) {
-              <p role="alert" class="text-xs text-destructive m-0">{{ quickError() }}</p>
-            }
           </div>
         </app-pi-form-section>
       }
@@ -491,12 +466,11 @@ export class OrderFormPanelComponent implements OnInit {
   readonly cancelled = output<void>();
 
   /**
-   * ROI-523: true when the operator changed anything — the main order form or
-   * the quick-create counterparty subform. Hosts (desk flyout) read this to
-   * guard dirty-close (Esc / backdrop / X / cancelled).
+   * ROI-523: true when the operator changed anything. Hosts (desk flyout) read
+   * this to guard dirty-close (Esc / backdrop / X / cancelled).
    */
   get isDirty(): boolean {
-    return this.form.dirty || this.quickForm.dirty;
+    return this.form.dirty;
   }
 
   constructor() {
@@ -541,12 +515,13 @@ export class OrderFormPanelComponent implements OnInit {
   private readonly productsService = inject(ProductsService);
   private readonly usersService = Users.inject();
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   protected readonly isEdit = computed<boolean>(() => this.order() != null);
   protected readonly submitting = signal<boolean>(false);
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly quickSubmitting = signal<boolean>(false);
-  protected readonly quickError = signal<string | null>(null);
 
   protected readonly counterparties = signal<Counterparty[]>([]);
   protected readonly sites = signal<Site[]>([]);
@@ -593,12 +568,6 @@ export class OrderFormPanelComponent implements OnInit {
     deliveryAddress: this.fb.control<string | null>(null),
     notes: this.fb.control<string | null>(null, [Validators.maxLength(2000)]),
     items: this.fb.array<ItemFormGroup>([]),
-  });
-
-  protected readonly quickForm = this.fb.group({
-    name: this.fb.control('', [Validators.required]),
-    phone: this.fb.control(''),
-    address: this.fb.control('', [Validators.required]),
   });
 
   get itemsArray(): FormArray<ItemFormGroup> {
@@ -785,38 +754,45 @@ export class OrderFormPanelComponent implements OnInit {
     this.itemsArray.push(this.createItemGroup(initial));
   }
 
-  protected onQuickCreate(): void {
-    if (this.quickSubmitting()) return;
-    this.quickForm.markAllAsTouched();
-    if (this.quickForm.invalid) {
-      this.quickError.set('Укажите имя и адрес объекта');
-      return;
-    }
-    const v = this.quickForm.getRawValue();
-    this.quickSubmitting.set(true);
-    this.quickError.set(null);
-    this.counterpartyService
-      .quickCreateParty({
-        name: v.name.trim(),
-        phone: v.phone?.trim() || undefined,
-        address: v.address.trim(),
-      })
-      .subscribe((res) => {
-        this.quickSubmitting.set(false);
-        if (!res.ok) {
-          this.quickError.set(extractErrorMessage(res.error));
-          return;
-        }
-        const { counterparty, site } = res.data;
-        const list = this.counterparties();
-        if (!list.some((c) => c._id === counterparty._id)) {
-          this.counterparties.set([counterparty, ...list]);
-        }
-        this.form.controls.counterpartyId.setValue(counterparty._id);
-        this.loadSites(counterparty._id, site._id);
-        this.quickForm.reset({ name: '', phone: '', address: '' });
-        this.toast.success('Заказчик и объект созданы');
-      });
+  protected openCreateCounterparty(): void {
+    if (this.isCompositionLocked()) return;
+    const ref = this.dialog.open<PartyQuickCreateResult>(PartyQuickCreateDialogComponent, {
+      width: 'sm',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (result) => {
+      if (!result) return;
+      const { counterparty, site } = result;
+      const list = this.counterparties();
+      if (!list.some((c) => c._id === counterparty._id)) {
+        this.counterparties.set([counterparty, ...list]);
+      }
+      this.form.controls.counterpartyId.setValue(counterparty._id);
+      this.form.controls.counterpartyId.markAsDirty();
+      this.loadSites(counterparty._id, site._id);
+    });
+  }
+
+  protected openCreateSite(): void {
+    const counterpartyId = this.form.controls.counterpartyId.value;
+    if (!counterpartyId || this.isCompositionLocked()) return;
+    const ref = this.dialog.open<Site | null, SiteQuickCreateDialogData>(
+      SiteQuickCreateDialogComponent,
+      {
+        width: 'sm',
+        data: { counterpartyId },
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (site) => {
+      if (!site) return;
+      const list = this.sites();
+      if (!list.some((s) => s._id === site._id)) {
+        this.sites.set([...list, site]);
+      }
+      this.form.controls.siteId.setValue(site._id);
+      this.form.controls.siteId.markAsDirty();
+    });
   }
 
   protected hasError(name: keyof typeof this.form.controls): boolean {
@@ -868,7 +844,6 @@ export class OrderFormPanelComponent implements OnInit {
     for (const key of composition) {
       this.form.controls[key].disable({ emitEvent: false });
     }
-    this.quickForm.disable({ emitEvent: false });
     if (mode === 'hard') {
       this.form.controls.plannedDate.disable({ emitEvent: false });
       this.form.controls.priority.disable({ emitEvent: false });
