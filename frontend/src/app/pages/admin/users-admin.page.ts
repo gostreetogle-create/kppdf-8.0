@@ -59,7 +59,7 @@ const PAGE_SIZE = 10;
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
-          class="pi-input w-72"
+          class="pi-input w-72 pi-focus-ring"
           [value]="searchQuery()"
           (input)="onSearchInput($event)"
           placeholder="Поиск пользователей…"
@@ -78,77 +78,84 @@ const PAGE_SIZE = 10;
         }
       </div>
       @if (error(); as err) {
-        <p role="alert" class="text-sm text-destructive mb-4" data-testid="users-admin-error">
+        <div
+          role="alert"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
+          data-testid="users-admin-error"
+        >
           {{ err }}
-        </p>
+        </div>
       }
-      <app-pi-table
-        [data]="users()"
-        [columns]="cols"
-        [loading]="loading()"
-        [total]="total()"
-        [page]="page()"
-        [pageSize]="pageSize"
-        [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Пользователи не найдены.'"
-        [ariaLabel]="'Список пользователей'"
-        [rowActions]="rowActionsTplBinding"
-        (pageChange)="onPageChange($event)"
-      >
-        <ng-template #rowActionsTpl let-u>
-          <div class="flex items-center justify-end gap-2">
-            @if (loadingRowId() === u.id) {
-              <span
-                class="text-xs text-muted-foreground"
-                role="status"
-                aria-label="Загрузка"
-                data-test="users-admin-row-loading"
-              >
-                Загрузка…
-              </span>
-            }
-            @if (caps.hasAny(['user:admin'])) {
-              <button
-                type="button"
-                class="pi-icon-btn pi-focus-ring"
-                (click)="onResetPassword(u)"
-                [attr.aria-label]="'Сбросить пароль ' + u.username"
-                title="Сбросить пароль"
-                [disabled]="loadingRowId() === u.id"
-                data-test="users-admin-reset-password"
-              >
-                <span aria-hidden="true">⚿</span>
-              </button>
-            }
-            @if (caps.hasAny(['user:write']) && !isSelfOwner(u)) {
-              <button
-                type="button"
-                class="pi-icon-btn pi-focus-ring"
-                (click)="onToggleActive(u)"
-                [attr.aria-label]="
-                  u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
-                "
-                [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
-                [disabled]="loadingRowId() === u.id"
-                data-test="users-admin-toggle-active"
-              >
-                <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
-              </button>
-            }
-            <app-pi-row-actions
-              [row]="u"
-              [showEdit]="caps.hasAny(['user:write'])"
-              [showDelete]="caps.hasAny(['user:admin']) && !isSelfOwner(u)"
-              [loading]="loadingRowId() === u.id"
-              editLabel="Редактировать"
-              dataTestEdit="users-admin-edit"
-              deleteLabel="Удалить"
-              dataTestDelete="users-admin-delete"
-              (edit)="onEdit($event)"
-              (delete)="onDelete($event)"
-            />
-          </div>
-        </ng-template>
-      </app-pi-table>
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="users()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Пользователи не найдены.'"
+          [ariaLabel]="'Список пользователей'"
+          [rowActions]="rowActionsTplBinding"
+          (pageChange)="onPageChange($event)"
+        >
+          <ng-template #rowActionsTpl let-u>
+            <div class="flex items-center justify-end gap-2">
+              @if (loadingRowId() === u.id) {
+                <span
+                  class="text-xs text-muted-foreground"
+                  role="status"
+                  aria-label="Загрузка"
+                  data-test="users-admin-row-loading"
+                >
+                  Загрузка…
+                </span>
+              }
+              @if (caps.hasAny(['user:admin'])) {
+                <button
+                  type="button"
+                  class="pi-icon-btn pi-focus-ring"
+                  (click)="onResetPassword(u)"
+                  [attr.aria-label]="'Сбросить пароль ' + u.username"
+                  title="Сбросить пароль"
+                  [disabled]="loadingRowId() === u.id"
+                  data-test="users-admin-reset-password"
+                >
+                  <span aria-hidden="true">⚿</span>
+                </button>
+              }
+              @if (caps.hasAny(['user:write']) && !isSelfOwner(u)) {
+                <button
+                  type="button"
+                  class="pi-icon-btn pi-focus-ring"
+                  (click)="onToggleActive(u)"
+                  [attr.aria-label]="
+                    u.isActive ? 'Деактивировать ' + u.username : 'Активировать ' + u.username
+                  "
+                  [title]="u.isActive ? 'Деактивировать' : 'Активировать'"
+                  [disabled]="loadingRowId() === u.id"
+                  data-test="users-admin-toggle-active"
+                >
+                  <span aria-hidden="true">{{ u.isActive ? '⏸' : '▶' }}</span>
+                </button>
+              }
+              <app-pi-row-actions
+                [row]="u"
+                [showEdit]="caps.hasAny(['user:write'])"
+                [showDelete]="caps.hasAny(['user:admin']) && !isSelfOwner(u)"
+                [loading]="loadingRowId() === u.id"
+                editLabel="Редактировать"
+                dataTestEdit="users-admin-edit"
+                deleteLabel="Удалить"
+                dataTestDelete="users-admin-delete"
+                (edit)="onEdit($event)"
+                (delete)="onDelete($event)"
+              />
+            </div>
+          </ng-template>
+        </app-pi-table>
+      </div>
     </app-pi-group-workspace>
   `,
 })
@@ -175,13 +182,14 @@ export class UsersAdminPage implements OnInit {
   private requestVersion = 0;
 
   protected readonly cols: ColumnDef<ClientUser>[] = [
-    { key: 'username', label: 'Логин', sticky: 'left' },
-    { key: 'displayName', label: 'ФИО' },
-    { key: 'email', label: 'Email', cellClass: 'text-muted-foreground' },
+    { key: 'username', label: 'Логин', sticky: 'left', cellClass: 'text-xs' },
+    { key: 'displayName', label: 'ФИО', cellClass: 'text-xs' },
+    { key: 'email', label: 'Email', cellClass: 'text-xs text-muted-foreground' },
     { key: 'role', label: 'Роль', cellClass: 'font-mono text-xs' },
     {
       key: 'isActive',
       label: 'Активен',
+      cellClass: 'text-xs',
       format: (u) => (u.isActive ? 'да' : 'нет'),
     },
   ];

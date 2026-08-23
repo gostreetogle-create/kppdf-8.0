@@ -13,7 +13,7 @@ export type PiFormSectionTone = 'gold' | 'neutral' | 'dimensions' | 'default';
       [attr.aria-labelledby]="headingId()"
       [attr.data-test]="'form-section-' + headingId()"
     >
-      <p [id]="headingId()" class="eyebrow text-ink">{{ title() }}</p>
+      <p [id]="headingId()" class="text-sm font-medium text-ink m-0">{{ title() }}</p>
       <ng-content />
     </section>
   `,
@@ -24,7 +24,7 @@ export class PiFormSectionComponent {
   readonly tone = input<PiFormSectionTone>('default');
 
   protected sectionClasses(): string {
-    const base = 'space-y-form-field rounded-sm p-3';
+    const base = 'space-y-2 rounded-sm p-4';
     switch (this.tone()) {
       case 'gold':
         return `${base} bg-paper-2/40 border-l-[3px] border-l-gold`;

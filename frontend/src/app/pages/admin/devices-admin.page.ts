@@ -69,62 +69,69 @@ import { DeviceRoleDialogComponent } from './device-role-dialog.component';
         }
       </div>
       @if (error(); as err) {
-        <p role="alert" class="text-sm text-destructive mb-4" data-test="devices-admin-error">
+        <div
+          role="alert"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
+          data-test="devices-admin-error"
+        >
           {{ err }}
-        </p>
+        </div>
       }
-      <app-pi-table
-        [data]="devicesList()"
-        [columns]="cols"
-        [loading]="loading()"
-        [emptyMessage]="'Нет подключённых компьютеров.'"
-        [ariaLabel]="'Список устройств'"
-        [rowActions]="rowActionsTplBinding"
-      >
-        <ng-template #rowActionsTpl let-d>
-          <div class="flex items-center justify-end gap-2">
-            @if (loadingRowId() === d.id) {
-              <span
-                class="text-xs text-muted-foreground"
-                role="status"
-                aria-label="Загрузка"
-                data-test="devices-row-loading"
-              >
-                Загрузка…
-              </span>
-            }
-            @if (d.status === 'active') {
-              <button
-                type="button"
-                class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
-                (click)="onEditDevice(d, 'role')"
-                [disabled]="loadingRowId() === d.id"
-                data-test="devices-edit-role"
-              >
-                Изменить роль
-              </button>
-              <button
-                type="button"
-                class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
-                (click)="onEditDevice(d, 'ttl')"
-                [disabled]="loadingRowId() === d.id"
-                data-test="devices-edit-ttl"
-              >
-                Изменить срок
-              </button>
-              <button
-                type="button"
-                class="text-xs text-destructive hover:underline pi-focus-ring"
-                (click)="onRevoke(d)"
-                [disabled]="loadingRowId() === d.id"
-                data-test="devices-revoke"
-              >
-                Отключить
-              </button>
-            }
-          </div>
-        </ng-template>
-      </app-pi-table>
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="devicesList()"
+          [columns]="cols"
+          [loading]="loading()"
+          [emptyMessage]="'Нет подключённых компьютеров.'"
+          [ariaLabel]="'Список устройств'"
+          [rowActions]="rowActionsTplBinding"
+        >
+          <ng-template #rowActionsTpl let-d>
+            <div class="flex items-center justify-end gap-2">
+              @if (loadingRowId() === d.id) {
+                <span
+                  class="text-xs text-muted-foreground"
+                  role="status"
+                  aria-label="Загрузка"
+                  data-test="devices-row-loading"
+                >
+                  Загрузка…
+                </span>
+              }
+              @if (d.status === 'active') {
+                <button
+                  type="button"
+                  class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
+                  (click)="onEditDevice(d, 'role')"
+                  [disabled]="loadingRowId() === d.id"
+                  data-test="devices-edit-role"
+                >
+                  Изменить роль
+                </button>
+                <button
+                  type="button"
+                  class="text-xs underline decoration-dotted underline-offset-2 text-muted-foreground hover:text-ink pi-focus-ring"
+                  (click)="onEditDevice(d, 'ttl')"
+                  [disabled]="loadingRowId() === d.id"
+                  data-test="devices-edit-ttl"
+                >
+                  Изменить срок
+                </button>
+                <button
+                  type="button"
+                  class="text-xs text-destructive hover:underline pi-focus-ring"
+                  (click)="onRevoke(d)"
+                  [disabled]="loadingRowId() === d.id"
+                  data-test="devices-revoke"
+                >
+                  Отключить
+                </button>
+              }
+            </div>
+          </ng-template>
+        </app-pi-table>
+      </div>
     </app-pi-group-workspace>
   `,
 })
@@ -146,23 +153,25 @@ export class DevicesAdminPage implements OnInit {
   readonly loadingRowId = signal<string | null>(null);
 
   protected readonly cols: ColumnDef<AdminDevice>[] = [
-    { key: 'deviceName', label: 'Имя компьютера', sticky: 'left' },
+    { key: 'deviceName', label: 'Имя компьютера', sticky: 'left', cellClass: 'text-xs' },
     {
       key: 'status',
       label: 'Состояние',
+      cellClass: 'text-xs',
       format: (d) => (d.status === 'active' ? 'Работает' : 'Отключён'),
     },
     { key: 'role', label: 'Роль', cellClass: 'font-mono text-xs' },
     {
       key: 'expiresAt',
       label: 'Срок доступа',
+      cellClass: 'text-xs tabular-nums',
       format: (d) => formatDate(d.expiresAt),
     },
     {
       key: 'lastUsedAt',
       label: 'Последний вход',
+      cellClass: 'text-xs text-muted-foreground tabular-nums',
       format: (d) => formatDate(d.lastUsedAt),
-      cellClass: 'text-muted-foreground',
     },
   ];
 

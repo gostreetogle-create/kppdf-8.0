@@ -48,7 +48,7 @@ const PAGE_SIZE = 10;
       <div tools class="flex items-center gap-form-field flex-wrap w-full">
         <input
           type="search"
-          class="pi-input w-72"
+          class="pi-input w-72 pi-focus-ring"
           [value]="searchQuery()"
           (input)="onSearchInput($event)"
           placeholder="Поиск ролей…"
@@ -67,82 +67,89 @@ const PAGE_SIZE = 10;
         }
       </div>
       @if (error(); as err) {
-        <p role="alert" class="text-sm text-destructive mb-4" data-testid="roles-admin-error">
+        <div
+          role="alert"
+          class="mb-4 border hairline border-destructive rounded-sm px-4 py-3 text-xs text-destructive"
+          data-testid="roles-admin-error"
+        >
           {{ err }}
-        </p>
+        </div>
       }
-      <app-pi-table
-        [data]="roles()"
-        [columns]="cols"
-        [loading]="loading()"
-        [total]="total()"
-        [page]="page()"
-        [pageSize]="pageSize"
-        [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Роли не найдены.'"
-        [ariaLabel]="'Список ролей'"
-        [rowActions]="rowActionsTplBinding"
-        (pageChange)="onPageChange($event)"
-      >
-        <ng-template #rowActionsTpl let-r>
-          @if (!r.isSystem) {
-            <div class="flex items-center justify-end gap-2">
-              @if (loadingRowId() === r.id) {
-                <span
-                  class="text-xs text-muted-foreground"
-                  role="status"
-                  aria-label="Загрузка"
-                  data-test="roles-admin-row-loading"
-                >
-                  Загрузка…
-                </span>
-              }
-              <app-pi-row-actions
-                [row]="r"
-                [showEdit]="caps.hasAny(['role:write'])"
-                [showDelete]="caps.hasAny(['role:admin'])"
-                [loading]="loadingRowId() === r.id"
-                editLabel="Редактировать"
-                dataTestEdit="roles-admin-edit"
-                deleteLabel="Удалить"
-                dataTestDelete="roles-admin-delete"
-                (edit)="onEdit($event)"
-                (delete)="onDelete($event)"
-              />
-            </div>
-          } @else {
-            <div class="flex items-center justify-end gap-2">
-              <span
-                class="text-xs text-muted-foreground whitespace-nowrap"
-                data-test="roles-admin-system-badge"
-              >
-                {{ copy.systemBadge }}
-              </span>
-              @if (caps.hasAny(['role:write'])) {
+      <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+        <app-pi-table
+          [compact]="true"
+          [data]="roles()"
+          [columns]="cols"
+          [loading]="loading()"
+          [total]="total()"
+          [page]="page()"
+          [pageSize]="pageSize"
+          [emptyMessage]="searchQuery() ? 'Ничего не найдено.' : 'Роли не найдены.'"
+          [ariaLabel]="'Список ролей'"
+          [rowActions]="rowActionsTplBinding"
+          (pageChange)="onPageChange($event)"
+        >
+          <ng-template #rowActionsTpl let-r>
+            @if (!r.isSystem) {
+              <div class="flex items-center justify-end gap-2">
+                @if (loadingRowId() === r.id) {
+                  <span
+                    class="text-xs text-muted-foreground"
+                    role="status"
+                    aria-label="Загрузка"
+                    data-test="roles-admin-row-loading"
+                  >
+                    Загрузка…
+                  </span>
+                }
                 <app-pi-row-actions
                   [row]="r"
-                  [showEdit]="true"
-                  [showDelete]="false"
+                  [showEdit]="caps.hasAny(['role:write'])"
+                  [showDelete]="caps.hasAny(['role:admin'])"
                   [loading]="loadingRowId() === r.id"
                   editLabel="Редактировать"
-                  deleteLabel="Удалить"
                   dataTestEdit="roles-admin-edit"
+                  deleteLabel="Удалить"
+                  dataTestDelete="roles-admin-delete"
                   (edit)="onEdit($event)"
+                  (delete)="onDelete($event)"
                 />
-              } @else {
-                <app-pi-button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  (click)="onView(r)"
-                  data-test="roles-admin-view"
+              </div>
+            } @else {
+              <div class="flex items-center justify-end gap-2">
+                <span
+                  class="text-xs text-muted-foreground whitespace-nowrap"
+                  data-test="roles-admin-system-badge"
                 >
-                  {{ copy.viewLabel }}
-                </app-pi-button>
-              }
-            </div>
-          }
-        </ng-template>
-      </app-pi-table>
+                  {{ copy.systemBadge }}
+                </span>
+                @if (caps.hasAny(['role:write'])) {
+                  <app-pi-row-actions
+                    [row]="r"
+                    [showEdit]="true"
+                    [showDelete]="false"
+                    [loading]="loadingRowId() === r.id"
+                    editLabel="Редактировать"
+                    deleteLabel="Удалить"
+                    dataTestEdit="roles-admin-edit"
+                    (edit)="onEdit($event)"
+                  />
+                } @else {
+                  <app-pi-button
+                    variant="ghost"
+                    size="sm"
+                    type="button"
+                    (click)="onView(r)"
+                    data-test="roles-admin-view"
+                  >
+                    {{ copy.viewLabel }}
+                  </app-pi-button>
+                }
+              </div>
+            }
+          </ng-template>
+        </app-pi-table>
+      </div>
     </app-pi-group-workspace>
   `,
 })
@@ -173,16 +180,19 @@ export class RolesAdminPage implements OnInit {
     {
       key: 'label',
       label: 'Название',
+      cellClass: 'text-xs',
       format: (r) => roleLabelRu(r.name, r.label),
     },
     {
       key: 'permissions',
       label: 'Права',
+      cellClass: 'text-xs text-muted-foreground',
       format: (r) => permissionsSummary(r.permissions),
     },
     {
       key: 'isSystem',
       label: 'Тип',
+      cellClass: 'text-xs',
       format: (r) => (r.isSystem ? ROLE_FORM_COPY.systemBadge : ROLE_FORM_COPY.customBadge),
     },
   ];

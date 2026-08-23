@@ -102,7 +102,7 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-5"
+        class="space-y-4"
         data-test="counterparty-full-editor"
       >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -188,10 +188,12 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
                 <div class="flex flex-wrap gap-2" data-test="cp-roles">
                   @for (role of roleItems(); track role.slug) {
                     <label
-                      class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
-                      [class.bg-sunrise-warm]="isRoleSelected(role.slug)"
+                      class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y rounded-sm cursor-pointer transition-colors"
+                      [class.bg-gold]="isRoleSelected(role.slug)"
                       [class.text-on-gold]="isRoleSelected(role.slug)"
-                      [class.border-ink]="isRoleSelected(role.slug)"
+                      [class.border-gold]="isRoleSelected(role.slug)"
+                      [class.hairline]="!isRoleSelected(role.slug)"
+                      [class.hover:bg-paper-2]="!isRoleSelected(role.slug)"
                     >
                       <input
                         type="checkbox"
@@ -304,7 +306,7 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
           </app-pi-form-section>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start hairline-t pt-4">
           <app-pi-form-section title="Банк" headingId="cp-sec-bank" tone="neutral">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
               <app-pi-form-field class="sm:col-span-2" label="Банк" htmlFor="cp-bankName">
@@ -418,7 +420,7 @@ const FALLBACK_ROLES: { slug: string; label: string }[] = [
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
+        <app-pi-button type="button" variant="outline" (click)="onCancel()">Отмена</app-pi-button>
       </div>
     </app-pi-dialog>
   `,

@@ -214,4 +214,11 @@ describe('CounterpartyFullEditorDialogComponent (TZ-PARTY-303)', () => {
     await build(existing);
     expect(fixture.nativeElement.querySelector('[data-test="cp-inn-stub-hint"]')).toBeNull();
   });
+
+  it('uses Paper & Ink density: gold role chips (TZ-UI-DEN-530)', async () => {
+    await build(existing);
+    const html = (fixture.nativeElement as HTMLElement).innerHTML;
+    expect(html).toContain('bg-gold');
+    expect(html).not.toContain('bg-sunrise-warm');
+  });
 });

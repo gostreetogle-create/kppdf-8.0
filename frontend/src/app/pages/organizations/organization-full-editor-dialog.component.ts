@@ -88,7 +88,7 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
         body
         [formGroup]="form"
         (ngSubmit)="onSubmit()"
-        class="space-y-5"
+        class="space-y-4"
         data-test="organization-full-editor"
       >
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -152,10 +152,12 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
                 <div class="flex flex-wrap gap-2">
                   @for (t of allTypes; track t) {
                     <label
-                      class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
-                      [class.bg-sunrise-warm]="isTypeSelected(t)"
+                      class="inline-flex items-center gap-2 min-h-touch px-control-x py-control-y rounded-sm cursor-pointer transition-colors"
+                      [class.bg-gold]="isTypeSelected(t)"
                       [class.text-on-gold]="isTypeSelected(t)"
-                      [class.border-ink]="isTypeSelected(t)"
+                      [class.border-gold]="isTypeSelected(t)"
+                      [class.hairline]="!isTypeSelected(t)"
+                      [class.hover:bg-paper-2]="!isTypeSelected(t)"
                     >
                       <input
                         type="checkbox"
@@ -286,7 +288,7 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
           </app-pi-form-section>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start hairline-t pt-4">
           <app-pi-form-section title="Банк" headingId="org-sec-bank" tone="neutral">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">
               <app-pi-form-field class="sm:col-span-2" label="Банк" htmlFor="org-bankName">
@@ -360,133 +362,141 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
           </app-pi-form-section>
         </div>
 
-        <app-pi-form-section title="Файлы для документов" headingId="org-sec-assets" tone="neutral">
-          @if (!isEdit()) {
-            <p class="text-xs text-muted-foreground" data-test="org-assets-locked">
-              Логотип, печать и подпись можно загрузить после сохранения организации.
-            </p>
-          } @else {
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" data-test="org-assets">
-              @for (role of assetRoles; track role) {
-                <div class="space-y-2" [attr.data-test]="'org-asset-' + role">
-                  <div class="flex items-baseline justify-between gap-2">
-                    <span class="text-sm font-medium">{{ assetLabels[role] }}</span>
-                    @if (assetOf(role); as asset) {
-                      <span class="text-[11px] text-muted-foreground truncate max-w-[10rem]">
-                        {{ asset.originalFilename }}
-                      </span>
-                    }
-                  </div>
-
-                  <div
-                    class="relative h-28 hairline rounded-sm bg-paper-2 flex items-center justify-center overflow-hidden"
-                  >
-                    @if (assetOf(role); as asset) {
-                      <img
-                        [src]="asset.storageUrl"
-                        [alt]="assetLabels[role] + ' организации'"
-                        class="max-h-full max-w-full object-contain"
-                        [attr.data-test]="'org-asset-preview-' + role"
-                      />
-                    } @else {
-                      <span class="text-[11px] text-muted-foreground">Не загружен</span>
-                    }
-                  </div>
-
-                  @if (assetLocked(role)) {
-                    <p
-                      class="text-[11px] text-muted-foreground"
-                      [attr.data-test]="'org-asset-locked-' + role"
-                    >
-                      Печать меняет только администратор.
-                    </p>
-                  } @else {
-                    <div class="flex items-center gap-2">
-                      <label
-                        class="inline-flex items-center min-h-touch px-control-x py-control-y text-xs hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
-                      >
-                        <input
-                          type="file"
-                          accept="image/*"
-                          class="sr-only"
-                          [attr.data-test]="'org-asset-file-' + role"
-                          [disabled]="assetBusy() === role"
-                          (change)="onAssetPicked(role, $event)"
-                        />
-                        <span>{{ assetOf(role) ? 'Заменить' : 'Загрузить' }}</span>
-                      </label>
-                      @if (assetOf(role)) {
-                        <app-pi-button
-                          type="button"
-                          variant="ghost"
-                          [disabled]="assetBusy() === role"
-                          [attr.data-test]="'org-asset-remove-' + role"
-                          (click)="onAssetRemove(role)"
-                        >
-                          Снять
-                        </app-pi-button>
+        <div class="hairline-t pt-4">
+          <app-pi-form-section
+            title="Файлы для документов"
+            headingId="org-sec-assets"
+            tone="neutral"
+          >
+            @if (!isEdit()) {
+              <p class="text-xs text-muted-foreground" data-test="org-assets-locked">
+                Логотип, печать и подпись можно загрузить после сохранения организации.
+              </p>
+            } @else {
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" data-test="org-assets">
+                @for (role of assetRoles; track role) {
+                  <div class="space-y-2" [attr.data-test]="'org-asset-' + role">
+                    <div class="flex items-baseline justify-between gap-2">
+                      <span class="text-sm font-medium">{{ assetLabels[role] }}</span>
+                      @if (assetOf(role); as asset) {
+                        <span class="text-[11px] text-muted-foreground truncate max-w-[10rem]">
+                          {{ asset.originalFilename }}
+                        </span>
                       }
                     </div>
-                  }
-                </div>
-              }
-            </div>
-          }
-        </app-pi-form-section>
+
+                    <div
+                      class="relative h-28 hairline rounded-sm bg-paper-2 flex items-center justify-center overflow-hidden"
+                    >
+                      @if (assetOf(role); as asset) {
+                        <img
+                          [src]="asset.storageUrl"
+                          [alt]="assetLabels[role] + ' организации'"
+                          class="max-h-full max-w-full object-contain"
+                          [attr.data-test]="'org-asset-preview-' + role"
+                        />
+                      } @else {
+                        <span class="text-[11px] text-muted-foreground">Не загружен</span>
+                      }
+                    </div>
+
+                    @if (assetLocked(role)) {
+                      <p
+                        class="text-[11px] text-muted-foreground"
+                        [attr.data-test]="'org-asset-locked-' + role"
+                      >
+                        Печать меняет только администратор.
+                      </p>
+                    } @else {
+                      <div class="flex items-center gap-2">
+                        <label
+                          class="inline-flex items-center min-h-touch px-control-x py-control-y text-xs hairline rounded-sm cursor-pointer hover:bg-paper-2 transition-colors"
+                        >
+                          <input
+                            type="file"
+                            accept="image/*"
+                            class="sr-only"
+                            [attr.data-test]="'org-asset-file-' + role"
+                            [disabled]="assetBusy() === role"
+                            (change)="onAssetPicked(role, $event)"
+                          />
+                          <span>{{ assetOf(role) ? 'Заменить' : 'Загрузить' }}</span>
+                        </label>
+                        @if (assetOf(role)) {
+                          <app-pi-button
+                            type="button"
+                            variant="ghost"
+                            [disabled]="assetBusy() === role"
+                            [attr.data-test]="'org-asset-remove-' + role"
+                            (click)="onAssetRemove(role)"
+                          >
+                            Снять
+                          </app-pi-button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </app-pi-form-section>
+        </div>
 
         @if (isSoleProprietor()) {
-          <app-pi-form-section title="Паспорт ИП" headingId="org-sec-passport" tone="dimensions">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-form-field">
-              <app-pi-form-field label="Серия" htmlFor="org-passportSeries">
-                <app-pi-input
-                  id="org-passportSeries"
-                  formControlName="passportSeries"
-                  placeholder="03 05"
-                  class="font-mono"
-                />
-              </app-pi-form-field>
+          <div class="hairline-t pt-4">
+            <app-pi-form-section title="Паспорт ИП" headingId="org-sec-passport" tone="dimensions">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-form-field">
+                <app-pi-form-field label="Серия" htmlFor="org-passportSeries">
+                  <app-pi-input
+                    id="org-passportSeries"
+                    formControlName="passportSeries"
+                    placeholder="03 05"
+                    class="font-mono"
+                  />
+                </app-pi-form-field>
 
-              <app-pi-form-field label="Номер" htmlFor="org-passportNumber">
-                <app-pi-input
-                  id="org-passportNumber"
-                  formControlName="passportNumber"
-                  placeholder="123456"
-                  class="font-mono"
-                />
-              </app-pi-form-field>
+                <app-pi-form-field label="Номер" htmlFor="org-passportNumber">
+                  <app-pi-input
+                    id="org-passportNumber"
+                    formControlName="passportNumber"
+                    placeholder="123456"
+                    class="font-mono"
+                  />
+                </app-pi-form-field>
 
-              <app-pi-form-field label="Дата выдачи" htmlFor="org-passportIssuedAt">
-                <input
-                  id="org-passportIssuedAt"
-                  type="date"
-                  name="org-passportIssuedAt"
-                  formControlName="passportIssuedAt"
-                  class="pi-input w-full"
-                />
-              </app-pi-form-field>
+                <app-pi-form-field label="Дата выдачи" htmlFor="org-passportIssuedAt">
+                  <input
+                    id="org-passportIssuedAt"
+                    type="date"
+                    name="org-passportIssuedAt"
+                    formControlName="passportIssuedAt"
+                    class="pi-input w-full"
+                  />
+                </app-pi-form-field>
 
-              <app-pi-form-field label="Код подразделения" htmlFor="org-passportDivisionCode">
-                <app-pi-input
-                  id="org-passportDivisionCode"
-                  formControlName="passportDivisionCode"
-                  placeholder="230-001"
-                  class="font-mono"
-                />
-              </app-pi-form-field>
+                <app-pi-form-field label="Код подразделения" htmlFor="org-passportDivisionCode">
+                  <app-pi-input
+                    id="org-passportDivisionCode"
+                    formControlName="passportDivisionCode"
+                    placeholder="230-001"
+                    class="font-mono"
+                  />
+                </app-pi-form-field>
 
-              <app-pi-form-field
-                class="col-span-2 sm:col-span-4"
-                label="Кем выдан"
-                htmlFor="org-passportIssuedBy"
-              >
-                <app-pi-input
-                  id="org-passportIssuedBy"
-                  formControlName="passportIssuedBy"
-                  placeholder="ОУФМС России по Краснодарскому краю"
-                />
-              </app-pi-form-field>
-            </div>
-          </app-pi-form-section>
+                <app-pi-form-field
+                  class="col-span-2 sm:col-span-4"
+                  label="Кем выдан"
+                  htmlFor="org-passportIssuedBy"
+                >
+                  <app-pi-input
+                    id="org-passportIssuedBy"
+                    formControlName="passportIssuedBy"
+                    placeholder="ОУФМС России по Краснодарскому краю"
+                  />
+                </app-pi-form-field>
+              </div>
+            </app-pi-form-section>
+          </div>
         }
 
         @if (errorMessage()) {
@@ -506,7 +516,7 @@ const LEGAL_TYPE_ITEMS: PiOverflowSelectItem[] = [
         >
           {{ submitting() ? 'Сохранение…' : 'Сохранить' }}
         </app-pi-button>
-        <app-pi-button type="button" variant="ghost" (click)="onCancel()">Отмена</app-pi-button>
+        <app-pi-button type="button" variant="outline" (click)="onCancel()">Отмена</app-pi-button>
       </div>
     </app-pi-dialog>
   `,

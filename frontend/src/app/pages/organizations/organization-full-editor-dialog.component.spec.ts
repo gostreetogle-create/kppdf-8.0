@@ -96,6 +96,13 @@ describe('OrganizationFullEditorDialogComponent (TZ-PARTY-302)', () => {
     return fixture.componentInstance as Editor;
   }
 
+  it('uses Paper & Ink density: gold role chips and outline cancel (TZ-UI-DEN-530)', async () => {
+    await build(existing);
+    const html = (fixture.nativeElement as HTMLElement).innerHTML;
+    expect(html).toContain('bg-gold');
+    expect(html).not.toContain('bg-sunrise-warm');
+  });
+
   it('renders the kind C wide shell with all requisite sections', async () => {
     await build(existing);
     const sections = Array.from(
