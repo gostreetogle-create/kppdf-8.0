@@ -9,7 +9,10 @@ import { ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 @Component({
   selector: 'app-test-dialog-content',
   standalone: true,
-  template: `<p data-test="dialog-data">data={{ data ?? 'none' }}</p>`,
+  // The button gives the focus trap a real focusable target so the
+  // return-focus test can observe focus moving in and back out.
+  template: `<p data-test="dialog-data">data={{ data ?? 'none' }}</p>
+    <button type="button">OK</button>`,
 })
 class TestDialogContent {
   readonly data: unknown;
@@ -148,5 +151,29 @@ describe('PiDialogService', () => {
     expect(ref2.closed()).toBeUndefined();
     ref2.close('second');
     expect(ref2.closed()).toBe('second');
+  });
+
+  it('returns focus to the trigger when the dialog closes (return-focus, TZ-UI-WR-501)', () => {
+    const trigger = document.createElement('button');
+    trigger.textContent = 'Open';
+    document.body.appendChild(trigger);
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+
+    const ref = openDialog();
+    const panel = document.querySelector('.pi-overlay-panel');
+    expect(panel).toBeTruthy();
+
+    // Simulate what the CDK focus trap does in a real browser (jsdom does
+    // not run afterNextRender for service-level open without a fixture):
+    // focus moves inside the dialog, away from the trigger.
+    const inside = panel!.querySelector('button') as HTMLElement;
+    inside.focus();
+    expect(document.activeElement).toBe(inside);
+
+    ref.close();
+    expect(document.activeElement).toBe(trigger);
+
+    trigger.remove();
   });
 });

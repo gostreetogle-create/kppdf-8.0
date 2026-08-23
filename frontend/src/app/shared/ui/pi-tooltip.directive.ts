@@ -102,6 +102,7 @@ export class TooltipDirective {
         .withPush(true)
         .withFlexibleDimensions(false),
       scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      panelClass: 'pi-tooltip-panel',
     });
 
     const portal = new ComponentPortal(TooltipComponent);

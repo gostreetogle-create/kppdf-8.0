@@ -91,6 +91,22 @@
   --overlay-bg: oklch(0% 0 0 / 0.5);
   --overlay-bg-fallback: rgb(0 0 0 / 0.5);
 
+  /* === Z-index scale (TZ-UI-WR-501) ===
+     Single source of truth for overlay stacking. Magic z-40/z-50/100 on
+     shared overlays is forbidden — use these tokens (page-local canvas z
+     in builder/gantt/desk is out of scope: 503/507/509).
+     CDK's .cdk-overlay-container stays at its default 1000 and creates the
+     stacking context; these values order the panes INSIDE it. */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 40;
+  --z-popover: 50;
+  --z-drawer: 60;
+  --z-sheet: 70;
+  --z-dialog: 80;
+  --z-toast: 90;
+  --z-max: 100;
+
   /* Elevated surfaces — clean tonal lift (no marble texture).
      Pearl/noise experiment failed visual review → flat paper-2. */
   --pi-marble-noise: none;
@@ -1140,6 +1156,32 @@
     overflow-x: clip !important;
     overflow-y: clip !important;
   }
+}
+
+/* TZ-UI-WR-501: z-scale tokens on every CDK overlay panelClass.
+   UN-LAYERED on purpose: CDK injects `.cdk-overlay-pane { z-index: 1000 }`
+   inside `@layer cdk-overlay`, which is declared after Tailwind's layer
+   stack, so a rule inside `@layer components` would lose to it. Un-layered
+   rules beat layered ones at equal specificity. Panes are siblings inside
+   .cdk-overlay-container (z-index 1000) — these only order overlays
+   among themselves (dialog above sheet, sheet above drawer, …). */
+.pi-overlay-panel {
+  z-index: var(--z-dialog);
+}
+.pi-drawer-panel {
+  z-index: var(--z-drawer);
+}
+.pi-sheet-panel {
+  z-index: var(--z-sheet);
+}
+.pi-popover-panel {
+  z-index: var(--z-popover);
+}
+.pi-tooltip-panel {
+  z-index: var(--z-popover);
+}
+.pi-dropdown-menu-panel {
+  z-index: var(--z-dropdown);
 }
 
 /* Animation — applied to the inner <div role="dialog"> of <app-pi-dialog>

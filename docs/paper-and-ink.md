@@ -349,3 +349,28 @@ User's original audit also flagged "small text (футер, подписи) reco
 Оттенок заливки — вкусовой параметр PO, правится одной строкой `--color-gold`
 (и теми же значениями у `sunrise` / `sunrise-warm` / `accent-warm`). `gold-deep` при
 этом не трогать.
+
+---
+
+## Z-index scale (TZ-UI-WR-501)
+
+Единственный источник правды по слоям — токены `--z-*` в `frontend/src/styles.css` `:root`.
+Magic `z-40` / `z-50` / `z-index: 100` на shared overlays запрещён — использовать токены.
+
+| Токен | Значение | Кто |
+|-------|----------|-----|
+| `--z-base` | 0 | контент страницы по умолчанию |
+| `--z-sticky` | 10 | sticky header / sticky-элементы |
+| `--z-dropdown` | 40 | `pi-dropdown-menu`, bell-panel |
+| `--z-popover` | 50 | `piPopover`, `piTooltip` |
+| `--z-drawer` | 60 | `PiDrawerService` (bottom drawer) |
+| `--z-sheet` | 70 | `PiSheetService` (side sheet) |
+| `--z-dialog` | 80 | `PiDialogService` (modal) |
+| `--z-toast` | 90 | `app-pi-toast-host` |
+| `--z-max` | 100 | последний резерв |
+
+Как это работает: CDK `.cdk-overlay-container` остаётся на дефолтном `z-index: 1000`
+и создаёт stacking context; токены упорядочивают панели **внутри** него
+(диалог выше sheet, sheet выше drawer, popover выше dropdown, toast выше всего).
+Page-local canvas z в builder/gantt/desk вынесены за токены (503/507/509) — их
+магия чинится своими TZ, не этой шкалой.

@@ -20,3 +20,25 @@
 4. Не переписывать все FullEditor одним TZ — successors по outliers table в audit.
 5. Ёмкость полей (Д/Ш/В не на полширины) — kind **B и C**: [`ui-form-field-capacity.md`](./ui-form-field-capacity.md).
 6. Kind C на 1440: identity-блок без body-scroll после packing. Не раздувать maxWidth. Страница — крайний случай per-editor, не отмена kind C.
+
+## Overlay platform contract (TZ-UI-WR-501)
+
+Распространяется на `PiDialogService` / `PiDrawerService` / `PiSheetService` —
+единый контракт после WR-501:
+
+1. **Return-focus:** при закрытии фокус возвращается на trigger, который открыл
+   overlay (сохраняется `document.activeElement` на open, восстанавливается на
+   close). Закрытие без restore focus запрещено.
+2. **Focus trap:** CDK `ConfigurableFocusTrapFactory` на `overlayElement` (панель) —
+   Tab не выходит из модального overlay.
+3. **Scroll lock:** все три используют `scrollStrategies.block()` (drawer переведён
+   с `reposition()` в WR-501) — фон не скроллится, пока overlay открыт.
+4. **Esc / backdrop:** закрытие по умолчанию, отключается флагами
+   `dismissOnEscape` / `dismissOnBackdropClick` (исключение — формальные
+   exceptions, см. KP-CATALOG-REVIEW-NO-ESC в WR-510).
+5. **Z-index:** только токены `--z-*` из `docs/paper-and-ink.md` (диалог 80,
+   sheet 70, drawer 60). Magic numbers на shared overlays запрещены.
+
+**Migration note (WR-501):** новый overlay вручную (свой backdrop, `@HostListener`
+без restore, `z-40`/`z-index:100`) — запрещён: сначала `PiDialogService` /
+`PiSheetService` / `PiDrawerService`, иначе review reject.

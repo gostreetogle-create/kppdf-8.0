@@ -44,6 +44,11 @@ export class PiSheetService {
       height: !isHorizontal ? dims.h : undefined,
     });
 
+    // TZ-UI-WR-501: return-focus — remember the trigger before the sheet
+    // takes focus, restore it in close().
+    const previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
     const closedSig = signal(false);
 
     const ref: SheetRef = {
@@ -52,6 +57,7 @@ export class PiSheetService {
         if (closedSig()) return;
         closedSig.set(true);
         this.cleanup();
+        restoreFocus(previousActiveElement);
       },
     };
 
@@ -65,13 +71,13 @@ export class PiSheetService {
     overlayRef.overlayElement.setAttribute('data-anchor', anchor);
     overlayRef.overlayElement.setAttribute('data-size', sizeKey);
 
-    const panelEl = overlayRef.overlayElement.querySelector(
-      '.cdk-overlay-pane',
-    ) as HTMLElement | null;
-    if (panelEl) {
-      this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
-      this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
-    }
+    // TZ-UI-WR-501: overlayElement IS the `.cdk-overlay-pane`; the old
+    // querySelector('.cdk-overlay-pane') from inside the pane always returned
+    // null, so the sheet never had a focus trap. Trap the pane itself, the
+    // same way PiDialogService does.
+    const panelEl = overlayRef.overlayElement as HTMLElement;
+    this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
+    this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
 
     overlayRef
       .keydownEvents()
@@ -114,5 +120,19 @@ export class PiSheetService {
       this.activeRef.dispose();
       this.activeRef = null;
     }
+  }
+}
+
+/**
+ * TZ-UI-WR-501: focus the element that had focus before the overlay opened.
+ * No-op when the element was removed from the DOM or already has focus.
+ */
+function restoreFocus(el: HTMLElement | null): void {
+  if (!el || !el.isConnected) return;
+  if (document.activeElement === el) return;
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    /* ignore — element may not be focusable */
   }
 }

@@ -30,9 +30,15 @@ export class PiDrawerService {
       backdropClass: 'pi-overlay-backdrop',
       panelClass: 'pi-drawer-panel',
       positionStrategy: this.overlay.position().global().bottom('0').centerHorizontally(),
-      scrollStrategy: this.overlay.scrollStrategies.reposition(),
+      // TZ-UI-WR-501: block page scroll like Dialog/Sheet (was reposition()).
+      scrollStrategy: this.overlay.scrollStrategies.block(),
       height: '85vh',
     });
+
+    // TZ-UI-WR-501: return-focus — remember the trigger before the drawer
+    // takes focus, restore it in close().
+    const previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const closedSig = signal(false);
     const ref: DrawerRef = {
@@ -41,6 +47,7 @@ export class PiDrawerService {
         if (closedSig()) return;
         closedSig.set(true);
         this.cleanup();
+        restoreFocus(previousActiveElement);
       },
     };
 
@@ -48,13 +55,13 @@ export class PiDrawerService {
     const portal = new ComponentPortal(DrawerComponent, null, childInjector);
     overlayRef.attach(portal);
 
-    const panelEl = overlayRef.overlayElement.querySelector(
-      '.cdk-overlay-pane',
-    ) as HTMLElement | null;
-    if (panelEl) {
-      this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
-      this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
-    }
+    // TZ-UI-WR-501: overlayElement IS the `.cdk-overlay-pane`; the old
+    // querySelector('.cdk-overlay-pane') from inside the pane always returned
+    // null, so the drawer never had a focus trap. Trap the pane itself, the
+    // same way PiDialogService does.
+    const panelEl = overlayRef.overlayElement as HTMLElement;
+    this.activeFocusTrap = this.focusTrapFactory.create(panelEl);
+    this.activeFocusTrap.focusInitialElementWhenReady().catch(() => {});
 
     overlayRef
       .keydownEvents()
@@ -83,5 +90,19 @@ export class PiDrawerService {
       this.activeRef.dispose();
       this.activeRef = null;
     }
+  }
+}
+
+/**
+ * TZ-UI-WR-501: focus the element that had focus before the overlay opened.
+ * No-op when the element was removed from the DOM or already has focus.
+ */
+function restoreFocus(el: HTMLElement | null): void {
+  if (!el || !el.isConnected) return;
+  if (document.activeElement === el) return;
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    /* ignore — element may not be focusable */
   }
 }

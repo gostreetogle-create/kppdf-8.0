@@ -57,7 +57,7 @@ const SEVERITY_DOT: Record<NotificationSeverity, string> = {
           role="dialog"
           aria-label="Список уведомлений"
           data-test="notification-panel"
-          class="absolute right-0 top-full mt-2 z-40 w-[min(22rem,calc(100vw-1.5rem))]
+          class="absolute right-0 top-full mt-2 z-[var(--z-dropdown)] w-[min(22rem,calc(100vw-1.5rem))]
                  max-h-[min(28rem,70vh)] flex flex-col hairline rounded-sm bg-paper shadow-md
                  overflow-hidden"
           (click)="$event.stopPropagation()"

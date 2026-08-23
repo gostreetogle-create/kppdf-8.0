@@ -45,6 +45,11 @@ export class PiDialogService {
     const closedSig = signal<TResult | undefined>(undefined);
     const isClosed = signal(false);
 
+    // TZ-UI-WR-501: remember what had focus before the dialog took it over,
+    // so close() can return focus to the trigger (return-focus contract).
+    const previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
     // TZ-103.1: Create a FOCUS TRAP LOCAL to this dialog
     let localFocusTrap: ReturnType<ConfigurableFocusTrapFactory['create']> | null = null;
 
@@ -64,6 +69,8 @@ export class PiDialogService {
           localFocusTrap = null;
         }
         overlayRef.dispose();
+        // TZ-UI-WR-501: return focus to the trigger that opened the dialog.
+        restoreFocus(previousActiveElement);
       },
     };
 
@@ -122,5 +129,19 @@ export class PiDialogService {
     });
 
     return ref;
+  }
+}
+
+/**
+ * TZ-UI-WR-501: focus the element that had focus before the overlay opened.
+ * No-op when the element was removed from the DOM or already has focus.
+ */
+function restoreFocus(el: HTMLElement | null): void {
+  if (!el || !el.isConnected) return;
+  if (document.activeElement === el) return;
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    /* ignore — element may not be focusable */
   }
 }

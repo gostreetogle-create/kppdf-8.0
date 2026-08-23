@@ -47,7 +47,7 @@ const VARIANT_CLASS: Record<QueuedToast['variant'], string> = {
       aria-atomic="true"
       aria-label="Уведомления"
       data-component="pi-toast-host"
-      class="pi-toast-host tours guides fixed top-page-x right-page-x z-50 flex flex-col gap-3 outline-none"
+      class="pi-toast-host tours guides fixed top-page-x right-page-x z-[var(--z-toast)] flex flex-col gap-3 outline-none"
       style="max-width: min(420px, calc(100vw - 24px));"
     >
       @for (t of toasts(); track t.id) {
