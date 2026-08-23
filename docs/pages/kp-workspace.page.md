@@ -19,7 +19,7 @@
 | Route | Статус | Title / роль |
 |-------|--------|----------------|
 | `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout (тонкий wrapper над shell, TZ-KP-WS-401) |
-| `/proposals/workspace` | **TZ-KP-WS-403 DONE** | Left panels (каталог/шаблон/клиент) + hydration + autosave + preview; правые панели — TZ-404 |
+| `/proposals/workspace` | **TZ-KP-WS-404 DONE** | Left (каталог/шаблон/клиент) + right (параметры/таблица/условия/вывод) panels; hydration + autosave + preview; catalog review |
 | `/proposals/create` | legacy до **TZ-KP-WS-408** | Текущая студия; после cutover → workspace (или redirect) |
 | `/proposals` | list | Lifecycle (статус, копия, заказ) — **не** в workspace ribbon (канон 367) |
 
@@ -110,7 +110,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | Сигнал / store | Назначение |
 |----------------|------------|
 | `ProposalWorkspaceStore` (TZ-402 DONE) | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId`; actions `openSection`/`toggleSection`/`closePanel`/`setOrientation` |
-| `ProposalWorkspaceDraftService` (TZ-403 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org/деньги/сроки + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
+| `ProposalWorkspaceDraftService` (TZ-404 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org/деньги/сроки + right-panel state: `kpTableLayout`/`tableTargets`/`tableTemplateId` + `catalogReviewOpen`/`catalogReviewRows` + `requestOutput` gates + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
 | draft lines / templateId / org / recipient / terms / sheetLayout / kpTableLayout | как create — один autosave path |
 | `panelCollapsed` | overlay hide; A4 неизменен |
 
@@ -119,7 +119,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | Что | Примитив | Когда |
 |-----|----------|--------|
 | Tools panel | shell absolute overlay | секции L/R |
-| Catalog review | modal (create reuse) | exit table editor с dirty catalog fields |
+| Catalog review | modal (create reuse) **TZ-404 DONE** | exit table editor с dirty catalog fields; Esc НЕ закрывает (formal exception KP-CATALOG-REVIEW-NO-ESC) |
 | Table preset / text edit | `PiDialog` / `PiSheet` | Wave 405 inline |
 | Pairing desktop | existing pairing dialog | Wave 406 CTA |
 | Family attach | existing family dialog | Wave 407 |
@@ -146,7 +146,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | `.../workspace/proposal-workspace-shell.component.*` | **SoT геометрии** (TZ-401 DONE); rails/store — TZ-402 |
 | `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + chrome rails L/R + placeholder (TZ-401/402 DONE) |
 | `.../workspace/proposal-workspace.store.ts` | store state machine (TZ-402 DONE) |
-| `.../workspace/proposal-workspace-draft.service.ts` | draft: hydration + autosave + build — один write-path (TZ-403 DONE) |
+| `.../workspace/proposal-workspace-draft.service.ts` | draft: hydration + autosave + build — один write-path; right-panel методы (TZ-403/404 DONE) |
 | `proposal-create.page.ts` + `proposal-create-*` / `proposal-product-rail` | reuse в панелях; god-page снять в 409 |
 | `tasks/kp-workspace-dummy/*` | reference only после 401 |
 
@@ -159,7 +159,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **401** | shell component + `/proposals/workspace` — **DONE** |
 | **402** | store + chrome rails — **DONE** (L3+R4, unique Lucide, Esc/close) |
 | **403** | left: catalog / template / recipient — **DONE** (mount + hydration + autosave + preview) |
-| **404** | right: params / table / terms / output |
+| **404** | right: params / table / terms / output — **DONE** (inspector/table-editor/terms/output mounted; catalog review на exit; output gates 368; tier-L overlay без A4 reflow) |
 | **405** | embedded table/text/template settings |
 | **406** | MCP AI-draft bridge |
 | **407** | multi-supplier UX |

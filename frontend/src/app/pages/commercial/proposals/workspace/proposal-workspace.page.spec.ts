@@ -1,7 +1,7 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { of } from 'rxjs';
 import {
   ContactRound,
@@ -25,9 +25,17 @@ import { CounterpartyService } from '../../../../shared/services/pi-counterparty
 import { PersonsService } from '../../../../shared/services/pi-persons.service';
 import { SiteService } from '../../../../shared/services/pi-site.service';
 import { DocumentTemplatesService } from '../../../../shared/services/pi-document-templates.service';
+import { TemplateBlocksService } from '../../../../shared/services/pi-template-blocks.service';
+import { TableTemplatesService } from '../../../../shared/services/pi-table-templates.service';
+import { GeneratedDocumentsService } from '../../../../shared/services/pi-generated-documents.service';
+import { PiDialogService } from '../../../../shared/ui/dialog/pi-dialog.service';
+import { OrganizationsService } from '../../../../shared/services/organizations.service';
+import { TextBlocksService } from '../../../../shared/services/pi-text-blocks.service';
+import { TextBlockCategoriesService } from '../../../../shared/services/pi-text-block-categories.service';
 import { ProposalsService } from '../../../../shared/services/pi-proposals.service';
 import { ProposalWorkspacePage } from './proposal-workspace.page';
 import { ProposalWorkspaceStore } from './proposal-workspace.store';
+import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
 
 const EMPTY_LIST = () => of({ ok: true, data: { items: [], total: 0 } });
 
@@ -53,7 +61,7 @@ describe('ProposalWorkspacePage', () => {
           provide: ProductsService,
           useValue: {
             list: EMPTY_LIST,
-            findById: jest.fn(),
+            findById: jest.fn(() => of({ ok: true, data: { _id: 'prod-1', name: 'Стенд' } })),
             update: jest.fn(),
             duplicate: jest.fn(),
           },
@@ -80,6 +88,33 @@ describe('ProposalWorkspacePage', () => {
           useValue: { findById: jest.fn(), create: jest.fn(), update: jest.fn() },
         },
         { provide: OrdersService, useValue: { findById: jest.fn() } },
+        { provide: OrganizationsService, useValue: { list: EMPTY_LIST } },
+        {
+          provide: TemplateBlocksService,
+          useValue: { listByTemplate: jest.fn(() => of({ ok: true, data: [] })) },
+        },
+        {
+          provide: TextBlocksService,
+          useValue: { list: jest.fn(() => of({ ok: true, data: { items: [], total: 0 } })) },
+        },
+        {
+          provide: TextBlockCategoriesService,
+          useValue: { list: jest.fn(() => of({ ok: true, data: [] })) },
+        },
+        { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
+        {
+          provide: GeneratedDocumentsService,
+          useValue: { archiveQuotation: jest.fn(() => of({ ok: true })) },
+        },
+        {
+          provide: PiDialogService,
+          useValue: {
+            open: jest.fn(() => ({
+              closed: computed(() => undefined),
+              close: jest.fn(),
+            })),
+          },
+        },
         {
           provide: PiToastService,
           useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
@@ -188,5 +223,131 @@ describe('ProposalWorkspacePage', () => {
     store.openSection('recipient');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="kp-recipient-panel"]')).not.toBeNull();
+  });
+
+  it('mounts the params inspector in the Параметры section', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('params');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-create-inspector"]')).not.toBeNull();
+  });
+
+  it('mounts the table editor as tier-L wide overlay without A4 reflow', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('table');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-table-editor"]')).not.toBeNull();
+    const panel = fixture.nativeElement.querySelector(
+      '[data-test="kp-tools-panel"]',
+    ) as HTMLElement;
+    expect(panel.classList.contains('kp-ws-panel--wide')).toBe(true);
+    // overlay only — the A4 sheet host keeps its own size (no inline reflow)
+    const sheet = fixture.nativeElement.querySelector('[data-test="kp-a4-sheet"]');
+    expect(sheet).not.toBeNull();
+  });
+
+  it('adds a custom line from the table editor footer (parity with create)', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
+    store.openSection('table');
+    fixture.detectChanges();
+    const before = draft.draftLines().length;
+
+    const add = fixture.nativeElement.querySelector(
+      '[data-test="kp-table-editor-add-custom"]',
+    ) as HTMLElement;
+    add.click();
+    fixture.detectChanges();
+
+    expect(draft.draftLines()).toHaveLength(before + 1);
+    expect(draft.draftLines()[before].lineKind).toBe('custom');
+  });
+
+  it('mounts the terms panel and opens the library without leaving workspace', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('terms');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-terms-panel"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-terms-add"]')).not.toBeNull();
+
+    const libToggle = Array.from(
+      fixture.nativeElement.querySelectorAll('[data-test="kp-terms-panel"] button'),
+    ).find((b) => (b as HTMLElement).textContent?.includes('Взять из библиотеки')) as HTMLElement;
+    libToggle.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-terms-library"]')).not.toBeNull();
+  });
+
+  it('output panel mounts print/PDF/archive gates matching create (canon 368)', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('output');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-create-output"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-output-print"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-output-pdf"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-output-archive"]')).not.toBeNull();
+  });
+
+  it('catalog review modal opens on table exit with dirty rows and resumes on resolve', () => {
+    const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
+    draft.draftLines.set([
+      {
+        lineKind: 'catalog',
+        productId: 'prod-1',
+        productName: 'Стенд',
+        quantity: 1,
+        unit: 'шт',
+        unitPrice: 100,
+        catalogDirtyFields: ['productName'],
+      },
+    ]);
+    let exited = false;
+
+    draft.requestTableExit(() => {
+      exited = true;
+    });
+    fixture.detectChanges();
+
+    expect(draft.catalogReviewOpen()).toBe(true);
+    expect(fixture.nativeElement.querySelector('.kp-catalog-review')).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-catalog-review-row-0"]'),
+    ).not.toBeNull();
+
+    const kpOnly = fixture.nativeElement.querySelector(
+      '[data-test="kp-catalog-review-kp-only-0"]',
+    ) as HTMLElement;
+    kpOnly.click();
+    fixture.detectChanges();
+
+    expect(draft.catalogReviewOpen()).toBe(false);
+    expect(exited).toBe(true);
+  });
+
+  it('Escape does NOT close the catalog review modal (formal exception KP-CATALOG-REVIEW-NO-ESC)', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
+    draft.draftLines.set([
+      {
+        lineKind: 'catalog',
+        productId: 'prod-1',
+        productName: 'Стенд',
+        quantity: 1,
+        unit: 'шт',
+        unitPrice: 100,
+        catalogDirtyFields: ['productName'],
+      },
+    ]);
+    store.openSection('table');
+    fixture.detectChanges();
+    draft.requestTableExit(() => undefined);
+    fixture.detectChanges();
+    expect(draft.catalogReviewOpen()).toBe(true);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(draft.catalogReviewOpen()).toBe(true);
+    expect(fixture.nativeElement.querySelector('.kp-catalog-review')).not.toBeNull();
   });
 });

@@ -1,9 +1,18 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { computed } from '@angular/core';
 import { of } from 'rxjs';
 
 import { PiToastService } from '../../../../shared/ui/toast';
+import { PiDialogService } from '../../../../shared/ui/dialog/pi-dialog.service';
 import { OrdersService } from '../../../../shared/services/orders.service';
+import { ProductsService } from '../../../../shared/services/products.service';
+import { ProductModulesService } from '../../../../shared/services/pi-product-modules.service';
+import { MaterialsService } from '../../../../shared/services/materials.service';
 import { DocumentTemplatesService } from '../../../../shared/services/pi-document-templates.service';
+import { TableTemplatesService } from '../../../../shared/services/pi-table-templates.service';
+import { TemplateBlocksService } from '../../../../shared/services/pi-template-blocks.service';
+import { GeneratedDocumentsService } from '../../../../shared/services/pi-generated-documents.service';
 import { ProposalsService, type Proposal } from '../../../../shared/services/pi-proposals.service';
 import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
 import type { ProposalDraftLine } from '../proposal-product-rail.component';
@@ -37,6 +46,7 @@ describe('ProposalWorkspaceDraftService', () => {
   const proposalsFindMock = jest.fn();
   const proposalsCreateMock = jest.fn();
   const proposalsUpdateMock = jest.fn();
+  const proposalsDownloadPdfMock = jest.fn();
   const templatesFindMock = jest.fn();
   const buildMock = jest.fn();
   const toastError = jest.fn();
@@ -50,10 +60,13 @@ describe('ProposalWorkspaceDraftService', () => {
     proposalsFindMock.mockReturnValue(of({ ok: true, data: DRAFT }));
     proposalsCreateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-new' } }));
     proposalsUpdateMock.mockReturnValue(of({ ok: true, data: { _id: 'q-1', status: 'draft' } }));
+    proposalsDownloadPdfMock.mockReturnValue(of(new Blob(['pdf'])));
     templatesFindMock.mockReturnValue(of({ ok: true, data: TEMPLATE }));
     buildMock.mockReturnValue(
       of({ ok: true, data: '<html><body><div class="doc-page">A4</div></body></html>' }),
     );
+    URL.createObjectURL = jest.fn(() => 'blob:mock');
+    URL.revokeObjectURL = jest.fn();
 
     TestBed.configureTestingModule({
       providers: [
@@ -64,6 +77,7 @@ describe('ProposalWorkspaceDraftService', () => {
             findById: proposalsFindMock,
             create: proposalsCreateMock,
             update: proposalsUpdateMock,
+            downloadPdf: proposalsDownloadPdfMock,
           },
         },
         {
@@ -71,6 +85,36 @@ describe('ProposalWorkspaceDraftService', () => {
           useValue: { findById: templatesFindMock, build: buildMock },
         },
         { provide: OrdersService, useValue: { findById: jest.fn() } },
+        {
+          provide: ProductsService,
+          useValue: {
+            list: jest.fn(),
+            findById: jest.fn(),
+            duplicate: jest.fn(),
+            update: jest.fn(),
+          },
+        },
+        { provide: ProductModulesService, useValue: { findById: jest.fn(), update: jest.fn() } },
+        { provide: MaterialsService, useValue: { findById: jest.fn(), update: jest.fn() } },
+        {
+          provide: TemplateBlocksService,
+          useValue: { listByTemplate: jest.fn(() => of({ ok: true, data: [] })) },
+        },
+        { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
+        {
+          provide: GeneratedDocumentsService,
+          useValue: { archiveQuotation: jest.fn(() => of({ ok: true })) },
+        },
+        {
+          provide: PiDialogService,
+          useValue: {
+            open: jest.fn(() => ({
+              closed: computed(() => undefined),
+              close: jest.fn(),
+            })),
+          },
+        },
+        provideRouter([]),
         {
           provide: PiToastService,
           useValue: { error: toastError, success: toastSuccess, warning: toastWarning },
@@ -183,6 +227,66 @@ describe('ProposalWorkspaceDraftService', () => {
     service.init({ id: 'q-1' });
     tick(200);
     expect(service.compositionTotal()).toBe(12000); // 2 × 5000 + 20% НДС
+    tick(5000);
+  }));
+
+  it('params change triggers a preview rebuild and autosave (AC: params → rebuild)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    const buildsAfterHydrate = buildMock.mock.calls.length;
+
+    service.onInspectorState({
+      number: 'КП-099',
+      title: 'КП на стенды',
+      date: '2026-08-23',
+      validUntil: '2026-09-23',
+      organizationId: 'org-1',
+      counterpartyId: 'cp-1',
+      orgMarkupPercent: 20,
+      dealVatPercent: 20,
+      discountType: 'none',
+      discountPercent: 0,
+      discountAmount: 0,
+      prepaymentPercent: 0,
+      productionDays: 0,
+      deliveryDays: 0,
+      sheetLayout: { rowsFirstPage: 8, rowsNextPage: 12 },
+    });
+    expect(service.proposalNumber()).toBe('КП-099');
+    tick(2000); // rebuild debounce + autosave
+    expect(buildMock.mock.calls.length).toBeGreaterThan(buildsAfterHydrate);
+    expect(proposalsUpdateMock).toHaveBeenCalled();
+    tick(5000);
+  }));
+
+  it('terms change updates the draft without leaving workspace (AC: terms from library)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    expect(service.terms()).toHaveLength(0);
+
+    service.onTermsChange([{ text: 'Оплата 100% по факту готовности', sortOrder: 0 }]);
+    expect(service.terms()).toHaveLength(1);
+    expect(service.terms()[0].text).toBe('Оплата 100% по факту готовности');
+    tick(2000);
+    expect(proposalsUpdateMock).toHaveBeenCalled();
+    tick(5000);
+  }));
+
+  it('output print gate: without a ready preview it errors instead of printing', fakeAsync(() => {
+    service.requestOutput('print');
+    tick();
+    expect(toastError).toHaveBeenCalledWith(expect.stringContaining('Превью'));
+  }));
+
+  it('output pdf gate: a saved draft downloads the PDF (canon 368)', fakeAsync(() => {
+    service.init({ id: 'q-1' });
+    tick(200);
+    expect(service.currentDraftId()).toBe('q-1');
+
+    service.requestOutput('pdf');
+    tick();
+    expect(proposalsDownloadPdfMock).toHaveBeenCalledWith('q-1');
+    expect(toastSuccess).toHaveBeenCalledWith('PDF подготовлен');
     tick(5000);
   }));
 
