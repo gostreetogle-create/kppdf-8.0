@@ -418,9 +418,16 @@ describe('OrdersPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
+    // DESK-423: supply section is collapsed by default; expand it
+    const supplyToggle = fixture.nativeElement.querySelector(
+      '[aria-controls="order-supply-content"]',
+    ) as HTMLButtonElement;
+    supplyToggle.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('[data-test="order-supply-block"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-supply-counters"]')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Черновик 1');
+    expect(fixture.nativeElement.textContent).toContain('Заказано 1');
     expect(fixture.nativeElement.textContent).toContain('всего 4');
 
     const supplyLink = fixture.nativeElement.querySelector(
@@ -460,8 +467,17 @@ describe('OrdersPage', () => {
     httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Нет задач снабжения');
 
+    // DESK-423: supply section collapsed by default; expand and verify no error
+    const supplyToggle = fixture.nativeElement.querySelector(
+      '[aria-controls="order-supply-content"]',
+    ) as HTMLButtonElement;
+    supplyToggle.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="order-supply-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-supply-error"]')).toBeFalsy();
+
+    // Collapse row and re-expand → new tray component, supply section collapsed again
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
     comp.onRowClick(fakeOrders[0]!);
@@ -470,6 +486,13 @@ describe('OrdersPage', () => {
     httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     await tickMicrotask();
+    fixture.detectChanges();
+
+    // Expand supply again to see the error
+    const supplyToggle2 = fixture.nativeElement.querySelector(
+      '[aria-controls="order-supply-content"]',
+    ) as HTMLButtonElement;
+    supplyToggle2.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="order-supply-error"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
@@ -580,6 +603,13 @@ describe('OrdersPage', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
+    // DESK-423: logistics section collapsed by default; expand it
+    const logisticsToggle = fixture.nativeElement.querySelector(
+      '[aria-controls="order-logistics-content"]',
+    ) as HTMLButtonElement;
+    logisticsToggle.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-block"]')).toBeTruthy();
     expect(
       fixture.nativeElement.querySelector('[data-test="order-warehouse-counters"]')?.textContent,
@@ -608,8 +638,19 @@ describe('OrdersPage', () => {
     httpMock.expectOne(matchReservationExpand('ORD-001')).flush([]);
     await tickMicrotask();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Нет броней');
 
+    // DESK-423: logistics section collapsed by default; expand and verify no error
+    const logisticsToggle = fixture.nativeElement.querySelector(
+      '[aria-controls="order-logistics-content"]',
+    ) as HTMLButtonElement;
+    logisticsToggle.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-block"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-error"]')).toBeFalsy();
+
+    // Collapse row and re-expand → new tray component, logistics collapsed again.
+    // The reservation error arrives asynchronously after ngOnInit, so logistics
+    // won't auto-expand — expand manually after the error flush.
     comp.onRowClick(fakeOrders[0]!);
     fixture.detectChanges();
     comp.onRowClick(fakeOrders[0]!);
@@ -621,12 +662,21 @@ describe('OrdersPage', () => {
     await tickMicrotask();
     await tickMicrotask();
     fixture.detectChanges();
+
     expect(comp.reservationExpandError()).toBeTruthy();
+
+    // DESK-423: error arrived after tray init; expand logistics manually
+    const logisticsToggle2 = fixture.nativeElement.querySelector(
+      '[aria-controls="order-logistics-content"]',
+    ) as HTMLButtonElement;
+    logisticsToggle2.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('[data-test="order-warehouse-error"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="order-group-order"]')).toBeTruthy();
   });
 
-  it('HUB-304 renders shipping stub with link to /shipping and no shipment API', async () => {
+  it('HUB-304 renders shipping section with link to /shipping and no shipment API', async () => {
     const fixture = TestBed.createComponent(OrdersPage);
     fixture.detectChanges();
     httpMock.expectOne(matchListGet).flush([fakeOrders[0]]);
@@ -639,10 +689,14 @@ describe('OrdersPage', () => {
     await flushExpandLoads(httpMock, fakeOrders[0]!);
     fixture.detectChanges();
 
+    // DESK-423: logistics section collapsed by default; expand it
+    const logisticsToggle = fixture.nativeElement.querySelector(
+      '[aria-controls="order-logistics-content"]',
+    ) as HTMLButtonElement;
+    logisticsToggle.click();
+    fixture.detectChanges();
+
     expect(fixture.nativeElement.querySelector('[data-test="order-shipping-block"]')).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('[data-test="order-shipping-stub"]')?.textContent,
-    ).toContain('Отгрузка пока не ведётся');
     const shippingLink = fixture.nativeElement.querySelector(
       '[data-test="order-shipping-link"]',
     ) as HTMLAnchorElement;
