@@ -1,41 +1,55 @@
-# Freebuff-2 — KP Workspace 407 (parallel после 404)
+# Freebuff-2 — Closeout: Gantt 354 + density guards
 
-> **Ждёшь 404 на remote, потом одна TZ и STOP.**
+> **2026-08-23 closeout.** DEN-552 **DONE**. Твоя полоса — **PRODUCTION-354** + grep guards.  
+> Freebuff-1 параллельно на **410** — не трогай `proposals/workspace/**`.
 
-## Старт — wait loop
+## Старт
 
 ```text
 cd D:\kppdf-8.0
-git pull
+git pull --ff-only
 ```
 
-**Не начинай код**, пока нет файла:
+`GEMINI.md` · `kppdf-executor-loop` · `docs/ui-rules.md` § truncated-label-peek
 
-`tasks/_archive/2026-08/TZ-KP-WS-404.done.md`
+## 1) TZ-PRODUCTION-354
 
-Если нет — каждые 5 мин: `git pull`, проверка снова.
+Spec: `tasks/TZ-PRODUCTION-354-gantt-truncated-label-peek.md`
 
-**После 404 archived — подожди ещё**, пока Freebuff-1 не закроет **405** (общий conflict: `proposal-create-inspector.*`). Старт 407 только когда есть `TZ-KP-WS-405.done.md` OR `406` in progress on remote — безопаснее: **жди `405.done`**.
+WIP уже в дереве (`gantt-bars.component.ts` + spec). **Не переписывай** — verify + gates + archive.
 
-## CLAIM
+CLAIM → `_active/TZ-PRODUCTION-354.md` · `agent_id: freebuff-2`
 
-```text
-tasks/_active/TZ-KP-WS-407.md
-agent_id: freebuff-2 · claimed_at ISO · D:\kppdf-8.0
-```
-
-## TZ
-
-`tasks/TZ-KP-WS-407.md` — org hint · copy для другой фирмы · family attach в workspace.
-
-**CONFLICT:** не трогать файлы 405/406 если Freebuff-1 на них (inspector/ribbon/workspace host — согласуй через pull).
-
-## Gates
+Gates:
 
 ```bash
-cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit && pnpm test -- proposal && pnpm lint
+cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
+pnpm test -- gantt-bars --runInBand
+pnpm lint
 ```
 
-## После DONE
+Если docs/ui-rules + AI-UI-CONTRACT уже описывают pattern — commit только код+spec.
 
-Archive → **commit + push** → **STOP** (408 делает Freebuff-1).
+Archive → `tasks/_archive/2026-08/TZ-PRODUCTION-354.done.md`  
+Commit: `fix(production): gantt truncated-label-peek overlay (354)` · push
+
+## 2) UI-DENSITY-GUARDS (grep, read-only)
+
+```bash
+cd frontend/src/app/pages && rg 'shadow-(sm|md|lg|xl)' -g '*.ts' | rg -v 'spec\.ts'
+cd frontend/src/app/pages && rg 'bg-white' -g '*.ts' | rg -v 'spec\.ts'
+```
+
+Запиши hits в `.done.md` 354 или короткий note в `docs/agent-checklists/UI-DENSITY-GUARDS.md` (exceptions only).  
+Не чини чужие страницы без TZ.
+
+## 3) Optional — keyboard-only evidence
+
+Если dev-server up: пройди сценарий A `/desk` из `docs/qa/keyboard-only-pass.md`, заполни колонку PASS/FAIL.  
+Не чини FAIL — только evidence.
+
+Commit docs-only · push
+
+## STOP
+
+Deploy без PO. Не workspace. Не deploy-prep (это Cursor).

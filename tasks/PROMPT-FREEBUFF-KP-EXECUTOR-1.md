@@ -1,69 +1,63 @@
-# Freebuff-1 — KP Workspace MAIN chain (401→409)
+# Freebuff-1 — Closeout: KP-410 + smoke + hygiene
 
-> **Один агент · одна непрерывная сессия.** Между TZ: archive → commit+push → `/clear` → следующий CLAIM.  
-> **Geometry law:** `docs/pages/kp-workspace-geometry.md` — нарушение = STOP.
+> **2026-08-23 closeout.** KP/DEN/409 **DONE** на main. Твоя полоса — **410 → smoke → tasks hygiene**.  
+> Freebuff-2 параллельно на **354 Gantt** — не трогай `production/**`.
 
-## Старт
+## Старт (один раз)
 
 ```text
-git pull
 cd D:\kppdf-8.0
+git pull --ff-only
+git status
 ```
 
-## CLAIM (каждая TZ)
+`GEMINI.md` · `kppdf-executor-loop` · `docs/PO-CANON.md` · `docs/pages/kp-workspace-geometry.md`
 
-```text
-1) tasks/_active/<TASK-ID>.md + docs/agent-checklists/_TEMPLATE.md
-2) agent_id: freebuff-1 · claimed_at ISO · workspace D:\kppdf-8.0
-3) _active-map — чужой claim на CONFLICT KEYS = STOP
-4) GEMINI.md + docs/AI-AGENT-Guide.md + назначенный TZ
-```
+## 1) TZ-KP-WS-410 — дожать hotfix
 
-## Порядок (строго)
+Spec: `tasks/TZ-KP-WS-410-hotfix-empty-viewport.md`
 
-| # | TZ | После archive — commit+push если менялся код/docs |
-|---|-----|---------------------------------------------------|
-| 1 | **401** Shell + `/proposals/workspace` | да |
-| 2 | **402** Store + chrome rails L/R | да |
-| 3 | **403** Left: catalog · template · recipient + autosave | да |
-| 4 | **404** Right: params · table · terms · output | да |
-| 5 | **405** Inline table/text/template settings | да |
-| 6 | **406** MCP bridge + BE fields | да (FE+BE) |
-| 7 | **408** Cutover `/proposals/create` | да — **STOP если 407 не archived** |
-| 8 | **409** Cleanup + `kp-workspace.page.md` sync | да |
+**Уже в main (DEN-552):** flex chain + empty state + `onSheetClick` в `proposal-workspace.page.ts`.
 
-**407 делает Freebuff-2** (параллельно после 404). Перед **408**: `git pull` и проверь `tasks/_archive/2026-08/TZ-KP-WS-407.done.md` на origin.
+**Осталось закоммитить (проверь diff):**
+- `proposal-workspace-draft.service.ts` — `resumeLastDraft()` без draft → `resumeLastTemplate()` (не `removeStorage`)
+- `proposal-workspace.page.spec.ts` — 3 теста empty/filled sheet
+- `deals-group-chips.ts` + spec — chip «Коммерческое предложение» → `/proposals/workspace`
 
-## Gates (после 401, 404, 408)
+CLAIM → `_active/TZ-KP-WS-410.md` · `agent_id: freebuff-1`
+
+Gates:
 
 ```bash
-cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit && pnpm test -- proposal && pnpm lint
+cd frontend && pnpm exec tsc -p tsconfig.app.json --noEmit
+pnpm test -- proposal-workspace deals-group-chips --runInBand
+pnpm lint
 ```
 
-После 406:
+Archive → `tasks/_archive/2026-08/TZ-KP-WS-410.done.md`  
+Commit: `fix(kp): workspace empty viewport hotfix (KP-WS-410)` · push
+
+## 2) Full KP smoke (dev servers)
 
 ```bash
-cd backend && pnpm exec tsc -p tsconfig.build.json --noEmit && pnpm test -- document-template
+cd D:\kppdf-8.0 && node start.mjs --no-browser
 ```
 
-## Обязательно читать перед кодом
+Прогон: `docs/agent-checklists/KP-WORKSPACE-SMOKE.md` (10 шагов) + 3 риска.  
+Evidence: обнови `docs/qa/kp-workspace-manager-smoke.md` (PASS/FAIL по строкам).  
+Нужен backend — если VPN/DB нет, зафиксируй BLOCKED + что автотесты PASS.
 
-- `docs/pages/kp-workspace-rail-ia.md`
-- `docs/audits/2026-08-23-kp-workspace-implementation-audit.md`
-- `docs/pages/kp-workspace.page.md`
+Commit docs-only если менял evidence · push
 
-## Запреты
+## 3) Tasks hygiene (корень tasks/)
 
-- Reflow/shrink A4 on panel open
-- Второй write-path Quotation
-- Hand-rolled modals
-- **408 без 407 archived**
-- Deploy без команды PO
+Удалить/перенести в `_archive/2026-08/specs-dup-root/` **уже archived** specs в корне:
+`TZ-KP-WS-400.md` … `409.md` (если есть `.done.md` в archive).
 
-## Commit cadence
+`_active/` должен быть пуст между задачами.
 
-Push после каждой archived TZ (401, 402, 403, 404, 405, 406, 408, 409) — не копить WIP.
+Commit: `chore(tasks): archive stale KP-WS root specs` · push
 
-## Финал
+## STOP
 
-Wave DONE → `tasks/WAVE-KP-SINGLE-WORKSPACE.md` status DONE, `_active/` пуст по KP-WS.
+Deploy без PO. Не `production/**`. Не DEN backlog.

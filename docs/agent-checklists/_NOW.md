@@ -5,7 +5,34 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T17:50:00+03:00
+updated_at: 2026-08-23T17:46:00+03:00
+
+## ORCHESTRATOR — PO away
+
+| Lane | Agent | TZ | Status |
+|------|-------|-----|--------|
+| A | **Freebuff-1** | KP-WS-410 | IN WORK (`_active`) |
+| B | **Freebuff-2** | PRODUCTION-354 | IN WORK |
+| C | **Cursor** | DEN-505 spec + deploy-prep | ACTIVE |
+| D | Next freebuff | DEN-505 execute | WAIT 410+354 |
+
+Промпты: `PROMPT-FREEBUFF-CLOSEOUT-WAVE.md` · `PROMPT-CURSOR-CLOSEOUT-ORCHESTRATOR.md`
+
+PO note: `/desk` empty text flush to frame → **DEN-505** (inset canon).
+
+---
+
+## CLOSEOUT — PO away (410 + 354 + deploy-prep)
+
+| Lane | Agent | TZ | Status |
+|------|-------|-----|--------|
+| A | Freebuff-1 | **KP-WS-410** (draft.service + chips) → KP smoke → tasks hygiene | READY |
+| B | Freebuff-2 | **PRODUCTION-354** gantt peek → UI-DENSITY grep | READY |
+| C | Cursor | deploy-prep после push A+B | WAIT A+B |
+
+Промпты: `tasks/PROMPT-FREEBUFF-CLOSEOUT-WAVE.md`
+
+---
 
 ## ACTIVE — WAVE-UI-DENSITY
 

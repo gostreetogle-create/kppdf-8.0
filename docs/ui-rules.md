@@ -4,6 +4,7 @@
 > Этот файл — их снимок для промптов, где нет времени открывать браузер.
 > При расхождении: правь kit-комментарий **и** этот файл в одном коммите.
 > TZ: `tasks/_archive/2026-08/TZ-UI-ROI-522.done.md`.
+> **P0 шпаргалка импортов/токенов:** [`AI-UI-CONTRACT.md`](./AI-UI-CONTRACT.md).
 
 ## Перед любым UI-действием
 
@@ -29,6 +30,49 @@
 | Toast | `PiToastService` (`shared/ui/toast/pi-toast.service.ts`) | Краткое уведомление success/error/warning (Sonner-style) | Долгие сообщения, confirm-диалоги (AlertDialog) |
 | FormField | `FormFieldComponent` (`shared/ui/form-field/form-field.component.ts`) | Обёртка label+error+hint для form-контролов | Standalone без Input/Select/Checkbox |
 | PiTable | `TableComponent` (`shared/ui/pi-table.component.ts`) | Sortable/paginated data-table | Своя `<table>` с ручной сортировкой |
+| **Truncated Label Peek** | Локальный паттерн в ячейке (см. § ниже) | Фиксированная колонка, текст обрезан `truncate` | Снять `overflow:hidden`, «голый» текст поверх сетки, клик-toggle без hover |
+
+## Truncated Label Peek (`truncated-label-peek`) — ЗАКОН
+
+> **Русское имя:** плашка раскрытия обрезанного текста.
+> **Когда:** узкая колонка (таблица, Гант, inbox) — текст не влезает, но иногда нужен целиком.
+> **Эталон в коде:** `frontend/src/app/pages/production/blocks/gantt-bars.component.ts` (`.gantt-label-overlay`).
+
+### Открытие (только если текст реально обрезан)
+
+1. **Hover** — `mouseenter` на ячейку/лейбл.
+2. **Cascade expand** — пользователь раскрыл дерево (▸): заказ → первый обрезанный child; product/module → эта строка.
+
+**Запрещено:** открывать по клику на текст, когда строка скрыта (родитель свёрнут), или если текст и так влезает.
+
+### Закрытие
+
+`mouseleave` (120ms), клик вне, Escape, scroll контейнера, сворачивание ▸.
+
+### Визуал (обязательно)
+
+| Свойство | Значение |
+|----------|----------|
+| Позиция | `absolute; left: 0; z-index: 50` относительно ячейки |
+| Фон | **Непрозрачный** wash строки/уровня (`--gantt-level-*`, `bg-paper`) |
+| Рамка | `border` hairline тон `#8c7853/40`, `rounded-r-md` |
+| Тень | `shadow-lg` |
+| Текст | `white-space: nowrap`, `max-width: 420px`, без многоточия |
+| Layout | **Не сдвигать** соседние колонки и сетку |
+
+### Anti-patterns
+
+- Убрать `overflow: hidden` у строки «навсегда».
+- Прозрачный/полупрозрачный фон — линии сетки просвечивают.
+- Tooltip браузера (`title`) как единственное решение на плотных экранах.
+- PiDialog/Sheet для одной строки label.
+
+### DoD перед сдачей
+
+- [ ] Обрезка в покое (`truncate`)
+- [ ] Плашка перекрывает линии таблицы/Ганта
+- [ ] Сетка и ширина колонок не меняются
+- [ ] Закрытие по клику мимо / уход мыши / Escape
 
 ## ЗАПРЕЩЕНО
 

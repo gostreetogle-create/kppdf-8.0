@@ -1,26 +1,35 @@
 # QUEUE-LIVE — кто что берёт
 
-> Обновлено: 2026-08-23 (tasks hygiene)
+> Обновлено: 2026-08-23T17:42+03:00 (closeout wave)
 
-## Статус
+## Статус волн
 
 | Волна | Status |
 |-------|--------|
-| UI-WR 500–510 | **DONE** |
-| ROI 520–523 | **DONE** |
-| TEST-421 | **DONE** |
-| UX-FORM 309–313 | **DONE** |
+| KP Single Workspace 401–409 | **DONE** |
+| UI Density DEN (incl. 552) | **DONE** |
+| DESK 425–430 | **DONE** |
+| SHIP-433 | **DONE** |
 
-`tasks/` корень чистый; `_active/` пусто.
+## Closeout (PO away) — 2 параллели + Cursor
 
-## Следующее
+| Агент | Промпт | TZ |
+|-------|--------|-----|
+| Freebuff-1 | `PROMPT-FREEBUFF-KP-EXECUTOR-1.md` | **KP-WS-410** | IN WORK |
+| Freebuff-2 | `PROMPT-FREEBUFF-KP-EXECUTOR-2.md` | **PRODUCTION-354** | IN WORK |
+| Cursor | `PROMPT-CURSOR-CLOSEOUT-ORCHESTRATOR.md` | DEN-505 spec + deploy-prep | ACTIVE |
+| Next freebuff | `PROMPT-FREEBUFF-DEN-505.md` | **DEN-505** inset | WAIT 410+354 |
 
-1. **KP Single Workspace** (401–409 IN PROGRESS) — `PROMPT-FREEBUFF-KP-EXECUTOR-1/2.md` · 400 DONE
-2. **DESK-425 wave** (6 TZ: 425–430) — `tasks/PROMPT-FREEBUFF-DESK-425-WAVE.md`
-2. Cursor: **«подготовь к деплою»** (`PROMPT-DEPLOY-READY.md`)
-3. PO: keyboard-only `docs/qa/keyboard-only-pass.md`
-4. Деплой: «сделай деплой по документации» при `DEPLOY-READY` = READY
+Индекс: `tasks/PROMPT-FREEBUFF-CLOSEOUT-WAVE.md`
 
-## Freebuff
+## После closeout (PO)
 
-LIVE TZ: **TZ-SHIP-433** (отмена отгрузки). Desk wave DONE.
+1. Browser: `/proposals/workspace`, `/production`, `/desk`
+2. `UI-DENSITY-GUARDS.md` — 5-route ✓
+3. `keyboard-only-pass.md` — сценарии A/B (мышь запрещена)
+4. «кати» → только при `DEPLOY-READY` = READY
+
+## Backlog (не брать без PO)
+
+- `tasks/_backlog/TZ-COMP-402-lock-password-login-wan.md`
+- `tasks/_backlog/ui-density/*` (волна закрыта кроме PO sign-off)

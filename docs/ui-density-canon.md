@@ -50,6 +50,8 @@ updated_at: 2026-08-23 (merged Studio spec)
 - Зоны разделять **hairline** `#c4c7c7`, не пустотой.
 - Сетка **4/8px**; высота кнопок **30–32px**.
 - Три уровня фона: экран `#fbf9f6` · плашка `#f3f1ee` · рабочая таблица `#ffffff`.
+- **Framed content inset:** текст внутри блока с border/hairline (empty, loading, error) — **min 16px** от края (`--panel-content-inset` / `px-panel-inset`). Эталон controls: `px-control-x`. Anti-pattern: `padding: Xrem 0` на message в bordered box (см. `/desk` queue empty vs search). TZ: **DEN-505**.
+- **Обрезанный текст в узкой колонке** → паттерн **`truncated-label-peek`** ([`ui-rules.md`](./ui-rules.md)): hover + раскрытие ▸, opaque плашка поверх сетки, без сдвига layout.
 
 ---
 
