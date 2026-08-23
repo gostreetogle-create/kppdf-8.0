@@ -15,10 +15,12 @@
 
 ## Следующее
 
-1. Cursor: **«подготовь к деплою»** (`PROMPT-DEPLOY-READY.md`)
-2. PO: keyboard-only `docs/qa/keyboard-only-pass.md`
-3. Деплой: «сделай деплой по документации» при `DEPLOY-READY` = READY
+1. **KP Single Workspace** (10 TZ: 400–409) — `tasks/PROMPT-FREEBUFF-KP-WORKSPACE-WAVE.md` · Wave 0 geometry **PASS**
+2. **DESK-425 wave** (6 TZ: 425–430) — `tasks/PROMPT-FREEBUFF-DESK-425-WAVE.md`
+2. Cursor: **«подготовь к деплою»** (`PROMPT-DEPLOY-READY.md`)
+3. PO: keyboard-only `docs/qa/keyboard-only-pass.md`
+4. Деплой: «сделай деплой по документации» при `DEPLOY-READY` = READY
 
 ## Freebuff
 
-Сейчас **нет** LIVE TZ в корне. Новое — только из `_backlog/` по решению PO.
+LIVE TZ: **TZ-SHIP-433** (отмена отгрузки). Desk wave DONE.

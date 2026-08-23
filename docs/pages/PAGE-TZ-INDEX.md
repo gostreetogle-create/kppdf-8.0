@@ -56,13 +56,15 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **FORMS-316 READY** vat/days number; **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **FORMS-316 READY** vat/days number; **NAV-301** thin list; **PARTY-301 DONE**; **PARTY-303 DONE**; **MIG-304** поле «Почта» (git); **MIG-307 BLOCKED** до кати `da01f1e5` |
-| `/design`, `/design/combine`, `/supply`, `/shipping` | **design.page.md**; **design-combine.page.md**; supply.page.md; shipping.page.md | **NAV-303/305** Комбайн в Проект; **COMBINE-401…411** boardLane/product-rows; **412** fuse; **414** name→expand / pencil-edit; **415** readable order № + text-ink; метод [`combine-product-row-kanban.md`](../methods/combine-product-row-kanban.md); **supply** live (SUPPLY-301/302); **SUPPLY-304 DONE** быстрый заказ UI mock (`?view=quick`); **305 PARK** data bind; **shipping** stub; **SWEEP-401** ship |
-| `/` , `/desk` | **manager-desk.page.md** | **401/405/406 DONE**; **402/412/403/413/410/411 DONE**; **407 DONE** view=gantt/combine stub; **404 DONE** deep-link студии + «На стол»; **408 DONE** DeskNote (BE+FE); **414 DONE** RouterLink + stale notes + `[activeId]=view()`; **415 DONE** GET orderId + PATCH/DELETE author; **416** tray production `from=desk`; **TZ-DESK-418 DONE** delete заказа со стола с confirm; **TZ-DESK-423 DONE** операторский tray; **TZ-DESK-424 DONE** tray declutter; **TZ-UX-FORM-313 READY** order-form-panel packing; **не** master-detail две колонки (повтор 401) |
+| `/design`, `/design/combine`, `/supply`, `/shipping` | **design.page.md**; **design-combine.page.md**; supply.page.md; shipping.page.md | **COMBINE-401…415**; **supply** live; **shipping** реестр (не stub); **TZ-SHIP-433 READY** отмена до dispatch; **SWEEP-401** ship |
+| `/` , `/desk` | **manager-desk.page.md** | **401…424 DONE**; **425…430 READY** tray workspace + ship-without-doc; prompt `PROMPT-FREEBUFF-DESK-425-WAVE.md` |
 | `/` , `/dashboard` | **dashboard.page.md** | **NAV-303 DONE** Обзор KPI (**не дом** после DESK-401); **TZ-DASHBOARD-401 DONE**; **UX-331** brand → стол; Канбан на `/design/combine`; **TZ-UI-414 READY** helper 11px |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
-| `/proposals/create` | **proposals-create.page.md** | editor 359–367 DONE; **370–378 DONE**; **SALES-379 DONE** Chromium Docker PDF; **377 DONE**; **TZ-SALES-381 READY** wrap capacity; **320** PARK |
+| `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
+| `/proposals/workspace` | **kp-workspace.page.md** | **WAVE-KP-SINGLE-WORKSPACE** **TZ-KP-WS-400…409 READY**; SoT студии; cutover 408 |
+| `/proposals/create` | **proposals-create.page.md** (legacy) | editor 359–378 DONE; после 408 → workspace; см. banner в page doc |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
@@ -118,6 +120,15 @@ Merged: 502→501, 511→507, 512→506.
 | TZ-UI-WR-508 | C | Dropdown portal + nav |
 | TZ-UI-WR-509 | A | Desk flyout a11y |
 | TZ-UI-WR-510 | A | KP review Esc=B exception |
+
+## Post-WR ROI (2026-08-23, после Freebuff A/C)
+
+| TZ | Ready? | One-liner |
+|----|--------|-----------|
+| [TZ-UI-ROI-520](../../tasks/TZ-UI-ROI-520-keyboard-only-qa.md) | сейчас (docs) | Keyboard-only чеклист |
+| [TZ-UI-ROI-521](../../tasks/TZ-UI-ROI-521-native-select-fallback.md) | после 501 если CSS | Native select fallback канон |
+| [TZ-UI-ROI-522](../../tasks/TZ-UI-ROI-522-ui-rules-kit-snapshot.md) | сейчас (после 506) | `docs/ui-rules.md` для агентов |
+| [TZ-UI-ROI-523](../../tasks/TZ-UI-ROI-523-desk-dirty-close.md) | **после 509** | Dirty-close desk flyout |
 
 ## Cross-cutting UX batch (this sweep)
 

@@ -52,7 +52,9 @@
 | 30 | **Shipping** | `shipping.page.md` | `/shipping` | Частичные отгрузки (stub NAV-301) |
 | 31 | **Import Todos** | `import-todos.page.md` | `/import-todos` | Импорт: finish-list менеджера (TZD-29) |
 | 32 | **Proposals** | `proposals.page.md` | `/proposals` | Коммерческие предложения (SALES-*) |
-| 33 | **Proposal Create** | `proposals-create.page.md` | `/proposals/create` | Витрина КП (SALES-317…328) |
+| 33 | **Proposal Create** | `proposals-create.page.md` | `/proposals/create` | Legacy студия КП (до cutover 408) |
+| 33a | **KP Single Workspace** | `kp-workspace.page.md` | `/proposals/workspace` (+ demo) | Целевая студия КП; SoT Wave 0+ |
+| 33b | **KP geometry** | `kp-workspace-geometry.md` | — (закон layout) | Overlay / A4 / 480px — immutable |
 | 34 | **Color References** | `color-references.page.md` | `/dictionaries/color-references` | Палитра цветов (DICT-306) |
 | 35 | **Form Profiles** | `form-profiles.page.md` | `/dictionaries/form-profiles` | Профили быстрых форм (DICT-315) |
 | 36 | **Foundations (kit)** | `foundations.page.md` | — (kit; нет route в app.routes.ts) | Стильгайд/шрифты (design-spec; OPS-308) |

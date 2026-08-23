@@ -1,4 +1,7 @@
-# /proposals/create — Создать КП
+# /proposals/create — Создать КП (legacy до cutover)
+
+> **Миграция:** целевая студия = [`kp-workspace.page.md`](./kp-workspace.page.md) (`/proposals/workspace`, WAVE-KP-SINGLE-WORKSPACE).  
+> Этот файл — канон **текущего** `/proposals/create` до **TZ-KP-WS-408**. После cutover — superseded; не дублировать новые фичи сюда.
 
 **Route:** `/proposals/create` (вход из «Сделки» → КП по умолчанию ведёт сюда; «Все КП» остаётся `/proposals`)
 **TZ:** **310–317 DONE** · **319 + 321 DONE** · wave-2 **323/324/325** · витрина **326–328 READY** (318→328) · **320/322 PARK**  
