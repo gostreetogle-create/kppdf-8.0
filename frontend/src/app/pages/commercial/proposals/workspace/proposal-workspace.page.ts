@@ -6,6 +6,7 @@ import {
   HostListener,
   Injector,
   afterNextRender,
+  computed,
   effect,
   inject,
   signal,
@@ -106,6 +107,63 @@ const SECTION_DEFS: readonly SectionDef[] = [
   providers: [ProposalWorkspaceStore, ProposalWorkspaceDraftService],
   styles: [
     `
+      :host {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      :host ::ng-deep app-pi-group-workspace {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      :host ::ng-deep .group-chrome {
+        flex-shrink: 0;
+      }
+
+      :host ::ng-deep .group-body--flush {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+      }
+
+      .kp-ws-empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        height: 100%;
+        min-height: 12rem;
+        padding: 1rem;
+        text-align: center;
+        box-sizing: border-box;
+      }
+
+      .kp-ws-empty-state__title {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+
+      .kp-ws-empty-state__hint {
+        margin: 0;
+        max-width: 16rem;
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--color-muted-foreground);
+      }
+
       .kp-ws-note {
         padding: var(--space-2, 8px);
         border: 1px solid var(--color-rule);
@@ -232,6 +290,50 @@ const SECTION_DEFS: readonly SectionDef[] = [
         padding-top: 0.65rem;
       }
 
+      .kp-create-output {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+      }
+
+      .kp-create-output__title {
+        margin: 0 0 4px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--color-ink);
+      }
+
+      .kp-create-output__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--color-rule-strong);
+        border-radius: var(--radius-sm, 2px);
+        background: var(--color-paper-raised);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-ink);
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .kp-create-output__btn:hover {
+        background: var(--color-paper-2);
+      }
+
+      .kp-create-output__btn--gold {
+        background: var(--color-gold);
+        border-color: var(--color-gold-deep);
+        color: var(--color-on-gold);
+      }
+
+      .kp-create-output__btn--gold:hover {
+        background: var(--color-gold-deep);
+      }
+
       .kp-ws-org-hint {
         display: flex;
         align-items: center;
@@ -270,12 +372,13 @@ const SECTION_DEFS: readonly SectionDef[] = [
         [railItems]="railItems"
         [panelWide]="store.activeSection() === 'catalog' || store.activeSection() === 'table'"
         [sheetHost]="!!draft.selectedTemplate()"
-        badgeText="Черновик"
+        [badgeText]="badgeDisplay()"
+        [totalText]="totalDisplay()"
         [statusText]="draft.autosaveLabel() || 'Workspace · черновик'"
         (orientationChange)="store.setOrientation($event)"
         (sectionChange)="onSectionChange($event)"
         (panelToggle)="store.closePanel()"
-        (sheetClick)="store.closePanel()"
+        (sheetClick)="onSheetClick()"
       >
         <div kpWsPanel>
           @switch (store.activeSection()) {
@@ -398,11 +501,11 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 </button>
                 <button
                   type="button"
-                  class="kp-create-output__btn pi-focus-ring"
+                  class="kp-create-output__btn kp-create-output__btn--gold pi-focus-ring"
                   data-test="kp-output-pdf"
                   (click)="draft.requestOutput('pdf')"
                 >
-                  PDF
+                  Скачать PDF
                 </button>
                 <button
                   type="button"
@@ -429,6 +532,21 @@ const SECTION_DEFS: readonly SectionDef[] = [
             [previewStatus]="draft.previewStatus()"
             (requestPick)="store.openSection('template')"
           />
+        } @else {
+          <div class="kp-ws-empty-state" kpWsSheet data-test="kp-ws-empty-state">
+            <p class="kp-ws-empty-state__title">Шаблон не выбран</p>
+            <p class="kp-ws-empty-state__hint">
+              Выберите шаблон КП — здесь появится превью листа A4
+            </p>
+            <app-pi-button
+              variant="outline"
+              size="sm"
+              data-test="kp-ws-empty-pick-template"
+              (click)="store.openSection('template')"
+            >
+              Выбрать шаблон
+            </app-pi-button>
+          </div>
         }
       </app-proposal-workspace-shell>
     </app-pi-group-workspace>
@@ -535,6 +653,20 @@ export class ProposalWorkspacePage {
   private readonly catalogReviewRef = viewChild<ElementRef<HTMLElement>>('catalogReview');
   private readonly templateCenter = viewChild(ProposalCreateTemplateCenterComponent);
 
+  /** TZ-UI-DEN-552 — live total formatted for the ribbon. */
+  protected readonly totalDisplay = computed(() => {
+    const total = this.draft.compositionTotal();
+    if (total <= 0) return '';
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      maximumFractionDigits: 0,
+    }).format(total);
+  });
+
+  /** TZ-UI-DEN-552 — dynamic save badge: autosave label or fallback. */
+  protected readonly badgeDisplay = computed(() => this.draft.autosaveLabel() || 'Черновик');
+
   constructor() {
     const query = this.route.snapshot.queryParamMap;
     const id = query.get('id')?.trim() || null;
@@ -552,6 +684,7 @@ export class ProposalWorkspacePage {
     afterNextRender(() => {
       const center = this.templateCenter();
       if (center) this.draft.attachPrinter(() => center.printPreview());
+      this.ensureEmptyStudioGuidance();
     });
 
     // TZ-KP-WS-406: MCP import-todo href → open template panel on the draft.
@@ -595,6 +728,21 @@ export class ProposalWorkspacePage {
 
   protected onSectionChange(id: string): void {
     this.switchSection(id as WsSection);
+  }
+
+  /** Empty sheet → template panel; filled sheet → collapse overlay (geometry law). */
+  protected onSheetClick(): void {
+    if (!this.draft.selectedTemplate()) {
+      this.store.openSection('template');
+      return;
+    }
+    this.store.closePanel();
+  }
+
+  private ensureEmptyStudioGuidance(): void {
+    if (this.draft.selectedTemplate()) return;
+    if (this.store.panelOpen()) return;
+    this.store.openSection('template');
   }
 
   /** Exit guard: leaving the table with pending catalog rows opens the review first. */
