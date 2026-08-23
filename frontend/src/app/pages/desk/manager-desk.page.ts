@@ -16,18 +16,7 @@ import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cd
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { httpResource } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import {
-  BookOpen,
-  Factory,
-  FileText,
-  Filter,
-  LayoutGrid,
-  Notebook,
-  Package,
-  Pencil,
-  ShoppingCart,
-  Users,
-} from 'lucide-angular';
+import { BookOpen, Filter, Notebook, Package } from 'lucide-angular';
 import { PiChromeToolsService } from '../../shared/chrome/pi-chrome-tools.service';
 import type { PiChromeToolItem } from '../../shared/chrome/pi-chrome-tools.types';
 import {
@@ -1645,8 +1634,13 @@ export class ManagerDeskPage {
     el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
+  /**
+   * DESK-427 — правый icon-rail убран целиком: он дублировал tray CTA и
+   * workflow chips (audit §2.5). Левый rail (create/filter/summary/notebook)
+   * остаётся — аналогов в chips/tray нет. Cross-page = chips (426),
+   * действия заказа = tray (425/424), клиент/состав/docs = tray CTA + flyouts.
+   */
   private syncChromeTools(): void {
-    const expanded = this.expandedOrder();
     const open = this.panel();
     const left: DeskChromeTool[] = [
       {
@@ -1699,90 +1693,7 @@ export class ManagerDeskPage {
       },
     ];
 
-    const right: DeskChromeTool[] = expanded
-      ? [
-          this.actionTool('edit', 'Редактировать', Pencil, open === 'edit', 1),
-          this.actionTool('client', 'Клиент', Users, open === 'client', 2),
-          this.actionTool('bom', 'Состав', Package, open === 'bom', 3),
-          this.actionTool('docs', 'Документы', FileText, open === 'docs', 4),
-          ...(this.canOpenPage('supply') &&
-          (expanded.status === 'in_production' || expanded.status === 'ready')
-            ? [this.actionTool('supply', 'Снабжение', ShoppingCart, open === 'supply', 5)]
-            : []),
-          ...(this.canOpenPage('production')
-            ? [this.studioTool('gantt', 'На Ганте', Factory, 'gantt', 6)]
-            : []),
-          ...(this.canOpenPage('orders')
-            ? [this.studioTool('combine', 'В комбайне', LayoutGrid, 'combine', 7)]
-            : []),
-        ]
-      : [];
-
-    this.chromeTools.setTools(CHROME_OWNER, [...left, ...right]);
-  }
-
-  /** Page-ACL gate for rail tools; undefined pages (legacy session) → show. */
-  private canOpenPage(pageKey: string): boolean {
-    const pages = this.auth.user()?.pages;
-    return !Array.isArray(pages) || pages.includes(pageKey);
-  }
-
-  /**
-   * 404: rail tools deep-link into the real studios with orderId&from=desk
-   * (deep-link fallback; the ?view= stub stays for the workflow chips).
-   */
-  private studioTool(
-    id: 'gantt' | 'combine',
-    label: string,
-    icon: PiChromeToolItem['icon'],
-    view: Exclude<DeskView, 'desk'>,
-    order: number,
-  ): DeskChromeTool {
-    return {
-      id,
-      side: 'right',
-      ariaLabel: label,
-      title: label,
-      icon,
-      active: false,
-      disabled: false,
-      ariaExpanded: false,
-      order,
-      onClick: () => this.openStudio(view),
-    };
-  }
-
-  private openStudio(view: Exclude<DeskView, 'desk'>): void {
-    const orderId = this.expandedOrder()?._id ?? null;
-    if (!orderId) return;
-    void Promise.resolve(
-      this.router.navigate([STUDIO_ROUTES[view]], {
-        queryParams: { orderId, from: 'desk' },
-      }),
-    ).catch(() => undefined);
-  }
-
-  private actionTool(
-    id: string,
-    label: string,
-    icon: PiChromeToolItem['icon'],
-    active: boolean,
-    order: number,
-    disabled = false,
-  ): DeskChromeTool {
-    const disabledTitle = `${label} — подключится в DESK-404`;
-    return {
-      id,
-      side: 'right',
-      ariaLabel: label,
-      title: disabled ? disabledTitle : label,
-      icon,
-      active,
-      disabled,
-      ariaExpanded: !disabled && active,
-      ariaControls: `desk-flyout-${id}`,
-      order,
-      onClick: disabled ? () => undefined : () => this.openPanel(id as ManagerDeskPanel),
-    };
+    // DESK-427: правый rail больше не регистрируется — пустой всегда.
+    this.chromeTools.setTools(CHROME_OWNER, left);
   }
 }

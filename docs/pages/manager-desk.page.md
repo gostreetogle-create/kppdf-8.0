@@ -46,7 +46,8 @@
   - **403 / 423:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → кнопка «Добавить изделие» (`panel=bom`, не edit); «Создать документ» reuse hub-хендлера.
   - **413 / 423:** tray = summary bar + 2-колонка (Состав слева; справа Исполнение открыто, снабжение/логистика disclosure); Комбайн = lane chips в «Исполнение»; desk composition open by default; без вечных helper-подписей.
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
-- **411 / 423:** workflow strip + rail tools скрываются по page ACL (`user.pages`); primary CTA: причина недоступности — toast/status **по клику**, не вечная подпись.
+- **411 / 423:** workflow strip скрывается по page ACL (`user.pages`); primary CTA: причина недоступности — toast/status **по клику**, не вечная подпись.
+- **427:** правый icon-rail **убран целиком** (дубль tray + chips); левый rail (create/filter/summary/notebook) остаётся; действия заказа — в tray, cross-page — chips (426).
 - **407:** `?view=gantt|combine` — stub-вью с crumbs + «Открыть в студии» (`/production` | `/design/combine` + `orderId&from=desk`); embed отложен.
 - **414:** `RouterLink` на studio-link; `loadNotes` сбрасывает список и игнорит stale GET при смене expand; `[activeId]="view()"` — чип Гант/Комбайн подсвечивается на stub.
 - **404:** rail tools «На Ганте»/«В комбайне» — deep-link в студии с `orderId&from=desk` (не stub); на `/production` при `from=desk` — кнопка RU **«На стол»** (`data-test="desk-return"`) → `/desk?orderId=`. Комбайн (общий DashboardPage) — known_limitation: назад браузера.
@@ -97,4 +98,5 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-423** | операторский tray (изделие / confirm-on-press / disclosure) — **DONE** |
 | **DESK-424** | tray declutter: no card-in-card composition tree (border-b, kind rail only), tray drops the client-name repeat + inner composition wrapper, desk primary CTA is `bg-gold`/`text-ink` (not black), hub «Открыть заказ»/«Открыть карточку заказа» are outline buttons not underline, right-column Снабжение/Производство/Документы/Блокнот buttons are `w-full`, delete lives in the row's own grid (not a separate flex strip) — **DONE** |
 | **DESK-426** | chips = cross-page SoT с контекстом заказа: `deskWorkflowChips(orderId)` (Стол/КП/Комбайн/Гант/Снабжение/Отгрузка), КП prefill из заказа (`source=order&sourceId`), supply/shipping фильтр заказа + «На стол» (`from=desk`) — **DONE** |
+| **DESK-427** | правый rail удалён (`right=[]`), dead code studioTool/openStudio/actionTool вычищен, левый rail 4 tools остаётся; edit/клиент/состав/docs — tray CTA + flyouts; cross-page — chips — **DONE** |
 | **DESK-425** | tray = workspace без route jumps: supply/docs R-flyout вместо navigate; Производство/Склад/Отгрузка — read-only сводка вместо ссылок в `mode="desk"` — **DONE** |

@@ -822,11 +822,8 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    const rightIds = chromeTools.rightTools().map((t) => t.id);
-    expect(rightIds).toContain('edit');
-    expect(rightIds).toContain('combine');
-    expect(rightIds).not.toContain('supply');
-    expect(rightIds).not.toContain('gantt');
+    // DESK-427: правый rail пуст при expand — дубли tray/chips убраны.
+    expect(chromeTools.rightTools()).toHaveLength(0);
   });
 
   it('407: ?view=gantt&orderId= renders the gantt studio-link view with crumbs', async () => {
@@ -948,7 +945,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     expect(page().viewStudioRoute()).toBe('/design/combine');
   });
 
-  it('404: rail tools deep-link into studios with orderId&from=desk', async () => {
+  it('427: right rail is empty on expand — cross-page lives in chips, actions in tray', async () => {
     queryParams$.next(convertToParamMap({ status: 'all' }));
     flushBase(httpMock);
     await tickMicrotask();
@@ -964,27 +961,15 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     await tickMicrotask();
     fixture.detectChanges();
 
-    navigate.mockClear();
-    const gantt = chromeTools.rightTools().find((t) => t.id === 'gantt');
-    expect(gantt).toBeTruthy();
-    gantt!.onClick();
-    expect(navigate).toHaveBeenCalledWith(
-      ['/production'],
-      expect.objectContaining({
-        queryParams: expect.objectContaining({ orderId: 'o2', from: 'desk' }),
-      }),
-    );
-
-    navigate.mockClear();
-    const combine = chromeTools.rightTools().find((t) => t.id === 'combine');
-    expect(combine).toBeTruthy();
-    combine!.onClick();
-    expect(navigate).toHaveBeenCalledWith(
-      ['/design/combine'],
-      expect.objectContaining({
-        queryParams: expect.objectContaining({ orderId: 'o2', from: 'desk' }),
-      }),
-    );
+    expect(chromeTools.rightTools()).toHaveLength(0);
+    // Левый rail — create/filter/summary/notebook — остаётся.
+    const leftIds = chromeTools.leftTools().map((t) => t.id);
+    expect(leftIds).toEqual(['create', 'filter', 'summary', 'notebook']);
+    // Cross-page остаётся в chips (426): Снабжение/Гант/Комбайн — ссылки, не rail.
+    const chips = fixture.nativeElement.querySelector('[data-test="group-chips"]');
+    expect(chips?.querySelector('[data-test="desk-workflow-supply"]')).toBeTruthy();
+    expect(chips?.querySelector('[data-test="desk-workflow-gantt"]')).toBeTruthy();
+    expect(chips?.querySelector('[data-test="desk-workflow-combine"]')).toBeTruthy();
   });
 
   it('408: notebook without expanded order shows a hint', async () => {
