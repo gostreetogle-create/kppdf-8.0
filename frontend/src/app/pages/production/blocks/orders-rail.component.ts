@@ -69,14 +69,12 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
         </div>
       } @else {
         @if (showList()) {
-          <div class="p-3 space-y-2 shrink-0">
-            <label class="text-xs font-medium text-muted-foreground" for="prod-order-search">
-              Заказы
-            </label>
+          <div class="p-3 space-y-1.5 shrink-0 border-b hairline">
+            <label class="pi-label text-muted-foreground" for="prod-order-search"> Заказы </label>
             <input
               id="prod-order-search"
               type="search"
-              class="pi-input w-full text-sm"
+              class="pi-input w-full !h-8 !text-[13px] !py-0"
               placeholder="Поиск по номеру…"
               [value]="ctx.search()"
               (input)="onSearch($event)"
@@ -85,12 +83,12 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
           </div>
         }
         @if (showFilters()) {
-          <div class="p-3 space-y-2 shrink-0">
+          <div class="p-3 space-y-1.5 shrink-0">
             <p class="eyebrow m-0">Фильтры</p>
-            <label class="block text-[11px] text-muted-foreground">
+            <label class="block pi-label text-muted-foreground">
               Заказчик
               <select
-                class="pi-input w-full mt-0.5 text-xs"
+                class="pi-input w-full mt-0.5 !h-8 !text-[13px] !py-0"
                 [value]="ctx.counterpartyFilter() ?? ''"
                 (change)="onCounterpartyChange($event)"
                 data-test="orders-rail-counterparty"
@@ -101,7 +99,7 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
                 }
               </select>
             </label>
-            <label class="flex items-center gap-2 text-xs text-ink cursor-pointer">
+            <label class="flex items-center gap-2 text-[13px] text-ink cursor-pointer">
               <input
                 type="checkbox"
                 class="pi-focus-ring"
@@ -111,10 +109,10 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
               />
               Все активные
             </label>
-            <label class="block text-[11px] text-muted-foreground">
+            <label class="block pi-label text-muted-foreground">
               Приоритет
               <select
-                class="pi-input w-full mt-0.5 text-xs"
+                class="pi-input w-full mt-0.5 !h-8 !text-[13px] !py-0"
                 [value]="ctx.priorityFilter()"
                 (change)="onPriority($event)"
                 data-test="orders-rail-priority"
@@ -128,21 +126,21 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
               Приоритет — важность в списке/фильтре, не длина полосок на Ганте.
             </p>
             <div class="grid grid-cols-2 gap-1">
-              <label class="block text-[11px] text-muted-foreground">
+              <label class="block pi-label text-muted-foreground">
                 С
                 <input
                   type="date"
-                  class="pi-input w-full mt-0.5 text-xs"
+                  class="pi-input w-full mt-0.5 !h-8 !text-[13px] !py-0"
                   [value]="ctx.dateFrom() ?? ''"
                   (change)="onDateFrom($event)"
                   data-test="orders-rail-date-from"
                 />
               </label>
-              <label class="block text-[11px] text-muted-foreground">
+              <label class="block pi-label text-muted-foreground">
                 По
                 <input
                   type="date"
-                  class="pi-input w-full mt-0.5 text-xs"
+                  class="pi-input w-full mt-0.5 !h-8 !text-[13px] !py-0"
                   [value]="ctx.dateTo() ?? ''"
                   (change)="onDateTo($event)"
                   data-test="orders-rail-date-to"
@@ -151,7 +149,7 @@ const PRIORITY_OPTS: { value: OrderPriority | 'all'; label: string }[] = [
             </div>
             <button
               type="button"
-              class="pi-btn pi-focus-ring w-full"
+              class="pi-btn pi-focus-ring w-full !h-8 !min-h-8 !text-[13px]"
               [class.pi-btn-ink]="ctx.filtersDirty()"
               [class.pi-btn-ghost]="!ctx.filtersDirty()"
               data-test="production-reset-filters"

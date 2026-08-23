@@ -20,7 +20,7 @@ import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
       >
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !text-xs !px-2.5 !py-1"
+          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !h-8 !min-h-8 !text-[13px] !px-3 !py-0"
           [class.pi-btn-ink]="groupBy() === 'orders'"
           data-test="gantt-group-orders"
           (click)="groupByChange.emit('orders')"
@@ -29,7 +29,7 @@ import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
         </button>
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !text-xs !px-2.5 !py-1"
+          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !h-8 !min-h-8 !text-[13px] !px-3 !py-0"
           [class.pi-btn-ink]="groupBy() === 'workers'"
           data-test="gantt-group-workers"
           (click)="groupByChange.emit('workers')"
@@ -45,7 +45,7 @@ import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
       >
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !text-xs !px-2.5 !py-1"
+          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !h-8 !min-h-8 !text-[13px] !px-3 !py-0"
           [class.pi-btn-ink]="zoom() === 'day'"
           data-test="gantt-zoom-day"
           (click)="zoomChange.emit('day')"
@@ -54,7 +54,7 @@ import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
         </button>
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !text-xs !px-2.5 !py-1"
+          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !h-8 !min-h-8 !text-[13px] !px-3 !py-0"
           [class.pi-btn-ink]="zoom() === 'month'"
           data-test="gantt-zoom-month"
           (click)="zoomChange.emit('month')"
@@ -63,7 +63,7 @@ import type { GanttGroupBy, GanttZoom } from '../production-cockpit.context';
         </button>
         <button
           type="button"
-          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !text-xs !px-2.5 !py-1"
+          class="pi-btn pi-btn-ghost pi-focus-ring !rounded-none !border-0 !h-8 !min-h-8 !text-[13px] !px-3 !py-0"
           data-test="gantt-fit"
           (click)="fit.emit()"
         >

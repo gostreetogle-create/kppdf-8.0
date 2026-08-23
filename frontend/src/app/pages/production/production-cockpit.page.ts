@@ -109,7 +109,10 @@ const CHROME_OWNER = 'production-cockpit';
     >
       <div class="production-cockpit" data-test="production-cockpit">
         @if (facade.state().error) {
-          <div role="alert" class="px-4 py-2 text-sm text-destructive border-b hairline">
+          <div
+            role="alert"
+            class="px-4 py-1.5 text-[13px] text-destructive border-b hairline bg-paper"
+          >
             {{ facade.state().error }}
           </div>
         }
@@ -117,7 +120,7 @@ const CHROME_OWNER = 'production-cockpit';
         @if (orderIdHint()) {
           <div
             role="status"
-            class="px-4 py-2 text-sm text-muted-foreground border-b hairline"
+            class="px-4 py-1.5 text-[13px] text-muted-foreground border-b hairline bg-paper"
             data-test="production-order-id-hint"
           >
             {{ orderIdHint() }}
@@ -126,14 +129,14 @@ const CHROME_OWNER = 'production-cockpit';
 
         @if (returnLink(); as ret) {
           <div
-            class="px-4 py-2 text-sm border-b hairline flex items-center justify-between gap-3"
+            class="px-4 py-1.5 text-[13px] border-b hairline bg-paper flex items-center justify-between gap-3"
             data-test="desk-return-bar"
           >
             <span class="text-muted-foreground">Вы перешли со стола</span>
             <a
               [routerLink]="['/desk']"
               [queryParams]="ret"
-              class="min-h-touch inline-flex items-center gap-1.5 px-3 py-1 border border-rule-strong rounded-sm text-ink no-underline hover:bg-paper-2"
+              class="h-8 min-h-8 inline-flex items-center gap-1.5 px-3 py-0 border border-rule-strong rounded-sm text-[13px] text-ink no-underline hover:bg-paper-2"
               data-test="desk-return"
             >
               ← На стол
@@ -145,7 +148,7 @@ const CHROME_OWNER = 'production-cockpit';
           <main class="production-studio-center" data-test="gantt-main" (click)="onMainClick()">
             @if (facade.state().loading) {
               <div
-                class="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground bg-paper/70"
+                class="absolute inset-0 z-10 flex items-center justify-center text-[13px] text-muted-foreground bg-paper/70"
                 data-test="cockpit-loading"
               >
                 Считаем оценку…
@@ -293,8 +296,7 @@ const CHROME_OWNER = 'production-cockpit';
         padding: 0.75rem;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
-        background: color-mix(in oklch, var(--color-paper, #fff) 96%, transparent);
-        box-shadow: var(--shadow-raised, 0 8px 24px oklch(0.2 0.02 260 / 0.12));
+        background: var(--color-paper-raised, var(--color-paper));
       }
       .production-studio-flyout-left {
         left: 0;

@@ -21,6 +21,19 @@ describe('ProductionScaleControlsComponent', () => {
     ).toContain('pi-btn-ink');
   });
 
+  it('TZ-UI-DEN-560: toolbar buttons use compact 32px / 13px density', () => {
+    const fixture = TestBed.createComponent(ProductionScaleControlsComponent);
+    fixture.componentRef.setInput('zoom', 'month');
+    fixture.componentRef.setInput('groupBy', 'orders');
+    fixture.detectChanges();
+
+    const btn = fixture.nativeElement.querySelector(
+      '[data-test="gantt-group-orders"]',
+    ) as HTMLElement;
+    expect(btn.className).toMatch(/!h-8/);
+    expect(btn.className).toMatch(/!text-\[13px\]/);
+  });
+
   it('emits zoom, groupBy and fit events without owning page state', () => {
     const fixture = TestBed.createComponent(ProductionScaleControlsComponent);
     fixture.componentRef.setInput('zoom', 'day');

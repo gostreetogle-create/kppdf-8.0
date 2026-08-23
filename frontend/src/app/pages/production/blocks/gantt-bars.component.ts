@@ -271,13 +271,13 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
   imports: [RouterLink, ProductionScaleControlsComponent],
   template: `
     <div
-      class="flex flex-col h-full min-h-0 bg-[oklch(0.985_0.005_95)] dark:bg-paper"
+      class="flex flex-col h-full min-h-0 bg-paper"
       [attr.data-zoom]="zoom()"
       data-test="gantt-bars-root"
       (click)="onRootClick($event)"
     >
       <div
-        class="shrink-0 px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 border-b hairline"
+        class="shrink-0 px-3 py-1 flex flex-wrap items-center gap-x-3 gap-y-1 border-b hairline bg-paper"
       >
         <app-production-scale-controls
           class="min-w-0 flex-1"
@@ -288,12 +288,14 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
           (fit)="fit.emit()"
         />
         @if (usedTodayFallback()) {
-          <span class="text-xs text-amber-800 dark:text-amber-300" data-test="gantt-today-fallback"
+          <span
+            class="text-[13px] text-amber-800 dark:text-amber-300"
+            data-test="gantt-today-fallback"
             >Дата начала не задана — показано от сегодня</span
           >
         }
         @if (readOnly()) {
-          <span class="text-xs text-amber-800 dark:text-amber-300"
+          <span class="text-[13px] text-amber-800 dark:text-amber-300"
             >Заказ завершён/отменён — только просмотр</span
           >
         }
@@ -301,7 +303,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
       @if (unassignedSummary().workTypeNames.length) {
         <div
-          class="shrink-0 px-3 py-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-amber-950 dark:text-amber-100 bg-amber-50/90 dark:bg-amber-950/40 border-b hairline"
+          class="shrink-0 px-3 py-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-hint-warn border-b hairline bg-paper"
           data-test="gantt-unassigned-banner"
           role="status"
         >
@@ -311,11 +313,11 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
           </span>
           <a
             routerLink="/people"
-            class="font-medium text-amber-950 dark:text-amber-50 underline underline-offset-2 shrink-0"
+            class="font-medium text-hint-warn underline underline-offset-2 shrink-0"
             data-test="gantt-unassigned-people-link"
             >Люди</a
           >
-          <span class="text-amber-900/80 dark:text-amber-200/80 truncate min-w-0">
+          <span class="text-hint-warn/80 truncate min-w-0">
             — {{ unassignedWorkTypeNamesPreview() }}
           </span>
         </div>
@@ -323,7 +325,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
       @if (warnings().length) {
         <div
-          class="shrink-0 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200 bg-amber-50/80 dark:bg-amber-950/30 border-b hairline"
+          class="shrink-0 px-3 py-1 text-[13px] text-hint-warn border-b hairline bg-paper"
           data-test="gantt-warnings"
         >
           @for (w of warnings(); track w) {
@@ -334,7 +336,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
       @if (legendItems().length) {
         <div
-          class="shrink-0 px-3 py-1.5 flex flex-wrap gap-x-3 gap-y-1 border-b hairline text-[10px]"
+          class="shrink-0 px-3 py-1 flex flex-wrap gap-x-3 gap-y-1 border-b hairline bg-paper text-xs text-muted-foreground"
           data-test="gantt-worktype-legend"
         >
           @for (item of legendItems(); track item.id) {
@@ -351,7 +353,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
 
       @if (!bars().length) {
         <div
-          class="shrink-0 px-3 py-1.5 text-xs text-muted-foreground border-b hairline bg-paper-2/40"
+          class="shrink-0 px-3 py-1 text-[13px] text-muted-foreground border-b hairline bg-paper"
           data-test="gantt-empty"
           role="status"
         >
