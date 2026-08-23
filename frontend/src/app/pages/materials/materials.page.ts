@@ -211,8 +211,7 @@ const CHROME_OWNER = 'materials-page';
       </div>
 
       <app-error-banner
-        [error]="error()"
-        [canRetry]="true"
+        [error]="error() ? { message: error()!, canRetry: true } : null"
         data-test="materials-error-banner"
         (retry)="reload()"
       />

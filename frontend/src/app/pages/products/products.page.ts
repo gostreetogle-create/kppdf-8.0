@@ -237,8 +237,7 @@ const STATUS_OPTIONS: ProductStatus[] = ['new', 'active', 'archived', 'draft'];
       </div>
 
       <app-error-banner
-        [error]="error()"
-        [canRetry]="true"
+        [error]="error() ? { message: error()!, canRetry: true } : null"
         data-test="products-error-banner"
         (retry)="reload()"
       />

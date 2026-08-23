@@ -283,8 +283,7 @@ function moduleHasComposition(row: ProductModule): boolean {
       </div>
 
       <app-error-banner
-        [error]="error()"
-        [canRetry]="true"
+        [error]="error() ? { message: error()!, canRetry: true } : null"
         data-test="modules-error-banner"
         (retry)="reload()"
       />
