@@ -1,26 +1,38 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
+import { OrganizationFullEditorDialogComponent } from '../../organizations/organization-full-editor-dialog.component';
 import { ProposalCreateInspectorComponent } from './proposal-create-inspector.component';
-import { OrganizationsService } from '../../../shared/services/organizations.service';
+import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
 import { CounterpartyService } from '../../../shared/services/pi-counterparty.service';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 
 interface InspectorHarness {
   onTextChange(field: 'number' | 'title' | 'date' | 'validUntil', event: Event): void;
   number(): string;
+  openOrganization(): void;
 }
 
 describe('ProposalCreateInspectorComponent A6 characterization', () => {
   let fixture: ComponentFixture<ProposalCreateInspectorComponent>;
+  let dialogSpy: { open: jest.Mock };
+  let routerNavigate: jest.SpyInstance;
+
+  const fakeOrg = { _id: 'org-1', name: 'ООО Наша фирма', inn: '7700000002' } as Organization;
 
   beforeEach(async () => {
+    dialogSpy = { open: jest.fn().mockReturnValue({}) };
     await TestBed.configureTestingModule({
       imports: [ProposalCreateInspectorComponent],
       providers: [
         provideRouter([]),
+        { provide: PiDialogService, useValue: dialogSpy },
         {
           provide: OrganizationsService,
-          useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
+          useValue: {
+            list: () => of({ ok: true, data: { items: [fakeOrg], total: 1 } }),
+            findById: jest.fn(),
+          },
         },
         {
           provide: CounterpartyService,
@@ -31,6 +43,7 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
       .overrideComponent(ProposalCreateInspectorComponent, { set: { template: '', imports: [] } })
       .compileComponents();
     fixture = TestBed.createComponent(ProposalCreateInspectorComponent);
+    routerNavigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
 
   it('does not wipe an in-progress number when the parent rebinds inputs', () => {
@@ -54,5 +67,20 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
     fixture.detectChanges();
 
     expect(inspector.number()).toBe('server-2');
+  });
+
+  it('openOrganization opens OrganizationFullEditor in-place without router navigation', async () => {
+    fixture.componentRef.setInput('initialOrganizationId', 'org-1');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const inspector = fixture.componentInstance as unknown as InspectorHarness;
+    inspector.openOrganization();
+
+    expect(routerNavigate).not.toHaveBeenCalled();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      OrganizationFullEditorDialogComponent,
+      expect.objectContaining({ data: fakeOrg }),
+    );
   });
 });

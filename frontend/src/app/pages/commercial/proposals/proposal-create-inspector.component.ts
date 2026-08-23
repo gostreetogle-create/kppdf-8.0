@@ -1,6 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  Injector,
   OnInit,
   computed,
   effect,
@@ -10,8 +12,10 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { OrganizationFullEditorDialogComponent } from '../../organizations/organization-full-editor-dialog.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../../shared/ui/input/input.component';
@@ -26,6 +30,8 @@ import {
   type ProposalStatus,
 } from '../../../shared/services/pi-proposals.service';
 import { formatPrice } from '../../../shared/util/format';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import type { ProposalDraftLine } from './proposal-product-rail.component';
 
@@ -669,6 +675,9 @@ export class ProposalCreateInspectorComponent implements OnInit {
   private readonly orgs = inject(OrganizationsService);
   private readonly counterparties = inject(CounterpartyService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly draftLines = input<ProposalDraftLine[]>([]);
   readonly tableLayout = input<ProposalTableLayoutColumn[]>([]);
@@ -1043,7 +1052,31 @@ export class ProposalCreateInspectorComponent implements OnInit {
     if (this.readOnly()) return;
     const id = this.organizationId();
     if (!id) return;
-    void this.router.navigate(['/organizations'], { queryParams: { highlight: id } });
+    const cached = this.organizations().find((org) => org._id === id);
+    if (cached) {
+      this.openOrganizationDialog(cached);
+      return;
+    }
+    this.orgs
+      .findById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) return;
+        this.openOrganizationDialog(res.data);
+      });
+  }
+
+  private openOrganizationDialog(org: Organization): void {
+    const ref = this.dialog.open<Organization>(OrganizationFullEditorDialogComponent, {
+      data: org,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (saved) => {
+      this.organizations.update((items) =>
+        items.map((item) => (item._id === saved._id ? saved : item)),
+      );
+    });
   }
 
   protected openTableTemplate(): void {

@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
   computed,
   inject,
   input,
@@ -10,9 +11,10 @@ import {
 } from '@angular/core';
 import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { distinctUntilChanged, of, switchMap } from 'rxjs';
+import { CounterpartyFullEditorDialogComponent } from '../../counterparties/counterparty-full-editor-dialog.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import {
   Counterparty,
@@ -20,6 +22,7 @@ import {
 } from '../../../shared/services/pi-counterparty.service';
 import { Person, PersonsService } from '../../../shared/services/pi-persons.service';
 import { Site, SiteService } from '../../../shared/services/pi-site.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 
 export interface ProposalRecipientState {
@@ -194,7 +197,8 @@ export class ProposalCreateRecipientComponent {
   private readonly counterpartiesService = inject(CounterpartyService);
   private readonly personsService = inject(PersonsService);
   private readonly sitesService = inject(SiteService);
-  private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly selectedCounterpartyId = input('');
@@ -277,7 +281,35 @@ export class ProposalCreateRecipientComponent {
   }
   protected openCard(): void {
     const id = this.selectedCounterpartyId();
-    if (id) void this.router.navigate(['/counterparties', id]);
+    if (!id) return;
+    const cached = this.selectedCounterparty();
+    if (cached) {
+      this.openCounterpartyDialog(cached);
+      return;
+    }
+    this.counterpartiesService
+      .findById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) {
+          this.error.set(extractErrorMessage(res.error));
+          return;
+        }
+        this.openCounterpartyDialog(res.data);
+      });
+  }
+
+  private openCounterpartyDialog(client: Counterparty): void {
+    const ref = this.dialog.open<Counterparty>(CounterpartyFullEditorDialogComponent, {
+      data: client,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (saved) => {
+      this.counterparties.update((items) =>
+        items.map((item) => (item._id === saved._id ? saved : item)),
+      );
+    });
   }
   protected createClient(): void {
     if (this.readOnly() || !this.newClientName.trim() || !this.newClientAddress.trim()) {
