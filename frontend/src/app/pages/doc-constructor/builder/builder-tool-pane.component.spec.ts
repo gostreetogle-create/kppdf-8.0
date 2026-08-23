@@ -232,4 +232,80 @@ describe('BuilderToolPaneComponent (TZ-DOC-317 category filter)', () => {
     fixture.nativeElement.querySelector('[data-test="tool-pane-group-ungroup"]').click();
     expect(ungroupSpy).toHaveBeenCalledWith('g1');
   });
+
+  describe('TZ-UI-WR-503 flyout a11y (Escape / outside / return-focus)', () => {
+    /** Create a component with a stable, HTTP-drained fixture (nothing open). */
+    async function createFixture(): Promise<{
+      fixture: ReturnType<typeof TestBed.createComponent<BuilderToolPaneComponent>>;
+      comp: BuilderToolPaneComponent;
+    }> {
+      const fixture = TestBed.createComponent(BuilderToolPaneComponent);
+      fixture.detectChanges();
+      TestBed.flushEffects();
+      httpMock
+        .expectOne((r) => r.method === 'GET' && r.url.includes('/text-block-categories'))
+        .flush(fakeCategories);
+      httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/text-blocks')).flush([]);
+      httpMock.expectOne((r) => r.method === 'GET' && r.url.includes('/table-templates')).flush([]);
+      await tickMicrotask();
+      TestBed.flushEffects();
+      fixture.detectChanges();
+      return { fixture, comp: fixture.componentInstance };
+    }
+
+    function isOpen(comp: BuilderToolPaneComponent): boolean {
+      return (comp as unknown as { anyOpen: () => boolean }).anyOpen();
+    }
+
+    it('Escape closes the open flyout', async () => {
+      const { fixture, comp } = await openTextsSection();
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeTruthy();
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeNull();
+      expect(isOpen(comp)).toBe(false);
+    });
+
+    it('pointerdown outside the rail/flyout closes the flyout', async () => {
+      const { fixture, comp } = await openTextsSection();
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeTruthy();
+
+      // jsdom 20 has no PointerEvent constructor — plain Event with the
+      // same type is enough: the HostListener matches by event name.
+      document.body.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeNull();
+      expect(isOpen(comp)).toBe(false);
+    });
+
+    it('pointerdown inside the flyout keeps it open', async () => {
+      const { fixture } = await openTextsSection();
+      const flyout = fixture.nativeElement.querySelector('.tool-pane__flyout') as HTMLElement;
+      expect(flyout).toBeTruthy();
+
+      flyout.dispatchEvent(new Event('pointerdown', { bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeTruthy();
+    });
+
+    it('closing returns focus to the rail button that opened the section (return-focus)', async () => {
+      const { fixture } = await createFixture();
+      const btn = fixture.nativeElement.querySelector(
+        '[data-test="tool-pane-groups-toggle"]',
+      ) as HTMLButtonElement;
+      btn.click(); // toggle('groups', $event) — captures currentTarget as railFocusRef
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeTruthy();
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.tool-pane__flyout')).toBeNull();
+      expect(document.activeElement).toBe(btn);
+    });
+  });
 });

@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  HostListener,
   computed,
   inject,
   input,
@@ -61,7 +63,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           type="button"
           class="tool-pane__rail-btn pi-focus-ring"
           [class.is-active]="isOpen('groups')"
-          (click)="toggle('groups')"
+          (click)="toggle('groups', $event)"
           [attr.aria-pressed]="isOpen('groups')"
           [attr.aria-expanded]="isOpen('groups')"
           title="Группы"
@@ -77,7 +79,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           type="button"
           class="tool-pane__rail-btn pi-focus-ring"
           [class.is-active]="isOpen('texts')"
-          (click)="toggle('texts')"
+          (click)="toggle('texts', $event)"
           [attr.aria-pressed]="isOpen('texts')"
           [attr.aria-expanded]="isOpen('texts')"
           title="Тексты"
@@ -89,7 +91,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           type="button"
           class="tool-pane__rail-btn pi-focus-ring"
           [class.is-active]="isOpen('tables')"
-          (click)="toggle('tables')"
+          (click)="toggle('tables', $event)"
           [attr.aria-pressed]="isOpen('tables')"
           [attr.aria-expanded]="isOpen('tables')"
           title="Таблицы"
@@ -101,7 +103,7 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
           type="button"
           class="tool-pane__rail-btn pi-focus-ring"
           [class.is-active]="isOpen('photo')"
-          (click)="toggle('photo')"
+          (click)="toggle('photo', $event)"
           [attr.aria-pressed]="isOpen('photo')"
           [attr.aria-expanded]="isOpen('photo')"
           title="Фото"
@@ -112,7 +114,12 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
       </nav>
 
       @if (anyOpen()) {
-        <div class="tool-pane__flyout" role="dialog" [attr.aria-label]="flyoutTitle()">
+        <div
+          class="tool-pane__flyout"
+          role="dialog"
+          [attr.aria-label]="flyoutTitle()"
+          aria-modal="true"
+        >
           <header class="tool-pane__flyout-head">
             <h2 class="tool-pane__flyout-title">{{ flyoutTitle() }}</h2>
             <button
@@ -400,6 +407,8 @@ import type { TableTemplate } from '../../../shared/services/pi-table-templates.
         top: 0;
         bottom: 0;
         width: 300px;
+        /* TZ-UI-WR-503: popover-level stacking (WR-501 --z-* scale). */
+        z-index: var(--z-popover);
         display: flex;
         flex-direction: column;
         min-height: 0;
@@ -707,6 +716,10 @@ export class BuilderToolPaneComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly textBlockCategories = inject(TextBlockCategoriesService);
   private readonly textFilter = inject(BuilderTextFilterService);
+  private readonly hostEl = inject(ElementRef<HTMLElement>);
+
+  /** TZ-UI-WR-503: rail button that opened the current section — focus target on collapse. */
+  private railFocusRef: HTMLElement | null = null;
 
   protected readonly FileTextIcon = FileText;
   protected readonly TableIconSvg = TableIcon;
@@ -736,16 +749,44 @@ export class BuilderToolPaneComponent {
     return 'Палитра';
   });
 
-  protected readonly toggle = (k: string): void => {
+  protected readonly toggle = (k: string, event?: Event): void => {
+    if (event && event.currentTarget instanceof HTMLElement) {
+      this.railFocusRef = event.currentTarget;
+    }
     this.open.update((s) => {
       const next = !s[k];
       return { groups: false, texts: false, tables: false, photo: false, [k]: next };
     });
   };
 
-  /** Close flyout — after place-on-canvas or explicit close. */
+  /** Close flyout — after place-on-canvas, explicit close, Esc or outside click. */
   collapse(): void {
     this.open.set({ groups: false, texts: false, tables: false, photo: false });
+    // TZ-UI-WR-503: return focus to the rail button that opened the section.
+    if (this.railFocusRef && this.railFocusRef.isConnected) {
+      this.railFocusRef.focus({ preventScroll: true });
+    }
+    this.railFocusRef = null;
+  }
+
+  /** TZ-UI-WR-503: Escape closes the open flyout (stopPropagation only when open). */
+  @HostListener('document:keydown.escape', ['$event'])
+  protected onDocEscape(event: KeyboardEvent): void {
+    if (!this.anyOpen()) return;
+    event.stopPropagation();
+    this.collapse();
+  }
+
+  /** TZ-UI-WR-503: pointer down outside the rail/flyout closes the flyout. */
+  @HostListener('document:pointerdown', ['$event'])
+  protected onDocPointerDown(event: PointerEvent): void {
+    if (!this.anyOpen()) return;
+    const target = event.target as Node | null;
+    if (!target) return;
+    // Inside the rail or the flyout — keep open (clicks on rail buttons
+    // switch sections; clicks inside flyout interact with its content).
+    if (this.hostEl.nativeElement.contains(target)) return;
+    this.collapse();
   }
 
   protected readonly blockTypeItems = (
