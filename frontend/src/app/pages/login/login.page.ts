@@ -27,15 +27,15 @@ import { InputComponent } from '../../shared/ui/input/input.component';
       class="min-h-screen bg-paper text-ink font-body flex items-center justify-center px-page-x"
     >
       <main
-        class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-10 py-12 bg-paper box-border overflow-hidden"
+        class="w-full max-w-sm border hairline border-sunrise-warm rounded-sm px-8 py-8 bg-white box-border overflow-hidden"
       >
-        <div class="flex items-center gap-2 mb-10">
+        <div class="flex items-center gap-2 mb-6">
           <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
-          <span class="font-display font-bold tracking-tight"> KPPDF · Вход </span>
+          <span class="font-display font-bold tracking-tight text-sm"> KPPDF · Вход </span>
         </div>
 
-        <h1 class="font-display text-2xl font-semibold mb-3">С возвращением.</h1>
-        <p class="text-sm text-muted-foreground mb-4">
+        <h1 class="font-display text-lg font-semibold mb-2">С возвращением.</h1>
+        <p class="text-xs text-muted-foreground mb-4">
           Введите учётные данные для входа в систему.
         </p>
 
