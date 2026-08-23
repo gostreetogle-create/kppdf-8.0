@@ -35,7 +35,7 @@
 
 | Коммит | Файлы |
 |--------|-------|
-| *(заполнить после commit)* | `docs/pages/kp-workspace-rail-ia.md`, `docs/agent-checklists/TZ-KP-WS-400.md`, `tasks/_archive/2026-08/TZ-KP-WS-400.done.md`, `tasks/_active/TZ-KP-WS-400.md` (claim B) |
+| `21b88137` | `docs/pages/kp-workspace-rail-ia.md`, `docs/agent-checklists/TZ-KP-WS-400.md`, `tasks/_archive/2026-08/TZ-KP-WS-400.done.md` (claim B в `tasks/_active/` не коммитился — транзитный, часть A) |
 
 ## known_limitation
 
