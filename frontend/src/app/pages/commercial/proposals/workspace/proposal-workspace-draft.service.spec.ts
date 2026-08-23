@@ -14,6 +14,8 @@ import { TableTemplatesService } from '../../../../shared/services/pi-table-temp
 import { TemplateBlocksService } from '../../../../shared/services/pi-template-blocks.service';
 import { GeneratedDocumentsService } from '../../../../shared/services/pi-generated-documents.service';
 import { ProposalsService, type Proposal } from '../../../../shared/services/pi-proposals.service';
+import { OrganizationsService } from '../../../../shared/services/organizations.service';
+import { CounterpartyService } from '../../../../shared/services/pi-counterparty.service';
 import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
 import type { ProposalDraftLine } from '../proposal-product-rail.component';
 
@@ -53,7 +55,10 @@ describe('ProposalWorkspaceDraftService', () => {
   const toastError = jest.fn();
   const toastSuccess = jest.fn();
   const toastWarning = jest.fn();
+  const toastShow = jest.fn();
   const dialogOpenMock = jest.fn();
+  const orgFindMock = jest.fn();
+  const counterpartyFindMock = jest.fn();
   let dialogCloseValue: unknown = undefined;
 
   beforeEach(() => {
@@ -84,6 +89,8 @@ describe('ProposalWorkspaceDraftService', () => {
     buildMock.mockReturnValue(
       of({ ok: true, data: '<html><body><div class="doc-page">A4</div></body></html>' }),
     );
+    orgFindMock.mockReturnValue(of({ ok: true, data: { _id: 'org-1', vatRate: 20 } }));
+    counterpartyFindMock.mockReturnValue(of({ ok: true, data: { _id: 'cp-1', vatRate: 20 } }));
     URL.createObjectURL = jest.fn(() => 'blob:mock');
     URL.revokeObjectURL = jest.fn();
 
@@ -125,6 +132,14 @@ describe('ProposalWorkspaceDraftService', () => {
           useValue: { archiveQuotation: jest.fn(() => of({ ok: true })) },
         },
         {
+          provide: OrganizationsService,
+          useValue: { findById: orgFindMock },
+        },
+        {
+          provide: CounterpartyService,
+          useValue: { findById: counterpartyFindMock },
+        },
+        {
           provide: PiDialogService,
           useValue: {
             open: dialogOpenMock.mockImplementation(() => ({
@@ -136,7 +151,12 @@ describe('ProposalWorkspaceDraftService', () => {
         provideRouter([]),
         {
           provide: PiToastService,
-          useValue: { error: toastError, success: toastSuccess, warning: toastWarning },
+          useValue: {
+            error: toastError,
+            success: toastSuccess,
+            warning: toastWarning,
+            show: toastShow,
+          },
         },
       ],
     });
@@ -525,11 +545,23 @@ describe('ProposalWorkspaceDraftService', () => {
         },
         { provide: TableTemplatesService, useValue: { findById: jest.fn() } },
         { provide: GeneratedDocumentsService, useValue: { archiveQuotation: jest.fn() } },
+        {
+          provide: OrganizationsService,
+          useValue: { findById: jest.fn(() => of({ ok: true, data: {} })) },
+        },
+        {
+          provide: CounterpartyService,
+          useValue: {
+            findById: jest.fn(() =>
+              of({ ok: true, data: { _id: 'cp-order', vatRate: 20, paymentTermDays: 10 } }),
+            ),
+          },
+        },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
         provideRouter([]),
         {
           provide: PiToastService,
-          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
+          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn(), show: jest.fn() },
         },
       ],
     });
@@ -572,4 +604,120 @@ describe('ProposalWorkspaceDraftService', () => {
     expect(layout.filter((column) => column.key === 'photo')).toHaveLength(1);
     expect(layout.some((column) => column.key === 'photoIds')).toBe(false);
   });
+
+  const inspectorBase = {
+    orgMarkupPercent: 0,
+    dealVatPercent: 20,
+    discountType: 'none' as const,
+    discountPercent: 0,
+    discountAmount: 0,
+    prepaymentPercent: 0,
+    productionDays: 0,
+    deliveryDays: 0,
+    sheetLayout: {
+      rowsFirstPage: 0,
+      rowsNextPage: 0,
+      photoScalePercent: 100,
+      photoCropYPercent: 0,
+      showPhotoColumn: true,
+      tableFontSize: 12,
+      tableHeaderFontSize: 12,
+    },
+  };
+
+  it('MECH-504: org change inherits vatRate when user has not touched vat', fakeAsync(() => {
+    service.init({ new: true });
+    orgFindMock.mockReturnValueOnce(of({ ok: true, data: { _id: 'org-10', vatRate: 10 } }));
+
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-10',
+      counterpartyId: '',
+    });
+    tick();
+
+    expect(orgFindMock).toHaveBeenCalledWith('org-10');
+    expect(service.dealVatPercent()).toBe(10);
+    expect(service.vatTouchedByUser()).toBe(false);
+    tick(5000);
+  }));
+
+  it('MECH-504: counterparty change inherits vatRate when user has not touched vat', fakeAsync(() => {
+    service.init({ new: true });
+    counterpartyFindMock.mockReturnValueOnce(
+      of({ ok: true, data: { _id: 'cp-5', vatRate: 0, paymentTermDays: 14 } }),
+    );
+
+    service.onRecipientState({ counterpartyId: 'cp-5', contactPersonId: '', siteId: '' });
+    tick();
+
+    expect(counterpartyFindMock).toHaveBeenCalledWith('cp-5');
+    expect(service.dealVatPercent()).toBe(0);
+    expect(toastShow).toHaveBeenCalledWith('У клиента срок оплаты 14 дн.');
+    tick(5000);
+  }));
+
+  it('MECH-504: manual vat edit blocks inherit on subsequent org change', fakeAsync(() => {
+    service.init({ new: true });
+    orgFindMock.mockReturnValueOnce(of({ ok: true, data: { _id: 'org-10', vatRate: 10 } }));
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-10',
+      counterpartyId: '',
+    });
+    tick();
+    expect(service.dealVatPercent()).toBe(10);
+
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-10',
+      counterpartyId: '',
+      dealVatPercent: 15,
+    });
+    tick();
+    expect(service.vatTouchedByUser()).toBe(true);
+    expect(service.dealVatPercent()).toBe(15);
+
+    orgFindMock.mockReturnValueOnce(of({ ok: true, data: { _id: 'org-20', vatRate: 5 } }));
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-20',
+      counterpartyId: '',
+      dealVatPercent: 15,
+    });
+    tick();
+    expect(service.dealVatPercent()).toBe(15);
+    tick(5000);
+  }));
+
+  it('MECH-504: new draft keeps discount none/0 by default', fakeAsync(() => {
+    service.init({ new: true });
+    tick();
+    expect(service.discountType()).toBe('none');
+    expect(service.discountPercent()).toBe(0);
+    expect(service.discountAmount()).toBe(0);
+    expect(service.discountTouchedByUser()).toBe(false);
+    tick(5000);
+  }));
+
+  it('MECH-504: hydrated draft marks vat touched from saved snapshot', fakeAsync(() => {
+    proposalsFindMock.mockReturnValue(
+      of({ ok: true, data: { ...DRAFT, vatPercent: 7, discountType: 'none' } }),
+    );
+    service.init({ id: 'q-1' });
+    tick(200);
+    expect(service.dealVatPercent()).toBe(7);
+    expect(service.vatTouchedByUser()).toBe(true);
+
+    orgFindMock.mockClear();
+    service.onInspectorState({
+      ...inspectorBase,
+      organizationId: 'org-99',
+      counterpartyId: 'cp-1',
+      dealVatPercent: 7,
+    });
+    tick();
+    expect(service.dealVatPercent()).toBe(7);
+    tick(5000);
+  }));
 });

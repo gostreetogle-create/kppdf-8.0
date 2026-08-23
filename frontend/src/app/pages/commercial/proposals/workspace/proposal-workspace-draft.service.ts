@@ -28,6 +28,8 @@ import {
 import { TemplateBlocksService } from '../../../../shared/services/pi-template-blocks.service';
 import { ProposalsService, type Proposal } from '../../../../shared/services/pi-proposals.service';
 import { GeneratedDocumentsService } from '../../../../shared/services/pi-generated-documents.service';
+import { OrganizationsService } from '../../../../shared/services/organizations.service';
+import { CounterpartyService } from '../../../../shared/services/pi-counterparty.service';
 import type { TemplateBlock } from '../../../../shared/template-block/template-block.types';
 import type {
   ProposalCreateInspectorState,
@@ -38,6 +40,12 @@ import type {
 } from '../proposal-create-inspector.component';
 import type { KpTemplatePreviewStatus } from '../proposal-create-template-center.component';
 import type { ProposalRecipientState } from '../proposal-create-recipient.component';
+import {
+  isPhotoColumnKey,
+  normalizeTableLayoutColumnKey,
+  normalizeTableLayoutColumns,
+  tableLayoutColumnAliases,
+} from '../proposal-table-layout.util';
 import type { CatalogDirtyField, ProposalDraftLine } from '../proposal-product-rail.component';
 import type { ProposalTerm } from '../proposal-create-terms.component';
 import type {
@@ -132,6 +140,10 @@ export class ProposalWorkspaceDraftService {
   readonly proposalStatus = signal<ProposalCreateStatus>('draft');
   readonly currentDraftId = signal<string | null>(null);
   readonly autosaveLabel = signal('');
+  /** MECH-504 — do not overwrite vat after manual edit in this session. */
+  readonly vatTouchedByUser = signal(false);
+  /** MECH-504 — reserved; discount is not inherited from party yet. */
+  readonly discountTouchedByUser = signal(false);
 
   /** TZ-KP-WS-404 — catalog review (same contract as create; modal in page). */
   readonly catalogReviewOpen = signal(false);
@@ -165,6 +177,8 @@ export class ProposalWorkspaceDraftService {
   readonly compositionTotal = computed(() => this.calculateDealTotal());
 
   private readonly proposalsSvc = inject(ProposalsService);
+  private readonly orgsSvc = inject(OrganizationsService);
+  private readonly counterpartiesSvc = inject(CounterpartyService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
   private readonly ordersSvc = inject(OrdersService);
   private readonly productsSvc = inject(ProductsService);
@@ -277,10 +291,16 @@ export class ProposalWorkspaceDraftService {
 
   onRecipientState(state: ProposalRecipientState): void {
     if (this.isReadOnly()) return;
-    this.counterpartyId.set(state.counterpartyId.trim());
+    const nextCounterparty = state.counterpartyId.trim();
+    const cpChanged = nextCounterparty !== this.counterpartyId();
+    this.counterpartyId.set(nextCounterparty);
     this.contactPersonId.set(state.contactPersonId.trim());
     this.siteId.set(state.siteId.trim());
-    this.refreshComposition();
+    if (cpChanged && nextCounterparty) {
+      this.inheritFromCounterparty(nextCounterparty);
+    } else {
+      this.refreshComposition();
+    }
   }
 
   onTermsChange(terms: ProposalTerm[]): void {
@@ -322,6 +342,19 @@ export class ProposalWorkspaceDraftService {
       (state.deliveryDays ?? this.deliveryDays()) === this.deliveryDays() &&
       JSON.stringify(state.sheetLayout ?? this.sheetLayout()) ===
         JSON.stringify(this.sheetLayout());
+    const orgChanged = nextOrganization !== this.organizationId();
+    const cpChanged = nextCounterparty !== this.counterpartyId();
+    const vatChanged = nextVat !== this.dealVatPercent();
+    const discountChanged =
+      nextDiscountType !== this.discountType() ||
+      nextDiscountPercent !== this.discountPercent() ||
+      nextDiscountAmount !== this.discountAmount();
+    if (vatChanged && !orgChanged && !cpChanged) {
+      this.vatTouchedByUser.set(true);
+    }
+    if (discountChanged && !orgChanged && !cpChanged) {
+      this.discountTouchedByUser.set(true);
+    }
     if (nextUnchanged) return;
     this.organizationId.set(nextOrganization);
     this.counterpartyId.set(nextCounterparty);
@@ -340,7 +373,13 @@ export class ProposalWorkspaceDraftService {
     this.productionDays.set(Math.max(0, state.productionDays ?? this.productionDays()));
     this.deliveryDays.set(Math.max(0, state.deliveryDays ?? this.deliveryDays()));
     if (state.sheetLayout) this.sheetLayout.set({ ...this.sheetLayout(), ...state.sheetLayout });
-    this.refreshComposition();
+    if (cpChanged && nextCounterparty) {
+      this.inheritFromCounterparty(nextCounterparty);
+    } else if (orgChanged && nextOrganization) {
+      this.inheritFromOrganization(nextOrganization);
+    } else {
+      this.refreshComposition();
+    }
   }
 
   onTableTargetChange(targetId: string): void {
@@ -416,23 +455,29 @@ export class ProposalWorkspaceDraftService {
       {
         key: 'productName',
         label: 'Наименование',
-        aliases: ['productname', 'name', 'title', 'product', 'наименование'],
+        aliases: tableLayoutColumnAliases('productName'),
       },
       {
         key: 'photo',
         label: 'Фото',
-        aliases: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
+        aliases: tableLayoutColumnAliases('photo'),
       },
       {
         key: 'quantity',
         label: 'Кол-во',
-        aliases: ['quantity', 'qty', 'count', 'кол-во', 'количество'],
+        aliases: tableLayoutColumnAliases('quantity'),
       },
-      { key: 'unit', label: 'Ед.', aliases: ['unit', 'ед', 'ед.изм'] },
-      { key: 'unitPrice', label: 'Цена', aliases: ['unitprice', 'price', 'unit_price', 'цена'] },
-      { key: 'sum', label: 'Сумма', aliases: ['sum', 'total', 'amount', 'сумма'] },
+      { key: 'unit', label: 'Ед.', aliases: tableLayoutColumnAliases('unit') },
+      { key: 'unitPrice', label: 'Цена', aliases: tableLayoutColumnAliases('unitPrice') },
+      { key: 'sum', label: 'Сумма', aliases: tableLayoutColumnAliases('sum') },
     ];
-    const existing = new Set(this.kpTableLayout().map((column) => column.key.trim().toLowerCase()));
+    const existing = new Set(
+      this.kpTableLayout().flatMap((column) =>
+        tableLayoutColumnAliases(normalizeTableLayoutColumnKey(column.key)).map((alias) =>
+          alias.trim().toLowerCase(),
+        ),
+      ),
+    );
     const next = [
       ...this.kpTableLayout(),
       ...canonical
@@ -873,12 +918,13 @@ export class ProposalWorkspaceDraftService {
   }
 
   private ensureEssentialColumns(layout: ProposalTableLayoutColumn[]): ProposalTableLayoutColumn[] {
-    const next = layout.map((column) =>
+    const normalized = normalizeTableLayoutColumns(layout);
+    const next = normalized.map((column) =>
       ['productName', 'quantity', 'unit', 'unitPrice', 'sum'].includes(column.key)
         ? { ...column, visible: true }
         : { ...column },
     );
-    if (!next.some((candidate) => candidate.key === 'photo')) {
+    if (!next.some((candidate) => isPhotoColumnKey(candidate.key))) {
       next.splice(Math.min(2, next.length), 0, { key: 'photo', label: 'Фото', visible: true });
     }
     return next;
@@ -1333,8 +1379,10 @@ export class ProposalWorkspaceDraftService {
         return;
       }
       const order: Order = res.data;
-      this.counterpartyId.set(this.refId(order.counterpartyId) ?? '');
+      const cpId = this.refId(order.counterpartyId) ?? '';
+      this.counterpartyId.set(cpId);
       this.siteId.set(this.refId(order.siteId) ?? '');
+      if (cpId) this.inheritFromCounterparty(cpId);
       this.draftLines.set(
         (order.items ?? []).map((item) => ({
           lineKind: 'catalog' as const,
@@ -1354,6 +1402,44 @@ export class ProposalWorkspaceDraftService {
     this.currentDraftId.set(null);
     this.removeStorage('kp.create.lastDraftId');
     this.removeStorage('kp.create.lastTemplateId');
+    this.vatTouchedByUser.set(false);
+    this.discountTouchedByUser.set(false);
+  }
+
+  private applyInheritedVat(vatRate: number | undefined): void {
+    if (this.vatTouchedByUser()) return;
+    this.dealVatPercent.set(this.clampVat(vatRate ?? 20));
+  }
+
+  private inheritFromOrganization(orgId: string): void {
+    this.orgsSvc
+      .findById(orgId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) {
+          this.refreshComposition();
+          return;
+        }
+        this.applyInheritedVat(res.data.vatRate);
+        this.refreshComposition();
+      });
+  }
+
+  private inheritFromCounterparty(cpId: string): void {
+    this.counterpartiesSvc
+      .findById(cpId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok) {
+          this.refreshComposition();
+          return;
+        }
+        this.applyInheritedVat(res.data.vatRate);
+        if (typeof res.data.paymentTermDays === 'number' && res.data.paymentTermDays > 0) {
+          this.toast.show(`У клиента срок оплаты ${res.data.paymentTermDays} дн.`);
+        }
+        this.refreshComposition();
+      });
   }
 
   private resumeLastTemplate(): void {
@@ -1384,6 +1470,12 @@ export class ProposalWorkspaceDraftService {
     this.proposalDate.set(draft.date ? draft.date.slice(0, 10) : '');
     this.proposalValidUntil.set(draft.validUntil ? draft.validUntil.slice(0, 10) : '');
     this.dealVatPercent.set(this.clampVat(draft.vatPercent ?? 20));
+    this.vatTouchedByUser.set(true);
+    this.discountTouchedByUser.set(
+      (draft.discountType ?? 'none') !== 'none' ||
+        (draft.discountPercent ?? 0) > 0 ||
+        (draft.discountAmount ?? 0) > 0,
+    );
     this.discountType.set(draft.discountType ?? 'none');
     this.discountPercent.set(Math.max(0, draft.discountPercent ?? 0));
     this.discountAmount.set(Math.max(0, draft.discountAmount ?? 0));
