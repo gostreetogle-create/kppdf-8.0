@@ -9,8 +9,8 @@
 ```yaml
 status: READY
 # Гейты прогнаны на ancestor; tip main = deploy target после pull.
-deploy_sha_target: b683e178b58b69e911cc75aa75d0e56ff95744b4
-prepared_at: 2026-08-23T23:35:00+03:00
+deploy_sha_target: 828ccb9f
+prepared_at: 2026-08-24T00:05:00+03:00
 prepared_by: cursor-orchestrator
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-23-evening.md
 known_debt:
@@ -21,7 +21,10 @@ known_debt:
   - KP/supply browser smoke — PO optional after warm
 mixed_commits: false
 why_ready: >
-  Tip b683e178: SUPPLY-318 strict category picker + full material edit dialog.
-  Prior gates on ancestor; supply smoke PASS on commit. §F deploy not run.
-  Deploy agent: README only — no jest/tsc. VPN off. Warm deploy.ps1.
+  Tip 828ccb9f: SUPPLY-320 material categories wired to the live catalog
+  (backend ?categoryId= filter matched only ObjectId while PATCH persisted a
+  string; picker read only the API cache; mock categories polluted the
+  dropdown). Gates on tip: FE supply specs 47 PASS + tsc, BE material 30 PASS,
+  supply-gate focused jest 58 PASS, supply-smoke 23 PASS on :3000.
+  §F deploy not run. Deploy agent: README only — no jest/tsc. VPN off.
 ```
