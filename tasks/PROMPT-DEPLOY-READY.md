@@ -52,7 +52,7 @@ CLAIM (agent_id, claimed_at ISO, workspace D:\kppdf-8.0).
 ### §Базлайн (обновлять на каждом прогоне)
 
 ```text
-Проверено на: <sha>  date: <ISO>
+Проверено на: 167865c9  date: 2026-08-23T23:40:00+03:00
 backend/src/modules/catalog/catalog-314.archive.spec.ts:79
 backend/src/modules/admin/users-admin.controller.spec.ts:114
 ```

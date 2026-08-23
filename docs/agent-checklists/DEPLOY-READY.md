@@ -8,19 +8,19 @@
 
 ```yaml
 status: READY
-deploy_sha_target: 00ed9416a39aa9d792ee8dceecbf7d46f9d8bc61
-prepared_at: 2026-08-23T18:20:00+03:00
+deploy_sha_target: 167865c9be944b3f9c4f6dd6154a960137ad477b
+prepared_at: 2026-08-23T23:40:00+03:00
 prepared_by: cursor-orchestrator
-evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-23.md
+evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-23-evening.md
 known_debt:
   - backend catalog-314.archive.spec.ts (baseline)
   - backend users-admin.controller.spec.ts (baseline)
-  - KP manual smoke 10-step — PO browser (VPN/dev-server)
-  - keyboard-only-pass — PO optional
-  - workspace/proposal-create inset sweep deferred (DEN-505.done.md)
-desktop_zip: stale — verify before Desktop link
+  - BE pnpm lint unused-imports (not a READY gate)
+  - desktop_zip accept-stale (TZD-67 on HEAD; zip not rebuilt)
+  - KP/supply browser smoke — PO optional after warm
 mixed_commits: false
 why_ready: >
-  Closeout 410+354+505 on main; FE 1958/1958; DEN-505 desk inset fixed.
-  PO spot-check /desk /proposals/workspace /production before «кати».
+  HEAD 167865c9: FE 2015/2015, BE 969/971 (2 baseline), arch PASS,
+  SUPPLY-316/317 + MECH/PLUS/KP-WS waves on main. §F deploy not run.
+  Deploy agent: README only — no jest/tsc. VPN off. Warm deploy.ps1.
 ```

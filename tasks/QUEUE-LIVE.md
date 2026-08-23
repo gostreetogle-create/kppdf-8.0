@@ -15,8 +15,9 @@
 
 ## NEXT
 
-- **TZ-SUPPLY-317** — supplier website/email autofill + blur-save to Organization card (`tasks/TZ-SUPPLY-317-supplier-autofill-persist.md`) — IN FLIGHT via executor
-- Done recently: TZ-SUPPLY-316 material orphan/fallback filter
+- **Deploy-Ready:** `docs/agent-checklists/DEPLOY-READY.md` → READY @ `167865c9`
+- PO: любому ИИ — «сделай деплой по документации» (VPN off; без тестов)
+- Done: TZ-SUPPLY-316/317 material filter + supplier blur-persist
 
 - PLUS-604: оставшиеся blocking selects (КП form / pickers)
 - Каталог expand уже есть (products/modules) — не трогать без бага
