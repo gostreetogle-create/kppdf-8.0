@@ -2,7 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   HostListener,
+  Injector,
   inject,
   signal,
   OnDestroy,
@@ -46,6 +48,9 @@ import {
   PiDictionaryLabelsService,
 } from '../../shared/services/pi-dictionary-labels.service';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { OrganizationFullEditorDialogComponent } from '../organizations/organization-full-editor-dialog.component';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 
 type Result = Material | null | undefined;
 
@@ -333,22 +338,35 @@ interface DimensionFormGroup extends FormGroup {
               [error]="suppliersError()"
               [hint]="suppliersLoading() ? 'Загрузка поставщиков…' : null"
             >
-              <app-pi-overflow-select
-                [items]="supplierItems()"
-                [value]="form.controls.supplierId.value ?? ''"
-                (valueChange)="onSupplierChange($event)"
-                [disabled]="suppliersLoading()"
-                searchable="auto"
-                placeholder="— не указан —"
-                ariaLabel="Поставщик"
-                dataTest="mat-supplier"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="supplierItems()"
+                  [value]="form.controls.supplierId.value ?? ''"
+                  (valueChange)="onSupplierChange($event)"
+                  [disabled]="suppliersLoading()"
+                  searchable="auto"
+                  placeholder="— не указан —"
+                  ariaLabel="Поставщик"
+                  dataTest="mat-supplier"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateSupplier()"
+                  [disabled]="suppliersLoading()"
+                  title="Новый поставщик"
+                  aria-label="Новый поставщик"
+                  data-test="mat-supplier-add"
+                >
+                  +
+                </button>
+              </div>
               @if (!suppliersLoading() && !suppliersError() && suppliers().length === 0) {
                 <p class="mt-1 text-xs text-muted-foreground" data-test="supplier-empty-hint">
-                  Нет поставщиков — создайте организацию с типом Поставщик.
+                  Нет поставщиков — нажмите + или
                   <a href="/organizations" class="underline underline-offset-2"
-                    >Создать организацию</a
-                  >
+                    >откройте справочник</a
+                  >.
                 </p>
               }
             </app-pi-form-field>
@@ -559,6 +577,9 @@ export class MaterialFormDialogComponent implements OnDestroy {
   private readonly toast = inject(PiToastService);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly data = inject<Material | null>(PI_DIALOG_DATA);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isEdit = signal<boolean>(this.data != null);
   protected readonly submitting = signal<boolean>(false);
@@ -654,6 +675,21 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected onSupplierChange(supplierId: string): void {
     this.form.controls.supplierId.setValue(supplierId || null);
     this.form.controls.supplierId.markAsDirty();
+  }
+
+  protected openCreateSupplier(): void {
+    const ref = this.dialog.open<Organization | null>(OrganizationFullEditorDialogComponent, {
+      data: null,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Organization | null>(ref, this.injector, (org) => {
+      if (!org.type?.includes('supplier') || org.isActive === false) return;
+      this.suppliers.update((list) =>
+        list.some((s) => s._id === org._id) ? list : [...list, org],
+      );
+      this.onSupplierChange(org._id);
+    });
   }
 
   private loadSuppliers(): void {

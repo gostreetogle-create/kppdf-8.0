@@ -25,6 +25,8 @@ import { PiColorReferencesService } from '../../shared/services/pi-color-referen
 import { PhotosService } from '../../shared/services/photos.service';
 import { AuthService } from '../../core/auth.service';
 import { PiToastService } from '../../shared/ui/toast';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { CategoryFormDialogComponent } from '../dictionaries/category-form-dialog.component';
 
 const ACTIVE_COLORS = [
   {
@@ -61,6 +63,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     uploadWithProgress: jest.Mock;
     remove: jest.Mock;
   };
+  let dialogOpen: jest.Mock;
 
   function ref<T>(): DialogRef<T> {
     return {
@@ -94,6 +97,10 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
           },
         },
         { provide: PiToastService, useValue: { success, error } },
+        {
+          provide: PiDialogService,
+          useValue: { open: (...args: unknown[]) => dialogOpen(...args) },
+        },
       ],
     })
       .overrideComponent(ProductFormDialogComponent, {
@@ -149,6 +156,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     errorMessage: () => string | null;
     isEdit: () => boolean;
     editProductId: () => string | null;
+    openCreateCategory: () => void;
+    categoryItems: () => { id: string; label: string }[];
+    categories: () => { _id: string; name: string; type: string }[];
   } {
     return fixture.componentInstance as unknown as {
       onSubmit: () => void;
@@ -169,6 +179,9 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       errorMessage: () => string | null;
       isEdit: () => boolean;
       editProductId: () => string | null;
+      openCreateCategory: () => void;
+      categoryItems: () => { id: string; label: string }[];
+      categories: () => { _id: string; name: string; type: string }[];
     };
   }
 
@@ -216,6 +229,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       uploadWithProgress: jest.fn(),
       remove: jest.fn().mockReturnValue(of({ ok: true, data: undefined })),
     };
+    dialogOpen = jest.fn().mockReturnValue({ closed: signal(undefined) });
   });
 
   it('smoke: instantiates in create mode with content-variant wide dialog', async () => {
@@ -565,5 +579,26 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     expect(source).toContain('variant="outline"');
     expect(source).not.toContain('shadow-sm');
     expect(source).toContain('bg-paper-raised');
+  });
+
+  it('keeps category + on same row as overflow-select with supply add-btn class (TZ-UI-PLUS-602)', async () => {
+    await setup(null);
+    const row = fixture.nativeElement.querySelector('.pi-select-add-row') as HTMLElement;
+    const select = row?.querySelector('app-pi-overflow-select');
+    const btn = row?.querySelector('[data-test="prod-category-add"]') as HTMLButtonElement;
+    expect(row).toBeTruthy();
+    expect(select).toBeTruthy();
+    expect(btn?.classList.contains('pi-select-add-btn')).toBe(true);
+    expect(row.children[0]).toBe(select);
+    expect(row.children[1]).toBe(btn);
+  });
+
+  it('openCreateCategory opens CategoryFormDialog (TZ-UI-PLUS-602)', async () => {
+    await setup(null);
+    instance().openCreateCategory();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      CategoryFormDialogComponent,
+      expect.objectContaining({ data: null, width: 'md' }),
+    );
   });
 });

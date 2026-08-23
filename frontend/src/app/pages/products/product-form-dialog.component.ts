@@ -1,7 +1,9 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   HostListener,
+  Injector,
   computed,
   inject,
   signal,
@@ -47,6 +49,9 @@ import { ProductBomPanelComponent } from '../../shared/ui/composition/product-bo
 import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 import { colSpanClass, controlMaxClass } from '../../shared/ui/quick-create/field-capacity';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { CategoryFormDialogComponent } from '../dictionaries/category-form-dialog.component';
+import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 
 type Result = Product | null | undefined;
 
@@ -255,15 +260,27 @@ function usableProductId(value: unknown): string | null {
               htmlFor="prod-category"
               hint="Из справочника категорий (тип «изделие»). Пусто = «Без категории»."
             >
-              <app-pi-overflow-select
-                [items]="categoryItems()"
-                [value]="form.controls.categoryId.value ?? ''"
-                (valueChange)="onCategoryChange($event)"
-                searchable="auto"
-                placeholder="— без категории —"
-                ariaLabel="Категория"
-                dataTest="prod-category"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="categoryItems()"
+                  [value]="form.controls.categoryId.value ?? ''"
+                  (valueChange)="onCategoryChange($event)"
+                  searchable="auto"
+                  placeholder="— без категории —"
+                  ariaLabel="Категория"
+                  dataTest="prod-category"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateCategory()"
+                  title="Новая категория изделия"
+                  aria-label="Новая категория изделия"
+                  data-test="prod-category-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -611,6 +628,9 @@ export class ProductFormDialogComponent implements OnDestroy {
   private readonly dictionaryLabels = inject(PiDictionaryLabelsService, { optional: true });
   private readonly photosService = inject(PhotosService);
   private readonly auth = inject(AuthService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly dropdownHost = viewChild<ElementRef<HTMLElement>>('colorDropdownHost');
 
@@ -779,6 +799,21 @@ export class ProductFormDialogComponent implements OnDestroy {
   protected onCategoryChange(categoryId: string): void {
     this.form.controls.categoryId.setValue(categoryId || null);
     this.form.controls.categoryId.markAsDirty();
+  }
+
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<Category | null>(CategoryFormDialogComponent, {
+      data: null,
+      width: 'md',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Category | null>(ref, this.injector, (category) => {
+      if (category.type !== 'product' || category.isActive === false) return;
+      this.categories.update((list) =>
+        list.some((c) => c._id === category._id) ? list : [...list, category],
+      );
+      this.onCategoryChange(category._id);
+    });
   }
 
   // ─── RAL dropdown handlers ───

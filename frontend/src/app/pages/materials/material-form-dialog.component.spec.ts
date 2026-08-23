@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../shared/ui/dialog/dialog.tokens';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
@@ -11,6 +11,8 @@ import { PiToastService } from '../../shared/ui/toast';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
+import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { OrganizationFullEditorDialogComponent } from '../organizations/organization-full-editor-dialog.component';
 
 /**
  * TZ-MATERIALS-301 — MaterialFormDialogComponent unit spec.
@@ -54,6 +56,8 @@ interface Harness {
   suppliers: () => unknown[];
   suppliersLoading: () => boolean;
   suppliersError: () => string | null;
+  openCreateSupplier: () => void;
+  supplierItems: () => { id: string; label: string }[];
 }
 
 async function setup(
@@ -74,8 +78,10 @@ async function setup(
   remove: jest.Mock;
   upload: jest.Mock;
   fixture: ReturnType<typeof TestBed.createComponent<MaterialFormDialogComponent>>;
+  dialogOpen: jest.Mock;
 }> {
   const close = jest.fn();
+  const dialogOpen = jest.fn().mockReturnValue({ closed: signal(undefined) });
   const create = jest.fn(() =>
     of({ ok: true, data: { _id: 'm-new', name: 'Стекло', unit: 'm2' } }),
   );
@@ -143,6 +149,10 @@ async function setup(
       },
       { provide: PiToastService, useValue: { success: () => {}, error: () => {} } },
       {
+        provide: PiDialogService,
+        useValue: { open: (...args: unknown[]) => dialogOpen(...args) },
+      },
+      {
         provide: UnitsService,
         useValue: {
           listActive: () =>
@@ -190,7 +200,7 @@ async function setup(
     value: string | null;
   };
   if (!article.value) article.setValue('TEST-ARTICLE');
-  return { comp, close, create, update, remove, upload, fixture };
+  return { comp, close, create, update, remove, upload, fixture, dialogOpen };
 }
 
 describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
@@ -367,7 +377,7 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     fixture.detectChanges();
     const hint = fixture.nativeElement.querySelector('[data-test="supplier-empty-hint"]');
     expect(hint?.textContent).toContain('Нет поставщиков');
-    expect(hint?.textContent).toContain('типом Поставщик');
+    expect(hint?.textContent).toContain('нажмите +');
     expect(hint?.querySelector('a')?.getAttribute('href')).toBe('/organizations');
     expect(comp.suppliersError()).toBeNull();
   });
@@ -646,6 +656,28 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     expect(source).toContain('space-y-4');
     expect(source).toContain('variant="outline"');
     expect(source).not.toContain('variant="ghost"');
+  });
+
+  it('keeps supplier + on same row as overflow-select with supply add-btn class (TZ-UI-PLUS-602)', async () => {
+    const { fixture } = await setup(null);
+    fixture.detectChanges();
+    const row = fixture.nativeElement.querySelector('.pi-select-add-row') as HTMLElement;
+    const select = row?.querySelector('app-pi-overflow-select');
+    const btn = row?.querySelector('[data-test="mat-supplier-add"]') as HTMLButtonElement;
+    expect(row).toBeTruthy();
+    expect(select).toBeTruthy();
+    expect(btn?.classList.contains('pi-select-add-btn')).toBe(true);
+    expect(row.children[0]).toBe(select);
+    expect(row.children[1]).toBe(btn);
+  });
+
+  it('openCreateSupplier opens OrganizationFullEditorDialog (TZ-UI-PLUS-602)', async () => {
+    const { comp, dialogOpen } = await setup(null);
+    comp.openCreateSupplier();
+    expect(dialogOpen).toHaveBeenCalledWith(
+      OrganizationFullEditorDialogComponent,
+      expect.objectContaining({ data: null, width: 'lg' }),
+    );
   });
 
   // ─────────────────────────────────────────────────────────────────
