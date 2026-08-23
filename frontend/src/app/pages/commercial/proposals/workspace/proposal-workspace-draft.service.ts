@@ -1323,7 +1323,7 @@ export class ProposalWorkspaceDraftService {
       });
       return;
     }
-    this.removeStorage('kp.create.lastTemplateId');
+    this.resumeLastTemplate();
   }
 
   private prefillFromOrder(orderId: string): void {

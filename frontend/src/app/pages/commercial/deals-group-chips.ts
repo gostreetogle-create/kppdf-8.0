@@ -16,6 +16,12 @@ export const DEALS_TOC_CHIPS: readonly GroupChip[] = [
 ];
 
 export const KP_SECTION_CHIPS: readonly GroupChip[] = [
+  {
+    id: 'workspace',
+    label: 'Коммерческое предложение',
+    route: '/proposals/workspace',
+    pageKey: 'proposals',
+  },
   { id: 'create', label: 'Создать КП', route: '/proposals/create', pageKey: 'proposals' },
   { id: 'all', label: 'Все КП', route: '/proposals', pageKey: 'proposals' },
 ];

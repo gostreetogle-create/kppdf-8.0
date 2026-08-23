@@ -146,6 +146,14 @@ describe('ProposalWorkspacePage', () => {
     dialogCloseValue.set(undefined);
   });
 
+  it('shows empty A4 placeholder and opens template panel when no template is selected', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ws-empty-state"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-a4-sheet"]')).not.toBeNull();
+    expect(store.panelOpen()).toBe(true);
+    expect(store.activeSection()).toBe('template');
+  });
+
   it('registers left rail: Каталог · Шаблон · Клиент with unique Lucide icons and RU labels', () => {
     const left = chromeTools.leftTools();
     expect(left.map((t) => t.id)).toEqual(['catalog', 'template', 'recipient']);
@@ -199,11 +207,24 @@ describe('ProposalWorkspacePage', () => {
     expect(store.panelOpen()).toBe(false);
   });
 
-  it('clicking the A4 sheet closes the panel', () => {
+  it('clicking empty A4 sheet keeps template panel open', () => {
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
     store.openSection('params');
     fixture.detectChanges();
+
+    const sheet = fixture.nativeElement.querySelector('[data-test="kp-a4-sheet"]') as HTMLElement;
+    sheet.click();
+    fixture.detectChanges();
     expect(store.panelOpen()).toBe(true);
+    expect(store.activeSection()).toBe('template');
+  });
+
+  it('clicking the A4 sheet closes the panel when template preview is loaded', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    const draft = fixture.componentInstance['draft'] as ProposalWorkspaceDraftService;
+    draft.selectedTemplate.set({ _id: 'tpl-1', name: 'Test' } as never);
+    store.openSection('params');
+    fixture.detectChanges();
 
     const sheet = fixture.nativeElement.querySelector('[data-test="kp-a4-sheet"]') as HTMLElement;
     sheet.click();

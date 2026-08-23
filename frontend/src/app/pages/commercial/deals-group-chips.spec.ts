@@ -14,8 +14,9 @@ describe('Deals workspace chips (TZ-SALES-329 / TZ-NAV-303)', () => {
     expect(DEALS_TOC_CHIPS.some((chip) => chip.route === '/dashboard')).toBe(false);
   });
 
-  it('limits yellow subchips to proposal actions', () => {
+  it('limits yellow subchips to proposal actions (workspace + create + list)', () => {
     expect(KP_SECTION_CHIPS.map((chip) => [chip.id, chip.label, chip.route])).toEqual([
+      ['workspace', 'Коммерческое предложение', '/proposals/workspace'],
       ['create', 'Создать КП', '/proposals/create'],
       ['all', 'Все КП', '/proposals'],
     ]);
