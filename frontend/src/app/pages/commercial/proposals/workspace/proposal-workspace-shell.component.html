@@ -80,6 +80,7 @@
     >
       <aside
         class="kp-ws-panel"
+        [class.kp-ws-panel--wide]="panelWide()"
         data-test="kp-tools-panel"
         [attr.data-active-section]="activeSection() ?? ''"
       >
@@ -93,6 +94,7 @@
         <div class="kp-ws-viewport__stage" #viewportStage>
           <div
             class="kp-ws-sheet"
+            [class.kp-ws-sheet--host]="sheetHost()"
             data-test="kp-a4-sheet"
             aria-label="Превью A4"
             (click)="onSheetClick()"

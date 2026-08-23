@@ -2,6 +2,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
+import { of } from 'rxjs';
 import {
   ContactRound,
   FileText,
@@ -14,8 +15,21 @@ import {
 
 import { AuthService } from '../../../../core/auth.service';
 import { PiChromeToolsService } from '../../../../shared/chrome/pi-chrome-tools.service';
+import { PiToastService } from '../../../../shared/ui/toast';
+import { OrdersService } from '../../../../shared/services/orders.service';
+import { CategoriesService } from '../../../../shared/services/categories.service';
+import { ProductsService } from '../../../../shared/services/products.service';
+import { ProductModulesService } from '../../../../shared/services/pi-product-modules.service';
+import { MaterialsService } from '../../../../shared/services/materials.service';
+import { CounterpartyService } from '../../../../shared/services/pi-counterparty.service';
+import { PersonsService } from '../../../../shared/services/pi-persons.service';
+import { SiteService } from '../../../../shared/services/pi-site.service';
+import { DocumentTemplatesService } from '../../../../shared/services/pi-document-templates.service';
+import { ProposalsService } from '../../../../shared/services/pi-proposals.service';
 import { ProposalWorkspacePage } from './proposal-workspace.page';
 import { ProposalWorkspaceStore } from './proposal-workspace.store';
+
+const EMPTY_LIST = () => of({ ok: true, data: { items: [], total: 0 } });
 
 describe('ProposalWorkspacePage', () => {
   let fixture: ComponentFixture<ProposalWorkspacePage>;
@@ -33,6 +47,42 @@ describe('ProposalWorkspacePage', () => {
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: { get: () => null } } },
+        },
+        // Data services for mounted left panels (catalog / template / recipient).
+        {
+          provide: ProductsService,
+          useValue: {
+            list: EMPTY_LIST,
+            findById: jest.fn(),
+            update: jest.fn(),
+            duplicate: jest.fn(),
+          },
+        },
+        { provide: ProductModulesService, useValue: { list: EMPTY_LIST, findById: jest.fn() } },
+        { provide: MaterialsService, useValue: { list: EMPTY_LIST, findById: jest.fn() } },
+        { provide: CategoriesService, useValue: { list: EMPTY_LIST } },
+        {
+          provide: CounterpartyService,
+          useValue: { list: EMPTY_LIST, quickCreateParty: jest.fn() },
+        },
+        { provide: PersonsService, useValue: { list: EMPTY_LIST } },
+        { provide: SiteService, useValue: { listByCounterparty: EMPTY_LIST } },
+        {
+          provide: DocumentTemplatesService,
+          useValue: {
+            list: EMPTY_LIST,
+            findById: jest.fn(),
+            build: jest.fn(() => of({ ok: true, data: '<html/>' })),
+          },
+        },
+        {
+          provide: ProposalsService,
+          useValue: { findById: jest.fn(), create: jest.fn(), update: jest.fn() },
+        },
+        { provide: OrdersService, useValue: { findById: jest.fn() } },
+        {
+          provide: PiToastService,
+          useValue: { error: jest.fn(), success: jest.fn(), warning: jest.fn() },
         },
       ],
     }).compileComponents();
@@ -75,19 +125,19 @@ describe('ProposalWorkspacePage', () => {
     expect(new Set(icons).size).toBe(7);
   });
 
-  it('clicking a chrome tool opens the panel with the section active', () => {
+  it('clicking catalog tool opens the panel with the catalog vitrine (tier-wide)', () => {
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
-    expect(store.panelOpen()).toBe(false);
-
     const catalog = chromeTools.leftTools().find((t) => t.id === 'catalog')!;
     catalog.onClick();
     fixture.detectChanges();
 
     expect(store.panelOpen()).toBe(true);
     expect(store.activeSection()).toBe('catalog');
-    expect(fixture.nativeElement.querySelector('.kp-ws-panel__head')?.textContent).toContain(
-      'Каталог',
-    );
+    expect(fixture.nativeElement.querySelector('[data-test="kp-product-rail"]')).not.toBeNull();
+    const panel = fixture.nativeElement.querySelector(
+      '[data-test="kp-tools-panel"]',
+    ) as HTMLElement;
+    expect(panel.classList.contains('kp-ws-panel--wide')).toBe(true);
   });
 
   it('repeat click on the same section collapses the panel', () => {
@@ -124,5 +174,19 @@ describe('ProposalWorkspacePage', () => {
     const ids = [...chromeTools.leftTools(), ...chromeTools.rightTools()].map((t) => t.id);
     expect(ids).not.toContain('composition');
     expect(ids).not.toContain('client');
+  });
+
+  it('mounts the template picker in the Шаблон panel', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('template');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-tpl-picker"]')).not.toBeNull();
+  });
+
+  it('mounts the recipient panel in the Клиент section', () => {
+    const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
+    store.openSection('recipient');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-recipient-panel"]')).not.toBeNull();
   });
 });

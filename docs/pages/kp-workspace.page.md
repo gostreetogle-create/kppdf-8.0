@@ -19,7 +19,7 @@
 | Route | Статус | Title / роль |
 |-------|--------|----------------|
 | `/proposals/demo-workspace` | **Wave 0 PASS** | Геометрия + placeholders; эталон layout (тонкий wrapper над shell, TZ-KP-WS-401) |
-| `/proposals/workspace` | **TZ-KP-WS-401 DONE** | Shell + placeholder-панель; реальные панели — TZ-402/403/404 (`?id=` / `?new=1` с TZ-402) |
+| `/proposals/workspace` | **TZ-KP-WS-403 DONE** | Left panels (каталог/шаблон/клиент) + hydration + autosave + preview; правые панели — TZ-404 |
 | `/proposals/create` | legacy до **TZ-KP-WS-408** | Текущая студия; после cutover → workspace (или redirect) |
 | `/proposals` | list | Lifecycle (статус, копия, заказ) — **не** в workspace ribbon (канон 367) |
 
@@ -110,6 +110,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | Сигнал / store | Назначение |
 |----------------|------------|
 | `ProposalWorkspaceStore` (TZ-402 DONE) | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId`; actions `openSection`/`toggleSection`/`closePanel`/`setOrientation` |
+| `ProposalWorkspaceDraftService` (TZ-403 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org/деньги/сроки + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
 | draft lines / templateId / org / recipient / terms / sheetLayout / kpTableLayout | как create — один autosave path |
 | `panelCollapsed` | overlay hide; A4 неизменен |
 
@@ -145,6 +146,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | `.../workspace/proposal-workspace-shell.component.*` | **SoT геометрии** (TZ-401 DONE); rails/store — TZ-402 |
 | `.../workspace/proposal-workspace.page.ts` | `/proposals/workspace` — shell + chrome rails L/R + placeholder (TZ-401/402 DONE) |
 | `.../workspace/proposal-workspace.store.ts` | store state machine (TZ-402 DONE) |
+| `.../workspace/proposal-workspace-draft.service.ts` | draft: hydration + autosave + build — один write-path (TZ-403 DONE) |
 | `proposal-create.page.ts` + `proposal-create-*` / `proposal-product-rail` | reuse в панелях; god-page снять в 409 |
 | `tasks/kp-workspace-dummy/*` | reference only после 401 |
 
@@ -156,7 +158,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **KP-WS-400** | audit + rail IA docs |
 | **401** | shell component + `/proposals/workspace` — **DONE** |
 | **402** | store + chrome rails — **DONE** (L3+R4, unique Lucide, Esc/close) |
-| **403** | left: catalog / template / recipient |
+| **403** | left: catalog / template / recipient — **DONE** (mount + hydration + autosave + preview) |
 | **404** | right: params / table / terms / output |
 | **405** | embedded table/text/template settings |
 | **406** | MCP AI-draft bridge |

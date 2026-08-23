@@ -52,6 +52,10 @@ export class ProposalWorkspaceShellComponent {
   readonly totalText = input('');
   readonly statusText = input('');
   readonly debugText = input('');
+  /** Tier-L panel (e.g. catalog vitrine): wider overlay, A4 still not reflowed. */
+  readonly panelWide = input(false);
+  /** Sheet slot acts as a transparent host (consumer renders its own A4 pages). */
+  readonly sheetHost = input(false);
 
   readonly orientationChange = output<WsOrientation>();
   readonly sectionChange = output<string>();

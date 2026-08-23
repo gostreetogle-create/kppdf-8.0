@@ -25,10 +25,15 @@ import type {
 } from '../../../../shared/chrome/pi-chrome-tools.types';
 import { PiGroupWorkspaceComponent } from '../../../../shared/page/pi-group-workspace.component';
 import { DEALS_TOC_CHIPS, KP_SECTION_CHIPS } from '../../deals-group-chips';
+import { ProposalCreateRecipientComponent } from '../proposal-create-recipient.component';
+import { ProposalCreateTemplateCenterComponent } from '../proposal-create-template-center.component';
+import { ProposalCreateTemplatePickerComponent } from '../proposal-create-template-picker.component';
+import { ProposalProductRailComponent } from '../proposal-product-rail.component';
 import {
   ProposalWorkspaceShellComponent,
   type WsRailItem,
 } from './proposal-workspace-shell.component';
+import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
 import { ProposalWorkspaceStore, type WsSection } from './proposal-workspace.store';
 
 const CHROME_OWNER = 'proposal-workspace';
@@ -43,8 +48,7 @@ interface SectionDef {
 
 /**
  * IA (docs/pages/kp-workspace-rail-ia.md §1): left = Каталог · Шаблон · Клиент,
- * right = Параметры · Редактор таблицы · Условия · Вывод. Lucide icons unique
- * per section; no duplicate FileText/Printer on rails.
+ * right = Параметры · Редактор таблицы · Условия · Вывод. Unique Lucide icons.
  */
 const SECTION_DEFS: readonly SectionDef[] = [
   { id: 'catalog', title: 'Каталог', icon: Package, side: 'left', order: 1 },
@@ -57,18 +61,25 @@ const SECTION_DEFS: readonly SectionDef[] = [
 ];
 
 /**
- * TZ-KP-WS-402 — production workspace route `/proposals/workspace`.
- *
- * Store-driven: chrome rails L/R register via `PiChromeToolsService` (left 3 +
- * right 4), clicks toggle the 480px overlay panel; Escape / sheet click close
- * it; A4 is never reflowed (geometry law). Panel bodies arrive in TZ-403/404.
+ * TZ-KP-WS-403 — /proposals/workspace: left panels (catalog / template /
+ * recipient) + A4 preview center, driven by the draft service (hydration +
+ * autosave + build — one write-path mirroring create). Right panels arrive in
+ * TZ-404; `/proposals/create` untouched.
  */
 @Component({
   selector: 'app-proposal-workspace-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [PiGroupWorkspaceComponent, ProposalWorkspaceShellComponent, RouterLink],
-  providers: [ProposalWorkspaceStore],
+  imports: [
+    PiGroupWorkspaceComponent,
+    ProposalWorkspaceShellComponent,
+    ProposalProductRailComponent,
+    ProposalCreateTemplatePickerComponent,
+    ProposalCreateRecipientComponent,
+    ProposalCreateTemplateCenterComponent,
+    RouterLink,
+  ],
+  providers: [ProposalWorkspaceStore, ProposalWorkspaceDraftService],
   styles: [
     `
       .kp-ws-note {
@@ -95,26 +106,65 @@ const SECTION_DEFS: readonly SectionDef[] = [
         [activeSection]="store.activeSection()"
         [panelTitle]="store.panelTitle()"
         [railItems]="railItems"
+        [panelWide]="store.activeSection() === 'catalog'"
+        [sheetHost]="!!draft.selectedTemplate()"
         badgeText="Черновик"
-        statusText="Workspace · панели инструментов подключаются в TZ-403/404"
+        [statusText]="draft.autosaveLabel() || 'Workspace · черновик'"
         (orientationChange)="store.setOrientation($event)"
         (sectionChange)="onSectionChange($event)"
         (panelToggle)="store.closePanel()"
         (sheetClick)="store.closePanel()"
       >
         <div kpWsPanel>
-          <div class="kp-ws-note">
-            Секция «{{ store.panelTitle() || '—' }}»: инструменты подключаются в TZ-403/404. Полная
-            студия — на
-            <a class="pi-focus-ring" routerLink="/proposals/create">/proposals/create</a>.
-          </div>
+          @switch (store.activeSection()) {
+            @case ('catalog') {
+              <app-proposal-product-rail
+                [draftLines]="draft.draftLines()"
+                [readOnly]="draft.isReadOnly()"
+                (productAdd)="draft.onProductAdd($event)"
+              />
+            }
+            @case ('template') {
+              <app-proposal-create-template-picker
+                [initialId]="draft.selectedTemplate()?._id ?? ''"
+                (templateChange)="draft.onTemplateChange($event)"
+              />
+            }
+            @case ('recipient') {
+              <app-proposal-create-recipient
+                [selectedCounterpartyId]="draft.counterpartyId()"
+                [selectedContactPersonId]="draft.contactPersonId()"
+                [selectedSiteId]="draft.siteId()"
+                [readOnly]="draft.isReadOnly()"
+                (stateChange)="draft.onRecipientState($event)"
+              />
+            }
+            @default {
+              <div class="kp-ws-note">
+                Выберите инструмент: слева — каталог, шаблон, клиент; справа — параметры, таблица,
+                условия, вывод (TZ-404).
+              </div>
+            }
+          }
         </div>
+
+        @if (draft.selectedTemplate()) {
+          <app-proposal-create-template-center
+            kpWsSheet
+            [selected]="draft.selectedTemplate()"
+            [previewHtml]="draft.previewHtml()"
+            [previewPages]="draft.previewPages()"
+            [previewStatus]="draft.previewStatus()"
+            (requestPick)="store.openSection('template')"
+          />
+        }
       </app-proposal-workspace-shell>
     </app-pi-group-workspace>
   `,
 })
 export class ProposalWorkspacePage {
   protected readonly store = inject(ProposalWorkspaceStore);
+  protected readonly draft = inject(ProposalWorkspaceDraftService);
   protected readonly dealsToc = DEALS_TOC_CHIPS;
   protected readonly sectionChips = KP_SECTION_CHIPS;
   protected readonly railItems: readonly WsRailItem[] = SECTION_DEFS.map((def) => ({
@@ -128,8 +178,12 @@ export class ProposalWorkspacePage {
   private readonly route = inject(ActivatedRoute);
 
   constructor() {
-    const id = this.route.snapshot.queryParamMap.get('id');
+    const query = this.route.snapshot.queryParamMap;
+    const id = query.get('id')?.trim() || null;
+    const source = query.get('source')?.trim() || null;
+    const sourceId = query.get('sourceId')?.trim() || null;
     if (id) this.store.quotationId.set(id);
+    this.draft.init({ id, new: query.get('new') === '1', source, sourceId });
 
     effect(() => {
       void this.store.activeLeft();
