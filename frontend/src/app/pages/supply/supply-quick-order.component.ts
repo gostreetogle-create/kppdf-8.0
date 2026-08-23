@@ -1965,7 +1965,11 @@ export class SupplyQuickOrderComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (!res.ok) return;
-        const live = (res.data ?? []).map((c) => ({ id: c._id, label: c.name }));
+        // Belt-and-braces: a material request must never surface product/general
+        // categories, even if the server ignores `?type=`.
+        const live = (res.data ?? [])
+          .filter((c) => c.type === 'material' && c.isActive !== false)
+          .map((c) => ({ id: c._id, label: c.name }));
         if (live.length > 0) this.applyLiveCategories(live);
       });
 
@@ -2053,10 +2057,17 @@ export class SupplyQuickOrderComponent {
   protected materialsFor(categoryId: string): QuickOrderMaterial[] {
     // Empty category = full catalog (materials in DB often have no categoryId yet).
     if (!categoryId) return this.materials();
-    if (OBJECT_ID_RE.test(categoryId)) {
-      return this.materialsByCategory()[categoryId] ?? [];
-    }
-    return materialsForCategory(this.materials(), categoryId);
+    const local = materialsForCategory(this.materials(), categoryId);
+    if (!OBJECT_ID_RE.test(categoryId)) return local;
+    // TZ-SUPPLY-320: union of the already-loaded catalog and the server-filtered
+    // cache. Reading the cache alone made the picker empty whenever the
+    // `?categoryId=` request was still in flight or came back empty, even though
+    // `materials()` already held rows carrying exactly this categoryId.
+    const cached = this.materialsByCategory()[categoryId] ?? [];
+    if (cached.length === 0) return local;
+    const byId = new Map(local.map((material) => [material.id, material]));
+    for (const material of cached) byId.set(material.id, material);
+    return [...byId.values()];
   }
 
   protected materialOptions(
@@ -2105,10 +2116,11 @@ export class SupplyQuickOrderComponent {
   }
 
   /**
-   * Catalog reference book is the SoT for categories, but 307 materials are
-   * still local mocks keyed by MOCK_CATEGORIES ids. Re-key them (and the rows)
-   * by category name so the picker keeps working against a live `/categories`.
-   * Drops out entirely in 305, when materials come from the backend.
+   * `/categories?type=material` is the only source of truth for the dropdown.
+   * Mock rows are re-keyed by category name so the offline seed keeps working,
+   * and mock categories without a live twin («Метизы», «Подшипники» …) are
+   * dropped: selecting one could only ever point the picker at an id the
+   * backend does not know, which is what made the list look broken (SUPPLY-320).
    */
   private applyLiveCategories(live: QuickOrderCategory[]): void {
     const norm = (s: string) => s.trim().toLowerCase();
@@ -2118,9 +2130,9 @@ export class SupplyQuickOrderComponent {
       const liveId = liveIdByLabel.get(norm(mock.label));
       if (liveId) remap.set(mock.id, liveId);
     }
+    const dropped = new Set(MOCK_CATEGORIES.filter((c) => !remap.has(c.id)).map((c) => c.id));
 
-    const unmatched = MOCK_CATEGORIES.filter((c) => !remap.has(c.id));
-    this.categories.set([...live, ...unmatched]);
+    this.categories.set([...live]);
     this.materials.update((list) =>
       list.map((m) => ({ ...m, categoryId: remap.get(m.categoryId) ?? m.categoryId })),
     );
@@ -2130,8 +2142,13 @@ export class SupplyQuickOrderComponent {
         categoryIds: s.categoryIds.map((id) => remap.get(id) ?? id),
       })),
     );
+    // A row pointing at a dropped category falls back to «— все материалы —»
+    // instead of keeping a dangling id that renders as «—».
     this.rows.update((rows) =>
-      rows.map((r) => ({ ...r, categoryId: remap.get(r.categoryId) ?? r.categoryId })),
+      rows.map((r) => ({
+        ...r,
+        categoryId: remap.get(r.categoryId) ?? (dropped.has(r.categoryId) ? '' : r.categoryId),
+      })),
     );
   }
 
@@ -3186,9 +3203,10 @@ export class SupplyQuickOrderComponent {
 /** TZ-SUPPLY-311 — Material (API) → QuickOrderMaterial (UI). */
 function mapMaterial(m: Material): QuickOrderMaterial {
   const mainPhotoId = typeof m.mainPhotoId === 'string' ? m.mainPhotoId : m.mainPhotoId?._id;
-  const populatedCategory = m.categoryId as unknown as { _id?: string } | undefined;
-  const categoryId =
-    typeof m.categoryId === 'string' ? m.categoryId : (populatedCategory?._id ?? '');
+  // `GET /materials` populates categoryId, so the field arrives either as a raw
+  // id string or as a `{ _id, name, … }` document (SUPPLY-320).
+  const rawCategory = m.categoryId as unknown as string | { _id?: string } | null | undefined;
+  const categoryId = typeof rawCategory === 'string' ? rawCategory : String(rawCategory?._id ?? '');
   const photos = (m.photoIds ?? []).map((entry, index) => {
     if (typeof entry === 'string') {
       return { id: entry, label: `Фото ${index + 1}` };

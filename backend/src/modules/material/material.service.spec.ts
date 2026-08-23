@@ -19,6 +19,8 @@ function buildService(
     findOneAndUpdate?: jest.Mock;
     categoryFindById?: jest.Mock;
     counterNext?: jest.Mock;
+    find?: jest.Mock;
+    countDocuments?: jest.Mock;
   } = {},
 ) {
   const create = opts.create ?? jest.fn();
@@ -27,12 +29,24 @@ function buildService(
   const findOneAndUpdate = opts.findOneAndUpdate ?? jest.fn();
   const categoryFindById = opts.categoryFindById ?? jest.fn();
   const counterNext = opts.counterNext ?? jest.fn();
-  const model = { create, findById, updateOne, findOneAndUpdate } as any;
+  const find = opts.find ?? jest.fn().mockReturnValue(findChain([]));
+  const countDocuments = opts.countDocuments ?? jest.fn().mockReturnValue(query(0));
+  const model = { create, findById, updateOne, findOneAndUpdate, find, countDocuments } as any;
   const categoryModel = { findById: categoryFindById } as any;
   const counter = { next: counterNext } as any;
   const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
   const service = new MaterialService(model, categoryModel, counter, catalogGraph);
-  return { service, create, findById, updateOne, categoryFindById, counterNext };
+  return { service, create, findById, updateOne, categoryFindById, counterNext, find, countDocuments };
+}
+
+/** Mimics the chained `find().populate()…lean().exec()` builder used by findAll. */
+function findChain<T>(items: T[]) {
+  const chain: Record<string, unknown> = {};
+  for (const method of ['populate', 'sort', 'skip', 'limit', 'lean']) {
+    chain[method] = jest.fn().mockReturnValue(chain);
+  }
+  chain.exec = jest.fn().mockResolvedValue(items);
+  return chain;
 }
 
 function dto(overrides: Partial<CreateMaterialDto> = {}): CreateMaterialDto {
@@ -217,6 +231,29 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
     });
   });
 
+  describe('findAll category filter (TZ-SUPPLY-320)', () => {
+    it('matches both the ObjectId and the legacy string form of categoryId', async () => {
+      const { service, find, countDocuments } = buildService();
+
+      await service.findAll({ categoryId: CATEGORY_ID });
+
+      const [filter] = find.mock.calls[0] as [{ categoryId: { $in: unknown[] } }];
+      expect(filter.categoryId.$in).toHaveLength(2);
+      expect(filter.categoryId.$in[0]).toBeInstanceOf(Types.ObjectId);
+      expect(filter.categoryId.$in[1]).toBe(CATEGORY_ID);
+      expect(countDocuments).toHaveBeenCalledWith(expect.objectContaining({ categoryId: filter.categoryId }));
+    });
+
+    it('leaves the filter untouched when no category is requested', async () => {
+      const { service, find } = buildService();
+
+      await service.findAll({});
+
+      const [filter] = find.mock.calls[0] as [Record<string, unknown>];
+      expect(filter.categoryId).toBeUndefined();
+    });
+  });
+
   describe('update', () => {
     it('rejects duplicate dimension types on update', async () => {
       const save = jest.fn();
@@ -275,6 +312,25 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
       await expect(service.update('507f1f77bcf86cd799439011', updateDto)).rejects.toBeInstanceOf(
         ConflictException,
       );
+    });
+
+    it('casts FK ids to ObjectId so the ?categoryId= filter can match (TZ-SUPPLY-320)', async () => {
+      const findOneAndUpdate = jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue(doc()),
+      });
+      const { service } = buildService({
+        findById: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(doc()) }),
+        categoryFindById: jest.fn().mockReturnValue(
+          query({ _id: CATEGORY_ID, name: 'Комплектующие', type: 'material', isActive: true, skuPrefix: 'CMP' }),
+        ),
+        findOneAndUpdate,
+      });
+
+      await service.update('507f1f77bcf86cd799439011', { categoryId: CATEGORY_ID });
+
+      const [, update] = findOneAndUpdate.mock.calls[0] as [unknown, { $set: Record<string, unknown> }];
+      expect(update.$set.categoryId).toBeInstanceOf(Types.ObjectId);
+      expect(String(update.$set.categoryId)).toBe(CATEGORY_ID);
     });
 
     it('keeps 404 behavior for a missing document (no save attempted)', async () => {

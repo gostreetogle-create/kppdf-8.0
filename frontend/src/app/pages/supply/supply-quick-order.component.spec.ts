@@ -6,6 +6,28 @@ import { provideRouter } from '@angular/router';
 import { SupplyQuickOrderComponent } from './supply-quick-order.component';
 
 describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
+  /** Real seed ids from `categories.seed.ts` (24-hex, so the ObjectId path runs). */
+  const COMPONENTS_CATEGORY_ID = '6a6a5aa8414225da04787cb4';
+  const METALS_CATEGORY_ID = '6a6a5aa7414225da04787c2f';
+
+  const flushLiveMaterialCategories = (
+    httpMock: HttpTestingController,
+    categories: { _id: string; name: string }[],
+  ): void => {
+    httpMock
+      .expectOne((req) => req.url.includes('/categories') && req.params.get('type') === 'material')
+      .flush(
+        categories.map((category, index) => ({
+          ...category,
+          slug: `seed-${index}`,
+          type: 'material',
+          skuPrefix: 'SEED',
+          sortOrder: index,
+          isActive: true,
+        })),
+      );
+  };
+
   const openOverflowOptions = (root: HTMLElement, hook: string): string[] => {
     const host = root.querySelector(`[data-test="${hook}"]`);
     (
@@ -491,6 +513,101 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     const options = openOverflowOptions(root, 'supply-quick-material-select');
     expect(options.length).toBeGreaterThan(5);
     expect(options).toContain('Подшипник 6205');
+  });
+
+  it('TZ-SUPPLY-320: dropdown keeps only live material categories once the catalog loads', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      categoryOptions: () => { id: string; label: string }[];
+      rows: () => { id: string; categoryId: string }[];
+    };
+    flushLiveMaterialCategories(httpMock, [
+      { _id: COMPONENTS_CATEGORY_ID, name: 'Комплектующие' },
+      { _id: METALS_CATEGORY_ID, name: 'Металлы' },
+    ]);
+    fixture.detectChanges();
+
+    const labels = comp.categoryOptions().map((option) => option.label);
+    expect(labels).toEqual(['— все материалы —', 'Комплектующие', 'Металлы']);
+    expect(labels).not.toContain('Подшипники');
+    expect(labels).not.toContain('Метизы');
+    // Rows keyed by a dropped mock category fall back to «— все материалы —».
+    expect(comp.rows().every((row) => row.categoryId === '')).toBe(true);
+  });
+
+  it('TZ-SUPPLY-320: live category lists materials from the signal before the API cache fills', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      materialOptions: (categoryId: string) => { id: string; label: string }[];
+      materialPickerPlaceholder: (categoryId: string) => string;
+      materials: {
+        set: (list: { id: string; categoryId: string; name: string; unit: string }[]) => void;
+      };
+    };
+    flushLiveMaterialCategories(httpMock, [{ _id: COMPONENTS_CATEGORY_ID, name: 'Комплектующие' }]);
+    comp.materials.set([
+      {
+        id: '6a6f19759f53f007783874d8',
+        categoryId: COMPONENTS_CATEGORY_ID,
+        name: 'Петля сварная усиленная',
+        unit: 'шт',
+      },
+      { id: '6a81c3ef107c9fceaf1e5c03', categoryId: '', name: 'Лист стальной 2 мм', unit: 'м²' },
+    ]);
+    fixture.detectChanges();
+
+    expect(comp.materialOptions(COMPONENTS_CATEGORY_ID).map((option) => option.label)).toEqual([
+      'Петля сварная усиленная',
+    ]);
+    expect(comp.materialPickerPlaceholder(COMPONENTS_CATEGORY_ID)).toContain('выберите материал');
+    // Empty category still means the whole catalog.
+    expect(comp.materialOptions('').map((option) => option.label)).toEqual([
+      'Петля сварная усиленная',
+      'Лист стальной 2 мм',
+    ]);
+  });
+
+  it('TZ-SUPPLY-320: an empty ?categoryId= response does not blank a category that has materials', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      onCategoryChange: (rowId: string, categoryId: string) => void;
+      materialOptions: (categoryId: string) => { id: string; label: string }[];
+      materials: {
+        set: (list: { id: string; categoryId: string; name: string; unit: string }[]) => void;
+      };
+    };
+    flushLiveMaterialCategories(httpMock, [{ _id: COMPONENTS_CATEGORY_ID, name: 'Комплектующие' }]);
+    comp.materials.set([
+      {
+        id: '6a6f19759f53f007783874d8',
+        categoryId: COMPONENTS_CATEGORY_ID,
+        name: 'Петля сварная усиленная',
+        unit: 'шт',
+      },
+    ]);
+    comp.onCategoryChange('qo-1', COMPONENTS_CATEGORY_ID);
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne(
+        (req) =>
+          req.url.includes('/materials') && req.params.get('categoryId') === COMPONENTS_CATEGORY_ID,
+      )
+      .flush({ items: [], total: 0, page: 1, limit: 500 });
+    fixture.detectChanges();
+
+    expect(comp.materialOptions(COMPONENTS_CATEGORY_ID).map((option) => option.label)).toEqual([
+      'Петля сварная усиленная',
+    ]);
   });
 
   it('TZ-SUPPLY-308: manager select and + stay disabled until a supplier is chosen', async () => {

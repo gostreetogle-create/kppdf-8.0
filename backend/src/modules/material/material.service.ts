@@ -45,8 +45,12 @@ export class MaterialService {
     const page = Math.max(1, q.page ?? 1); const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = { deletedAt: null, ...this.organizationFilter(organizationId) };
     if (q.search) { const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const re = new RegExp(escaped, 'i'); filter.$or = [{ name: re }, { article: re }, { sku: re }]; }
-    if (q.categoryId) filter.categoryId = new Types.ObjectId(q.categoryId);
-    if (q.supplierId) filter.supplierId = new Types.ObjectId(q.supplierId);
+    // TZ-SUPPLY-320: legacy rows store `categoryId` as a plain string (the audit
+    // plugin's `setUpdate()` in pre('findOneAndUpdate') replaces the already-cast
+    // update, so PATCH persisted the raw string). Matching both shapes keeps
+    // `?categoryId=` from silently returning 0 items for real assignments.
+    if (q.categoryId) filter.categoryId = { $in: [new Types.ObjectId(q.categoryId), q.categoryId] };
+    if (q.supplierId) filter.supplierId = { $in: [new Types.ObjectId(q.supplierId), q.supplierId] };
     if (q.materialKind) filter.materialKind = q.materialKind;
     const [items, total] = await Promise.all([
       this.model.find(filter).populate('categoryId').populate('photoIds').populate('mainPhotoId').populate('supplierId').sort({ name: 1 }).skip((page - 1) * limit).limit(limit).lean().exec(),
@@ -85,6 +89,15 @@ export class MaterialService {
     if (colors !== undefined) $set.colors = colors;
     if (Array.isArray(dto.photoIds)) {
       $set.photoIds = dto.photoIds.map((pid) => new Types.ObjectId(String(pid)));
+    }
+    // TZ-SUPPLY-320: same reason as photoIds — the audit plugin re-sets the update
+    // in a pre-hook, which bypasses Mongoose casting. Without an explicit cast the
+    // FK lands as a string and every `?categoryId=` / `?supplierId=` filter misses it.
+    for (const key of ['categoryId', 'supplierId', 'mainPhotoId'] as const) {
+      const value = $set[key];
+      if (typeof value === 'string' && Types.ObjectId.isValid(value)) {
+        $set[key] = new Types.ObjectId(value);
+      }
     }
     try {
       const updated = await this.model
