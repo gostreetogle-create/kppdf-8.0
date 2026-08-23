@@ -5,6 +5,19 @@
 под header. H1 ERP: `font-display text-lg`. Catalog detail имя (passport):
 `text-lg sm:text-xl` max (TYPE-302).
 
+## Плотность (TZ-UI-DEN-511 + `ui-density-canon.md`)
+
+| Элемент | Размер / класс | px |
+|---------|----------------|-----|
+| Крошки (links + meta) | `text-xs` | 12px |
+| Текущая крошка (list-only title) | `text-base` | 16px |
+| H1 (detail) | `text-lg` max | 18px |
+| Описание под H1 | `text-xs` | 12px |
+| Блок chrome | `pi-edge-bleed py-2 hairline-b` | vert 8px; horiz = `--space-page-x` через bleed |
+| Межэлементный gap | `gap-1.5` / `gap-2` | 6–8px |
+
+SoT компонента: `frontend/src/app/shared/page/pi-page-chrome.component.ts`.
+
 ## Brand home (TZ-UX-331 + TZ-NAV-303)
 
 Левый бренд шапки `KPPDF · 8.0` — **кликабельный chip** (`data-test="nav-brand-home"`)
@@ -217,4 +230,4 @@ app-chrome-rail-left          app-chrome-rail-right
 
 ---
 
-_Создано: 2026-08-07. Обновлено: 2026-08-22 (боковые меню → chrome-rail; TZ-UX-345)._
+_Создано: 2026-08-07. Обновлено: 2026-08-23 (DEN-511 page-chrome density)._

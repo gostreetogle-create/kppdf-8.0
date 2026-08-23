@@ -18,10 +18,10 @@ export type PageCrumb = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <header class="mb-2" data-test="page-chrome">
+    <header class="pi-edge-bleed py-2 hairline-b mb-2" data-test="page-chrome">
       @if (crumbs().length > 0) {
         <nav
-          class="flex flex-wrap items-baseline gap-1.5 text-sm"
+          class="flex flex-wrap items-baseline gap-1.5 text-xs"
           aria-label="Навигация"
           data-test="page-crumbs"
         >
@@ -50,8 +50,8 @@ export type PageCrumb = {
       }
 
       @if (title() || description()) {
-        <div class="mt-1.5 flex flex-wrap items-start justify-between gap-3">
-          <div class="min-w-0 space-y-1">
+        <div class="mt-1 flex flex-wrap items-start justify-between gap-2">
+          <div class="min-w-0 space-y-0.5">
             @if (title()) {
               <h1
                 class="font-display text-lg tracking-tight text-ink leading-snug m-0 break-words"
@@ -61,7 +61,7 @@ export type PageCrumb = {
               </h1>
             }
             @if (description()) {
-              <p class="text-sm text-muted-foreground max-w-[58ch] m-0 leading-relaxed">
+              <p class="text-xs text-muted-foreground max-w-[58ch] m-0 leading-relaxed">
                 {{ description() }}
               </p>
             }
