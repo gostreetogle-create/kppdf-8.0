@@ -189,16 +189,29 @@ export type ProposalCreateStatus = ProposalStatus;
         </section>
 
         <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
-          <app-pi-overflow-select
-            [items]="organizationItems()"
-            [value]="organizationId()"
-            (valueChange)="onOrgChange($event)"
-            searchable="auto"
-            placeholder="— выберите —"
-            ariaLabel="Наша фирма"
-            dataTest="kp-insp-org"
-            [disabled]="readOnly()"
-          />
+          <div class="pi-select-add-row">
+            <app-pi-overflow-select
+              [items]="organizationItems()"
+              [value]="organizationId()"
+              (valueChange)="onOrgChange($event)"
+              searchable="auto"
+              placeholder="— выберите —"
+              ariaLabel="Наша фирма"
+              dataTest="kp-insp-org"
+              [disabled]="readOnly()"
+            />
+            <button
+              type="button"
+              class="pi-select-add-btn"
+              (click)="openCreateOrganization()"
+              [disabled]="readOnly()"
+              title="Новая организация"
+              aria-label="Новая организация"
+              data-test="kp-insp-org-add"
+            >
+              +
+            </button>
+          </div>
         </app-pi-form-field>
 
         @if (organizationId()) {
@@ -1050,6 +1063,23 @@ export class ProposalCreateInspectorComponent implements OnInit {
     if (this.tableTargets().some((target) => target.id === id)) {
       this.tableTargetChange.emit(id);
     }
+  }
+
+  /** TZ-UI-PLUS-604: create org via FullEditor, then select. */
+  protected openCreateOrganization(): void {
+    if (this.readOnly()) return;
+    const ref = this.dialog.open<Organization | null>(OrganizationFullEditorDialogComponent, {
+      data: null,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Organization | null>(ref, this.injector, (org) => {
+      if (!org || org.isActive === false) return;
+      this.organizations.update((list) =>
+        list.some((item) => item._id === org._id) ? list : [...list, org],
+      );
+      this.onOrgChange(org._id);
+    });
   }
 
   protected openOrganization(): void {

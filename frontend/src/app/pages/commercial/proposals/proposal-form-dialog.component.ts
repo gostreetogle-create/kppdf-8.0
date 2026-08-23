@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  Injector,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import {
   FormArray,
   FormControl,
@@ -15,7 +23,7 @@ import { TextareaComponent } from '../../../shared/ui/textarea/textarea.componen
 import { PiFormSectionComponent } from '../../../shared/ui/form-section';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
 import { PiToastService } from '../../../shared/ui/toast';
-import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
 import { extractErrorMessage } from '../../../core/silent-http';
 import {
   Counterparty,
@@ -32,6 +40,9 @@ import {
 } from '../../../shared/services/pi-proposals.service';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import { toOptionalNumber } from '../../../shared/forms/to-optional-number';
+import { CounterpartyFullEditorDialogComponent } from '../../counterparties/counterparty-full-editor-dialog.component';
+import { OrganizationFullEditorDialogComponent } from '../../organizations/organization-full-editor-dialog.component';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 
 type Result = Proposal | null | undefined;
 
@@ -119,16 +130,29 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('organizationId')"
             >
-              <app-pi-overflow-select
-                [items]="organizationItems()"
-                [value]="form.controls.organizationId.value"
-                (valueChange)="onOrganizationChange($event)"
-                searchable="auto"
-                placeholder="— выберите —"
-                ariaLabel="Наша организация"
-                dataTest="pr-org"
-                [disabled]="readOnly()"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="organizationItems()"
+                  [value]="form.controls.organizationId.value"
+                  (valueChange)="onOrganizationChange($event)"
+                  searchable="auto"
+                  placeholder="— выберите —"
+                  ariaLabel="Наша организация"
+                  dataTest="pr-org"
+                  [disabled]="readOnly()"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateOrganization()"
+                  [disabled]="readOnly()"
+                  title="Новая организация"
+                  aria-label="Новая организация"
+                  data-test="pr-org-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -137,16 +161,29 @@ interface ItemFormGroup extends FormGroup {
               [required]="true"
               [error]="errorFor('counterpartyId')"
             >
-              <app-pi-overflow-select
-                [items]="counterpartyItems()"
-                [value]="form.controls.counterpartyId.value"
-                (valueChange)="onCounterpartyChange($event)"
-                searchable="auto"
-                placeholder="— выберите —"
-                ariaLabel="Контрагент"
-                dataTest="pr-cp"
-                [disabled]="readOnly()"
-              />
+              <div class="pi-select-add-row">
+                <app-pi-overflow-select
+                  [items]="counterpartyItems()"
+                  [value]="form.controls.counterpartyId.value"
+                  (valueChange)="onCounterpartyChange($event)"
+                  searchable="auto"
+                  placeholder="— выберите —"
+                  ariaLabel="Контрагент"
+                  dataTest="pr-cp"
+                  [disabled]="readOnly()"
+                />
+                <button
+                  type="button"
+                  class="pi-select-add-btn"
+                  (click)="openCreateCounterparty()"
+                  [disabled]="readOnly()"
+                  title="Новый контрагент"
+                  aria-label="Новый контрагент"
+                  data-test="pr-cp-add"
+                >
+                  +
+                </button>
+              </div>
             </app-pi-form-field>
 
             <app-pi-form-field
@@ -373,6 +410,9 @@ export class ProposalFormDialogComponent {
   private readonly counterpartyService = inject(CounterpartyService);
   private readonly productsService = inject(ProductsService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly ref = inject<DialogRef<Result>>(PI_DIALOG_REF);
   private readonly proposal = this.resolved.proposal;
 
@@ -435,6 +475,40 @@ export class ProposalFormDialogComponent {
   protected onCounterpartyChange(id: string): void {
     this.form.controls.counterpartyId.setValue(id);
     this.form.controls.counterpartyId.markAsDirty();
+  }
+
+  /** TZ-UI-PLUS-604: create org via FullEditor, then select. */
+  protected openCreateOrganization(): void {
+    if (this.readOnly()) return;
+    const ref = this.dialog.open<Organization | null>(OrganizationFullEditorDialogComponent, {
+      data: null,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Organization | null>(ref, this.injector, (org) => {
+      if (!org || org.isActive === false) return;
+      this.organizations.update((list) =>
+        list.some((item) => item._id === org._id) ? list : [...list, org],
+      );
+      this.onOrganizationChange(org._id);
+    });
+  }
+
+  /** TZ-UI-PLUS-604: create counterparty via FullEditor, then select. */
+  protected openCreateCounterparty(): void {
+    if (this.readOnly()) return;
+    const ref = this.dialog.open<Counterparty | null>(CounterpartyFullEditorDialogComponent, {
+      data: null,
+      width: 'lg',
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce<Counterparty | null>(ref, this.injector, (cp) => {
+      if (!cp) return;
+      this.counterparties.update((list) =>
+        list.some((item) => item._id === cp._id) ? list : [...list, cp],
+      );
+      this.onCounterpartyChange(cp._id);
+    });
   }
 
   private loadLookups(): void {

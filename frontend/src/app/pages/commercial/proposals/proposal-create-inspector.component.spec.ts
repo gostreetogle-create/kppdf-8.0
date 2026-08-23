@@ -11,6 +11,7 @@ interface InspectorHarness {
   onTextChange(field: 'number' | 'title' | 'date' | 'validUntil', event: Event): void;
   number(): string;
   openOrganization(): void;
+  openCreateOrganization(): void;
 }
 
 describe('ProposalCreateInspectorComponent A6 characterization', () => {
@@ -119,6 +120,27 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
     expect(dialogSpy.open).toHaveBeenCalledWith(
       OrganizationFullEditorDialogComponent,
       expect.objectContaining({ data: fakeOrg }),
+    );
+  });
+
+  it('TZ-UI-PLUS-604: org select uses pi-select-add-row with supply add-btn', () => {
+    const source = require('fs').readFileSync(
+      require('path').join(__dirname, 'proposal-create-inspector.component.ts'),
+      'utf8',
+    );
+    expect(source).toContain('pi-select-add-row');
+    expect(source).toContain('pi-select-add-btn');
+    expect(source).toContain('data-test="kp-insp-org-add"');
+    expect(source).toContain('openCreateOrganization()');
+    expect(source).toContain('data-test="kp-insp-open-org"');
+  });
+
+  it('TZ-UI-PLUS-604: openCreateOrganization opens OrganizationFullEditor with data null', () => {
+    const inspector = fixture.componentInstance as unknown as InspectorHarness;
+    inspector.openCreateOrganization();
+    expect(dialogSpy.open).toHaveBeenCalledWith(
+      OrganizationFullEditorDialogComponent,
+      expect.objectContaining({ data: null, width: 'lg' }),
     );
   });
 });

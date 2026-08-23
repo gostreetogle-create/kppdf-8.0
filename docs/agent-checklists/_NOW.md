@@ -5,7 +5,11 @@
 >
 > Обновляй оперативные секции in-place. Лимит файла: 120 строк.
 
-updated_at: 2026-08-23T21:55:00+03:00
+updated_at: 2026-08-23T22:04:06+03:00
+
+## ACTIVE — WAVE-UI-PLUS (601+)
+
+**DONE — PLUS-604** (2026-08-23T22:04:06+03:00): + create party/org in KP form selects. Archive `tasks/_archive/2026-08/TZ-UI-PLUS-604.done.md`.
 
 ## ACTIVE — SUPPLY-308R
 
