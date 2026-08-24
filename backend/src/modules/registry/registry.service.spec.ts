@@ -1,4 +1,32 @@
-import { buildFieldsFromSchema } from './registry.service';
+import { buildFieldsFromSchema, RegistryService } from './registry.service';
+
+describe('RegistryService.getDataSources', () => {
+  const service = new RegistryService();
+
+  it('labels organization as «Наша фирма» and counterparty as «Клиент»', () => {
+    const { sources } = service.getDataSources();
+    const organization = sources.find((s) => s.key === 'organization');
+    const counterparty = sources.find((s) => s.key === 'counterparty');
+
+    expect(organization?.label).toBe('Наша фирма');
+    expect(counterparty?.label).toBe('Клиент');
+  });
+
+  it('exposes site/contact fields on counterparty', () => {
+    const { sources } = service.getDataSources();
+    const counterparty = sources.find((s) => s.key === 'counterparty');
+    const fieldKeys = counterparty?.fields.map((f) => f.key) ?? [];
+
+    expect(fieldKeys).toEqual(
+      expect.arrayContaining([
+        'siteAddress',
+        'siteName',
+        'contactName',
+        'contactPosition',
+      ]),
+    );
+  });
+});
 
 describe('buildFieldsFromSchema', () => {
   it('surfaces a new scalar schema path without editing a descriptor array', () => {

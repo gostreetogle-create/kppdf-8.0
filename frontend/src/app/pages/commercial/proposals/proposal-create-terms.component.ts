@@ -24,6 +24,7 @@ export interface ProposalTerm {
 }
 
 const TERM_VARIABLES = [
+  // {{client_name}} = counterparty.name на бланке (тот же алиас, отдельный токен для условий).
   { token: '{{client_name}}', label: 'Клиент' },
   { token: '{{kp_number}}', label: 'Номер КП' },
   { token: '{{total_price}}', label: 'Итого' },

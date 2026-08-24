@@ -86,6 +86,18 @@ describe('ProposalCreateTermsComponent', () => {
     expect(component.libraryOpen()).toBe(true);
   });
 
+  it('labels the {{client_name}} variable button «Клиент»', () => {
+    fixture.componentRef.setInput('terms', [{ text: '', sortOrder: 0 }]);
+    fixture.detectChanges();
+
+    const buttons = Array.from(
+      fixture.nativeElement.querySelectorAll('.terms__variable'),
+    ) as HTMLButtonElement[];
+    const clientButton = buttons.find((btn) => btn.textContent?.trim() === 'Клиент');
+
+    expect(clientButton).toBeTruthy();
+  });
+
   it('inserts a supported variable at the end of the active condition', () => {
     fixture.componentRef.setInput('terms', [{ text: 'Сумма: ', sortOrder: 0 }]);
     const component = fixture.componentInstance as unknown as {

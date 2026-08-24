@@ -153,7 +153,7 @@ export class RegistryService {
 const DATA_SOURCES: DataSourceDescriptor[] = [
   {
     key: 'organization',
-    label: 'Организация',
+    label: 'Наша фирма',
     group: 'contacts',
     fields: [
       { key: 'name', label: 'Наименование', type: 'text' },
@@ -186,7 +186,7 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
   },
   {
     key: 'counterparty',
-    label: 'Контрагент',
+    label: 'Клиент',
     group: 'contacts',
     fields: [
       { key: 'name', label: 'Наименование', type: 'text' },
@@ -204,6 +204,10 @@ const DATA_SOURCES: DataSourceDescriptor[] = [
       { key: 'bankAccount', label: 'Расчётный счёт', type: 'text' },
       { key: 'bankCorrAccount', label: 'Корр. счёт', type: 'text' },
       { key: 'directorName', label: 'Директор', type: 'text' },
+      { key: 'siteAddress', label: 'Адрес объекта', type: 'text' },
+      { key: 'siteName', label: 'Объект', type: 'text' },
+      { key: 'contactName', label: 'Контакт (ФИО)', type: 'text' },
+      { key: 'contactPosition', label: 'Должность контакта', type: 'text' },
     ],
   },
   {
