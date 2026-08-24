@@ -49,8 +49,8 @@ describe('SupplyPage HUB-303 orderId filter', () => {
     mock.expectOne((r) => r.url === `${baseUrl}/categories` && r.method === 'GET').flush([]);
     mock.expectOne((r) => r.url.startsWith(`${baseUrl}/materials`) && r.method === 'GET').flush([]);
     mock
-      .expectOne((r) => r.url.startsWith(`${baseUrl}/organizations`) && r.method === 'GET')
-      .flush({ items: [], total: 0 });
+      .match((r) => r.url.startsWith(`${baseUrl}/organizations`) && r.method === 'GET')
+      .forEach((r) => r.flush({ items: [], total: 0 }));
     mock.expectOne((r) => r.url.startsWith(`${baseUrl}/persons`) && r.method === 'GET').flush([]);
     mock.expectOne((r) => r.url === `${baseUrl}/supply-requests` && r.method === 'GET').flush([]);
   }

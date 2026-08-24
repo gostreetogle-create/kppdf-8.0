@@ -24,6 +24,28 @@ describe('PiPhotoDropzoneComponent', () => {
 
   beforeEach(() => TestBed.resetTestingModule());
 
+  it('ignores non-image files on drop and emits invalidFileType', async () => {
+    const { fixture, component } = await setup();
+    const uploadRequest = jest.fn();
+    const invalidFileType = jest.fn();
+    component.uploadRequest.subscribe(uploadRequest);
+    component.invalidFileType.subscribe(invalidFileType);
+
+    const pdf = new File(['pdf'], 'doc.pdf', { type: 'application/pdf' });
+    const target = fixture.nativeElement.querySelector(
+      '[data-test="photo-drop-target"]',
+    ) as HTMLElement;
+    const drop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', {
+      value: { files: [pdf] },
+    });
+    target.dispatchEvent(drop);
+    fixture.detectChanges();
+
+    expect(uploadRequest).not.toHaveBeenCalled();
+    expect(invalidFileType).toHaveBeenCalled();
+  });
+
   it('is presentational: renders input photos and emits uploadRequest instead of calling the API', async () => {
     const { fixture, component } = await setup();
     const uploadRequest = jest.fn();

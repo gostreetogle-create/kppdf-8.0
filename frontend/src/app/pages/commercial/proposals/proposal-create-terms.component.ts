@@ -44,25 +44,51 @@ const TERM_VARIABLES = [
     <div class="terms" data-test="kp-terms-panel">
       <div class="terms__heading">
         <div>
-          <h3>Условия</h3>
+          <h3>Условия этого КП</h3>
           <p class="text-xs text-muted-foreground m-0" data-test="kp-hint-terms">
-            Тексты условий — в это КП. «Библиотека» — общие блоки на будущее.
+            Строки ниже попадают в PDF. Поля бланка (реквизиты) — в конструкторе шаблона.
           </p>
         </div>
+        <app-pi-button
+          type="button"
+          variant="default"
+          size="sm"
+          [disabled]="readOnly()"
+          (click)="addTerm()"
+          data-test="kp-term-add"
+        >
+          Добавить условие
+        </app-pi-button>
+      </div>
+
+      <div class="terms__library-toggle">
         <app-pi-button
           type="button"
           variant="ghost"
           size="sm"
           [disabled]="readOnly()"
           (click)="toggleLibrary()"
+          data-test="kp-terms-library-toggle"
         >
-          Взять из библиотеки
+          {{ libraryOpen() ? 'Скрыть библиотеку' : 'Библиотека текстовых блоков' }}
         </app-pi-button>
+        @if (libraryOpen()) {
+          <app-pi-button
+            type="button"
+            variant="outline"
+            size="sm"
+            [disabled]="readOnly()"
+            (click)="createTextBlock.emit()"
+            data-test="kp-ws-text-block-create"
+          >
+            Создать текстовый блок
+          </app-pi-button>
+        }
       </div>
 
       @if (libraryOpen()) {
         <section class="terms__library" data-test="kp-terms-library">
-          <strong>Текстовые блоки</strong>
+          <strong>Библиотека (на будущее)</strong>
           <select
             class="pi-input terms__category"
             [ngModel]="selectedCategoryId()"
@@ -253,6 +279,12 @@ const TERM_VARIABLES = [
       min-height: 2rem;
       font-size: 0.72rem;
     }
+    .terms__library-toggle {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
   `,
 })
 export class ProposalCreateTermsComponent {
@@ -261,6 +293,7 @@ export class ProposalCreateTermsComponent {
   /** TZ-KP-WS-405 — bump to reload the text-block library after an inline create/edit. */
   readonly libraryRefresh = input(0);
   readonly termsChange = output<ProposalTerm[]>();
+  readonly createTextBlock = output<void>();
 
   protected readonly libraryOpen = signal(false);
   protected readonly blocks = signal<TextBlock[]>([]);
@@ -304,6 +337,10 @@ export class ProposalCreateTermsComponent {
   protected add(text = ''): void {
     if (this.readOnly()) return;
     this.emit([...this.terms(), { text, sortOrder: this.terms().length }]);
+  }
+
+  protected addTerm(): void {
+    this.add('');
   }
 
   protected addFromLibrary(block: TextBlock): void {

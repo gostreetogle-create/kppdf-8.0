@@ -62,6 +62,14 @@ function escapeHtmlValue(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
+/** Strip TipTap tags inside `{{…}}` tokens (legacy templates). TZ-KP-BIND-513 */
+export function normalizeSubstitutionHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/\{\{[\s\S]*?\}\}/g, (token) =>
+    token.replace(/<[^>]+>/g, ''),
+  );
+}
+
 /**
  * TZ-86 Phase A.4 — DocumentTemplateService extended.
  *
@@ -320,6 +328,7 @@ export class DocumentTemplateService {
       doc.backgroundOpacity = dto.backgroundOpacity;
     if (dto.pageNumbering !== undefined) doc.pageNumbering = dto.pageNumbering;
     if (dto.defaultSheetLayout !== undefined) doc.defaultSheetLayout = dto.defaultSheetLayout;
+    if (dto.orientation !== undefined) doc.orientation = dto.orientation;
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.version !== undefined) doc.version = dto.version;
     if (dto.categoryId !== undefined) {
@@ -654,6 +663,7 @@ export class DocumentTemplateService {
     const { template, blocks } = await this.findExpanded(templateId);
     const bag = await this.resolveSourceIds(dto);
     await this.applyIssuerOrganization(template, bag);
+    this.mergeDraftContextIntoBag(dto, bag);
     const termsHtml = this.renderQuotationTerms(dto, bag);
     const lineItemsTargetIds = this.resolveLineItemsTargetIds(
       blocks,
@@ -1160,7 +1170,7 @@ export class DocumentTemplateService {
           .filter((entry) => entry.visible !== false)
           .map(
             (entry) =>
-              persistedColumns.find((column) => column.key === entry.key) ??
+              this.findPersistedLayoutColumn(persistedColumns, entry.key) ??
               this.syntheticKpColumn(entry.key),
           )
           .filter((column): column is NonNullable<typeof column> =>
@@ -1177,9 +1187,21 @@ export class DocumentTemplateService {
 
   /** Request-only columns merged by Create КП; the shared TableTemplate is unchanged. */
   private isPhotoColumn(key: string): boolean {
-    return ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'].includes(
+    return ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'].includes(
       key.trim().toLowerCase(),
     );
+  }
+
+  private findPersistedLayoutColumn(
+    persistedColumns: NonNullable<TableTemplateDocument['columns']>,
+    layoutKey: string,
+  ): NonNullable<TableTemplateDocument['columns']>[number] | undefined {
+    const direct = persistedColumns.find((column) => column.key === layoutKey);
+    if (direct) return direct;
+    if (this.isPhotoColumn(layoutKey)) {
+      return persistedColumns.find((column) => this.isPhotoColumn(column.key));
+    }
+    return undefined;
   }
 
   private syntheticKpColumn(
@@ -1193,7 +1215,7 @@ export class DocumentTemplateService {
       unit: ['unit', 'ед', 'ед.изм'],
       unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
       sum: ['sum', 'total', 'amount', 'сумма'],
-      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
+      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'],
     };
     const match = Object.entries(aliases).find(([, values]) =>
       values.includes(normalized),
@@ -1255,7 +1277,7 @@ export class DocumentTemplateService {
       );
     }
     if (
-      ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'].includes(
+      ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'].includes(
         normalized,
       )
     ) {
@@ -1508,8 +1530,11 @@ export class DocumentTemplateService {
       Record<string, unknown> | undefined;
     const site = bag.site as Record<string, unknown> | undefined;
     if (counterparty) {
+      const cpName =
+        counterparty['name'] ?? counterparty['shortName'] ?? '';
       bag.counterparty = {
         ...counterparty,
+        name: cpName,
         contactName: contactPerson
           ? [
               contactPerson['lastName'],
@@ -1550,6 +1575,71 @@ export class DocumentTemplateService {
     }
 
     return bag;
+  }
+
+  /**
+   * TZ-KP-BIND-513 — merge draft КП fields + top-level aliases so body-text
+   * `{{client_name}}`, `{{kp_number}}`, `{{quotation.number}}` resolve like terms.
+   */
+  private mergeDraftContextIntoBag(
+    dto: BuildDocumentDto,
+    bag: Record<string, unknown>,
+  ): void {
+    const quotation = bag.quotation as Record<string, unknown> | undefined;
+    const counterparty = bag.counterparty as Record<string, unknown> | undefined;
+
+    const proposalStub: Record<string, unknown> = {
+      ...(quotation ?? {}),
+      number: dto.proposalNumber ?? quotation?.['number'] ?? '',
+      date: dto.proposalDate ?? quotation?.['date'] ?? '',
+      validUntil: dto.validUntil ?? quotation?.['validUntil'] ?? '',
+      total: dto.totalPrice ?? quotation?.['total'] ?? '',
+      prepaymentPercent:
+        dto.dealTotals?.prepaymentPercent ??
+        quotation?.['prepaymentPercent'] ??
+        '',
+      productionDays:
+        dto.dealTotals?.productionDays ?? quotation?.['productionDays'] ?? '',
+      deliveryDays:
+        dto.dealTotals?.deliveryDays ?? quotation?.['deliveryDays'] ?? '',
+    };
+    bag.proposal = proposalStub;
+    if (!bag.quotation) {
+      bag.quotation = { ...proposalStub };
+    }
+
+    bag.client_name = String(
+      counterparty?.['name'] ?? counterparty?.['shortName'] ?? '',
+    );
+    bag.kp_number = String(dto.proposalNumber ?? quotation?.['number'] ?? '');
+    bag.total_price = this.formatValue(
+      dto.totalPrice ?? quotation?.['total'],
+      'currency',
+    );
+    bag.date = this.formatValue(
+      dto.proposalDate ?? quotation?.['date'],
+      'date',
+    );
+    bag.valid_until = this.formatValue(
+      dto.validUntil ?? quotation?.['validUntil'],
+      'date',
+    );
+    bag.prepayment_percent = String(
+      dto.dealTotals?.prepaymentPercent ??
+        quotation?.['prepaymentPercent'] ??
+        '',
+    );
+    bag.production_days = String(
+      dto.dealTotals?.productionDays ?? quotation?.['productionDays'] ?? '',
+    );
+    bag.delivery_days = String(
+      dto.dealTotals?.deliveryDays ?? quotation?.['deliveryDays'] ?? '',
+    );
+  }
+
+  /** Strip TipTap tags inside `{{…}}` tokens (legacy templates). TZ-KP-BIND-513 */
+  private normalizeSubstitutionHtml(html: string): string {
+    return normalizeSubstitutionHtml(html);
   }
 
   /**
@@ -1802,7 +1892,8 @@ export class DocumentTemplateService {
     };
     const substitute = (s: string | undefined): string => {
       if (!s) return '';
-      return s.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key: string) => {
+      const normalized = this.normalizeSubstitutionHtml(s);
+      return normalized.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key: string) => {
         const val = key.split('.').reduce<unknown>((acc, k) => {
           if (acc == null) return undefined;
           if (Array.isArray(acc)) {
@@ -1871,7 +1962,7 @@ export class DocumentTemplateService {
         const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
         const cols = b.columns ?? [];
         const multiColHtml =
-          cols.length > 1
+          cols.length > 0
             ? `<div style="display:flex;gap:12px;width:100%">${cols
                 .map((c) => {
                   const w = c.width && c.width > 0 ? c.width : 1;

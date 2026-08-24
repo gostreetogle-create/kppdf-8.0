@@ -450,15 +450,15 @@ const SECTION_DEFS: readonly SectionDef[] = [
               />
             }
             @case ('template') {
-              <app-workspace-ai-draft />
-              <app-workspace-template-actions
-                [template]="draft.selectedTemplate()"
-                [readOnly]="draft.isReadOnly()"
-              />
               <app-proposal-create-template-picker
                 [initialId]="store.templateDraftId() || (draft.selectedTemplate()?._id ?? '')"
                 (templateChange)="draft.onTemplateChange($event)"
               />
+              <app-workspace-template-actions
+                [template]="draft.selectedTemplate()"
+                [readOnly]="draft.isReadOnly()"
+              />
+              <app-workspace-ai-draft />
             }
             @case ('recipient') {
               <app-proposal-create-recipient
@@ -578,25 +578,18 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 (chromeChange)="draft.onTableChromeChange($event)"
                 (tableFontSizeChange)="draft.onTableFontSizeChange($event)"
                 (tableHeaderFontSizeChange)="draft.onTableHeaderFontSizeChange($event)"
+                [rowsFirstPage]="draft.sheetLayout().rowsFirstPage"
+                [rowsNextPage]="draft.sheetLayout().rowsNextPage"
+                (sheetPageLayoutChange)="draft.onSheetPageLayoutChange($event)"
               />
             }
             @case ('terms') {
-              <div class="kp-ws-terms-head">
-                <app-pi-button
-                  variant="outline"
-                  size="sm"
-                  [disabled]="draft.isReadOnly()"
-                  (click)="openTextBlockEditor()"
-                  data-test="kp-ws-text-block-create"
-                >
-                  Создать текстовый блок
-                </app-pi-button>
-              </div>
               <app-proposal-create-terms
                 [terms]="draft.terms()"
                 [readOnly]="draft.isReadOnly()"
                 [libraryRefresh]="textBlocksVersion()"
                 (termsChange)="draft.onTermsChange($event)"
+                (createTextBlock)="openTextBlockEditor()"
               />
             }
             @default {

@@ -443,6 +443,12 @@ export class ProposalWorkspaceDraftService {
     this.refreshComposition();
   }
 
+  onSheetPageLayoutChange(patch: { rowsFirstPage: number; rowsNextPage: number }): void {
+    if (this.isReadOnly()) return;
+    this.sheetLayout.update((current) => ({ ...current, ...patch }));
+    this.refreshComposition();
+  }
+
   /** TZ-KP-WS-405 — edit the table preset inline (PiDialog), no route change. */
   openTableTemplatePreset(): void {
     if (this.isReadOnly()) return;

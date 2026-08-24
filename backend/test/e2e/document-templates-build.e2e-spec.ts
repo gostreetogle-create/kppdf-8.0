@@ -26,6 +26,7 @@ import { createTestApp, TestContext } from '../setup/test-db';
 import { loginAsAdmin, authHeader } from '../setup/test-auth';
 import { TemplateBlock, TemplateBlockDocument } from '../../src/modules/template-block/template-block.schema';
 import { Organization, OrganizationDocument } from '../../src/modules/organization/organization.schema';
+import { Counterparty, CounterpartyDocument } from '../../src/modules/counterparty/counterparty.schema';
 import { TableTemplate, TableTemplateDocument } from '../../src/modules/table-template/table-template.schema';
 
 describe('DocumentTemplates build (e2e)', () => {
@@ -35,10 +36,12 @@ describe('DocumentTemplates build (e2e)', () => {
   let connection: Connection;
   let blockModel: Model<TemplateBlockDocument>;
   let orgModel: Model<OrganizationDocument>;
+  let counterpartyModel: Model<CounterpartyDocument>;
   let tableModel: Model<TableTemplateDocument>;
   const createdTemplates: string[] = [];
   const createdTables: string[] = [];
   const createdOrgs: string[] = [];
+  const createdCounterparties: string[] = [];
 
   beforeAll(async () => {
     ctx = await createTestApp();
@@ -46,6 +49,7 @@ describe('DocumentTemplates build (e2e)', () => {
     connection = app.get<Connection>(getConnectionToken());
     blockModel = connection.model<TemplateBlockDocument>(TemplateBlock.name);
     orgModel = connection.model<OrganizationDocument>(Organization.name);
+    counterpartyModel = connection.model<CounterpartyDocument>(Counterparty.name);
     tableModel = connection.model<TableTemplateDocument>(TableTemplate.name);
     const { access } = await loginAsAdmin(app);
     auth = authHeader(access);
@@ -64,6 +68,9 @@ describe('DocumentTemplates build (e2e)', () => {
     // Cleanup organizations created directly via Mongoose
     for (const id of createdOrgs) {
       await orgModel.deleteOne({ _id: new Types.ObjectId(id) }).exec().catch(() => undefined);
+    }
+    for (const id of createdCounterparties) {
+      await counterpartyModel.deleteOne({ _id: new Types.ObjectId(id) }).exec().catch(() => undefined);
     }
     await ctx.cleanup();
   });
@@ -106,6 +113,22 @@ describe('DocumentTemplates build (e2e)', () => {
       });
     expect([200, 201]).toContain(res.status);
     createdOrgs.push(res.body._id);
+    return res.body._id;
+  }
+
+  async function createRealCounterparty(name: string): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/api/counterparties')
+      .set(auth)
+      .send({
+        name,
+        shortName: name.slice(0, 12),
+        inn: generateValidInn(),
+        roles: ['customer'],
+        isActive: true,
+      });
+    expect([200, 201]).toContain(res.status);
+    createdCounterparties.push(res.body._id);
     return res.body._id;
   }
 
@@ -234,6 +257,42 @@ describe('DocumentTemplates build (e2e)', () => {
     expect(res.status).toBe(201);
     expect(res.text).toContain('Hello SubstituteOrg!');
     expect(res.text).not.toContain('{{organization.name}}');
+  });
+
+  it('POST /document-templates/:id/build — substitutes {{counterparty.name}} and {{client_name}}', async () => {
+    const orgId = await createRealOrganization('Cp Substitute Org');
+    const cpId = await createRealCounterparty('School 91 Krasnodar');
+    const { templateId } = await createTemplateWithBlock({
+      templateName: 'Counterparty Substitute',
+      organizationId: orgId,
+      blockContent: 'Client: {{counterparty.name}} / {{client_name}}',
+    });
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({ organizationId: orgId, counterpartyId: cpId });
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('School 91 Krasnodar');
+    expect(res.text).not.toContain('{{counterparty.name}}');
+    expect(res.text).not.toContain('{{client_name}}');
+  });
+
+  it('POST /document-templates/:id/build — substitutes {{kp_number}} from proposalNumber', async () => {
+    const orgId = await createRealOrganization('Kp Number Org');
+    const { templateId } = await createTemplateWithBlock({
+      templateName: 'KP Number Substitute',
+      organizationId: orgId,
+      blockContent: 'No {{kp_number}}',
+    });
+
+    const res = await request(app.getHttpServer())
+      .post(`/api/document-templates/${templateId}/build`)
+      .set(auth)
+      .send({ organizationId: orgId, proposalNumber: 'QTN-2026-029' });
+    expect(res.status).toBe(201);
+    expect(res.text).toContain('No QTN-2026-029');
+    expect(res.text).not.toContain('{{kp_number}}');
   });
 
   it('POST /document-templates/:id/build — static dataBinding via Mongoose bypass substitutes value', async () => {

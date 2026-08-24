@@ -88,6 +88,41 @@ type ColumnWidths = Record<string, number>;
         Состав и цены — это КП. «Пресет таблицы» — общий шаблон колонок для других документов.
       </p>
 
+      <section class="editor__pages" data-test="kp-table-pages">
+        <h3 class="editor__pages-title">Страницы таблицы</h3>
+        <p class="editor__pages-hint">
+          0 = авто по рамке шаблона. «С новой страницы» — в меню строки (⋯).
+        </p>
+        <div class="editor__pages-fields">
+          <label>
+            <span>Строк на 1-й</span>
+            <input
+              type="number"
+              class="pi-input"
+              min="0"
+              max="200"
+              [value]="rowsFirstPage()"
+              [disabled]="readOnly()"
+              (change)="onPageRowsChange('rowsFirstPage', $event)"
+              data-test="kp-table-rows-first"
+            />
+          </label>
+          <label>
+            <span>Строк на следующих</span>
+            <input
+              type="number"
+              class="pi-input"
+              min="0"
+              max="200"
+              [value]="rowsNextPage()"
+              [disabled]="readOnly()"
+              (change)="onPageRowsChange('rowsNextPage', $event)"
+              data-test="kp-table-rows-next"
+            />
+          </label>
+        </div>
+      </section>
+
       <!-- Toolbar -->
       @if (lines().length > 0) {
         <div class="editor__toolbar" data-test="kp-table-editor-toolbar">
@@ -929,6 +964,39 @@ type ColumnWidths = Record<string, number>;
       max-width: 30rem;
     }
 
+    .editor__pages {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-rule);
+    }
+    .editor__pages-title {
+      margin: 0;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-muted-foreground-strong);
+    }
+    .editor__pages-hint {
+      margin: 0;
+      font-size: 0.68rem;
+      color: var(--color-muted);
+    }
+    .editor__pages-fields {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+    }
+    .editor__pages-fields label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.68rem;
+      min-width: 7rem;
+    }
+
     .editor__header-actions {
       display: flex;
       align-items: center;
@@ -1755,6 +1823,9 @@ export class ProposalCreateTableEditorComponent {
   /** Live KP sheetLayout.tableHeaderFontSize — header (TZ-SALES-374). */
   readonly tableHeaderFontSize = input(12);
   readonly tableHeaderFontSizeChange = output<number>();
+  readonly rowsFirstPage = input(0);
+  readonly rowsNextPage = input(0);
+  readonly sheetPageLayoutChange = output<{ rowsFirstPage: number; rowsNextPage: number }>();
 
   // ── Local state ──
   protected readonly columnsMenuOpen = signal(false);
@@ -2204,6 +2275,16 @@ export class ProposalCreateTableEditorComponent {
     if (open === index) this.openRowIndex.set(target);
     else if (open === target) this.openRowIndex.set(index);
     this.move.emit({ index, direction });
+  }
+
+  protected onPageRowsChange(field: 'rowsFirstPage' | 'rowsNextPage', event: Event): void {
+    if (this.readOnly()) return;
+    const raw = Number((event.target as HTMLInputElement).value);
+    const value = Number.isFinite(raw) ? Math.min(200, Math.max(0, Math.round(raw))) : 0;
+    this.sheetPageLayoutChange.emit({
+      rowsFirstPage: field === 'rowsFirstPage' ? value : this.rowsFirstPage(),
+      rowsNextPage: field === 'rowsNextPage' ? value : this.rowsNextPage(),
+    });
   }
 
   protected setPresentation(index: number, patch: Partial<ProposalRowPresentation>): void {

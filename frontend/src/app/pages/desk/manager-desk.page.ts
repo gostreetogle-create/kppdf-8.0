@@ -508,7 +508,19 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                           {{ noteAuthorLabel(note) }} · {{ noteDateLabel(note) }}
                         </span>
                       </div>
-                      <p class="manager-desk__note-text">{{ note.text }}</p>
+                      <p class="manager-desk__note-text">
+                        @if (editingNoteId() === note._id) {
+                          <textarea
+                            class="pi-input w-full"
+                            rows="2"
+                            [value]="editingNoteText()"
+                            (input)="onNoteEditInput($event)"
+                            data-test="desk-note-edit-text"
+                          ></textarea>
+                        } @else {
+                          {{ note.text }}
+                        }
+                      </p>
                       <div class="manager-desk__note-actions">
                         @if (note.kind === 'checklist') {
                           <label class="manager-desk__note-done">
@@ -520,6 +532,33 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
                             />
                             готово
                           </label>
+                        }
+                        @if (editingNoteId() === note._id) {
+                          <button
+                            type="button"
+                            class="manager-desk__note-edit-save"
+                            data-test="desk-note-edit-save"
+                            (click)="onNoteEditSave(note)"
+                          >
+                            Сохранить
+                          </button>
+                          <button
+                            type="button"
+                            class="manager-desk__note-edit-cancel"
+                            data-test="desk-note-edit-cancel"
+                            (click)="onNoteEditCancel()"
+                          >
+                            Отмена
+                          </button>
+                        } @else {
+                          <button
+                            type="button"
+                            class="manager-desk__note-edit"
+                            data-test="desk-note-edit"
+                            (click)="onNoteEdit(note)"
+                          >
+                            Изменить
+                          </button>
                         }
                         <button
                           type="button"
@@ -860,7 +899,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         border-right: 0;
       }
       .manager-desk__flyout--left {
-        left: 4rem;
+        left: 3.5rem;
         border-left: 0;
       }
       .manager-desk__close {
@@ -996,6 +1035,8 @@ export class ManagerDeskPage {
   protected readonly templatesError = signal<string | null>(null);
   private templatesLoaded = false;
   protected readonly noteText = signal('');
+  protected readonly editingNoteId = signal<string | null>(null);
+  protected readonly editingNoteText = signal('');
   protected readonly noteKind = signal<DeskNoteKind>('note');
   protected readonly noteLineId = signal<string | null>(null);
 
@@ -1254,6 +1295,10 @@ export class ManagerDeskPage {
 
   protected panelTitle(): string {
     const panel = this.panel();
+    if (panel === 'notebook') {
+      const order = this.expandedOrder();
+      if (order?.number) return `Блокнот · ${order.number}`;
+    }
     return panel ? PANEL_LABELS[panel] : '';
   }
 
@@ -1514,6 +1559,33 @@ export class ManagerDeskPage {
     });
   }
 
+  protected onNoteEdit(note: DeskNote): void {
+    this.editingNoteId.set(note._id);
+    this.editingNoteText.set(note.text);
+  }
+
+  protected onNoteEditInput(event: Event): void {
+    this.editingNoteText.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  protected onNoteEditSave(note: DeskNote): void {
+    const text = this.editingNoteText().trim();
+    if (!text) return;
+    this.notesService.update(note._id, { text }).subscribe((res) => {
+      if (res.ok) {
+        this.editingNoteId.set(null);
+        this.loadNotes(this.expandedOrder()?._id ?? note.anchorOrderId);
+      } else {
+        this.notesError.set(extractErrorMessage(res.error));
+      }
+    });
+  }
+
+  protected onNoteEditCancel(): void {
+    this.editingNoteId.set(null);
+    this.editingNoteText.set('');
+  }
+
   protected noteAnchorLabel(note: DeskNote): string {
     if (note.anchorLineId) {
       const item = this.expandedOrder()?.items?.find(
@@ -1545,6 +1617,12 @@ export class ManagerDeskPage {
   /** Shared handler for left-rail tools and any future empty-state CTA. */
   protected openPanel(panel: ManagerDeskPanel): void {
     if (!this.canOpenPanel(panel)) return;
+    if (panel === 'notebook') {
+      const order = this.expandedOrder();
+      if (order) {
+        this.noteLineId.set(null);
+      }
+    }
     // TZ-UI-WR-509: remember the trigger so close() can return focus to it.
     this.previousActiveElement =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;

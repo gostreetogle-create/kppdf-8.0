@@ -56,6 +56,28 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     expect(html).toContain('border:1px solid #ccc');
   });
 
+  it('renders an image cell for catalog photoIds column key', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'photoIds', label: 'Фото', type: 'text', align: 'left' },
+            { key: 'name', label: 'Наименование', type: 'text', align: 'left' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const html = await service.preview('507f1f77bcf86cd799439011', [
+      [{ kind: 'image', url: '/uploads/catalog.webp' }, 'Стенд'],
+    ]);
+
+    expect(html).toContain('<img src="/uploads/catalog.webp"');
+    expect(html.match(/<th[^>]*>Фото<\/th>/g)?.length ?? 0).toBeLessThanOrEqual(1);
+  });
+
   it('hides the photo column without shifting the remaining row cells', async () => {
     const model = {
       findById: jest.fn().mockReturnValue({

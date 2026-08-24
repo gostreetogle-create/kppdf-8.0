@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  HostListener,
   TemplateRef,
   ViewChild,
   computed,
@@ -20,12 +21,20 @@ import { PiDialogComponent } from '../../shared/ui/dialog/pi-dialog.component';
 import { PiDialogService, type DialogRef } from '../../shared/ui/dialog/pi-dialog.service';
 import { PI_DIALOG_DATA } from '../../shared/ui/dialog/dialog.tokens';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
+import { PiSelectAddRowComponent } from '../../shared/ui/select-add-row';
+import {
+  DropdownMenuComponent,
+  type DropdownMenuItem,
+} from '../../shared/ui/menu/pi-dropdown-menu.component';
+import { MenuTriggerDirective } from '../../shared/ui/menu/pi-menu-trigger.directive';
 import { CategoriesService } from '../../shared/services/categories.service';
 import { MaterialsService, type Material } from '../../shared/services/materials.service';
 import {
   OrganizationsService,
+  ORG_TYPE_LABELS,
   type Organization,
   type OrganizationContact,
+  type OrgType,
 } from '../../shared/services/organizations.service';
 import { PersonsService, type Person } from '../../shared/services/pi-persons.service';
 import {
@@ -62,6 +71,7 @@ import {
   statusLabel,
   suppliersForCategory,
   type QuickOrderCategory,
+  categoryPickerLabel,
   type QuickOrderMaterial,
   type QuickOrderMaterialPhoto,
   type QuickOrderPriority,
@@ -100,7 +110,14 @@ class SupplyQuickOrderDialogComponent {
   selector: 'app-supply-quick-order',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonComponent, PiOverflowSelectComponent],
+  imports: [
+    FormsModule,
+    ButtonComponent,
+    PiOverflowSelectComponent,
+    PiSelectAddRowComponent,
+    DropdownMenuComponent,
+    MenuTriggerDirective,
+  ],
   template: `
     <ng-template #toolbarTemplate>
       <div
@@ -175,21 +192,23 @@ class SupplyQuickOrderDialogComponent {
             Вид
           </span>
           <span class="supply-quick-order__table-head-cell">Дата</span>
+          <span class="supply-quick-order__table-head-cell">Категория</span>
           <span
             class="supply-quick-order__table-head-cell supply-quick-order__table-head-cell--material"
           >
-            Материал
+            Наименование
+          </span>
+          <span
+            class="supply-quick-order__table-head-cell supply-quick-order__table-head-cell--center"
+          >
+            Кол-во
           </span>
           <span
             class="supply-quick-order__table-head-cell supply-quick-order__table-head-cell--center"
           >
             Статус
           </span>
-          <span
-            class="supply-quick-order__table-head-cell supply-quick-order__table-head-cell--center"
-          >
-            Приоритет
-          </span>
+          <span class="supply-quick-order__table-head-cell">Поставщик</span>
           <span
             class="supply-quick-order__table-head-cell supply-quick-order__table-head-cell--center"
           >
@@ -221,6 +240,11 @@ class SupplyQuickOrderDialogComponent {
                   {{ fmtDay(row.createdAt) }}
                 </span>
                 <span
+                  class="supply-quick-order__summary-cell supply-quick-order__summary-cell--category"
+                >
+                  {{ categoryLabel(row.categoryId) }}
+                </span>
+                <span
                   class="supply-quick-order__summary-cell supply-quick-order__summary-cell--material"
                 >
                   @if (materialMainPhoto(row.materialId); as photo) {
@@ -245,6 +269,11 @@ class SupplyQuickOrderDialogComponent {
                   </span>
                 </span>
                 <span
+                  class="supply-quick-order__summary-cell supply-quick-order__summary-cell--qty"
+                >
+                  {{ row.qty }} {{ row.unit }}
+                </span>
+                <span
                   class="supply-quick-order__summary-cell supply-quick-order__summary-cell--status"
                 >
                   <span
@@ -256,74 +285,82 @@ class SupplyQuickOrderDialogComponent {
                   </span>
                 </span>
                 <span
-                  class="supply-quick-order__summary-cell supply-quick-order__summary-cell--priority"
+                  class="supply-quick-order__summary-cell supply-quick-order__summary-cell--supplier"
                 >
-                  <span
-                    class="supply-quick-order__priority"
-                    [class.supply-quick-order__priority--urgent]="row.priority === 'urgent'"
-                    [class.supply-quick-order__priority--low]="row.priority === 'low'"
-                  >
-                    {{ priorityIcon(row.priority) }} {{ priorityLabel(row.priority) }}
-                  </span>
+                  {{ supplierName(row.supplierId) }}
                 </span>
               </span>
             </button>
-            @if (expandedId() === row.id) {
-              <button
-                type="button"
-                class="supply-quick-order__delete"
-                (click)="onDelete(row.id)"
-                data-test="supply-quick-delete"
-              >
-                Удалить
-              </button>
-            } @else {
-              <span class="supply-quick-order__delete-slot" aria-hidden="true"></span>
-            }
+            <div class="supply-quick-order__row-actions">
+              @if (expandedId() !== row.id) {
+                <button
+                  type="button"
+                  class="supply-quick-order__row-action"
+                  (click)="duplicateRow(row.id); $event.stopPropagation()"
+                  title="Дублировать строку"
+                  aria-label="Дублировать строку"
+                  data-test="supply-quick-duplicate-collapsed"
+                >
+                  ⧉
+                </button>
+                <button
+                  type="button"
+                  class="supply-quick-order__row-action supply-quick-order__row-action--danger"
+                  (click)="onDelete(row.id); $event.stopPropagation()"
+                  title="Удалить"
+                  aria-label="Удалить"
+                  data-test="supply-quick-delete-collapsed"
+                >
+                  ✕
+                </button>
+              }
+            </div>
           </div>
 
           @if (expandedId() === row.id) {
             <div class="supply-quick-order__expanded" data-test="supply-quick-tile-expanded">
-              <div class="supply-quick-order__strips">
-                <div class="supply-quick-order__strip supply-quick-order__strip--what">
-                  <span class="supply-quick-order__strip-label">Позиция</span>
-                  <div class="supply-quick-order__fields">
-                    <div
-                      class="supply-quick-order__subgroup supply-quick-order__subgroup--category"
-                    >
-                      <span class="supply-quick-order__subgroup-label">Категория</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label
-                          class="supply-quick-order__field supply-quick-order__field--category"
+              <div class="supply-quick-order__expanded-top">
+                <span class="supply-quick-order__expanded-hint">Esc · Свернуть</span>
+              </div>
+              <div class="supply-quick-order__grid">
+                <!-- A ПОЗИЦИЯ -->
+                <section class="supply-quick-order__zone supply-quick-order__zone--a">
+                  <h3 class="supply-quick-order__zone-title">
+                    <span class="supply-quick-order__zone-badge">A</span> ПОЗИЦИЯ
+                  </h3>
+                  <div class="supply-quick-order__zone-body">
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">①</span>
+                      }
+                      <span class="supply-quick-order__field-label">Категория</span>
+                      <app-pi-select-add-row
+                        addTitle="Новая категория"
+                        addDataTest="supply-quick-category-add"
+                        (addClick)="openNewCategory(row.id)"
+                      >
+                        <app-pi-overflow-select
+                          [items]="categoryOptions()"
+                          [value]="row.categoryId"
+                          (valueChange)="onCategoryChange(row.id, $event)"
+                          searchable="auto"
+                          placeholder="—"
+                          ariaLabel="Категория"
+                          dataTest="supply-quick-category-select"
+                        />
+                      </app-pi-select-add-row>
+                    </label>
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">②</span>
+                      }
+                      <span class="supply-quick-order__field-label">Материал</span>
+                      <div class="supply-quick-order__material-row">
+                        <app-pi-select-add-row
+                          addTitle="Новый материал"
+                          addDataTest="supply-quick-material-add"
+                          (addClick)="openNewMaterial(row.id, row.categoryId)"
                         >
-                          <app-pi-overflow-select
-                            [items]="categoryOptions()"
-                            [value]="row.categoryId"
-                            (valueChange)="onCategoryChange(row.id, $event)"
-                            searchable="auto"
-                            placeholder="—"
-                            ariaLabel="Категория"
-                            dataTest="supply-quick-category-select"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          class="supply-quick-order__add-btn"
-                          (click)="openNewCategory(row.id)"
-                          title="Новая категория"
-                          aria-label="Новая категория"
-                          data-test="supply-quick-category-add"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div
-                      class="supply-quick-order__subgroup supply-quick-order__subgroup--material"
-                    >
-                      <span class="supply-quick-order__subgroup-label">Материал</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--grow">
                           <app-pi-overflow-select
                             [items]="materialOptions(row.categoryId, row.materialId)"
                             [value]="row.materialId ?? ''"
@@ -333,17 +370,7 @@ class SupplyQuickOrderDialogComponent {
                             ariaLabel="Материал"
                             dataTest="supply-quick-material-select"
                           />
-                        </label>
-                        <button
-                          type="button"
-                          class="supply-quick-order__add-btn"
-                          (click)="openNewMaterial(row.id, row.categoryId)"
-                          title="Новый материал"
-                          aria-label="Новый материал"
-                          data-test="supply-quick-material-add"
-                        >
-                          +
-                        </button>
+                        </app-pi-select-add-row>
                         <button
                           type="button"
                           class="supply-quick-order__mini-btn"
@@ -366,445 +393,424 @@ class SupplyQuickOrderDialogComponent {
                         >
                           ⧉
                         </button>
-                        <label
-                          class="supply-quick-order__field supply-quick-order__field--grow supply-quick-order__field--link"
+                      </div>
+                    </label>
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">③</span>
+                      }
+                      <span class="supply-quick-order__field-label">Ссылка на товар</span>
+                      <input
+                        class="pi-input"
+                        [ngModel]="row.productUrl"
+                        (ngModelChange)="patchRow(row.id, { productUrl: $event })"
+                        placeholder="https://…"
+                        data-test="supply-quick-product-url"
+                      />
+                    </label>
+                    <div class="supply-quick-order__pair">
+                      <div class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">④</span>
+                        }
+                        <span class="supply-quick-order__field-label">Артикул · ГОСТ</span>
+                        <span
+                          class="supply-quick-order__readonly supply-quick-order__readonly--truncate"
+                          [attr.title]="materialArticle(row.materialId) || null"
+                          data-test="supply-quick-material-article"
                         >
-                          <span class="supply-quick-order__field-label">Ссылка на товар</span>
-                          <input
+                          {{ materialArticle(row.materialId) || '—' }}
+                        </span>
+                      </div>
+                      <div class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Цвет / сплав</span>
+                        <app-pi-select-add-row
+                          addTitle="Новый цвет"
+                          addDataTest="supply-quick-color-add"
+                          [addDisabled]="!row.materialId"
+                          (addClick)="openNewColor(row.id, row.materialId)"
+                        >
+                          <select
                             class="pi-input"
-                            [ngModel]="row.productUrl"
-                            (ngModelChange)="patchRow(row.id, { productUrl: $event })"
-                            placeholder="https://…"
-                            data-test="supply-quick-product-url"
-                          />
-                        </label>
-                        <div class="supply-quick-order__field supply-quick-order__field--article">
-                          <span class="supply-quick-order__field-label">Артикул</span>
-                          <span
-                            class="supply-quick-order__readonly supply-quick-order__readonly--truncate"
-                            [attr.title]="materialArticle(row.materialId) || null"
-                            data-test="supply-quick-material-article"
+                            [ngModel]="row.color ?? ''"
+                            (ngModelChange)="onColorChange(row.id, $event)"
+                            [disabled]="!row.materialId"
+                            aria-label="Цвет"
+                            data-test="supply-quick-material-color"
                           >
-                            {{ materialArticle(row.materialId) || '—' }}
-                          </span>
-                        </div>
-                        <div class="supply-quick-order__field supply-quick-order__field--color">
-                          <span class="supply-quick-order__field-label">Цвет</span>
-                          <div class="supply-quick-order__combo">
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.color ?? ''"
-                              (ngModelChange)="onColorChange(row.id, $event)"
-                              [disabled]="!row.materialId"
-                              aria-label="Цвет"
-                              data-test="supply-quick-material-color"
-                            >
-                              <option value="">—</option>
-                              @for (c of materialColors(row.materialId); track c) {
-                                <option [value]="c">{{ c }}</option>
-                              }
-                            </select>
-                            <button
-                              type="button"
-                              class="supply-quick-order__add-btn"
-                              (click)="openNewColor(row.id, row.materialId)"
-                              [disabled]="!row.materialId"
-                              title="Новый цвет"
-                              aria-label="Новый цвет"
-                              data-test="supply-quick-color-add"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
+                            <option value="">—</option>
+                            @for (c of materialColors(row.materialId); track c) {
+                              <option [value]="c">{{ c }}</option>
+                            }
+                          </select>
+                        </app-pi-select-add-row>
                       </div>
                     </div>
-                    <div
-                      class="supply-quick-order__subgroup supply-quick-order__subgroup--quantity"
+                    <div class="supply-quick-order__pair">
+                      <label class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">⑤</span>
+                        }
+                        <span class="supply-quick-order__field-label">Кол-во *</span>
+                        <input
+                          class="pi-input"
+                          type="number"
+                          min="0"
+                          step="any"
+                          [ngModel]="row.qty"
+                          (ngModelChange)="patchRow(row.id, { qty: +$event })"
+                        />
+                      </label>
+                      <label class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Ед. изм. *</span>
+                        <select
+                          class="pi-input"
+                          [ngModel]="row.unit"
+                          (ngModelChange)="patchRow(row.id, { unit: $event })"
+                        >
+                          @for (u of units; track u) {
+                            <option [value]="u">{{ u }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- B ПОСТАВЩИК И КОНТАКТ -->
+                <section class="supply-quick-order__zone supply-quick-order__zone--b">
+                  <h3 class="supply-quick-order__zone-title">
+                    <span class="supply-quick-order__zone-badge">B</span> ПОСТАВЩИК И КОНТАКТ
+                  </h3>
+                  <div class="supply-quick-order__zone-body">
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">⑥</span>
+                      }
+                      <span class="supply-quick-order__field-label">Организация</span>
+                      <div class="supply-quick-order__org-row">
+                        <app-pi-overflow-select
+                          [items]="supplierOptions(row.categoryId)"
+                          [value]="row.supplierId ?? ''"
+                          (valueChange)="onSupplierChange(row.id, $event)"
+                          searchable="auto"
+                          placeholder="—"
+                          ariaLabel="Поставщик"
+                          dataTest="supply-quick-supplier-select"
+                        />
+                        @if (row.supplierId) {
+                          <button
+                            type="button"
+                            class="supply-quick-order__card-link"
+                            (click)="openSupplierCard(row.supplierId)"
+                            data-test="supply-quick-supplier-card-link"
+                          >
+                            Карточка
+                          </button>
+                        }
+                        <button
+                          type="button"
+                          class="pi-select-add-btn supply-quick-order__org-add"
+                          piDropdownTrigger
+                          title="Добавить поставщика"
+                          aria-label="Добавить поставщика"
+                          data-test="supply-quick-supplier-add"
+                        >
+                          +
+                          <ng-template piDropdownContent>
+                            <app-pi-dropdown-menu
+                              ariaLabel="Действия с поставщиком"
+                              [items]="supplierMenuItems(row.id, row.supplierId)"
+                            />
+                          </ng-template>
+                        </button>
+                      </div>
+                    </label>
+                    <div class="supply-quick-order__pair">
+                      <label class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">⑦</span>
+                        }
+                        <span class="supply-quick-order__field-label">Сайт</span>
+                        <input
+                          class="pi-input"
+                          [class.supply-autofill--filled]="!!supplierWebsite(row.supplierId)"
+                          [class.supply-autofill--saving]="supplierSavedHint()"
+                          [class.supply-autofill--error]="!!supplierSaveError()"
+                          [ngModel]="supplierWebsite(row.supplierId)"
+                          (ngModelChange)="onSupplierFieldInput(row.supplierId, 'website', $event)"
+                          (blur)="onSupplierFieldBlur(row.supplierId, 'website')"
+                          [disabled]="!row.supplierId"
+                          placeholder="https://…"
+                          title="Сайт и почта сохраняются в карточке поставщика"
+                          data-test="supply-quick-supplier-website"
+                        />
+                      </label>
+                      <label class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Email org</span>
+                        <input
+                          class="pi-input"
+                          [class.supply-autofill--filled]="!!supplierEmail(row.supplierId)"
+                          [class.supply-autofill--saving]="supplierSavedHint()"
+                          [class.supply-autofill--error]="!!supplierSaveError()"
+                          [ngModel]="supplierEmail(row.supplierId)"
+                          (ngModelChange)="onSupplierFieldInput(row.supplierId, 'email', $event)"
+                          (blur)="onSupplierFieldBlur(row.supplierId, 'email')"
+                          [disabled]="!row.supplierId"
+                          placeholder="zakaz@…"
+                          title="Сайт и почта сохраняются в карточке поставщика"
+                          data-test="supply-quick-supplier-email"
+                        />
+                      </label>
+                    </div>
+                    @if (supplierSaveError() || supplierSavedHint()) {
+                      <p
+                        class="supply-quick-order__inline-hint m-0"
+                        data-test="supply-quick-supplier-inline-hint"
+                      >
+                        @if (supplierSaveError()) {
+                          <span
+                            class="text-destructive"
+                            role="alert"
+                            data-test="supply-quick-supplier-save-error"
+                          >
+                            {{ supplierSaveError() }}
+                          </span>
+                        } @else {
+                          <span data-test="supply-quick-supplier-saved">сохранено</span>
+                        }
+                      </p>
+                    }
+                    <hr class="supply-quick-order__hairline" />
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">⑧</span>
+                      }
+                      <span class="supply-quick-order__field-label">Контакт</span>
+                      <app-pi-select-add-row
+                        addTitle="Новый менеджер"
+                        addDataTest="supply-quick-manager-add"
+                        [addDisabled]="!row.supplierId"
+                        (addClick)="openNewManager(row.id)"
+                      >
+                        <app-pi-overflow-select
+                          [items]="contactOptions(row.supplierId, row.supplierContactId)"
+                          [value]="row.supplierContactId ?? ''"
+                          (valueChange)="onContactChange(row.id, $event)"
+                          searchable="auto"
+                          [placeholder]="row.supplierId ? '—' : '— сначала поставщик —'"
+                          ariaLabel="Контакт"
+                          dataTest="supply-quick-manager-select"
+                          [disabled]="!row.supplierId"
+                        />
+                      </app-pi-select-add-row>
+                    </label>
+                    <div class="supply-quick-order__pair">
+                      <label class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">⑨</span>
+                        }
+                        <span class="supply-quick-order__field-label">Тел</span>
+                        <input
+                          class="pi-input"
+                          [class.supply-autofill--filled]="!!contactPhone(row.supplierContactId)"
+                          [class.supply-autofill--saving]="contactSavedHint()"
+                          [class.supply-autofill--error]="!!contactSaveError()"
+                          [ngModel]="contactPhone(row.supplierContactId)"
+                          (ngModelChange)="
+                            onContactFieldInput(row.supplierContactId, 'phone', $event)
+                          "
+                          (blur)="onContactFieldBlur(row.supplierContactId, 'phone')"
+                          [disabled]="!row.supplierContactId"
+                          placeholder="+7 …"
+                          title="Контакты сохраняются у менеджера"
+                          data-test="supply-quick-manager-phone"
+                        />
+                      </label>
+                      <label class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Email менеджера</span>
+                        <input
+                          class="pi-input"
+                          [class.supply-autofill--filled]="!!contactEmail(row.supplierContactId)"
+                          [class.supply-autofill--saving]="contactSavedHint()"
+                          [class.supply-autofill--error]="!!contactSaveError()"
+                          [ngModel]="contactEmail(row.supplierContactId)"
+                          (ngModelChange)="
+                            onContactFieldInput(row.supplierContactId, 'email', $event)
+                          "
+                          (blur)="onContactFieldBlur(row.supplierContactId, 'email')"
+                          [disabled]="!row.supplierContactId"
+                          placeholder="manager@…"
+                          title="Контакты сохраняются у менеджера"
+                          data-test="supply-quick-manager-email"
+                        />
+                      </label>
+                    </div>
+                    @if (contactSaveError() || contactSavedHint()) {
+                      <p
+                        class="supply-quick-order__inline-hint m-0"
+                        data-test="supply-quick-manager-inline-hint"
+                      >
+                        @if (contactSaveError()) {
+                          <span class="text-destructive" role="alert">{{
+                            contactSaveError()
+                          }}</span>
+                        } @else {
+                          <span data-test="supply-quick-contact-saved">сохранено</span>
+                        }
+                      </p>
+                    }
+                  </div>
+                </section>
+
+                <!-- C ДЕТАЛИ -->
+                <section class="supply-quick-order__zone supply-quick-order__zone--c">
+                  <h3 class="supply-quick-order__zone-title">
+                    <span class="supply-quick-order__zone-badge">C</span> ДЕТАЛИ
+                  </h3>
+                  <div class="supply-quick-order__zone-body">
+                    <div class="supply-quick-order__pair">
+                      <label class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">⑩</span>
+                        }
+                        <span class="supply-quick-order__field-label">Статус</span>
+                        <select
+                          class="pi-input"
+                          [ngModel]="row.status"
+                          (ngModelChange)="onStatusChange(row.id, $event)"
+                          data-test="supply-quick-status-select"
+                        >
+                          @for (s of statuses; track s.value) {
+                            <option [value]="s.value">{{ s.label }}</option>
+                          }
+                        </select>
+                      </label>
+                      <label class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Приоритет</span>
+                        <select
+                          class="pi-input"
+                          [ngModel]="row.priority"
+                          (ngModelChange)="patchRow(row.id, { priority: $event })"
+                          data-test="supply-quick-priority-select"
+                        >
+                          @for (p of priorities; track p.value) {
+                            <option [value]="p.value">{{ p.label }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                    <div class="supply-quick-order__pair">
+                      <label class="supply-quick-order__field">
+                        @if (fillOrderHints()) {
+                          <span class="supply-quick-order__step-badge">⑪</span>
+                        }
+                        <span class="supply-quick-order__field-label">Нужно к</span>
+                        <input
+                          class="pi-input"
+                          type="date"
+                          [ngModel]="row.neededBy"
+                          (ngModelChange)="patchRow(row.id, { neededBy: $event })"
+                        />
+                      </label>
+                      <label class="supply-quick-order__field">
+                        <span class="supply-quick-order__field-label">Наша компания</span>
+                        <select
+                          class="pi-input"
+                          [ngModel]="row.companyId"
+                          (ngModelChange)="patchRow(row.id, { companyId: $event })"
+                        >
+                          @for (c of companies; track c.id) {
+                            <option [value]="c.id">{{ c.name }}</option>
+                          }
+                        </select>
+                      </label>
+                    </div>
+                    <label class="supply-quick-order__field supply-quick-order__field--full">
+                      @if (fillOrderHints()) {
+                        <span class="supply-quick-order__step-badge">⑫</span>
+                      }
+                      <span class="supply-quick-order__field-label">Примечание</span>
+                      <input
+                        class="pi-input"
+                        [ngModel]="row.notes"
+                        (ngModelChange)="patchRow(row.id, { notes: $event })"
+                        [attr.title]="row.notes || null"
+                        placeholder="Одной строкой"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      class="supply-quick-order__more-toggle"
+                      [attr.aria-expanded]="moreExpanded()"
+                      (click)="moreExpanded.set(!moreExpanded())"
+                      data-test="supply-quick-more-toggle"
                     >
-                      <span class="supply-quick-order__subgroup-label">Количество</span>
-                      <div class="supply-quick-order__subgroup-fields">
-                        <label class="supply-quick-order__field supply-quick-order__field--qty">
-                          <span class="supply-quick-order__field-label">Кол-во *</span>
+                      {{ moreExpanded() ? '▾' : '▸' }} Ещё
+                    </button>
+                    @if (moreExpanded()) {
+                      <div
+                        class="supply-quick-order__more-fields"
+                        data-test="supply-quick-more-panel"
+                      >
+                        <label class="supply-quick-order__field">
+                          <span class="supply-quick-order__field-label">Ориентир. цена</span>
                           <input
                             class="pi-input"
                             type="number"
                             min="0"
                             step="any"
-                            [ngModel]="row.qty"
-                            (ngModelChange)="patchRow(row.id, { qty: +$event })"
+                            [ngModel]="row.priceHint"
+                            (ngModelChange)="
+                              patchRow(row.id, { priceHint: $event === '' ? null : +$event })
+                            "
                           />
                         </label>
-                        <label class="supply-quick-order__field supply-quick-order__field--unit">
-                          <span class="supply-quick-order__field-label">Ед. изм. *</span>
-                          <select
+                        <label class="supply-quick-order__field">
+                          <span class="supply-quick-order__field-label">Заказ у поставщика</span>
+                          <input
                             class="pi-input"
-                            [ngModel]="row.unit"
-                            (ngModelChange)="patchRow(row.id, { unit: $event })"
-                          >
-                            @for (u of units; track u) {
-                              <option [value]="u">{{ u }}</option>
-                            }
-                          </select>
+                            type="date"
+                            [ngModel]="row.supplierOrderDate"
+                            (ngModelChange)="patchRow(row.id, { supplierOrderDate: $event })"
+                          />
                         </label>
+                        <div class="supply-quick-order__field">
+                          <span class="supply-quick-order__field-label">Ответственный</span>
+                          <span class="supply-quick-order__readonly">{{ row.responsible }}</span>
+                        </div>
                       </div>
-                    </div>
+                    }
                   </div>
-                </div>
-
-                <button
-                  type="button"
-                  class="supply-quick-order__more-toggle"
-                  [attr.aria-expanded]="whereExpanded()"
-                  (click)="whereExpanded.set(!whereExpanded())"
-                  data-test="supply-quick-where-toggle"
-                >
-                  {{ whereExpanded() ? '▾' : '▸' }} Поставщик
-                </button>
-
-                @if (whereExpanded()) {
-                  <div class="supply-quick-order__strip supply-quick-order__strip--where">
-                    <span class="supply-quick-order__strip-label">Поставщик</span>
-                    <div class="supply-quick-order__fields">
-                      <div
-                        class="supply-quick-order__subgroup supply-quick-order__subgroup--supplier"
-                      >
-                        <span class="supply-quick-order__subgroup-label">Организация</span>
-                        <div class="supply-quick-order__subgroup-fields">
-                          <label class="supply-quick-order__field supply-quick-order__field--grow">
-                            <app-pi-overflow-select
-                              [items]="supplierOptions(row.categoryId)"
-                              [value]="row.supplierId ?? ''"
-                              (valueChange)="onSupplierChange(row.id, $event)"
-                              searchable="auto"
-                              placeholder="—"
-                              ariaLabel="Поставщик"
-                              dataTest="supply-quick-supplier-select"
-                            />
-                          </label>
-                          <button
-                            type="button"
-                            class="supply-quick-order__add-btn"
-                            (click)="openNewSupplier(row.id)"
-                            title="Новый поставщик"
-                            aria-label="Новый поставщик"
-                            data-test="supply-quick-supplier-add"
-                          >
-                            +
-                          </button>
-                          <label class="supply-quick-order__field supply-quick-order__field--site">
-                            <span class="supply-quick-order__field-label">Сайт</span>
-                            <input
-                              class="pi-input"
-                              [ngModel]="supplierWebsite(row.supplierId)"
-                              (ngModelChange)="
-                                onSupplierFieldInput(row.supplierId, 'website', $event)
-                              "
-                              (blur)="onSupplierFieldBlur(row.supplierId, 'website')"
-                              [disabled]="!row.supplierId"
-                              placeholder="https://…"
-                              title="Сайт и почта сохраняются в карточке поставщика"
-                              data-test="supply-quick-supplier-website"
-                            />
-                          </label>
-                          <label class="supply-quick-order__field supply-quick-order__field--email">
-                            <span class="supply-quick-order__field-label">Почта поставщика</span>
-                            <input
-                              class="pi-input"
-                              [ngModel]="supplierEmail(row.supplierId)"
-                              (ngModelChange)="
-                                onSupplierFieldInput(row.supplierId, 'email', $event)
-                              "
-                              (blur)="onSupplierFieldBlur(row.supplierId, 'email')"
-                              [disabled]="!row.supplierId"
-                              placeholder="zakaz@…"
-                              title="Сайт и почта сохраняются в карточке поставщика"
-                              data-test="supply-quick-supplier-email"
-                            />
-                          </label>
-                          <p
-                            class="supply-quick-order__persist-hint text-xs text-muted-foreground m-0"
-                            data-test="supply-quick-supplier-persist-hint"
-                          >
-                            Сайт и почта сохраняются в карточке поставщика
-                            @if (supplierSaveError()) {
-                              <span
-                                class="text-destructive"
-                                role="alert"
-                                data-test="supply-quick-supplier-save-error"
-                              >
-                                — {{ supplierSaveError() }}
-                              </span>
-                            } @else if (supplierSavedHint()) {
-                              <span data-test="supply-quick-supplier-saved"> — сохранено</span>
-                            }
-                          </p>
-                        </div>
-                      </div>
-                      <div
-                        class="supply-quick-order__subgroup supply-quick-order__subgroup--manager"
-                      >
-                        <span class="supply-quick-order__subgroup-label">Контакт</span>
-                        <div class="supply-quick-order__subgroup-fields">
-                          <label
-                            class="supply-quick-order__field supply-quick-order__field--manager"
-                          >
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.supplierContactId ?? ''"
-                              (ngModelChange)="
-                                patchRow(row.id, { supplierContactId: $event || null })
-                              "
-                              [disabled]="!row.supplierId"
-                              data-test="supply-quick-manager-select"
-                            >
-                              <option value="">
-                                {{ row.supplierId ? '—' : '— сначала поставщик —' }}
-                              </option>
-                              @for (c of contactsFor(row.supplierId); track c.id) {
-                                <option [value]="c.id">{{ contactLabel(c) }}</option>
-                              }
-                            </select>
-                          </label>
-                          <button
-                            type="button"
-                            class="supply-quick-order__add-btn"
-                            (click)="openNewManager(row.id)"
-                            [disabled]="!row.supplierId"
-                            [title]="row.supplierId ? 'Новый менеджер' : '— сначала поставщик —'"
-                            aria-label="Новый менеджер"
-                            data-test="supply-quick-manager-add"
-                          >
-                            +
-                          </button>
-                          <label class="supply-quick-order__field supply-quick-order__field--phone">
-                            <span class="supply-quick-order__field-label">Телефон менеджера</span>
-                            <input
-                              class="pi-input"
-                              [ngModel]="contactPhone(row.supplierContactId)"
-                              (ngModelChange)="
-                                onContactFieldInput(row.supplierContactId, 'phone', $event)
-                              "
-                              (blur)="onContactFieldBlur(row.supplierContactId, 'phone')"
-                              [disabled]="!row.supplierContactId"
-                              placeholder="+7 …"
-                              title="Контакты сохраняются у менеджера"
-                              data-test="supply-quick-manager-phone"
-                            />
-                          </label>
-                          <label class="supply-quick-order__field supply-quick-order__field--email">
-                            <span class="supply-quick-order__field-label">Почта менеджера</span>
-                            <input
-                              class="pi-input"
-                              [ngModel]="contactEmail(row.supplierContactId)"
-                              (ngModelChange)="
-                                onContactFieldInput(row.supplierContactId, 'email', $event)
-                              "
-                              (blur)="onContactFieldBlur(row.supplierContactId, 'email')"
-                              [disabled]="!row.supplierContactId"
-                              placeholder="manager@…"
-                              title="Контакты сохраняются у менеджера"
-                              data-test="supply-quick-manager-email"
-                            />
-                          </label>
-                          <p
-                            class="supply-quick-order__persist-hint text-xs text-muted-foreground m-0"
-                            data-test="supply-quick-manager-persist-hint"
-                          >
-                            Контакты сохраняются у менеджера
-                            @if (contactSaveError()) {
-                              <span
-                                class="text-destructive"
-                                role="alert"
-                                data-test="supply-quick-supplier-save-error"
-                              >
-                                — {{ contactSaveError() }}
-                              </span>
-                            } @else if (contactSavedHint()) {
-                              <span data-test="supply-quick-supplier-saved"> — сохранено</span>
-                            }
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-
-                <button
-                  type="button"
-                  class="supply-quick-order__more-toggle"
-                  [attr.aria-expanded]="detailsExpanded()"
-                  (click)="detailsExpanded.set(!detailsExpanded())"
-                  data-test="supply-quick-details-toggle"
-                >
-                  {{ detailsExpanded() ? '▾' : '▸' }} Детали и статус
-                </button>
-
-                @if (detailsExpanded()) {
-                  <div class="supply-quick-order__strip supply-quick-order__strip--details">
-                    <span class="supply-quick-order__strip-label">Детали и статус</span>
-                    <div class="supply-quick-order__fields supply-quick-order__fields--details">
-                      <div
-                        class="supply-quick-order__subgroup supply-quick-order__subgroup--context"
-                      >
-                        <span class="supply-quick-order__subgroup-label">Контекст</span>
-                        <div class="supply-quick-order__subgroup-fields">
-                          <label
-                            class="supply-quick-order__field supply-quick-order__field--company"
-                          >
-                            <span class="supply-quick-order__field-label">Наша компания</span>
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.companyId"
-                              (ngModelChange)="patchRow(row.id, { companyId: $event })"
-                            >
-                              @for (c of companies; track c.id) {
-                                <option [value]="c.id">{{ c.name }}</option>
-                              }
-                            </select>
-                          </label>
-                          <label class="supply-quick-order__field supply-quick-order__field--who">
-                            <span class="supply-quick-order__field-label">Кто просил</span>
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.requestedBy"
-                              (ngModelChange)="patchRow(row.id, { requestedBy: $event })"
-                            >
-                              @for (r of requestedBy; track r) {
-                                <option [value]="r">{{ r }}</option>
-                              }
-                            </select>
-                          </label>
-                          <label class="supply-quick-order__field supply-quick-order__field--grow">
-                            <span class="supply-quick-order__field-label">Связь с заказом</span>
-                            <input
-                              class="pi-input"
-                              [ngModel]="row.orderId ?? ''"
-                              (ngModelChange)="patchRow(row.id, { orderId: $event || null })"
-                              placeholder="Необязательно"
-                            />
-                          </label>
-                          <label class="supply-quick-order__field supply-quick-order__field--date">
-                            <span class="supply-quick-order__field-label">Нужно к</span>
-                            <input
-                              class="pi-input"
-                              type="date"
-                              [ngModel]="row.neededBy"
-                              (ngModelChange)="patchRow(row.id, { neededBy: $event })"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                      <div
-                        class="supply-quick-order__subgroup supply-quick-order__subgroup--status"
-                      >
-                        <span class="supply-quick-order__subgroup-label">Статус</span>
-                        <div class="supply-quick-order__subgroup-fields">
-                          <label
-                            class="supply-quick-order__field supply-quick-order__field--status"
-                          >
-                            <span class="supply-quick-order__field-label">Состояние</span>
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.status"
-                              (ngModelChange)="onStatusChange(row.id, $event)"
-                              data-test="supply-quick-status-select"
-                            >
-                              @for (s of statuses; track s.value) {
-                                <option [value]="s.value">{{ s.label }}</option>
-                              }
-                            </select>
-                          </label>
-                          <label
-                            class="supply-quick-order__field supply-quick-order__field--priority"
-                          >
-                            <span class="supply-quick-order__field-label">Приоритет</span>
-                            <select
-                              class="pi-input"
-                              [ngModel]="row.priority"
-                              (ngModelChange)="patchRow(row.id, { priority: $event })"
-                              data-test="supply-quick-priority-select"
-                            >
-                              @for (p of priorities; track p.value) {
-                                <option [value]="p.value">{{ p.label }}</option>
-                              }
-                            </select>
-                          </label>
-                        </div>
-                      </div>
-                      <label class="supply-quick-order__field supply-quick-order__field--grow">
-                        <span class="supply-quick-order__field-label">Примечание</span>
-                        <input
-                          class="pi-input"
-                          [ngModel]="row.notes"
-                          (ngModelChange)="patchRow(row.id, { notes: $event })"
-                          [attr.title]="row.notes || null"
-                          placeholder="Одной строкой"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                }
-
-                <button
-                  type="button"
-                  class="supply-quick-order__more-toggle"
-                  [attr.aria-expanded]="moreExpanded()"
-                  (click)="moreExpanded.set(!moreExpanded())"
-                  data-test="supply-quick-more-toggle"
-                >
-                  {{ moreExpanded() ? '▾' : '▸' }} Ещё
-                </button>
-
-                @if (moreExpanded()) {
-                  <div
-                    class="supply-quick-order__strip supply-quick-order__strip--more"
-                    data-test="supply-quick-more-panel"
+                </section>
+              </div>
+              <div class="supply-quick-order__expanded-footer">
+                <div class="supply-quick-order__footer-left">
+                  <app-pi-button
+                    variant="outline"
+                    size="sm"
+                    (click)="duplicateRow(row.id)"
+                    data-test="supply-quick-duplicate-expanded"
                   >
-                    <span class="supply-quick-order__strip-label">Ещё</span>
-                    <div class="supply-quick-order__fields">
-                      <label class="supply-quick-order__field supply-quick-order__field--money">
-                        <span class="supply-quick-order__field-label">Ориентир. цена</span>
-                        <input
-                          class="pi-input"
-                          type="number"
-                          min="0"
-                          step="any"
-                          [ngModel]="row.priceHint"
-                          (ngModelChange)="
-                            patchRow(row.id, { priceHint: $event === '' ? null : +$event })
-                          "
-                        />
-                      </label>
-                      <label class="supply-quick-order__field supply-quick-order__field--money">
-                        <span class="supply-quick-order__field-label">Сумма строки</span>
-                        <input
-                          class="pi-input"
-                          type="number"
-                          min="0"
-                          step="any"
-                          [ngModel]="row.lineTotal"
-                          (ngModelChange)="
-                            patchRow(row.id, { lineTotal: $event === '' ? null : +$event })
-                          "
-                        />
-                      </label>
-                      <label class="supply-quick-order__field supply-quick-order__field--date">
-                        <span class="supply-quick-order__field-label">Заказ у поставщика</span>
-                        <input
-                          class="pi-input"
-                          type="date"
-                          [ngModel]="row.supplierOrderDate"
-                          (ngModelChange)="patchRow(row.id, { supplierOrderDate: $event })"
-                        />
-                      </label>
-                      <div class="supply-quick-order__field supply-quick-order__field--grow">
-                        <span class="supply-quick-order__field-label">Ответственный</span>
-                        <span class="supply-quick-order__readonly">{{ row.responsible }}</span>
-                      </div>
-                    </div>
-                  </div>
-                }
+                    Скопировать строку
+                  </app-pi-button>
+                  <app-pi-button
+                    variant="outline"
+                    size="sm"
+                    (click)="onDelete(row.id)"
+                    data-test="supply-quick-delete"
+                  >
+                    Удалить
+                  </app-pi-button>
+                </div>
+                <app-pi-button
+                  variant="default"
+                  size="sm"
+                  (click)="saveExpandedRow(row.id)"
+                  data-test="supply-quick-save-row"
+                >
+                  Сохранить изменения
+                </app-pi-button>
               </div>
             </div>
           }
@@ -1055,6 +1061,86 @@ class SupplyQuickOrderDialogComponent {
             </div>
           }
 
+          @if (showPromoteOrgPicker()) {
+            <div class="supply-quick-order__panel" data-test="supply-promote-org-picker">
+              <label class="supply-quick-order__field supply-quick-order__field--grow">
+                <span class="supply-quick-order__field-label">Поиск организации</span>
+                <input
+                  class="pi-input"
+                  type="search"
+                  [ngModel]="promoteOrgSearch()"
+                  (ngModelChange)="promoteOrgSearch.set($event)"
+                  placeholder="Название, ИНН, город…"
+                  data-test="supply-promote-org-search"
+                />
+              </label>
+              <div class="supply-quick-order__promote-list">
+                @for (org of filteredPromoteOrgs(); track org._id) {
+                  <button
+                    type="button"
+                    class="supply-quick-order__promote-item"
+                    (click)="selectPromoteOrg(org)"
+                    data-test="supply-promote-org-item"
+                  >
+                    <strong>{{ org.name }}</strong>
+                    <span>ИНН {{ org.inn }}</span>
+                  </button>
+                } @empty {
+                  <span class="text-xs text-muted-foreground">Ничего не найдено</span>
+                }
+              </div>
+              <div class="supply-quick-order__modal-actions">
+                <app-pi-button variant="outline" size="sm" (click)="cancelPromoteOrgPicker()">
+                  Отмена
+                </app-pi-button>
+              </div>
+            </div>
+          }
+
+          @if (showPromoteOrgConfirm()) {
+            <div class="supply-quick-order__panel" data-test="supply-promote-org-confirm">
+              <p class="m-0 text-sm">Сделать поставщиком?</p>
+              <p class="m-0 text-xs text-muted-foreground">{{ promoteOrgRoleLabel() }}</p>
+              <div class="supply-quick-order__modal-actions">
+                <app-pi-button
+                  variant="default"
+                  size="sm"
+                  (click)="confirmPromoteOrg()"
+                  data-test="supply-promote-org-confirm-btn"
+                >
+                  Подтвердить
+                </app-pi-button>
+                <app-pi-button variant="outline" size="sm" (click)="cancelPromoteOrgConfirm()">
+                  Отмена
+                </app-pi-button>
+              </div>
+            </div>
+          }
+
+          @if (showSupplierCard()) {
+            <div class="supply-quick-order__panel" data-test="supply-quick-supplier-card-panel">
+              <strong>{{ supplierCardOrg()?.name }}</strong>
+              <span class="text-xs text-muted-foreground">ИНН {{ supplierCardOrg()?.inn }}</span>
+              @if (supplierCardOrg()?.website) {
+                <span class="text-xs">{{ supplierCardOrg()?.website }}</span>
+              }
+              @if (supplierCardOrg()?.email) {
+                <span class="text-xs">{{ supplierCardOrg()?.email }}</span>
+              }
+              <span class="supply-quick-order__panel-label">Менеджеры</span>
+              @for (c of contactsFor(supplierCardOrg()?.id ?? null); track c.id) {
+                <span class="text-xs">{{ contactLabel(c) }}</span>
+              } @empty {
+                <span class="text-xs text-muted-foreground">Контактов нет</span>
+              }
+              <div class="supply-quick-order__modal-actions">
+                <app-pi-button variant="outline" size="sm" (click)="closeSupplierCard()">
+                  Закрыть
+                </app-pi-button>
+              </div>
+            </div>
+          }
+
           @if (showNewManager()) {
             <div class="supply-quick-order__panel" data-test="supply-quick-manager-panel">
               <label class="supply-quick-order__field supply-quick-order__field--person">
@@ -1154,7 +1240,10 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__table-head {
         display: grid;
-        grid-template-columns: 2.2rem 6.8rem minmax(16rem, 1fr) 12rem 10rem 5rem;
+        grid-template-columns: 2.2rem 5.5rem 6.5rem minmax(10rem, 1fr) 4.5rem 8rem minmax(
+            7rem,
+            1fr
+          ) 4.5rem;
         min-width: 0;
         overflow: hidden;
         border: 1px solid var(--color-rule);
@@ -1190,8 +1279,8 @@ class SupplyQuickOrderDialogComponent {
         align-items: center;
         gap: 0;
         min-width: 0;
-        min-height: 3rem;
-        padding: 0.55rem 0.75rem;
+        min-height: 2.25rem;
+        padding: 0.2rem 0.5rem;
         border: none;
         background: transparent;
         color: inherit;
@@ -1203,31 +1292,42 @@ class SupplyQuickOrderDialogComponent {
         outline: none;
         box-shadow: var(--focus-ring-shadow);
       }
-      .supply-quick-order__delete-slot {
-        display: block;
-        width: 5rem;
+      .supply-quick-order__row-actions {
+        display: flex;
         flex-shrink: 0;
+        align-items: center;
+        gap: 0.15rem;
+        padding-right: 0.35rem;
+        opacity: 0;
+        transition: opacity 120ms ease;
       }
-      .supply-quick-order__delete {
-        width: 5rem;
-        flex-shrink: 0;
-        margin-right: 0.5rem;
-        padding: 0.2rem 0.5rem;
+      .supply-quick-order__head:hover .supply-quick-order__row-actions,
+      .supply-quick-order__head:focus-within .supply-quick-order__row-actions {
+        opacity: 1;
+      }
+      .supply-quick-order__row-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        padding: 0;
         border: 1px solid transparent;
         border-radius: 2px;
         background: transparent;
-        color: var(--color-destructive);
+        color: var(--color-muted-foreground);
         font: inherit;
-        font-size: var(--text-micro);
+        font-size: 0.75rem;
         cursor: pointer;
       }
-      .supply-quick-order__delete:hover {
-        border-color: var(--color-destructive);
-        background: var(--color-destructive-soft);
+      .supply-quick-order__row-action:hover {
+        border-color: var(--color-rule);
+        background: var(--color-paper-2);
+        color: var(--color-ink);
       }
-      .supply-quick-order__delete:focus-visible {
-        outline: none;
-        box-shadow: var(--focus-ring-shadow);
+      .supply-quick-order__row-action--danger:hover {
+        border-color: var(--color-destructive);
+        color: var(--color-destructive);
       }
       .supply-quick-order__disclosure {
         display: inline-flex;
@@ -1240,7 +1340,7 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__summary-text {
         display: grid;
-        grid-template-columns: 6.8rem minmax(16rem, 1fr) 12rem 10rem;
+        grid-template-columns: 5.5rem 6.5rem minmax(10rem, 1fr) 4.5rem 8rem minmax(7rem, 1fr);
         flex: 1;
         align-items: center;
         min-width: 0;
@@ -1316,8 +1416,6 @@ class SupplyQuickOrderDialogComponent {
         color: var(--color-success, #2d6a4f);
       }
       .supply-quick-order__expanded {
-        /* DESK-431: container grid — strips layout reacts to the flyout
-           width, not the viewport (wide monitor + narrow flyout = 1 col). */
         container-type: inline-size;
         padding: 0 0.5rem 0.5rem;
         border: 1px solid var(--color-sunrise-warm, #c79542);
@@ -1325,140 +1423,196 @@ class SupplyQuickOrderDialogComponent {
         border-radius: 0 0 2px 2px;
         background: var(--color-paper);
       }
-
-      /* TZ-SUPPLY-308R Option A: stacked strips (not 3 columns side-by-side).
-         Position always open; where/details gated by ▸ toggles.
-         DESK-431: container-type kept for dense field wrapping inside a strip. */
-      .supply-quick-order__strips {
+      .supply-quick-order__expanded-top {
         display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        align-items: stretch;
+        justify-content: flex-end;
+        padding: 0.25rem 0.35rem 0;
       }
-      .supply-quick-order__strip {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
+      .supply-quick-order__expanded-hint {
+        color: var(--color-muted-foreground);
+        font-size: var(--text-micro);
+      }
+      .supply-quick-order__grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 0;
         min-width: 0;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
-        background: var(--color-paper);
         overflow: hidden;
       }
-      .supply-quick-order__strip--what,
-      .supply-quick-order__strip--where,
-      .supply-quick-order__strip--details {
-        background: var(--color-paper);
-      }
-      .supply-quick-order__strip--more {
-        background: var(--color-paper-2);
-      }
-      .supply-quick-order__more-toggle {
-        width: 100%;
-        flex-shrink: 0;
-      }
-      .supply-quick-order__strip-label {
-        display: block;
-        padding: 0.5rem 0.75rem;
-        border-bottom: 1px solid var(--color-rule);
-        background: var(--color-paper-2);
-        color: var(--color-ink);
-        font-size: var(--text-micro);
-        font-weight: 700;
-        line-height: 1.15;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-      .supply-quick-order__fields {
-        display: flex;
-        flex: 1;
-        flex-wrap: wrap;
-        align-items: stretch;
-        gap: 0.5rem;
-        min-width: 0;
-        padding: 0.5rem 0.75rem;
-      }
-      .supply-quick-order__subgroup {
+      .supply-quick-order__zone {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
         min-width: 0;
+        border-left: 1px solid var(--color-rule);
       }
-      .supply-quick-order__subgroup-label {
-        padding-bottom: 0.3rem;
+      .supply-quick-order__zone:first-child {
+        border-left: none;
+      }
+      .supply-quick-order__zone-title {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: 0;
+        padding: 0.35rem 0.5rem;
         border-bottom: 1px solid var(--color-rule);
+        background: var(--color-paper-2);
         color: var(--color-muted-foreground);
         font-size: var(--text-micro);
         font-weight: 700;
-        line-height: 1.15;
         letter-spacing: 0.06em;
         text-transform: uppercase;
       }
-      .supply-quick-order__subgroup-fields {
+      .supply-quick-order__zone-badge {
+        color: var(--color-sunrise-warm);
+      }
+      .supply-quick-order__zone-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        padding: 0.45rem 0.5rem;
+        min-width: 0;
+      }
+      .supply-quick-order__pair {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-        gap: 0.5rem 0.75rem;
-        align-items: end;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+        min-width: 0;
+      }
+      .supply-quick-order__field--full {
         width: 100%;
         min-width: 0;
       }
-      .supply-quick-order__subgroup--category .supply-quick-order__subgroup-fields,
-      .supply-quick-order__subgroup--supplier .supply-quick-order__subgroup-fields,
-      .supply-quick-order__subgroup--manager .supply-quick-order__subgroup-fields {
-        grid-template-columns: 1fr auto;
+      .supply-quick-order__material-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 0.35rem;
+        align-items: end;
+        min-width: 0;
       }
-      .supply-quick-order__subgroup--material .supply-quick-order__subgroup-fields {
-        grid-template-columns: 1fr auto auto auto;
-      }
-      .supply-quick-order__subgroup--category .supply-quick-order__field--category,
-      .supply-quick-order__subgroup--material
-        .supply-quick-order__field--grow:has(app-pi-overflow-select),
-      .supply-quick-order__subgroup--supplier
-        .supply-quick-order__field--grow:has(app-pi-overflow-select),
-      .supply-quick-order__subgroup--manager .supply-quick-order__field--manager {
+      .supply-quick-order__material-row app-pi-select-add-row {
         grid-column: 1;
         min-width: 0;
       }
-      .supply-quick-order__subgroup-fields > .supply-quick-order__add-btn {
-        grid-column: 2;
-        align-self: end;
-      }
-      .supply-quick-order__subgroup--material .supply-quick-order__mini-btn:nth-of-type(1) {
-        grid-column: 3;
-        grid-row: 1;
-      }
-      .supply-quick-order__subgroup--material .supply-quick-order__mini-btn:nth-of-type(2) {
-        grid-column: 4;
-        grid-row: 1;
-      }
-      .supply-quick-order__strip--what .supply-quick-order__fields,
-      .supply-quick-order__strip--where .supply-quick-order__fields,
-      .supply-quick-order__strip--details .supply-quick-order__fields {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .supply-quick-order__strip--what .supply-quick-order__subgroup,
-      .supply-quick-order__strip--where .supply-quick-order__subgroup,
-      .supply-quick-order__strip--details .supply-quick-order__subgroup {
-        flex: 0 0 auto;
-        width: 100%;
+      .supply-quick-order__org-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        gap: 0.35rem;
+        align-items: end;
         min-width: 0;
       }
-      /* full-width rows inside the material / supplier / manager / notes groups */
-      .supply-quick-order__subgroup--material .supply-quick-order__field--link,
-      .supply-quick-order__subgroup--supplier .supply-quick-order__field--site,
-      .supply-quick-order__subgroup--supplier .supply-quick-order__field--email,
-      .supply-quick-order__subgroup--manager .supply-quick-order__field--phone,
-      .supply-quick-order__subgroup--manager .supply-quick-order__field--email,
-      .supply-quick-order__strip--more .supply-quick-order__field--grow,
-      .supply-quick-order__persist-hint {
-        grid-column: 1 / -1;
+      .supply-quick-order__org-row app-pi-overflow-select {
+        grid-column: 1;
+        min-width: 0;
+      }
+      .supply-quick-order__card-link {
+        align-self: end;
+        padding: 0.15rem 0.35rem;
+        border: none;
+        background: transparent;
+        color: var(--color-gold-deep);
+        font: inherit;
+        font-size: var(--text-micro);
+        text-decoration: underline;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .supply-quick-order__org-add {
+        align-self: end;
+      }
+      .supply-quick-order__hairline {
+        margin: 0.15rem 0;
+        border: none;
+        border-top: 1px solid var(--color-rule);
+      }
+      .supply-quick-order__inline-hint {
+        color: var(--color-muted-foreground);
+        font-size: var(--text-micro);
+      }
+      .supply-quick-order__step-badge {
+        position: absolute;
+        margin-left: -1.1rem;
+        color: var(--color-sunrise-warm);
+        font-size: 0.65rem;
+        font-weight: 700;
+      }
+      .supply-quick-order__expanded-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 0.45rem;
+        padding-top: 0.35rem;
+        border-top: 1px solid var(--color-rule);
+      }
+      .supply-quick-order__footer-left {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+      .supply-quick-order__more-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+      .supply-quick-order__promote-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        max-height: 14rem;
+        overflow: auto;
+        flex-basis: 100%;
+      }
+      .supply-quick-order__promote-item {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.1rem;
+        padding: 0.35rem 0.5rem;
+        border: 1px solid var(--color-rule);
+        border-radius: 2px;
+        background: var(--color-paper);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .supply-quick-order__promote-item:hover {
+        border-color: var(--color-sunrise-warm);
+        background: var(--color-sunrise-soft);
+      }
+      .supply-autofill--filled {
+        background: color-mix(in oklch, var(--color-sunrise-soft) 45%, var(--color-paper));
+      }
+      .supply-autofill--saving {
+        border-color: var(--color-gold-deep);
+      }
+      .supply-autofill--error {
+        border-color: var(--color-destructive);
+      }
+      .supply-quick-order__more-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        width: 100%;
+        padding: 0.2rem 0;
+        border: none;
+        background: transparent;
+        color: var(--color-muted-foreground);
+        font: inherit;
+        font-size: var(--text-micro);
+        text-align: left;
+        cursor: pointer;
+      }
+      .supply-quick-order__more-toggle:hover {
+        color: var(--color-ink);
       }
       .supply-quick-order__field {
         display: flex;
         flex-direction: column;
-        gap: 0.25rem;
+        gap: 0.2rem;
         min-width: 0;
+        position: relative;
       }
       .supply-quick-order__field-label {
         color: var(--color-muted-foreground);
@@ -1785,14 +1939,22 @@ class SupplyQuickOrderDialogComponent {
         color: var(--color-ink);
       }
 
-      /* TZ-SUPPLY-308R: always stacked — drop the 3-column wide-container rule.
-         Dense field wrap inside a full-width strip only. */
       @container (max-width: 35.99rem) {
-        .supply-quick-order__subgroup-fields {
-          grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+        .supply-quick-order__grid {
+          grid-template-columns: 1fr;
         }
-        .supply-quick-order__more-toggle {
-          margin-top: -0.15rem;
+        .supply-quick-order__zone {
+          border-left: none;
+          border-top: 1px solid var(--color-rule);
+        }
+        .supply-quick-order__zone:first-child {
+          border-top: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .supply-quick-order__pair {
+          grid-template-columns: 1fr 1fr;
         }
       }
 
@@ -1801,7 +1963,11 @@ class SupplyQuickOrderDialogComponent {
           display: none;
         }
         .supply-quick-order__summary-text {
-          grid-template-columns: 6.5rem minmax(10rem, 1fr) 9rem 8rem;
+          grid-template-columns: 5rem minmax(8rem, 1fr) 4rem 7rem;
+        }
+        .supply-quick-order__summary-cell--category,
+        .supply-quick-order__summary-cell--supplier {
+          display: none;
         }
       }
     `,
@@ -1847,7 +2013,11 @@ export class SupplyQuickOrderComponent {
   protected readonly categories = signal<QuickOrderCategory[]>([...MOCK_CATEGORIES]);
   protected readonly categoryOptions = computed(() => [
     { id: '', label: '— все материалы —' },
-    ...this.categories().map((category) => ({ id: category.id, label: category.label })),
+    ...[...this.categories()]
+      .sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.label.localeCompare(b.label, 'ru'),
+      )
+      .map((category) => ({ id: category.id, label: category.label })),
   ]);
   protected readonly materials = signal<QuickOrderMaterial[]>([...MOCK_MATERIALS]);
   /** Live categories: picker reads ONLY this cache (API ?categoryId=), not the global bulk list. */
@@ -1865,10 +2035,41 @@ export class SupplyQuickOrderComponent {
   protected readonly statusFilter = signal<QuickOrderStatus | ''>('');
   protected readonly priorityFilter = signal<QuickOrderPriority | ''>('');
   protected readonly moreExpanded = signal(false);
+  protected readonly fillOrderHints = signal(
+    typeof globalThis !== 'undefined' &&
+      new URLSearchParams(globalThis.location?.search ?? '').get('fillOrder') === '1',
+  );
 
-  /** TZ-SUPPLY-314 / 308R — guided-flow block visibility (per expanded row). */
-  protected readonly whereExpanded = signal(false);
-  protected readonly detailsExpanded = signal(false);
+  /** TZ-SUPPLY-431 — org promote + read-only card. */
+  protected readonly showPromoteOrgPicker = signal(false);
+  protected readonly showPromoteOrgConfirm = signal(false);
+  protected readonly showSupplierCard = signal(false);
+  protected readonly promoteOrgSearch = signal('');
+  protected readonly allPromoteOrgs = signal<Organization[]>([]);
+  protected readonly pendingPromoteOrg = signal<Organization | null>(null);
+  protected readonly supplierCardOrg = signal<(QuickOrderSupplier & { inn?: string }) | null>(null);
+
+  protected readonly filteredPromoteOrgs = computed(() => {
+    const q = this.promoteOrgSearch().trim().toLowerCase();
+    const existingSupplierIds = new Set(this.suppliers().map((s) => s.id));
+    const list = this.allPromoteOrgs().filter((org) => !existingSupplierIds.has(org._id));
+    if (!q) return list.slice(0, 50);
+    return list
+      .filter((org) => {
+        const hay = [org.name, org.inn, org.legalAddress ?? ''].join(' ').toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 50);
+  });
+
+  protected readonly promoteOrgRoleLabel = computed(() => {
+    const org = this.pendingPromoteOrg();
+    if (!org) return '';
+    const before = (org.type ?? []).map((t) => ORG_TYPE_LABELS[t]).join(', ') || '—';
+    const afterTypes = [...new Set([...(org.type ?? []), 'supplier' as OrgType])];
+    const after = afterTypes.map((t) => ORG_TYPE_LABELS[t]).join(', ');
+    return `[${before}] → [${after}]`;
+  });
 
   /** TZ-SUPPLY-317 — visible persist feedback for org / person card edits. */
   protected readonly supplierSaveError = signal<string | null>(null);
@@ -1969,7 +2170,12 @@ export class SupplyQuickOrderComponent {
         // categories, even if the server ignores `?type=`.
         const live = (res.data ?? [])
           .filter((c) => c.type === 'material' && c.isActive !== false)
-          .map((c) => ({ id: c._id, label: c.name }));
+          .map((c) => ({
+            id: c._id,
+            label: categoryPickerLabel(c),
+            matchName: c.name,
+            sortOrder: c.sortOrder,
+          }));
         if (live.length > 0) this.applyLiveCategories(live);
       });
 
@@ -2004,6 +2210,13 @@ export class SupplyQuickOrderComponent {
         if (res.ok) this.persons.set(res.data?.items ?? []);
       });
 
+    this.orgsSvc
+      .list({ limit: 500 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.allPromoteOrgs.set(res.data?.items ?? []);
+      });
+
     this.supplySvc
       .list({ orderId: this.prefillOrderId() ?? undefined })
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -2015,6 +2228,191 @@ export class SupplyQuickOrderComponent {
         if (liveMaterials) this.materials.set(liveMaterials);
         const liveSuppliers = this.pendingLiveSuppliers();
         if (liveSuppliers) this.suppliers.set(liveSuppliers);
+      });
+  }
+
+  protected contactOptions(
+    supplierId: string | null,
+    selectedContactId?: string | null,
+  ): { id: string; label: string }[] {
+    const list = this.contactsFor(supplierId);
+    const items = list.map((c) => ({ id: c.id, label: contactLabel(c) }));
+    if (selectedContactId && !items.some((i) => i.id === selectedContactId)) {
+      const extra = list.find((c) => c.id === selectedContactId);
+      if (extra) items.push({ id: extra.id, label: contactLabel(extra) });
+    }
+    return items;
+  }
+
+  protected supplierMenuItems(rowId: string, supplierId: string | null): DropdownMenuItem[] {
+    return [
+      {
+        label: 'Новый поставщик',
+        handler: () => this.openNewSupplier(rowId),
+        dataTest: 'supply-supplier-menu-new',
+      },
+      {
+        label: 'Из наших организаций',
+        handler: () => this.openPromoteOrgPicker(rowId),
+        dataTest: 'supply-supplier-menu-promote',
+      },
+      {
+        label: 'Карточка',
+        handler: () => supplierId && this.openSupplierCard(supplierId),
+        disabled: !supplierId,
+        dataTest: 'supply-supplier-menu-card',
+      },
+    ];
+  }
+
+  @HostListener('document:keydown.escape')
+  protected onEscapeCollapse(): void {
+    if (this.modalRef) return;
+    if (this.expandedId()) this.expandedId.set(null);
+  }
+
+  protected saveExpandedRow(rowId: string): void {
+    const row = this.rows().find((r) => r.id === rowId);
+    if (row?.supplierId) {
+      this.onSupplierFieldBlur(row.supplierId, 'website');
+      this.onSupplierFieldBlur(row.supplierId, 'email');
+    }
+    if (row?.supplierContactId) {
+      this.onContactFieldBlur(row.supplierContactId, 'phone');
+      this.onContactFieldBlur(row.supplierContactId, 'email');
+    }
+    this.expandedId.set(null);
+  }
+
+  protected duplicateRow(sourceId: string): void {
+    const source = this.rows().find((r) => r.id === sourceId);
+    if (!source) return;
+    const copy = createEmptyQuickOrderRow(this.prefillOrderId());
+    Object.assign(copy, {
+      categoryId: source.categoryId,
+      materialId: source.materialId,
+      color: source.color,
+      unit: source.unit,
+      supplierId: source.supplierId,
+      supplierContactId: source.supplierContactId,
+      productUrl: source.productUrl,
+      companyId: source.companyId,
+      requestedBy: source.requestedBy,
+      orderId: source.orderId,
+      neededBy: source.neededBy,
+      status: source.status,
+      priority: source.priority,
+      notes: source.notes,
+      priceHint: source.priceHint,
+      supplierOrderDate: source.supplierOrderDate,
+      responsible: source.responsible,
+      qty: 1,
+    });
+    this.rows.update((rows) => [copy, ...rows]);
+    this.expandedId.set(copy.id);
+    this.moreExpanded.set(false);
+
+    this.supplySvc
+      .create(rowToDto(copy))
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok || !res.data) return;
+        this.rows.update((rows) =>
+          rows.map((r) => (r.id === copy.id ? mapRequestToRow(res.data!) : r)),
+        );
+        if (this.expandedId() === copy.id) this.expandedId.set(res.data!._id);
+      });
+  }
+
+  protected onContactChange(rowId: string, contactId: string): void {
+    this.patchRow(rowId, { supplierContactId: contactId || null });
+  }
+
+  protected openSupplierCard(supplierId: string): void {
+    const cached = this.suppliers().find((s) => s.id === supplierId);
+    if (cached && !OBJECT_ID_RE.test(supplierId)) {
+      this.supplierCardOrg.set(cached);
+      this.showSupplierCard.set(true);
+      this.openPanelDialog('Карточка поставщика');
+      return;
+    }
+    this.orgsSvc
+      .findById(supplierId)
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok || !res.data) return;
+        const mapped = { ...mapSupplier(res.data), inn: res.data.inn };
+        this.supplierCardOrg.set(mapped);
+        this.showSupplierCard.set(true);
+        this.openPanelDialog('Карточка поставщика');
+        if (OBJECT_ID_RE.test(supplierId)) this.loadSupplierContacts(supplierId);
+      });
+  }
+
+  protected closeSupplierCard(): void {
+    this.closePanelDialog();
+    this.showSupplierCard.set(false);
+    this.supplierCardOrg.set(null);
+  }
+
+  protected openPromoteOrgPicker(rowId: string): void {
+    this.closePanels();
+    this.activeRowId.set(rowId);
+    this.promoteOrgSearch.set('');
+    this.showPromoteOrgPicker.set(true);
+    this.openPanelDialog('Из наших организаций');
+  }
+
+  protected cancelPromoteOrgPicker(): void {
+    this.closePanelDialog();
+    this.showPromoteOrgPicker.set(false);
+    this.promoteOrgSearch.set('');
+  }
+
+  protected selectPromoteOrg(org: Organization): void {
+    this.pendingPromoteOrg.set(org);
+    this.showPromoteOrgPicker.set(false);
+    this.showPromoteOrgConfirm.set(true);
+    this.openPanelDialog('Сделать поставщиком?');
+  }
+
+  protected cancelPromoteOrgConfirm(): void {
+    this.closePanelDialog();
+    this.showPromoteOrgConfirm.set(false);
+    this.pendingPromoteOrg.set(null);
+  }
+
+  protected confirmPromoteOrg(): void {
+    const org = this.pendingPromoteOrg();
+    const rowId = this.activeRowId();
+    if (!org || !rowId) return;
+    const mergedTypes = [...new Set([...(org.type ?? []), 'supplier' as OrgType])];
+    this.cancelPromoteOrgConfirm();
+
+    if (!OBJECT_ID_RE.test(org._id)) {
+      const local = mapSupplier(org);
+      this.suppliers.update((list) => [...list, local]);
+      this.onSupplierChange(rowId, local.id);
+      return;
+    }
+
+    this.orgsSvc
+      .update(org._id, { type: mergedTypes })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (!res.ok || !res.data) return;
+        const live = mapSupplier(res.data);
+        this.suppliers.update((list) => {
+          const idx = list.findIndex((s) => s.id === live.id);
+          if (idx < 0) return [...list, live];
+          const next = [...list];
+          next[idx] = { ...next[idx]!, ...live };
+          return next;
+        });
+        this.allPromoteOrgs.update((list) =>
+          list.map((item) => (item._id === org._id ? res.data! : item)),
+        );
+        this.onSupplierChange(rowId, live.id);
       });
   }
 
@@ -2124,7 +2522,7 @@ export class SupplyQuickOrderComponent {
    */
   private applyLiveCategories(live: QuickOrderCategory[]): void {
     const norm = (s: string) => s.trim().toLowerCase();
-    const liveIdByLabel = new Map(live.map((c) => [norm(c.label), c.id]));
+    const liveIdByLabel = new Map(live.map((c) => [norm(c.matchName ?? c.label), c.id]));
     const remap = new Map<string, string>();
     for (const mock of MOCK_CATEGORIES) {
       const liveId = liveIdByLabel.get(norm(mock.label));
@@ -2296,7 +2694,7 @@ export class SupplyQuickOrderComponent {
         this.commitSupplierField(supplierId, {
           [field]: this.suppliers().find((s) => s.id === supplierId)?.[field] ?? '',
         });
-      }, 500),
+      }, 400),
     );
   }
 
@@ -2310,7 +2708,7 @@ export class SupplyQuickOrderComponent {
         this.commitContactField(contactId, {
           [field]: this.contacts().find((c) => c.id === contactId)?.[field] ?? '',
         });
-      }, 500),
+      }, 400),
     );
   }
 
@@ -2446,8 +2844,6 @@ export class SupplyQuickOrderComponent {
     this.closePanels();
     if (next) {
       this.moreExpanded.set(false);
-      this.whereExpanded.set(false);
-      this.detailsExpanded.set(false);
       const categoryId = this.rows().find((row) => row.id === next)?.categoryId;
       if (categoryId) this.refreshMaterialsForCategory(categoryId);
     }
@@ -2474,8 +2870,6 @@ export class SupplyQuickOrderComponent {
     this.rows.update((rows) => [row, ...rows]);
     this.expandedId.set(row.id);
     this.moreExpanded.set(false);
-    this.whereExpanded.set(false);
-    this.detailsExpanded.set(false);
 
     // TZ-SUPPLY-311: оптимистично создаём локально, затем заменяем id на серверный.
     this.supplySvc
@@ -2542,12 +2936,23 @@ export class SupplyQuickOrderComponent {
     });
     this.cancelNewManager();
 
-    if (id && OBJECT_ID_RE.test(id)) {
-      this.loadSupplierContacts(id);
-      const found = this.suppliers().find((s) => s.id === id);
-      const sparse = !found || (!found.website && !found.email);
-      if (sparse) this.hydrateSupplierCard(id);
+    if (id) {
+      if (OBJECT_ID_RE.test(id)) {
+        this.loadSupplierContacts(id);
+        this.hydrateSupplierCard(id);
+      } else {
+        this.hydrateSupplierCardFromCache(id);
+      }
     }
+  }
+
+  /** Mock/local supplier — ensure website/email visible without API. */
+  private hydrateSupplierCardFromCache(supplierId: string): void {
+    const cached = this.suppliers().find((s) => s.id === supplierId);
+    if (!cached) return;
+    this.suppliers.update((list) =>
+      list.map((s) => (s.id === supplierId ? { ...s, ...cached } : s)),
+    );
   }
 
   /** TZ-SUPPLY-317 — when live list is sparse/missing, pull Organization by id. */
@@ -2763,6 +3168,12 @@ export class SupplyQuickOrderComponent {
     this.cancelNewSupplier();
     this.cancelNewManager();
     this.cancelNewColor();
+    this.showPromoteOrgPicker.set(false);
+    this.showPromoteOrgConfirm.set(false);
+    this.showSupplierCard.set(false);
+    this.pendingPromoteOrg.set(null);
+    this.supplierCardOrg.set(null);
+    this.promoteOrgSearch.set('');
     this.activeRowId.set(null);
   }
 
@@ -2796,15 +3207,6 @@ export class SupplyQuickOrderComponent {
       color: '',
       ...(material ? { unit: material.unit } : {}),
     });
-    this.maybeAutoExpandWhere(rowId);
-  }
-
-  private maybeAutoExpandWhere(rowId: string): void {
-    if (this.expandedId() !== rowId) return;
-    const row = this.rows().find((r) => r.id === rowId);
-    if (row?.materialId) {
-      this.whereExpanded.set(true);
-    }
   }
 
   protected onColorChange(rowId: string, color: string): void {

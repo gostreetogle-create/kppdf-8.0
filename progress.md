@@ -1,4 +1,69 @@
-﻿## [2026-08-22] — TZ-UI-405 — detail-страницы: один back + 2-уровневые крошки
+﻿## [2026-08-24] — TZ-SUPPLY-431 — быстрый заказ 3-col UX redesign
+
+**Исполнитель:** Cursor executor
+**Статус:** DONE
+**Суть:** Expanded row = zones A|B|C одновременно (без accordion); compact 36px summary; PiSelectAddRow + org promote menu; overflow-select для контакта; autofill states 400ms; duplicate row.
+**Gates:** FE tsc PASS · supply-quick-order jest 46/46 PASS
+**Archive:** `tasks/_archive/2026-08/TZ-SUPPLY-431-supply-quick-order-ux-redesign.done.md`
+
+## [2026-08-24] — TZ-UI-PLUS-605 + tasks hygiene + WAVE-PO-SMOKE archive
+
+**Исполнитель:** Cursor agent
+**Статус:** DONE локально
+**Суть:** `PiSelectAddRowComponent` (styles colocated); recipient + inspector migrated; dev badge `local · sha`; tasks/ root cleaned (17 dupes removed); wave archive `WAVE-PO-SMOKE-2026-08-24.done.md`; `_NOW` + `QUEUE-LIVE` rewritten.
+**Gates:** FE tsc + focused jest (pending run).
+
+## [2026-08-24] — PO smoke wave — BIND-513…AUDIT-530
+
+**Исполнитель:** Cursor agent (executor mode)
+**Статус:** DONE локально
+**Суть:** P0 КП подстановки (BIND-513/514), builder live refresh + token chips (DOC-524/525),
+стол view/edit + блокнот (DESK-433/434/435), wave C (PLUS-601R, ORIENT-523, TPL/TERMS/PAGE),
+supply category hierarchy (CATALOG-376), photo MIME guard (PHOTO-304), audit checklist (AUDIT-MGR-530).
+**Gates:** BE tsc PASS; BE jest substitution 4/4; FE tsc PASS; FE jest photo-dropzone + picker 11/11.
+**Smoke:** `tasks/TZ-AUDIT-MGR-530-manager-journey-audit.md` · `tasks/QUEUE-LIVE.md`
+
+## [2026-08-24] — TZ-KP-IA-511 — КП right rail: Money / Deadlines / без Output
+
+**Исполнитель:** freebuff
+**Статус:** DONE
+**Суть:** FE adoption IA-510: right rail params→money→deadlines→table→terms; output убран из rail, ribbon сохранён. Inspector разделён на modes params/money/deadlines; recipient summary/CTA удалён из inspector и живёт в left Client panel.
+**Gates:** FE tsc PASS; focused Jest 97/97 PASS; eslint PASS; architecture:check — 2 pre-existing violations вне scope.
+**Archive:** tasks/_archive/2026-08/TZ-KP-IA-511.done.md
+
+## [2026-08-24] — TZ-KP-BIND-512 — Registry labels + siteAddress в пикере
+
+**Исполнитель:** Claude (Codebuff/Buffy)
+**Статус:** DONE
+**Суть:** `registry.service.ts` DATA_SOURCES: organization.label → «Наша фирма»,
+counterparty.label → «Клиент»; counterparty.fields += siteAddress/siteName/
+contactName/contactPosition (print/enrichment catalogue only, bag keys не менялись).
+Picker (`data-field-picker-dialog.component.ts`) уже брал лейблы только из registry —
+хардкода не было; добавлен `data-field-picker-dialog.component.spec.ts` (новый, 2 теста).
+Terms `{{client_name}}`/«Клиент» уже были в каноне — добавлен однострочный комментарий
+(= counterparty.name алиас) + spec-тест на лейбл кнопки.
+**Изменено:** `backend/src/modules/registry/registry.service.ts`,
+`backend/src/modules/registry/registry.service.spec.ts` (+2 теста),
+`frontend/.../doc-constructor/texts/data-field-picker-dialog.component.spec.ts` (новый),
+`frontend/.../commercial/proposals/proposal-create-terms.component.ts` (+комментарий),
+`frontend/.../proposal-create-terms.component.spec.ts` (+1 тест).
+**Gates:** BE tsc 0; BE jest registry 4/4; FE tsc 0; FE jest data-field-picker (2/2) +
+proposal-create-terms (5/5) = 7/7.
+**HARD STOP:** `document-template.service.ts` НЕ тронут (чужой WIP остался как был).
+**Archive:** tasks/_archive/2026-08/TZ-KP-BIND-512.done.md
+
+## [2026-08-24] — TZ-KP-IA-510 — KP rail IA: Money + Deadlines канон
+
+**Исполнитель:** Claude (Codebuff/Buffy)
+**Статус:** DONE
+**Суть:** Docs-only — расширение правой рейла КП с 3 до 5 секций: params/money/deadlines/table/terms.
+Output/Вывод исключён из rail → убран в ribbon. Баннер IA-510: не откатывает 402.
+**Изменено:** kp-workspace-rail-ia.md (§1–§7), kp-workspace.page.md (UI-схема/секции), PAGE-TZ-INDEX.md.
+**Gates:** docs-only (tsc/jest N/A), ручная верификация PASS.
+**Archive:** tasks/_archive/2026-08/TZ-KP-IA-510.done.md
+**Next:** TZ-KP-IA-511 (code: панели money/deadlines).
+
+## [2026-08-22] — TZ-UI-405 — detail-страницы: один back + 2-уровневые крошки
 
 **Исполнитель:** claude (executor)
 **Статус:** DONE
@@ -3844,9 +3909,12 @@ BOM inspector вЂ” РІРєР»Р°Рґ СЃС‚СЂРѕРєРё material/mo
 **Lock:** .mimocode/locks/TZ-MIG-301-kp3-extract-map.lock (local, gitignored)
 **NEXT:** Р¶РґР°С‚СЊ РІРµСЂРґРёРєС‚ PO РїРѕ gap-СЃРїРёСЃРєСѓ в†’ MIG-302 (map/rename С‡Р°СЃС‚СЊ) РїРѕСЃР»Рµ OK.
 
--   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 8 0   ( d e f a u l t S h e e t L a y o u t   4;O  H01;>=>2)  
- 2 0 2 6 - 0 8 - 1 9 :   025@H5=>  T Z - S A L E S - 3 8 0   ( k p - t e m p l a t e - p a g e - b r e a k - d e f a u l t s )      45D>;B=K5  =0AB@>9:8  p a g e   b r e a k s   =0  C@>2=5  1;0=:0.  
- -   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 7 7   ( C o n t i n u a t i o n   p a g e s      D>=  +   B01;8F0)  
+-   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 8 0   ( d e f a u l t S h e e t L a y o u t   4;O  H01;>=>2) 
+ 
+ 2 0 2 6 - 0 8 - 1 9 :   025@H5=>  T Z - S A L E S - 3 8 0   ( k p - t e m p l a t e - p a g e - b r e a k - d e f a u l t s )      45D>;B=K5  =0AB@>9:8  p a g e   b r e a k s   =0  C@>2=5  1;0=:0. 
+ 
+ -   2 0 2 6 - 0 8 - 1 9   025@H5=>:   T Z - S A L E S - 3 7 7   ( C o n t i n u a t i o n   p a g e s      D>=  +   B01;8F0) 
+ 
  
 - 2026-08-22 TZD-59 (desktop compat version failsafe) - DONE by claude-computer; commit 7bb76150 (local, push blocked - no git credentials in session); archive tasks/_archive/2026-08/TZD-59.done.md; gates: FE tsc PASS, jest focused 14/14 PASS, eslint 0; full FE suite 1832/1840 (8 pre-existing failures out of scope).
 - 2026-08-22 TZD-61 (desktop onboarding clarity) - DONE by claude-computer; copy/docs-only: AI tab not-a-chat hint + INSTALL.md getting-started sequence + tab naming sync in MCP/PAIRING/AI-PROVIDERS; archive tasks/_archive/2026-08/TZD-61.done.md; gates: desktop tsc PASS, svelte-check 0 errors (Linux slice; Windows host spawn EPERM).

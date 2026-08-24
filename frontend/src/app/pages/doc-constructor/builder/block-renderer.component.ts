@@ -37,6 +37,7 @@ import {
 } from '@angular/core';
 import { CdkDrag } from '@angular/cdk/drag-drop';
 import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
+import { migratePlainTokensToNodes } from '../../../shared/ui/rich-text/substitution-token.extension';
 import { LucideAngularModule, Lock } from 'lucide-angular';
 import {
   blockKey,
@@ -738,7 +739,7 @@ export class BlockRendererComponent {
   // ═══════════════════════════════════════════════════════════
 
   protected byPassHtml(content: string | undefined): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(content ?? '');
+    return this.sanitizer.bypassSecurityTrustHtml(migratePlainTokensToNodes(content ?? ''));
   }
 
   // ── Click / keyboard handlers ──

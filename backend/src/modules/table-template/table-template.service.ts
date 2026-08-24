@@ -380,7 +380,7 @@ export class TableTemplateService implements OnModuleInit {
       unit: ['unit', 'ед', 'ед.изм'],
       unitPrice: ['unitprice', 'price', 'unit_price', 'цена'],
       sum: ['sum', 'total', 'amount', 'сумма'],
-      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'фото'],
+      photo: ['photo', 'image', 'рисунок', 'photourl', 'photoid', 'photo_id', 'photoids', 'photo_ids', 'фото'],
     };
     const match = Object.entries(aliases).find(([, values]) =>
       values.includes(normalized),
@@ -530,6 +530,8 @@ export class TableTemplateService implements OnModuleInit {
       'photourl',
       'photoid',
       'photo_id',
+      'photoids',
+      'photo_ids',
       'фото',
     ].includes(key.trim().toLowerCase());
   }

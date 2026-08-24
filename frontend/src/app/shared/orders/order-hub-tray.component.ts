@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 
 import {
@@ -37,8 +37,8 @@ import {
   ORDER_TREE_MAX_DEPTH,
 } from './order-composition-forest';
 import {
-  isEmptyCatalogBranch,
   openCatalogEditFromTree,
+  openCatalogViewFromTree,
   type CatalogCompositionEditDeps,
 } from './open-catalog-composition-edit';
 import type { BoardLane, Order, OrderItem, OrderStatus } from '../services/orders.service';
@@ -733,6 +733,7 @@ export class OrderHubTrayComponent implements OnInit {
   private shipmentsLoadSeq = 0;
 
   private readonly catalog = inject(ProductModulesService);
+  private readonly router = inject(Router);
   private readonly products = inject(ProductsService);
   private readonly materials = inject(MaterialsService);
   private readonly supply = inject(SupplyTaskService);
@@ -876,9 +877,7 @@ export class OrderHubTrayComponent implements OnInit {
 
   protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
     this.compositionSelectedId.set(ev.node._id);
-    if (isEmptyCatalogBranch(ev.node)) {
-      openCatalogEditFromTree(this.catalogEditDeps(), ev);
-    }
+    openCatalogViewFromTree(this.router, ev);
   }
 
   protected onCompositionEdit(ev: CompositionTreeEditEvent): void {

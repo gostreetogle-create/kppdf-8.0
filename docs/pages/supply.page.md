@@ -38,7 +38,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 
 ### Быстрый заказ (`view=quick` или default)
 
-- **431:** expanded-строки используют **container grid** (не viewport-breakpoint): ≥36rem — 3 равные колонки strips, <36rem — full-width стек с 2-col subgroups внутри; поля `p-4`, инпуты `min-height: var(--touch-comfortable)`. В desk flyout (wide 48rem) strips остаются 3-col.
+- **431:** design sign-off `docs/audits/2026-08-24-supply-431-design-signoff.md`; expanded — 3-col grid, PiSelectAddRow org menu, org promote, summary 36px.
 
 - Expand-in-row плитки (▸/▾), одна развёрнутая
 - Toolbar: поиск, фильтр статус/приоритет, «N заявок», «+ Создать»

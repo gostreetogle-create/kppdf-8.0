@@ -16,6 +16,7 @@ import { CounterpartyFullEditorDialogComponent } from '../../counterparties/coun
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
 import {
   Counterparty,
   CounterpartyService,
@@ -26,6 +27,10 @@ import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { PersonQuickCreateDialogComponent } from '../../../shared/person/person-quick-create-dialog.component';
 import { personToOverflowItem } from '../../../shared/person/person.util';
+import {
+  SiteQuickCreateDialogComponent,
+  type SiteQuickCreateDialogData,
+} from '../../../shared/site/site-quick-create-dialog.component';
 
 export interface ProposalRecipientState {
   counterpartyId: string;
@@ -37,7 +42,7 @@ export interface ProposalRecipientState {
   selector: 'app-proposal-create-recipient',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ButtonComponent, PiOverflowSelectComponent],
+  imports: [FormsModule, ButtonComponent, PiOverflowSelectComponent, PiSelectAddRowComponent],
   template: `
     <div class="recipient" data-test="kp-recipient-panel">
       <div class="recipient__heading">
@@ -83,7 +88,12 @@ export interface ProposalRecipientState {
         </section>
         <label>
           <span>Контактное лицо</span>
-          <div class="pi-select-add-row">
+          <app-pi-select-add-row
+            addTitle="Новое контактное лицо"
+            addDataTest="kp-recipient-contact-add"
+            [addDisabled]="readOnly()"
+            (addClick)="openCreatePerson()"
+          >
             <app-pi-overflow-select
               [items]="personItems()"
               [value]="selectedContactPersonId()"
@@ -94,33 +104,27 @@ export interface ProposalRecipientState {
               dataTest="kp-recipient-contact"
               [disabled]="readOnly()"
             />
-            <button
-              type="button"
-              class="pi-select-add-btn"
-              (click)="openCreatePerson()"
-              [disabled]="readOnly()"
-              title="Новое контактное лицо"
-              aria-label="Новое контактное лицо"
-              data-test="kp-recipient-contact-add"
-            >
-              +
-            </button>
-          </div>
+          </app-pi-select-add-row>
         </label>
         <label>
           <span>Объект / адрес</span>
-          <select
-            class="pi-input w-full"
-            [ngModel]="selectedSiteId()"
-            (ngModelChange)="selectSite($event)"
-            [disabled]="readOnly()"
-            data-test="kp-recipient-site"
+          <app-pi-select-add-row
+            addTitle="Новый объект"
+            addDataTest="kp-recipient-site-add"
+            [addDisabled]="readOnly() || !selectedCounterpartyId()"
+            (addClick)="openCreateSite()"
           >
-            <option value="">— не выбран —</option>
-            @for (site of sites(); track site._id) {
-              <option [value]="site._id">{{ site.name }} · {{ site.address }}</option>
-            }
-          </select>
+            <app-pi-overflow-select
+              [items]="siteItems()"
+              [value]="selectedSiteId()"
+              (valueChange)="selectSite($event)"
+              searchable="auto"
+              placeholder="— не выбран —"
+              ariaLabel="Объект / адрес"
+              dataTest="kp-recipient-site"
+              [disabled]="readOnly()"
+            />
+          </app-pi-select-add-row>
         </label>
       } @else {
         <p class="text-xs text-muted-foreground">
@@ -234,6 +238,12 @@ export class ProposalCreateRecipientComponent {
   protected readonly personItems = computed(() =>
     this.persons().map((p) => personToOverflowItem(p)),
   );
+  protected readonly siteItems = computed(() =>
+    this.sites().map((site) => ({
+      id: site._id,
+      label: `${site.name}${site.address ? ' · ' + site.address : ''}`,
+    })),
+  );
 
   constructor() {
     this.counterpartiesService.list({ limit: 200 }).subscribe((res) => {
@@ -334,6 +344,27 @@ export class ProposalCreateRecipientComponent {
       });
     });
   }
+
+  protected openCreateSite(): void {
+    const counterpartyId = this.selectedCounterpartyId();
+    if (this.readOnly() || !counterpartyId) return;
+    const ref = this.dialog.open<Site | null, SiteQuickCreateDialogData>(
+      SiteQuickCreateDialogComponent,
+      {
+        width: 'sm',
+        data: { counterpartyId },
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce<Site | null>(ref, this.injector, (site) => {
+      if (!site) return;
+      this.sites.update((items) =>
+        items.some((item) => item._id === site._id) ? items : [...items, site],
+      );
+      this.selectSite(site._id);
+    });
+  }
+
   protected createClient(): void {
     if (this.readOnly() || !this.newClientName.trim() || !this.newClientAddress.trim()) {
       this.error.set('Заполните название и адрес объекта.');

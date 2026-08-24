@@ -24,6 +24,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import { Placeholder } from '@tiptap/extensions/placeholder';
+import { SubstitutionToken, migratePlainTokensToNodes } from './substitution-token.extension';
 
 export function createRichTextExtensions(placeholderText: string) {
   return [
@@ -39,6 +40,7 @@ export function createRichTextExtensions(placeholderText: string) {
     }),
     Underline,
     TextAlign.configure({ types: ['paragraph'] }),
+    SubstitutionToken,
     Placeholder.configure({
       placeholder: placeholderText,
       emptyEditorClass: 'is-editor-empty',
@@ -345,6 +347,18 @@ export const DEFAULT_EXTENSIONS = createRichTextExtensions('Напишите т�
       .pi-rte-editor u {
         text-decoration: underline;
       }
+      :host ::ng-deep .substitution-token {
+        display: inline-block;
+        padding: 1px 6px;
+        margin: 0 1px;
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: oklch(var(--color-ink));
+        background: oklch(var(--color-paper-2));
+        border: 1px solid oklch(var(--color-rule));
+        border-radius: 2px;
+      }
 
       .pi-rte-editor .ProseMirror {
         outline: none;
@@ -400,7 +414,7 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
     this.editor = new Editor({
       element: el,
       extensions: createRichTextExtensions(this.placeholder()),
-      content: this.value() || '',
+      content: migratePlainTokensToNodes(this.value() || ''),
       editorProps: {
         attributes: { 'data-placeholder': this.placeholder() },
       },
@@ -427,7 +441,7 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
       if (!editor) return;
       if (editor.getHTML() !== v) {
         this.isUpdatingFromOutside = true;
-        editor.commands.setContent(v || '');
+        editor.commands.setContent(migratePlainTokensToNodes(v || ''));
         this.isUpdatingFromOutside = false;
       }
     });
@@ -478,7 +492,17 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
       chain = chain.setTextSelection({ from, to });
       this.savedSelection = null;
     }
-    chain.insertContent(text).run();
+    const tokenMatch = /^\{\{[\w.]+\}\}$/.exec(text.trim());
+    if (tokenMatch) {
+      chain
+        .insertContent({
+          type: 'substitutionToken',
+          attrs: { token: tokenMatch[0] },
+        })
+        .run();
+    } else {
+      chain.insertContent(text).run();
+    }
     this.syncValueFromEditor();
   }
 

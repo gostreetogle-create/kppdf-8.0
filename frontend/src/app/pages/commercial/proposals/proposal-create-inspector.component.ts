@@ -20,6 +20,7 @@ import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { InputComponent } from '../../../shared/ui/input/input.component';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
 import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
 import {
   estimateFamilyTotal,
@@ -99,6 +100,7 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
     FormFieldComponent,
     InputComponent,
     PiOverflowSelectComponent,
+    PiSelectAddRowComponent,
   ],
   template: `
     <div class="inspector" data-test="kp-create-inspector">
@@ -186,7 +188,12 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
         </section>
 
         <app-pi-form-field label="Наша фирма (бланк)" htmlFor="kp-insp-org">
-          <div class="pi-select-add-row">
+          <app-pi-select-add-row
+            addTitle="Новая организация"
+            addDataTest="kp-insp-org-add"
+            [addDisabled]="readOnly()"
+            (addClick)="openCreateOrganization()"
+          >
             <app-pi-overflow-select
               [items]="organizationItems()"
               [value]="organizationId()"
@@ -197,18 +204,7 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
               dataTest="kp-insp-org"
               [disabled]="readOnly()"
             />
-            <button
-              type="button"
-              class="pi-select-add-btn"
-              (click)="openCreateOrganization()"
-              [disabled]="readOnly()"
-              title="Новая организация"
-              aria-label="Новая организация"
-              data-test="kp-insp-org-add"
-            >
-              +
-            </button>
-          </div>
+          </app-pi-select-add-row>
         </app-pi-form-field>
 
         @if (organizationId()) {

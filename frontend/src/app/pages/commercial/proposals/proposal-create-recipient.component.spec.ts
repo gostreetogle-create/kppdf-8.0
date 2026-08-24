@@ -176,14 +176,12 @@ describe('ProposalCreateRecipientComponent template (TZ-PARTY-306)', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const row = fixture.nativeElement.querySelector('.pi-select-add-row') as HTMLElement;
+    const row = fixture.nativeElement.querySelector('app-pi-select-add-row') as HTMLElement;
     const select = row?.querySelector('app-pi-overflow-select');
     const btn = row?.querySelector('[data-test="kp-recipient-contact-add"]') as HTMLButtonElement;
     expect(row).toBeTruthy();
     expect(select).toBeTruthy();
     expect(btn?.classList.contains('pi-select-add-btn')).toBe(true);
-    expect(row.children[0]).toBe(select);
-    expect(row.children[1]).toBe(btn);
   });
 
   it('openCreatePerson opens PersonQuickCreate dialog', async () => {

@@ -1176,6 +1176,10 @@ async function main() {
     state.services.frontend.status = 'ready';
     state.services.frontend.readyAt = Date.now();
   } else {
+    spawnSync('node', [join(ROOT, 'scripts/write-build-info.mjs')], {
+      cwd: ROOT,
+      stdio: useTui() ? 'ignore' : 'inherit',
+    });
     frontend = spawnDetached('pnpm', ['start'], FRONTEND_DIR, 'frontend');
   }
 

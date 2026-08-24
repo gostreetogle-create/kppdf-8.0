@@ -127,6 +127,11 @@ export class PiPhotoDropzoneComponent {
   readonly errorMessage = input<string | null>(null);
   readonly uploadRequest = output<File[]>();
   readonly deleteRequest = output<string>();
+  /** Fired when drop/select contained only non-image files. */
+  readonly invalidFileType = output<void>();
+
+  /** RU copy for parents wiring `(invalidFileType)`. */
+  static readonly INVALID_FILE_TYPE_MESSAGE = 'Только изображения (JPG, PNG, WebP, GIF, AVIF, SVG)';
 
   protected readonly dragActive = signal(false);
   private readonly hovered = signal(false);
@@ -146,7 +151,17 @@ export class PiPhotoDropzoneComponent {
   protected onFileChange(event: Event): void {
     if (this.uploading()) return;
     const input = event.target as HTMLInputElement;
-    this.uploadRequest.emit(Array.from(input.files ?? []));
+    const files = imageFilesFromFileList(input.files);
+    if (files.length === 0 && (input.files?.length ?? 0) > 0) {
+      this.invalidFileType.emit();
+      input.value = '';
+      return;
+    }
+    if (files.length === 0) {
+      input.value = '';
+      return;
+    }
+    this.uploadRequest.emit(files);
     input.value = '';
   }
 
@@ -189,7 +204,12 @@ export class PiPhotoDropzoneComponent {
     event.preventDefault();
     this.dragActive.set(false);
     if (this.uploading()) return;
-    this.uploadRequest.emit(Array.from(event.dataTransfer?.files ?? []));
+    const files = imageFilesFromFileList(event.dataTransfer?.files ?? null);
+    if (files.length === 0) {
+      this.invalidFileType.emit();
+      return;
+    }
+    this.uploadRequest.emit(files);
   }
 
   protected remove(id: string, event: Event): void {
@@ -197,6 +217,10 @@ export class PiPhotoDropzoneComponent {
     if (this.uploading()) return;
     this.deleteRequest.emit(id);
   }
+}
+
+function imageFilesFromFileList(files: FileList | null): File[] {
+  return Array.from(files ?? []).filter((file) => file.type.startsWith('image/'));
 }
 
 function imageFilesFromClipboard(data: DataTransfer | null): File[] {

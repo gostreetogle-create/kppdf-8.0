@@ -133,6 +133,29 @@
 
 ## 5. Лог сессий (новые сверху)
 
+### 2026-08-24 — SUPPLY-431 DONE (executor)
+- 3-col A|B|C без accordion; org promote; PiSelectAddRow; autofill states; 46 tests PASS.
+- Archive: `tasks/_archive/2026-08/TZ-SUPPLY-431-supply-quick-order-ux-redesign.done.md`
+
+### 2026-08-24 — Supply-431: design sign-off → executor
+- Wireframe 3-col + PiSelectAddRow menu + org promote принят PO.
+- Sign-off: `docs/audits/2026-08-24-supply-431-design-signoff.md`; TZ-431 обновлён, gate снят.
+- Источник: внешний AI-дизайнер + чат PO.
+
+### 2026-08-24 — Снабжение: одна страница, autofill, дизайн-бrief
+- Быстрый заказ: слишком разбросано; порядок полей неочевиден; org без autofill — баг UX.
+- Канон: **максимум на одной странице** — inline +/create/copy, справочник = SoT, не прыжки ради «+».
+- Нужно: существующая org → пометить поставщиком из списка; категории RU из `/categories`.
+- Редизайн compact — сначала wireframe внешним AI (`PROMPT-DESIGN-SUPPLY-431`), потом TZ-431 код.
+- Источник: smoke supply + чат PO.
+
+### 2026-08-24 — КП: шаги в rail, не портянка в Параметрах
+- Правый rail КП: Параметры → Деньги ($) → Сроки (часы) → Таблица → Условия; «Вывод» только ribbon.
+- Сводка клиента — в левой панели Клиент, не дубль в Параметрах.
+- Подстановки: хватит реестра+пикера («Наша фирма»/«Клиент», siteAddress); отдельную менюху текстовых полей в КП не плодить.
+- Override канона WS-402 осознанный: расширяем минимальный IA, не откатываем output→ribbon.
+- Источник: чат audit KP rails / WAVE-KP-RAIL-BIND (TZ 510–512).
+
 ### 2026-08-23 — Не «быстро», а качественно; эталон глазом
 
 - Скорость без глазной сверки с эталоном = брак (голый «+» vs зелёный квадрат в снабжении).

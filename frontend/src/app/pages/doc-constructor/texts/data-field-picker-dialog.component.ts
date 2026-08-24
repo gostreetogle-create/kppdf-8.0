@@ -25,6 +25,19 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
   work: 'Работы и материалы',
 };
 
+const CONTACT_SECTION_HEAD: Record<string, { title: string; hint: string }> = {
+  organization: {
+    title: 'Наша фирма (бланк)',
+    hint: 'Реквизиты продавца — выбираются в КП → Параметры',
+  },
+  counterparty: {
+    title: 'Клиент (получатель)',
+    hint: 'Покупатель КП — выбирается в панели Клиент',
+  },
+};
+
+const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
+
 /**
  * Диалог двухшагового выбора постановочного поля (Stitch / Paper & Ink).
  */
@@ -48,7 +61,7 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
             Колонка <strong>#{{ data.columnIndex + 1 }}</strong> — источник слева, поле справа. Клик
             по полю сразу вставляет токен
             <code class="dfpd-hint-token">{{ previewToken() }}</code>
-            в текст колонки.
+            в текст колонки. «Наша фирма» = бланк; «Клиент» = получатель КП.
           </p>
         </div>
 
@@ -59,7 +72,12 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
 
             @for (group of groupedSources(); track group.key) {
               <section class="dfpd-group">
-                <div class="dfpd-group-head">{{ group.label }}</div>
+                @if (group.label) {
+                  <div class="dfpd-group-head">{{ group.label }}</div>
+                }
+                @if (group.hint) {
+                  <p class="dfpd-group-hint">{{ group.hint }}</p>
+                }
                 <div class="dfpd-source-list">
                   @for (src of group.sources; track src.key) {
                     <button
@@ -102,7 +120,7 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
                     (click)="selectField(field)"
                   >
                     <div class="dfpd-field-top">
-                      <span class="dfpd-field-label">{{ field.label }}</span>
+                      <span class="dfpd-field-label">{{ fieldDisplayLabel(src, field) }}</span>
                       <span class="dfpd-add-icon" aria-hidden="true">⊕</span>
                     </div>
                     <code class="dfpd-field-token">{{ token(src.key, field.key) }}</code>
@@ -213,6 +231,14 @@ const GROUP_LABELS: Record<DataSourceDescriptor['group'], string> = {
         letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--color-muted-foreground-strong);
+      }
+      .dfpd-group-hint {
+        margin: 0;
+        padding: 8px 8px 6px;
+        font-size: 11px;
+        line-height: 1.35;
+        color: var(--color-muted-foreground-strong);
+        border-inline: 1px solid var(--color-rule);
       }
       .dfpd-source-list {
         border: 1px solid var(--color-rule);
@@ -407,13 +433,44 @@ export class DataFieldPickerDialogComponent {
       list.push(src);
       map.set(src.group, list);
     }
-    return (['contacts', 'catalog', 'work'] as const)
-      .filter((g) => map.has(g))
-      .map((g) => ({
+    const result: Array<{
+      key: string;
+      label: string;
+      hint?: string;
+      sources: DataSourceDescriptor[];
+    }> = [];
+
+    const contacts = map.get('contacts') ?? [];
+    for (const key of CONTACT_SOURCE_ORDER) {
+      const src = contacts.find((s) => s.key === key);
+      if (!src) continue;
+      const section = CONTACT_SECTION_HEAD[key];
+      result.push({
+        key: `contacts-${key}`,
+        label: section?.title ?? src.label,
+        hint: section?.hint,
+        sources: [src],
+      });
+    }
+    for (const other of contacts.filter(
+      (s) => !CONTACT_SOURCE_ORDER.includes(s.key as (typeof CONTACT_SOURCE_ORDER)[number]),
+    )) {
+      result.push({
+        key: `contacts-${other.key}`,
+        label: other.label,
+        sources: [other],
+      });
+    }
+
+    for (const g of ['catalog', 'work'] as const) {
+      if (!map.has(g)) continue;
+      result.push({
         key: g,
         label: GROUP_LABELS[g],
         sources: map.get(g)!,
-      }));
+      });
+    }
+    return result;
   });
 
   protected readonly previewToken = computed(() => {
@@ -460,6 +517,10 @@ export class DataFieldPickerDialogComponent {
 
   protected token(source: string, key: string): string {
     return `{{${source}.${key}}}`;
+  }
+
+  protected fieldDisplayLabel(src: DataSourceDescriptor, field: FieldDescriptor): string {
+    return `${src.label} · ${field.label}`;
   }
 
   protected fieldWord(n: number): string {

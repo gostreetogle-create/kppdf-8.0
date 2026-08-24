@@ -46,6 +46,19 @@ describe('DataFieldPickerDialogComponent', () => {
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('Наша фирма');
     expect(text).toContain('Клиент');
+    expect(text).toContain('Наша фирма (бланк)');
+    expect(text).toContain('Клиент (получатель)');
+  });
+
+  it('prefixes field labels with source name', () => {
+    const component = fixture.componentInstance as unknown as {
+      pickSource: (src: DataSourceDescriptor) => void;
+    };
+    component.pickSource(mockSources[0]);
+    fixture.detectChanges();
+
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Наша фирма · Наименование');
   });
 
   it('shows counterparty siteAddress field after picking the source', () => {

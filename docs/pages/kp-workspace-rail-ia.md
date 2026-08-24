@@ -8,6 +8,11 @@
 > **Программа:** `docs/audits/2026-08-23-kp-single-workspace-program.md` §3 (таблица IA).
 > **Ограничение:** только архитектура. Внутренности панелей (кнопки, фильтры) — по аудиту
 > `docs/audits/2026-08-23-kp-workspace-implementation-audit.md` (часть A, отдельный артефакт).
+>
+> **IA-510 (PO 2026-08-24):** не откатывает cleanup WS-402 (output → ribbon).
+> Расширяет согласованный минимальный IA: params расщепляется на
+> params + money + deadlines → **3L + 5R**. Слово «финальная» в этом файле
+> означает SoT *после* 510, не «нельзя менять после 402».
 
 ## 1. Финальная IA — сводная таблица
 
@@ -26,9 +31,11 @@
 
 | # | Секция | Иконка Lucide | Откуда (create) | data-test (create) | Tier | data-test (workspace) |
 |---|--------|---------------|-----------------|--------------------|------|-----------------------|
-| 4 | Параметры (документ · деньги · сроки · org) | `SlidersHorizontal` | right pane `params` | `kp-create-toggle-right` | S | `chrome-tool-params` |
-| 5 | Редактор таблицы (состав + chrome таблицы) | `TableProperties` | right pane `table` | `kp-create-toggle-table` | **L** | `chrome-tool-table` |
-| 6 | Условия (+ библиотека TextBlock) | `ScrollText` | right pane `terms` | `kp-create-toggle-terms` | S | `chrome-tool-terms` |
+| 4 | Параметры (документ · вид листа · наша фирма) | `SlidersHorizontal` | right pane `params` | `kp-create-toggle-right` | S | `chrome-tool-params` |
+| 5 | Деньги (наценка · НДС · скидка · оценка) | `CircleDollarSign` | right pane `money` | — (new) | S | `chrome-tool-money` |
+| 6 | Сроки (предоплата · дней на производство) | `Clock` | right pane `deadlines` | — (new) | S | `chrome-tool-deadlines` |
+| 7 | Редактор таблицы (состав + chrome таблицы) | `TableProperties` | right pane `table` | `kp-create-toggle-table` | **L** | `chrome-tool-table` |
+| 8 | Условия (+ библиотека TextBlock) | `ScrollText` | right pane `terms` | `kp-create-toggle-terms` | S | `chrome-tool-terms` |
 
 ### Ribbon (не rail!)
 
@@ -43,12 +50,12 @@
 | Ещё (архив и пр.) | `Ellipsis` | `kp-output-archive` | `kp-ws-ribbon-more` |
 | Fit (масштаб viewport) | `Maximize2` | — (demo toolbar) | `kp-ws-viewport-fit` |
 
-**Вывод (п. 7 программы):** отдельная rail-кнопка «Вывод» упраздняется — Печать/PDF/Архив
-переезжают в ribbon (всегда видимы, не reflow). Это единственный rail-→ribbon перенос.
+**Вывод (п. 7 программы):** отдельная rail-кнопка «Вывод» упразднена — Печать/PDF/Архив
+живут в ribbon (всегда видимы, не reflow). Это единственный rail→ribbon перенос.
 
-> **STATUS 2026-08-23 (TZ-KP-WS-402):** «Вывод» временно зарегистрирован в правом rail
-> (`chrome-tool-output`, иконка `Printer`) до прихода панелей/ribbon-действий (TZ-403/404);
-> ribbon-перенос — по мере ввода ribbon-кнопок в TZ-404.
+> **STATUS 2026-08-24 (TZ-KP-IA-510):** «Вывод» исключён из правого rail окончательно.
+> Правая rail = 5 секций: params, money, deadlines, table, terms.
+> Ribbon-кнопки (Печать/PDF/Архив) — SoT вывода, не rail.
 
 ## 2. Сверка demo ↔ create (data-test parity)
 
@@ -61,13 +68,15 @@ Demo rail рендерится chrome-ралем (`chrome-tool-{id}`, side left,
 | `catalog` (Package) | `kp-create-toggle-left` «Товары» | ✅ каталог изделий | merge → секция **Каталог**, id `catalog` |
 | `template` (FileText) | `kp-create-toggle-template` | ✅ | остаётся, id `template` |
 | `composition` (List) | (в create — внутри `kp-create-toggle-table`) | ⚠️ состав = часть таблицы | merge в **Редактор таблицы**, id `table` |
-| `params` (Settings) | `kp-create-toggle-right` (SlidersHorizontal) | ✅ | остаётся, иконка → `SlidersHorizontal` |
+| `params` (Settings) | `kp-create-toggle-right` (SlidersHorizontal) | ✅ | остаётся, иконка → `SlidersHorizontal`, содержимое сужено до док./вид листа/фирма |
+| `money` (CircleDollarSign) | — (new, PO 2026-08-24) | — | новая секция: наценка/НДС/скидка/оценка, id `money` |
+| `deadlines` (Clock) | — (new, PO 2026-08-24) | — | новая секция: предоплата/дни, id `deadlines` |
 | `client` (User) | `kp-create-toggle-recipient` (ContactRound) | ✅ | остаётся, иконка → `ContactRound` |
 | `terms` (ScrollText) | `kp-create-toggle-terms` | ✅ | остаётся, id `terms` |
 | — (нет) | `kp-create-toggle-output` (Printer) | — | **убрать из rail** → ribbon |
 | — (нет) | `kp-create-toggle-table` (TableProperties) | — | остаётся, id `table`, tier L |
 
-Итог: 6 chrome-tool секций (3 left + 3 right) вместо 7 инлайн-кнопок; `kp-create-toggle-output`
+Итог: 8 chrome-tool секций (3 left + 5 right) вместо 7 инлайн-кнопок; `kp-create-toggle-output`
 ликвидируется на cutover 408 (переезд в ribbon), остальные `kp-create-toggle-*` → алиасы
 `chrome-tool-*` до очистки 409.
 
@@ -80,11 +89,14 @@ Demo rail рендерится chrome-ралем (`chrome-tool-{id}`, side left,
 | `User` (demo `client`) vs `ContactRound` (create `recipient`) | rail | Финал — `ContactRound` (контакт точнее «пользователя»). `User` освобождается |
 | `Settings` (demo `params`) vs `SlidersHorizontal` (create `params`) | rail | Финал — `SlidersHorizontal` (create SoT, ближе к «настройки документа») |
 | `List` (demo `composition`) vs `TableProperties` (create `table`) | rail | Финал — `TableProperties`; `List` освобождается (не использовать для «Состав» отдельно) |
-| `Printer` дважды: demo ribbon «Печать» и create rail `output` | rail vs ribbon | Ribbon SoT; rail-кнопка удаляется |
+| `CircleDollarSign` (new `money` — IA-510) | rail | Новая секция «Деньги», ранее не использовалась. Свободна в `SECTION_DEFS` |
+| `Clock` (new `deadlines` — IA-510) | rail | Новая секция «Сроки», ранее не использовалась. Свободна в `SECTION_DEFS` |
+| `Printer` дважды: demo ribbon «Печать» и create rail `output` | rail vs ribbon | Ribbon SoT; rail-кнопка удаляется. `Printer` **не** в rail (только ribbon) |
 | `Download` (PDF) — только demo ribbon | ribbon | Остаётся в ribbon; create `kp-output-pdf` сливается |
 
-Проверка после Layer 1: каждый Lucide-икон в rails/ribbon встречается ровно один раз
+Проверка после Layer 1 (510): каждый Lucide-икон в rails/ribbon встречается ровно один раз
 (грепом по `[img]="...Icon"`), кроме `ChevronDown` (селекторы) и `Ellipsis` (меню «Ещё»).
+Иконки `CircleDollarSign`/`Clock` добавлены в целевой набор (IA-510); `Printer` — только ribbon.
 
 ## 4. Dedup кнопок (не иконок)
 
@@ -112,11 +124,15 @@ Demo rail рендерится chrome-ралем (`chrome-tool-{id}`, side left,
 
 - **TZ-402:** chrome-tool секции по таблице §1; demo `catalog|template|composition|params|client|terms`
   переименовать/слить по §2 (id = финальные).
+- **TZ-KP-IA-510:** добавить chrome-tool секции `money` (CircleDollarSign) и `deadlines` (Clock).
+  `chrome-tool-output` **не** регистрируется в rail.
+- **Ожидаемые chrome-tool ids (финал):** `catalog`, `template`, `client`|`recipient`,
+  `params`, `money`, `deadlines`, `table`, `terms`.
 - **Leftover (legacy, до 409):** инлайн `kp-rail-left`/`kp-rail-right` + `kp-create-toggle-*`
   в `proposal-create.page.ts`; flyout «Вывод» (`kp-output-*`); секция demo `composition`.
-- **Parity-тесты** (408): `chrome-tool-catalog/template/client/params/table/terms` рендерятся
+- **Parity-тесты** (408+510): `chrome-tool-catalog/template/client/params/money/deadlines/table/terms` рендерятся
   и открывают панель; `kp-ws-ribbon-print/pdf/more` присутствуют; rail не содержит кнопки
-  «Вывод»; `Package/FileText/ContactRound/SlidersHorizontal/TableProperties/ScrollText`
+  «Вывод»; `Package/FileText/ContactRound/SlidersHorizontal/CircleDollarSign/Clock/TableProperties/ScrollText`
   встречаются в rails ровно по одному разу.
 
 ## 7. Migration note
@@ -125,5 +141,6 @@ Demo rail рендерится chrome-ралем (`chrome-tool-{id}`, side left,
 - Не добавлять rail-кнопку «Вывод» — вывод живёт в ribbon.
 - Не использовать освобождённые иконки (`List`, `User`, `Settings`) в новых секциях без
   новой резолюции в этой таблице.
+- **IA-510:** `CircleDollarSign` и `Clock` закреплены за `money`/`deadlines` — не reuse.
 - Ручной дубль rail-раздела в ribbon (например, «Клиент» и в rail, и в ribbon-селекторе) —
   запрещён: ribbon-селектор «Клиент» — сводка, панель «Клиент» — редактирование.

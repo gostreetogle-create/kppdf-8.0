@@ -50,9 +50,10 @@ Resume keys localStorage (пока общие с create): `kp.create.lastDraftId
 │  Recipient    │                        │                     │
 ├ chrome-rail-R ┤  (right sections)      │                     │
 │  Params       │                        │                     │
+│  Money        │                        │                     │
+│  Deadlines    │                        │                     │
 │  Table (L)    │  tier-L может ~794px overlay, без reflow A4  │
 │  Terms        │                        │                     │
-│  Output       │                        │                     │
 └───────────────┴────────────────────────┴─────────────────────┘
 ```
 
@@ -63,7 +64,7 @@ Resume keys localStorage (пока общие с create): `kp.create.lastDraftId
 - **Клик по A4** / Escape → свернуть панель (кроме модалки catalog-review).
 
 Детали геометрии: [`kp-workspace-geometry.md`](./kp-workspace-geometry.md).  
-IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rail-ia.md) — создать в TZ-400.
+IA иконок (после 510): [`kp-workspace-rail-ia.md`](./kp-workspace-rail-ia.md) — 3L + 5R.
 
 ## Секции (target IA)
 
@@ -71,11 +72,13 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 |--------|------|--------------------------------------|-----|
 | Шаблон | L | секция «Из файла (AI)» (406) + mini-actions (rename/дубликат/фон, 405) + picker с бейджем `(AI)` → «Редактировать» → builder `?returnUrl=` | S |
 | Каталог | L | витрина изделий/модулей/материалов: search, chips, pager, cards, «В КП: N» | S / L* |
-| Получатель | L | Counterparty · контакт · объект | S |
-| Параметры | R | org, деньги, сроки, вид листа | S |
+| Получатель | L | Counterparty · контакт · объект · сводка клиента (была в params) | S |
+| Параметры | R | документ · вид листа · наша фирма (`Organization`) | S |
+| Деньги | R | наценка · НДС · скидка · оценка стоимости | S |
+| Сроки | R | предоплата · дней на производство | S |
 | Редактор таблицы | R | состав + chrome + DnD + row drawer + catalog review | L |
 | Условия | R | `Quotation.terms` + библиотека TextBlock | S |
-| Вывод | R / ribbon | Печать · PDF · Архив (gates 368) | S |
+| Вывод | ribbon | Печать · PDF · Архив (gates 368) — **не** rail | — |
 
 \* если витрина не влезает в 480 — nested/wider overlay, **без** reflow A4.
 
@@ -110,7 +113,7 @@ IA иконок (после 400): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | Сигнал / store | Назначение |
 |----------------|------------|
 | `ProposalWorkspaceStore` (TZ-402 DONE) | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId`; actions `openSection`/`toggleSection`/`closePanel`/`setOrientation` |
-| `ProposalWorkspaceDraftService` (TZ-404 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org/деньги/сроки + right-panel state: `kpTableLayout`/`tableTargets`/`tableTemplateId` + `catalogReviewOpen`/`catalogReviewRows` + `requestOutput` gates + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
+| `ProposalWorkspaceDraftService` (TZ-404 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org + money/наценка/НДС/скидка + deadlines/предоплата/дни + right-panel state: `kpTableLayout`/`tableTargets`/`tableTemplateId` + `catalogReviewOpen`/`catalogReviewRows` + `requestOutput` gates + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
 | draft lines / templateId / org / recipient / terms / sheetLayout / kpTableLayout | как create — один autosave path |
 | `panelCollapsed` | overlay hide; A4 неизменен |
 

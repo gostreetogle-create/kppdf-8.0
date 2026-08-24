@@ -199,6 +199,7 @@ import { forkJoin } from 'rxjs';
               [errorMessage]="photoErrorMessage()"
               (uploadRequest)="onUploadRequest($event)"
               (deleteRequest)="onDeleteRequest($event)"
+              (invalidFileType)="onInvalidPhotoType()"
             />
           </div>
 
@@ -425,6 +426,10 @@ export class ModuleFormDialogComponent implements OnDestroy {
         this.toast.error(message);
       }
     });
+  }
+
+  protected onInvalidPhotoType(): void {
+    this.photoErrorMessage.set(PiPhotoDropzoneComponent.INVALID_FILE_TYPE_MESSAGE);
   }
 
   protected onDeleteRequest(id: string): void {

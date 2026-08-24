@@ -76,10 +76,10 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     expect(summary).toBeTruthy();
     expect(summary.textContent).toContain('19.08.2026');
     expect(summary.textContent).toContain('Подшипник 6205');
-    expect(summary.querySelectorAll('.supply-quick-order__summary-cell').length).toBe(4);
-    expect(root.querySelectorAll('[data-test="supply-quick-table-head"] > span').length).toBe(6);
+    expect(summary.querySelectorAll('.supply-quick-order__summary-cell').length).toBe(6);
+    expect(root.querySelectorAll('[data-test="supply-quick-table-head"] > span').length).toBe(8);
     expect(root.querySelector('[data-test="supply-quick-table-head"]')?.textContent).toContain(
-      'Материал',
+      'Наименование',
     );
     expect(summary.querySelector('[data-test="supply-quick-status-badge"]')).toBeTruthy();
   });
@@ -108,26 +108,23 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     ).toBeTruthy();
   });
 
-  it('TZ-SUPPLY-306: expanded tile renders three cards, inline delete, one-line notes', () => {
+  it('TZ-SUPPLY-306 / 431: expanded tile renders three zones A|B|C simultaneously', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
       visibleRows: () => { id: string }[];
-      whereExpanded: { set: (v: boolean) => void };
-      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand(comp.visibleRows()[0].id);
-    comp.whereExpanded.set(true);
-    comp.detailsExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(3);
-    expect(
-      root.querySelector('.supply-quick-order__head [data-test="supply-quick-delete"]'),
-    ).toBeTruthy();
+    expect(root.querySelectorAll('.supply-quick-order__zone').length).toBe(3);
+    expect(root.querySelector('.supply-quick-order__zone--a')).toBeTruthy();
+    expect(root.querySelector('.supply-quick-order__zone--b')).toBeTruthy();
+    expect(root.querySelector('.supply-quick-order__zone--c')).toBeTruthy();
+    expect(root.querySelector('[data-test="supply-quick-delete"]')).toBeTruthy();
     expect(root.querySelector('[data-test="supply-quick-tile-expanded"] textarea')).toBeNull();
 
     for (const hook of [
@@ -151,38 +148,23 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     }
   });
 
-  it('TZ-SUPPLY-308R: where/details strips stay gated behind ▸ toggles (Option A)', () => {
+  it('TZ-SUPPLY-431: expanded row shows all zones without accordion toggles', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
       visibleRows: () => { id: string }[];
-      whereExpanded: { set: (v: boolean) => void };
-      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand(comp.visibleRows()[0].id);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    // Position strip only — where/details collapsed by default.
-    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(1);
-    expect(root.querySelector('.supply-quick-order__strip--what')).toBeTruthy();
-    expect(root.querySelector('[data-test="supply-quick-where-toggle"]')).toBeTruthy();
-    expect(root.querySelector('[data-test="supply-quick-details-toggle"]')).toBeTruthy();
-    expect(root.querySelector('[data-test="supply-quick-supplier-select"]')).toBeNull();
-    expect(root.querySelector('[data-test="supply-quick-status-select"]')).toBeNull();
-    expect(root.querySelector('[data-test="supply-quick-more-toggle"]')).toBeTruthy();
-
-    comp.whereExpanded.set(true);
-    fixture.detectChanges();
+    expect(root.querySelector('[data-test="supply-quick-where-toggle"]')).toBeNull();
+    expect(root.querySelector('[data-test="supply-quick-details-toggle"]')).toBeNull();
     expect(root.querySelector('[data-test="supply-quick-supplier-select"]')).toBeTruthy();
-    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(2);
-
-    comp.detailsExpanded.set(true);
-    fixture.detectChanges();
     expect(root.querySelector('[data-test="supply-quick-status-select"]')).toBeTruthy();
-    expect(root.querySelectorAll('.supply-quick-order__strip').length).toBe(3);
+    expect(root.querySelectorAll('.supply-quick-order__zone').length).toBe(3);
   });
 
   it('TZ-SUPPLY-307: what strip has no free-text title / article inputs', () => {
@@ -395,38 +377,21 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     ).toBe(false);
   });
 
-  it('TZ-SUPPLY-308: expanded card is split into three labelled groups', () => {
+  it('TZ-SUPPLY-308 / 431: expanded card is split into three zone columns', () => {
     const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
     fixture.detectChanges();
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
-      detailsExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
     fixture.detectChanges();
-    comp.whereExpanded.set(true);
-    comp.detailsExpanded.set(true);
-    fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    const labels = Array.from(root.querySelectorAll('.supply-quick-order__strip-label')).map((e) =>
+    const titles = Array.from(root.querySelectorAll('.supply-quick-order__zone-title')).map((e) =>
       (e.textContent ?? '').trim(),
     );
-    expect(labels).toEqual(['Позиция', 'Поставщик', 'Детали и статус']);
-
-    const subgroupLabels = (stripClass: string) =>
-      Array.from(root.querySelectorAll(`${stripClass} .supply-quick-order__subgroup-label`)).map(
-        (e) => (e.textContent ?? '').trim(),
-      );
-    expect(subgroupLabels('.supply-quick-order__strip--what')).toEqual([
-      'Категория',
-      'Материал',
-      'Количество',
-    ]);
-    expect(subgroupLabels('.supply-quick-order__strip--where')).toEqual(['Организация', 'Контакт']);
-    expect(subgroupLabels('.supply-quick-order__strip--details')).toEqual(['Контекст', 'Статус']);
+    expect(titles).toEqual(['A ПОЗИЦИЯ', 'B ПОСТАВЩИК И КОНТАКТ', 'C ДЕТАЛИ']);
   });
 
   it('TZ-SUPPLY-308: suppliers are filtered by row category, managers by supplier', async () => {
@@ -437,26 +402,20 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       toggleExpand: (id: string) => void;
       onCategoryChange: (rowId: string, categoryId: string) => void;
       visibleRows: () => { id: string; supplierId: string | null }[];
-      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
     // NgModel applies value / disabled state in a microtask, so flush before DOM asserts.
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
-    const optionsOf = (hook: string) =>
-      Array.from(root.querySelectorAll(`[data-test="${hook}"] option`)).map((o) =>
-        (o.textContent ?? '').trim(),
-      );
 
     const supplierOptions = openOverflowOptions(root, 'supply-quick-supplier-select');
     expect(supplierOptions).toContain('Кубаньподшипник');
     expect(supplierOptions).not.toContain('profrezi.ru');
-    expect(optionsOf('supply-quick-manager-select')).toContain('Ковалёв И. П.');
-    expect(optionsOf('supply-quick-manager-select')).not.toContain('Сидоров А. Ю.');
+    const managerOptions = openOverflowOptions(root, 'supply-quick-manager-select');
+    expect(managerOptions).toContain('Ковалёв И. П.');
+    expect(managerOptions).not.toContain('Сидоров А. Ю.');
     expect(
       (root.querySelector('[data-test="supply-quick-manager-email"]') as HTMLInputElement).value,
     ).toBe('kovalev@kubanpodshipnik.ru');
@@ -616,18 +575,18 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-2');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
     expect(
-      (root.querySelector('[data-test="supply-quick-manager-select"]') as HTMLSelectElement)
-        .disabled,
+      (
+        root.querySelector(
+          '[data-test="supply-quick-manager-select"] button[data-test="pi-overflow-select-trigger"]',
+        ) as HTMLButtonElement
+      ).disabled,
     ).toBe(true);
     expect(
       (root.querySelector('[data-test="supply-quick-manager-add"]') as HTMLButtonElement).disabled,
@@ -640,7 +599,8 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: { set: (v: string) => void; whereExpanded: { set: (v: boolean) => void } };
+      openNewSupplier: (rowId: string) => void;
+      newSupplierName: { set: (v: string) => void };
       newSupplierInn: { set: (v: string) => void };
       newSupplierWebsite: { set: (v: string) => void };
       newContactLastName: { set: (v: string) => void };
@@ -656,19 +616,10 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     };
     comp.toggleExpand('qo-2');
     fixture.detectChanges();
-    comp.whereExpanded.set(true);
-    fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
-    (root.querySelector('[data-test="supply-quick-supplier-add"]') as HTMLButtonElement).click();
+    comp.openNewSupplier('qo-2');
     fixture.detectChanges();
-    expect(document.body.querySelector('[data-test="supply-quick-supplier-panel"]')).toBeTruthy();
-    expect(
-      document.body
-        .querySelector('[data-test="supply-quick-supplier-panel-category"]')
-        ?.textContent?.trim(),
-    ).toBe('Метизы');
-
     comp.newSupplierName.set('Метизторг');
     comp.newSupplierInn.set('1234567890');
     comp.newSupplierWebsite.set('https://metiztorg.ru');
@@ -679,7 +630,6 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     const row = comp.visibleRows().find((r) => r.id === 'qo-2');
     expect(row?.supplierId).toBeTruthy();
     expect(row?.supplierContactId).toBeNull();
-    expect(document.body.querySelector('[data-test="supply-quick-supplier-panel"]')).toBeNull();
     expect(root.querySelector('[data-test="supply-quick-supplier-manager-last-name"]')).toBeNull();
     // TZ-SUPPLY-311: новый поставщик больше не привязан к категории (общий справочник).
     expect(comp.suppliers().find((s) => s.id === row!.supplierId)?.categoryIds).toEqual([]);
@@ -692,20 +642,23 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     expect(
       root
         .querySelector('[data-test="supply-quick-product-url"]')
-        ?.closest('.supply-quick-order__strip--what'),
+        ?.closest('.supply-quick-order__zone--a'),
     ).toBeTruthy();
     expect(
       root
         .querySelector('[data-test="supply-quick-product-url"]')
-        ?.closest('.supply-quick-order__strip--where'),
+        ?.closest('.supply-quick-order__zone--b'),
     ).toBeNull();
 
     const supplierOptions = openOverflowOptions(root, 'supply-quick-supplier-select');
     expect(supplierOptions).toContain('Метизторг');
-    const managerSelect = root.querySelector(
-      '[data-test="supply-quick-manager-select"]',
-    ) as HTMLSelectElement;
-    expect(managerSelect.disabled).toBe(false);
+    expect(
+      (
+        root.querySelector(
+          '[data-test="supply-quick-manager-select"] button[data-test="pi-overflow-select-trigger"]',
+        ) as HTMLButtonElement
+      ).disabled,
+    ).toBe(false);
     expect(
       (root.querySelector('[data-test="supply-quick-manager-add"]') as HTMLButtonElement).disabled,
     ).toBe(false);
@@ -721,9 +674,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const updatedRow = comp.visibleRows().find((r) => r.id === 'qo-2');
     expect(updatedRow?.supplierContactId).toBeTruthy();
-    const managerOptions = Array.from(
-      root.querySelectorAll('[data-test="supply-quick-manager-select"] option'),
-    ).map((o) => (o.textContent ?? '').trim());
+    const managerOptions = openOverflowOptions(root, 'supply-quick-manager-select');
     expect(managerOptions).toContain('Панов Д.');
   });
 
@@ -733,17 +684,12 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newContactLastName: {
-        set: (v: string) => void;
-        whereExpanded: { set: (v: boolean) => void };
-      };
+      newContactLastName: { set: (v: string) => void };
       saveNewManager: (rowId: string) => void;
       contactsFor: (supplierId: string | null) => { id: string; position?: string }[];
       visibleRows: () => { id: string; supplierContactId: string | null }[];
     };
     comp.toggleExpand('qo-1');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -762,9 +708,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       contacts.at(-1)?.id,
     );
     expect(document.body.querySelector('[data-test="supply-quick-manager-panel"]')).toBeNull();
-    const managerOptions = Array.from(
-      root.querySelectorAll('[data-test="supply-quick-manager-select"] option'),
-    ).map((o) => (o.textContent ?? '').trim());
+    const managerOptions = openOverflowOptions(root, 'supply-quick-manager-select');
     expect(managerOptions).toContain('Тарасов');
   });
 
@@ -774,11 +718,9 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
+      openNewSupplier: (rowId: string) => void;
     };
     comp.toggleExpand('qo-1');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -786,7 +728,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     fixture.detectChanges();
     expect(document.body.querySelector('[data-test="supply-quick-manager-panel"]')).toBeTruthy();
 
-    (root.querySelector('[data-test="supply-quick-supplier-add"]') as HTMLButtonElement).click();
+    comp.openNewSupplier('qo-1');
     fixture.detectChanges();
     expect(document.body.querySelector('[data-test="supply-quick-manager-panel"]')).toBeNull();
     expect(document.body.querySelector('[data-test="supply-quick-supplier-panel"]')).toBeTruthy();
@@ -803,11 +745,8 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-1');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -1171,11 +1110,8 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       toggleExpand: (id: string) => void;
       onCategoryChange: (rowId: string, categoryId: string) => void;
       onSupplierChange: (rowId: string, supplierId: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
     };
     comp.toggleExpand('qo-2');
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
     comp.onCategoryChange('qo-2', 'cat-osnastka');
     fixture.detectChanges();
@@ -1190,12 +1126,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     expect(
       (root.querySelector('[data-test="supply-quick-supplier-email"]') as HTMLInputElement).value,
     ).toBe('sales@profrezi.ru');
-    expect(
-      root.querySelector('[data-test="supply-quick-supplier-persist-hint"]')?.textContent,
-    ).toContain('Сайт и почта сохраняются в карточке поставщика');
-    expect(
-      root.querySelector('[data-test="supply-quick-manager-persist-hint"]')?.textContent,
-    ).toContain('Контакты сохраняются у менеджера');
+    expect(root.querySelector('[data-test="supply-quick-supplier-persist-hint"]')).toBeNull();
   });
 
   it('TZ-SUPPLY-317: valid email commits one Organization PATCH on blur', () => {
@@ -1284,7 +1215,7 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
     );
 
-    jest.advanceTimersByTime(500);
+    jest.advanceTimersByTime(400);
     const requests = httpMock.match(
       (r) => r.method === 'PATCH' && r.url === `/api/organizations/${supplierId}`,
     );
@@ -1374,7 +1305,6 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
       onSupplierFieldBlur: (supplierId: string, field: 'website' | 'email') => void;
       supplierEmail: (id: string | null) => string;
       toggleExpand: (id: string) => void;
-      whereExpanded: { set: (v: boolean) => void };
       visibleRows: () => { id: string }[];
     };
     comp.suppliers.update((list) => [
@@ -1383,8 +1313,6 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     ]);
     const rowId = comp.visibleRows()[0]!.id;
     comp.toggleExpand(rowId);
-    fixture.detectChanges();
-    comp.whereExpanded.set(true);
     fixture.detectChanges();
 
     comp.onSupplierFieldInput(supplierId, 'email', 'bad@');
@@ -1412,22 +1340,15 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     const httpMock = TestBed.inject(HttpTestingController);
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: {
-        set: (value: string) => void;
-        whereExpanded: { set: (v: boolean) => void };
-      };
+      openNewSupplier: (rowId: string) => void;
+      newSupplierName: { set: (value: string) => void };
+      newSupplierInn: { set: (value: string) => void };
       newSupplierEmail: { set: (value: string) => void };
       saveNewSupplier: (rowId: string) => void;
     };
     comp.toggleExpand('qo-2');
     fixture.detectChanges();
-    comp.whereExpanded.set(true);
-    fixture.detectChanges();
-    (
-      fixture.nativeElement.querySelector(
-        '[data-test="supply-quick-supplier-add"]',
-      ) as HTMLButtonElement
-    ).click();
+    comp.openNewSupplier('qo-2');
     fixture.detectChanges();
     comp.newSupplierName.set('Поставщик с почтой');
     comp.newSupplierInn.set('1234567890');
@@ -1457,27 +1378,85 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
 
     const comp = fixture.componentInstance as unknown as {
       toggleExpand: (id: string) => void;
-      newSupplierName: { set: (v: string) => void; whereExpanded: { set: (v: boolean) => void } };
+      openNewSupplier: (rowId: string) => void;
+      newSupplierName: { set: (v: string) => void };
       newSupplierInn: { set: (v: string) => void };
       visibleRows: () => { id: string; supplierId: string | null }[];
     };
     comp.toggleExpand('qo-2');
     fixture.detectChanges();
-    comp.whereExpanded.set(true);
-    fixture.detectChanges();
-
-    const root = fixture.nativeElement as HTMLElement;
-    (root.querySelector('[data-test="supply-quick-supplier-add"]') as HTMLButtonElement).click();
+    comp.openNewSupplier('qo-2');
     fixture.detectChanges();
 
     comp.newSupplierName.set('Метизторг Модал');
     comp.newSupplierInn.set('1234567890');
-    (
-      document.body.querySelector('[data-test="supply-quick-supplier-save"]') as HTMLButtonElement
-    ).click();
+    comp.saveNewSupplier('qo-2');
     fixture.detectChanges();
 
     expect(comp.visibleRows().find((r) => r.id === 'qo-2')?.supplierId).toBeTruthy();
     expect(document.body.querySelector('[data-test="supply-quick-modal"]')).toBeNull();
+  });
+
+  it('TZ-SUPPLY-431: single contact auto-selected on supplier change', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const comp = fixture.componentInstance as unknown as {
+      onSupplierChange: (rowId: string, supplierId: string) => void;
+      visibleRows: () => { id: string; supplierContactId: string | null }[];
+    };
+    comp.onSupplierChange('qo-2', 'sup-profrezi');
+    fixture.detectChanges();
+    const row = comp.visibleRows().find((r) => r.id === 'qo-2');
+    expect(row?.supplierContactId).toBeTruthy();
+  });
+
+  it('TZ-SUPPLY-431: promote org merges supplier type via PATCH', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+    const httpMock = TestBed.inject(HttpTestingController);
+    const orgId = 'ffffffffffffffffffffffff';
+    const comp = fixture.componentInstance as unknown as {
+      activeRowId: { set: (v: string) => void };
+      pendingPromoteOrg: {
+        set: (v: { _id: string; name: string; inn: string; type: string[] }) => void;
+      };
+      confirmPromoteOrg: () => void;
+      onSupplierChange: (rowId: string, supplierId: string) => void;
+    };
+    comp.activeRowId.set('qo-1');
+    comp.pendingPromoteOrg.set({
+      _id: orgId,
+      name: 'Клиент ООО',
+      inn: '7700000000',
+      type: ['customer'],
+    });
+    comp.confirmPromoteOrg();
+
+    const patch = httpMock.expectOne(
+      (r) => r.method === 'PATCH' && r.url === `/api/organizations/${orgId}`,
+    );
+    expect(patch.request.body).toEqual({ type: ['customer', 'supplier'] });
+    patch.flush({
+      _id: orgId,
+      name: 'Клиент ООО',
+      inn: '7700000000',
+      type: ['customer', 'supplier'],
+    });
+    const findReq = httpMock.match(
+      (r) => r.method === 'GET' && r.url === `/api/organizations/${orgId}`,
+    );
+    for (const req of findReq) {
+      req.flush({
+        _id: orgId,
+        name: 'Клиент ООО',
+        inn: '7700000000',
+        type: ['customer', 'supplier'],
+      });
+    }
+    const contactReqs = httpMock.match(
+      (r) => r.method === 'GET' && r.url === `/api/organizations/${orgId}/contacts`,
+    );
+    for (const req of contactReqs) req.flush([]);
+    fixture.detectChanges();
   });
 });

@@ -121,14 +121,13 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
     );
   });
 
-  it('TZ-UI-PLUS-604: org select uses pi-select-add-row with supply add-btn', () => {
+  it('TZ-UI-PLUS-604: org select uses PiSelectAddRow with kp-insp-org-add', () => {
     const source = require('fs').readFileSync(
       require('path').join(__dirname, 'proposal-create-inspector.component.ts'),
       'utf8',
     );
-    expect(source).toContain('pi-select-add-row');
-    expect(source).toContain('pi-select-add-btn');
-    expect(source).toContain('data-test="kp-insp-org-add"');
+    expect(source).toContain('app-pi-select-add-row');
+    expect(source).toContain('addDataTest="kp-insp-org-add"');
     expect(source).toContain('openCreateOrganization()');
     expect(source).toContain('data-test="kp-insp-open-org"');
   });

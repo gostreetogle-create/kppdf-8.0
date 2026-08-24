@@ -1,7 +1,7 @@
 # Page ↔ TZ index
 
 **Purpose:** Search by page/route to find which tasks touched or will touch it.  
-**Updated:** 2026-08-23 (UI War Room WR-500…512; **WAVE-UI-DENSITY DEN closeout DONE** — 552 WAIT 409, 512 deferred)
+**Updated:** 2026-08-24 (IA-510 docs DONE — KP rail money/deadlines; UI War Room WR-500…512 DONE)
 
 How to use: `Ctrl+F` по route или имени страницы. Новые TZ обязаны указывать
 `PAGES:` / `PAGE_DOCS:` в шапке (см. `tz-authoring`).
@@ -82,8 +82,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
 | `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
-| `/proposals/workspace` | **kp-workspace.page.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409 archived); SoT студии; cutover 408; god-page удалена 409 |
-| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); legacy-канон до cutover; см. banner в page doc |
+| `/proposals/workspace` | **kp-workspace.page.md** · **kp-workspace-rail-ia.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409); **WAVE-KP-RAIL-BIND** TZ-KP-IA-510/511 + TZ-KP-BIND-512 (Money/Deadlines rail; registry labels; 510 docs DONE) |
+| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
@@ -153,6 +153,7 @@ Merged: 502→501, 511→507, 512→506.
 
 | TZ | Pages | One-liner |
 |----|-------|-----------|
+| [AUDIT-MGR-530](../../tasks/TZ-AUDIT-MGR-530-manager-journey-audit.md) | cross-cutting | Manager-journey smoke checklist + orchestration (PO smoke wave 2026-08-24) |
 | [UX-301 DONE](../../tasks/_archive/2026-08/TZ-UX-301.done.md) | inventory, storage-items, stock-movements | Add Склад nav |
 | [UX-302 DONE](../../tasks/_archive/2026-08/TZ-UX-302.done.md) | categories | Strip dead docCat |
 | [UX-303 DONE](../../tasks/_archive/2026-08/TZ-UX-303.done.md) | documents, dictionaries | Unify labels |

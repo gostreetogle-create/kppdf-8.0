@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, of, switchMap } from 'rxjs';
 import { PiPageChromeComponent, type PageCrumb } from '../../shared/page/pi-page-chrome.component';
@@ -37,8 +37,8 @@ import {
   ORDER_TREE_MAX_DEPTH,
 } from '../../shared/orders/order-composition-forest';
 import {
-  isEmptyCatalogBranch,
   openCatalogEditFromTree,
+  openCatalogViewFromTree,
   type CatalogCompositionEditDeps,
 } from '../../shared/orders/open-catalog-composition-edit';
 
@@ -236,6 +236,7 @@ type PopulatedOwner =
 })
 export class OrderDetailPage {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly orders = inject(OrdersService);
   private readonly catalog = inject(ProductModulesService);
   private readonly products = inject(ProductsService);
@@ -456,9 +457,7 @@ export class OrderDetailPage {
 
   protected onSelect(ev: CompositionTreeSelectEvent): void {
     this.selectedId.set(ev.node._id);
-    if (isEmptyCatalogBranch(ev.node)) {
-      openCatalogEditFromTree(this.catalogEditDeps(), ev);
-    }
+    openCatalogViewFromTree(this.router, ev);
   }
 
   protected onEdit(ev: CompositionTreeEditEvent): void {

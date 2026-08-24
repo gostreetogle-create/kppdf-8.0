@@ -46,6 +46,7 @@ import { PiToastService } from '../shared/ui/toast/pi-toast.service';
 import { PiNotificationBellComponent } from '../shared/ui/notifications/pi-notification-bell.component';
 import { PairingDialogComponent } from '../pages/desktop/pairing-dialog.component';
 import { API_BASE_URL } from '../core/api.tokens';
+import { BUILD_INFO } from '../core/build-info';
 import {
   PiNavDropdownComponent,
   type PiNavDropdownItem,
@@ -556,6 +557,18 @@ export function matchActiveCategoryId(
           </footer>
         }
       </div>
+
+      @if (devBuildLabel) {
+        <div
+          class="fixed bottom-1 right-1 z-[100] pointer-events-none select-none
+                 px-1.5 py-0.5 rounded-sm hairline bg-paper-2/90
+                 font-mono text-[10px] text-muted-foreground opacity-80"
+          data-test="dev-build-badge"
+          aria-hidden="true"
+        >
+          local · {{ devBuildLabel }}
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -650,6 +663,9 @@ export function matchActiveCategoryId(
 export class AppLayoutComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly monitorIcon = Monitor;
+  /** Dev-only: git short SHA from scripts/write-build-info.mjs (start.mjs). */
+  protected readonly devBuildLabel =
+    isDevMode() && BUILD_INFO.sha !== 'dev' ? BUILD_INFO.sha : null;
   // TZ-UX-317 — системные ← → в полях.
   protected readonly backIcon = ArrowLeft;
   protected readonly forwardIcon = ArrowRight;

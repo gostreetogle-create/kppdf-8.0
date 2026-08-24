@@ -16,6 +16,7 @@ import {
   catchError,
   debounceTime,
   forkJoin,
+  fromEvent,
   groupBy,
   map,
   mergeMap,
@@ -46,6 +47,8 @@ import type { AddBlockPayload } from './builder.types';
 import { BuilderCanvasComponent } from './builder-canvas.component';
 import { BuilderInspectorComponent } from './builder-inspector.component';
 import { BuilderToolPaneComponent } from './builder-tool-pane.component';
+import { TextBlocksService } from '../../../shared/services/pi-text-blocks.service';
+import type { TextBlock } from '../../../shared/services/pi-text-blocks.service';
 
 /**
  * Полная документация страницы: docs/pages/builder.page.md
@@ -176,32 +179,45 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         (ungroupGroup)="onUngroupById($event)"
       ></app-builder-tool-pane>
 
-      <app-builder-canvas
-        [blocks]="blocks()"
-        [selectedId]="selectedId()"
-        [selectedIds]="selectedIds()"
-        [backgroundImages]="backgroundImages()"
-        [orientation]="orientation()"
-        [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
-        [pageNumbering]="template()?.pageNumbering ?? false"
-        [pageSize]="template()?.pageSize ?? 'A4'"
-        [snapEnabled]="snapEnabled()"
-        [gridSize]="gridSize()"
-        [boundaryPadding]="boundaryPadding()"
-        [gridVisible]="false"
-        [viewMode]="viewMode()"
-        (select)="onSelect($event)"
-        (multiSelect)="onMultiSelect($event)"
-        (marqueeSelect)="onMarqueeSelect($event)"
-        (reorder)="onReorder($event)"
-        (dropAdd)="onDropAdd($event)"
-        (blockWidthChange)="onBlockWidthChange($event)"
-        (overlayMove)="onOverlayMove($event)"
-        (overlayResize)="onOverlayResize($event)"
-        (layoutChanges)="onLayoutChanges($event)"
-        (canvasClick)="onCanvasClick()"
-        (deleteRequest)="onDeleteBlock($event)"
-      />
+      <div class="builder-canvas-wrap">
+        <app-builder-canvas
+          [blocks]="blocks()"
+          [selectedId]="selectedId()"
+          [selectedIds]="selectedIds()"
+          [backgroundImages]="backgroundImages()"
+          [orientation]="orientation()"
+          [backgroundOpacity]="template()?.backgroundOpacity ?? 0.3"
+          [pageNumbering]="template()?.pageNumbering ?? false"
+          [pageSize]="template()?.pageSize ?? 'A4'"
+          [snapEnabled]="snapEnabled()"
+          [gridSize]="gridSize()"
+          [boundaryPadding]="boundaryPadding()"
+          [gridVisible]="false"
+          [viewMode]="viewMode()"
+          (select)="onSelect($event)"
+          (multiSelect)="onMultiSelect($event)"
+          (marqueeSelect)="onMarqueeSelect($event)"
+          (reorder)="onReorder($event)"
+          (dropAdd)="onDropAdd($event)"
+          (blockWidthChange)="onBlockWidthChange($event)"
+          (overlayMove)="onOverlayMove($event)"
+          (overlayResize)="onOverlayResize($event)"
+          (layoutChanges)="onLayoutChanges($event)"
+          (canvasClick)="onCanvasClick()"
+          (deleteRequest)="onDeleteBlock($event)"
+        />
+        @if (viewMode() === 'preview') {
+          @if (previewBuildLoading()) {
+            <div class="builder-build-preview-loading">Подстановка данных…</div>
+          } @else if (previewBuildHtml()) {
+            <iframe
+              class="builder-build-preview"
+              title="Превью с подстановкой"
+              [attr.srcdoc]="previewBuildHtml()"
+            ></iframe>
+          }
+        }
+      </div>
 
       <div class="builder-inspector-panel">
         <app-builder-inspector
@@ -251,6 +267,36 @@ import { BuilderToolPaneComponent } from './builder-tool-pane.component';
         flex: 1;
         min-height: 0;
         position: relative;
+      }
+
+      .builder-canvas-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+      }
+
+      .builder-build-preview {
+        position: absolute;
+        inset: 0;
+        z-index: 20;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: #fff;
+      }
+
+      .builder-build-preview-loading {
+        position: absolute;
+        inset: 0;
+        z-index: 21;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.85);
+        font-size: 13px;
+        color: var(--color-muted-foreground-strong);
       }
 
       .header-actions {
@@ -428,6 +474,7 @@ export class BuilderPage {
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly templatesSvc = inject(DocumentTemplatesService);
+  private readonly textBlocksSvc = inject(TextBlocksService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
   private readonly destroyRef = inject(DestroyRef);
@@ -449,6 +496,11 @@ export class BuilderPage {
   protected readonly templateSelected = signal<boolean>(false);
   /** TZ-211: View mode toggle — 'editor' | 'preview' */
   protected readonly viewMode = signal<'editor' | 'preview'>('editor');
+  /** TZ-DOC-525: server-built HTML when preview mode is active */
+  protected readonly previewBuildHtml = signal<string | null>(null);
+  protected readonly previewBuildLoading = signal(false);
+  private readonly liveRefresh$ = new Subject<void>();
+  private liveRefreshInFlight = 0;
   /** Snap-to-grid enabled for overlay blocks (persisted to localStorage). */
   protected readonly snapEnabled = signal<boolean>(loadSnapSettings().snapEnabled);
   /** Grid size for snapping (px) (persisted to localStorage). */
@@ -719,6 +771,57 @@ export class BuilderPage {
         replaceUrl: true,
       });
     });
+
+    // TZ-DOC-524: debounced live text-block refresh (focus + after load)
+    this.liveRefresh$
+      .pipe(
+        debounceTime(300),
+        switchMap(() => this.refreshLiveTextBlocks$()),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
+    if (typeof window !== 'undefined') {
+      fromEvent(window, 'focus')
+        .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => {
+          if (this.templateId()) this.scheduleLiveTextRefresh();
+        });
+    }
+
+    // TZ-DOC-525: preview mode → server build with sample org
+    effect(() => {
+      const mode = this.viewMode();
+      const tid = this.templateId();
+      if (mode !== 'preview' || !tid) {
+        this.previewBuildHtml.set(null);
+        this.previewBuildLoading.set(false);
+        return;
+      }
+      const tpl = this.template();
+      const rawOrg = tpl?.organizationId;
+      const organizationId =
+        rawOrg && typeof rawOrg === 'object' && '_id' in (rawOrg as object)
+          ? String((rawOrg as { _id: string })._id)
+          : rawOrg
+            ? String(rawOrg)
+            : undefined;
+      this.previewBuildLoading.set(true);
+      this.templatesSvc.build(tid, organizationId ? { organizationId } : {}).subscribe({
+        next: (res) => {
+          this.previewBuildLoading.set(false);
+          if (res.ok && typeof res.data === 'string') {
+            this.previewBuildHtml.set(res.data);
+          } else {
+            this.previewBuildHtml.set(null);
+          }
+        },
+        error: () => {
+          this.previewBuildLoading.set(false);
+          this.previewBuildHtml.set(null);
+        },
+      });
+    });
   }
 
   /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */
@@ -770,6 +873,7 @@ export class BuilderPage {
         this.isLoading.set(false);
         if (res.ok) {
           this.blocks.set(res.data ?? []);
+          this.scheduleLiveTextRefresh();
         } else {
           this.toast.error(extractErrorMessage(res.error));
         }
@@ -1690,6 +1794,59 @@ export class BuilderPage {
   protected onReload(): void {
     const tid = this.templateId();
     if (tid) this.loadBlocks(tid);
+  }
+
+  /** TZ-DOC-524 — queue refresh of live text-block refs on canvas. */
+  private scheduleLiveTextRefresh(): void {
+    this.liveRefresh$.next();
+  }
+
+  private refreshLiveTextBlocks$() {
+    const blocks = this.blocks();
+    const refIds = [
+      ...new Set(
+        blocks
+          .map((b) => {
+            const src = b.source;
+            if (src?.kind !== 'text-block' || src.mode === 'snapshot' || !src.refId) return null;
+            return src.refId;
+          })
+          .filter((id): id is string => !!id),
+      ),
+    ];
+    if (refIds.length === 0) return of(undefined);
+
+    const flight = ++this.liveRefreshInFlight;
+    return forkJoin(
+      refIds.map((id) =>
+        this.textBlocksSvc.findById(id).pipe(
+          map((res) => (res.ok && res.data ? { id, text: res.data as TextBlock } : null)),
+          catchError(() => of(null)),
+        ),
+      ),
+    ).pipe(
+      tap((results) => {
+        if (flight !== this.liveRefreshInFlight) return;
+        const byId = new Map(results.filter(Boolean).map((r) => [r!.id, r!.text] as const));
+        if (byId.size === 0) return;
+        this.blocks.update((current) =>
+          current.map((block) => {
+            const src = block.source;
+            if (src?.kind !== 'text-block' || src.mode === 'snapshot' || !src.refId) {
+              return block;
+            }
+            const text = byId.get(src.refId);
+            if (!text) return block;
+            return {
+              ...block,
+              content: text.content ?? block.content,
+              columns: text.columns ?? block.columns,
+            };
+          }),
+        );
+      }),
+      map(() => undefined),
+    );
   }
 
   /**
