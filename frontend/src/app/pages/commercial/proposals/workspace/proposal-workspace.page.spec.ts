@@ -5,10 +5,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
 import { of } from 'rxjs';
 import {
+  CircleDollarSign,
+  Clock,
   ContactRound,
   FileText,
   Package,
-  Printer,
   ScrollText,
   SlidersHorizontal,
   TableProperties,
@@ -166,26 +167,28 @@ describe('ProposalWorkspacePage', () => {
     expect(left.map((t) => t.icon)).toEqual([Package, FileText, ContactRound]);
   });
 
-  it('registers right rail: Параметры · Редактор таблицы · Условия · Вывод', () => {
+  it('registers right rail: Параметры · Деньги · Сроки · Таблица · Условия', () => {
     const right = chromeTools.rightTools();
-    expect(right.map((t) => t.id)).toEqual(['params', 'table', 'terms', 'output']);
+    expect(right.map((t) => t.id)).toEqual(['params', 'money', 'deadlines', 'table', 'terms']);
     expect(right.map((t) => t.title)).toEqual([
       'Параметры',
+      'Деньги',
+      'Сроки',
       'Редактор таблицы',
       'Условия',
-      'Вывод',
     ]);
     expect(right.map((t) => t.icon)).toEqual([
       SlidersHorizontal,
+      CircleDollarSign,
+      Clock,
       TableProperties,
       ScrollText,
-      Printer,
     ]);
   });
 
-  it('uses 7 distinct icons — no duplicate Template vs Terms (dedup IA)', () => {
+  it('uses 8 distinct icons — no duplicate Template vs Terms (dedup IA)', () => {
     const icons = [...chromeTools.leftTools(), ...chromeTools.rightTools()].map((t) => t.icon);
-    expect(new Set(icons).size).toBe(7);
+    expect(new Set(icons).size).toBe(8);
   });
 
   it('clicking catalog tool opens the panel with the catalog vitrine (tier-wide)', () => {
@@ -516,14 +519,25 @@ describe('ProposalWorkspacePage', () => {
     expect(page.textBlocksVersion()).toBe(before + 1);
   });
 
-  it('output panel mounts print/PDF/archive gates matching create (canon 368)', () => {
+  it('money and deadlines panels mount as separate S-tier inspector modes', () => {
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
-    store.openSection('output');
+    store.openSection('money');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[data-test="kp-create-output"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="kp-output-print"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="kp-output-pdf"]')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('[data-test="kp-output-archive"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-discount"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-org"]')).toBeNull();
+
+    store.openSection('deadlines');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-terms"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-discount"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-sheet-layout"]')).toBeNull();
+  });
+
+  it('does not register an output rail tool; output actions remain on ribbon', () => {
+    const right = chromeTools.rightTools();
+    expect(right.some((tool) => tool.id === 'output')).toBe(false);
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ribbon-print"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-ribbon-pdf"]')).not.toBeNull();
   });
 
   it('ribbon exposes Печать and PDF without opening the Вывод panel (canon: demo ribbon)', () => {

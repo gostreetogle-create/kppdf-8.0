@@ -22,10 +22,6 @@ import { InputComponent } from '../../../shared/ui/input/input.component';
 import { PiOverflowSelectComponent } from '../../../shared/ui/overflow-select/pi-overflow-select.component';
 import { Organization, OrganizationsService } from '../../../shared/services/organizations.service';
 import {
-  Counterparty,
-  CounterpartyService,
-} from '../../../shared/services/pi-counterparty.service';
-import {
   estimateFamilyTotal,
   type ProposalStatus,
 } from '../../../shared/services/pi-proposals.service';
@@ -87,6 +83,7 @@ export interface ProposalCreateInspectorState {
 }
 
 export type ProposalCreateStatus = ProposalStatus;
+export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
 
 /**
  * Right inspector for Create KP (TZ-SALES-315 + TZ-SALES-330).
@@ -105,7 +102,7 @@ export type ProposalCreateStatus = ProposalStatus;
   ],
   template: `
     <div class="inspector" data-test="kp-create-inspector">
-      @if (!tableOnly()) {
+      @if (mode() === 'params') {
         <p class="text-xs text-muted-foreground m-0" data-test="kp-hint-params">
           Параметры этого коммерческого предложения. Каталог и шаблон не меняются.
         </p>
@@ -141,7 +138,7 @@ export type ProposalCreateStatus = ProposalStatus;
         </div>
       }
 
-      @if (!tableOnly()) {
+      @if (mode() === 'params') {
         <section class="inspector__section" data-test="kp-insp-document">
           <div class="inspector__section-heading">
             <h3>Документ</h3>
@@ -226,31 +223,41 @@ export type ProposalCreateStatus = ProposalStatus;
             Открыть организацию
           </app-pi-button>
         }
+      }
 
-        <app-pi-form-field label="Наценка %" htmlFor="kp-insp-markup">
-          <app-pi-input
-            id="kp-insp-markup"
-            type="number"
-            [ngModel]="orgMarkupPercent()"
-            (ngModelChange)="onMarkupChange($event)"
-            [disabled]="readOnly()"
-            data-test="kp-insp-markup"
-          />
-        </app-pi-form-field>
+      @if (mode() === 'money') {
+        <section class="inspector__section" data-test="kp-insp-money-fields">
+          <div class="inspector__section-heading">
+            <h3>Деньги</h3>
+            <p>Финансовые параметры только этого КП</p>
+          </div>
+          <app-pi-form-field label="Наценка %" htmlFor="kp-insp-markup">
+            <app-pi-input
+              id="kp-insp-markup"
+              type="number"
+              [ngModel]="orgMarkupPercent()"
+              (ngModelChange)="onMarkupChange($event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-markup"
+            />
+          </app-pi-form-field>
 
-        <p class="inspector__markup-hint">Только в этом КП; каталог не меняем.</p>
+          <p class="inspector__markup-hint">Только в этом КП; каталог не меняем.</p>
 
-        <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
-          <app-pi-input
-            id="kp-insp-vat"
-            type="number"
-            [ngModel]="dealVatPercent()"
-            (ngModelChange)="onVatChange($event)"
-            [disabled]="readOnly()"
-            data-test="kp-insp-vat"
-          />
-        </app-pi-form-field>
+          <app-pi-form-field label="НДС %" htmlFor="kp-insp-vat">
+            <app-pi-input
+              id="kp-insp-vat"
+              type="number"
+              [ngModel]="dealVatPercent()"
+              (ngModelChange)="onVatChange($event)"
+              [disabled]="readOnly()"
+              data-test="kp-insp-vat"
+            />
+          </app-pi-form-field>
+        </section>
+      }
 
+      @if (mode() === 'params') {
         <section class="inspector__sheet" data-test="kp-insp-sheet-layout">
           <div class="inspector__section-heading">
             <h3>Вид листа</h3>
@@ -341,7 +348,9 @@ export type ProposalCreateStatus = ProposalStatus;
             />
           </app-pi-form-field>
         </section>
+      }
 
+      @if (mode() === 'money') {
         <section class="inspector__section" data-test="kp-insp-discount">
           <div class="inspector__section-heading">
             <h3>Деньги</h3>
@@ -490,31 +499,7 @@ export type ProposalCreateStatus = ProposalStatus;
         </section>
       }
 
-      @if (!tableOnly()) {
-        <section class="inspector__section" data-test="kp-insp-recipient">
-          <div class="inspector__section-heading">
-            <h3>Получатель</h3>
-            <p>{{ selectedRecipient()?.name || 'Клиент не выбран' }}</p>
-          </div>
-          @if (selectedRecipient(); as recipient) {
-            <span class="text-xs text-muted-foreground"
-              >ИНН {{ recipient.inn }}{{ recipient.kpp ? ' · КПП ' + recipient.kpp : '' }}</span
-            >
-          }
-          <app-pi-button
-            type="button"
-            variant="ghost"
-            size="sm"
-            data-test="kp-insp-edit-recipient"
-            [disabled]="readOnly()"
-            (click)="recipientEditRequest.emit()"
-          >
-            Изменить получателя
-          </app-pi-button>
-        </section>
-      }
-
-      @if (!tableOnly()) {
+      @if (mode() === 'deadlines') {
         <section class="inspector__section" data-test="kp-insp-terms">
           <div class="inspector__section-heading">
             <h3>Сроки</h3>
@@ -557,7 +542,7 @@ export type ProposalCreateStatus = ProposalStatus;
         </section>
       }
 
-      @if (error() && !tableOnly()) {
+      @if (error() && (mode() === 'params' || mode() === 'money')) {
         <p class="text-xs text-destructive m-0" role="alert">{{ error() }}</p>
       }
     </div>
@@ -690,7 +675,6 @@ export type ProposalCreateStatus = ProposalStatus;
 })
 export class ProposalCreateInspectorComponent implements OnInit {
   private readonly orgs = inject(OrganizationsService);
-  private readonly counterparties = inject(CounterpartyService);
   private readonly router = inject(Router);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
@@ -698,11 +682,14 @@ export class ProposalCreateInspectorComponent implements OnInit {
 
   readonly draftLines = input<ProposalDraftLine[]>([]);
   readonly tableLayout = input<ProposalTableLayoutColumn[]>([]);
+  /** Read-only context carried through state events; selection belongs to the Client panel. */
+  readonly selectedCounterpartyId = input('');
+  readonly mode = input<ProposalCreateInspectorMode>('params');
+  /** Legacy table mode is retained for the table editor consumer only. */
   readonly tableOnly = input(false);
   readonly tableTemplateId = input<string | null>(null);
   readonly tableTargets = input<ProposalTableTarget[]>([]);
   readonly selectedTableTargetId = input<string | null>(null);
-  readonly selectedCounterpartyId = input('');
   readonly initialNumber = input('');
   readonly initialTitle = input('');
   readonly initialDate = input('');
@@ -732,10 +719,8 @@ export class ProposalCreateInspectorComponent implements OnInit {
   readonly commercialColumnsRequest = output<void>();
   readonly tableTargetChange = output<string>();
   readonly statusRequest = output<ProposalCreateStatus>();
-  readonly recipientEditRequest = output<void>();
 
   protected readonly organizations = signal<Organization[]>([]);
-  protected readonly counterpartiesList = signal<Counterparty[]>([]);
   protected readonly organizationId = signal('');
   protected readonly orgMarkupPercent = signal(0);
   protected readonly dealVatPercent = signal(20);
@@ -890,18 +875,6 @@ export class ProposalCreateInspectorComponent implements OnInit {
     })),
   );
 
-  protected readonly selectedRecipient = computed(
-    () =>
-      this.counterpartiesList().find((item) => item._id === this.selectedCounterpartyId()) ?? null,
-  );
-
-  protected readonly counterpartyItems = computed(() =>
-    this.counterpartiesList().map((counterparty) => ({
-      id: counterparty._id,
-      label: `${counterparty.name}${counterparty.inn ? ' · ИНН ' + counterparty.inn : ''}`,
-    })),
-  );
-
   protected readonly estimateLabel = computed(() => {
     const base = this.draftLines().reduce((sum, line) => sum + line.quantity * line.unitPrice, 0);
     const marked = estimateFamilyTotal(base, this.orgMarkupPercent());
@@ -943,11 +916,6 @@ export class ProposalCreateInspectorComponent implements OnInit {
       }
       this.organizations.set(res.data.items ?? []);
     });
-    // Client means any active Counterparty: do not send a role/type filter.
-    this.counterparties.list({ limit: 200 }).subscribe((res) => {
-      if (!res.ok) return;
-      this.counterpartiesList.set((res.data.items ?? []).filter((item) => item.isActive !== false));
-    });
   }
 
   protected onOrgChange(id: string): void {
@@ -979,11 +947,6 @@ export class ProposalCreateInspectorComponent implements OnInit {
     if (this.readOnly()) return;
     const next = (event.target as HTMLSelectElement).value as ProposalStatus;
     if (this.statusOptions().includes(next)) this.statusRequest.emit(next);
-  }
-
-  protected onCounterpartyChange(id: string): void {
-    if (this.readOnly()) return;
-    this.emitState(id);
   }
 
   protected onVatChange(raw: string | number): void {
@@ -1168,12 +1131,12 @@ export class ProposalCreateInspectorComponent implements OnInit {
     this.emitState();
   }
 
-  private emitState(counterpartyId = this.selectedCounterpartyId()): void {
+  private emitState(): void {
     this.stateChange.emit({
       organizationId: this.organizationId(),
       orgMarkupPercent: this.orgMarkupPercent(),
+      counterpartyId: this.selectedCounterpartyId(),
       dealVatPercent: this.dealVatPercent(),
-      counterpartyId,
       number: this.number(),
       title: this.title(),
       date: this.date(),

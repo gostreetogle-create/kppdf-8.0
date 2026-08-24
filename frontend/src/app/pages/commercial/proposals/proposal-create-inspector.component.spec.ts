@@ -40,9 +40,7 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
           useValue: { list: () => of({ ok: true, data: { items: [], total: 0 } }) },
         },
       ],
-    })
-      .overrideComponent(ProposalCreateInspectorComponent, { set: { template: '', imports: [] } })
-      .compileComponents();
+    }).compileComponents();
     fixture = TestBed.createComponent(ProposalCreateInspectorComponent);
     routerNavigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
   });
@@ -142,5 +140,39 @@ describe('ProposalCreateInspectorComponent A6 characterization', () => {
       OrganizationFullEditorDialogComponent,
       expect.objectContaining({ data: null, width: 'lg' }),
     );
+  });
+
+  it('IA-511 mode keeps params free of money and deadlines fields', () => {
+    fixture.componentRef.setInput('mode', 'params');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-org"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-markup"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-discount"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-terms"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-recipient"]')).toBeNull();
+  });
+
+  it('IA-511 money mode shows money fields without organization or sheet fields', () => {
+    fixture.componentRef.setInput('mode', 'money');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-markup"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-discount"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-org"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-sheet-layout"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-terms"]')).toBeNull();
+  });
+
+  it('IA-511 deadlines mode shows deadline fields without money or sheet fields', () => {
+    fixture.componentRef.setInput('mode', 'deadlines');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-prepayment"]')).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-insp-production-days"]'),
+    ).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('[data-test="kp-insp-delivery-days"]'),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-discount"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="kp-insp-sheet-layout"]')).toBeNull();
   });
 });

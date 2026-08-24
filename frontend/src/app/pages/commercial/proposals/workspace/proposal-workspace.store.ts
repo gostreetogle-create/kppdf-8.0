@@ -4,8 +4,8 @@ import type { WsOrientation } from './proposal-workspace-shell.component';
 
 /** Left rail sections (IA: docs/pages/kp-workspace-rail-ia.md). */
 export type WsLeftSection = 'template' | 'catalog' | 'recipient';
-/** Right rail sections. Output stays here until ribbon migration (TZ-404+). */
-export type WsRightSection = 'params' | 'table' | 'terms' | 'output';
+/** Right rail sections (IA-510). Output lives in the ribbon, not the rail. */
+export type WsRightSection = 'params' | 'money' | 'deadlines' | 'table' | 'terms';
 export type WsSection = WsLeftSection | WsRightSection;
 
 const LEFT: readonly WsLeftSection[] = ['template', 'catalog', 'recipient'];
@@ -15,9 +15,10 @@ const SECTION_TITLES: Record<WsSection, string> = {
   catalog: 'Каталог',
   recipient: 'Клиент',
   params: 'Параметры',
+  money: 'Деньги',
+  deadlines: 'Сроки',
   table: 'Редактор таблицы',
   terms: 'Условия',
-  output: 'Вывод',
 };
 
 function isLeft(section: WsSection): section is WsLeftSection {

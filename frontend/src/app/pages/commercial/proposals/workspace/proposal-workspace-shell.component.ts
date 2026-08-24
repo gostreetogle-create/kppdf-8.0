@@ -20,7 +20,7 @@ export interface WsRailItem {
 }
 
 /** Right chrome-rail sections — panel anchors to the matching edge. */
-const RIGHT_PANEL_SECTIONS = new Set(['params', 'table', 'terms', 'output']);
+const RIGHT_PANEL_SECTIONS = new Set(['params', 'money', 'deadlines', 'table', 'terms']);
 
 /**
  * TZ-KP-WS-401 — Proposal workspace layout shell (extracted from demo page).

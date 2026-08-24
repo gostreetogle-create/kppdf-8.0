@@ -67,10 +67,20 @@ describe('ProposalWorkspaceStore', () => {
 
   it('toggleSection switches to a different section', () => {
     store.openSection('catalog');
-    store.toggleSection('output');
-    expect(store.activeRight()).toBe('output');
+    store.toggleSection('money');
+    expect(store.activeRight()).toBe('money');
     expect(store.activeLeft()).toBeNull();
     expect(store.panelOpen()).toBe(true);
+  });
+
+  it('supports the IA-511 right rail order without an output section', () => {
+    const sections = ['params', 'money', 'deadlines', 'table', 'terms'] as const;
+    for (const section of sections) {
+      store.openSection(section);
+      expect(store.activeRight()).toBe(section);
+      expect(store.panelTitle()).not.toBe('');
+    }
+    expect(store.activeRight()).toBe('terms');
   });
 
   it('closePanel hides the panel but keeps the active section', () => {

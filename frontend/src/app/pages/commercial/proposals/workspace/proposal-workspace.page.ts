@@ -16,6 +16,8 @@ import {
 import { ActivatedRoute } from '@angular/router';
 import { ConfigurableFocusTrap, ConfigurableFocusTrapFactory } from '@angular/cdk/a11y';
 import {
+  CircleDollarSign,
+  Clock,
   ContactRound,
   Copy,
   Download,
@@ -75,23 +77,25 @@ interface SectionDef {
 
 /**
  * IA (docs/pages/kp-workspace-rail-ia.md §1): left = Каталог · Шаблон · Клиент,
- * right = Параметры · Редактор таблицы · Условия · Вывод. Unique Lucide icons.
+ * right = Параметры · Деньги · Сроки · Редактор таблицы · Условия. Output is ribbon-only.
  */
 const SECTION_DEFS: readonly SectionDef[] = [
   { id: 'catalog', title: 'Каталог', icon: Package, side: 'left', order: 1 },
   { id: 'template', title: 'Шаблон', icon: FileText, side: 'left', order: 2 },
   { id: 'recipient', title: 'Клиент', icon: ContactRound, side: 'left', order: 3 },
   { id: 'params', title: 'Параметры', icon: SlidersHorizontal, side: 'right', order: 1 },
-  { id: 'table', title: 'Редактор таблицы', icon: TableProperties, side: 'right', order: 2 },
-  { id: 'terms', title: 'Условия', icon: ScrollText, side: 'right', order: 3 },
-  { id: 'output', title: 'Вывод', icon: Printer, side: 'right', order: 4 },
+  { id: 'money', title: 'Деньги', icon: CircleDollarSign, side: 'right', order: 2 },
+  { id: 'deadlines', title: 'Сроки', icon: Clock, side: 'right', order: 3 },
+  { id: 'table', title: 'Редактор таблицы', icon: TableProperties, side: 'right', order: 4 },
+  { id: 'terms', title: 'Условия', icon: ScrollText, side: 'right', order: 5 },
 ];
 
 /**
- * TZ-KP-WS-404 — /proposals/workspace with all seven tools mounted in the
- * shell panel (left: catalog/template/recipient, right: params/table/terms/
- * output). Table exit runs the catalog-review guard; modal owns a CDK focus
- * trap (KP-CATALOG-REVIEW-NO-ESC — Esc stays blocked). A4 never reflows.
+ * TZ-KP-IA-511 — /proposals/workspace with all eight tools mounted in the
+ * shell panel (left: catalog/template/recipient, right: params/money/deadlines/
+ * table/terms). Output actions remain in the ribbon. Table exit runs the
+ * catalog-review guard; modal owns a CDK focus trap (KP-CATALOG-REVIEW-NO-ESC —
+ * Esc stays blocked). A4 never reflows.
  */
 @Component({
   selector: 'app-proposal-workspace-page',
@@ -354,40 +358,6 @@ const SECTION_DEFS: readonly SectionDef[] = [
         border-bottom: 1px solid var(--color-rule);
       }
 
-      .kp-create-output {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        padding: 0;
-      }
-
-      .kp-create-output__title {
-        margin: 0 0 4px;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--color-ink);
-      }
-
-      .kp-create-output__btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 32px;
-        padding: 0 12px;
-        border: 1px solid var(--color-rule-strong);
-        border-radius: var(--radius-sm, 2px);
-        background: var(--color-paper-raised);
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--color-ink);
-        cursor: pointer;
-        white-space: nowrap;
-      }
-
-      .kp-create-output__btn:hover {
-        background: var(--color-paper-2);
-      }
-
       .kp-ws-org-hint {
         display: flex;
         align-items: center;
@@ -513,11 +483,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 </app-pi-button>
               </div>
               <app-proposal-create-inspector
-                [draftLines]="draft.draftLines()"
-                [tableLayout]="draft.kpTableLayout()"
-                [tableTemplateId]="draft.tableTemplateId()"
-                [tableTargets]="draft.tableTargets()"
-                [selectedTableTargetId]="draft.selectedTableTargetId()"
+                mode="params"
                 [selectedCounterpartyId]="draft.counterpartyId()"
                 [initialNumber]="draft.proposalNumber()"
                 [initialTitle]="draft.proposalTitle()"
@@ -536,11 +502,54 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 [readOnly]="draft.isReadOnly()"
                 [status]="draft.proposalStatus()"
                 (stateChange)="draft.onInspectorState($event)"
-                (recipientEditRequest)="store.openSection('recipient')"
-                (tableLayoutChange)="draft.onTableLayoutChange($event)"
-                (commercialColumnsRequest)="draft.addCommercialColumns()"
-                (tableTargetChange)="draft.onTableTargetChange($event)"
                 (statusRequest)="draft.onStatusRequest($event)"
+              />
+            }
+            @case ('money') {
+              <app-proposal-create-inspector
+                mode="money"
+                [draftLines]="draft.draftLines()"
+                [selectedCounterpartyId]="draft.counterpartyId()"
+                [initialNumber]="draft.proposalNumber()"
+                [initialTitle]="draft.proposalTitle()"
+                [initialDate]="draft.proposalDate()"
+                [initialValidUntil]="draft.proposalValidUntil()"
+                [initialDiscountType]="draft.discountType()"
+                [initialDiscountPercent]="draft.discountPercent()"
+                [initialDiscountAmount]="draft.discountAmount()"
+                [initialPrepaymentPercent]="draft.prepaymentPercent()"
+                [initialProductionDays]="draft.productionDays()"
+                [initialDeliveryDays]="draft.deliveryDays()"
+                [initialOrganizationId]="draft.organizationId()"
+                [initialOrgMarkupPercent]="draft.orgMarkupPercent()"
+                [initialDealVatPercent]="draft.dealVatPercent()"
+                [initialSheetLayout]="draft.sheetLayout()"
+                [readOnly]="draft.isReadOnly()"
+                [status]="draft.proposalStatus()"
+                (stateChange)="draft.onInspectorState($event)"
+              />
+            }
+            @case ('deadlines') {
+              <app-proposal-create-inspector
+                mode="deadlines"
+                [selectedCounterpartyId]="draft.counterpartyId()"
+                [initialNumber]="draft.proposalNumber()"
+                [initialTitle]="draft.proposalTitle()"
+                [initialDate]="draft.proposalDate()"
+                [initialValidUntil]="draft.proposalValidUntil()"
+                [initialDiscountType]="draft.discountType()"
+                [initialDiscountPercent]="draft.discountPercent()"
+                [initialDiscountAmount]="draft.discountAmount()"
+                [initialPrepaymentPercent]="draft.prepaymentPercent()"
+                [initialProductionDays]="draft.productionDays()"
+                [initialDeliveryDays]="draft.deliveryDays()"
+                [initialOrganizationId]="draft.organizationId()"
+                [initialOrgMarkupPercent]="draft.orgMarkupPercent()"
+                [initialDealVatPercent]="draft.dealVatPercent()"
+                [initialSheetLayout]="draft.sheetLayout()"
+                [readOnly]="draft.isReadOnly()"
+                [status]="draft.proposalStatus()"
+                (stateChange)="draft.onInspectorState($event)"
               />
             }
             @case ('table') {
@@ -589,35 +598,6 @@ const SECTION_DEFS: readonly SectionDef[] = [
                 [libraryRefresh]="textBlocksVersion()"
                 (termsChange)="draft.onTermsChange($event)"
               />
-            }
-            @case ('output') {
-              <div class="kp-create-output" data-test="kp-create-output">
-                <p class="kp-create-output__title">Вывод</p>
-                <button
-                  type="button"
-                  class="kp-create-output__btn pi-focus-ring"
-                  data-test="kp-output-print"
-                  (click)="draft.requestOutput('print')"
-                >
-                  Печать
-                </button>
-                <button
-                  type="button"
-                  class="kp-create-output__btn pi-focus-ring"
-                  data-test="kp-output-pdf"
-                  (click)="draft.requestOutput('pdf')"
-                >
-                  Скачать PDF
-                </button>
-                <button
-                  type="button"
-                  class="kp-create-output__btn pi-focus-ring"
-                  data-test="kp-output-archive"
-                  (click)="draft.requestOutput('archive')"
-                >
-                  Сохранить в архив документов
-                </button>
-              </div>
             }
             @default {
               <div class="kp-ws-note">Выберите инструмент слева или справа.</div>
