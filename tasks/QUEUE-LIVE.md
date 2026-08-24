@@ -10,16 +10,15 @@ BIND-513 · BIND-514 · DOC-524/525 · DESK-433/434/435 · ORIENT-523 · PLUS-60
 
 Archive SUPPLY-431: `tasks/_archive/2026-08/TZ-SUPPLY-431-supply-quick-order-ux-redesign.done.md`
 
-**Gates:** BE/FE tsc PASS · focused jest PASS · PO live smoke PENDING
+**Gates:** BE/FE tsc PASS · supply-smoke 23/23 · pushed `565c630d` · DEPLOY-READY
 
 ## NEXT
 
 | # | Что | Кому |
 |---|-----|------|
-| 1 | Live smoke `TZ-AUDIT-MGR-530` §0–5 | PO |
-| 2 | Commit/push/deploy | PO явная команда |
-| 3 | PLUS-604 backlog (остальные blocking selects) | Freebuff при FAIL smoke |
-| 4 | **CATALOG-377** — category SoT + справочники UX | Freebuff после smoke |
+| 1 | **Деплой** — «сделай деплой по документации» | PO / любой agent |
+| 2 | Live smoke AUDIT-530 (когда будут силы) | PO |
+| 3 | **CATALOG-377** | Freebuff |
 
 Design sign-off (SUPPLY-431): `docs/audits/2026-08-24-supply-431-design-signoff.md` — **DONE**
 

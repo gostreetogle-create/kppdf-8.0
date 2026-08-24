@@ -2,20 +2,12 @@
 
 > Правда для resume. Лимит: 120 строк. Журналы: `progress.md`, не читать целиком.
 
-updated_at: 2026-08-24T23:45:00+03:00
-
-## ACTIVE — WAVE-PO-SMOKE
-
-**DONE локально (2026-08-24):** BIND-513…PHOTO-304 + PLUS-605 + **SUPPLY-431** (3-col quick order UX).
-Archive: `tasks/_archive/2026-08/TZ-SUPPLY-431-supply-quick-order-ux-redesign.done.md`
-
-**NEXT PO:** live smoke §1–5 → commit/push/deploy по команде.
-
-**READY executor:** следующая задача из `tasks/QUEUE-LIVE.md`.
+updated_at: 2026-08-24T23:52:00+03:00
 
 ## ACTIVE — DEPLOY
 
-**READY** (см. `docs/agent-checklists/DEPLOY-READY.md`). PO: «деплой по документации».
+**READY** @ `565c630d` — `docs/agent-checklists/DEPLOY-READY.md`  
+PO: «сделай деплой по документации» (VPN off, warm, no wipe).
 
 ## Корень tasks/ (канон)
 
