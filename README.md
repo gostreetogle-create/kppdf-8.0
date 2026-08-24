@@ -1,348 +1,196 @@
 # kppdf-8.0
 
-> **ERP-система для управления коммерческими предложениями, договорами, производством, складом, закупками и тендерами.**
-> Активная стадия: Angular 20 SPA + NestJS 10 backend + MongoDB Replica Set.
-> Дизайн-система: Paper & Ink (OKLCH, hairline, anti-bling).
-> Разработка через AI-агентов: `docs/AI-AGENT-GUIDE.md`
+> Цеховой ERP (~10 пользователей): продажи / КП → заказ → снабжение / производство → склад / отгрузка.  
+> Стек: **Angular 20** + **NestJS 10** + **MongoDB 7 Replica Set**. UI: **Paper & Ink** (OKLCH, hairline).  
+> Разработка ведётся ИИ-агентами по executable TZ. GitHub = хранилище кода (без GitHub Actions / Dependabot).
 
 ---
 
-## 📌 Что это
+## Для ИИ, открывшего репозиторий
 
-**kppdf-8.0** — это **ERP / производственная платформа** для автоматизации полного цикла работы с заказами:
+Не читай весь репозиторий. Следуй порядку ниже — иначе сломаешь контур агентов и доменные имена.
 
-- **Продажи** — коммерческие предложения (КП), договоры, заказы, отгрузки, отгрузочные документы.
-- **Производство** — заказы на производство, наряды, операции, технологические процессы, себестоимость, закрытие заказов.
-- **Склад** — остатки, движения, резервирование, инвентаризация.
-- **Закупки** — заявки, заказы поставщикам, входящие счета, тендеры, РПП.
-- **Документы** — гибкие шаблоны (блоки, таблицы), автоматическая генерация PDF по КП/договорам.
-- **Финансы** — акты сверки, финансовые отчёты.
-- **Identity & Access** — пользователи, роли, права, фича-флаги, rate-limiting.
+### Порядок чтения (обязательный)
 
-Доменная модель (89 сущностей, 11 доменов) описана в [`docs/data-model.md`](docs/data-model.md).
+| Шаг | Файл | Зачем |
+|-----|------|--------|
+| 0 | [`docs/how-to-connect-ai.md`](docs/how-to-connect-ai.md) | Workspace: continuous = `main`, isolated = `.worktrees/<TASK-ID>`; `.freebuff/worktrees` запрещён |
+| 1 | [`GEMINI.md`](GEMINI.md) | Контракт исполнителя: claim, gates, archive, DoD |
+| 2 | [`docs/PROJECT-MEMORY.md`](docs/PROJECT-MEMORY.md) | Куда смотреть «правду»; что не потерять при DONE |
+| 3 | [`docs/PO-CANON.md`](docs/PO-CANON.md) | Планка качества PO, север продукта, антипаттерны |
+| 4 | [`docs/CONTEXT.md`](docs/CONTEXT.md) | Доменный язык (Counterparty ≠ Organization и т.д.) |
+| 5 | [`docs/agent-checklists/_NOW.md`](docs/agent-checklists/_NOW.md) + `tasks/_active/` | Текущая очередь и conflict keys |
+| 6 | Своя TZ + checklist + релевантный `docs/pages/*.page.md` | Только зона задачи |
+
+Справочники по необходимости (не startup): [`docs/AI-AGENT-GUIDE.md`](docs/AI-AGENT-GUIDE.md), [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md), [`docs/DOMAIN-MAP.md`](docs/DOMAIN-MAP.md), [`docs/data-model.md`](docs/data-model.md) — **живая schema в `backend/src/modules/` побеждает** data-model.md.
+
+### Роли агентов
+
+| Роль | Кто | Делает | Не делает |
+|------|-----|--------|-----------|
+| **Архитектор / TZ-author** | Cursor | Спеки, grilling, UX-smell → TZ, review текстом | Product-код (`frontend/**`, `backend/**/*.ts`) |
+| **Исполнитель** | Freebuff / Claude CLI / Gemini | Код по TZ, gates, archive, commit по политике | Roadmap «улучшить всё»; deploy без явной команды PO |
+| **Peer** | MCP `claude_code` из Cursor | Analysis-only: архитектура, идеи, review | Grind, product files |
+| **Perplexity** | MCP | Выжимка сайта/статьи | Канон репо, TZ, код |
+| **Kit** | `OrchestratorKit/` | Только kit `TZ-NN.txt` (отдельный контур) | Root `tasks/TZ-*.md` |
+
+Skills: [`.agents/skills/kppdf-project/SKILL.md`](.agents/skills/kppdf-project/SKILL.md) · карта: [`docs/agents/SKILLS-MAP.md`](docs/agents/SKILLS-MAP.md).
+
+### Критичные запреты
+
+- Без **CLAIM** (`tasks/_active/<ID>.md` + Claim slot в checklist) — не писать product-код.
+- Не `git add -A` / не коммитить чужой WIP. Политика: [`docs/GIT-POLICY.md`](docs/GIT-POLICY.md).
+- Deploy / wipe — только по явной команде PO (`deploy/synology/`, `docs/ops/DANGEROUS-OPS.md`).
+- Не путать: **клиент = `Counterparty`**, **наша фирма = `Organization`**; остаток склада SoT = **`StorageItem`**, не `Material.stockQty`; КП ≠ Order.
+- Смысл статуса/поля на нескольких экранах — [`docs/COUPLING-MAP.md`](docs/COUPLING-MAP.md); локальный «активный» запрещён.
+- Проверки только локальные (tsc / jest / lint / `pnpm architecture:check`). CI на GitHub не добавлять.
 
 ---
 
-## 🗂 Доменная модель (11 доменов, 89 сущностей)
+## Что это за продукт
 
-Подробное описание полей каждой сущности — в [`docs/data-model.md`](docs/data-model.md).
-Там же — секция «Дубликаты и аномалии» (16 пар дубликатов, 11 entity без PK, 24 избыточных поля).
+ERP для небольшого производства: менеджер ведёт сделки и документы, цех — производство, склад — остатки и отгрузку. UI на русском; цель — рабочий продукт для показа коллегам, не демо-заглушка.
 
-| #  | Домен                       | Кол-во | Ключевые сущности |
-|----|------------------------------|--------|-------------------|
-| 1  | **Identity & Access**        | 7      | `User`, `Role`, `Permissions`, `FeatureFlag`, `RateLimitEntry` |
-| 2  | **People & Contacts**        | 8      | `Person`, `Client`, `Counterparty`, `Worker`, `Interaction` |
-| 3  | **Organizations**            | 3      | `Organization`, `OrgRole`, `Category` |
-| 4  | **Products & Materials**     | 18     | `Product`, `Material`, `Bom`, `ProductModule`, `Certificate`, `AttributeDefinition` |
-| 5  | **Production**               | 11     | `ProductionOrder`, `WorkType`, `WorkCenter`, `WorkOrder`, `CostCalculation` |
-| 6  | **Sales & Commerce**         | 11     | `Proposal`, `Quotation`, `Contract`, `Order`, `Shipment`, `CartItem` |
-| 7  | **Warehouse & Inventory**    | 6      | `Warehouse`, `StorageItem`, `InventoryItem`, `StockMovement`, `Reservation` |
-| 8  | **Procurement**              | 10     | `PurchaseRequest`, `SupplierOrder`, `Tender`, `Rpp`, `IncomingInvoice` |
-| 9  | **Documents & Templates**    | 6      | `DocumentTemplate`, `TemplateBlock`, `DocType`, `TableTemplate` |
-| 10 | **Finance**                  | 3      | `ReconciliationAct`, `FinancialReport`, `Setting` |
-| 11 | **System & Activity**        | 6      | `StatusWorkflow`, `EntityStatus`, `ImportJobs`, `OrderHistory`, `UserActivity` |
-|    | **Итого**                    | **89** | |
+| Контур | Содержание |
+|--------|------------|
+| **Продажи** | КП (`Quotation`), договоры, заказы, стол менеджера `/desk`, отгрузка |
+| **Каталог** | Продукция, модули, материалы, состав (BOM) — SoT будущих документов |
+| **Производство** | Наряды, виды работ, cockpit / Гант |
+| **Склад** | Остатки, движения, резервы (READY TO USE — см. readiness) |
+| **Снабжение** | Заявки / задачи снабжения (не legacy PurchaseRequest UI) |
+| **Документы** | Шаблоны, builder, PDF |
+| **Desktop** | Tauri: HITL-импорт / MCP; сайт = SoT; ПДн клиентов через API не гонять |
+| **Identity** | Users, roles, RBAC, feature flags |
 
-**Стек:** NestJS 10 + Mongoose 8 + MongoDB 7 Replica Set (backend) · Angular 20 standalone + Signals + OnPush (frontend) · Paper & Ink OKLCH design system · TailwindCSS v4 · Lucide icons. См. `STACK.md`.
+Готовность разделов: [`docs/SECTION-READINESS.md`](docs/SECTION-READINESS.md).  
+Домен → модуль → route → page.md: [`docs/DOMAIN-MAP.md`](docs/DOMAIN-MAP.md).  
+Север продаж→цех: [`docs/audits/2026-08-08-sales-to-shop-flow-canon.md`](docs/audits/2026-08-08-sales-to-shop-flow-canon.md).
+
+Модель (ориентир, может отставать): [`docs/data-model.md`](docs/data-model.md) — ~11 доменов / ~89 сущностей.
 
 ---
 
-## 📁 Структура репозитория
+## Стек
+
+| Слой | Технологии |
+|------|------------|
+| Frontend | Angular 20 standalone, Signals, OnPush, TailwindCSS v4, Lucide, TipTap |
+| UI kit | Paper & Ink — `frontend/src/app/shared/ui/*` (без Material / PrimeNG) |
+| Backend | NestJS 10, Mongoose 8, JWT+RBAC, idempotency, audit log |
+| DB | MongoDB 7 Replica Set (`docker compose`) |
+| Desktop | Tauri + MCP (`desktop/`) |
+| Package manager | **только pnpm** (отдельно в `backend/` и `frontend/`) |
+
+Детали: [`STACK.md`](STACK.md) · паттерны кода: [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md) · диалоги: [`docs/DIALOG-COOKBOOK.md`](docs/DIALOG-COOKBOOK.md).
+
+---
+
+## Структура репозитория
 
 ```
 kppdf-8.0/
-├── README.md                      ← вы здесь
-├── docs/
-│   ├── data-model.md              ← структурированная модель (11 доменов, дубликаты, статистика)
-│   └── data-model-audit.md        ← аудит модели (консолидация, target schema)
-├── tasks/                         ← 👁️ ТВОЯ ПАПКА: файлы задач (TZ-NN.md)
-│                                    (агент удаляет файл после выполнения)
-├── backend/                       ← NestJS 10 backend (19+ modules, 65+ entities)
-├── frontend/                      ← Angular 20 SPA (pages, shared/ui, shared/dsl)
-├── OrchestratorKit/               ← 🔒 МОЯ ПАПКА: автоматизация, скрипты, архив (не трогать)
-│   ├── README.md                  ← описание kit-а
-│   ├── QUICKSTART.md              ← 5 шагов от нуля до первого TZ
-│   ├── AGENTS.md                  ← мануал для ИИ-агента
-│   ├── kit-init.sh                ← bootstrap (создаёт root progress/ARCHITECTURE/STACK)
-│   ├── kit-stack.sh               ← auto-detect стека → STACK.md
-│   ├── make-tz.sh                 ← создать новый TZ-NN.txt
-│   ├── auto-archive.sh            ← финализация TZ (move → _archive, обновить STATUS)
-│   ├── verify-status.sh           ← двусторонняя синхронизация STATUS.md ↔ FS
-│   ├── STATUS.md                  ← at-a-glance board (READY / IN WORK / DONE / FAILED)
-│   ├── _templates/                ← шаблоны TZ, STATUS, STACK, stack-specific
-│   ├── _active/                   ← TZ в работе (создаётся kit-init.sh)
-│   ├── _archive/                  ← завершённые TZ (YYYY-MM/, создаётся kit-init.sh)
-│   └── .mimocode/locks/           ← lock-файлы DONE-задач (создаётся kit-init.sh)
-├── STACK.md                       ← авто-сгенерированный kit-ом: стек проекта
-├── progress.md                    ← журнал прогресса (обновляется после каждого TZ)
-└── ARCHITECTURE.md                ← архитектурный документ
+├── README.md                 ← вы здесь (онбординг людей и ИИ)
+├── GEMINI.md / CLAUDE.md     ← контракт исполнителя
+├── start.mjs                 ← единый локальный старт
+├── docker-compose.yml        ← Mongo RS
+├── ARCHITECTURE.md           ← архитектура (читать по зоне задачи)
+├── STACK.md / progress.md / STATUS.md
+├── frontend/                 ← Angular 20 SPA
+├── backend/                  ← NestJS 10 API
+├── desktop/                  ← Tauri + MCP import
+├── mobile/                   ← отдельный контур (см. mobile/README)
+├── deploy/synology/          ← prod deploy (только по команде PO)
+├── docs/                     ← канон, pages, compliance, agents
+│   ├── how-to-connect-ai.md  ← ПЕРВЫЙ файл сессии ИИ
+│   ├── PROJECT-MEMORY.md     ← индекс «где правда»
+│   ├── PO-CANON.md           ← планка PO
+│   ├── CONTEXT.md            ← глоссарий
+│   ├── pages/                ← page.md по экранам
+│   └── agent-checklists/     ← _NOW.md, checklists TZ
+├── tasks/                    ← root TZ (executable specs)
+│   ├── _active/              ← claimed / in work
+│   ├── _archive/             ← done
+│   ├── _backlog/ / _park/    ← очередь / парковка
+│   └── QUEUE-LIVE.md         ← живая очередь исполнителей
+└── OrchestratorKit/          ← отдельный kit-контур (не смешивать с root tasks/)
 ```
+
+Индекс docs: [`docs/README.md`](docs/README.md).
 
 ---
 
-## 🚀 Quickstart
-
-### ⚡ Запустить локально одной командой
-
-**Из корня проекта** (любая ОС, Node 20+, Docker Desktop, pnpm 8+):
-
-```bash
-# ── Прямой вызов (всегда работает):
-node start.mjs                # полный запуск (Mongo в Docker + backend + frontend + browser)
-node start.mjs --tail         # TUI-режим: live-логи в одном TTY-окне
-node start.mjs --check        # только pre-flight проверки
-node start.mjs --stop         # остановить backend + frontend
-node start.mjs --reset        # полный сброс: docker down -v + rm node_modules
-node start.mjs --no-browser   # без авто-открытия браузера
-node start.mjs --help         # справка
-
-# ── pnpm-скрипты (из корня, где есть package.json):
-pnpm start                    # = node start.mjs --check (безопасный preflight, не висит)
-pnpm run start:all            # = node start.mjs (полный запуск, висит пока работает)
-pnpm run start:tail           # = node start.mjs --tail (TUI-режим)
-pnpm run check:start          # = node start.mjs --check
-pnpm run stop:start           # = node start.mjs --stop
-pnpm run reset:start          # = node start.mjs --reset
-pnpm run start:no-browser     # = node start.mjs --no-browser
-pnpm run start:prod           # = node start.mjs --prod (production: pnpm build + node dist/main.js + static server)
-
-# ── ENV-переменные:
-NO_TUI=1 node start.mjs       # отключить TUI (для CI / пайп-режима), даже если передан --tail
-NO_COLOR=1 node start.mjs     # отключить ANSI-цвета
-
-# ── Платформенные обёртки (chmod +x start.sh на Unix):
-./start.sh --check            # bash: работает из любой директории
-.\start.cmd --check           # Windows cmd: ОБЯЗАТЕЛЬНО префикс .\ иначе Windows путает с built-in `start`
-```
-
-**Что делает `start.mjs`:**
-1. ✅ Pre-flight: Node 20+, pnpm 8+, Docker daemon, `.env` (hard-fail на занятых 3000/4200)
-2. ✅ `docker compose up -d mongo` (replica set rs0) — **бэкенд локально** (обход Dockerfile pnpm blocker из TZ-18)
-3. ✅ Ждёт `rs.status().ok === 1`
-4. ✅ `pnpm install` в `backend/` и `frontend/` (если нужно)
-5. ✅ `pnpm start:dev` для backend на :3000
-6. ✅ `pnpm start` для frontend на :4200
-7. ✅ Polls /api/health + GET /, парсит body, измеряет латентность
-8. ✅ **TUI-режим (`--tail`)** — рисует 3 строки статуса с in-place обновлением + ring buffer логов (последние 5 строк на сервис)
-9. ✅ Финальная "Ready" панель с латентностями /api/health и / для backend/frontend
-10. ✅ Открывает браузер на http://localhost:4200
-11. ✅ Ctrl+C → чистая остановка backend + frontend (Mongo остаётся работать)
-
-**Endpoints после старта:**
-- Backend: http://localhost:3000/api/health
-- Frontend: http://localhost:4200
-- Swagger: http://localhost:3000/docs
-- Login: `admin` / `admin123` (admin user seeded by `AdminSeed`)
-- Login field: `username` (НЕ email) — `admin@kppdf.local` даст 401
-- UI Kit showcase: http://localhost:4200/kit (хедер → кнопка "🎨 UI Kit")
+## Quickstart (локально)
 
 **Требования:** Node 20+, pnpm 8+, Docker Desktop.
 
-**Кросс-платформенность:** Windows 10+ (cmd/PowerShell/Git Bash), macOS, Linux.
-
----
-
-### 🤖 Для AI-агентов
-
-Перед началом работы агент автоматически подключается к локальной Team Room через `OrchestratorKit/team-room`. Первый агент запускает общую комнату, последующие используют её же. Вручную открыть dashboard можно через `OrchestratorKit\\team-room.cmd open` (Windows) или `bash OrchestratorKit/team-room.sh open`.
-
-Перед началом работы обязательно прочитай:
-- [`docs/AI-AGENT-GUIDE.md`](docs/AI-AGENT-GUIDE.md) — онбординг, обязательные паттерны, запреты
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — полная архитектура проекта
-- [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md) — конкретные код-паттерны
-
-**⚠️ Важно для Windows:** не вводите `start --check` без `.\` — Windows путает с built-in командой `start` (для открытия файлов). Используйте `.\start.cmd --check` или `node start.mjs --check` или `pnpm run check:start`.
-
-### 🛠️ Под капотом
-
-Архитектура проекта:
-- Backend: NestJS 10 + Mongoose 8 + MongoDB Replica Set — 73 module files, 72 schema files (basher-verified 2026-08-01)
-- Frontend: Angular 20 standalone + Signals + OnPush + Paper & Ink design system — 24+ UI primitives (TZ-19..TZ-104)
-- DSL: defineEntity, SubmitGuard, IdempotencyInterceptor, PiEntityListComponent (TZ-232)
-- Auth: JWT (access+refresh), bcrypt, RBAC, 30+ permission keys (TZ-04)
-- Audit: все мутации автоматически логируются в AuditLog (TZ-05)
-
-### 📂 Структура репозитория
-
-```
-kppdf-8.0/
-├── start.mjs                     ← ⚡ ЕДИНЫЙ СТАРТЕР (Node 20+)
-├── docker-compose.yml            ← Mongo + mongo-init (бэк локально)
-├── .env                          ← переменные окружения (не в git)
-├── docs/                         ← data-model.md, data-model-audit.md
-├── tasks/                        ← текущие TZ-NN.md (агент удаляет после выполнения)
-│   └── _archive/                 ← завершённые TZ
-├── backend/                      ← NestJS приложение
-├── frontend/                     ← Angular приложение
-├── OrchestratorKit/              ← 🔒 kit для AI-агентов (TZ-flow, скрипты, шаблоны)
-├── STACK.md / progress.md / ARCHITECTURE.md  ← сгенерированы kit-ом
-└── docs/project-passport.md       ← паспорт проекта и рабочие соглашения
-```
-
-### 🛑 Остановить всё
-
 ```bash
-node start.mjs --stop   # убивает backend + frontend
-docker compose down      # убивает Mongo (если нужно)
+node start.mjs                # Mongo + backend :3000 + frontend :4200 + browser
+node start.mjs --check        # только preflight
+node start.mjs --stop         # остановить BE/FE
+node start.mjs --help
 ```
 
-### 🎨 UI Kit (Paper & Ink)
+Эквиваленты: `pnpm run start:all`, `pnpm run check:start`, `pnpm run stop:start`.
 
-Кастомный UI Kit на базе TailwindCSS + Lucide Angular. Доступен по ссылке **http://localhost:4200/kit** (кнопка в хедере).
+| URL | Назначение |
+|-----|------------|
+| http://localhost:4200 | SPA |
+| http://localhost:3000/api/health | Health |
+| http://localhost:3000/docs | Swagger |
+| http://localhost:4200/kit | UI Kit showcase |
 
-**Структура компонентов:**
-```
-frontend/src/app/shared/ui/
-├── button/          — PiButton (6 variants × 4 sizes)
-├── badge/           — PiBadge (status indicators)
-├── form-field/      — PiFormField (input wrapper)
-├── dialog/          — PiDialog + PiAlertDialog
-├── toast/           — PiToast notifications
-├── pi-tabs/         — PiTabs
-├── pi-accordion/    — PiAccordion
-├── pi-drawer/       — PiDrawer (side panel)
-├── pi-empty-state/  — PiEmptyState
-├── pi-empty-tile/   — PiEmptyTile (placeholder)
-├── pi-row-actions/  — PiRowActions (table row buttons)
-├── select/          — PiSelect dropdown
-├── switch/          — PiSwitch toggle
-├── textarea/        — PiTextarea
-├── input/           — PiInput
-├── label/           — PiLabel
-├── separator/       — PiSeparator
-├── skeleton/        — PiSkeleton (loading)
-├── progress/        — PiProgress bar
-├── scroll-area/     — PiScrollArea
-├── slider/          — PiSlider
-├── radio/           — PiRadio
-├── charts/          — PiBarChart, PiLineChart
-└── menu/            — PiNavDropdown, PiContextMenu
-```
+Логин seed: `admin` / `admin123` (поле **`username`**, не email).
 
-**Kit страницы:** overview, foundations (tokens), basics, forms, overlays, navigation, playground (theme editor, code preview)
-
-### 3. 📂 Рабочий цикл — `tasks/` = твоя папка, `OrchestratorKit/` = моя закрытая
-
-| Где | Что | Кто трогает |
-|-----|-----|-------------|
-| **`tasks/`** | Файлы задач `TZ-NN.md` — там появляются задачи, которые я тебе сгенерировал | **Ты** — смотришь, отдаёшь агенту, файл исчез = готово |
-| **`OrchestratorKit/`** | Моя закрытая папка: скрипты, шаблоны, архив выполненных задач, лок-файлы | **Я** (Buffy) — автоматизация, не лезь |
-| `backend/`, `frontend/` | Куда агент кладёт код по задачам | Агент по задачам |
-| `docs/`, `README.md`, `STACK.md` | Документация | По мере необходимости |
-
-**Конвенция имён TZ-файлов:** `TZ-NN.md` (короткий, без описательного суффикса — заголовок берётся из первой строки файла, например `TZ-01: Запустить backend`).
-
-**Десктоп-задачи (desktop/, mobile/):** префикс `TZD-NN` (TZ Desktop) — `tasks/TZD-NN.md`. `TZD-00` — мастер-контекст и roadmap десктопа (см. `tasks/TZD-00.md`).
-
-**Workflow (одна задача за раз):**
-1. Я кладу файл в `tasks/TZ-NN.md` с описанием задачи.
-2. Ты видишь файл в `tasks/` → отдаёшь его агенту (другому AI).
-3. Агент делает работу по критериям приёмки.
-4. Агент **удаляет файл из `tasks/`** (это сигнал «выполнено»).
-5. Я вижу что `tasks/` пустая → кладу следующую задачу.
-6. Повторяем пока проект не готов.
-
-> 💡 Если `tasks/` пустая — все задачи выполнены, жди от меня следующую.
+**Windows:** не вызывай `start` без префикса — используй `node start.mjs` или `.\start.cmd`.
 
 ---
 
-## 🧰 Стек и служебные команды
+## Рабочий цикл задач (исполнитель)
 
-Стек проекта уже определён и поддерживается двумя самостоятельными пакетами:
+1. Синхронизация с `main` (`docs/how-to-connect-ai.md`).
+2. Взять TZ из очереди / `tasks/` → **CLAIM** в `_active` + checklist.
+3. Conflict keys пересекаются с чужим `_active` → STOP / DEFERRED.
+4. Код только в зоне TZ → focused gates (tsc / test / lint; UI — browser/DOM).
+5. `## Executor report (auto)` в checklist → archive в `tasks/_archive/YYYY-MM/` после PASS.
+6. Git: только свои файлы, по [`docs/GIT-POLICY.md`](docs/GIT-POLICY.md).
 
-- `backend/package.json` + `backend/pnpm-lock.yaml` — NestJS 10, Mongoose 8 и Jest;
-- `frontend/package.json` + `frontend/pnpm-lock.yaml` — Angular 20, TypeScript, Jest и ESLint;
-- корневой `package.json` — только кросс-платформенный запуск проекта, Team Room и pre-commit tooling.
-
-Канонический менеджер пакетов — **pnpm**. CI использует `pnpm install --frozen-lockfile` отдельно в `backend/` и `frontend/`; не создавайте root `package-lock.json`.
-
-Для обновления описания стека используйте `STACK.md` и соответствующие manifests, а не создавайте новый manifest в корне.
-
----
-
-## 📊 Текущий статус
-
-- ✅ **Доменная модель:** 89 entity, 11 доменов, задокументированы дубликаты и аномалии
-- ✅ **Инфраструктура для AI-агентов:** OrchestratorKit и локальный Team Room функциональны
-- ✅ **Стек проекта:** NestJS 10 + Angular 20 + MongoDB 7 Replica Set, manifests и lock-файлы синхронизированы
-- ✅ **Код приложения:** backend и frontend реализованы; текущие ограничения и следующие этапы отражены в `STATUS.md` и `progress.md`
-- 📋 **Ближайший backlog:** security/RBAC follow-ups перечислены в `STATUS.md` и архиве задач; отсутствие файлов в `tasks/` означает отсутствие выданной активной задачи, а не отсутствие roadmap.
-- ✅ **Security batch TZ-247:** idempotency middleware + storage + smoke-скрипт реализованы (backend/src/common/idempotency/), live REPLAY/CONFLICT проверены — DONE.
-- 📋 **Security batch TZ-248:** CORS/trust-proxy проверены и зафиксированы в архиве.
-- 📋 **Security batch TZ-255:** backend permissions guard и boot validation уже зафиксированы в архиве.
-- 📋 **Security batch TZ-256:** capability guard и frontend authorization имеют отдельные тестовые follow-ups.
-- 📋 **Security batch TZ-257:** admin/RBAC mutation follow-ups отражены в `STATUS.md`.
-- 📋 **Security batch TZ-258:** RBAC contracts и остаточные spec follow-ups отражены в `STATUS.md`.
-- 📋 **Дубликаты в модели:** 16 пар/троек документированы для последующей консолидации (см. `docs/data-model.md` § «Дубликаты и аномалии»)
+Писать новую TZ: [`docs/TZ-AUTHORING.md`](docs/TZ-AUTHORING.md) + skill `tz-authoring`.  
+Аудит ≠ реализация: [`docs/AUDIT-METHODOLOGY.md`](docs/AUDIT-METHODOLOGY.md).
 
 ---
 
-## 🖥️ Local only: Claude Code MCP
+## Deploy
 
-Эта интеграция работает **только в Cursor Desktop на вашем компьютере**. Cloud Agent (этот агент, работающий в облаке) MCP-сервер `claude-code-mcp` **не использует и не может использовать** — у него нет доступа к вашей локальной машине.
-
-### Что это
-
-`@steipete/claude-code-mcp` — MCP-сервер, который даёт Cursor Desktop доступ к локально установленному Claude Code CLI как к инструменту (агент внутри агента).
-
-**Важно:** `.cursor/*` в этом репозитории в `.gitignore` (исключение — только `.cursor/rules/`), поэтому `.cursor/mcp.json` **не коммитится и не пушится**. Каждый, кто хочет пользоваться этой интеграцией, создаёт файл у себя локально по формату ниже.
-
-### Шаг 1 — установить Claude Code CLI локально
-
-На вашем компьютере (не в этом облачном сеансе):
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-Проверить установку и авторизоваться:
-
-```bash
-claude --version
-claude auth login    # если ещё не залогинены
-```
-
-### Шаг 2 — формат `.cursor/mcp.json`
-
-Создайте файл `.cursor/mcp.json` в корне репозитория на своей машине (файл не в git):
-
-```json
-{
-  "mcpServers": {
-    "claude-code-mcp": {
-      "command": "npx",
-      "args": ["-y", "@steipete/claude-code-mcp@latest"]
-    }
-  }
-}
-```
-
-Если у вас уже есть другие MCP-серверы в этом файле — просто добавьте ключ `claude-code-mcp` в объект `mcpServers`, ничего не удаляя.
-
-### Шаг 3 — проверить после перезапуска Cursor
-
-1. Полностью закройте и снова откройте Cursor Desktop (не просто перезагрузите окно).
-2. Откройте **Settings → MCP** (или **Cursor Settings → Features → MCP**).
-3. Убедитесь, что `claude-code-mcp` в списке серверов имеет статус **enabled / green dot** (сервер поднялся и ответил на handshake).
-4. В чате Cursor (Composer/Agent) должен появиться инструмент от `claude-code-mcp` — попробуйте вызвать его на простом запросе, чтобы убедиться, что локальный `claude` CLI действительно отвечает.
-
-Если сервер не поднимается — проверьте, что `claude` CLI доступен в `PATH` (`claude --version` из того же терминала, что использует Cursor), и что `npx` может скачать пакет (доступ в интернет, корпоративный прокси/фаервол не блокирует npm registry).
+Канон: [`deploy/synology/README.md`](deploy/synology/README.md).  
+ИИ **не** деплоит сам — только после явной фразы PO («сделай деплой по документации»).
 
 ---
 
-## 📚 Ссылки
+## Compliance (152-ФЗ)
 
-- [`docs/data-model.md`](docs/data-model.md) — структурированная модель (полное описание полей, дубликаты, статистика)
-- [`STACK.md`](STACK.md) — авто-генерируемый стек проекта
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — архитектурный документ (заготовка)
-- [`progress.md`](progress.md) — журнал прогресса
-- [`OrchestratorKit/README.md`](OrchestratorKit/README.md) — описание kit-а для AI-агентов
-- [`OrchestratorKit/QUICKSTART.md`](OrchestratorKit/QUICKSTART.md) — 5 шагов от нуля до первого TZ
-- [`deploy/synology/README.md`](deploy/synology/README.md) — **деплой одной командой** (`deploy.ps1` / `deploy.sh`)
-- [`deploy/synology/RUNBOOK.md`](deploy/synology/RUNBOOK.md) — краткий чеклист / troubleshooting
-- [`deploy/synology/DEPLOY.md`](deploy/synology/DEPLOY.md) — архитектура VPS+tunnel+VM
-- [`deploy/synology/CREDENTIALS.example.md`](deploy/synology/CREDENTIALS.example.md) — шаблон секретов (реальные → `CREDENTIALS.md`, gitignore)
+Уже оператор ПДн. Без TZ+юрист: foreign analytics, marketing SMS/email, публичный register, трансгран SaaS с ПДн.  
+Канон: [`docs/compliance/COMPLIANCE-RULES.md`](docs/compliance/COMPLIANCE-RULES.md).
 
 ---
 
-_Документ создан: 2026-07-04. При изменении доменной модели — обновляйте [`docs/data-model.md`](docs/data-model.md) + соответствующие секции этого README._
+## Ключевые ссылки
+
+| Тема | Путь |
+|------|------|
+| Онбординг ИИ | [`docs/how-to-connect-ai.md`](docs/how-to-connect-ai.md) |
+| Память / индекс | [`docs/PROJECT-MEMORY.md`](docs/PROJECT-MEMORY.md) |
+| PO / качество | [`docs/PO-CANON.md`](docs/PO-CANON.md) |
+| Глоссарий | [`docs/CONTEXT.md`](docs/CONTEXT.md) |
+| Готовность разделов | [`docs/SECTION-READINESS.md`](docs/SECTION-READINESS.md) |
+| Карта домена | [`docs/DOMAIN-MAP.md`](docs/DOMAIN-MAP.md) |
+| Связность статусов | [`docs/COUPLING-MAP.md`](docs/COUPLING-MAP.md) |
+| Паттерны кода | [`docs/DEVELOPMENT-PATTERNS.md`](docs/DEVELOPMENT-PATTERNS.md) |
+| Страницы UI | [`docs/pages/README.md`](docs/pages/README.md) |
+| Git | [`docs/GIT-POLICY.md`](docs/GIT-POLICY.md) |
+| Deploy | [`deploy/synology/README.md`](deploy/synology/README.md) |
+| Desktop MCP | [`desktop/docs/MCP.md`](desktop/docs/MCP.md) |
+| ADR | [`docs/adr/README.md`](docs/adr/README.md) |
+
+---
+
+_При смене контура продукта или процесса агентов обновляй этот README и `docs/PROJECT-MEMORY.md` в той же волне docs._

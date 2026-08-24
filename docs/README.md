@@ -63,7 +63,7 @@ docs/
 
 | Категория | Файлы | Назначение |
 |-----------|-------|-----------|
-| **AI Agent Guide** | `AI-AGENT-GUIDE.md` | **ОБЯЗАТЕЛЬНО К ПРОЧТЕНИЮ** — онбординг AI-агента: паттерны, запреты, чек-лист |
+| **AI Agent Guide** | `AI-AGENT-GUIDE.md` | Справочник паттернов/ролей (**не** startup; startup — корневой README + `how-to-connect-ai`) |
 | **Operating strategy** | `PROJECT-OPERATING-STRATEGY.md` | Ежедневный процесс: audit → TZ → claim → gates → archive; стратегия prompt-файлов |
 | **TZ Authoring** | `TZ-AUTHORING.md` | **Как писать TZ** — канон имён (Counterparty≠Organization), unique, preflight; skill: `.agents/skills/tz-authoring` |
 | **Audit methodology** | `AUDIT-METHODOLOGY.md` | **Как аудитить** перед крупными миграциями/TZ: режимы, preflight, evidence, P0–P3 → child-TZ; отчёты в `docs/audits/` |
@@ -80,18 +80,26 @@ docs/
 
 ## Рекомендуемый порядок чтения для AI-агента / разработчика
 
-1. `docs/AI-AGENT-GUIDE.md` — **ОБЯЗАТЕЛЬНО** (онбординг, паттерны, запреты)
-1a. `docs/PROJECT-OPERATING-STRATEGY.md` — если ведёшь волну, аудит или пишешь prompt
-1a2. `docs/CONTEXT.md` — доменный язык; `docs/agents/SKILLS-MAP.md` — внешние skills
-1b. `docs/TZ-AUTHORING.md` — **если пишешь TZ** (канон имён / unique / preflight)
-1c. `docs/AUDIT-METHODOLOGY.md` — **если аудитишь** домен / миграцию / чужой diff (не путать с реализацией)
-2. `ARCHITECTURE.md` (корень проекта) — общая архитектура
-3. `docs/DEVELOPMENT-PATTERNS.md` — как писать код (SilentResult, defineEntity, SubmitGuard, EntityList, httpResource)
-4. `docs/data-model.md` — модель данных
-5. `docs/design-spec.md` — design spec (бренд, цвета, компоненты)
-6. `docs/paper-and-ink.md` — техническое rationale (токены, WCAG)
-7. `docs/pages/README.md` — какие страницы есть
-8. Нужная `docs/pages/<name>.page.md` — конкретная страница
+**Точка входа с GitHub:** корневой [`README.md`](../README.md) (продукт + роли + запреты).
+
+**Startup (обязательный порядок):**
+
+0. `docs/how-to-connect-ai.md` — workspace / git sync
+1. `GEMINI.md` + `docs/PROJECT-MEMORY.md` — контракт исполнителя + «где правда»
+2. `docs/PO-CANON.md` + `docs/CONTEXT.md` — планка PO + доменный язык
+3. `docs/agent-checklists/_NOW.md` + `tasks/_active/` — очередь / conflict keys
+4. Своя TZ + checklist + релевантный `docs/pages/<name>.page.md`
+
+**По необходимости (не startup):**
+
+- `docs/AI-AGENT-GUIDE.md` — справочник паттернов / ролей
+- `docs/PROJECT-OPERATING-STRATEGY.md` — волна / audit / prompt
+- `docs/TZ-AUTHORING.md` — если пишешь TZ
+- `docs/AUDIT-METHODOLOGY.md` — если аудитишь (≠ реализация)
+- `docs/agents/SKILLS-MAP.md` — внешние skills
+- `ARCHITECTURE.md`, `docs/DEVELOPMENT-PATTERNS.md`, `docs/DOMAIN-MAP.md`, `docs/data-model.md`
+- `docs/design-spec.md`, `docs/paper-and-ink.md` — дизайн
+- `docs/pages/README.md` → нужный `.page.md`
 
 ## Связанные
 
