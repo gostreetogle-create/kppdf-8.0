@@ -7,6 +7,7 @@ import { MaterialFormDialogComponent } from './material-form-dialog.component';
 import { Material, MaterialsService } from '../../shared/services/materials.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
 import { PhotosService } from '../../shared/services/photos.service';
+import { CategoriesService } from '../../shared/services/categories.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
@@ -99,6 +100,12 @@ async function setup(
           create,
           update,
           list: () => of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } }),
+        },
+      },
+      {
+        provide: CategoriesService,
+        useValue: {
+          list: () => of({ ok: true, data: [] }),
         },
       },
       {
