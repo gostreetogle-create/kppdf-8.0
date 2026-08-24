@@ -30,6 +30,8 @@ CLI/MCP гигиена (не дублировать сюда): @docs/agents/CLAU
    релевантный `page.md`/domain doc.
 4. `.agents/skills/kppdf-project/SKILL.md` — роутинг skills; следуй ветке
    «Gemini / локальные» (Executor: код, gates, archive, continuous queue).
+5. `.agents/skills/kppdf-context-preflight/SKILL.md` — Preflight Check Output
+   с **конкретными путями** (не wait-confirm; не техдопрос PO) до кода.
 
 ## Обязательный цикл перед кодом
 

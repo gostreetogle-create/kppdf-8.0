@@ -8,6 +8,8 @@
 
 ## Для ИИ, открывшего репозиторий
 
+**Вход:** skill [`kppdf-context-preflight`](.agents/skills/kppdf-context-preflight/SKILL.md). SoT = `docs/` + `.agents/skills/`. Не `.ai/`. Cursor = TZ only; Executor = код + FIC. `.claude/rules` не используем (см. [`docs/agents/CLAUDE-CODE.md`](docs/agents/CLAUDE-CODE.md)). Аудит: [`docs/audits/2026-08-24-agent-skills-ai-folder-audit.md`](docs/audits/2026-08-24-agent-skills-ai-folder-audit.md).
+
 Не читай весь репозиторий. Следуй порядку ниже — иначе сломаешь контур агентов и доменные имена.
 
 ### Порядок чтения (обязательный)

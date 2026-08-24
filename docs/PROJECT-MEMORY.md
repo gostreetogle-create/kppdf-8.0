@@ -18,7 +18,7 @@
 3. `git status --short` — чужие незакоммиченные правки не трогать и не коммитить.
 4. CLAIM: TZ → `tasks/_active/<ID>.md`, checklist по `_TEMPLATE.md` с Claim slot (`agent_id`, `claimed_at` ISO).
 5. Сверь `_NOW.md` + чужие `_active` **CONFLICT KEYS** — пересечение = STOP/DEFERRED.
-6. Прочитай **этот файл**, затем релевантные `page.md` / канон — и только потом правь код.
+6. Прочитай **этот файл**, затем skill `kppdf-context-preflight` (артефакт с путями), затем релевантные `page.md` / канон — и только потом правь код.
 7. Перед READY/archive — заполни **Integrity slot** в checklist (см. `docs/DOCS-INTEGRITY.md`).
 
 ## 3. Где правда (таблица)
@@ -26,6 +26,7 @@
 | Вопрос | Куда смотреть |
 |--------|---------------|
 | Онбординг / роли / запреты | `docs/AI-AGENT-GUIDE.md` |
+| Preflight до TZ/кода (пути + FIC) | `.agents/skills/kppdf-context-preflight/SKILL.md` (+ audit `docs/audits/2026-08-24-agent-skills-ai-folder-audit.md`) |
 | Общий язык домена | `docs/CONTEXT.md` |
 | Индекс решений (ADR) | `docs/adr/README.md` |
 | Внешние agent-skills | `docs/agents/SKILLS-MAP.md` (mattpocock plugin не ставить) |

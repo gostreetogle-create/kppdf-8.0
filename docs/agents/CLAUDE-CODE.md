@@ -60,6 +60,8 @@ Claude CLI: root `.mcp.json` (npx). Один ключ на оба клиента
 | MCP GitHub / Figma / Postgres / Notion / Sentry | **Нет.** GitHub = хранилище без Issues. БД = Mongo, не Postgres. Allowlist: `claude_code` (peer) + Perplexity (статья). Playwright — локальный скрипт/Jest, не новый MCP «на всякий случай». |
 | MCP read-only, без skip-permissions | Да. Секреты не в `.claude/settings.json` / git. |
 | `.claude/skills/` api-change, db-migration, release… | Уже `.agents/skills/` + `kppdf-executor-loop` / `tdd` / `systematic-debugging`. Не плодить вторую пачку. |
+| `.claude/rules/` как project memory | **Сознательно не используем:** `.claude/` в `.gitignore`. Контракт = `CLAUDE.md` → `GEMINI.md` + `.agents/skills/` (+ `kppdf-context-preflight`). Не «недоделано». |
+| Explore → Plan → confirm → code | **TZ + Claim + preflight artifact** (конкретные пути). Нет wait-confirm mid-wave. Plan Mode только если TZ дырявый. |
 | Hooks линтер/секреты | Husky pre-commit / pre-push. Claude PostToolUse не дублировать. |
 | Исследуй → план → согласуй → код | **TZ + Claim.** Plan Mode только если TZ дырявый. Peer MCP = план до TZ, не код. |
 | git worktree на каждую фичу | Только `.worktrees/<TASK-ID>` Isolated. Continuous = `D:\kppdf-8.0` main. Не `claude --worktree`. |

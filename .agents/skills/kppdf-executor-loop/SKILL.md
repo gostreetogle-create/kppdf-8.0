@@ -13,6 +13,8 @@ Continuous: **`D:\kppdf-8.0`/main**. Explicit Cursor Isolated:
 
 Прочитай: `GEMINI.md`, `docs/PO-CANON.md`, `_NOW.md`, свой TZ/checklist.
 
+После CLAIM — skill **`kppdf-context-preflight`**: Preflight Check Output с конкретными путями + FIC по типу изменения. **Не** ждать «ок» плана в чате. Технику не выпытывать у PO — каноны (`DEVELOPMENT-PATTERNS`, UX-FORM, Paper & Ink).
+
 **Плотность форм (2026-08-22):** любая правка диалога / flyout / FullEditor → `docs/DIALOG-COOKBOOK.md` + `docs/pages/ui-form-field-capacity.md`. Не увеличивать ширину/высоту окна вместо упаковки полей. Kind C: identity на 1440 без body-scroll.
 
 ## Главное правило PO (2026-08-05)

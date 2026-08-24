@@ -3,6 +3,10 @@
 > Источник: `docs/audits/2026-08-22-matt-pocock-skills-source.md` + [mattpocock/skills](https://github.com/mattpocock/skills).
 > Берём **ритуалы**, не вторую операционку. Claude Code plugin / `/setup-matt-pocock-skills` — **не ставить**.
 
+## Вход с улицы
+
+Вход: skill `kppdf-context-preflight`. SoT = `docs/` + `.agents/skills/`. Не `.ai/`, не симлинки. Cursor = TZ only; Executor = код + FIC. `.claude/rules` не используем — `CLAUDE.md` → `GEMINI.md` + skills. Аудит: `docs/audits/2026-08-24-agent-skills-ai-folder-audit.md`.
+
 ## Что уже есть у нас
 
 | Pocock | У нас |
@@ -23,8 +27,9 @@
 ## Запрещено копировать
 
 - Корневой `AGENTS.md` рядом с `GEMINI.md`
+- Папка `.ai/` как второй SoT и симлинки в `.cursor` / `.claude`
 - `docs/prd/` и `docs/issues/`
-- `alwaysApply` global rule поверх `cursor-architect.mdc`
+- `alwaysApply` global rule поверх `cursor-architect.mdc` (кроме тонкого `context-preflight.mdc`)
 - TDD-glob, который заставляет Cursor писать product-тесты
 - Claude: `claude plugins install mattpocock-skills` и `/setup-matt-pocock-skills` (спросит GitHub/Linear)
 

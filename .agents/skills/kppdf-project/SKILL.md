@@ -9,6 +9,8 @@ description: >-
 
 Используй из корня `D:\kppdf-8.0`. Роли разные — не смешивай циклы.
 
+**Любая задача:** сначала skill `kppdf-context-preflight` (артефакт с **конкретными путями**; не wait-confirm; не техдопрос PO).
+
 ## Роутинг по роли
 
 | Агент | Контракт | Режим |
@@ -63,6 +65,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 
 | Ситуация | Skill |
 |---|---|
+| Старт любой задачи (до TZ/кода) | **`kppdf-context-preflight`** |
 | Любая сессия Cursor на репо | `cursor-usage` |
 | Написать/уточнить TZ, спеку, AC | `tz-authoring` + **обязательно** `docs/TZ-AUTHORING.md` + `docs/CONTEXT.md` |
 | Фича расплывчатая / поток PO | правило `planning-grilling.mdc` (потом TZ, не код) |
@@ -99,6 +102,8 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 
 | Ситуация | Skill |
 |---|---|
+| Старт TZ / до кода (пути + FIC) | **`kppdf-context-preflight`** |
+| Continuous claim→gates→archive | **`kppdf-executor-loop`** |
 | Angular-компонент, signals, formы, DI, роутинг, a11y | `angular-developer` |
 | Создание нового Angular-приложения/шаблона | `angular-new-app` |
 | Дизайн/ревью MongoDB-схемы, embed vs reference, миграция | `mongodb-schema-design` |

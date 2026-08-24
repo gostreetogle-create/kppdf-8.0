@@ -1,0 +1,18 @@
+---
+description: Mandatory preflight before any task (Mode A: no product code)
+alwaysApply: true
+---
+
+# Context preflight (kppdf-8.0)
+
+Native project rules live in `.cursor/rules/*.mdc` (tracked). Do not invent a parallel `.ai/` SoT.
+
+Before TZ or any work:
+
+1. Follow skill `.agents/skills/kppdf-context-preflight/SKILL.md`.
+2. Emit **Preflight Check Output** with **concrete paths** only (opened via tools). Ban vague «read the docs».
+3. Check relevant `docs/pages/*.page.md` and `docs/FEATURE-INTEGRATION-CHECKLIST.md` by change type.
+4. **Mode A hard ban:** no product code in `frontend/**` or `backend/**/*.ts` app logic — even if asked to «implement yourself». Hand TZ to executor.
+5. Do not tech-grill PO; do not wait for chat «ок» on the plan. Artifact is for agent/checklist, not a PO essay.
+
+See: `docs/audits/2026-08-24-agent-skills-ai-folder-audit.md`.

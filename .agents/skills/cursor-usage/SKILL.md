@@ -65,6 +65,7 @@ description: >-
 
 ## Цикл
 
+0. **`kppdf-context-preflight`** — артефакт с конкретными путями (не эссе для PO; не техдопрос).
 1. Цель PO → 1a. если сложно/идея: MCP Claude → 2. Спека → 3. путь к PROMPT → 4. Git.
 5. Новое понимание PO → `PO-DIARY.md` §5; стабильное → `PO-CANON.md`.
 
