@@ -7,7 +7,10 @@
 > Prod до деплоя: `c8ebdeb6` (2026-08-11).
 
 ```yaml
-status: READY
+status: DEPLOYED
+deployed_sha: 24a0d74a032dcf2b243062ab584e2409ef171321 (product wave 565c630d + docs tip)
+deployed_at: 2026-08-25 (warm deploy.ps1, WIPE=false; Deploy complete + Auth OK + Frontend 200 + https health/ready 200)
+prod_before: d551d2e4 (2026-08-25 morning warm, same protocol)
 deploy_sha_target: 565c630d0ba94b00b4e3b4890b366e4f6e09cf5e
 prepared_at: 2026-08-24T23:52:00+03:00
 prepared_by: cursor-orchestrator
