@@ -36,7 +36,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | Route | Page doc | TZs |
 |-------|----------|-----|
 | `/doc-constructor/builder`, `/builder/:id` | builder.page.md, builder-tool-pane, builder-inspector | DOC-324…341; **DOC-342** upload null→400; **DOC-343 READY** create-parity; **UX-316 READY** returnUrl из Create КП |
-| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell); **UX-342 DONE** remove unused Показано helpers |
+| `/doc-constructor/templates` | templates.page.md | DOC-324…341; **section chips** parity; **UX-316/317 READY** nav return + gutters (shell); **UX-342 DONE** remove unused Показано helpers; **TZ-DOC-443 QUEUED** category `+` in setup |
 | `(app shell)` | page-chrome.md | **UX-317** ←→; **UX-321/FIX** rails; **UX-322/323 DONE** chrome page-tools + Gantt; **UX-324 READY** history↔tools gap; **UX-325 DONE** migration audit → 326…328 DONE; **UX-331 DONE** brand chip → home; **NAV-303 DONE**; **WAVE-UX-PAGINATION-UNIFY** **#1–#3 DONE**; **TZ-UX-345 READY** chrome-rail виден с 1024 (поле шапки, не откат w-12); audit `2026-08-15-chrome-page-tools-migration-audit.md` |
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY; **UX-342 DONE** drop dead pager total |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons; **UX-342 DONE** drop dead pager total; **TZ-UI-417 READY** counter 11px |
@@ -75,7 +75,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/organizations` | organizations.page.md | **FORMS-316 READY** vat/days number; **UX-305 DONE**; nav → **Админ** (NAV-301); **PARTY-301 DONE** (tenant-scope, soft-delete, `isOurCompany`, `GET /current`); **PARTY-302 DONE** (FullEditor kind C, паспорт ИП, бейдж «наша фирма»); очередь **ASSETS-301/302**; **UX-314 READY** PAGE_SIZE=10 |
 | `/counterparties` | counterparties.page.md | **FORMS-316 READY** vat/days number; **NAV-301** thin list; **PARTY-301 DONE**; **PARTY-303 DONE**; **MIG-304** поле «Почта» (git); **MIG-307 BLOCKED** до кати `da01f1e5` |
-| `/design`, `/design/combine`, `/supply`, `/shipping` | **design.page.md**; **design-combine.page.md**; supply.page.md; shipping.page.md | **COMBINE-401…415**; **supply** live; **shipping** реестр (не stub); **TZ-SHIP-433 READY** отмена до dispatch; **SWEEP-401** ship; **TZ-SHIP-440 READY** warehouse select (не ObjectId); **TZ-UX-440 READY** supply «Почта организации» |
+| `/design`, `/design/combine`, `/supply`, `/shipping` | **design.page.md**; **design-combine.page.md**; supply.page.md; shipping.page.md | **COMBINE-401…415**; **supply** live; **shipping** реестр (не stub); **TZ-SHIP-433 READY** отмена до dispatch; **SWEEP-401** ship; **TZ-SHIP-440 READY** warehouse select (не ObjectId); **TZ-UX-440 READY** supply «Почта организации»; **TZ-UX-443 LIVE** content inset; **TZ-SUPPLY-443 DONE** org `+` btn canon |
 | `/` , `/desk` | **manager-desk.page.md** | **401…424 DONE**; **425…430 DONE** tray workspace + ship-without-doc; **TZ-DESK-440 DONE** honest primary CTA (нет «подключится позже»); audit `2026-08-25-ux-hygiene-sweep.md` |
 | `/` , `/dashboard` | **dashboard.page.md** | **NAV-303 DONE** Обзор KPI (**не дом** после DESK-401); **TZ-DASHBOARD-401 DONE**; **UX-331** brand → стол; Канбан на `/design/combine`; **TZ-UI-414 READY** helper 11px |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
@@ -83,7 +83,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
 | `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
 | `/proposals/workspace` | **kp-workspace.page.md** · **kp-workspace-rail-ia.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409); **WAVE-KP-RAIL-BIND** TZ-KP-IA-510/511 + TZ-KP-BIND-512 (Money/Deadlines rail; registry labels; 510 docs DONE); **TZ-UX-440 READY** catalog review dirty = RU, не `productName` |
-| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc |
+| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc; **TZ-KP-443 QUEUED** orientation from template |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 
@@ -93,7 +93,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 |-------|----------|-----|
 | `/dictionaries` | dictionaries.page.md | UX-303; **DICT-303/308**; **DICT-311** (retire hub); **DICT-312** (dense/adaptive Group Chip chrome); **WAVE-DICT-DEMO** (317–320) |
 | `/dictionaries/measurements` | measurements-group.page.md | **DICT-308 DONE**, **DICT-309** (units cutover), **DICT-312**; **DICT-317** (units edit/roles) |
-| `/dictionaries/kind-labels` | (DICT-320) | **DICT-319/320** productKind+materialKind labels; **DICT-441** chips Категории+Виды always visible |
+| `/dictionaries/kind-labels` | (DICT-320) | **DICT-319/320** productKind+materialKind labels; **DICT-441** chips Категории+Виды always visible; **TZ-UX-443 LIVE** inset via group-workspace |
 | `/dictionaries/color-references` | color-references.page.md | PRODUCTS-301; DICT-306; **DICT-310**; **DICT-318** (RAL prefix) |
 | `/dictionaries/units` | units.page.md | DICT-304 DONE; **DICT-309** → redirect |
 | `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group); **DICT-312** (dense/adaptive Group Chip chrome); **DICT-441** shared CLASSIFICATION_CHIPS; **CATALOG-377** name-path + `?type=` + write-through; **TZ-UX-442 DONE** RU slug placeholders |

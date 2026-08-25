@@ -1459,4 +1459,22 @@ describe('SupplyQuickOrderComponent TZ-SUPPLY-304', () => {
     for (const req of contactReqs) req.flush([]);
     fixture.detectChanges();
   });
+
+  it('TZ-SUPPLY-443: supplier add button has pi-select-add-btn canon class', () => {
+    const fixture = TestBed.createComponent(SupplyQuickOrderComponent);
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      toggleExpand: (id: string) => void;
+      visibleRows: () => { id: string }[];
+    };
+    comp.toggleExpand(comp.visibleRows()[0].id);
+    fixture.detectChanges();
+
+    const btn = fixture.nativeElement.querySelector(
+      '[data-test="supply-quick-supplier-add"]',
+    ) as HTMLButtonElement;
+    expect(btn).toBeTruthy();
+    expect(btn.classList.contains('pi-select-add-btn')).toBe(true);
+  });
 });

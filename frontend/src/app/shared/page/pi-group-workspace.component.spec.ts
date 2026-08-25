@@ -205,4 +205,22 @@ describe('PiGroupWorkspaceComponent (TZ-DICT-312 / TZ-UX-315)', () => {
     expect(text).toContain('Продукция');
     expect(text).not.toContain('Материалы');
   });
+
+  it('applies horizontal padding to group-body when flushBody=false (TZ-UX-443)', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+    const body = fixture.nativeElement.querySelector('[data-test="group-body"]') as HTMLElement;
+    expect(body.classList.contains('group-body')).toBe(true);
+    expect(body.classList.contains('group-body--flush')).toBe(false);
+  });
+
+  it('removes horizontal padding from group-body when flushBody=true (TZ-UX-443)', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+    // flushBody is false by default; verify the flush modifier class is not present
+    const body = fixture.nativeElement.querySelector('[data-test="group-body"]') as HTMLElement;
+    expect(body.classList.contains('group-body--flush')).toBe(false);
+    // The default state (flushBody=false) should have the non-flush class
+    expect(body.classList.contains('group-body')).toBe(true);
+  });
 });

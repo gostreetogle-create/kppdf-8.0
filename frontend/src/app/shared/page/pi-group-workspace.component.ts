@@ -124,10 +124,12 @@ import { filterByPageAcl } from '../../core/capabilities/page-acl';
 
       .group-body {
         padding-top: 0.5rem;
+        padding-inline: var(--panel-content-inset);
       }
 
       .group-body--flush {
         padding-top: 0;
+        padding-inline: 0;
       }
 
       /* Flush studios (KP workspace): single tight row between TOC and chips. */

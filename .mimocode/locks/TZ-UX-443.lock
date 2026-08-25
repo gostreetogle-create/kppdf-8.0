@@ -1,0 +1,7 @@
+task: TZ-UX-443
+agent: freebuff
+status: DONE
+claimed_at: 2026-08-26T00:00:00+03:00
+closed_at: 2026-08-26T00:32:00+03:00
+workspace: D:\kppdf-8.0
+commit_sha: pending

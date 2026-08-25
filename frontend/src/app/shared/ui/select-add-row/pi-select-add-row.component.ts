@@ -24,6 +24,8 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       </button>
     </div>
   `,
+  /* Visual styles for .pi-select-add-btn live in src/styles.css (SoT).
+   * Only grid layout rules stay here — scoped to the host. */
   styles: `
     .pi-select-add-row {
       display: grid;
@@ -40,38 +42,6 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
     .pi-select-add-btn {
       grid-column: 2;
       align-self: end;
-      display: inline-flex;
-      flex-shrink: 0;
-      align-items: center;
-      justify-content: center;
-      width: 2.4rem;
-      height: 2.25rem;
-      margin: 0;
-      padding: 0;
-      border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 55%, var(--color-rule));
-      border-radius: 4px;
-      background: var(--color-sunrise-soft);
-      color: var(--color-success);
-      font: inherit;
-      font-size: var(--text-title);
-      font-weight: 700;
-      line-height: 1;
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-    }
-    .pi-select-add-btn:hover:not(:disabled) {
-      border-color: color-mix(in oklch, var(--color-sunrise-warm) 80%, var(--color-gold-deep));
-      background: color-mix(in oklch, var(--color-sunrise-soft) 55%, var(--color-sunrise-warm));
-      color: color-mix(in oklch, var(--color-success) 82%, #000000);
-    }
-    .pi-select-add-btn:focus-visible {
-      outline: none;
-      box-shadow: var(--focus-ring-shadow);
-    }
-    .pi-select-add-btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
     }
   `,
 })

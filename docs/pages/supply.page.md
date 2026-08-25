@@ -70,6 +70,7 @@ Query `orderId` **сохраняется** при переключении Бы�
 | **TZ-ORDERS-HUB-303** | Query `orderId` filter + deep-link from orders expand |
 | **TZ-UX-342** | Removed dead `[total]` on pi-table (no fake pager without slice) |
 | **TZ-SUPPLY-304** | Быстрый заказ mock UI + view chips + desk navigate |
+| **TZ-SUPPLY-443** | Org "+" btn = canon pi-select-add-btn (SoT: styles.css); pi-focus-ring |
 
 ## Канон
 

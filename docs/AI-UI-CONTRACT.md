@@ -24,6 +24,7 @@
 | **FormField** | `import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component'` | label + error + hint |
 | **PiTable** | `import { TableComponent } from '../../shared/ui/pi-table.component'` | sortable/paginated table |
 | **Icons (нет PiIcon)** | `import { LucideAngularModule, Package, … } from 'lucide-angular'` | `<lucide-icon [img]="Package" [size]="16">` — размеры **14** meta · **16** action · **20** hero |
+| **PiSelectAddBtn** | CSS class `.pi-select-add-btn` (SoT: `src/styles.css` `@layer components`) | использовать с `<app-pi-select-add-row>` или solo (напр. supply org row). Не нужен импорт — глобальный класс. |
 
 Пути от `frontend/src/app/pages/<feature>/` — скорректируй `../` по глубине.
 

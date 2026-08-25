@@ -510,7 +510,7 @@ class SupplyQuickOrderDialogComponent {
                         }
                         <button
                           type="button"
-                          class="pi-select-add-btn supply-quick-order__org-add"
+                          class="pi-select-add-btn supply-quick-order__org-add pi-focus-ring"
                           piDropdownTrigger
                           title="Добавить поставщика"
                           aria-label="Добавить поставщика"

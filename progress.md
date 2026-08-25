@@ -1,4 +1,12 @@
-﻿## [2026-08-25] — TZ-UX-442 — dict slug RU placeholders
+﻿## [2026-08-26] — TZ-UX-443 — content inset from frame (group-workspace)
+
+**Исполнитель:** freebuff
+**Статус:** DONE
+**Суть:** `.group-body` имеет `padding-inline: var(--panel-content-inset)` (16px) при `flushBody=false`; `flushBody=true` = full-bleed. Docs обновлены.
+**Gates:** FE tsc PASS; pi-group-workspace spec 10/10 PASS; FE lint 0 errors (17 pre-existing warnings); architecture:check FAIL только на pre-existing materials/products imports.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-443.done.md`
+
+## [2026-08-25] — TZ-UX-442 — dict slug RU placeholders
 
 **Исполнитель:** freebuff
 **Статус:** DONE

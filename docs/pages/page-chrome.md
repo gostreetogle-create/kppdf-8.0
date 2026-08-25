@@ -15,6 +15,9 @@
 | Описание под H1 | `text-xs` | 12px |
 | Блок chrome | `pi-edge-bleed py-2 hairline-b` | vert 8px; horiz = `--space-page-x` через bleed |
 | Межэлементный gap | `gap-1.5` / `gap-2` | 6–8px |
+| **Content column inset** | `--panel-content-inset` on `.group-body` | ≥16px |
+
+**Content column inset:** под `app-pi-group-workspace` (и аналогичный ERP list body) текст/контролы/доски **не** стартуют с x=0 колонки. Min **16px** (`--panel-content-inset`) `padding-inline` на `.group-body`. Anti-pattern: eyebrow/H1/label flush к левому краю `main` / к вертикали hairline-таблицы без общего inset (TZ-UX-443). `flushBody=true` (KP studio) — полный bleed без inset.
 
 SoT компонента: `frontend/src/app/shared/page/pi-page-chrome.component.ts`.
 
