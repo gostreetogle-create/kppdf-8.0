@@ -55,8 +55,9 @@
 
 - outcome: DONE
 - archive: `tasks/_archive/2026-08/TZ-CATALOG-377.done.md`
-- lock: `.mimocode/locks/TZ-CATALOG-377-category-reference-canon.lock`
-- commit: _(filled after push)_
+- lock: `.mimocode/locks/TZ-CATALOG-377-category-reference-canon.lock` (gitignored locally)
+- commit: `49f5231a1e27f15e710d8662e0375967b795af6f` (pushed `main`)
+- gates: BE tsc + category.service.spec 3/3; FE tsc + supply-quick-order.mock 3/3; ESLint; architecture:check; pre-commit supply-smoke 23 PASS
 - deploy: NOT run
 
 ## Review handoff

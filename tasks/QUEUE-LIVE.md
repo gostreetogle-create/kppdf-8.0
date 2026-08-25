@@ -6,7 +6,7 @@
 
 | TZ | Evidence | Closeout |
 |----|----------|----------|
-| **CATALOG-377** | archive `TZ-CATALOG-377.done.md` | ✅ DONE |
+| **CATALOG-377** | `49f5231a` · archive `TZ-CATALOG-377.done.md` | ✅ DONE |
 | **DICT-441** | archive `TZ-DICT-441.done.md` | ✅ DONE |
 | **SHIP-440** | `c50d57f2` · archive `TZ-SHIP-440.done.md` | ✅ DONE |
 | **DESK-440** | `e835003b` (+ docs `0b52a7cb`) · archive `TZ-DESK-440.done.md` | ✅ DONE |
