@@ -93,7 +93,7 @@ function openDownload(url: string): void {
               [(ngModel)]="label"
               name="label"
               maxlength="64"
-              placeholder="Office PC"
+              placeholder="Офисный ПК"
               data-test="pairing-label"
             />
           </label>

@@ -215,7 +215,7 @@ export class PeoplePage implements OnInit {
   protected readonly cols: ColumnDef<Person>[] = [
     { key: 'lastName', label: 'ФИО', sortable: true, sticky: 'left', cellClass: 'text-xs' },
     { key: 'position', label: 'Должность', sortable: true, cellClass: 'empty-cell text-xs' },
-    { key: 'email', label: 'Email', sortable: true, cellClass: 'empty-cell text-xs' },
+    { key: 'email', label: 'Почта', sortable: true, cellClass: 'empty-cell text-xs' },
     { key: 'isActive', label: 'Активен', cellClass: 'text-center text-xs' },
   ];
 

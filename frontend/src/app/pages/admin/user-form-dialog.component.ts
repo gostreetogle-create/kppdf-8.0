@@ -85,7 +85,7 @@ export interface UserFormResult {
           </label>
 
           <label class="field">
-            <span class="field__label">Email (необязательно)</span>
+            <span class="field__label">Почта (необязательно)</span>
             <input
               class="field__input"
               type="email"

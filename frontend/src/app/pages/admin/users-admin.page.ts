@@ -184,7 +184,7 @@ export class UsersAdminPage implements OnInit {
   protected readonly cols: ColumnDef<ClientUser>[] = [
     { key: 'username', label: 'Логин', sticky: 'left', cellClass: 'text-xs' },
     { key: 'displayName', label: 'ФИО', cellClass: 'text-xs' },
-    { key: 'email', label: 'Email', cellClass: 'text-xs text-muted-foreground' },
+    { key: 'email', label: 'Почта', cellClass: 'text-xs text-muted-foreground' },
     { key: 'role', label: 'Роль', cellClass: 'font-mono text-xs' },
     {
       key: 'isActive',

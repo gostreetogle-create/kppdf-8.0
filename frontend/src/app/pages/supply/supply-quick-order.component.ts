@@ -547,7 +547,7 @@ class SupplyQuickOrderDialogComponent {
                         />
                       </label>
                       <label class="supply-quick-order__field">
-                        <span class="supply-quick-order__field-label">Email org</span>
+                        <span class="supply-quick-order__field-label">Почта организации</span>
                         <input
                           class="pi-input"
                           [class.supply-autofill--filled]="!!supplierEmail(row.supplierId)"
@@ -1240,10 +1240,9 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__table-head {
         display: grid;
-        grid-template-columns: 2.2rem 5.5rem 6.5rem minmax(10rem, 1fr) 4.5rem 8rem minmax(
-            7rem,
-            1fr
-          ) 4.5rem;
+        grid-template-columns:
+          2.2rem 5.5rem 6.5rem minmax(10rem, 1fr) 4.5rem 8rem minmax(7rem, 1fr)
+          4.5rem;
         min-width: 0;
         overflow: hidden;
         border: 1px solid var(--color-rule);

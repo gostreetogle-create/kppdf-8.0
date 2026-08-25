@@ -658,7 +658,6 @@ const SECTION_DEFS: readonly SectionDef[] = [
               >
                 <div class="kp-catalog-review__row-copy">
                   <strong>{{ entry.line.productName || 'Без названия' }}</strong>
-                  <span>{{ entry.line.catalogDirtyFields?.join(', ') }}</span>
                   <small>{{ draft.catalogDiffText(entry) }}</small>
                 </div>
                 <div class="kp-catalog-review__actions">

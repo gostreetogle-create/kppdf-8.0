@@ -131,7 +131,7 @@ import { extractErrorMessage } from '../../core/silent-http';
               />
             </app-pi-form-field>
 
-            <app-pi-form-field class="md:col-span-8" label="Email" htmlFor="p-email">
+            <app-pi-form-field class="md:col-span-8" label="Почта" htmlFor="p-email">
               <app-pi-input
                 id="p-email"
                 type="email"
