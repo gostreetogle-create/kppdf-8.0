@@ -67,12 +67,7 @@ const CATEGORY_TYPES: { value: Category['type']; label: string }[] = [
             hint="Строчные латинские буквы, цифры, дефис. Например: metals, wood"
             [error]="errorFor('slug')"
           >
-            <app-pi-input
-              id="cat-slug"
-              formControlName="slug"
-              placeholder="category-slug"
-              [invalid]="hasError('slug')"
-            />
+            <app-pi-input id="cat-slug" formControlName="slug" [invalid]="hasError('slug')" />
           </app-pi-form-field>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-form-field">

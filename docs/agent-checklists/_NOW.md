@@ -1,36 +1,29 @@
 ﻿# NOW — оперативная доска агента (короткий срез)
 
-> Правда для resume. Лимит: 120 строк. Журналы: `progress.md`, не читать целиком.
+> Правда для resume. Лимит: 120 строк.
 
-updated_at: 2026-08-25T21:35:00+03:00
+updated_at: 2026-08-25T22:00:00+03:00
 
-## ACTIVE
+## ACTIVE / LIVE
 
-_(пусто)_
+**WAVE UX-441+442** — `tasks/PROMPT-FREEBUFF-UX-441-442.md`  
+- TZ-UX-441 DONE — reserved form-field error footer; archive `tasks/_archive/2026-08/TZ-UX-441.done.md`  
+- TZ-UX-442 DONE — dict slug RU placeholders (4 dialog); archive `tasks/_archive/2026-08/TZ-UX-442.done.md`  
 
-## DONE (сегодня)
+## DONE (не трогать)
 
-- **CATALOG-377** ✅ name-path + `/categories` UX — archive `tasks/_archive/2026-08/TZ-CATALOG-377.done.md`
-- **DICT-441** ✅ chips Классификация — archive `tasks/_archive/2026-08/TZ-DICT-441.done.md`
-- WAVE UX-HYGIENE-440: SHIP `c50d57f2` · DESK `e835003b` / `0b52a7cb` · UX `69186b2c` · archive `TZ-UX-440.done.md`
+440 wave · CATALOG-377 · DICT-441 · HEAD был `23add390`+
 
-## DEPLOY
+## NEXT
 
-Warm deploy — только после явной фразы PO.
-
-## Корень tasks/
-
-QUEUE-LIVE · AUDIT-530 · WAVE density · backlog ux-hygiene
+1. После 441+442 → «подготовь к деплою»  
+2. PO smoke AUDIT-530  
+3. DESK-441 park (Да/Нет)
 
 ## Dev smoke
 
-1. `npm run start:no-browser`
-2. `/desk` — нет «подключится позже»
-3. `/shipping` — склад select
-4. «Почта…» / KP без EN dirty keys
-5. `/dictionaries/kind-labels` — оба chip Категории + Виды
-6. Supply picker — «Металлы» не `metals`; `/categories?type=material`
+1. `npm run start:no-browser`  
+2. Любая форма с error — ряд не прыгает (441)  
+3. `/categories` create — нет `category-slug` placeholder (442)
 
-## HEAD
-
-`49f5231a` — CATALOG-377 on `main` (pushed).
+deploy_docs: `deploy/synology/README.md`

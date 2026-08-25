@@ -96,12 +96,7 @@ type Result = TextBlockCategory | null | undefined;
                 hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
                 [error]="errorFor('slug')"
               >
-                <app-pi-input
-                  id="tbc-slug"
-                  formControlName="slug"
-                  placeholder="rekvizity-kontragenta"
-                  [invalid]="hasError('slug')"
-                />
+                <app-pi-input id="tbc-slug" formControlName="slug" [invalid]="hasError('slug')" />
               </app-pi-form-field>
             </div>
 

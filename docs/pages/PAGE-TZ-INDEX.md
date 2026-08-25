@@ -96,7 +96,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/dictionaries/kind-labels` | (DICT-320) | **DICT-319/320** productKind+materialKind labels; **DICT-441** chips Категории+Виды always visible |
 | `/dictionaries/color-references` | color-references.page.md | PRODUCTS-301; DICT-306; **DICT-310**; **DICT-318** (RAL prefix) |
 | `/dictionaries/units` | units.page.md | DICT-304 DONE; **DICT-309** → redirect |
-| `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group); **DICT-312** (dense/adaptive Group Chip chrome); **DICT-441** shared CLASSIFICATION_CHIPS; **CATALOG-377** name-path + `?type=` + write-through |
+| `/categories` | categories.page.md | UX-302; DICT-305; **DICT-310** (classification group); **DICT-312** (dense/adaptive Group Chip chrome); **DICT-441** shared CLASSIFICATION_CHIPS; **CATALOG-377** name-path + `?type=` + write-through; **TZ-UX-442 DONE** RU slug placeholders |
 | `/doc-template-categories` | **OPS-305 DONE** → `document-template-categories.page.md` | UX-304; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS; **UX-342 DONE** drop dead pager total |
 | `/dictionaries/text-block-categories` | **OPS-305 DONE** → `text-block-categories.page.md` | DOC-334; DICT-307; **DICT-310**; **DICT-312**; WAVE-PAGE-DOCS-GAPS; **UX-342 DONE** drop dead pager total |
 

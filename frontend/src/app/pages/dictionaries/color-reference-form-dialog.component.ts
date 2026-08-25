@@ -145,12 +145,7 @@ function parseRalName(name: string | undefined): ParsedRalName {
               hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
               [error]="errorFor('slug')"
             >
-              <app-pi-input
-                id="cr-slug"
-                formControlName="slug"
-                placeholder="ral-9003-signalny-belyy"
-                [invalid]="hasError('slug')"
-              />
+              <app-pi-input id="cr-slug" formControlName="slug" [invalid]="hasError('slug')" />
             </app-pi-form-field>
 
             <app-pi-form-field label="Описание" htmlFor="cr-description">

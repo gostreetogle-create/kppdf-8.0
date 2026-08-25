@@ -87,12 +87,7 @@ type Result = DocumentTemplateCategory | null | undefined;
             hint="Необязательно — сервер сгенерирует из названия. Строчные латинские, цифры, дефис."
             [error]="errorFor('slug')"
           >
-            <app-pi-input
-              id="dtc-slug"
-              formControlName="slug"
-              placeholder="commercial-proposals"
-              [invalid]="hasError('slug')"
-            />
+            <app-pi-input id="dtc-slug" formControlName="slug" [invalid]="hasError('slug')" />
           </app-pi-form-field>
 
           <app-pi-form-field label="Описание" htmlFor="dtc-description">

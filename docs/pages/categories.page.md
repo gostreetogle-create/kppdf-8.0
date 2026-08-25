@@ -86,5 +86,6 @@
 | TZ-DOC-308 | Отдельный плоский справочник категорий шаблонов |
 | TZ-DOC-316 | Отдельный плоский справочник категорий текстов |
 | TZ-CATALOG-377 | name-based fullPath; `?type=` filter; path hint; copy slug; write-through |
+| TZ-UX-442 | RU placeholders для slug-полей (вместо EN транслита) |
 
 ---

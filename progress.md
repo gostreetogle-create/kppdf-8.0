@@ -1,4 +1,21 @@
-﻿## [2026-08-25] — TZ-CATALOG-377 — category name-path + справочник UX
+﻿## [2026-08-25] — TZ-UX-442 — dict slug RU placeholders
+
+**Исполнитель:** freebuff
+**Статус:** DONE
+**Суть:** 4 form-dialog'а словарей (category / text-block-category / document-template-category / color-reference) — убраны EN/translit placeholder'ы slug-полей (`category-slug`, `commercial-proposals`, `rekvizity-kontragenta`, `ral-9003-signalny-belyy`); RU hints остались.
+**Gates:** FE tsc PASS; category-form-dialog spec 23/23 PASS; color-reference-form-dialog 3/3 PASS; FE lint 0 errors (17 pre-existing warnings); architecture:check FAIL только на чужие materials/products cross-page imports (мои файлы 0 violations); grep AC 0 matches.
+
+## [2026-08-25] — TZ-UX-441 — reserved error footer for form-field
+
+**Исполнитель:** freebuff
+**Статус:** DONE
+**Суть:** `app-pi-form-field` всегда держит one-line reserved footer; error сохраняет alert/destructive semantics и не меняет layout slot.
+**Gates:** FE tsc PASS; form-field.component.spec 7/7 PASS; FE lint 0 errors (17 pre-existing warnings); architecture:check FAIL только на чужие materials/products cross-page imports.
+**Archive:** `tasks/_archive/2026-08/TZ-UX-441.done.md`
+**Lock:** `.mimocode/locks/TZ-UX-441.lock`
+**Known limit:** full-dialog visual smoke не запускался; deploy НЕ.
+
+## [2026-08-25] — TZ-CATALOG-377 — category name-path + справочник UX
 
 **Исполнитель:** cursor-task-resume (resume after freebuff fixture stall)
 **Статус:** DONE
