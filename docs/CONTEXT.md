@@ -19,6 +19,7 @@
 | Люди / сотрудники цеха | **`Worker`** | `User` (логин) |
 | Пользователь системы | **`User`** + роли | карточка Worker |
 | Остаток на складе | **`StorageItem`** | `Material.stockQty` как SoT |
+| Категория каталога | **`Category`** (`type`: material \| product \| general); modules → `type=product` | отдельные коллекции / mock picker |
 
 1 клиент → N КП / N заказов. Unique обычно на **номере** документа, не на FK клиента.
 

@@ -29,7 +29,11 @@ import {
   ProductsService,
   ProductStatus,
 } from '../../shared/services/products.service';
-import { CategoriesService, Category } from '../../shared/services/categories.service';
+import {
+  CategoriesService,
+  Category,
+  categoryPickerLabel,
+} from '../../shared/services/categories.service';
 import {
   PiColorReferencesService,
   ColorReference,
@@ -648,7 +652,7 @@ export class ProductFormDialogComponent implements OnDestroy {
   protected readonly categoriesError = signal<string | null>(null);
   protected readonly categoryItems = computed(() => [
     { id: '', label: '— без категории —' },
-    ...this.categories().map((c) => ({ id: c._id, label: c.name })),
+    ...this.categories().map((c) => ({ id: c._id, label: categoryPickerLabel(c) })),
   ]);
 
   // ─── Colors (RAL) ───

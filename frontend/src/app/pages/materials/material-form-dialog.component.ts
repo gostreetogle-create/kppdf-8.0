@@ -39,7 +39,11 @@ import {
   type Photo,
 } from '../../shared/services/photos.service';
 import { Organization, OrganizationsService } from '../../shared/services/organizations.service';
-import { CategoriesService, type Category } from '../../shared/services/categories.service';
+import {
+  CategoriesService,
+  categoryPickerLabel,
+  type Category,
+} from '../../shared/services/categories.service';
 import { Unit, UnitsService } from '../../pages/dictionaries/units.service';
 import { PiFormSectionComponent } from '../../shared/ui/form-section';
 import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component';
@@ -247,15 +251,55 @@ interface DimensionFormGroup extends FormGroup {
                 hint="Из справочника категорий (тип «материал»)."
                 class="md:col-span-8"
               >
-                <app-pi-overflow-select
-                  [items]="categoryItems()"
-                  [value]="form.controls.categoryId.value ?? ''"
-                  (valueChange)="onCategoryChange($event)"
-                  searchable="auto"
-                  placeholder="— без категории —"
-                  ariaLabel="Категория материала"
-                  dataTest="mat-category"
-                />
+                <div class="pi-select-add-row">
+                  <app-pi-overflow-select
+                    [items]="categoryItems()"
+                    [value]="form.controls.categoryId.value ?? ''"
+                    (valueChange)="onCategoryChange($event)"
+                    searchable="auto"
+                    placeholder="— без категории —"
+                    ariaLabel="Категория материала"
+                    dataTest="mat-category"
+                  />
+                  <button
+                    type="button"
+                    class="pi-select-add-btn"
+                    (click)="openCreateCategory()"
+                    title="Новая категория материала"
+                    aria-label="Новая категория материала"
+                    data-test="mat-category-add"
+                  >
+                    +
+                  </button>
+                </div>
+                @if (showNewCategory()) {
+                  <div class="mt-2 flex items-center gap-2" data-test="mat-category-quick-create">
+                    <app-pi-input
+                      id="mat-new-category-name"
+                      [value]="newCategoryName()"
+                      (valueChange)="newCategoryName.set($event)"
+                      placeholder="Название категории"
+                      ariaLabel="Название новой категории"
+                    />
+                    <app-pi-button
+                      type="button"
+                      variant="default"
+                      [disabled]="creatingCategory()"
+                      (click)="saveNewCategory()"
+                      data-test="mat-category-quick-save"
+                    >
+                      {{ creatingCategory() ? '…' : 'Создать' }}
+                    </app-pi-button>
+                    <app-pi-button
+                      type="button"
+                      variant="ghost"
+                      [disabled]="creatingCategory()"
+                      (click)="cancelNewCategory()"
+                    >
+                      Отмена
+                    </app-pi-button>
+                  </div>
+                }
               </app-pi-form-field>
 
               <!-- ─── TZ-CATALOG-301 / 316: масса в кг (≥ 0) ─── -->
@@ -614,9 +658,12 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected readonly categories = signal<Category[]>([]);
   protected readonly categoriesLoading = signal(false);
   protected readonly categoriesError = signal<string | null>(null);
+  protected readonly showNewCategory = signal(false);
+  protected readonly newCategoryName = signal('');
+  protected readonly creatingCategory = signal(false);
   protected readonly categoryItems = computed(() => [
     { id: '', label: '— без категории —' },
-    ...this.categories().map((c) => ({ id: c._id, label: c.name })),
+    ...this.categories().map((c) => ({ id: c._id, label: categoryPickerLabel(c) })),
   ]);
   protected readonly supplierItems = computed(() => [
     { id: '', label: '— не указан —' },
@@ -736,6 +783,50 @@ export class MaterialFormDialogComponent implements OnDestroy {
   protected onCategoryChange(categoryId: string): void {
     this.form.controls.categoryId.setValue(categoryId || null);
     this.form.controls.categoryId.markAsDirty();
+  }
+
+  protected openCreateCategory(): void {
+    this.showNewCategory.set(true);
+    this.newCategoryName.set('');
+  }
+
+  protected cancelNewCategory(): void {
+    this.showNewCategory.set(false);
+    this.newCategoryName.set('');
+    this.creatingCategory.set(false);
+  }
+
+  protected saveNewCategory(): void {
+    const name = this.newCategoryName().trim();
+    if (!name || this.creatingCategory()) return;
+    const stamp = Date.now().toString(36);
+    const slug =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || `cat-${stamp}`;
+    const skuPrefix =
+      name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '')
+        .slice(0, 8) || 'CAT';
+    this.creatingCategory.set(true);
+    this.categoriesService
+      .create({ name, slug: slug.slice(0, 64), skuPrefix, type: 'material', isActive: true })
+      .subscribe((res) => {
+        this.creatingCategory.set(false);
+        if (!res.ok) {
+          this.toast.error(extractErrorMessage(res.error));
+          return;
+        }
+        const created = res.data;
+        this.categories.update((list) =>
+          list.some((c) => c._id === created._id) ? list : [...list, created],
+        );
+        this.onCategoryChange(created._id);
+        this.cancelNewCategory();
+        this.toast.success('Категория создана');
+      });
   }
 
   private loadSuppliers(): void {

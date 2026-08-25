@@ -3304,7 +3304,7 @@ export class SupplyQuickOrderComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (!res.ok || !res.data) return;
-        const live = { id: res.data._id, label: res.data.name };
+        const live = { id: res.data._id, label: categoryPickerLabel(res.data) };
         this.categories.update((list) => list.map((c) => (c.id === localId ? live : c)));
         this.rows.update((rows) =>
           rows.map((r) => (r.categoryId === localId ? { ...r, categoryId: live.id } : r)),

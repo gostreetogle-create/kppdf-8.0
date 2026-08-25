@@ -11,6 +11,8 @@ import {
   signal,
 } from '@angular/core';
 import { httpResource } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute } from '@angular/router';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { CLASSIFICATION_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
@@ -84,6 +86,9 @@ type TypeFilter = 'all' | Category['type'];
         <span class="flex-1"></span>
         <app-pi-button variant="default" (click)="openCreate()">+ Создать</app-pi-button>
       </div>
+      <p class="mb-2 text-xs text-muted-foreground" data-test="categories-path-hint">
+        Справочники → Классификация → Категории
+      </p>
       <app-pi-table-tree
         [compact]="true"
         [data]="treeData()"
@@ -113,6 +118,16 @@ type TypeFilter = 'all' | Category['type'];
       <ng-template #rowActionsTpl let-c>
         <button
           type="button"
+          class="pi-icon-btn pi-focus-ring"
+          [attr.aria-label]="'Копировать slug ' + c.slug"
+          title="Копировать slug"
+          data-test="category-copy-slug"
+          (click)="copySlug(c)"
+        >
+          <span aria-hidden="true">#</span>
+        </button>
+        <button
+          type="button"
           class="pi-icon-btn pi-icon-btn-edit pi-focus-ring"
           [attr.aria-label]="'Редактировать ' + c.name"
           (click)="openEdit(c)"
@@ -139,10 +154,13 @@ export class CategoriesPage {
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
   private readonly baseUrl = inject(API_BASE_URL);
   private readonly search = createSearchState(300);
   protected readonly searchQuery = this.search.searchQuery;
-  protected readonly typeFilter = signal<TypeFilter>('all');
+  protected readonly typeFilter = signal<TypeFilter>(
+    CategoriesPage.parseTypeFilter(this.route.snapshot.queryParamMap.get('type')),
+  );
   protected readonly expandedIds = signal<Set<string>>(new Set());
   private readonly treeRes = httpResource<CategoryTreeNode[]>(() => ({
     url: `${this.baseUrl}/categories/tree`,
@@ -168,11 +186,14 @@ export class CategoriesPage {
     if (f === n) return n ? `${n} ${pluralize(n, ['категория', 'категории', 'категорий'])}` : '';
     return `${f} из ${n} ${pluralize(n, ['категории', 'категорий', 'категорий'])}`;
   });
-  protected readonly emptyMessage = computed(() =>
-    this.searchQuery() || this.typeFilter() !== 'all'
-      ? 'Ничего не найдено.'
-      : 'Нет категорий. Создайте первую.',
-  );
+  protected readonly emptyMessage = computed(() => {
+    if (this.searchQuery()) return 'Ничего не найдено.';
+    if (this.typeFilter() === 'material') {
+      return 'Категории материалов используются в Снабжении и карточке материала. Создайте первую.';
+    }
+    if (this.typeFilter() !== 'all') return 'Ничего не найдено.';
+    return 'Нет категорий. Создайте первую.';
+  });
   /** Drag only on the full unfiltered tree so drop indices match server order. */
   protected readonly canDragReorder = computed(
     () => !this.search.debouncedSearch().trim() && this.typeFilter() === 'all',
@@ -198,10 +219,19 @@ export class CategoriesPage {
   );
   constructor() {
     this.destroyRef.onDestroy(() => this.search.destroy());
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const next = CategoriesPage.parseTypeFilter(params.get('type'));
+      if (next !== this.typeFilter()) this.typeFilter.set(next);
+    });
     effect(() => {
       if (this.search.debouncedSearch().trim() || this.typeFilter() !== 'all')
         this.expandedIds.set(this.collectParentIds(this.allTreeData()));
     });
+  }
+
+  private static parseTypeFilter(raw: string | null): TypeFilter {
+    if (raw === 'material' || raw === 'product' || raw === 'general') return raw;
+    return 'all';
   }
   protected childrenOf = (node: CategoryTreeNode): CategoryTreeNode[] => node.children;
   private filterTree(
@@ -314,6 +344,19 @@ export class CategoriesPage {
       });
     });
   }
+
+  protected copySlug(row: Category): void {
+    const slug = row.slug?.trim();
+    if (!slug) {
+      this.toast.error('У категории нет slug');
+      return;
+    }
+    void navigator.clipboard.writeText(slug).then(
+      () => this.toast.success(`Slug скопирован: ${slug}`),
+      () => this.toast.error('Не удалось скопировать slug'),
+    );
+  }
+
   private refreshOnDialogClose(ref: DialogRef<unknown>): void {
     onDialogCloseOnce(ref, this.injector, () => this.treeRes.reload());
   }

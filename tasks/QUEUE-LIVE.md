@@ -1,11 +1,12 @@
 # QUEUE-LIVE
 
-> 2026-08-25 · DICT-441 DONE · WAVE UX-HYGIENE-440 DONE
+> 2026-08-25 · CATALOG-377 DONE · DICT-441 DONE · WAVE UX-HYGIENE-440 DONE
 
 ## DONE
 
 | TZ | Evidence | Closeout |
 |----|----------|----------|
+| **CATALOG-377** | archive `TZ-CATALOG-377.done.md` | ✅ DONE |
 | **DICT-441** | archive `TZ-DICT-441.done.md` | ✅ DONE |
 | **SHIP-440** | `c50d57f2` · archive `TZ-SHIP-440.done.md` | ✅ DONE |
 | **DESK-440** | `e835003b` (+ docs `0b52a7cb`) · archive `TZ-DESK-440.done.md` | ✅ DONE |
@@ -17,15 +18,14 @@
 
 | # | Что | Промпт |
 |---|-----|--------|
-| 1 | **CATALOG-377** | `tasks/PROMPT-FREEBUFF-CATALOG-377.md` |
-| 2 | Backlog `tasks/_backlog/ux-hygiene/` (form-field 441…) | Cursor → отдельная TZ |
-| 3 | Live smoke AUDIT-530 | PO |
+| 1 | Backlog `tasks/_backlog/ux-hygiene/` (form-field 441…) | Cursor → отдельная TZ |
+| 2 | Live smoke AUDIT-530 | PO |
 
 ## Dev ritual
 
 ```bash
 npm run start:no-browser
-# /dictionaries/kind-labels — оба chip · /desk · /shipping · «Почта» · категории slug→RU (после 377)
+# /dictionaries/kind-labels — оба chip · /desk · /shipping · «Почта» · Supply «Металлы» · /categories?type=material
 ```
 
 ## Deploy-Ready

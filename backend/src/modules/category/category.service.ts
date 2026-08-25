@@ -25,11 +25,7 @@ export class CategoryService {
   constructor(@InjectModel(Category.name) private readonly model: Model<CategoryDocument>) {}
 
   async create(dto: CreateCategoryDto, organizationId?: string | null): Promise<CategoryDocument> {
-    let fullPath: string | undefined;
-    if (dto.parentId) {
-      const parent = await this.findById(dto.parentId, organizationId);
-      fullPath = parent.fullPath ? `${parent.fullPath}/${dto.slug}` : `${parent.name}/${dto.slug}`;
-    } else fullPath = dto.slug;
+    const fullPath = await this.buildFullPath(dto.name, dto.parentId, organizationId);
     return this.model.create({ ...dto, fullPath, ...this.organizationWrite(organizationId) });
   }
 
@@ -48,34 +44,78 @@ export class CategoryService {
 
   async update(id: string, dto: UpdateCategoryDto, organizationId?: string | null): Promise<CategoryDocument> {
     const doc = await this.findById(id, organizationId);
-    const oldSlug = doc.slug;
     const oldParentId = doc.parentId ? doc.parentId.toString() : null;
-    const oldFullPath = doc.fullPath;
-    const newSlug = dto.slug ?? oldSlug;
+    const oldFullPath = doc.fullPath ?? doc.name;
+    const newName = dto.name ?? doc.name;
     const newParentId = 'parentId' in dto ? (dto.parentId ? String(dto.parentId) : null) : oldParentId;
-    const slugChanged = dto.slug !== undefined && dto.slug !== oldSlug;
+    const nameChanged = dto.name !== undefined && dto.name !== doc.name;
     const parentChanged = newParentId !== oldParentId;
-    Object.assign(doc, dto);
+    if (newParentId) {
+      const isDescendant = await this.isDescendantOf(newParentId, id, organizationId);
+      if (isDescendant) throw new BadRequestException('Cannot move category under its own descendant (would create a cycle)');
+    }
+    const newFullPath = await this.buildFullPath(newName, newParentId, organizationId, id);
+    Object.assign(doc, { ...dto, fullPath: newFullPath });
     await doc.save();
-    if ((slugChanged || parentChanged) && oldFullPath) {
-      if (newParentId) {
-        const isDescendant = await this.isDescendantOf(newParentId, id, organizationId);
-        if (isDescendant) throw new BadRequestException('Cannot move category under its own descendant (would create a cycle)');
-      }
-      let newFullPath: string;
-      if (newParentId) {
-        const parent = await this.findById(newParentId, organizationId);
-        newFullPath = parent.fullPath ? `${parent.fullPath}/${newSlug}` : `${parent.name}/${newSlug}`;
-      } else newFullPath = newSlug;
-      await this.model.updateOne({ _id: doc._id, ...this.organizationFilter(organizationId) }, { $set: { fullPath: newFullPath } }).exec();
-      const prefixRegex = new RegExp(`^${CategoryService.escapeRegex(oldFullPath)}/`);
-      const descendants = await this.model.find({ fullPath: prefixRegex, deletedAt: null, ...this.organizationFilter(organizationId) }).exec();
-      if (descendants.length > 0) {
-        const ops = descendants.map((desc) => ({ updateOne: { filter: { _id: desc._id }, update: { $set: { fullPath: `${newFullPath}${desc.fullPath!.substring(oldFullPath.length)}` } } } }));
-        await this.model.bulkWrite(ops);
-      }
+    if (nameChanged || parentChanged || oldFullPath !== newFullPath) {
+      await this.rebuildDescendantFullPaths(id, organizationId);
     }
     return doc;
+  }
+
+  /**
+   * Rebuild every descendant fullPath from name segments (BFS by parentId).
+   * Prefer this over string-prefix replace so slug-era paths like metals/sheet
+   * become Сплавы/Лист after renaming Металлы → Сплавы.
+   */
+  private async rebuildDescendantFullPaths(rootId: string, organizationId?: string | null): Promise<void> {
+    const queue: string[] = [rootId];
+    const visited = new Set<string>([rootId]);
+    const ops: Array<{ updateOne: { filter: { _id: Types.ObjectId }; update: { $set: { fullPath: string } } } }> = [];
+    const pathById = new Map<string, string>();
+    const root = await this.findById(rootId, organizationId);
+    pathById.set(rootId, root.fullPath ?? root.name);
+
+    while (queue.length > 0) {
+      const parentId = queue.shift()!;
+      const parentPath = pathById.get(parentId)!;
+      const children = await this.model
+        .find({ parentId: new Types.ObjectId(parentId), deletedAt: null, ...this.organizationFilter(organizationId) })
+        .exec();
+      for (const child of children) {
+        const childId = child._id.toString();
+        if (visited.has(childId)) continue;
+        visited.add(childId);
+        const nextPath = `${parentPath}/${child.name}`;
+        pathById.set(childId, nextPath);
+        if (child.fullPath !== nextPath) {
+          ops.push({ updateOne: { filter: { _id: child._id as Types.ObjectId }, update: { $set: { fullPath: nextPath } } } });
+        }
+        queue.push(childId);
+      }
+    }
+    if (ops.length > 0) await this.model.bulkWrite(ops);
+  }
+
+  /** One-shot: rewrite slug-era fullPath values to name segments for the whole org tree. */
+  async migrateFullPathsToNames(organizationId?: string | null): Promise<number> {
+    const flat = await this.findAll(undefined, organizationId);
+    const byId = new Map(flat.map((c) => [c.id, c]));
+    const resolve = (cat: CategoryDocument): string => {
+      if (!cat.parentId) return cat.name;
+      const parent = byId.get(cat.parentId.toString());
+      return parent ? `${resolve(parent)}/${cat.name}` : cat.name;
+    };
+    const ops = flat
+      .map((cat) => {
+        const next = resolve(cat);
+        return cat.fullPath === next
+          ? null
+          : { updateOne: { filter: { _id: cat._id }, update: { $set: { fullPath: next } } } };
+      })
+      .filter((op): op is NonNullable<typeof op> => op !== null);
+    if (ops.length > 0) await this.model.bulkWrite(ops);
+    return ops.length;
   }
 
   async remove(id: string, organizationId?: string | null): Promise<void> {
@@ -121,6 +161,23 @@ export class CategoryService {
     return roots;
   }
 
+  private async buildFullPath(
+    name: string,
+    parentId: string | undefined | null,
+    organizationId?: string | null,
+    excludeId?: string,
+  ): Promise<string> {
+    if (!parentId) return name;
+    if (excludeId && parentId === excludeId) {
+      throw new BadRequestException('Category cannot be its own parent');
+    }
+    const parent = await this.findById(parentId, organizationId);
+    if (excludeId && parent._id.toString() === excludeId) {
+      throw new BadRequestException('Category cannot be its own parent');
+    }
+    return parent.fullPath ? `${parent.fullPath}/${name}` : `${parent.name}/${name}`;
+  }
+
   private async isDescendantOf(candidateDescendantId: string, ancestorId: string, organizationId?: string | null): Promise<boolean> {
     let currentId = candidateDescendantId; const visited = new Set<string>();
     while (currentId) {
@@ -145,5 +202,4 @@ export class CategoryService {
     if (!Types.ObjectId.isValid(organizationId)) throw new BadRequestException('Invalid organization scope');
     return { organizationId: new Types.ObjectId(organizationId) };
   }
-  private static escapeRegex(s: string): string { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 }

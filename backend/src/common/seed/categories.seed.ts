@@ -40,7 +40,9 @@ export class CategoriesSeed implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     for (const c of DEFAULT_CATEGORIES) {
       const existing = await this.model.findOne({ slug: c.slug, type: c.type }).exec();
-      if (existing) continue;
+      if (existing) {
+        continue;
+      }
 
       try {
         await this.model.create({
@@ -50,13 +52,42 @@ export class CategoriesSeed implements OnApplicationBootstrap {
           skuPrefix: c.skuPrefix,
           sortOrder: c.sortOrder,
           isActive: true,
-          fullPath: c.slug,
+          fullPath: c.name,
           description: c.description,
         });
         this.logger.log(`Category seeded: ${c.type}/${c.slug}`);
       } catch (err) {
         this.logger.warn(`Could not seed category ${c.slug}: ${(err as Error).message}`);
       }
+    }
+
+    // One-shot bootstrap: slug-era fullPath (metals, metals/sheet) → name segments.
+    await this.migrateSlugFullPathsToNames();
+  }
+
+  /** Rebuild fullPath from name hierarchy for any row still on slug segments. */
+  private async migrateSlugFullPathsToNames(): Promise<void> {
+    const flat = await this.model.find({ deletedAt: null }).exec();
+    if (flat.length === 0) return;
+
+    const byId = new Map(flat.map((c) => [c.id, c]));
+    const resolve = (cat: CategoryDocument): string => {
+      if (!cat.parentId) return cat.name;
+      const parent = byId.get(cat.parentId.toString());
+      return parent ? `${resolve(parent)}/${cat.name}` : cat.name;
+    };
+
+    let patched = 0;
+    for (const cat of flat) {
+      const next = resolve(cat);
+      if (cat.fullPath !== next) {
+        cat.fullPath = next;
+        await cat.save();
+        patched += 1;
+      }
+    }
+    if (patched > 0) {
+      this.logger.log(`Category fullPath name-migration: patched ${patched} row(s)`);
     }
   }
 }

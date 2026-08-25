@@ -1,4 +1,14 @@
-﻿## [2026-08-25] — TZ-DICT-441 — classification chips always visible
+﻿## [2026-08-25] — TZ-CATALOG-377 — category name-path + справочник UX
+
+**Исполнитель:** cursor-task-resume (resume after freebuff fixture stall)
+**Статус:** DONE
+**Суть:** BE `fullPath` из name (+ BFS descendants, seed/bootstrap slug→name); FE `/categories` path hint / `?type=` / copy-slug / empty; material+supply write-through POST; shared `categoryPickerLabel`.
+**Gates:** BE tsc+category.service.spec 3/3 PASS; FE tsc+supply-quick-order.mock 3/3 PASS; ESLint PASS; architecture:check PASS.
+**Archive:** `tasks/_archive/2026-08/TZ-CATALOG-377.done.md`
+**Lock:** `.mimocode/locks/TZ-CATALOG-377-category-reference-canon.lock`
+**Known limit:** live browser smoke не; deploy НЕ.
+
+## [2026-08-25] — TZ-DICT-441 — classification chips always visible
 
 **Исполнитель:** freebuff-executor
 **Статус:** DONE

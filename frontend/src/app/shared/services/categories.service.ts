@@ -27,6 +27,23 @@ export interface CategoryTreeNode extends Category {
   children: CategoryTreeNode[];
 }
 
+/** True when fullPath segments are URL slugs, not display names (legacy seed/BE). */
+function isSlugOnlyPath(path: string): boolean {
+  return path.split('/').every((part) => /^[a-z0-9_-]+$/i.test(part.trim()));
+}
+
+/** Hierarchical picker label; slug-era fullPath → RU `name`. */
+export function categoryPickerLabel(c: { name: string; fullPath?: string }): string {
+  const path = c.fullPath?.trim();
+  if (!path) return c.name;
+  if (isSlugOnlyPath(path)) return c.name;
+  return path
+    .split('/')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(' › ');
+}
+
 @Injectable({ providedIn: 'root' })
 export class CategoriesService {
   private readonly http = inject(HttpClient);

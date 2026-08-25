@@ -16,7 +16,8 @@
     "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-draft.service.ts:58:fe-page-cross-component",
     "frontend/src/app/pages/commercial/proposals/workspace/proposal-workspace-text-block-dialog.component.ts:4:fe-page-cross-component",
     "frontend/src/app/pages/desk/manager-desk.page.ts:50:fe-page-cross-component",
-    "frontend/src/app/pages/materials/material-form-dialog.component.ts:51:fe-page-cross-component",
-    "frontend/src/app/pages/products/product-form-dialog.component.ts:52:fe-page-cross-component"
+    "frontend/src/app/pages/materials/material-form-dialog.component.ts:52:fe-page-cross-component",
+    "frontend/src/app/pages/products/product-form-dialog.component.ts:52:fe-page-cross-component",
+    "frontend/src/app/pages/supply/supply-quick-order.component.ts:47:fe-page-cross-component"
   ]
 }

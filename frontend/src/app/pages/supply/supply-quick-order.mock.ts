@@ -12,22 +12,8 @@ export interface QuickOrderCategory {
   matchName?: string;
 }
 
-/** True when fullPath segments are URL slugs, not display names (legacy seed/BE). */
-function isSlugOnlyPath(path: string): boolean {
-  return path.split('/').every((part) => /^[a-z0-9_-]+$/i.test(part.trim()));
-}
-
-/** TZ-CATALOG-376 — hierarchical picker label; slug fullPath → show RU `name`. */
-export function categoryPickerLabel(c: { name: string; fullPath?: string }): string {
-  const path = c.fullPath?.trim();
-  if (!path) return c.name;
-  if (isSlugOnlyPath(path)) return c.name;
-  return path
-    .split('/')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(' › ');
-}
+/** Re-export canon label helper (CATALOG-376/377). */
+export { categoryPickerLabel } from '../../shared/services/categories.service';
 
 /** TZ-SUPPLY-308 — supplier org; `Organization` (type=supplier) in 305. */
 export interface QuickOrderSupplier {
