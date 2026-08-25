@@ -1,6 +1,6 @@
 # TZ-DESK-440 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **READY FOR REVIEW** (код + gates зелёные, pushed `e835003b`; archive ждёт Cursor/PO live PASS)
 > Marker: `tasks/_active/TZ-DESK-440-tray-honest-cta.md`
 > Conflict keys: `frontend/src/app/shared/orders/order-hub-tray.component.ts`; `frontend/src/app/shared/orders/order-hub-tray.component.spec.ts`
 > Commit/push: по `docs/GIT-POLICY.md`
