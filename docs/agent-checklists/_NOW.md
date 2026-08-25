@@ -10,7 +10,8 @@ updated_at: 2026-08-25T18:45:00+03:00
 DESK-440 · SHIP-440 · UX-440 · audit `docs/audits/2026-08-25-ux-hygiene-sweep.md`
 
 DESK-440: **код + specs зелёные, pushed**; live `/desk` PASS + archive — ждут Cursor/PO review handoff  
-SHIP-440 · UX-440: параллельные Freebuff-сессии (свои conflict keys)
+SHIP-440: **DONE**, archive `tasks/_archive/2026-08/TZ-SHIP-440.done.md`, commit/push — warehouse select + guards
+UX-440: параллельная Freebuff-сессия (свои conflict keys)
 
 ## ACTIVE — DEPLOY (после 440 PASS)
 

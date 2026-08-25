@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   Injector,
+  computed,
   inject,
   signal,
 } from '@angular/core';
@@ -26,6 +27,7 @@ import {
   type ShipmentStatus,
 } from '../../shared/services/shipments.service';
 import { LOGISTICS_SECTION_CHIPS } from '../supply/logistics-group-chips';
+import { WarehousesService, type Warehouse } from '../inventory/warehouses.service';
 
 const STATUS_LABELS: Record<ShipmentStatus, string> = {
   draft: 'Черновик',
@@ -155,15 +157,42 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                 />
               </label>
               <label class="flex flex-col gap-1 text-xs">
-                <span class="text-muted-foreground">Склад</span>
-                <input
+                <span class="text-muted-foreground">Склад *</span>
+                <select
                   class="pi-input"
                   [(ngModel)]="createWarehouseId"
                   name="warehouseId"
-                  placeholder="ID склада для dispatch"
-                />
+                  required
+                  data-test="shipping-create-warehouse"
+                >
+                  <option value="">Выберите склад…</option>
+                  @for (warehouse of activeWarehouses(); track warehouse._id) {
+                    <option [value]="warehouse._id">{{ warehouse.name }}</option>
+                  }
+                </select>
               </label>
             </div>
+            @if (warehousesLoading()) {
+              <p class="text-xs text-muted-foreground m-0" data-test="shipping-warehouses-loading">
+                Загрузка складов…
+              </p>
+            } @else if (warehousesError()) {
+              <p
+                class="text-xs text-destructive m-0"
+                role="alert"
+                data-test="shipping-warehouses-error"
+              >
+                Не удалось загрузить список складов.
+              </p>
+            } @else if (activeWarehouses().length === 0) {
+              <p
+                class="text-xs text-destructive m-0"
+                role="alert"
+                data-test="shipping-warehouses-empty"
+              >
+                Нет активных складов — создайте в разделе «Склады».
+              </p>
+            }
             <label class="flex flex-col gap-1 text-xs">
               <span class="text-muted-foreground">Адрес</span>
               <input
@@ -218,7 +247,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                 type="submit"
                 variant="default"
                 size="sm"
-                [disabled]="busy()"
+                [disabled]="busy() || !isKnownWarehouse(createWarehouseId)"
                 data-test="shipping-create-submit"
               >
                 Создать отгрузку
@@ -289,6 +318,7 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                       type="button"
                       class="shipping-page__text-button"
                       (click)="openEdit(shipment)"
+                      [attr.data-test]="'shipping-edit-' + shipment._id"
                     >
                       Изменить
                     </button>
@@ -315,9 +345,48 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                     ><input class="pi-input" [(ngModel)]="editDriverInfo"
                   /></label>
                   <label
-                    ><span>Склад</span
-                    ><input class="pi-input" [(ngModel)]="editWarehouseId" placeholder="ID склада"
-                  /></label>
+                    ><span>Склад *</span
+                    ><select
+                      class="pi-input"
+                      [value]="editWarehouseId"
+                      (change)="onEditWarehouseChange($event)"
+                      data-test="shipping-edit-warehouse"
+                    >
+                      <option value="">Выберите склад…</option>
+                      @for (warehouse of editWarehouses(); track warehouse._id) {
+                        <option
+                          [value]="warehouse._id"
+                          [selected]="warehouse._id === editWarehouseId"
+                        >
+                          {{ warehouse.name }}
+                        </option>
+                      }
+                    </select></label
+                  >
+                  @if (warehousesLoading()) {
+                    <p
+                      class="text-xs text-muted-foreground m-0"
+                      data-test="shipping-edit-warehouses-loading"
+                    >
+                      Загрузка складов…
+                    </p>
+                  } @else if (warehousesError()) {
+                    <p
+                      class="text-xs text-destructive m-0"
+                      role="alert"
+                      data-test="shipping-edit-warehouses-error"
+                    >
+                      Не удалось загрузить список складов.
+                    </p>
+                  } @else if (activeWarehouses().length === 0) {
+                    <p
+                      class="text-xs text-destructive m-0"
+                      role="alert"
+                      data-test="shipping-edit-warehouses-empty"
+                    >
+                      Нет активных складов — создайте в разделе «Склады».
+                    </p>
+                  }
                   <label class="shipping-page__editor-wide"
                     ><span>Примечание</span><input class="pi-input" [(ngModel)]="editNotes"
                   /></label>
@@ -326,7 +395,8 @@ const STATUS_LABELS: Record<ShipmentStatus, string> = {
                       variant="default"
                       size="sm"
                       (click)="saveEdit(shipment)"
-                      [disabled]="busy()"
+                      [disabled]="busy() || !isKnownWarehouse(editWarehouseId, true)"
+                      [attr.data-test]="'shipping-edit-save-' + shipment._id"
                       >Сохранить</app-pi-button
                     >
                     <button
@@ -487,6 +557,9 @@ export class ShippingPage {
   ];
   protected readonly shipments = signal<Shipment[]>([]);
   protected readonly orders = signal<Order[]>([]);
+  protected readonly warehouses = signal<Warehouse[]>([]);
+  protected readonly warehousesLoading = signal(true);
+  protected readonly warehousesError = signal<string | null>(null);
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);
   protected readonly statusFilter = signal<ShipmentStatus | ''>('');
@@ -504,6 +577,16 @@ export class ShippingPage {
   protected editDriverInfo = '';
   protected editWarehouseId = '';
   protected editNotes = '';
+  protected readonly activeWarehouses = computed(() =>
+    this.warehouses().filter((warehouse) => warehouse.isActive !== false),
+  );
+  protected editWarehouses(): Warehouse[] {
+    const active = this.activeWarehouses();
+    const current = this.warehouses().find((warehouse) => warehouse._id === this.editWarehouseId);
+    return current && !active.some((warehouse) => warehouse._id === current._id)
+      ? [...active, current]
+      : active;
+  }
   protected readonly docShipmentId = signal<string | null>(null);
   protected docType = 'ttn';
   protected docNumber = '';
@@ -517,6 +600,7 @@ export class ShippingPage {
   private readonly router = inject(Router);
   private readonly injector = inject(Injector);
   private readonly ordersSvc = inject(OrdersService);
+  private readonly warehousesSvc = inject(WarehousesService);
   private readonly shipmentsSvc = inject(ShipmentsService);
   private readonly toast = inject(PiToastService);
   private readonly dialog = inject(PiDialogService);
@@ -534,6 +618,19 @@ export class ShippingPage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((res) => {
         if (res.ok) this.orders.set(res.data ?? []);
+      });
+    this.warehousesSvc
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        this.warehousesLoading.set(false);
+        if (res.ok) {
+          this.warehouses.set(res.data ?? []);
+        } else {
+          const message = extractErrorMessage(res.error) || 'Не удалось загрузить список складов';
+          this.warehousesError.set(message);
+          this.toast.error(message);
+        }
       });
     // Первичная загрузка: queryParamMap эмитит текущее значение сразу,
     // поэтому reload() вызывается подпиской — отдельный вызов не нужен.
@@ -626,6 +723,10 @@ export class ShippingPage {
 
   protected createShipment(event: Event): void {
     event.preventDefault();
+    if (!this.isKnownWarehouse(this.createWarehouseId)) {
+      this.toast.error('Выберите склад из списка');
+      return;
+    }
     const order = this.createOrder();
     if (!order) {
       this.toast.error('Выберите заказ');
@@ -752,6 +853,10 @@ export class ShippingPage {
   }
 
   protected saveEdit(shipment: Shipment): void {
+    if (!this.isKnownWarehouse(this.editWarehouseId, true)) {
+      this.toast.error('Выберите склад из списка');
+      return;
+    }
     this.busy.set(true);
     this.shipmentsSvc
       .update(shipment._id, {
@@ -772,6 +877,15 @@ export class ShippingPage {
         this.toast.success('Отгрузка сохранена');
         this.reload();
       });
+  }
+
+  protected onEditWarehouseChange(event: Event): void {
+    this.editWarehouseId = (event.target as HTMLSelectElement).value;
+  }
+
+  protected isKnownWarehouse(id: string, includeInactive = false): boolean {
+    const warehouses = includeInactive ? this.warehouses() : this.activeWarehouses();
+    return !!id && warehouses.some((warehouse) => warehouse._id === id);
   }
 
   protected openDoc(shipment: Shipment): void {

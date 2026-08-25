@@ -1,4 +1,14 @@
-﻿## [2026-08-24] — TZ-SUPPLY-431 — быстрый заказ 3-col UX redesign
+﻿## [2026-08-25] — TZ-SHIP-440 — склад в отгрузке через реестр
+
+**Исполнитель:** Buffy / Freebuff
+**Статус:** DONE
+**Суть:** `/shipping` загружает активные склады через `WarehousesService`; create/edit используют native select вместо ручного ObjectId. Пустой/ошибочный реестр виден по-русски, ship/update защищены от пустого или неизвестного `warehouseId`.
+**Gates:** FE tsc PASS; shipping.page.spec 12/12 PASS; FE lint 0 errors (17 pre-existing warnings); focused ESLint PASS; architecture:check FAIL только на чужих materials/supply cross-page imports.
+**Archive:** `tasks/_archive/2026-08/TZ-SHIP-440.done.md`
+**Lock:** `.mimocode/locks/TZ-SHIP-440-warehouse-select.lock`
+**Known limit:** live `/shipping` smoke не запускался; deploy НЕ.
+
+## [2026-08-24] — TZ-SUPPLY-431 — быстрый заказ 3-col UX redesign
 
 **Исполнитель:** Cursor executor
 **Статус:** DONE

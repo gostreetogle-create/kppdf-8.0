@@ -38,7 +38,7 @@ Group Chip: `LOGISTICS_SECTION_CHIPS` (`PiGroupWorkspace`, activeId `shipping`).
     `data-test="shipping-cancel-{id}"`; после успеха reload + toast);
   - `in_transit` — «Доставлена»;
   - не `cancelled`/`delivered` — «Изменить» (форма редактирования), «Документ» (форма добавления).
-- Форма создания: выбор заказа → позиции с количествами (partial) → `ship()`.
+- Форма создания: выбор заказа → склад из реестра `GET /warehouses` → позиции с количествами (partial) → `ship()`; склад нельзя ввести вручную как ObjectId.
 
 ## Hub expand
 
@@ -53,6 +53,7 @@ From `/orders` tray — блок «Отгрузка» (`order-shipping-block`): 
 | TZ-SUPPLY-312 | Живой реестр + dispatch (замена stub) |
 | TZ-DESK-426 | Фильтр `orderId` + `from=desk` (чип «Отгрузка») |
 | TZ-SHIP-433 | Отмена ошибочной отгрузки (cancel-shipment), tray «Отменить отгрузку», page.md — реестр |
+| TZ-SHIP-440 | Склад в create/edit выбирается из реестра `GET /warehouses`, не вводится как ObjectId |
 
 ## Особенности
 
