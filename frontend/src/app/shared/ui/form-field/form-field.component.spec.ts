@@ -33,6 +33,10 @@ describe('FormFieldComponent', () => {
     return fixture.nativeElement.querySelector('span[role="alert"]');
   }
 
+  function footer(fixture: ComponentFixture<FormFieldComponent>): HTMLDivElement {
+    return fixture.nativeElement.querySelector('[data-test="form-field-footer"]') as HTMLDivElement;
+  }
+
   it('should create', async () => {
     const fixture = await createFixture();
     expect(fixture.componentInstance).toBeTruthy();
@@ -63,6 +67,34 @@ describe('FormFieldComponent', () => {
     const fixture = await createFixture({ hint: 'Saved', hintTone: 'success' });
     const span = hintSpan(fixture);
     expect(span?.className).toContain('text-hint-success');
+  });
+
+  it('keeps a reserved footer slot while error is set, cleared, and set again', async () => {
+    const fixture = await createFixture();
+    const reservedFooter = footer(fixture);
+
+    expect(reservedFooter).toBeTruthy();
+    expect(reservedFooter.classList.contains('min-h-4')).toBe(true);
+    expect(reservedFooter.classList.contains('leading-4')).toBe(true);
+    const reservedHeight = reservedFooter.clientHeight;
+
+    fixture.componentRef.setInput('error', 'Required field');
+    fixture.detectChanges();
+    expect(footer(fixture)).toBe(reservedFooter);
+    expect(footer(fixture).clientHeight).toBe(reservedHeight);
+    expect(footer(fixture).className).toContain('min-h-4');
+
+    fixture.componentRef.setInput('error', null);
+    fixture.detectChanges();
+    expect(footer(fixture)).toBe(reservedFooter);
+    expect(footer(fixture).clientHeight).toBe(reservedHeight);
+    expect(footer(fixture).className).toContain('min-h-4');
+
+    fixture.componentRef.setInput('error', 'Still required');
+    fixture.detectChanges();
+    expect(footer(fixture)).toBe(reservedFooter);
+    expect(footer(fixture).clientHeight).toBe(reservedHeight);
+    expect(footer(fixture).className).toContain('min-h-4');
   });
 
   it('error shadows hint and uses role=alert', async () => {

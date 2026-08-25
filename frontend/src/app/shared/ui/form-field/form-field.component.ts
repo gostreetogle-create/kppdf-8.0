@@ -48,11 +48,14 @@ const HINT_TONE_CLASS: Record<FormFieldHintTone, string> = {
       <div class="block">
         <ng-content />
       </div>
-      @if (error()) {
-        <span class="text-xs text-destructive" role="alert">{{ error() }}</span>
-      } @else if (hint()) {
-        <span [class]="hintClass()">{{ hint() }}</span>
-      }
+      <!-- Keep one text-xs line reserved so validation never shifts adjacent fields. -->
+      <div class="min-h-4 leading-4 text-xs" data-test="form-field-footer">
+        @if (error()) {
+          <span class="text-xs text-destructive" role="alert">{{ error() }}</span>
+        } @else if (hint()) {
+          <span [class]="hintClass()">{{ hint() }}</span>
+        }
+      </div>
     </div>
   `,
 })
