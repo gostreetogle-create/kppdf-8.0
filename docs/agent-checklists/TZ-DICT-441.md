@@ -49,6 +49,6 @@
 - Gates: FE tsc PASS; kind-labels.page.spec 5/5 PASS; focused ESLint PASS; architecture:check FAIL only pre-existing materials/supply cross-page imports (out of scope)
 - Archive: `tasks/_archive/2026-08/TZ-DICT-441.done.md`
 - Lock: `.mimocode/locks/TZ-DICT-441-classification-chips.lock`
-- Commit SHA: _(filled after commit)_
+- Commit SHA: `c1770471cd6c6e361ddeda22a1754f6daace7f72`
 - Not staged: PO-DIARY, UX-440 leftovers, data/КП, tmp-registry, CATALOG-377, build-info
 - Deploy/wipe: none
