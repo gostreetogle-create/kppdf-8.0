@@ -2,9 +2,17 @@
 
 > Правда для resume. Лимит: 120 строк. Журналы: `progress.md`, не читать целиком.
 
-updated_at: 2026-08-24T23:52:00+03:00
+updated_at: 2026-08-25T18:45:00+03:00
 
-## ACTIVE — DEPLOY
+## ACTIVE — WAVE UX-HYGIENE-440
+
+**READY** — Freebuff: `tasks/PROMPT-FREEBUFF-UX-HYGIENE-440.md`  
+DESK-440 · SHIP-440 · UX-440 · audit `docs/audits/2026-08-25-ux-hygiene-sweep.md`
+
+DESK-440: **код + specs зелёные, pushed**; live `/desk` PASS + archive — ждут Cursor/PO review handoff  
+SHIP-440 · UX-440: параллельные Freebuff-сессии (свои conflict keys)
+
+## ACTIVE — DEPLOY (после 440 PASS)
 
 **READY** @ `565c630d` — `docs/agent-checklists/DEPLOY-READY.md`  
 PO: «сделай деплой по документации» (VPN off, warm, no wipe).
@@ -14,18 +22,20 @@ PO: «сделай деплой по документации» (VPN off, warm, 
 | Оставить в корне | Зачем |
 |------------------|-------|
 | `README.md`, `QUEUE-LIVE.md` | указатель + очередь |
-| `PROMPT-RESUME-ANY.md`, `PROMPT-FOLLOW-QUEUE.md`, `PROMPT-UNIVERSAL-CONTINUOUS.md`, `PROMPT-DEPLOY-READY.md` | executor |
-| `TZ-AUDIT-MGR-530-manager-journey-audit.md` | живой smoke checklist |
+| `PROMPT-*`, `PROMPT-FREEBUFF-UX-HYGIENE-440.md` | executor |
+| `TZ-DESK-440-*`, `TZ-SHIP-440-*`, `TZ-UX-440-*` | LIVE wave |
+| `TZ-AUDIT-MGR-530-*`, `TZ-CATALOG-377-*` | smoke / next |
 | `WAVE-UI-DENSITY-PAPER-INK.md` | wave doc |
 
-**Нет** spent TZ/PROMPT в корне — только `_archive/`.
+Spent → `_archive/` после DONE.
 
 ## Dev smoke (не угадывать bundle)
 
-1. `npm run start:no-browser` → пишет `build-info.ts`, badge **local · &lt;sha&gt;** справа снизу
-2. КП → Клиент → `[data-test="kp-recipient-contact-add"]` — зелёный + в одной строке (`app-pi-select-add-row`)
-3. `/supply?view=quick` — §4.1–4.7 (3-col, autofill, org promote)
-4. FAIL → thin TZ, не «может рестарт»
+1. `npm run start:no-browser` → badge **local · &lt;sha&gt;**
+2. `/desk` tray: нет «подключится позже»; на ready один ship control
+3. `/shipping`: склад = select, не ObjectId
+4. Supply / people: «Почта…»; KP review без `productName` chips
+5. FAIL → thin TZ, не «может рестарт»
 
 ---
 

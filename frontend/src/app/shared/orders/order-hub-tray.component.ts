@@ -58,14 +58,10 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   cancelled: 'Отменён',
 };
 
-const PRIMARY_CTA_LABELS: Record<OrderStatus, string> = {
+/** TZ-DESK-440: tray primary CTA is a live action only — confirm on draft.
+ *  Statuses past draft rely on their badge + real controls (ship, etc.). */
+const PRIMARY_CTA_LABELS: Partial<Record<OrderStatus, string>> = {
   draft: 'Подтвердить',
-  confirmed: 'В производство',
-  in_production: 'К отгрузке',
-  ready: 'Отгрузить',
-  shipped: 'Отгружен',
-  delivered: 'Доставлен',
-  cancelled: 'Отменён',
 };
 
 const BOARD_LANE_LABELS: Record<BoardLane, string> = {
@@ -141,12 +137,12 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
               data-test="order-summary-status"
               >{{ statusLabel(order().status) }}</span
             >
-            @if (mode() === 'desk') {
+            @if (mode() === 'desk' && deskPrimaryCtaVisible()) {
               <span class="flex-1" aria-hidden="true"></span>
               <div class="flex flex-col items-end gap-1">
                 <button
                   type="button"
-                  class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm text-sm"
+                  class="min-h-touch px-3 py-1.5 border border-rule-strong rounded-sm text-sm pi-focus-ring"
                   [class.bg-gold]="canConfirm()"
                   [class.text-ink]="canConfirm()"
                   [class.bg-paper]="!canConfirm()"
@@ -585,7 +581,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                             @if (shipmentCancellable()) {
                               <button
                                 type="button"
-                                class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                                class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
                                 (click)="cancelShipment.emit(activeShipment()!)"
                                 data-test="desk-cancel-shipment-button"
                               >
@@ -596,7 +592,7 @@ const EMPTY_SUPPLY_COUNTERS: Record<SupplyTaskStatus, number> & { total: number 
                         } @else if (canMarkShipped()) {
                           <button
                             type="button"
-                            class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs"
+                            class="w-full min-h-touch px-2 py-1.5 mt-1 border border-rule-strong rounded-sm bg-transparent text-xs pi-focus-ring"
                             (click)="markShipped.emit(order())"
                             data-test="desk-ship-button"
                           >
@@ -778,7 +774,12 @@ export class OrderHubTrayComponent implements OnInit {
   }
 
   protected primaryCtaLabel(): string {
-    return PRIMARY_CTA_LABELS[this.order().status];
+    return PRIMARY_CTA_LABELS[this.order().status] ?? '';
+  }
+
+  /** TZ-DESK-440: desk primary CTA is live only — confirm on draft, hidden past draft. */
+  protected deskPrimaryCtaVisible(): boolean {
+    return this.order().status === 'draft';
   }
 
   protected canConfirm(): boolean {
@@ -814,29 +815,13 @@ export class OrderHubTrayComponent implements OnInit {
     return counters.total > 0 ? `Бронь ${counters.total}` : 'Бронь —';
   }
 
-  /** RU why-disabled copy for the desk primary CTA (411). */
+  /** RU why-disabled copy for the desk primary CTA (411, narrowed to draft by 440). */
   protected primaryCtaDisabledReason(): string {
     const order = this.order();
-    const status = this.statusLabel(order.status);
-    switch (order.status) {
-      case 'shipped':
-      case 'delivered':
-      case 'cancelled':
-        return `Заказ в статусе «${status}» — действие недоступно.`;
-      case 'in_production':
-      case 'ready':
-        if (!order.siteId) {
-          return 'У заказа нет площадки (siteId) — создайте объект у контрагента.';
-        }
-        return `Заказ в статусе «${status}» — действие подключится позже.`;
-      case 'draft':
-        if (!order.siteId) return 'Укажите площадку (siteId) — без неё заказ нельзя подтвердить.';
-        if (!(order.items?.length ?? 0)) return 'Добавьте изделия, чтобы подтвердить заказ.';
-        return '';
-      case 'confirmed':
-        if (!(order.items?.length ?? 0)) return 'Добавьте изделия.';
-        return 'Действие «В производство» подключится позже.';
-    }
+    if (order.status !== 'draft') return '';
+    if (!order.siteId) return 'Укажите площадку — без неё заказ нельзя подтвердить.';
+    if (!(order.items?.length ?? 0)) return 'Добавьте изделия, чтобы подтвердить заказ.';
+    return '';
   }
 
   protected itemCountLabel(count: number): string {

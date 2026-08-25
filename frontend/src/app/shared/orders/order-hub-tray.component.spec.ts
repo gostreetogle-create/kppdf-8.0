@@ -147,6 +147,84 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(fixture.nativeElement.querySelector('[data-test="order-summary-client"]')).toBeNull();
   });
 
+  // ── TZ-DESK-440: tray primary CTA = live actions only ──
+
+  it('440: non-draft statuses hide the desk primary CTA entirely (no fake buttons, no «позже» copy)', () => {
+    const statuses = [
+      'confirmed',
+      'in_production',
+      'ready',
+      'shipped',
+      'delivered',
+      'cancelled',
+    ] as const;
+    for (const status of statuses) {
+      const fixture = TestBed.createComponent(OrderHubTrayComponent);
+      fixture.componentRef.setInput('order', { ...ORDER, status });
+      fixture.componentRef.setInput('mode', 'desk');
+      fixture.detectChanges();
+      const tray = fixture.nativeElement as HTMLElement;
+      expect(tray.querySelector('[data-test="desk-primary-cta"]')).toBeNull();
+      expect(tray.textContent).not.toContain('подключится позже');
+      expect(tray.textContent).not.toContain('siteId');
+    }
+  });
+
+  it('440: draft (confirmable) keeps the gold CTA «Подтвердить» and emits primaryCta', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    const emitSpy = jest.fn();
+    const order = {
+      ...ORDER,
+      status: 'draft' as const,
+      siteId: 'site1',
+      items: [{ productId: 'p1', quantity: 1, unitPrice: 1 }],
+    };
+    fixture.componentRef.setInput('order', order);
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.componentRef.instance.primaryCta.subscribe(emitSpy);
+    fixture.detectChanges();
+    const cta = fixture.nativeElement.querySelector(
+      '[data-test="desk-primary-cta"]',
+    ) as HTMLButtonElement;
+    expect(cta).toBeTruthy();
+    expect(cta.textContent).toContain('Подтвердить');
+    expect(cta.classList.contains('bg-gold')).toBe(true);
+    cta.click();
+    expect(emitSpy).toHaveBeenCalledWith(fixture.componentRef.instance.order());
+  });
+
+  it('440: ready order has one ship control (desk-ship-button «Отгружено»), no «Отгрузить» CTA', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', { ...ORDER, status: 'ready' });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const tray = fixture.nativeElement as HTMLElement;
+    expect(tray.querySelector('[data-test="desk-primary-cta"]')).toBeNull();
+    expect(tray.querySelectorAll('[data-test="desk-ship-button"]').length).toBe(1);
+    expect(tray.textContent).not.toContain('Отгрузить');
+  });
+
+  it('440: draft without siteId keeps a muted CTA with «площадка» reason (no API field name)', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', {
+      ...ORDER,
+      status: 'draft',
+      items: [{ productId: 'p1', quantity: 1, unitPrice: 1 }],
+    });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const tray = fixture.nativeElement as HTMLElement;
+    const cta = tray.querySelector('[data-test="desk-primary-cta"]') as HTMLButtonElement;
+    expect(cta.classList.contains('bg-gold')).toBe(false);
+    expect(cta.classList.contains('text-muted-foreground')).toBe(true);
+    cta.click();
+    fixture.detectChanges();
+    expect(tray.querySelector('[data-test="desk-primary-cta-hint"]')?.textContent).toContain(
+      'площадку',
+    );
+    expect(tray.textContent).not.toContain('siteId');
+  });
+
   function expandLogistics(order: Order) {
     const fixture = TestBed.createComponent(OrderHubTrayComponent);
     fixture.componentRef.setInput('order', order);

@@ -66,6 +66,11 @@
   список шаблонов (`DocumentTemplatesService.list()`), «Создать» у шаблона —
   единственная неизбежная навигация в builder (`/doc-constructor/builder/:id
   ?source=order&sourceId=`), сам список остаётся на `/desk`.
+- **440:** tray primary CTA — только живые действия: «Подтвердить» на `draft`
+  (gold, emit) либо muted + причина без `siteId`; статусы `confirmed`…`cancelled` —
+  `desk-primary-cta` скрыт целиком (бейдж статуса уже есть), копия «подключится
+  позже» удалена; на `ready` единственный ship control — «Отгружено» (DESK-430);
+  `pi-focus-ring` на primary/ship/cancel.
 - Правый rail — дубль; primary actions предпочтительно в tray.
 
 
@@ -103,3 +108,4 @@ Fixture удалён в 402; очередь теперь живой `GET /orders
 | **DESK-427** | правый rail удалён (`right=[]`), dead code studioTool/openStudio/actionTool вычищен, левый rail 4 tools остаётся; edit/клиент/состав/docs — tray CTA + flyouts; cross-page — chips — **DONE** |
 | **DESK-425** | tray = workspace без route jumps: supply/docs R-flyout вместо navigate; Производство/Склад/Отгрузка — read-only сводка вместо ссылок в `mode="desk"` — **DONE** |
 | **DESK-430** | «Отгружено» без документа: tray-кнопка (не `shipped/delivered/cancelled`) → `PiDialogService` confirm-форма (`ShipConfirmDialogComponent`, автозаполнение клиент/адрес из заказа) → `OrdersService.ship()` (POST, whole-order, без `items`); блок «Отгружен» — номер/дата, «Документ не оформлен» если `docs` пуст — норма, не ошибка; lazy `GET /shipments?orderId=` при expand — **DONE** |
+| **DESK-440** | tray primary CTA = только confirm: CTA скрыт после `draft` (бейдж статуса), «подключится позже» удалено, `siteId` из copy убран, `pi-focus-ring` на primary/ship/cancel — **DONE** |
