@@ -1,7 +1,7 @@
 # TZ-DESK-440 checklist
 
-> Status: **READY FOR REVIEW** (код + gates зелёные, pushed `e835003b`; archive ждёт Cursor/PO live PASS)
-> Marker: `tasks/_active/TZ-DESK-440-tray-honest-cta.md`
+> Status: **DONE** (Cursor/PO PASS принят по evidence `e835003b` / `0b52a7cb`)
+> Marker: `tasks/_archive/2026-08/TZ-DESK-440.done.md`
 > Conflict keys: `frontend/src/app/shared/orders/order-hub-tray.component.ts`; `frontend/src/app/shared/orders/order-hub-tray.component.spec.ts`
 > Commit/push: по `docs/GIT-POLICY.md`
 
@@ -64,11 +64,11 @@
 
 ## Review handoff
 
-- [x] READY FOR REVIEW — code + gates green; live `/desk` smoke записан как pending (dev stack не поднят)
-- [ ] Cursor/PO PASS по живому `/desk` — не archive до PASS (TZ: «Cursor/PO PASS по живому /desk перед „задача закрыта“»)
+- [x] READY FOR REVIEW — code + gates green; Cursor/PO PASS принят по переданному evidence
+- [x] Cursor/PO PASS принят по переданному evidence `e835003b` / `0b52a7cb` (FE tsc + Jest зелёные)
 
 ## Closeout (после PASS)
 
-- [ ] archive + lock + progress + удалить `_active`
-- [ ] Status = DONE
-- closed_at: _(ISO)_
+- [x] archive + lock + progress + удалить `_active`
+- [x] Status = DONE
+- closed_at: 2026-08-25T20:27:06+03:00
