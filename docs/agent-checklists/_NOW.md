@@ -11,7 +11,7 @@ updated_at: 2026-08-25T20:40:00+03:00
 ## DONE (сегодня)
 
 - **DICT-441** ✅ chips Классификация — archive `tasks/_archive/2026-08/TZ-DICT-441.done.md`
-- WAVE UX-HYGIENE-440: SHIP `c50d57f2` · DESK `e835003b` / `0b52a7cb` · UX archive `TZ-UX-440.done.md`
+- WAVE UX-HYGIENE-440: SHIP `c50d57f2` · DESK `e835003b` / `0b52a7cb` · UX `69186b2c` · archive `TZ-UX-440.done.md`
 
 ## DEPLOY
 

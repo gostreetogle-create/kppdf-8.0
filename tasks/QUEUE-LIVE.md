@@ -9,7 +9,7 @@
 | **DICT-441** | archive `TZ-DICT-441.done.md` | ✅ DONE |
 | **SHIP-440** | `c50d57f2` · archive `TZ-SHIP-440.done.md` | ✅ DONE |
 | **DESK-440** | `e835003b` (+ docs `0b52a7cb`) · archive `TZ-DESK-440.done.md` | ✅ DONE |
-| **UX-440** | FE working-tree diff · archive `TZ-UX-440.done.md` | ✅ DONE |
+| **UX-440** | `69186b2c` · archive `TZ-UX-440.done.md` | ✅ DONE |
 
 Аудит: `docs/audits/2026-08-25-ux-hygiene-sweep.md`
 
