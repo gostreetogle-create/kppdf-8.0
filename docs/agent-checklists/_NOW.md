@@ -2,51 +2,38 @@
 
 > Правда для resume. Лимит: 120 строк. Журналы: `progress.md`, не читать целиком.
 
-updated_at: 2026-08-25T18:45:00+03:00
+updated_at: 2026-08-25T20:40:00+03:00
 
-## ACTIVE — WAVE UX-HYGIENE-440
+## ACTIVE — CATALOG-377 next
 
-**READY** — Freebuff: `tasks/PROMPT-FREEBUFF-UX-HYGIENE-440.md`  
-DESK-440 · SHIP-440 · UX-440 · audit `docs/audits/2026-08-25-ux-hygiene-sweep.md`
+1. **CATALOG-377** — `tasks/PROMPT-FREEBUFF-CATALOG-377.md` (keys ≠ kind-labels)
 
-DESK-440: **код + specs зелёные, pushed**; live `/desk` PASS + archive — ждут Cursor/PO review handoff  
-SHIP-440: **DONE**, archive `tasks/_archive/2026-08/TZ-SHIP-440.done.md`, commit/push — warehouse select + guards
-UX-440: параллельная Freebuff-сессия (свои conflict keys)
+## DONE (сегодня)
 
-## ACTIVE — DEPLOY (после 440 PASS)
+- **DICT-441** ✅ chips Классификация — archive `tasks/_archive/2026-08/TZ-DICT-441.done.md`
+- WAVE UX-HYGIENE-440: SHIP `c50d57f2` · DESK `e835003b` / `0b52a7cb` · UX archive `TZ-UX-440.done.md`
 
-**READY** @ `565c630d` — `docs/agent-checklists/DEPLOY-READY.md`  
-PO: «сделай деплой по документации» (VPN off, warm, no wipe).
+## DEPLOY
 
-## Корень tasks/ (канон)
+Warm deploy — только после явной фразы PO.
 
-| Оставить в корне | Зачем |
-|------------------|-------|
-| `README.md`, `QUEUE-LIVE.md` | указатель + очередь |
-| `PROMPT-*`, `PROMPT-FREEBUFF-UX-HYGIENE-440.md` | executor |
-| `TZ-DESK-440-*`, `TZ-SHIP-440-*`, `TZ-UX-440-*` | LIVE wave |
-| `TZ-AUDIT-MGR-530-*`, `TZ-CATALOG-377-*` | smoke / next |
-| `WAVE-UI-DENSITY-PAPER-INK.md` | wave doc |
+## Корень tasks/
 
-Spent → `_archive/` после DONE.
+QUEUE-LIVE · PROMPT-FOLLOW-QUEUE · PROMPT-FREEBUFF-CATALOG-377 · TZ-CATALOG-377 · AUDIT-530 · WAVE density
 
-## Dev smoke (не угадывать bundle)
+## Dev smoke
 
-1. `npm run start:no-browser` → badge **local · &lt;sha&gt;**
-2. `/desk` tray: нет «подключится позже»; на ready один ship control
-3. `/shipping`: склад = select, не ObjectId
-4. Supply / people: «Почта…»; KP review без `productName` chips
-5. FAIL → thin TZ, не «может рестарт»
+1. `npm run start:no-browser`
+2. `/desk` — нет «подключится позже»
+3. `/shipping` — склад select
+4. «Почта…» / KP без EN dirty keys
+5. `/dictionaries/kind-labels` — оба chip Категории + Виды
+6. После 377 — supply категории RU name, не slug
 
 ---
 
-## Справка (DONE, не active)
+## Справка DONE
 
-- **KP IA-510/511** — archived `TZ-KP-IA-510.done.md`, `TZ-KP-IA-511.done.md`
-- **KP WS 401–409** — wave closed; `/proposals/create` = workspace
-- **UI Density** — wave closed; PO sign-off `UI-DENSITY-GUARDS.md`
-- **DESK 425–430** — archived
-- **SUPPLY 316/317/308R** — archived
-- **PLUS-604** — archived
-
-deploy_docs: `deploy/synology/README.md`
+- DICT-441: kind-labels → CLASSIFICATION_CHIPS
+- WAVE UX-HYGIENE-440: SHIP / DESK / UX
+- PO smoke 2026-08-24 · SUPPLY-431 · KP IA/BIND

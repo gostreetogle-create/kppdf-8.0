@@ -1,4 +1,16 @@
-﻿## [2026-08-25] — TZ-SHIP-440 — склад в отгрузке через реестр
+﻿## [2026-08-25] — TZ-DICT-441 — classification chips always visible
+
+**Исполнитель:** freebuff-executor
+**Статус:** DONE
+**Суть:** `kind-labels.page.ts` использует shared `CLASSIFICATION_CHIPS` (Категории + Виды изделий и материалов) вместо одиночного chip; regression spec на оба id/label; docs page.md + PAGE-TZ-INDEX.
+**Gates:** FE tsc PASS; kind-labels.page.spec 5/5 PASS; focused ESLint PASS; architecture:check FAIL только чужие materials/supply cross-page imports.
+**Archive:** `tasks/_archive/2026-08/TZ-DICT-441.done.md`
+**Lock:** `.mimocode/locks/TZ-DICT-441-classification-chips.lock`
+**Known limit:** live browser smoke не запускался; deploy НЕ.
+
+## [2026-08-25] — WAVE UX-HYGIENE-440 closeout — DESK/UX DONE; SHIP-440 already DONE; archives and locks created; no deploy.
+
+## [2026-08-25] — TZ-SHIP-440 — склад в отгрузке через реестр
 
 **Исполнитель:** Buffy / Freebuff
 **Статус:** DONE

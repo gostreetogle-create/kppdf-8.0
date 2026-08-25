@@ -10,7 +10,7 @@
 
 | Группа | Alias route | Body |
 |--------|-------------|------|
-| Классификация | `/dictionaries/classification` → `/categories` | chips Категории / Виды изделий и материалов |
+| Классификация | `/dictionaries/classification` → `/categories` | chips Категории / Виды изделий и материалов (**DICT-441:** оба chip обязательны на `/categories` и `/dictionaries/kind-labels` через `CLASSIFICATION_CHIPS`) |
 | Измерения | `/dictionaries/measurements` | chip Единицы |
 | Оформление | `/dictionaries/appearance` → color-references | chip Цвета |
 | Документы | `/dictionaries/documents-ref` → doc-template-cats | chips шаблоны / тексты |
@@ -27,4 +27,4 @@ SoT: `docs/superpowers/specs/2026-08-04-group-chip-workspace-design.md`
 
 ---
 
-_Обновлено: 2026-08-05 (TZ-DICT-312 READY FOR REVIEW)._
+_Обновлено: 2026-08-25 (TZ-DICT-441 classification chips)._

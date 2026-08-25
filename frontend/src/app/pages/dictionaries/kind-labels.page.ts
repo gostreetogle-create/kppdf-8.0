@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { PiGroupWorkspaceComponent } from '../../shared/page/pi-group-workspace.component';
 import type { GroupChip } from '../../shared/page/pi-group-workspace.component';
-import { DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
+import { CLASSIFICATION_CHIPS, DICTIONARY_TOC_CHIPS } from './dictionary-group-chips';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../shared/ui/switch/switch.component';
 import { PiToastService } from '../../shared/ui/toast';
@@ -111,9 +111,7 @@ import {
 })
 export class KindLabelsPage {
   protected readonly toc: readonly GroupChip[] = DICTIONARY_TOC_CHIPS;
-  protected readonly chips: readonly GroupChip[] = [
-    { id: 'kind-labels', label: 'Виды изделий и материалов', route: '/dictionaries/kind-labels' },
-  ];
+  protected readonly chips = CLASSIFICATION_CHIPS;
   protected readonly tabs = [
     { scope: 'productKind' as const, label: 'Виды изделий' },
     { scope: 'materialKind' as const, label: 'Виды материалов' },

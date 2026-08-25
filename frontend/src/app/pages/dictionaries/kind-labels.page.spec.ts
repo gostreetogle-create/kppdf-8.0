@@ -76,6 +76,15 @@ describe('KindLabelsPage (TZ-DICT-320)', () => {
     expect(component.rows().map((row) => row.key)).toEqual(['good', 'service']);
   });
 
+  it('exposes both classification chips (TZ-DICT-441)', () => {
+    const { component } = create();
+    expect(component.chips.map((chip) => chip.id)).toEqual(['categories', 'kind-labels']);
+    expect(component.chips.map((chip) => chip.label)).toEqual([
+      'Категории',
+      'Виды изделий и материалов',
+    ]);
+  });
+
   it('switches tabs and reloads material labels', () => {
     const { component } = create();
     service.list.mockReturnValue(of({ ok: true, data: [] }));
