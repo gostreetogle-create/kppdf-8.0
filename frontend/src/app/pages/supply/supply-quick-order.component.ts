@@ -628,7 +628,7 @@ class SupplyQuickOrderDialogComponent {
                         />
                       </label>
                       <label class="supply-quick-order__field">
-                        <span class="supply-quick-order__field-label">Email менеджера</span>
+                        <span class="supply-quick-order__field-label">Почта менеджера</span>
                         <input
                           class="pi-input"
                           [class.supply-autofill--filled]="!!contactEmail(row.supplierContactId)"
@@ -1230,8 +1230,8 @@ class SupplyQuickOrderDialogComponent {
       }
       .supply-quick-order__head:hover,
       .supply-quick-order__head--expanded {
-        border-color: var(--color-sunrise-warm, #c79542);
-        background: var(--color-sunrise-soft, #fff6df);
+        border-color: var(--color-sunrise-warm);
+        background: var(--color-sunrise-soft);
       }
       .supply-quick-order__head--expanded {
         border-bottom-color: transparent;
@@ -1334,7 +1334,7 @@ class SupplyQuickOrderDialogComponent {
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        color: var(--color-sunrise-warm, #9b6b1e);
+        color: var(--color-sunrise-warm);
         font-size: 0.9rem; /* disclosure chevron glyph; deliberate compact-control exception (TZ-SUPPLY-315) */
       }
       .supply-quick-order__summary-text {
@@ -1408,16 +1408,16 @@ class SupplyQuickOrderDialogComponent {
         padding: 0.05rem 0.5rem;
         border: 1px solid var(--color-destructive);
         border-radius: 2px;
-        background: var(--color-destructive-soft, #fdeaea);
+        background: var(--color-destructive-soft);
         color: var(--color-destructive);
       }
       .supply-quick-order__priority--low {
-        color: var(--color-success, #2d6a4f);
+        color: var(--color-success);
       }
       .supply-quick-order__expanded {
         container-type: inline-size;
         padding: 0 0.5rem 0.5rem;
-        border: 1px solid var(--color-sunrise-warm, #c79542);
+        border: 1px solid var(--color-sunrise-warm);
         border-top: none;
         border-radius: 0 0 2px 2px;
         background: var(--color-paper);
@@ -1712,7 +1712,7 @@ class SupplyQuickOrderDialogComponent {
       .supply-quick-order__add-btn:hover {
         border-color: color-mix(in oklch, var(--color-sunrise-warm) 80%, var(--color-gold-deep));
         background: color-mix(in oklch, var(--color-sunrise-soft) 55%, var(--color-sunrise-warm));
-        color: color-mix(in oklch, var(--color-success) 82%, #000000);
+        color: color-mix(in oklch, var(--color-success) 82%, var(--color-ink));
       }
       .supply-quick-order__add-btn:focus-visible {
         outline: none;
