@@ -52,9 +52,13 @@ CLAIM (agent_id, claimed_at ISO, workspace D:\kppdf-8.0).
 ### §Базлайн (обновлять на каждом прогоне)
 
 ```text
-Проверено на: 167865c9  date: 2026-08-23T23:40:00+03:00
+Проверено на: 631f96e0  date: 2026-08-26T06:20:00+03:00
 backend/src/modules/catalog/catalog-314.archive.spec.ts:79
 backend/src/modules/admin/users-admin.controller.spec.ts:114
+FE suites (debt): proposal-create-terms; orders.page / order-detail;
+  material-form-dialog; proposal-workspace
+architecture: 2× fe-page-cross-component (materials/products dialogs)
+categories.page.spec: PASS (TZ-TEST-422 done)
 ```
 
 ---

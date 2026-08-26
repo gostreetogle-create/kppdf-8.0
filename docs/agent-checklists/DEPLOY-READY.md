@@ -4,29 +4,33 @@
 > Пишет подготовка («подготовь к деплою»).  
 > Читает любой ИИ по `deploy/synology/README.md` → «сделай деплой по документации».
 >
-> Prod до деплоя: `c8ebdeb6` (2026-08-11).
+> Prod до этой выкладки: `24a0d74a` / product `565c630d` (warm 2026-08-25).
 
 ```yaml
-status: DEPLOYED
-deployed_sha: 24a0d74a032dcf2b243062ab584e2409ef171321 (product wave 565c630d + docs tip)
-deployed_at: 2026-08-25 (warm deploy.ps1, WIPE=false; Deploy complete + Auth OK + Frontend 200 + https health/ready 200)
-prod_before: d551d2e4 (2026-08-25 morning warm, same protocol)
-deploy_sha_target: 565c630d0ba94b00b4e3b4890b366e4f6e09cf5e
-prepared_at: 2026-08-24T23:52:00+03:00
-prepared_by: cursor-orchestrator
-evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-24-wave.md
+status: READY
+deploy_sha_target: 631f96e0d0b53cdaeaf91cc28cb22421e3fd8d58
+prepared_at: 2026-08-26T06:20:00+03:00
+prepared_by: cursor-architect
+evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-26.md
 known_debt:
   - backend catalog-314.archive.spec.ts (baseline)
   - backend users-admin.controller.spec.ts (baseline)
-  - FE jest 56 failures (baseline — orders/workspace/terms/materials)
-  - architecture:check fe-page-cross-component (material-form-dialog imports)
-  - BE pnpm lint unused-imports (not a READY gate)
-  - desktop_zip accept-stale (TZD-67)
-  - PO browser smoke AUDIT-530 deferred
-mixed_commits: true
+  - FE jest 8 fail / 2043 pass (terms/orders/materials/workspace — baseline)
+  - architecture:check fe-page-cross-component (2)
+  - desktop_zip accept-stale (no zip in frontend/downloads)
+  - SSH may need VPN off + LAN at deploy time
+mixed_commits: inherited-waive-from-prior-stamp
 why_ready: >
-  PO smoke wave on main: SUPPLY-431 3-col quick order + org promote,
-  KP substitutions/BIND-513, PiSelectAddRow, desk fixes, dev build badge.
-  FE/BE tsc PASS; supply-gate + supply-smoke 23/23 PASS on local stand.
-  §F deploy not run. VPN off. Warm deploy.ps1 only.
+  TZ-TEST-422 fixed categories.page.spec ActivatedRoute (a01730fb + 631f96e0).
+  FE/BE tsc PASS. New-outside-baseline red cleared. SUPPLY-443 XOR fixed.
+  FE 8 / BE 2 / arch 2 = documented baseline only. §F not run.
+  Warm deploy.ps1 only (WIPE=false). Desktop accept-stale.
 ```
+
+## Для агента деплоя
+
+1. `status` = **READY** → можно.
+2. `git fetch` && `git checkout main` && `git pull --ff-only`.
+3. `git merge-base --is-ancestor 631f96e0 HEAD` must succeed; deploy from **tip HEAD**.
+4. VPN **off**. `.\deploy\synology\deploy.ps1` (no `-Wipe`).
+5. Smoke per `deploy/synology/README.md`. Then set this stamp `INVALID` + commit.

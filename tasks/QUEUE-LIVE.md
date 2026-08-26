@@ -1,33 +1,14 @@
 # QUEUE-LIVE
 
-> 2026-08-25 · CATALOG-377 DONE · DICT-441 DONE · WAVE UX-HYGIENE-440 DONE
+> **DEPLOY-READY** — можно: «сделай деплой по документации»
 
-## DONE
+Штамп: `docs/agent-checklists/DEPLOY-READY.md` = **READY** @ `631f96e0`  
+Evidence: `docs/agent-checklists/PRE-DEPLOY-2026-08-26.md`
 
-| TZ | Evidence | Closeout |
-|----|----------|----------|
-| **CATALOG-377** | `49f5231a` · archive `TZ-CATALOG-377.done.md` | ✅ DONE |
-| **DICT-441** | archive `TZ-DICT-441.done.md` | ✅ DONE |
-| **SHIP-440** | `c50d57f2` · archive `TZ-SHIP-440.done.md` | ✅ DONE |
-| **DESK-440** | `e835003b` (+ docs `0b52a7cb`) · archive `TZ-DESK-440.done.md` | ✅ DONE |
-| **UX-440** | `69186b2c` · archive `TZ-UX-440.done.md` | ✅ DONE |
-
-Аудит: `docs/audits/2026-08-25-ux-hygiene-sweep.md`
-
-## NEXT
-
-| # | Что | Промпт |
+| # | TZ | Notes |
 |---|-----|--------|
-| 1 | Backlog `tasks/_backlog/ux-hygiene/` (form-field 441…) | Cursor → отдельная TZ |
-| 2 | Live smoke AUDIT-530 | PO |
+| — | warm deploy | `deploy/synology/README.md` only |
+| 1 | `TZ-DOC-443-template-setup-category-plus.md` | после деплоя / по желанию PO |
+| 2 | `TZ-KP-443-orientation-from-template.md` | параллельно с DOC-443 |
 
-## Dev ritual
-
-```bash
-npm run start:no-browser
-# /dictionaries/kind-labels — оба chip · /desk · /shipping · «Почта» · Supply «Металлы» · /categories?type=material
-```
-
-## Deploy-Ready
-
-`docs/agent-checklists/DEPLOY-READY.md` — только явная фраза PO.
+Парк: DESK-441 (Да/Нет PO).
