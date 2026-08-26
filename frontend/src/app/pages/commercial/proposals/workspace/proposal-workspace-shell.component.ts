@@ -1,10 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import {
-  LucideAngularModule,
-  Maximize2,
-  RectangleHorizontal,
-  RectangleVertical,
-} from 'lucide-angular';
+import { LucideAngularModule, Maximize2 } from 'lucide-angular';
 
 import type { PiChromeLucideIcon } from '../../../../shared/chrome/pi-chrome-tools.types';
 
@@ -25,8 +20,9 @@ const RIGHT_PANEL_SECTIONS = new Set(['params', 'money', 'deadlines', 'table', '
 /**
  * TZ-KP-WS-401 — Proposal workspace layout shell (extracted from demo page).
  *
- * Owns ONLY the geometry frame: ribbon (orientation segment + status/total),
- * horizontal mobile rail strip (from `railItems`), absolute tools panel
+ * Owns ONLY the geometry frame: ribbon (status/total — orientation is
+ * mirrored read-only from the template, TZ-KP-443), horizontal mobile rail
+ * strip (from `railItems`), absolute tools panel
  * (`[kpWsPanel]` content), A4 viewport stage with sheet slot (`[kpWsSheet]`),
  * viewport toolbar and status bar. Controlled component: state comes in via
  * inputs, user intent leaves via outputs — consumers (demo / workspace page /
@@ -69,20 +65,11 @@ export class ProposalWorkspaceShellComponent {
     return section && RIGHT_PANEL_SECTIONS.has(section) ? 'right' : 'left';
   });
 
-  readonly orientationChange = output<WsOrientation>();
   readonly sectionChange = output<string>();
   readonly panelToggle = output<void>();
   readonly sheetClick = output<void>();
 
-  protected readonly rectVerticalIcon = RectangleVertical;
-  protected readonly rectHorizontalIcon = RectangleHorizontal;
   protected readonly maximizeIcon = Maximize2;
-
-  protected setOrientation(next: WsOrientation): void {
-    if (this.orientation() !== next) {
-      this.orientationChange.emit(next);
-    }
-  }
 
   /** Mirror of demo toggle: same section while open collapses the panel. */
   protected onSectionClick(id: string): void {

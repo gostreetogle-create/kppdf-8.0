@@ -6,35 +6,7 @@
 >
   <div class="kp-ws">
     <header class="kp-ws-ribbon" data-test="kp-workspace-ribbon">
-      <div class="kp-ws-ribbon__group">
-        <div
-          class="kp-ws-segment"
-          role="group"
-          aria-label="Ориентация листа"
-          data-test="kp-orient-toggle"
-        >
-          <button
-            type="button"
-            class="kp-ws-segment__btn pi-focus-ring"
-            [class.kp-ws-segment__btn--active]="orientation() === 'portrait'"
-            title="Книжная"
-            [attr.aria-pressed]="orientation() === 'portrait'"
-            (click)="setOrientation('portrait')"
-          >
-            <lucide-angular [img]="rectVerticalIcon" [size]="12" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            class="kp-ws-segment__btn pi-focus-ring"
-            [class.kp-ws-segment__btn--active]="orientation() === 'landscape'"
-            title="Альбомная"
-            [attr.aria-pressed]="orientation() === 'landscape'"
-            (click)="setOrientation('landscape')"
-          >
-            <lucide-angular [img]="rectHorizontalIcon" [size]="12" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
+      <!-- Orientation is read-only from the template (TZ-KP-443): no toggle here. -->
 
       <!-- Mid ribbon: selectors / fields projected by consumer -->
       <ng-content select="[kpWsRibbonExtra]" />

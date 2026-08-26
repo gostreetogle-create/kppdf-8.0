@@ -179,7 +179,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
       }
 
       .kp-ws-note {
-        padding: var(--space-2, 8px);
+        padding: var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: var(--radius-sm, 2px);
         font-size: 11px;
@@ -210,7 +210,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
         overflow: auto;
         padding: 1rem;
         border: 1px solid var(--color-rule);
-        background: var(--color-paper, #fff);
+        background: var(--color-paper);
         color: var(--color-ink);
         box-shadow: var(--shadow-raised, 0 12px 36px oklch(0.2 0.02 260 / 0.18));
       }
@@ -281,7 +281,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
       .kp-catalog-review__cancel {
         padding: 0.35rem 0.5rem;
         border: 1px solid var(--color-rule);
-        background: var(--color-paper, #fff);
+        background: var(--color-paper);
         color: var(--color-ink);
         font-size: 0.72rem;
         cursor: pointer;
@@ -294,7 +294,7 @@ const SECTION_DEFS: readonly SectionDef[] = [
 
       .kp-catalog-review__error {
         margin: 0 0 0.5rem;
-        color: var(--color-danger, #9f1239);
+        color: var(--color-destructive);
         font-size: 0.78rem;
       }
 
@@ -311,8 +311,8 @@ const SECTION_DEFS: readonly SectionDef[] = [
         justify-content: center;
         gap: var(--space-1, 4px);
         height: 26px;
-        padding: 0 var(--space-2, 8px);
-        margin-right: var(--space-1, 4px);
+        padding: 0 var(--space-2);
+        margin-right: var(--space-1);
         border: 1px solid var(--color-rule-strong);
         border-radius: var(--radius-sm, 2px);
         background: var(--color-paper-raised);
@@ -399,7 +399,6 @@ const SECTION_DEFS: readonly SectionDef[] = [
         [badgeText]="badgeDisplay()"
         [totalText]="totalDisplay()"
         [statusText]="draft.autosaveLabel() || 'Workspace · черновик'"
-        (orientationChange)="store.setOrientation($event)"
         (sectionChange)="onSectionChange($event)"
         (panelToggle)="store.closePanel()"
         (sheetClick)="onSheetClick()"

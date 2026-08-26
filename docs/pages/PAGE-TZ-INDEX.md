@@ -82,8 +82,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
 | `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
 | `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
-| `/proposals/workspace` | **kp-workspace.page.md** · **kp-workspace-rail-ia.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409); **WAVE-KP-RAIL-BIND** TZ-KP-IA-510/511 + TZ-KP-BIND-512 (Money/Deadlines rail; registry labels; 510 docs DONE); **TZ-UX-440 READY** catalog review dirty = RU, не `productName` |
-| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc; **TZ-KP-443 QUEUED** orientation from template |
+| `/proposals/workspace` | **kp-workspace.page.md** · **kp-workspace-rail-ia.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409); **WAVE-KP-RAIL-BIND** TZ-KP-IA-510/511 + TZ-KP-BIND-512 (Money/Deadlines rail; registry labels; 510 docs DONE); **TZ-UX-440 READY** catalog review dirty = RU, не `productName`; **TZ-KP-443 DONE** orientation from template (toggle убран с КП; Lucide в builder inspector) |
+| `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc; **TZ-KP-443 DONE** orientation from template |
 
 | top nav L→R | app-layout | **NAV-301** lifecycle IA |
 

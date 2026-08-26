@@ -127,12 +127,6 @@ export class ProposalWorkspaceDemoPage {
     });
   }
 
-  protected setOrientation(next: WsOrientation): void {
-    if (this.orientation() === next) return;
-    this.orientation.set(next);
-    this.refreshMetrics();
-  }
-
   protected onSectionChange(id: string): void {
     this.activeSection.set(id as WorkspaceSection);
     this.panelCollapsed.set(false);

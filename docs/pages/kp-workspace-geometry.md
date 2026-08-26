@@ -10,7 +10,7 @@
 3. **A4 альбомный:** width-first на всю доступную ширину stage (минус 8px справа), **то же** выравнивание `flex-end`. Open/close панели лист **не reflow**.
 4. **Ширина панели:** **480px** фиксированно, portrait = landscape. Контент внутри компактный, `max-width: 272px`. Без JS-расчёта «эффективной ширины».
 5. **Left rail:** иконки разделов в `app-chrome-rail-left` через `PiChromeToolsService`. В альбоме **остаются слева**; горизонтальная полоса — только mobile (`<lg`).
-6. **Lucide** + segmented orientation toggle. Без emoji и текстовой кнопки ориентации.
+6. **Ориентация — из шаблона (TZ-KP-443).** Lucide segmented orientation control живёт на **редакторе шаблона** (builder inspector, chips Книжная/Альбомная с `RectangleVertical`/`RectangleHorizontal`). КП workspace **только отображает** `template.orientation` (read-only, derived в store). Запрет emoji/текстовой кнопки/сегмента ориентации на КП.
 7. **Ribbon** не крадёт высоту плоскости; toolbar viewport — overlay в углу листа.
 
 ## Чек-лист перед PASS / Wave 1

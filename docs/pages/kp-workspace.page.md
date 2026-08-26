@@ -43,7 +43,8 @@ Resume keys localStorage (пока общие с create): `kp.create.lastDraftId
 
 ```
 ┌─ group-workspace chips (Сделки / КП) ─────────────────────────┐
-├─ ribbon (ориентация · №/дата · статус/сумма · Печать/PDF) ────┤
+├─ ribbon (№/дата · статус/сумма · Печать/PDF; ориентация ─────┤
+│  read-only из шаблона, без toggle)                             │
 ├ chrome-rail-L ┬─ body (relative) ─────────────────────────────┤
 │  Template     │  [panel overlay 480px] │ viewport (A4 stage) │
 │  Catalog      │  absolute left         │ sheet flex-end 8px  │
@@ -60,7 +61,7 @@ Resume keys localStorage (пока общие с create): `kp.create.lastDraftId
 - **Панель = overlay** поверх viewport; open/close **не двигает и не сжимает** A4 (portrait **и** landscape).
 - **Panel width:** 480px (S-tier); контент `max-width: 272px` где применимо; Table = tier-L overlay (~A4).
 - **Left chrome rail:** `PiChromeToolsService` — иконки слева и в альбоме; horizontal strip только `<lg`.
-- **Ribbon:** действия и режимы (ориентация, печать), не третий flyout с формой.
+- **Ribbon:** действия и режимы (печать/PDF/архив), не третий flyout с формой. Ориентация **не меняется на КП** — только зеркалит `template.orientation` (TZ-KP-443).
 - **Клик по A4** / Escape → свернуть панель (кроме модалки catalog-review).
 
 Детали геометрии: [`kp-workspace-geometry.md`](./kp-workspace-geometry.md).  
@@ -112,7 +113,7 @@ IA иконок (после 510): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 
 | Сигнал / store | Назначение |
 |----------------|------------|
-| `ProposalWorkspaceStore` (TZ-402 DONE) | `activeLeft` / `activeRight` / `panelOpen` / `orientation` / `quotationId`; actions `openSection`/`toggleSection`/`closePanel`/`setOrientation` |
+| `ProposalWorkspaceStore` (TZ-402 DONE; 443) | `activeLeft` / `activeRight` / `panelOpen` / `quotationId`; `orientation` = **computed** из `draft.selectedTemplate()?.orientation ?? 'portrait'` (TZ-KP-443, read-only — `setOrientation` удалён); actions `openSection`/`toggleSection`/`closePanel` |
 | `ProposalWorkspaceDraftService` (TZ-404 DONE) | `selectedTemplate`/`draftLines`/`previewHtml`/`previewPages`/`previewStatus` + recipient/terms/org + money/наценка/НДС/скидка + deadlines/предоплата/дни + right-panel state: `kpTableLayout`/`tableTargets`/`tableTemplateId` + `catalogReviewOpen`/`catalogReviewRows` + `requestOutput` gates + `saveDraft`/`scheduleAutosave` (1200ms) + hydration `?id`/`?new=1`/`source=order`/resume |
 | draft lines / templateId / org / recipient / terms / sheetLayout / kpTableLayout | как create — один autosave path |
 | `panelCollapsed` | overlay hide; A4 неизменен |
@@ -171,6 +172,7 @@ IA иконок (после 510): [`kp-workspace-rail-ia.md`](./kp-workspace-rai
 | **407** | multi-supplier UX — **DONE** (org-change hint, копия для другой фирмы, family attach) |
 | **408** | cutover — **DONE** (`/proposals/create` → тот же компонент workspace; `?action=print` parity; parity matrix 45 строк PASS/defer в `.done.md`) |
 | **409** | legacy cleanup — **DONE** (god-page `ProposalCreatePage` удалена; subcomponents остались; этот файл = SoT; wave closed) |
+| **KP-443** | orientation SoT = шаблон — **DONE** (store derived; toggle убран с КП-ribbon; Lucide chips в builder inspector; docs law #6) |
 
 Wave: [`../../tasks/WAVE-KP-SINGLE-WORKSPACE.md`](../../tasks/WAVE-KP-SINGLE-WORKSPACE.md).
 
@@ -202,4 +204,4 @@ Wave: [`../../tasks/WAVE-KP-SINGLE-WORKSPACE.md`](../../tasks/WAVE-KP-SINGLE-WOR
 
 ---
 
-_Создано: 2026-08-23. Последнее обновление: 2026-08-23 (Wave 0 PASS; SoT до/во время KP-WS-400…409)._
+_Создано: 2026-08-23. Последнее обновление: 2026-08-26 (TZ-KP-443: ориентация из шаблона, без toggle на КП)._

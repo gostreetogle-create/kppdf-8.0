@@ -1,10 +1,44 @@
+import { TestBed } from '@angular/core/testing';
+import { signal, type WritableSignal } from '@angular/core';
+
+import type { DocumentTemplate } from '../../../../shared/services/pi-document-templates.service';
 import { ProposalWorkspaceStore } from './proposal-workspace.store';
+import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
+
+function templateWith(orientation: DocumentTemplate['orientation']): DocumentTemplate {
+  return {
+    _id: 'tpl-1',
+    name: 'Шаблон',
+    tags: [],
+    organizationId: 'org-1',
+    docTypeId: 'dt-1',
+    isDefault: false,
+    isActive: true,
+    pageSize: 'A4',
+    backgroundImage: [],
+    defaultBackgroundIndex: 0,
+    backgroundOpacity: 1,
+    orientation,
+    version: 1,
+  } satisfies DocumentTemplate;
+}
 
 describe('ProposalWorkspaceStore', () => {
   let store: ProposalWorkspaceStore;
+  let selectedTemplate: WritableSignal<DocumentTemplate | null>;
 
   beforeEach(() => {
-    store = new ProposalWorkspaceStore();
+    selectedTemplate = signal<DocumentTemplate | null>(null);
+    TestBed.configureTestingModule({
+      providers: [
+        ProposalWorkspaceStore,
+        {
+          provide: ProposalWorkspaceDraftService,
+          useValue: { selectedTemplate },
+        },
+      ],
+    });
+    store = TestBed.inject(ProposalWorkspaceStore);
   });
 
   it('starts closed with no active section and portrait orientation', () => {
@@ -90,9 +124,21 @@ describe('ProposalWorkspaceStore', () => {
     expect(store.activeLeft()).toBe('template');
   });
 
-  it('setOrientation updates orientation and quotationId stores the draft id', () => {
-    store.setOrientation('landscape');
+  it('orientation mirrors the template: portrait when no template or portrait template', () => {
+    expect(store.orientation()).toBe('portrait');
+    selectedTemplate.set(templateWith('portrait'));
+    expect(store.orientation()).toBe('portrait');
+  });
+
+  it('orientation follows a landscape template with no user write on KP (TZ-KP-443)', () => {
+    selectedTemplate.set(templateWith('landscape'));
     expect(store.orientation()).toBe('landscape');
+
+    // No user-facing write-path for orientation on the workspace anymore.
+    expect((store as unknown as { setOrientation?: unknown }).setOrientation).toBeUndefined();
+  });
+
+  it('quotationId stores the draft id', () => {
     store.quotationId.set('q-123');
     expect(store.quotationId()).toBe('q-123');
   });

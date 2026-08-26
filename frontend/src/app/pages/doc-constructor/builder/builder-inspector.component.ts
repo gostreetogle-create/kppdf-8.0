@@ -23,6 +23,8 @@ import {
   ChevronsDown,
   Lock,
   Unlock,
+  RectangleVertical,
+  RectangleHorizontal,
 } from 'lucide-angular';
 import {
   BLOCK_TYPE_LABELS,
@@ -213,6 +215,7 @@ type Orientation = 'portrait' | 'landscape';
                   [attr.data-test]="'insp-orientation-' + orient.value"
                   (click)="onOrientationChange(orient.value)"
                 >
+                  <lucide-icon [img]="orient.icon" [size]="14"></lucide-icon>
                   {{ orient.label }}
                 </button>
               }
@@ -993,7 +996,7 @@ type Orientation = 'portrait' | 'landscape';
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding: 10px 16px;
+        padding: var(--space-control-y-md) var(--space-4);
         border-bottom: 1px solid var(--color-rule);
         position: sticky;
         top: 0;
@@ -1022,7 +1025,7 @@ type Orientation = 'portrait' | 'landscape';
         background: var(--color-paper);
         color: var(--color-ink);
         border: 1px solid var(--color-rule);
-        padding: 2px 8px;
+        padding: 0.125rem var(--space-2);
         border-radius: 2px;
         font-weight: 600;
       }
@@ -1048,7 +1051,7 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .insp-section {
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
         border-bottom: 1px solid var(--color-rule);
         display: flex;
         flex-direction: column;
@@ -1091,7 +1094,7 @@ type Orientation = 'portrait' | 'landscape';
         color: var(--color-muted);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
-        padding: 2px 6px;
+        padding: 0.125rem 0.375rem;
       }
 
       .insp-hint {
@@ -1150,9 +1153,13 @@ type Orientation = 'portrait' | 'landscape';
       }
 
       .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
         flex: 1 1 auto;
         min-width: 3.5rem;
-        padding: 6px 10px;
+        padding: 0.375rem var(--space-control-y-md);
         font-size: 11px;
         font-weight: 600;
         letter-spacing: 0.04em;
@@ -1178,7 +1185,7 @@ type Orientation = 'portrait' | 'landscape';
       .field__textarea {
         width: 100%;
         height: 30px;
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         background: var(--color-paper);
         color: var(--color-ink);
         border: 1px solid var(--color-rule);
@@ -1193,7 +1200,7 @@ type Orientation = 'portrait' | 'landscape';
         height: auto;
         min-height: 72px;
         resize: vertical;
-        padding: 8px;
+        padding: var(--space-2);
       }
 
       .field__input:focus,
@@ -1260,7 +1267,7 @@ type Orientation = 'portrait' | 'landscape';
         align-items: center;
         gap: 4px;
         background: var(--color-paper-2);
-        padding: 2px 6px;
+        padding: 0.125rem 0.375rem;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         font-size: 11px;
@@ -1289,8 +1296,8 @@ type Orientation = 'portrait' | 'landscape';
         gap: 6px;
         width: 100%;
         justify-content: center;
-        margin-bottom: 10px;
-        padding: 6px 10px;
+        margin-bottom: var(--space-control-y-md);
+        padding: 0.375rem var(--space-control-y-md);
         font-size: 11px;
         font-weight: 600;
         font-family: var(--font-mono);
@@ -1361,7 +1368,7 @@ type Orientation = 'portrait' | 'landscape';
         align-items: center;
         gap: 4px;
         align-self: flex-start;
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         height: 24px;
         font-size: 11px;
         font-weight: 500;
@@ -1393,7 +1400,7 @@ type Orientation = 'portrait' | 'landscape';
       .block-bg-swatch {
         width: 28px;
         height: 28px;
-        padding: 2px;
+        padding: 0.125rem;
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         background: transparent;
@@ -1443,7 +1450,7 @@ type Orientation = 'portrait' | 'landscape';
 
       .inspector__group-badge {
         margin: 0;
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         font-size: 11px;
         font-weight: 500;
         color: var(--color-ink);
@@ -1571,7 +1578,7 @@ type Orientation = 'portrait' | 'landscape';
         width: 1px;
         height: 1px;
         padding: 0;
-        margin: -1px;
+        margin: -0.0625rem;
         overflow: hidden;
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
@@ -1585,7 +1592,7 @@ type Orientation = 'portrait' | 'landscape';
         gap: 8px;
         width: 100%;
         height: 28px;
-        padding: 0 12px;
+        padding: 0 var(--space-3);
         font-size: 11px;
         font-weight: 600;
         font-family: inherit;
@@ -1615,7 +1622,7 @@ type Orientation = 'portrait' | 'landscape';
       .image-preview {
         position: relative;
         display: inline-block;
-        margin-bottom: 8px;
+        margin-bottom: var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         overflow: hidden;
@@ -1783,9 +1790,14 @@ export class BuilderInspectorComponent implements OnInit {
   protected readonly categoriesLoading = signal(false);
   protected readonly categoriesError = signal<string | null>(null);
   protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
-  protected readonly orientations: ReadonlyArray<{ value: Orientation; label: string }> = [
-    { value: 'portrait', label: 'Книжная' },
-    { value: 'landscape', label: 'Альбомная' },
+  /** TZ-KP-443 — Lucide icons moved here from the KP ribbon (single orientation control). */
+  protected readonly orientations: ReadonlyArray<{
+    value: Orientation;
+    label: string;
+    icon: typeof RectangleVertical;
+  }> = [
+    { value: 'portrait', label: 'Книжная', icon: RectangleVertical },
+    { value: 'landscape', label: 'Альбомная', icon: RectangleHorizontal },
   ];
 
   // Icons

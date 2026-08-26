@@ -1,6 +1,7 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 
 import type { WsOrientation } from './proposal-workspace-shell.component';
+import { ProposalWorkspaceDraftService } from './proposal-workspace-draft.service';
 
 /** Left rail sections (IA: docs/pages/kp-workspace-rail-ia.md). */
 export type WsLeftSection = 'template' | 'catalog' | 'recipient';
@@ -34,10 +35,19 @@ function isLeft(section: WsSection): section is WsLeftSection {
  */
 @Injectable()
 export class ProposalWorkspaceStore {
+  private readonly draft = inject(ProposalWorkspaceDraftService);
+
   readonly activeLeft = signal<WsLeftSection | null>(null);
   readonly activeRight = signal<WsRightSection | null>(null);
   readonly panelOpen = signal(false);
-  readonly orientation = signal<WsOrientation>('portrait');
+
+  /**
+   * TZ-KP-443 — orientation SoT is the template (`DocumentTemplate.orientation`).
+   * The KP workspace only mirrors it (read-only); the user cannot change it here.
+   */
+  readonly orientation = computed<WsOrientation>(
+    () => this.draft.selectedTemplate()?.orientation ?? 'portrait',
+  );
   readonly quotationId = signal<string | null>(null);
 
   /**
@@ -79,9 +89,5 @@ export class ProposalWorkspaceStore {
 
   closePanel(): void {
     this.panelOpen.set(false);
-  }
-
-  setOrientation(next: WsOrientation): void {
-    this.orientation.set(next);
   }
 }

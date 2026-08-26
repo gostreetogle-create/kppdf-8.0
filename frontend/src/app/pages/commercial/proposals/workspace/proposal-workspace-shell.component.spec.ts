@@ -35,19 +35,20 @@ describe('ProposalWorkspaceShellComponent', () => {
     expect(el.querySelector('[data-test="kp-workspace-status"]')).not.toBeNull();
   });
 
-  it('defaults to portrait and applies the orientation class; toggling emits orientationChange', () => {
+  it('applies the orientation class from the input and renders no user toggle (TZ-KP-443)', () => {
     const shell = fixture.nativeElement.querySelector(
       '[data-test="kp-workspace-shell"]',
     ) as HTMLElement;
     expect(shell.classList.contains('kp-ws-shell--portrait')).toBe(true);
 
-    const emitSpy = jest.spyOn(component.orientationChange, 'emit');
-    const landscapeBtn = (fixture.nativeElement as HTMLElement).querySelector(
-      'button[title="Альбомная"]',
-    ) as HTMLButtonElement;
-    landscapeBtn.click();
-    expect(emitSpy).toHaveBeenCalledWith('landscape');
-    expect(component.orientationChange.emit).toHaveBeenCalledTimes(1);
+    // Orientation is mirrored read-only from the template — no segment on KP.
+    expect(fixture.nativeElement.querySelector('[data-test="kp-orient-toggle"]')).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('button[title="Альбомная"]'),
+    ).toBeNull();
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('button[title="Книжная"]'),
+    ).toBeNull();
 
     fixture.componentRef.setInput('orientation', 'landscape');
     fixture.detectChanges();

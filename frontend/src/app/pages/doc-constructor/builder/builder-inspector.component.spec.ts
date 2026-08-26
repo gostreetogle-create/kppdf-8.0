@@ -189,6 +189,27 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
     ]);
   });
 
+  it('TZ-KP-443: orientation chips carry Lucide icons and emit on click', () => {
+    const portrait = fixture.nativeElement.querySelector(
+      '[data-test="insp-orientation-portrait"]',
+    ) as HTMLButtonElement;
+    const landscape = fixture.nativeElement.querySelector(
+      '[data-test="insp-orientation-landscape"]',
+    ) as HTMLButtonElement;
+    expect(portrait).toBeTruthy();
+    expect(landscape).toBeTruthy();
+    expect(portrait.textContent).toContain('Книжная');
+    expect(landscape.textContent).toContain('Альбомная');
+    // Lucide icon markup (NO_ERRORS_SCHEMA keeps <lucide-icon> in the DOM).
+    expect(portrait.querySelector('lucide-icon')).toBeTruthy();
+    expect(landscape.querySelector('lucide-icon')).toBeTruthy();
+
+    const updates: Partial<DocumentTemplate>[] = [];
+    fixture.componentInstance.templateUpdate.subscribe((p) => updates.push(p));
+    landscape.click();
+    expect(updates).toEqual([{ orientation: 'landscape' }]);
+  });
+
   it('DOC-332 Mode A: document context + snap (no hero «Ничего не выбрано»)', () => {
     const f = TestBed.createComponent(BuilderInspectorComponent);
     f.componentRef.setInput('templateSelected', false);
