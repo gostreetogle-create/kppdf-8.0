@@ -29,7 +29,10 @@
 
 1. **Nav:** `Каталог / <имя>` (`PiPageChrome`).
 2. **Split xl:** слева sticky-колонка (паспорт + аккордеон **Фото / Себестоимость**);
-   справа **только BOM** на всю высоту (без `max-h`/внутреннего скролла дерева).
+   справа **связи → состав** (TZ-UX-444B): сверху секция **«Где используется»**
+   (родители, в составе которых есть этот товар; таблица Тип | Название | Кол-во | Ед.,
+   `GET /products/:id/where-used?page=1&limit=50`, паттерн material-detail), затем
+   **BOM** на всю высоту (без `max-h`/внутреннего скролла дерева).
 3. **BOM (`ProductBomPanel`):**
    - дерево: **`app-composition-tree`** — клик по всей строке ([канон](./ui-composition-tree.md));
      kind-цвета на бейдже/rail (изд/мод/мат) через `catalogKindOklch` (TZ-330);
@@ -87,6 +90,7 @@ one-photo modal to reopen between files; selecting three or more files is one si
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/products/:id` | Детали |
+| GET | `/api/products/:id/where-used` | Где используется (родители, limit 50) |
 | GET/POST/PATCH/DELETE | `/api/products/:id/composition` | Состав изделия |
 | GET | `/api/products/:id/tree` | Дерево |
 | GET/POST/PATCH/DELETE | `/api/modules/:id/composition` | Состав модуля (add-in-context) |
@@ -96,10 +100,11 @@ one-photo modal to reopen between files; selecting three or more files is one si
 ## Известные ограничения
 
 - Загрузка фото с detail — Phase E; add-and-continue реализован в multi-file edit dialog.
-- Where-used на изделии — не в UI.
+- Where-used: только прямые родители из API (без «опосредованной связи» вендора,
+  §5.1 аудита legacy ERP); лимит 50 строк.
 - Глубокое дерево подгружается по expand (depth +2, max 8).
 - Список модулей: колонка «Себест.» = hint «см. карточку» (нет batch preview; TZ-COST-303 P0).
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-305 product-line · TZ-COST-303 · TZ-333/334 · TZ-UX-DIALOG-304)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-COST-305 product-line · TZ-COST-303 · TZ-333/334 · TZ-UX-DIALOG-304) · 2026-08-26 (TZ-UX-444B where-used)._

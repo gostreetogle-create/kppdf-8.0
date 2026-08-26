@@ -2,33 +2,31 @@
 
 > Правда для resume. Лимит: 120 строк.
 
-updated_at: 2026-08-26T15:40:00Z (Buffy TZ-KP-443 checkpoint)
+updated_at: 2026-08-26T20:00:00+03:00
 
 ## ACTIVE / LIVE
 
-**DEPLOY-READY** @ `631f96e0` — `docs/agent-checklists/DEPLOY-READY.md`  
-PO → любому ИИ: **«сделай деплой по документации»**
+**UX-444 A+B** — `tasks/PROMPT-FREEBUFF-UX-444-AB.md`  
+- TZ-UX-444A — PiStatusBanner + order-detail  
+- TZ-UX-444B — where-used product/module **DONE** (13/13 · tsc PASS · pushed)  
 
-## LIVE (Freebuff ×2 — осталась 1)
+**NEXT:** 444C → 444D (`PROMPT-FREEBUFF-UX-444-CD.md`)
 
-- TZ-DOC-443 — template setup category + (параллель, disjoint)  
-- Промпт: `tasks/PROMPT-FREEBUFF-DOC-KP-443.md`  
-- Cursor: после DOC-443 DONE → «что дальше»
-
-## Checkpoint 2026-08-26T15:40:00Z · TZ-KP-443 DONE
-- DONE: ориентация КП = из шаблона (store `orientation` = computed из `draft.selectedTemplate()?.orientation ?? 'portrait'`, `setOrientation` удалён); toggle portrait/landscape убран с КП-ribbon (shell/demo/page); builder-inspector chips получили Lucide `RectangleVertical`/`RectangleHorizontal` (PATCH-путь не менялся); docs law #6 + kp-workspace.page.md.
-- Gates: FE tsc PASS; jest shell+store+draft+inspector 72/72 PASS; eslint 0 новых; prettier/diff-check PASS.
-- Pre-existing: page.spec 3 фейла (`kp-ws-text-block-create`) — падает и на HEAD, не регрессия.
-- Archive: `tasks/_archive/2026-08/TZ-KP-443.done.md`; lock `.mimocode/locks/TZ-KP-443-orientation-from-template.lock`; checklist DONE; `_active/TZ-KP-443.md` удалён.
-- NEXT: DOC-443 (Freebuff-1). Deploy: NO.
-
-## DONE (не трогать)
-
-TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443**
+**DEPLOY-READY** @ `631f96e0` — по фразе PO
 
 ## PARK
 
-DESK-441 (`canMarkShipped` → only `ready`) — Да/Нет PO
+- DESK-441 (`canMarkShipped` → only `ready`) — Да/Нет PO  
+- **PRICE-HIST** — гибко (supply ∪ manual ∪ import later) → `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md`
+
+## DONE (не трогать)
+
+TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444B**
+
+## Checkpoint 2026-08-26T19:37:10+03:00 · TZ-DOC-443 DONE
+- DONE: setup и builder inspector показывают scoped system + current-organization categories; `+` открывает shared category form inline и сразу выбирает результат; duplicate mode без category сохранён.
+- Gates: FE tsc PASS; focused Jest 4 suites / 63 tests PASS; targeted ESLint + Prettier PASS; diff-check PASS.
+- Residual baseline: full FE lint 208 pre-existing errors + 17 warnings; token checker 35 pre-existing CSS violations; architecture 2 pre-existing materials/products violations.
+- Archive: `tasks/_archive/2026-08/TZ-DOC-443.done.md`; lock `.mimocode/locks/TZ-DOC-443-template-setup-category-plus.lock`; active marker removed; shared prompt moved to `prompts-spent`. Deploy: NO.
 
 deploy_docs: `deploy/synology/README.md`
-

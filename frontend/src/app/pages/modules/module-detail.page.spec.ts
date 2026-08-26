@@ -120,6 +120,35 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
 
     httpMock.expectOne('/api/modules/mod-1').flush(moduleBody);
     httpMock.expectOne('/api/modules/mod-1/cost-preview').flush(costBody);
+    const whereUsed = httpMock.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.urlWithParams.startsWith('/api/modules/mod-1/where-used'),
+    );
+    expect(whereUsed.request.params.get('limit')).toBe('50');
+    whereUsed.flush({
+      items: [
+        {
+          id: 'prod-1',
+          kind: 'product',
+          name: 'Горка',
+          relation: 'module',
+          quantity: 2,
+          unit: 'шт',
+        },
+        {
+          id: 'mod-2',
+          kind: 'module',
+          name: 'Каркас усиленный',
+          relation: 'module',
+          quantity: 1,
+          unit: 'шт',
+        },
+      ],
+      total: 2,
+      page: 1,
+      limit: 50,
+    });
     await tickMicrotask();
     fixture.detectChanges();
     // composition-tree / catalog kind colors may request appearance settings
@@ -191,6 +220,42 @@ describe('ModuleDetailPage (TZ-CATALOG-336)', () => {
         data: { src: '/uploads/module.jpg', alt: 'Каркас', filename: 'Каркас' },
       }),
     );
+  });
+
+  it('shows where-used above BOM with rows and links (TZ-UX-444B)', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const section = el.querySelector('[data-test="module-where-used"]') as HTMLElement;
+    expect(section).toBeTruthy();
+    expect(section.textContent).toContain('Где используется');
+    expect(section.textContent).toContain('Горка');
+    expect(section.textContent).toContain('Товар');
+    expect(section.textContent).toContain('Каркас усиленный');
+    expect(section.textContent).toContain('Модуль');
+    const links = Array.from(section.querySelectorAll('a'));
+    expect(links.length).toBe(2);
+    expect(links[0].getAttribute('href')).toContain('/products/prod-1');
+    expect(links[1].getAttribute('href')).toContain('/modules/mod-2');
+  });
+
+  it('shows RU empty state when where-used has no items (TZ-UX-444B)', async () => {
+    const page = fixture.componentInstance as unknown as {
+      whereUsedRes: { reload: () => unknown };
+    };
+    page.whereUsedRes.reload();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+    const whereUsedEmpty = httpMock.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.urlWithParams.startsWith('/api/modules/mod-1/where-used'),
+    );
+    whereUsedEmpty.flush({ items: [], total: 0, page: 1, limit: 50 });
+    await tickMicrotask();
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    const section = el.querySelector('[data-test="module-where-used"]') as HTMLElement;
+    expect(section.textContent).toContain('Этот модуль пока не используется');
   });
 
   it('passes rootKind=module to BOM panel', () => {

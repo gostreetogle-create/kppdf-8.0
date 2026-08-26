@@ -7,7 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { httpResource } from '@angular/common/http';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
@@ -51,6 +51,24 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
   draft: 'Черновик',
 };
 
+/** Where-used item contract from GET /products/:id/where-used (TZ-UX-444B). */
+interface WhereUsedItem {
+  id: string;
+  kind: 'product' | 'module';
+  name: string;
+  relation: string;
+  quantity: number;
+  unit?: string;
+  sortOrder?: number;
+}
+
+interface WhereUsedPage {
+  items: WhereUsedItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 /**
  * TZ-83 Phase D + TZ-CATALOG-317: ProductDetailPage.
  *
@@ -80,6 +98,7 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
     PiPageChromeComponent,
     PiFactCardComponent,
     PiFactStackComponent,
+    RouterLink,
   ],
   template: `
     <app-pi-page-chrome [crumbs]="detailCrumbs()" data-test="product-detail-nav">
@@ -362,8 +381,73 @@ const STATUS_LABELS: Record<ProductStatus, string> = {
           </app-pi-accordion>
         </div>
 
-        <!-- Центр: состав на всю высоту -->
-        <div class="min-w-0">
+        <!-- Центр: связи → состав (TZ-UX-444B: where-used над BOM) -->
+        <div class="min-w-0 space-y-4">
+          <section class="hairline rounded-sm bg-paper" data-test="product-where-used">
+            <div class="flex flex-wrap items-baseline justify-between gap-3 px-4 py-3 hairline-b">
+              <div>
+                <p class="pi-label text-ink m-0">Где используется</p>
+                <p class="text-xs text-muted-foreground m-0 mt-1">
+                  Изделия, в составе которых есть этот товар.
+                </p>
+              </div>
+              @if (whereUsedTotal()) {
+                <span class="font-mono text-xs text-muted-foreground">{{ whereUsedTotal() }}</span>
+              }
+            </div>
+
+            @if (whereUsedLoading()) {
+              <p class="px-4 py-6 text-sm text-muted-foreground">Загрузка…</p>
+            } @else if (whereUsedError()) {
+              <p class="px-4 py-6 text-sm text-destructive" role="alert">{{ whereUsedError() }}</p>
+            } @else if (whereUsedItems().length > 0) {
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm min-w-[480px]">
+                  <thead class="hairline-b">
+                    <tr>
+                      <th class="pi-cell pi-label text-left">Тип</th>
+                      <th class="pi-cell pi-label text-left">Название</th>
+                      <th class="pi-cell-numeric pi-label w-20">Кол-во</th>
+                      <th class="pi-cell pi-label w-24">Ед.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of whereUsedItems(); track item.id + item.kind) {
+                      <tr class="pi-table-row pi-table-row-odd last:border-0">
+                        <td class="pi-cell">
+                          {{ item.kind === 'product' ? 'Товар' : 'Модуль' }}
+                        </td>
+                        <td class="pi-cell">
+                          <a
+                            [routerLink]="
+                              item.kind === 'product'
+                                ? ['/products', item.id]
+                                : ['/modules', item.id]
+                            "
+                            class="text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm"
+                          >
+                            {{ item.name }}
+                          </a>
+                        </td>
+                        <td class="pi-cell-numeric font-mono">{{ item.quantity }}</td>
+                        <td class="pi-cell">{{ item.unit || '—' }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+              @if (whereUsedTotal() > whereUsedItems().length) {
+                <p class="px-4 py-2 text-xs text-muted-foreground">
+                  Показано {{ whereUsedItems().length }} из {{ whereUsedTotal() }}
+                </p>
+              }
+            } @else {
+              <p class="px-4 py-6 text-sm text-muted-foreground">
+                Этот товар пока не используется в составе других изделий.
+              </p>
+            }
+          </section>
+
           <app-product-bom-panel
             [productId]="p._id"
             (changed)="onBomChanged()"
@@ -529,6 +613,23 @@ export class ProductDetailPage {
   protected readonly costRes = httpResource<CostCalculation[]>(() => ({
     url: `${this.baseUrl}/products/${this.idString()}/cost-calculations`,
   }));
+
+  /** TZ-UX-444B: where-used — родители, в составе которых есть этот товар (reuse API). */
+  protected readonly whereUsedRes = httpResource<WhereUsedPage>(() => ({
+    url: `${this.baseUrl}/products/${this.idString()}/where-used`,
+    params: { page: 1, limit: 50 },
+  }));
+
+  protected readonly whereUsedItems = computed<WhereUsedItem[]>(
+    () => this.whereUsedRes.value()?.items ?? [],
+  );
+  protected readonly whereUsedTotal = computed<number>(() => this.whereUsedRes.value()?.total ?? 0);
+  protected readonly whereUsedLoading = computed<boolean>(() => this.whereUsedRes.isLoading());
+  protected readonly whereUsedError = computed<string | null>(() => {
+    const err = this.whereUsedRes.error() as
+      import('@angular/common/http').HttpErrorResponse | undefined;
+    return err ? extractErrorMessage(err) : null;
+  });
 
   constructor() {
     this.loadKindLabels();

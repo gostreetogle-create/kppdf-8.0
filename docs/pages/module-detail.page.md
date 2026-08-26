@@ -34,7 +34,10 @@
    Имя в паспорте: `font-display text-lg sm:text-xl` (TYPE-302, как у изделия).
 2. **Split xl:** слева sticky — паспорт (имя, артикул, габариты/вес FactCard)
    + аккордеон **Фото / Себестоимость / Виды работ**;
-   справа **только BOM** (`ProductBomPanel` + `rootKind="module"`; inspector DETAIL-303).
+   справа **связи → состав** (TZ-UX-444B): сверху секция **«Где используется»**
+   (товары и модули, в составе которых есть этот модуль; таблица Тип | Название |
+   Кол-во | Ед., `GET /modules/:id/where-used?page=1&limit=50`, паттерн material-detail),
+   затем **BOM** (`ProductBomPanel` + `rootKind="module"`; inspector DETAIL-303).
 3. **BOM:** тот же визуальный язык, что у изделия
    ([composition-tree канон](./ui-composition-tree.md); pattern lock cascade).
    Picker с `restrictToModule` — **без вкладки изделия**; сырьё ок.
@@ -62,6 +65,7 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/modules/:id` | Детали |
+| GET | `/api/modules/:id/where-used` | Где используется (родители, limit 50) |
 | GET/POST/PATCH/DELETE | `/api/modules/:id/composition` | Состав |
 | GET | `/api/modules/:id/tree` | Дерево |
 | GET | `/api/modules/:id/cost-preview` | Read-only rollup |
@@ -70,9 +74,10 @@
 ## Известные ограничения
 
 - Upload фото с диска — Phase E (URL add-and-continue есть).
-- Where-used — не в UI.
+- Where-used: только прямые родители из API (без «опосредованной связи» вендора,
+  §5.1 аудита legacy ERP); лимит 50 строк.
 - Batch cost на списке модулей — hint «см. карточку».
 
 ---
 
-_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-CATALOG-336 module = product A+ · TZ-UX-DIALOG-304)._
+_Создано: 2026-08-04. Обновлено: 2026-08-08 (TZ-CATALOG-336 module = product A+ · TZ-UX-DIALOG-304) · 2026-08-26 (TZ-UX-444B where-used)._
