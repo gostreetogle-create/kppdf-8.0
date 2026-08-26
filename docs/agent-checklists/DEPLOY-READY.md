@@ -7,7 +7,9 @@
 > Prod до этой выкладки: `24a0d74a` / product `565c630d` (warm 2026-08-25).
 
 ```yaml
-status: READY
+status: INVALID
+why_invalid: deployed 78de2801 2026-08-26 (warm deploy.ps1, WIPE=false; Deploy complete + Auth OK + Frontend 200 + LAN/https health/ready ok)
+deployed_by: claude terminal (PO prompt «сделай деплой по документации»)
 deploy_sha_target: 631f96e0d0b53cdaeaf91cc28cb22421e3fd8d58
 prepared_at: 2026-08-26T06:20:00+03:00
 prepared_by: cursor-architect
