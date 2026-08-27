@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { of } from 'rxjs';
 
 import { WorkTypesPage } from './work-types.page';
@@ -137,5 +137,33 @@ describe('WorkTypesPage', () => {
     const comp = fixture.componentInstance as unknown as { openCreate: () => void };
     comp.openCreate();
     expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('reloads the list when the create dialog closes with a saved value', async () => {
+    const closed = signal<unknown>(undefined);
+    dialogSpy.open.mockReturnValueOnce({ closed, close: jest.fn() });
+
+    const fixture = TestBed.createComponent(WorkTypesPage);
+    fixture.detectChanges();
+    httpMock.expectOne(matchListGet).flush([]);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const comp = fixture.componentInstance as unknown as {
+      openCreate: () => void;
+      data: () => WorkType[];
+    };
+    comp.openCreate();
+    expect(dialogSpy.open).toHaveBeenCalled();
+
+    closed.set({ _id: 'wt3', name: 'Сборка', hourlyRate: 500, days: 2 } as WorkType);
+    fixture.detectChanges();
+    await tickMicrotask();
+
+    httpMock.expectOne(matchListGet).flush(fakeWorkTypes);
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    expect(comp.data().length).toBe(2);
   });
 });

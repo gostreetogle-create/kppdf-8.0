@@ -28,7 +28,7 @@
 | [QA-445E](./TZ-QA-445E-gantt-calendar-button.md) | Цех → Гант | кнопка календаря в шапке не реагирует | **DONE** (`TZ-QA-445E.done.md`) |
 | [QA-445F](./TZ-QA-445F-desk-order-row-edit-affordance.md) | Стол → Состав заказа | клик по строке сразу открывает редактирование | **BLOCKED (444A)** |
 | [QA-445G](./TZ-QA-445G-desktop-import-supply-category.md) | Desktop → Импорт | в категориях Excel-форм нет «Снабжение» | backlog |
-| [QA-445H](./TZ-QA-445H-desktop-mcp-package-error.md) | Desktop → MCP | каталог `desktop/mcp` не распознаётся как пакет | backlog, вне таймкодов PO |
+| [QA-445H](./TZ-QA-445H-desktop-mcp-package-error.md) | Desktop → MCP | каталог `desktop/mcp` не распознаётся как пакет | **DONE** (`TZ-QA-445H.done.md`, diagnosis-only, no code) |
 
 Каждый файл самодостаточен: РОЛЬ / CONFLICT KEYS / ЧТО (репро + ожидание) /
 НЕ / AC — бери в работу по контракту `CLAUDE.md`/`GEMINI.md` (Claim в
