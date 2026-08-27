@@ -41,6 +41,11 @@ Chrome calendar tool (`id: today`, Lucide `CalendarDays`) already called `onToda
 
 `.mimocode/locks/TZ-QA-445E-gantt-calendar-button.lock`
 
+## Git
+
+- Product fix SHA: `2beebeed` (landed with concurrent 444C staging — same tree)
+- Lock SHA: `5c93fb96`
+
 ## Deploy
 
 NO
