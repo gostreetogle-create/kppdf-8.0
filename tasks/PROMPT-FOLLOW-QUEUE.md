@@ -6,10 +6,9 @@ GEMINI.md + .agents/skills/kppdf-executor-loop/SKILL.md + docs/PO-CANON.md
 Перед UI: docs/ui-rules.md
 
 Очередь: tasks/QUEUE-LIVE.md
-Сейчас LIVE: PROMPT-FREEBUFF-UX-444-AB.md
-  TZ-UX-444A · TZ-UX-444B
-NEXT: TZ-UX-444C · TZ-UX-444D (PROMPT-FREEBUFF-UX-444-CD.md)
-PARK: PRICE-HIST гибко · DESK-441
+Сейчас LIVE: PROMPT-FREEBUFF-UX-444-CD.md
+  TZ-UX-444C · TZ-UX-444D
+DONE A+B · PARK: PRICE-HIST гибко · DESK-441
 
 ЦИКЛ: pull → CLAIM → код → gates → archive → commit/push → следующая
 НЕ deploy / wipe без русской фразы PO
