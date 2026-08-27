@@ -1,10 +1,9 @@
 ﻿# QUEUE-LIVE
 
-> **QA-445** A–H DONE · **UX-445I CLAIMED** (nested collapsed) · затем DEPLOY-READY prep
+> Очередь пуста. **DEPLOY-READY = READY** @ `fd416e40`
 
-| # | TZ | Status | Notes |
-|---|-----|--------|--------|
-| 1 | `TZ-UX-445I-order-nested-collapsed-by-default.md` | CLAIMED freebuff-1 | состав/дерево свёрнуты |
-| 2 | Deploy prep | after 445I | secrets local; stamp READY |
+| # | Next | Notes |
+|---|------|--------|
+| 1 | Deploy | PO: «сделай деплой по документации» |
+| 2 | DESK-441 / PRICE-HIST | park |
 
-Парк: DESK-441 · PRICE-HIST.
