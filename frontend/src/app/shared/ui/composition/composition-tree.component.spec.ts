@@ -101,7 +101,24 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     fixture.componentRef.setInput('root', tree);
     fixture.detectChanges();
 
-    // Root auto-expands → nest under product
+    // UX-445I: root starts collapsed — no nest until user clicks.
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-nest"]',
+      ),
+    ).toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('[data-test="composition-tree-node-p1"]')
+        ?.getAttribute('aria-expanded'),
+    ).toBe('false');
+
+    const rootRow = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    rootRow.click();
+    fixture.detectChanges();
+
     const rootNest = fixture.nativeElement.querySelector(
       '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-nest"]',
     ) as HTMLElement | null;
@@ -164,6 +181,12 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     fixture.componentRef.setInput('root', tree);
     fixture.detectChanges();
 
+    const rootRow = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+    ) as HTMLElement;
+    rootRow.click();
+    fixture.detectChanges();
+
     const m2Row = fixture.nativeElement.querySelector(
       '[data-test="composition-tree-node-m2"] > [data-test="composition-tree-row"]',
     ) as HTMLElement;
@@ -194,6 +217,13 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
     fixture.componentRef.setInput('selectedId', null);
     fixture.detectChanges();
 
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+      ) as HTMLElement
+    ).click();
+    fixture.detectChanges();
+
     const events: Array<{ id: string }> = [];
     fixture.componentInstance.selectedChange.subscribe((e) => events.push({ id: e.node._id }));
 
@@ -213,6 +243,13 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
 
   it('shows larger › only when node has children', () => {
     fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+      ) as HTMLElement
+    ).click();
     fixture.detectChanges();
 
     const withKids = fixture.nativeElement.querySelector(
@@ -251,6 +288,13 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
   it('TZ-DESK-424: no inset box-shadow on the nest, light or dark', () => {
     const theme = TestBed.inject(ThemeService);
     fixture.componentRef.setInput('root', tree);
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+      ) as HTMLElement
+    ).click();
     fixture.detectChanges();
 
     const moduleRow = fixture.nativeElement.querySelector(
@@ -339,11 +383,12 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
         },
       }),
     );
+    // Thumb must not expand the row (UX-445I: starts collapsed).
     expect(
       fixture.nativeElement
         .querySelector('[data-test="composition-tree-node-p1"]')
         ?.getAttribute('aria-expanded'),
-    ).toBe('true');
+    ).toBe('false');
   });
 
   it('TZ-UX-312: thumb ≥36px (w-9 h-9); denser row (min-h-11, tight pad)', () => {
@@ -376,6 +421,13 @@ describe('CompositionTreeComponent (TZ-CATALOG-333/334 nest)', () => {
   it('TZ-ORDERS-337: pencil on each row emits editClick without collapsing', () => {
     fixture.componentRef.setInput('root', tree);
     fixture.componentRef.setInput('selectedId', 'm1');
+    fixture.detectChanges();
+
+    (
+      fixture.nativeElement.querySelector(
+        '[data-test="composition-tree-node-p1"] > [data-test="composition-tree-row"]',
+      ) as HTMLElement
+    ).click();
     fixture.detectChanges();
 
     const moduleRow = fixture.nativeElement.querySelector(

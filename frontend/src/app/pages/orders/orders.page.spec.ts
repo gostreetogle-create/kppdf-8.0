@@ -375,6 +375,12 @@ describe('OrdersPage', () => {
     ).toBeTruthy();
     expect(fixture.nativeElement.querySelector('[data-test="composition-tree"]')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('изд');
+    // UX-445I: product root starts collapsed — expand to reveal modules.
+    const productToggle = fixture.nativeElement.querySelector(
+      '[data-test="composition-tree-node-p1"] [data-test="composition-tree-toggle"]',
+    ) as HTMLElement;
+    productToggle.click();
+    fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('мод');
     // The material leaf sits under a collapsed module node; expand it to reveal
     // the 'мат' kind badge (lazy tree contract).

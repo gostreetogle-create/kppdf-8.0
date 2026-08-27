@@ -742,10 +742,10 @@ export class OrderHubTrayComponent implements OnInit {
     // HUB-303 lazy-on-expand load. Runs after the required order input
     // is available (constructor cannot read signal inputs yet).
     this.loadSupply(this.order()._id);
-    // 413: desk shows the composition as the primary surface by default.
+    // UX-445I: composition = disclosure (not primary dump). Load only on
+    // toggleComposition — same path for desk and hub. Desk still preloads
+    // shipments (DESK-430) for logistics summary.
     if (this.mode() === 'desk') {
-      this.compositionExpanded.set(true);
-      this.loadComposition();
       this.loadShipments(this.order()._id);
     }
     if (

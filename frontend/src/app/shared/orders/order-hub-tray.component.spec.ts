@@ -93,6 +93,9 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     fixture.componentRef.setInput('mode', 'desk');
     fixture.detectChanges();
     const tray = fixture.nativeElement as HTMLElement;
+    // UX-445I: open composition disclosure first — CTA lives inside the panel.
+    (tray.querySelector('[data-test="order-composition-toggle"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
     expect(tray.textContent).not.toContain('Нет изделий');
     expect(tray.querySelector('[data-test="desk-add-line-cta"]')?.textContent).toContain(
       'Добавить изделие',
@@ -380,6 +383,28 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(toggle.querySelector('lucide-icon')?.classList.contains('rotate-180')).toBe(true);
     expect(toggle.textContent).toContain('свернуть');
+  });
+
+  it('UX-445I: desk mode keeps composition collapsed until toggle (no auto-load)', () => {
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', {
+      ...ORDER,
+      items: [{ productId: 'p1', quantity: 1, unitPrice: 1 }],
+    });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+    const tray = fixture.nativeElement as HTMLElement;
+    const toggle = tray.querySelector(
+      '[data-test="order-composition-toggle"]',
+    ) as HTMLButtonElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(tray.querySelector('[data-test="order-composition-panel"]')).toBeNull();
+    expect(tray.querySelector('[data-test="order-composition-tree"]')).toBeNull();
+
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(tray.querySelector('[data-test="order-composition-panel"]')).toBeTruthy();
   });
 
   it('TZ-UI-DEN-512: desk mode uses paper-raised tray cards with 16px padding', () => {

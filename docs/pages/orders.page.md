@@ -19,7 +19,7 @@ Read-only expand на списке `/orders`:
 
 | Блок                       | HTTP | Содержание                                                                                                                                                               |
 | -------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Состав заказа**          | 1/line | группа «Заказ»; accordion; **`app-composition-tree`** forest (`GET /products/:id/tree`); карандаш → каталог; link «Открыть карточку заказа» → `/orders/:id`; без дубля заказчик/КП/объект |
+| **Состав заказа**          | 1/line | группа «Заказ»; accordion **свёрнут по умолчанию** (UX-445I); **`app-composition-tree`** forest (`GET /products/:id/tree`) — корни тоже свёрнуты до клика; карандаш → каталог; link «Открыть карточку заказа» → `/orders/:id`; без дубля заказчик/КП/объект |
 | **Снабжение (HUB-303)**    | 1    | lazy `GET /api/supply-tasks?orderId=<Order._id>` → счётчики draft/confirmed/ordered/received + total; empty «Нет задач снабжения»; error inline; link `/supply?orderId=` |
 | **Производство (HUB-303)** | 0    | «Оценка в цехе» + `/production?orderId=` (hub). **DESK-416:** tray `mode="desk"` → `from=desk` («На стол»); hub без `from`. `data-test="order-production-link"` не менять.                                                                                                                                 |
 | **Документы (HUB-303)**    | 0    | `/doc-constructor/templates?source=order&sourceId=`                                                                                                                      |

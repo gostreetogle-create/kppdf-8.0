@@ -225,14 +225,14 @@ export class CompositionTreeComponent {
 
   constructor() {
     this.appearance.load()?.subscribe();
+    // UX-445I: on root change clear expand state; do NOT auto-expand root
+    // (deep BOM must stay collapsed until the user clicks).
     effect(() => {
       const rootNode = this.root();
       if (!rootNode || rootNode.kind === 'material') return;
       if (this.lastRootId === rootNode._id) return;
       this.lastRootId = rootNode._id;
-      const next = new Set(this.expanded());
-      next.add(rootNode._id);
-      this.expanded.set(next);
+      this.expanded.set(new Set());
     });
   }
 

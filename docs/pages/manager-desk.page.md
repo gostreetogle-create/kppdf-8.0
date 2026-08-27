@@ -46,7 +46,7 @@
 - **402:** `create`/`edit` хостит `order-form-panel` — один write-path с `/orders`; invalid `?orderId=` → RU toast + clear query.
 - **412:** expand tray = `order-hub-tray` (shared с `/orders`); supply/docs/CTA — desk-события.
   - **403 / 423:** состав (tree) + lazy supply + combine-strip в shared tray; пустой состав → кнопка «Добавить изделие» (`panel=bom`, не edit); «Создать документ» reuse hub-хендлера.
-  - **413 / 423:** tray = summary bar + 2-колонка (Состав слева; справа Исполнение открыто, снабжение/логистика disclosure); Комбайн = lane chips в «Исполнение»; desk composition open by default; без вечных helper-подписей.
+  - **413 / 423 / UX-445I:** tray = summary bar + 2-колонка (Состав слева; справа Исполнение открыто, снабжение/логистика disclosure); Комбайн = lane chips в «Исполнение»; состав свёрнут до клика (disclosure); без вечных helper-подписей.
 - **410:** toolbar debounced search (номер/клиент/адрес/заметки); L flyout `filter` (status multi-select + preset «Активные» default + «Обновить»); L flyout `summary` (read-only counts по статусам); sort = date/created/updated desc; «ещё N» pagination; `?status=` persist.
 - **411 / 423:** workflow strip скрывается по page ACL (`user.pages`); primary CTA: причина недоступности — toast/status **по клику**, не вечная подпись.
 - **427:** правый icon-rail **убран целиком** (дубль tray + chips); левый rail (create/filter/summary/notebook) остаётся; действия заказа — в tray, cross-page — chips (426).

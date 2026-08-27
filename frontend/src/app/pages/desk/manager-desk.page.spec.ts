@@ -279,8 +279,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     rows[0]!.click();
     fixture.detectChanges();
     flushSupply(httpMock, 'o1');
-    flushProductTree(httpMock, 'p1', 'Стол переговорный');
-    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    // UX-445I: composition stays collapsed — no tree HTTP until toggle.
     await tickMicrotask();
     fixture.detectChanges();
     const expandedDelete = fixture.nativeElement.querySelector(
@@ -336,9 +335,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     rows[0]!.click();
     fixture.detectChanges();
     flushSupply(httpMock, 'o1');
-    // 413: desk composition opens by default → tree requests fire on expand.
-    flushProductTree(httpMock, 'p1', 'Стол переговорный');
-    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    // UX-445I: composition collapsed by default — no tree HTTP yet.
     await tickMicrotask();
     fixture.detectChanges();
 
@@ -359,6 +356,16 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     const compositionToggle = tray?.querySelector(
       '[data-test="order-composition-toggle"]',
     ) as HTMLButtonElement;
+    expect(compositionToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(tray?.querySelector('[data-test="order-composition-tree"]')).toBeNull();
+
+    compositionToggle.click();
+    fixture.detectChanges();
+    flushProductTree(httpMock, 'p1', 'Стол переговорный');
+    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    await tickMicrotask();
+    fixture.detectChanges();
+
     expect(compositionToggle.getAttribute('aria-expanded')).toBe('true');
     expect(tray?.querySelector('[data-test="order-composition-tree"]')).toBeTruthy();
     expect(tray?.querySelectorAll('[data-test="composition-tree"]')).toHaveLength(2);
@@ -874,8 +881,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     await tickMicrotask();
     fixture.detectChanges();
     flushSupply(httpMock, 'o1');
-    flushProductTree(httpMock, 'p1', 'Стол переговорный');
-    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    // UX-445I: composition not auto-loaded on refresh either.
     await tickMicrotask();
     fixture.detectChanges();
 
@@ -964,8 +970,7 @@ describe('ManagerDeskPage (TZ-DESK-402)', () => {
     await tickMicrotask();
     fixture.detectChanges();
     flushSupply(httpMock, 'o1');
-    flushProductTree(httpMock, 'p1', 'Стол переговорный');
-    flushProductTree(httpMock, 'p2', 'Опоры металлические');
+    // UX-445I: composition collapsed — no tree preload for deep-link expand.
     await tickMicrotask();
     fixture.detectChanges();
     expect(page().expandedId()).toBe('o1');
