@@ -4,28 +4,18 @@
 > Пишет подготовка («подготовь к деплою»).  
 > Читает любой ИИ по `deploy/synology/README.md` → «сделай деплой по документации».
 >
-> Prod до этой выкладки: deployed `78de2801` 2026-08-26 (warm). Prior READY was `631f96e0`.
+> Prod до этой выкладки: deployed `4d55d0ea` 2026-08-27 (warm). Prior deployed `78de2801` 2026-08-26.
 
 ```yaml
-status: READY
+status: INVALID
 deploy_sha_target: fd416e40ff02b8fb3b37ebf44bb2734986c546a8
+deployed_sha: 4d55d0ea
 prepared_at: 2026-08-27T22:10:00+03:00
 prepared_by: cursor-architect
+deployed_at: 2026-08-27T19:25:00+03:00
+deployed_by: buffy-executor
 evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-27.md
-desktop_zip: accept-stale
-mixed_commits: none-blocking (sequential TZ commits; 444C/445E co-stage disclosed earlier)
-known_debt:
-  - backend catalog-314.archive.spec.ts (baseline)
-  - backend users-admin.controller.spec.ts (baseline)
-  - FE jest 6 fail / 2086 pass (proposal-create-terms; material-form-dialog; proposal-workspace)
-  - architecture:check 3× fe-page-cross-component (materials/products prior + inventory←materials from QA-445B)
-  - desktop_zip accept-stale (no zip in frontend/downloads)
-  - SSH needs VPN off + LAN at deploy time
-why_ready: >
-  Tip fd416e40 includes UX-444 C+D, QA-445 A–H, UX-445I (nested composition collapsed).
-  FE/BE tsc PASS. Full jest red = documented baseline only (FE improved 8→6 fails).
-  preflight.ps1 PASS with config.env+CREDENTIALS restored on this machine from _001.
-  Warm deploy.ps1 only (WIPE=false). Desktop accept-stale. §F not run.
+why_invalid: deployed 4d55d0ea 2026-08-27 warm (WIPE=false)
 ```
 
 ## Для агента деплоя
