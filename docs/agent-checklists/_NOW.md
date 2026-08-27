@@ -21,7 +21,7 @@ updated_at: 2026-08-27T21:50:00+03:00
   (no MCP sidecar yet), already documented in INSTALL.md/MCP.md. Deploy: NO.
 
 ## Checkpoint — TZ-QA-445G DONE
-- DONE: Form Studio категория «Снабжение» + supplyRequest/supplyTask; desktop 35/35. Deploy: NO.
+- DONE: Form Studio категория «Снабжение» + supplyRequest/supplyTask; desktop 35/35; commit `1bb3ac3c`. Deploy: NO.
 
 ## Checkpoint — TZ-QA-445F DONE
 - DONE: composition row click = select; edit via pencil; Jest 50/50. Deploy: NO.
