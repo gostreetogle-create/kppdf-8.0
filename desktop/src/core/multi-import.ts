@@ -122,6 +122,19 @@ export function referenceDedupeKeysOf(
 /** Enum каталога для типа склада и типа категории (канон Nest DTO). */
 const WAREHOUSE_TYPES = new Set(['main', 'branch', 'transit', 'production', 'other']);
 const CATEGORY_TYPES = new Set(['material', 'product', 'general']);
+const SUPPLY_REQUEST_PRIORITIES = new Set(['urgent', 'normal', 'low']);
+const SUPPLY_REQUEST_STATUSES = new Set([
+  'in_progress',
+  'requested',
+  'ordered',
+  'received',
+  'cancelled',
+]);
+const OBJECT_ID_RE = /^[a-fA-F0-9]{24}$/;
+
+function isObjectId(value: string): boolean {
+  return OBJECT_ID_RE.test(value);
+}
 
 /** TZD-51 — проверка значений строки справочника; null = ок, иначе RU-причина. */
 function referenceFieldError(targetKey: ImportTargetKey, values: RawRow): string | null {
@@ -245,6 +258,9 @@ export function validateTableRows(
   if (isReferenceTargetKey(targetKey)) {
     return validateReferenceRows(rows, targetKey, existingKeys);
   }
+  if (targetKey === 'supplyRequest' || targetKey === 'supplyTask') {
+    return validateSupplyRows(rows, targetKey);
+  }
   const target = importTarget(targetKey);
   const dedupeKey = DEDUPE_KEYS[targetKey] ?? '';
   const seen = new Map<string, number[]>();
@@ -285,6 +301,99 @@ export function validateTableRows(
     }
     if (key && existingKeys.has(key)) {
       return { rowIndex, values, status: 'ok_update', message: 'Совпадение с каталогом — готово к обновлению' };
+    }
+    return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
+  });
+}
+
+/** TZ-QA-445G — валидация строк снабжения (без каталожного dedupe). */
+function validateSupplyRows(
+  rows: RawRow[],
+  targetKey: 'supplyRequest' | 'supplyTask',
+): ValidatedImportRow[] {
+  const target = importTarget(targetKey);
+  return rows.map((values, rowIndex) => {
+    const missing = target.requiredFields.filter((key) => !textValue(values, key));
+    if (missing.length > 0) {
+      return { rowIndex, values, status: 'invalid', message: `Пусто: ${missing.join(', ')}` };
+    }
+
+    if (targetKey === 'supplyRequest') {
+      const priority = textValue(values, 'priority').toLowerCase();
+      if (priority && !SUPPLY_REQUEST_PRIORITIES.has(priority)) {
+        return {
+          rowIndex,
+          values,
+          status: 'invalid',
+          message: 'Приоритет: urgent, normal или low',
+        };
+      }
+      const status = textValue(values, 'status').toLowerCase();
+      if (status && !SUPPLY_REQUEST_STATUSES.has(status)) {
+        return {
+          rowIndex,
+          values,
+          status: 'invalid',
+          message: 'Статус: in_progress, requested, ordered, received или cancelled',
+        };
+      }
+      const rawQty = values.qty;
+      const hasQty = rawQty !== undefined && rawQty !== null && String(rawQty).trim() !== '';
+      if (hasQty) {
+        const quantity = numberValue(values, 'qty');
+        if (quantity === undefined || quantity < 0) {
+          return { rowIndex, values, status: 'invalid', message: 'Количество должно быть числом от 0' };
+        }
+      }
+      for (const idKey of ['orderId', 'materialId', 'supplierId'] as const) {
+        const id = textValue(values, idKey);
+        if (id && !isObjectId(id)) {
+          return {
+            rowIndex,
+            values,
+            status: 'invalid',
+            message: `${fieldLabel(targetKey, idKey)}: ожидается Mongo ObjectId (24 hex)`,
+          };
+        }
+      }
+      return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
+    }
+
+    // supplyTask
+    const orderId = textValue(values, 'orderId');
+    if (!isObjectId(orderId)) {
+      return {
+        rowIndex,
+        values,
+        status: 'invalid',
+        message: 'ID заказа: ожидается Mongo ObjectId (24 hex)',
+      };
+    }
+    const quantity = numberValue(values, 'qty');
+    if (quantity === undefined || quantity < 0) {
+      return { rowIndex, values, status: 'invalid', message: 'Количество должно быть числом от 0' };
+    }
+    const title = textValue(values, 'title');
+    const materialId = textValue(values, 'materialId');
+    const moduleId = textValue(values, 'moduleId');
+    if (!title && !materialId && !moduleId) {
+      return {
+        rowIndex,
+        values,
+        status: 'invalid',
+        message: 'Укажите наименование или ID материала/модуля',
+      };
+    }
+    for (const idKey of ['materialId', 'moduleId'] as const) {
+      const id = textValue(values, idKey);
+      if (id && !isObjectId(id)) {
+        return {
+          rowIndex,
+          values,
+          status: 'invalid',
+          message: `${fieldLabel(targetKey, idKey)}: ожидается Mongo ObjectId (24 hex)`,
+        };
+      }
     }
     return { rowIndex, values, status: 'ok_new', message: 'Новая строка готова' };
   });

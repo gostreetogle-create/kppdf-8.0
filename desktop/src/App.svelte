@@ -1564,6 +1564,73 @@
             skuPrefix,
             description: row.description ? String(row.description) : undefined,
           });
+        } else if (targetKey === 'supplyRequest') {
+          const title = String(row.title ?? '').trim();
+          if (!title) {
+            errors.push({ rowName: 'без имени', error: 'Строке снабжения нужно наименование' });
+            continue;
+          }
+          const priorityRaw = String(row.priority ?? '').trim().toLowerCase();
+          const priority = ['urgent', 'normal', 'low'].includes(priorityRaw)
+            ? priorityRaw
+            : undefined;
+          const statusRaw = String(row.status ?? '').trim().toLowerCase();
+          const status = [
+            'in_progress',
+            'requested',
+            'ordered',
+            'received',
+            'cancelled',
+          ].includes(statusRaw)
+            ? statusRaw
+            : undefined;
+          await apiPost(apiFrom(cfg), '/api/supply-requests', {
+            title,
+            article: row.article ? String(row.article).trim() : undefined,
+            qty: numberOr(row.qty),
+            unit: row.unit ? String(row.unit).trim() : undefined,
+            priority,
+            status,
+            notes: row.notes ? String(row.notes) : undefined,
+            priceHint: numberOr(row.priceHint),
+            neededBy: row.neededBy ? String(row.neededBy).trim() : undefined,
+            requestedBy: row.requestedBy ? String(row.requestedBy).trim() : undefined,
+            responsible: row.responsible ? String(row.responsible).trim() : undefined,
+            productUrl: row.productUrl ? String(row.productUrl).trim() : undefined,
+            color: row.color ? String(row.color).trim() : undefined,
+            orderId: row.orderId ? String(row.orderId).trim() : undefined,
+            materialId: row.materialId ? String(row.materialId).trim() : undefined,
+            supplierId: row.supplierId ? String(row.supplierId).trim() : undefined,
+          });
+        } else if (targetKey === 'supplyTask') {
+          const orderId = String(row.orderId ?? '').trim();
+          const qty = numberOr(row.qty);
+          const title = row.title ? String(row.title).trim() : undefined;
+          const materialId = row.materialId ? String(row.materialId).trim() : undefined;
+          const moduleId = row.moduleId ? String(row.moduleId).trim() : undefined;
+          if (!orderId || qty === undefined) {
+            errors.push({
+              rowName: title || 'без имени',
+              error: 'Задаче снабжения нужны ID заказа и кол-во',
+            });
+            continue;
+          }
+          if (!title && !materialId && !moduleId) {
+            errors.push({
+              rowName: 'без имени',
+              error: 'Укажите наименование или ID материала/модуля',
+            });
+            continue;
+          }
+          await apiPost(apiFrom(cfg), '/api/supply-tasks', {
+            orderId,
+            qty,
+            title,
+            materialId,
+            moduleId,
+            notes: row.notes ? String(row.notes) : undefined,
+            orderLineId: row.orderLineId ? String(row.orderLineId).trim() : undefined,
+          });
         }
         created += 1;
       } catch (err) {
@@ -2173,6 +2240,10 @@
     targetKey: ImportTargetKey,
   ): Promise<{ keys: Set<string>; truncated: boolean }> {
     const keys = new Set<string>();
+    // Снабжение: нет каталожного dedupe (строки — оперативные заявки/задачи).
+    if (targetKey === 'supplyRequest' || targetKey === 'supplyTask') {
+      return { keys, truncated: false };
+    }
     // TZD-51 — справочники: list endpoint возвращает массив, ключи нормализуются
     // той же функцией, что и строки файла (`referenceDedupeKeysOf`).
     if (isReferenceTargetKey(targetKey)) {

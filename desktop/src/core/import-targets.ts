@@ -33,7 +33,9 @@ export type ImportTargetKey =
   | 'warehouse'
   | 'workType'
   | 'colorReference'
-  | 'category';
+  | 'category'
+  | 'supplyRequest'
+  | 'supplyTask';
 
 /** TZD-51 — справочники (пишутся сразу после confirm, без журнала предложений). */
 export const REFERENCE_TARGET_KEYS: readonly ImportTargetKey[] = [
@@ -161,6 +163,45 @@ export const IMPORT_TARGETS = {
       { key: 'description', label: 'Описание', aliases: ['description', 'описание', 'примечание'] },
     ],
   },
+  /** TZ-QA-445G — быстрый заказ (SupplyRequest), без обязательного orderId. */
+  supplyRequest: {
+    key: 'supplyRequest',
+    label: 'Быстрый заказ',
+    requiredFields: ['title'],
+    columns: [
+      { key: 'title', label: 'Наименование', aliases: ['title', 'наименование', 'название', 'позиция', 'что заказать'] },
+      { key: 'article', label: 'Артикул', aliases: ['article', 'артикул', 'обозначение', 'код'] },
+      { key: 'qty', label: 'Кол-во', aliases: ['qty', 'quantity', 'количество', 'кол-во', 'кол', 'к-во'] },
+      { key: 'unit', label: 'Ед. изм.', aliases: ['unit', 'ед', 'ед.', 'единица', 'ед. изм.', 'ед.изм'] },
+      { key: 'priority', label: 'Приоритет', aliases: ['priority', 'приоритет', 'срочность'] },
+      { key: 'status', label: 'Статус', aliases: ['status', 'статус'] },
+      { key: 'notes', label: 'Примечание', aliases: ['notes', 'примечание', 'комментарий', 'заметки'] },
+      { key: 'priceHint', label: 'Цена (ориентир)', aliases: ['pricehint', 'цена', 'цена ориентир', 'ориентир цены'] },
+      { key: 'neededBy', label: 'Нужно к', aliases: ['neededby', 'нужно к', 'срок', 'дата'] },
+      { key: 'requestedBy', label: 'Кто просил', aliases: ['requestedby', 'кто просил', 'участок', 'отдел'] },
+      { key: 'responsible', label: 'Ответственный', aliases: ['responsible', 'ответственный', 'снабженец'] },
+      { key: 'productUrl', label: 'Ссылка', aliases: ['producturl', 'ссылка', 'url', 'url товара'] },
+      { key: 'color', label: 'Цвет', aliases: ['color', 'цвет'] },
+      { key: 'orderId', label: 'ID заказа', aliases: ['orderid', 'id заказа', 'заказ'] },
+      { key: 'materialId', label: 'ID материала', aliases: ['materialid', 'id материала'] },
+      { key: 'supplierId', label: 'ID поставщика', aliases: ['supplierid', 'id поставщика', 'поставщик'] },
+    ],
+  },
+  /** TZ-QA-445G — реестр SupplyTask (нужен ID заказа). */
+  supplyTask: {
+    key: 'supplyTask',
+    label: 'Задачи снабжения',
+    requiredFields: ['orderId', 'qty'],
+    columns: [
+      { key: 'orderId', label: 'ID заказа', aliases: ['orderid', 'id заказа', 'заказ'] },
+      { key: 'title', label: 'Наименование', aliases: ['title', 'наименование', 'название', 'позиция'] },
+      { key: 'qty', label: 'Кол-во', aliases: ['qty', 'quantity', 'количество', 'кол-во', 'кол', 'к-во'] },
+      { key: 'notes', label: 'Примечание', aliases: ['notes', 'примечание', 'комментарий'] },
+      { key: 'materialId', label: 'ID материала', aliases: ['materialid', 'id материала'] },
+      { key: 'moduleId', label: 'ID модуля', aliases: ['moduleid', 'id модуля'] },
+      { key: 'orderLineId', label: 'ID линии заказа', aliases: ['orderlineid', 'линия заказа', 'order line'] },
+    ],
+  },
 } as const satisfies Record<ImportTargetKey, ImportTarget>;
 
 export type ImportTargetTable = (typeof IMPORT_TARGETS)[ImportTargetKey];
@@ -175,6 +216,8 @@ export const IMPORT_TARGET_ORDER: ImportTargetKey[] = [
   'workType',
   'colorReference',
   'category',
+  'supplyRequest',
+  'supplyTask',
 ];
 
 export function importTarget(key: ImportTargetKey): ImportTargetTable {

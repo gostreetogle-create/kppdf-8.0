@@ -193,3 +193,24 @@ test('TZD-51 category: плохой slug / тип вне enum → invalid', () =
   );
   assert.equal(badType[0].status, 'invalid');
 });
+
+test('TZ-QA-445G supplyRequest: title → ok_new; bad priority / id → invalid', () => {
+  const ok = validateTableRows([{ title: 'Болт М8', qty: 10, priority: 'urgent' }], 'supplyRequest');
+  assert.equal(ok[0].status, 'ok_new');
+  const noTitle = validateTableRows([{ article: 'A-1' }], 'supplyRequest');
+  assert.equal(noTitle[0].status, 'invalid');
+  const badPriority = validateTableRows([{ title: 'X', priority: 'asap' }], 'supplyRequest');
+  assert.equal(badPriority[0].status, 'invalid');
+  const badId = validateTableRows([{ title: 'X', orderId: 'not-an-id' }], 'supplyRequest');
+  assert.equal(badId[0].status, 'invalid');
+});
+
+test('TZ-QA-445G supplyTask: orderId+qty+title → ok_new; missing identity → invalid', () => {
+  const orderId = '507f1f77bcf86cd799439011';
+  const ok = validateTableRows([{ orderId, qty: 2, title: 'Шайба' }], 'supplyTask');
+  assert.equal(ok[0].status, 'ok_new');
+  const noIdentity = validateTableRows([{ orderId, qty: 1 }], 'supplyTask');
+  assert.equal(noIdentity[0].status, 'invalid');
+  const badOrder = validateTableRows([{ orderId: 'xx', qty: 1, title: 'X' }], 'supplyTask');
+  assert.equal(badOrder[0].status, 'invalid');
+});

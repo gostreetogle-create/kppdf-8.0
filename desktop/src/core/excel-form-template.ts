@@ -27,7 +27,7 @@ export const FORM_SHEET_NAME = '_kppdf';
 /** Лист данных формы (строка 1 — заголовки, строка 2 — пустой скелет). */
 export const FORM_DATA_SHEET = 'Данные';
 
-export type FormCategoryKey = 'catalog' | 'counterparties' | 'references';
+export type FormCategoryKey = 'catalog' | 'counterparties' | 'references' | 'supply';
 
 export interface FormCategory {
   key: FormCategoryKey;
@@ -50,6 +50,11 @@ export const FORM_CATEGORIES: readonly FormCategory[] = [
     key: 'references',
     labelRu: 'Справочники',
     descriptionRu: 'Склады, виды работ, цвета (RAL) и категории — справочники пишутся сразу после подтверждения.',
+  },
+  {
+    key: 'supply',
+    labelRu: 'Снабжение',
+    descriptionRu: 'Быстрый заказ и задачи реестра снабжения — пачкой из Excel.',
   },
 ];
 
@@ -136,6 +141,24 @@ const FORM_TEMPLATES: readonly FormTemplate[] = [
       'Категории: наименование, тип (material / product / general), Slug и префикс SKU. Slug и префикс SKU лучше латиницей; префикс — заглавными. Пишется сразу после подтверждения.',
     requiredFields: IMPORT_TARGETS.category.requiredFields,
     columns: IMPORT_TARGETS.category.columns,
+  },
+  {
+    targetKey: 'supplyRequest',
+    categoryKey: 'supply',
+    labelRu: IMPORT_TARGETS.supplyRequest.label,
+    descriptionRu:
+      'Строки быстрого заказа: что заказать, сколько, приоритет. Пишутся в /supply (SupplyRequest) сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.supplyRequest.requiredFields,
+    columns: IMPORT_TARGETS.supplyRequest.columns,
+  },
+  {
+    targetKey: 'supplyTask',
+    categoryKey: 'supply',
+    labelRu: IMPORT_TARGETS.supplyTask.label,
+    descriptionRu:
+      'Задачи реестра снабжения: нужен ID заказа и кол-во; наименование или ID материала/модуля. Пишутся сразу после подтверждения.',
+    requiredFields: IMPORT_TARGETS.supplyTask.requiredFields,
+    columns: IMPORT_TARGETS.supplyTask.columns,
   },
 ];
 

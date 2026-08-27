@@ -18,7 +18,7 @@ import {
   serializeFormWorkbook,
 } from './excel-form-template';
 
-test('V2 allowlist: catalog/counterparties/references → 8 таблиц (TZD-51)', () => {
+test('V2+supply allowlist: catalog/counterparties/references/supply (TZ-QA-445G)', () => {
   assert.deepEqual(
     formTemplatesByCategory('catalog').map((t) => t.targetKey),
     ['material', 'product', 'module'],
@@ -31,12 +31,20 @@ test('V2 allowlist: catalog/counterparties/references → 8 таблиц (TZD-51
     formTemplatesByCategory('references').map((t) => t.targetKey),
     ['warehouse', 'workType', 'colorReference', 'category'],
   );
-  assert.equal(formTemplates().length, 8);
+  assert.deepEqual(
+    formTemplatesByCategory('supply').map((t) => t.targetKey),
+    ['supplyRequest', 'supplyTask'],
+  );
+  assert.equal(formTemplates().length, 10);
   assert.ok(formTemplateFor('warehouse'));
   assert.ok(formTemplateFor('category'));
+  assert.ok(formTemplateFor('supplyRequest'));
+  assert.ok(formTemplateFor('supplyTask'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'catalog'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'counterparties'));
   assert.ok(FORM_CATEGORIES.some((c) => c.key === 'references'));
+  assert.ok(FORM_CATEGORIES.some((c) => c.key === 'supply'));
+  assert.equal(FORM_CATEGORIES.find((c) => c.key === 'supply')?.labelRu, 'Снабжение');
 });
 
 test('form file name uses latin target key (stable for V1)', () => {
@@ -120,6 +128,42 @@ test('TZD-51 round-trip: warehouse + category сохраняют targetKey и п
     assert.deepEqual(preview.fingerprint!.columnKeys, template.columns.map((c) => c.key));
     assert.ok(!preview.sheets.some((s) => s.name === FORM_SHEET_NAME));
   }
+});
+
+test('TZ-QA-445G round-trip: supplyRequest + supplyTask fingerprint', async () => {
+  for (const targetKey of ['supplyRequest', 'supplyTask'] as const) {
+    const wb = buildFormWorkbook(targetKey);
+    const template = formTemplateFor(targetKey)!;
+    XLSX.utils.sheet_add_aoa(
+      wb.Sheets[FORM_DATA_SHEET],
+      [template.columns.map((_, index) => `test-${index}`)],
+      { origin: 'A2' },
+    );
+    const bytes = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+    const preview = await parseExcelWorkbook({ name: formFileName(targetKey), data: bytes });
+    assert.ok(preview.fingerprint, `fingerprint expected for ${targetKey}`);
+    assert.equal(preview.fingerprint!.targetKey, targetKey);
+    assert.deepEqual(preview.fingerprint!.columnKeys, template.columns.map((c) => c.key));
+    assert.ok(preview.sheets.some((s) => s.name === FORM_DATA_SHEET));
+  }
+});
+
+test('TZ-QA-445G identity mapping: снабжение labels → keys', () => {
+  const request = identityMappingForForm(
+    ['Наименование *', 'Артикул', 'Кол-во', 'Приоритет'],
+    'supplyRequest',
+  );
+  const rMap = Object.fromEntries(request.rows.map((r) => [r.header, r.canonical]));
+  assert.equal(rMap['Наименование *'], 'title');
+  assert.equal(rMap['Артикул'], 'article');
+  assert.equal(rMap['Кол-во'], 'qty');
+  assert.equal(rMap['Приоритет'], 'priority');
+
+  const task = identityMappingForForm(['ID заказа *', 'Наименование', 'Кол-во *'], 'supplyTask');
+  const tMap = Object.fromEntries(task.rows.map((r) => [r.header, r.canonical]));
+  assert.equal(tMap['ID заказа *'], 'orderId');
+  assert.equal(tMap['Наименование'], 'title');
+  assert.equal(tMap['Кол-во *'], 'qty');
 });
 
 test('unknown targetKey in fingerprint → safe ignore (null)', () => {
