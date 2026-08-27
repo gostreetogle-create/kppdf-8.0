@@ -25,7 +25,7 @@ function flushDictionaryLabels(httpMock: HttpTestingController): void {
   for (const request of requests) request.flush([]);
 }
 
-describe('ProductDetailPage (TZ-UX-444B)', () => {
+describe('ProductDetailPage (TZ-UX-444B / TZ-UX-444C)', () => {
   let fixture: ComponentFixture<ProductDetailPage>;
   let httpMock: HttpTestingController;
 
@@ -192,6 +192,81 @@ describe('ProductDetailPage (TZ-UX-444B)', () => {
     expect(links.length).toBe(2);
     expect(links[0].getAttribute('href')).toContain('/products/prod-2');
     expect(links[1].getAttribute('href')).toContain('/modules/mod-9');
+  });
+
+  it('uses info data-link classes on where-used anchors (TZ-UX-444C)', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const links = Array.from(
+      el.querySelectorAll<HTMLAnchorElement>('[data-test="product-where-used-link"]'),
+    );
+    expect(links.length).toBe(2);
+    for (const link of links) {
+      expect(link.classList.contains('text-info')).toBe(true);
+      expect(link.classList.contains('text-primary')).toBe(false);
+      expect(link.className).not.toContain('sunrise-warm');
+    }
+  });
+
+  it('hides status banner when product is active (TZ-UX-444C)', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="pi-status-banner"]')).toBeNull();
+  });
+
+  it('shows warning banner for draft product (TZ-UX-444C)', async () => {
+    const page = fixture.componentInstance as unknown as {
+      productRes: { reload: () => unknown };
+    };
+    page.productRes.reload();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+    httpMock.expectOne('/api/products/prod-1').flush({ ...productBody, status: 'draft' });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector(
+      '[data-test="pi-status-banner"]',
+    ) as HTMLElement | null;
+    expect(banner?.getAttribute('data-tone')).toBe('warning');
+    expect(banner?.textContent).toContain('Черновик — изделие не готово к продаже/производству');
+  });
+
+  it('shows destructive banner for archived product (TZ-UX-444C)', async () => {
+    const page = fixture.componentInstance as unknown as {
+      productRes: { reload: () => unknown };
+    };
+    page.productRes.reload();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+    httpMock.expectOne('/api/products/prod-1').flush({ ...productBody, status: 'archived' });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector(
+      '[data-test="pi-status-banner"]',
+    ) as HTMLElement | null;
+    expect(banner?.getAttribute('data-tone')).toBe('destructive');
+    expect(banner?.textContent).toContain('В архиве');
+  });
+
+  it('shows info banner for new product (TZ-UX-444C)', async () => {
+    const page = fixture.componentInstance as unknown as {
+      productRes: { reload: () => unknown };
+    };
+    page.productRes.reload();
+    fixture.detectChanges();
+    await tickMicrotask();
+    fixture.detectChanges();
+    httpMock.expectOne('/api/products/prod-1').flush({ ...productBody, status: 'new' });
+    await tickMicrotask();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector(
+      '[data-test="pi-status-banner"]',
+    ) as HTMLElement | null;
+    expect(banner?.getAttribute('data-tone')).toBe('info');
+    expect(banner?.textContent).toContain('Новый');
   });
 
   it('shows RU empty state when where-used has no items', async () => {

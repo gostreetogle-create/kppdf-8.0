@@ -335,7 +335,8 @@ interface WhereUsedPage {
                                 ? ['/products', item.id]
                                 : ['/modules', item.id]
                             "
-                            class="text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm"
+                            class="text-info underline decoration-dotted underline-offset-4 hover:opacity-90"
+                            data-test="material-where-used-link"
                           >
                             {{ item.name }}
                           </a>
@@ -368,7 +369,7 @@ interface WhereUsedPage {
               <a
                 [routerLink]="['/storage-items']"
                 [queryParams]="{ materialId: m._id }"
-                class="inline-flex items-center gap-1.5 mt-3 text-sm text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm transition-colors"
+                class="inline-flex items-center gap-1.5 mt-3 text-sm text-info underline decoration-dotted underline-offset-4 hover:opacity-90 transition-colors"
                 data-test="stock-link"
               >
                 Открыть остатки на складе →

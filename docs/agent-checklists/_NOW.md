@@ -1,27 +1,31 @@
-﻿# NOW — оперативная доска агента (короткий срез)
+﻿# NOW - Оперативная доска агента (тонкий срез)
 
-> Правда для resume. Лимит: 120 строк.
+> Справка для resume. Лимит: 120 строк.
 
-updated_at: 2026-08-26T20:44:27+03:00
+updated_at: 2026-08-27T21:30:00+03:00
 
 ## ACTIVE / LIVE
 
-**UX-444 C+D** — `tasks/PROMPT-FREEBUFF-UX-444-CD.md`
-- TZ-UX-444C — catalog banner + info links (depends on A)
-- TZ-UX-444D — empty thumbnail hatch (after C)
+**UX-444C** CLAIMED (freebuff-1) — `tasks/_active/TZ-UX-444C.md`
+**QA-445E** DONE (freebuff-2) — `tasks/_archive/2026-08/TZ-QA-445E.done.md`
+**NEXT after C:** TZ-UX-444D · **Claude lane:** TZ-QA-445A diagnose
+**QA backlog imported:** `tasks/_backlog/qa-2026-08-27-live-bugs/` (A–H; E DONE)
 
-**NEXT:** 444C → 444D (`PROMPT-FREEBUFF-UX-444-CD.md`)
-
-**DEPLOY-READY** @ `631f96e0` — по фразе PO
+**DEPLOY-READY** @ `631f96e0` - не трогать без PO
 
 ## PARK
 
-- DESK-441 (`canMarkShipped` → only `ready`) — Да/Нет PO  
-- **PRICE-HIST** — гибко (supply ∪ manual ∪ import later) → `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md`
+- DESK-441 (`canMarkShipped` → only `ready`) - да/нет PO
+- **PRICE-HIST** - гибко → `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md`
 
 ## DONE (не трогать)
 
-TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444A** · **UX-444B**
+TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444A** · **UX-444B** · **QA-445E**
+
+## Checkpoint 2026-08-27T21:30:00+03:00 · TZ-QA-445E DONE
+- DONE: chrome «Сегодня» scroll + pulse на красном маркере (не silent no-op на коротком пустом диапазоне).
+- Gates: FE tsc PASS; focused Jest 2 suites / 90 PASS; owned ESLint PASS (1 pre-existing OnInit warn).
+- Archive: `tasks/_archive/2026-08/TZ-QA-445E.done.md`; lock `.mimocode/locks/TZ-QA-445E-gantt-calendar-button.lock`; active marker removed. Deploy: NO.
 
 ## Checkpoint 2026-08-26T19:37:10+03:00 · TZ-DOC-443 DONE
 - DONE: setup и builder inspector показывают scoped system + current-organization categories; `+` открывает shared category form inline и сразу выбирает результат; duplicate mode без category сохранён.

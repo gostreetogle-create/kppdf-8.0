@@ -54,6 +54,7 @@ SoT: `frontend/src/styles.css` `:root` + `@theme inline`.
 | Loading | `app-pi-skeleton` | `<p>Загрузка…</p>` |
 | Load error | `app-error-banner` | `<p class="text-destructive">` |
 | Persistent lifecycle status | `app-pi-status-banner` (`role="status"`) | `app-error-banner`, Toast, or Dialog |
+| **Data-link** (cross-card / where-used / warehouse) | `text-info underline decoration-dotted underline-offset-4 hover:opacity-90` | `text-primary` / `hover:text-sunrise-warm` as link chrome; gold reserved for CTA / PiButton / chrome focus |
 | **Truncated text in fixed column** | **`truncated-label-peek`** (см. [`ui-rules.md`](./ui-rules.md) § Truncated Label Peek) | снять `overflow:hidden`; голый текст; `title`-only; PiDialog для одной ячейки |
 
 ## Truncated Label Peek (плотные колонки)

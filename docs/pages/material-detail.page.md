@@ -24,6 +24,8 @@
 2. **Split xl:** слева sticky — hero-фото + паспорт (имя `font-display`, артикул/SKU/тип,
    FactStack габариты/вес) + аккордеон **Фото / Цена**;
    справа рабочая зона на всю высоту: таблица «Где используется» + ссылка на склад.
+   **TZ-UX-444C:** where-used и склад — data-links `text-info` dotted underline (не gold);
+   status-banner нет (у материала нет ProductStatus).
 3. **Не** копировать `ProductBomPanel` / composition-tree на материал.
 4. Цена: FactCard «Цена за ед.» с caption «Закупочная / учётная цена материала»;
    без cost-preview модуля и без журнала CostCalculation изделия — у материала нет rollup.

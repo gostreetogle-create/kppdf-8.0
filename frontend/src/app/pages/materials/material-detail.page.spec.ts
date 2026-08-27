@@ -191,6 +191,34 @@ describe('MaterialDetailPage', () => {
     const link = el.querySelector('[data-test="stock-link"]') as HTMLAnchorElement;
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toContain('/storage-items');
+    expect(link.classList.contains('text-info')).toBe(true);
+    expect(link.classList.contains('text-primary')).toBe(false);
+    expect(link.className).not.toContain('sunrise-warm');
+    httpMock.verify();
+  }));
+
+  it('uses info data-link classes on where-used anchors (TZ-UX-444C)', fakeAsync(() => {
+    configure('mat-1');
+    const httpMock = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(MaterialDetailPage);
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${API}/materials/mat-1`).flush(mockMaterial);
+    httpMock.expectOne(`${API}/materials/mat-1/where-used?page=1&limit=50`).flush(mockWhereUsed);
+    flush();
+    fixture.detectChanges();
+
+    const el = fixture.nativeElement as HTMLElement;
+    const links = Array.from(
+      el.querySelectorAll<HTMLAnchorElement>('[data-test="material-where-used-link"]'),
+    );
+    expect(links.length).toBe(2);
+    for (const link of links) {
+      expect(link.classList.contains('text-info')).toBe(true);
+      expect(link.classList.contains('text-primary')).toBe(false);
+      expect(link.className).not.toContain('sunrise-warm');
+    }
+    expect(el.querySelector('[data-test="pi-status-banner"]')).toBeNull();
     httpMock.verify();
   }));
 

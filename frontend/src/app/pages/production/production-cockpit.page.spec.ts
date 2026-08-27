@@ -280,6 +280,24 @@ describe('ProductionCockpitPage HUB-303 orderId', () => {
     expect(ctx.zoom()).toBe('month');
   });
 
+  it('QA-445E: chrome Сегодня tool stays enabled and wires onToday', () => {
+    const fixture = TestBed.createComponent(ProductionCockpitPage);
+    fixture.detectChanges();
+    const chrome = TestBed.inject(PiChromeToolsService);
+    const today = chrome.rightTools().find((t) => t.id === 'today')!;
+    expect(today).toBeTruthy();
+    expect((today as { disabled?: boolean }).disabled).not.toBe(true);
+    expect(today.title).toBe('Прокрутить к сегодня');
+    expect(today.ariaLabel).toBe('Прокрутить к сегодня');
+
+    const page = fixture.componentInstance as unknown as {
+      onToday: (e?: Event) => void;
+      scrollRequest: () => { target: string; nonce: number } | null;
+    };
+    today.onClick();
+    expect(page.scrollRequest()?.target).toBe('today');
+  });
+
   it('TZ-PRODUCTION-348: gantt toolbar toggles По заказам / По рабочим', () => {
     const fixture = TestBed.createComponent(ProductionCockpitPage);
     const page = fixture.componentInstance as unknown as {

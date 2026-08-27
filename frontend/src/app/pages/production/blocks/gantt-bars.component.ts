@@ -676,6 +676,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
               <div
                 class="absolute top-0 bottom-0 w-px bg-destructive/70 z-[1]"
                 #todayMarker
+                [class.gantt-today-pulse]="todayPulse()"
+                [attr.data-pulse]="todayPulse() ? 'true' : null"
                 [style.left.px]="todayLeftPx()"
                 title="Сегодня"
                 data-test="gantt-today-marker"
@@ -882,6 +884,27 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-scroll {
       container-type: inline-size;
       container-name: gantt-scroll;
+    }
+    /* QA-445E — visible ack when scrollLeft cannot move (short range / already centered). */
+    .gantt-today-pulse {
+      width: 3px;
+      background: var(--color-destructive, oklch(0.55 0.2 25));
+      outline: 2px solid color-mix(in oklch, var(--color-destructive, oklch(0.55 0.2 25)) 55%, transparent);
+      outline-offset: 1px;
+      animation: gantt-today-pulse 0.7s ease-out 1;
+    }
+    @keyframes gantt-today-pulse {
+      0% {
+        opacity: 1;
+      }
+      35% {
+        opacity: 1;
+        width: 4px;
+      }
+      100% {
+        opacity: 0.7;
+        width: 3px;
+      }
     }
     /* Full-bleed cascade panel: lives in sticky label column, spans label+timeline. */
     .gantt-cascade-panel {
@@ -1319,6 +1342,9 @@ export class GanttBarsComponent implements AfterViewInit {
   protected readonly metaPriorities = ORDER_META_PRIORITIES;
   protected readonly priorityDraft = signal<OrderPriority>('normal');
   protected readonly plannedDraft = signal('');
+  /** QA-445E — flash red today line so «Сегодня» is never a silent no-op. */
+  protected readonly todayPulse = signal(false);
+  private todayPulseTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     effect(() => {
@@ -1338,7 +1364,10 @@ export class GanttBarsComponent implements AfterViewInit {
         { injector: this.injector },
       );
     });
-    this.destroyRef.onDestroy(() => this.clearLabelOverlayLeaveTimer());
+    this.destroyRef.onDestroy(() => {
+      this.clearLabelOverlayLeaveTimer();
+      this.clearTodayPulseTimer();
+    });
   }
 
   /** Live right-edge resize preview (null = idle). */
@@ -1614,9 +1643,10 @@ export class GanttBarsComponent implements AfterViewInit {
     this.destroyRef.onDestroy(() => observer.disconnect());
   }
 
-  /** Scroll the marker into the visible timeline viewport (Сегодня). */
+  /** Scroll the marker into the visible timeline viewport (Сегодня) + pulse ack. */
   scrollToToday(): void {
     this.scrollToMarker(this.todayMarker()?.nativeElement ?? null);
+    this.pulseTodayMarker();
   }
 
   /** Reveal the beginning of the fitted bars range. */
@@ -1625,6 +1655,35 @@ export class GanttBarsComponent implements AfterViewInit {
     if (!scroll) return;
     if (typeof scroll.scrollTo === 'function') scroll.scrollTo({ left: 0, behavior: 'auto' });
     else scroll.scrollLeft = 0;
+  }
+
+  private pulseTodayMarker(): void {
+    this.clearTodayPulseTimer();
+    // Force class off→on so CSS animation retriggers on repeated clicks.
+    if (this.todayPulse()) {
+      this.todayPulse.set(false);
+      queueMicrotask(() => {
+        this.todayPulse.set(true);
+        this.scheduleTodayPulseClear();
+      });
+      return;
+    }
+    this.todayPulse.set(true);
+    this.scheduleTodayPulseClear();
+  }
+
+  private scheduleTodayPulseClear(): void {
+    this.todayPulseTimer = setTimeout(() => {
+      this.todayPulse.set(false);
+      this.todayPulseTimer = null;
+    }, 700);
+  }
+
+  private clearTodayPulseTimer(): void {
+    if (this.todayPulseTimer != null) {
+      clearTimeout(this.todayPulseTimer);
+      this.todayPulseTimer = null;
+    }
   }
 
   private scrollToMarker(marker: HTMLElement | null): void {

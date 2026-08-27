@@ -54,6 +54,7 @@
    - product-line picker: лейбл **«Цена в составе, ₽»**; default = `costPrice` → `listPrice`;
      пишет только `composition[].unitPriceOverride` (не карточку ребёнка).
 4. Паспорт (DETAIL-301): фото, имя (`font-display text-lg sm:text-xl`, TYPE-302), badges, **В составе** (count); габариты/вес/RAL через FactCard. Цены — в блоке Себестоимость (DETAIL-302).
+   **TZ-UX-444C:** `app-pi-status-banner` под chrome для `draft`/`archived`/`new` (`active` — без баннера); where-used data-links = `text-info` dotted underline (не gold CTA).
 5. Фото / себестоимость — слева: цены (Прайс/Себест/База + captions) + вертикальный журнал снимков; auto-recalc после mutate состава (DETAIL-302).
 
 ## Фото add-and-continue (TZ-UX-DIALOG-304)

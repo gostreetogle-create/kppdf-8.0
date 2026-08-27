@@ -42,7 +42,11 @@ import { PiPhotoLightboxComponent } from '../../shared/ui/photo';
 import { ProductFormDialogComponent } from './product-form-dialog.component';
 import { Product, ProductStatus } from '../../shared/services/products.service';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
+import { PiStatusBannerComponent, type PiStatusBannerTone } from '../../shared/ui/status-banner';
 import { CatalogReturnStore, catalogBackLabel } from '../../shared/navigation/catalog-return.util';
+
+/** Cross-entity data links (where-used, warehouse) — not gold CTA. See AI-UI-CONTRACT. */
+const DATA_LINK_CLASS = 'text-info underline decoration-dotted underline-offset-4 hover:opacity-90';
 
 const STATUS_LABELS: Record<ProductStatus, string> = {
   new: 'Новый',
@@ -98,6 +102,7 @@ interface WhereUsedPage {
     PiPageChromeComponent,
     PiFactCardComponent,
     PiFactStackComponent,
+    PiStatusBannerComponent,
     RouterLink,
   ],
   template: `
@@ -137,6 +142,15 @@ interface WhereUsedPage {
     }
 
     @if (product(); as p) {
+      @if (statusBannerTone(p.status); as tone) {
+        <div class="mb-4">
+          <app-pi-status-banner
+            [tone]="tone"
+            [message]="statusBannerMessage(p.status)"
+            data-test="product-detail-status-banner"
+          />
+        </div>
+      }
       <div
         class="grid grid-cols-1 xl:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)] gap-5 items-start"
         data-test="product-detail-layout"
@@ -424,7 +438,8 @@ interface WhereUsedPage {
                                 ? ['/products', item.id]
                                 : ['/modules', item.id]
                             "
-                            class="text-primary underline decoration-dotted underline-offset-4 hover:text-sunrise-warm"
+                            [class]="dataLinkClass"
+                            data-test="product-where-used-link"
                           >
                             {{ item.name }}
                           </a>
@@ -540,6 +555,36 @@ export class ProductDetailPage {
 
   protected statusLabel(status: string): string {
     return STATUS_LABELS[status as ProductStatus] ?? status;
+  }
+
+  /** Template bind for where-used / cross-card data links (TZ-UX-444C). */
+  protected readonly dataLinkClass = DATA_LINK_CLASS;
+
+  protected statusBannerTone(status: string | undefined): PiStatusBannerTone | null {
+    switch (status) {
+      case 'draft':
+        return 'warning';
+      case 'archived':
+        return 'destructive';
+      case 'new':
+        return 'info';
+      case 'active':
+      default:
+        return null;
+    }
+  }
+
+  protected statusBannerMessage(status: string | undefined): string {
+    switch (status) {
+      case 'draft':
+        return 'Черновик — изделие не готово к продаже/производству';
+      case 'archived':
+        return 'В архиве';
+      case 'new':
+        return 'Новый';
+      default:
+        return status ? this.statusLabel(status) : '';
+    }
   }
 
   protected kindLabel(kind?: string): string {

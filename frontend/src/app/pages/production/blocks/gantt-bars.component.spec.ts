@@ -825,6 +825,26 @@ describe('GanttBarsComponent', () => {
     expect(el.querySelectorAll('[data-test="gantt-placeholder-row"]').length).toBeGreaterThan(0);
   });
 
+  it('QA-445E: Сегодня pulses today marker even when scroll cannot move (empty short range)', () => {
+    const fixture = TestBed.createComponent(GanttBarsComponent);
+    fixture.componentRef.setInput('bars', []);
+    fixture.componentRef.setInput('rangeStart', '2026-08-01');
+    fixture.componentRef.setInput('rangeEnd', '2026-08-16');
+    fixture.componentRef.setInput('today', '2026-08-03');
+    fixture.detectChanges();
+
+    const cmp = fixture.componentInstance as unknown as { scrollToToday: () => void };
+    cmp.scrollToToday();
+    fixture.detectChanges();
+
+    const marker = fixture.nativeElement.querySelector(
+      '[data-test="gantt-today-marker"]',
+    ) as HTMLElement;
+    expect(marker).toBeTruthy();
+    expect(marker.classList.contains('gantt-today-pulse')).toBe(true);
+    expect(marker.getAttribute('data-pulse')).toBe('true');
+  });
+
   it('fits month density to the measured timeline width without shrinking day mode', () => {
     expect(calculateGanttPxPerDay('month', 14, 700)).toBe(50);
     expect(calculateGanttPxPerDay('month', 100, 700)).toBe(GANTT_PX_PER_DAY.month);
