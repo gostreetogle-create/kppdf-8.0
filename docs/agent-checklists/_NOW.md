@@ -2,11 +2,11 @@
 
 > Справка для resume. Лимит: 120 строк.
 
-updated_at: 2026-08-27T21:50:00+03:00
+updated_at: 2026-08-27T21:55:00+03:00
 
 ## ACTIVE / LIVE
 
-**QA-445F** CLAIMED (freebuff-1) — `tasks/_active/TZ-QA-445F.md`
+_(пусто — QA-445 wave closeout pending G–H)_
 
 **DEPLOY-READY** @ `631f96e0` — не трогать без PO
 
@@ -16,7 +16,10 @@ updated_at: 2026-08-27T21:50:00+03:00
 
 ## DONE (не трогать)
 
-… · **UX-444A–D** · **QA-445A** · **QA-445B** · **QA-445C** · **QA-445D** · **QA-445E**
+… · **UX-444A–D** · **QA-445A** · **QA-445B** · **QA-445C** · **QA-445D** · **QA-445E** · **QA-445F**
+
+## Checkpoint — TZ-QA-445F DONE
+- DONE: composition row click = select/expand only; edit only via pencil; removed row→catalog navigate; Jest 50/50. Deploy: NO.
 
 ## Checkpoint — TZ-QA-445C DONE
 - DONE: PDF live rebuild + doc `<base>` + builder flush/srcdoc uploads + photo `[img]`→empty; gates 25+31 PASS. Deploy: NO.

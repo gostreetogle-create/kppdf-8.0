@@ -7,11 +7,7 @@ import type { ProductsService } from '../services/products.service';
 import type { MaterialsService } from '../services/materials.service';
 import type { PiDialogService } from '../ui/dialog/pi-dialog.service';
 import type { PiToastService } from '../ui/toast';
-import type { Router } from '@angular/router';
-import type {
-  CompositionTreeEditEvent,
-  CompositionTreeSelectEvent,
-} from '../ui/composition/composition-tree.component';
+import type { CompositionTreeEditEvent } from '../ui/composition/composition-tree.component';
 
 export interface CatalogCompositionEditDeps {
   dialog: PiDialogService;
@@ -131,21 +127,4 @@ export function openCatalogEditFromTree(
   ev: CompositionTreeEditEvent,
 ): void {
   openCatalogCompositionEdit(deps, ev.node);
-}
-
-/** Row click → catalog card; pencil → edit dialog (TZ-DESK-433). */
-export function openCatalogViewFromTree(router: Router, ev: CompositionTreeSelectEvent): void {
-  const node = ev.node;
-  if (!isCatalogCompositionId(node._id)) return;
-  if (node.kind === 'module') {
-    void router.navigate(['/modules', node._id]);
-    return;
-  }
-  if (node.kind === 'product') {
-    void router.navigate(['/products', node._id]);
-    return;
-  }
-  if (node.kind === 'material') {
-    void router.navigate(['/materials', node._id]);
-  }
 }

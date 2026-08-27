@@ -109,7 +109,7 @@ Read-only expand на списке `/orders`:
 - Meta под заголовком: **Заказчик** (name) + **Объект** (site name/address), если populate есть.
 - Блок «Позиции»: простые строки — имя изделия · Ответственный · Отгрузка (без цен).
 - Корни дерева = линии заказа (`productId`, qty, snapshot name); expand = live composition каталога.
-- Карандаш на каждой строке → Product/Module/Material form dialog (как BOM `bom-edit`). Пустой product/module (нет ›): клик открывает тот же редактор.
+- Карандаш на каждой строке → Product/Module/Material Form dialog (как BOM om-edit). Клик по строке — только select/expand (TZ-QA-445F); редактирование **только** через карандаш.
 - Hint под «Состав»: «Кликни строку — выбрать и раскрыть · карандаш — изменить в каталоге».
 - Empty: «В заказе нет изделий»; 404 каталога — warn на узле, без падения.
 - **Не** показывать unitPrice / прайс КП в дереве (rails D4).

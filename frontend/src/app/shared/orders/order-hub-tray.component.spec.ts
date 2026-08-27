@@ -429,4 +429,47 @@ describe('OrderHubTrayComponent TZ-DESK-416 production link', () => {
     expect(tray.querySelector('[data-test="desk-ship-button"]')).toBeTruthy();
     expect(tray.querySelector('[data-test="order-shipment-block"]')).toBeNull();
   });
+
+  it('TZ-QA-445F: composition row select does not open catalog edit', () => {
+    const productsFindById = jest
+      .fn()
+      .mockReturnValue(of({ ok: false, error: { message: 'skip' } }));
+    TestBed.overrideProvider(ProductsService, {
+      useValue: { findById: productsFindById },
+    });
+    const fixture = TestBed.createComponent(OrderHubTrayComponent);
+    fixture.componentRef.setInput('order', {
+      ...ORDER,
+      items: [{ productId: 'p1', productName: 'Навес АКП ДПС', quantity: 3, unitPrice: 0 }],
+    });
+    fixture.componentRef.setInput('mode', 'desk');
+    fixture.detectChanges();
+
+    const cmp = fixture.componentInstance as unknown as {
+      compositionSelectedId: { (): string | null };
+      onCompositionSelect: (ev: {
+        node: { _id: string; name: string; kind: 'product'; quantity: number; children: [] };
+        parent: null;
+        depth: number;
+      }) => void;
+      onCompositionEdit: (ev: {
+        node: { _id: string; name: string; kind: 'product'; quantity: number; children: [] };
+        parent: null;
+        depth: number;
+      }) => void;
+    };
+    const node = {
+      _id: 'p1',
+      name: 'Навес АКП ДПС',
+      kind: 'product' as const,
+      quantity: 3,
+      children: [] as [],
+    };
+    cmp.onCompositionSelect({ node, parent: null, depth: 0 });
+    expect(cmp.compositionSelectedId()).toBe('p1');
+    expect(productsFindById).not.toHaveBeenCalled();
+
+    cmp.onCompositionEdit({ node, parent: null, depth: 0 });
+    expect(productsFindById).toHaveBeenCalledWith('p1');
+  });
 });

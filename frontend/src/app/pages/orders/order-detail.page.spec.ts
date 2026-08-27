@@ -283,9 +283,10 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       return fixture;
     }
 
-    it('navigates to the product card when a leaf product row is clicked', async () => {
+    it('TZ-QA-445F: row click selects without navigating or opening catalog edit', async () => {
       const fixture = await renderLeafProduct();
       const cmp = fixture.componentInstance as unknown as {
+        selectedId: { (): string | null };
         onSelect: (ev: {
           node: CompositionTreeNode;
           parent: CompositionTreeNode | null;
@@ -294,7 +295,8 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       };
       const leaf = { ...productTree, children: [] as CompositionTreeNode[] };
       cmp.onSelect({ node: leaf, parent: null, depth: 0 });
-      expect(routerNavigate).toHaveBeenCalledWith(['/products', 'prod-1']);
+      expect(cmp.selectedId()).toBe('prod-1');
+      expect(routerNavigate).not.toHaveBeenCalled();
       expect(productsFindById).not.toHaveBeenCalled();
     });
 

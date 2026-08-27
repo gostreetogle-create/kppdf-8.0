@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ChevronDown, LucideAngularModule } from 'lucide-angular';
 
 import {
@@ -38,7 +38,6 @@ import {
 } from './order-composition-forest';
 import {
   openCatalogEditFromTree,
-  openCatalogViewFromTree,
   type CatalogCompositionEditDeps,
 } from './open-catalog-composition-edit';
 import type { BoardLane, Order, OrderItem, OrderStatus } from '../services/orders.service';
@@ -729,7 +728,6 @@ export class OrderHubTrayComponent implements OnInit {
   private shipmentsLoadSeq = 0;
 
   private readonly catalog = inject(ProductModulesService);
-  private readonly router = inject(Router);
   private readonly products = inject(ProductsService);
   private readonly materials = inject(MaterialsService);
   private readonly supply = inject(SupplyTaskService);
@@ -860,9 +858,9 @@ export class OrderHubTrayComponent implements OnInit {
     this.loadComposition();
   }
 
+  /** TZ-QA-445F: row = select/expand only; edit only via pencil (desk: no navigate). */
   protected onCompositionSelect(ev: CompositionTreeSelectEvent): void {
     this.compositionSelectedId.set(ev.node._id);
-    openCatalogViewFromTree(this.router, ev);
   }
 
   protected onCompositionEdit(ev: CompositionTreeEditEvent): void {
