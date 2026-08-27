@@ -38,7 +38,11 @@ export class QuotationOutputService {
     id: string,
     user?: OutputUser,
   ): Promise<{ buffer: Buffer; number: string }> {
-    const rendered = await this.renderQuotation(id, user);
+    // TZ-QA-445C: always rebuild from current quotation items so product
+    // photos are not lost behind a stale templateSnapshot.html freeze.
+    const rendered = await this.renderQuotation(id, user, {
+      preferLiveRebuild: true,
+    });
     const browser = await this.getBrowser();
     let page: Page | undefined;
     try {
@@ -121,6 +125,7 @@ export class QuotationOutputService {
   private async renderQuotation(
     id: string,
     user?: OutputUser,
+    opts?: { preferLiveRebuild?: boolean },
   ): Promise<RenderedQuotation> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`КП ${id} не найдено`);
@@ -141,7 +146,12 @@ export class QuotationOutputService {
       Record<string, unknown> | undefined;
     const snapshotHtml = snapshot?.['html'];
     const templateId = this.templateIdOf(quotation.templateId, snapshot);
-    if (typeof snapshotHtml === 'string' && snapshotHtml.trim() && templateId) {
+    if (
+      !opts?.preferLiveRebuild &&
+      typeof snapshotHtml === 'string' &&
+      snapshotHtml.trim() &&
+      templateId
+    ) {
       return {
         quotation,
         html: snapshotHtml,

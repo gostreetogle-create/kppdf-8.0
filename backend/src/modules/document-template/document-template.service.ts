@@ -941,7 +941,8 @@ export class DocumentTemplateService {
     const pageNumberCss = template.pageNumbering
       ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
       : '';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
+    const baseHref = this.documentPublicOrigin();
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
   }
 
   private renderQuotationTerms(
@@ -1912,6 +1913,9 @@ export class DocumentTemplateService {
     const pageWidth = isLandscape ? '297mm' : '210mm';
     const pageMinHeight = isLandscape ? '210mm' : '297mm';
     const contentStyles = this.buildDocumentContentStyles(template);
+    // TZ-QA-445C: absolute base so /uploads images resolve in srcdoc iframes
+    // and headless PDF (same contract as quotation-output.withPdfBaseHref).
+    const baseHref = this.documentPublicOrigin();
     const css = `
       <style>
         @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
@@ -2021,7 +2025,20 @@ export class DocumentTemplateService {
     const pageNumberCss = template.pageNumbering
       ? '<style>.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}</style>'
       : '';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtml(baseHref)}/"><title>${escapeHtml(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
+  }
+
+  /** Public origin for document `<base href>` (uploads in PDF / srcdoc). */
+  private documentPublicOrigin(): string {
+    const configured =
+      process.env.KPPDF_PUBLIC_ORIGIN ??
+      process.env.PUBLIC_BASE_URL ??
+      'http://127.0.0.1:3000';
+    try {
+      return new URL(configured).origin;
+    } catch {
+      return 'http://127.0.0.1:3000';
+    }
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

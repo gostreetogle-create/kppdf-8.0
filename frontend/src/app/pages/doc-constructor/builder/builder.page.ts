@@ -552,6 +552,8 @@ export class BuilderPage {
 
   // Auto-save Subject — grouped by _id, debounced per group.
   private readonly save$ = new Subject<{ _id: string; patch: Partial<TemplateBlock> }>();
+  /** TZ-QA-445C: latest unsaved patch per block — flushed before preview build. */
+  private readonly pendingPatches = new Map<string, Partial<TemplateBlock>>();
 
   // D.2.3 nit (code-reviewer): monotonic counter for the 2s 'saved'→'idle'
   // timer revert. Without this guard, a stale timer from an earlier 'saved'
@@ -687,19 +689,30 @@ export class BuilderPage {
     //    the backend 400s those, so scrub them here too.
     this.save$
       .pipe(
-        tap(() => this.saveStatus.set('saving')),
+        tap(({ _id, patch }) => {
+          this.pendingPatches.set(_id, this.mergePendingPatch(_id, patch));
+          this.saveStatus.set('saving');
+        }),
         groupBy((p) => p._id),
         mergeMap((group$) =>
           group$.pipe(
             debounceTime(1500),
-            switchMap(({ _id, patch }) =>
-              this.blocksSvc.update(_id, this.sanitizeOutgoingPatch(patch)),
-            ),
+            switchMap(({ _id }) => {
+              const patch = this.pendingPatches.get(_id);
+              if (!patch) return of(null);
+              return this.blocksSvc.update(_id, this.sanitizeOutgoingPatch(patch)).pipe(
+                tap((res) => {
+                  if (res?.ok) this.pendingPatches.delete(_id);
+                }),
+              );
+            }),
           ),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe((res) => this.handleSaveResult(res));
+      .subscribe((res) => {
+        if (res) this.handleSaveResult(res);
+      });
 
     // 2) Watch route param :id + query params (Phase E.3: ?source + ?sourceId).
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
@@ -709,6 +722,7 @@ export class BuilderPage {
       // filter back to «Все». A category selected for template A is a UX
       // dead-end on template B (B may have no blocks in that category).
       this.textFilter.reset();
+      this.pendingPatches.clear();
       this.blocks.set([]);
       this.template.set(null);
       this.selectedId.set(null);
@@ -789,7 +803,8 @@ export class BuilderPage {
         });
     }
 
-    // TZ-DOC-525: preview mode → server build with sample org
+    // TZ-DOC-525 / TZ-QA-445C: preview → flush pending autosaves, then server
+    // build; rewrite /uploads for srcdoc so photos match the editor.
     effect(() => {
       const mode = this.viewMode();
       const tid = this.templateId();
@@ -807,21 +822,81 @@ export class BuilderPage {
             ? String(rawOrg)
             : undefined;
       this.previewBuildLoading.set(true);
-      this.templatesSvc.build(tid, organizationId ? { organizationId } : {}).subscribe({
-        next: (res) => {
-          this.previewBuildLoading.set(false);
-          if (res.ok && typeof res.data === 'string') {
-            this.previewBuildHtml.set(res.data);
-          } else {
+      this.flushPendingSaves$()
+        .pipe(
+          switchMap(() => this.templatesSvc.build(tid, organizationId ? { organizationId } : {})),
+          takeUntilDestroyed(this.destroyRef),
+        )
+        .subscribe({
+          next: (res) => {
+            this.previewBuildLoading.set(false);
+            if (res.ok && typeof res.data === 'string') {
+              this.previewBuildHtml.set(this.withPreviewBaseHref(res.data));
+            } else {
+              this.previewBuildHtml.set(null);
+            }
+          },
+          error: () => {
+            this.previewBuildLoading.set(false);
             this.previewBuildHtml.set(null);
-          }
-        },
-        error: () => {
-          this.previewBuildLoading.set(false);
-          this.previewBuildHtml.set(null);
-        },
-      });
+          },
+        });
     });
+  }
+
+  /**
+   * TZ-QA-445C: flush debounced block PATCHes before preview so the server
+   * build matches the editor canvas (not the last-saved snapshot).
+   */
+  private flushPendingSaves$() {
+    const entries = [...this.pendingPatches.entries()];
+    if (entries.length === 0) return of(true);
+    this.saveStatus.set('saving');
+    return forkJoin(
+      entries.map(([_id, patch]) =>
+        this.blocksSvc.update(_id, this.sanitizeOutgoingPatch(patch)).pipe(
+          tap((res) => {
+            if (res.ok) this.pendingPatches.delete(_id);
+            this.handleSaveResult(res);
+          }),
+          catchError(() => of(null)),
+        ),
+      ),
+    ).pipe(map(() => true));
+  }
+
+  private mergePendingPatch(_id: string, patch: Partial<TemplateBlock>): Partial<TemplateBlock> {
+    const prev = this.pendingPatches.get(_id) ?? {};
+    const merged: Partial<TemplateBlock> = { ...prev, ...patch };
+    if (prev.settings || patch.settings) {
+      merged.settings = {
+        ...((prev.settings as Record<string, unknown> | undefined) ?? {}),
+        ...((patch.settings as Record<string, unknown> | undefined) ?? {}),
+      } as TemplateBlock['settings'];
+    }
+    if (prev.layout || patch.layout) {
+      merged.layout = {
+        ...(prev.layout ?? {}),
+        ...(patch.layout ?? {}),
+      } as TemplateBlock['layout'];
+    }
+    return merged;
+  }
+
+  /** Make /uploads resolve inside about:srcdoc iframes (browser preview). */
+  private withPreviewBaseHref(html: string): string {
+    const origin =
+      typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
+    if (!origin) return html;
+    const rewritten = html.replace(/(["'(])\/uploads\//g, `$1${origin}/uploads/`);
+    if (/<base\s/i.test(rewritten)) {
+      return rewritten.replace(/<base\s[^>]*>/i, `<base href="${origin}/">`);
+    }
+    const baseTag = `<base href="${origin}/">`;
+    if (/<head[^>]*>/i.test(rewritten)) {
+      return rewritten.replace(/<head[^>]*>/i, (open) => `${open}${baseTag}`);
+    }
+    return `<!DOCTYPE html><html><head>${baseTag}</head><body>${rewritten}</body></html>`;
   }
 
   /** Phase E.3: source context (order/contract ID pre-binding for future expansion). */

@@ -60,7 +60,7 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
     else process.env.PUPPETEER_EXECUTABLE_PATH = originalExecutable;
   });
 
-  it('renders the saved snapshot to PDF and keeps one browser instance', async () => {
+  it('rebuilds live HTML for PDF (ignores stale snapshot) and keeps one browser instance', async () => {
     process.env.PUPPETEER_EXECUTABLE_PATH = 'chrome-for-test';
     const page = {
       setContent: jest.fn().mockResolvedValue(undefined),
@@ -77,7 +77,18 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
         exec: jest.fn().mockResolvedValue(quotationFixture()),
       })),
     };
-    const templateService = { findById: jest.fn(), build: jest.fn() };
+    const templateService = {
+      findById: jest.fn().mockResolvedValue({
+        _id: templateId,
+        organizationId,
+      }),
+      build: jest
+        .fn()
+        .mockResolvedValue(
+          '<!doctype html><html><style>@page { size: A4; }</style><body>КП live</body></html>',
+        ),
+      assertBuildSourcesInOrganization: jest.fn().mockResolvedValue(undefined),
+    };
     const generatedDocuments = { archiveRendered: jest.fn() };
     const service = new QuotationOutputService(
       model as never,
@@ -108,10 +119,10 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
       }),
     );
     expect(page.setContent).toHaveBeenCalledWith(
-      expect.stringContaining('КП'),
+      expect.stringContaining('КП live'),
       expect.objectContaining({ timeout: 15_000 }),
     );
-    expect(templateService.build).not.toHaveBeenCalled();
+    expect(templateService.build).toHaveBeenCalled();
   });
 
   it('returns 503 when no Chromium binary is available', async () => {
@@ -124,7 +135,14 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
     };
     const service = new QuotationOutputService(
       model as never,
-      { findById: jest.fn(), build: jest.fn() } as never,
+      {
+        findById: jest.fn().mockResolvedValue({
+          _id: templateId,
+          organizationId,
+        }),
+        build: jest.fn().mockResolvedValue('<html>КП</html>'),
+        assertBuildSourcesInOrganization: jest.fn().mockResolvedValue(undefined),
+      } as never,
       { archiveRendered: jest.fn() } as never,
     );
 

@@ -791,4 +791,35 @@ describe('BuilderPage', () => {
       expect(comp.backgroundImages()).toEqual(['/c.png']);
     });
   });
+
+  describe('TZ-QA-445C preview base href + flush', () => {
+    it('withPreviewBaseHref rewrites /uploads and replaces base for srcdoc', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as {
+        withPreviewBaseHref: (html: string) => string;
+      };
+      const html =
+        '<!DOCTYPE html><html><head><base href="http://127.0.0.1:3000/"><title>T</title></head><body><img src="/uploads/x.webp"></body></html>';
+      const out = comp.withPreviewBaseHref(html);
+      expect(out).toContain(`<base href="${window.location.origin}/">`);
+      expect(out).toContain(`src="${window.location.origin}/uploads/x.webp"`);
+      expect(out).not.toContain('href="http://127.0.0.1:3000/"');
+    });
+
+    it('flushPendingSaves$ PATCHes queued blocks before completing', () => {
+      const fixture = TestBed.createComponent(BuilderPage);
+      const comp = fixture.componentInstance as unknown as {
+        pendingPatches: Map<string, Partial<TemplateBlock>>;
+        flushPendingSaves$: () => import('rxjs').Observable<boolean>;
+      };
+      comp.pendingPatches.set('b1', { content: 'hello' });
+      let done = false;
+      comp.flushPendingSaves$().subscribe(() => {
+        done = true;
+      });
+      expect(blocksSvcUpdate).toHaveBeenCalledWith('b1', { content: 'hello' });
+      expect(done).toBe(true);
+      expect(comp.pendingPatches.has('b1')).toBe(false);
+    });
+  });
 });

@@ -142,6 +142,7 @@ describe('DocumentTemplateService print bindings (TZ-ORG-ASSETS-302)', () => {
 
     expect(html).toContain('src="/uploads/org/logo.png"');
     expect(html).toContain('src="/uploads/org/signature.png"');
+    expect(html).toContain('<base href="http://127.0.0.1:3000/">');
     expect(html).toContain('г. Москва, ул. Примерная, 1');
     expect(html).toContain('QTN-2026-001');
     expect(html).toContain('ООО Заказчик');

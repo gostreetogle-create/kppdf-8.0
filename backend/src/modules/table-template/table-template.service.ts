@@ -252,6 +252,7 @@ export class TableTemplateService implements OnModuleInit {
               c.format,
               photoOptions,
               presentation,
+              c.key,
             );
             const pad =
               presentation.density === 'compact'
@@ -443,7 +444,37 @@ export class TableTemplateService implements OnModuleInit {
     format?: string,
     photoOptions?: TablePhotoOptions,
     rowPresentation?: TableRowPresentation,
+    columnKey?: string,
   ): string {
+    // Photo columns: accept {kind:'image'}, real /uploads URL strings, and
+    // neutralize legacy sample placeholders like `[img]` (TZ-QA-445C).
+    if (columnKey && this.isPhotoColumn(columnKey)) {
+      if (
+        typeof value === 'object' &&
+        value !== null &&
+        (value as { kind?: string }).kind === 'image'
+      ) {
+        return this.formatImageCell(
+          (value as { url?: unknown }).url,
+          photoOptions,
+          rowPresentation?.photoFit,
+        );
+      }
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed || /^\[(?:img|image|фото|photo)\]$/i.test(trimmed)) {
+          return '<span class="pi-photo-empty">Нет фото</span>';
+        }
+        return this.formatImageCell(
+          trimmed,
+          photoOptions,
+          rowPresentation?.photoFit,
+        );
+      }
+      if (value === null || value === undefined || value === '') {
+        return '<span class="pi-photo-empty">Нет фото</span>';
+      }
+    }
     if (value === null || value === undefined || value === '') {
       return '';
     }

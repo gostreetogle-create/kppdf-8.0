@@ -34,6 +34,34 @@ describe('TableTemplateService (TZ-SALES-335)', () => {
     expect(html).toContain('>3</td>');
   });
 
+  it('TZ-QA-445C: photo column string URL becomes <img>; [img] placeholder → Нет фото', async () => {
+    const model = {
+      findById: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({
+          _id: 'table-1',
+          columns: [
+            { key: 'photo', label: 'Фото', type: 'text', align: 'center' },
+            { key: 'productName', label: 'Наименование', type: 'text', align: 'left' },
+          ],
+        }),
+      }),
+    } as unknown as Model<TableTemplateDocument>;
+    const service = new TableTemplateService(model);
+
+    const withUrl = await service.preview('507f1f77bcf86cd799439011', [
+      ['/uploads/stand.webp', 'Стенд'],
+    ]);
+    expect(withUrl).toContain('<img src="/uploads/stand.webp"');
+    expect(withUrl).not.toContain('[img]');
+
+    const placeholder = await service.preview('507f1f77bcf86cd799439011', [
+      ['[img]', 'Стенд'],
+    ]);
+    expect(placeholder).toContain('Нет фото');
+    expect(placeholder).not.toContain('[img]');
+    expect(placeholder).not.toContain('<img');
+  });
+
   it('does not render an unsafe image URL', async () => {
     const model = {
       findById: jest.fn().mockReturnValue({
