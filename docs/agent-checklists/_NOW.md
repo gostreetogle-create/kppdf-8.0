@@ -2,13 +2,13 @@
 
 > Правда для resume. Лимит: 120 строк.
 
-updated_at: 2026-08-26T20:00:00+03:00
+updated_at: 2026-08-26T20:44:27+03:00
 
 ## ACTIVE / LIVE
 
-**UX-444 A+B** — `tasks/PROMPT-FREEBUFF-UX-444-AB.md`  
-- TZ-UX-444A — PiStatusBanner + order-detail  
-- TZ-UX-444B — where-used product/module **DONE** (13/13 · tsc PASS · pushed)  
+**UX-444 C+D** — `tasks/PROMPT-FREEBUFF-UX-444-CD.md`
+- TZ-UX-444C — catalog banner + info links (depends on A)
+- TZ-UX-444D — empty thumbnail hatch (after C)
 
 **NEXT:** 444C → 444D (`PROMPT-FREEBUFF-UX-444-CD.md`)
 
@@ -21,12 +21,19 @@ updated_at: 2026-08-26T20:00:00+03:00
 
 ## DONE (не трогать)
 
-TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444B**
+TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444A** · **UX-444B**
 
 ## Checkpoint 2026-08-26T19:37:10+03:00 · TZ-DOC-443 DONE
 - DONE: setup и builder inspector показывают scoped system + current-organization categories; `+` открывает shared category form inline и сразу выбирает результат; duplicate mode без category сохранён.
 - Gates: FE tsc PASS; focused Jest 4 suites / 63 tests PASS; targeted ESLint + Prettier PASS; diff-check PASS.
 - Residual baseline: full FE lint 208 pre-existing errors + 17 warnings; token checker 35 pre-existing CSS violations; architecture 2 pre-existing materials/products violations.
 - Archive: `tasks/_archive/2026-08/TZ-DOC-443.done.md`; lock `.mimocode/locks/TZ-DOC-443-template-setup-category-plus.lock`; active marker removed; shared prompt moved to `prompts-spent`. Deploy: NO.
+
+## Checkpoint 2026-08-26T20:44:27+03:00 · TZ-UX-444A DONE
+- DONE: shared `PiStatusBanner` with four tones, optional action, `role=status`; order-detail maps draft/cancelled/active lifecycle and hides shipped/delivered; kit overview has a live example.
+- Gates: FE tsc PASS; focused Jest 2 suites / 23 tests PASS; owned ESLint + Prettier + diff-check PASS; `build:dev` PASS.
+- Residual baseline: full FE lint FAIL (208 errors + 17 warnings outside owned files); UI token checker FAIL (35 existing proposal/block-renderer CSS violations); architecture FAIL (2 existing materials/products cross-page imports); full Jest FAIL (7 existing baseline failures, new zone green).
+- Browser smoke: dev server `127.0.0.1:4204` served `/kit/overview`, auth guard redirected to `/login`; demo login returned backend HTTP 500 because local backend was unavailable. No product-detail/DOC-443 files touched.
+- Archive: `tasks/_archive/2026-08/TZ-UX-444A.done.md`; lock `.mimocode/locks/TZ-UX-444A-status-banner.lock`; A+B prompt moved to `tasks/_archive/2026-08/prompts-spent/`; deploy: NO.
 
 deploy_docs: `deploy/synology/README.md`

@@ -1,14 +1,13 @@
 # QUEUE-LIVE
 
-> **DEPLOY-READY** — можно: «сделай деплой по документации»
+> Волна **UX-444 C+D** — prompt `tasks/PROMPT-FREEBUFF-UX-444-CD.md` (A+B archived DONE)
+> История цены: park `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md` (гибко)
 
-Штамп: `docs/agent-checklists/DEPLOY-READY.md` = **READY** @ `631f96e0`  
-Evidence: `docs/agent-checklists/PRE-DEPLOY-2026-08-26.md`
+Штамп deploy: `docs/agent-checklists/DEPLOY-READY.md` @ `631f96e0` (не блокирует UI-волну)
 
 | # | TZ | Notes |
 |---|-----|--------|
-| 1 | `TZ-DOC-443-template-setup-category-plus.md` | Freebuff-1 · `PROMPT-FREEBUFF-DOC-KP-443.md` |
-| 2 | `TZ-KP-443-orientation-from-template.md` | Freebuff-2 · параллельно |
-| — | warm deploy | когда PO скажет · `deploy/synology/README.md` |
+| 1 | `TZ-UX-444C-catalog-banner-info-links.md` | после A+B · зависит от PiStatusBanner |
+| 2 | `TZ-UX-444D-empty-thumb-hatch.md` | после C (или когда product-detail свободен) |
 
-Парк: DESK-441 (Да/Нет PO).
+Парк: DESK-441 · PRICE-HIST (гибко).

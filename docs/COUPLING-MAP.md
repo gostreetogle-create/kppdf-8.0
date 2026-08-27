@@ -72,6 +72,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | `Shipment.status` | `ship()` → `scheduled`; `dispatch()` → `in_transit`; `delivered`; **`cancelShipment()` → `cancelled`** (433) | `/shipping`, desk tray | Отмена только до dispatch; отменённые в tray не считаются активной отгрузкой |
 | `DeskNote.anchorOrderId` | `/desk` блокнот (408) | `/desk` блокнот | ObjectId → Order; anchorLineId — строка (productId/lineId), anchorModuleId — ObjectId → ProductModule; hard delete |
 | composition / BOM | каталог | Гант | live каталог |
+| `DocumentTemplate.categoryId` | `/doc-constructor/templates` create + duplicate; `/doc-constructor/builder/:id` inspector | templates registry, setup dialog, builder inspector | Active assignable scope = system ∪ current organization from `list({ activeOnly: true })`; duplicate keeps source category; create and inspector may write the selected category id |
 | остаток qty | movements | склад | SoT = `StorageItem` |
 
 ## 4. Экран → поля
