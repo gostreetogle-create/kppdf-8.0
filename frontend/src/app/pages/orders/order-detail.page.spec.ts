@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { BehaviorSubject, of } from 'rxjs';
 
 import { OrderDetailPage } from './order-detail.page';
@@ -14,6 +14,7 @@ import {
 import { ProductsService } from '../../shared/services/products.service';
 import { MaterialsService } from '../../shared/services/materials.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
+import { PiStatusBannerComponent } from '../../shared/ui/status-banner';
 import { API_BASE_URL } from '../../core/api.tokens';
 
 describe('OrderDetailPage (TZ-ORDERS-302)', () => {
@@ -67,6 +68,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
   const productsFindById = jest.fn();
   const modulesFindById = jest.fn();
   const materialsFindById = jest.fn();
+  const routerNavigate = jest.fn().mockResolvedValue(true);
 
   beforeEach(async () => {
     paramMap$.next(convertToParamMap({ id: 'ord-1' }));
@@ -76,6 +78,8 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     productsFindById.mockReset();
     modulesFindById.mockReset();
     materialsFindById.mockReset();
+    routerNavigate.mockReset();
+    routerNavigate.mockResolvedValue(true);
     findById.mockReturnValue(of({ ok: true, data: order }));
     getProductTree.mockReturnValue(of({ ok: true, data: productTree }));
     productsFindById.mockReturnValue(of({ ok: true, data: { _id: 'prod-1', name: 'Стеллаж А' } }));
@@ -100,6 +104,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
         provideHttpClientTesting(),
         { provide: API_BASE_URL, useValue: '/api' },
         { provide: ActivatedRoute, useValue: { paramMap: paramMap$.asObservable() } },
+        { provide: Router, useValue: { navigate: routerNavigate } },
         { provide: OrdersService, useValue: { findById, createStubProposal } },
         { provide: ProductModulesService, useValue: { getProductTree, findById: modulesFindById } },
         { provide: ProductsService, useValue: { findById: productsFindById } },
@@ -108,7 +113,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       ],
     })
       .overrideComponent(OrderDetailPage, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiStatusBannerComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
   });
@@ -144,6 +149,51 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     const json = JSON.stringify(roots);
     expect(json).not.toContain('9999');
     expect(json).not.toContain('unitPrice');
+  });
+
+  it('shows a warning status banner for a draft order', async () => {
+    findById.mockReturnValue(of({ ok: true, data: { ...order, status: 'draft' } }));
+    const fixture = TestBed.createComponent(OrderDetailPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-test="pi-status-banner"]');
+    expect(banner?.getAttribute('data-tone')).toBe('warning');
+    expect(banner?.textContent).toContain('Черновик — заказ ещё не подтверждён');
+  });
+
+  it('uses the info tone for a confirmed order', async () => {
+    const fixture = TestBed.createComponent(OrderDetailPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-test="pi-status-banner"]');
+    expect(banner?.getAttribute('data-tone')).toBe('info');
+    expect(banner?.textContent).toContain('Подтверждён');
+  });
+
+  it('shows a destructive status banner for a cancelled order', async () => {
+    findById.mockReturnValue(of({ ok: true, data: { ...order, status: 'cancelled' } }));
+    const fixture = TestBed.createComponent(OrderDetailPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    const banner = fixture.nativeElement.querySelector('[data-test="pi-status-banner"]');
+    expect(banner?.getAttribute('data-tone')).toBe('destructive');
+    expect(banner?.textContent).toContain('Заказ отменён');
+  });
+
+  it('hides the status banner for a shipped order', async () => {
+    findById.mockReturnValue(of({ ok: true, data: { ...order, status: 'shipped' } }));
+    const fixture = TestBed.createComponent(OrderDetailPage);
+    fixture.detectChanges();
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-test="pi-status-banner"]')).toBeNull();
   });
 
   it('shows honest empty when order has no lines', async () => {
@@ -233,7 +283,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       return fixture;
     }
 
-    it('opens product editor when a leaf product row is clicked', async () => {
+    it('navigates to the product card when a leaf product row is clicked', async () => {
       const fixture = await renderLeafProduct();
       const cmp = fixture.componentInstance as unknown as {
         onSelect: (ev: {
@@ -244,7 +294,8 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       };
       const leaf = { ...productTree, children: [] as CompositionTreeNode[] };
       cmp.onSelect({ node: leaf, parent: null, depth: 0 });
-      expect(productsFindById).toHaveBeenCalledWith('prod-1');
+      expect(routerNavigate).toHaveBeenCalledWith(['/products', 'prod-1']);
+      expect(productsFindById).not.toHaveBeenCalled();
     });
 
     it('opens product editor from the pencil on a leaf product', async () => {

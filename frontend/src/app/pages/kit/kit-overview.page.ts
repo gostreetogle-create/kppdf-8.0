@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PiStatusBannerComponent } from '../../shared/ui/status-banner';
 
 /**
  * Kit overview — entry point для Paper & Ink UI Kit.
@@ -10,7 +11,7 @@ import { RouterLink } from '@angular/router';
   selector: 'app-kit-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, PiStatusBannerComponent],
   template: `
     <div class="pi-page-frame">
       <h1 class="font-display text-3xl font-bold tracking-[-0.02em] mb-2">Paper & Ink · UI Kit</h1>
@@ -70,6 +71,21 @@ import { RouterLink } from '@angular/router';
           >
         </div>
       </div>
+
+      <section class="mt-section" aria-labelledby="status-banner-heading">
+        <div class="flex items-baseline gap-form-field">
+          <span class="eyebrow">07</span>
+          <h2 id="status-banner-heading" class="font-title-sm text-ink m-0">Lifecycle status</h2>
+        </div>
+        <p class="text-xs text-muted-foreground mt-form-row mb-form-row">
+          Постоянный акцент состояния записи, не ошибка загрузки и не краткий Toast.
+        </p>
+        <app-pi-status-banner
+          tone="warning"
+          message="Черновик — запись ещё не опубликована"
+          data-test="kit-status-banner-demo"
+        />
+      </section>
 
       <div class="mt-8 hairline-t pt-6">
         <h3 class="eyebrow mb-3">Агентам</h3>

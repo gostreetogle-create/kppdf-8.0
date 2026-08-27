@@ -5,6 +5,7 @@
 > При расхождении: правь kit-комментарий **и** этот файл в одном коммите.
 > TZ: `tasks/_archive/2026-08/TZ-UI-ROI-522.done.md`.
 > **P0 шпаргалка импортов/токенов:** [`AI-UI-CONTRACT.md`](./AI-UI-CONTRACT.md).
+> **Приоритет:** этот файл задаёт Stop-rules; исполняемые токены и primitives живут в `frontend/src/styles.css`; затем применяются `ui-density-canon.md`, `paper-and-ink.md`, `design-spec.md`.
 
 ## Перед любым UI-действием
 
@@ -26,6 +27,7 @@
 | PiSelect | `shared/ui/select/select.component.ts` | Выбор из статического списка опций внутри формы | Динамические/поисковые списки (OverflowSelect), навигация, меню |
 | PiButton | `ButtonComponent` (`shared/ui/button/button.component.ts`) | Любая кнопка/действие в canonical UI | Свой `<button>` с ручными классами вместо компонента |
 | ErrorBanner | `ErrorBannerComponent` (`shared/ui/error-banner/error-banner.component.ts`) | Баннер ошибки (`role="alert"`), string \| `{message, canRetry?}` \| null | Успех/предупреждение (Toast), ошибка валидации поля |
+| **StatusBanner** | `PiStatusBannerComponent` (`shared/ui/status-banner/`) | Постоянный lifecycle-акцент записи (`role="status"`): черновик, в производстве, отменён | Ошибка загрузки (ErrorBanner), краткая обратная связь (Toast), модальное действие (Dialog) |
 | Skeleton | `PiSkeletonComponent` (`shared/ui/skeleton/pi-skeleton.component.ts`) | Placeholder загрузки контента | Пустые состояния (EmptyState), ошибки |
 | Toast | `PiToastService` (`shared/ui/toast/pi-toast.service.ts`) | Краткое уведомление success/error/warning (Sonner-style) | Долгие сообщения, confirm-диалоги (AlertDialog) |
 | FormField | `FormFieldComponent` (`shared/ui/form-field/form-field.component.ts`) | Обёртка label+error+hint для form-контролов | Standalone без Input/Select/Checkbox |

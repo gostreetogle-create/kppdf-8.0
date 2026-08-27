@@ -104,6 +104,8 @@ Read-only expand на списке `/orders`:
 ## Карточка `/orders/:id` (TZ-ORDERS-302 + 303 + 337)
 
 - Chrome: «Заказ №…» (`PiPageChrome` + H1). FactStack title **«Заказ»** (не «Паспорт заказа»).
+- Lifecycle под заголовком: `app-pi-status-banner` — warning для черновика, destructive для отменённого, info для подтверждённого/производства/готовности; для отгруженного и доставленного заказов полоса скрыта.
+- StatusBanner — постоянный акцент страницы (`role="status"`), не замена ErrorBanner для ошибок загрузки и не Toast для краткой обратной связи.
 - Meta под заголовком: **Заказчик** (name) + **Объект** (site name/address), если populate есть.
 - Блок «Позиции»: простые строки — имя изделия · Ответственный · Отгрузка (без цен).
 - Корни дерева = линии заказа (`productId`, qty, snapshot name); expand = live composition каталога.
@@ -189,6 +191,7 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 | **TZ-ORDERS-HUB-303** | Expand Снабжение/Производство/Документы + `/supply?orderId=` + `/production?orderId=` — DONE |
 | **TZ-ORDERS-HUB-304** | Готовность + Склад + shipping stub — DONE                                                    |
 | **TZ-DESK-428** | Shared tray: spacing `p-4`/`gap-5`/`pb-4` + disclosure chevron (rotate) / hover / бейдж «раскрыть-свернуть» — parity с `/desk` |
+| **TZ-UX-444A** | Shared `PiStatusBanner` + lifecycle adoption на `/orders/:id`: draft/cancelled обязательны; shipped/delivered скрыты |
 
 ## Особенности
 
@@ -199,4 +202,4 @@ listRes → data → filteredRows → sortedRows → paginatedRows
 
 ---
 
-_Обновлено: 2026-08-15 (TZ-ORDERS-337)._
+_Обновлено: 2026-08-26 (TZ-UX-444A)._

@@ -29,6 +29,7 @@ import { SupplyTaskService } from '../../shared/services/pi-supply.service';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
 import { PiToastService } from '../../shared/ui/toast';
 import { PiFactCardComponent, PiFactStackComponent } from '../../shared/ui/fact-card';
+import { PiStatusBannerComponent, type PiStatusBannerTone } from '../../shared/ui/status-banner';
 import { ProductsService } from '../../shared/services/products.service';
 import { MaterialsService } from '../../shared/services/materials.service';
 import {
@@ -71,6 +72,7 @@ type PopulatedOwner =
     CompositionTreeComponent,
     PiFactCardComponent,
     PiFactStackComponent,
+    PiStatusBannerComponent,
   ],
   template: `
     <app-pi-page-chrome [crumbs]="crumbs()" data-test="order-detail-nav" />
@@ -102,6 +104,13 @@ type PopulatedOwner =
             Заказ №{{ o.number }}
           </h1>
         </div>
+        @if (statusBannerTone(o.status); as tone) {
+          <app-pi-status-banner
+            [tone]="tone"
+            [message]="statusBannerMessage(o.status)"
+            data-test="order-detail-status-banner"
+          />
+        }
         <app-pi-fact-stack title="Заказ" headingId="order-facts" dataTest="order-detail-facts">
           <app-pi-fact-card label="Номер" [value]="'№' + o.number" [mono]="true" />
           <app-pi-fact-card label="Клиент" [value]="partyLine() ?? '—'" />
@@ -380,6 +389,35 @@ export class OrderDetailPage {
 
   protected statusLabel(status: Order['status']): string {
     return ORDER_STATUS_LABELS[status] ?? status;
+  }
+
+  protected statusBannerTone(status: Order['status']): PiStatusBannerTone | null {
+    switch (status) {
+      case 'draft':
+        return 'warning';
+      case 'cancelled':
+        return 'destructive';
+      case 'confirmed':
+      case 'in_production':
+      case 'ready':
+        return 'info';
+      case 'shipped':
+      case 'delivered':
+        return null;
+      default:
+        return null;
+    }
+  }
+
+  protected statusBannerMessage(status: Order['status']): string {
+    switch (status) {
+      case 'draft':
+        return 'Черновик — заказ ещё не подтверждён';
+      case 'cancelled':
+        return 'Заказ отменён';
+      default:
+        return this.statusLabel(status);
+    }
   }
 
   protected formatOrderDate(date: string | undefined): string {

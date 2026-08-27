@@ -14,6 +14,7 @@
 | Примитив | Import | Selector / service |
 |----------|--------|-------------------|
 | **PiButton** | `import { ButtonComponent } from '../../shared/ui/button/button.component'` | `<app-pi-button variant="default\|secondary\|outline\|ghost\|link\|destructive" size="sm\|md\|lg\|icon">` |
+| **PiStatusBanner** | `import { PiStatusBannerComponent } from '../../shared/ui/status-banner'` | `<app-pi-status-banner tone="warning\|info\|destructive\|neutral">` — persistent lifecycle status |
 | **PiSelect** | `import { SelectComponent } from '../../shared/ui/select/select.component'` + `SelectOptionComponent` | `<app-pi-select>` — статический список в форме |
 | **PiOverflowSelect** | `import { PiOverflowSelectComponent } from '../../shared/ui/overflow-select/pi-overflow-select.component'` | длинный/поисковый список (>~20 опций) |
 | **Native select** | HTML `<select class="pi-native-select">` | короткий enum ≤~20 без поиска (approved fallback) |
@@ -52,6 +53,7 @@ SoT: `frontend/src/styles.css` `:root` + `@theme inline`.
 | Menu | `pi-dropdown-menu` | inline menu copy |
 | Loading | `app-pi-skeleton` | `<p>Загрузка…</p>` |
 | Load error | `app-error-banner` | `<p class="text-destructive">` |
+| Persistent lifecycle status | `app-pi-status-banner` (`role="status"`) | `app-error-banner`, Toast, or Dialog |
 | **Truncated text in fixed column** | **`truncated-label-peek`** (см. [`ui-rules.md`](./ui-rules.md) § Truncated Label Peek) | снять `overflow:hidden`; голый текст; `title`-only; PiDialog для одной ячейки |
 
 ## Truncated Label Peek (плотные колонки)
