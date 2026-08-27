@@ -25,7 +25,7 @@ function flushDictionaryLabels(httpMock: HttpTestingController): void {
   for (const request of requests) request.flush([]);
 }
 
-describe('ProductDetailPage (TZ-UX-444B / TZ-UX-444C)', () => {
+describe('ProductDetailPage (TZ-UX-444B / TZ-UX-444C / TZ-UX-444D)', () => {
   let fixture: ComponentFixture<ProductDetailPage>;
   let httpMock: HttpTestingController;
 
@@ -267,6 +267,22 @@ describe('ProductDetailPage (TZ-UX-444B / TZ-UX-444C)', () => {
     ) as HTMLElement | null;
     expect(banner?.getAttribute('data-tone')).toBe('info');
     expect(banner?.textContent).toContain('Новый');
+  });
+
+  it('renders empty thumb hatch in hero and gallery when no photos (TZ-UX-444D)', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    const hero = el.querySelector('[data-test="product-hero-photo"]') as HTMLElement;
+    expect(hero.querySelector('[data-test="pi-thumb-empty"]')).toBeTruthy();
+    expect(hero.textContent).not.toContain('Нет фото');
+
+    (
+      fixture.componentInstance as unknown as { openPhotos: { set: (v: boolean) => void } }
+    ).openPhotos.set(true);
+    fixture.detectChanges();
+
+    const gallery = el.querySelector('[data-test="product-photo-gallery"]') as HTMLElement;
+    expect(gallery.querySelector('[data-test="pi-thumb-empty"]')).toBeTruthy();
+    expect(gallery.textContent).not.toContain('Нет фото у этого товара');
   });
 
   it('shows RU empty state when where-used has no items', async () => {

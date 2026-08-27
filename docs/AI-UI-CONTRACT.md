@@ -26,6 +26,7 @@
 | **PiTable** | `import { TableComponent } from '../../shared/ui/pi-table.component'` | sortable/paginated table |
 | **Icons (нет PiIcon)** | `import { LucideAngularModule, Package, … } from 'lucide-angular'` | `<lucide-icon [img]="Package" [size]="16">` — размеры **14** meta · **16** action · **20** hero |
 | **PiSelectAddBtn** | CSS class `.pi-select-add-btn` (SoT: `src/styles.css` `@layer components`) | использовать с `<app-pi-select-add-row>` или solo (напр. supply org row). Не нужен импорт — глобальный класс. |
+| **Empty thumb** | CSS class `.pi-thumb-empty` (SoT: `src/styles.css` `@layer components`) | нет фото / gallery `@empty` — штрихованный thumb (`data-test="pi-thumb-empty"`, `aria-hidden`); не голый «Нет», не spinner. |
 
 Пути от `frontend/src/app/pages/<feature>/` — скорректируй `../` по глубине.
 
@@ -52,6 +53,7 @@ SoT: `frontend/src/styles.css` `:root` + `@theme inline`.
 | Side panel | `PiSheetService` | page-local `absolute` flyout |
 | Menu | `pi-dropdown-menu` | inline menu copy |
 | Loading | `app-pi-skeleton` | `<p>Загрузка…</p>` |
+| Empty photo thumb | `.pi-thumb-empty` | bare «Нет» / infinite spinner as empty |
 | Load error | `app-error-banner` | `<p class="text-destructive">` |
 | Persistent lifecycle status | `app-pi-status-banner` (`role="status"`) | `app-error-banner`, Toast, or Dialog |
 | **Data-link** (cross-card / where-used / warehouse) | `text-info underline decoration-dotted underline-offset-4 hover:opacity-90` | `text-primary` / `hover:text-sunrise-warm` as link chrome; gold reserved for CTA / PiButton / chrome focus |

@@ -6,21 +6,31 @@ updated_at: 2026-08-27T21:30:00+03:00
 
 ## ACTIVE / LIVE
 
-**UX-444C** CLAIMED (freebuff-1) — `tasks/_active/TZ-UX-444C.md`
-**QA-445E** DONE (freebuff-2) — `tasks/_archive/2026-08/TZ-QA-445E.done.md`
-**NEXT after C:** TZ-UX-444D · **Claude lane:** TZ-QA-445A diagnose
-**QA backlog imported:** `tasks/_backlog/qa-2026-08-27-live-bugs/` (A–H; E DONE)
+**QA-445A** CLAIMED (claude) — `tasks/_active/TZ-QA-445A.md` (diagnose: no defect → regression test)
 
-**DEPLOY-READY** @ `631f96e0` - не трогать без PO
+**DEPLOY-READY** @ `631f96e0` — не трогать без PO
 
 ## PARK
 
-- DESK-441 (`canMarkShipped` → only `ready`) - да/нет PO
-- **PRICE-HIST** - гибко → `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md`
+- DESK-441 (`canMarkShipped` → only `ready`) — да/нет PO
+- **PRICE-HIST** — гибко → `tasks/_backlog/ux-hygiene/TZ-PRICE-HIST-park.md`
+- QA-445B…H (без E) — `tasks/_backlog/qa-2026-08-27-live-bugs/`
+
+## NEXT (после 444D)
+
+QA backlog: 445B warehouse-receipt · 445C doc-template-pdf-photo · 445D proposal-pdf-401 · 445F desk-order-row · 445G desktop-import-category · 445H desktop-mcp-package
 
 ## DONE (не трогать)
 
-TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444A** · **UX-444B** · **QA-445E**
+TEST-422 · SUPPLY-443 · UX-443 · UX-441 · UX-442 · 440 wave · UX-440R · CATALOG-377 · DICT-441 · **KP-443** · **DOC-443** · **UX-444A** · **UX-444B** · **UX-444C** · **UX-444D** · **QA-445E**
+
+## Checkpoint 2026-08-27 — TZ-UX-444D DONE
+- DONE: `.pi-thumb-empty` hatch + product-detail hero/gallery empty; AI-UI-CONTRACT; 11 focused tests PASS.
+- Archive: `tasks/_archive/2026-08/TZ-UX-444D.done.md`; lock local. Deploy: NO.
+
+## Checkpoint 2026-08-27 — TZ-UX-444C DONE
+- DONE: product lifecycle banner + catalog data-links text-info; 17 focused tests PASS; commit `2beebeed` (peer 445E files co-committed — disclosed).
+- Archive: `tasks/_archive/2026-08/TZ-UX-444C.done.md`; lock local. Deploy: NO.
 
 ## Checkpoint 2026-08-27T21:30:00+03:00 · TZ-QA-445E DONE
 - DONE: chrome «Сегодня» scroll + pulse на красном маркере (не silent no-op на коротком пустом диапазоне).

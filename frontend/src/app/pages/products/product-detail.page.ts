@@ -178,7 +178,11 @@ interface WhereUsedPage {
                   />
                 </button>
               } @else {
-                <span class="text-xs text-muted-foreground px-3 text-center">Нет фото</span>
+                <span
+                  class="pi-thumb-empty"
+                  aria-hidden="true"
+                  data-test="pi-thumb-empty"
+                ></span>
               }
             </div>
             <div class="p-4 space-y-3">
@@ -278,7 +282,11 @@ interface WhereUsedPage {
                     </button>
                   </figure>
                 } @empty {
-                  <p class="text-sm text-muted-foreground">Нет фото у этого товара.</p>
+                  <span
+                    class="pi-thumb-empty"
+                    aria-hidden="true"
+                    data-test="pi-thumb-empty"
+                  ></span>
                 }
               </div>
             </app-pi-accordion-item>
