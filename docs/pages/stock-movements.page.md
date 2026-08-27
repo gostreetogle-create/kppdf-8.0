@@ -43,6 +43,7 @@
 - **Date format** — `toLocaleDateString('ru-RU')`
 - **Type labels** — MovementType → readable Russian labels
 - Chips рендерятся самой страницей (не group-workspace) — чтобы пробрасывать `queryParams`
+- **Приход/расход модалка (TZ-QA-445B):** поле «Материал» = `pi-select-add-row` + `MaterialFormDialog` (тот же write-path каталога). После инлайн-создания `materialId` подставляется; лейбл количества показывает ед. изм. из карточки (`Количество (м²)`).
 
 ## TZ reference
 
@@ -51,7 +52,8 @@
 | TZ-115 | silent-http error toast + httpResource migration |
 | **TZ-WAREHOUSE-UX-301** | **Фильтр склада (chips ≤8 / select >8) + сохранение type; page doc** |
 | **TZ-UX-342** | Removed dead `[total]`/`[pageSize]` (no fake pager without pageChange) |
+| **TZ-QA-445B** | Инлайн «+» материал в модалке прихода/расхода + autofill materialId/unit |
 
 ---
 
-_Создано: 2026-07-19. Обновлено: 2026-08-16 (TZ-UX-342)._
+_Создано: 2026-07-19. Обновлено: 2026-08-27 (TZ-QA-445B)._

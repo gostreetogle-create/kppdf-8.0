@@ -1,17 +1,13 @@
 ﻿# QUEUE-LIVE
 
-> Волна **UX-444 C+D** + **QA-445** (live bugs из `_001`)
-> Prompt C+D: `tasks/PROMPT-FREEBUFF-UX-444-CD.md`
-> QA backlog: `tasks/_backlog/qa-2026-08-27-live-bugs/`
-
-Штамп deploy: `docs/agent-checklists/DEPLOY-READY.md` @ `631f96e0` (не блокирует UI-волну)
+> **UX-444** A–D DONE (prompt spent)
+> **QA-445** A+B+D+E DONE · **C CLAIMED** · F–H backlog
 
 | # | TZ | Status | Notes |
 |---|-----|--------|--------|
-| 1 | `TZ-UX-444C-catalog-banner-info-links.md` | CLAIMED freebuff-1 | после A+B · PiStatusBanner |
-| 2 | `TZ-QA-445E-gantt-calendar-button.md` | DONE freebuff-2 | archive `tasks/_archive/2026-08/TZ-QA-445E.done.md` |
-| 3 | `TZ-UX-444D-empty-thumb-hatch.md` | QUEUED | после C (product-detail) |
-| 4 | `TZ-QA-445A-work-types-create-modal.md` | QUEUED | Claude diagnose → fix |
-| 5–10 | QA-445B…H | backlog | см. README волны |
+| 1 | `TZ-QA-445B-warehouse-receipt-inline-material.md` | DONE freebuff-1 | archive 2026-08 |
+| 2 | `TZ-QA-445C-doc-template-pdf-photo.md` | CLAIMED freebuff-2 | doc-constructor PDF |
+| 3 | `TZ-QA-445D-proposal-pdf-401.md` | DONE (claude) | diagnosis-only, same root cause as QA-445A, no code change |
+| 4 | `TZ-QA-445F`…`H` | backlog | F unblocked (444A DONE) |
 
-Парк: DESK-441 · PRICE-HIST (гибко).
+Парк: DESK-441 · PRICE-HIST.
