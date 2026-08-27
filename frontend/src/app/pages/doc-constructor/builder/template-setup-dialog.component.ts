@@ -1,12 +1,24 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  Injector,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
-import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
-import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
-import { DocumentTemplateCategory } from '../../../shared/services/pi-document-template-categories.service';
+import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
+import { DocumentTemplateCategoryFormDialogComponent } from '../../../shared/ui/dialog/document-template-category-form-dialog.component';
+import {
+  DocumentTemplateCategoriesService,
+  DocumentTemplateCategory,
+} from '../../../shared/services/pi-document-template-categories.service';
 
 export type PageSize = 'A3' | 'A4' | 'A5';
 export type Orientation = 'portrait' | 'landscape';
@@ -27,14 +39,14 @@ export interface TemplateSetupData {
  * a document template. Opened via PiDialogService.open().
  * TZ-DOC-336 — FormField + chips aria-pressed / pi-focus-ring.
  * TZ-DOC-337 — pageSize A3|A4|A5.
- * TZ-DOC-338 — system categories only (assignable to any org).
+ * TZ-DOC-338 — active categories are scoped by the API (system + own org).
  * TZ-DOC-339 — duplicate hides category.
  */
 @Component({
   selector: 'app-template-setup-dialog',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ButtonComponent, PiDialogComponent, FormFieldComponent],
+  imports: [ButtonComponent, PiDialogComponent, FormFieldComponent, PiSelectAddRowComponent],
   template: `
     <app-pi-dialog
       title="Настройка шаблона"
@@ -56,31 +68,40 @@ export interface TemplateSetupData {
                 <span class="text-xs text-muted-foreground">Загрузка категорий…</span>
               } @else if (categoriesError()) {
                 <span class="text-xs text-destructive">{{ categoriesError() }}</span>
-              } @else if (categories().length === 0) {
-                <div class="text-xs text-muted-foreground flex flex-col gap-2">
-                  <span>Нет активных системных категорий.</span>
-                  <button
-                    type="button"
-                    class="text-left text-xs underline text-ink pi-focus-ring"
-                    (click)="goCategoriesDictionary()"
-                  >
-                    Открыть справочник категорий шаблонов
-                  </button>
-                </div>
               } @else {
-                <select
-                  id="template-category"
-                  class="pi-input w-full"
-                  [value]="categoryId()"
-                  (change)="onCategoryChange($event)"
-                  [class.border-destructive]="confirmAttempted() && !categoryId()"
-                  aria-label="Категория шаблона"
+                <app-pi-select-add-row
+                  addTitle="Создать категорию шаблона"
+                  addAriaLabel="Создать категорию шаблона"
+                  addDataTest="template-setup-category-add"
+                  (addClick)="openCreateCategory()"
                 >
-                  <option value="" disabled>— выберите категорию —</option>
-                  @for (cat of categories(); track cat._id) {
-                    <option [value]="cat._id">{{ cat.name }}</option>
-                  }
-                </select>
+                  <select
+                    id="template-category"
+                    class="pi-input w-full"
+                    [value]="categoryId()"
+                    (change)="onCategoryChange($event)"
+                    [class.border-destructive]="confirmAttempted() && !categoryId()"
+                    aria-label="Категория шаблона"
+                    [disabled]="categories().length === 0"
+                  >
+                    <option value="" disabled>— выберите категорию —</option>
+                    @for (cat of categories(); track cat._id) {
+                      <option [value]="cat._id">{{ cat.name }}</option>
+                    }
+                  </select>
+                </app-pi-select-add-row>
+                @if (categories().length === 0) {
+                  <div class="text-xs text-muted-foreground flex flex-col gap-2">
+                    <span>Нет категорий — создайте +</span>
+                    <button
+                      type="button"
+                      class="text-left text-xs underline text-ink pi-focus-ring"
+                      (click)="goCategoriesDictionary()"
+                    >
+                      Открыть справочник категорий шаблонов
+                    </button>
+                  </div>
+                }
               }
             </app-pi-form-field>
           } @else {
@@ -137,56 +158,56 @@ export interface TemplateSetupData {
       .setup-form {
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        padding: 4px 0;
+        gap: var(--space-section);
+        padding: var(--space-1) 0;
       }
 
       .field {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: var(--space-2);
       }
 
       .field__label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 10px;
+        font-family: var(--font-mono);
+        font-size: var(--text-micro);
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.1em;
-        color: var(--color-muted, #7f7663);
+        color: var(--color-muted-foreground-strong);
       }
 
       .field__chips {
         display: flex;
-        gap: 8px;
+        gap: var(--space-2);
       }
 
       .chip {
         flex: 1;
-        padding: 10px 16px;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
+        padding: var(--space-control-y-md) var(--space-control-x);
+        font-family: var(--font-mono);
+        font-size: var(--text-label);
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        border: 1px solid var(--color-rule, #d0c5af);
-        border-radius: 2px;
-        background: var(--color-paper, #f8f9fa);
-        color: var(--color-muted, #7f7663);
+        border: var(--border-width-hairline) solid var(--color-rule);
+        border-radius: var(--radius);
+        background: var(--color-paper);
+        color: var(--color-muted-foreground);
         cursor: pointer;
         transition: all 120ms ease;
       }
 
       .chip:hover {
-        border-color: var(--color-ink, #191c1d);
-        color: var(--color-ink, #191c1d);
+        border-color: var(--color-ink);
+        color: var(--color-ink);
       }
 
       .chip--active {
-        background: var(--color-sunrise-warm, #735c00);
-        border-color: var(--color-sunrise-warm, #735c00);
-        /* paper (not white): dark theme gold is light — white text would dissolve */
-        color: var(--color-paper, #191c1d);
+        background: var(--color-sunrise-warm);
+        border-color: var(--color-sunrise-warm);
+        /* Gold is light in dark mode; keep the label on the dedicated token. */
+        color: var(--color-on-gold);
       }
     `,
   ],
@@ -195,6 +216,9 @@ export class TemplateSetupDialogComponent {
   readonly data = inject<TemplateSetupData>(PI_DIALOG_DATA);
   private readonly ref = inject<DialogRef<TemplateSetupResult>>(PI_DIALOG_REF);
   private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
   private readonly router = inject(Router);
 
   protected readonly pageSizes: PageSize[] = ['A3', 'A4', 'A5'];
@@ -230,10 +254,10 @@ export class TemplateSetupDialogComponent {
     this.categoriesSvc.list({ activeOnly: true }).subscribe((res) => {
       this.categoriesLoading.set(false);
       if (res.ok) {
-        // TZ-DOC-338 — system-only (no organizationId): assignable to any org after ensureOrg.
-        const systemOnly = (res.data ?? []).filter((c) => !c.organizationId);
-        this.categories.set(systemOnly);
-        const defaultCat = systemOnly.find((c) => c.isDefault) ?? systemOnly[0];
+        // The API already returns system + current-organization categories in scope.
+        const categories = res.data ?? [];
+        this.categories.set(categories);
+        const defaultCat = categories.find((c) => c.isDefault) ?? categories[0];
         if (defaultCat) {
           this.categoryId.set(defaultCat._id);
         }
@@ -243,6 +267,26 @@ export class TemplateSetupDialogComponent {
     });
   }
 
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<DocumentTemplateCategory, null>(
+      DocumentTemplateCategoryFormDialogComponent,
+      {
+        data: null,
+        width: 'md',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (category) => {
+      this.categories.update((current) => {
+        const withoutDuplicate = current.filter((item) => item._id !== category._id);
+        return [...withoutDuplicate, category];
+      });
+      this.categoryId.set(category._id);
+      this.confirmAttempted.set(false);
+    });
+  }
+
+  /** Secondary escape hatch; the inline plus remains the primary empty-state action. */
   protected goCategoriesDictionary(): void {
     this.ref.close();
     void this.router.navigate(['/doc-template-categories']);
@@ -253,7 +297,8 @@ export class TemplateSetupDialogComponent {
     if (!this.isCreate()) return true;
     if (this.categoriesLoading()) return false;
     if (this.categoriesError()) return false;
-    if (this.categories().length === 0) return false;
+    // The add action remains available for an empty catalog. onConfirm() still
+    // validates categoryId, so the enabled button gives visible feedback.
     return true;
   }
 

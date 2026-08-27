@@ -1,6 +1,8 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
+  Injector,
   OnInit,
   computed,
   effect,
@@ -49,6 +51,10 @@ import { PiToastService } from '../../../shared/ui/toast';
 import { extractErrorMessage } from '../../../core/silent-http';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { SwitchComponent } from '../../../shared/ui/switch/switch.component';
+import { PiDialogService } from '../../../shared/ui/dialog/pi-dialog.service';
+import { onDialogCloseOnce } from '../../../shared/util/on-dialog-close-once';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
+import { DocumentTemplateCategoryFormDialogComponent } from '../../../shared/ui/dialog/document-template-category-form-dialog.component';
 
 type PageSize = 'A3' | 'A4' | 'A5';
 type Orientation = 'portrait' | 'landscape';
@@ -63,7 +69,7 @@ type Orientation = 'portrait' | 'landscape';
   selector: 'app-builder-inspector',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [LucideAngularModule, ButtonComponent, SwitchComponent],
+  imports: [LucideAngularModule, ButtonComponent, SwitchComponent, PiSelectAddRowComponent],
   template: `
     <aside class="inspector" aria-label="Свойства блока">
       <header class="inspector__header">
@@ -166,20 +172,29 @@ type Orientation = 'portrait' | 'landscape';
               <p class="insp-hint insp-hint--muted m-0">Загрузка категорий…</p>
             } @else if (categoriesError()) {
               <p class="insp-hint m-0" role="alert">{{ categoriesError() }}</p>
-            } @else if (categories().length === 0) {
-              <p class="insp-hint insp-hint--muted m-0">Нет активных категорий</p>
             } @else {
-              <select
-                class="pi-input w-full"
-                data-test="insp-template-category"
-                aria-label="Категория шаблона"
-                [value]="templateCategoryId()"
-                (change)="onCategoryChange($event)"
+              <app-pi-select-add-row
+                addTitle="Создать категорию шаблона"
+                addAriaLabel="Создать категорию шаблона"
+                addDataTest="insp-template-category-add"
+                (addClick)="openCreateCategory()"
               >
-                @for (cat of categories(); track cat._id) {
-                  <option [value]="cat._id">{{ cat.name }}</option>
-                }
-              </select>
+                <select
+                  class="pi-input w-full"
+                  data-test="insp-template-category"
+                  aria-label="Категория шаблона"
+                  [value]="categoryIdDraft()"
+                  [disabled]="categories().length === 0"
+                  (change)="onCategoryChange($event)"
+                >
+                  @for (cat of categories(); track cat._id) {
+                    <option [value]="cat._id">{{ cat.name }}</option>
+                  }
+                </select>
+              </app-pi-select-add-row>
+              @if (categories().length === 0) {
+                <p class="insp-hint insp-hint--muted m-0">Нет категорий — создайте +</p>
+              }
             }
           </label>
         </section>
@@ -1783,9 +1798,13 @@ export class BuilderInspectorComponent implements OnInit {
   private readonly blocksSvc = inject(TemplateBlocksService);
   private readonly toast = inject(PiToastService);
   private readonly categoriesSvc = inject(DocumentTemplateCategoriesService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly injector = inject(Injector);
 
   /** Local draft for Mode B template name (commit on blur/Enter only). */
   protected readonly nameDraft = signal('');
+  protected readonly categoryIdDraft = signal('');
   protected readonly categories = signal<DocumentTemplateCategory[]>([]);
   protected readonly categoriesLoading = signal(false);
   protected readonly categoriesError = signal<string | null>(null);
@@ -2020,9 +2039,11 @@ export class BuilderInspectorComponent implements OnInit {
       this.localBoundaryPadding.set(this.boundaryPadding());
     });
 
-    // Mode B: keep name draft in sync with template (after successful PATCH / load).
+    // Mode B: keep local drafts in sync with the latest template payload.
     effect(() => {
-      this.nameDraft.set(this.template()?.name ?? '');
+      const template = this.template();
+      this.nameDraft.set(template?.name ?? '');
+      this.categoryIdDraft.set(this.templateCategoryId());
     });
   }
 
@@ -2040,8 +2061,8 @@ export class BuilderInspectorComponent implements OnInit {
         this.categoriesError.set('Не удалось загрузить категории');
         return;
       }
-      const systemOnly = (res.data ?? []).filter((c) => !c.organizationId);
-      this.categories.set(systemOnly);
+      // The API already scopes this catalog to system + current organization.
+      this.categories.set(res.data ?? []);
     });
   }
 
@@ -2207,9 +2228,31 @@ export class BuilderInspectorComponent implements OnInit {
     this.templateUpdate.emit({ name: trimmed });
   }
 
+  protected openCreateCategory(): void {
+    const ref = this.dialog.open<DocumentTemplateCategory, null>(
+      DocumentTemplateCategoryFormDialogComponent,
+      {
+        data: null,
+        width: 'md',
+        parentDestroyRef: this.destroyRef,
+      },
+    );
+    onDialogCloseOnce(ref, this.injector, (category) => {
+      this.categories.update((current) => {
+        const withoutDuplicate = current.filter((item) => item._id !== category._id);
+        return [...withoutDuplicate, category];
+      });
+      this.categoriesError.set(null);
+      this.categoriesLoading.set(false);
+      this.categoryIdDraft.set(category._id);
+      this.templateUpdate.emit({ categoryId: category._id });
+    });
+  }
+
   protected onCategoryChange(event: Event): void {
     const id = (event.target as HTMLSelectElement).value;
-    if (!id || id === this.templateCategoryId()) return;
+    if (!id || id === this.categoryIdDraft()) return;
+    this.categoryIdDraft.set(id);
     this.templateUpdate.emit({ categoryId: id });
   }
 

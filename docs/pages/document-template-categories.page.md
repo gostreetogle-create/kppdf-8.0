@@ -34,7 +34,7 @@
 
 | Компонент | Режим | Данные |
 |-----------|-------|--------|
-| `DocumentTemplateCategoryFormDialogComponent` | create / edit | `null` / `DocumentTemplateCategory` (width md) |
+| `DocumentTemplateCategoryFormDialogComponent` | create / edit | `null` / `DocumentTemplateCategory` (width md); also opened inline from template setup and builder inspector |
 | `AlertDialogComponent` | confirm delete | `{ title, message, confirmLabel, variant: destructive }` |
 
 ## Services
@@ -46,6 +46,10 @@
 Кэш: только `activeOnly`-каталог (стабильный, для template setup) кэшируется на
 время жизни приложения; словарные/search-запросы всегда свежие. Успешная мутация
 инвалидирует кэш (generation-guard, shareReplay).
+
+## Couplings
+
+Active categories are consumed by the templates setup dialog and builder inspector. The service response is already scoped to system plus current organization; consumers must preserve that scope and may update `DocumentTemplate.categoryId` only with a returned category.
 
 ## State (signals)
 
@@ -74,6 +78,7 @@
 | TZ-DOC-308 | Первая реализация справочника (page + service) |
 | TZ-DICT-307 / DICT-310 | Group Chip Workspace (documents-ref, чип «Категории шаблонов») |
 | TZ-UX-304 | pi-table column definitions вместо raw `<table>` |
+| TZ-DOC-443 | Inline category creation from template setup and builder inspector (`app-pi-select-add-row`) |
 
 ## Особенности
 
@@ -82,7 +87,9 @@
 - Удаление категории, используемой шаблонами → 409 (подсказка в deleteTitle).
 - Клиентская сортировка/поиск; server-side пагинации нет (список маленький).
 - Search и реестр шаблонов ходят в свежий GET; активный каталог — из кэша.
+- Из `TemplateSetupDialogComponent` и `BuilderInspectorComponent` форма создания открывается через `+` в текущем контексте: после сохранения категория сразу добавляется в select и выбирается; переход в справочник не требуется.
+- Пустой каталог не закрывает setup: `+` остаётся доступен, а secondary-ссылка в справочник сохраняется только как запасной путь.
 
 ---
 
-_Создано: 2026-08-09. Последнее обновление: 2026-08-09._
+_Создано: 2026-08-09. Последнее обновление: 2026-08-26._

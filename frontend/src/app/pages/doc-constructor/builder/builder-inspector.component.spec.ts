@@ -4,7 +4,7 @@
  * DOC-311: template panel pageNumbering; removed TOC/header/footer fields.
  * DOC-332: section chrome order per modes A–D; snap/pageNumbering via pi-switch.
  */
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { BuilderInspectorComponent } from './builder-inspector.component';
@@ -12,7 +12,28 @@ import type { DocumentTemplate } from '../../../shared/services/pi-document-temp
 import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
 import { TemplateBlocksService } from '../../../shared/services/pi-template-blocks.service';
 import { PiToastService } from '../../../shared/ui/toast';
+import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
+import { DocumentTemplateCategoryFormDialogComponent } from '../../../shared/ui/dialog/document-template-category-form-dialog.component';
+import { type DocumentTemplateCategory } from '../../../shared/services/pi-document-template-categories.service';
 import type { TemplateBlock } from '../../../shared/template-block/template-block.types';
+
+function makeDialogRef<T>(): DialogRef<T> {
+  const closedValue = signal<T | undefined>(undefined);
+  const isClosed = signal(false);
+  return {
+    closed: computed(() => (isClosed() ? closedValue() : undefined)),
+    close: (value?: T) => {
+      if (isClosed()) return;
+      closedValue.set(value);
+      isClosed.set(true);
+    },
+  };
+}
+
+async function flushDialogClose(): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
 
 describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
   let fixture: ComponentFixture<BuilderInspectorComponent>;
@@ -33,6 +54,8 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
   const uploadImageMock = jest.fn();
   const toastErrorMock = jest.fn();
   const categoriesListMock = jest.fn();
+  const dialogOpenMock = jest.fn();
+  let categoryDialogRef: DialogRef<DocumentTemplateCategory>;
   const createObjectURLSpy = jest.fn(() => 'blob:mock-inspector');
   const revokeObjectURLSpy = jest.fn();
 
@@ -41,6 +64,8 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
     uploadImageMock.mockReturnValue(
       of({ ok: true, data: { url: '/uploads/template-blocks/b1/new.png' } }),
     );
+    categoryDialogRef = makeDialogRef<DocumentTemplateCategory>();
+    dialogOpenMock.mockReturnValue(categoryDialogRef);
     categoriesListMock.mockReturnValue(
       of({
         ok: true,
@@ -74,6 +99,7 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
       providers: [
         { provide: TemplateBlocksService, useValue: { uploadImage: uploadImageMock } },
         { provide: PiToastService, useValue: { error: toastErrorMock } },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
         {
           provide: DocumentTemplateCategoriesService,
           useValue: { list: categoriesListMock },
@@ -81,7 +107,7 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
       ],
     })
       .overrideComponent(BuilderInspectorComponent, {
-        set: { imports: [], schemas: [NO_ERRORS_SCHEMA] },
+        set: { imports: [PiSelectAddRowComponent], schemas: [NO_ERRORS_SCHEMA] },
       })
       .compileComponents();
 
@@ -187,6 +213,45 @@ describe('BuilderInspectorComponent (TZ-DOC-311 / DOC-332 / DOC-343)', () => {
       { pageSize: 'A5' },
       { orientation: 'landscape' },
     ]);
+  });
+
+  it('opens category creation inline and selects the created organization category', async () => {
+    const updates: Partial<DocumentTemplate>[] = [];
+    fixture.componentInstance.templateUpdate.subscribe((p) => updates.push(p));
+
+    const addButton = fixture.nativeElement.querySelector(
+      '[data-test="insp-template-category-add"]',
+    ) as HTMLButtonElement | null;
+    expect(addButton).toBeTruthy();
+    addButton!.click();
+
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      DocumentTemplateCategoryFormDialogComponent,
+      expect.objectContaining({ data: null, width: 'md', parentDestroyRef: expect.anything() }),
+    );
+
+    const created: DocumentTemplateCategory = {
+      _id: 'cat-created',
+      name: 'Моя категория',
+      slug: 'my-category',
+      isActive: true,
+      isSystem: false,
+      isDefault: false,
+      sortOrder: 10,
+      organizationId: 'org-1',
+    };
+    categoryDialogRef.close(created);
+    await flushDialogClose();
+    fixture.detectChanges();
+
+    expect(
+      (
+        fixture.nativeElement.querySelector(
+          '[data-test="insp-template-category"]',
+        ) as HTMLSelectElement
+      ).value,
+    ).toBe('cat-created');
+    expect(updates).toEqual([{ categoryId: 'cat-created' }]);
   });
 
   it('TZ-KP-443: orientation chips carry Lucide icons and emit on click', () => {

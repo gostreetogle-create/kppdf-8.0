@@ -34,7 +34,7 @@
  * empty imports + NO_ERRORS_SCHEMA, dialog ref/data injected via the
  * PI_DIALOG_REF / PI_DIALOG_DATA tokens.
  */
-import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
+import { NO_ERRORS_SCHEMA, computed, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
@@ -43,11 +43,33 @@ import {
   type TemplateSetupResult,
 } from './template-setup-dialog.component';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '../../../shared/ui/dialog/dialog.tokens';
-import type { DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
-import { DocumentTemplateCategoriesService } from '../../../shared/services/pi-document-template-categories.service';
+import { PiDialogService, type DialogRef } from '../../../shared/ui/dialog/pi-dialog.service';
+import {
+  DocumentTemplateCategoriesService,
+  type DocumentTemplateCategory,
+} from '../../../shared/services/pi-document-template-categories.service';
 import { FormFieldComponent } from '../../../shared/ui/form-field/form-field.component';
 import { ButtonComponent } from '../../../shared/ui/button/button.component';
 import { PiDialogComponent } from '../../../shared/ui/dialog/pi-dialog.component';
+import { PiSelectAddRowComponent } from '../../../shared/ui/select-add-row';
+import { DocumentTemplateCategoryFormDialogComponent } from '../../../shared/ui/dialog/document-template-category-form-dialog.component';
+
+function makeDialogRef<T>(): DialogRef<T> {
+  const closedValue = signal<T | undefined>(undefined);
+  const isClosed = signal(false);
+  return {
+    closed: computed(() => (isClosed() ? closedValue() : undefined)),
+    close: (value?: T) => {
+      if (isClosed()) return;
+      closedValue.set(value);
+      isClosed.set(true);
+    },
+  };
+}
+
+async function flushDialogClose(): Promise<void> {
+  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+}
 
 describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   let fixture: ComponentFixture<TemplateSetupDialogComponent>;
@@ -55,6 +77,8 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
   let ref: DialogRef<TemplateSetupResult>;
   let listMock: jest.Mock;
   let navigate: jest.Mock;
+  let dialogOpenMock: jest.Mock;
+  let categoryDialogRef: DialogRef<DocumentTemplateCategory>;
 
   const CATS = [
     {
@@ -77,13 +101,13 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     },
     {
       _id: 'cat-org',
-      name: 'Чужая org',
+      name: 'Организационная',
       slug: 'org-scoped',
       isActive: true,
       isSystem: false,
       isDefault: false,
       sortOrder: 20,
-      organizationId: 'org-other',
+      organizationId: 'org-current',
     },
   ];
 
@@ -96,6 +120,8 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     } as DialogRef<TemplateSetupResult>;
     // Default: no active categories. Tests override BEFORE createFixture().
     listMock = jest.fn().mockReturnValue(of({ ok: true, data: [] }));
+    categoryDialogRef = makeDialogRef<DocumentTemplateCategory>();
+    dialogOpenMock = jest.fn().mockReturnValue(categoryDialogRef);
 
     await TestBed.configureTestingModule({
       imports: [TemplateSetupDialogComponent],
@@ -104,6 +130,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
         { provide: PI_DIALOG_DATA, useValue: { mode: 'create' } },
         { provide: PI_DIALOG_REF, useValue: ref },
         { provide: Router, useValue: { navigate } },
+        { provide: PiDialogService, useValue: { open: dialogOpenMock } },
         {
           provide: DocumentTemplateCategoriesService,
           useValue: { list: listMock },
@@ -112,7 +139,12 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     })
       .overrideComponent(TemplateSetupDialogComponent, {
         set: {
-          imports: [FormFieldComponent, ButtonComponent, PiDialogComponent],
+          imports: [
+            FormFieldComponent,
+            ButtonComponent,
+            PiDialogComponent,
+            PiSelectAddRowComponent,
+          ],
           schemas: [NO_ERRORS_SCHEMA],
         },
       })
@@ -278,13 +310,23 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it('shows an empty hint and blocks submit when there are no active categories', () => {
+  it('keeps the setup open and exposes + when there are no active categories', () => {
     // Default mock: no categories.
     createFixture();
 
     expect(handlers().categoryId()).toBe('');
+    expect(handlers().canConfirm()).toBe(true);
+    const addButton = fixture.nativeElement.querySelector(
+      '[data-test="template-setup-category-add"]',
+    ) as HTMLButtonElement | null;
+    expect(addButton).toBeTruthy();
+    addButton!.click();
+    expect(dialogOpenMock).toHaveBeenCalledTimes(1);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
     handlers().onConfirm();
     expect(close).not.toHaveBeenCalled();
+    expect(handlers().confirmAttempted()).toBe(true);
   });
 
   it('category select is keyboard-focusable (basic a11y scenario)', () => {
@@ -409,23 +451,64 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it('confirm button is disabled when there are no active categories', () => {
+  it('confirm button remains enabled when there are no categories because + can create one', () => {
     // Default mock: no categories.
     createFixture();
 
-    expect(handlers().canConfirm()).toBe(false);
+    expect(handlers().canConfirm()).toBe(true);
     handlers().onConfirm();
     expect(close).not.toHaveBeenCalled();
   });
 
-  it('filters out org-scoped categories from the create picker (TZ-DOC-338)', () => {
+  it('keeps organization-scoped categories returned by the scoped API (TZ-DOC-338)', () => {
     listMock.mockReturnValue(of({ ok: true, data: CATS }));
     createFixture();
     const ids = handlers()
       .categories()
       .map((c) => c._id);
-    expect(ids).toEqual(['cat-1', 'cat-2']);
-    expect(ids).not.toContain('cat-org');
+    expect(ids).toEqual(['cat-1', 'cat-2', 'cat-org']);
+  });
+
+  it('creates a category inline, appends it, and selects it in setup', async () => {
+    listMock.mockReturnValue(of({ ok: true, data: [CATS[0]] }));
+    createFixture();
+
+    const addButton = fixture.nativeElement.querySelector(
+      '[data-test="template-setup-category-add"]',
+    ) as HTMLButtonElement | null;
+    expect(addButton).toBeTruthy();
+    addButton!.click();
+    expect(dialogOpenMock).toHaveBeenCalledWith(
+      DocumentTemplateCategoryFormDialogComponent,
+      expect.objectContaining({ data: null, width: 'md', parentDestroyRef: expect.anything() }),
+    );
+
+    const created = {
+      ...CATS[2],
+      _id: 'cat-created',
+      name: 'Моя категория',
+      organizationId: 'org-current',
+      isSystem: false,
+    } as DocumentTemplateCategory;
+    categoryDialogRef.close(created);
+    await flushDialogClose();
+    fixture.detectChanges();
+
+    expect(
+      handlers()
+        .categories()
+        .map((category) => category._id),
+    ).toEqual(['cat-1', 'cat-created']);
+    expect(handlers().categoryId()).toBe('cat-created');
+    expect(
+      (fixture.nativeElement.querySelector('#template-category') as HTMLSelectElement).value,
+    ).toBe('cat-created');
+    handlers().onConfirm();
+    expect(close).toHaveBeenCalledWith({
+      pageSize: 'A4',
+      orientation: 'portrait',
+      categoryId: 'cat-created',
+    });
   });
 
   describe('duplicate mode (TZ-DOC-339)', () => {
@@ -449,6 +532,7 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
           },
           { provide: PI_DIALOG_REF, useValue: ref },
           { provide: Router, useValue: { navigate } },
+          { provide: PiDialogService, useValue: { open: dialogOpenMock } },
           {
             provide: DocumentTemplateCategoriesService,
             useValue: { list: listMock },
@@ -457,7 +541,12 @@ describe('TemplateSetupDialogComponent (TZ-DOC-268 + TZ-DOC-308)', () => {
       })
         .overrideComponent(TemplateSetupDialogComponent, {
           set: {
-            imports: [FormFieldComponent, ButtonComponent, PiDialogComponent],
+            imports: [
+              FormFieldComponent,
+              ButtonComponent,
+              PiDialogComponent,
+              PiSelectAddRowComponent,
+            ],
             schemas: [NO_ERRORS_SCHEMA],
           },
         })

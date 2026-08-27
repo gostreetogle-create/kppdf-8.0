@@ -63,9 +63,13 @@
 - **RxJS subscription** — manual subscribe (не httpResource)
 - **Category column** — отображает имя категории (populated `categoryId`); «—» если нет
 - **Category filter** — client-side по активным категориям из `DocumentTemplateCategoriesService` (список шаблонов уже загружен)
-- **Setup dialog (create)** — только системные категории (`!organizationId`); default auto-select; пустой каталог → CTA в справочник; без `categoryId` submit заблокирован
+- **Setup dialog (create)** — scoped active categories (system + current organization); default auto-select; `app-pi-select-add-row` opens the category form inline and selects the created category; empty catalog stays open with `+` and a secondary dictionary link; without `categoryId` submit shows validation
 - **Setup dialog (duplicate)** — поле category скрыто; категория остаётся у source (сервер); UI не врёт про смену category
 - **pageSize canon** — A3 \| A4 \| A5 (DTO ↔ chips; Letter/Legal не в UI)
+
+## Couplings
+
+`DocumentTemplate.categoryId` is shared with the setup dialog and builder inspector. The active picker catalog is the API-scoped union of system and current-organization categories; duplicate keeps the source category.
 
 ## TZ reference
 
@@ -75,8 +79,9 @@
 | TZ-DOC-308 | Категория шаблона: колонка в реестре, фильтр по категории, выбор категории в setup-диалоге (default auto-select, required) |
 | TZ-DOC-324 | **IA:** этот реестр стал единственным местом CRUD для шаблонов. Builder (бывший дубль-picker на /builder без :id) возвращает редирект на /templates. Тесты TZ-DOC-268/310/310B на create/duplicate перенесены в `templates.page.spec.ts`. |
 | TZ-DOC-337 | pageSize A3\|A4\|A5 в Create DTO |
-| TZ-DOC-338 | Create: system-only categories + empty CTA |
+| TZ-DOC-338 | Create: active categories from the scoped API + required default selection |
 | TZ-DOC-339 | Duplicate honesty: без category в UI |
+| TZ-DOC-443 | Inline `+` for template categories in setup; scoped org categories remain visible; empty catalog stays in context |
 | TZ-DOC-340 / UX-DIALOG-301 | Mobile viewport clamp на PiDialog / form dialogs |
 | TZ-PROC-301 | Deploy smoke checklist (create A4) |
 

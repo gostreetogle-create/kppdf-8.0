@@ -260,11 +260,17 @@ flowBlocks    = computed(() => blocks.filter(b => !isOverlayBlock(b)))
 #### Режим 3: Свойства шаблона (templateSelected === true) — create-parity (TZ-DOC-343)
 
 Секции:
-- **Основные** (`insp-section-basics`): Название (blur/Enter → PATCH); Категория (select системных active)
+- **Основные** (`insp-section-basics`): Название (blur/Enter → PATCH); Категория (scoped active catalog: system + current organization) через `app-pi-select-add-row`; `+` открывает `DocumentTemplateCategoryFormDialogComponent` inline и сразу выбирает созданную категорию
 - **Страница** (`insp-section-page`): Формат A3|A4|A5; Ориентация Книжная|Альбомная; Нумерация
 - **Фон** (`insp-section-background`): opacity + upload/grid/default/remove.
   На холсте всегда **один** слой — `defaultBackgroundIndex` (невалидный/`-1` → 0).
   Первый upload выставляет звезду на индекс 0; активная звезда — gold fill (TZ-DOC-344).
+
+Для категории используется `DocumentTemplateCategoriesService.list({ activeOnly: true })` без клиентского system-only фильтра: API возвращает системные и текущие organization-scoped категории. Кнопка `+` открывает вложенную форму без перехода на `/doc-template-categories`; после успешного закрытия новая категория добавляется в локальный список и отправляется через `templateUpdate({ categoryId })`. При пустом каталоге ряд остаётся видимым, select disabled, а `+` доступен.
+
+### Couplings
+
+`DocumentTemplate.categoryId` совпадает с полем реестра шаблонов и create setup. Inspector пишет только выбранный id; duplicate mode сохраняет категорию исходного шаблона.
 
 BE: `DocumentTemplateService.update` пишет и `orientation` (не только отдельный PATCH).
 Org / docType в этой TZ не меняются.
@@ -452,6 +458,7 @@ Payload варианты (см. `builder.types.ts`):
 | TZ-211 (overlay) | Overlay-режим фото: drag, resize, snap-to-grid, boundary clamp, corner handle |
 | 2026-07-24 | Template properties panel, block resize, margins, print styles |
 | 2026-07-25 | **Overlay bugfixes:** кеширование hostEl при drag, сигналы resizeActive/resizeWidth/resizeHeight вместо direct DOM, scrollHeight для нижней границы, кешированный paper ref в snapToBlockEdges, сигналы dragActive/dragLeft/dragTop для drag-позиции, авто-очистка override при обновлении settings |
+| TZ-DOC-443 | Inspector category picker parity: scoped active categories, inline `+` create, immediate selection and `templateUpdate({ categoryId })` |
 
 ## Magnetic Grid + Alignment Guides (TZ-237.MAGNETIC-GRID-r0)
 
