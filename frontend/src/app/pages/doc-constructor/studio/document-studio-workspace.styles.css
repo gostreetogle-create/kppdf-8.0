@@ -1,0 +1,46 @@
+/* TZ-STUDIO-UI-301 — consumer ribbon styles (parity with proposal-workspace.page.ts). */
+
+.studio-ribbon-extra {
+  margin-left: var(--space-2, 8px);
+}
+
+:host ::ng-deep .kp-ws-ribbon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1, 4px);
+  height: 26px;
+  padding: 0 var(--space-2, 8px);
+  margin-right: var(--space-1, 4px);
+  border: 1px solid var(--color-rule-strong);
+  border-radius: var(--radius-sm, 2px);
+  background: var(--color-paper-raised);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .kp-ws-ribbon-btn:hover {
+  background: var(--color-paper-2);
+}
+
+:host ::ng-deep .kp-ws-ribbon-btn--gold {
+  background: var(--color-gold);
+  border-color: var(--color-gold-deep);
+  color: var(--color-on-gold);
+}
+
+:host ::ng-deep .kp-ws-ribbon-btn--gold:hover {
+  background: var(--color-gold-deep);
+}
+
+:host ::ng-deep .kp-ws-ribbon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

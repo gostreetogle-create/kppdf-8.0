@@ -1,0 +1,28 @@
+/* Shared flex host for studio pages using ProposalWorkspaceShell (TZ-DOC-STUDIO-301). */
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep app-pi-group-workspace {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep .group-chrome {
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .group-body--flush {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}

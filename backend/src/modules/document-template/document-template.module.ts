@@ -6,6 +6,7 @@ import {
 } from './document-template.schema';
 import { DocumentTemplateService } from './document-template.service';
 import { DocumentTemplateController } from './document-template.controller';
+import { DocumentRenderModule } from '../document-render/document-render.module';
 import { TemplateBlockModule } from '../template-block/template-block.module';
 import { QuotationModule } from '../quotation/quotation.module';
 import { ContractModule } from '../contract/contract.module';
@@ -23,6 +24,7 @@ import { TableTemplateModule } from '../table-template/table-template.module';
 import { TextBlockModule } from '../text-block/text-block.module';
 import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
 import { DocumentTemplateCategoryModule } from '../document-template-category/document-template-category.module';
+import { DocTypeModule } from '../doc-type/doc-type.module';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateModule extended.
@@ -47,6 +49,7 @@ import { DocumentTemplateCategoryModule } from '../document-template-category/do
     MongooseModule.forFeature([
       { name: DocumentTemplate.name, schema: DocumentTemplateSchema },
     ]),
+    DocumentRenderModule,
     TemplateBlockModule,
     QuotationModule,
     ContractModule,
@@ -65,6 +68,8 @@ import { DocumentTemplateCategoryModule } from '../document-template-category/do
     TextBlockModule,
     // TZ-DOC-307 — document-template categories
     DocumentTemplateCategoryModule,
+    // TZ-DOC-STUDIO-2004 — blank A4 sentinel needs active DocType lookup
+    DocTypeModule,
   ],
   controllers: [DocumentTemplateController],
   providers: [DocumentTemplateService, OwnershipGuard],

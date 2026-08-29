@@ -27,17 +27,47 @@ App layout: **denseMain** — без `pt-page-y` и без site footer (flush п
 | `category` | `string` (ObjectId) | Фильтр «Текстов» по `TextBlockCategory._id` в tool-pane picker и в inline toolbar dropdown (TZ-DOC-317). `null`/отсутствие = «Все». Двусторонняя синхронизация с `BuilderTextFilterService.categoryId` через `effect()` + `Router.navigate({ queryParamsHandling: 'merge', replaceUrl: true })` — refresh страницы сохраняет выбор. При смене `:id` шаблона фильтр сбрасывается на «Все». |
 | `returnUrl` | `string` (same-origin path) | Куда «←» возвращает из конструктора (TZ-UX-316). Из Create КП приходит `/proposals/create[?id=…]`. Валидируется: только absolute same-origin path (без `//host` и схем). Без него — smart-back через `CatalogReturnStore` с fallback на `/doc-constructor/templates`. |
 
+## Layout contract (canvas-layout-layer)
+
+> TZ-DOC-STUDIO-101 · ADR [`../architecture/document-studio.md`](../architecture/document-studio.md)
+
+Builder canvas uses **normalized `layout`** (`x/y/width/height` as page fractions) as the canonical geometry contract — not legacy overlay-only positioning. Positioned blocks render in the **canvas-layout-layer**; legacy `settings.overlay` is migrated to `layout` via `legacyOverlayToLayout`.
+
+| Layer | Role |
+|-------|------|
+| `canvas-layout-layer` | Positioned blocks (drag/resize/z-index) |
+| Preview iframe | Server `build()` HTML — separate from edit geometry |
+
+**FE/BE parity:** `shared/template-block/template-block-layout.ts` mirrors `backend/.../template-block-layout.ts`. Page field exists for multipage (Wave 9+); both sides clamp to page `1` until page containers ship. Merge to shared package — Wave 2a/3 controlled extract, not Wave 1.
+
+---
+
 ## Layout
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  Toolbar: ← Шаблоны | title | category | [Редактор|Превью] | save chip   │
 ├────┬─────────────────────────────────────────────────┬───────────────────┤
-│ 48 │  Canvas                                         │ Inspector 320px   │
-│rail│  empty → «палитра слева (Тексты/Таблицы/Фото)»  │ Геометрия + lock  │
-│+fly│  preview = без chrome; add/drop/photo no-op     │                   │
+│ 48 │  Canvas (pi-canvas-page)                         │ Inspector 320px   │
+│rail│  ├─ canvas-dropzone      (flow / legacy)        │ Геометрия + lock  │
+│+fly│  ├─ canvas-layout-layer  (BlockLayout absolute) │                   │
+│    │  └─ canvas-overlay-layer (legacy image overlay) │                   │
 └────┴─────────────────────────────────────────────────┴───────────────────┘
 ```
+
+### Canvas layers (TZ-259 / DOC-STUDIO-101)
+
+Canonical positioning uses **`TemplateBlock.layout`** (`BlockLayout`: normalized x/y/width/height on page 1). The builder renders three stacked layers inside `pi-canvas-page`:
+
+| Layer | DOM class | Blocks | Positioning |
+|-------|-----------|--------|-------------|
+| Flow (legacy) | `.canvas-dropzone` | Blocks **without** `layout` and not overlay images | CDK reorder, margin/width % |
+| **Layout (primary)** | `.canvas-layout-layer` | Blocks **with** `layout` | Absolute % geometry; drag/resize; snap-engine |
+| Overlay (legacy) | `.canvas-overlay-layer` | `type=image` + `settings.overlay=true` without migrating to `layout` | px overlayLeft/Top, imageWidth/Height |
+
+Server HTML render (`DocumentRenderService`) and builder preview both consume the same normalized `layout` contract via `normalizeBlockLayout` (page clamped to **1** until multipage containers ship). Legacy overlay settings remain supported via `legacyOverlayToLayout` but new geometry should use `layout`.
+
+Shared layout math: `frontend/src/app/shared/template-block/template-block-layout.ts` ↔ `backend/src/modules/template-block/template-block-layout.ts` (parity tests in BE spec; no shared package in Wave 1).
 
 ### Geometry lock (2026-08-03)
 
@@ -545,4 +575,4 @@ changes to three existing files.
 
 ---
 
-_Создано: 2026-07-19. Последнее обновление: 2026-07-25. Охватывает: TZ-86, TZ-87, TZ-104, TZ-170, TZ-211, overlay bugfixes._
+_Создано: 2026-07-19. Последнее обновление: 2026-08-29. Охватывает: TZ-86, TZ-87, TZ-104, TZ-170, TZ-211, overlay bugfixes, TZ-DOC-STUDIO-101 (canvas-layout-layer SoT)._

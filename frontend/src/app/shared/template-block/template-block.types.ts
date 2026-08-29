@@ -28,7 +28,7 @@ import type { TextBlockColumn } from '../services/pi-text-blocks.service';
 import type { BlockLayout, BlockSource } from './template-block-layout';
 export type { BlockLayout, BlockSource } from './template-block-layout';
 
-export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature';
+export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
 export const BLOCK_TYPES: readonly BlockType[] = [
   'header',
@@ -36,7 +36,11 @@ export const BLOCK_TYPES: readonly BlockType[] = [
   'table',
   'image',
   'signature',
+  'spacer',
 ] as const;
+
+/** Polymorphic parent discriminator (Document Studio Wave 2a); legacy blocks omit. */
+export type TemplateBlockParentType = 'template' | 'studio-document';
 
 export type DataBindingSource =
   | 'organization'
@@ -102,6 +106,12 @@ export interface TemplateBlock {
   /** Client-only UUID for blocks awaiting server-assigned _id. */
   tempId?: string;
   templateId: string;
+  /**
+   * Polymorphic parent (Document Studio Wave 2a). When absent, `templateId`
+   * is the sole parent reference. Builder write path unchanged in Wave 1.
+   */
+  parentType?: TemplateBlockParentType;
+  parentId?: string;
   type: BlockType;
   order: number;
   title?: string;
@@ -173,6 +183,7 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   table: 'Таблица',
   image: 'Изображение',
   signature: 'Подпись',
+  spacer: 'Отступ',
 };
 
 /**
@@ -184,4 +195,5 @@ export const BLOCK_TYPE_HINTS: Record<BlockType, string> = {
   table: 'Шаблон таблицы с колонками',
   image: 'Картинка из библиотеки',
   signature: 'Место для подписи / печати',
+  spacer: 'Вертикальный зазор между блоками',
 };

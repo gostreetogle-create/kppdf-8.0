@@ -4,6 +4,9 @@ import type { BlockLayout, BlockSource } from './template-block-layout';
 
 export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
+/** TZ-DOC-STUDIO-201a — polymorphic parent for template builder vs studio document. */
+export type TemplateBlockParentType = 'template' | 'studio-document';
+
 /**
  * TZ-86 Phase A.3 — DataBinding subdoc.
  *
@@ -118,6 +121,14 @@ export class TemplateBlock {
   @Prop({ type: Types.ObjectId, ref: 'DocumentTemplate', required: true, index: true })
   templateId!: Types.ObjectId;
 
+  /** TZ-DOC-STUDIO-201a — canonical parent kind; backfilled to `template` for legacy rows. */
+  @Prop({ type: String, enum: ['template', 'studio-document'] })
+  parentType?: TemplateBlockParentType;
+
+  /** TZ-DOC-STUDIO-201a — ObjectId of DocumentTemplate or StudioDocument. */
+  @Prop({ type: Types.ObjectId })
+  parentId?: Types.ObjectId;
+
   @Prop({ enum: ['header', 'text', 'table', 'image', 'signature', 'spacer'], required: true })
   type!: BlockType;
 
@@ -184,3 +195,4 @@ export class TemplateBlock {
 
 export const TemplateBlockSchema = SchemaFactory.createForClass(TemplateBlock);
 TemplateBlockSchema.index({ templateId: 1, order: 1 });
+TemplateBlockSchema.index({ parentType: 1, parentId: 1, order: 1 });

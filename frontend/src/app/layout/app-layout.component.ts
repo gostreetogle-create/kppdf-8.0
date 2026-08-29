@@ -201,6 +201,7 @@ const NAV_CATEGORIES: NavCategory[] = [
     entryPath: '/doc-constructor/templates',
     items: [
       { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
+      { path: '/doc-constructor/studio', pageKey: 'doc-studio', label: 'Студия документов' },
       { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
@@ -581,9 +582,9 @@ export function matchActiveCategoryId(
       box-sizing: border-box;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      width: 64px;
-      padding-top: 16px;
+      gap: var(--space-2);
+      width: var(--spacing-16);
+      padding-top: var(--space-4);
       margin: 0;
       border: none;
       background: transparent;

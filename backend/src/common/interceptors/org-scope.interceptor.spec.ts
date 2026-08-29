@@ -108,6 +108,20 @@ describe('OrgScopeGuardInterceptor', () => {
     ]);
   });
 
+  it('filters array when organizationId is populated (mongoose .populate())', async () => {
+    const ctx = buildCtx({ hasMetadata: true, user: { id: 'u1', organizationId: 'orgA' } });
+    const docs = [
+      { organizationId: { _id: 'orgA', name: 'Org A' }, name: 'T1' },
+      { organizationId: { _id: 'orgB', name: 'Org B' }, name: 'T2' },
+    ];
+    const value = await firstValueFrom(
+      interceptor.intercept(ctx, callHandler(docs)),
+    );
+    expect(value).toEqual([
+      { organizationId: { _id: 'orgA', name: 'Org A' }, name: 'T1' },
+    ]);
+  });
+
   it('passes through non-document values (boolean / plain object)', async () => {
     const ctx = buildCtx({ hasMetadata: true, user: { id: 'u1', organizationId: 'orgA' } });
     const value1 = await firstValueFrom(

@@ -109,6 +109,48 @@ export class TemplateBlocksService {
     return silentDelete<void>(this.http, `${this.baseUrl}/template-blocks/${id}`);
   }
 
+  /** TZ-DOC-STUDIO-401 — studio-document scoped block endpoints. */
+  listByStudioDocument(studioDocId: string): Observable<SilentResult<TemplateBlock[]>> {
+    return silentGet<TemplateBlock[]>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${studioDocId}/blocks`,
+    );
+  }
+
+  addToStudioDocument(
+    studioDocId: string,
+    payload: CreateTemplateBlockPayload & { expectedRevision: number },
+  ): Observable<SilentResult<TemplateBlock>> {
+    return silentPost<TemplateBlock>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${studioDocId}/blocks`,
+      payload,
+    );
+  }
+
+  reorderStudioDocument(
+    studioDocId: string,
+    payload: ReorderBlocksPayload & { expectedRevision: number },
+  ): Observable<SilentResult<TemplateBlock[]>> {
+    return silentPost<TemplateBlock[]>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${studioDocId}/blocks/reorder`,
+      payload,
+    );
+  }
+
+  updateStudioLayouts(
+    studioDocId: string,
+    updates: Array<{ blockId: string; layout: NonNullable<TemplateBlock['layout']> }>,
+    expectedRevision: number,
+  ): Observable<SilentResult<TemplateBlock[]>> {
+    return silentPatch<TemplateBlock[]>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${studioDocId}/blocks/layouts`,
+      { updates, expectedRevision },
+    );
+  }
+
   /**
    * Upload an image file for a template block.
    * Sends FormData via POST to the block's image upload endpoint.

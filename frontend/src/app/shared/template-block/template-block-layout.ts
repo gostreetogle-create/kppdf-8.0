@@ -11,6 +11,11 @@ export interface BlockLayout {
   rotation: number;
 }
 
+export interface NormalizeBlockLayoutOptions {
+  /** TZ-DOC-STUDIO-1701 — studio allows pages up to manualPageCount; builder stays at 1. */
+  maxPage?: number;
+}
+
 export type BlockSource =
   | { kind: 'text-block'; refId: string; mode: 'live' | 'snapshot' }
   | { kind: 'table-template'; refId: string; mode: 'live' | 'snapshot' }
@@ -45,11 +50,15 @@ function finite(value: unknown, fallback: number): number {
 }
 
 /** Clamp a canonical layout to a valid single-page normalized range. */
-export function normalizeBlockLayout(layout: Partial<BlockLayout> | null | undefined): BlockLayout {
-  // The canvas and renderer currently expose one page. Keep the field in the
-  // contract for forward-compatible pagination, but never render page 2 into
-  // the wrong page until page containers are implemented end-to-end.
-  const page = Math.min(1, Math.max(1, Math.floor(finite(layout?.page, DEFAULT_LAYOUT.page))));
+export function normalizeBlockLayout(
+  layout: Partial<BlockLayout> | null | undefined,
+  options?: NormalizeBlockLayoutOptions,
+): BlockLayout {
+  const maxPage = Math.max(1, Math.floor(finite(options?.maxPage, 1)));
+  const page = Math.min(
+    maxPage,
+    Math.max(1, Math.floor(finite(layout?.page, DEFAULT_LAYOUT.page))),
+  );
   const width = Math.min(1, Math.max(0.001, finite(layout?.width, DEFAULT_LAYOUT.width)));
   const x = Math.min(1 - width, Math.max(0, finite(layout?.x, DEFAULT_LAYOUT.x)));
   const rawHeight =

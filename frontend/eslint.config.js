@@ -6,6 +6,7 @@ const angular = require('@angular-eslint/eslint-plugin');
 const angularTemplate = require('@angular-eslint/template-parser');
 const noRawHttpInComponentsRule = require('./eslint/rules/no-raw-http-in-components.cjs');
 const noImplementsOnInitInPagesRule = require('./eslint/rules/no-implements-oninit-in-pages.cjs');
+const noRawUiValuesRule = require('./eslint/rules/no-raw-ui-values.cjs');
 
 module.exports = tseslint.config(
   {
@@ -36,6 +37,7 @@ module.exports = tseslint.config(
         rules: {
           'no-raw-http-in-components': noRawHttpInComponentsRule,
           'no-implements-oninit-in-pages': noImplementsOnInitInPagesRule,
+          'no-raw-ui-values': noRawUiValuesRule,
         },
       },
     },
@@ -68,9 +70,10 @@ module.exports = tseslint.config(
     },
   },
   {
-    files: ['**/*.component.ts'],
+    files: ['**/*.component.ts', '**/*.page.ts'],
     rules: {
       'kppdf-frontend-architecture/no-raw-http-in-components': 'warn',
+      'kppdf-frontend-architecture/no-raw-ui-values': 'error',
     },
   },
   {
@@ -88,6 +91,7 @@ module.exports = tseslint.config(
         rules: {
           'no-raw-http-in-components': noRawHttpInComponentsRule,
           'no-implements-oninit-in-pages': noImplementsOnInitInPagesRule,
+          'no-raw-ui-values': noRawUiValuesRule,
         },
       },
     },

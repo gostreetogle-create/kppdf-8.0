@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { DocumentTemplateService } from './document-template.service';
+import { DocumentRenderService } from '../document-render/document-render.service';
 import { DocumentTemplate } from './document-template.schema';
 import { TemplateBlock } from '../template-block/template-block.schema';
 import { TableTemplateService } from '../table-template/table-template.service';
@@ -15,6 +16,7 @@ import { Product } from '../product/product.schema';
 import { Material } from '../material/material.schema';
 import { WorkType } from '../work-type/work-type.schema';
 import { TextBlock } from '../text-block/text-block.schema';
+import { DocType } from '../doc-type/doc-type.schema';
 
 describe('DocumentTemplateService - Continuation Pages', () => {
   let service: DocumentTemplateService;
@@ -48,6 +50,8 @@ describe('DocumentTemplateService - Continuation Pages', () => {
         { provide: CounterService, useValue: {} },
         { provide: TableTemplateService, useValue: mockTableTemplateService },
         { provide: DocumentTemplateCategoryService, useValue: {} },
+        { provide: getModelToken(DocType.name), useValue: {} },
+        DocumentRenderService,
       ],
     }).compile();
 

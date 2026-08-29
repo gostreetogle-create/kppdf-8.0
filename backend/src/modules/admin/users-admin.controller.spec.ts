@@ -28,8 +28,13 @@ function buildController(opts: {
   const remove = opts.remove ?? jest.fn();
   const adminResetPassword = opts.adminResetPassword ?? jest.fn();
   const userService = { create, update, remove, adminResetPassword } as unknown as UserService;
+  const defaultFindById = jest.fn().mockReturnValue({
+    lean: jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue({ accountType: 'user' }),
+    }),
+  });
   const userModel = {
-    findById: opts.findById ?? jest.fn(),
+    findById: opts.findById ?? defaultFindById,
     find: opts.find ?? jest.fn(),
     countDocuments: opts.countDocuments ?? jest.fn(),
   } as any;

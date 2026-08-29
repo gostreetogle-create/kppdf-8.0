@@ -41,6 +41,7 @@ How to use: `Ctrl+F` по route или имени страницы. Новые T
 | `/doc-constructor/texts` | texts.page.md | DOC-316/326/336; **section chips**; **TZD-30** MCP AI-draft READY; **UX-342 DONE** drop dead pager total |
 | `/doc-constructor/tables` | tables.page.md | **WAVE-DOC-TABLES 301–306 DONE**; **308 DONE** dialog layout/preview; **307 DONE** category КП + seed/apply preset (`WAVE-KP-TABLE-CONFIG`); **309 DONE** RU copy + taller fields; **310 READY FOR REVIEW** remove help + separate toolbar buttons; **UX-342 DONE** drop dead pager total; **TZ-UI-417 READY** counter 11px |
 | `/doc-constructor/documents` | documents.page.md | **UX-303 DONE**; **UX-342 DONE** remove unused Показано helpers |
+| `/doc-constructor/studio`, `/studio/:id` | **document-studio.page.md** | **WAVE-DOC-STUDIO** Wave 0 DONE (ADR); **101 READY** extract; 201a…1101 planned |
 | `/import-todos` | import-todos.page.md | **TZD-29 DONE** (manager finish-list after import) |
 
 ## Catalog / production

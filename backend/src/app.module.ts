@@ -80,6 +80,8 @@ import { TemplateBlockModule } from './modules/template-block/template-block.mod
 import { TextBlockModule } from './modules/text-block/text-block.module';
 import { TableTemplateModule } from './modules/table-template/table-template.module';
 import { GeneratedDocumentModule } from './modules/generated-document/generated-document.module';
+import { StudioDocumentModule } from './modules/studio-document/studio-document.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 import { DocumentTableTypeModule } from './modules/document-table-type/document-table-type.module';
 import { RegistryModule } from './modules/registry/registry.module';
 import { ReconciliationActModule } from './modules/reconciliation-act/reconciliation-act.module';
@@ -119,6 +121,7 @@ import { CurrenciesSeed } from './common/seed/currencies.seed';
 import { DevFixturesSeed } from './common/seed/dev-fixtures.seed';
 import { LocalDemoSeed } from './common/seed/local-demo.seed';
 import { DocumentTemplateCategoriesSeed } from './common/seed/document-template-categories.seed';
+import { BlankA4TemplateSeed } from './common/seed/blank-a4-template.seed';
 import { TextBlockCategoriesSeed } from './common/seed/text-block-categories.seed';
 import { ColorReferencesSeed } from './common/seed/color-references.seed';
 import { BomComponentResolveService } from './modules/bom/migrations/bom-component-resolve.service';
@@ -246,6 +249,8 @@ import { RequestMethod } from '@nestjs/common';
     TableTemplateModule,
     DocumentTableTypeModule,
     GeneratedDocumentModule,
+    StudioDocumentModule, // TZ-DOC-STUDIO-201b: StudioDocument CRUD + org scope + revision gate
+    UploadsModule, // TZ-DOC-STUDIO-1801: orphan upload sweep
     RegistryModule, // TZ-86 Фаза A.5: data-source catalogue for Document Constructor tool pane
     ReconciliationActModule,
     FinancialReportModule,
@@ -306,6 +311,8 @@ import { RequestMethod } from '@nestjs/common';
     LocalDemoSeed,
     // TZ-DOC-307: системная default-категория шаблонов «Общее»
     DocumentTemplateCategoriesSeed,
+    // TZ-DOC-STUDIO-2004: per-org sentinel «Пустой A4» for blank studio finalize
+    BlankA4TemplateSeed,
     // TZ-DOC-315/321: системная default-категория текстовых блоков «Общее»
     TextBlockCategoriesSeed,
     // TZ-PRODUCTS-301: системный default-цвет «Не выбран»

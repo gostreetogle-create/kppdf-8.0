@@ -1,5 +1,6 @@
 import { Types } from 'mongoose';
 import { DocumentTemplateService } from './document-template.service';
+import { DocumentRenderService } from '../document-render/document-render.service';
 
 const TEMPLATE_ID = new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa');
 const ORG_ID = new Types.ObjectId('bbbbbbbbbbbbbbbbbbbbbbbb');
@@ -82,6 +83,8 @@ function makeService(options: {
     {} as never,
     (options.tableTemplate ?? {}) as never,
     {} as never,
+    {} as never,
+    new DocumentRenderService(),
     invoiceModel as never,
   );
   return service;

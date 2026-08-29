@@ -490,6 +490,26 @@ export const routes: Routes = [
           import('./pages/doc-constructor/builder/builder.page').then((m) => m.BuilderPage),
         title: 'KPPDF — Конструктор',
       },
+      {
+        path: 'doc-constructor/studio',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-studio' },
+        loadComponent: () =>
+          import('./pages/doc-constructor/studio/document-studio-list.page').then(
+            (m) => m.DocumentStudioListPage,
+          ),
+        title: 'KPPDF — Документ-студия',
+      },
+      {
+        path: 'doc-constructor/studio/:id',
+        canMatch: [capabilityRouteGuard],
+        data: { pageKey: 'doc-studio' },
+        loadComponent: () =>
+          import('./pages/doc-constructor/studio/document-studio-editor.page').then(
+            (m) => m.DocumentStudioEditorPage,
+          ),
+        title: 'KPPDF — Студия · редактор',
+      },
       // TZ-101: Inventory Operations
       {
         path: 'inventory',

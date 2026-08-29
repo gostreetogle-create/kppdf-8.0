@@ -6,6 +6,10 @@ import {
   GeneratedDocumentDocument,
   GeneratedDocumentSourceType,
 } from './generated-document.schema';
+import {
+  Organization,
+  OrganizationDocument,
+} from '../organization/organization.schema';
 import { DocumentTemplateService } from '../document-template/document-template.service';
 import { BuildDocumentDto } from '../document-template/dto/build-document.dto';
 import { CounterService } from '../counter/counter.service';
@@ -18,6 +22,8 @@ export class GeneratedDocumentService {
   constructor(
     @InjectModel(GeneratedDocument.name)
     private readonly model: Model<GeneratedDocumentDocument>,
+    @InjectModel(Organization.name)
+    private readonly orgModel: Model<OrganizationDocument>,
     private readonly templateService: DocumentTemplateService,
     private readonly counter: CounterService,
   ) {}
@@ -130,6 +136,43 @@ export class GeneratedDocumentService {
     });
   }
 
+  /** Wave 10 — archive a studio document render snapshot. */
+  async archiveStudio(input: {
+    studioDocumentId: string;
+    sourceRevision: number;
+    templateId: string;
+    templateName?: string;
+    name: string;
+    organizationId: string;
+    html: string;
+    buildPayload: Record<string, unknown>;
+  }): Promise<GeneratedDocumentDocument> {
+    if (
+      !Types.ObjectId.isValid(input.studioDocumentId) ||
+      !Types.ObjectId.isValid(input.templateId) ||
+      !Types.ObjectId.isValid(input.organizationId)
+    ) {
+      throw new NotFoundException('Studio document, template or organization not found');
+    }
+    const studioObjectId = new Types.ObjectId(input.studioDocumentId);
+    const number = await this.nextStudioArchiveNumber(input.organizationId);
+    return this.model.create({
+      number,
+      name: input.name,
+      templateId: new Types.ObjectId(input.templateId),
+      templateName: input.templateName,
+      sourceType: 'studio',
+      studioDocumentId: studioObjectId,
+      sourceId: studioObjectId,
+      sourceRevision: input.sourceRevision,
+      organizationId: new Types.ObjectId(input.organizationId),
+      html: input.html,
+      buildPayload: input.buildPayload,
+      status: 'final',
+      isActive: true,
+    });
+  }
+
   async archiveRendered(input: {
     templateId: string;
     templateName?: string;
@@ -170,6 +213,32 @@ export class GeneratedDocumentService {
     }
     doc.isActive = false;
     await doc.save();
+  }
+
+  /** ADR §6 — `SD-{orgShort}-{year}-{seq}` via CounterService. */
+  private async nextStudioArchiveNumber(organizationId: string): Promise<string> {
+    const org = await this.orgModel
+      .findById(organizationId)
+      .select('shortName name')
+      .lean()
+      .exec();
+    const orgShort = this.orgShortSlug(org, organizationId);
+    return this.counter.next('studio-generated-document', `SD-${orgShort}`);
+  }
+
+  private orgShortSlug(
+    org: { shortName?: string; name?: string } | null,
+    organizationId: string,
+  ): string {
+    const raw = (org?.shortName ?? org?.name ?? '').trim();
+    const slug = raw
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '')
+      .toUpperCase()
+      .slice(0, 12);
+    if (slug) return slug;
+    return `ORG${organizationId.slice(-6).toUpperCase()}`;
   }
 
   private organizationIdOf(value: unknown): string | null {

@@ -28,6 +28,10 @@ import { AuditAction } from '../../common/decorators/audit-action.decorator';
 import { OwnerOnly } from '../../common/guards/ownership/ownership.decorator';
 import { OwnershipGuard } from '../../common/guards/ownership/ownership.guard';
 import type { AuthenticatedUserLike } from '../../common/contracts/rbac-contract';
+import {
+  AuthenticatedUser,
+  CurrentUser,
+} from '../../common/decorators/current-user.decorator';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateController extended.
@@ -67,16 +71,20 @@ export class DocumentTemplateController {
    * TZ-DOC-307 — `categoryId` query filter (optional). A template list can
    * be narrowed to one document-template category without weakening the
    * existing organization / docType / isDefault scoping.
+   *
+   * TZ-DOC-STUDIO-2003 — `organizationId` is always taken from the JWT
+   * (`@CurrentUser()`), never from a client query param. Org-scoped users
+   * cannot enumerate cross-org templates; system admin (null org) sees all.
    */
   @Get()
   findAll(
-    @Query('organizationId') organizationId?: string,
+    @CurrentUser() user: AuthenticatedUser,
     @Query('docTypeId') docTypeId?: string,
     @Query('isDefault') isDefault?: string,
     @Query('categoryId') categoryId?: string,
   ) {
     return this.service.findAll(
-      organizationId,
+      user.organizationId ?? undefined,
       docTypeId,
       isDefault === undefined ? undefined : isDefault === 'true',
       categoryId,

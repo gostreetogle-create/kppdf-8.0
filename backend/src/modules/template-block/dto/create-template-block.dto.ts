@@ -140,6 +140,15 @@ export class BlockSourceDto {
 export class CreateTemplateBlockDto {
   @IsObjectId() templateId!: string;
 
+  /** TZ-DOC-STUDIO-201a — optional polymorphic parent; legacy builder omits these. */
+  @IsOptional()
+  @IsIn(['template', 'studio-document'])
+  parentType?: 'template' | 'studio-document';
+
+  @IsOptional()
+  @IsObjectId()
+  parentId?: string;
+
   @IsIn(['header', 'text', 'table', 'image', 'signature', 'spacer'])
   type!: 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 

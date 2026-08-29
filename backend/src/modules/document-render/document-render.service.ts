@@ -1,0 +1,239 @@
+import { Injectable } from '@nestjs/common';
+import { sanitizeHtml } from '../../common/sanitize-html';
+import { blockBackgroundStyle, blockLayoutStyle } from '../document-template/layout-renderer';
+import type { DocumentTemplateDocument } from '../document-template/document-template.schema';
+import type { TemplateBlockDocument } from '../template-block/template-block.schema';
+import {
+  documentPublicOrigin,
+  escapeHtmlValue,
+  normalizeSubstitutionHtml,
+} from './document-render.utils';
+
+export {
+  escapeHtmlValue,
+  normalizeSubstitutionHtml,
+} from './document-render.utils';
+
+export interface RenderHtmlOptions {
+  /** TZ-DOC-STUDIO-1701 — per-page letterhead index into backgroundImage[]. */
+  backgroundPageIndex?: number;
+}
+
+/**
+ * TZ-DOC-STUDIO-101 — neutral HTML renderer extracted from DocumentTemplateService.
+ * Studio and quotation/KP pipelines share this surface; orchestration stays upstream.
+ */
+@Injectable()
+export class DocumentRenderService {
+  renderHtml(
+    template: DocumentTemplateDocument,
+    blocks: TemplateBlockDocument[],
+    data: Record<string, unknown>,
+    options?: RenderHtmlOptions,
+  ): string {
+    const substitute = (s: string | undefined): string => {
+      if (!s) return '';
+      const normalized = normalizeSubstitutionHtml(s);
+      return normalized.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key: string) => {
+        const val = key.split('.').reduce<unknown>((acc, k) => {
+          if (acc == null) return undefined;
+          if (Array.isArray(acc)) {
+            const idx = parseInt(k, 10);
+            return Number.isFinite(idx) ? acc[idx] : undefined;
+          }
+          if (typeof acc === 'object') {
+            return (acc as Record<string, unknown>)[k];
+          }
+          return undefined;
+        }, data);
+        return val == null ? '' : escapeHtmlValue(String(val));
+      });
+    };
+
+    const safeImageUrl = (value: string | undefined): string => {
+      const url = value?.trim() ?? '';
+      if (!url) return '';
+      if (/^data:/i.test(url)) {
+        return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url)
+          ? escapeHtmlValue(url)
+          : '';
+      }
+      if (
+        /^https?:\/\//i.test(url) ||
+        /^\/(?!\/)/.test(url) ||
+        /^\.\.?(?:\/|$)/.test(url) ||
+        /^#/.test(url)
+      ) {
+        return escapeHtmlValue(url);
+      }
+      return '';
+    };
+
+    const isLandscape = (template as { orientation?: string }).orientation === 'landscape';
+    const pageWidth = isLandscape ? '297mm' : '210mm';
+    const pageMinHeight = isLandscape ? '210mm' : '297mm';
+    const contentStyles = this.buildDocumentContentStyles(template);
+    const baseHref = documentPublicOrigin();
+    const css = `
+      <style>
+        @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
+        html, body { margin: 0; overflow: hidden; }
+        html { width: ${pageWidth}; height: ${pageMinHeight}; }
+        body { font-family: 'Times New Roman', serif; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 0; position: relative; box-sizing: border-box; }
+        ${contentStyles}
+      </style>`;
+    const bgImages = template.backgroundImage ?? [];
+    const defaultIdx = (template as { defaultBackgroundIndex?: number }).defaultBackgroundIndex ?? -1;
+    const pageBgIdx = options?.backgroundPageIndex;
+    const activeBgs =
+      pageBgIdx !== undefined && pageBgIdx >= 0 && pageBgIdx < bgImages.length
+        ? [bgImages[pageBgIdx]]
+        : defaultIdx >= 0 && defaultIdx < bgImages.length
+          ? [bgImages[defaultIdx]]
+          : bgImages;
+    const bgLayers = activeBgs
+      .map((url) => {
+        const safeUrl = safeImageUrl(url);
+        return safeUrl
+          ? `<div class="doc-bg"><img src="${safeUrl}" alt=""></div>`
+          : '';
+      })
+      .join('');
+    const termsHtml =
+      typeof data['__termsHtml'] === 'string' ? data['__termsHtml'] : '';
+    const body = blocks
+      .map((b) => {
+        const blockSettings = b.settings as
+          | { role?: string; imageUrl?: string }
+          | undefined;
+        const isTermsBlock = blockSettings?.role === 'terms';
+        const rawContent = b.content ?? b.title;
+        const content = isTermsBlock
+          ? (rawContent ?? '')
+          : substitute(rawContent);
+        const literalContent = isTermsBlock
+          ? content
+          : b.source?.kind === 'literal'
+            ? sanitizeHtml(b.source.value)
+            : content;
+        const imageSettings = blockSettings;
+        const imageContent =
+          safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
+        const layoutStyle = blockLayoutStyle(b.layout);
+        const bgStyle = blockBackgroundStyle(
+          b.settings as Record<string, unknown> | undefined,
+        );
+        const combinedStyle = [layoutStyle, bgStyle].filter(Boolean).join(';');
+        const blockClass = layoutStyle ? 'block block--positioned' : 'block';
+        const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
+        const cols = b.columns ?? [];
+        const multiColHtml =
+          cols.length > 0
+            ? `<div style="display:flex;gap:12px;width:100%">${cols
+                .map((c) => {
+                  const w = c.width && c.width > 0 ? c.width : 1;
+                  return `<div style="flex:${w};font-size:${c.fontSize ?? 14}px">${substitute(c.content)}</div>`;
+                })
+                .join('')}</div>`
+            : null;
+        switch (b.type) {
+          case 'header':
+            return `<div class="${blockClass}"${styleAttr}><h2>${substitute(b.title ?? '')}</h2>${multiColHtml ?? literalContent}</div>`;
+          case 'text':
+            return `<div class="${blockClass}"${styleAttr}>${multiColHtml ?? literalContent}</div>`;
+          case 'image': {
+            const settings = b.settings as { role?: string } | undefined;
+            if (settings?.role === 'separator') {
+              const h = b.height ?? 40;
+              return `<div class="${blockClass}" style="${[combinedStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
+            }
+            return imageContent
+              ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
+              : `<div class="${blockClass}" style="${[combinedStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
+          }
+          case 'signature': {
+            const signature = imageContent
+              ? `<img src="${imageContent}" alt="Подпись" style="max-width:100%">`
+              : `<em>Подпись: ___________________</em><br>${content}`;
+            return `<div class="${blockClass}"${styleAttr}>${signature}</div>`;
+          }
+          case 'table': {
+            const tableClass = layoutStyle
+              ? 'block block--positioned block--table'
+              : 'block block--table';
+            return `<div class="${tableClass}"${styleAttr}>${literalContent || '<p>Нет данных</p>'}</div>`;
+          }
+          case 'spacer': {
+            const h = b.height ?? 40;
+            return `<div class="${blockClass}" style="${[combinedStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
+          }
+          default:
+            return `<div class="${blockClass}"${styleAttr}>${content}</div>`;
+        }
+      })
+      .join('\n');
+    const fallbackTerms =
+      termsHtml &&
+      !blocks.some(
+        (block) =>
+          (block.settings as { role?: string } | undefined)?.role === 'terms',
+      )
+        ? `<section class="block kp-terms"><h3>Условия</h3>${termsHtml}</section>`
+        : '';
+    const pageNumber = data['__pageNumber'];
+    const pageCount = data['__pageCount'];
+    const pageNumberHtml =
+      template.pageNumbering &&
+      typeof pageNumber === 'number' &&
+      typeof pageCount === 'number'
+        ? `<div class="kp-page-number">Страница ${pageNumber} из ${pageCount}</div>`
+        : '';
+    const pageNumberCss = template.pageNumbering
+      ? '<style>.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}</style>'
+      : '';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
+  }
+
+  renderHtmlPages(
+    template: DocumentTemplateDocument,
+    pages: TemplateBlockDocument[][],
+    data: Record<string, unknown>,
+    options?: { backgroundPageIndices?: number[] },
+  ): string {
+    const renderedBodies = pages.map((page, index) => {
+      const html = this.renderHtml(template, page, {
+        ...data,
+        __pageNumber: index + 1,
+        __pageCount: pages.length,
+      }, {
+        backgroundPageIndex: options?.backgroundPageIndices?.[index],
+      });
+      const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+      return match?.[1] ?? '';
+    });
+    const orientation = (template as { orientation?: string }).orientation === 'landscape';
+    const width = orientation ? '297mm' : '210mm';
+    const height = orientation ? '210mm' : '297mm';
+    const contentStyles = this.buildDocumentContentStyles(template);
+    const pageNumberCss = template.pageNumbering
+      ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
+      : '';
+    const baseHref = documentPublicOrigin();
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
+  }
+
+  private buildDocumentContentStyles(
+    template: DocumentTemplateDocument,
+  ): string {
+    return `
+        h1, h2, h3 { margin: 8px 0; }
+        .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
+        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
+        .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
+        .block--positioned.block--table { overflow: hidden; }
+        table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
+        .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
+        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }`;
+  }
+}

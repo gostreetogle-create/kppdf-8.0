@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { DocumentTemplateService } from './document-template.service';
+import { DocumentRenderService } from '../document-render/document-render.service';
 
 const ORG_A = new Types.ObjectId().toString();
 const CAT_ID = new Types.ObjectId('aaaaaaaaaaaaaaaaaaaaaaaa');
@@ -80,6 +81,8 @@ function createService(overrides: Record<string, unknown> = {}) {
     dependencies.counter as never,
     dependencies.tableTemplateService as never,
     dependencies.categoryService as never,
+    {} as never,
+    new DocumentRenderService(),
   );
   return { service, model: dependencies.model as { create: jest.Mock; find: jest.Mock; findById: jest.Mock }, categoryService };
 }

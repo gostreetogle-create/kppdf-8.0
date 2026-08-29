@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { promises as fs } from 'node:fs';
 import { TemplateBlock, TemplateBlockDocument } from './template-block.schema';
+import { StudioDocument } from '../studio-document/studio-document.schema';
 import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
 import { UpdateTemplateBlockLayoutsDto } from './dto/update-layouts.dto';
@@ -13,17 +14,101 @@ import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
 import { normalizeBlockLayout, type BlockSource } from './template-block-layout';
 import type { BlockSourceDto } from './dto/create-template-block.dto';
 
+const PARENT_REF_BACKFILL_FLAG = 'template_blocks_parent_ref_v1';
+
 @Injectable()
-export class TemplateBlockService {
+export class TemplateBlockService implements OnModuleInit {
+  private readonly logger = new Logger(TemplateBlockService.name);
+
   constructor(
     @InjectModel(TemplateBlock.name)
     private readonly model: Model<TemplateBlockDocument>,
+    @InjectModel(StudioDocument.name)
+    private readonly studioDocumentModel: Model<{ manualPageCount?: number }>,
     private readonly sessionRunner: SessionRunner,
   ) {}
 
+  /** TZ-DOC-STUDIO-201a — idempotent backfill: parentType/parentId from legacy templateId. */
+  async onModuleInit(): Promise<void> {
+    await this.backfillParentRefs();
+  }
+
+  private async backfillParentRefs(): Promise<void> {
+    const flags = this.model.db.collection('migration_flags');
+    const existing = await flags.findOne({ key: PARENT_REF_BACKFILL_FLAG });
+    if (existing) return;
+
+    const missing = await this.model.countDocuments({ parentType: { $exists: false } }).exec();
+    if (missing === 0) {
+      await flags.insertOne({ key: PARENT_REF_BACKFILL_FLAG, completedAt: new Date() });
+      return;
+    }
+
+    const res = await this.model
+      .updateMany(
+        { parentType: { $exists: false }, templateId: { $exists: true, $ne: null } },
+        [{ $set: { parentType: 'template', parentId: '$templateId' } }],
+      )
+      .exec();
+
+    await flags.insertOne({
+      key: PARENT_REF_BACKFILL_FLAG,
+      completedAt: new Date(),
+      modifiedCount: res.modifiedCount,
+    });
+
+    if (res.modifiedCount > 0) {
+      this.logger.log(
+        `TZ-DOC-STUDIO-201a backfill parentType/parentId for ${res.modifiedCount} template block(s)`,
+      );
+    }
+  }
+
+  /** Dual-read filter: legacy templateId OR canonical parent ref (excludes studio clones). */
+  private templateParentFilter(templateId: string): Record<string, unknown> {
+    const templateObjectId = new Types.ObjectId(templateId);
+    return {
+      $or: [
+        { templateId: templateObjectId, parentType: { $ne: 'studio-document' } },
+        { parentType: 'template', parentId: templateObjectId },
+      ],
+    };
+  }
+
+  /** Studio-document scoped filter (canonical parent ref only). */
+  private studioParentFilter(studioDocId: string): Record<string, unknown> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      return { parentType: 'studio-document', parentId: null };
+    }
+    return {
+      parentType: 'studio-document',
+      parentId: new Types.ObjectId(studioDocId),
+    };
+  }
+
   async create(dto: CreateTemplateBlockDto): Promise<TemplateBlockDocument> {
+    const templateObjectId = new Types.ObjectId(dto.templateId);
+    const parentType = dto.parentType ?? 'template';
+    const parentId = dto.parentId
+      ? new Types.ObjectId(dto.parentId)
+      : parentType === 'template'
+        ? templateObjectId
+        : undefined;
+
+    if (parentType === 'studio-document' && !parentId) {
+      throw new BadRequestException('studio-document blocks require parentId');
+    }
+
+    const maxPage =
+      parentType === 'studio-document' && parentId
+        ? await this.resolveStudioMaxPage(String(parentId))
+        : 1;
+    const layoutOpts = { maxPage };
+
     return this.model.create({
-      templateId: new Types.ObjectId(dto.templateId),
+      templateId: templateObjectId,
+      parentType,
+      parentId,
       type: dto.type,
       order: dto.order,
       title: dto.title,
@@ -39,7 +124,8 @@ export class TemplateBlockService {
       settings: this.sanitizeSettings(dto.settings),
       dataBinding: dto.dataBinding,
       layout: dto.layout
-        ? (this.assertSupportedPage(dto.layout.page), normalizeBlockLayout(dto.layout))
+        ? (this.assertSupportedPage(dto.layout.page, maxPage),
+          normalizeBlockLayout(dto.layout, layoutOpts))
         : undefined,
       source: this.normalizeSource(dto.source),
       groupId: dto.groupId ?? null,
@@ -84,9 +170,42 @@ export class TemplateBlockService {
     const filter: Record<string, unknown> = { isActive: true };
     if (templateId) {
       if (!Types.ObjectId.isValid(templateId)) return [];
-      filter.templateId = new Types.ObjectId(templateId);
+      Object.assign(filter, this.templateParentFilter(templateId));
     }
-    return this.model.find(filter).sort({ templateId: 1, order: 1 }).exec();
+    return this.model.find(filter).sort({ order: 1 }).exec();
+  }
+
+  /** TZ-DOC-STUDIO-401 — list blocks for a studio document instance. */
+  async findAllByStudioDocument(studioDocId: string): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(studioDocId)) return [];
+    return this.model
+      .find({ isActive: true, ...this.studioParentFilter(studioDocId) })
+      .sort({ order: 1 })
+      .exec();
+  }
+
+  /**
+   * TZ-DOC-STUDIO-401 — create a block on a studio document.
+   * Legacy `templateId` = sourceTemplateId when present, else studioDocId (ADR §7).
+   */
+  async createForStudioDocument(
+    studioDocId: string,
+    dto: Omit<CreateTemplateBlockDto, 'templateId' | 'parentType' | 'parentId'>,
+    sourceTemplateId?: string,
+  ): Promise<TemplateBlockDocument> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      throw new BadRequestException('studioDocId must be a valid ObjectId');
+    }
+    const legacyTemplateId =
+      sourceTemplateId && Types.ObjectId.isValid(sourceTemplateId)
+        ? sourceTemplateId
+        : studioDocId;
+    return this.create({
+      ...dto,
+      templateId: legacyTemplateId,
+      parentType: 'studio-document',
+      parentId: studioDocId,
+    });
   }
 
   async findById(id: string): Promise<TemplateBlockDocument> {
@@ -118,13 +237,16 @@ export class TemplateBlockService {
     if (dto.settings !== undefined) doc.settings = this.sanitizeSettings(dto.settings);
     if (dto.dataBinding !== undefined) doc.dataBinding = dto.dataBinding;
     if (dto.layout !== undefined) {
-      this.assertSupportedPage(dto.layout.page);
-      doc.layout = normalizeBlockLayout({ ...doc.layout, ...dto.layout });
+      const maxPage = await this.resolveMaxPageForBlock(doc);
+      this.assertSupportedPage(dto.layout.page, maxPage);
+      doc.layout = normalizeBlockLayout({ ...doc.layout, ...dto.layout }, { maxPage });
     }
     if (dto.source !== undefined) doc.source = this.normalizeSource(dto.source);
     if (dto.groupId !== undefined) doc.groupId = dto.groupId;
     if (dto.locked !== undefined) doc.locked = dto.locked;
     if (dto.isActive !== undefined) doc.isActive = dto.isActive;
+    if (dto.parentType !== undefined) doc.parentType = dto.parentType;
+    if (dto.parentId !== undefined) doc.parentId = new Types.ObjectId(dto.parentId);
     return doc.save();
   }
 
@@ -145,11 +267,10 @@ export class TemplateBlockService {
       throw new BadRequestException('Layout update contains an invalid block ID');
     }
 
-    const templateObjectId = new Types.ObjectId(templateId);
     const blockObjectIds = ids.map((id) => new Types.ObjectId(id));
     const blocks = await this.model.find({
       _id: { $in: blockObjectIds },
-      templateId: templateObjectId,
+      ...this.templateParentFilter(templateId),
       isActive: true,
     }).exec();
     if (blocks.length !== ids.length) {
@@ -160,7 +281,10 @@ export class TemplateBlockService {
       await this.model.bulkWrite(
         dto.updates.map((update) => ({
           updateOne: {
-            filter: { _id: new Types.ObjectId(update.blockId), templateId: templateObjectId },
+            filter: {
+              _id: new Types.ObjectId(update.blockId),
+              ...this.templateParentFilter(templateId),
+            },
             update: { $set: { layout: normalizeBlockLayout(update.layout) } },
           },
         })),
@@ -168,6 +292,52 @@ export class TemplateBlockService {
       );
     });
     return this.findAll(templateId);
+  }
+
+  /** TZ-DOC-STUDIO-401 — batch layout update for studio-document blocks. */
+  async updateLayoutsForStudioDocument(
+    studioDocId: string,
+    dto: UpdateTemplateBlockLayoutsDto,
+  ): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      throw new NotFoundException(`StudioDocument ${studioDocId} not found`);
+    }
+
+    const maxPage = await this.resolveStudioMaxPage(studioDocId);
+    dto.updates.forEach((update) => this.assertSupportedPage(update.layout.page, maxPage));
+    const ids = dto.updates.map((update) => update.blockId);
+    if (new Set(ids).size !== ids.length) {
+      throw new BadRequestException('Layout updates must contain unique block IDs');
+    }
+    if (ids.some((id) => !Types.ObjectId.isValid(id))) {
+      throw new BadRequestException('Layout update contains an invalid block ID');
+    }
+
+    const blockObjectIds = ids.map((id) => new Types.ObjectId(id));
+    const blocks = await this.model.find({
+      _id: { $in: blockObjectIds },
+      ...this.studioParentFilter(studioDocId),
+      isActive: true,
+    }).exec();
+    if (blocks.length !== ids.length) {
+      throw new BadRequestException('Every layout block must belong to the studio document');
+    }
+
+    await this.sessionRunner.run(async (session) => {
+      await this.model.bulkWrite(
+        dto.updates.map((update) => ({
+          updateOne: {
+            filter: {
+              _id: new Types.ObjectId(update.blockId),
+              ...this.studioParentFilter(studioDocId),
+            },
+            update: { $set: { layout: normalizeBlockLayout(update.layout, { maxPage }) } },
+          },
+        })),
+        { ordered: true, session },
+      );
+    });
+    return this.findAllByStudioDocument(studioDocId);
   }
 
   async reorder(templateId: string, blockIds: string[]): Promise<TemplateBlockDocument[]> {
@@ -181,9 +351,8 @@ export class TemplateBlockService {
       throw new BadRequestException('Reorder contains an invalid block ID');
     }
 
-    const templateObjectId = new Types.ObjectId(templateId);
     const existing = await this.model.find({
-      templateId: templateObjectId,
+      ...this.templateParentFilter(templateId),
       isActive: true,
     }).select({ _id: 1 }).lean().exec();
     const existingIds = new Set(existing.map((block) => String(block._id)));
@@ -195,7 +364,11 @@ export class TemplateBlockService {
       await this.model.bulkWrite(
         blockIds.map((id, order) => ({
           updateOne: {
-            filter: { _id: new Types.ObjectId(id), templateId: templateObjectId, isActive: true },
+            filter: {
+              _id: new Types.ObjectId(id),
+              ...this.templateParentFilter(templateId),
+              isActive: true,
+            },
             update: { $set: { order } },
           },
         })),
@@ -205,10 +378,76 @@ export class TemplateBlockService {
     return this.findAll(templateId);
   }
 
-  private assertSupportedPage(page: number | undefined): void {
-    if (page !== undefined && page !== 1) {
-      throw new BadRequestException('Only page 1 is currently supported by the document builder');
+  /** TZ-DOC-STUDIO-401 — reorder blocks within a studio document. */
+  async reorderForStudioDocument(
+    studioDocId: string,
+    blockIds: string[],
+  ): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      throw new NotFoundException(`StudioDocument ${studioDocId} not found`);
     }
+    if (blockIds.length === 0 || new Set(blockIds).size !== blockIds.length) {
+      throw new BadRequestException('Reorder requires a unique, non-empty block ID list');
+    }
+    if (blockIds.some((id) => !Types.ObjectId.isValid(id))) {
+      throw new BadRequestException('Reorder contains an invalid block ID');
+    }
+
+    const existing = await this.model.find({
+      ...this.studioParentFilter(studioDocId),
+      isActive: true,
+    }).select({ _id: 1 }).lean().exec();
+    const existingIds = new Set(existing.map((block) => String(block._id)));
+    if (existingIds.size !== blockIds.length || blockIds.some((id) => !existingIds.has(id))) {
+      throw new BadRequestException(
+        'Reorder must contain every active block in the studio document exactly once',
+      );
+    }
+
+    await this.sessionRunner.run(async (session) => {
+      await this.model.bulkWrite(
+        blockIds.map((id, order) => ({
+          updateOne: {
+            filter: {
+              _id: new Types.ObjectId(id),
+              ...this.studioParentFilter(studioDocId),
+              isActive: true,
+            },
+            update: { $set: { order } },
+          },
+        })),
+        { ordered: true, session },
+      );
+    });
+    return this.findAllByStudioDocument(studioDocId);
+  }
+
+  private assertSupportedPage(page: number | undefined, maxPage = 1): void {
+    if (page === undefined) return;
+    const safeMax = Math.max(1, Math.floor(maxPage));
+    if (page < 1 || page > safeMax) {
+      if (safeMax === 1) {
+        throw new BadRequestException('Only page 1 is currently supported by the document builder');
+      }
+      throw new BadRequestException(`Page must be between 1 and ${safeMax}`);
+    }
+  }
+
+  private async resolveStudioMaxPage(studioDocId: string): Promise<number> {
+    if (!Types.ObjectId.isValid(studioDocId)) return 1;
+    const doc = await this.studioDocumentModel
+      .findById(studioDocId)
+      .select({ manualPageCount: 1 })
+      .lean()
+      .exec();
+    return Math.max(1, doc?.manualPageCount ?? 1);
+  }
+
+  private async resolveMaxPageForBlock(block: TemplateBlockDocument): Promise<number> {
+    if (block.parentType === 'studio-document' && block.parentId) {
+      return this.resolveStudioMaxPage(String(block.parentId));
+    }
+    return 1;
   }
 
   /**
@@ -346,6 +585,188 @@ export class TemplateBlockService {
 
   async remove(id: string): Promise<void> {
     const doc = await this.findById(id);
+    await this.unlinkBlockImage(doc);
     await this.model.updateOne({ _id: doc._id }, { $set: { deletedAt: new Date(), isActive: false } }).exec();
+  }
+
+  /**
+   * TZ-DOC-STUDIO-1801 — hard-delete all blocks for a studio document and unlink images.
+   */
+  async deleteAllByStudioDocument(studioDocId: string): Promise<number> {
+    if (!Types.ObjectId.isValid(studioDocId)) return 0;
+    const blocks = await this.model.find(this.studioParentFilter(studioDocId)).exec();
+    for (const block of blocks) {
+      await this.unlinkBlockImage(block);
+    }
+    const result = await this.model.deleteMany(this.studioParentFilter(studioDocId)).exec();
+    return result.deletedCount ?? 0;
+  }
+
+  private async unlinkBlockImage(doc: TemplateBlockDocument): Promise<void> {
+    const settings = (doc.settings ?? {}) as Record<string, unknown>;
+    const imageUrl = settings['imageUrl'];
+    if (
+      typeof imageUrl === 'string' &&
+      TemplateBlockService.BLOCK_IMAGE_URL_RE.test(imageUrl)
+    ) {
+      await fs.unlink(join(process.cwd(), imageUrl)).catch(() => {});
+    }
+  }
+
+  /**
+   * TZ-DOC-STUDIO-1301 — copy active template blocks onto a studio document.
+   *
+   * @param templateId — template whose blocks are copied (dual-read parent filter)
+   * @param studioDocId — target studio document id (parentId)
+   * @param sourceTemplateId — legacy `templateId` stored on cloned blocks
+   */
+  async cloneBlocksFromTemplate(
+    templateId: string,
+    studioDocId: string,
+    sourceTemplateId: string,
+  ): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      throw new BadRequestException('studioDocId must be a valid ObjectId');
+    }
+    if (!Types.ObjectId.isValid(templateId)) {
+      throw new BadRequestException('templateId must be a valid ObjectId');
+    }
+
+    const blocks = await this.findAll(templateId);
+    const legacyTemplateId =
+      sourceTemplateId && Types.ObjectId.isValid(sourceTemplateId)
+        ? sourceTemplateId
+        : studioDocId;
+
+    const created: TemplateBlockDocument[] = [];
+    for (const block of blocks) {
+      created.push(
+        await this.model.create({
+          templateId: new Types.ObjectId(legacyTemplateId),
+          parentType: 'studio-document',
+          parentId: new Types.ObjectId(studioDocId),
+          type: block.type,
+          order: block.order,
+          title: block.title,
+          content: block.content,
+          columns: block.columns,
+          height: block.height,
+          showLine: block.showLine,
+          settings: block.settings,
+          dataBinding: block.dataBinding,
+          layout: block.layout,
+          source: block.source,
+          groupId: block.groupId,
+          locked: block.locked,
+          isActive: block.isActive,
+        }),
+      );
+    }
+    return created;
+  }
+
+  /**
+   * TZ-DOC-STUDIO-1501 — copy active studio-document blocks onto a template
+   * (inverse of {@link cloneBlocksFromTemplate}).
+   */
+  async cloneBlocksToTemplate(
+    studioDocId: string,
+    templateId: string,
+    keepDataBindings = false,
+  ): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(studioDocId)) {
+      throw new BadRequestException('studioDocId must be a valid ObjectId');
+    }
+    if (!Types.ObjectId.isValid(templateId)) {
+      throw new BadRequestException('templateId must be a valid ObjectId');
+    }
+
+    const blocks = await this.findAllByStudioDocument(studioDocId);
+    const templateObjectId = new Types.ObjectId(templateId);
+
+    const created: TemplateBlockDocument[] = [];
+    for (const block of blocks) {
+      const payload: Record<string, unknown> = {
+        templateId: templateObjectId,
+        parentType: 'template',
+        parentId: templateObjectId,
+        type: block.type,
+        order: block.order,
+        title: block.title,
+        content: block.content,
+        columns: block.columns,
+        height: block.height,
+        showLine: block.showLine,
+        settings: block.settings,
+        layout: block.layout,
+        groupId: block.groupId,
+        locked: block.locked,
+        isActive: block.isActive,
+      };
+
+      if (keepDataBindings) {
+        payload.dataBinding = block.dataBinding;
+        payload.source = block.source;
+      } else {
+        const source = block.source as BlockSource | undefined;
+        if (
+          source &&
+          typeof source === 'object' &&
+          'kind' in source &&
+          source.kind !== 'field'
+        ) {
+          payload.source = block.source;
+        }
+      }
+
+      created.push(await this.model.create(payload));
+    }
+    return created;
+  }
+
+  /** TZ-DOC-STUDIO-1301 — clone active blocks between studio document instances. */
+  async cloneBlocksFromStudioDocument(
+    sourceStudioDocId: string,
+    targetStudioDocId: string,
+    sourceTemplateId?: string,
+  ): Promise<TemplateBlockDocument[]> {
+    if (!Types.ObjectId.isValid(sourceStudioDocId)) {
+      throw new BadRequestException('sourceStudioDocId must be a valid ObjectId');
+    }
+    if (!Types.ObjectId.isValid(targetStudioDocId)) {
+      throw new BadRequestException('targetStudioDocId must be a valid ObjectId');
+    }
+
+    const blocks = await this.findAllByStudioDocument(sourceStudioDocId);
+    const legacyTemplateId =
+      sourceTemplateId && Types.ObjectId.isValid(sourceTemplateId)
+        ? sourceTemplateId
+        : targetStudioDocId;
+
+    const created: TemplateBlockDocument[] = [];
+    for (const block of blocks) {
+      created.push(
+        await this.model.create({
+          templateId: new Types.ObjectId(legacyTemplateId),
+          parentType: 'studio-document',
+          parentId: new Types.ObjectId(targetStudioDocId),
+          type: block.type,
+          order: block.order,
+          title: block.title,
+          content: block.content,
+          columns: block.columns,
+          height: block.height,
+          showLine: block.showLine,
+          settings: block.settings,
+          dataBinding: block.dataBinding,
+          layout: block.layout,
+          source: block.source,
+          groupId: block.groupId,
+          locked: block.locked,
+          isActive: block.isActive,
+        }),
+      );
+    }
+    return created;
   }
 }

@@ -477,9 +477,9 @@ describe('ProposalWorkspacePage', () => {
     expect(fixture.nativeElement.querySelector('[data-test="kp-terms-panel"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('[data-test="kp-terms-add"]')).not.toBeNull();
 
-    const libToggle = Array.from(
-      fixture.nativeElement.querySelectorAll('[data-test="kp-terms-panel"] button'),
-    ).find((b) => (b as HTMLElement).textContent?.includes('Взять из библиотеки')) as HTMLElement;
+    const libToggle = fixture.nativeElement.querySelector(
+      '[data-test="kp-terms-library-toggle"]',
+    ) as HTMLElement;
     libToggle.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[data-test="kp-terms-library"]')).not.toBeNull();
@@ -488,6 +488,10 @@ describe('ProposalWorkspacePage', () => {
   it('terms panel mounts the inline text-block create action (TZ-405)', () => {
     const store = fixture.componentInstance['store'] as ProposalWorkspaceStore;
     store.openSection('terms');
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector('[data-test="kp-terms-library-toggle"]') as HTMLElement
+    ).click();
     fixture.detectChanges();
     expect(
       fixture.nativeElement.querySelector('[data-test="kp-ws-text-block-create"]'),
@@ -500,6 +504,10 @@ describe('ProposalWorkspacePage', () => {
       textBlocksVersion: { (): number; update: (fn: (v: number) => number) => void };
     };
     store.openSection('terms');
+    fixture.detectChanges();
+    (
+      fixture.nativeElement.querySelector('[data-test="kp-terms-library-toggle"]') as HTMLElement
+    ).click();
     fixture.detectChanges();
 
     const button = fixture.nativeElement.querySelector(

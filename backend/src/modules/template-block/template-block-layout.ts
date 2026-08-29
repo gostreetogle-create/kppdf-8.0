@@ -43,11 +43,17 @@ function finite(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-export function normalizeBlockLayout(layout: Partial<BlockLayout> | null | undefined): BlockLayout {
-  // The current builder and HTML renderer expose one page. Keep the field
-  // for forward-compatible pagination, but do not silently place page 2 on
-  // page 1 until page containers are implemented end-to-end.
-  const page = Math.min(1, Math.max(1, Math.floor(finite(layout?.page, DEFAULT_LAYOUT.page))));
+export interface NormalizeBlockLayoutOptions {
+  /** TZ-DOC-STUDIO-1701 — studio allows pages up to manualPageCount; builder stays at 1. */
+  maxPage?: number;
+}
+
+export function normalizeBlockLayout(
+  layout: Partial<BlockLayout> | null | undefined,
+  options?: NormalizeBlockLayoutOptions,
+): BlockLayout {
+  const maxPage = Math.max(1, Math.floor(finite(options?.maxPage, 1)));
+  const page = Math.min(maxPage, Math.max(1, Math.floor(finite(layout?.page, DEFAULT_LAYOUT.page))));
   const width = Math.min(1, Math.max(0.001, finite(layout?.width, DEFAULT_LAYOUT.width)));
   const x = Math.min(1 - width, Math.max(0, finite(layout?.x, DEFAULT_LAYOUT.x)));
   const rawHeight = layout?.height === undefined

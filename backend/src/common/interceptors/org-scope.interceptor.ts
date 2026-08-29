@@ -89,7 +89,16 @@ export class OrgScopeGuardInterceptor implements NestInterceptor {
       // Legacy / system records without organizationId are global.
       return true;
     }
-    return String(orgIdRaw) === userOrgId;
+    return this.normalizeOrgId(orgIdRaw) === userOrgId;
+  }
+
+  /** Handles raw ObjectId strings and populated `{ _id }` refs from `.populate()`. */
+  private normalizeOrgId(value: unknown): string {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value !== null && '_id' in value) {
+      return String((value as { _id: unknown })._id);
+    }
+    return String(value);
   }
 }
 

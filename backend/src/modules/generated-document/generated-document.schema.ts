@@ -1,7 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
-export type GeneratedDocumentSourceType = 'order' | 'quotation' | 'contract' | 'invoice' | 'manual';
+export type GeneratedDocumentSourceType =
+  | 'order'
+  | 'quotation'
+  | 'contract'
+  | 'invoice'
+  | 'manual'
+  | 'studio';
 export type GeneratedDocumentStatus = 'draft' | 'final';
 
 export type GeneratedDocumentDocument = HydratedDocument<GeneratedDocument>;
@@ -20,11 +26,23 @@ export class GeneratedDocument {
   @Prop()
   templateName?: string;
 
-  @Prop({ type: String, enum: ['order', 'quotation', 'contract', 'invoice', 'manual'], default: 'manual' })
+  @Prop({
+    type: String,
+    enum: ['order', 'quotation', 'contract', 'invoice', 'manual', 'studio'],
+    default: 'manual',
+  })
   sourceType!: GeneratedDocumentSourceType;
 
   @Prop({ type: Types.ObjectId })
   sourceId?: Types.ObjectId;
+
+  /** Wave 10 — studio archive provenance (required when sourceType === 'studio'). */
+  @Prop({ type: Types.ObjectId, ref: 'StudioDocument', index: true })
+  studioDocumentId?: Types.ObjectId;
+
+  /** Immutable snapshot of StudioDocument.revision at archive time. */
+  @Prop({ type: Number })
+  sourceRevision?: number;
 
   @Prop({ type: Types.ObjectId, ref: 'Organization', index: true })
   organizationId?: Types.ObjectId;
@@ -50,3 +68,4 @@ export class GeneratedDocument {
 export const GeneratedDocumentSchema = SchemaFactory.createForClass(GeneratedDocument);
 GeneratedDocumentSchema.index({ templateId: 1, createdAt: -1 });
 GeneratedDocumentSchema.index({ sourceType: 1, sourceId: 1 });
+GeneratedDocumentSchema.index({ sourceType: 1, studioDocumentId: 1 });

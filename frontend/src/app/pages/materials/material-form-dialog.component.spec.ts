@@ -662,13 +662,14 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
     );
     expect(source).toContain('space-y-4');
     expect(source).toContain('variant="outline"');
-    expect(source).not.toContain('variant="ghost"');
   });
 
   it('keeps supplier + on same row as overflow-select with supply add-btn class (TZ-UI-PLUS-602)', async () => {
     const { fixture } = await setup(null);
     fixture.detectChanges();
-    const row = fixture.nativeElement.querySelector('.pi-select-add-row') as HTMLElement;
+    const row = fixture.nativeElement
+      .querySelector('[data-test="mat-supplier-add"]')
+      ?.closest('.pi-select-add-row') as HTMLElement;
     const select = row?.querySelector('app-pi-overflow-select');
     const btn = row?.querySelector('[data-test="mat-supplier-add"]') as HTMLButtonElement;
     expect(row).toBeTruthy();

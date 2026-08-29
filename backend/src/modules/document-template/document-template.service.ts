@@ -49,26 +49,18 @@ import {
   TableTemplateDocument,
 } from '../table-template/table-template.schema';
 import { TextBlock, TextBlockDocument } from '../text-block/text-block.schema';
-import { sanitizeHtml } from '../../common/sanitize-html';
-import { blockBackgroundStyle, blockLayoutStyle } from './layout-renderer';
 import { DocumentTemplateCategoryService } from '../document-template-category/document-template-category.service';
+import {
+  DocumentRenderService,
+  escapeHtmlValue,
+} from '../document-render/document-render.service';
+import { DocType, DocTypeDocument } from '../doc-type/doc-type.schema';
+import {
+  BLANK_A4_SENTINEL_TAG,
+  BLANK_A4_TEMPLATE_NAME,
+} from './blank-a4-template.constants';
 
-function escapeHtmlValue(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\\\"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-/** Strip TipTap tags inside `{{…}}` tokens (legacy templates). TZ-KP-BIND-513 */
-export function normalizeSubstitutionHtml(html: string): string {
-  if (!html) return '';
-  return html.replace(/\{\{[\s\S]*?\}\}/g, (token) =>
-    token.replace(/<[^>]+>/g, ''),
-  );
-}
+export { normalizeSubstitutionHtml } from '../document-render/document-render.service';
 
 /**
  * TZ-86 Phase A.4 — DocumentTemplateService extended.
@@ -144,6 +136,9 @@ export class DocumentTemplateService {
     private readonly counter: CounterService,
     private readonly tableTemplateService: TableTemplateService,
     private readonly categoryService: DocumentTemplateCategoryService,
+    @InjectModel(DocType.name)
+    private readonly docTypeModel: Model<DocTypeDocument>,
+    private readonly documentRender: DocumentRenderService,
     // Optional keeps isolated legacy unit fixtures valid while the Nest module
     // supplies the model in production (ASSETS-302 invoice bindings).
     @Optional()
@@ -242,6 +237,57 @@ export class DocumentTemplateService {
         userId && Types.ObjectId.isValid(userId)
           ? new Types.ObjectId(userId)
           : undefined,
+    });
+  }
+
+  /**
+   * TZ-DOC-STUDIO-2004 — idempotent per-org sentinel for blank studio finalize.
+   * Satisfies GeneratedDocument.templateId required without making it optional globally.
+   */
+  async ensureBlankA4Sentinel(organizationId: string): Promise<DocumentTemplateDocument> {
+    if (!Types.ObjectId.isValid(organizationId)) {
+      throw new BadRequestException('organizationId must be a valid ObjectId');
+    }
+    const orgObjectId = new Types.ObjectId(organizationId);
+    const existing = await this.model
+      .findOne({
+        organizationId: orgObjectId,
+        tags: BLANK_A4_SENTINEL_TAG,
+        deletedAt: null,
+      })
+      .exec();
+    if (existing) {
+      return existing;
+    }
+
+    const docType = await this.docTypeModel
+      .findOne({ isActive: true })
+      .sort({ slug: 1 })
+      .exec();
+    if (!docType) {
+      throw new BadRequestException(
+        'Не удалось создать системный шаблон «Пустой A4»: нет активного типа документа. Создайте тип документа в справочнике.',
+      );
+    }
+
+    const categoryId = await this.resolveCategoryId({ organizationId });
+    return this.model.create({
+      name: BLANK_A4_TEMPLATE_NAME,
+      tags: [BLANK_A4_SENTINEL_TAG],
+      organizationId: orgObjectId,
+      docTypeId: docType._id,
+      categoryId,
+      isDefault: false,
+      isActive: true,
+      pageSize: 'A4',
+      orientation: 'portrait',
+      backgroundImage: [],
+      defaultBackgroundIndex: -1,
+      backgroundOpacity: 0.3,
+      pageNumbering: false,
+      defaultSheetLayout: { rowsFirstPage: 0, rowsNextPage: 0 },
+      version: 1,
+      notes: 'System sentinel for blank studio documents (TZ-DOC-STUDIO-2004).',
     });
   }
 
@@ -745,12 +791,12 @@ export class DocumentTemplateService {
     }
 
     if (pageBlocks.length === 1) {
-      return this.renderHtml(template, pageBlocks[0], {
+      return this.documentRender.renderHtml(template, pageBlocks[0], {
         ...bag,
         __termsHtml: termsHtml,
       });
     }
-    return this.renderHtmlPages(template, pageBlocks, {
+    return this.documentRender.renderHtmlPages(template, pageBlocks, {
       ...bag,
       __termsHtml: termsHtml,
     });
@@ -902,47 +948,6 @@ export class DocumentTemplateService {
         height: 1,
       },
     });
-  }
-
-  /** Shared in-page CSS for single-page and multipage document shells. */
-  private buildDocumentContentStyles(
-    template: DocumentTemplateDocument,
-  ): string {
-    return `
-        h1, h2, h3 { margin: 8px 0; }
-        .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
-        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
-        .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
-        .block--positioned.block--table { overflow: hidden; }
-        table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
-        .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
-        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }`;
-  }
-
-  private renderHtmlPages(
-    template: DocumentTemplateDocument,
-    pages: TemplateBlockDocument[][],
-    data: Record<string, unknown>,
-  ): string {
-    const renderedBodies = pages.map((page, index) => {
-      const html = this.renderHtml(template, page, {
-        ...data,
-        __pageNumber: index + 1,
-        __pageCount: pages.length,
-      });
-      const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
-      return match?.[1] ?? '';
-    });
-    const orientation = (template as any).orientation === 'landscape';
-    const width = orientation ? '297mm' : '210mm';
-    const height = orientation ? '210mm' : '297mm';
-    const contentStyles = this.buildDocumentContentStyles(template);
-    const pageNumberCss = template.pageNumbering
-      ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
-      : '';
-    const baseHref = this.documentPublicOrigin();
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
   }
 
   private renderQuotationTerms(
@@ -1638,11 +1643,6 @@ export class DocumentTemplateService {
     );
   }
 
-  /** Strip TipTap tags inside `{{…}}` tokens (legacy templates). TZ-KP-BIND-513 */
-  private normalizeSubstitutionHtml(html: string): string {
-    return normalizeSubstitutionHtml(html);
-  }
-
   /**
    * Resolve the issuer side for order/quotation/invoice builds. The document
    * template belongs to the issuing organization, so callers do not need to
@@ -1847,7 +1847,7 @@ export class DocumentTemplateService {
   async preview(id: string, dataId?: string): Promise<string> {
     const { template, blocks } = await this.findExpanded(id);
     const data = dataId ? await this.loadData(dataId) : {};
-    return this.renderHtml(template, blocks, data);
+    return this.documentRender.renderHtml(template, blocks, data);
   }
 
   private async loadData(dataId: string): Promise<Record<string, unknown>> {
@@ -1859,186 +1859,6 @@ export class DocumentTemplateService {
     const o = await this.orderModel.findById(dataId).exec();
     if (o) return { kind: 'order', ...JSON.parse(JSON.stringify(o)) };
     return {};
-  }
-
-  private renderHtml(
-    template: DocumentTemplateDocument,
-    blocks: TemplateBlockDocument[],
-    data: Record<string, unknown>,
-  ): string {
-    const escapeHtml = (value: string): string =>
-      value
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    const safeImageUrl = (value: string | undefined): string => {
-      const url = value?.trim() ?? '';
-      if (!url) return '';
-      if (/^data:/i.test(url)) {
-        return /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(url)
-          ? escapeHtml(url)
-          : '';
-      }
-      if (
-        /^https?:\/\//i.test(url) ||
-        /^\/(?!\/)/.test(url) ||
-        /^\.\.?(?:\/|$)/.test(url) ||
-        /^#/.test(url)
-      ) {
-        return escapeHtml(url);
-      }
-      return '';
-    };
-    const substitute = (s: string | undefined): string => {
-      if (!s) return '';
-      const normalized = this.normalizeSubstitutionHtml(s);
-      return normalized.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key: string) => {
-        const val = key.split('.').reduce<unknown>((acc, k) => {
-          if (acc == null) return undefined;
-          if (Array.isArray(acc)) {
-            const idx = parseInt(k, 10);
-            return Number.isFinite(idx) ? acc[idx] : undefined;
-          }
-          if (typeof acc === 'object') {
-            return (acc as Record<string, unknown>)[k];
-          }
-          return undefined;
-        }, data);
-        return val == null ? '' : escapeHtml(String(val));
-      });
-    };
-    const isLandscape = (template as any).orientation === 'landscape';
-    const pageWidth = isLandscape ? '297mm' : '210mm';
-    const pageMinHeight = isLandscape ? '210mm' : '297mm';
-    const contentStyles = this.buildDocumentContentStyles(template);
-    // TZ-QA-445C: absolute base so /uploads images resolve in srcdoc iframes
-    // and headless PDF (same contract as quotation-output.withPdfBaseHref).
-    const baseHref = this.documentPublicOrigin();
-    const css = `
-      <style>
-        @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
-        html, body { margin: 0; overflow: hidden; }
-        html { width: ${pageWidth}; height: ${pageMinHeight}; }
-        body { font-family: 'Times New Roman', serif; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 0; position: relative; box-sizing: border-box; }
-        ${contentStyles}
-      </style>`;
-    const bgImages = template.backgroundImage ?? [];
-    const defaultIdx = (template as any).defaultBackgroundIndex ?? -1;
-    const activeBgs =
-      defaultIdx >= 0 && defaultIdx < bgImages.length
-        ? [bgImages[defaultIdx]]
-        : bgImages;
-    const bgLayers = activeBgs
-      .map((url) => {
-        const safeUrl = safeImageUrl(url);
-        return safeUrl
-          ? `<div class="doc-bg"><img src="${safeUrl}" alt=""></div>`
-          : '';
-      })
-      .join('');
-    const termsHtml =
-      typeof data['__termsHtml'] === 'string' ? data['__termsHtml'] : '';
-    const body = blocks
-      .map((b) => {
-        const blockSettings = b.settings as
-          { role?: string; imageUrl?: string } | undefined;
-        const isTermsBlock = blockSettings?.role === 'terms';
-        const rawContent = b.content ?? b.title;
-        const content = isTermsBlock
-          ? (rawContent ?? '')
-          : substitute(rawContent);
-        const literalContent = isTermsBlock
-          ? content
-          : b.source?.kind === 'literal'
-            ? sanitizeHtml(b.source.value)
-            : content;
-        const imageSettings = blockSettings;
-        const imageContent =
-          safeImageUrl(content) || safeImageUrl(imageSettings?.imageUrl);
-        const layoutStyle = blockLayoutStyle(b.layout);
-        const bgStyle = blockBackgroundStyle(
-          b.settings as Record<string, unknown> | undefined,
-        );
-        const combinedStyle = [layoutStyle, bgStyle].filter(Boolean).join(';');
-        const blockClass = layoutStyle ? 'block block--positioned' : 'block';
-        const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
-        const cols = b.columns ?? [];
-        const multiColHtml =
-          cols.length > 0
-            ? `<div style="display:flex;gap:12px;width:100%">${cols
-                .map((c) => {
-                  const w = c.width && c.width > 0 ? c.width : 1;
-                  return `<div style="flex:${w};font-size:${c.fontSize ?? 14}px">${substitute(c.content)}</div>`;
-                })
-                .join('')}</div>`
-            : null;
-        switch (b.type) {
-          case 'header':
-            return `<div class="${blockClass}"${styleAttr}><h2>${substitute(b.title ?? '')}</h2>${multiColHtml ?? literalContent}</div>`;
-          case 'text':
-            return `<div class="${blockClass}"${styleAttr}>${multiColHtml ?? literalContent}</div>`;
-          case 'image': {
-            const settings = b.settings as { role?: string } | undefined;
-            if (settings?.role === 'separator') {
-              const h = b.height ?? 40;
-              return `<div class="${blockClass}" style="${[combinedStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
-            }
-            return imageContent
-              ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
-              : `<div class="${blockClass}" style="${[combinedStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
-          }
-          case 'signature': {
-            const signature = imageContent
-              ? `<img src="${imageContent}" alt="Подпись" style="max-width:100%">`
-              : `<em>Подпись: ___________________</em><br>${content}`;
-            return `<div class="${blockClass}"${styleAttr}>${signature}</div>`;
-          }
-          case 'table': {
-            const tableClass = layoutStyle
-              ? 'block block--positioned block--table'
-              : 'block block--table';
-            return `<div class="${tableClass}"${styleAttr}>${literalContent || '<p>Нет данных</p>'}</div>`;
-          }
-          default:
-            return `<div class="${blockClass}"${styleAttr}>${content}</div>`;
-        }
-      })
-      .join('\n');
-    const fallbackTerms =
-      termsHtml &&
-      !blocks.some(
-        (block) =>
-          (block.settings as { role?: string } | undefined)?.role === 'terms',
-      )
-        ? `<section class="block kp-terms"><h3>Условия</h3>${termsHtml}</section>`
-        : '';
-    const pageNumber = data['__pageNumber'];
-    const pageCount = data['__pageCount'];
-    const pageNumberHtml =
-      template.pageNumbering &&
-      typeof pageNumber === 'number' &&
-      typeof pageCount === 'number'
-        ? `<div class="kp-page-number">Страница ${pageNumber} из ${pageCount}</div>`
-        : '';
-    const pageNumberCss = template.pageNumbering
-      ? '<style>.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}</style>'
-      : '';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtml(baseHref)}/"><title>${escapeHtml(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
-  }
-
-  /** Public origin for document `<base href>` (uploads in PDF / srcdoc). */
-  private documentPublicOrigin(): string {
-    const configured =
-      process.env.KPPDF_PUBLIC_ORIGIN ??
-      process.env.PUBLIC_BASE_URL ??
-      'http://127.0.0.1:3000';
-    try {
-      return new URL(configured).origin;
-    } catch {
-      return 'http://127.0.0.1:3000';
-    }
   }
 
   // ── Phase A.6 — Upload background image (TZ-86 §2.6) ─────────────────────────────────

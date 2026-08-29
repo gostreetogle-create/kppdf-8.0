@@ -226,6 +226,7 @@ export class BlockRendererStateService {
       table: 'Таблица без шаблона',
       image: 'Изображение не выбрано',
       signature: 'Место для подписи',
+      spacer: '',
     };
     return placeholders[b.type] ?? '—';
   }); // ═══════════════════════════════════════════════════════════

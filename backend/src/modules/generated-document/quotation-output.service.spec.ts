@@ -281,4 +281,53 @@ describe('QuotationOutputService (TZ-SALES-345)', () => {
       }),
     );
   });
+
+  it('caps concurrent PDF renders via semaphore (TZ-DOC-STUDIO-1801)', async () => {
+    process.env.PUPPETEER_EXECUTABLE_PATH = 'chrome-for-test';
+    process.env.PDF_MAX_CONCURRENT = '1';
+
+    let active = 0;
+    let maxActive = 0;
+    const page = {
+      setContent: jest.fn().mockImplementation(async () => {
+        active++;
+        maxActive = Math.max(maxActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        active--;
+      }),
+      pdf: jest.fn().mockResolvedValue(new Uint8Array([37, 80, 68, 70])),
+      close: jest.fn().mockResolvedValue(undefined),
+    };
+    const browser = {
+      newPage: jest.fn().mockResolvedValue(page),
+      close: jest.fn().mockResolvedValue(undefined),
+    };
+    jest.spyOn(puppeteer, 'launch').mockResolvedValue(browser as never);
+
+    const model = {
+      findById: jest.fn(() => ({
+        exec: jest.fn().mockResolvedValue(quotationFixture()),
+      })),
+    };
+    const templateService = {
+      findById: jest.fn().mockResolvedValue({
+        _id: templateId,
+        organizationId,
+      }),
+      build: jest.fn().mockResolvedValue('<html><body>pdf</body></html>'),
+      assertBuildSourcesInOrganization: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new QuotationOutputService(
+      model as never,
+      templateService as never,
+      { archiveRendered: jest.fn() } as never,
+    );
+
+    await Promise.all([
+      service.renderHtmlToPdf('<html><body>a</body></html>'),
+      service.renderHtmlToPdf('<html><body>b</body></html>'),
+    ]);
+
+    expect(maxActive).toBe(1);
+  });
 });

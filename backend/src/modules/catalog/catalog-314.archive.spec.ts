@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { ConflictException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ROLES_KEY } from '../../common/decorators/roles.decorator';
+import { PERMISSIONS_KEY } from '../../common/decorators/permissions.decorator';
 import { ProductController } from '../product/product.controller';
 import { MaterialController } from '../material/material.controller';
 import { ProductModuleController } from '../product-module/product-module.controller';
@@ -76,7 +77,9 @@ describe('TZ-CATALOG-314 archive contracts', () => {
     expect(Reflect.getMetadata(ROLES_KEY, ProductController.prototype.remove)).toEqual(['admin', 'manager']);
     expect(Reflect.getMetadata(ROLES_KEY, MaterialController.prototype.remove)).toEqual(['admin', 'manager']);
     expect(Reflect.getMetadata(ROLES_KEY, ProductModuleController.prototype.remove)).toEqual(['admin', 'manager']);
-    expect(Reflect.getMetadata(ROLES_KEY, WorkTypeController.prototype.remove)).toEqual(['admin', 'manager']);
+    expect(Reflect.getMetadata(PERMISSIONS_KEY, WorkTypeController.prototype.remove)).toEqual([
+      'production:write',
+    ]);
     expect(Reflect.getMetadata(ROLES_KEY, CategoryController.prototype.remove)).toEqual(['admin']);
   });
 

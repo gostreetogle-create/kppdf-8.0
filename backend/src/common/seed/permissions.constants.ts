@@ -46,7 +46,7 @@ export const PAGE_KEYS = [
   // TZ-NAV-301 — lifecycle stubs + clients hub
   'counterparties', 'design', 'supply', 'shipping',
   'dictionaries', 'categories', 'doc-template-categories', 'text-block-categories', 'color-references',
-  'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents',
+  'doc-templates', 'doc-texts', 'doc-tables', 'doc-documents', 'doc-studio',
   'inventory', 'storage-items', 'stock-movements',
   'people',
   'production',

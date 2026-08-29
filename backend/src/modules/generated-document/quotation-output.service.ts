@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import puppeteer, { type Browser, type Page } from 'puppeteer-core';
 import { existsSync } from 'node:fs';
 import { Model, Types } from 'mongoose';
+import { PdfSemaphore } from '../../common/pdf/pdf-semaphore';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { DocumentTemplateService } from '../document-template/document-template.service';
 import { BuildDocumentDto } from '../document-template/dto/build-document.dto';
@@ -25,7 +27,11 @@ type RenderedQuotation = {
 
 @Injectable()
 export class QuotationOutputService {
+  private readonly logger = new Logger(QuotationOutputService.name);
   private browserPromise: Promise<Browser> | null = null;
+  private readonly pdfSemaphore = new PdfSemaphore(
+    Math.max(1, Number(process.env.PDF_MAX_CONCURRENT ?? 2)),
+  );
 
   constructor(
     @InjectModel(Quotation.name)
@@ -43,11 +49,39 @@ export class QuotationOutputService {
     const rendered = await this.renderQuotation(id, user, {
       preferLiveRebuild: true,
     });
+    const buffer = await this.renderHtmlToPdf(rendered.html);
+    return { buffer, number: rendered.quotation.number };
+  }
+
+  /** Shared HTML → PDF pipeline (Wave 10 studio reuse). */
+  async renderHtmlToPdf(html: string): Promise<Buffer> {
+    const release = await this.pdfSemaphore.acquire();
+    const startedAt = Date.now();
+    try {
+      const buffer = await this.renderHtmlToPdfInner(html);
+      const durationMs = Date.now() - startedAt;
+      this.logger.log(`PDF render completed in ${durationMs}ms`);
+      return buffer;
+    } catch (error) {
+      const durationMs = Date.now() - startedAt;
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`PDF render failed after ${durationMs}ms: ${message}`);
+      if (error instanceof ServiceUnavailableException) throw error;
+      throw new ServiceUnavailableException(
+        'Сервис печати недоступен, используйте Печать в браузере.',
+        { cause: error instanceof Error ? error : undefined },
+      );
+    } finally {
+      release();
+    }
+  }
+
+  private async renderHtmlToPdfInner(html: string): Promise<Buffer> {
     const browser = await this.getBrowser();
     let page: Page | undefined;
     try {
       page = await browser.newPage();
-      await page.setContent(this.withPdfBaseHref(rendered.html), {
+      await page.setContent(this.withPdfBaseHref(html), {
         waitUntil: 'load',
         timeout: 15_000,
       });
@@ -77,20 +111,14 @@ export class QuotationOutputService {
           );
         });
       }
-      const buffer = Buffer.from(
+      return Buffer.from(
         await page.pdf({
-          format: this.pageFormat(rendered.html),
-          landscape: this.isLandscape(rendered.html),
+          format: this.pageFormat(html),
+          landscape: this.isLandscape(html),
           printBackground: true,
           preferCSSPageSize: true,
           margin: { top: '0', right: '0', bottom: '0', left: '0' },
         }),
-      );
-      return { buffer, number: rendered.quotation.number };
-    } catch (error) {
-      if (error instanceof ServiceUnavailableException) throw error;
-      throw new ServiceUnavailableException(
-        'Сервис печати недоступен, используйте Печать в браузере.',
       );
     } finally {
       await page?.close().catch(() => undefined);

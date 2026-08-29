@@ -41,7 +41,7 @@ describe('ProposalCreateTermsComponent', () => {
 
   it('shows the Russian empty state and an explicit add-condition CTA', () => {
     const hint = fixture.nativeElement.querySelector('[data-test="kp-hint-terms"]');
-    expect(hint?.textContent).toContain('Тексты условий — в это КП');
+    expect(hint?.textContent).toContain('Строки ниже попадают в PDF');
     expect(
       fixture.nativeElement.querySelector('[data-test="kp-terms-empty"]')?.textContent,
     ).toContain('Добавьте первое условие');

@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { DocumentTemplateService } from './document-template.service';
+import { DocumentRenderService } from '../document-render/document-render.service';
 
 const ORG_A = new Types.ObjectId().toString();
 const ORG_B = new Types.ObjectId();
@@ -61,6 +62,8 @@ function createService(overrides: Record<string, unknown> = {}) {
     dependencies.counter as never,
     dependencies.tableTemplateService as never,
     dependencies.categoryService as never,
+    {} as never,
+    new DocumentRenderService(),
   );
 }
 

@@ -1,0 +1,172 @@
+<app-pi-group-workspace
+  [toc]="toc"
+  tocActiveId="studio"
+  [chips]="chips"
+  activeId="list"
+  [flushBody]="true"
+>
+  @if (vm.loadError()) {
+    <div class="p-4">
+      <p class="text-sm text-destructive">{{ vm.loadError() }}</p>
+      <app-pi-button variant="ghost" size="sm" href="/doc-constructor/studio" class="mt-2">
+        ← К списку
+      </app-pi-button>
+    </div>
+  } @else {
+    <app-proposal-workspace-shell
+      [orientation]="vm.orientation()"
+      [panelCollapsed]="vm.panelCollapsed()"
+      [activeSection]="vm.activeSection()"
+      [panelSide]="vm.panelSide()"
+      [panelWide]="vm.panelWide()"
+      [panelTitle]="vm.panelTitle()"
+      [railItems]="railItems"
+      [statusText]="vm.statusText()"
+      [sheetHost]="vm.viewMode() === 'editor'"
+      (panelToggle)="vm.togglePanel()"
+      (sectionChange)="vm.onSection($event)"
+      (sheetClick)="vm.onSheetClick()"
+    >
+      <app-studio-ribbon-mode [viewMode]="vm.viewMode()" (viewModeChange)="setViewMode($event)" />
+      <app-studio-ribbon-actions
+        [pdfLoading]="vm.pdfLoading()"
+        [archiveDisabled]="!vm.canArchive() || vm.finalizing()"
+        [archiveTitle]="vm.archiveButtonTitle()"
+        (downloadPdf)="vm.onDownloadPdf()"
+        (finalize)="vm.onFinalize()"
+      />
+
+      <div kpWsPanel class="text-sm" [class.max-w-[272px]]="!vm.panelWide()">
+        <div class="mb-3">
+          <app-pi-button variant="ghost" size="sm" href="/doc-constructor/studio">
+            ← К списку
+          </app-pi-button>
+        </div>
+
+        @switch (vm.activeSection()) {
+          @case ('elements') {
+            <app-studio-panel-elements
+              [doc]="vm.doc()"
+              [blockCount]="vm.blocksState.blocks().length"
+              [previewMode]="vm.viewMode() === 'preview'"
+              (addText)="vm.addTextBlock()"
+              (addTable)="vm.addTableBlock()"
+              (imageFile)="vm.onImageFile($event)"
+            />
+          }
+          @case ('layers') {
+            <app-studio-panel-layers
+              [previewMode]="vm.viewMode() === 'preview'"
+              [pageCount]="vm.pageCount()"
+              [pageFilterValue]="vm.pageFilterValue()"
+              [pageOptions]="vm.pageOptions()"
+              [layers]="vm.layersSorted()"
+              [selectedId]="vm.blocksState.selectedId()"
+              [typeLabel]="blockTypeLabel"
+              (addPage)="vm.addPage()"
+              (removePage)="vm.removePage()"
+              (pageFilterChange)="vm.onPageFilterChange($event)"
+              (layerSelect)="vm.onLayerSelect($event)"
+              (toggleLock)="vm.toggleLayerLock($event)"
+              (layerReorder)="vm.applyLayerZOrder($event)"
+            />
+          }
+          @case ('properties') {
+            <app-studio-panel-properties
+              [block]="vm.selectedBlock()"
+              (contentChange)="onContentChange($event)"
+              (titleChange)="onTitleChange($event)"
+              (lockChange)="onLockChange($event)"
+              (imageFullPage)="onImageFullPage()"
+              (imageToBack)="onImageToBack()"
+              (deleteBlock)="vm.deleteSelected()"
+            />
+          }
+          @case ('data') {
+            <app-studio-panel-data
+              [issuerOrgName]="vm.issuerOrgName()"
+              [counterpartyId]="vm.counterpartyId()"
+              [quotationId]="vm.quotationId()"
+              [orderId]="vm.orderId()"
+              [counterparties]="vm.counterparties()"
+              [proposals]="vm.proposals()"
+              [orders]="vm.orders()"
+              [contextSaving]="vm.contextSaving()"
+              [contextSaveError]="vm.contextSaveError()"
+              (counterpartyChange)="vm.onCounterpartyChange($event)"
+              (quotationChange)="vm.onQuotationChange($event)"
+              (orderChange)="vm.onOrderChange($event)"
+            />
+          }
+          @case ('table') {
+            <app-studio-panel-table
+              [doc]="vm.doc()"
+              [block]="vm.selectedTableBlock()"
+              [draftRows]="vm.draftTableRows()"
+              [quotationId]="vm.quotationId()"
+              [orderId]="vm.orderId()"
+              [contextSaving]="vm.contextSaving()"
+              [dataSetSaving]="vm.dataSetSaving()"
+              [dataSetSaveError]="vm.dataSetSaveError()"
+              (cellChange)="vm.onTableCellChange($event.rowIdx, $event.colIdx, $event.value)"
+              (removeRow)="vm.removeTableRow($event)"
+              (addRow)="vm.addTableRow()"
+              (linkQuotation)="onLinkQuotation()"
+              (linkOrder)="onLinkOrder()"
+              (saveRows)="vm.saveTableDataSet()"
+            />
+          }
+          @case ('template') {
+            <app-studio-panel-template
+              [pageNumbering]="vm.doc()?.pageNumbering ?? false"
+              [templateName]="vm.templateSaveName()"
+              [docTypeId]="vm.docTypeId()"
+              [docTypes]="vm.docTypes()"
+              [keepBindings]="vm.templateKeepBindings()"
+              [contextSaving]="vm.contextSaving()"
+              [saving]="vm.templateSaving()"
+              [saveError]="vm.templateSaveError()"
+              (pageNumberingChange)="vm.onPageNumberingChange($event)"
+              (templateNameChange)="vm.templateSaveName.set($event)"
+              (docTypeChange)="vm.onDocTypeChange($event)"
+              (keepBindingsChange)="vm.templateKeepBindings.set($event)"
+              (save)="vm.onSaveAsTemplate()"
+            />
+          }
+        }
+      </div>
+
+      <div kpWsSheet class="studio-canvas-host">
+        @if (vm.viewMode() === 'preview') {
+          @if (vm.previewLoading()) {
+            <p class="text-sm text-muted-foreground p-4">Рендер…</p>
+          } @else if (vm.previewError()) {
+            <p class="text-sm text-destructive p-4">{{ vm.previewError() }}</p>
+          } @else if (vm.previewHtml()) {
+            <iframe
+              class="studio-preview-frame"
+              title="Просмотр документа"
+              [srcdoc]="vm.previewHtml()!"
+              data-test="studio-preview-frame"
+            ></iframe>
+          }
+        } @else {
+          <app-builder-canvas
+            [blocks]="vm.canvasBlocks()"
+            [selectedId]="vm.blocksState.selectedId()"
+            [orientation]="vm.orientation()"
+            [pageSize]="vm.pageSize()"
+            [backgroundImages]="vm.backgroundImages()"
+            [backgroundOpacity]="vm.doc()?.backgroundOpacity ?? 0.3"
+            [pageNumbering]="vm.doc()?.pageNumbering ?? false"
+            [viewMode]="'editor'"
+            (select)="vm.onSelect($event)"
+            (layoutChanges)="vm.blocksState.onLayoutChanges($event)"
+            (canvasClick)="vm.onCanvasClick()"
+            (deleteRequest)="vm.blocksState.deleteBlock($event)"
+          />
+        }
+      </div>
+    </app-proposal-workspace-shell>
+  }
+</app-pi-group-workspace>

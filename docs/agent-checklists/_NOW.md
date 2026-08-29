@@ -1,21 +1,15 @@
-﻿# NOW - Оперативная доска агента (тонкий срез)
+﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-27T22:12:29+03:00
+updated_at: 2026-08-29T07:52:00+03:00
 
 ## ACTIVE / LIVE
 
-_(очередь пуста)_
-
-**DEPLOY-READY = READY** @ `fd416e40` — evidence `docs/agent-checklists/PRE-DEPLOY-2026-08-27.md`
-PO: «сделай деплой по документации» (warm, без wipe). На машине деплоя нужны `config.env` + `CREDENTIALS.md`.
+_(none — Document Studio wave committed)_
 
 ## PARK
-- DESK-441 · PRICE-HIST
-- architecture debt: inventory→material-form-dialog (445B)
 
-## DONE
-… · **UX-444A–D** · **QA-445A–H** · **UX-445I**
+- `TZ-DOC-STUDIO-2006` render extract phase 2 (техдолг)
+- template_blocks cutover step 5–6
+- TZ-2001 leak audit: run `backend/scripts/tz-doc-studio-2001-dual-read-leak-audit.ts` on prod Mongo before deploy (script in repo, not executed yet)
 
-## Checkpoint — TZ-UX-445I DONE
-- DONE: состав/дерево свёрнуты до клика; commit `fd416e40`. Deploy: prep READY.
-
+Program: `tasks/WAVE-DOC-STUDIO.md` · waves 0–19 + 2001–2004 + UI-301/302 **DONE** (committed)

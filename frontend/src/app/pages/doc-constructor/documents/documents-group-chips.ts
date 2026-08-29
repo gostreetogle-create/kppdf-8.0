@@ -11,6 +11,12 @@ export const DOCUMENTS_TOC_CHIPS: readonly GroupChip[] = [
     pageKey: 'doc-templates',
   },
   {
+    id: 'studio',
+    label: 'Студия документов',
+    route: '/doc-constructor/studio',
+    pageKey: 'doc-studio',
+  },
+  {
     id: 'documents',
     label: 'Архив',
     route: '/doc-constructor/documents',

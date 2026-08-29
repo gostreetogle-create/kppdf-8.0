@@ -4,6 +4,10 @@ import {
   GeneratedDocument,
   GeneratedDocumentSchema,
 } from './generated-document.schema';
+import {
+  Organization,
+  OrganizationSchema,
+} from '../organization/organization.schema';
 import { Quotation, QuotationSchema } from '../quotation/quotation.schema';
 import { QuotationOutputService } from './quotation-output.service';
 import { QuotationOutputController } from './quotation-output.controller';
@@ -16,6 +20,7 @@ import { CounterModule } from '../counter/counter.module';
   imports: [
     MongooseModule.forFeature([
       { name: GeneratedDocument.name, schema: GeneratedDocumentSchema },
+      { name: Organization.name, schema: OrganizationSchema },
       { name: Quotation.name, schema: QuotationSchema },
     ]),
     DocumentTemplateModule,
@@ -23,6 +28,6 @@ import { CounterModule } from '../counter/counter.module';
   ],
   controllers: [GeneratedDocumentController, QuotationOutputController],
   providers: [GeneratedDocumentService, QuotationOutputService],
-  exports: [GeneratedDocumentService, MongooseModule],
+  exports: [GeneratedDocumentService, QuotationOutputService, MongooseModule],
 })
 export class GeneratedDocumentModule {}

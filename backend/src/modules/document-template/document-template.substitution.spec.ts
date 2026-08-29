@@ -3,6 +3,7 @@ import {
   DocumentTemplateService,
   normalizeSubstitutionHtml,
 } from './document-template.service';
+import { DocumentRenderService } from '../document-render/document-render.service';
 
 function lookup<T>(value: T) {
   return {
@@ -88,6 +89,8 @@ function createService(
     dependencies.counter as never,
     dependencies.tableTemplateService as never,
     dependencies.categoryService as never,
+    {} as never,
+    new DocumentRenderService(),
   );
 }
 

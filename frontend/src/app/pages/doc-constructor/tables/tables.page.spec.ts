@@ -94,6 +94,7 @@ describe('TablesPage', () => {
   it('keeps Documents TOC dark and table subchips yellow-only', () => {
     expect(DOCUMENTS_TOC_CHIPS.map((chip) => chip.id)).toEqual([
       'templates',
+      'studio',
       'documents',
       'texts',
       'tables',

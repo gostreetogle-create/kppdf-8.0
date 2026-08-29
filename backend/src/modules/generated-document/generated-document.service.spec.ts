@@ -27,6 +27,29 @@ function makeDocument(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function orgModelMock() {
+  return {
+    findById: jest.fn().mockReturnValue({
+      select: jest.fn().mockReturnThis(),
+      lean: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue({ shortName: 'Demo' }),
+    }),
+  };
+}
+
+function makeService(
+  model: Record<string, unknown>,
+  templateService: Record<string, unknown>,
+  counter: Record<string, unknown>,
+) {
+  return new GeneratedDocumentService(
+    model as never,
+    orgModelMock() as never,
+    templateService as never,
+    counter as never,
+  );
+}
+
 describe('GeneratedDocumentService organization scope', () => {
   it('filters list and detail reads to the authenticated organization plus global records', async () => {
     const model = {
@@ -35,11 +58,7 @@ describe('GeneratedDocumentService organization scope', () => {
     };
     const templateService = { findById: jest.fn(), build: jest.fn() };
     const counter = { next: jest.fn() };
-    const service = new GeneratedDocumentService(
-      model as never,
-      templateService as never,
-      counter as never,
-    );
+    const service = makeService(model, templateService, counter);
 
     await service.findAll({}, { organizationId: ORG_A.toString() });
     await service.findById(DOCUMENT_ID.toString(), { organizationId: ORG_A.toString() });
@@ -63,14 +82,14 @@ describe('GeneratedDocumentService organization scope', () => {
       ),
       create: jest.fn(),
     };
-    const service = new GeneratedDocumentService(
-      model as never,
+    const service = makeService(
+      model,
       {
         findById: jest.fn(),
         assertBuildSourcesInOrganization: jest.fn(),
         build: jest.fn(),
-      } as never,
-      { next: jest.fn() } as never,
+      },
+      { next: jest.fn() },
     );
 
     await expect(
@@ -97,11 +116,7 @@ describe('GeneratedDocumentService organization scope', () => {
       assertBuildSourcesInOrganization: jest.fn(),
       build: jest.fn(),
     };
-    const service = new GeneratedDocumentService(
-      model as never,
-      templateService as never,
-      { next: jest.fn() } as never,
-    );
+    const service = makeService(model, templateService, { next: jest.fn() });
 
     await expect(
       service.generate(
@@ -145,11 +160,7 @@ describe('GeneratedDocumentService organization scope', () => {
       ),
       build: jest.fn(),
     };
-    const service = new GeneratedDocumentService(
-      model as never,
-      templateService as never,
-      { next: jest.fn() } as never,
-    );
+    const service = makeService(model, templateService, { next: jest.fn() });
 
     await expect(
       service.generate(
@@ -180,11 +191,7 @@ describe('GeneratedDocumentService organization scope', () => {
       build: jest.fn().mockResolvedValue('<p>safe</p>'),
     };
     const counter = { next: jest.fn().mockResolvedValue('DOC-1') };
-    const service = new GeneratedDocumentService(
-      model as never,
-      templateService as never,
-      counter as never,
-    );
+    const service = makeService(model, templateService, counter);
 
     await service.generate(
       TEMPLATE_ID.toString(),
@@ -204,14 +211,14 @@ describe('GeneratedDocumentService organization scope', () => {
       findOne: jest.fn().mockReturnValue(chain(document)),
       find: jest.fn(),
     };
-    const service = new GeneratedDocumentService(
-      model as never,
+    const service = makeService(
+      model,
       {
         findById: jest.fn(),
         assertBuildSourcesInOrganization: jest.fn(),
         build: jest.fn(),
-      } as never,
-      { next: jest.fn() } as never,
+      },
+      { next: jest.fn() },
     );
 
     await expect(
@@ -235,16 +242,53 @@ describe('GeneratedDocumentService organization scope', () => {
       build: jest.fn().mockResolvedValue('<p>safe</p>'),
     };
     const counter = { next: jest.fn().mockResolvedValue('DOC-1') };
-    const service = new GeneratedDocumentService(
-      model as never,
-      templateService as never,
-      counter as never,
-    );
+    const service = makeService(model, templateService, counter);
 
     await service.generate(TEMPLATE_ID.toString(), {}, undefined, { organizationId: null });
 
     expect(model.create).toHaveBeenCalledWith(
       expect.objectContaining({ organizationId: ORG_B }),
+    );
+  });
+});
+
+describe('GeneratedDocumentService archiveStudio (TZ-DOC-STUDIO-1801)', () => {
+  it('uses SD-{orgShort} counter prefix for studio archives', async () => {
+    const studioId = new Types.ObjectId();
+    const templateId = new Types.ObjectId();
+    const orgId = new Types.ObjectId();
+    const model = { create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId() }) };
+    const counter = { next: jest.fn().mockResolvedValue('SD-DEMO-2026-001') };
+    const orgModel = {
+      findById: jest.fn().mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        lean: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue({ shortName: 'Demo' }),
+      }),
+    };
+    const service = new GeneratedDocumentService(
+      model as never,
+      orgModel as never,
+      { findById: jest.fn() } as never,
+      counter as never,
+    );
+
+    await service.archiveStudio({
+      studioDocumentId: studioId.toString(),
+      sourceRevision: 3,
+      templateId: templateId.toString(),
+      name: 'Archived',
+      organizationId: orgId.toString(),
+      html: '<p>snap</p>',
+      buildPayload: {},
+    });
+
+    expect(counter.next).toHaveBeenCalledWith(
+      'studio-generated-document',
+      'SD-DEMO',
+    );
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({ number: 'SD-DEMO-2026-001' }),
     );
   });
 });
