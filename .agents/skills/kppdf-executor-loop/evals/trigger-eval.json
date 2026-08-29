@@ -1,0 +1,82 @@
+[
+  {
+    "query": "agent_id: claude — возьми TZ-245 из tasks/_active/, заполни claim slot и закрой по GEMINI.md без остановок mid-queue",
+    "should_trigger": true
+  },
+  {
+    "query": "continuous executor на D:\\kppdf-8.0: очередь QUEUE-LIVE не пуста, бери следующую TZ, gates, archive, commit push",
+    "should_trigger": true
+  },
+  {
+    "query": "Freebuff wave: checklist CLAIMED, conflict keys сверь, потом backend tsc test lint и archive lock",
+    "should_trigger": true
+  },
+  {
+    "query": "очередь tasks пуста — обнови _NOW.md и скажи PO «готово предложить деплой», сам не кати",
+    "should_trigger": true
+  },
+  {
+    "query": "Gemini executor: не жди «поехали» от PO, крути claim → code → gates → archive пока QUEUE-LIVE не кончится",
+    "should_trigger": true
+  },
+  {
+    "query": "перед первой правкой кода: tasks/_active/<id>.md + claim slot agent_id claimed_at ISO — иначе STOP",
+    "should_trigger": true
+  },
+  {
+    "query": "Claude Code CLI как исполнитель kppdf: прочитай GEMINI.md и kppdf-executor-loop, закрой TZ-300",
+    "should_trigger": true
+  },
+  {
+    "query": "после archive TZ — commit + push по GIT-POLICY, потом следующий из _NOW / QUEUE-LIVE",
+    "should_trigger": true
+  },
+  {
+    "query": "warm deploy только если PO явно сказал «задеплой» — иначе idle после пустой очереди",
+    "should_trigger": true
+  },
+  {
+    "query": "isolated worktree .worktrees/TZ-312 — claim на task branch, не continuous main",
+    "should_trigger": true
+  },
+  {
+    "query": "напиши TZ на studio-document multipage с conflict keys и AC для Gemini",
+    "should_trigger": false
+  },
+  {
+    "query": "Cursor Mode A: только спека, не трогай backend/**/*.ts — сделай tasks/TZ-400.md",
+    "should_trigger": false
+  },
+  {
+    "query": "preflight check output: какие page.md и FIC открыть перед правкой document-template",
+    "should_trigger": false
+  },
+  {
+    "query": "analysis only через MCP claude_code — архитектура document-render до TZ, файлы не пиши",
+    "should_trigger": false
+  },
+  {
+    "query": "баг в org-scope interceptor — найди причину и напиши TZ на фикс, не патчь",
+    "should_trigger": false
+  },
+  {
+    "query": "grilling по CONTEXT.md: PO описал фичу расплывчато, нужны вопросы до TZ",
+    "should_trigger": false
+  },
+  {
+    "query": "что в PO-CANON про плотность форм и DIALOG-COOKBOOK — просто напомни",
+    "should_trigger": false
+  },
+  {
+    "query": "tdd: failing test сначала для quotation-output.service, потом минимальный код",
+    "should_trigger": false
+  },
+  {
+    "query": "systematic debugging: reproduce stack trace и root cause для studio-render",
+    "should_trigger": false
+  },
+  {
+    "query": "напиши ADR для dual-read template-block — текст для docs/adr",
+    "should_trigger": false
+  }
+]

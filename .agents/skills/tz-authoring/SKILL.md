@@ -1,9 +1,15 @@
 ---
 name: tz-authoring
 description: >-
-  Writes executable TZ specs for kppdf-8.0 local agents. Use when PO asks for a
-  TZ, task spec, acceptance criteria, conflict keys, or work for Gemini/local AI.
-  ALWAYS read docs/TZ-AUTHORING.md (domain preflight) before drafting any TZ.
+  Writes executable TZ specs (tasks/TZ-*.md) for kppdf-8.0 local agents:
+  conflict keys, acceptance criteria, CLAIM handoff, domain preflight via
+  docs/TZ-AUTHORING.md. Use whenever PO or Cursor needs a task spec, TZ,
+  grilling before code, split rule, PAGES/PAGE_DOCS tagging, backlog vs active
+  placement, or handoff for Gemini/Claude executor — even if the user says
+  «спека», «задача для агента», or acceptance criteria without saying TZ. Do
+  NOT use for implementing code, running claim/archive/gates, continuous
+  executor queue, debugging patches, MCP analysis-only peer sessions, or
+  general doc/ADR writing.
 ---
 
 # TZ Authoring (Cursor)

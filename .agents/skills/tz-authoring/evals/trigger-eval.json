@@ -1,0 +1,82 @@
+[
+  {
+    "query": "PO: нужна TZ на studio-document save-as-template с conflict keys и handoff для Claude executor",
+    "should_trigger": true
+  },
+  {
+    "query": "напиши tasks/TZ-401.md: acceptance criteria, LAYER, НЕ ИЗМЕНЯТЬ, pnpm gates — по TZ-AUTHORING.md",
+    "should_trigger": true
+  },
+  {
+    "query": "Cursor: фича расплывчатая — сначала grilling, потом executable spec для local agent без уточнений",
+    "should_trigger": true
+  },
+  {
+    "query": "сделай спеку на org-scope для document-templates: PAGES, PAGE_DOCS, conflict keys через ;",
+    "should_trigger": true
+  },
+  {
+    "query": "handoff-промпт с CLAIM-блоком первым + путь к TZ для Gemini/Freebuff",
+    "should_trigger": true
+  },
+  {
+    "query": "UX smell: дубли меню в studio — оформи TZ с ИСХОДНОЕ СОСТОЯНИЕ по файлам/строкам",
+    "should_trigger": true
+  },
+  {
+    "query": "split rule: >7 шагов в одной задаче — разбей на TZ с DEPENDENCIES",
+    "should_trigger": true
+  },
+  {
+    "query": "domain preflight: Counterparty не Organization, unique на номере — зафиксируй в шапке TZ",
+    "should_trigger": true
+  },
+  {
+    "query": "новая идея document-render multipage — MCP claude_code analysis-only, потом черновик TZ",
+    "should_trigger": true
+  },
+  {
+    "query": "куда положить initiative: tasks/_backlog vs tasks/TZ-*.md ready сейчас",
+    "should_trigger": true
+  },
+  {
+    "query": "claim TZ-245, agent_id claude, gates tsc test, archive в tasks/_archive/2026-08/",
+    "should_trigger": false
+  },
+  {
+    "query": "continuous executor: QUEUE-LIVE не пуст — бери следующую без «поехали»",
+    "should_trigger": false
+  },
+  {
+    "query": "preflight: конкретные пути page.md FIC перед кодом document-template",
+    "should_trigger": false
+  },
+  {
+    "query": "implement studio-output.service сам по готовой TZ-390 — пиши код",
+    "should_trigger": false
+  },
+  {
+    "query": "architecture review текстом: dual-read template-block, без TZ и без патчей",
+    "should_trigger": false
+  },
+  {
+    "query": "debug org-scope interceptor — diagnose TZ, не implementation",
+    "should_trigger": false
+  },
+  {
+    "query": "просто объясни что такое conflict keys в kppdf одним абзацем",
+    "should_trigger": false
+  },
+  {
+    "query": "обнови STATUS.md и progress для leadership update",
+    "should_trigger": false
+  },
+  {
+    "query": "pnpm test quotation-output после claim — executor gates",
+    "should_trigger": false
+  },
+  {
+    "query": "brainstorming: как должен выглядеть flyout Kind C — без готовой TZ пока",
+    "should_trigger": false
+  }
+]

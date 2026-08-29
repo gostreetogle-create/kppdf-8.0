@@ -1,9 +1,15 @@
 ---
 name: kppdf-executor-loop
 description: >-
-  Continuous executor loop for kppdf-8.0: claim → code → gates → archive →
-  commit/push → next TZ. No fake stop-words. Deploy only on explicit PO deploy
-  command. Use when running as Gemini/Buffy/local executor on this repo.
+  Runs the kppdf-8.0 executor loop end-to-end: Claim slot → preflight → code →
+  gates (tsc/tests/lint) → archive → commit/push → next TZ from
+  QUEUE-LIVE/_NOW.md. Use whenever acting as Gemini, Freebuff, Buffy, Claude
+  Code CLI, or any local executor on this repo — including prompts mentioning
+  claim, tasks/_active, conflict keys, GEMINI.md, archive, continuous queue,
+  agent_id claude/gemini, or «не останавливайся mid-queue». Do NOT use for
+  Cursor architect/TZ-only mode, analysis-only MCP peer, writing new TZ specs,
+  preflight-only questions, deploy without explicit PO command, or architecture
+  review without implementation.
 ---
 
 # kppdf executor loop (Buffy / Gemini)
