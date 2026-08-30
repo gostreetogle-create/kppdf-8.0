@@ -20,6 +20,7 @@
 | Доменный SoT / write-path | page.md + при необходимости audit/vision; канон не менять молча |
 | Только refactor без UX/API | progress + checklist; page.md только если изменилось UX-поведение |
 | Доменная карта | строка в `docs/DOMAIN-MAP.md` при смене контура домена (module/route/page) |
+| Auth / RBAC в `frontend-nx` | `docs/architecture/nx-auth-platform.md` + `docs/RBAC-CONTRACT.md` |
 | Общее поле / статус / фильтр «активные» (≥2 экрана) | строка в `docs/COUPLING-MAP.md` + Couplings в затронутых page.md |
 
 ## 3. Integrity slot (обязателен в checklist)

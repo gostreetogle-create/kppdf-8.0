@@ -120,6 +120,10 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/legal/privacy` | legal-privacy.page.md | **TZ-COMP-401** public policy (path A) |
 | `/admin` stub | — | **TZ-AUTH-308** redirect → `/admin/devices` |
 | `/login` | login.page.md | TZ-AUTH-301 notice; **AUTH-306** owner break-glass; **AUTH-305 DONE**; AUTH-307 park; **TZ-COMP-401** formula + privacy link; **TZ-UI-415 READY** footer 11px |
+| **frontend-nx** `/login`, `/enroll/:token`, `/admin/*` | same page.md (behavior parity) | **TZ-NX-F3 READY** — port auth platform + BE effective-permissions fix; canon `docs/architecture/nx-auth-platform.md` |
+| **frontend-nx-only** `/registries`, `/registries/:registryKey` | registries.page.md | **TZ-NX-REGISTRIES-MASTER-TABLE-UX DONE** — master table + inline detail panel (no separate detail route); `units` real API (`GET/PATCH /units`), `departments` demo fixture; no legacy equivalent, no domain permissions |
+| **frontend-nx-only** `/registries` (closeout wave) | registries.page.md | **TZ-NX-REGISTRIES-FULL-CLOSEOUT DONE** — icon row actions + click-effect tests + real browser smoke (all 6 registries, create/edit/archive-confirm dialogs, zero console errors) — evidence `docs/agent-checklists/evidence/TZ-NX-REGISTRIES-FULL-CLOSEOUT/`; Units delete still deferred (backend blocker, see `tasks/_backlog/TZ-NX-REGISTRY-UNITS-DELETE-FE.md`) |
+| **frontend-nx-only** `/constructor`, `/constructor/create/:kind` | constructor.page.md | **TZ-NX-CONSTRUCTOR-SHELL DONE** — catalog composition workspace shell; four create kinds (material/part/module/product); Complex not a create kind; header nav chip, no rails/API |
 
 ## UI War Room / WR-50x (2026-08-23)
 
@@ -211,3 +215,5 @@ Merged: 502→501, 511→507, 512→506.
 | **[DEPLOY-301](../../tasks/_archive/2026-08/TZ-DEPLOY-301-prep-first-deploy.done.md) ** | ops | **Gate перед первым деплоем** (auth/CORS/secrets/compose) |
 
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
+
+| TZ-NX-DOCPLAT-01 DONE (docs/tasks) | tasks/ порядок + legacy-съёмка студии/builder/КП | archive: `tasks/_archive/2026-08/TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER.done.md` · evidence: `docs/agent-checklists/evidence/TZ-NX-DOCPLAT-01/` |

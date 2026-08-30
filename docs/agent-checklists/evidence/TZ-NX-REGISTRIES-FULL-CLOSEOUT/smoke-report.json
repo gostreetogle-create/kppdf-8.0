@@ -1,0 +1,2558 @@
+{
+  "consoleErrors": {
+    "units": [],
+    "materials": [],
+    "details": [],
+    "modules": [],
+    "products": [],
+    "departments": []
+  },
+  "actionButtons": {
+    "units": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-prev",
+        "ariaLabel": "Предыдущая страница",
+        "title": null,
+        "text": "‹",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page",
+        "ariaLabel": "Страница 1",
+        "title": null,
+        "text": "1",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-next",
+        "ariaLabel": "Следующая страница",
+        "title": null,
+        "text": "›",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-key",
+        "ariaLabel": "Копировать ключ",
+        "title": "Копировать ключ",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-activate",
+        "ariaLabel": "Активировать",
+        "title": "Единица уже активна",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-deactivate",
+        "ariaLabel": "Деактивировать",
+        "title": "Деактивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ],
+    "materials": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-create",
+        "ariaLabel": "Создать материал",
+        "title": "Создать материал",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-prev",
+        "ariaLabel": "Предыдущая страница",
+        "title": null,
+        "text": "‹",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page",
+        "ariaLabel": "Страница 1",
+        "title": null,
+        "text": "1",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-next",
+        "ariaLabel": "Следующая страница",
+        "title": null,
+        "text": "›",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ],
+    "details": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-create",
+        "ariaLabel": "Создать деталь",
+        "title": "Создать деталь",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-prev",
+        "ariaLabel": "Предыдущая страница",
+        "title": null,
+        "text": "‹",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page",
+        "ariaLabel": "Страница 1",
+        "title": null,
+        "text": "1",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-next",
+        "ariaLabel": "Следующая страница",
+        "title": null,
+        "text": "›",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-material",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-material",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-material",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ],
+    "modules": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-create",
+        "ariaLabel": "Создать модуль",
+        "title": "Создать модуль",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-prev",
+        "ariaLabel": "Предыдущая страница",
+        "title": null,
+        "text": "‹",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page",
+        "ariaLabel": "Страница 1",
+        "title": null,
+        "text": "1",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-next",
+        "ariaLabel": "Следующая страница",
+        "title": null,
+        "text": "›",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-module",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-module",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ],
+    "products": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-create",
+        "ariaLabel": "Создать изделие",
+        "title": "Создать изделие",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-prev",
+        "ariaLabel": "Предыдущая страница",
+        "title": null,
+        "text": "‹",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page",
+        "ariaLabel": "Страница 1",
+        "title": null,
+        "text": "1",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page-btn",
+        "ariaLabel": "Страница 2",
+        "title": null,
+        "text": "2",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-page-btn",
+        "ariaLabel": "Страница 3",
+        "title": null,
+        "text": "3",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "pager-next",
+        "ariaLabel": "Следующая страница",
+        "title": null,
+        "text": "›",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-edit-product",
+        "ariaLabel": "Редактировать",
+        "title": "Редактировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-composition",
+        "ariaLabel": "Открыть состав",
+        "title": "Открыть состав",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-copy-product",
+        "ariaLabel": "Копировать",
+        "title": "Копировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-archive-product",
+        "ariaLabel": "Архивировать",
+        "title": "Архивировать",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "registry-row-action-open-constructor",
+        "ariaLabel": "Открыть в Конструкторе",
+        "title": "Открыть в Конструкторе",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ],
+    "departments": [
+      {
+        "dataTest": "shell-notifications",
+        "ariaLabel": "Уведомления (скоро)",
+        "title": "Уведомления (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-logout",
+        "ariaLabel": "Выйти",
+        "title": "Выйти",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-back",
+        "ariaLabel": "Назад",
+        "title": "Назад",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-filters",
+        "ariaLabel": "Фильтры (скоро)",
+        "title": "Фильтры (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-view-grid",
+        "ariaLabel": "Вид сеткой (скоро)",
+        "title": "Вид сеткой (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-left-density",
+        "ariaLabel": "Плотность (скоро)",
+        "title": "Плотность (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Раскрыть строку",
+        "title": null,
+        "text": "▸",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "table-expand-toggle",
+        "ariaLabel": "Свернуть строку",
+        "title": null,
+        "text": "▾",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-nav-forward",
+        "ariaLabel": "Вперёд",
+        "title": "Вперёд",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-search",
+        "ariaLabel": "Поиск (скоро)",
+        "title": "Поиск (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      },
+      {
+        "dataTest": "shell-tool-right-panel",
+        "ariaLabel": "Боковая панель (скоро)",
+        "title": "Боковая панель (скоро)",
+        "text": "",
+        "tag": "BUTTON"
+      }
+    ]
+  },
+  "notes": [
+    "clicked demo-fill link: true",
+    "clicked submit: true",
+    "post-login url: http://localhost:4201/admin/devices",
+    "master table url: http://localhost:4201/registries, title snapshot taken",
+    "materials create dialog: NO create button found via data-test"
+  ]
+}

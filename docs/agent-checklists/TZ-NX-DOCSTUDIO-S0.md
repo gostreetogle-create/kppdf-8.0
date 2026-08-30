@@ -1,17 +1,15 @@
 # TZ-NX-DOCSTUDIO-S0 checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 > Marker: `tasks/TZ-NX-DOCSTUDIO-S0-FOUNDATION.md`
 
 ## Attempt log
 
 - **Attempt 1 (`freebuff-docstudio-s0`) — ABANDONED, verified 2026-08-30 by Cursor.**
-  Preflight written, then silent stop. No `tasks/_active/` claim file, no
-  `text-blocks.registry.ts` / `table-templates.registry.ts`, no
-  `@kppdf/ui/rich-text` entry point, no data-access services, gates left
-  `pending`, no commit, no archive. Likely cause: `frontend-nx/` was entirely
-  untracked at the time and may have been read as peer WIP. Workspace is now
-  tracked (commit `406a7952`).
+  Сделала шаги 1–2: `rich-text/index.ts`, alias `@kppdf/ui/rich-text` и 4
+  data-access сервиса. Claim-файл не создала, гейты не прогнала и не
+  закоммитила. Эти файлы попали в git в составе коммита `406a7952`
+  (сквозная фиксация `frontend-nx`).
 - **Attempt 2** — re-issue via `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S0.md`
   (hardened: explicit `_active` claim, per-step progress line, silent stop banned).
 
@@ -34,9 +32,13 @@
 - [ ] Specs, page docs, index, progress and archive updated.
 
 ## Integrity slot
-- [ ] Type: page + other
-- [ ] FIC and page docs complete
-- [ ] Coupling map: N/A
+- [x] Type: page + other
+- [x] FIC: N/A — no route, permission, backend module, MCP, or shared cross-page field changed.
+- [x] page.md updated; PAGE-TZ-INDEX unchanged because no route changed.
+- [x] SECTION-READINESS: N/A — registry capability documentation only.
+- [x] Foreign WIP excluded from intended commit; conflict keys respected.
+- [x] Coupling map: N/A — no shared field/status contract introduced.
+- [x] Canon: `docs/DOCS-INTEGRITY.md`.
 
 ## Gates
 - Claim: active marker created at `tasks/_active/TZ-NX-DOCSTUDIO-S0-FOUNDATION.md`; checklist claimed as `freebuff-docstudio-s0-r2`.
@@ -45,10 +47,14 @@
 - Step 3: text-block registry, client data source, dialog and actions created; `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/text-blocks.registry.ts`, `text-blocks-http-data-source.ts`, `doc-studio-registry-actions.ts`, `dialogs/text-block-form-dialog.component.ts`.
 - Step 4: table-template registry, client data source and dialog created; `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/table-templates.registry.ts`, `table-templates-http-data-source.ts`, `dialogs/table-template-form-dialog.component.ts`.
 - Step 5: catalog registration completed and focused payload/catalog specs added; `registries.catalog.ts`, `doc-studio-registry-actions.spec.ts`.
+- Step 6: documentation updated; integrity recorded; archive marker created. Full test gate passes for kppdf-web/data-access/http/paper-and-ink; features retains an unrelated ESM Jest failure. Architecture check reports 3 pre-existing frontend cross-page violations.
 - Step 1 (test hygiene): снята чужая поломка Jest — helper переименован в `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/registries-catalog-test-mocks.ts`; обновлены 3 импорта. Причина: helper содержал 0 тестов и Jest завершался `must contain at least one test`; содержимое helper не менялось.
 
 ## Executor report
-- In progress; implementation and TypeScript gate pass. Test helper naming fix applied; remaining gates and closeout pending.
+- DONE. TypeScript and lint pass; Jest kppdf-web/data-access/http/paper-and-ink pass. Features Jest is blocked by unrelated ESM parsing in `frontend-nx/libs/features/src/lib/pi-group-workspace.component.spec.ts`; architecture check is blocked by 3 pre-existing frontend cross-component violations.
 
 ## Closeout
-- pending
+- Archive: `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S0-FOUNDATION.done.md`
+- Archive marker: `ARCHIVE_MARKER: TZ-NX-DOCSTUDIO-S0-FOUNDATION`
+- Browser evidence: not captured; live CRUD smoke remains a known limitation.
+- Commit/push: not performed because shared checkout contains unrelated dirty/staged work.

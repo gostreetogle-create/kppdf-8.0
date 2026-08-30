@@ -1,0 +1,11 @@
+{
+  "notes": [
+    "materials create button found: true",
+    "dialog element present after click: true",
+    "materials edit button found: true",
+    "materials archive button found: true",
+    "confirm-ish text present after archive click: true",
+    "modules edit-module button: focus screenshot taken"
+  ],
+  "consoleErrors": []
+}

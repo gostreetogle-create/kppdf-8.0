@@ -1,0 +1,93 @@
+{
+ "shots": [
+  "10-kp-workspace-portrait.png",
+  "10b-kp-workspace-portrait-collapsed.png",
+  "10c-kp-template-picker.png",
+  "11-kp-workspace-landscape.png",
+  "11b-kp-workspace-landscape-collapsed.png"
+ ],
+ "errors": [
+  "net 404: http://127.0.0.1:4200/uploads/document-templates/6a787010f5ff6f9ead19e44d/ee1aaa0c-493a-40f4-96d4-f9",
+  "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+ ],
+ "portrait_open": {
+  "sheet": {
+   "x": 832.5,
+   "y": 144,
+   "w": 510.5,
+   "h": 722,
+   "right": 1343,
+   "bottom": 866
+  },
+  "panel": {
+   "x": 79,
+   "y": 132,
+   "w": 480,
+   "h": 746,
+   "right": 559,
+   "bottom": 878
+  },
+  "stage": null,
+  "vw": 1440
+ },
+ "portrait_closed": {
+  "sheet": {
+   "x": 832.5,
+   "y": 144,
+   "w": 510.5,
+   "h": 722,
+   "right": 1343,
+   "bottom": 866
+  },
+  "panel": {
+   "x": -401,
+   "y": 132,
+   "w": 480,
+   "h": 746,
+   "right": 79,
+   "bottom": 878
+  },
+  "stage": null,
+  "vw": 1440
+ },
+ "landscape_open": {
+  "sheet": {
+   "x": 83,
+   "y": 140,
+   "w": 1260,
+   "h": 730,
+   "right": 1343,
+   "bottom": 870
+  },
+  "panel": {
+   "x": 79,
+   "y": 132,
+   "w": 480,
+   "h": 746,
+   "right": 559,
+   "bottom": 878
+  },
+  "stage": null,
+  "vw": 1440
+ },
+ "landscape_closed": {
+  "sheet": {
+   "x": 83,
+   "y": 140,
+   "w": 1260,
+   "h": 730,
+   "right": 1343,
+   "bottom": 870
+  },
+  "panel": {
+   "x": -401,
+   "y": 132,
+   "w": 480,
+   "h": 746,
+   "right": 79,
+   "bottom": 878
+  },
+  "stage": null,
+  "vw": 1440
+ }
+}
