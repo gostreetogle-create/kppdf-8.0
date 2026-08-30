@@ -35,6 +35,9 @@ export class PiProductsService {
     if (typeof params.isActive === 'boolean') {
       httpParams = httpParams.set('isActive', String(params.isActive));
     }
+    if (typeof params.isComplex === 'boolean') {
+      httpParams = httpParams.set('isComplex', String(params.isComplex));
+    }
     if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
     if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
     return silentGet<ProductsListResponse>(this.http, `${this.baseUrl}/products`, {

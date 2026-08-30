@@ -153,14 +153,14 @@ describe('createProductsHttpDataSource (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)'
     });
   });
 
-  it('never passes isComplex filter', async () => {
+  it('passes isComplex filter to list API', async () => {
     const list = jest.fn().mockReturnValue(
       of({ ok: true as const, data: { items: [], total: 0, page: 1, limit: 25 } }),
     );
     const dataSource = createProductsHttpDataSource(mockProductsService({ list }));
     await dataSource.query({ ...BASE_STATE, filters: { isComplex: 'true' } });
     const params = list.mock.calls[0]?.[0] as Record<string, unknown>;
-    expect(params).not.toHaveProperty('isComplex');
+    expect(params['isComplex']).toBe(true);
   });
 
   it('ignores unsupported sort keys', () => {
@@ -221,12 +221,12 @@ describe('registry definitions (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => 
     expect(def.columns.every((c) => !c.sortable)).toBe(true);
   });
 
-  it('products registry has search/status filters but no isComplex filter', () => {
+  it('products registry has search, status and isComplex filters', () => {
     const def = createProductsRegistryDefinition(productDeps);
     const keys = def.filters?.map((f) => f.key) ?? [];
     expect(keys).toContain('search');
     expect(keys).toContain('status');
-    expect(keys).not.toContain('isComplex');
+    expect(keys).toContain('isComplex');
   });
 
   it('does not add a separate Complex registry key', () => {

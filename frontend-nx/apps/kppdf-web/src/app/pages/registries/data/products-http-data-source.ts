@@ -9,8 +9,14 @@ import {
 } from '@kppdf/data-access';
 import type { RegistryDataSource, RegistryQueryState, RegistrySort } from '../model/registry.types';
 
-/** List rows may include `isComplex` when the API sends it (detail-only today). */
+/** List rows include derived `isComplex` from `GET /products` (composition product line). */
 export type ProductRow = Product & { isComplex?: boolean };
+
+function parseIsComplexFilter(raw: string | undefined): boolean | undefined {
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return undefined;
+}
 
 const SORTABLE_PRODUCT_FIELDS = new Set<NonNullable<ProductsListParams['sortBy']>>([
   'name',
@@ -43,6 +49,7 @@ export function createProductsHttpDataSource(
     async query(state: RegistryQueryState) {
       const search = state.filters['search']?.trim();
       const status = state.filters['status']?.trim() as ProductStatus | undefined;
+      const isComplex = parseIsComplexFilter(state.filters['isComplex']?.trim());
       const limit = Math.min(state.pageSize, PRODUCTS_MAX_PAGE_SIZE);
 
       const res = await firstValueFrom(
@@ -51,6 +58,7 @@ export function createProductsHttpDataSource(
           limit,
           search: search || undefined,
           status: status || undefined,
+          isComplex,
           ...mapRegistrySortToProductsParams(state.sort),
         }),
       );

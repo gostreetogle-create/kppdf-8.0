@@ -47,11 +47,16 @@ export class ProductService {
     }
   }
 
-  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; status?: string; isActive?: boolean; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}, organizationId?: string | null): Promise<{ items: Record<string, unknown>[]; total: number; page: number; limit: number }> {
+  async findAll(q: { page?: number; limit?: number; search?: string; categoryId?: string; status?: string; isActive?: boolean; isComplex?: boolean; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}, organizationId?: string | null): Promise<{ items: Record<string, unknown>[]; total: number; page: number; limit: number }> {
     const page = Math.max(1, q.page ?? 1); const limit = Math.min(100, Math.max(1, q.limit ?? 20));
     const filter: Record<string, unknown> = { deletedAt: null }; const clauses: Record<string, unknown>[] = []; const scope = this.organizationFilter(organizationId);
     if (scope.$or) clauses.push(scope);
     if (q.search) { const escaped = q.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); const re = new RegExp(escaped, 'i'); clauses.push({ $or: [{ name: re }, { sku: re }] }); }
+    if (q.isComplex === true) {
+      filter.composition = { $elemMatch: { lineType: 'product' } };
+    } else if (q.isComplex === false) {
+      clauses.push({ $nor: [{ composition: { $elemMatch: { lineType: 'product' } } }] });
+    }
     if (clauses.length > 0) filter.$and = clauses;
     // KP3/migrate rows may store categoryId as string; ObjectId-only equality → total:0.
     // Match both BSON ObjectId and string forms (TZ-MIG-306).
@@ -64,7 +69,11 @@ export class ProductService {
     if (typeof q.isActive === 'boolean') filter.isActive = q.isActive;
     const sortField = q.sortBy ?? 'createdAt'; const sortOrder = q.sortOrder === 'asc' ? 1 : -1;
     const [rawItems, total] = await Promise.all([this.model.find(filter).populate('categoryId').populate('photoIds').populate('productModuleIds').sort({ [sortField]: sortOrder }).skip((page - 1) * limit).limit(limit).lean().exec(), this.model.countDocuments(filter).exec()]);
-    const items = rawItems.map((item) => ({ ...item, name: item.name?.trim() || item.sku })) as Record<string, unknown>[];
+    const items = rawItems.map((item) => {
+      const composition = (item.composition ?? []) as unknown as CompositionLineDocumentShape[];
+      const isComplex = composition.some((line) => line.lineType === 'product');
+      return { ...item, name: item.name?.trim() || item.sku, isComplex } as Record<string, unknown>;
+    });
     return { items, total, page, limit };
   }
 

@@ -1,16 +1,21 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T18:52:14+03:00
+updated_at: 2026-08-30T18:57:14+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:52).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:57).
 
-Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A5
-`TZ-NX-PRODUCT-COMPLEX-COMPOSITION`.
+Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A6
+`TZ-NX-REGISTRIES-BROWSER-MATRIX-2` (полный обход реестров, закрывает Phase A).
 
 ## DONE this slice
 
+- `TZ-NX-PRODUCT-COMPLEX-COMPOSITION` (Wave A5, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  список изделий теперь реально отдаёт `isComplex` (раньше только detail),
+  фильтр «Все/Комплекс/Обычное» на реестре; live-verified API (5 комплексов
+  из 68) + скриншот браузера; archive
+  `tasks/_archive/2026-08/TZ-NX-PRODUCT-COMPLEX-COMPOSITION.done.md`
 - `TZ-NX-DETAIL-MATERIAL-BOM` (Wave A4, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   заменил notes-хак (`__DETAIL_BOM__`) на настоящий backend composition для
   Материала (тот же API/UI, что у Product/Module); live-verified API +

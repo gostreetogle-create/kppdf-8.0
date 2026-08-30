@@ -121,6 +121,17 @@ export function createProductsRegistryDefinition(
         ariaLabel: 'Фильтр по статусу изделия',
         options: PRODUCT_STATUS_OPTIONS,
       },
+      {
+        key: 'isComplex',
+        label: 'Комплекс',
+        type: 'select',
+        ariaLabel: 'Фильтр: комплекс или обычное изделие',
+        emptyOptionLabel: 'Все',
+        options: [
+          { value: 'true', label: 'Комплекс' },
+          { value: 'false', label: 'Обычное' },
+        ],
+      },
     ],
     paginationMode: 'server',
     createAction: buildProductCreateAction(deps),

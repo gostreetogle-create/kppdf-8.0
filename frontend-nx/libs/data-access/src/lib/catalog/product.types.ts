@@ -68,6 +68,8 @@ export interface ProductsListParams {
   isActive?: boolean;
   sortBy?: 'name' | 'sku' | 'listPrice' | 'createdAt';
   sortOrder?: 'asc' | 'desc';
+  /** Derived flag: composition contains product lines */
+  isComplex?: boolean;
 }
 
 export interface CreateProductPayload {
