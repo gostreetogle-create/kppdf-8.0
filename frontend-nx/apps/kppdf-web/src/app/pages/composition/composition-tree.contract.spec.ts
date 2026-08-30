@@ -3,6 +3,7 @@ import {
   canAddIntoNode,
   isLineTypeAllowed,
   isMaterialKindAllowedForParent,
+  lineTypeLabel,
   treeHasProductChild,
 } from './composition-tree.contract';
 
@@ -21,6 +22,10 @@ describe('composition-tree.contract (TZ-NX-REGISTRIES-COMPOSITION-DIALOG)', () =
     expect(isMaterialKindAllowedForParent('product', 'raw')).toBe(false);
     expect(isMaterialKindAllowedForParent('product', 'part')).toBe(true);
     expect(isMaterialKindAllowedForParent('module', 'raw')).toBe(true);
+  });
+
+  it('labels material picker tab as Материал / Деталь', () => {
+    expect(lineTypeLabel('material')).toBe('Материал / Деталь');
   });
 
   it('canAddIntoNode matches legacy BOM parent rules', () => {

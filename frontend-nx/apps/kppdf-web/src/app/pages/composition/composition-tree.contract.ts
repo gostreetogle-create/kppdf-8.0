@@ -54,6 +54,6 @@ export function lineTypeLabel(lineType: CompositionLineType): string {
     case 'module':
       return 'Модуль';
     default:
-      return 'Материал';
+      return 'Материал / Деталь';
   }
 }

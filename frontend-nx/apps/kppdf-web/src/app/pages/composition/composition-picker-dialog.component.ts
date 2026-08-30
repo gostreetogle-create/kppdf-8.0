@@ -76,6 +76,23 @@ type PickerTab = CompositionLineType;
         }
 
         @if (!loading() && !error()) {
+          @if (activeKind() === 'material') {
+            <div class="flex flex-wrap gap-1" role="group" aria-label="Фильтр материалов">
+              @for (f of materialFilters(); track f.key) {
+                <button
+                  type="button"
+                  class="px-2 py-1 text-xs rounded-sm hairline transition-colors"
+                  [class.bg-paper-2]="materialFilter() === f.key"
+                  [class.font-medium]="materialFilter() === f.key"
+                  (click)="materialFilter.set(f.key)"
+                  [attr.data-test]="'composition-picker-mat-filter-' + f.key"
+                >
+                  {{ f.label }}
+                </button>
+              }
+            </div>
+          }
+
           <label class="block">
             <span class="eyebrow block mb-1.5">Поиск</span>
             <input
@@ -158,6 +175,7 @@ export class CompositionPickerDialogComponent implements OnInit {
   protected readonly selectedId = signal<string | null>(null);
   protected readonly validationError = signal<string | null>(null);
   protected readonly activeKind = signal<PickerTab>('module');
+  protected readonly materialFilter = signal<'all' | 'raw' | 'part'>('all');
 
   private modules: ProductModule[] = [];
   private materials: Material[] = [];
@@ -175,8 +193,17 @@ export class CompositionPickerDialogComponent implements OnInit {
 
   protected selectKind(kind: PickerTab): void {
     this.activeKind.set(kind);
+    this.materialFilter.set('all');
     this.selectedId.set(null);
     this.validationError.set(null);
+  }
+
+  protected materialFilters(): { key: 'all' | 'raw' | 'part'; label: string }[] {
+    return [
+      { key: 'all', label: 'Все' },
+      { key: 'part', label: 'Детали' },
+      { key: 'raw', label: 'Сырьё' },
+    ];
   }
 
   protected async loadCatalog(): Promise<void> {
@@ -216,9 +243,19 @@ export class CompositionPickerDialogComponent implements OnInit {
         .filter((m) => m._id !== this.data.parentId)
         .map((m) => ({ id: m._id, label: m.name, meta: m.article }));
     } else if (kind === 'material') {
+      const filter = this.materialFilter();
       items = this.materials
         .filter((m) => isMaterialKindAllowedForParent(this.data.parentKind, m.materialKind))
-        .map((m) => ({ id: m._id, label: m.name, meta: m.article ?? m.unit }));
+        .filter((m) => {
+          if (filter === 'all') return true;
+          if (filter === 'raw') return m.materialKind === 'raw' || m.materialKind == null;
+          return m.materialKind === 'part' || m.materialKind === 'fastener' || m.materialKind === 'purchased' || m.materialKind === 'other';
+        })
+        .map((m) => ({
+          id: m._id,
+          label: m.name,
+          meta: `${m.materialKind === 'part' || m.materialKind === 'fastener' ? 'дет.' : 'мат.'} · ${m.article ?? m.unit}`,
+        }));
     } else {
       items = this.products
         .filter((p) => p._id !== this.data.parentId)

@@ -1,16 +1,22 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T18:13:21+03:00
+updated_at: 2026-08-30T18:19:08+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:13).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:19).
 
-Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A3
-`TZ-NX-COMPOSITION-PICKER-PARITY`.
+Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A4
+`TZ-NX-DETAIL-MATERIAL-BOM`.
 
 ## DONE this slice
 
+- `TZ-NX-COMPOSITION-PICKER-PARITY` (Wave A3, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  confirmed root cause of the reported "500 BSONError on module composition":
+  `resolveMaterialId()` unwraps populated legacy `materials[].materialId`;
+  live-swept all 21 modules + 68 products (0 errors), live-verified nested
+  module-in-module add via real UI flow; archive
+  `tasks/_archive/2026-08/TZ-NX-COMPOSITION-PICKER-PARITY.done.md`
 - `TZ-NX-COMPOSITION-ERROR-I18N` (Wave A2, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   frontend banner+toast wiring was already correct; real gap was backend
   `http-exception.filter.ts` never matching class-validator's actual

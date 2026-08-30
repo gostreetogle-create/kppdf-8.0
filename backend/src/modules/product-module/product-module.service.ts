@@ -107,7 +107,21 @@ export class ProductModuleService {
 
   async getComposition(id: string): Promise<CompositionLineDocumentShape[]> {
     const doc = await this.findById(id);
-    const legacy = (doc.materials ?? []).map((row) => ({ _id: new Types.ObjectId(), lineType: 'material' as const, refId: new Types.ObjectId(String(row.materialId)), quantity: row.quantity ?? 1, sortOrder: row.sortOrder ?? 0, unit: row.unit, overrideDimensions: row.overrideDimensions, isPurchased: row.isPurchased }));
+    const legacy: CompositionLineDocumentShape[] = [];
+    for (const row of doc.materials ?? []) {
+      const materialId = this.resolveMaterialId(row.materialId);
+      if (!Types.ObjectId.isValid(materialId)) continue;
+      legacy.push({
+        _id: new Types.ObjectId(),
+        lineType: 'material',
+        refId: new Types.ObjectId(materialId),
+        quantity: row.quantity ?? 1,
+        sortOrder: row.sortOrder ?? 0,
+        unit: row.unit,
+        overrideDimensions: row.overrideDimensions,
+        isPurchased: row.isPurchased,
+      });
+    }
     return this.compositionLines.dualRead(doc, legacy);
   }
 
@@ -219,5 +233,16 @@ export class ProductModuleService {
   private organizationId(value: string): Types.ObjectId {
     if (!Types.ObjectId.isValid(value)) throw new BadRequestException('Invalid organization scope');
     return new Types.ObjectId(value);
+  }
+
+  /** findById populates materials.materialId — String(populated) is `[object Object]` and breaks BSON. */
+  private resolveMaterialId(materialId: unknown): string {
+    if (materialId == null || materialId === '') return '';
+    if (typeof materialId === 'string') return materialId;
+    if (typeof materialId === 'object' && materialId !== null && '_id' in materialId) {
+      const id = (materialId as { _id: unknown })._id;
+      return id == null ? '' : String(id);
+    }
+    return String(materialId);
   }
 }

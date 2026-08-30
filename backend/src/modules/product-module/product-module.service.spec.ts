@@ -166,4 +166,30 @@ describe('ProductModuleService (TZ-CATALOG-304 + TZ-MATERIALS-309)', () => {
     })).rejects.toBeInstanceOf(BadRequestException);
     expect(save).not.toHaveBeenCalled();
   });
+
+  it('getComposition resolves populated legacy materials.materialId (module composition 500 fix)', async () => {
+    const moduleId = new Types.ObjectId();
+    const populatedMaterial = {
+      _id: new Types.ObjectId(MATERIAL_ID),
+      name: 'Лист',
+      unit: 'm2',
+      dimensions: [],
+      materialKind: 'raw',
+    };
+    const doc = {
+      _id: moduleId,
+      deletedAt: null,
+      composition: [] as unknown[],
+      materials: [{ materialId: populatedMaterial, quantity: 2, sortOrder: 0, unit: 'm2' }],
+    };
+    const { service } = serviceWith([]);
+    (service as any).model.findById.mockReturnValue({
+      populate: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(doc),
+    });
+    const lines = await service.getComposition(String(moduleId));
+    expect(lines).toHaveLength(1);
+    expect(lines[0].refId.toString()).toBe(MATERIAL_ID);
+    expect(lines[0].quantity).toBe(2);
+  });
 });
