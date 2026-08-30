@@ -1,17 +1,22 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T13:30:00+03:00
+updated_at: 2026-08-30T17:55:20+03:00
 
 ## ACTIVE / LIVE
 
-- `TZ-NX-COMPOSITION-LEGACY-AUDIT` — analysis-only legacy inventory (чужой `_active`)
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 17:55).
 
-## ACTIVE / LIVE
-
-- `TZ-NX-REGISTRY-CRUD-UNIFY` / registries wave — другая волна агента (backend + registries/**, composition WIP). Мой scope: S2 shell закрыт, не трогал их ключи.
+Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A2
+`TZ-NX-COMPOSITION-ERROR-I18N`.
 
 ## DONE this slice
 
+- `TZ-NX-REGISTRY-PRODUCT-FORM-UX` (Wave A1, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  форма изделия: секция «Изделие», без превью паспорта, derived-Комплекс hint,
+  описание+заметки в 2 колонки; live-verified (Playwright, не только code review);
+  archive `tasks/_archive/2026-08/TZ-NX-REGISTRY-PRODUCT-FORM-UX.done.md`
+- `TZ-NX-REGISTRY-CRUD-UNIFY` (+ closeout) — единый CRUD во всех реестрах, снос «Конструктор»; commit `f06ef170`; spec/prompts в `tasks/_archive/2026-08/`
+- `TZ-NX-DOCSTUDIO-S3-TEXT-BLOCKS` (+ `S3-SHELL-WIRE` CRLF-обход) — текстовые блоки на листе студии; commit `b09464a3`; spec/prompts в `tasks/_archive/2026-08/`
 - `TZ-NX-DOCSTUDIO-S2-SHELL` (freebuff-docstudio-s2) — `/studio` list + `/studio/:id` A4 shell, геометрия по `kp-workspace-geometry` (portrait 0.7071 / landscape 1.4143, panel 480px, Δ=0), PATCH-ориентация с revision gate; evidence `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/`; archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S2-SHELL.done.md`
 
 - `TZ-BACKEND-PDF-FONT-READY` — `font-display: block` + bounded `document.fonts.ready` перед `page.pdf()`; archive `tasks/_archive/2026-08/TZ-BACKEND-PDF-FONT-READY.done.md`

@@ -114,7 +114,7 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `products` | Изделия | `api` (`GET/POST/PATCH/DELETE /products`, duplicate, composition) | toolbar create; row: edit/copy/archive, Открыть состав (dialog), Открыть в Конструкторе; badge «Комплекс» только при `isComplex` |
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
-| `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; distinct from computed preview in product dialog; **client** pagination |
+| `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; product form dialog has **no** embedded passport preview (removed, `TZ-NX-REGISTRY-PRODUCT-FORM-UX`) — open passports only from this registry; **client** pagination |
 | `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 

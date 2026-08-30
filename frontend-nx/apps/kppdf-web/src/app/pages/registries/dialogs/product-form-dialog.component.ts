@@ -37,7 +37,6 @@ import { extractErrorMessage } from '@kppdf/util-http';
 import { CompositionPanelComponent } from '../../composition/composition-panel.component';
 import { scrollCompositionBlockIntoView } from '../../composition/composition-focus-scroll';
 import { confirmDirtyClose } from '../../composition/dirty-dialog.guard';
-import { ProductPassportPreviewComponent } from '../../passport/product-passport-preview.component';
 
 export interface ProductFormDialogData {
   mode: 'create' | 'edit';
@@ -71,7 +70,6 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
     TextareaComponent,
     PiFormSectionComponent,
     CompositionPanelComponent,
-    ProductPassportPreviewComponent,
   ],
   template: `
     <app-pi-dialog
@@ -82,7 +80,7 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
       (userClose)="onCancel()"
     >
       <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="product-form">
-        <app-pi-form-section title="Паспорт изделия" headingId="product-passport" tone="gold">
+        <app-pi-form-section title="Изделие" headingId="product-main" tone="gold">
           <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field label="Название" htmlFor="prod-name" class="md:col-span-8">
               <app-pi-input id="prod-name" formControlName="name" />
@@ -122,19 +120,15 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
               <app-pi-input id="prod-weight" type="number" formControlName="weightKg" />
             </app-pi-form-field>
           </div>
-          <app-pi-form-field label="Описание" htmlFor="prod-description">
-            <app-pi-textarea id="prod-description" formControlName="description" [rows]="2" />
-          </app-pi-form-field>
-          <app-pi-form-field label="Заметки" htmlFor="prod-notes">
-            <app-pi-textarea id="prod-notes" formControlName="notes" [rows]="2" />
-          </app-pi-form-field>
+          <div class="grid md:grid-cols-2 gap-form-field">
+            <app-pi-form-field label="Описание" htmlFor="prod-description">
+              <app-pi-textarea id="prod-description" formControlName="description" [rows]="2" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Заметки" htmlFor="prod-notes">
+              <app-pi-textarea id="prod-notes" formControlName="notes" [rows]="2" />
+            </app-pi-form-field>
+          </div>
         </app-pi-form-section>
-
-        @if (mode() === 'edit' && savedId(); as id) {
-          @if (productEntity(); as product) {
-            <pi-product-passport-preview [product]="product" [productId]="id" />
-          }
-        }
 
         @if (savedId(); as id) {
           <div
@@ -149,9 +143,14 @@ const STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
             />
           </div>
         } @else {
-          <p class="text-sm text-muted-foreground" data-test="product-composition-create-hint">
-            Сохраните изделие, чтобы редактировать состав.
-          </p>
+          <div class="space-y-1" data-test="product-composition-create-hint">
+            <p class="text-sm text-muted-foreground">
+              Сохраните изделие, чтобы редактировать состав.
+            </p>
+            <p class="text-sm text-muted-foreground" data-test="product-complex-hint">
+              Комплекс — когда в состав входят другие изделия (настраивается в блоке «Состав» после сохранения).
+            </p>
+          </div>
         }
 
         @if (errorMessage()) {
