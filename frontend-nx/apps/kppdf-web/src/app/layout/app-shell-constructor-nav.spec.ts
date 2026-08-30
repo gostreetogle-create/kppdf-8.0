@@ -14,8 +14,8 @@ class DevicesStubPage {}
 @Component({ standalone: true, template: 'registries stub' })
 class RegistriesStubPage {}
 
-@Component({ standalone: true, template: 'constructor stub' })
-class ConstructorStubPage {}
+@Component({ standalone: true, template: 'studio stub' })
+class StudioStubPage {}
 
 const TEST_ROUTES = [
   {
@@ -24,12 +24,12 @@ const TEST_ROUTES = [
     children: [
       { path: 'admin/devices', loadComponent: () => Promise.resolve(DevicesStubPage) },
       { path: 'registries', loadComponent: () => Promise.resolve(RegistriesStubPage) },
-      { path: 'constructor', loadComponent: () => Promise.resolve(ConstructorStubPage) },
+      { path: 'studio', loadComponent: () => Promise.resolve(StudioStubPage) },
     ],
   },
 ];
 
-describe('AppShellComponent constructor header navigation (TZ-NX-CONSTRUCTOR-SHELL)', () => {
+describe('AppShellComponent studio quicknav (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppShellComponent, RouterLink],
@@ -38,7 +38,7 @@ describe('AppShellComponent constructor header navigation (TZ-NX-CONSTRUCTOR-SHE
         {
           provide: AuthService,
           useValue: {
-            user: signal({ role: 'manager', pages: ['orders'] }),
+            user: signal({ role: 'admin', pages: ['doc-studio', 'orders'] }),
             isAuthenticated: signal(true),
             logout: jest.fn(),
           },
@@ -57,31 +57,24 @@ describe('AppShellComponent constructor header navigation (TZ-NX-CONSTRUCTOR-SHE
     }).compileComponents();
   });
 
-  it('shows the Конструктор header chip alongside Реестры', async () => {
+  it('shows the docs quicknav chip whose entry path falls back to /studio', async () => {
     const harness = await RouterTestingHarness.create('/admin/devices');
     harness.detectChanges();
     await harness.fixture.whenStable();
 
     const link = harness.routeNativeElement?.querySelector(
-      '[data-test="shell-quicknav-constructor"]',
+      '[data-test="shell-quicknav-docs"]',
     ) as HTMLAnchorElement;
     expect(link).toBeTruthy();
-    expect(link.textContent).toContain('Констр');
-    expect(link.getAttribute('href')).toBe('/constructor');
+    // Default docs entryPath (/doc-constructor/templates) has no NX route, so the
+    // filter falls back to the first surviving item — the studio shell (/studio).
+    expect(link.getAttribute('href')).toBe('/studio');
   });
 
-  it('clicking the Конструктор chip navigates to /constructor', async () => {
-    const harness = await RouterTestingHarness.create('/admin/devices');
+  it('survives navigating to /studio (constructor stub replaced by studio)', async () => {
+    const harness = await RouterTestingHarness.create('/studio');
     harness.detectChanges();
     await harness.fixture.whenStable();
-
-    const link = harness.routeNativeElement?.querySelector(
-      '[data-test="shell-quicknav-constructor"]',
-    ) as HTMLAnchorElement;
-    link.click();
-    harness.detectChanges();
-    await harness.fixture.whenStable();
-
-    expect(harness.routeNativeElement?.textContent).toContain('constructor stub');
+    expect(harness.routeNativeElement?.textContent).toContain('studio stub');
   });
 });

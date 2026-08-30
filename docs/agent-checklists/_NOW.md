@@ -1,12 +1,18 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T09:40:00+03:00
+updated_at: 2026-08-30T13:30:00+03:00
 
 ## ACTIVE / LIVE
 
 - `TZ-NX-COMPOSITION-LEGACY-AUDIT` — analysis-only legacy inventory (чужой `_active`)
 
+## ACTIVE / LIVE
+
+- `TZ-NX-REGISTRY-CRUD-UNIFY` / registries wave — другая волна агента (backend + registries/**, composition WIP). Мой scope: S2 shell закрыт, не трогал их ключи.
+
 ## DONE this slice
+
+- `TZ-NX-DOCSTUDIO-S2-SHELL` (freebuff-docstudio-s2) — `/studio` list + `/studio/:id` A4 shell, геометрия по `kp-workspace-geometry` (portrait 0.7071 / landscape 1.4143, panel 480px, Δ=0), PATCH-ориентация с revision gate; evidence `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/`; archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S2-SHELL.done.md`
 
 - `TZ-BACKEND-PDF-FONT-READY` — `font-display: block` + bounded `document.fonts.ready` перед `page.pdf()`; archive `tasks/_archive/2026-08/TZ-BACKEND-PDF-FONT-READY.done.md`
 

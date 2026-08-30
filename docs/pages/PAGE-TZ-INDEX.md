@@ -220,3 +220,5 @@ Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
 | TZ-NX-DOCPLAT-01 DONE (docs/tasks) | tasks/ порядок + legacy-съёмка студии/builder/КП | archive: `tasks/_archive/2026-08/TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER.done.md` · evidence: `docs/agent-checklists/evidence/TZ-NX-DOCPLAT-01/` |
 
 | TZ-BACKEND-PDF-FONT-READY DONE (backend render) | `font-display: block` + bounded fonts.ready перед page.pdf | archive: `tasks/_archive/2026-08/TZ-BACKEND-PDF-FONT-READY.done.md` |
+
+| TZ-NX-DOCSTUDIO-S2-SHELL DONE (NX studio shell) | `/studio` list + `/studio/:id` A4 shell (рельсы/панель/ribbon), современный A4-landscape (≈1.414), PATCH-ориентация | archive: `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S2-SHELL.done.md` · evidence: `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/` |

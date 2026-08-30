@@ -35,7 +35,7 @@ describe('collectPageRoutePaths', () => {
     expect(paths.has('/admin/roles')).toBe(true);
     expect(paths.has('/kit')).toBe(false);
     expect(paths.has('/kit/overview')).toBe(true);
-    expect(paths.has('/constructor')).toBe(true);
+    expect(paths.has('/studio')).toBe(true);
     expect(paths.has('/products')).toBe(false);
   });
 

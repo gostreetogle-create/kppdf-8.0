@@ -66,8 +66,8 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-admin"]');
   const registriesQuickNav = (): HTMLAnchorElement | null =>
     fixture.nativeElement.querySelector('[data-test="shell-quicknav-registries"]');
-  const constructorQuickNav = (): HTMLAnchorElement | null =>
-    fixture.nativeElement.querySelector('[data-test="shell-quicknav-constructor"]');
+  const docsQuickNav = (): HTMLAnchorElement | null =>
+    fixture.nativeElement.querySelector('[data-test="shell-quicknav-docs"]');
 
   it('uses grid workspace with left rail, main, right rail — no sidebar', async () => {
     await setup('/admin/devices');
@@ -91,12 +91,12 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(header?.querySelector('[data-test="shell-nav-forward"]')).toBeNull();
   });
 
-  it('shows only existing-route header chips (admin, registries, constructor) — no dead links', async () => {
+  it('shows only existing-route header chips (admin, registries, docs) — no dead links', async () => {
     await setup('/admin/devices');
     expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(3);
     expect(adminQuickNav()).toBeTruthy();
     expect(registriesQuickNav()).toBeTruthy();
-    expect(constructorQuickNav()).toBeTruthy();
+    expect(docsQuickNav()).toBeTruthy();
   });
 
   it('shows the Реестры chip (TZ-NX-REGISTRIES-NAV-AND-DEMO-REVIEW)', async () => {
@@ -158,15 +158,15 @@ describe('AppShellComponent (TZ-NX-SHELL-rail-layout-fix)', () => {
     expect(main?.querySelector('router-outlet')).toBeTruthy();
   });
 
-  it('hides admin header chip when role gate fails, but Реестры and Конструктор have no such gate', async () => {
+  it('hides admin header chip when role gate fails, but Реестры and Документы have no such gate', async () => {
     await setup('/admin/devices');
     userSig.set({ role: 'user' });
     fixture.detectChanges();
-    // `registries` and `constructor` deliberately carry no `systemRoles`/`capabilities`.
+    // `registries` and `docs` deliberately carry no `systemRoles`/`capabilities`.
     expect(fixture.nativeElement.querySelectorAll('[data-test^="shell-quicknav-"]').length).toBe(2);
     expect(adminQuickNav()).toBeNull();
     expect(registriesQuickNav()).toBeTruthy();
-    expect(constructorQuickNav()).toBeTruthy();
+    expect(docsQuickNav()).toBeTruthy();
   });
 
   it('shows Реестры chip for restrictive pages[] ACL (TZ-NX-REGISTRIES-NAV-VISIBILITY-FIX)', async () => {

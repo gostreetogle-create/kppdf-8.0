@@ -13,30 +13,38 @@ describe('NAV_CATEGORIES (ported from legacy frontend/src/app/layout/app-layout.
       'docs',
       'reference',
       'registries',
-      'constructor',
       'admin',
     ]);
   });
 });
 
-describe('constructor category (TZ-NX-CONSTRUCTOR-SHELL)', () => {
-  it('links to /constructor with skipPageAcl and no Complex create kind', () => {
-    const cat = NAV_CATEGORIES.find((c) => c.id === 'constructor');
-    expect(cat).toBeTruthy();
-    expect(cat!.entryPath).toBe('/constructor');
-    expect(cat!.items).toEqual([
-      {
-        path: '/constructor',
-        pageKey: 'constructor',
-        label: 'Конструктор',
-        skipPageAcl: true,
-      },
-    ]);
-    expect(cat!.items.some((i) => /комплекс/i.test(i.label))).toBe(false);
+describe('studio category (TZ-NX-DOCSTUDIO-S2-SHELL)', () => {
+  it('links the docs category to /studio with a doc-studio pageKey', () => {
+    const docs = NAV_CATEGORIES.find((c) => c.id === 'docs');
+    expect(docs).toBeTruthy();
+    const studio = docs!.items.find((i) => (i.path as string).endsWith('/studio'));
+    expect(studio).toBeTruthy();
+    expect(studio!.pageKey).toBe('doc-studio');
+    expect(studio!.label).toContain('Студия');
   });
 
-  it('shows constructor when route exists even with restrictive pages[]', () => {
-    const existing = new Set(['/constructor', '/registries', '/admin/devices']);
+  it('shows studio item under docs when its pageKey is in the pages[] allow-list', () => {
+    const existing = new Set(['/studio', '/registries', '/admin/devices']);
+    const result = filterNavCategories(
+      NAV_CATEGORIES,
+      existing,
+      ['admin-users', 'doc-studio'],
+      () => true,
+      'admin',
+    );
+    expect(result.map((c) => c.id)).toContain('docs');
+    const docs = result.find((c) => c.id === 'docs');
+    expect(docs!.items.map((i) => i.path as string)).toContain('/studio');
+    expect(docs!.entryPath).toBe('/studio');
+  });
+
+  it('hides studio (no pageKey) under a restrictive pages[] allow-list', () => {
+    const existing = new Set(['/studio', '/registries', '/admin/devices']);
     const result = filterNavCategories(
       NAV_CATEGORIES,
       existing,
@@ -44,7 +52,10 @@ describe('constructor category (TZ-NX-CONSTRUCTOR-SHELL)', () => {
       () => true,
       'admin',
     );
-    expect(result.map((c) => c.id)).toEqual(['registries', 'constructor', 'admin']);
+    const docs = result.find((c) => c.id === 'docs');
+    // Studio is the only surviving docs route; with pageKey gated out the docs
+    // category shows nothing else, so it drops entirely.
+    expect(docs).toBeUndefined();
   });
 });
 
