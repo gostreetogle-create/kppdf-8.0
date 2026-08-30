@@ -23,7 +23,7 @@ export interface TextBlockFormDialogData { readonly mode: 'create' | 'edit'; rea
         <app-pi-form-field label="Категория" htmlFor="text-category"><select id="text-category" formControlName="categoryId" class="pi-input w-full"><option value="">Без выбора</option>@for (category of categories(); track category._id) {<option [value]="category._id">{{ category.name }}</option>}</select></app-pi-form-field>
         <app-pi-form-field label="Порядок" htmlFor="text-sort"><app-pi-input id="text-sort" type="number" formControlName="sortOrder" /></app-pi-form-field>
       </div>
-      <app-pi-form-field label="Содержание" htmlFor="text-content"><app-pi-rich-text formControlName="content" /></app-pi-form-field>
+      <app-pi-form-field label="Содержание" htmlFor="text-content"><app-pi-rich-text [(value)]="content" /></app-pi-form-field>
       @if (errorMessage()) { <p role="alert" class="text-destructive text-sm">{{ errorMessage() }}</p> }
     </form>
     <div footer class="flex justify-end gap-3"><app-pi-button variant="default" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Сохранение…' : 'Сохранить' }}</app-pi-button><app-pi-button variant="outline" (click)="ref.close(undefined)">Отмена</app-pi-button></div>
@@ -36,8 +36,10 @@ export class TextBlockFormDialogComponent {
   private readonly categoryService = inject(PiTextBlockCategoriesService);
   private readonly fb = inject(NonNullableFormBuilder);
   protected readonly saving = signal(false); protected readonly errorMessage = signal<string | null>(null); protected readonly categories = signal<readonly { _id: string; name: string }[]>([]);
-  protected readonly form = this.fb.group({ name: ['', Validators.required], slug: ['', Validators.required], tags: [''], categoryId: [''], sortOrder: [0], content: [''] });
-  constructor() { const row = this.data.textBlock; if (row) this.form.patchValue({ name: row.name, slug: row.slug, tags: row.tags.join(', '), categoryId: row.categoryId ?? '', sortOrder: row.sortOrder, content: row.content }); void this.loadCategories(); }
+  /** PiRichTextEditorComponent exposes a signal `model()`, not ControlValueAccessor — cannot live inside the reactive form as a formControlName. */
+  protected readonly content = signal('');
+  protected readonly form = this.fb.group({ name: ['', Validators.required], slug: ['', Validators.required], tags: [''], categoryId: [''], sortOrder: [0] });
+  constructor() { const row = this.data.textBlock; if (row) { this.form.patchValue({ name: row.name, slug: row.slug, tags: row.tags.join(', '), categoryId: row.categoryId ?? '', sortOrder: row.sortOrder }); this.content.set(row.content); } void this.loadCategories(); }
   private async loadCategories(): Promise<void> { const result = await firstValueFrom(this.categoryService.list()); if (result.ok) this.categories.set(result.data); }
-  protected async submit(): Promise<void> { if (this.saving() || this.form.invalid) { this.form.markAllAsTouched(); return; } this.saving.set(true); this.errorMessage.set(null); const result = this.data.mode === 'edit' && this.data.textBlock ? await firstValueFrom(this.service.update(this.data.textBlock._id, textBlockPayload(this.form.getRawValue()))) : await firstValueFrom(this.service.create(textBlockPayload(this.form.getRawValue()))); this.saving.set(false); if (!result.ok) { this.errorMessage.set(extractErrorMessage(result.error)); return; } this.ref.close(result.data); }
+  protected async submit(): Promise<void> { if (this.saving() || this.form.invalid) { this.form.markAllAsTouched(); return; } this.saving.set(true); this.errorMessage.set(null); const payload = textBlockPayload({ ...this.form.getRawValue(), content: this.content() }); const result = this.data.mode === 'edit' && this.data.textBlock ? await firstValueFrom(this.service.update(this.data.textBlock._id, payload)) : await firstValueFrom(this.service.create(payload)); this.saving.set(false); if (!result.ok) { this.errorMessage.set(extractErrorMessage(result.error)); return; } this.ref.close(result.data); }
 }

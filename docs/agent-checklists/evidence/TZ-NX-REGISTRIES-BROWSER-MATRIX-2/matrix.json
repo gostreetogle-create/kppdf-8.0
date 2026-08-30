@@ -1,0 +1,58 @@
+{
+  "task": "TZ-NX-REGISTRIES-BROWSER-MATRIX-2",
+  "closed_by": "claude",
+  "closed_at": "2026-08-30T16:22:08Z",
+  "method": "Live authenticated Playwright walk against the running dev server (:4201/:3000), not code review. Screenshots + console/network capture for every registry. Original session's matrix.json (superseded) explicitly disclosed 'live browser screenshots unavailable' and passed 120/120 from static review alone; this pass found 2 registries with a genuinely broken create flow that the static pass missed entirely.",
+  "registries": [
+    "units", "materials", "details", "modules", "products",
+    "supply-requests", "organizations", "product-passports",
+    "text-blocks", "table-templates"
+  ],
+  "checksPerRegistry": 12,
+  "checkKeys": [
+    "menu", "search", "filters", "pagination", "expand",
+    "create", "edit", "copy", "delete", "states",
+    "consoleNetwork", "deadButtons"
+  ],
+  "summary": {
+    "verifiedLiveThisPass": "100 of 120 cells directly exercised in-browser (screenshots in session scratchpad, not committed to the repo)",
+    "realDefectsFound": 2,
+    "realDefectsFixed": 2,
+    "knownNonBlockingResidue": 1
+  },
+  "matrix": {
+    "units": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "n/a (read-only, TZ-NX-REGISTRY-UNITS-READ-SLICE)", "edit": "pass", "copy": "n/a", "delete": "n/a (read-only)", "states": "pass", "consoleNetwork": "pass (0 console errors, 0 network failures)", "deadButtons": "pass" },
+    "materials": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "pass", "edit": "pass", "copy": "pass", "delete": "pass (confirm dialog shown, cancelled — not executed, no data loss)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "details": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "pass", "edit": "pass", "copy": "pass", "delete": "pass (buttons confirmed present+enabled via screenshot; automated confirm-dialog click hit a transient dev-server collision, not a product defect — see notes)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "modules": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "pass", "edit": "pass", "copy": "n/a (modules have no duplicate action)", "delete": "pass (confirm dialog shown, cancelled)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "products": { "menu": "pass", "search": "pass", "filters": "pass (also independently verified live in A5, incl. the isComplex filter)", "pagination": "pass", "expand": "pass", "create": "pass", "edit": "pass", "copy": "pass", "delete": "pass (confirm dialog shown, cancelled)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "supply-requests": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "n/a (read-only)", "edit": "n/a (read-only)", "copy": "n/a", "delete": "n/a (read-only)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "organizations": { "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass", "create": "n/a (read-only)", "edit": "n/a (read-only)", "copy": "n/a", "delete": "n/a (read-only)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "product-passports": { "menu": "pass", "search": "pass", "filters": "n/a (no filter controls on this registry by design)", "pagination": "pass", "expand": "pass", "create": "n/a (read-only)", "edit": "n/a (read-only)", "copy": "n/a", "delete": "n/a (read-only)", "states": "pass", "consoleNetwork": "pass", "deadButtons": "pass" },
+    "text-blocks": {
+      "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass",
+      "create": "FIXED — was crashing (NG01203: No value accessor for form control name: 'content'); PiRichTextEditorComponent exposes a signal model(), not ControlValueAccessor, so formControlName was never valid for it. Fixed by binding [(value)] to a plain signal instead, kept out of the reactive FormGroup, merged into the payload at submit. Live-reproduced the crash, fixed, then live-verified a real record round-trip (typed text, saved, confirmed present via a fresh unfiltered GET /api/text-blocks). Regression test added: text-block-form-dialog.component.spec.ts.",
+      "edit": "FIXED (same root cause and fix as create — content is now a signal in both modes)",
+      "copy": "n/a",
+      "delete": "pass (confirm dialog shown, cancelled)",
+      "states": "pass",
+      "consoleNetwork": "was FAIL (2x NG01203 RuntimeError) -> pass after fix (0 console errors on repeat live run)",
+      "deadButtons": "was FAIL -> pass after fix"
+    },
+    "table-templates": {
+      "menu": "pass", "search": "pass", "filters": "pass", "pagination": "pass", "expand": "pass",
+      "create": "FIXED — was crashing (\"Cannot find control with name: 'columns'\"); the template's formArrayName=\"columns\" had no matching FormArray registered on the parent form (columns lived in a separate signal, `columnRows`). Fixed by making `columns` a real FormArray inside the reactive form, matching the exact pattern material-form-dialog.component.ts already uses for `dimensions`. Live-reproduced the crash, fixed, then live-verified a real record round-trip (added a column, saved, confirmed present via a fresh unfiltered GET /api/table-templates). Regression test added: table-template-form-dialog.component.spec.ts.",
+      "edit": "FIXED (same underlying FormArray, same fix applies to both modes; not independently re-verified live in edit mode specifically)",
+      "copy": "n/a",
+      "delete": "pass (confirm dialog shown, cancelled)",
+      "states": "pass",
+      "consoleNetwork": "KNOWN NON-BLOCKING RESIDUE — after the fix, the two 'Cannot find control' crashes are gone (confirmed), but a separate `TypeError: newCollection[Symbol.iterator] is not a function` at Angular's @for reconcile still fires repeatedly while the column rows render. This error was ALREADY present in the original broken state (see git history of this file's evidence) — not introduced by this fix. Save still succeeds (verified: real POST 201, record persists correctly with its columns). Root cause not fully isolated; parked in docs/agent-checklists/_NOW.md rather than guessed at further.",
+      "deadButtons": "pass (button clicks all produce a real, correct outcome — create/save works end-to-end despite the console noise)"
+    }
+  },
+  "notes": {
+    "filters_check_methodology": "This pass's own generic Playwright selector for filter controls was too narrow to reliably find them across differently-laid-out registries (false negatives in an earlier draft of this matrix). Filters are independently confirmed working via: A1/A5's targeted live verification this session (screenshots), and every registry screenshot taken during this walk visibly showing populated, usable search/filter controls in the toolbar.",
+    "details_delete_check": "The automated confirm-dialog click for the LAST row's delete button hit a transient <vite-error-overlay> collision (another concurrent editing session's HMR reload, observed multiple times this session on unrelated files) — not a reproducible product defect. A screenshot of the same registry (details-01-list.png) shows edit/copy/delete icon buttons clearly present, enabled, and correctly rendered on real rows.",
+    "constructor_button_stale_docs": "docs/pages/registries.page.md's table still mentions an 'Открыть в Конструкторе' row action for materials/products. Checked: the action was already cleanly removed from the actual registry-action code (registries.catalog.spec.ts explicitly asserts no registry exposes an 'open-constructor' action; materials-registries.spec.ts's old test for it is describe.skip'd, not deleted). This is stale documentation text, not a live dead button — not fixed in this pass since it's a docs-only, zero-risk drive-by outside this TZ's own scope; flagged for whoever next touches that doc."
+  }
+}

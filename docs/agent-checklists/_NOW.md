@@ -1,16 +1,24 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T18:57:14+03:00
+updated_at: 2026-08-30T19:22:08+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:57).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 19:22).
 
-Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A6
-`TZ-NX-REGISTRIES-BROWSER-MATRIX-2` (полный обход реестров, закрывает Phase A).
+**Phase A (`WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) закрыта — A1–A6 все DONE,
+live-verified.** Следующий шаг — Phase B (Студия): B1
+`TZ-NX-DOCSTUDIO-S4-TYPOGRAPHY`.
 
 ## DONE this slice
 
+- `TZ-NX-REGISTRIES-BROWSER-MATRIX-2` (Wave A6, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  честный живой обход всех 10 реестров (прошлая версия сама признавала
+  "live screenshots unavailable", 120/120 из code-review); нашёл и починил
+  2 реально сломанных create-диалога (text-blocks: NG01203 rich-text;
+  table-templates: FormArray не зарегистрирован) — оба live-verified
+  реальным round-trip через API; archive
+  `tasks/_archive/2026-08/TZ-NX-REGISTRIES-BROWSER-MATRIX-2.done.md`
 - `TZ-NX-PRODUCT-COMPLEX-COMPOSITION` (Wave A5, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   список изделий теперь реально отдаёт `isComplex` (раньше только detail),
   фильтр «Все/Комплекс/Обычное» на реестре; live-verified API (5 комплексов
@@ -52,6 +60,19 @@ updated_at: 2026-08-30T18:57:14+03:00
 - `TZ-NX-COMPOSITION-NX-AUDIT` — IA nx archived (analysis-only PASS)
 
 ## PARK
+
+- `table-templates` create/edit dialog: after A6's FormArray fix, a
+  non-blocking `TypeError: newCollection[Symbol.iterator] is not a
+  function` still fires from Angular's `@for` reconcile while column rows
+  render. Confirmed pre-existing (present in the original broken state
+  too, alongside the now-fixed crashes) — not introduced by the fix. Save
+  works correctly end-to-end regardless. Root cause not isolated in the
+  time available.
+- `docs/pages/registries.page.md` still mentions "Открыть в Конструкторе"
+  for materials/products row actions — the action was already cleanly
+  removed from the actual code (tests enforce its absence); this is stale
+  doc text, not a live dead button. One-line fix whenever someone's next
+  in that file.
 
 - Деталь's own raw-material BOM doesn't appear nested inside a Product's
   full tree view when that Деталь is used inside a Module — found during
