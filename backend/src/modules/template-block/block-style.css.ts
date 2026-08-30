@@ -38,7 +38,7 @@ export function styledTemplateFontCss(): string {
     const font = BLOCK_FONT_FACES[display as keyof typeof BLOCK_FONT_FACES];
     const decl = (weight: BlockFontWeight, fontWeight: string, fontStyle: string) => {
       if (!font) return '';
-      return `@font-face { font-family: '${escapeCss(display)}'; font-weight: ${fontWeight}; font-style: ${fontStyle}; src: ${src(font[weight])}; font-display: swap; }`;
+      return `@font-face { font-family: '${escapeCss(display)}'; font-weight: ${fontWeight}; font-style: ${fontStyle}; src: ${src(font[weight])}; font-display: block; }`;
     };
     return [
       decl('regular', '400', 'normal'),

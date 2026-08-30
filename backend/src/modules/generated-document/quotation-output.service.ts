@@ -110,6 +110,7 @@ export class QuotationOutputService {
             ),
           );
         });
+        await this.waitForDocumentFonts(page);
       }
       return Buffer.from(
         await page.pdf({
@@ -271,6 +272,32 @@ export class QuotationOutputService {
       totalPrice: quotation.total ?? 0,
       quotationId: quotation._id.toString(),
     };
+  }
+
+  private async waitForDocumentFonts(page: Page): Promise<void> {
+    const timeoutMs = 5_000;
+    const evaluate = page.evaluate;
+    if (typeof evaluate !== 'function') return;
+    let timedOut = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        evaluate.call(page, () => document.fonts.ready),
+        new Promise<void>((resolve) => {
+          timer = setTimeout(() => {
+            timedOut = true;
+            resolve();
+          }, timeoutMs);
+        }),
+      ]);
+      if (timer) clearTimeout(timer);
+      if (timedOut) {
+        this.logger.warn(`PDF font loading timed out after ${timeoutMs}ms; continuing with declared font stack`);
+      }
+    } catch (error) {
+      if (timer) clearTimeout(timer);
+      this.logger.warn(`PDF font loading failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   private async getBrowser(): Promise<Browser> {

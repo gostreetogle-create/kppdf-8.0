@@ -107,7 +107,19 @@ async function bootstrap() {
 
   // TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE — self-hosted @font-face files for the
   // document PDF render (dev and prod images share no system font set).
-  // CSP fontSrc already allows 'self'. Served under /fonts/* → ./assets/fonts/
+  // Served under /fonts/* → ./assets/fonts/. The PDF pipeline loads the rendered
+  // document via page.setContent (null / "about:blank" origin), so the document's
+  // @font-face url(...) is a cross-origin fetch. It must be allowed: without an
+  // open ACAO/CORP the headless browser silently substitutes a fallback face
+  // (the exact „PDF ≠ экран“ trap this TZ exists to close). Web fonts are public
+  // assets, so a wildcard ACAO + cross-origin CORP here is the safe conventional
+  // choice; Helmet's default same-origin CORP is overridden only for /fonts/*.
+  app.use('/fonts/', (_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    next();
+  });
   app.useStaticAssets(join(process.cwd(), 'assets', 'fonts'), {
     prefix: '/fonts/',
   });
