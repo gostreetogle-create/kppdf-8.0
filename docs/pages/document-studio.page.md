@@ -1,74 +1,253 @@
-# Типографика блоков (D1)
+# Страница: Документ-студия (`/studio`)
 
-`TemplateBlock.style` — единый источник гарнитуры, размера, цвета, выравнивания и межстрочного интервала для шаблонов и studio-документов. При сохранении inline `font-family`, `font-size` и `color` удаляются; bold/italic/underline, ссылки, списки и токены `{{...}}` сохраняются.
+**Кратко:** единое рабочее место для создания и правки **экземпляров документов** (КП, договор, паспорт, произвольный A4): лист по центру, боковые рельсы с overlay-панелями, слои, таблицы, подстановочные поля, PDF и архив.
 
-Белый список шрифтов: **Times New Roman**, **Arial**, **Calibri**. Рендер подключает metric-compatible файлы Tinos, Liberation Sans и Carlito через `@font-face` из `backend/src/modules/template-block/assets/fonts`, поэтому headless Chromium использует те же гарнитуры, а не системную подстановку.
+**Маршруты NX (актуально):**
 
-# Страница: Документ-студия (`DocumentStudio*`)
+| Route | Что видит оператор |
+|-------|-------------------|
+| `/studio` | Список документов, «Создать документ» |
+| `/studio/:id` | Редактор (единственная страница правки — без ухода в builder/texts) |
 
-**Краткое описание:** универсальное рабочее место для **создания и правки экземпляров документов** (не только КП): editable A4-центр, chrome-rails, overlay-панели, слои, таблицы с данными ERP, multipage, save-as-template. **Одна страница редактора** — без navigate на texts/tables/builder.
+`pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-> **SoT.** Статус: **Waves 0–19 DONE** (2026-08-29).  
-> ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md)  
-> Программа: [`../../tasks/WAVE-DOC-STUDIO.md`](../../tasks/WAVE-DOC-STUDIO.md)
+**Статус волны:** S2–S7 **DONE** (commit `a7b54868`, 2026-08-30). S8 — очередь на доделку: [`../../tasks/WAVE-DOCSTUDIO-S8.md`](../../tasks/WAVE-DOCSTUDIO-S8.md).
 
-## NX Studio S2 shell
+---
 
-`/studio` показывает список документов через `PiStudioDocumentsService`, а `/studio/:id` — редактор с A4-листом в видимой рамке (border/shadow у `.kp-ws-sheet`, `sheetHost=false`). Лист **по центру stage** (книжная — центр; альбомная — центр по ширине, чуть выше по высоте), масштаб = max fit в viewport при сохранении ratio 210/297 или 297/210 (`container-type: size` + `min(cqw,cqh*ratio)`). Canvas заполняет лист белым; на stage **все видимые слои** текущей страницы (z-index снизу вверх); **активный слой** — единственный редактируемый (drag/resize/текст). Текстовые блоки — прозрачный фон. Глаз в панели слоёв персистит `isActive` через PATCH блока. Панель страниц — overlay 480px; стрелки prev/next ≥32×32px, метка «Стр. N / M». Ориентация меняется через PATCH документа и сохраняет A4 ratio для альбомного листа (~1.414). Клик по листу сворачивает панель, PDF/архив отключены до S8. Геометрия и открытая/свёрнутая панель не меняют rect листа; числовое evidence: `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/_geometry.json`.
+## 1. Карта интерфейса
 
-Панель **Свойства** — категории (Слой / Контент / Типографика / Геометрия / Действия), русские типы; fallback `propertiesBlock = selected ?? activeLayer`. Панель **Слои** — плитки без opacity на неактивных; кнопка «Свойства» на плитке.
+### 1.1 Шапка приложения (не студия)
 
+Вкладка **«Докум.»** в app-shell. Общие настройки, тема, пользователь — как на всех страницах.
 
-## NX Studio S7-0 (WIP closeout, 2026-08-30)
+### 1.2 Ribbon (вторая строка, 36px)
 
-- **Canvas compositing:** studioCanvasBlocks() — all visible layers on the current page (isActive !== false), sorted by z-index; only the **active** layer is interactively editable (drag/resize/table cells).
-- **Layers rail:** eye toggles PATCH isActive; lock toggles PATCH locked; reorder via drag updates z-index.
-- **Properties (right):** tabs by block type — **no geometry readout** in panel (position/size on canvas only). Text via pi-studio-text-properties (rich-text toolbar, block-level align left/center/right on canvas, library pick/save). Table via pi-studio-table-properties (	ableTransparentBackground default opaque; row colors + save template).
-- **Canvas text render:** innerHTML with block-level 	extAlign, 
-ontSizePt, color from TemplateBlock.style.
-- **Shell:** overlay panel --kp-panel-w: 340px; A4 sheet centered on stage (see studio-workspace-shell.component.css).
-- **data-test:** studio-text-properties, studio-table-transparent-bg, studio-align-center (and siblings).
+Слева направо — три логические зоны:
 
-## Routes
+| Зона | Элементы | Назначение |
+|------|----------|------------|
+| **Контекст** | «Студия документов», **+ Страница**, ‹ Стр. N / M ›, **Книжная/Альбомная** | Метка модуля; добавить страницу (`manualPageCount`); навигация по страницам; PATCH `orientation` на документе |
+| **Документ** | Badge имени, «Страниц: N» | `doc.name`, `pageCount()` — только информация |
+| **Действия** | К списку · **Редактор** · **Просмотр** · Шаблон · PDF · В архив | Навигация, режим, вывод |
 
-| Route | Роль |
-|-------|------|
-| `/doc-constructor/studio` | список: **+ Новый**, **Из шаблона**, **Дублировать** |
-| `/doc-constructor/studio/:id` | редактор (single-page law) |
+**Ribbon — что работает сейчас**
 
-`pageKey`: `doc-studio`.
+| Кнопка | Поведение |
+|--------|-----------|
+| К списку | `/studio` |
+| Редактор | Canvas: drag/resize, правка текста и таблиц на листе |
+| Просмотр | `POST /studio-documents/:id/preview` → iframe с HTML как при печати |
+| Шаблон | Диалог save-as-template (нужен `docTypeId`) |
+| PDF | `downloadPdf` + сохранение файла |
+| В архив | Confirm → finalize (draft→frozen→final), ERP snapshot строк таблицы |
 
-## Rails (actual)
+### 1.3 Icon-rail (app-chrome-rail, слева и справа)
 
-| Rail | Содержимое |
-|------|------------|
-| L Элементы | + текст / таблица / фото |
-| L Слои | z-order, lock, page filter, +/- страницы |
-| L Шаблон | save-as-template (name + keep bindings + docTypeId) |
-| L Данные | issuer org, counterparty, **КП/заказ** (live ERP) |
+Студия регистрирует инструменты через `ShellToolRailService` (owner `studio-editor`).
 
-**NX `/studio` (2026-08):** L rail «Данные» wired (org read-only + context PATCH counterpartyId/quotationId/orderId). L rail «Шаблон»: save-as-template via `StudioSaveAsTemplateDialogComponent` (name + keep bindings); requires `docTypeId` on document. Table tier-L / text parity → S7-3+.
-| R Свойства | layer title, text/table/image props, full-page image, delete (no geometry panel) |
-| R Таблица (tier-L) | manual + ERP live rows → `putDataSet` |
+**Слева:**
 
-Ribbon: **Редактор | Просмотр** · **PDF** · **В архив** · нумерация страниц.
+| Иконка | Панель | Содержимое |
+|--------|--------|------------|
+| **Элементы** | Flyout 340px | + Текст, + Фото, + Таблица (новый слой) |
+| **Данные** | Flyout | Исполнитель (read-only), селекты **Клиент**, **КП**, **Заказ** → PATCH `document.context` |
+| **Шаблон** | Flyout | Тип документа (`docTypeId`), CTA «Сохранить как шаблон» |
+| **Слои** | Flyout | Z-order, lock, видимость (глаз), удаление, «Свойства» на плитке |
 
-## API
+**Справа:**
 
-| Endpoint | Status |
-|----------|--------|
-| CRUD + blocks + data-sets + preview + pdf + finalize | yes |
-| `POST …/from-template` | yes |
-| `POST …/:id/duplicate` | yes |
-| `POST …/:id/save-as-template` | yes (needs `docTypeId`) |
-| **+ Новый → Пустой A4** → finalize | yes (sentinel template «Пустой A4», TZ-DOC-STUDIO-2004) |
+| Иконка | Панель | Содержимое |
+|--------|--------|------------|
+| **Свойства** | Flyout | По типу блока: текст (rich-text, библиотека, **ERP-поле**), таблица (вид/колонки), изображение (фон паспорта), общие действия |
 
-## Known limitations
+Повторный клик по активной иконке или клик по листу **сворачивает** панель. Лист A4 **не меняет размер** при open/close (закон [`kp-workspace-geometry.md`](./kp-workspace-geometry.md)).
 
-- No Ctrl+Z (ADR § Not in MVP).
-- `template_blocks` cutover cleanup (studio-only parent write) — successor wave 20.
+### 1.4 Stage (центр)
 
-## Related
+- Белый лист A4 в рамке; все **видимые** слои текущей страницы composited по z-index.
+- **Активный слой** — единственный с drag/resize и редактированием ячеек/текста.
+- Нижний угол stage: заглушки Fit / 100% / метка страницы (ещё не wired).
+
+### 1.5 Status-bar (низ)
+
+Текст статуса: «Режим просмотра», autosave, ошибки контекста и т.д.
+
+---
+
+## 2. Подстановочные поля — как это задумано и что работает
+
+### 2.1 Два разных механизма
+
+| Механизм | Где настраивается | Синтаксис | Когда подставляются данные |
+|----------|-------------------|-----------|----------------------------|
+| **Текстовые токены** | Свойства → текст → «Поле ERP» | `{{source.field}}`, напр. `{{counterparty.name}}` | **Просмотр / PDF / архив** (серверный рендер). В режиме **Редактор** на листе виден **сырой токен**. |
+| **Строки таблицы из ERP** | Legacy: rail «Таблица» + `putDataSet`. **NX: UI отсутствует** | dataSet `source.type`: `quotation-items` \| `order-items` | **Просмотр / PDF**, если в документе есть dataSet и в **Данные** выбран КП/заказ. Строки live-read до finalize, потом snapshot. |
+
+Каталог полей для текстовых токенов: `GET /api/registry/data-sources` → диалог «Постановочные данные» (`studio-data-field-picker-dialog`).
+
+### 2.2 Цепочка для текста `{{counterparty.name}}`
+
+```mermaid
+flowchart LR
+  A[Свойства → Поле ERP] --> B[Токен в HTML блока]
+  C[Панель Данные → Клиент] --> D[PATCH context.counterpartyId]
+  D --> E[Preview/PDF render]
+  B --> E
+  E --> F{Backend data bag}
+  F -->|S8 TODO| G[Подставленное имя]
+  F -->|сейчас| H[Пусто или только _id org]
+```
+
+**Шаги оператора (когда S8 закрыт):**
+
+1. В **Данные** выбрать **Клиент** (Counterparty) — сохраняется в `studio_documents.context.counterpartyId`.
+2. В текстовом блоке через **Поле ERP** вставить, например, `{{counterparty.name}}`.
+3. Переключить **Просмотр** (или PDF) — сервер подставляет значение из БД.
+
+**Сейчас (gap S8-1):** `StudioOutputService` передаёт в рендер только `organizationId`; `studio-render.adapter.ts` не грузит counterparty/order/quotation из `doc.context`. Токены **не заполняются** в preview/PDF, хотя UI вставки и панель «Данные» уже есть.
+
+**Исполнитель (наша фирма):** берётся из `document.organizationId` пользователя; в панели «Данные» показывается read-only имя (`issuerOrgName`). Токены `{{organization.*}}` — тот же gap до S8-1.
+
+**Продукт / каталог:** в picker есть группа «Каталог», но автоподстановка **не** зависит от выбора изделия на странице — нужен явный контекст или dataSet (S8-3).
+
+### 2.3 Цепочка для таблицы из КП/заказа
+
+```mermaid
+flowchart LR
+  A[Панель Данные] --> B[context.quotationId или orderId]
+  C[Привязка таблицы к источнику] --> D[dataSets table- blockId]
+  D --> E[resolveDataSets backend]
+  B --> E
+  E --> F[Строки в Preview/PDF]
+```
+
+**Backend готов:** `StudioDataResolverService` читает `quotation-items` / `order-items` по `context` (с org-scope check).
+
+**NX gap S8-2:** нет UI «Источник строк: КП / заказ / вручную» и нет вызова `putDataSet` (в legacy — `document-studio-editor.facade.ts` + `studio-panel-table.component.ts`). Пока таблица только **ручные** строки на листе + sampleRows в settings блока.
+
+### 2.4 Связь «Данные» ↔ подстановка
+
+| Поле в «Данные» | Поле в `context` | Влияет на |
+|-----------------|------------------|-----------|
+| Клиент | `counterpartyId` | Токены `{{counterparty.*}}` (после S8-1) |
+| КП | `quotationId` | Строки таблиц с source `quotation-items` |
+| Заказ | `orderId` | Строки таблиц с source `order-items` |
+| Исполнитель | (из JWT org) | `{{organization.*}}`, scope ERP |
+
+Выбор КП **не** подставляет клиента автоматически в NX (в legacy builder — cascade при render). Successor: S8-1 cascade из order/quotation.
+
+---
+
+## 3. Панели — детально
+
+### 3.1 Элементы
+
+- **+ Текст:** в активный текстовый слой или новый текстовый слой.
+- **+ Фото:** новый image-слой (upload).
+- **+ Таблица:** новый table-слой с дефолтными колонками.
+
+### 3.2 Слои
+
+Список блоков текущей страницы: drag reorder → PATCH z-index; lock; глаз → `isActive`; удаление; переход в Свойства.
+
+### 3.3 Данные
+
+PATCH документа `{ context: { counterpartyId, quotationId, orderId } }` с revision gate. Списки КП/заказов/контрагентов — live API при открытии редактора.
+
+### 3.4 Шаблон
+
+- **Тип документа** (`docTypeId`) — обязателен для «Сохранить как шаблон» и ribbon «Шаблон».
+- Save-as-template: имя + `keepDataBindings` → `POST …/save-as-template`.
+
+### 3.5 Свойства (текст)
+
+- Rich-text (TipTap), шрифт/размер/цвет/выравнивание на уровне блока (`TemplateBlock.style`).
+- Библиотека: pick/save → реестр «Тексты».
+- **Поле ERP:** вставка токена (см. §2).
+
+### 3.6 Свойства (таблица)
+
+- Выбор **вида таблицы** из реестра «Виды таблиц».
+- Редактор колонок (key, label, type, width, align).
+- Прозрачный фон таблицы; сохранение вида в реестр.
+- Строки редактируются **на листе** (inline cells).
+
+### 3.7 Свойства (изображение)
+
+- Фон паспорта (`settings.overlay`): full-page под блоками, z-order в canvas и preview (S7-6 DONE).
+
+---
+
+## 4. Режимы и вывод
+
+| Режим | Источник картинки |
+|-------|-------------------|
+| Редактор | `studio-blocks-canvas` — сырые блоки, токены как текст |
+| Просмотр | Backend HTML, таблицы через `injectTableContent` + dataSets |
+| PDF | Тот же HTML → puppeteer |
+| В архив | `bakeSnapshot` dataSets → `generated_documents` |
+
+---
+
+## 5. API (используется NX)
+
+| Endpoint | NX UI |
+|----------|-------|
+| CRUD `studio-documents` | list + editor |
+| blocks CRUD | canvas |
+| PATCH context, orientation, docTypeId | Данные, ribbon, Шаблон |
+| `POST …/preview` | Просмотр |
+| `POST …/pdf` | PDF |
+| `POST …/finalize` | В архив |
+| `POST …/save-as-template` | Шаблон |
+| `POST …/from-template` | **Нет UI на `/studio`** (S8-3) |
+| `POST …/duplicate` | **Нет UI на `/studio`** (S8-3) |
+| `PUT …/data-sets/:key` | **Нет UI** (S8-2) |
+| `GET registry/data-sources` | picker ERP-полей |
+
+---
+
+## 6. Сделано (S2–S7)
+
+- Shell A4, overlay 340px, icon-rail, ribbon (26px controls).
+- Элементы, слои, compositing всех видимых слоёв.
+- Текст rich + типографика блока + библиотека текстов.
+- Таблица: inline edit, виды из реестра, колонки, save template.
+- Панель Данные: клиент, КП, заказ → context.
+- Picker ERP-полей → токены в текст.
+- Doc type picker, save-as-template guard.
+- Preview, PDF, finalize (draft only).
+- Passport background image layer.
+- Реестры текстов/видов таблиц; снос `/constructor`.
+- Encoding canon: [`../ENCODING.md`](../ENCODING.md).
+
+---
+
+## 7. Не сделано / известные дыры (→ S8)
+
+| # | Gap | Влияние на оператора | TZ |
+|---|-----|----------------------|-----|
+| 1 | Текстовые токены не резолвятся в preview/PDF | Видит `{{counterparty.name}}` в просмотре | `TZ-NX-DOCSTUDIO-S8-TEXT-SUBSTITUTION` |
+| 2 | Нет привязки таблицы к КП/заказу | Таблица только ручная | `TZ-NX-DOCSTUDIO-S8-TABLE-ERP-BIND` |
+| 3 | Список: нет «Из шаблона», дублировать | Только пустой документ | `TZ-NX-DOCSTUDIO-S8-LIST-TEMPLATES` |
+| 4 | Панель «Страницы» (фон, поля, перенос строк) | Только +Страница и ориентация в ribbon | `TZ-NX-DOCSTUDIO-S8-PAGES-PANEL` |
+| 5 | `catalog-products` dataSet | Нельзя набрать таблицу из каталога | backend D3 + TZ successor |
+| 6 | Ctrl+Z, conflict merge UI | ADR: вне MVP | PARK |
+| 7 | Fit/100% zoom toolbar | Заглушки | micro-TZ |
+| 8 | RBAC role permissions (uncommitted) | Права роли vs пользователя | `TZ-AUTH-RBAC-ROLE-PERMS` |
+
+---
+
+## 8. Типографика (D1)
+
+`TemplateBlock.style` — SoT шрифта/размера/цвета/выравнивания. Inline font-family/size/color вырезаются при save; bold/italic/underline и `{{…}}` сохраняются. Шрифты: Times New Roman, Arial, Calibri (+ metric-compatible в PDF).
+
+---
+
+## 9. Связанные документы
 
 - [`document-studio-data-anchors.md`](../architecture/document-studio-data-anchors.md)
 - [`kp-workspace-geometry.md`](./kp-workspace-geometry.md)
+- [`../ENCODING.md`](../ENCODING.md)
+- Волна S8: [`../../tasks/WAVE-DOCSTUDIO-S8.md`](../../tasks/WAVE-DOCSTUDIO-S8.md)

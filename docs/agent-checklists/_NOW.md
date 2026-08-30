@@ -1,36 +1,24 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-08-30T22:40:00+03:00
+updated_at: 2026-08-30T23:00:00+03:00
 
 ## ACTIVE / LIVE
 
-**ACTIVE TZ:** _(none — S7 wave complete, post-S7 PARK cleared for docType picker)_
+**ACTIVE TZ:** _(none — S8 wave READY, see `tasks/WAVE-DOCSTUDIO-S8.md`)_
 
-S7 wave COMPLETE and **committed+pushed** as `a7b54868` (`main`, was sitting
-uncommitted across multiple Freebuff waves + Claude sessions until this pass).
-Doc type picker shipped; save-as-template unblocked after type selection.
+S7 wave COMPLETE and **committed+pushed** as `a7b54868` + docs sync `f4490ef7`.
+Local **unpushed:** `094d41df` (ribbon 26px + image layer polish) — push with doc audit commit.
 
-**Encoding incident (2026-08-30, PO-reported via screenshot):** mojibake
-(«РЎС‚СЂР°РЅРёС†» instead of «Страниц») in the Studio ribbon/status bar,
-caused by a UTF-8↔CP1251 round-trip in `studio-editor.page.ts` /
-`studio-table-defaults.ts`. A first fix attempt restored correct Cyrillic but
-left a UTF-8 BOM on 8 files (PowerShell `-Encoding utf8` side effect) — that
-BOM also stripped this same restore rolled `studio-editor.page.ts` back to
-the pre-S7 commit content for a window, which would have silently discarded
-the whole S7 feature set (save-as-template/PDF/finalize, data panel, template
-panel, ERP field picker, doctype picker) had it been committed as-is. Caught
-via the file's own uncommitted content still held in this session's context;
-reconciled onto the fuller version instead of overwriting it. Rules now in
-`docs/ENCODING.md` (linked from `GEMINI.md`); fixed and live-verified
-(Playwright screenshot, zero console errors, all ribbon/status Cyrillic clean).
+**Operator SoT (2026-08-30 audit):** full UI map + substitution flow +
+gaps → `docs/pages/document-studio.page.md` (§1–§7). Key finding: **текстовые
+`{{токены}}` и таблица←КП не дожимают до Preview** — S8-1/S8-2 TZ written.
 
-**Not committed, flagged to PO:** `backend/src/common/contracts/rbac-contract.ts`
-+ `permissions.guard.ts` + `auth.module.ts`/`auth.service.ts`/`jwt.strategy.ts`
-+ `docker-compose.yml` — a real-looking RBAC fix (role's own `permissions`
-were never actually read; the guard used the *user's* `permissions` as a
-stand-in for the *role's*) sitting uncommitted with no checklist/claim. Left
-alone deliberately (unclaimed, undocumented, security-relevant) — needs PO or
-whoever wrote it to close it out properly.
+**Encoding incident (2026-08-30):** resolved in Claude pass; rules `docs/ENCODING.md`.
+Studio Cyrillic verified clean; do not PowerShell-write UTF-8 without BOM=false.
+
+**Not committed, flagged to PO:** RBAC WIP → `TZ-AUTH-RBAC-ROLE-PERMS.md` (security).
+Studio image stagger WIP in working tree — not in TZ; stash or own micro-TZ tomorrow.
+docker-compose healthcheck tweak — ops-only, not in doc commit.
 
 ## DONE this slice
 
