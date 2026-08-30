@@ -36,7 +36,7 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 | Нужно PO | Уже есть | Путь |
 |---|---|---|
 | Шаблон документа | `document_templates`: `pageSize` A3/A4/A5, `orientation`, `backgroundImage[]`, `defaultBackgroundIndex`, `backgroundOpacity`, `pageNumbering`, `docTypeId`, `categoryId`, `version` | `document-template.schema.ts:42-70` |
-| Перенос строк таблицы на след. страницу | `defaultSheetLayout {rowsFirstPage, rowsNextPage}` | `document-template.schema.ts:72-82` |
+| Перенос строк таблицы на след. страницу | `defaultSheetLayout {rowsFirstPage, rowsNextPage}` — **только на шаблоне**; см. дельту D5 | `document-template.schema.ts:72-82` |
 | Слои и позиционирование | `template_blocks.layout {page, x, y, width, height?, zIndex, rotation}` + `groupId` + `locked` | `template-block.schema.ts:164-183`, `template-block-layout.ts:3-11` |
 | Типы блоков | `type`: header \| text \| table \| image \| signature \| spacer | `template-block.schema.ts:132-133` |
 | Рабочий документ | `studio_documents`: `sourceTemplateId`, `manualPageCount`, `context`, `dataSets[]`, `dataAnchors[]`, `status` draft/frozen/final, `revision` | `studio-document.schema.ts:19-64` |
@@ -44,7 +44,7 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 | Сохранённые виды таблиц | `table_templates`: `columns[] {key, label, type, width, align, format}`, `category`, `dataSource`, `sampleRows` | `table-template.schema.ts:69-147` |
 | Сохранённые тексты | `text_blocks`: `name`, `slug`, `tags`, `content`, `columns[]`, `categoryId` | `text-block.schema.ts:39-90` |
 | Привязка данных | `dataBinding {source, field, value, format}` на блоке; подстановка `{{путь.к.полю}}` при рендере; `GET registry/data-sources` — каталог привязываемых полей | `template-block.schema.ts:37-67`, `document-render.service.ts:37-50`, `registry.service.ts:153-277` |
-| Строки таблицы из ERP | `dataSets[].source.type` = manual \| quotation-items \| order-items | `studio-data-resolver.ts:272-299` |
+| Строки таблицы из ERP | `dataSets[].source.type` = manual \| quotation-items \| order-items (**`catalog-products` есть только в docs, в резолвере нет** — дельта D3) | `studio-data-resolver.ts:272-299` |
 | Архив и вывод | `generated_documents` + HTML-рендер + PDF через puppeteer-core | `generated-document.schema.ts:23-45`, `quotation-output.service.ts:57-87` |
 
 Префиксы API: `document-templates`, `studio-documents`, `text-blocks`, `table-templates`, `doc-types`, `registry`,
@@ -52,16 +52,18 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 
 ## 4. Backend: минимальная дельта
 
-**Новых коллекций — ноль.** Только добавочные поля и один резолвер.
+**Новых коллекций — ноль.** Добавочные поля, один резолвер и один снос.
+Уточнено по ревизии `docs/adr/ADR-NX-DOC-STUDIO-REVIEW.md` (2026-08-30).
 
 | # | Что | Где | Зачем именно для этого модуля |
 |---|---|---|---|
-| D1 | `style { fontFamily, fontSizePt, color, align, lineHeight, bold }` | новое поле на `template_blocks` | Панель шрифтов PO. Сегодня типографика существует только внутри TipTap-HTML, а серверный рендер жёстко прибит к `Times New Roman` (`document-render.service.ts:82`) — то есть выбранный шрифт не доживает до PDF. Блочные поля дают рендеру CSS без разбора HTML; исключения внутри абзаца остаются в HTML. |
-| D2 | `pageMargins { top, right, bottom, left }` | добавочно на `document_templates` и `studio_documents` | Поля страницы сегодня живут только в UI Builder и не персистятся; рендер использует `@page{margin:0}` + `padding:20px` (`document-render.service.ts:79,231`). Без этого лист в PDF не совпадёт с экраном. |
-| D3 | `dataSets[].source.type += 'catalog-products'` + резолвер строк | `studio-data-resolver.ts` | PO хочет набирать позиции **из каталога**, а не только из готового КП/заказа. В legacy это отложено как Wave 8 (`document-studio.md` § MVP delivered → «catalog-products live» deferred). Схема не меняется — только новый источник строк. |
-| D4 | Снос `document_table_types` | `backend/src/modules/document-table-type/**` | Коллекция-сирота: зарегистрирована в `app.module.ts:250`, потребителей вне своего модуля нет, с `table_templates` не связана (`table-template.schema.ts:12-15`). Дублирует «виды таблиц» и путает. **Решение PO:** сносим / оставляем. |
+| D1 | `style { fontFamily, fontSizePt, color, align, lineHeight }` | новое поле на `template_blocks` | Панель шрифтов PO. Сегодня типографика живёт только внутри TipTap-HTML, а серверный рендер жёстко прибит к `Times New Roman` (`document-render.service.ts:82`) — выбранный шрифт не доживает до PDF. **Правило разрешения конфликта (обязательное):** блочный `style` — единственный источник гарнитуры, размера, цвета и выравнивания; inline-HTML внутри абзаца оставляет **только** `bold`, `italic`, `underline`, ссылку. `font-size` и `font-family` из inline-разметки **вырезаются при сохранении** (sanitize). Без этого правила inline-CSS перебивает блочный, и экран расходится с PDF. |
+| D2 | `pageMargins { top, right, bottom, left }` | добавочно на `document_templates` и `studio_documents` **+ синхронизация рендера** | Полей страницы **нет нигде**: в Builder то, что похоже на них, — отступы **блока** (`builder-inspector.component.ts:670-705`), а размер и ориентация там же (`:207-229`) полями страницы не являются. Рендер использует `@page{margin:0}` + `.doc-content{padding:20px}` (`document-render.service.ts:79,231`) — padding обязан читаться из `pageMargins`, иначе лист в PDF не совпадёт с экраном. Панель «Страницы» — новый UX, не перенос. |
+| D3 | `dataSets[].source.type += 'catalog-products'` + резолвер + **маппинг и итоги** | `studio-data-resolver.ts`, `renderStudioTableHtml` | PO набирает позиции **из каталога**, а не только из готового КП/заказа. Одного источника строк мало: нужен маппинг `Product → строка таблицы`, ограничение выборки по организации, и **подсчёт суммы и НДС на сервере** (либо явный `totals`-dataSet). Сейчас рендер таблицы игнорирует `ColumnType` и форматирование (`studio-data-resolver.ts:104-135`), а итоги КП считаются только на клиенте (`proposal-workspace-draft.service.ts:1661-1672`) — иначе числа на экране и в PDF разойдутся. |
+| D4 | Снос `document_table_types` | `backend/src/modules/document-table-type/**` | Коллекция-сирота: зарегистрирована в `app.module.ts:250`, потребителей вне своего модуля нет, `documentTableTypeId` в продуктовом коде не встречается, с `table_templates` не связана (`table-template.schema.ts:12-15`). Дублирует «виды таблиц». **Решение:** сносим **отдельной ops-TZ после S1**, когда реестр «Виды таблиц» живой — не раньше, чтобы снос не совпал с появлением замены. |
+| D5 | `sheetLayout { rowsFirstPage, rowsNextPage }` на `studio_documents` + копирование из шаблона в `createFromTemplate` | `studio-document.schema.ts`, `studio-document.service.ts:379-399` | Правило переноса строк живёт только на шаблоне и **в экземпляр не копируется**; многостраничность студии работает на захардкоженных `DEFAULT_ROWS_FIRST/NEXT` (`studio-multipage.utils.ts:11-12`). Без D5 требование PO «с какой строки начинается следующая страница» настраивается в шаблоне, а на документе игнорируется. |
 
-Каждый пункт D1–D3 — отдельная backend-TZ, выдаётся **только** когда до него дошёл срез из § 6. Заранее не добавляем.
+Каждый пункт — отдельная backend-TZ, выдаётся **только** когда до него дошёл срез из § 6. Одно исключение: **схема D1 landing до S3** (см. § 6), иначе текст, сохранённый в S3, придётся миграционно переписывать в S4.
 
 ## 5. Геометрия единой страницы (главный ответ на «меню не должны сужать лист»)
 
@@ -71,7 +73,8 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 - **Панели — overlay.** `position: absolute` поверх плоскости, ширина **480px** фиксированно (книжный = альбомный), контент внутри `max-width: 272px`. Открытие/закрытие панели **не меняет** прямоугольник листа: Δ width/height/right ≤ 0.5px в обеих ориентациях. Запрещено «если панель открыта — уменьшить лист».
 - **Рельсы — иконки.** Левый и правый `4rem` рельс в оболочке NX уже размечены (`app-shell.component.ts`, `tool-rail-definitions.ts`) — сегодня все кнопки заглушки. В альбомном рельсы **остаются по бокам**, горизонтальная полоса — только мобильный `<lg`.
 - **Ribbon не крадёт высоту** плоскости: тонкая полоса overlay в углу листа.
-- **Типографика — плавающий контекстный тулбар** над выделенным блоком (как мини-панель в Word), а не постоянная боковая панель. Причина прямо из требования PO: в альбомном режиме постоянная панель шрифтов либо сужает лист, либо перекрывает его половину. Тулбар появляется по выделению и исчезает по снятию.
+- **Типографика — плавающий контекстный тулбар** над выделенным блоком (как мини-панель в Word), а не постоянная боковая панель. Причина прямо из требования PO: в альбомном режиме постоянная панель шрифтов либо сужает лист, либо перекрывает его половину. Тулбар появляется по выделению и исчезает по снятию. **Обязательно `stopPropagation`** на клике внутри тулбара: он висит над листом, а клик по листу сворачивает панель (п.7 закона) — иначе выбор шрифта будет закрывать панель.
+- **Холст NX переиспользовать нельзя как есть.** `pi-canvas-page.component.ts:15-16` центрирует лист (`mx-auto my-4`), а закон требует `flex-end` + 8px справа. Публичный контракт `@kppdf/ui/canvas` определяется под закон геометрии в S2, а не наследует текущие отступы.
 
 ### Раскладка панелей
 
@@ -92,6 +95,12 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 указанию PO, а не молчаливая правка раскладки — фиксируется здесь и в `kp-workspace-geometry.md` при первом срезе,
 который меняет ориентацию.
 
+**Владелец ориентации (решение, ревизия вопрос A):** `studio_documents.orientation` — единственный источник правды для
+экземпляра, шаблон только задаёт начальное значение при `from-template`. Иначе оператор не переключит альбом на живом
+документе без ухода в Builder. Следствие, которое нельзя терять: `save-as-template` пишет ориентацию документа обратно
+в новый шаблон (`studio-document.service.ts:481`), но **исходный** шаблон не обновляется — расхождение шаблона и
+документа нормально и не «лечится» автосинхронизацией.
+
 ## 6. Порядок вертикальных срезов
 
 Каждый срез — отдельная TZ, отдельный claim, зелёные gates, и **видимый результат** до следующего.
@@ -101,14 +110,17 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 | **S0** | `TZ-NX-DOCSTUDIO-S0-FOUNDATION` | ничего видимого: публичные import-пути для холста и rich-text + сервисы доступа к данным документов | `frontend-nx/libs/**` |
 | **S1** | вместе с S0 | реестры **«Тексты»** и **«Виды таблиц»** на `/registries` — списки сохранённых текстов и настроенных таблиц | `frontend-nx/apps/**/registries/**` |
 | **S2** | `TZ-NX-DOCSTUDIO-S2-SHELL` | `/studio` (список документов) и `/studio/:id`: лист A4 книжный/альбомный, иконочные рельсы, overlay-панели, ribbon. Блоков ещё нет | apps/studio |
+| **D1-схема** | `TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE` | ничего видимого: поля стиля на блоке + правило sanitize, **без UI** | backend |
 | **S3** | `…-S3-TEXT-BLOCKS` | вставить текст, перетащить, изменить размер, слои с z/lock/видимостью, редактируемые свойства, autosave + конфликт ревизий | apps/studio |
-| **S4** | `…-S4-TYPOGRAPHY` | плавающий тулбар: шрифт, размер, цвет, выравнивание — и это доживает до PDF (нужна backend-дельта **D1**) | apps + backend |
-| **S5** | `…-S5-PAGES` | несколько страниц, фон по странице, размер/ориентация/поля, правило переноса строк (backend-дельта **D2**) | apps + backend |
+| **S4** | `…-S4-TYPOGRAPHY` | плавающий тулбар: шрифт, размер, цвет, выравнивание — и это доживает до PDF | apps/studio |
+| **S5** | `…-S5-PAGES` | несколько страниц, фон по странице, размер/ориентация/поля, правило переноса строк (backend-дельта **D2 + D5**) | apps + backend |
 | **S6** | `…-S6-TABLE-BLOCK` | таблица: колонки на ходу, «Сохранить как вид», применить сохранённый вид | apps/studio |
-| **S7** | `…-S7-DATA-BINDING` | подключение таблицы к данным, позиции из каталога с пересчётом, автоподстановка заказчика/поставщика/организации (backend-дельта **D3**) | apps + backend |
-| **S8** | `…-S8-TEMPLATES-OUTPUT` | сохранить как шаблон, выбрать из списка шаблонов, режим просмотра, PDF, в архив | apps/studio |
+| **S7** | `…-S7-DATA-BINDING` | подключение таблицы к данным, позиции из каталога с пересчётом, автоподстановка заказчика/поставщика/организации (backend-дельта **D3** — маппинг, org-scope и итоги **до** UI пересчёта) | apps + backend |
+| **S8** | `…-S8-TEMPLATES-OUTPUT` | сохранить как шаблон, выбрать из списка шаблонов, режим просмотра, PDF, в архив; golden HTML тесты типографики и полей **до** демонстрации PDF | apps/studio |
 
-Порядок не менять: S3 без S2 некуда рисовать; S4 без D1 не доживёт до PDF; S6 без S1 некуда сохранять вид; S7 без S6 нечего подключать.
+Порядок не менять: S3 без S2 некуда рисовать; **схема D1 обязана лечь до S3**, иначе сохранённый в S3 текст придётся
+миграционно переписывать в S4; S6 без S1 некуда сохранять вид; S7 без S6 нечего подключать; S7 без серверных итогов
+даст разные числа на экране и в PDF.
 
 ## 7. Что НЕ входит
 
@@ -125,3 +137,12 @@ Waves 0–19 закрыты. **Мы не изобретаем платформу
 - **`DocumentTemplateService` — god-object**, render-extract сделан поверхностно (`tasks/_backlog/doc-studio/TZ-DOC-STUDIO-2006-render-extract-phase2.md`). Новые срезы **не должны** добавлять логику в него.
 - **`template_blocks` dual-read cutover, шаги 5–6 не закрыты** (`document-studio.md` § 7). Пишем блоки только через `parentType`/`parentId`; `templateId: null` не писать — поле опускать.
 - **Расхождение docs ↔ код** в legacy: `document-studio-generated-document-migration.md` утверждает «схема не менялась», хотя `sourceType: 'studio'` и `studioDocumentId` уже в коллекции. Не опираться на этот файл.
+- **КП — это не документ студии.** КП Workspace пишет `Quotation` (`proposal-workspace-draft.service.ts`), а не `studio_documents`, и пересчёт итогов живёт в его клиентском драфт-сервисе. «КП как тип документа» в S7/S8 требует явного моста Quotation → dataSet, а не наследуется само.
+- **Блоки студии всё ещё пишут `templateId`** (`template-block.service.ts:205-207`) при незакрытых шагах 5–6 cutover. NX обязан писать через `createForStudioDocument` / `studio-documents/:id/blocks`, а не `document-templates/:id/blocks`, и не писать `templateId: null` (поле опускать — sparse index).
+- **Параллельная правка одного документа** старым и новым редактором. Legacy-состояние блоков не всегда отправляет `expectedRevision` (`studio-blocks-state.service.ts:601-616`), то есть возможна тихая перезапись. **Решение (ревизия вопрос C):** нового поля в схеме не вводим — при ~10 пользователях это функция на вырост. Действует рабочее правило: новые документы создаём только в NX, один документ не правим в двух редакторах. Пересмотреть, если редактировать начнёт второй человек.
+
+## 9. Ревизия плана
+
+Независимая проверка кодом: `docs/adr/ADR-NX-DOC-STUDIO-REVIEW.md` (2026-08-30). Возражения приняты и внесены в § 3
+(что готово не полностью), § 4 (D1 правило конфликта, D2 не перенос а новое, D3 итоги, новый D5), § 5 (контракт холста,
+stopPropagation, владелец ориентации), § 6 (D1-схема до S3), § 8 (мост КП, cutover блоков, параллельная правка).
