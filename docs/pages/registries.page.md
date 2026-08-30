@@ -118,6 +118,8 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; distinct from computed preview in product dialog; **client** pagination |
 | `departments` | Отделы | `demo` (`createFixtureDataSource`, без backend) | expandable row, `failFirstAttempt`, destructive archive + copy actions |
+| `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
+| `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 
 Каталог — `createRegistriesCatalog()` / `provideRegistriesCatalog()` на `RegistriesPage`
 (`REGISTRIES_CATALOG`, `data/registries.catalog.ts`). Dialog hosts получают **page-scoped**
@@ -144,6 +146,8 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `organizations` | `search`, `type` | `server` | `GET /organizations` page/limit/search/type |
 | `product-passports` | `search` (client), `productId` (API) | `client` | `GET /passports` list-all; optional `productId` query |
 | `departments` | `search`, `status` | `fixture` | in-memory demo adapter |
+| `text-blocks` | `search` (client), `categoryId`, `isActive` | `client` | GET /text-blocks returns full list; no server pagination |
+| `table-templates` | `search`, `category` (client) | `client` | GET /table-templates returns full list; no server pagination |
 
 ### Icon row actions (TZ-NX-REGISTRIES-FULL-CLOSEOUT)
 
@@ -243,6 +247,10 @@ Verified matrix: `tasks/_archive/2026-08/TZ-NX-REGISTRIES-SUPPLY-PASSPORT-MATRIX
 Spreadsheet import is **out of scope** for registries platform — see audit blockers (status mapping,
 supplier dedup, passport↔Product matching, invoice field).
 
+### Doc Studio dialogs
+
+«Тексты» используют `TextBlockFormDialogComponent`: name, slug, tags, categoryId, sortOrder и rich-text content. Поле legacy `category` намеренно не формируется и не отправляется. «Виды таблиц» используют `TableTemplateFormDialogComponent`: category с RU-метками, dataSource и редактор колонок с добавлением/удалением строк. Для обоих реестров диалоги получают page-scoped DestroyRef.
+
 ## Browser verification (TZ-NX-REGISTRY-READINESS-MARATHON)
 
 Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
@@ -292,4 +300,4 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 
 ---
 
-_Обновлено: 2026-08-29 (TZ-NX-SUPPLY-REQUEST/ORGANIZATION/PRODUCT-PASSPORT-REGISTRY-READ)._
+_Обновлено: 2026-08-30 (TZ-NX-DOCSTUDIO-S0-FOUNDATION)._
