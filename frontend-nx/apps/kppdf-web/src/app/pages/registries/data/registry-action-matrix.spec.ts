@@ -18,7 +18,7 @@ import {
   mockOrganizationsService,
   mockProductPassportsService,
   mockSupplyRequestsService,
-} from './registries-catalog-test-mocks.spec';
+} from './registries-catalog-test-mocks';
 import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
 

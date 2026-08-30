@@ -12,7 +12,7 @@ import {
   mockOrganizationsService,
   mockProductPassportsService,
   mockSupplyRequestsService,
-} from './data/registries-catalog-test-mocks.spec';
+} from './data/registries-catalog-test-mocks';
 import type { MaterialRegistryDialogHost } from './data/material-registry-dialog-host';
 import type { CatalogRegistryDialogHost } from './data/catalog-registry-dialog-host';
 import { defineRegistry, type RegistryDefinition, type RegistryRow } from './model/registry.types';

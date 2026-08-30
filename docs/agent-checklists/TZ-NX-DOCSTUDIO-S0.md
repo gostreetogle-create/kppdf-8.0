@@ -1,6 +1,6 @@
 # TZ-NX-DOCSTUDIO-S0 checklist
 
-> Status: **STALE CLAIM — attempt 1 abandoned**, re-issue pending
+> Status: **CLAIMED / IN PROGRESS**
 > Marker: `tasks/TZ-NX-DOCSTUDIO-S0-FOUNDATION.md`
 
 ## Attempt log
@@ -16,8 +16,8 @@
   (hardened: explicit `_active` claim, per-step progress line, silent stop banned).
 
 ## Claim slot
-- agent_id: freebuff-docstudio-s0 — **stale, superseded by attempt 2**
-- claimed_at: 2026-08-30T00:00:00Z
+- agent_id: freebuff-docstudio-s0-r2
+- claimed_at: 2026-08-30T12:00:00Z
 - workspace: D:\kppdf-8.0
 - team_room_claim: unavailable (no team-room CLI)
 
@@ -39,10 +39,16 @@
 - [ ] Coupling map: N/A
 
 ## Gates
-- pending
+- Claim: active marker created at `tasks/_active/TZ-NX-DOCSTUDIO-S0-FOUNDATION.md`; checklist claimed as `freebuff-docstudio-s0-r2`.
+- Step 1: rich-text public entry point and alias verified; `frontend-nx/libs/ui/paper-and-ink/src/lib/rich-text/index.ts`, `frontend-nx/tsconfig.base.json`.
+- Step 2: typed doc-studio services exported; `frontend-nx/libs/data-access/src/lib/doc-studio/`.
+- Step 3: text-block registry, client data source, dialog and actions created; `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/text-blocks.registry.ts`, `text-blocks-http-data-source.ts`, `doc-studio-registry-actions.ts`, `dialogs/text-block-form-dialog.component.ts`.
+- Step 4: table-template registry, client data source and dialog created; `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/table-templates.registry.ts`, `table-templates-http-data-source.ts`, `dialogs/table-template-form-dialog.component.ts`.
+- Step 5: catalog registration completed and focused payload/catalog specs added; `registries.catalog.ts`, `doc-studio-registry-actions.spec.ts`.
+- Step 1 (test hygiene): снята чужая поломка Jest — helper переименован в `frontend-nx/apps/kppdf-web/src/app/pages/registries/data/registries-catalog-test-mocks.ts`; обновлены 3 импорта. Причина: helper содержал 0 тестов и Jest завершался `must contain at least one test`; содержимое helper не менялось.
 
 ## Executor report
-- pending
+- In progress; implementation and TypeScript gate pass. Test helper naming fix applied; remaining gates and closeout pending.
 
 ## Closeout
 - pending

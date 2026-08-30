@@ -38,6 +38,7 @@ function buildCatalog() {
     router,
     mockDialogHost(),
     mockCatalogDialogHost(),
+    { textBlocks: {} as never, categories: {} as never, templates: {} as never, dataSources: {} as never } as never,
   );
 }
 
@@ -78,6 +79,11 @@ describe('registry filters + pagination mode (TZ-NX-REGISTRIES-FILTERS-PAGINATIO
     const def = catalog.find((r) => r.key === 'products')!;
     expect(filterKeys(def.filters)).toEqual(['search', 'status']);
     expect(def.paginationMode).toBe('server');
+  });
+
+  it('text-blocks and table-templates use client pagination', () => {
+    expect(catalog.find((r) => r.key === 'text-blocks')?.paginationMode).toBe('client');
+    expect(catalog.find((r) => r.key === 'table-templates')?.paginationMode).toBe('client');
   });
 
   it('departments: demo filters + fixture pagination', () => {

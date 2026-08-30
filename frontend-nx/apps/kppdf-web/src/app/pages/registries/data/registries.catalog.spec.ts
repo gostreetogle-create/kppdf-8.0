@@ -6,8 +6,8 @@ import {
   PiOrganizationsService,
   PiProductPassportsService,
   PiProductsService,
-  PiSupplyRequestsService,
-  PiUnitsService,
+  PiSupplyRequestsService,    PiUnitsService,
+  PiTextBlocksService, PiTextBlockCategoriesService, PiTableTemplatesService, PiRegistryDataSourcesService,
 } from '@kppdf/data-access';
 import { buildRegistriesCatalogDefault } from './registries.catalog';
 import { DEPARTMENTS_REGISTRY } from './departments.registry';
@@ -113,6 +113,7 @@ describe('registries.catalog (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => {
       mockRouter(paths),
       mockMaterialDialogHost(),
       mockCatalogDialogHost(),
+      { textBlocks: {} as PiTextBlocksService, categories: {} as PiTextBlockCategoriesService, templates: {} as PiTableTemplatesService, dataSources: {} as PiRegistryDataSourcesService } as never,
     );
   }
 
@@ -128,8 +129,10 @@ describe('registries.catalog (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => {
       'organizations',
       'product-passports',
       'departments',
+      'text-blocks',
+      'table-templates',
     ]);
-    expect(new Set(catalog.map((r) => r.key)).size).toBe(9);
+    expect(new Set(catalog.map((r) => r.key)).size).toBe(11);
   });
 
   it('marks new supply/org/passport registries as api source', () => {
@@ -145,7 +148,7 @@ describe('registries.catalog (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => {
     expect(catalog.find((r) => r.key === 'units')?.title).toContain('Единицы');
     expect(catalog.find((r) => r.key === 'materials')?.key).toBe('materials');
     expect(catalog.find((r) => r.key === 'details')?.key).toBe('details');
-    expect(catalog[catalog.length - 1]).toBe(DEPARTMENTS_REGISTRY);
+    expect(catalog.find((r) => r.key === 'departments')).toBe(DEPARTMENTS_REGISTRY);
   });
 
   it('read-only registries have no create or row actions', () => {

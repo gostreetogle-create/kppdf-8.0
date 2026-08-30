@@ -9,6 +9,10 @@ import {
   PiProductsService,
   PiSupplyRequestsService,
   PiUnitsService,
+  PiTextBlocksService,
+  PiTextBlockCategoriesService,
+  PiTableTemplatesService,
+  PiRegistryDataSourcesService,
 } from '@kppdf/data-access';
 import { collectPageRoutePaths } from '../../../layout/route-paths';
 import type { RegistryDefinition, RegistryRow } from '../model/registry.types';
@@ -23,6 +27,9 @@ import { createOrganizationsRegistry } from './organizations.registry';
 import { createProductPassportsRegistry } from './product-passports.registry';
 import { createUnitsRegistry } from './units.registry';
 import { DEPARTMENTS_REGISTRY } from './departments.registry';
+import { createDocStudioDialogDeps, type DocStudioDialogDeps } from './doc-studio-registry-actions';
+import { createTextBlocksRegistry } from './text-blocks.registry';
+import { createTableTemplatesRegistry } from './table-templates.registry';
 
 export function buildMaterialRegistryDeps(
   materialsService: PiMaterialsService,
@@ -72,10 +79,12 @@ export function buildRegistriesCatalogDefault(
   router: Router,
   materialDialogHost: MaterialRegistryDeps['dialogHost'],
   catalogDialogHost: ModuleRegistryDeps['dialogHost'],
+  docStudioDeps?: DocStudioDialogDeps,
 ): readonly RegistryDefinition<RegistryRow>[] {
   const materialDeps = buildMaterialRegistryDeps(materialsService, router, materialDialogHost);
   const moduleDeps = buildModuleRegistryDeps(modulesService, catalogDialogHost);
   const productDeps = buildProductRegistryDeps(productsService, router, catalogDialogHost);
+  const studio = docStudioDeps;
   return [
     createUnitsRegistry(unitsService),
     createMaterialsRegistry(materialDeps),
@@ -86,6 +95,7 @@ export function buildRegistriesCatalogDefault(
     createOrganizationsRegistry(organizationsService),
     createProductPassportsRegistry(productPassportsService),
     DEPARTMENTS_REGISTRY,
+    ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
   ];
 }
 
@@ -106,6 +116,10 @@ export function createRegistriesCatalog(
   const organizationsService = inject(PiOrganizationsService);
   const productPassportsService = inject(PiProductPassportsService);
   const unitsService = inject(PiUnitsService);
+  const textBlocksService = inject(PiTextBlocksService);
+  const textBlockCategoriesService = inject(PiTextBlockCategoriesService);
+  const tableTemplatesService = inject(PiTableTemplatesService);
+  const dataSourcesService = inject(PiRegistryDataSourcesService);
 
   const materialDialogHost = createMaterialRegistryDialogHost({
     dialog,
@@ -121,6 +135,12 @@ export function createRegistriesCatalog(
     productsService,
   });
 
+  const docStudioDeps = createDocStudioDialogDeps(dialog, destroyRef, injector);
+  docStudioDeps.textBlocks = textBlocksService;
+  docStudioDeps.categories = textBlockCategoriesService;
+  docStudioDeps.templates = tableTemplatesService;
+  docStudioDeps.dataSources = dataSourcesService;
+
   return buildRegistriesCatalogDefault(
     unitsService,
     materialsService,
@@ -132,6 +152,7 @@ export function createRegistriesCatalog(
     router,
     materialDialogHost,
     catalogDialogHost,
+    docStudioDeps,
   );
 }
 
