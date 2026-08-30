@@ -166,10 +166,11 @@ export class StudioOutputService {
             input.template,
             pageBlocks[0] ?? [],
             input.data,
-            { backgroundPageIndex: backgroundPageIndices[0] },
+            { backgroundPageIndex: backgroundPageIndices[0], studioCanvas: true },
           )
         : this.renderService.renderHtmlPages(input.template, pageBlocks, input.data, {
             backgroundPageIndices: backgroundPageIndices.map((idx) => idx ?? -1),
+            studioCanvas: true,
           });
     const buildPayload: Record<string, unknown> = {
       studioDocumentId: id,

@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import puppeteer, { type Browser, type Page } from 'puppeteer-core';
 import { existsSync } from 'node:fs';
 import { Model, Types } from 'mongoose';
+import { inlineLocalUploadsForPdf } from '../document-render/document-render.utils';
 import { PdfSemaphore } from '../../common/pdf/pdf-semaphore';
 import { Quotation, QuotationDocument } from '../quotation/quotation.schema';
 import { DocumentTemplateService } from '../document-template/document-template.service';
@@ -77,11 +78,12 @@ export class QuotationOutputService {
   }
 
   private async renderHtmlToPdfInner(html: string): Promise<Buffer> {
+    const htmlForPdf = await inlineLocalUploadsForPdf(html);
     const browser = await this.getBrowser();
     let page: Page | undefined;
     try {
       page = await browser.newPage();
-      await page.setContent(this.withPdfBaseHref(html), {
+      await page.setContent(this.withPdfBaseHref(htmlForPdf), {
         waitUntil: 'load',
         timeout: 15_000,
       });

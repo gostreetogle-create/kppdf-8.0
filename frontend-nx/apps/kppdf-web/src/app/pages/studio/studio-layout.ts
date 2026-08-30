@@ -175,6 +175,21 @@ export function studioImageForegroundLayout(block: StudioBlock, zIndex: number):
   return studioCenteredImageLayout(zIndex, page);
 }
 
+/** Nudge each new image so stacked inserts stay visible and selectable. */
+export function studioStaggerImageLayout(
+  layout: StudioBlockLayout,
+  staggerIndex: number,
+): StudioBlockLayout {
+  if (staggerIndex <= 0) return layout;
+  const height = layout.height ?? 0.28;
+  const shift = (staggerIndex % 6) * 0.035;
+  return normalizeStudioBlockLayout({
+    ...layout,
+    x: Math.min(1 - layout.width, layout.x + shift),
+    y: Math.min(1 - height, layout.y + shift),
+  });
+}
+
 /** Proportional corner resize: width follows mouse delta, height derived from aspect. */
 export function studioProportionalImageResize(
   startLayout: StudioBlockLayout,

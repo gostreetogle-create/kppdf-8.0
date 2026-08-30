@@ -30,6 +30,10 @@ import {
   standalone: true,
   imports: [FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'studio-blocks-canvas',
+    '[class.studio-canvas--readonly]': 'readOnly',
+  },
   template: `
     <div class="studio-passport-bg" aria-hidden="true">
       @for (block of backgroundBlocks(); track block._id) {
@@ -74,7 +78,7 @@ import {
               (pointerdown)="startDrag($event, block)"
             >
               <div class="studio-block__text-body" [innerHTML]="textHtml(block)"></div>
-              @if (selectedId === block._id && !block.locked) {
+              @if (selectedId === block._id && !block.locked && !readOnly) {
                 <span class="selection-frame" aria-hidden="true"></span>
                 <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
               }
@@ -100,7 +104,7 @@ import {
               } @else {
                 <span class="image-placeholder">Фото</span>
               }
-              @if (selectedId === block._id && !block.locked) {
+              @if (selectedId === block._id && !block.locked && !readOnly) {
                 <span class="selection-frame" aria-hidden="true"></span>
                 <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
               }
@@ -109,7 +113,7 @@ import {
             <article
               class="studio-block studio-block--table"
               [class.studio-block--table-transparent]="tableTransparent(block)"
-              [class.studio-block--table-editing]="selectedId === block._id && !block.locked"
+              [class.studio-block--table-editing]="selectedId === block._id && !block.locked && !readOnly"
               [class.selected]="selectedId === block._id"
               [class.studio-block--editable]="selectedId === block._id && !block.locked"
               [class.studio-block--passive]="selectedId !== block._id || block.locked"
@@ -123,7 +127,7 @@ import {
               (click)="selectBlock($event, block)"
               (pointerdown)="startDrag($event, block)"
             >
-              @if (selectedId === block._id && !block.locked) {
+              @if (selectedId === block._id && !block.locked && !readOnly) {
                 <div
                   class="table-edit"
                   data-test="studio-table-rows-editor"
@@ -211,7 +215,7 @@ import {
                   </table>
                 </div>
               }
-              @if (selectedId === block._id && !block.locked) {
+              @if (selectedId === block._id && !block.locked && !readOnly) {
                 <span class="selection-frame" aria-hidden="true"></span>
                 <button class="resize-handle" type="button" aria-label="Изменить размер" (pointerdown)="startResize($event, block)"></button>
               }
@@ -222,6 +226,7 @@ import {
   `,
   styles: [`
     :host { position:absolute; inset:0; pointer-events:none; z-index:1; }
+    :host.studio-canvas--readonly { pointer-events: none; }
     .studio-passport-bg {
       position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden;
     }
@@ -229,7 +234,7 @@ import {
       pointer-events:none; cursor:default; padding:0; border:none; z-index:0;
     }
     .studio-block--passport-bg img {
-      width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;
+      width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;
     }
     .studio-block {
       position:absolute; box-sizing:border-box; min-width:4%; min-height:3%;
@@ -402,6 +407,8 @@ export class StudioBlocksCanvasComponent {
   @Input() currentPage = 1;
   @Input() sheetWidth = 800;
   @Input() sheetHeight = 900;
+  /** Read-only compositing (preview / print check) — no drag, resize, or table edit. */
+  @Input() readOnly = false;
   @Output() selected = new EventEmitter<string>();
   @Output() layoutChanged = new EventEmitter<{ id: string; layout: StudioBlockLayout }>();
   /** Fired after drag/resize ends so the editor can persist layout immediately. */
@@ -498,6 +505,7 @@ export class StudioBlocksCanvasComponent {
   }
 
   selectBlock(event: MouseEvent, block: StudioBlock): void {
+    if (this.readOnly) return;
     event.stopPropagation();
     if (this.suppressNextClick) {
       this.suppressNextClick = false;
@@ -507,6 +515,7 @@ export class StudioBlocksCanvasComponent {
   }
 
   startDrag(event: PointerEvent, block: StudioBlock): void {
+    if (this.readOnly) return;
     if (event.button !== 0 || !block.layout || block.locked) return;
     const target = event.target as HTMLElement;
     if (target.closest('input, button, textarea, select, .table-edit, .cell-input')) return;
@@ -566,6 +575,7 @@ export class StudioBlocksCanvasComponent {
   }
 
   startResize(event: PointerEvent, block: StudioBlock): void {
+    if (this.readOnly) return;
     if (event.button !== 0 || !block.layout || block.locked) return;
     event.stopPropagation();
     event.preventDefault();

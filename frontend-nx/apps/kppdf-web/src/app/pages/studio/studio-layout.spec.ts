@@ -8,6 +8,7 @@ import {
   studioImageLayoutFromNaturalSize,
   studioImageResizeAspectRatio,
   studioProportionalImageResize,
+  studioStaggerImageLayout,
   zIndexFromLayerOrder,
 } from './studio-layout';
 import type { StudioBlock } from '@kppdf/data-access';
@@ -114,5 +115,12 @@ describe('studio layout helpers', () => {
     const next = studioProportionalImageResize(start, 0, onScreenAspect);
     expect(next.width).toBeCloseTo(0.5, 5);
     expect(next.height).toBeCloseTo(0.35, 5);
+  });
+
+  it('staggers repeated image inserts on the same page', () => {
+    const base = studioImageLayoutFromNaturalSize(1200, 800, 2, 1);
+    const shifted = studioStaggerImageLayout(base, 2);
+    expect(shifted.x).toBeGreaterThan(base.x);
+    expect(shifted.y).toBeGreaterThan(base.y);
   });
 });

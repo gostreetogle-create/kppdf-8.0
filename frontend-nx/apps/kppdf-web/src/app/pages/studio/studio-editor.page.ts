@@ -82,6 +82,7 @@ import {
   studioImageForegroundLayout,
   studioImageLayoutFromNaturalSize,
   studioReadImageNaturalSize,
+  studioStaggerImageLayout,
   zIndexFromLayerOrder,
 } from './studio-layout';
 import { rememberStudioDocument } from './studio-session';
@@ -297,35 +298,21 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
         </div>
 
         <div kpWsSheet class="studio-canvas-host" #sheetHost>
-          @if (viewMode() === 'preview') {
-            @if (previewLoading()) {
-              <p class="preview-state">Рендер документа…</p>
-            } @else if (previewError()) {
-              <p class="preview-state preview-state--error">{{ previewError() }}</p>
-            } @else if (previewHtml()) {
-              <iframe
-                class="studio-preview-frame"
-                title="Просмотр документа"
-                [attr.srcdoc]="previewHtml()"
-                data-test="studio-preview-frame"
-              ></iframe>
-            }
-          } @else {
-            <pi-studio-blocks-canvas
-              [blocks]="pageBlocks()"
-              [selectedId]="selectedId()"
-              [activeLayerId]="activeLayerId()"
-              [currentPage]="currentPage()"
-              [sheetWidth]="sheetSize().width"
-              [sheetHeight]="sheetSize().height"
-              (selected)="onSelect($event)"
-              (layoutChanged)="changeLayout($event.id, $event.layout)"
-              (layoutCommit)="onLayoutCommit()"
-              (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
-              (tableRowsChange)="patchTableRows($event)"
-              (tableDisabledRowsChange)="patchTableDisabledRows($event)"
-            />
-          }
+          <pi-studio-blocks-canvas
+            [blocks]="pageBlocks()"
+            [selectedId]="viewMode() === 'preview' ? null : selectedId()"
+            [activeLayerId]="activeLayerId()"
+            [currentPage]="currentPage()"
+            [sheetWidth]="sheetSize().width"
+            [sheetHeight]="sheetSize().height"
+            [readOnly]="viewMode() === 'preview'"
+            (selected)="onSelect($event)"
+            (layoutChanged)="changeLayout($event.id, $event.layout)"
+            (layoutCommit)="onLayoutCommit()"
+            (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
+            (tableRowsChange)="patchTableRows($event)"
+            (tableDisabledRowsChange)="patchTableDisabledRows($event)"
+          />
         </div>
       </pi-studio-workspace-shell>
     } @else {
@@ -686,10 +673,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.viewMode.set('preview');
     this.panelCollapsed.set(true);
     this.selectedId.set(null);
-    this.previewLoading.set(true);
-    this.previewError.set(null);
     await this.flushLayouts();
-    this.fetchPreview();
   }
 
   onLayoutCommit(): void {
@@ -801,12 +785,6 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   addImageToActiveLayer(file: File): void {
-    const layerId = this.activeLayerId();
-    const block = layerId ? this.blocks().find((b) => b._id === layerId) : null;
-    if (block?.type === 'image') {
-      void this.uploadImageToBlock(block._id, file);
-      return;
-    }
     void this.createImageLayer(file);
   }
 
@@ -930,11 +908,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     } catch {
       /* fallback dimensions */
     }
-    const layout = studioImageLayoutFromNaturalSize(
-      natural.width,
-      natural.height,
-      zIndex,
-      this.currentPage(),
+    const layout = studioStaggerImageLayout(
+      studioImageLayoutFromNaturalSize(
+        natural.width,
+        natural.height,
+        zIndex,
+        this.currentPage(),
+      ),
+      this.pageBlocks().filter(
+        (b) => b.type === 'image' && !studioBlockIsPassportBackground(b),
+      ).length,
     );
     const createRes = await firstValueFrom(
       this.blocksService.create(d._id, {
@@ -1436,9 +1419,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   private refreshPreviewIfActive(): void {
-    if (this.viewMode() === 'preview') {
-      void this.flushLayouts().then(() => this.fetchPreview());
-    }
+    /* Preview is client-side canvas; no server HTML refresh needed. */
   }
 
   patchBlockTitle(title: string): void {

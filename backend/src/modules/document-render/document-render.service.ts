@@ -19,6 +19,28 @@ export {
 export interface RenderHtmlOptions {
   /** TZ-DOC-STUDIO-1701 — per-page letterhead index into backgroundImage[]. */
   backgroundPageIndex?: number;
+  /** NX Document Studio — fraction layout matches editor canvas (no content padding). */
+  studioCanvas?: boolean;
+}
+
+function isStudioPassportImageBlock(block: TemplateBlockDocument): boolean {
+  if (block.type !== 'image') return false;
+  return (block.settings as Record<string, unknown> | undefined)?.['overlay'] === true;
+}
+
+function partitionStudioBlocks(
+  blocks: readonly TemplateBlockDocument[],
+  studioCanvas: boolean,
+): { foreground: TemplateBlockDocument[]; passport: TemplateBlockDocument[] } {
+  if (!studioCanvas) {
+    return { foreground: [...blocks], passport: [] };
+  }
+  const visible = blocks
+    .filter((b) => b.isActive !== false)
+    .sort((a, b) => (a.layout?.zIndex ?? 0) - (b.layout?.zIndex ?? 0));
+  const passport = visible.filter(isStudioPassportImageBlock);
+  const foreground = visible.filter((b) => !passport.includes(b));
+  return { foreground, passport };
 }
 
 /**
@@ -74,7 +96,8 @@ export class DocumentRenderService {
     const isLandscape = (template as { orientation?: string }).orientation === 'landscape';
     const pageWidth = isLandscape ? '297mm' : '210mm';
     const pageMinHeight = isLandscape ? '210mm' : '297mm';
-    const contentStyles = this.buildDocumentContentStyles(template);
+    const studioCanvas = options?.studioCanvas === true;
+    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas);
     const baseHref = documentPublicOrigin();
     const css = `
       <style>
@@ -102,9 +125,25 @@ export class DocumentRenderService {
           : '';
       })
       .join('');
+    const { foreground, passport } = partitionStudioBlocks(blocks, studioCanvas);
+    const renderBlocks = studioCanvas
+      ? foreground.filter((b) => Boolean(b.layout))
+      : foreground;
+    const blockPassportLayers = passport
+      .map((b) => {
+        const imageSettings = b.settings as { imageUrl?: string } | undefined;
+        const imageContent =
+          safeImageUrl(b.content ?? undefined) || safeImageUrl(imageSettings?.imageUrl);
+        if (!imageContent) return '';
+        const layoutStyle =
+          blockLayoutStyle(b.layout) ||
+          'position:absolute;left:0%;top:0%;width:100%;height:100%;z-index:0';
+        return `<div class="doc-bg doc-bg--block" style="${layoutStyle}"><img src="${imageContent}" alt=""></div>`;
+      })
+      .join('');
     const termsHtml =
       typeof data['__termsHtml'] === 'string' ? data['__termsHtml'] : '';
-    const body = blocks
+    const body = renderBlocks
       .map((b) => {
         const blockSettings = b.settings as
           | { role?: string; imageUrl?: string }
@@ -127,7 +166,9 @@ export class DocumentRenderService {
           b.settings as Record<string, unknown> | undefined,
         );
         const combinedStyle = [layoutStyle, bgStyle, blockStyleCss(b.style)].filter(Boolean).join(';');
-        const blockClass = layoutStyle ? 'block block--positioned' : 'block';
+        const blockClass = layoutStyle
+          ? `block block--positioned${b.type === 'text' ? ' block--text' : ''}`
+          : 'block';
         const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
         const cols = b.columns ?? [];
         const multiColHtml =
@@ -161,8 +202,12 @@ export class DocumentRenderService {
               const h = b.height ?? 40;
               return `<div class="${blockClass}" style="${[combinedStyle, `height:${h}px`].filter(Boolean).join(';')}"></div>`;
             }
+            const imgStyle =
+              layoutStyle && studioCanvas
+                ? 'width:100%;height:100%;object-fit:cover;display:block'
+                : 'max-width:100%';
             return imageContent
-              ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="max-width:100%"></div>`
+              ? `<div class="${blockClass}"${styleAttr}><img src="${imageContent}" alt="" style="${imgStyle}"></div>`
               : `<div class="${blockClass}" style="${[combinedStyle, `height:${b.height ?? 80}px`].filter(Boolean).join(';')}"></div>`;
           }
           case 'signature': {
@@ -188,7 +233,7 @@ export class DocumentRenderService {
       .join('\n');
     const fallbackTerms =
       termsHtml &&
-      !blocks.some(
+      !renderBlocks.some(
         (block) =>
           (block.settings as { role?: string } | undefined)?.role === 'terms',
       )
@@ -205,15 +250,20 @@ export class DocumentRenderService {
     const pageNumberCss = template.pageNumbering
       ? '<style>.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}</style>'
       : '';
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title>${css}${pageNumberCss}</head><body>${bgLayers}<div class="doc-content">${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
+    const bodyClass = studioCanvas ? ' class="doc-body--studio"' : '';
+    const contentWrapperOpen = studioCanvas
+      ? '<div class="doc-stage">'
+      : '<div class="doc-content">';
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title>${css}${pageNumberCss}</head><body${bodyClass}>${bgLayers}${blockPassportLayers}${contentWrapperOpen}${body}${fallbackTerms}</div>${pageNumberHtml}</body></html>`;
   }
 
   renderHtmlPages(
     template: DocumentTemplateDocument,
     pages: TemplateBlockDocument[][],
     data: Record<string, unknown>,
-    options?: { backgroundPageIndices?: number[] },
+    options?: { backgroundPageIndices?: number[]; studioCanvas?: boolean },
   ): string {
+    const studioCanvas = options?.studioCanvas === true;
     const renderedBodies = pages.map((page, index) => {
       const html = this.renderHtml(template, page, {
         ...data,
@@ -221,6 +271,7 @@ export class DocumentRenderService {
         __pageCount: pages.length,
       }, {
         backgroundPageIndex: options?.backgroundPageIndices?.[index],
+        studioCanvas,
       });
       const match = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
       return match?.[1] ?? '';
@@ -228,7 +279,7 @@ export class DocumentRenderService {
     const orientation = (template as { orientation?: string }).orientation === 'landscape';
     const width = orientation ? '297mm' : '210mm';
     const height = orientation ? '210mm' : '297mm';
-    const contentStyles = this.buildDocumentContentStyles(template);
+    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas);
     const pageNumberCss = template.pageNumbering
       ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
       : '';
@@ -238,16 +289,27 @@ export class DocumentRenderService {
 
   private buildDocumentContentStyles(
     template: DocumentTemplateDocument,
+    studioCanvas = false,
   ): string {
+    const contentPadding = studioCanvas ? '0' : '20px';
+    const studioCanvasCss = studioCanvas
+      ? `
+        .doc-body--studio { position: relative; width: 100%; height: 100%; overflow: hidden; }
+        .doc-stage { position: absolute; inset: 0; z-index: 1; overflow: hidden; box-sizing: border-box; }
+        .block--positioned img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .block--positioned.block--text { overflow: hidden; }
+        .doc-bg--block { opacity: 1; }
+        .doc-bg--block img { width: 100%; height: 100%; object-fit: contain; display: block; background-color: white; }`
+      : '';
     return `
         h1, h2, h3 { margin: 8px 0; }
         .block { max-width: 100%; margin: 12px 0; padding: 8px 0; position: relative; z-index: 1; box-sizing: border-box; overflow-wrap: anywhere; }
-        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: 20px; box-sizing: border-box; overflow: hidden; }
+        .doc-content { position: relative; z-index: 1; width: 100%; height: 100%; max-width: 100%; max-height: 100%; min-height: 0; padding: ${contentPadding}; box-sizing: border-box; overflow: hidden; }
         .block--positioned { margin: 0; box-sizing: border-box; border: none; background: transparent; }
         .block--positioned.block--table { overflow: hidden; }
         table { width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; }
         th, td { border: 1px solid #ccc; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; }
         .doc-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; opacity: ${template.backgroundOpacity ?? 0.3}; }
-        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }`;
+        .doc-bg img { width: 100%; height: 100%; object-fit: contain; background-color: white; }${studioCanvasCss}`;
   }
 }
