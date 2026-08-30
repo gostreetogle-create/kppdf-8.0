@@ -1,0 +1,7 @@
+.foundation-banner {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  font: 13px/1.4 system-ui, sans-serif;
+  background: #f4f4f5;
+  border-bottom: 1px solid #d4d4d8;
+}

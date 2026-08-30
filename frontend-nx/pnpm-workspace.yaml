@@ -1,0 +1,12 @@
+packages:
+  - 'apps/*'
+  - 'libs/**/*'
+
+allowBuilds:
+  nx: true
+  esbuild: true
+  '@parcel/watcher': true
+  lmdb: true
+  '@swc/core': true
+  msgpackr-extract: true
+  unrs-resolver: true

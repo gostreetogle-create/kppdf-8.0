@@ -1,0 +1,159 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2015",
+    "module": "esnext",
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {"@kppdf/data-access": ["libs/data-access/src/index.ts"],
+      "@kppdf/data-access/auth": ["libs/data-access/src/lib/auth/index.ts"],
+      "@kppdf/data-access/capabilities": ["libs/data-access/src/lib/capabilities/index.ts"],
+      "@kppdf/data-access/admin": ["libs/data-access/src/lib/admin/index.ts"],
+      "@kppdf/features": [
+        "libs/features/src/index.ts"
+      ],
+      "@kppdf/ui": [
+        "libs/ui/paper-and-ink/src/index.ts"
+      ],
+      "@kppdf/util-http": [
+        "libs/util/http/src/index.ts"
+      ],
+      "@kppdf/ui/avatar": [
+        "libs/ui/paper-and-ink/src/lib/avatar/index.ts"
+      ],
+      "@kppdf/ui/badge": [
+        "libs/ui/paper-and-ink/src/lib/badge/index.ts"
+      ],
+      "@kppdf/ui/button": [
+        "libs/ui/paper-and-ink/src/lib/button/index.ts"
+      ],
+      "@kppdf/ui/card": [
+        "libs/ui/paper-and-ink/src/lib/card/index.ts"
+      ],
+      "@kppdf/ui/charts": [
+        "libs/ui/paper-and-ink/src/lib/charts/index.ts"
+      ],
+      "@kppdf/ui/checkbox": [
+        "libs/ui/paper-and-ink/src/lib/checkbox/index.ts"
+      ],
+      "@kppdf/ui/fact-card": [
+        "libs/ui/paper-and-ink/src/lib/fact-card/index.ts"
+      ],
+      "@kppdf/ui/filter-panel": [
+        "libs/ui/paper-and-ink/src/lib/filter-panel/index.ts"
+      ],
+      "@kppdf/ui/form-field": [
+        "libs/ui/paper-and-ink/src/lib/form-field/index.ts"
+      ],
+      "@kppdf/ui/form-section": [
+        "libs/ui/paper-and-ink/src/lib/form-section/index.ts"
+      ],
+      "@kppdf/ui/input": [
+        "libs/ui/paper-and-ink/src/lib/input/index.ts"
+      ],
+      "@kppdf/ui/label": [
+        "libs/ui/paper-and-ink/src/lib/label/index.ts"
+      ],
+      "@kppdf/ui/progress": [
+        "libs/ui/paper-and-ink/src/lib/progress/index.ts"
+      ],
+      "@kppdf/ui/radio": [
+        "libs/ui/paper-and-ink/src/lib/radio/index.ts"
+      ],
+      "@kppdf/ui/scroll-area": [
+        "libs/ui/paper-and-ink/src/lib/scroll-area/index.ts"
+      ],
+      "@kppdf/ui/select": [
+        "libs/ui/paper-and-ink/src/lib/select/index.ts"
+      ],
+      "@kppdf/ui/select-add-row": [
+        "libs/ui/paper-and-ink/src/lib/select-add-row/index.ts"
+      ],
+      "@kppdf/ui/separator": [
+        "libs/ui/paper-and-ink/src/lib/separator/index.ts"
+      ],
+      "@kppdf/ui/skeleton": [
+        "libs/ui/paper-and-ink/src/lib/skeleton/index.ts"
+      ],
+      "@kppdf/ui/slider": [
+        "libs/ui/paper-and-ink/src/lib/slider/index.ts"
+      ],
+      "@kppdf/ui/status-banner": [
+        "libs/ui/paper-and-ink/src/lib/status-banner/index.ts"
+      ],
+      "@kppdf/ui/switch": [
+        "libs/ui/paper-and-ink/src/lib/switch/index.ts"
+      ],
+      "@kppdf/ui/textarea": [
+        "libs/ui/paper-and-ink/src/lib/textarea/index.ts"
+      ],
+      "@kppdf/ui/toast": [
+        "libs/ui/paper-and-ink/src/lib/toast/index.ts"
+      ],
+      "@kppdf/ui/page": [
+        "libs/ui/paper-and-ink/src/page/index.ts"
+      ],
+      "@kppdf/ui/theme": [
+        "libs/ui/paper-and-ink/src/theme/index.ts"
+      ],
+      "@kppdf/ui/dialog": [
+        "libs/ui/paper-and-ink/src/lib/dialog/index.ts"
+      ],
+      "@kppdf/ui/rich-text": [
+        "libs/ui/paper-and-ink/src/lib/rich-text/index.ts"
+      ],
+      "@kppdf/ui/overflow-select": [
+        "libs/ui/paper-and-ink/src/lib/overflow-select/pi-overflow-select.component.ts"
+      ],
+      "@kppdf/ui/table": [
+        "libs/ui/paper-and-ink/src/lib/pi-table-index.ts"
+      ],
+      "@kppdf/ui/table-tree": [
+        "libs/ui/paper-and-ink/src/lib/pi-table-tree.component.ts"
+      ],
+      "@kppdf/ui/row-actions": [
+        "libs/ui/paper-and-ink/src/lib/pi-row-actions/pi-row-actions.component.ts"
+      ],
+      "@kppdf/ui/dropdown-menu": [
+        "libs/ui/paper-and-ink/src/lib/menu/pi-dropdown-menu.component.ts"
+      ],
+      "@kppdf/ui/drawer": [
+        "libs/ui/paper-and-ink/src/lib/drawer/index.ts"
+      ],
+      "@kppdf/ui/sheet": [
+        "libs/ui/paper-and-ink/src/lib/sheet/index.ts"
+      ],
+      "@kppdf/ui/tabs": [
+        "libs/ui/paper-and-ink/src/lib/tabs/index.ts"
+      ],
+      "@kppdf/ui/breadcrumb": [
+        "libs/ui/paper-and-ink/src/lib/breadcrumb/index.ts"
+      ],
+      "@kppdf/ui/tooltip": [
+        "libs/ui/paper-and-ink/src/lib/tooltip/index.ts"
+      ],
+      "@kppdf/ui/popover": [
+        "libs/ui/paper-and-ink/src/lib/popover/index.ts"
+      ],
+      "@kppdf/ui/hover-card": [
+        "libs/ui/paper-and-ink/src/lib/hover-card/index.ts"
+      ]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
+}

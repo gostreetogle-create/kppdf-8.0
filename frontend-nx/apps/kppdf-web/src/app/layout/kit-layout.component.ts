@@ -1,0 +1,244 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  PLATFORM_ID,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { filter, map, startWith } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { LucideAngularModule, Menu, ArrowUpRight, Search } from 'lucide-angular';
+import { ThemeToggleComponent } from './theme-toggle.component';
+import { environment } from '../environment';
+
+interface NavLink {
+  path: string;
+  label: string;
+}
+interface NavGroup {
+  label: string;
+  links: NavLink[];
+}
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Paper & Ink UI Kit',
+    links: [
+      { path: '/kit/overview', label: 'Обзор' },
+      { path: '/kit/foundations', label: 'Основы' },
+      { path: '/kit/forms', label: 'Формы' },
+      { path: '/kit/overlays', label: 'Оверлеи' },
+    ],
+  },
+];
+
+/**
+ * TZ-67 KitLayoutComponent — sticky editorial shell.
+ *
+ * Top-down structure:
+ *  - Sticky header (top-0, z-30, hairline border-b) with:
+ *    · Mobile hamburger (md:hidden) toggles `isSidebarOpen`
+ *    · Brand block (10×10 ink square + wordmark "Paper & Ink · UI Kit v0.1")
+ *    · Right side: Docs link (lucide arrow-up-right) + ThemeToggle + ⌘K badge
+ *  - Sidebar (md:visible, hidden on mobile) with grouped nav:
+ *    · "Начало" → /overview, /foundations
+ *    · "Компоненты" → /basics, /forms, /overlays, /navigation
+ *    · Active link inverted: `bg-ink text-paper`
+ *  - Main: `<router-outlet />`
+ *  - Footer: `© 2026 Paper & Ink · Syne · Plus Jakarta Sans` (mono, uppercase)
+ *
+ * ResizeObserver for `isMobile` (< 768px), via DestroyRef cleanup.
+ * ⌘K binding: window-level keydown listener, opens command palette
+ * (placeholder for TZ-75; if not yet present, ⌘K is a no-op).
+ *
+ * Standalone + OnPush + signal-based.
+ */
+@Component({
+  selector: 'app-kit-layout',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule, ThemeToggleComponent],
+  template: `
+    <div class="h-screen bg-paper text-ink font-body flex flex-col overflow-hidden">
+      <header
+        class="sticky top-0 z-30 hairline-b
+               bg-paper/95 supports-[backdrop-filter]:backdrop-blur-sm pi-edge-bleed"
+      >
+        <div class="px-page-x sm:px-10 lg:px-16 h-14 flex items-center justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              class="md:hidden pi-icon-btn pi-focus-ring"
+              [attr.aria-label]="isSidebarOpen() ? 'Закрыть меню' : 'Открыть меню'"
+              [attr.aria-expanded]="isSidebarOpen()"
+              (click)="isSidebarOpen.set(!isSidebarOpen())"
+            >
+              <lucide-angular [img]="menuIcon" [size]="14" aria-hidden="true" />
+            </button>
+            <a routerLink="/kit/overview" class="flex items-center gap-2 min-w-0">
+              <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
+              <span class="font-display font-bold tracking-tight truncate">
+                Paper &amp; Ink · UI Kit v0.1
+              </span>
+            </a>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <a
+              href="https://example.com/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="eyebrow hidden sm:flex items-center gap-1 hover:text-ink transition-colors"
+            >
+              Документация
+              <lucide-angular [img]="arrowUpRightIcon" [size]="11" aria-hidden="true" />
+            </a>
+            @if (environment.showKitNav) {
+              <a
+                routerLink="/kit/overview"
+                class="eyebrow pi-focus-ring"
+                data-test="ui-kit-link"
+              >
+                UI Kit
+              </a>
+            }
+            <app-theme-toggle />
+            <button
+              type="button"
+              class="pi-icon-btn gap-1 px-2 w-auto pi-focus-ring"
+              aria-label="Открыть командную палитру (⌘K)"
+              title="Открыть командную палитру (⌘K)"
+              data-cmd-k
+              (click)="openCommandPalette()"
+            >
+              <lucide-angular [img]="searchIcon" [size]="12" aria-hidden="true" />
+              <span class="font-mono text-[10px] tracking-wider">⌘K</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="flex flex-1 min-h-0">
+        <aside
+          [class.hidden]="!isSidebarOpen() && isMobile()"
+          [class.md:block]="true"
+          class="w-[220px] shrink-0 sticky top-14 self-start
+                 h-[calc(100vh-3.5rem)] hairline-r
+                 overflow-y-auto"
+          aria-label="Навигация"
+        >
+          <nav class="px-3 py-5 flex flex-col gap-5">
+            @for (group of navGroups; track group.label) {
+              <div>
+                <h3 class="eyebrow mb-2 px-2">{{ group.label }}</h3>
+                <ul class="flex flex-col">
+                  @for (link of group.links; track link.path) {
+                    <li>
+                      <a
+                        [routerLink]="link.path"
+                        routerLinkActive="bg-sunrise-warm text-on-gold"
+                        [routerLinkActiveOptions]="{ exact: link.path === '/kit/overview' }"
+                        class="block px-2 py-1.5 text-sm
+                               hover:bg-paper-2 transition-colors rounded-sm"
+                      >
+                        {{ link.label }}
+                      </a>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </nav>
+        </aside>
+
+        <main class="flex-1 min-w-0 pt-page-y">
+          <div class="pi-page-frame">
+            <router-outlet />
+          </div>
+        </main>
+      </div>
+
+      <footer
+        class="hairline-t py-2 px-page-x sm:px-10 lg:px-16
+               font-mono text-[10px] uppercase tracking-[0.12em]
+               text-muted-foreground flex flex-wrap justify-between gap-2"
+      >
+        <span>© 2026 Paper &amp; Ink</span>
+        <span>Syne · Plus Jakarta Sans · Lucide Angular · @angular/cdk</span>
+      </footer>
+    </div>
+  `,
+})
+export class KitLayoutComponent {
+  protected readonly menuIcon = Menu;
+  protected readonly arrowUpRightIcon = ArrowUpRight;
+  protected readonly searchIcon = Search;
+
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  protected readonly navGroups = NAV_GROUPS;
+  protected readonly environment = environment;
+
+  /** Mobile (<768px) sidebar collapsed by default. */
+  protected readonly isSidebarOpen = signal<boolean>(true);
+  protected readonly isMobile = signal<boolean>(false);
+
+  /** Active route URL (signal-mapped from router events for template use). */
+  protected readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+      map((e) => e.urlAfterRedirects),
+      startWith(this.router.url),
+    ),
+    { initialValue: this.router.url },
+  );
+
+  /** Has the user reached the page header for a11y focus (placeholder for future). */
+  protected readonly currentRoute = computed(() => this.route.snapshot);
+
+  constructor() {
+    if (this.isBrowser) {
+      const check = (): void => this.isMobile.set(window.innerWidth < 768);
+      check();
+      window.addEventListener('resize', check, { passive: true });
+      this.destroyRef.onDestroy(() => window.removeEventListener('resize', check));
+    }
+
+    // ⌘K (or Ctrl+K on Win/Linux) opens the command palette (TZ-75 placeholder).
+    if (this.isBrowser) {
+      const onKeydown = (event: KeyboardEvent): void => {
+        const isK =
+          event.key === 'k' || event.key === 'K' || event.key === 'к' || event.key === 'К';
+        const meta = event.metaKey || event.ctrlKey;
+        if (meta && isK) {
+          event.preventDefault();
+          this.openCommandPalette();
+        }
+      };
+      document.addEventListener('keydown', onKeydown);
+      this.destroyRef.onDestroy(() => document.removeEventListener('keydown', onKeydown));
+    }
+  }
+
+  /**
+   * TZ-75 placeholder: ⌘K should open the command palette. If the
+   * PiCommandPaletteService is not yet wired (TZ-75 not done), this
+   * is a no-op. Header ⌘K badge still works (no error).
+   */
+  protected openCommandPalette(): void {
+    // Intentionally empty until TZ-75 lands. Future: this.commandPalette.open().
+  }
+}
