@@ -6,3 +6,5 @@ export * from './pi-table-templates.service';
 export * from './pi-registry-data-sources.service';
 export * from './pi-studio-documents.service';
 export * from './studio-document.types';
+export * from './studio-block.types';
+export * from './pi-studio-blocks.service';

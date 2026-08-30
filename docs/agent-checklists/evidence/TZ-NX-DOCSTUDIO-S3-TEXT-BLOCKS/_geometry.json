@@ -1,0 +1,6 @@
+{
+  "route": "/studio/:id",
+  "sheet": { "portraitRatio": 0.7070707071, "landscapeRatio": 1.4142857143, "reflowDelta": 0 },
+  "panelWidth": 480,
+  "stage": "not available in headless shared checkout"
+}
