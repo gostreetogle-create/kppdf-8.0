@@ -1,16 +1,22 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T17:55:20+03:00
+updated_at: 2026-08-30T18:13:21+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 17:55).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:13).
 
-Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A2
-`TZ-NX-COMPOSITION-ERROR-I18N`.
+Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A3
+`TZ-NX-COMPOSITION-PICKER-PARITY`.
 
 ## DONE this slice
 
+- `TZ-NX-COMPOSITION-ERROR-I18N` (Wave A2, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  frontend banner+toast wiring was already correct; real gap was backend
+  `http-exception.filter.ts` never matching class-validator's actual
+  generated text (verified live against 3 real fields: refId/IsMongoId,
+  lineType/IsIn, quantity/IsNumber+Min) — fixed + regression-tested;
+  archive `tasks/_archive/2026-08/TZ-NX-COMPOSITION-ERROR-I18N.done.md`
 - `TZ-NX-REGISTRY-PRODUCT-FORM-UX` (Wave A1, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   форма изделия: секция «Изделие», без превью паспорта, derived-Комплекс hint,
   описание+заметки в 2 колонки; live-verified (Playwright, не только code review);
@@ -31,6 +37,12 @@ updated_at: 2026-08-30T17:55:20+03:00
 
 ## PARK
 
+- Nested `@ValidateNested()` DTO validation errors (e.g.
+  `overrideDimensions.unit`) still return NestJS's raw multi-line
+  "An instance of X has failed the validation..." dump untranslated — found
+  live during A2, different root cause than the fixed dictionary bug (needs
+  a custom `exceptionFactory` on the global `ValidationPipe`, likely in
+  `main.ts`), broader blast radius (every nested DTO in the app) → own TZ.
 - `TZ-DOC-STUDIO-2006` render extract phase 2 (техдолг)
 - template_blocks cutover step 5–6
 - TZ-2001 leak audit: run `backend/scripts/tz-doc-studio-2001-dual-read-leak-audit.ts` on prod Mongo before deploy (script in repo, not executed yet)

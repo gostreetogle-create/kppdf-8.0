@@ -72,29 +72,64 @@ export function humanizeNotFoundMessage(message: string): string {
   return ru;
 }
 
-function humanizeValidationMessage(message: string): string {
+// class-validator's actual generated wording for "must be X" constraints
+// never literally contains the decorator's camelCase name (e.g. @IsMongoId()
+// says "a mongodb id", not "mongoid") — so the VALIDATION_MESSAGES lookup
+// below never matched anything and silently fell through to raw English.
+// Verified live against this backend (2026-08-30) for the fields
+// composition-line.dto.ts actually uses: IsMongoId (refId), IsNumber
+// (quantity), IsIn (lineType).
+const MUST_BE_RU: [pattern: RegExp, ru: string][] = [
+  [/mongodb id/, VALIDATION_MESSAGES.isMongoId],
+  [/a number conforming to the specified constraints/, VALIDATION_MESSAGES.isNumber],
+  [/one of the following values/, VALIDATION_MESSAGES.isIn],
+];
+
+/** Humanize one class-validator constraint clause (no "; " separators left). */
+function humanizeConstraintClause(clause: string): string {
+  const trimmed = clause.trim();
+  if (!trimmed) return '';
+
+  const mustBe = trimmed.match(/^(\w+) must be (.+)$/i);
+  if (mustBe) {
+    const [, field, rest] = mustBe;
+    const lower = rest.toLowerCase();
+    for (const [pattern, ru] of MUST_BE_RU) {
+      if (pattern.test(lower)) return `${field}: ${ru}`;
+    }
+    for (const [key, ru] of Object.entries(VALIDATION_MESSAGES)) {
+      if (lower.includes(key.toLowerCase()) && ru) return `${field}: ${ru}`;
+    }
+    // Fallback for unknown constraints — keep original to aid debugging
+    return `Поле "${field}": ${trimmed}`;
+  }
+
+  // @Min()/@Max(): "$property must not be less/greater than $n" — different
+  // verb than the "must be" branch above. @Min() verified live (quantity's
+  // 0.000001 floor); @Max() is its documented mirror, not independently
+  // re-triggered against a live endpoint.
+  const notLess = trimmed.match(/^(\w+) must not be less than (.+)$/i);
+  if (notLess) return `${notLess[1]}: ${VALIDATION_MESSAGES.min}`;
+  const notGreater = trimmed.match(/^(\w+) must not be greater than (.+)$/i);
+  if (notGreater) return `${notGreater[1]}: ${VALIDATION_MESSAGES.max}`;
+
+  return trimmed;
+}
+
+export function humanizeValidationMessage(message: string): string {
   if (typeof message !== 'string') return 'Ошибка валидации';
 
   const trimmed = message.trim();
   const notFound = humanizeNotFoundMessage(trimmed);
   if (notFound !== trimmed) return notFound;
 
-  // class-validator generates: "property must be X" — replace with Russian
-  const match = trimmed.match(/^(\w+) must be (.+)$/i);
-  if (match) {
-    const field = match[1];
-    const constraint = match[2].toLowerCase();
-
-    for (const [key, ru] of Object.entries(VALIDATION_MESSAGES)) {
-      if (constraint.includes(key.toLowerCase()) && ru) {
-        return `${field}: ${ru}`;
-      }
-    }
-    // Fallback for unknown constraints — keep original to aid debugging
-    return `Поле "${field}": ${trimmed}`;
-  }
-
-  return trimmed;
+  // NestJS joins multiple failed constraints for the same property with
+  // "; " into one message string — humanize each clause independently.
+  return trimmed
+    .split(';')
+    .map(humanizeConstraintClause)
+    .filter(Boolean)
+    .join('; ');
 }
 
 @Catch()
