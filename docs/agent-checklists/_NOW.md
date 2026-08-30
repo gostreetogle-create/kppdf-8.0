@@ -1,19 +1,42 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-08-30T22:05:00+03:00
+updated_at: 2026-08-30T22:40:00+03:00
 
 ## ACTIVE / LIVE
 
 **ACTIVE TZ:** _(none — S7 wave complete, post-S7 PARK cleared for docType picker)_
 
-S7 wave COMPLETE. Doc type picker shipped; save-as-template unblocked after type selection.
+S7 wave COMPLETE and **committed+pushed** as `a7b54868` (`main`, was sitting
+uncommitted across multiple Freebuff waves + Claude sessions until this pass).
+Doc type picker shipped; save-as-template unblocked after type selection.
+
+**Encoding incident (2026-08-30, PO-reported via screenshot):** mojibake
+(«РЎС‚СЂР°РЅРёС†» instead of «Страниц») in the Studio ribbon/status bar,
+caused by a UTF-8↔CP1251 round-trip in `studio-editor.page.ts` /
+`studio-table-defaults.ts`. A first fix attempt restored correct Cyrillic but
+left a UTF-8 BOM on 8 files (PowerShell `-Encoding utf8` side effect) — that
+BOM also stripped this same restore rolled `studio-editor.page.ts` back to
+the pre-S7 commit content for a window, which would have silently discarded
+the whole S7 feature set (save-as-template/PDF/finalize, data panel, template
+panel, ERP field picker, doctype picker) had it been committed as-is. Caught
+via the file's own uncommitted content still held in this session's context;
+reconciled onto the fuller version instead of overwriting it. Rules now in
+`docs/ENCODING.md` (linked from `GEMINI.md`); fixed and live-verified
+(Playwright screenshot, zero console errors, all ribbon/status Cyrillic clean).
+
+**Not committed, flagged to PO:** `backend/src/common/contracts/rbac-contract.ts`
++ `permissions.guard.ts` + `auth.module.ts`/`auth.service.ts`/`jwt.strategy.ts`
++ `docker-compose.yml` — a real-looking RBAC fix (role's own `permissions`
+were never actually read; the guard used the *user's* `permissions` as a
+stand-in for the *role's*) sitting uncommitted with no checklist/claim. Left
+alone deliberately (unclaimed, undocumented, security-relevant) — needs PO or
+whoever wrote it to close it out properly.
 
 ## DONE this slice
 
 - TZ-NX-DOCSTUDIO-S7-DOCTYPE-PICKER — archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-DOCTYPE-PICKER.done.md`; gates data-access tsc / nx test studio / nx build exit 0; save-as-template unblocked when `docTypeId` set
 
 - TZ-NX-DOCSTUDIO-S7-PASSPORT-BG (S7-6) — archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-PASSPORT-BG.done.md`; gates tsc / nx test studio / nx build exit 0
-- TZ-NX-DOCSTUDIO-S7-PASSPORT-BG (S7-6) ? archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-PASSPORT-BG.done.md`; gates tsc / nx test studio / nx build exit 0
 
 - TZ-NX-DOCSTUDIO-S7-RIBBON-EXPORT (S7-5) - archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-RIBBON-EXPORT.done.md`; gates tsc / nx test studio / nx build exit 0; live smoke SKIP (login 401)
 
