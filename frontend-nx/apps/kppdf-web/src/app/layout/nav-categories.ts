@@ -10,7 +10,6 @@ import {
   BookOpen,
   ShieldCheck,
   Table2,
-  Boxes,
 } from 'lucide-angular';
 import type { PermissionKey } from '@kppdf/data-access/capabilities';
 
@@ -152,11 +151,10 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
     entryPath: '/doc-constructor/templates',
     items: [
       { path: '/doc-constructor/templates', pageKey: 'doc-templates', label: 'Шаблоны' },
-      { path: '/doc-constructor/studio', pageKey: 'doc-studio', label: 'Студия документов' },
       { path: '/doc-constructor/texts', pageKey: 'doc-texts', label: 'Текстовые блоки' },
       { path: '/doc-constructor/tables', pageKey: 'doc-tables', label: 'Шаблоны таблиц' },
       { path: '/doc-constructor/documents', pageKey: 'doc-documents', label: 'Архив документов' },
-      { path: '/doc-constructor/builder', pageKey: 'doc-templates', label: 'Конструктор' },
+      { path: '/studio', pageKey: 'doc-studio', label: 'Студия документов' },
       { path: '/import-todos', pageKey: 'import-todos', label: 'Задачи импорта' },
     ],
   },
@@ -211,23 +209,6 @@ export const NAV_CATEGORIES: readonly NavCategory[] = [
         pageKey: 'registries',
         label: 'Реестры',
         // No backend page-ACL seed for `registries` — route existence is the gate.
-        skipPageAcl: true,
-      },
-    ],
-  },
-  {
-    // TZ-NX-CONSTRUCTOR-SHELL — catalog composition workspace; no backend page-ACL seed.
-    id: 'constructor',
-    label: 'Конструктор',
-    shortLabel: 'Констр.',
-    icon: Boxes,
-    entryPath: '/constructor',
-    activeAliases: ['/constructor/create'],
-    items: [
-      {
-        path: '/constructor',
-        pageKey: 'constructor',
-        label: 'Конструктор',
         skipPageAcl: true,
       },
     ],

@@ -3,7 +3,7 @@ import { CanMatchFn, Router, Route } from '@angular/router';
 import { AuthService, authGuard, publicOnlyGuard } from '@kppdf/data-access/auth';
 import { capabilityRouteGuard } from '@kppdf/data-access/capabilities';
 import { REGISTRIES_ROUTES } from './pages/registries/registries.routes';
-import { CONSTRUCTOR_ROUTES } from './pages/constructor/constructor.routes';
+import { STUDIO_ROUTES } from './pages/studio/studio.routes';
 
 export const ownerOnlyRouteGuard: CanMatchFn = () => {
   const auth = inject(AuthService);
@@ -45,10 +45,8 @@ export const appRoutes: Route[] = [
         children: REGISTRIES_ROUTES,
       },
       {
-        // TZ-NX-CONSTRUCTOR-SHELL — catalog composition workspace shell (no API yet).
-        // Static `children` for nav path discovery (same rationale as `/registries`).
-        path: 'constructor',
-        children: CONSTRUCTOR_ROUTES,
+        path: 'studio',
+        children: STUDIO_ROUTES,
       },
     ],
   },

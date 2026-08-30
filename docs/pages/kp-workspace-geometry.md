@@ -13,6 +13,8 @@
 6. **Ориентация — из шаблона (TZ-KP-443).** Lucide segmented orientation control живёт на **редакторе шаблона** (builder inspector, chips Книжная/Альбомная с `RectangleVertical`/`RectangleHorizontal`). КП workspace **только отображает** `template.orientation` (read-only, derived в store). Запрет emoji/текстовой кнопки/сегмента ориентации на КП.
 7. **Ribbon** не крадёт высоту плоскости; toolbar viewport — overlay в углу листа.
 
+> Для NX Studio S2 ориентация документа отображается в панели «Страницы» и сохраняется через PATCH документа; альбомный лист сохраняет A4 ratio (~1.414).
+
 ## Чек-лист перед PASS / Wave 1
 
 | # | Проверка | Portrait | Landscape |

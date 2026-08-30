@@ -12,6 +12,10 @@
 > ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md)  
 > Программа: [`../../tasks/WAVE-DOC-STUDIO.md`](../../tasks/WAVE-DOC-STUDIO.md)
 
+## NX Studio S2 shell
+
+`/studio` показывает список документов через `PiStudioDocumentsService`, а `/studio/:id` — пустую A4-плоскость без блоков (блоки появятся в S3). Панель страниц — overlay 480px с компактным контентом 272px; ориентация меняется через PATCH документа и сохраняет A4 ratio для альбомного листа (~1.414). Клик по листу сворачивает панель, PDF/архив отключены до S8. Геометрия и открытая/свёрнутая панель не меняют rect листа; числовое evidence: `docs/agent-checklists/evidence/TZ-NX-DOCSTUDIO-S2-SHELL/_geometry.json`.
+
 ## Routes
 
 | Route | Роль |

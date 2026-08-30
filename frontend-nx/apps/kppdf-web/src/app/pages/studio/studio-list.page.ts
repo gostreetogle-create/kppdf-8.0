@@ -1,0 +1,72 @@
+import { ChangeDetectionStrategy, Component, inject, Injector, OnInit, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { PiToastService } from '@kppdf/ui/toast';
+import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import { PiStudioDocumentsService, type StudioDocument } from '@kppdf/data-access';
+
+@Component({
+  selector: 'pi-studio-list-page',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [PiStatusBannerComponent],
+  template: `
+    <main class="px-panel-inset py-6" data-test="studio-list">
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <div><div class="eyebrow">Документы</div><h1 class="font-display text-2xl m-0">Студия документов</h1></div>
+        <button class="pi-button pi-button-primary" type="button" (click)="create()">Создать документ</button>
+      </div>
+      @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
+      @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }
+      @if (status() === 'success' && documents().length === 0) { <div class="pi-dashed-panel p-8 text-center">Документов пока нет.</div> }
+      @if (status() === 'success' && documents().length > 0) {
+        <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
+          @for (document of documents(); track document._id) {
+            <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
+              <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
+                <div class="font-medium">{{ document.name }}</div>
+                <div class="text-xs text-muted-foreground">{{ document.status }} · {{ document.updatedAt ?? '—' }}</div>
+              </button>
+              <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" (click)="remove(document)">×</button>
+            </div>
+          }
+        </div>
+      }
+    </main>
+  `,
+})
+export class StudioListPage implements OnInit {
+  private readonly service = inject(PiStudioDocumentsService);
+  private readonly router = inject(Router);
+  private readonly dialog = inject(PiDialogService);
+  private readonly toast = inject(PiToastService);
+  private readonly injector = inject(Injector);
+  readonly documents = signal<readonly StudioDocument[]>([]);
+  readonly status = signal<'loading' | 'success' | 'error'>('loading');
+  readonly error = signal('Не удалось загрузить документы.');
+
+  ngOnInit(): void { this.load(); }
+  load(): void {
+    this.status.set('loading');
+    void firstValueFrom(this.service.list()).then((result) => {
+      if (!result.ok) { this.error.set(String(result.error)); this.status.set('error'); return; }
+      this.documents.set(result.data); this.status.set('success');
+    });
+  }
+  create(): void {
+    void firstValueFrom(this.service.create({ name: 'Новый документ', orientation: 'portrait', pageSize: 'A4' })).then((result) => {
+      if (result.ok) void this.router.navigate(['/studio', result.data._id]);
+      else this.toast.error(String(result.error));
+    });
+  }
+  open(document: StudioDocument): void { void this.router.navigate(['/studio', document._id]); }
+  remove(document: StudioDocument): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, { data: { title: `Удалить «${document.name}»?`, confirmLabel: 'Удалить', cancelLabel: 'Отмена', variant: 'destructive' }, width: 'sm' });
+    onDialogCloseOnce(ref, this.injector, (ok) => {
+      if (ok !== true) return;
+      void firstValueFrom(this.service.remove(document._id)).then((result) => { if (result.ok) this.load(); else this.toast.error(String(result.error)); });
+    });
+  }
+}

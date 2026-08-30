@@ -1,0 +1,54 @@
+{
+  "viewport": {
+    "width": 1200,
+    "height": 800
+  },
+  "notes": [],
+  "console_errors": [],
+  "steps": [
+    {
+      "list_loaded": true,
+      "existing_rows": 6
+    }
+  ],
+  "doc_url": "http://127.0.0.1:4201/studio/6a940371fa63971036d4f895",
+  "stage": {
+    "x": 64,
+    "y": 95,
+    "width": 1062,
+    "height": 705,
+    "right": 1126,
+    "bottom": 800
+  },
+  "panel_overlay": {
+    "width": 480,
+    "position": "absolute"
+  },
+  "portrait": {
+    "sheet": {
+      "x": 625.17,
+      "y": 99,
+      "width": 492.83,
+      "height": 697,
+      "right": 1118,
+      "bottom": 796
+    },
+    "ratio": 0.7071
+  },
+  "landscape": {
+    "sheet": {
+      "x": 136,
+      "y": 100.33,
+      "width": 982,
+      "height": 694.33,
+      "right": 1118,
+      "bottom": 794.66
+    },
+    "ratio": 1.4143
+  },
+  "open_vs_collapsed": {
+    "deltaWidth": 0.0,
+    "deltaHeight": 0,
+    "deltaRight": 0
+  }
+}
