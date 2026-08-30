@@ -20,12 +20,15 @@ import { fileURLToPath } from 'node:url';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const baselinePath = path.join(repositoryRoot, 'scripts', 'architecture-check.baseline.json');
-const sourceRoots = ['backend/src', 'frontend/src/app'];
+const sourceRoots = ['backend/src', 'frontend/src/app', 'frontend-nx/libs', 'frontend-nx/apps'];
 const sourceExtension = /\.(?:[cm]?[jt]sx?)$/;
 const importPattern =
   /(?:^|\n)\s*(?:import|export)\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?['"]([^'"]+)['"]/g;
 
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
+const rootsArg = rawArgs.find((arg) => arg.startsWith('--roots='));
+const scopedRoots = rootsArg ? rootsArg.slice('--roots='.length).split(',').filter(Boolean) : null;
 const writeBaseline = args.has('--write-baseline');
 const noBaseline = args.has('--no-baseline');
 
@@ -76,6 +79,7 @@ function resolveRepositoryImport(importer, specifier) {
 }
 
 function checkFrontend(filePath, specifier, report) {
+  if (filePath.startsWith('frontend-nx/')) return;
   if (!filePath.startsWith('frontend/src/app/')) return;
 
   const target = resolveRepositoryImport(filePath, specifier);
@@ -168,7 +172,7 @@ async function loadBaseline() {
 
 async function main() {
   const files = [];
-  for (const sourceRoot of sourceRoots) {
+  for (const sourceRoot of scopedRoots ?? sourceRoots) {
     const absoluteRoot = path.join(repositoryRoot, sourceRoot);
     for (const filePath of await collectSourceFiles(absoluteRoot)) {
       files.push({

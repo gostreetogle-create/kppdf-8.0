@@ -9,7 +9,7 @@
  *  3. Ждёт готовности Mongo (rs.status().ok === 1)
  *  4. Ставит deps в backend/ и frontend/ если node_modules отсутствует
  *  5. Запускает backend (pnpm start:dev) на :3000
- *  6. Запускает frontend (pnpm start) на :4200
+ *  6. Запускает frontend (pnpm start :4200) или frontend-nx (pnpm start :4201 с --nx)
  *  7. Polls /api/health + GET / до готовности, парсит body для health-check панели
  *  8. Рисует "Ready" экран с латентностями health-check
  *  9. Открывает браузер на http://localhost:4200
@@ -21,7 +21,8 @@
  *   node start.mjs --check        # только pre-flight проверки
  *   node start.mjs --stop         # остановить запущенные процессы
  *   node start.mjs --reset        # полный сброс: docker down -v + pkill + удалить node_modules
- *   node start.mjs --no-browser   # не открывать браузер
+ *   node start.mjs --nx             # Mongo + backend + frontend-nx (Nx :4201)
+ *   node start.mjs --nx --no-browser
  *   node start.mjs --verbose      # полные HTTP/Nest INFO логи (по умолчанию тихо)
  *   node start.mjs --help         # показать usage
  *
@@ -36,13 +37,41 @@
  */
 import { spawn, spawnSync, execSync } from 'node:child_process';
 import { createServer } from 'node:http';
-import { existsSync, statSync, rmSync, readFileSync, writeFileSync, createReadStream, readdirSync } from 'node:fs';
+import {
+  existsSync,
+  statSync,
+  rmSync,
+  readFileSync,
+  writeFileSync,
+  appendFileSync,
+  mkdirSync,
+  createReadStream,
+  readdirSync,
+} from 'node:fs';
 import { readFile as readFileAsync } from 'node:fs/promises';
 import { platform, exit, argv, env, stdout, stderr } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, extname, normalize, sep } from 'node:path';
 import http from 'node:http';
-import net from 'node:net';
+import {
+  parseMongoInspect,
+  shouldSkipMongoRecreate,
+  computeReadyTiming,
+  extractStopPids,
+} from './scripts/start-fast-path-helpers.mjs';
+import {
+  buildFrontendChildEnv,
+  buildNxFrontendSpawn,
+  shouldReuseFrontendOnPort,
+  isFrontendHtmlHealthy,
+  evaluateFrontendProbe,
+  formatSpawnFailure,
+  formatSpawnCommand,
+  isStalePidEntry,
+  ensureNxIdeNonInteractive,
+  isNxConsolePromptLine,
+  formatNxPromptFailure,
+} from './scripts/start-launcher-helpers.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isWin = platform === 'win32';
@@ -51,10 +80,10 @@ const ROOT = __dirname;
 
 const BACKEND_DIR = join(ROOT, 'backend');
 const FRONTEND_DIR = join(ROOT, 'frontend');
+const FRONTEND_NX_DIR = join(ROOT, 'frontend-nx');
 const PID_FILE = join(ROOT, '.start.pids.json');
-
-const PORTS = { backend: 3000, frontend: 4200, mongo: 27017 };
-const HOSTS = { backend: 'http://localhost:3000', frontend: 'http://localhost:4200' };
+const LOG_DIR = join(ROOT, '.logs');
+const FRONTEND_LOG = join(LOG_DIR, 'launcher-frontend.log');
 
 // ---------- args ----------
 const args = argv.slice(2);
@@ -65,15 +94,35 @@ const flags = {
   noBrowser: args.includes('--no-browser') || args.includes('--noBrowser'),
   tail: args.includes('--tail'),
   prod: args.includes('--prod'),
+  nx: args.includes('--nx'),
   noBuild: args.includes('--no-build'),
   /** Full Nest/pino INFO (каждый request). Default: quiet WARN+ for PO. */
   verbose: args.includes('--verbose') || args.includes('-v'),
   help: args.includes('--help') || args.includes('-h'),
 };
 
-// Validation: --prod несовместим с --reset
+const FRONTEND_PORT = flags.nx ? 4201 : 4200;
+const PORTS = { backend: 3000, frontend: FRONTEND_PORT, mongo: 27017 };
+// Prefer an IPv4 loopback URL for the launcher health checks. On Windows,
+// `localhost` may resolve to ::1 while Angular binds only one address family;
+// keeping the probe explicitly IPv4 prevents a false frontend timeout.
+const HOSTS = { backend: 'http://127.0.0.1:3000', frontend: `http://127.0.0.1:${FRONTEND_PORT}` };
+
+function activeFrontendDir() {
+  return flags.nx ? FRONTEND_NX_DIR : FRONTEND_DIR;
+}
+
+function activeFrontendName() {
+  return flags.nx ? 'frontend-nx' : 'frontend';
+}
+
+// Validation: --prod несовместим с --reset / --nx (nx prod — отдельная TZ)
 if (flags.prod && flags.reset) {
   console.error('✖ --prod и --reset несовместимы: --reset удалит dist/, а --prod требует build artifacts.');
+  exit(1);
+}
+if (flags.prod && flags.nx) {
+  console.error('✖ --prod и --nx несовместимы в этой версии: для nx используйте dev (`node start.mjs --nx`).');
   exit(1);
 }
 
@@ -93,6 +142,10 @@ start.mjs — единый кросс-платформенный запуск kp
   node start.mjs --stop         # остановить запущенные процессы
   node start.mjs --reset        # полный сброс (down -v + pkill + rm node_modules)
   node start.mjs --no-browser   # не открывать браузер
+  node start.mjs --nx           # Mongo + backend + frontend-nx (Angular Nx :4201)
+  node start.mjs --nx --no-browser
+  # nx frontend: при занятом :4201 переиспользуется healthy dev-server; иначе node start.mjs --stop
+  # Если frontend завис: закройте ручной nx serve на :4201 или node start.mjs --stop
   node start.mjs --verbose      # подробные логи (каждый HTTP request) — по умолчанию тихо
   node start.mjs --prod         # PRODUCTION mode: pnpm build + node dist/main.js + static server
   node start.mjs --prod --no-build  # skip rebuild (use existing dist/)
@@ -112,9 +165,10 @@ Production mode (--prod):
 
 Endpoints:
   Backend:  http://localhost:3000/api/health
-  Frontend: http://localhost:4200
+  Frontend: http://localhost:4200 (legacy) | http://localhost:4201 (--nx)
   Login:    admin@kppdf.local / admin123 (default from .env ADMIN_PASSWORD)
-  Showcase: http://localhost:4200/p/showcase (UI Kit — TZ-31..40)
+  Showcase: http://localhost:4200/p/showcase (legacy UI Kit)
+  Nx:       http://localhost:4201/  → login или /admin/* · Kit: /kit/overview
 `);
   exit(0);
 }
@@ -143,6 +197,9 @@ const state = {
     frontend: { status: 'pending', log: [], startedAt: null, readyAt: null, health: null },
   },
   tuiActive: false,
+  scriptStartedAt: null,
+  /** true when :4201 already serves a healthy nx dev-server (no duplicate spawn) */
+  frontendReused: false,
 };
 
 function pushLog(service, line) {
@@ -150,7 +207,7 @@ function pushLog(service, line) {
   const clean = String(line).replace(/\x1b\[[0-9;]*m/g, '').replace(/\r/g, '').trim();
   if (!clean) return;
   const log = state.services[service].log;
-  if (log.length >= 5) log.shift();
+  if (log.length >= 30) log.shift();
   log.push(clean);
 }
 
@@ -347,6 +404,71 @@ function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+function isProcessAlive(pid) {
+  if (!pid) return false;
+  try {
+    process.kill(Number(pid), 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** GET url; return {status, body} for frontend reuse / SPA health probes. */
+function probeFrontendHttp(url, timeoutMs = 3000) {
+  return new Promise((resolve) => {
+    const req = http.get(url, { timeout: timeoutMs }, (res) => {
+      let body = '';
+      res.on('data', (c) => (body += c));
+      res.on('end', () => resolve({ status: res.statusCode ?? 0, body }));
+    });
+    req.on('error', () => resolve({ status: 0, body: null }));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve({ status: 0, body: null });
+    });
+  });
+}
+
+async function tryMarkFrontendReuse(port) {
+  if (!flags.nx || state.frontendReused) return false;
+  if (!(await isPortInUse(port))) return false;
+  const probe = await probeFrontendHttp(HOSTS.frontend);
+  const ev = evaluateFrontendProbe(probe);
+  if (!shouldReuseFrontendOnPort({ occupied: true, httpOk: ev.httpOk, htmlOk: ev.htmlOk })) {
+    return false;
+  }
+  state.frontendReused = true;
+  state.services.frontend.status = 'ready';
+  state.services.frontend.startedAt = Date.now();
+  state.services.frontend.readyAt = Date.now();
+  log.ok(`Порт ${port} (frontend-nx) — healthy dev-server, переиспользуем ${HOSTS.frontend}`);
+  if (useTui()) renderStatus();
+  return true;
+}
+
+function initFrontendLogFile() {
+  try {
+    mkdirSync(LOG_DIR, { recursive: true });
+    writeFileSync(
+      FRONTEND_LOG,
+      `--- frontend log ${new Date().toISOString()} ---\n`,
+      'utf8',
+    );
+    log.dim(`frontend log: ${FRONTEND_LOG}`);
+  } catch (e) {
+    log.warn(`не удалось создать frontend log: ${e.message}`);
+  }
+}
+
+function appendFrontendLog(chunk) {
+  try {
+    appendFileSync(FRONTEND_LOG, chunk, 'utf8');
+  } catch {
+    /* non-fatal */
+  }
+}
+
 function pingHttp(url, timeoutMs = 2000) {
   return new Promise((resolve) => {
     const req = http.get(url, { timeout: timeoutMs }, (res) => {
@@ -384,6 +506,8 @@ async function checkHealth(url, timeoutMs = 2000) {
           if (status === 'error' || mongoStatus === 'down') {
             isHealthy = false;
           }
+        } else if (!url.includes('/api/health')) {
+          isHealthy = httpOk && isFrontendHtmlHealthy(body);
         }
         resolve({
           ok: isHealthy,
@@ -408,10 +532,18 @@ async function checkHealth(url, timeoutMs = 2000) {
  * Wait for HTTP endpoint to be ready, with health body check.
  * Updates state.services[serviceName] when set.
  */
-async function waitFor(url, label, timeoutMs = 90000, serviceName = null) {
+async function waitFor(url, label, timeoutMs = 90000, serviceName = null, readiness = null) {
   const start = Date.now();
   let attempt = 0;
   while (Date.now() - start < timeoutMs) {
+    if (readiness?.failed) {
+      log.err(`${label} завершился до готовности: ${readiness.error || 'процесс остановлен'}`);
+      if (serviceName && state.services[serviceName]) {
+        state.services[serviceName].status = 'failed';
+        if (useTui()) renderStatus();
+      }
+      return false;
+    }
     attempt++;
     const ok = await pingHttp(url, 2000);
     if (ok) {
@@ -558,28 +690,37 @@ async function preflight() {
   }
 
   // project structure
+  const feDir = activeFrontendDir();
+  const feLabel = activeFrontendName();
   const haveBackend = existsSync(join(BACKEND_DIR, 'package.json'));
-  const haveFrontend = existsSync(join(FRONTEND_DIR, 'package.json'));
+  const haveFrontend = existsSync(join(feDir, 'package.json'));
   if (!haveBackend) { log.err(`backend/package.json не найден в ${BACKEND_DIR}`); ok = false; }
-  if (!haveFrontend) { log.err(`frontend/package.json не найден в ${FRONTEND_DIR}`); ok = false; }
+  if (!haveFrontend) {
+    log.err(`${feLabel}/package.json не найден в ${feDir}`);
+    ok = false;
+  }
 
   if (ok) {
     // Одна сводная строка вместо 5 отдельных (TZ-46: краткость)
     log.ok(`${detected.join(' · ')}`);
   }
 
-  // ports free? — auto-kill backend/frontend processes, warn for Mongo (might be expected)
+  // ports free? — auto-kill backend/frontend; Mongo may be external
   for (const [name, port] of Object.entries(PORTS)) {
-    const inUse = await isPortInUse(port);
-    if (!inUse) continue;
     if (name === 'mongo') {
-      log.warn(`Порт ${port} (${name}) занят — считаем внешним Mongo, продолжаем`);
-    } else {
+      if (await isPortInUse(port)) {
+        log.warn(`Порт ${port} (${name}) занят — считаем внешним Mongo, продолжаем`);
+      }
+      continue;
+    }
+    if (await isPortInUse(port)) {
+      if (name === 'frontend' && flags.nx && (await tryMarkFrontendReuse(port))) {
+        continue;
+      }
       log.info(`Порт ${port} (${name}) занят — освобождаем…`);
       const killed = await killProcessOnPort(port);
-      if (killed) {
-        log.ok(`Порт ${port} освобождён (убит pid ${killed})`);
-        await sleep(1000);
+      if (killed && !(await isPortInUse(port))) {
+        log.ok(`Порт ${port} освобождён (pid ${killed})`);
       } else {
         log.err(`Не удалось освободить порт ${port} (${name})`);
         ok = false;
@@ -590,55 +731,130 @@ async function preflight() {
   return ok;
 }
 
-async function isPortInUse(port) {
-  return new Promise((resolve) => {
-    const srv = net.createServer();
-    srv.once('error', () => resolve(true));
-    srv.once('listening', () => srv.close(() => resolve(false)));
-    srv.listen(port, '0.0.0.0');
-  });
-}
-
-/**
- * Kill the process occupying a given port.
- * Windows: netstat -ano → find PID → taskkill /PID /T /F
- * Unix: lsof -ti :port → kill
- * Returns PID killed or null.
- */
-async function killProcessOnPort(port) {
+/** PIDs with TCP LISTEN on port (IPv4 + IPv6; netstat/lsof, not bind probe). */
+function findListeningPidsOnPort(port) {
+  const pids = new Set();
   try {
     if (isWin) {
       const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-      if (r.status !== 0) return null;
+      if (r.status !== 0) return [];
+      const portRe = new RegExp(`:${port}(\\s|$)`);
       for (const line of r.stdout.split('\n')) {
         const trimmed = line.trim();
-        if (trimmed.includes(`:${port}`) && trimmed.includes('LISTENING')) {
-          const parts = trimmed.split(/\s+/);
-          const pid = parts[parts.length - 1];
-          if (pid && pid !== '0') {
-            spawnSync('taskkill', ['/PID', pid, '/T', '/F'], { stdio: 'ignore' });
-            return pid;
-          }
-        }
+        if (!portRe.test(trimmed) || !trimmed.includes('LISTENING')) continue;
+        const parts = trimmed.split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && pid !== '0' && /^\d+$/.test(pid)) pids.add(pid);
       }
     } else {
-      const r = spawnSync('lsof', ['-ti', `:${port}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+      const r = spawnSync('lsof', ['-ti', `:${port}`, '-sTCP:LISTEN'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
       if (r.status === 0 && r.stdout.trim()) {
-        const pid = r.stdout.trim().split('\n')[0];
-        process.kill(Number(pid), 'SIGKILL');
-        return pid;
+        for (const pid of r.stdout.trim().split('\n')) {
+          if (pid && /^\d+$/.test(pid)) pids.add(pid);
+        }
       }
     }
-  } catch {}
-  return null;
+  } catch {
+    /* ignore */
+  }
+  return [...pids];
+}
+
+async function isPortInUse(port) {
+  return findListeningPidsOnPort(port).length > 0;
+}
+
+/**
+ * Kill all processes LISTENing on port; wait until free (≤5s).
+ * Returns comma-separated PIDs killed, or null if already free.
+ */
+async function killProcessOnPort(port) {
+  const pids = findListeningPidsOnPort(port);
+  if (pids.length === 0) return null;
+  for (const pid of pids) killTree(Number(pid));
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    if (!(await isPortInUse(port))) return pids.join(',');
+    await sleep(250);
+  }
+  return pids.join(',');
+}
+
+/** Free backend/frontend dev ports (re-run before spawn — PO one-shot start). */
+async function ensureDevPortsFree() {
+  let ok = true;
+  for (const [name, port] of Object.entries(PORTS)) {
+    if (name === 'mongo') continue;
+    if (name === 'frontend' && state.frontendReused) continue;
+    if (!(await isPortInUse(port))) continue;
+    log.info(`Порт ${port} (${name}) занят — освобождаем…`);
+    const killed = await killProcessOnPort(port);
+    if (killed && !(await isPortInUse(port))) {
+      log.ok(`Порт ${port} освобождён (pid ${killed})`);
+    } else {
+      log.err(`Не удалось освободить порт ${port} (${name})`);
+      ok = false;
+    }
+  }
+  return ok;
+}
+
+function killTrackedPids(pids) {
+  if (!pids) return;
+  for (const k of ['backend', 'frontend']) {
+    const pid = pids[k];
+    if (pid == null) continue;
+    if (typeof pid === 'number' || (typeof pid === 'string' && /^\d+$/.test(pid))) {
+      killTree(Number(pid));
+    }
+  }
 }
 
 // ---------- mongo ----------
+function inspectMongoContainer() {
+  const r = spawnSync(
+    'docker',
+    [
+      'inspect',
+      '-f',
+      '{{.State.Running}}|{{if .State.Health}}{{.State.Health.Status}}{{end}}',
+      'kppdf-mongo',
+    ],
+    { stdio: 'pipe', encoding: 'utf8' },
+  );
+  if (r.status !== 0) return null;
+  return parseMongoInspect(r.stdout);
+}
+
+function probeMongoReplicaSet() {
+  const r = spawnSync(
+    'docker',
+    ['exec', 'kppdf-mongo', 'mongosh', '--quiet', '--eval', 'rs.status().ok'],
+    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  return r.status === 0 && r.stdout && r.stdout.trim() === '1';
+}
+
 async function startMongo() {
   log.step(2, 'Запуск MongoDB (replica set rs0)');
   state.services.mongo.status = 'starting';
   state.services.mongo.startedAt = Date.now();
   if (useTui()) renderStatus();
+
+  const container = inspectMongoContainer();
+  const replicaSetOk = container?.running ? probeMongoReplicaSet() : false;
+  if (shouldSkipMongoRecreate({ container, replicaSetOk })) {
+    log.ok('Mongo уже запущен и healthy — пересоздание контейнера не требуется');
+    return;
+  }
+
+  if (container?.running && container.healthStatus === 'healthy' && !replicaSetOk) {
+    log.dim('Mongo контейнер healthy, replica set ещё не готов — ждём без пересоздания');
+    return;
+  }
 
   // Удаляем старый контейнер, если висит с прошлого запуска — иначе
   // `docker compose up` упадёт с «Conflict. The container name is already in use».
@@ -647,7 +863,7 @@ async function startMongo() {
     ['rm', '-f', 'kppdf-mongo'],
     { stdio: 'pipe', encoding: 'utf8' },
   );
-  if (stale.status === 0) {
+  if (stale.status === 0 && stale.stdout?.trim()) {
     log.dim('удалён старый контейнер kppdf-mongo');
   }
 
@@ -758,34 +974,33 @@ function installDeps(dir, name) {
 }
 
 // ---------- spawn dev servers ----------
-function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
+function resolveNxCli(cwd) {
+  const nxJs = join(cwd, 'node_modules', 'nx', 'bin', 'nx.js');
+  if (!existsSync(nxJs)) return null;
+  if (!resolveBin('node')) return null;
+  return nxJs;
+}
+
+function spawnDetached(cmd, args, cwd, name, envExtra = {}, spawnMeta = null) {
   // detached + new process group on Unix so we can kill tree; on Windows taskkill /T
   const bin = resolveBin(cmd);
   if (!bin) {
     log.err(`${cmd} not found in PATH`);
     throw new Error(`${cmd} binary not found`);
   }
-  const child = spawnProcess(bin, args, {
+  const meta = spawnMeta ?? {
+    cmd: formatSpawnCommand(bin, args),
     cwd,
-    env: { ...env, ...envExtra, FORCE_COLOR: '1' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: !isWin,
-    windowsHide: true,
-  });
-  // Трекаем в state
+    display: formatSpawnCommand(bin, args),
+  };
+  if (name === 'frontend') initFrontendLogFile();
   if (name && state.services[name]) {
     state.services[name].startedAt = Date.now();
     state.services[name].status = 'starting';
     if (useTui()) renderStatus();
   }
   const dirName = cwd.split(/[\\/]/).pop();
-  /**
-   * TZ-OPS-301 / boot DX: vite prints multi-line proxy failures while Nest is
-   * still compiling. First line is often only `http proxy error: /api/...`
-   * without ECONNREFUSED on the same line — older filter let those through and
-   * scared PO. Suppress the whole race pattern until backend status=ready;
-   * after that, real proxy errors still show.
-   */
+  const lifecycle = name ? { failed: false, error: '', pid: null } : null;
   let proxyRaceNotePrinted = false;
   const isFrontendProxyRaceNoise = (line) => {
     if (name !== 'frontend') return false;
@@ -795,7 +1010,6 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     if (t.includes('http proxy error')) return true;
     if (t.includes('ECONNREFUSED')) return true;
     if (t.includes('AggregateError')) return true;
-    // stack frames that follow vite proxy AggregateError
     if (/^at\s+/.test(t) && (t.includes('node:net') || t.includes('ConnectMultiple'))) {
       return true;
     }
@@ -809,29 +1023,58 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
     );
   };
 
+  const child = spawnProcess(bin, args, {
+    cwd,
+    env: { ...env, ...envExtra, FORCE_COLOR: '1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    detached: !isWin,
+    windowsHide: true,
+  });
+  if (lifecycle) lifecycle.pid = child.pid;
+
+  const failOnNxPrompt = (line) => {
+    if (name !== 'frontend' || !lifecycle || lifecycle.failed) return false;
+    if (!isNxConsolePromptLine(line)) return false;
+    lifecycle.failed = true;
+    lifecycle.error = 'Nx Console interactive prompt (non-interactive launcher)';
+    const svc = state.services[name];
+    if (svc) svc.status = 'failed';
+    log.err(
+      formatNxPromptFailure({
+        cmd: meta.display,
+        cwd: meta.cwd,
+        lastLines: svc?.log ?? [],
+      }),
+    );
+    killTree(child.pid);
+    if (useTui()) renderStatus();
+    return true;
+  };
+
   const onChunk = (b) => {
     const chunk = b.toString();
     if (name) {
       for (const line of chunk.split('\n')) {
         if (!line.trim()) continue;
+        if (failOnNxPrompt(line)) return;
         if (isFrontendProxyRaceNoise(line)) {
           noteProxyRaceOnce();
           continue;
         }
         pushLog(name, line);
       }
+      if (name === 'frontend') appendFrontendLog(chunk);
     }
     if (useTui()) {
-      // TUI: ничего не пишем в stdout, просто redraw
       renderStatus();
     } else {
-      // Non-TUI: passthrough с префиксом [name]
       const prefix = name ? `[${name}] ` : `[${dirName}] `;
       if (name === 'frontend') {
         const parts = chunk.split('\n');
         for (let i = 0; i < parts.length; i++) {
           const line = parts[i];
           const last = i === parts.length - 1;
+          if (failOnNxPrompt(line)) return;
           if (isFrontendProxyRaceNoise(line)) {
             noteProxyRaceOnce();
             continue;
@@ -849,6 +1092,42 @@ function spawnDetached(cmd, args, cwd, name, envExtra = {}) {
   };
   child.stdout.on('data', onChunk);
   child.stderr.on('data', onChunk);
+  if (name) {
+    child.on('error', (error) => {
+      lifecycle.failed = true;
+      lifecycle.error = `ошибка запуска: ${error.message}`;
+      const svc = state.services[name];
+      if (svc) svc.status = 'failed';
+      log.err(formatSpawnFailure({
+        label: name,
+        cmd: meta.display,
+        cwd: meta.cwd,
+        code: null,
+        signal: null,
+        lastLines: svc?.log ?? [],
+      }));
+      if (useTui()) renderStatus();
+    });
+    child.on('exit', (code, signal) => {
+      if (code === 0 || signal === 'SIGTERM' || signal === 'SIGINT') return;
+      lifecycle.failed = true;
+      lifecycle.error = `code=${code ?? 'null'} signal=${signal ?? 'null'}`;
+      const svc = state.services[name];
+      if (svc?.status === 'ready') return;
+      log.err(formatSpawnFailure({
+        label: name,
+        cmd: meta.display,
+        cwd: meta.cwd,
+        code,
+        signal,
+        lastLines: svc?.log ?? [],
+      }));
+      if (svc) svc.status = 'failed';
+      if (useTui()) renderStatus();
+    });
+  }
+  child.spawnMeta = meta;
+  child.startupState = lifecycle;
   return child;
 }
 
@@ -995,13 +1274,13 @@ function serveStatic(rootDir, port) {
 // длинный «простынный» вывод из TZ-41 на короткий читаемый результат.
 function printReadyPanel() {
   const s = state.services;
-  const totalReady = [s.mongo, s.backend, s.frontend].filter((x) => x.status === 'ready').length;
-  const earliest = Math.min(
-    ...[s.mongo, s.backend, s.frontend]
-      .filter((x) => x.startedAt && x.readyAt)
-      .map((x) => x.readyAt - x.startedAt),
-  );
-  const totalSec = isFinite(earliest) ? Math.round(earliest / 1000) + 's' : '—';
+  const scriptStartedAt = state.scriptStartedAt ?? Date.now();
+  const timing = computeReadyTiming(s, scriptStartedAt);
+  const totalSec = `${timing.wallClockSec}s`;
+  const serviceTiming = ['mongo', 'backend', 'frontend']
+    .filter((name) => timing.perService[name] != null)
+    .map((name) => `${name} ${timing.perService[name]}s`)
+    .join(' · ');
 
   const border = `${c.bold}${c.green}╔════════════════════════════════════════════════════════╗${c.reset}`;
   const footer = `${c.bold}${c.green}╚════════════════════════════════════════════════════════╝${c.reset}`;
@@ -1013,10 +1292,13 @@ function printReadyPanel() {
   console.log(footer);
   console.log('');
 
-  if (totalReady === 3) {
+  if (timing.allReady) {
     console.log(`  ${c.cyan}⏱${c.reset}  Все сервисы готовы за ${c.bold}${totalSec}${c.reset}`);
   } else {
-    console.log(`  ${c.yellow}⚠${c.reset}  Готово ${totalReady}/3 сервисов за ${c.bold}${totalSec}${c.reset}`);
+    console.log(`  ${c.yellow}⚠${c.reset}  Готово ${timing.readyCount}/3 сервисов за ${c.bold}${totalSec}${c.reset}`);
+  }
+  if (serviceTiming) {
+    console.log(`  ${c.dim}   ${serviceTiming}${c.reset}`);
   }
 
   // Prod-specific: bundle sizes
@@ -1032,7 +1314,10 @@ function printReadyPanel() {
   ];
   const right = [
     [`${c.cyan}👤${c.reset}  Логин`,    `admin@kppdf.local / admin123`],
-    [`${c.cyan}📋${c.reset}  Showcase`, `${HOSTS.frontend}/p/showcase`],
+    [
+      `${c.cyan}📋${c.reset}  ${flags.nx ? 'UI Kit (dev)' : 'Showcase'}`,
+      flags.nx ? `${HOSTS.frontend}/kit/overview` : `${HOSTS.frontend}/p/showcase`,
+    ],
   ];
   // Динамическая ширина: используем ширину терминала, но не менее 80 и не более 120
   const termW = Math.max(80, Math.min(120, stdout.columns || 100));
@@ -1057,7 +1342,9 @@ function printReadyPanel() {
 async function main() {
   const banner = flags.prod
     ? `${c.bold}${c.yellow}━━ kppdf-8.0 PRODUCTION ━━${c.reset}\n${c.dim}  Backend: dist/main.js (NODE_ENV=production) · Frontend: static server${c.reset}`
-    : `${c.bold}${c.magenta}━━ kppdf-8.0 local starter ━━${c.reset}\n${c.dim}  Mongo + Backend (NestJS) + Frontend (Angular 20)${c.reset}`;
+    : flags.nx
+      ? `${c.bold}${c.magenta}━━ kppdf-8.0 local starter (Nx) ━━${c.reset}\n${c.dim}  Mongo + Backend (NestJS) + frontend-nx (Angular Nx :4201)${c.reset}`
+      : `${c.bold}${c.magenta}━━ kppdf-8.0 local starter ━━${c.reset}\n${c.dim}  Mongo + Backend (NestJS) + Frontend (Angular 20 :4200)${c.reset}`;
   console.log(banner);
 
   // ---- STOP mode ----
@@ -1068,10 +1355,11 @@ async function main() {
       return;
     }
     log.info('Остановка фоновых процессов…');
-    for (const k of Object.keys(pids)) {
-      killTree(pids[k]);
-      log.ok(`остановлен ${k} (pid ${pids[k]})`);
+    for (const { key, pid } of extractStopPids(pids)) {
+      killTree(pid);
+      log.ok(`остановлен ${key} (pid ${pid})`);
     }
+    await ensureDevPortsFree();
     clearPids();
     // also stop mongo via docker
     spawnSync('docker', ['compose', 'down'], { cwd: ROOT, stdio: 'inherit' });
@@ -1083,7 +1371,7 @@ async function main() {
   if (flags.reset) {
     log.warn('RESET: удаление контейнеров, томов, node_modules…');
     spawnSync('docker', ['compose', 'down', '-v'], { cwd: ROOT, stdio: 'inherit' });
-    for (const d of [BACKEND_DIR, FRONTEND_DIR]) {
+    for (const d of [BACKEND_DIR, FRONTEND_DIR, FRONTEND_NX_DIR]) {
       const nm = join(d, 'node_modules');
       if (existsSync(nm)) {
         rmSync(nm, { recursive: true, force: true });
@@ -1108,6 +1396,8 @@ async function main() {
     exit(1);
   }
 
+  state.scriptStartedAt = Date.now();
+
   // Mongo
   await startMongo();
   const mongoOk = await waitMongo();
@@ -1119,7 +1409,7 @@ async function main() {
   // Deps
   log.step(4, 'Установка зависимостей (пропускается если node_modules уже есть)');
   installDeps(BACKEND_DIR, 'backend');
-  installDeps(FRONTEND_DIR, 'frontend');
+  installDeps(activeFrontendDir(), activeFrontendName());
 
   // Prod build (if --prod)
   let prodBackend = null;
@@ -1132,12 +1422,23 @@ async function main() {
   // Spawn
   log.step(5, 'Запуск backend + frontend (detached, логи в pipe)');
 
-  // Clean up any prior pid file
+  // Clean up any prior pid file + stale listeners (manual nx serve, зомби)
   const prior = readPids();
   if (prior) {
     log.info('очистка предыдущих фоновых процессов…');
-    for (const k of Object.keys(prior)) killTree(prior[k]);
+    for (const { key, pid } of extractStopPids(prior)) {
+      if (isStalePidEntry(pid, isProcessAlive)) {
+        log.dim(`stale pid ${key}=${pid} (процесс не жив) — пропускаем taskkill`);
+        continue;
+      }
+      killTree(pid);
+    }
     clearPids();
+  }
+  await tryMarkFrontendReuse(PORTS.frontend);
+  if (!(await ensureDevPortsFree())) {
+    log.err('Порты backend/frontend заняты. Закройте процесс вручную или перезапустите.');
+    exit(1);
   }
 
   // Backend
@@ -1176,27 +1477,90 @@ async function main() {
     state.services.frontend.status = 'ready';
     state.services.frontend.readyAt = Date.now();
   } else {
-    spawnSync('node', [join(ROOT, 'scripts/write-build-info.mjs')], {
-      cwd: ROOT,
-      stdio: useTui() ? 'ignore' : 'inherit',
-    });
-    frontend = spawnDetached('pnpm', ['start'], FRONTEND_DIR, 'frontend');
+    if (!flags.nx) {
+      spawnSync('node', [join(ROOT, 'scripts/write-build-info.mjs')], {
+        cwd: ROOT,
+        stdio: useTui() ? 'ignore' : 'inherit',
+      });
+    }
+    const feDir = activeFrontendDir();
+    const feEnv = buildFrontendChildEnv(flags.nx);
+    if (flags.nx) {
+      if (state.frontendReused) {
+        log.ok('frontend: существующий dev-server на :4201 (без нового spawn)');
+      } else {
+        if (ensureNxIdeNonInteractive()) {
+          log.dim('~/.nx/ide.json: auto_install_console=false (non-interactive nx)');
+        }
+        // Windows: pnpm.cmd → cmd /c → nx daemon — parent умирает, :4201 пустой.
+        // Прямой node nx.js — один долгоживущий процесс, стабильный pid для taskkill.
+        const nxSpawn = buildNxFrontendSpawn(feDir, PORTS.frontend, resolveNxCli);
+        if (!nxSpawn.ok) throw new Error(nxSpawn.error);
+        log.dim(`frontend spawn: cwd=${feDir}`);
+        log.dim(`frontend command: ${nxSpawn.display}`);
+        frontend = spawnDetached(
+          nxSpawn.cmd,
+          nxSpawn.args,
+          nxSpawn.cwd,
+          'frontend',
+          feEnv,
+          { cmd: nxSpawn.display, cwd: nxSpawn.cwd, display: nxSpawn.display },
+        );
+      }
+    } else {
+      frontend = spawnDetached('pnpm', ['start'], feDir, 'frontend', feEnv);
+    }
   }
 
-  writePids({ backend: backend.pid, frontend: frontendStaticServer ? null : frontend.pid, startedAt: new Date().toISOString() });
-  log.ok(`backend pid=${backend.pid}${frontendStaticServer ? '' : `, frontend pid=${frontend.pid}`}`);
+  writePids({
+    backend: backend.pid,
+    frontend: frontendStaticServer ? null : (state.frontendReused ? null : frontend?.pid ?? null),
+    frontendReused: state.frontendReused,
+    startedAt: new Date().toISOString(),
+  });
+  log.ok(
+    `backend pid=${backend.pid}${
+      state.frontendReused
+        ? ', frontend reused (existing :4201)'
+        : frontend
+          ? `, frontend pid=${frontend.pid}`
+          : ''
+    }`,
+  );
   // На Windows child.pid теперь pnpm.cmd напрямую (DEP0190 fix, TZ-44). Раньше был
   // cmd.exe wrapper — теперь PIDs в .start.pids.json точные и можно kill через taskkill /T /F.
 
-  // Wait for endpoints
+  // Wait for endpoints (параллельно — frontend собирается пока backend компилируется)
   log.step(6, 'Ожидание готовности endpoints');
-  const backendOk = await waitFor(`${HOSTS.backend}/api/health`, 'backend /api/health', 120000, 'backend');
-  const frontendOk = await waitFor(HOSTS.frontend, 'frontend', 180000, 'frontend');
+  const [backendOk, frontendOk] = await Promise.all([
+    waitFor(`${HOSTS.backend}/api/health`, 'backend /api/health', 120000, 'backend', backend.startupState),
+    waitFor(HOSTS.frontend, 'frontend', 180000, 'frontend', frontend?.startupState),
+  ]);
 
   if (!backendOk || !frontendOk) {
     log.err('Один или несколько сервисов не стартовали вовремя.');
-    log.dim('Смотрите логи выше. Для остановки: node start.mjs --stop');
-    // do not exit — let user inspect live logs
+    if (!frontendOk) {
+      log.dim(`Смотрите ${FRONTEND_LOG} и логи [frontend] выше.`);
+      if (frontend?.spawnMeta) {
+        log.err(
+          formatSpawnFailure({
+            label: 'frontend',
+            cmd: frontend.spawnMeta.display,
+            cwd: frontend.spawnMeta.cwd,
+            code: null,
+            signal: null,
+            lastLines: state.services.frontend.log,
+          }).replace('code=null signal=null', 'timeout waiting for HTTP ready'),
+        );
+      }
+    }
+    log.dim('Для остановки: node start.mjs --stop');
+    try {
+      killTree(backend.pid);
+      if (frontend && !state.frontendReused) killTree(frontend.pid);
+    } catch {}
+    clearPids();
+    exit(1);
   } else {
     log.step(7, 'Готово');
     // В TUI режиме — освобождаем TUI зону (1 пустая строка), затем печатаем панель
@@ -1208,8 +1572,9 @@ async function main() {
 
     if (!flags.noBrowser) {
       try {
-        openBrowser(HOSTS.frontend);
-        log.ok(`открыт ${HOSTS.frontend} в браузере по умолчанию`);
+        const openUrl = flags.nx ? `${HOSTS.frontend}/login` : HOSTS.frontend;
+        openBrowser(openUrl);
+        log.ok(`открыт ${openUrl} в браузере по умолчанию`);
       } catch (e) {
         log.warn(`не удалось открыть браузер: ${e.message}`);
       }
@@ -1222,7 +1587,7 @@ async function main() {
     try {
       if (frontendStaticServer) frontendStaticServer.close();
       killTree(backend.pid);
-      if (frontend) killTree(frontend.pid);
+      if (frontend && !state.frontendReused) killTree(frontend.pid);
     } catch {}
     clearPids();
     // leave mongo running — user can docker compose down manually

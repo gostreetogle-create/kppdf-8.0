@@ -46,6 +46,7 @@
 | Север продаж → цех | `docs/audits/2026-08-08-sales-to-shop-flow-canon.md` |
 | Целостность docs (closeout) | `docs/DOCS-INTEGRITY.md` — протокол триггер→файлы + Integrity slot |
 | Карта домен↔модули↔страницы | `docs/DOMAIN-MAP.md` — домен → BE module → route → page.md → SoT |
+| Nx auth platform | `docs/architecture/nx-auth-platform.md` — interceptors, guards, device invite, lib map |
 | Общее поле на нескольких экранах | `docs/COUPLING-MAP.md` — смысл статуса/FK; не выдумывать локальный «активный» |
 
 ## 4. Не потерять при DONE (чеклист)
