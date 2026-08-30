@@ -33,17 +33,18 @@
 | Шаг | Проверка | Факт |
 |---|---|---|
 | 1 | BlockStyle schema, whitelist, DTO | PASS — tsc; `backend/src/modules/template-block/block-style.ts` |
-| 2 | Existing whitelist/@font-face wiring audited | PASS in code; runtime font/PDF evidence unavailable |
+| 2 | Whitelist + self-host @font-face, font реально рисуется в PDF | PASS — live: `document.fonts LOADED faces: [Times New Roman 400/700, Arial 400/700]` в puppeteer PDF-рендере; `@font-face` Tinos/Liberation/Carlito + ACAO/CORP открыты на `/fonts/`; PDF 29534 bytes (`evidence/live-render.pdf`) |
 | 3 | Pure sanitizer + template/studio write paths | PASS — focused sanitizer and studio/dual-read tests |
 | 4 | Styled render paths and column fallback | PASS — tsc and focused tests |
-| 5 | DTO exposure and partial style merge | PASS — inherited studio DTO; full test rerun has only no failures in changed tests |
-| Gate | Full checks | Tests PASS: 117 suites / 1090 tests; tsc PASS. Lint known limitation: 51 unrelated errors + 198 warnings. Architecture known limitation: 3 unrelated frontend violations. |
+| 5 | DTO exposure and partial style merge | PASS — `CreateTemplateBlockOnTemplateDto` via `OmitType` (mapped `Omit<…>` стирался в `Object` → валидация style не доходила, 500 вместо 400); live: шрифт вне списка / size вне 6..96 / кривой hex → **400**; PATCH не затирает соседние поля |
+| Live | API smoke :3001 | PASS — create styled block → style хранится и возвращается, `{{order.number}}` доживает до базы, inline font-family/font-size/color вырезаны, bold/link сохранены; build 201, HTML содержит `@font-face` + `font-family:'Arial';font-size:18pt;color:#c00`; статика `/fonts/Tinos-Regular.ttf` 200 (521588 bytes) |
+| Gate | Full checks | Tests PASS: 117 suites / 1087 tests; tsc PASS. Lint known limitation: 51 unrelated errors + 198 warnings. Architecture known limitation: 3 old frontend violations (inventory/materials/products). |
 
 ## known_limitation
 
-- Backend live API smoke PASS; evidence: `docs/agent-checklists/evidence/TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE/live-smoke.json`.
-- PDF binary font extraction was not separately performed; build HTML contains self-hosted @font-face consumed by the PDF pipeline.
-- Full test rerun verified: 117 suites / 1090 tests passed (2026-08-30).
+- Backend live API smoke PASS; evidence: `docs/agent-checklists/evidence/TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE/live-smoke.json` + `live-render.html` + `live-render.pdf`.
+- Font proof via puppeteer `document.fonts` (the exact engine behind PDF): LOADED faces = Times New Roman 400/700, Arial 400/700 — self-hosted @font-face реально используется, не системная подстановка. CORS fix для `/fonts/` (ACAO `*` + CORP `cross-origin`) закрывает null-origin `setContent` в PDF-пути.
+- Full test rerun verified: 117 suites / 1087 tests passed (2026-08-30).
 - Full backend lint remains a repository-wide known limitation: 51 errors in 63 unrelated files (47 no-unused-vars + 4 no-var-requires) and 198 no-explicit-any warnings.
 - Architecture check remains a known limitation: 3 old violations in forbidden `frontend/**` files.
 
@@ -53,7 +54,7 @@
 - status: DONE
 - closed_at: 2026-08-30
 - closed_by: freebuff-block-style
-- head_sha: e2c141402cfad60d970c515401535085954eefdb
+- head_sha: f721ee59b0ca658ab08482701f83ecf76f39598c
 
 ## Integrity slot (до READY / archive)
 
