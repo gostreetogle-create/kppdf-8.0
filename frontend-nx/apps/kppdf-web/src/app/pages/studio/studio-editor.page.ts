@@ -1,8 +1,10 @@
-import {
+﻿import {
   AfterViewInit,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  Injector,
   OnDestroy,
   computed,
   effect,
@@ -10,25 +12,56 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { ChevronLeft, ChevronRight, FileText, Layers, LucideAngularModule, Settings2 } from 'lucide-angular';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Database,
+  FileText,
+  Layers,
+  LayoutTemplate,
+  LucideAngularModule,
+  Settings2,
+} from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import {
+  PiCounterpartiesService,
+  PiDocTypesService,
+  PiOrdersService,
+  PiOrganizationsService,
+  PiQuotationsService,
   PiStudioBlocksService,
   PiStudioDocumentsService,
+  type Counterparty,
+  type DocType,
+  type Order,
+  type Quotation,
   type StudioBlock,
   type StudioBlockLayout,
   type StudioBlockStyle,
   type StudioDocument,
+  type TableTemplate,
+  type TextBlock,
 } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
+import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { ShellToolRailService } from '../../layout/shell-tool-rail.service';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table-template-form-dialog.component';
+import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
+import { StudioDataPanelComponent } from './studio-data-panel.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
+import {
+  StudioSaveAsTemplateDialogComponent,
+  type StudioSaveAsTemplateResult,
+} from './studio-save-as-template-dialog.component';
+import { StudioTemplatePanelComponent } from './studio-template-panel.component';
 import {
   onStudioSectionClick,
   studioPanelSide,
@@ -37,17 +70,26 @@ import {
 } from './studio-workspace-chrome';
 import { StudioWorkspaceShellComponent } from './studio-workspace-shell.component';
 import {
+  studioImageSettingsForUpdate,
+  studioMergeBlockSettings,
+} from './studio-block-helpers';
+import {
   coerceStudioBlockLayout,
   normalizeStudioBlockLayout,
   studioCenteredImageLayout,
   studioCenteredTableLayout,
   studioCenteredTextLayout,
+  studioImageLayoutFromNaturalSize,
+  studioReadImageNaturalSize,
   zIndexFromLayerOrder,
 } from './studio-layout';
+import { rememberStudioDocument } from './studio-session';
 import {
   STUDIO_DEFAULT_TABLE_COLUMNS,
   STUDIO_DEFAULT_TABLE_ROWS,
+  buildTableTemplatePayloadFromBlock,
 } from './studio-table-defaults';
+import { studioTextBlockSlug } from './studio-text-helpers';
 
 const STUDIO_TOOL_OWNER = 'studio-editor';
 
@@ -57,9 +99,11 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
   imports: [
     StudioWorkspaceShellComponent,
     StudioBlocksCanvasComponent,
+    StudioDataPanelComponent,
     StudioElementsPanelComponent,
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
+    StudioTemplatePanelComponent,
     ButtonComponent,
     LucideAngularModule,
   ],
@@ -127,6 +171,14 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
           <button
             type="button"
             class="kp-ws-ribbon-btn"
+            data-test="studio-open-list"
+            (click)="openDocumentList()"
+          >
+            К списку
+          </button>
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
             [class.kp-ws-ribbon-btn--active]="viewMode() === 'editor'"
             (click)="setViewMode('editor')"
           >
@@ -141,9 +193,37 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
           >
             Просмотр
           </button>
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-save-as-template"
+            [disabled]="templateSaving()"
+            (click)="openSaveAsTemplateDialog()"
+          >
+            {{ templateSaving() ? 'Сохранение…' : 'Шаблон' }}
+          </button>
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-download-pdf"
+            [disabled]="pdfLoading()"
+            (click)="onDownloadPdf()"
+          >
+            {{ pdfLoading() ? 'PDF…' : 'PDF' }}
+          </button>
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-finalize"
+            [disabled]="finalizing() || doc.status !== 'draft'"
+            [attr.title]="doc.status !== 'draft' ? 'Уже в архиве' : 'Отправить в архив'"
+            (click)="onFinalize()"
+          >
+            {{ finalizing() ? 'В архив…' : 'В архив' }}
+          </button>
         </div>
 
-        <div kpWsPanel class="studio-panel-inner text-sm">
+        <div kpWsPanel class="studio-panel-inner text-sm" (click)="$event.stopPropagation()">
           @switch (activeSection()) {
             @case ('elements') {
               <pi-studio-elements-panel
@@ -152,6 +232,32 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (addText)="addTextToActiveLayer()"
                 (addTable)="addTableLayer()"
                 (imageFile)="addImageToActiveLayer($event)"
+              />
+            }
+            @case ('data') {
+              <pi-studio-data-panel
+                [issuerOrgName]="issuerOrgName()"
+                [counterpartyId]="counterpartyId()"
+                [quotationId]="quotationId()"
+                [orderId]="orderId()"
+                [counterparties]="counterparties()"
+                [quotations]="quotations()"
+                [orders]="orders()"
+                [contextSaving]="contextSaving()"
+                [contextSaveError]="contextSaveError()"
+                (counterpartyChange)="onCounterpartyChange($event)"
+                (quotationChange)="onQuotationChange($event)"
+                (orderChange)="onOrderChange($event)"
+              />
+            }
+            @case ('template') {
+              <pi-studio-template-panel
+                [docTypeId]="docTypeId()"
+                [docTypes]="docTypes()"
+                [docTypeSaving]="docTypeSaving()"
+                [saving]="templateSaving()"
+                (docTypeChange)="onDocTypeChange($event)"
+                (saveAsTemplate)="openSaveAsTemplateDialog()"
               />
             }
             @case ('layers') {
@@ -164,6 +270,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (layerReorder)="applyLayerZOrder($event)"
                 (toggleLock)="toggleLock($event)"
                 (toggleVisible)="toggleVisible($event)"
+                (deleteLayer)="deleteLayerById($event)"
               />
             }
             @case ('properties') {
@@ -173,8 +280,11 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (contentChange)="patchBlockContent($event)"
                 (titleChange)="patchBlockTitle($event)"
                 (imageFullPage)="setImageFullPage()"
-                (deleteLayer)="deleteActiveLayer()"
-                (tableRowsChange)="patchTableRows($event)"
+                (deleteLayer)="deleteLayerById(propertiesBlock()?._id)"
+                (tableSettingsChange)="patchTableSettings($event)"
+                (saveTableTemplate)="openSaveTableTemplateDialog()"
+                (applyLibraryText)="applyLibraryText($event)"
+                (saveTextBlock)="openSaveTextBlockDialog()"
               />
             }
           }
@@ -204,7 +314,10 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               [sheetHeight]="sheetSize().height"
               (selected)="onSelect($event)"
               (layoutChanged)="changeLayout($event.id, $event.layout)"
+              (layoutCommit)="onLayoutCommit()"
               (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
+              (tableRowsChange)="patchTableRows($event)"
+              (tableDisabledRowsChange)="patchTableDisabledRows($event)"
             />
           }
         </div>
@@ -264,15 +377,32 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
 })
 export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly documents = inject(PiStudioDocumentsService);
   private readonly blocksService = inject(PiStudioBlocksService);
+  private readonly counterpartiesApi = inject(PiCounterpartiesService);
+  private readonly quotationsApi = inject(PiQuotationsService);
+  private readonly ordersApi = inject(PiOrdersService);
+  private readonly orgsApi = inject(PiOrganizationsService);
+  private readonly docTypesApi = inject(PiDocTypesService);
   private readonly toast = inject(PiToastService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly shellTools = inject(ShellToolRailService);
   private readonly sheetHostRef = viewChild<ElementRef<HTMLElement>>('sheetHost');
   private timer?: number;
+  private layoutSavePromise: Promise<void> | null = null;
+  private layoutsDirty = false;
   private resizeObserver?: ResizeObserver;
 
   readonly document = signal<StudioDocument | null>(null);
+  readonly issuerOrgName = signal('');
+  readonly counterparties = signal<Counterparty[]>([]);
+  readonly quotations = signal<Quotation[]>([]);
+  readonly orders = signal<Order[]>([]);
+  readonly contextSaving = signal(false);
+  readonly contextSaveError = signal<string | null>(null);
   readonly blocks = signal<readonly StudioBlock[]>([]);
   readonly selectedId = signal<string | null>(null);
   readonly activeLayerId = signal<string | null>(null);
@@ -284,6 +414,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly previewError = signal<string | null>(null);
   readonly currentPage = signal(1);
   readonly sheetSize = signal({ width: 800, height: 566 });
+  readonly templateSaving = signal(false);
+  readonly docTypes = signal<DocType[]>([]);
+  readonly docTypeSaving = signal(false);
+  readonly pdfLoading = signal(false);
+  readonly finalizing = signal(false);
 
   readonly selectedBlock = computed(() => {
     const id = this.selectedId();
@@ -291,6 +426,23 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   });
 
   readonly propertiesBlock = computed(() => this.selectedBlock() ?? this.activeLayerBlock());
+
+  readonly counterpartyId = computed(() => {
+    const raw = this.document()?.context?.['counterpartyId'];
+    return typeof raw === 'string' ? raw : '';
+  });
+  readonly quotationId = computed(() => {
+    const raw = this.document()?.context?.['quotationId'];
+    return typeof raw === 'string' ? raw : '';
+  });
+  readonly orderId = computed(() => {
+    const raw = this.document()?.context?.['orderId'];
+    return typeof raw === 'string' ? raw : '';
+  });
+  readonly docTypeId = computed(() => {
+    const raw = this.document()?.docTypeId;
+    return typeof raw === 'string' ? raw : '';
+  });
 
   readonly panelSide = computed(() => studioPanelSide(this.activeSection()));
 
@@ -319,6 +471,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       return `Свойства: «${name}»`;
     }
     if (section === 'elements') return 'Элементы';
+    if (section === 'data') return 'Данные';
+    if (section === 'template') return 'Шаблон';
     return studioPanelTitle(section);
   });
 
@@ -342,7 +496,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (id) {
       void firstValueFrom(this.documents.getById(id)).then((r) => {
         if (r.ok) {
+          rememberStudioDocument(r.data._id);
           this.document.set(r.data);
+          this.loadIssuerOrg(r.data.organizationId);
           void firstValueFrom(this.blocksService.list(id)).then((b) => {
             if (b.ok) {
               const normalized = b.data.map((block) =>
@@ -362,6 +518,34 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       });
     }
 
+    this.counterpartiesApi
+      .list({ limit: 200 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.counterparties.set(res.data.items ?? []);
+      });
+
+    this.quotationsApi
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.quotations.set(res.data ?? []);
+      });
+
+    this.ordersApi
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.orders.set(res.data ?? []);
+      });
+
+    this.docTypesApi
+      .list()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((res) => {
+        if (res.ok) this.docTypes.set(res.data ?? []);
+      });
+
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.syncSheetSize());
     }
@@ -379,6 +563,24 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
             icon: FileText,
             active: !collapsed && section === 'elements',
             onClick: () => this.onSection('elements'),
+          },
+          {
+            id: 'data',
+            side: 'left',
+            ariaLabel: 'Данные',
+            title: 'Данные',
+            icon: Database,
+            active: !collapsed && section === 'data',
+            onClick: () => this.onSection('data'),
+          },
+          {
+            id: 'template',
+            side: 'left',
+            ariaLabel: 'Шаблон',
+            title: 'Шаблон',
+            icon: LayoutTemplate,
+            active: !collapsed && section === 'template',
+            onClick: () => this.onSection('template'),
           },
           {
             id: 'layers',
@@ -423,32 +625,47 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     onStudioSectionClick(id as StudioWorkspaceSection, this.activeSection, this.panelCollapsed);
   }
 
+  openDocumentList(): void {
+    void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
+  }
+
   togglePanel(): void {
     this.panelCollapsed.update((v) => !v);
   }
 
   setViewMode(mode: 'editor' | 'preview'): void {
-    this.viewMode.set(mode);
     if (mode === 'preview') {
-      this.panelCollapsed.set(true);
-      this.selectedId.set(null);
-      this.fetchPreview();
+      void this.enterPreviewMode();
       return;
     }
+    this.viewMode.set(mode);
     this.previewHtml.set(null);
     this.previewError.set(null);
   }
 
+  private async enterPreviewMode(): Promise<void> {
+    this.viewMode.set('preview');
+    this.panelCollapsed.set(true);
+    this.selectedId.set(null);
+    this.previewLoading.set(true);
+    this.previewError.set(null);
+    await this.flushLayouts();
+    this.fetchPreview();
+  }
+
+  onLayoutCommit(): void {
+    void this.flushLayouts();
+  }
+
   onSheetClick(): void {
     this.selectedId.set(null);
+    /* Сворачиваем только по клику на лист — не трогаем opacity/transform панели */
     this.panelCollapsed.set(true);
   }
 
   onSelect(id: string): void {
-    if (this.activeLayerId() !== id) return;
+    this.activeLayerId.set(id);
     this.selectedId.set(id);
-    this.activeSection.set('properties');
-    this.panelCollapsed.set(false);
   }
 
   activateLayer(id: string): void {
@@ -556,8 +773,46 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   setImageFullPage(): void {
     const block = this.propertiesBlock();
-    if (!block?.layout || block.type !== 'image' || block._id !== this.activeLayerId()) return;
-    this.changeLayout(block._id, normalizeStudioBlockLayout({ ...block.layout, x: 0, y: 0, width: 1, height: 1 }));
+    if (!block?.layout || block.type !== 'image') return;
+    const fullLayout = normalizeStudioBlockLayout({
+      ...block.layout,
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      zIndex: 0,
+    });
+    const optimisticSettings = { ...(block.settings ?? {}), overlay: true };
+    const persistSettings = studioImageSettingsForUpdate(block.settings, { overlay: true });
+    this.layoutsDirty = true;
+    this.blocks.update((b) =>
+      b.map((x) =>
+        x._id === block._id ? { ...x, layout: fullLayout, settings: optimisticSettings } : x,
+      ),
+    );
+    void firstValueFrom(
+      this.blocksService.update(block._id, {
+        layout: fullLayout,
+        settings: persistSettings,
+      }),
+    ).then((r) => {
+      if (r.ok) {
+        this.blocks.update((b) =>
+          b.map((x) => {
+            if (x._id !== r.data._id) return x;
+            return {
+              ...r.data,
+              layout: coerceStudioBlockLayout(r.data.layout ?? fullLayout),
+              settings: studioMergeBlockSettings(block.settings, r.data.settings, { overlay: true }),
+            };
+          }),
+        );
+        this.layoutsDirty = false;
+        this.refreshPreviewIfActive();
+      } else {
+        this.conflict();
+      }
+    });
   }
 
   prevPage(): void {
@@ -579,6 +834,18 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const zIndex = this.nextZIndex();
     const localUrl = URL.createObjectURL(file);
     const title = file.name.replace(/\.[^.]+$/, '') || `Фото ${layerNo}`;
+    let natural = { width: 800, height: 600 };
+    try {
+      natural = await studioReadImageNaturalSize(file);
+    } catch {
+      /* fallback dimensions */
+    }
+    const layout = studioImageLayoutFromNaturalSize(
+      natural.width,
+      natural.height,
+      zIndex,
+      this.currentPage(),
+    );
     const createRes = await firstValueFrom(
       this.blocksService.create(d._id, {
         expectedRevision: d.revision ?? 1,
@@ -586,8 +853,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         order: this.blocks().length,
         title,
         content: '',
-        layout: studioCenteredImageLayout(zIndex, this.currentPage()),
-        settings: { overlay: true },
+        layout,
+        settings: {
+          naturalWidth: natural.width,
+          naturalHeight: natural.height,
+        },
       }),
     );
     if (!createRes.ok) {
@@ -599,26 +869,71 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       ? {
           ...createRes.data,
           layout: coerceStudioBlockLayout(createRes.data.layout),
-          settings: { overlay: true, imageUrl: localUrl },
+          settings: {
+            ...(createRes.data.settings ?? {}),
+            naturalWidth: natural.width,
+            naturalHeight: natural.height,
+            imageUrl: localUrl,
+          },
         }
-      : { ...createRes.data, settings: { overlay: true, imageUrl: localUrl } };
+      : {
+          ...createRes.data,
+          settings: {
+            naturalWidth: natural.width,
+            naturalHeight: natural.height,
+            imageUrl: localUrl,
+          },
+        };
     this.blocks.update((b) => [...b, block]);
     this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
-    this.activateLayer(block._id);
-    await this.uploadImageToBlock(block._id, file, localUrl);
+    this.openLayerProperties(block._id);
+    await this.uploadImageToBlock(block._id, file, localUrl, natural);
   }
 
   private async uploadImageToBlock(
     blockId: string,
     file: File,
     existingLocalUrl?: string,
+    knownNatural?: { width: number; height: number },
   ): Promise<void> {
     const localUrl = existingLocalUrl ?? URL.createObjectURL(file);
+    let natural = knownNatural;
+    if (!natural) {
+      try {
+        natural = await studioReadImageNaturalSize(file);
+      } catch {
+        natural = undefined;
+      }
+    }
     if (!existingLocalUrl) {
       this.blocks.update((b) =>
         b.map((x) =>
           x._id === blockId
-            ? { ...x, settings: { ...(x.settings ?? {}), imageUrl: localUrl } }
+            ? {
+                ...x,
+                settings: {
+                  ...(x.settings ?? {}),
+                  imageUrl: localUrl,
+                  ...(natural
+                    ? { naturalWidth: natural.width, naturalHeight: natural.height }
+                    : {}),
+                },
+              }
+            : x,
+        ),
+      );
+    } else if (natural) {
+      this.blocks.update((b) =>
+        b.map((x) =>
+          x._id === blockId
+            ? {
+                ...x,
+                settings: {
+                  ...(x.settings ?? {}),
+                  naturalWidth: natural!.width,
+                  naturalHeight: natural!.height,
+                },
+              }
             : x,
         ),
       );
@@ -626,13 +941,40 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const uploadRes = await firstValueFrom(this.blocksService.uploadImage(blockId, file));
     URL.revokeObjectURL(localUrl);
     if (uploadRes.ok) {
+      const block = this.blocks().find((b) => b._id === blockId);
+      const settings = {
+        ...(block?.settings ?? {}),
+        imageUrl: uploadRes.data.url,
+        ...(natural ? { naturalWidth: natural.width, naturalHeight: natural.height } : {}),
+      };
+      if (block?.layout && natural) {
+        const defaultLayout = studioCenteredImageLayout(
+          block.layout.zIndex ?? 1,
+          block.layout.page ?? 1,
+        );
+        const isDefaultSmallBox =
+          Math.abs(block.layout.width - defaultLayout.width) < 0.001 &&
+          Math.abs((block.layout.height ?? 0) - (defaultLayout.height ?? 0)) < 0.001;
+        if (isDefaultSmallBox) {
+          this.changeLayout(
+            blockId,
+            studioImageLayoutFromNaturalSize(
+              natural.width,
+              natural.height,
+              block.layout.zIndex ?? 1,
+              block.layout.page ?? 1,
+            ),
+          );
+        }
+      }
       this.blocks.update((b) =>
-        b.map((x) =>
-          x._id === blockId
-            ? { ...x, settings: { ...(x.settings ?? {}), imageUrl: uploadRes.data.url } }
-            : x,
-        ),
+        b.map((x) => (x._id === blockId ? { ...x, settings } : x)),
       );
+      void firstValueFrom(this.blocksService.update(blockId, { settings })).then((r) => {
+        if (r.ok) {
+          this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        }
+      });
     } else {
       this.toast.error(extractErrorMessage(uploadRes.error));
     }
@@ -645,20 +987,26 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   changeLayout(id: string, layout: StudioBlockLayout): void {
     const normalized = normalizeStudioBlockLayout(layout);
+    this.layoutsDirty = true;
     this.blocks.update((b) => b.map((x) => (x._id === id ? { ...x, layout: normalized } : x)));
     this.schedule();
   }
 
   applyLayerZOrder(blockIdsTopToBottom: readonly string[]): void {
     const zMap = zIndexFromLayerOrder(blockIdsTopToBottom);
+    let changed = false;
     this.blocks.update((blocks) =>
       blocks.map((b) => {
         const zIndex = zMap.get(b._id);
         if (zIndex === undefined || !b.layout || b.layout.zIndex === zIndex) return b;
+        changed = true;
         return { ...b, layout: normalizeStudioBlockLayout({ ...b.layout, zIndex }) };
       }),
     );
-    this.schedule();
+    if (changed) {
+      this.layoutsDirty = true;
+      this.schedule();
+    }
   }
 
   patchBlockStyle(patch: Partial<StudioBlockStyle>): void {
@@ -671,6 +1019,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void firstValueFrom(this.blocksService.update(block._id, { style: patch })).then((r) => {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        this.refreshPreviewIfActive();
       } else {
         this.conflict();
       }
@@ -693,6 +1042,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void firstValueFrom(this.blocksService.update(blockId, { content })).then((r) => {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        this.refreshPreviewIfActive();
       } else {
         this.conflict();
       }
@@ -700,19 +1050,305 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   patchTableRows(rows: string[][]): void {
+    const block = this.activeTableBlock();
+    if (!block) return;
+    this.patchTableSettingsForBlock(block._id, { tableTemplateSampleRows: rows });
+  }
+
+  patchTableSettings(patch: Record<string, unknown>): void {
     const block = this.propertiesBlock();
     if (!block || block.type !== 'table' || block._id !== this.activeLayerId()) return;
-    const settings = { ...(block.settings ?? {}), tableTemplateSampleRows: rows };
+    this.patchTableSettingsForBlock(block._id, patch);
+  }
+
+  patchTableDisabledRows(indices: number[]): void {
+    const block = this.activeTableBlock();
+    if (!block) return;
+    this.patchTableSettingsForBlock(block._id, { tableDisabledRowIndices: indices });
+  }
+
+  private activeTableBlock(): StudioBlock | null {
+    const id = this.activeLayerId();
+    const block = id ? this.blocks().find((b) => b._id === id) : null;
+    return block?.type === 'table' ? block : null;
+  }
+
+  private patchTableSettingsForBlock(blockId: string, patch: Record<string, unknown>): void {
+    const block = this.blocks().find((b) => b._id === blockId);
+    if (!block || block.type !== 'table') return;
+    const settings = { ...(block.settings ?? {}), ...patch };
+    const title =
+      typeof patch['tableTemplateName'] === 'string' && patch['tableTemplateName'].trim()
+        ? String(patch['tableTemplateName']).trim()
+        : block.title;
     this.blocks.update((b) =>
-      b.map((x) => (x._id === block._id ? { ...x, settings } : x)),
+      b.map((x) => (x._id === block._id ? { ...x, settings, ...(title !== block.title ? { title } : {}) } : x)),
     );
-    void firstValueFrom(this.blocksService.update(block._id, { settings })).then((r) => {
+    void firstValueFrom(
+      this.blocksService.update(block._id, {
+        settings,
+        ...(title !== block.title ? { title } : {}),
+      }),
+    ).then((r) => {
       if (r.ok) {
         this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        this.refreshPreviewIfActive();
       } else {
         this.conflict();
       }
     });
+  }
+
+  openSaveTableTemplateDialog(): void {
+    const block = this.propertiesBlock();
+    if (!block || block.type !== 'table' || block.locked) return;
+    const draft = buildTableTemplatePayloadFromBlock(block, block.title?.trim() || 'Таблица');
+    const ref = this.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, {
+      data: {
+        mode: 'create',
+        template: {
+          _id: '',
+          name: draft.name,
+          sortOrder: draft.sortOrder,
+          columns: draft.columns,
+          sampleRows: draft.sampleRows,
+          isActive: true,
+        },
+        initialSampleRows: draft.sampleRows,
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (value) {
+        this.toast.success(`Вид таблицы «${value.name}» сохранён`);
+        this.patchTableSettings({
+          tableTemplateId: value._id,
+          tableTemplateName: value.name,
+          tableTemplateColumns: value.columns,
+          tableTemplateSampleRows: draft.sampleRows.map((row) => row.map((c) => String(c ?? ''))),
+        });
+      }
+    });
+  }
+
+  applyLibraryText(textBlock: TextBlock): void {
+    const block = this.propertiesBlock();
+    if (!block || block.type !== 'text' || block._id !== this.activeLayerId()) return;
+    this.applyBlockContent(block._id, textBlock.content ?? '');
+    if (textBlock.name?.trim()) {
+      this.patchBlockTitle(textBlock.name.trim());
+    }
+    this.toast.success(`Текст «${textBlock.name}» вставлен`);
+  }
+
+  openSaveTextBlockDialog(): void {
+    const block = this.propertiesBlock();
+    if (!block || block.type !== 'text' || block.locked) return;
+    const defaultName = block.title?.trim() || 'Текст';
+    const ref = this.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, {
+      data: {
+        mode: 'create',
+        textBlock: {
+          _id: '',
+          name: defaultName,
+          slug: studioTextBlockSlug(defaultName),
+          content: block.content ?? '',
+          sortOrder: 0,
+          isActive: true,
+        },
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (value) {
+        this.toast.success(`Текст «${value.name}» сохранён в библиотеку`);
+      }
+    });
+  }
+
+  onCounterpartyChange(counterpartyId: string): void {
+    const doc = this.document();
+    if (!doc) return;
+    const nextContext = { ...(doc.context ?? {}) };
+    if (counterpartyId) nextContext['counterpartyId'] = counterpartyId;
+    else delete nextContext['counterpartyId'];
+    this.patchDocumentContext(nextContext);
+  }
+
+  onQuotationChange(quotationId: string): void {
+    this.patchContextField('quotationId', quotationId);
+  }
+
+  onOrderChange(orderId: string): void {
+    this.patchContextField('orderId', orderId);
+  }
+
+  onDocTypeChange(docTypeId: string): void {
+    const doc = this.document();
+    if (!doc) return;
+    this.docTypeSaving.set(true);
+    void firstValueFrom(
+      this.documents.update(doc._id, {
+        expectedRevision: doc.revision ?? 1,
+        docTypeId: docTypeId || undefined,
+      }),
+    ).then((r) => {
+      this.docTypeSaving.set(false);
+      if (r.ok) {
+        this.document.set(r.data);
+      } else {
+        this.conflict();
+      }
+    });
+  }
+
+  openSaveAsTemplateDialog(): void {
+    const doc = this.document();
+    if (!doc || this.templateSaving()) return;
+    if (!this.docTypeId()) {
+      this.toast.error('Назначьте тип документа — без него шаблон не сохранить');
+      return;
+    }
+    const ref = this.dialog.open<StudioSaveAsTemplateResult | undefined>(StudioSaveAsTemplateDialogComponent, {
+      data: { defaultName: doc.name || 'Шаблон' },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (!value) return;
+      this.templateSaving.set(true);
+      void firstValueFrom(
+        this.documents.saveAsTemplate(doc._id, {
+          name: value.name,
+          keepDataBindings: value.keepDataBindings,
+        }),
+      ).then((r) => {
+        this.templateSaving.set(false);
+        if (r.ok) {
+          this.toast.success(`Шаблон «${r.data.name}» сохранён`);
+        } else {
+          this.toast.error(extractErrorMessage(r.error));
+        }
+      });
+    });
+  }
+
+  onDownloadPdf(): void {
+    const doc = this.document();
+    if (!doc || this.pdfLoading()) return;
+    this.pdfLoading.set(true);
+    void this.flushLayouts()
+      .then(() => firstValueFrom(this.documents.downloadPdf(doc._id)))
+      .then((blob) => this.consumePdfBlob(doc, blob))
+      .catch((err) => {
+        this.pdfLoading.set(false);
+        this.toast.error(extractErrorMessage(err as Parameters<typeof extractErrorMessage>[0]));
+      });
+  }
+
+  onFinalize(): void {
+    const doc = this.document();
+    if (!doc || this.finalizing() || doc.status !== 'draft') return;
+    if (!window.confirm('Отправить документ в архив? Редактирование будет закрыто.')) return;
+    this.finalizing.set(true);
+    void this.flushLayouts()
+      .then(() => firstValueFrom(this.documents.finalize(doc._id)))
+      .then((r) => {
+        this.finalizing.set(false);
+        if (r.ok) {
+          this.document.set(r.data.studioDocument);
+          this.refreshPreviewIfActive();
+          this.toast.success('Документ в архиве');
+        } else {
+          this.toast.error(extractErrorMessage(r.error));
+        }
+      })
+      .catch(() => {
+        this.finalizing.set(false);
+      });
+  }
+
+  private async consumePdfBlob(doc: StudioDocument, blob: Blob): Promise<void> {
+    try {
+      if (!blob.size) {
+        throw new Error('Сервер вернул пустой PDF');
+      }
+      if (blob.type && !blob.type.includes('pdf')) {
+        const text = await blob.text();
+        let message = text;
+        try {
+          const parsed = JSON.parse(text) as { message?: string; error?: string };
+          message = parsed.message ?? parsed.error ?? text;
+        } catch {
+          /* plain text */
+        }
+        throw new Error(message.trim() || 'Не удалось сформировать PDF');
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${doc.name || 'document'}.pdf`;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      this.toast.success('PDF скачан');
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : extractErrorMessage(err as Parameters<typeof extractErrorMessage>[0]);
+      this.toast.error(msg);
+    } finally {
+      this.pdfLoading.set(false);
+    }
+  }
+
+  private patchContextField(field: 'quotationId' | 'orderId', value: string): void {
+    const doc = this.document();
+    if (!doc) return;
+    const nextContext = { ...(doc.context ?? {}) };
+    if (value) nextContext[field] = value;
+    else delete nextContext[field];
+    this.patchDocumentContext(nextContext);
+  }
+
+  private patchDocumentContext(context: Record<string, unknown>): void {
+    const doc = this.document();
+    if (!doc) return;
+    this.contextSaving.set(true);
+    this.contextSaveError.set(null);
+    void firstValueFrom(
+      this.documents.update(doc._id, {
+        expectedRevision: doc.revision ?? 1,
+        context,
+      }),
+    ).then((r) => {
+      this.contextSaving.set(false);
+      if (r.ok) {
+        this.document.set(r.data);
+        this.refreshPreviewIfActive();
+      } else {
+        this.contextSaveError.set(extractErrorMessage(r.error));
+        this.conflict();
+      }
+    });
+  }
+
+  private loadIssuerOrg(organizationId: string | undefined): void {
+    if (!organizationId) {
+      this.issuerOrgName.set('');
+      return;
+    }
+    void firstValueFrom(this.orgsApi.getById(organizationId)).then((res) => {
+      this.issuerOrgName.set(res.ok ? res.data.name : organizationId);
+    });
+  }
+
+  private refreshPreviewIfActive(): void {
+    if (this.viewMode() === 'preview') {
+      void this.flushLayouts().then(() => this.fetchPreview());
+    }
   }
 
   patchBlockTitle(title: string): void {
@@ -728,8 +1364,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  deleteActiveLayer(): void {
-    const id = this.activeLayerId();
+  deleteLayerById(id: string | null | undefined): void {
     const doc = this.document();
     if (!id || !doc) return;
     const block = this.blocks().find((b) => b._id === id);
@@ -737,15 +1372,29 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.toast.error('Слой заблокирован');
       return;
     }
-    void firstValueFrom(this.blocksService.remove(id)).then((r) => {
-      if (!r.ok) {
-        this.conflict();
-        return;
-      }
-      this.blocks.update((b) => b.filter((x) => x._id !== id));
-      this.selectedId.set(null);
-      this.syncActiveLayerForPage();
-      this.toast.success('Слой удалён');
+    const name = block?.title?.trim() || block?.content?.trim()?.slice(0, 32) || 'слой';
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: `Удалить «${name}»?`,
+        confirmLabel: 'Удалить',
+        cancelLabel: 'Отмена',
+        variant: 'destructive',
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (!confirmed) return;
+      void firstValueFrom(this.blocksService.remove(id)).then((r) => {
+        if (!r.ok) {
+          this.conflict();
+          return;
+        }
+        this.blocks.update((b) => b.filter((x) => x._id !== id));
+        this.selectedId.set(null);
+        this.syncActiveLayerForPage();
+        this.refreshPreviewIfActive();
+        this.toast.success('Слой удалён');
+      });
     });
   }
 
@@ -780,6 +1429,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         return;
       }
       this.document.set(r.data);
+      this.refreshPreviewIfActive();
       this.currentPage.set(r.data.manualPageCount ?? nextCount);
       this.toast.success(`Страниц: ${r.data.manualPageCount ?? nextCount}`);
     });
@@ -805,17 +1455,30 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   toggleLock(block: StudioBlock): void {
-    this.blocks.update((b) => b.map((x) => (x._id === block._id ? { ...x, locked: !x.locked } : x)));
-    this.schedule();
+    const locked = !block.locked;
+    this.blocks.update((b) => b.map((x) => (x._id === block._id ? { ...x, locked } : x)));
+    void firstValueFrom(this.blocksService.update(block._id, { locked })).then((r) => {
+      if (r.ok) {
+        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+      } else {
+        this.conflict();
+      }
+    });
   }
 
   toggleVisible(block: StudioBlock): void {
+    const isActive = block.isActive === false;
     this.blocks.update((b) =>
-      b.map((x) =>
-        x._id === block._id ? { ...x, isActive: x.isActive === false ? true : false } : x,
-      ),
+      b.map((x) => (x._id === block._id ? { ...x, isActive } : x)),
     );
-    this.schedule();
+    void firstValueFrom(this.blocksService.update(block._id, { isActive })).then((r) => {
+      if (r.ok) {
+        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        this.refreshPreviewIfActive();
+      } else {
+        this.conflict();
+      }
+    });
   }
 
   private pickDefaultLayer(blocks: readonly StudioBlock[]): void {
@@ -847,22 +1510,49 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   private schedule(): void {
     if (this.timer) clearTimeout(this.timer);
-    this.timer = window.setTimeout(() => this.saveLayouts(), 400);
+    this.timer = window.setTimeout(() => {
+      this.timer = undefined;
+      this.layoutSavePromise = this.saveLayouts();
+      void this.layoutSavePromise.finally(() => {
+        if (this.layoutSavePromise) this.layoutSavePromise = null;
+      });
+    }, 400);
   }
 
-  private saveLayouts(): void {
+  /** Persist pending layout debounce before preview/server output. */
+  private flushLayouts(): Promise<void> {
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = undefined;
+    }
+    if (this.layoutSavePromise) {
+      return this.layoutSavePromise;
+    }
+    if (!this.layoutsDirty) {
+      return Promise.resolve();
+    }
+    this.layoutSavePromise = this.saveLayouts();
+    const pending = this.layoutSavePromise;
+    return pending.finally(() => {
+      if (this.layoutSavePromise === pending) this.layoutSavePromise = null;
+    });
+  }
+
+  private saveLayouts(): Promise<void> {
     const d = this.document();
-    if (!d) return;
+    if (!d) return Promise.resolve();
     const updates = this.blocks()
       .filter((b): b is StudioBlock & { layout: StudioBlockLayout } => Boolean(b.layout))
       .map((b) => ({
         blockId: b._id,
         layout: normalizeStudioBlockLayout(b.layout),
       }));
-    void firstValueFrom(
+    if (updates.length === 0) return Promise.resolve();
+    return firstValueFrom(
       this.blocksService.updateLayouts(d._id, { expectedRevision: d.revision ?? 1, updates }),
     ).then((r) => {
       if (r.ok) {
+        this.layoutsDirty = false;
         const normalized = r.data.map((block) =>
           block.layout ? { ...block, layout: coerceStudioBlockLayout(block.layout) } : block,
         );

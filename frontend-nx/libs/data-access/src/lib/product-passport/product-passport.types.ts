@@ -1,4 +1,15 @@
 /** Mirrors `backend/src/modules/product-passport/product-passport.schema.ts`. */
+export interface CreateProductPassportPayload {
+  readonly passportNumber: string;
+  readonly name?: string;
+  readonly article?: string;
+  readonly date?: string;
+  readonly category?: string;
+  readonly description?: string;
+}
+
+export type UpdateProductPassportPayload = Partial<CreateProductPassportPayload>;
+
 export interface ProductPassport {
   readonly _id: string;
   readonly productId: string;

@@ -6,10 +6,11 @@
 
 | Папка | Назначение |
 |-------|------------|
-| **`_active/`** | 0–1 claim (сейчас: TZ-NX-DOCPLAT-01) |
+| **`_active/`** | 0–1 claim (сейчас: пусто) |
 | **`_archive/`** | DONE, specs-dup-root, prompts-spent |
 | **`_backlog/`** | Незакрытые TZ (см. `QUEUE.md`) |
 | **`_park/`** | Отложено; **не трогать** без PO |
+| **`_prompts/`** | Живые переиспользуемые промпты (не разовые, не spent) — напр. `PROMPT-CURSOR-TZ-ORDERING.md` |
 
 ## Файлы в корне (зачем не «только папки»)
 
@@ -34,9 +35,10 @@ Spent drain: `_archive/2026-08/prompts-spent/PROMPT-FREEBUFF-TASKS-DRAIN.md`
 [`docs/architecture/nx-doc-studio.md`](../docs/architecture/nx-doc-studio.md) — SoT
 (Cursor), порядок срезов S0–S8 и дельта backend D1–D4 там.
 
-Активные волны:
-- `TZ-NX-DOCSTUDIO-S0-FOUNDATION` — реестры «Тексты» + «Виды таблиц» (Freebuff #1)
-- `TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER` — порядок в `tasks/` + съёмка legacy (Freebuff #2)
+Активных волн нет: `_active/` пуст, S0/S2/S3 (text blocks + shell wire) и
+`TZ-NX-REGISTRY-CRUD-UNIFY` closeout — все закрыты и в `_archive/2026-08/`
+(специфика в `QUEUE-LIVE.md`). Следующий срез — по явному указанию PO
+(PO-CANON п.7): агент сам не предлагает.
 
 Backlog по темам: [`_backlog/nx/`](./_backlog/nx/) · [`_backlog/doc-studio/`](./_backlog/doc-studio/) ·
 [`_backlog/ux-hygiene/`](./_backlog/ux-hygiene/) · [`_backlog/ops/`](./_backlog/ops/) ·

@@ -149,6 +149,7 @@ describe('registry action matrix — click effects (TZ-NX-REGISTRIES-FULL-CLOSEO
       router,
       materialHost,
       catalogHost,
+      { openEdit: jest.fn() },
     );
     const definition = catalog.find((d) => d.key === key)!;
     fixture = TestBed.createComponent(RegistryDetailPanelComponent);

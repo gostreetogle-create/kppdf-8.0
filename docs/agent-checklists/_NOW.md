@@ -1,22 +1,26 @@
-﻿# NOW - Оперативная доска агента
+﻿# NOW - активная очередь агента
 
-updated_at: 2026-08-30T20:21:01+03:00
+updated_at: 2026-08-30T22:05:00+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 20:21).
+**ACTIVE TZ:** _(none — S7 wave complete, post-S7 PARK cleared for docType picker)_
 
-**Phase A закрыта (A1–A6).** Phase B (Студия) уже в работе — отдельная
-сессия (Cursor) вживую строила S4/S5/S6-территорию (реальный редактор
-таблиц, рельс Элементы/Слои/Свойства) параллельно этому чату; PO подтвердил
-и попросил Claude принять и доделать. См.
-`TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX` в DONE — 2 реальных бага
-найдены и починены, всё закоммичено. Остаётся открытым (не в этом TZ):
-конфигурация колонок таблицы, save-as-template UI, PDF/Archive в ribbon,
-image data-binding/тайлинг фона (нужно для паспорта изделия — см. отдельный
-анализ в диалоге с PO 2026-08-30).
+S7 wave COMPLETE. Doc type picker shipped; save-as-template unblocked after type selection.
 
 ## DONE this slice
+
+- TZ-NX-DOCSTUDIO-S7-DOCTYPE-PICKER — archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-DOCTYPE-PICKER.done.md`; gates data-access tsc / nx test studio / nx build exit 0; save-as-template unblocked when `docTypeId` set
+
+- TZ-NX-DOCSTUDIO-S7-PASSPORT-BG (S7-6) — archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-PASSPORT-BG.done.md`; gates tsc / nx test studio / nx build exit 0
+- TZ-NX-DOCSTUDIO-S7-PASSPORT-BG (S7-6) ? archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-PASSPORT-BG.done.md`; gates tsc / nx test studio / nx build exit 0
+
+- TZ-NX-DOCSTUDIO-S7-RIBBON-EXPORT (S7-5) - archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-RIBBON-EXPORT.done.md`; gates tsc / nx test studio / nx build exit 0; live smoke SKIP (login 401)
+
+
+- TZ-NX-DOCSTUDIO-S7-TABLE-POLISH (S7-4) - archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-TABLE-POLISH.done.md`; gates tsc / nx test / nx build exit 0
+
+- TZ-NX-DOCSTUDIO-S7-RAILS-DATA (S7-1) — archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S7-RAILS-DATA.done.md`; gates tsc / nx test studio / nx build exit 0
 
 - `TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX` — принял и закрыл
   in-progress работу Cursor по Студии (реальный табличный редактор, рельс
@@ -114,3 +118,4 @@ image data-binding/тайлинг фона (нужно для паспорта �
 - Дефекты legacy из `docs/agent-checklists/evidence/TZ-NX-DOCPLAT-01/defects.md` (D1–D9) — ждут решения PO (каждая → отдельная TZ)
 
 Program: `tasks/_backlog/doc-studio/WAVE-DOC-STUDIO.md` · waves 0–19 + 2001–2004 + UI-301/302 **DONE** (committed) · карта модуля: `docs/architecture/nx-doc-studio.md`
+

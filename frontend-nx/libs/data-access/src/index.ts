@@ -8,3 +8,4 @@ export * from './lib/organization';
 export * from './lib/product-passport';
 export * from './lib/doc-studio';
 export * from './lib/submit-guard';
+export * from './lib/sales';

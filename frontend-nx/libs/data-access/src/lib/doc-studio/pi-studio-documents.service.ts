@@ -47,4 +47,34 @@ export class PiStudioDocumentsService {
       {},
     );
   }
+
+  saveAsTemplate(
+    id: string,
+    payload: { name: string; keepDataBindings?: boolean },
+  ): Observable<SilentResult<{ _id: string; name: string }>> {
+    return silentPost<{ _id: string; name: string }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/save-as-template`,
+      payload,
+    );
+  }
+
+  duplicate(id: string): Observable<SilentResult<StudioDocument>> {
+    return silentPost<StudioDocument>(this.http, `${this.baseUrl}/studio-documents/${id}/duplicate`, {});
+  }
+
+  finalize(
+    id: string,
+  ): Observable<SilentResult<{ generatedDocument: Record<string, unknown>; studioDocument: StudioDocument }>> {
+    return silentPost<{ generatedDocument: Record<string, unknown>; studioDocument: StudioDocument }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/finalize`,
+      {},
+    );
+  }
+
+  /** Raw blob, not the SilentResult<T> convention -- a PDF binary doesn't fit it. Caller handles errors. */
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.post(`${this.baseUrl}/studio-documents/${id}/pdf`, {}, { responseType: 'blob' });
+  }
 }

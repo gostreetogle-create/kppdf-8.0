@@ -34,7 +34,7 @@
 
 - **Editorial form** — Paper & Ink дизайн (minimal, centered card)
 - **Password visibility toggle** — Eye/EyeOff icons
-- **Dev helper** — «Заполнить демо-данные» (admin / AdminPass123), только в dev mode
+- **Dev helper** — «Заполнить демо-данные» (admin / admin123), только в dev mode
 - **publicOnlyGuard** — already-authed users redirect to /
 - **Guard** — `authGuard` не нужен (public page)
 - **No httpResource** — использует `AuthService.login()` (async/await, не Observable)

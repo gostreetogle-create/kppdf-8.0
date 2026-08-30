@@ -148,6 +148,54 @@ export function tableColumnsFromBlock(
   return settings?.tableTemplateColumns ?? [];
 }
 
+/** Manual table rows stored on the block until baked into document.dataSets. */
+export function sampleRowsFromBlock(block: TemplateBlockDocument): string[][] {
+  const settings = block.settings as
+    | {
+        tableTemplateSampleRows?: unknown;
+        tableTemplateDisabledRows?: unknown;
+      }
+    | undefined;
+  const rawRows = settings?.tableTemplateSampleRows;
+  if (!Array.isArray(rawRows)) return [];
+  const disabled = new Set(
+    Array.isArray(settings?.tableTemplateDisabledRows)
+      ? settings!.tableTemplateDisabledRows!.filter(
+          (value): value is number => typeof value === 'number' && Number.isFinite(value),
+        )
+      : [],
+  );
+  return rawRows
+    .map((row, index) => (disabled.has(index) ? null : row))
+    .filter((row): row is unknown[] => Array.isArray(row))
+    .map((row) => row.map((cell) => String(cell ?? '')));
+}
+
+/** Ensure each table block has a dataSet entry (preview/PDF when dataSets[] is empty). */
+export function ensureTableDataSetsFromBlocks(
+  blocks: TemplateBlockDocument[],
+  entries: DataSetEntry[],
+): DataSetEntry[] {
+  const merged = [...entries];
+  const keys = new Set(
+    merged
+      .filter((entry) => typeof entry.key === 'string')
+      .map((entry) => String(entry.key)),
+  );
+  for (const block of blocks) {
+    if (block.type !== 'table') continue;
+    const key = tableDataSetKey(block);
+    if (keys.has(key)) continue;
+    merged.push({
+      key,
+      source: { type: 'manual' },
+      rows: sampleRowsFromBlock(block),
+    });
+    keys.add(key);
+  }
+  return merged;
+}
+
 export function injectTableContent(
   blocks: TemplateBlockDocument[],
   dataSets: DataSetEntry[],
@@ -191,7 +239,10 @@ export class StudioDataResolverService {
   ): Promise<Record<string, unknown>[]> {
     const context = doc.context ?? {};
     const orgId = refId(doc.organizationId);
-    const entries = [...(doc.dataSets ?? [])] as DataSetEntry[];
+    const entries = ensureTableDataSetsFromBlocks(
+      blocks,
+      [...(doc.dataSets ?? [])] as DataSetEntry[],
+    );
     const columnsByKey = new Map(
       blocks
         .filter((block) => block.type === 'table')

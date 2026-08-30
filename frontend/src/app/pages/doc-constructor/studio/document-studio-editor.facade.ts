@@ -519,8 +519,20 @@ export class DocumentStudioEditorFacade {
 
   applyImageFullPage(block: TemplateBlock): void {
     if (!block._id || !block.layout || block.locked) return;
-    const layout = normalizeBlockLayout({ ...block.layout, x: 0, y: 0, width: 1, height: 1 });
-    this.blocksState.onLayoutChanges([{ block, layout }]);
+    const settings = {
+      ...(block.settings as Record<string, unknown> | undefined),
+      overlay: true,
+    };
+    const layout = normalizeBlockLayout({
+      ...block.layout,
+      x: 0,
+      y: 0,
+      width: 1,
+      height: 1,
+      zIndex: 0,
+    });
+    this.blocksState.patchBlock(block._id, { settings });
+    this.blocksState.onLayoutChanges([{ block: { ...block, settings }, layout }]);
   }
 
   sendImageToBack(block: TemplateBlock): void {

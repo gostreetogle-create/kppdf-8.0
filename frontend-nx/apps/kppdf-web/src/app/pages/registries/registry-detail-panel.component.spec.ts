@@ -496,6 +496,7 @@ describe('RegistryDetailPanelComponent — real catalog smoke (TZ-NX-REGISTRY-UN
       router,
       mockDialogHost(),
       mockCatalogDialogHost(),
+      { openEdit: jest.fn() },
     );
     const definition = catalog.find((d) => d.key === key)!;
     fixture = TestBed.createComponent(RegistryDetailPanelComponent);

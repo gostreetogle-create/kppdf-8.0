@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, Injector, OnInit, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiStudioDocumentsService, type StudioDocument } from '@kppdf/data-access';
+import { pickResumeStudioDocument, rememberStudioDocument } from './studio-session';
 
 @Component({
   selector: 'pi-studio-list-page',
@@ -27,7 +28,7 @@ import { PiStudioDocumentsService, type StudioDocument } from '@kppdf/data-acces
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
               <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
                 <div class="font-medium">{{ document.name }}</div>
-                <div class="text-xs text-muted-foreground">{{ document.status }} · {{ document.updatedAt ?? '—' }}</div>
+                <div class="text-xs text-muted-foreground">{{ document.status }} · {{ formatUpdatedAt(document.updatedAt) }}</div>
               </button>
               <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" (click)="remove(document)">×</button>
             </div>
@@ -40,6 +41,7 @@ import { PiStudioDocumentsService, type StudioDocument } from '@kppdf/data-acces
 export class StudioListPage implements OnInit {
   private readonly service = inject(PiStudioDocumentsService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(PiDialogService);
   private readonly toast = inject(PiToastService);
   private readonly injector = inject(Injector);
@@ -52,16 +54,47 @@ export class StudioListPage implements OnInit {
     this.status.set('loading');
     void firstValueFrom(this.service.list()).then((result) => {
       if (!result.ok) { this.error.set(String(result.error)); this.status.set('error'); return; }
-      this.documents.set(result.data); this.status.set('success');
+      const rows = result.data;
+      this.documents.set(rows);
+
+      const forceList = this.route.snapshot.queryParamMap.get('list') === '1';
+      const resume = !forceList ? pickResumeStudioDocument(rows) : null;
+      if (resume) {
+        rememberStudioDocument(resume._id);
+        void this.router.navigate(['/studio', resume._id]);
+        return;
+      }
+
+      this.status.set('success');
     });
   }
   create(): void {
-    void firstValueFrom(this.service.create({ name: 'Новый документ', orientation: 'portrait', pageSize: 'A4' })).then((result) => {
-      if (result.ok) void this.router.navigate(['/studio', result.data._id]);
-      else this.toast.error(String(result.error));
+    const date = new Date().toLocaleDateString('ru-RU');
+    const sameDay = this.documents().filter((d) => d.name.startsWith(`Документ ${date}`)).length;
+    const name = sameDay === 0 ? `Документ ${date}` : `Документ ${date} (${sameDay + 1})`;
+    void firstValueFrom(this.service.create({ name, orientation: 'portrait', pageSize: 'A4' })).then((result) => {
+      if (result.ok) {
+        rememberStudioDocument(result.data._id);
+        void this.router.navigate(['/studio', result.data._id]);
+      } else this.toast.error(String(result.error));
     });
   }
-  open(document: StudioDocument): void { void this.router.navigate(['/studio', document._id]); }
+  protected formatUpdatedAt(value?: string): string {
+    if (!value) return '—';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+  open(document: StudioDocument): void {
+    rememberStudioDocument(document._id);
+    void this.router.navigate(['/studio', document._id]);
+  }
   remove(document: StudioDocument): void {
     const ref = this.dialog.open<boolean>(AlertDialogComponent, { data: { title: `Удалить «${document.name}»?`, confirmLabel: 'Удалить', cancelLabel: 'Отмена', variant: 'destructive' }, width: 'sm' });
     onDialogCloseOnce(ref, this.injector, (ok) => {

@@ -19,6 +19,10 @@ function mockCatalogDialogHost(): CatalogRegistryDialogHost {
   };
 }
 
+function mockUnitsDialogHost() {
+  return { openEdit: jest.fn() };
+}
+
 function buildCatalog() {
   const router = { config: [{ path: 'constructor' }], navigate: jest.fn() } as unknown as Router;
   return buildRegistriesCatalogDefault(
@@ -38,6 +42,7 @@ function buildCatalog() {
     router,
     mockDialogHost(),
     mockCatalogDialogHost(),
+    mockUnitsDialogHost(),
     { textBlocks: {} as never, categories: {} as never, templates: {} as never, dataSources: {} as never } as never,
   );
 }
@@ -75,9 +80,9 @@ describe('registry filters + pagination mode (TZ-NX-REGISTRIES-FILTERS-PAGINATIO
     expect(def.paginationMode).toBe('client');
   });
 
-  it('products: search + status, server pagination', () => {
+  it('products: search + status + isComplex, server pagination', () => {
     const def = catalog.find((r) => r.key === 'products')!;
-    expect(filterKeys(def.filters)).toEqual(['search', 'status']);
+    expect(filterKeys(def.filters)).toEqual(['search', 'status', 'isComplex']);
     expect(def.paginationMode).toBe('server');
   });
 

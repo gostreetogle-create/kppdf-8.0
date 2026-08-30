@@ -87,9 +87,12 @@ export class UnitService {
         `System unit "${key}" cannot be deleted — deactivate it instead`,
       );
     }
-    await this.model
-      .updateOne({ _id: doc._id }, { $set: { deletedAt: new Date() } })
-      .exec();
-    this.logger.log(`Unit soft-deleted: ${key}`);
+    // Schema has no `deletedAt` and opts out of the soft-delete plugin
+    // (`softDelete: false`) — a soft-delete `$set` was a silent no-op
+    // (Mongoose strict strips the unknown path), leaving the row behind
+    // and blocking the unique `key` index. Hard delete matches the
+    // collection (same fix as storage-item.service.ts for the same bug).
+    await this.model.deleteOne({ _id: doc._id }).exec();
+    this.logger.log(`Unit deleted: ${key}`);
   }
 }

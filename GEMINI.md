@@ -35,6 +35,7 @@
 - UI: Paper & Ink, OKLCH, hairline borders, `pi-focus-ring`, WCAG.
 - Package manager: только `pnpm`.
 - Tests: Jest; UI verification: Playwright, если сервер доступен.
+- **Кодировка:** все исходники UTF-8 без BOM; кириллица в `.ts` только как нормальный Unicode — не CP1251-mojibake, не PowerShell `>` redirect. См. `docs/ENCODING.md`.
 
 Frontend: канон `docs/ANGULAR-GUIDE.md`: Angular 20 standalone, explicit `OnPush`,
 `inject()`, Signals + RxJS по границе, container/presentational split только по

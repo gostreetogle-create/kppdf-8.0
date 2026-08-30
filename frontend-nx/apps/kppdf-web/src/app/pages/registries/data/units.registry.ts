@@ -61,7 +61,9 @@ export function createUnitsRegistryDefinition(deps: UnitsRegistryDeps): Registry
   };
 }
 
-export function createUnitsRegistry(unitsService: PiUnitsService, dialogHost = createUnitsDialogHost(unitsService)) { return defineRegistry(createUnitsRegistryDefinition({ unitsService, dialogHost })); }
+export function createUnitsRegistry(unitsService: PiUnitsService, dialogHost: UnitsRegistryDeps['dialogHost']) {
+  return defineRegistry(createUnitsRegistryDefinition({ unitsService, dialogHost }));
+}
 
 async function patchIsActive(unitsService: PiUnitsService, row: Unit, isActive: boolean, ctx: { reload: () => void; notify: (message: string, tone?: 'success' | 'error') => void }): Promise<void> {
   const result = await firstValueFrom(unitsService.update(row.key, { isActive }));

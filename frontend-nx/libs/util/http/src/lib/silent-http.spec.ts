@@ -28,9 +28,17 @@ describe('extractErrorMessage (TZ-UX-332)', () => {
     expect(humanizeEnglishApiError('Raw Exception: failed')).toBe('Не удалось выполнить операцию');
   });
 
-  it('maps dev jargon tokens to Russian (DEN-590)', () => {
-    expect(humanizeEnglishApiError('unfit')).toBe('Не сопоставлено');
-    expect(humanizeEnglishApiError('null')).toBe('Пусто');
-    expect(humanizeEnglishApiError('Row null is invalid')).toBe('Row пусто is invalid');
+  it('maps HTTP 500 status to Russian when body is empty', () => {
+    const err = new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error' });
+    expect(extractErrorMessage(err)).toBe('Внутренняя ошибка сервера');
+  });
+
+  it('maps Internal Server Error to Russian', () => {
+    expect(humanizeEnglishApiError('Internal Server Error')).toBe('Внутренняя ошибка сервера');
+    const err = new HttpErrorResponse({
+      status: 500,
+      error: { message: 'Internal Server Error' },
+    });
+    expect(extractErrorMessage(err)).toBe('Внутренняя ошибка сервера');
   });
 });

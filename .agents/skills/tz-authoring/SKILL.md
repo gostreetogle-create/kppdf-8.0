@@ -56,6 +56,17 @@ description: >-
 
 - >7 шагов → несколько TZ с DEPENDENCIES
 - >1 Layer-3 hot file в конфликте с параллелью → отдельные TZ или DEFER note
+- **frontend-nx:** TZ >~1ч агента → серия с зелёным `nx build kppdf-web` после каждого куска
+
+## Build-integrity (frontend-nx, обязательно)
+
+SoT: [`docs/TZ-NX-BUILD-INTEGRITY.md`](../../docs/TZ-NX-BUILD-INTEGRITY.md). Кратко:
+
+1. Любой TZ с `apps/kppdf-web/src/**` → в шапке `IMPLICIT CONFLICT: nx build kppdf-web`.
+2. Gates: `cd frontend-nx && pnpm exec nx build kppdf-web` — **до** claim и **последним** перед archive.
+3. Не выдавать параллельно два TZ на `kppdf-web/src/**` (разные route ≠ разный build).
+4. PO «можно запускать?» → только если `tasks/_active/` пуст и build green.
+5. Копировать блок §5 из TZ-NX-BUILD-INTEGRITY в каждый новый TZ и PROMPT-FREEBUFF-*.
 
 ## Куда класть
 

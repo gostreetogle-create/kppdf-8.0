@@ -63,6 +63,19 @@ import {
         </div>
       }
 
+      <div class="canvas-passport-bg" aria-hidden="true">
+        @for (block of passportBackgroundBlocks(); track blockKey(block)) {
+          <app-block-renderer
+            [block]="block"
+            [selected]="false"
+            [multiSelected]="false"
+            [groupBlocks]="[]"
+            [allBlocks]="blocks()"
+            [preview]="true"
+          />
+        }
+      </div>
+
       <div
         cdkDropList
         [id]="CANVAS_DROPLIST_ID"
@@ -322,6 +335,18 @@ import {
         flex-direction: column;
       }
 
+      .canvas-passport-bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .canvas-passport-bg > app-block-renderer {
+        pointer-events: none;
+      }
+
       .canvas-bg {
         flex: 1;
         background-size: contain;
@@ -345,8 +370,8 @@ import {
         align-items: center;
         justify-content: center;
         border: 1px dashed var(--color-rule);
-        margin: 16px;
-        padding: 48px 24px;
+        margin: var(--space-4);
+        padding: var(--space-12) var(--space-6);
         text-align: center;
         border-radius: 4px;
       }
@@ -355,7 +380,7 @@ import {
         font-size: 14px;
         font-weight: 600;
         color: var(--color-muted);
-        margin: 0 0 4px;
+        margin: 0 0 var(--space-1);
       }
 
       .canvas-dropzone__empty-hint {
@@ -369,7 +394,7 @@ import {
       .canvas-page-number {
         position: relative;
         z-index: 2;
-        padding: 4px 16px 12px;
+        padding: var(--space-1) var(--space-4) var(--space-3);
         font-size: 11px;
         color: var(--color-muted);
         text-align: right;
@@ -428,7 +453,7 @@ import {
         display: flex;
         align-items: center;
         gap: 2px;
-        padding: 4px 6px;
+        padding: var(--space-1) var(--space-2);
         background: var(--color-paper);
         border: 1px solid var(--color-rule);
         border-radius: 4px;
@@ -466,7 +491,7 @@ import {
       .canvas-align-toolbar__btn--labeled {
         width: auto;
         min-width: 26px;
-        padding: 0 6px;
+        padding: 0 var(--space-2);
         gap: 4px;
       }
 
@@ -481,7 +506,7 @@ import {
       .canvas-align-toolbar__sep {
         width: 1px;
         height: 16px;
-        margin: 0 3px;
+        margin: 0 var(--space-1);
         background: var(--color-rule);
       }
 
@@ -704,6 +729,13 @@ export class BuilderCanvasComponent {
     const h = landscape ? w / 1.414 : w * 1.414;
     return { width: w, height: h };
   });
+
+  /** Studio passport / letterhead image behind all positioned blocks. */
+  protected isPassportBackgroundBlock(block: TemplateBlock): boolean {
+    if (block.type !== 'image' || !block.layout) return false;
+    const settings = block.settings as Record<string, unknown> | undefined;
+    return settings?.['overlay'] === true;
+  }
 
   /** Check if a block is in overlay mode. */
   protected isOverlayBlock(block: TemplateBlock): boolean {
@@ -971,6 +1003,11 @@ export class BuilderCanvasComponent {
     if (changes.length > 0) this.layoutChanges.emit(changes);
   }
 
+  /** Positioned image blocks flagged overlay render under doc content. */
+  protected readonly passportBackgroundBlocks = computed(() =>
+    this.blocks().filter((b) => this.isPassportBackgroundBlock(b)),
+  );
+
   /** Legacy pixel-positioned image blocks stay in the overlay layer. */
   protected readonly overlayBlocks = computed(() =>
     this.blocks().filter((b) => !b.layout && this.isOverlayBlock(b)),
@@ -982,7 +1019,9 @@ export class BuilderCanvasComponent {
   });
 
   /** Canonical positioned blocks render in the paper-level layout layer. */
-  protected readonly positionedBlocks = computed(() => this.blocks().filter((b) => !!b.layout));
+  protected readonly positionedBlocks = computed(() =>
+    this.blocks().filter((b) => !!b.layout && !this.isPassportBackgroundBlock(b)),
+  );
 
   /** Legacy flow blocks remain in the sortable drop list. */
   protected readonly flowBlocks = computed(() =>

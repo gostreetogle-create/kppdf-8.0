@@ -1,140 +1,111 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import type { StudioBlock, StudioBlockAlign, StudioBlockStyle } from '@kppdf/data-access';
+import type { StudioBlock, StudioBlockStyle, TextBlock } from '@kppdf/data-access';
 import { ButtonComponent } from '@kppdf/ui/button';
+import {
+  Image,
+  Layers,
+  LucideAngularModule,
+  Maximize2,
+  Table2,
+  Trash2,
+  Type,
+} from 'lucide-angular';
 import { studioImageUrl, studioLayerTypeLabel } from './studio-block-helpers';
-import { studioTableColumns, studioTableRowCount, studioTableRows } from './studio-table-defaults';
-import { StudioTableEditorComponent } from './studio-table-editor.component';
-
-function pct(value: number | undefined): string {
-  if (value === undefined || !Number.isFinite(value)) return '—';
-  return `${(value * 100).toFixed(1)}%`;
-}
+import { StudioTablePropertiesComponent } from './studio-table-properties.component';
+import { StudioTextPropertiesComponent } from './studio-text-properties.component';
 
 function layerDisplayName(block: StudioBlock): string {
   if (block.title?.trim()) return block.title.trim();
-  if (block.content?.trim()) {
-    const t = block.content.trim();
-    return t.length > 24 ? `${t.slice(0, 24)}…` : t;
-  }
   return 'Без названия';
 }
-
-const ALIGN_OPTIONS: readonly { value: StudioBlockAlign; label: string }[] = [
-  { value: 'left', label: 'Слева' },
-  { value: 'center', label: 'По центру' },
-  { value: 'right', label: 'Справа' },
-  { value: 'justify', label: 'По ширине' },
-];
 
 @Component({
   selector: 'pi-studio-properties-panel',
   standalone: true,
-  imports: [FormsModule, ButtonComponent, StudioTableEditorComponent],
+  imports: [FormsModule, ButtonComponent, StudioTablePropertiesComponent, StudioTextPropertiesComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="properties" data-test="studio-properties-panel">
+    <section class="props" data-test="studio-properties-panel" (click)="$event.stopPropagation()">
       @if (block; as selected) {
-        <p class="context-subhead">
-          Слой: {{ layerName(selected) }} · тип: {{ typeLabel(selected) }}
-        </p>
+        <header class="props__hero">
+          <span class="props__hero-icon" aria-hidden="true">
+            <lucide-angular [img]="typeIconFor(selected)" [size]="18" />
+          </span>
+          <div class="props__hero-text">
+            <strong class="props__hero-name">{{ layerName(selected) }}</strong>
+            <span class="props__hero-type">{{ typeLabel(selected) }}</span>
+          </div>
+        </header>
 
-        <h3 class="section-title">Слой</h3>
-        <label class="field">
-          <span>Название</span>
-          <input
-            type="text"
-            [ngModel]="selected.title ?? ''"
-            (ngModelChange)="titleChange.emit($event)"
-            data-test="studio-layer-title"
-          />
-        </label>
         @if (selected.locked) {
-          <p class="lock-hint">Слой заблокирован — редактирование недоступно</p>
+          <p class="props__lock">Слой заблокирован</p>
         }
 
-        <h3 class="section-title">Контент</h3>
-        @if (selected.type === 'text') {
-          <label class="field">
-            <span>Текст</span>
-            <textarea
-              rows="4"
-              [ngModel]="selected.content ?? ''"
-              (ngModelChange)="contentChange.emit($event)"
+        <div class="props__card">
+          <h3 class="props__card-title">
+            <lucide-angular [img]="layersIcon" [size]="14" aria-hidden="true" />
+            Слой
+          </h3>
+          <label class="props__field">
+            <span class="props__label">Название</span>
+            <input
+              class="props__input"
+              type="text"
+              [ngModel]="selected.title ?? ''"
+              (ngModelChange)="titleChange.emit($event)"
               [disabled]="!!selected.locked"
-              data-test="studio-block-content"
-            ></textarea>
+              data-test="studio-layer-title"
+            />
           </label>
-        } @else if (selected.type === 'image') {
-          @if (imageUrl(selected); as url) {
-            <img [src]="url" alt="" class="image-preview" data-test="studio-image-preview" />
-          } @else {
-            <p class="content-hint">Изображение не загружено</p>
-          }
-        } @else if (selected.type === 'table') {
-          <pi-studio-table-editor
-            [block]="selected"
-            [rows]="tableRows(selected)"
-            [disabled]="!!selected.locked"
-            (rowsChange)="tableRowsChange.emit($event)"
-          />
-        }
+        </div>
 
-        @if (selected.type === 'text') {
-          <h3 class="section-title">Типографика</h3>
-          <div class="typo" data-test="studio-typography-controls">
-            <label>
-              <span>Размер (pt)</span>
-              <input
-                type="number"
-                min="6"
-                max="96"
-                step="1"
-                [ngModel]="selected.style?.fontSizePt ?? 14"
-                (ngModelChange)="patchStyle({ fontSizePt: toFontSize($event) })"
-                [disabled]="!!selected.locked"
-                data-test="studio-font-size"
-              />
-            </label>
-            <label>
-              <span>Цвет</span>
-              <input
-                type="color"
-                [ngModel]="selected.style?.color ?? '#000000'"
-                (ngModelChange)="patchStyle({ color: $event })"
-                [disabled]="!!selected.locked"
-                data-test="studio-font-color"
-              />
-            </label>
-            <label>
-              <span>Выравнивание</span>
-              <select
-                [ngModel]="selected.style?.align ?? 'left'"
-                (ngModelChange)="patchStyle({ align: $event })"
-                [disabled]="!!selected.locked"
-                data-test="studio-text-align"
-              >
-                @for (opt of alignOptions; track opt.value) {
-                  <option [ngValue]="opt.value">{{ opt.label }}</option>
-                }
-              </select>
-            </label>
+        @if (selected.type === 'table') {
+          <div class="props__card">
+            <h3 class="props__card-title">
+              <lucide-angular [img]="tableIcon" [size]="14" aria-hidden="true" />
+              Вид таблицы
+            </h3>
+            <pi-studio-table-properties
+              [block]="selected"
+              [disabled]="!!selected.locked"
+              (settingsChange)="tableSettingsChange.emit($event)"
+              (saveTemplate)="saveTableTemplate.emit()"
+            />
           </div>
         }
 
-        @if (selected.layout; as layout) {
-          <h3 class="section-title">Геометрия</h3>
-          <dl class="geom">
-            <div><dt>X</dt><dd>{{ pct(layout.x) }}</dd></div>
-            <div><dt>Y</dt><dd>{{ pct(layout.y) }}</dd></div>
-            <div><dt>Ширина</dt><dd>{{ pct(layout.width) }}</dd></div>
-            <div><dt>Высота</dt><dd>{{ pct(layout.height) }}</dd></div>
-            <div><dt>Z-index</dt><dd>{{ layout.zIndex }}</dd></div>
-          </dl>
+        @if (selected.type === 'text') {
+          <div class="props__card">
+            <h3 class="props__card-title">
+              <lucide-angular [img]="typeIconConst" [size]="14" aria-hidden="true" />
+              Текст
+            </h3>
+            <pi-studio-text-properties
+              [block]="selected"
+              [disabled]="!!selected.locked"
+              (contentChange)="contentChange.emit($event)"
+              (styleChange)="styleChange.emit($event)"
+              (applyLibraryText)="applyLibraryText.emit($event)"
+              (saveToLibrary)="saveTextBlock.emit()"
+            />
+          </div>
+        } @else if (selected.type === 'image') {
+        <div class="props__card">
+          <h3 class="props__card-title">
+            <lucide-angular [img]="imageIcon" [size]="14" aria-hidden="true" />
+            Контент
+          </h3>
+            @if (imageUrl(selected); as url) {
+              <img [src]="url" alt="" class="props__image" data-test="studio-image-preview" />
+            } @else {
+              <p class="props__hint">Изображение не загружено</p>
+            }
+        </div>
         }
 
-        <h3 class="section-title">Действия</h3>
-        <div class="actions">
+        <div class="props__card props__card--actions">
+          <h3 class="props__card-title">Действия</h3>
           @if (selected.type === 'image') {
             <app-pi-button
               variant="secondary"
@@ -144,6 +115,7 @@ const ALIGN_OPTIONS: readonly { value: StudioBlockAlign; label: string }[] = [
               [disabled]="!!selected.locked"
               (click)="imageFullPage.emit()"
             >
+              <lucide-angular [img]="maximizeIcon" [size]="14" aria-hidden="true" />
               На весь лист
             </app-pi-button>
           }
@@ -155,80 +127,155 @@ const ALIGN_OPTIONS: readonly { value: StudioBlockAlign; label: string }[] = [
             [disabled]="!!selected.locked"
             (click)="deleteLayer.emit()"
           >
+            <lucide-angular [img]="trashIcon" [size]="14" aria-hidden="true" />
             Удалить слой
           </app-pi-button>
         </div>
       } @else {
-        <p class="empty">Выберите слой в панели «Слои» слева</p>
+        <div class="props__empty">
+          <lucide-angular [img]="layersIcon" [size]="28" aria-hidden="true" />
+          <p>Выберите слой в панели «Слои» слева или нажмите ⚙ на плитке слоя.</p>
+        </div>
       }
     </section>
   `,
   styles: [`
-    .properties { padding: 0; }
-    .context-subhead {
-      margin: 0 0 12px;
-      font-size: 12px;
-      color: var(--color-muted-foreground);
-      line-height: 1.4;
+    .props {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+      color: var(--color-ink);
+      opacity: 1;
     }
-    .section-title {
-      margin: 16px 0 8px;
+
+    .props__hero {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-paper-2);
+    }
+    .props__hero-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: color-mix(in oklch, var(--color-gold) 18%, var(--color-paper-raised));
+      color: var(--color-ink);
+      flex-shrink: 0;
+    }
+    .props__hero-text { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .props__hero-name {
+      font-size: 14px;
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .props__hero-type {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-muted-foreground);
+    }
+
+    .props__lock {
+      margin: 0;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-destructive);
+      border: 1px solid color-mix(in oklch, var(--color-destructive) 40%, var(--color-rule));
+      border-radius: var(--radius-sm);
+      background: color-mix(in oklch, var(--color-destructive) 8%, var(--color-paper-raised));
+    }
+
+    .props__card {
+      padding: 8px 10px;
+      border: 1px solid var(--color-rule);
+      border-radius: var(--radius-sm);
+      background: var(--color-paper-raised);
+    }
+    .props__card--actions { display: flex; flex-direction: column; gap: 8px; }
+
+    .props__card-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.06em;
       text-transform: uppercase;
-      color: var(--color-muted-foreground);
+      color: var(--color-ink);
     }
-    .section-title:first-of-type { margin-top: 0; }
-    .field {
+
+    .props__field {
       display: flex;
       flex-direction: column;
       gap: 4px;
-      margin: 0 0 8px;
-      font-size: 12px;
+      margin: 0;
     }
-    .field input, .field textarea { font-size: 13px; padding: 6px 8px; }
-    .field textarea { min-height: 72px; resize: vertical; }
-    .lock-hint {
-      margin: 0 0 8px;
-      font-size: 12px;
-      color: var(--color-destructive);
+    .props__label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-muted-foreground);
     }
-    .content-hint {
+
+    .props__input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 9px;
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+      font-size: 13px;
+      opacity: 1;
+    }
+    .props__input:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .props__input:focus {
+      outline: 2px solid var(--color-gold);
+      outline-offset: 0;
+      border-color: var(--color-gold-deep);
+    }
+
+    .props__image {
+      display: block;
+      max-width: 100%;
+      max-height: 140px;
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm);
+      background: var(--color-paper-2);
+    }
+    .props__hint {
       margin: 0;
       font-size: 12px;
       color: var(--color-muted-foreground);
-      line-height: 1.4;
     }
-    dl { margin: 0; }
-    .geom div {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 4px 0;
-      font-size: 13px;
-    }
-    dt { color: var(--color-muted-foreground); }
-    dd { margin: 0; font-variant-numeric: tabular-nums; }
-    .empty { font-size: 13px; color: var(--color-muted-foreground); margin: 0; }
-    .typo { display: flex; flex-direction: column; gap: 10px; }
-    .typo label {
+
+    .props__empty {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      font-size: 12px;
-      color: var(--color-ink-muted, #444);
+      align-items: center;
+      gap: 10px;
+      padding: 24px 12px;
+      text-align: center;
+      color: var(--color-muted-foreground);
+      font-size: 13px;
+      line-height: 1.45;
     }
-    .typo input, .typo select { font-size: 13px; padding: 4px 6px; }
-    .typo input[type="color"] { width: 48px; height: 32px; padding: 2px; }
-    .image-preview {
-      display: block;
-      max-width: 100%;
-      max-height: 128px;
-      border: 1px solid var(--color-rule);
-      border-radius: var(--radius-sm);
-    }
-    .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .props__empty p { margin: 0; }
   `],
 })
 export class StudioPropertiesPanelComponent {
@@ -238,11 +285,18 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly titleChange = new EventEmitter<string>();
   @Output() readonly imageFullPage = new EventEmitter<void>();
   @Output() readonly deleteLayer = new EventEmitter<void>();
-  @Output() readonly tableRowsChange = new EventEmitter<string[][]>();
+  @Output() readonly tableSettingsChange = new EventEmitter<Record<string, unknown>>();
+  @Output() readonly saveTableTemplate = new EventEmitter<void>();
+  @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
+  @Output() readonly saveTextBlock = new EventEmitter<void>();
 
-  protected readonly alignOptions = ALIGN_OPTIONS;
   protected readonly imageUrl = studioImageUrl;
-  protected readonly pct = pct;
+  protected readonly layersIcon = Layers;
+  protected readonly typeIconConst = Type;
+  protected readonly imageIcon = Image;
+  protected readonly tableIcon = Table2;
+  protected readonly maximizeIcon = Maximize2;
+  protected readonly trashIcon = Trash2;
 
   protected layerName(block: StudioBlock): string {
     return layerDisplayName(block);
@@ -252,25 +306,9 @@ export class StudioPropertiesPanelComponent {
     return studioLayerTypeLabel(block);
   }
 
-  tableCols(block: StudioBlock): number {
-    return studioTableColumns(block).length;
-  }
-
-  tableRows(block: StudioBlock): string[][] {
-    return studioTableRows(block);
-  }
-
-  tableRowCount(block: StudioBlock): number {
-    return studioTableRowCount(block);
-  }
-
-  patchStyle(patch: Partial<StudioBlockStyle>): void {
-    this.styleChange.emit(patch);
-  }
-
-  toFontSize(value: number | string): number {
-    const n = typeof value === 'number' ? value : Number(value);
-    if (!Number.isFinite(n)) return 14;
-    return Math.min(96, Math.max(6, Math.round(n)));
+  protected typeIconFor(block: StudioBlock): typeof Type {
+    if (block.type === 'image') return this.imageIcon;
+    if (block.type === 'table') return this.tableIcon;
+    return this.typeIconConst;
   }
 }

@@ -1,0 +1,9 @@
+{
+  "registries": ["units", "materials", "details", "modules", "products", "supply-requests", "organizations", "product-passports", "text-blocks", "table-templates"],
+  "checksPerRegistry": 12,
+  "verified": 0,
+  "total": 120,
+  "status": "BLOCKED",
+  "reason": "Authenticated browser/API smoke was unavailable in shared checkout; static/unit checks only.",
+  "known_limitation": "Live evidence required by TZ was not captured."
+}

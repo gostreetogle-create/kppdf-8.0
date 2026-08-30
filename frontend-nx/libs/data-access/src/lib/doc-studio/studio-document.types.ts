@@ -11,7 +11,10 @@ export interface StudioDocument {
   readonly revision?: number;
   readonly updatedAt?: string;
   readonly templateId?: string | null;
+  readonly organizationId?: string;
   readonly manualPageCount?: number;
+  readonly context?: Record<string, unknown>;
+  readonly docTypeId?: string;
 }
 
 export interface CreateStudioDocumentPayload {
@@ -31,4 +34,7 @@ export interface UpdateStudioDocumentPayload {
   readonly pageSize?: StudioDocumentPageSize;
   readonly status?: StudioDocumentStatus;
   readonly manualPageCount?: number;
+  readonly context?: Record<string, unknown>;
+  readonly docTypeId?: string;
 }
+

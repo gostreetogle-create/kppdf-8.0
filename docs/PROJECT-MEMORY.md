@@ -35,6 +35,7 @@
 | Claude CLI / Cursor MCP гигиена | `docs/agents/CLAUDE-CODE.md` (не startup) |
 | Cloudcoda / Claude Code onboarding | `docs/agents/CLOUDCODA.md` |
 | Архитектура / конвенции | `ARCHITECTURE.md` — только при нужде зоны |
+| Синтез 8 версий + финальная архитектура + закрытые бизнес-решения PO (канон) | `docs/architecture/MASTER-CORE.md` |
 | Домен сущности (схема) | `docs/data-model.md` + **живая schema** в `backend/src/modules/<x>/` (схема побеждает) |
 | UI-страница | `docs/pages/<name>.page.md` |
 | Готовность раздела | `docs/SECTION-READINESS.md` |

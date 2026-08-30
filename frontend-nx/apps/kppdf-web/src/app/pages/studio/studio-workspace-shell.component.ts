@@ -19,7 +19,7 @@ const RIGHT_PANEL_SECTIONS = new Set(['properties', 'table']);
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [LucideAngularModule],
   templateUrl: './studio-workspace-shell.component.html',
-  styleUrl: './studio-workspace-shell.component.css',
+  styleUrls: ['./studio-workspace-shell.component.css', './studio-panel-overlays.css'],
 })
 export class StudioWorkspaceShellComponent {
   readonly orientation = input<StudioWsOrientation>('portrait');

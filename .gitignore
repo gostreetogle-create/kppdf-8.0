@@ -65,6 +65,7 @@ stitch_*.zip
 
 # Logs
 logs/
+.logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
@@ -158,6 +159,10 @@ vendor/
 tasks/������/
 data/paspots/
 data/products/
+data/Pasports.xlsx
+data/Снабжение.xlsx
+data/КП/
+data/Скриншоты ERP/
 
 
 # Ruflo local secrets and runtime data

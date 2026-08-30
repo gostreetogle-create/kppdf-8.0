@@ -1,9 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL, silentGet, type SilentResult } from '@kppdf/util-http';
+import { API_BASE_URL, silentDelete, silentGet, silentPatch, silentPost, type SilentResult } from '@kppdf/util-http';
 import type {
+  CreateOrganizationPayload,
   Organization,
+  UpdateOrganizationPayload,
   OrganizationsListParams,
   OrganizationsListResponse,
 } from './organization.types';
@@ -34,5 +36,17 @@ export class PiOrganizationsService {
 
   getById(id: string): Observable<SilentResult<Organization>> {
     return silentGet<Organization>(this.http, `${this.baseUrl}/organizations/${id}`);
+  }
+
+  create(payload: CreateOrganizationPayload): Observable<SilentResult<Organization>> {
+    return silentPost<Organization>(this.http, `${this.baseUrl}/organizations`, payload);
+  }
+
+  update(id: string, payload: UpdateOrganizationPayload): Observable<SilentResult<Organization>> {
+    return silentPatch<Organization>(this.http, `${this.baseUrl}/organizations/${id}`, payload);
+  }
+
+  remove(id: string): Observable<SilentResult<void>> {
+    return silentDelete<void>(this.http, `${this.baseUrl}/organizations/${id}`);
   }
 }

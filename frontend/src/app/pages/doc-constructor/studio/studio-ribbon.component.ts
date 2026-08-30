@@ -18,7 +18,7 @@ export type StudioViewMode = 'editor' | 'preview';
     <app-pi-tabs
       [value]="viewMode()"
       ariaLabel="Режим документа"
-      (valueChange)="viewModeChange.emit($event as StudioViewMode)"
+      (valueChange)="onValueChange($event)"
     >
       <app-pi-tab
         value="editor"
@@ -38,6 +38,10 @@ export type StudioViewMode = 'editor' | 'preview';
 export class StudioRibbonModeComponent {
   readonly viewMode = input<StudioViewMode>('editor');
   readonly viewModeChange = output<StudioViewMode>();
+
+  protected onValueChange(value: string): void {
+    this.viewModeChange.emit(value as StudioViewMode);
+  }
 }
 
 @Component({

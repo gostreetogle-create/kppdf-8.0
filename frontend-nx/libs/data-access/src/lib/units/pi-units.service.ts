@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { API_BASE_URL, silentGet, silentPatch, type SilentResult } from '@kppdf/util-http';
+import { API_BASE_URL, silentDelete, silentGet, silentPatch, type SilentResult } from '@kppdf/util-http';
 
 /** Mirrors `backend/src/modules/unit/unit.schema.ts` — canonical slug is `key`. */
 export interface Unit {
@@ -62,5 +62,9 @@ export class PiUnitsService {
 
   update(key: string, payload: UpdateUnitPayload): Observable<SilentResult<Unit>> {
     return silentPatch<Unit>(this.http, `${this.baseUrl}/units/${key}`, payload);
+  }
+
+  remove(key: string): Observable<SilentResult<void>> {
+    return silentDelete<void>(this.http, `${this.baseUrl}/units/${key}`);
   }
 }

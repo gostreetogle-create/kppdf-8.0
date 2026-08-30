@@ -1,0 +1,12 @@
+/* Убираем «призрак» CDK drag-preview, если он застрял вне панели */
+.cdk-overlay-container .cdk-drag-preview.layer-row {
+  opacity: 1 !important;
+  background: var(--color-paper-raised) !important;
+  color: var(--color-ink) !important;
+  pointer-events: none;
+}
+
+/* Застрявший backdrop диалога не должен перекрывать студию после закрытия */
+.cdk-overlay-container:empty {
+  pointer-events: none;
+}

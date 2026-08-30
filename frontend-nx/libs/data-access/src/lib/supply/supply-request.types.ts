@@ -8,6 +8,17 @@ export type SupplyRequestStatus =
 
 export type SupplyRequestPriority = 'urgent' | 'normal' | 'low';
 
+export interface CreateSupplyRequestPayload {
+  readonly title: string;
+  readonly qty: number;
+  readonly unit?: string;
+  readonly priority?: SupplyRequestPriority;
+  readonly notes?: string;
+  readonly article?: string;
+}
+
+export type UpdateSupplyRequestPayload = Partial<CreateSupplyRequestPayload>;
+
 export interface SupplyRequest {
   readonly _id: string;
   readonly title?: string;

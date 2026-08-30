@@ -67,11 +67,18 @@ describe('PiProductsService (TZ-NX-CATALOG-DATA-ACCESS-READ)', () => {
     req.flush({ items: [], total: 0, page: 3, limit: 50 });
   });
 
-  it('list() omits isActive when undefined and does not invent isComplex filter', () => {
+  it('list() omits isActive when undefined and omits isComplex when undefined', () => {
     service.list({}).subscribe();
     const req = httpMock.expectOne((r) => r.url === listUrl);
     expect(req.request.params.has('isActive')).toBe(false);
     expect(req.request.params.has('isComplex')).toBe(false);
+    req.flush({ items: [], total: 0, page: 1, limit: 50 });
+  });
+
+  it('list() sends isComplex when provided', () => {
+    service.list({ isComplex: true }).subscribe();
+    const req = httpMock.expectOne((r) => r.url === listUrl);
+    expect(req.request.params.get('isComplex')).toBe('true');
     req.flush({ items: [], total: 0, page: 1, limit: 50 });
   });
 

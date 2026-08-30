@@ -294,6 +294,7 @@ describe('Registries routing — real catalog smoke (TZ-NX-REGISTRY-UNITS-READ-S
       } as unknown as Router,
       mockDialogHost(),
       mockCatalogDialogHost(),
+      { openEdit: jest.fn() },
     );
     TestBed.overrideComponent(RegistriesPage, {
       set: { providers: [{ provide: REGISTRIES_CATALOG, useValue: catalog }] },

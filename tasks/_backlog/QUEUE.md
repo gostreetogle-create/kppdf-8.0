@@ -29,6 +29,10 @@
 - [`ops/TZ-OPS-AGENT-ORCHESTRATION-AUDIT.md`](./ops/TZ-OPS-AGENT-ORCHESTRATION-AUDIT.md) — PLANNED, audit документации, config не менять.
 - [`ops/TZ-OPS-NX-START-CANON.md`](./ops/TZ-OPS-NX-START-CANON.md) — принятый PO канон запуска NX (2026-08-29).
 
+## CRM-канон (закрыт PO 2026-08-30, не брать списком без явной команды)
+
+- [`crm-canon-2026-08-30/CRM-CANON-DECISIONS-BACKLOG.md`](./crm-canon-2026-08-30/CRM-CANON-DECISIONS-BACKLOG.md) — код-дельты из `docs/architecture/MASTER-CORE.md`: семья КП (приоритет), Contract как опциональный статус, Order без КП, авторезерв склада + авто-SupplyRequest, statusOverride для Директора/Админа, capability-флаги поверх страничного доступа. Каждый пункт → своя TZ по команде PO.
+
 ## Park (не брать без PO)
 
 AUTH-307, UTF8, паспорта, TZD-49, MIG-305 branding.

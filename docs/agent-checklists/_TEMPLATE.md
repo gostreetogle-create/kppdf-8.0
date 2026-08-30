@@ -39,9 +39,17 @@
 - [ ] Coupling map: `docs/COUPLING-MAP.md` обновлён **или** N/A (не трогал общее поле/статус)
 - [ ] Канон: docs/DOCS-INTEGRITY.md
 
+## Build integrity (обязательно для frontend-nx / kppdf-web)
+
+- [ ] Baseline до кода: `cd frontend-nx && pnpm exec nx build kppdf-web` → exit 0 (или STOP + hotfix)
+- [ ] Нет другого `tasks/_active/*` с `apps/kppdf-web/src/**` (implicit conflict)
+- [ ] Закрытие: `nx build kppdf-web` — **последняя** команда в Gates, exit 0
+
+Канон: `docs/TZ-NX-BUILD-INTEGRITY.md`
+
 ## Gates (факт)
 
-- команды + PASS/FAIL
+- команды + PASS/FAIL (для nx UI: обязательна строка `nx build kppdf-web` с exit code)
 
 ## Executor report
 

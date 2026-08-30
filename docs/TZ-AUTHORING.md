@@ -148,4 +148,19 @@ Gate деплоя: `tasks/TZ-DEPLOY-301-prep-first-deploy.md` (не смешив
 
 ---
 
+## 7. Build-integrity (frontend-nx) — обязательно с 2026-08-30
+
+Любой TZ с `frontend-nx/apps/kppdf-web/src/**`:
+
+1. **Implicit conflict:** весь `kppdf-web` должен собираться (`nx build kppdf-web`), не только затронутый route.
+2. **Gate:** полный `nx build kppdf-web` — baseline до CLAIM и **последний** шаг перед archive (не заменяется `tsc`/scoped tests).
+3. **Параллель:** два активных TZ на `kppdf-web/src/**` — запрещены без sequential rule в `QUEUE-LIVE.md`.
+4. **Split:** монолиты «все реестры + constructor» → серия under-1h TZ, каждая с зелёным build в конце.
+5. **PO «можно запускать?»:** `tasks/_active/` пуст + `nx build kppdf-web` exit 0.
+
+Полный протокол, инцидент, шаблон блока для TZ: [`docs/TZ-NX-BUILD-INTEGRITY.md`](./TZ-NX-BUILD-INTEGRITY.md).  
+Промпт Cursor: [`tasks/PROMPT-CURSOR-TZ-ORDERING.md`](../tasks/PROMPT-CURSOR-TZ-ORDERING.md).
+
+---
+
 _Поддерживает: Cursor Mode A. При смене канона имён — правка §1.1 + commit этого файла._

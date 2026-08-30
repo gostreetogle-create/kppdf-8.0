@@ -1,8 +1,10 @@
 import { Types } from 'mongoose';
 import {
+  ensureTableDataSetsFromBlocks,
   injectTableContent,
   mapLineItemsToRows,
   renderStudioTableHtml,
+  sampleRowsFromBlock,
   StudioDataResolverService,
 } from './studio-data-resolver';
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
@@ -57,6 +59,38 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
 
     expect(rendered.content).toContain('Диван');
     expect(rendered.content).toContain('5000');
+  });
+
+  it('reads manual sample rows from block settings', () => {
+    const block = {
+      _id: new Types.ObjectId(),
+      type: 'table',
+      settings: {
+        tableTemplateSampleRows: [['Стол', '2', '1500']],
+        tableTemplateDisabledRows: [1],
+      },
+    } as unknown as TemplateBlockDocument;
+    expect(sampleRowsFromBlock(block)).toEqual([['Стол', '2', '1500']]);
+  });
+
+  it('synthesizes dataSets from table blocks when document has none', () => {
+    const blockId = new Types.ObjectId();
+    const block = {
+      _id: blockId,
+      type: 'table',
+      settings: {
+        tableTemplateColumns: columns,
+        tableTemplateSampleRows: [['Кресло', '1', '900']],
+      },
+    } as unknown as TemplateBlockDocument;
+    const dataSets = ensureTableDataSetsFromBlocks([block], []);
+    expect(dataSets).toEqual([
+      {
+        key: `table-${blockId.toString()}`,
+        source: { type: 'manual' },
+        rows: [['Кресло', '1', '900']],
+      },
+    ]);
   });
 });
 

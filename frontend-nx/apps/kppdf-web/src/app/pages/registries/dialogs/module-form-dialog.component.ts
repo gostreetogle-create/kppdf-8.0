@@ -61,7 +61,7 @@ export interface ModuleFormDialogData {
       (userClose)="onCancel()"
     >
       <form body [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4" data-test="module-form">
-        <app-pi-form-section title="Паспорт модуля" headingId="module-passport" tone="gold">
+        <app-pi-form-section title="Модуль" headingId="module-main" tone="gold">
           <div class="grid md:grid-cols-12 gap-form-field">
             <app-pi-form-field label="Название" htmlFor="mod-name" [required]="true" class="md:col-span-8">
               <app-pi-input id="mod-name" formControlName="name" />

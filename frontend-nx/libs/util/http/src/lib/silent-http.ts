@@ -76,6 +76,8 @@ export function extractErrorMessage(err: HttpErrorResponse): string {
       .filter((item): item is string => !!item && item.length > 0);
     if (parts.length > 0) return humanizeEnglishApiError(parts.join('; '));
   }
+  if (err.status === 500) return 'Внутренняя ошибка сервера';
+  if (err.status === 403) return 'Недостаточно прав для операции';
   if (err.message && err.message.length > 0) return humanizeEnglishApiError(err.message);
   return 'Неизвестная ошибка';
 }
@@ -100,6 +102,8 @@ export function humanizeEnglishApiError(message: string): string {
   const trimmed = message.trim();
   if (!trimmed) return 'Неизвестная ошибка';
   if (HTTP_FAILURE_EN.test(trimmed)) return 'Ошибка запроса к серверу';
+  if (/^internal server error$/i.test(trimmed)) return 'Внутренняя ошибка сервера';
+  if (/^Internal Server Error:/i.test(trimmed)) return 'Внутренняя ошибка сервера';
   if (ENTITY_NOT_FOUND_EN.test(trimmed)) return 'Объект не найден';
   if (/not found/i.test(trimmed) && !HAS_CYRILLIC.test(trimmed)) return 'Объект не найден';
   if (NESTJS_EXCEPTION_NAME.test(trimmed)) return 'Не удалось выполнить операцию';

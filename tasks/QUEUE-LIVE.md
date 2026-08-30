@@ -1,24 +1,34 @@
-﻿# QUEUE-LIVE
+# QUEUE-LIVE
 
-> **Модуль №1:** студия документов NX. План: `docs/architecture/nx-doc-studio.md` § 6 (S0–S8).
+> **PO audit 2026-08-30:** `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`  
+> **S7 orchestration:** `tasks/WAVE-DOCSTUDIO-S7.md` вЂ” **S7 wave COMPLETE** (2026-08-30)
 
-| # | Задача | Кому | Промпт |
-|---|--------|------|--------|
-| 1 | `TZ-NX-REGISTRY-CRUD-UNIFY` — **НЕ ЗАКРЫТ** | Freebuff #1 | см. ниже |
-| 2 | `TZ-BACKEND-PDF-FONT-READY` — closeout (архив) | Freebuff #2 | `PROMPT-FREEBUFF-PDF-FONT-READY-CLOSEOUT.md` |
-| 3 | `TZ-NX-DOCSTUDIO-S2-SHELL` — после #1 | Freebuff #1 | `PROMPT-FREEBUFF-DOCSTUDIO-S2.md` |
+| # | TZ | РЎС‚Р°С‚СѓСЃ |
+|---|-----|--------|
+| A5 | `TZ-NX-PRODUCT-COMPLEX-COMPOSITION` | **DONE** |
+| A6 | `TZ-NX-REGISTRIES-BROWSER-MATRIX-2` | **DONE** |
+| B1вЂ“B2 | S4 typography, S5 pages | **DONE** |
+| B4 | `TZ-NX-DOCSTUDIO-S6-PO-POLISH` | **DONE** (archive) |
 
-## Закрыто
+## S7 вЂ” Doc Studio РґРѕРІРѕРґРєР° (ACTIVE WAVE)
 
-| TZ | Итог |
-|---|---|
-| `TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE` (D1) | BlockStyle, sanitize, render, шрифты self-hosted, live PDF proof |
-| `TZ-NX-DOCSTUDIO-S0` | реестры «Тексты» + «Виды таблиц» |
-| `TZ-NX-DOCPLAT-01` | порядок tasks/, legacy evidence, геометрия, defects D1–D9 |
+| # | TZ | РЎС‚Р°С‚СѓСЃ |
+|---|-----|--------|
+| **S7-0** | TZ-NX-DOCSTUDIO-S7-WIP-CLOSEOUT | **DONE** (2026-08-30) |
+| **S7-1** | `TZ-NX-DOCSTUDIO-S7-RAILS-DATA` | **DONE** |
+| S7-2 | `TZ-NX-DOCSTUDIO-S7-RAILS-TEMPLATE` | **DONE** |
+| **S7-3** | `TZ-NX-DOCSTUDIO-S7-TEXT-LEGACY-PARITY` | **DONE** |
+| **S7-4** | `TZ-NX-DOCSTUDIO-S7-TABLE-POLISH` | **DONE** (2026-08-30) |
+| **S7-5** | `TZ-NX-DOCSTUDIO-S7-RIBBON-EXPORT` | **DONE** (2026-08-30) |
+| **S7-6** | `TZ-NX-DOCSTUDIO-S7-PASSPORT-BG` | **DONE** (2026-08-30) |
 
-## Долги
+**РџСЂРѕРјРїС‚ S7-0:** `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S7-WIP.md`
 
-- Backend lint: 51 error / 198 warn — repo-wide, не блокер волны.
-- `architecture:check`: 3 старых в `frontend/**`.
-- Чужой WIP: `backend/auth`, `backend/common`, `unit`, `docker-compose`, `login.page.md`.
-- `document_table_types` — снос после подтверждения PO.
+**РџСЂР°РІРёР»Рѕ:** РѕРґРЅР° active TZ; `nx build kppdf-web` green РјРµР¶РґСѓ РІРѕР»РЅР°РјРё.
+
+## Р—Р°РєСЂС‹С‚Рѕ (СЃРµСЃСЃРёСЏ 2026-08-30)
+
+| TZ | Archive |
+|----|---------|
+| S6 PO-POLISH | `TZ-NX-DOCSTUDIO-S6-PO-POLISH.done.md` |
+| A1вЂ“A6, B1вЂ“B2, S3-POLISH | СЃРј. `_archive/2026-08/` |

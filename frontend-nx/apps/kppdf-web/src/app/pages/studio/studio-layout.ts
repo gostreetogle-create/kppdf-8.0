@@ -1,4 +1,4 @@
-import type { StudioBlockLayout } from '@kppdf/data-access';
+import type { StudioBlock, StudioBlockLayout } from '@kppdf/data-access';
 
 /** Magnetic snap threshold in px — matches legacy builder SNAP_THRESHOLD. */
 export const STUDIO_SNAP_THRESHOLD_PX = 8;
@@ -120,6 +120,90 @@ export function studioCenteredTextLayout(
 
 export function studioCenteredImageLayout(zIndex: number, page = 1): StudioBlockLayout {
   return studioCenteredTextLayout(0.4, 0.28, zIndex, page);
+}
+
+const STUDIO_IMAGE_TARGET_WIDTH = 0.6;
+const PORTRAIT_SHEET_ASPECT = 210 / 297;
+
+/** Layout height/width ratio preserving image visual aspect on the sheet. */
+export function studioImageLayoutAspectRatio(
+  block: StudioBlock,
+  sheetAspect = PORTRAIT_SHEET_ASPECT,
+): number {
+  const nw = block.settings?.['naturalWidth'];
+  const nh = block.settings?.['naturalHeight'];
+  if (typeof nw === 'number' && typeof nh === 'number' && nw > 0 && nh > 0) {
+    return (sheetAspect * nh) / nw;
+  }
+  const layout = block.layout;
+  if (layout && layout.width > 0) {
+    const h = layout.height ?? 0.28;
+    return h / layout.width;
+  }
+  return 0.28 / 0.4;
+}
+
+export function studioImageLayoutFromNaturalSize(
+  naturalW: number,
+  naturalH: number,
+  zIndex: number,
+  page = 1,
+  sheetAspect = PORTRAIT_SHEET_ASPECT,
+): StudioBlockLayout {
+  const naturalAspect = naturalW / Math.max(1, naturalH);
+  let width = STUDIO_IMAGE_TARGET_WIDTH;
+  let height = (width * sheetAspect) / naturalAspect;
+  if (height > 1) {
+    height = 1;
+    width = (height * naturalAspect) / sheetAspect;
+  }
+  if (width > 1) {
+    width = 1;
+    height = (width * sheetAspect) / naturalAspect;
+  }
+  return studioCenteredTextLayout(width, height, zIndex, page);
+}
+
+/** Proportional corner resize: width follows mouse delta, height derived from aspect. */
+export function studioProportionalImageResize(
+  startLayout: StudioBlockLayout,
+  deltaWidthFraction: number,
+  aspectRatio: number,
+): { readonly width: number; readonly height: number } {
+  let width = Math.max(0.06, Math.min(1 - startLayout.x, startLayout.width + deltaWidthFraction));
+  let height = width * aspectRatio;
+  if (startLayout.y + height > 1) {
+    height = Math.max(0.04, 1 - startLayout.y);
+    width = Math.min(1 - startLayout.x, height / aspectRatio);
+    height = width * aspectRatio;
+  }
+  height = Math.max(0.04, Math.min(1 - startLayout.y, height));
+  width = Math.max(0.06, Math.min(1 - startLayout.x, width));
+  return { width, height };
+}
+
+export async function studioReadImageNaturalSize(
+  file: File,
+): Promise<{ readonly width: number; readonly height: number }> {
+  if (typeof createImageBitmap !== 'undefined') {
+    const bitmap = await createImageBitmap(file);
+    const size = { width: bitmap.width, height: bitmap.height };
+    bitmap.close();
+    return size;
+  }
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Не удалось прочитать размер изображения'));
+    };
+    img.src = url;
+  });
 }
 
 export function studioCenteredTableLayout(zIndex: number, page = 1): StudioBlockLayout {

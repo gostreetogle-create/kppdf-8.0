@@ -1,4 +1,16 @@
 /** Mirrors `backend/src/modules/organization/organization.schema.ts` (list fields). */
+export interface CreateOrganizationPayload {
+  readonly name: string;
+  readonly inn: string;
+  readonly shortName?: string;
+  readonly kpp?: string;
+  readonly type?: string[];
+  readonly isOurCompany?: boolean;
+  readonly isActive?: boolean;
+}
+
+export type UpdateOrganizationPayload = Partial<CreateOrganizationPayload>;
+
 export interface Organization {
   readonly _id: string;
   readonly name: string;

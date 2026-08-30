@@ -56,6 +56,8 @@
         data-test="studio-tools-panel"
         [attr.data-panel-side]="resolvedPanelSide()"
         [attr.data-active-section]="activeSection() ?? ''"
+        (click)="$event.stopPropagation()"
+        (pointerdown)="$event.stopPropagation()"
       >
         <div class="kp-ws-panel__head">{{ panelTitle() }}</div>
         <div class="kp-ws-panel__body">

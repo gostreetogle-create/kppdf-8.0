@@ -34,6 +34,20 @@ export interface TableTemplatePayload {
   readonly category?: TableTemplateCategory;
   readonly sortOrder: number;
   readonly columns: readonly TableTemplateColumn[];
+  readonly sampleRows?: readonly unknown[][];
   readonly dataSource?: string;
 }
-export interface RegistryDataSource { readonly key: string; readonly label: string; }
+export type RegistryFieldType = 'text' | 'number' | 'currency' | 'date' | 'bool';
+
+export interface RegistryDataField {
+  readonly key: string;
+  readonly label: string;
+  readonly type: RegistryFieldType;
+}
+
+export interface RegistryDataSource {
+  readonly key: string;
+  readonly label: string;
+  readonly group?: 'contacts' | 'catalog' | 'work';
+  readonly fields?: readonly RegistryDataField[];
+}

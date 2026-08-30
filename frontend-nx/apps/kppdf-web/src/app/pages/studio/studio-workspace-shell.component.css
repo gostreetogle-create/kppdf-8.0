@@ -9,8 +9,9 @@
   --kp-ribbon-h: 36px;
   --kp-status-h: 22px;
   --kp-tools-h: 36px;
-  --kp-panel-w: 480px;
-  --kp-panel-content-max: 272px;
+  /* Studio: компактная flyout-панель (контент на всю ширину) */
+  --kp-panel-w: 340px;
+  --kp-panel-content-max: 100%;
 }
 
 :host button {
@@ -187,6 +188,7 @@
 
 .kp-ws-body {
   position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: 'viewport';
@@ -198,7 +200,9 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  z-index: 5;
+  left: 0;
+  right: auto;
+  z-index: 20;
   width: var(--kp-panel-w);
   max-width: var(--kp-panel-w);
   display: flex;
@@ -207,11 +211,8 @@
   min-height: 0;
   overflow: hidden;
   background: var(--color-paper-raised);
-  transform: translateX(0);
-  opacity: 1;
-  transition:
-    transform 0.16s ease,
-    opacity 0.14s ease;
+  box-shadow: 4px 0 16px -8px rgba(0, 0, 0, 0.18);
+  pointer-events: auto;
 }
 
 .kp-ws-panel--left {
@@ -224,16 +225,11 @@
   left: auto;
   right: 0;
   border-left: 1px solid var(--color-rule);
+  box-shadow: -4px 0 16px -8px rgba(0, 0, 0, 0.18);
 }
 
 .kp-ws-body--collapsed .kp-ws-panel {
-  transform: translateX(-100%);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.kp-ws-body--collapsed .kp-ws-panel--right {
-  transform: translateX(100%);
+  display: none;
 }
 
 .kp-ws-panel--wide {
@@ -243,12 +239,18 @@
 
 .kp-ws-panel__head {
   flex-shrink: 0;
-  padding: 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--color-rule);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--color-paper-raised);
+  color: var(--color-ink);
 }
 
 .kp-ws-panel__body {
@@ -256,7 +258,9 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 16px;
+  padding: 10px 12px;
+  background: var(--color-paper-raised);
+  color: var(--color-ink);
 }
 
 .kp-ws-panel__body ::ng-deep .studio-panel-inner {
@@ -266,6 +270,7 @@
 .kp-ws-viewport {
   grid-area: viewport;
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -282,7 +287,8 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: var(--space-2, 8px);
+  padding: var(--space-3, 12px);
+  container-type: size;
 }
 
 .kp-ws-sheet {
@@ -292,34 +298,37 @@
   border: 1px solid var(--color-rule-strong);
   box-shadow: var(--shadow-executive, 0 1px 3px rgba(0, 0, 0, 0.08));
   cursor: pointer;
+  box-sizing: border-box;
 }
 
+/* Книжная A4: центр stage, максимальный масштаб в пропорции 210×297 */
 .kp-ws-shell--portrait .kp-ws-viewport__stage {
-  justify-content: flex-end;
-  padding-right: var(--space-2, 8px);
-  padding-left: var(--space-1, 4px);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3, 12px);
 }
 
 .kp-ws-shell--portrait .kp-ws-sheet {
-  height: min(calc(100% - var(--space-2, 8px)), 100%);
-  width: auto;
   aspect-ratio: 210 / 297;
-  max-width: calc(100% - var(--space-4, 16px));
-  max-height: 100%;
+  width: min(calc(100cqw - var(--space-2, 8px)), calc((100cqh - var(--space-2, 8px)) * 210 / 297));
+  height: auto;
+  max-width: calc(100cqw - var(--space-2, 8px));
+  max-height: calc(100cqh - var(--space-2, 8px));
 }
 
+/* Альбомная A4: по центру горизонтально, чуть выше вертикального центра */
 .kp-ws-shell--landscape .kp-ws-viewport__stage {
-  justify-content: flex-end;
-  padding-right: var(--space-2, 8px);
-  padding-left: var(--space-1, 4px);
+  align-items: center;
+  justify-content: center;
+  padding: 6% var(--space-3, 12px) 10%;
 }
 
 .kp-ws-shell--landscape .kp-ws-sheet {
-  width: min(calc(100% - var(--space-2, 8px)), 100%);
-  height: auto;
   aspect-ratio: 297 / 210;
-  max-width: 100%;
-  max-height: calc(100% - var(--space-2, 8px));
+  width: min(calc(100cqw - var(--space-2, 8px)), calc((100cqh - var(--space-2, 8px)) * 297 / 210));
+  height: auto;
+  max-width: calc(100cqw - var(--space-2, 8px));
+  max-height: calc(100cqh - var(--space-2, 8px));
 }
 
 .kp-ws-shell--portrait .kp-ws-sheet.kp-ws-sheet--host,

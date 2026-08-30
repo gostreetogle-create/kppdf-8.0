@@ -135,6 +135,7 @@ describe('material registry dialogs (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)', (
       mockRouter,
       mockDialogHost(),
       mockCatalogDialogHost(),
+      { openEdit: jest.fn() },
     );
     expect(catalog.find((r) => r.key === 'units')?.createAction).toBeUndefined();
     expect(catalog.find((r) => r.key === 'modules')?.createAction?.label).toContain('Создать');

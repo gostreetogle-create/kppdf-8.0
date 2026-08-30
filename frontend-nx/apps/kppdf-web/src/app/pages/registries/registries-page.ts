@@ -6,6 +6,7 @@ import {
   ViewChild,
   computed,
   inject,
+  signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
@@ -15,7 +16,7 @@ import { BadgeComponent } from '@kppdf/ui/badge';
 import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
 import { REGISTRIES_CATALOG, provideRegistriesCatalog } from './data/registries.catalog';
 import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
-import type { RegistryDefinition, RegistryMasterRow, RegistryRow } from './model/registry.types';
+import type { RegistryDefinition, RegistryMasterRow, RegistryRow, RegistrySort } from './model/registry.types';
 
 /**
  * TZ-NX-REGISTRIES-MASTER-TABLE-UX — `/registries` master table +
@@ -76,9 +77,9 @@ import type { RegistryDefinition, RegistryMasterRow, RegistryRow } from './model
       }
     </ng-template>
 
-    @if (masterRows.length > 0) {
+    @if (masterRows().length > 0) {
       <app-pi-table
-        [data]="masterRows"
+        [data]="masterRows()"
         [columns]="masterColumns"
         [cellTemplates]="masterCellTemplates"
         [localSort]="false"
@@ -116,14 +117,16 @@ export class RegistriesPage implements OnInit {
     return key !== null && !this.catalog.some((d) => d.key === key);
   });
 
-  protected readonly masterRows: RegistryMasterRow[] = this.catalog.map((def) => ({
-    id: def.key,
-    key: def.key,
-    title: def.title,
-    description: def.description,
-    source: def.source,
-    recordCount: def.recordCount ? def.recordCount() : null,
-  }));
+  protected readonly masterRows = signal<RegistryMasterRow[]>(
+    this.catalog.map((def) => ({
+      id: def.key,
+      key: def.key,
+      title: def.title,
+      description: def.description,
+      source: def.source,
+      recordCount: def.recordCount ? def.recordCount() : null,
+    })),
+  );
 
   protected readonly masterColumns: ColumnDef<RegistryMasterRow>[] = [
     { key: 'title', label: 'Реестр' },
@@ -160,6 +163,32 @@ export class RegistriesPage implements OnInit {
   ngOnInit(): void {
     this.masterCellTemplates = { title: this.titleTplRef, source: this.sourceTplRef };
     this.panelTplBinding = this.panelTplRef;
+    void this.loadRecordCounts();
+  }
+
+  private async loadRecordCounts(): Promise<void> {
+    const queryState = { filters: {}, page: 1, pageSize: 1, sort: null as RegistrySort | null };
+    const counts = await Promise.all(
+      this.catalog.map(async (def) => {
+        if (def.recordCount) return def.recordCount();
+        try {
+          const result = await def.dataSource.query({
+            ...queryState,
+            sort: def.defaultSort ?? null,
+            pageSize: def.defaultPageSize ?? 1,
+          });
+          return result.total;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    this.masterRows.update((rows) =>
+      rows.map((row, index) => ({
+        ...row,
+        recordCount: counts[index] ?? row.recordCount,
+      })),
+    );
   }
 
   protected definitionFor(key: string): RegistryDefinition<RegistryRow> | null {

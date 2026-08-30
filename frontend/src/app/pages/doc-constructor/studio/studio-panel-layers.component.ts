@@ -68,7 +68,7 @@ import { blockKey, type TemplateBlock } from '../../../shared/template-block/tem
       >
         <app-pi-select-option value="all">Все страницы</app-pi-select-option>
         @for (page of pageOptions(); track page) {
-          <app-pi-select-option [value]="String(page)">Страница {{ page }}</app-pi-select-option>
+          <app-pi-select-option [value]="pageValue(page)">Страница {{ page }}</app-pi-select-option>
         }
       </app-pi-select>
     </app-pi-form-field>
@@ -96,7 +96,7 @@ import { blockKey, type TemplateBlock } from '../../../shared/template-block/tem
             class="flex-1 min-w-0 justify-start truncate px-1 py-0.5 normal-case tracking-normal font-sans"
             (click)="layerSelect.emit(block)"
           >
-            {{ typeLabel(block) }}
+            {{ typeLabel()(block) }}
             @if (block.layout?.page; as page) {
               <span class="text-muted-foreground"> · стр. {{ page }}</span>
             }
@@ -143,6 +143,10 @@ export class StudioPanelLayersComponent {
   protected readonly GripVerticalIcon = GripVertical;
   protected readonly LockIcon = Lock;
   protected readonly UnlockIcon = Unlock;
+
+  protected pageValue(page: number): string {
+    return String(page);
+  }
 
   onDrop(event: CdkDragDrop<TemplateBlock[]>): void {
     const ordered = [...this.layers()];

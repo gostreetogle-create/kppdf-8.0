@@ -26,6 +26,7 @@ import { createSupplyRequestsRegistry } from './supply-requests.registry';
 import { createOrganizationsRegistry } from './organizations.registry';
 import { createProductPassportsRegistry } from './product-passports.registry';
 import { createUnitsRegistry } from './units.registry';
+import { createUnitsDialogHost } from './units-dialog-host';
 import { createDocStudioDialogDeps, type DocStudioDialogDeps } from './doc-studio-registry-actions';
 import { createTextBlocksRegistry } from './text-blocks.registry';
 import { createTableTemplatesRegistry } from './table-templates.registry';
@@ -78,6 +79,7 @@ export function buildRegistriesCatalogDefault(
   router: Router,
   materialDialogHost: MaterialRegistryDeps['dialogHost'],
   catalogDialogHost: ModuleRegistryDeps['dialogHost'],
+  unitsDialogHost: ReturnType<typeof createUnitsDialogHost>,
   docStudioDeps?: DocStudioDialogDeps,
 ): readonly RegistryDefinition<RegistryRow>[] {
   const materialDeps = buildMaterialRegistryDeps(materialsService, router, materialDialogHost);
@@ -86,7 +88,7 @@ export function buildRegistriesCatalogDefault(
   const studio = docStudioDeps;
   const registryDialog = (() => { try { return inject(PiDialogService, { optional: true }); } catch { return undefined; } })();
   return [
-    createUnitsRegistry(unitsService),
+    createUnitsRegistry(unitsService, unitsDialogHost),
     createMaterialsRegistry(materialDeps),
     createDetailsRegistry(materialDeps),
     createModulesRegistry(moduleDeps),
@@ -134,6 +136,8 @@ export function createRegistriesCatalog(
     productsService,
   });
 
+  const unitsDialogHost = createUnitsDialogHost({ dialog, destroyRef, injector, unitsService });
+
   const docStudioDeps = createDocStudioDialogDeps(dialog, destroyRef, injector);
   docStudioDeps.textBlocks = textBlocksService;
   docStudioDeps.categories = textBlockCategoriesService;
@@ -151,6 +155,7 @@ export function createRegistriesCatalog(
     router,
     materialDialogHost,
     catalogDialogHost,
+    unitsDialogHost,
     docStudioDeps,
   );
 }
