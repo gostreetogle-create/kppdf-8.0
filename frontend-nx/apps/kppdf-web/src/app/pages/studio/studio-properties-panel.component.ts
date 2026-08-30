@@ -6,12 +6,13 @@ import {
   Image,
   Layers,
   LucideAngularModule,
-  Maximize2,
   Table2,
   Trash2,
   Type,
+  Undo2,
+  Wallpaper,
 } from 'lucide-angular';
-import { studioImageUrl, studioLayerTypeLabel } from './studio-block-helpers';
+import { studioBlockIsPassportBackground, studioImageUrl, studioLayerTypeLabel } from './studio-block-helpers';
 import { StudioTablePropertiesComponent } from './studio-table-properties.component';
 import { StudioTextPropertiesComponent } from './studio-text-properties.component';
 
@@ -101,23 +102,42 @@ function layerDisplayName(block: StudioBlock): string {
             } @else {
               <p class="props__hint">Изображение не загружено</p>
             }
+            @if (isPassportBackground(selected)) {
+              <p class="props__hint props__hint--bg">
+                Фоновое изображение — под текстом и таблицами, на холсте не редактируется.
+              </p>
+            }
         </div>
         }
 
         <div class="props__card props__card--actions">
           <h3 class="props__card-title">Действия</h3>
           @if (selected.type === 'image') {
-            <app-pi-button
-              variant="secondary"
-              size="sm"
-              class="w-full"
-              data-test="studio-image-full-page"
-              [disabled]="!!selected.locked"
-              (click)="imageFullPage.emit()"
-            >
-              <lucide-angular [img]="maximizeIcon" [size]="14" aria-hidden="true" />
-              На весь лист
-            </app-pi-button>
+            @if (isPassportBackground(selected)) {
+              <app-pi-button
+                variant="secondary"
+                size="sm"
+                class="w-full"
+                data-test="studio-image-clear-background"
+                [disabled]="!!selected.locked"
+                (click)="imageClearBackground.emit()"
+              >
+                <lucide-angular [img]="undoIcon" [size]="14" aria-hidden="true" />
+                Убрать с фона
+              </app-pi-button>
+            } @else {
+              <app-pi-button
+                variant="secondary"
+                size="sm"
+                class="w-full"
+                data-test="studio-image-as-background"
+                [disabled]="!!selected.locked"
+                (click)="imageAsBackground.emit()"
+              >
+                <lucide-angular [img]="wallpaperIcon" [size]="14" aria-hidden="true" />
+                Сделать фоновым изображением
+              </app-pi-button>
+            }
           }
           <app-pi-button
             variant="destructive"
@@ -263,6 +283,10 @@ function layerDisplayName(block: StudioBlock): string {
       font-size: 12px;
       color: var(--color-muted-foreground);
     }
+    .props__hint--bg {
+      margin-top: 8px;
+      line-height: 1.4;
+    }
 
     .props__empty {
       display: flex;
@@ -283,7 +307,8 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly styleChange = new EventEmitter<Partial<StudioBlockStyle>>();
   @Output() readonly contentChange = new EventEmitter<string>();
   @Output() readonly titleChange = new EventEmitter<string>();
-  @Output() readonly imageFullPage = new EventEmitter<void>();
+  @Output() readonly imageAsBackground = new EventEmitter<void>();
+  @Output() readonly imageClearBackground = new EventEmitter<void>();
   @Output() readonly deleteLayer = new EventEmitter<void>();
   @Output() readonly tableSettingsChange = new EventEmitter<Record<string, unknown>>();
   @Output() readonly saveTableTemplate = new EventEmitter<void>();
@@ -291,11 +316,13 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly saveTextBlock = new EventEmitter<void>();
 
   protected readonly imageUrl = studioImageUrl;
+  protected readonly isPassportBackground = studioBlockIsPassportBackground;
   protected readonly layersIcon = Layers;
   protected readonly typeIconConst = Type;
   protected readonly imageIcon = Image;
   protected readonly tableIcon = Table2;
-  protected readonly maximizeIcon = Maximize2;
+  protected readonly wallpaperIcon = Wallpaper;
+  protected readonly undoIcon = Undo2;
   protected readonly trashIcon = Trash2;
 
   protected layerName(block: StudioBlock): string {

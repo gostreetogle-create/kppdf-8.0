@@ -21,7 +21,7 @@ import {
   clampStudioLayoutPosition,
   normalizeStudioBlockLayout,
   snapStudioLayoutToPageEdges,
-  studioImageLayoutAspectRatio,
+  studioImageResizeAspectRatio,
   studioProportionalImageResize,
 } from './studio-layout';
 
@@ -577,9 +577,8 @@ export class StudioBlocksCanvasComponent {
     const defaultHeight = block.type === 'image' ? 0.28 : block.type === 'table' ? 0.25 : 0.12;
     const startHeight = block.layout.height ?? defaultHeight;
     const start = { x: event.clientX, y: event.clientY, layout: block.layout };
-    const sheetAspect = this.sheetWidth / Math.max(1, this.sheetHeight);
     const imageAspect =
-      block.type === 'image' ? studioImageLayoutAspectRatio(block, sheetAspect) : null;
+      block.type === 'image' ? studioImageResizeAspectRatio(block.layout, defaultHeight) : null;
     let moved = false;
     const move = (e: PointerEvent) => {
       if (Math.abs(e.clientX - start.x) > 3 || Math.abs(e.clientY - start.y) > 3) {
@@ -599,11 +598,19 @@ export class StudioBlocksCanvasComponent {
       const bottomGap = 1 - (start.layout.y + height);
       const tx = 8 / Math.max(1, this.sheetWidth);
       const ty = 8 / Math.max(1, this.sheetHeight);
-      if (Math.abs(rightGap) <= tx) width = 1 - start.layout.x;
-      if (Math.abs(bottomGap) <= ty) height = 1 - start.layout.y;
-      if (block.type === 'image' && imageAspect != null && Math.abs(bottomGap) <= ty) {
-        width = Math.min(1 - start.layout.x, height / imageAspect);
-        height = width * imageAspect;
+      if (block.type === 'image' && imageAspect != null) {
+        if (Math.abs(rightGap) <= tx) {
+          width = 1 - start.layout.x;
+          height = width * imageAspect;
+        }
+        if (start.layout.y + height > 1 - ty) {
+          height = 1 - start.layout.y;
+          width = Math.min(1 - start.layout.x, height / imageAspect);
+          height = width * imageAspect;
+        }
+      } else {
+        if (Math.abs(rightGap) <= tx) width = 1 - start.layout.x;
+        if (Math.abs(bottomGap) <= ty) height = 1 - start.layout.y;
       }
       this.layoutChanged.emit({
         id: block._id,

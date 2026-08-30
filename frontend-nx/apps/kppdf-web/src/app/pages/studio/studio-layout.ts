@@ -164,22 +164,42 @@ export function studioImageLayoutFromNaturalSize(
   return studioCenteredTextLayout(width, height, zIndex, page);
 }
 
+/** Restore a foreground-sized layout after removing passport background mode. */
+export function studioImageForegroundLayout(block: StudioBlock, zIndex: number): StudioBlockLayout {
+  const page = block.layout?.page ?? 1;
+  const nw = block.settings?.['naturalWidth'];
+  const nh = block.settings?.['naturalHeight'];
+  if (typeof nw === 'number' && typeof nh === 'number' && nw > 0 && nh > 0) {
+    return studioImageLayoutFromNaturalSize(nw, nh, zIndex, page);
+  }
+  return studioCenteredImageLayout(zIndex, page);
+}
+
 /** Proportional corner resize: width follows mouse delta, height derived from aspect. */
 export function studioProportionalImageResize(
   startLayout: StudioBlockLayout,
   deltaWidthFraction: number,
   aspectRatio: number,
 ): { readonly width: number; readonly height: number } {
-  let width = Math.max(0.06, Math.min(1 - startLayout.x, startLayout.width + deltaWidthFraction));
+  const maxWidth = 1 - startLayout.x;
+  const maxHeight = 1 - startLayout.y;
+  let width = Math.max(0.06, Math.min(maxWidth, startLayout.width + deltaWidthFraction));
   let height = width * aspectRatio;
-  if (startLayout.y + height > 1) {
-    height = Math.max(0.04, 1 - startLayout.y);
-    width = Math.min(1 - startLayout.x, height / aspectRatio);
+  if (height > maxHeight) {
+    height = Math.max(0.04, maxHeight);
+    width = Math.min(maxWidth, height / aspectRatio);
     height = width * aspectRatio;
   }
-  height = Math.max(0.04, Math.min(1 - startLayout.y, height));
-  width = Math.max(0.06, Math.min(1 - startLayout.x, width));
-  return { width, height };
+  return {
+    width: Math.max(0.06, width),
+    height: Math.max(0.04, height),
+  };
+}
+
+/** Lock resize to the block's current on-screen proportions (not natural image pixels). */
+export function studioImageResizeAspectRatio(layout: StudioBlockLayout, fallbackHeight = 0.28): number {
+  const height = layout.height ?? fallbackHeight;
+  return layout.width > 0 ? height / layout.width : fallbackHeight / 0.4;
 }
 
 export async function studioReadImageNaturalSize(

@@ -6,6 +6,7 @@ import {
   studioCenteredTextLayout,
   studioImageLayoutAspectRatio,
   studioImageLayoutFromNaturalSize,
+  studioImageResizeAspectRatio,
   studioProportionalImageResize,
   zIndexFromLayerOrder,
 } from './studio-layout';
@@ -99,9 +100,19 @@ describe('studio layout helpers', () => {
 
   it('resizes image proportionally from width delta', () => {
     const start = { page: 1, x: 0.1, y: 0.1, width: 0.4, height: 0.28, zIndex: 1, rotation: 0 };
-    const aspect = 0.28 / 0.4;
+    const aspect = studioImageResizeAspectRatio(start);
     const next = studioProportionalImageResize(start, 0.1, aspect);
     expect(next.width).toBeCloseTo(0.5, 3);
     expect(next.height).toBeCloseTo(0.5 * aspect, 3);
+  });
+
+  it('does not jump at resize start when natural aspect differs from layout', () => {
+    const start = { page: 1, x: 0.1, y: 0.1, width: 0.5, height: 0.35, zIndex: 1, rotation: 0 };
+    const onScreenAspect = studioImageResizeAspectRatio(start);
+    const naturalAspect = (210 / 297) * (600 / 800);
+    expect(onScreenAspect).not.toBeCloseTo(naturalAspect, 2);
+    const next = studioProportionalImageResize(start, 0, onScreenAspect);
+    expect(next.width).toBeCloseTo(0.5, 5);
+    expect(next.height).toBeCloseTo(0.35, 5);
   });
 });

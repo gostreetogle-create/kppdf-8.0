@@ -44,7 +44,6 @@ import {
   type TableTemplate,
   type TextBlock,
 } from '@kppdf/data-access';
-import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import { extractErrorMessage } from '@kppdf/util-http';
@@ -70,6 +69,7 @@ import {
 } from './studio-workspace-chrome';
 import { StudioWorkspaceShellComponent } from './studio-workspace-shell.component';
 import {
+  studioBlockIsPassportBackground,
   studioImageSettingsForUpdate,
   studioMergeBlockSettings,
 } from './studio-block-helpers';
@@ -79,6 +79,7 @@ import {
   studioCenteredImageLayout,
   studioCenteredTableLayout,
   studioCenteredTextLayout,
+  studioImageForegroundLayout,
   studioImageLayoutFromNaturalSize,
   studioReadImageNaturalSize,
   zIndexFromLayerOrder,
@@ -104,7 +105,6 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
     StudioTemplatePanelComponent,
-    ButtonComponent,
     LucideAngularModule,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,9 +131,14 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
       >
         <div kpWsRibbonExtra class="studio-ribbon-extra">
           <span class="ribbon-label">Студия документов</span>
-          <app-pi-button variant="secondary" size="sm" data-test="studio-add-page" (click)="addPage()">
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-add-page"
+            (click)="addPage()"
+          >
             + Страница
-          </app-pi-button>
+          </button>
           <div class="page-nav" data-test="studio-page-nav">
             <button
               type="button"
@@ -143,7 +148,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               aria-label="Предыдущая страница"
               (click)="prevPage()"
             >
-              <lucide-angular [img]="chevronLeft" [size]="16" aria-hidden="true" />
+              <lucide-angular [img]="chevronLeft" [size]="14" aria-hidden="true" />
             </button>
             <span class="page-nav__label">Стр. {{ currentPage() }} / {{ pageCount() }}</span>
             <button
@@ -154,7 +159,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               aria-label="Следующая страница"
               (click)="nextPage()"
             >
-              <lucide-angular [img]="chevronRight" [size]="16" aria-hidden="true" />
+              <lucide-angular [img]="chevronRight" [size]="14" aria-hidden="true" />
             </button>
           </div>
           <button
@@ -279,7 +284,8 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (styleChange)="patchBlockStyle($event)"
                 (contentChange)="patchBlockContent($event)"
                 (titleChange)="patchBlockTitle($event)"
-                (imageFullPage)="setImageFullPage()"
+                (imageAsBackground)="setImageAsBackground()"
+                (imageClearBackground)="clearImageBackground()"
                 (deleteLayer)="deleteLayerById(propertiesBlock()?._id)"
                 (tableSettingsChange)="patchTableSettings($event)"
                 (saveTableTemplate)="openSaveTableTemplateDialog()"
@@ -335,29 +341,65 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     }
     .studio-editor-shell { flex: 1; min-height: 0; }
     .studio-loading { padding: 24px; color: var(--color-muted-foreground); }
-    .studio-ribbon-extra, .studio-ribbon-actions {
-      display: inline-flex; align-items: center; gap: var(--space-1, 4px); flex-shrink: 0;
+    .studio-ribbon-extra,
+    .studio-ribbon-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1, 4px);
+      flex-shrink: 0;
+      height: 100%;
+    }
+    .studio-ribbon-extra {
+      padding-right: var(--space-1, 4px);
+    }
+    .studio-ribbon-actions {
+      border-left: 1px solid var(--color-rule);
+      padding-left: var(--space-2, 8px);
+      margin-left: var(--space-1, 4px);
     }
     .ribbon-label {
-      font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
-      text-transform: uppercase; color: var(--color-muted-foreground); margin-right: var(--space-1, 4px);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-muted-foreground);
+      line-height: 1;
     }
     .page-nav {
-      display: inline-flex; align-items: center; gap: 6px; margin-left: 8px;
-      padding: 2px 4px; border: 1px solid var(--color-rule); border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1, 4px);
+      height: var(--kp-ribbon-control-h, 26px);
+      padding: 0 var(--space-1, 4px);
+      border: 1px solid var(--color-rule);
+      border-radius: var(--radius-sm, 2px);
       background: var(--color-paper-raised);
     }
     .page-nav__btn {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; padding: 0;
-      border: 1px solid var(--color-rule-strong); border-radius: var(--radius-sm);
-      background: var(--color-paper-2); color: var(--color-ink); cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--kp-ribbon-control-h, 26px);
+      height: var(--kp-ribbon-control-h, 26px);
+      padding: 0;
+      border: 1px solid var(--color-rule-strong);
+      border-radius: var(--radius-sm, 2px);
+      background: var(--color-paper-2);
+      color: var(--color-ink);
+      cursor: pointer;
     }
     .page-nav__btn:disabled { opacity: 0.35; cursor: default; }
     .page-nav__btn:not(:disabled):hover { background: var(--color-paper-3); }
     .page-nav__label {
-      font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums;
-      color: var(--color-ink); min-width: 6.5rem; text-align: center;
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-ink);
+      min-width: 6.5rem;
+      text-align: center;
+      line-height: 1;
     }
     .studio-canvas-host {
       position: relative; width: 100%; height: 100%; min-height: 0;
@@ -370,9 +412,6 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
       margin: 0; padding: 24px; font-size: 13px; color: var(--color-muted-foreground);
     }
     .preview-state--error { color: var(--color-destructive); }
-    :host ::ng-deep .kp-ws-ribbon-btn--active {
-      background: var(--color-gold); border-color: var(--color-gold-deep); color: var(--color-on-gold);
-    }
   `],
 })
 export class StudioEditorPage implements AfterViewInit, OnDestroy {
@@ -771,9 +810,44 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void this.createImageLayer(file);
   }
 
-  setImageFullPage(): void {
+  setImageAsBackground(): void {
     const block = this.propertiesBlock();
-    if (!block?.layout || block.type !== 'image') return;
+    if (!block?.layout || block.type !== 'image' || block.locked) return;
+    if (studioBlockIsPassportBackground(block)) return;
+    const page = block.layout.page ?? this.currentPage();
+    const previousBackgrounds = this.blocks().filter(
+      (b) =>
+        b._id !== block._id &&
+        b.type === 'image' &&
+        (b.layout?.page ?? 1) === page &&
+        studioBlockIsPassportBackground(b),
+    );
+    void (async () => {
+      for (const prev of previousBackgrounds) {
+        await this.restoreImageFromBackground(prev, false);
+      }
+      await this.applyImageBackground(block);
+      if (previousBackgrounds.length > 0) {
+        this.toast.success('Фоновое изображение заменено');
+      } else {
+        this.toast.success('Фоновое изображение установлено');
+      }
+    })();
+  }
+
+  clearImageBackground(): void {
+    const block = this.propertiesBlock();
+    if (!block?.layout || block.type !== 'image' || block.locked) return;
+    if (!studioBlockIsPassportBackground(block)) return;
+    void this.restoreImageFromBackground(block, true).then((ok) => {
+      if (ok) {
+        this.toast.success('Слой снова на холсте — можно двигать и менять размер');
+      }
+    });
+  }
+
+  private async applyImageBackground(block: StudioBlock): Promise<boolean> {
+    if (!block.layout || block.type !== 'image') return false;
     const fullLayout = normalizeStudioBlockLayout({
       ...block.layout,
       x: 0,
@@ -782,37 +856,53 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       height: 1,
       zIndex: 0,
     });
-    const optimisticSettings = { ...(block.settings ?? {}), overlay: true };
-    const persistSettings = studioImageSettingsForUpdate(block.settings, { overlay: true });
+    return this.patchImageBlock(block, fullLayout, { overlay: true });
+  }
+
+  private async restoreImageFromBackground(block: StudioBlock, showConflict = true): Promise<boolean> {
+    if (!block.layout || block.type !== 'image') return false;
+    const zIndex = Math.max(1, block.layout.zIndex ?? 1);
+    const layout = studioImageForegroundLayout(block, zIndex);
+    return this.patchImageBlock(block, layout, { overlay: false }, showConflict);
+  }
+
+  private async patchImageBlock(
+    block: StudioBlock,
+    layout: StudioBlockLayout,
+    settingsPatch: Record<string, unknown>,
+    showConflict = true,
+  ): Promise<boolean> {
+    const optimisticSettings = studioMergeBlockSettings(block.settings, undefined, settingsPatch);
+    const persistSettings = studioImageSettingsForUpdate(block.settings, settingsPatch);
     this.layoutsDirty = true;
     this.blocks.update((b) =>
       b.map((x) =>
-        x._id === block._id ? { ...x, layout: fullLayout, settings: optimisticSettings } : x,
+        x._id === block._id ? { ...x, layout, settings: optimisticSettings } : x,
       ),
     );
-    void firstValueFrom(
+    const r = await firstValueFrom(
       this.blocksService.update(block._id, {
-        layout: fullLayout,
+        layout,
         settings: persistSettings,
       }),
-    ).then((r) => {
-      if (r.ok) {
-        this.blocks.update((b) =>
-          b.map((x) => {
-            if (x._id !== r.data._id) return x;
-            return {
-              ...r.data,
-              layout: coerceStudioBlockLayout(r.data.layout ?? fullLayout),
-              settings: studioMergeBlockSettings(block.settings, r.data.settings, { overlay: true }),
-            };
-          }),
-        );
-        this.layoutsDirty = false;
-        this.refreshPreviewIfActive();
-      } else {
-        this.conflict();
-      }
-    });
+    );
+    if (!r.ok) {
+      if (showConflict) this.conflict();
+      return false;
+    }
+    this.blocks.update((b) =>
+      b.map((x) => {
+        if (x._id !== r.data._id) return x;
+        return {
+          ...r.data,
+          layout: coerceStudioBlockLayout(r.data.layout ?? layout),
+          settings: studioMergeBlockSettings(block.settings, r.data.settings, settingsPatch),
+        };
+      }),
+    );
+    this.layoutsDirty = false;
+    this.refreshPreviewIfActive();
+    return true;
   }
 
   prevPage(): void {
