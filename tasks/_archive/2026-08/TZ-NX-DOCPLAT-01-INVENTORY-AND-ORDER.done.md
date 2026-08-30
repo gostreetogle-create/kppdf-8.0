@@ -56,7 +56,8 @@ docs/pages/PAGE-TZ-INDEX.md (1 строка)
 docs/agent-checklists/_NOW.md (своя секция)
 ```
 
-Чужой WIP не коммитился: `backend/unit, auth, common`, `frontend/**`, `frontend-nx/**`, `start.mjs`, `package.json`, `docker-compose.yml`, `tasks/QUEUE-LIVE.md` — не тронуты/не staged.
+Продуктовый WIP не коммитился: `backend/unit, auth, common`, `frontend/**`, `frontend-nx/**`, `start.mjs`, `package.json`, `docker-compose.yml` — не тронуты/не staged.
+Примечание по составу delivery-коммита `bc65aa35`: вместе с файлами волны в коммит попали (1) 5 удалений `tasks/_backlog/doc-studio/TZ-DOC-STUDIO-2001..2005*` — это архив-процесс параллельной волны S0 (у всех 5 уже есть `.done.md` в `_archive/2026-08/`, удаление источников соответствует её намерению; попытка снять их с индекса до коммита не удалась из-за неверных имён pathspec); (2) чеклисты и evidence других NX-волн, лежавшие untracked на диске. Итоговое состояние корректно, продуктовый код не затронут.
 
 ## Known limits
 

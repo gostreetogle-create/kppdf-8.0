@@ -62,7 +62,7 @@
 
 - agent_id: `freebuff-docplat-01`
 - task: `TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER`
-- commit_sha: `b93f1a17d15af88af1858dce640e3b3b401ff943` (HEAD на момент финализации; финальный push-SHA в git log)
+- commit_sha: `bc65aa35445a03e69578c48e82a8b76c6c2aaa76` (delivery commit `bc65aa35` на `origin/main`)
 - type: `docs-only`
 - outcome: `DONE`
 
