@@ -5,7 +5,6 @@ import {
   PLATFORM_ID,
   computed,
   inject,
-  signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {
@@ -29,9 +28,8 @@ import { ThemeToggleComponent } from './theme-toggle.component';
 import { NavHistoryService } from './nav-history.service';
 import { NAV_CATEGORIES, filterNavCategories, matchActiveCategoryId } from './nav-categories';
 import { collectPageRoutePaths } from './route-paths';
+import { ShellToolRailService, type ShellToolRailItem } from './shell-tool-rail.service';
 import {
-  LEFT_TOOL_RAIL_ITEMS,
-  RIGHT_TOOL_RAIL_ITEMS,
   isToolRailItemDisabled,
   type ToolRailItem,
 } from './tool-rail-definitions';
@@ -164,9 +162,9 @@ import {
               [attr.data-test]="'shell-tool-left-' + tool.id"
               [attr.aria-label]="tool.ariaLabel"
               [attr.title]="tool.title"
-              [disabled]="isToolDisabled(tool)"
-              [attr.aria-disabled]="isToolDisabled(tool) ? 'true' : null"
-              (click)="onToolClick(tool)"
+              [disabled]="tool.disabled === true"
+              [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
+              (click)="onShellToolClick(tool)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
             </button>
@@ -206,9 +204,9 @@ import {
               [attr.data-test]="'shell-tool-right-' + tool.id"
               [attr.aria-label]="tool.ariaLabel"
               [attr.title]="tool.title"
-              [disabled]="isToolDisabled(tool)"
-              [attr.aria-disabled]="isToolDisabled(tool) ? 'true' : null"
-              (click)="onToolClick(tool)"
+              [disabled]="tool.disabled === true"
+              [attr.aria-disabled]="tool.disabled === true ? 'true' : null"
+              (click)="onShellToolClick(tool)"
             >
               <lucide-angular [img]="tool.icon" [size]="13" aria-hidden="true" />
             </button>
@@ -310,9 +308,10 @@ export class AppShellComponent {
   protected readonly logOutIcon = LogOut;
   protected readonly bellIcon = Bell;
 
-  protected readonly leftTools = signal(LEFT_TOOL_RAIL_ITEMS);
-  protected readonly rightTools = signal(RIGHT_TOOL_RAIL_ITEMS);
-  protected readonly activeToolId = signal<string | null>(null);
+  private readonly shellTools = inject(ShellToolRailService);
+  protected readonly leftTools = this.shellTools.leftTools;
+  protected readonly rightTools = this.shellTools.rightTools;
+  protected readonly activeToolId = this.shellTools.activeToolId;
 
   protected readonly navHistory = inject(NavHistoryService);
 
@@ -364,9 +363,8 @@ export class AppShellComponent {
     return isToolRailItemDisabled(tool);
   }
 
-  protected onToolClick(tool: ToolRailItem): void {
-    if (this.isToolDisabled(tool)) return;
-    this.activeToolId.set(tool.id);
+  protected onShellToolClick(tool: ShellToolRailItem): void {
+    this.shellTools.invoke(tool);
   }
 
   protected async onLogout(): Promise<void> {

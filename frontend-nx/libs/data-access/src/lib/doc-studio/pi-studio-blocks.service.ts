@@ -40,4 +40,14 @@ export class PiStudioBlocksService {
   updateLayouts(documentId: string, payload: UpdateStudioBlockLayoutsPayload): Observable<SilentResult<StudioBlock[]>> {
     return silentPatch<StudioBlock[]>(this.http, `${this.baseUrl}/studio-documents/${documentId}/blocks/layouts`, payload);
   }
+
+  uploadImage(blockId: string, file: File): Observable<SilentResult<{ url: string }>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return silentPost<{ url: string }>(
+      this.http,
+      `${this.baseUrl}/template-blocks/${blockId}/image`,
+      formData,
+    );
+  }
 }

@@ -39,4 +39,12 @@ export class PiStudioDocumentsService {
   remove(id: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/studio-documents/${id}`);
   }
+
+  preview(id: string): Observable<SilentResult<{ html: string; revision: number }>> {
+    return silentPost<{ html: string; revision: number }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/preview`,
+      {},
+    );
+  }
 }

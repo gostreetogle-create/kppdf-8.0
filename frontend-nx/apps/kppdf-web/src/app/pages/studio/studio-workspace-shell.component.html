@@ -1,0 +1,96 @@
+<div
+  class="kp-ws-shell"
+  [class.kp-ws-shell--portrait]="orientation() === 'portrait'"
+  [class.kp-ws-shell--landscape]="orientation() === 'landscape'"
+  [class.kp-ws-shell--desktop-rail]="showDesktopRail()"
+  data-test="studio-workspace-shell"
+>
+  <div class="kp-ws">
+    <header class="kp-ws-ribbon" data-test="studio-workspace-ribbon">
+      <ng-content select="[kpWsRibbonExtra]" />
+
+      <div class="kp-ws-ribbon__group kp-ws-ribbon__group--grow">
+        @if (badgeText()) {
+          <span class="kp-ws-badge">{{ badgeText() }}</span>
+        }
+        @if (totalText()) {
+          <span class="kp-ws-total">{{ totalText() }}</span>
+        }
+      </div>
+
+      <ng-content select="[kpWsRibbonActions]" />
+    </header>
+
+    @if (railItems().length > 0) {
+      <nav
+        class="kp-ws-rail kp-ws-rail--horizontal"
+        data-test="studio-icon-rail-horizontal"
+        aria-label="Разделы студии"
+      >
+        @for (item of railItems(); track item.id) {
+          <button
+            type="button"
+            class="kp-ws-rail-btn pi-focus-ring"
+            [class.kp-ws-rail-btn--active]="activeSection() === item.id && !panelCollapsed()"
+            [title]="item.title"
+            [attr.aria-expanded]="activeSection() === item.id && !panelCollapsed()"
+            (click)="onSectionClick(item.id)"
+          >
+            <lucide-angular [img]="item.icon" [size]="14" aria-hidden="true" />
+            <span class="kp-ws-rail-btn__label">{{ item.title }}</span>
+          </button>
+        }
+      </nav>
+    }
+
+    <div
+      class="kp-ws-body"
+      data-test="studio-workspace-body"
+      [class.kp-ws-body--collapsed]="panelCollapsed()"
+    >
+      <aside
+        class="kp-ws-panel"
+        [class.kp-ws-panel--left]="resolvedPanelSide() === 'left'"
+        [class.kp-ws-panel--right]="resolvedPanelSide() === 'right'"
+        [class.kp-ws-panel--wide]="panelWide()"
+        data-test="studio-tools-panel"
+        [attr.data-panel-side]="resolvedPanelSide()"
+        [attr.data-active-section]="activeSection() ?? ''"
+      >
+        <div class="kp-ws-panel__head">{{ panelTitle() }}</div>
+        <div class="kp-ws-panel__body">
+          <ng-content select="[kpWsPanel]" />
+        </div>
+      </aside>
+
+      <main class="kp-ws-viewport" data-test="studio-viewport" tabindex="0">
+        <div class="kp-ws-viewport__stage" #viewportStage>
+          <div
+            class="kp-ws-sheet"
+            [class.kp-ws-sheet--host]="sheetHost()"
+            data-test="studio-a4-sheet"
+            aria-label="Лист A4"
+            (click)="onSheetClick()"
+          >
+            <ng-content select="[kpWsSheet]" />
+          </div>
+        </div>
+        <div class="kp-ws-viewport__toolbar">
+          <button type="button" class="kp-ws-ribbon-btn" disabled aria-disabled="true">
+            <lucide-angular [img]="maximizeIcon" [size]="10" aria-hidden="true" />
+            Fit
+          </button>
+          <button type="button" class="kp-ws-ribbon-btn" disabled aria-disabled="true">100%</button>
+          <button type="button" class="kp-ws-ribbon-btn">{{ pageLabel() }}</button>
+        </div>
+      </main>
+    </div>
+
+    <footer class="kp-ws-status" data-test="studio-workspace-status">
+      <span>{{ statusText() }}</span>
+      @if (debugText()) {
+        <span class="kp-ws-status__debug">{{ debugText() }}</span>
+      }
+    </footer>
+  </div>
+</div>

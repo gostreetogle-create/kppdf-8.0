@@ -1,17 +1,32 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T19:22:08+03:00
+updated_at: 2026-08-30T20:21:01+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 19:22).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 20:21).
 
-**Phase A (`WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) закрыта — A1–A6 все DONE,
-live-verified.** Следующий шаг — Phase B (Студия): B1
-`TZ-NX-DOCSTUDIO-S4-TYPOGRAPHY`.
+**Phase A закрыта (A1–A6).** Phase B (Студия) уже в работе — отдельная
+сессия (Cursor) вживую строила S4/S5/S6-территорию (реальный редактор
+таблиц, рельс Элементы/Слои/Свойства) параллельно этому чату; PO подтвердил
+и попросил Claude принять и доделать. См.
+`TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX` в DONE — 2 реальных бага
+найдены и починены, всё закоммичено. Остаётся открытым (не в этом TZ):
+конфигурация колонок таблицы, save-as-template UI, PDF/Archive в ribbon,
+image data-binding/тайлинг фона (нужно для паспорта изделия — см. отдельный
+анализ в диалоге с PO 2026-08-30).
 
 ## DONE this slice
 
+- `TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX` — принял и закрыл
+  in-progress работу Cursor по Студии (реальный табличный редактор, рельс
+  Элементы/Слои/Свойства, ~1700 строк); нашёл и починил 2 живых бага:
+  (1) «+ Текст»/«+ Фото» были задизейблены на пустом документе — самое
+  первое естественное действие ничего не делало; (2) `ShellToolRailService`
+  после рефакторинга рельса терял дефолтные плейсхолдеры на ВСЕХ страницах,
+  не только Студии — это и был тот самый «чужой несвязанный» app-shell тест,
+  который тянулся с A4 (оказался связан). Live-verified + 4 новых теста;
+  archive `docs/agent-checklists/TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX.md`
 - `TZ-NX-REGISTRIES-BROWSER-MATRIX-2` (Wave A6, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   честный живой обход всех 10 реестров (прошлая версия сама признавала
   "live screenshots unavailable", 120/120 из code-review); нашёл и починил
@@ -82,11 +97,11 @@ live-verified.** Следующий шаг — Phase B (Студия): B1
   would fix this but touches the same cycle-sensitive recursive walk every
   Product/Module tree relies on — bigger blast radius than A4's isolated
   `buildMaterialTree()` addition → own TZ.
-- App-shell rail-layout: `app-shell.component.spec.ts` currently fails
-  (1 test) against someone's in-flight uncommitted `app-shell.component.ts`
-  edit (28-line diff) — found live during A4's `nx test kppdf-web` run,
-  confirmed unrelated via `git diff` (not touched this session). Whoever
-  owns that edit needs to finish it; not folded into any TZ closed today.
+- ~~App-shell rail-layout test failure~~ — **RESOLVED** by
+  `TZ-NX-DOCSTUDIO-ELEMENT-CREATION-AND-RAIL-FIX`: turned out to be a real
+  side effect of the app-wide `ShellToolRailService` refactor (empty
+  default rail instead of demo placeholders), not an unrelated concern as
+  first assumed during A4.
 - Nested `@ValidateNested()` DTO validation errors (e.g.
   `overrideDimensions.unit`) still return NestJS's raw multi-line
   "An instance of X has failed the validation..." dump untranslated — found

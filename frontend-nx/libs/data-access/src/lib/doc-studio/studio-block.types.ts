@@ -1,5 +1,15 @@
 export type StudioBlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
+export type StudioBlockAlign = 'left' | 'center' | 'right' | 'justify';
+
+export interface StudioBlockStyle {
+  readonly fontFamily?: string;
+  readonly fontSizePt?: number;
+  readonly color?: string;
+  readonly align?: StudioBlockAlign;
+  readonly lineHeight?: number;
+}
+
 export interface StudioBlockLayout {
   readonly page: number;
   readonly x: number;
@@ -20,6 +30,7 @@ export interface StudioBlock {
   readonly locked?: boolean;
   readonly isActive?: boolean;
   readonly settings?: Record<string, unknown>;
+  readonly style?: StudioBlockStyle;
 }
 
 export interface CreateStudioBlockPayload {
@@ -31,6 +42,7 @@ export interface CreateStudioBlockPayload {
   readonly layout?: StudioBlockLayout;
   readonly locked?: boolean;
   readonly isActive?: boolean;
+  readonly settings?: Record<string, unknown>;
 }
 
 export interface UpdateStudioBlockPayload {
@@ -41,6 +53,8 @@ export interface UpdateStudioBlockPayload {
   readonly layout?: Partial<StudioBlockLayout>;
   readonly locked?: boolean;
   readonly isActive?: boolean;
+  readonly style?: Partial<StudioBlockStyle>;
+  readonly settings?: Record<string, unknown>;
 }
 
 export interface StudioBlockLayoutUpdate {
