@@ -32,4 +32,4 @@
 - status: DONE
 - closed_at: 2026-08-30
 - closed_by: freebuff-pdf-font-ready
-- head_sha: a148711a
+- head_sha: c063df7853102b30e71a7c998daf6075e31ee02f

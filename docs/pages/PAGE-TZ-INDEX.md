@@ -218,3 +218,5 @@ Merged: 502→501, 511→507, 512→506.
 Audit note (doc-constructor detail): `DOC-CONSTRUCTOR-UX-AUDIT.md`
 
 | TZ-NX-DOCPLAT-01 DONE (docs/tasks) | tasks/ порядок + legacy-съёмка студии/builder/КП | archive: `tasks/_archive/2026-08/TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER.done.md` · evidence: `docs/agent-checklists/evidence/TZ-NX-DOCPLAT-01/` |
+
+| TZ-BACKEND-PDF-FONT-READY DONE (backend render) | `font-display: block` + bounded fonts.ready перед page.pdf | archive: `tasks/_archive/2026-08/TZ-BACKEND-PDF-FONT-READY.done.md` |
