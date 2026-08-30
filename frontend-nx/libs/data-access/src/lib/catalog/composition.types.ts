@@ -92,4 +92,4 @@ export type CompositionLineUpdateDto =
       notes?: string;
     };
 
-export type CompositionParentKind = 'module' | 'product';
+export type CompositionParentKind = 'module' | 'product' | 'material';

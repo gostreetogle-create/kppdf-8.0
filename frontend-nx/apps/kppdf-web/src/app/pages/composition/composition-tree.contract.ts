@@ -7,6 +7,7 @@ import type {
 
 /** Allowed composition line types per parent entity (backend rules). */
 export function allowedLineTypes(parent: CompositionParentKind): CompositionLineType[] {
+  if (parent === 'material') return ['material'];
   if (parent === 'module') return ['module', 'material'];
   return ['module', 'material', 'product'];
 }
@@ -15,11 +16,12 @@ export function isLineTypeAllowed(parent: CompositionParentKind, lineType: Compo
   return allowedLineTypes(parent).includes(lineType);
 }
 
-/** Product parent cannot attach raw Material directly. */
+/** Product parent cannot attach raw Material directly; Деталь composition is raw-only. */
 export function isMaterialKindAllowedForParent(
   parent: CompositionParentKind,
   materialKind?: MaterialKind | null,
 ): boolean {
+  if (parent === 'material') return materialKind === 'raw';
   if (parent === 'module') return true;
   return materialKind !== 'raw';
 }
@@ -42,6 +44,8 @@ export function canAddIntoNode(
   rootKind: CompositionParentKind,
   node: CompositionTreeNode,
 ): boolean {
+  // Деталь composition is flat (raw materials only) — nothing to drill into.
+  if (rootKind === 'material') return false;
   if (node.kind === 'material') return false;
   if (rootKind === 'module') return node.kind === 'module';
   return node.kind === 'product' || node.kind === 'module';

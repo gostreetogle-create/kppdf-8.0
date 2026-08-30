@@ -34,6 +34,7 @@ import { TextareaComponent } from '@kppdf/ui/textarea';
 import { PiFormSectionComponent } from '@kppdf/ui/form-section';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { formatMaterialKind } from '../data/material-formatters';
+import { CompositionPanelComponent } from '../../composition/composition-panel.component';
 
 const DIMENSION_TYPES: { value: MaterialDimensionType; label: string }[] = [
   { value: 'length', label: 'Длина' },
@@ -72,6 +73,7 @@ type DimensionGroup = FormGroup<{
     InputComponent,
     TextareaComponent,
     PiFormSectionComponent,
+    CompositionPanelComponent,
   ],
   template: `
     <app-pi-dialog
@@ -174,12 +176,14 @@ type DimensionGroup = FormGroup<{
         </app-pi-form-section>
 
         <app-pi-form-section title="Описание" headingId="mat-form-notes" tone="neutral">
-          <app-pi-form-field label="Описание" htmlFor="mat-description">
-            <app-pi-textarea id="mat-description" formControlName="description" [rows]="2" />
-          </app-pi-form-field>
-          <app-pi-form-field label="Заметки" htmlFor="mat-notes">
-            <app-pi-textarea id="mat-notes" formControlName="notes" [rows]="2" />
-          </app-pi-form-field>
+          <div class="grid md:grid-cols-2 gap-form-field">
+            <app-pi-form-field label="Описание" htmlFor="mat-description">
+              <app-pi-textarea id="mat-description" formControlName="description" [rows]="2" />
+            </app-pi-form-field>
+            <app-pi-form-field label="Заметки" htmlFor="mat-notes">
+              <app-pi-textarea id="mat-notes" formControlName="notes" [rows]="2" />
+            </app-pi-form-field>
+          </div>
         </app-pi-form-section>
 
         <app-pi-form-section title="Габариты" headingId="mat-form-dims" tone="dimensions">
@@ -214,6 +218,16 @@ type DimensionGroup = FormGroup<{
           </div>
         </app-pi-form-section>
 
+        @if (isDetailForm()) {
+          @if (savedId(); as id) {
+            <pi-composition-panel parentKind="material" [entityId]="id" data-test="detail-bom-composition" />
+          } @else {
+            <p class="text-sm text-muted-foreground" data-test="detail-bom-create-hint">
+              Сохраните деталь, чтобы указать материалы (сырьё).
+            </p>
+          }
+        }
+
         @if (errorMessage()) {
           <p role="alert" class="text-xs text-destructive" data-test="material-form-error">{{ errorMessage() }}</p>
         }
@@ -243,6 +257,13 @@ export class MaterialFormDialogComponent implements OnInit {
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly units = signal<Unit[]>([]);
+  protected readonly savedId = signal<string | null>(null);
+  protected readonly mode = signal<'create' | 'edit'>(this.data.mode);
+  private materialEntity = signal<Material | undefined>(undefined);
+
+  protected readonly isDetailForm = computed(
+    () => this.data.lockMaterialKind === 'part' || this.data.entityLabel === 'деталь',
+  );
 
   protected readonly dialogTitle = computed(() => {
     const label = this.data.entityLabel ?? 'материал';
@@ -287,6 +308,8 @@ export class MaterialFormDialogComponent implements OnInit {
       this.form.controls.materialKind.disable();
     }
     if (this.data.material) {
+      this.savedId.set(this.data.material._id);
+      this.materialEntity.set(this.data.material);
       this.patchMaterial(this.data.material);
     } else if (this.data.lockMaterialKind) {
       this.form.controls.materialKind.setValue(this.data.lockMaterialKind);
@@ -331,9 +354,10 @@ export class MaterialFormDialogComponent implements OnInit {
     this.submitting.set(true);
     this.errorMessage.set(null);
 
+    const editId = this.materialEntity()?._id ?? this.data.material?._id;
     const res =
-      this.data.mode === 'edit' && this.data.material
-        ? await firstValueFrom(this.materialsService.update(this.data.material._id, payload))
+      this.mode() === 'edit' && editId
+        ? await firstValueFrom(this.materialsService.update(editId, payload))
         : await firstValueFrom(this.materialsService.create(payload));
 
     this.submitting.set(false);
@@ -343,7 +367,14 @@ export class MaterialFormDialogComponent implements OnInit {
       return;
     }
 
-    this.ref.close(res.data);
+    this.savedId.set(res.data._id);
+    this.materialEntity.set(res.data);
+    this.mode.set('edit');
+    this.form.markAsPristine();
+
+    if (this.data.mode === 'edit' || !this.isDetailForm()) {
+      this.ref.close(res.data);
+    }
   }
 
   private async loadUnits(): Promise<void> {

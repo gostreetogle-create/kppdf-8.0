@@ -129,4 +129,44 @@ describe('CompositionLineService', () => {
       await expect(svc.validateReference('product', line, models)).rejects.toThrow(/unitPriceOverride is only allowed on product lines/i);
     });
   });
+
+  describe('validateReference — material parent (TZ-NX-DETAIL-MATERIAL-BOM)', () => {
+    function mockMaterialModel(material: { materialKind?: string } | null) {
+      return {
+        findById: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue(material),
+        }),
+      } as any;
+    }
+
+    it('accepts a raw material into a Деталь composition', async () => {
+      const materialModel = mockMaterialModel({ materialKind: 'raw' });
+      const line = { _id: new Types.ObjectId(), lineType: 'material' as const, refId: new Types.ObjectId(), quantity: 1, sortOrder: 0 };
+      await expect(svc.validateReference('material', line, { materialModel })).resolves.toBeUndefined();
+    });
+
+    it('rejects a non-raw material into a Деталь composition', async () => {
+      const materialModel = mockMaterialModel({ materialKind: 'part' });
+      const line = { _id: new Types.ObjectId(), lineType: 'material' as const, refId: new Types.ObjectId(), quantity: 1, sortOrder: 0 };
+      await expect(svc.validateReference('material', line, { materialModel })).rejects.toThrow(
+        /только сырьё/i,
+      );
+    });
+
+    it('rejects a missing material refId', async () => {
+      const materialModel = mockMaterialModel(null);
+      const line = { _id: new Types.ObjectId(), lineType: 'material' as const, refId: new Types.ObjectId(), quantity: 1, sortOrder: 0 };
+      await expect(svc.validateReference('material', line, { materialModel })).rejects.toThrow(NotFoundException);
+    });
+
+    it('rejects a module or product line on a material parent', async () => {
+      const materialModel = mockMaterialModel({ materialKind: 'raw' });
+      const moduleLine = { _id: new Types.ObjectId(), lineType: 'module' as const, refId: new Types.ObjectId(), quantity: 1, sortOrder: 0 };
+      await expect(svc.validateReference('material', moduleLine, { materialModel })).rejects.toThrow(
+        /только материалы/i,
+      );
+    });
+  });
 });

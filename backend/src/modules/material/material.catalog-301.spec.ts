@@ -13,7 +13,7 @@ function buildService() {
   const counter = { next: jest.fn() } as any;
   const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
   return {
-    service: new MaterialService(materialModel, categoryModel, counter, catalogGraph),
+    service: new MaterialService(materialModel, categoryModel, counter, catalogGraph, undefined),
     materialModel,
   };
 }

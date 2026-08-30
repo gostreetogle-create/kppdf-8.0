@@ -199,14 +199,53 @@ export class CatalogGraphService {
     return { id: String(parent._id), kind, name: parent.name ?? String(parent._id), relation, quantity: quantity ?? 1, unit, sortOrder: sortOrder ?? 0 };
   }
 
-  async getTree(kind: ParentKind, id: string, maxDepth = MAX_DEPTH): Promise<TreeNode> {
+  async getTree(kind: ParentKind | 'material', id: string, maxDepth = MAX_DEPTH): Promise<TreeNode> {
     if (!Number.isInteger(maxDepth) || maxDepth < 1 || maxDepth > MAX_DEPTH) throw new BadRequestException(`maxDepth must be an integer from 1 to ${MAX_DEPTH}`);
     if (!Types.ObjectId.isValid(id)) throw new BadRequestException('Invalid id');
+    if (kind === 'material') return this.buildMaterialTree(id);
     const root = kind === 'product'
       ? await this.productModel.findById(id).select('name unit composition productModuleIds photoIds').lean().exec()
       : await this.moduleModel.findById(id).select('name composition materials photoIds mainPhotoId').lean().exec();
     if (!root) throw new BadRequestException(`${kind} ${id} not found`);
     return this.buildNode(id, root.name ?? '', kind, root, maxDepth, 0, new Set(), new Map());
+  }
+
+  /**
+   * Деталь (materialKind='part') composition is a flat BOM of raw materials
+   * only — raw materials never carry their own composition, so this is
+   * always exactly one level deep. Deliberately NOT routed through
+   * `buildNode`/`getChildren`'s recursive product/module walk: keeps this
+   * addition isolated from the shared cycle-sensitive graph-walking code
+   * those two entity kinds rely on.
+   */
+  private async buildMaterialTree(id: string): Promise<TreeNode> {
+    const root = await this.materialModel
+      .findById(id)
+      .select('name unit composition photoIds mainPhotoId')
+      .lean()
+      .exec();
+    if (!root) throw new BadRequestException(`material ${id} not found`);
+    const photoCache = new Map<string, string | undefined>();
+    const node: TreeNode = { _id: id, name: root.name ?? '', kind: 'material', quantity: 1, children: [] };
+    const photoUrl = await this.resolvePhotoUrl(root as unknown as Record<string, unknown>, photoCache);
+    if (photoUrl) node.photoUrl = photoUrl;
+    const lines = (root as unknown as { composition?: LeanLine[] }).composition ?? [];
+    for (const line of lines) {
+      const child = await this.lookupMaterial(String(line.refId));
+      const childPhotoUrl = await this.resolvePhotoUrl(child as unknown as Record<string, unknown> | null, photoCache);
+      const childNode: TreeNode = {
+        _id: String(line.refId),
+        name: child?.name?.trim() || String(line.refId),
+        kind: 'material',
+        lineType: 'material',
+        quantity: line.quantity,
+        unit: line.unit,
+        children: [],
+      };
+      if (childPhotoUrl) childNode.photoUrl = childPhotoUrl;
+      node.children.push(childNode);
+    }
+    return node;
   }
 
   private async maxAncestorDepth(id: string, kind: ParentKind, ignoredEdge?: IgnoredEdge): Promise<number> {

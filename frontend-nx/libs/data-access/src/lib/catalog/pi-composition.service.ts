@@ -98,4 +98,42 @@ export class PiCompositionService {
   removeProductCompositionLine(productId: string, lineId: string): Observable<SilentResult<void>> {
     return silentDelete<void>(this.http, `${this.baseUrl}/products/${productId}/composition/${lineId}`);
   }
+
+  /** Деталь (Material kind=part) BOM of raw materials — TZ-NX-DETAIL-MATERIAL-BOM. */
+  getMaterialTree(materialId: string, maxDepth?: number): Observable<SilentResult<CompositionTreeNode>> {
+    return silentGet<CompositionTreeNode>(this.http, `${this.baseUrl}/materials/${materialId}/tree`, {
+      params: maxDepth == null ? undefined : new HttpParams().set('maxDepth', String(maxDepth)),
+    });
+  }
+
+  getMaterialComposition(materialId: string): Observable<SilentResult<CompositionLine[]>> {
+    return silentGet<CompositionLine[]>(this.http, `${this.baseUrl}/materials/${materialId}/composition`);
+  }
+
+  addMaterialCompositionLine(
+    materialId: string,
+    dto: CompositionLineUpsertDto,
+  ): Observable<SilentResult<CompositionLine[]>> {
+    return silentPost<CompositionLine[]>(
+      this.http,
+      `${this.baseUrl}/materials/${materialId}/composition`,
+      dto,
+    );
+  }
+
+  updateMaterialCompositionLine(
+    materialId: string,
+    lineId: string,
+    dto: CompositionLineUpdateDto,
+  ): Observable<SilentResult<CompositionLine[]>> {
+    return silentPatch<CompositionLine[]>(
+      this.http,
+      `${this.baseUrl}/materials/${materialId}/composition/${lineId}`,
+      dto,
+    );
+  }
+
+  removeMaterialCompositionLine(materialId: string, lineId: string): Observable<SilentResult<void>> {
+    return silentDelete<void>(this.http, `${this.baseUrl}/materials/${materialId}/composition/${lineId}`);
+  }
 }

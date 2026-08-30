@@ -15,6 +15,7 @@ function buildService(
   opts: {
     create?: jest.Mock;
     findById?: jest.Mock;
+    findOne?: jest.Mock;
     updateOne?: jest.Mock;
     findOneAndUpdate?: jest.Mock;
     categoryFindById?: jest.Mock;
@@ -25,18 +26,19 @@ function buildService(
 ) {
   const create = opts.create ?? jest.fn();
   const findById = opts.findById ?? jest.fn();
+  const findOne = opts.findOne ?? jest.fn();
   const updateOne = opts.updateOne ?? jest.fn();
   const findOneAndUpdate = opts.findOneAndUpdate ?? jest.fn();
   const categoryFindById = opts.categoryFindById ?? jest.fn();
   const counterNext = opts.counterNext ?? jest.fn();
   const find = opts.find ?? jest.fn().mockReturnValue(findChain([]));
   const countDocuments = opts.countDocuments ?? jest.fn().mockReturnValue(query(0));
-  const model = { create, findById, updateOne, findOneAndUpdate, find, countDocuments } as any;
+  const model = { create, findById, findOne, updateOne, findOneAndUpdate, find, countDocuments } as any;
   const categoryModel = { findById: categoryFindById } as any;
   const counter = { next: counterNext } as any;
   const catalogGraph = { getWhereUsed: jest.fn() } as unknown as CatalogGraphService;
-  const service = new MaterialService(model, categoryModel, counter, catalogGraph);
-  return { service, create, findById, updateOne, categoryFindById, counterNext, find, countDocuments };
+  const service = new MaterialService(model, categoryModel, counter, catalogGraph, undefined);
+  return { service, create, findById, findOne, updateOne, categoryFindById, counterNext, find, countDocuments };
 }
 
 /** Mimics the chained `find().populate()…lean().exec()` builder used by findAll. */
@@ -521,6 +523,52 @@ describe('MaterialService (TZ-MATERIALS-303/307)', () => {
 
       await expect(service.duplicate(SRC)).rejects.toBeInstanceOf(ConflictException);
       expect(create).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getComposition (TZ-NX-DETAIL-MATERIAL-BOM)', () => {
+    it('returns the stored composition array', async () => {
+      const compositionLine = { _id: new Types.ObjectId(), lineType: 'material', refId: new Types.ObjectId(), quantity: 3, sortOrder: 0 };
+      const { service } = buildService({
+        findOne: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue({ composition: [compositionLine] }),
+        }),
+      });
+      const result = await service.getComposition(new Types.ObjectId().toString());
+      expect(result).toEqual([compositionLine]);
+    });
+
+    it('returns an empty array for a Деталь without composition yet', async () => {
+      const { service } = buildService({
+        findOne: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue({ composition: [] }),
+        }),
+      });
+      const result = await service.getComposition(new Types.ObjectId().toString());
+      expect(result).toEqual([]);
+    });
+
+    it('rejects a missing material with NotFoundException', async () => {
+      const { service } = buildService({
+        findOne: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnThis(),
+          lean: jest.fn().mockReturnThis(),
+          exec: jest.fn().mockResolvedValue(null),
+        }),
+      });
+      await expect(service.getComposition(new Types.ObjectId().toString())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('rejects an invalid id before querying', async () => {
+      const { service, findOne } = buildService();
+      await expect(service.getComposition('not-an-object-id')).rejects.toBeInstanceOf(NotFoundException);
+      expect(findOne).not.toHaveBeenCalled();
     });
   });
 });

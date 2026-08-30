@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { AuditAction } from '../../common/interceptors/audit.interceptor';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser, AuthenticatedUser } from '../../common/decorators/current-user.decorator';
+import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
+import { CatalogGraphService, MAX_DEPTH } from '../catalog-graph/catalog-graph.service';
 import { CreateMaterialDto, MATERIAL_KINDS } from './dto/create-material.dto';
 import { UpdateMaterialDto } from './dto/update-material.dto';
 import { MaterialService } from './material.service';
@@ -10,7 +12,10 @@ import { MaterialService } from './material.service';
 @ApiTags('Справочники — Материалы')
 @Controller('materials')
 export class MaterialController {
-  constructor(private readonly service: MaterialService) {}
+  constructor(
+    private readonly service: MaterialService,
+    private readonly catalogGraph: CatalogGraphService,
+  ) {}
 
   @Get()
   @Roles('admin', 'director', 'manager')
@@ -33,6 +38,54 @@ export class MaterialController {
   @ApiQuery({ name: 'limit', required: false, description: 'Page size, max 100' })
   getWhereUsed(@Param('id') id: string, @Query('page') page = '1', @Query('limit') limit = '20', @CurrentUser() user: AuthenticatedUser) {
     return this.service.getWhereUsed(id, { page: parseInt(page, 10), limit: parseInt(limit, 10), organizationId: user.organizationId });
+  }
+
+  @Get(':id/composition')
+  @Roles('admin', 'director', 'manager', 'user')
+  @ApiOperation({ summary: 'Deталь BOM: raw materials in this part (TZ-NX-DETAIL-MATERIAL-BOM)' })
+  getComposition(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.service.getComposition(id, user.organizationId);
+  }
+
+  @Post(':id/composition')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'add-composition-line', entityType: 'Material', idParam: 'id' })
+  addComposition(
+    @Param('id') id: string,
+    @Body() dto: CreateCompositionLineDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.addComposition(id, dto, user.organizationId);
+  }
+
+  @Patch(':id/composition/:lineId')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update-composition-line', entityType: 'Material', idParam: 'id' })
+  updateComposition(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @Body() dto: UpdateCompositionLineDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.service.updateComposition(id, lineId, dto, user.organizationId);
+  }
+
+  @Delete(':id/composition/:lineId')
+  @Roles('admin', 'manager')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @AuditAction({ action: 'remove-composition-line', entityType: 'Material', idParam: 'id' })
+  async removeComposition(
+    @Param('id') id: string,
+    @Param('lineId') lineId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.service.removeComposition(id, lineId, user.organizationId);
+  }
+
+  @Get(':id/tree')
+  @Roles('admin', 'director', 'manager', 'user')
+  getTree(@Param('id') id: string, @Query('maxDepth') maxDepth?: string) {
+    return this.catalogGraph.getTree('material', id, maxDepth === undefined ? MAX_DEPTH : Number(maxDepth));
   }
 
   @Get(':id')

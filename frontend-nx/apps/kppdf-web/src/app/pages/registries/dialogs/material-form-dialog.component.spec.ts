@@ -1,10 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
-import { PiMaterialsService, PiUnitsService } from '@kppdf/data-access';
+import { PiCompositionService, PiMaterialsService, PiUnitsService } from '@kppdf/data-access';
 import { PI_DIALOG_DATA, PI_DIALOG_REF } from '@kppdf/ui/dialog';
 import type { DialogRef } from '@kppdf/ui/dialog';
 import { MaterialFormDialogComponent } from './material-form-dialog.component';
+
+const COMPOSITION_MOCK = {
+  getMaterialTree: jest.fn().mockReturnValue(
+    of({ ok: true, data: { _id: 'det-1', name: 'Кронштейн', kind: 'material', quantity: 1, children: [] } }),
+  ),
+  getMaterialComposition: jest.fn().mockReturnValue(of({ ok: true, data: [] })),
+};
 
 describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)', () => {
   let fixture: ComponentFixture<MaterialFormDialogComponent>;
@@ -193,5 +200,61 @@ describe('MaterialFormDialogComponent (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)',
     lockedFixture.detectChanges();
     expect(lockedFixture.componentInstance['form'].getRawValue().materialKind).toBe('raw');
     expect(lockedFixture.componentInstance['form'].controls.materialKind.disabled).toBe(true);
+  });
+
+  describe('Деталь composition (TZ-NX-DETAIL-MATERIAL-BOM)', () => {
+    it('shows the hint, not the composition panel, before a new Деталь is saved', async () => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [MaterialFormDialogComponent],
+        providers: [
+          provideRouter([]),
+          { provide: PI_DIALOG_DATA, useValue: { mode: 'create', lockMaterialKind: 'part', entityLabel: 'деталь' } },
+          { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+          { provide: PiUnitsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) } },
+          { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
+          { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        ],
+      }).compileComponents();
+
+      const createFixture = TestBed.createComponent(MaterialFormDialogComponent);
+      createFixture.detectChanges();
+      const el = createFixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-test="detail-bom-create-hint"]')).toBeTruthy();
+      expect(el.querySelector('[data-test="detail-bom-composition"]')).toBeNull();
+    });
+
+    it('shows the real composition panel (not the old notes-hack form) for a saved Деталь', async () => {
+      TestBed.resetTestingModule();
+      await TestBed.configureTestingModule({
+        imports: [MaterialFormDialogComponent],
+        providers: [
+          provideRouter([]),
+          {
+            provide: PI_DIALOG_DATA,
+            useValue: {
+              mode: 'edit',
+              material: { _id: 'det-1', name: 'Кронштейн', article: 'DET-1', unit: 'pcs', materialKind: 'part' },
+              lockMaterialKind: 'part',
+              entityLabel: 'деталь',
+            },
+          },
+          { provide: PI_DIALOG_REF, useValue: { close: jest.fn() } as DialogRef<unknown> },
+          { provide: PiUnitsService, useValue: { list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 50 } })) } },
+          { provide: PiMaterialsService, useValue: { create: jest.fn(), update: jest.fn() } },
+          { provide: PiCompositionService, useValue: COMPOSITION_MOCK },
+        ],
+      }).compileComponents();
+
+      const editFixture = TestBed.createComponent(MaterialFormDialogComponent);
+      editFixture.detectChanges();
+      await editFixture.whenStable();
+      const el = editFixture.nativeElement as HTMLElement;
+      expect(el.querySelector('[data-test="detail-bom-composition"]')).toBeTruthy();
+      expect(el.querySelector('[data-test="detail-bom-create-hint"]')).toBeNull();
+      // The retired notes-hack UI must be gone, not just hidden.
+      expect(el.querySelector('[data-test="detail-bom-add"]')).toBeNull();
+      expect(el.querySelector('[data-test^="detail-bom-row-"]')).toBeNull();
+    });
   });
 });

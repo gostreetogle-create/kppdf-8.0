@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateMaterialDto } from './dto/create-material.dto';
@@ -7,16 +7,24 @@ import { Material, MaterialDocument } from './material.schema';
 import { CounterService } from '../counter/counter.service';
 import { Category, CategoryDocument } from '../category/category.schema';
 import { CatalogGraphService } from '../catalog-graph/catalog-graph.service';
+import { CompositionLineService } from '../catalog/composition-line.service';
+import { CreateCompositionLineDto, UpdateCompositionLineDto } from '../catalog/composition-line.dto';
+import { CompositionLineDocumentShape } from '../catalog/composition-line.schema';
 
 @Injectable()
 export class MaterialService {
   private readonly logger = new Logger(MaterialService.name);
+  private readonly compositionLines: CompositionLineService;
+
   constructor(
     @InjectModel(Material.name) private readonly model: Model<MaterialDocument>,
     @InjectModel(Category.name) private readonly categoryModel: Model<CategoryDocument>,
     private readonly counter: CounterService,
     private readonly catalogGraph: CatalogGraphService,
-  ) {}
+    @Optional() compositionLines: CompositionLineService | undefined,
+  ) {
+    this.compositionLines = compositionLines ?? new CompositionLineService();
+  }
 
   async create(dto: CreateMaterialDto, organizationId?: string | null): Promise<MaterialDocument> {
     this.assertUniqueDimensionTypes(dto.dimensions);
@@ -60,6 +68,89 @@ export class MaterialService {
   }
 
   async getWhereUsed(id: string, options: { page?: number; limit?: number; organizationId?: string | null } = {}) { return this.catalogGraph.getWhereUsed('material', id, options); }
+
+  /** Деталь BOM (TZ-NX-DETAIL-MATERIAL-BOM). Only meaningful for materialKind='part' rows. */
+  async getComposition(id: string, organizationId?: string | null): Promise<CompositionLineDocumentShape[]> {
+    if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
+    const raw = await this.model
+      .findOne({ _id: new Types.ObjectId(id), deletedAt: null, ...this.organizationFilter(organizationId) })
+      .select('composition')
+      .lean()
+      .exec();
+    if (!raw) throw new NotFoundException(`Material ${id} not found`);
+    return (raw.composition ?? []) as unknown as CompositionLineDocumentShape[];
+  }
+
+  async addComposition(
+    id: string,
+    dto: CreateCompositionLineDto,
+    organizationId?: string | null,
+  ): Promise<CompositionLineDocumentShape[]> {
+    const doc = await this.findById(id, organizationId);
+    const incoming = this.compositionLines.toStoredLine(dto);
+    await this.compositionLines.validateReference('material', incoming, { materialModel: this.model });
+    const raw = ((doc.composition ?? []) as unknown as CompositionLineDocumentShape[]).map((line) =>
+      this.plainCompositionLine(line),
+    );
+    const next = this.compositionLines.upsertDeduplicated(raw, incoming);
+    this.compositionLines.ensureLineLimit(next);
+    const saved = await this.model
+      .findOneAndUpdate(
+        { ...this.versionedCompositionFilter(doc), ...this.organizationFilter(organizationId) },
+        { $set: { composition: next }, $inc: { __v: 1 } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (!saved) throw new ConflictException(`Material ${id} changed while composition was being updated`);
+    return saved.composition as unknown as CompositionLineDocumentShape[];
+  }
+
+  async updateComposition(
+    id: string,
+    lineId: string,
+    dto: UpdateCompositionLineDto,
+    organizationId?: string | null,
+  ): Promise<CompositionLineDocumentShape[]> {
+    if (!Types.ObjectId.isValid(lineId)) throw new BadRequestException('Invalid composition line id');
+    const doc = await this.findById(id, organizationId);
+    const raw = ((doc.composition ?? []) as unknown as CompositionLineDocumentShape[]).map((line) =>
+      this.plainCompositionLine(line),
+    );
+    const index = raw.findIndex((line) => line._id.toString() === lineId);
+    if (index < 0) throw new NotFoundException(`Composition line ${lineId} not found`);
+    const updated = this.compositionLines.toStoredLine(dto, raw[index]);
+    await this.compositionLines.validateReference('material', updated, { materialModel: this.model });
+    const next = raw.slice();
+    next[index] = updated;
+    this.compositionLines.ensureNoDuplicateKeys(next);
+    const saved = await this.model
+      .findOneAndUpdate(
+        { ...this.versionedCompositionFilter(doc), ...this.organizationFilter(organizationId) },
+        { $set: { composition: next }, $inc: { __v: 1 } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (!saved) throw new ConflictException(`Material ${id} changed while composition was being updated`);
+    return saved.composition as unknown as CompositionLineDocumentShape[];
+  }
+
+  async removeComposition(id: string, lineId: string, organizationId?: string | null): Promise<void> {
+    if (!Types.ObjectId.isValid(lineId)) throw new BadRequestException('Invalid composition line id');
+    const doc = await this.findById(id, organizationId);
+    const raw = ((doc.composition ?? []) as unknown as CompositionLineDocumentShape[]).map((line) =>
+      this.plainCompositionLine(line),
+    );
+    const next = raw.filter((line) => line._id.toString() !== lineId);
+    if (next.length === raw.length) throw new NotFoundException(`Composition line ${lineId} not found`);
+    const saved = await this.model
+      .findOneAndUpdate(
+        { ...this.versionedCompositionFilter(doc), ...this.organizationFilter(organizationId) },
+        { $set: { composition: next }, $inc: { __v: 1 } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (!saved) throw new ConflictException(`Material ${id} changed while composition was being updated`);
+  }
 
   async findById(id: string, organizationId?: string | null): Promise<MaterialDocument> {
     if (!Types.ObjectId.isValid(id)) throw new NotFoundException(`Material ${id} not found`);
@@ -193,6 +284,26 @@ export class MaterialService {
     }
     const payload: Record<string, unknown> = { ...copiableFields, name: copiedName, article: copiedArticle, ...(nextSku ? { sku: nextSku } : {}), photoIds: [], mainPhotoId: undefined, ...this.organizationWrite(organizationId) };
     try { return await this.model.create(payload); } catch (err) { this.rethrowDuplicate(err); }
+  }
+
+  private versionedCompositionFilter(doc: MaterialDocument): Record<string, unknown> {
+    return { _id: doc._id, $or: [{ __v: doc.__v ?? 0 }, { __v: { $exists: false } }] };
+  }
+
+  private plainCompositionLine(line: CompositionLineDocumentShape): CompositionLineDocumentShape {
+    return {
+      _id: line._id,
+      lineType: line.lineType,
+      refId: line.refId,
+      quantity: Number(line.quantity),
+      sortOrder: Number(line.sortOrder ?? 0),
+      unit: line.unit,
+      overrideDimensions: line.overrideDimensions,
+      isPurchased: line.isPurchased,
+      sourcePosition: line.sourcePosition,
+      sourceCode: line.sourceCode,
+      notes: line.notes,
+    };
   }
 
   private organizationFilter(organizationId?: string | null): Record<string, unknown> {

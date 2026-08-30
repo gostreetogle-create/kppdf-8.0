@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { optimisticLockPlugin } from '../../common/mongoose';
+import { CompositionLine, CompositionLineSchema } from '../catalog/composition-line.schema';
 
 export type MaterialDocument = HydratedDocument<Material>;
 
@@ -90,6 +91,14 @@ export class Material {
 
   @Prop()
   notes?: string;
+
+  /**
+   * TZ-NX-DETAIL-MATERIAL-BOM: a Деталь (materialKind='part') BOM of raw
+   * materials. Only ever populated for part-kind rows; raw materials never
+   * get their own nested composition (they are always a composition leaf).
+   */
+  @Prop({ type: [CompositionLineSchema], default: [] })
+  composition?: CompositionLine[];
 
   /** TZ-CATALOG-314 archive marker; legacy rows without this field remain active. */
   @Prop({ type: Date, default: null, index: true })

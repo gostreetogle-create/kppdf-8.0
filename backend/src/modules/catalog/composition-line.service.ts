@@ -7,7 +7,7 @@ import { CreateCompositionLineDto, UpdateCompositionLineDto } from './compositio
 import { CompositionLine, CompositionLineDocumentShape } from './composition-line.schema';
 
 export const MAX_COMPOSITION_LINES = 1000;
-type ParentKind = 'product' | 'module';
+type ParentKind = 'product' | 'module' | 'material';
 type CompositionLineType = 'module' | 'material' | 'product';
 
 export interface CompositionOwner {
@@ -16,7 +16,7 @@ export interface CompositionOwner {
 
 export interface CompositionModels {
   materialModel: Model<MaterialDocument>;
-  moduleModel: Model<ProductModuleDocument>;
+  moduleModel?: Model<ProductModuleDocument>;
   productModel?: Model<ProductDocument>;
 }
 
@@ -48,6 +48,20 @@ export class CompositionLineService {
     if (line.unitPriceOverride !== undefined && line.lineType !== 'product') {
       throw new BadRequestException('unitPriceOverride is only allowed on product lines');
     }
+    // Деталь (materialKind='part') composition is a flat BOM of raw materials
+    // only — no nested modules/products/parts, so no cycle is structurally
+    // possible (raw materials never carry their own composition).
+    if (parentKind === 'material') {
+      if (line.lineType !== 'material') {
+        throw new BadRequestException('Деталь может содержать только материалы (сырьё)');
+      }
+      const material = await models.materialModel.findById(line.refId).select('materialKind').lean().exec();
+      if (!material) throw new NotFoundException(`Material ${line.refId} not found`);
+      if (material.materialKind !== 'raw') {
+        throw new BadRequestException('В состав детали можно добавлять только сырьё');
+      }
+      return;
+    }
     // Parent-kind guard: product lines only allowed on Product
     if (line.lineType === 'product' && parentKind === 'module') {
       throw new BadRequestException('Product lines may only be added to products, not modules');
@@ -72,7 +86,7 @@ export class CompositionLineService {
       if (!material) throw new NotFoundException(`Material ${line.refId} not found`);
       return;
     }
-    const module = await models.moduleModel.findById(line.refId).select('_id').lean().exec();
+    const module = await models.moduleModel?.findById(line.refId).select('_id').lean().exec();
     if (!module) throw new NotFoundException(`ProductModule ${line.refId} not found`);
   }
 

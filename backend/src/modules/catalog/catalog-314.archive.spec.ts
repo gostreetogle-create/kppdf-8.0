@@ -60,7 +60,7 @@ describe('TZ-CATALOG-314 archive contracts', () => {
   it('blocks Material archive when a cost calculation references it', async () => {
     const id = new Types.ObjectId();
     const model = { findById: jest.fn().mockReturnValue(execChain({ _id: id, deletedAt: null })), updateOne: jest.fn(), db: archiveDb({ costcalculations: { _id: new Types.ObjectId() } }) };
-    const service = new MaterialService(model as never, { findById: jest.fn() } as never, {} as never, {} as never);
+    const service = new MaterialService(model as never, { findById: jest.fn() } as never, {} as never, {} as never, undefined);
     await expect(service.remove(id.toString())).rejects.toBeInstanceOf(ConflictException);
     expect(model.updateOne).not.toHaveBeenCalled();
   });
@@ -91,7 +91,7 @@ describe('TZ-CATALOG-314 archive contracts', () => {
     expect(productService.findAll).toHaveBeenCalledWith(expect.any(Object), user.organizationId);
 
     const materialService = { findAll: jest.fn() };
-    const materialController = new MaterialController(materialService as never);
+    const materialController = new MaterialController(materialService as never, {} as never);
     materialController.list(user as never);
     expect(materialService.findAll).toHaveBeenCalledWith(expect.any(Object), user.organizationId);
   });

@@ -9,10 +9,11 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, type Observable } from 'rxjs';
 import {
   PiCompositionService,
   type CompositionLine,
+  type CompositionLineUpdateDto,
   type CompositionLineUpsertDto,
   type CompositionParentKind,
   type CompositionTreeNode,
@@ -21,7 +22,7 @@ import { ButtonComponent } from '@kppdf/ui/button';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
-import { extractErrorMessage } from '@kppdf/util-http';
+import { extractErrorMessage, type SilentResult } from '@kppdf/util-http';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { findCompositionLine } from './composition-line-resolve';
 import {
@@ -186,12 +187,9 @@ export class CompositionPanelComponent implements OnInit {
     if (!id) return;
     this.loading.set(true);
     this.pageError.set(null);
-    const isModule = this.parentKind() === 'module';
     const [treeRes, linesRes] = await Promise.all([
-      firstValueFrom(isModule ? this.composition.getModuleTree(id) : this.composition.getProductTree(id)),
-      firstValueFrom(
-        isModule ? this.composition.getModuleComposition(id) : this.composition.getProductComposition(id),
-      ),
+      firstValueFrom(this.treeFor(this.parentKind(), id)),
+      firstValueFrom(this.compositionFor(this.parentKind(), id)),
     ]);
     this.loading.set(false);
     if (!treeRes.ok) {
@@ -285,11 +283,7 @@ export class CompositionPanelComponent implements OnInit {
       quantity: result.quantity,
       unit: result.unit,
     };
-    const res = await firstValueFrom(
-      target.parentKind === 'module'
-        ? this.composition.addModuleCompositionLine(target.parentId, dto)
-        : this.composition.addProductCompositionLine(target.parentId, dto),
-    );
+    const res = await firstValueFrom(this.addLineFor(target.parentKind, target.parentId, dto));
     if (!res.ok) {
       const message = extractErrorMessage(res.error);
       this.pageError.set(message);
@@ -305,11 +299,7 @@ export class CompositionPanelComponent implements OnInit {
     patch: { quantity?: number; unit?: string },
   ): Promise<void> {
     await this.withLine(sel, async (line, parent) => {
-      const res = await firstValueFrom(
-        parent.kind === 'product'
-          ? this.composition.updateProductCompositionLine(parent._id, line._id, patch)
-          : this.composition.updateModuleCompositionLine(parent._id, line._id, patch),
-      );
+      const res = await firstValueFrom(this.updateLineFor(parent.kind, parent._id, line._id, patch));
       if (!res.ok) {
         const message = extractErrorMessage(res.error);
         this.pageError.set(message);
@@ -322,11 +312,7 @@ export class CompositionPanelComponent implements OnInit {
 
   private async removeLine(sel: CompositionTreeSelectEvent): Promise<void> {
     await this.withLine(sel, async (line, parent) => {
-      const res = await firstValueFrom(
-        parent.kind === 'product'
-          ? this.composition.removeProductCompositionLine(parent._id, line._id)
-          : this.composition.removeModuleCompositionLine(parent._id, line._id),
-      );
+      const res = await firstValueFrom(this.removeLineFor(parent.kind, parent._id, line._id));
       if (!res.ok) {
         const message = extractErrorMessage(res.error);
         this.pageError.set(message);
@@ -360,21 +346,14 @@ export class CompositionPanelComponent implements OnInit {
 
   private async linesForParent(parent: CompositionTreeNode): Promise<CompositionLine[] | null> {
     const rootId = this.entityId();
-    if (parent.kind === 'product' && parent._id === rootId && this.parentKind() === 'product') {
-      return this.rootLines();
-    }
-    if (parent.kind === 'module' && parent._id === rootId && this.parentKind() === 'module') {
+    if (parent._id === rootId && parent.kind === this.parentKind()) {
       return this.rootLines();
     }
 
     const cached = this.parentLinesCache().get(parent._id);
     if (cached) return cached;
 
-    const res = await firstValueFrom(
-      parent.kind === 'product'
-        ? this.composition.getProductComposition(parent._id)
-        : this.composition.getModuleComposition(parent._id),
-    );
+    const res = await firstValueFrom(this.compositionFor(parent.kind, parent._id));
     if (!res.ok) {
       const message = extractErrorMessage(res.error);
       this.pageError.set(message);
@@ -394,5 +373,44 @@ export class CompositionPanelComponent implements OnInit {
     const next = new Map(this.parentLinesCache());
     next.set(parentId, res.data);
     this.parentLinesCache.set(next);
+  }
+
+  private treeFor(kind: CompositionParentKind, id: string): Observable<SilentResult<CompositionTreeNode>> {
+    if (kind === 'material') return this.composition.getMaterialTree(id);
+    if (kind === 'module') return this.composition.getModuleTree(id);
+    return this.composition.getProductTree(id);
+  }
+
+  private compositionFor(kind: CompositionParentKind, id: string): Observable<SilentResult<CompositionLine[]>> {
+    if (kind === 'material') return this.composition.getMaterialComposition(id);
+    if (kind === 'module') return this.composition.getModuleComposition(id);
+    return this.composition.getProductComposition(id);
+  }
+
+  private addLineFor(
+    kind: CompositionParentKind,
+    id: string,
+    dto: CompositionLineUpsertDto,
+  ): Observable<SilentResult<CompositionLine[]>> {
+    if (kind === 'material') return this.composition.addMaterialCompositionLine(id, dto);
+    if (kind === 'module') return this.composition.addModuleCompositionLine(id, dto);
+    return this.composition.addProductCompositionLine(id, dto);
+  }
+
+  private updateLineFor(
+    kind: CompositionParentKind,
+    id: string,
+    lineId: string,
+    dto: CompositionLineUpdateDto,
+  ): Observable<SilentResult<CompositionLine[]>> {
+    if (kind === 'material') return this.composition.updateMaterialCompositionLine(id, lineId, dto);
+    if (kind === 'module') return this.composition.updateModuleCompositionLine(id, lineId, dto);
+    return this.composition.updateProductCompositionLine(id, lineId, dto);
+  }
+
+  private removeLineFor(kind: CompositionParentKind, id: string, lineId: string): Observable<SilentResult<void>> {
+    if (kind === 'material') return this.composition.removeMaterialCompositionLine(id, lineId);
+    if (kind === 'module') return this.composition.removeModuleCompositionLine(id, lineId);
+    return this.composition.removeProductCompositionLine(id, lineId);
   }
 }

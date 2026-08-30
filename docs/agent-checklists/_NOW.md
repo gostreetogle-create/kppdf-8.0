@@ -1,16 +1,21 @@
 ﻿# NOW - Оперативная доска агента
 
-updated_at: 2026-08-30T18:19:08+03:00
+updated_at: 2026-08-30T18:52:14+03:00
 
 ## ACTIVE / LIVE
 
-Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:19).
+Пусто — `tasks/_active/` пуст, живых claim нет (проверено 2026-08-30 18:52).
 
-Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A4
-`TZ-NX-DETAIL-MATERIAL-BOM`.
+Следующий шаг по `tasks/WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`: A5
+`TZ-NX-PRODUCT-COMPLEX-COMPOSITION`.
 
 ## DONE this slice
 
+- `TZ-NX-DETAIL-MATERIAL-BOM` (Wave A4, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
+  заменил notes-хак (`__DETAIL_BOM__`) на настоящий backend composition для
+  Материала (тот же API/UI, что у Product/Module); live-verified API +
+  реальный браузер (Playwright); archive
+  `tasks/_archive/2026-08/TZ-NX-DETAIL-MATERIAL-BOM.done.md`
 - `TZ-NX-COMPOSITION-PICKER-PARITY` (Wave A3, `WAVE-NX-REGISTRIES-STUDIO-PO-AUDIT.md`) —
   confirmed root cause of the reported "500 BSONError on module composition":
   `resolveMaterialId()` unwraps populated legacy `materials[].materialId`;
@@ -43,6 +48,19 @@ updated_at: 2026-08-30T18:19:08+03:00
 
 ## PARK
 
+- Деталь's own raw-material BOM doesn't appear nested inside a Product's
+  full tree view when that Деталь is used inside a Module — found during
+  A4. `catalog-graph.service.ts`'s shared `getChildren()` short-circuits
+  `lineType === 'material'` to `[]` for every material, not just raw ones;
+  loosening it to recurse into a part-kind material's own composition
+  would fix this but touches the same cycle-sensitive recursive walk every
+  Product/Module tree relies on — bigger blast radius than A4's isolated
+  `buildMaterialTree()` addition → own TZ.
+- App-shell rail-layout: `app-shell.component.spec.ts` currently fails
+  (1 test) against someone's in-flight uncommitted `app-shell.component.ts`
+  edit (28-line diff) — found live during A4's `nx test kppdf-web` run,
+  confirmed unrelated via `git diff` (not touched this session). Whoever
+  owns that edit needs to finish it; not folded into any TZ closed today.
 - Nested `@ValidateNested()` DTO validation errors (e.g.
   `overrideDimensions.unit`) still return NestJS's raw multi-line
   "An instance of X has failed the validation..." dump untranslated — found
