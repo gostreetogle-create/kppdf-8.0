@@ -31,6 +31,9 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 # prod stage doesn't need pnpm or corepack — CMD invokes `node`, not pnpm scripts.
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/node_modules ./node_modules
+# TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE — self-hosted @font-face files (dev+prod images
+# share no system font set; render loads these for typeface parity in PDF).
+COPY --from=build /app/assets ./assets
 COPY package.json ./
 EXPOSE 3000
 CMD ["node", "dist/src/main.js"]

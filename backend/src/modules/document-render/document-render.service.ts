@@ -3,6 +3,8 @@ import { sanitizeHtml } from '../../common/sanitize-html';
 import { blockBackgroundStyle, blockLayoutStyle } from '../document-template/layout-renderer';
 import type { DocumentTemplateDocument } from '../document-template/document-template.schema';
 import type { TemplateBlockDocument } from '../template-block/template-block.schema';
+import { blockStyleCss } from '../template-block/block-style.css';
+import { styledTemplateFontCss } from '../template-block/block-style.css';
 import {
   documentPublicOrigin,
   escapeHtmlValue,
@@ -76,6 +78,7 @@ export class DocumentRenderService {
     const baseHref = documentPublicOrigin();
     const css = `
       <style>
+        ${styledTemplateFontCss()}
         @page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 0; }
         html, body { margin: 0; overflow: hidden; }
         html { width: ${pageWidth}; height: ${pageMinHeight}; }
@@ -123,7 +126,7 @@ export class DocumentRenderService {
         const bgStyle = blockBackgroundStyle(
           b.settings as Record<string, unknown> | undefined,
         );
-        const combinedStyle = [layoutStyle, bgStyle].filter(Boolean).join(';');
+        const combinedStyle = [layoutStyle, bgStyle, blockStyleCss(b.style)].filter(Boolean).join(';');
         const blockClass = layoutStyle ? 'block block--positioned' : 'block';
         const styleAttr = combinedStyle ? ` style="${combinedStyle}"` : '';
         const cols = b.columns ?? [];
@@ -132,7 +135,18 @@ export class DocumentRenderService {
             ? `<div style="display:flex;gap:12px;width:100%">${cols
                 .map((c) => {
                   const w = c.width && c.width > 0 ? c.width : 1;
-                  return `<div style="flex:${w};font-size:${c.fontSize ?? 14}px">${substitute(c.content)}</div>`;
+                  // TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE: columns[].fontSize is
+                  // unchanged (px, legacy default 14). A column WITHOUT its
+                  // own size inherits the block style.fontSizePt default when
+                  // present, otherwise keeps today's 14px — so a block with
+                  // no style stays byte-identical to the pre-wave output.
+                  const columnSize =
+                    c.fontSize !== undefined
+                      ? `${c.fontSize}px`
+                      : b.style?.fontSizePt !== undefined
+                        ? `${b.style.fontSizePt}pt`
+                        : '14px';
+                  return `<div style="flex:${w};font-size:${columnSize}">${substitute(c.content)}</div>`;
                 })
                 .join('')}</div>`
             : null;
@@ -219,7 +233,7 @@ export class DocumentRenderService {
       ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
       : '';
     const baseHref = documentPublicOrigin();
-    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title><style>@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8"><base href="${escapeHtmlValue(baseHref)}/"><title>${escapeHtmlValue(template.name ?? '')}</title><style>${styledTemplateFontCss()}@page{size:${orientation ? 'landscape' : 'portrait'};margin:0}html,body{margin:0;padding:0;background:#e5e7eb}.doc-page{position:relative;width:${width};height:${height};min-height:${height};box-sizing:border-box;page-break-after:always;overflow:hidden;background:#fff}.doc-page:last-child{page-break-after:auto}${contentStyles}${pageNumberCss ? pageNumberCss : ''}</style></head><body>${renderedBodies.map((body) => `<section class="doc-page">${body}</section>`).join('')}</body></html>`;
   }
 
   private buildDocumentContentStyles(

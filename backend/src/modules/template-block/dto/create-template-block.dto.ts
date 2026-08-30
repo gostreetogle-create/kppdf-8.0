@@ -12,6 +12,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
+import { BlockStyleDto } from '../block-style';
 
 /**
  * TZ-104.6 carry-over DTO — multi-column TipTap cell on a TemplateBlock.
@@ -157,6 +158,11 @@ export class CreateTemplateBlockDto {
 
   @IsOptional() @IsString() title?: string;
   @IsOptional() @IsString() content?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => BlockStyleDto)
+  style?: BlockStyleDto;
 
   /**
    * TZ-104.6 carry-over — multi-column text-block payload. Optional;

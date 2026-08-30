@@ -10,9 +10,10 @@ import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
 import { UpdateTemplateBlockLayoutsDto } from './dto/update-layouts.dto';
 import { SessionRunner } from '../../common/db/session-runner';
-import { sanitizeHtml, sanitizeBlockContent } from '../../common/sanitize-html';
+
 import { normalizeBlockLayout, type BlockSource } from './template-block-layout';
 import type { BlockSourceDto } from './dto/create-template-block.dto';
+import { sanitizeBlockHtml } from './block-content-sanitizer';
 
 const PARENT_REF_BACKFILL_FLAG = 'template_blocks_parent_ref_v1';
 
@@ -112,10 +113,10 @@ export class TemplateBlockService implements OnModuleInit {
       type: dto.type,
       order: dto.order,
       title: dto.title,
-      content: sanitizeHtml(dto.content ?? ''),
+      content: sanitizeBlockHtml(dto.content ?? ''),
       columns: dto.columns?.map((c) => ({
         id: c.id,
-        content: sanitizeBlockContent(c.content || ''),
+        content: sanitizeBlockHtml(c.content || ''),
         width: c.width ?? 1,
         ...(c.fontSize !== undefined ? { fontSize: c.fontSize } : {}),
       })),
@@ -123,6 +124,7 @@ export class TemplateBlockService implements OnModuleInit {
       showLine: dto.showLine ?? false,
       settings: this.sanitizeSettings(dto.settings),
       dataBinding: dto.dataBinding,
+      style: dto.style,
       layout: dto.layout
         ? (this.assertSupportedPage(dto.layout.page, maxPage),
           normalizeBlockLayout(dto.layout, layoutOpts))
@@ -222,12 +224,12 @@ export class TemplateBlockService implements OnModuleInit {
     if (dto.type !== undefined) doc.type = dto.type;
     if (dto.order !== undefined) doc.order = dto.order;
     if (dto.title !== undefined) doc.title = dto.title;
-    if (dto.content !== undefined) doc.content = sanitizeHtml(dto.content);
+    if (dto.content !== undefined) doc.content = sanitizeBlockHtml(dto.content);
     if (dto.columns !== undefined) {
       const previousById = new Map((doc.columns ?? []).map((c) => [c.id, c]));
       doc.columns = dto.columns.map((c) => ({
         id: c.id,
-        content: sanitizeBlockContent(c.content || ''),
+        content: sanitizeBlockHtml(c.content || ''),
         width: c.width ?? 1,
         fontSize: c.fontSize ?? previousById.get(c.id)?.fontSize ?? 14,
       }));
@@ -236,6 +238,7 @@ export class TemplateBlockService implements OnModuleInit {
     if (dto.showLine !== undefined) doc.showLine = dto.showLine;
     if (dto.settings !== undefined) doc.settings = this.sanitizeSettings(dto.settings);
     if (dto.dataBinding !== undefined) doc.dataBinding = dto.dataBinding;
+    if (dto.style !== undefined) doc.style = { ...(doc.style ?? {}), ...dto.style };
     if (dto.layout !== undefined) {
       const maxPage = await this.resolveMaxPageForBlock(doc);
       this.assertSupportedPage(dto.layout.page, maxPage);

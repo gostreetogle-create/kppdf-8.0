@@ -105,6 +105,13 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
 
+  // TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE — self-hosted @font-face files for the
+  // document PDF render (dev and prod images share no system font set).
+  // CSP fontSrc already allows 'self'. Served under /fonts/* → ./assets/fonts/
+  app.useStaticAssets(join(process.cwd(), 'assets', 'fonts'), {
+    prefix: '/fonts/',
+  });
+
   // Compression
   app.use(compression());
 

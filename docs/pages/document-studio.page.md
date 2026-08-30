@@ -1,3 +1,9 @@
+# Типографика блоков (D1)
+
+`TemplateBlock.style` — единый источник гарнитуры, размера, цвета, выравнивания и межстрочного интервала для шаблонов и studio-документов. При сохранении inline `font-family`, `font-size` и `color` удаляются; bold/italic/underline, ссылки, списки и токены `{{...}}` сохраняются.
+
+Белый список шрифтов: **Times New Roman**, **Arial**, **Calibri**. Рендер подключает metric-compatible файлы Tinos, Liberation Sans и Carlito через `@font-face` из `backend/src/modules/template-block/assets/fonts`, поэтому headless Chromium использует те же гарнитуры, а не системную подстановку.
+
 # Страница: Документ-студия (`DocumentStudio*`)
 
 **Краткое описание:** универсальное рабочее место для **создания и правки экземпляров документов** (не только КП): editable A4-центр, chrome-rails, overlay-панели, слои, таблицы с данными ERP, multipage, save-as-template. **Одна страница редактора** — без navigate на texts/tables/builder.

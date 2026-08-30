@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import type { BlockLayout, BlockSource } from './template-block-layout';
+import { BlockStyle, BlockStyleSchema } from './block-style';
 
 export type BlockType = 'header' | 'text' | 'table' | 'image' | 'signature' | 'spacer';
 
@@ -140,6 +141,9 @@ export class TemplateBlock {
 
   @Prop()
   content?: string;
+
+  @Prop({ type: BlockStyleSchema })
+  style?: BlockStyle;
 
   /**
    * TZ-104.6 carry-over at TemplateBlock level. Mirrors
