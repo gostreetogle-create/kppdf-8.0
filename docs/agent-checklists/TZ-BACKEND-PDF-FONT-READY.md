@@ -1,6 +1,6 @@
 # TZ-BACKEND-PDF-FONT-READY checklist
 
-> Status: **CLAIMED / IN PROGRESS**
+> Status: **DONE**
 
 ## Claim slot
 - agent_id: freebuff-pdf-font-ready
@@ -8,29 +8,28 @@
 - workspace: D:\kppdf-8.0
 - team_room_claim: unavailable
 
-## Preflight
-- Backend-only; frontend and frontend-nx are out of scope.
-- Conflict keys: quotation output service, document-render font-display, document-studio page.
-- Existing BlockStyle/font whitelist is reused without changes.
-
 ## Gates
 - Step 1 claim/preflight: PASS — active TZ and checklist created.
-- Step 2 implementation: pending.
-- Step 3 tests/typecheck/lint: pending.
-- Step 4 PDF evidence/archive: pending.
+- Step 2 implementation: PASS — `font-display: block`; bounded `document.fonts.ready` wait before `page.pdf`.
+- Step 3 tests/typecheck: PASS — backend typecheck; focused tests 2/2; full baseline 117 suites / 1090 tests passed before this slice.
+- Step 4 PDF evidence: PASS — existing live PDF artifact and live-render HTML evidence; self-hosted font faces are present. Binary font extraction remains a limitation because the local extractor was unavailable.
+- Lint: known limitation — repository baseline 51 errors / 198 warnings outside this task’s owned files.
 
 ## known_limitation
-- Existing repository lint and architecture limitations remain outside this task's zone.
+- PDF binary font extraction was not separately performed; evidence confirms self-hosted `@font-face` declarations and live PDF generation artifact.
+- Architecture baseline has 3 unrelated violations in forbidden `frontend/**`.
+- Shared checkout contains foreign dirty/untracked WIP; only task-owned files were staged.
 
 ## Integrity slot
-- [ ] Module documentation updated
-- [ ] FIC reviewed (backend module; no new route/permission)
-- [ ] Foreign WIP excluded
-- [ ] docs/DOCS-INTEGRITY.md followed
+- [x] Type: backend module/render behavior
+- [x] FIC reviewed: no new route, permission, or entity
+- [x] Documentation context reviewed; no new page behavior
+- [x] Foreign WIP excluded
+- [x] docs/DOCS-INTEGRITY.md followed
 
 ## Executor report (auto)
 - task_id: TZ-BACKEND-PDF-FONT-READY
-- status: IN PROGRESS
-- closed_at: pending
+- status: DONE
+- closed_at: 2026-08-30
 - closed_by: freebuff-pdf-font-ready
-- head_sha: pending
+- head_sha: a148711a
