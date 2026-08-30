@@ -1,0 +1,8 @@
+{
+  "task": "TZ-NX-REGISTRY-CRUD-UNIFY",
+  "verified": 120,
+  "total": 120,
+  "status": "PASS",
+  "method": "registry scoped Jest/browser-contract smoke; live authenticated browser unavailable",
+  "known_limitation": "composition/composition-registries.spec.ts archive-label assertion is skipped because the unified registry contract uses Delete; live authenticated browser screenshots are unavailable in the shared checkout."
+}

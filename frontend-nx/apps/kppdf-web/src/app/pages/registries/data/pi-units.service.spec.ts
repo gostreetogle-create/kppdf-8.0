@@ -90,8 +90,8 @@ describe('PiUnitsService (TZ-NX-REGISTRY-UNITS-READ-SLICE)', () => {
     });
   });
 
-  it('does not expose a remove/delete method', () => {
-    expect('remove' in service).toBe(false);
+  it('exposes remove for the unified CRUD contract', () => {
+    expect('remove' in service).toBe(true);
     expect('delete' in service).toBe(false);
   });
 

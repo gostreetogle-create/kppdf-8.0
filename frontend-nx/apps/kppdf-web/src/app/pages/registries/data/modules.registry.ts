@@ -29,6 +29,7 @@ export function createModulesRegistryDefinition(
     rowId: (row) => row._id,
     defaultPageSize: 25,
     emptyMessage: 'Модули не найдены.',
+    filters: [{ key: 'search', label: 'Поиск', type: 'text', placeholder: 'Название или артикул…', ariaLabel: 'Поиск по модулям' }],
     columns: [
       {
         key: 'name',

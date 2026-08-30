@@ -1,14 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
-import {
-  PiRegistryDataSourcesService,
-  PiTableTemplatesService,
-  PiTextBlockCategoriesService,
-  PiTextBlocksService,
-  type RegistryDataSource,
-  type TableTemplate,
-  type TextBlock,
-} from '@kppdf/data-access';
+import { PiRegistryDataSourcesService, PiTableTemplatesService, PiTextBlockCategoriesService, PiTextBlocksService, type RegistryDataSource, type TableTemplate, type TextBlock } from '@kppdf/data-access';
 import type { DestroyRef, Injector } from '@angular/core';
 import { PiDialogService } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../../on-dialog-close-once';
@@ -17,92 +9,23 @@ import { TableTemplateFormDialogComponent } from '../dialogs/table-template-form
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
 import type { TextBlockRow } from './text-blocks-http-data-source';
 import type { TableTemplateRow } from './table-templates-http-data-source';
+import { createRegistryCrudActions, copyName } from './registry-crud-actions';
 
-export interface DocStudioDialogDeps {
-  readonly dialog: PiDialogService;
-  readonly destroyRef: DestroyRef;
-  readonly injector: Injector;
-  textBlocks: PiTextBlocksService;
-  categories: PiTextBlockCategoriesService;
-  templates: PiTableTemplatesService;
-  dataSources: PiRegistryDataSourcesService;
-}
-
-export function createDocStudioDialogDeps(dialog: PiDialogService, destroyRef: DestroyRef, injector: Injector): DocStudioDialogDeps {
-  return { dialog, destroyRef, injector, textBlocks: undefined as never, categories: undefined as never, templates: undefined as never, dataSources: undefined as never };
-}
+export interface DocStudioDialogDeps { readonly dialog: PiDialogService; readonly destroyRef: DestroyRef; readonly injector: Injector; textBlocks: PiTextBlocksService; categories: PiTextBlockCategoriesService; templates: PiTableTemplatesService; dataSources: PiRegistryDataSourcesService; }
+export function createDocStudioDialogDeps(dialog: PiDialogService, destroyRef: DestroyRef, injector: Injector): DocStudioDialogDeps { return { dialog, destroyRef, injector, textBlocks: undefined as never, categories: undefined as never, templates: undefined as never, dataSources: undefined as never }; }
 
 export function buildTextBlockActions(deps: DocStudioDialogDeps): readonly RegistryRowAction<TextBlockRow>[] {
-  return [
-    { id: 'edit-text-block', label: 'Редактировать', icon: 'pencil', tone: 'edit', run: (row, ctx) => openTextEdit(deps, row, ctx) },
-    {
-      id: 'archive-text-block', label: 'Архивировать', icon: 'archive', tone: 'destructive', destructive: true,
-      confirm: { title: 'Архивировать текст?', confirmLabel: 'Архивировать', cancelLabel: 'Отмена' },
-      run: async (row, ctx) => {
-        const result = await firstValueFrom(deps.textBlocks.remove(row._id));
-        if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error');
-        ctx.notify('Текст архивирован', 'success'); ctx.reload();
-      },
-    },
-  ];
+  return createRegistryCrudActions({ entityLabel: 'текст', edit: (row, ctx) => openTextEdit(deps, row, ctx), copy: (row, ctx) => openTextCreate(deps, ctx, row), remove: async (row, ctx) => { const result = await firstValueFrom(deps.textBlocks.remove(row._id)); if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); ctx.notify('Текст удалён', 'success'); ctx.reload(); } });
 }
-
 export function buildTableTemplateActions(deps: DocStudioDialogDeps): readonly RegistryRowAction<TableTemplateRow>[] {
-  return [
-    { id: 'edit-table-template', label: 'Редактировать', icon: 'pencil', tone: 'edit', run: (row, ctx) => openTemplateEdit(deps, row, ctx) },
-    {
-      id: 'archive-table-template', label: 'Архивировать', icon: 'archive', tone: 'destructive', destructive: true,
-      confirm: { title: 'Архивировать вид таблицы?', confirmLabel: 'Архивировать', cancelLabel: 'Отмена' },
-      run: async (row, ctx) => {
-        const result = await firstValueFrom(deps.templates.remove(row._id));
-        if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error');
-        ctx.notify('Вид таблицы архивирован', 'success'); ctx.reload();
-      },
-    },
-  ];
+  return createRegistryCrudActions({ entityLabel: 'вид таблицы', edit: (row, ctx) => openTemplateEdit(deps, row, ctx), copy: (row, ctx) => openTemplateCreate(deps, ctx, row), remove: async (row, ctx) => { const result = await firstValueFrom(deps.templates.remove(row._id)); if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); ctx.notify('Вид таблицы удалён', 'success'); ctx.reload(); } });
 }
-
-export function buildTextBlockCreateAction(deps: DocStudioDialogDeps) {
-  return { label: 'Создать текст', run: (ctx: RegistryActionContext) => openTextCreate(deps, ctx) };
-}
-export function buildTableTemplateCreateAction(deps: DocStudioDialogDeps) {
-  return { label: 'Создать вид таблицы', run: (ctx: RegistryActionContext) => openTemplateCreate(deps, ctx) };
-}
-
-function openTextCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext): void {
-  const ref = deps.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, { data: { mode: 'create' }, parentDestroyRef: deps.destroyRef });
-  onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Текст создан', 'success'); ctx.reload(); } });
-}
-function openTextEdit(deps: DocStudioDialogDeps, row: TextBlockRow, ctx: RegistryActionContext): void {
-  void (async () => {
-    const result = await firstValueFrom(deps.textBlocks.getById(row._id));
-    if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error');
-    const ref = deps.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, { data: { mode: 'edit', textBlock: result.data }, parentDestroyRef: deps.destroyRef });
-    onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Текст обновлён', 'success'); ctx.reload(); } });
-  })();
-}
-function openTemplateCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext): void {
-  const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'create' }, parentDestroyRef: deps.destroyRef });
-  onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы создан', 'success'); ctx.reload(); } });
-}
-function openTemplateEdit(deps: DocStudioDialogDeps, row: TableTemplateRow, ctx: RegistryActionContext): void {
-  void (async () => {
-    const result = await firstValueFrom(deps.templates.getById(row._id));
-    if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error');
-    const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'edit', template: result.data }, parentDestroyRef: deps.destroyRef });
-    onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы обновлён', 'success'); ctx.reload(); } });
-  })();
-}
-
-export function textBlockPayload(value: { name: string; slug: string; tags: string; categoryId: string; sortOrder: number; content: string }): Parameters<PiTextBlocksService['create']>[0] {
-  const payload = { name: value.name.trim(), slug: value.slug.trim(), tags: value.tags.split(',').map((tag) => tag.trim()).filter(Boolean), content: value.content, sortOrder: value.sortOrder } as Parameters<PiTextBlocksService['create']>[0];
-  return value.categoryId.trim() ? { ...payload, categoryId: value.categoryId.trim() } : payload;
-  return payload;
-}
-
-export function tableTemplatePayload(value: { name: string; description: string; category: TableTemplate['category']; sortOrder: number; dataSource: string; columns: TableTemplate['columns'] }): Parameters<PiTableTemplatesService['create']>[0] {
-  const payload = { name: value.name.trim(), description: value.description.trim() || undefined, category: value.category, sortOrder: value.sortOrder, columns: value.columns } as Parameters<PiTableTemplatesService['create']>[0];
-  return value.dataSource.trim() ? { ...payload, dataSource: value.dataSource.trim() } : payload;
-}
-
+export function buildTextBlockCreateAction(deps: DocStudioDialogDeps) { return { label: 'Создать текст', run: (ctx: RegistryActionContext) => openTextCreate(deps, ctx) }; }
+export function buildTableTemplateCreateAction(deps: DocStudioDialogDeps) { return { label: 'Создать вид таблицы', run: (ctx: RegistryActionContext) => openTemplateCreate(deps, ctx) }; }
+function openTextCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext, source?: TextBlockRow): void { const ref = deps.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, { data: { mode: 'create', textBlock: source ? { ...source, name: copyName(source.name) } : undefined }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Текст создан', 'success'); ctx.reload(); } }); }
+function openTextEdit(deps: DocStudioDialogDeps, row: TextBlockRow, ctx: RegistryActionContext): void { void firstValueFrom(deps.textBlocks.getById(row._id)).then((result) => { if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); const ref = deps.dialog.open<TextBlock | null | undefined>(TextBlockFormDialogComponent, { data: { mode: 'edit', textBlock: result.data }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Текст обновлён', 'success'); ctx.reload(); } }); }); }
+function openTemplateCreate(deps: DocStudioDialogDeps, ctx: RegistryActionContext, source?: TableTemplateRow): void { const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'create', template: source ? { ...source, name: copyName(source.name) } : undefined }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы создан', 'success'); ctx.reload(); } }); }
+function openTemplateEdit(deps: DocStudioDialogDeps, row: TableTemplateRow, ctx: RegistryActionContext): void { void firstValueFrom(deps.templates.getById(row._id)).then((result) => { if (!result.ok) return ctx.notify(extractErrorMessage(result.error), 'error'); const ref = deps.dialog.open<TableTemplate | null | undefined>(TableTemplateFormDialogComponent, { data: { mode: 'edit', template: result.data }, parentDestroyRef: deps.destroyRef }); onDialogCloseOnce(ref, deps.injector, (value) => { if (value) { ctx.notify('Вид таблицы обновлён', 'success'); ctx.reload(); } }); }); }
+export function textBlockPayload(value: { name: string; slug: string; tags: string; categoryId: string; sortOrder: number; content: string }): Parameters<PiTextBlocksService['create']>[0] { const payload = { name: value.name.trim(), slug: value.slug.trim(), tags: value.tags.split(',').map((tag) => tag.trim()).filter(Boolean), content: value.content, sortOrder: value.sortOrder } as Parameters<PiTextBlocksService['create']>[0]; return value.categoryId.trim() ? { ...payload, categoryId: value.categoryId.trim() } : payload; }
+export function tableTemplatePayload(value: { name: string; description: string; category: TableTemplate['category']; sortOrder: number; dataSource: string; columns: TableTemplate['columns'] }): Parameters<PiTableTemplatesService['create']>[0] { const payload = { name: value.name.trim(), description: value.description.trim() || undefined, category: value.category, sortOrder: value.sortOrder, columns: value.columns } as Parameters<PiTableTemplatesService['create']>[0]; return value.dataSource.trim() ? { ...payload, dataSource: value.dataSource.trim() } : payload; }
 export type DataSourceOption = RegistryDataSource;

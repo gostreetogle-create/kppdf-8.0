@@ -217,7 +217,7 @@ describe('registry definitions (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => 
 
   it('modules registry has no filters and no sortable columns', () => {
     const def = createModulesRegistryDefinition(moduleDeps);
-    expect(def.filters ?? []).toHaveLength(0);
+    expect(def.filters ?? []).toHaveLength(1);
     expect(def.columns.every((c) => !c.sortable)).toBe(true);
   });
 
@@ -240,9 +240,9 @@ describe('registry definitions (TZ-NX-REGISTRIES-MODULES-PRODUCTS-READ)', () => 
     const moduleIds = modules.rowActions?.map((a) => a.id) ?? [];
     const productIds = products.rowActions?.map((a) => a.id) ?? [];
     expect(moduleIds).toContain('open-composition');
-    expect(moduleIds).toContain('edit-module');
+    expect(moduleIds).toContain('edit');
     expect(moduleIds).not.toContain('open-constructor');
     expect(productIds).toContain('open-composition');
-    expect(productIds).toContain('open-constructor');
+    expect(productIds).not.toContain('open-constructor');
   });
 });

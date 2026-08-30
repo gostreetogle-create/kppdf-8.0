@@ -105,12 +105,12 @@ describe('createUnitsHttpDataSource (TZ-NX-REGISTRY-UNITS-READ-SLICE)', () => {
 });
 
 describe('createUnitsRegistryDefinition row actions', () => {
-  it('PATCHes isActive via PiUnitsService.update and never calls DELETE', async () => {
+  it('PATCHes isActive via PiUnitsService.update and keeps DELETE available', async () => {
     const update = jest.fn().mockReturnValue(
       of({ ok: true as const, data: { ...SAMPLE_UNIT, isActive: false } }),
     );
     const service = mockUnitsService({ update });
-    const def = createUnitsRegistryDefinition(service);
+    const def = createUnitsRegistryDefinition({ unitsService: service, dialogHost: { openCreate: jest.fn(), openEdit: jest.fn() } });
     const deactivate = def.rowActions?.find((a) => a.id === 'deactivate');
     expect(deactivate).toBeTruthy();
 

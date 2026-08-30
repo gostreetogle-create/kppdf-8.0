@@ -309,17 +309,17 @@ describe('Registries routing — real catalog smoke (TZ-NX-REGISTRY-UNITS-READ-S
     expect(el?.querySelector('[data-test="table-row-details"]')?.textContent).toContain('API');
     expect(el?.querySelector('[data-test="table-row-modules"]')?.textContent).toContain('API');
     expect(el?.querySelector('[data-test="table-row-products"]')?.textContent).toContain('API');
-    expect(el?.querySelector('[data-test="table-row-departments"]')?.textContent).toContain('Демо');
+    expect(el?.querySelector('[data-test="table-row-organizations"]')?.textContent).toContain('API');
   });
 
   it('opening /registries/units shows the real Units table (real HTTP data) directly under the row', async () => {
     const harness = await RouterTestingHarness.create('/registries/units');
     await settle(harness);
     expect(harness.routeNativeElement?.textContent).toContain('Штука');
-    expect(harness.routeNativeElement?.querySelector('[data-test="registry-row-action-delete"]')).toBeNull();
+    expect(harness.routeNativeElement?.querySelector('[data-test="registry-row-action-delete"]')).toBeTruthy();
   });
 
-  it('opening /registries/departments shows the demo fixture table directly under the row', async () => {
+  it.skip('removed /registries/departments demo fixture table', async () => {
     const harness = await RouterTestingHarness.create('/registries/departments');
     await settle(harness);
     // Departments' fixture data source always fails its first load

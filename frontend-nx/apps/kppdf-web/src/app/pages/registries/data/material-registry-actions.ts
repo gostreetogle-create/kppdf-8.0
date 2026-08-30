@@ -2,7 +2,6 @@ import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { MaterialKind, PiMaterialsService } from '@kppdf/data-access';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
-import { buildOpenConstructorRowAction } from './registry-constructor-action';
 import type { MaterialRow } from './materials-http-data-source';
 import type { MaterialRegistryDialogHost } from './material-registry-dialog-host';
 
@@ -62,15 +61,15 @@ export function buildMaterialRowActions(
       },
     },
     {
-      id: 'archive-material',
-      label: 'Архивировать',
-      icon: 'archive',
+      id: 'delete-material',
+      label: 'Удалить',
+      icon: 'x',
       tone: 'destructive',
       destructive: true,
       confirm: {
-        title: 'Архивировать запись?',
-        description: 'Запись будет скрыта из справочника (мягкое удаление).',
-        confirmLabel: 'Архивировать',
+        title: 'Удалить запись?',
+        description: 'Запись будет удалена из справочника.',
+        confirmLabel: 'Удалить',
         cancelLabel: 'Отмена',
       },
       run: async (row, ctx) => {
@@ -79,14 +78,11 @@ export function buildMaterialRowActions(
           ctx.notify(extractErrorMessage(res.error), 'error');
           return;
         }
-        ctx.notify('Запись архивирована', 'success');
+        ctx.notify('Запись удалена', 'success');
         ctx.reload();
       },
     },
   ];
-
-  const openConstructor = buildOpenConstructorRowAction<MaterialRow>(deps.router, deps.existingPaths);
-  if (openConstructor) actions.push(openConstructor);
 
   return actions;
 }

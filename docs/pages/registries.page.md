@@ -8,9 +8,7 @@ API/демо, количество записей, expand-контрол). Кл�
 отдельную страницу. Раскрыт **только один** реестр одновременно —
 `/registries/:registryKey` определяет, какая строка раскрыта, переживает
 refresh/back/forward. `units` — **реальный backend API** (`GET /units`,
-`PATCH /units/:key`); `departments` — **демо-фикстура** (in-memory,
-`createFixtureDataSource`), обе явно подписаны на master-строке бейджем
-(«API» / «Демо»).
+`PATCH /units/:key`); `modules`, `supply-requests`, `product-passports`, `text-blocks` и `table-templates` используют клиентскую пагинацию, когда API возвращает полный список; все источники явно подписаны на master-строке бейджем «API»/«Демо».
 
 > До TZ-NX-REGISTRIES-MASTER-TABLE-UX `/registries` был card grid со
 > ссылками на отдельную routed detail-страницу
@@ -117,7 +115,6 @@ Angular Router переиспользовал ОДИН И ТОТ ЖЕ инста
 | `supply-requests` | Заявки снабжения | `api` (`GET /supply-requests`) | read-only; filters status/priority/search/orderId; **client** pagination (API cap 500) |
 | `organizations` | Организации | `api` (`GET /organizations`) | read-only; supplier = `type` filter; server pagination |
 | `product-passports` | Паспорта изделий | `api` (`GET /passports`) | read-only collection registry; distinct from computed preview in product dialog; **client** pagination |
-| `departments` | Отделы | `demo` (`createFixtureDataSource`, без backend) | expandable row, `failFirstAttempt`, destructive archive + copy actions |
 | `text-blocks` | Тексты | `api` (`GET/POST/PATCH/DELETE /text-blocks`) | client pagination; search client-side, categoryId/isActive API filters; create/edit/archive dialogs |
 | `table-templates` | Виды таблиц | `api` (`GET/POST/PATCH/DELETE /table-templates`) | client pagination; search/category client-side; column editor and data-source picker |
 
@@ -187,7 +184,7 @@ Row actions и toolbar create — **icon-only** Lucide через app-layer ко
 - `ModuleFormDialogComponent` / `ProductFormDialogComponent` — `PiDialogComponent` `variant="content"`, max-width 1120px, sticky footer, паспорт + `pi-composition-panel` в edit mode.
 - Composition: `GET .../tree`, CRUD `.../composition`, picker через `PiOverflowSelect`, inspector qty/unit, add-and-continue, remove с confirm, error/retry.
 - Domain: Module → Module+Material; Product → Module+non-raw Material+Product; Material — leaf.
-- `/constructor` сохранён (products: row action; modules — только dialog).
+- `/constructor` capability снят из registry actions; `/studio` остаётся отдельной страницей.
 
 ### Materials / Details row dialogs (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)
 
@@ -266,12 +263,9 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 
 ## Known limitations
 
-- **Units DELETE** — backend hard-delete fixed (`TZ-NX-REGISTRY-UNITS-DELETE-FIX`); FE row action
-  still absent until `tasks/_backlog/TZ-NX-REGISTRY-UNITS-DELETE-FE.md`.
 - **Supply / passport / org / stock registries** — not implemented; do not mark ready (see matrix above).
 - **Products «Комплекс» badge** — list API may omit `isComplex`; badge only when field present in row.
 - **Modules** — client-side pagination only (`GET /modules` list-all); no search filter until backend adds query params.
-- **Departments** — demo fixture with `failFirstAttempt` to exercise error/retry on first load.
 - `registries.routes.spec.ts`: paging back/forward по-прежнему проверяется
   через `harness.navigateByUrl(...)` вместо `Location.back()/forward()` —
   тот же, ранее задокументированный, версийный нюанс
@@ -300,4 +294,4 @@ Real browser smoke via `node start.mjs --nx --no-browser` + headless Chrome
 
 ---
 
-_Обновлено: 2026-08-30 (TZ-NX-DOCSTUDIO-S0-FOUNDATION)._
+_Обновлено: 2026-08-30 (TZ-NX-REGISTRY-CRUD-UNIFY)._

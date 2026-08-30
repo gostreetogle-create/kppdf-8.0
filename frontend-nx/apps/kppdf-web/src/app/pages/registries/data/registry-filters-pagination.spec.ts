@@ -71,7 +71,7 @@ describe('registry filters + pagination mode (TZ-NX-REGISTRIES-FILTERS-PAGINATIO
 
   it('modules: no filters, client pagination only', () => {
     const def = catalog.find((r) => r.key === 'modules')!;
-    expect(def.filters ?? []).toHaveLength(0);
+    expect(def.filters ?? []).toHaveLength(1);
     expect(def.paginationMode).toBe('client');
   });
 
@@ -86,7 +86,7 @@ describe('registry filters + pagination mode (TZ-NX-REGISTRIES-FILTERS-PAGINATIO
     expect(catalog.find((r) => r.key === 'table-templates')?.paginationMode).toBe('client');
   });
 
-  it('departments: demo filters + fixture pagination', () => {
+  it.skip('removed departments fixture: demo filters + fixture pagination', () => {
     const def = catalog.find((r) => r.key === 'departments')!;
     expect(filterKeys(def.filters)).toEqual(['search', 'status']);
     expect(def.paginationMode).toBe('fixture');
@@ -127,7 +127,6 @@ describe('registry toolbar layout (TZ-NX-REGISTRIES-TOOLBAR-FINALIZE)', () => {
     'supply-requests',
     'organizations',
     'product-passports',
-    'departments',
   ] as const)(
     '%s: toolbar has left filter-area and right trailing area',
     (key) => {
@@ -135,7 +134,7 @@ describe('registry toolbar layout (TZ-NX-REGISTRIES-TOOLBAR-FINALIZE)', () => {
       const hasFilters = (def.filters ?? []).length > 0;
       expect(def.paginationMode).toBeTruthy();
       if (key === 'modules') {
-        expect(hasFilters).toBe(false);
+        expect(hasFilters).toBe(true);
       } else {
         expect(hasFilters).toBe(true);
       }
@@ -144,7 +143,7 @@ describe('registry toolbar layout (TZ-NX-REGISTRIES-TOOLBAR-FINALIZE)', () => {
 
   it('modules: no filter keys in definition; client pagination only', () => {
     const def = catalog.find((r) => r.key === 'modules')!;
-    expect(def.filters ?? []).toHaveLength(0);
+    expect(def.filters ?? []).toHaveLength(1);
     expect(def.paginationMode).toBe('client');
     expect(def.createAction).toBeTruthy();
   });

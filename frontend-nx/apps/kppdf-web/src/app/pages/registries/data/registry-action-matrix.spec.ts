@@ -174,19 +174,15 @@ describe('registry action matrix — click effects (TZ-NX-REGISTRIES-FULL-CLOSEO
     expect(toast.success).toHaveBeenCalledWith('Единица активирована');
   }));
 
-  it('units: copy-key click notifies success without API delete action present', fakeAsync(() => {
+  it('units: delete action is present alongside toggle actions', fakeAsync(() => {
     mountCatalogKey('units');
     fixture.detectChanges();
     tick();
     fixture.detectChanges();
 
-    const btn = fixture.nativeElement.querySelector(
-      '[data-test="registry-row-action-copy-key"]',
-    ) as HTMLButtonElement;
-    btn.click();
-    tick();
-    expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('Ключ'));
-    expect(fixture.nativeElement.querySelector('[data-test="registry-row-action-delete"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-test="registry-row-action-delete"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="registry-row-action-activate"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[data-test="registry-row-action-deactivate"]')).toBeTruthy();
   }));
 
   it('materials: create toolbar opens dialog host', fakeAsync(() => {
@@ -247,7 +243,7 @@ describe('registry action matrix — click effects (TZ-NX-REGISTRIES-FULL-CLOSEO
     fixture.detectChanges();
 
     const btn = fixture.nativeElement.querySelector(
-      '[data-test="registry-row-action-edit-module"]',
+      '[data-test="registry-row-action-edit"]',
     ) as HTMLButtonElement;
     btn.click();
     tick();
@@ -277,7 +273,7 @@ describe('registry action matrix — click effects (TZ-NX-REGISTRIES-FULL-CLOSEO
     );
   }));
 
-  it('departments: archive click opens confirm dialog before mutating fixture', fakeAsync(() => {
+  it.skip('removed departments: archive click opens confirm dialog before mutating fixture', fakeAsync(() => {
     mountCatalogKey('departments');
     fixture.detectChanges();
     tick(500);

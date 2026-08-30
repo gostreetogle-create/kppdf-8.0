@@ -2,7 +2,6 @@ import { firstValueFrom } from 'rxjs';
 import { extractErrorMessage } from '@kppdf/util-http';
 import type { PiProductsService, ProductDetail } from '@kppdf/data-access';
 import type { RegistryActionContext, RegistryRowAction } from '../model/registry.types';
-import { buildOpenConstructorRowAction } from './registry-constructor-action';
 import type { ProductRow } from './products-http-data-source';
 import type { CatalogRegistryDialogHost } from './catalog-registry-dialog-host';
 
@@ -58,15 +57,15 @@ export function buildProductRowActions(
       },
     },
     {
-      id: 'archive-product',
-      label: 'Архивировать',
-      icon: 'archive',
+      id: 'delete-product',
+      label: 'Удалить',
+      icon: 'x',
       tone: 'destructive',
       destructive: true,
       confirm: {
-        title: 'Архивировать изделие?',
-        description: 'Изделие будет скрыто из справочника (мягкое удаление).',
-        confirmLabel: 'Архивировать',
+        title: 'Удалить изделие?',
+        description: 'Изделие будет удалено из справочника.',
+        confirmLabel: 'Удалить',
         cancelLabel: 'Отмена',
       },
       run: async (row, ctx) => {
@@ -75,14 +74,11 @@ export function buildProductRowActions(
           ctx.notify(extractErrorMessage(res.error), 'error');
           return;
         }
-        ctx.notify('Изделие архивировано', 'success');
+        ctx.notify('Изделие удалено', 'success');
         ctx.reload();
       },
     },
   ];
-
-  const openConstructor = buildOpenConstructorRowAction<ProductRow>(deps.router, deps.existingPaths);
-  if (openConstructor) actions.push(openConstructor);
 
   return actions;
 }

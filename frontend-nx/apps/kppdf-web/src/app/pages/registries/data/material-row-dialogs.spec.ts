@@ -54,8 +54,8 @@ describe('material registry dialogs (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)', (
     const ids = def.rowActions?.map((a) => a.id) ?? [];
     expect(ids).toContain('edit-material');
     expect(ids).toContain('copy-material');
-    expect(ids).toContain('archive-material');
-    expect(ids).toContain('open-constructor');
+    expect(ids).toContain('delete-material');
+    expect(ids).not.toContain('open-constructor');
     expect(ids).not.toContain('open-composition');
   });
 
@@ -102,9 +102,9 @@ describe('material registry dialogs (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)', (
       allowKindSelect: true,
       createLabel: 'Создать',
       entityLabel: 'деталь',
-    }).find((a) => a.id === 'archive-material')!;
+    }).find((a) => a.id === 'delete-material')!;
     expect(archive.destructive).toBe(true);
-    expect(archive.confirm?.confirmLabel).toBe('Архивировать');
+    expect(archive.confirm?.confirmLabel).toBe('Удалить');
   });
 
   it('archive run reports API error via notify', async () => {
@@ -117,7 +117,7 @@ describe('material registry dialogs (TZ-NX-REGISTRIES-ROW-DIALOGS-MATERIALS)', (
       allowKindSelect: true,
       createLabel: 'Создать',
       entityLabel: 'деталь',
-    }).find((a) => a.id === 'archive-material')!;
+    }).find((a) => a.id === 'delete-material')!;
     await archive.run(SAMPLE, { reload: jest.fn(), notify });
     expect(notify).toHaveBeenCalledWith(expect.any(String), 'error');
   });

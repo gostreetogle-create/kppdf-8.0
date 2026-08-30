@@ -26,7 +26,6 @@ import { createSupplyRequestsRegistry } from './supply-requests.registry';
 import { createOrganizationsRegistry } from './organizations.registry';
 import { createProductPassportsRegistry } from './product-passports.registry';
 import { createUnitsRegistry } from './units.registry';
-import { DEPARTMENTS_REGISTRY } from './departments.registry';
 import { createDocStudioDialogDeps, type DocStudioDialogDeps } from './doc-studio-registry-actions';
 import { createTextBlocksRegistry } from './text-blocks.registry';
 import { createTableTemplatesRegistry } from './table-templates.registry';
@@ -67,7 +66,7 @@ export function buildProductRegistryDeps(
   };
 }
 
-/** Default catalog: catalog + supply/org/passport API registries + Departments (fixture). */
+/** Default catalog: editable production API registries plus document-studio registries. */
 export function buildRegistriesCatalogDefault(
   unitsService: PiUnitsService,
   materialsService: PiMaterialsService,
@@ -85,16 +84,16 @@ export function buildRegistriesCatalogDefault(
   const moduleDeps = buildModuleRegistryDeps(modulesService, catalogDialogHost);
   const productDeps = buildProductRegistryDeps(productsService, router, catalogDialogHost);
   const studio = docStudioDeps;
+  const registryDialog = (() => { try { return inject(PiDialogService, { optional: true }); } catch { return undefined; } })();
   return [
     createUnitsRegistry(unitsService),
     createMaterialsRegistry(materialDeps),
     createDetailsRegistry(materialDeps),
     createModulesRegistry(moduleDeps),
     createProductsRegistry(productDeps),
-    createSupplyRequestsRegistry(supplyRequestsService),
-    createOrganizationsRegistry(organizationsService),
-    createProductPassportsRegistry(productPassportsService),
-    DEPARTMENTS_REGISTRY,
+    createSupplyRequestsRegistry(supplyRequestsService, registryDialog ?? undefined),
+    createOrganizationsRegistry(organizationsService, registryDialog ?? undefined),
+    createProductPassportsRegistry(productPassportsService, registryDialog ?? undefined),
     ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
   ];
 }

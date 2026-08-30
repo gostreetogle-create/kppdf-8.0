@@ -1,104 +1,13 @@
 import { defineRegistry, type RegistryDefinition } from '../model/registry.types';
+import { createProductPassportsHttpDataSource, type ProductPassportRow } from './product-passports-http-data-source';
 import { formatObjectIdRef } from './supply-request-formatters';
-import {
-  createProductPassportsHttpDataSource,
-  type ProductPassportRow,
-} from './product-passports-http-data-source';
 import type { PiProductPassportsService } from '@kppdf/data-access';
+import { PiDialogService } from '@kppdf/ui/dialog';
+import { simpleCrudActions, openSimpleDialog } from './registry-simple-crud';
 
-function formatDate(value: string | undefined): string {
-  if (!value) return '—';
-  const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('ru-RU');
+export function createProductPassportsRegistryDefinition(service: PiProductPassportsService, dialog = undefined as PiDialogService | undefined): RegistryDefinition<ProductPassportRow> {
+  const values = (row: ProductPassportRow) => ({ passportNumber: row.passportNumber, productId: row.productId });
+  const actions = dialog ? simpleCrudActions(dialog, service as never, 'passport', 'паспорт', values, (ctx, value) => openSimpleDialog(dialog, 'passport', ctx, value)) : [];
+  return { key: 'product-passports', title: 'Паспорта изделий', description: 'Паспорта изделий (создание требует productId).', source: 'api', rowId: (row) => row._id, defaultPageSize: 25, emptyMessage: 'Паспорта не найдены.', columns: [{ key: 'passportNumber', header: 'Паспорт №', format: (r) => r.passportNumber }, { key: 'name', header: 'Наименование', format: (r) => r.name ?? '—' }, { key: 'article', header: 'Артикул', format: (r) => r.article ?? '—' }, { key: 'productId', header: 'Изделие', format: (r) => formatObjectIdRef(r.productId) }, { key: 'date', header: 'Дата', format: (r) => r.date ?? '—' }, { key: 'category', header: 'Категория', format: (r) => r.category ?? '—' }, { key: 'isActive', header: 'Статус', format: (r) => r.isActive ? 'Активен' : 'Неактивен' }], filters: [{ key: 'search', label: 'Поиск', type: 'text' }, { key: 'productId', label: 'Изделие', type: 'text' }], paginationMode: 'client', createAction: dialog ? { label: 'Создать паспорт', run: (ctx) => openSimpleDialog(dialog, 'passport', ctx) } : undefined, rowActions: actions, dataSource: createProductPassportsHttpDataSource(service) };
 }
-
-/**
- * TZ-NX-PRODUCT-PASSPORT-REGISTRY-READ — read-only ProductPassport collection registry.
- * Distinct from computed preview in product dialog (`ProductPassportPreviewComponent`).
- */
-export function createProductPassportsRegistryDefinition(
-  productPassportsService: PiProductPassportsService,
-): RegistryDefinition<ProductPassportRow> {
-  return {
-    key: 'product-passports',
-    title: 'Паспорта изделий',
-    description:
-      'Снимки паспортов из коллекции ProductPassport (GET /passports). Не путать с вычисляемым предпросмотром в диалоге изделия. Импорт из XLSX и productId-matching — отдельно.',
-    source: 'api',
-    rowId: (row) => row._id,
-    defaultPageSize: 25,
-    emptyMessage: 'Паспорта не найдены.',
-    columns: [
-      {
-        key: 'passportNumber',
-        header: 'Паспорт №',
-        sortable: false,
-        width: '9rem',
-        format: (r) => r.passportNumber,
-      },
-      {
-        key: 'name',
-        header: 'Наименование',
-        sortable: false,
-        format: (r) => r.name ?? '—',
-      },
-      {
-        key: 'article',
-        header: 'Артикул',
-        sortable: false,
-        width: '9rem',
-        format: (r) => r.article ?? '—',
-      },
-      {
-        key: 'productId',
-        header: 'Изделие (ID)',
-        sortable: false,
-        width: '11rem',
-        format: (r) => formatObjectIdRef(r.productId),
-      },
-      {
-        key: 'date',
-        header: 'Дата',
-        sortable: false,
-        width: '8rem',
-        format: (r) => formatDate(r.date),
-      },
-      {
-        key: 'category',
-        header: 'Категория',
-        sortable: false,
-        width: '10rem',
-        format: (r) => r.category ?? '—',
-      },
-      {
-        key: 'isActive',
-        header: 'Статус',
-        sortable: false,
-        width: '8rem',
-        format: (r) => (r.isActive ? 'Активен' : 'Неактивен'),
-      },
-    ],
-    filters: [
-      {
-        key: 'search',
-        label: 'Поиск',
-        type: 'text',
-        placeholder: '№ паспорта, название, артикул…',
-        ariaLabel: 'Поиск по паспортам (на клиенте)',
-      },
-      {
-        key: 'productId',
-        label: 'Изделие (ID)',
-        type: 'text',
-        placeholder: 'MongoDB ObjectId изделия',
-        ariaLabel: 'Фильтр по productId на API',
-      },
-    ],
-    paginationMode: 'client',
-    dataSource: createProductPassportsHttpDataSource(productPassportsService),
-  };
-}
-
-export function createProductPassportsRegistry(productPassportsService: PiProductPassportsService) {
-  return defineRegistry(createProductPassportsRegistryDefinition(productPassportsService));
-}
+export function createProductPassportsRegistry(service: PiProductPassportsService, dialog?: PiDialogService) { return defineRegistry(createProductPassportsRegistryDefinition(service, dialog)); }
