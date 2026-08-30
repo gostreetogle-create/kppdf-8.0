@@ -5,9 +5,10 @@ updated_at: 2026-08-30T09:40:00+03:00
 ## ACTIVE / LIVE
 
 - `TZ-NX-COMPOSITION-LEGACY-AUDIT` — analysis-only legacy inventory (чужой `_active`)
-- `TZ-NX-DOCSTUDIO-S0-FOUNDATION` — параллельная кодовая волна (freebuff-docstudio-s0; владеет frontend-nx/** и registries.page.md)
 
 ## DONE this slice
+
+- `TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE` — BlockStyle schema, sanitization, dual render wiring, tests and live API evidence; archive `tasks/_archive/2026-08/TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE.done.md`
 
 - `TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER` — порядок в `tasks/` (корень = 11 файлов: 6 служебных + 5 активных) + legacy-съёмка живьём (19 скриншотов), геометрия КП числами (480px / 8px / Δ0), defects D1–D9; archive `tasks/_archive/2026-08/TZ-NX-DOCPLAT-01-INVENTORY-AND-ORDER.done.md`
 - `TZ-NX-CONSTRUCTOR-SHELL` — `/constructor` shell + header chip + 4 create CTAs; archive `tasks/_archive/2026-08/TZ-NX-CONSTRUCTOR-SHELL.done.md`

@@ -69,6 +69,7 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 
 
 | `/production` ↔ `/work-types` | `production-gantt-studio-spec.md` | **WAVE-PRODUCTION-STUDIO-CHROME** A→D; prompt `PROMPT-PRODUCTION-STUDIO-CONTINUOUS`; master checklist resume; target 98–99 |
+| `/doc-constructor/studio` | `document-studio.page.md` | **TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE DONE** — BlockStyle, sanitization, HTML/PDF render wiring |
 
 ## Deals / orgs / lifecycle stubs
 

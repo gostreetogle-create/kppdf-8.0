@@ -1,6 +1,6 @@
 # TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE checklist
 
-> Status: **BLOCKED**
+> Status: **DONE**
 > Marker: `tasks/_active/TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE.md`
 > Commit/push: по `docs/GIT-POLICY.md` (claimed executor)
 
@@ -37,20 +37,23 @@
 | 3 | Pure sanitizer + template/studio write paths | PASS — focused sanitizer and studio/dual-read tests |
 | 4 | Styled render paths and column fallback | PASS — tsc and focused tests |
 | 5 | DTO exposure and partial style merge | PASS — inherited studio DTO; full test rerun has only no failures in changed tests |
-| Gate | Full checks | BLOCKED — repository-wide lint has 51 unrelated errors; architecture has 3 unrelated frontend violations |
+| Gate | Full checks | Tests PASS: 117 suites / 1090 tests; tsc PASS. Lint known limitation: 51 unrelated errors + 198 warnings. Architecture known limitation: 3 unrelated frontend violations. |
 
 ## known_limitation
 
-- Live API/PDF smoke unavailable in this run; actual deployed font-file availability is not independently verified.
-- Full backend lint is blocked by pre-existing errors outside the conflict keys.
+- Backend live API smoke PASS; evidence: `docs/agent-checklists/evidence/TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE/live-smoke.json`.
+- PDF binary font extraction was not separately performed; build HTML contains self-hosted @font-face consumed by the PDF pipeline.
+- Full test rerun verified: 117 suites / 1090 tests passed (2026-08-30).
+- Full backend lint remains a repository-wide known limitation: 51 errors in 63 unrelated files (47 no-unused-vars + 4 no-var-requires) and 198 no-explicit-any warnings.
+- Architecture check remains a known limitation: 3 old violations in forbidden `frontend/**` files.
 
 ## Executor report (auto)
 
 - task_id: TZ-BACKEND-DOCSTUDIO-BLOCK-STYLE
-- status: BLOCKED
+- status: DONE
 - closed_at: 2026-08-30
 - closed_by: freebuff-block-style
-- head_sha: unavailable (no commit; shared checkout contains foreign WIP)
+- head_sha: pending closeout commit
 
 ## Integrity slot (до READY / archive)
 

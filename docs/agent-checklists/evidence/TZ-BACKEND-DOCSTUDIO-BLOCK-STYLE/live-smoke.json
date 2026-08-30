@@ -1,0 +1,10 @@
+{
+  "health": {"url":"http://127.0.0.1:3000/api/health","status":200},
+  "login": {"status":200},
+  "createBlock": {"status":201,"style":{"fontFamily":"Arial","fontSizePt":18,"color":"#123456","align":"center","lineHeight":1.5}},
+  "roundTrip": {"styleReturned":true,"contentSanitized":true,"content":"<p><strong> </strong></p>"},
+  "buildHtml": {"fontFamily":true,"fontSize":true,"color":true,"fontFace":true},
+  "patch": {"status":200,"fontSizePt":22,"siblingStyleFieldsPreserved":true},
+  "cleanup": "created block deleted",
+  "pdf": "not separately extracted; HTML used by PDF pipeline and contains self-hosted @font-face"
+}
