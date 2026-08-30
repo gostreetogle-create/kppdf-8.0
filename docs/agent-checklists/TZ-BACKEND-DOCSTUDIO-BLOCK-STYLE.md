@@ -53,7 +53,7 @@
 - status: DONE
 - closed_at: 2026-08-30
 - closed_by: freebuff-block-style
-- head_sha: pending closeout commit
+- head_sha: e2c141402cfad60d970c515401535085954eefdb
 
 ## Integrity slot (до READY / archive)
 

@@ -11,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { OmitType } from '@nestjs/mapped-types';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import { BlockStyleDto } from '../block-style';
 
@@ -208,3 +209,19 @@ export class CreateTemplateBlockDto {
 
   @IsOptional() @IsBoolean() isActive?: boolean;
 }
+
+/**
+ * Concrete body DTO for `POST /document-templates/:id/blocks`.
+ *
+ * MUST be a real class (via `OmitType`) rather than a TS mapped
+ * `Omit<CreateTemplateBlockDto,'templateId'>`: the latter erases to `Object`
+ * at runtime, so Nest's `ValidationPipe` would not reach `@ValidateNested`
+ * nested DTOs (e.g. `style`) and bad values would fall through to Mongoose
+ * as a 500 instead of the intended 400. `templateId` comes from the route
+ * param, so it is omitted here (server-side).
+ */
+export class CreateTemplateBlockOnTemplateDto extends OmitType(
+  CreateTemplateBlockDto,
+  ['templateId'] as const,
+) {}
+

@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { TemplateBlockService } from './template-block.service';
-import { CreateTemplateBlockDto } from './dto/create-template-block.dto';
+import { CreateTemplateBlockOnTemplateDto } from './dto/create-template-block.dto';
 import { UpdateTemplateBlockDto } from './dto/update-template-block.dto';
 import { ReorderBlocksDto } from './dto/reorder-blocks.dto';
 import { UpdateTemplateBlockLayoutsDto } from './dto/update-layouts.dto';
@@ -26,7 +26,7 @@ export class TemplateBlockController {
   @Post('document-templates/:id/blocks')
   @Roles('admin', 'manager')
   @AuditAction({ action: 'create', entityType: 'TemplateBlock' })
-  add(@Param('id') templateId: string, @Body() dto: Omit<CreateTemplateBlockDto, 'templateId'>) {
+  add(@Param('id') templateId: string, @Body() dto: CreateTemplateBlockOnTemplateDto) {
     return this.service.create({ ...dto, templateId });
   }
 
