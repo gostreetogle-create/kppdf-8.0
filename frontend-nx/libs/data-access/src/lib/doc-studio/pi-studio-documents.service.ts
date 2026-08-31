@@ -34,6 +34,17 @@ export class PiStudioDocumentsService {
     return silentPost<StudioDocument>(this.http, `${this.baseUrl}/studio-documents`, payload);
   }
 
+  createFromTemplate(
+    templateId: string,
+    payload: { name?: string } = {},
+  ): Observable<SilentResult<StudioDocument>> {
+    return silentPost<StudioDocument>(
+      this.http,
+      `${this.baseUrl}/studio-documents/from-template`,
+      { templateId, ...payload },
+    );
+  }
+
   update(id: string, payload: UpdateStudioDocumentPayload): Observable<SilentResult<StudioDocument>> {
     return silentPatch<StudioDocument>(this.http, `${this.baseUrl}/studio-documents/${id}`, payload);
   }

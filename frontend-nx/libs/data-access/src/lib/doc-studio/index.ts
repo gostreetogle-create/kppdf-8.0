@@ -7,6 +7,8 @@ export * from './pi-registry-data-sources.service';
 export * from './doc-type.types';
 export * from './pi-doc-types.service';
 export * from './pi-studio-documents.service';
+export * from './document-template.types';
+export * from './pi-document-templates.service';
 export * from './studio-document.types';
 export * from './studio-block.types';
 export * from './pi-studio-blocks.service';
