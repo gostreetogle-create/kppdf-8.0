@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import type { ValidationError } from 'class-validator';
 
 const VALIDATION_MESSAGES: Record<string, string> = {
   isString: 'Должно быть строкой',
@@ -90,6 +91,14 @@ function humanizeConstraintClause(clause: string): string {
   const trimmed = clause.trim();
   if (!trimmed) return '';
 
+  const lengthConstraint = trimmed.match(
+    /^(\S+) must be (longer than or equal to|shorter than or equal to) .+ characters$/i,
+  );
+  if (lengthConstraint) {
+    const [, field, direction] = lengthConstraint;
+    return `${field}: ${direction.toLowerCase().startsWith('longer') ? VALIDATION_MESSAGES.minLength : VALIDATION_MESSAGES.maxLength}`;
+  }
+
   const mustBe = trimmed.match(/^(\w+) must be (.+)$/i);
   if (mustBe) {
     const [, field, rest] = mustBe;
@@ -130,6 +139,45 @@ export function humanizeValidationMessage(message: string): string {
     .map(humanizeConstraintClause)
     .filter(Boolean)
     .join('; ');
+}
+
+function replaceLeafProperty(message: string, propertyPath: string, leafProperty: string): string {
+  const leafPrefix = `${leafProperty}:`;
+  return message.startsWith(leafPrefix)
+    ? `${propertyPath}:${message.slice(leafPrefix.length)}`
+    : `${propertyPath}: ${message}`;
+}
+
+/**
+ * Flattens class-validator's nested error tree into operator-facing lines.
+ * Parent `nestedValidation` dumps are intentionally ignored when children
+ * exist; only leaf constraints are humanized and emitted with their full path.
+ */
+export function flattenValidationErrors(
+  errors: ValidationError[],
+  parentPath = '',
+): string[] {
+  const lines: string[] = [];
+  for (const error of errors) {
+    const propertyPath = parentPath
+      ? `${parentPath}.${error.property}`
+      : error.property;
+    const children = error.children ?? [];
+    if (children.length > 0) {
+      lines.push(...flattenValidationErrors(children, propertyPath));
+      continue;
+    }
+    const constraints = Object.values(error.constraints ?? {});
+    if (constraints.length === 0) {
+      lines.push(`${propertyPath}: Ошибка валидации`);
+      continue;
+    }
+    for (const constraint of constraints) {
+      const humanized = humanizeValidationMessage(constraint);
+      lines.push(replaceLeafProperty(humanized, propertyPath, error.property));
+    }
+  }
+  return lines;
 }
 
 @Catch()

@@ -10,7 +10,10 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import type { NextFunction, Request, Response } from 'express';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import {
+  flattenValidationErrors,
+  HttpExceptionFilter,
+} from './common/filters/http-exception.filter';
 import { MulterExceptionFilter } from './common/filters/multer-exception.filter';
 import { VersionConflictFilter } from './common/filters/version-conflict.filter';
 import { ThrottlerBehindAuthGuard } from './common/guards/throttler-behind-auth.guard';
@@ -234,12 +237,9 @@ async function bootstrap() {
               lines.push(wlm);
             }
           } else {
-            // Non-whitelist errors: pass through with the standard
-            // class-validator rendering so we don't accidentally reword
-            // unrelated validation messages.
-            lines.push(
-              Object.values(err.constraints ?? { default: err.toString() }).join('; '),
-            );
+            // Nested validation errors are flattened before they reach the
+            // global filter, preserving the full property path for operators.
+            lines.push(...flattenValidationErrors([err]));
           }
         }
         return lines.length

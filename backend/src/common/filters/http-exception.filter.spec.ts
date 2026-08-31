@@ -1,6 +1,8 @@
 import { ArgumentsHost, NotFoundException } from '@nestjs/common';
+import type { ValidationError } from 'class-validator';
 import {
   HttpExceptionFilter,
+  flattenValidationErrors,
   humanizeNotFoundMessage,
   humanizeValidationMessage,
 } from './http-exception.filter';
@@ -58,6 +60,45 @@ describe('humanizeValidationMessage (TZ-NX-COMPOSITION-ERROR-I18N)', () => {
     expect(humanizeValidationMessage('weight must be a positive widget-flavor')).toBe(
       'Поле "weight": weight must be a positive widget-flavor',
     );
+  });
+});
+
+describe('flattenValidationErrors (TZ-BACKEND-VALIDATION-NESTED-I18N)', () => {
+  it('flattens nested overrideDimensions.unit and humanizes its Length message', () => {
+    const errors: ValidationError[] = [
+      {
+        property: 'overrideDimensions',
+        children: [
+          {
+            property: 'unit',
+            constraints: {
+              isLength: 'unit must be longer than or equal to 1 characters',
+            },
+          },
+        ],
+      },
+    ];
+
+    expect(flattenValidationErrors(errors)).toEqual([
+      'overrideDimensions.unit: Слишком короткое значение',
+    ]);
+  });
+
+  it('keeps flat validation properties and multiple constraints intact', () => {
+    const errors: ValidationError[] = [
+      {
+        property: 'quantity',
+        constraints: {
+          min: 'quantity must not be less than 0.000001',
+          isNumber: 'quantity must be a number conforming to the specified constraints',
+        },
+      },
+    ];
+
+    expect(flattenValidationErrors(errors)).toEqual([
+      'quantity: Значение слишком мало',
+      'quantity: Должно быть числом',
+    ]);
   });
 });
 
