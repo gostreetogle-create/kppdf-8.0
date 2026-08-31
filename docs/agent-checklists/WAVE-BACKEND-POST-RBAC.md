@@ -12,7 +12,7 @@ started_at: `2026-08-31T20:49:43+03:00`
 
 - [x] 0. Master-чеклист создан и claim зафиксирован
 - [x] 1. `TZ-BACKEND-VALIDATION-NESTED-I18N` — archived, commit `1e209c74`, docs sync `61e21823` pushed
-- [x] 2. `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE` — code/gates/archive готовы; commit pending
+- [x] 2. `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE` — archived and committed as `15ee4da9`
 - [ ] 3. QUEUE-LIVE + `_NOW` + Status=DONE + отчёт PO
 
 ## 1. TZ-BACKEND-VALIDATION-NESTED-I18N
@@ -29,7 +29,7 @@ started_at: `2026-08-31T20:49:43+03:00`
 - [x] Code: Product tree показывает BOM Детали одним уровнем; traversal semantics untouched
 - [x] Gates: tsc PASS; focused 14 PASS; full Jest 119 suites / 1115 tests PASS; target eslint PASS; full lint baseline 45 errors / 200 warnings
 - [x] Archive: `.done.md` создан; active marker будет очищен перед commit
-- [ ] Commit: точечно создать и push, затем записать SHA
+- [x] Commit: `15ee4da9` создан; docs SHA sync выполняется перед push
 
 ## Conflict
 

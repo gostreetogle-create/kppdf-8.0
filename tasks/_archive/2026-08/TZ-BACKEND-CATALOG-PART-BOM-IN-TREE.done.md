@@ -6,7 +6,7 @@ ARCHIVE_MARKER
 **closed_at:** `2026-08-31T21:43:00+03:00`
 **layer:** backend catalog graph read path
 **outcome:** DONE
-**commit:** pending catalog closeout commit
+**commit:** `15ee4da9`
 
 ## Outcome
 

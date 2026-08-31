@@ -48,7 +48,7 @@
 
 ```text
 outcome: DONE; part-material BOM is exposed one display level in Product trees
-commit: pending catalog closeout commit
+commit: 15ee4da9
 gates: tsc PASS; focused PASS (14); full Jest PASS (119 suites / 1115 tests); target eslint PASS; full eslint baseline FAIL (45 errors / 200 warnings outside scope)
 archive: tasks/_archive/2026-08/TZ-BACKEND-CATALOG-PART-BOM-IN-TREE.done.md
 ```
