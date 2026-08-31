@@ -148,6 +148,36 @@ export class StudioOutputService {
       },
       dataSets: dataSets,
     };
+
+    // TZ-NX-DOCSTUDIO-S8-1 — hydrate the substitution bag from doc.context
+    // (counterpartyId/quotationId/orderId) so {{counterparty.*}} and similar
+    // tokens resolve to real DB values in preview/PDF. Editor stays raw.
+    try {
+      const ctx = doc.context ?? {};
+      const buildDto: Record<string, unknown> = {
+        organizationId: String(doc.organizationId),
+      };
+      const contextKeys = [
+        'counterpartyId',
+        'quotationId',
+        'orderId',
+        'contractId',
+        'contactPersonId',
+        'siteId',
+      ];
+      for (const key of contextKeys) {
+        const val = ctx[key];
+        if (typeof val === "string" && val.trim() && Types.ObjectId.isValid(val.trim())) {
+          buildDto[key] = val.trim();
+        }
+      }
+      aggregate["data"] = await this.templateService.buildSubstitutionBag(
+        buildDto as Parameters<typeof this.templateService.buildSubstitutionBag>[0],
+      );
+    } catch {
+      // hydration is best-effort: render proceeds with the stub bag
+    }
+
     const input = studioAggregateToRenderInput(aggregate);
     const pagePlan = planStudioMultipage({
       blocks: input.blocks,

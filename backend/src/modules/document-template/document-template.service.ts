@@ -1311,7 +1311,7 @@ export class DocumentTemplateService {
    * while keeping identical runtime behaviour.
    */
   private async resolveSourceIds(
-    dto: BuildDocumentDto,
+    dto: Partial<BuildDocumentDto>,
   ): Promise<Record<string, unknown>> {
     const bag: Record<string, unknown> = {};
     const lookups: Array<Promise<void>> = [];
@@ -1581,6 +1581,22 @@ export class DocumentTemplateService {
     }
 
     return bag;
+  }
+
+  /**
+   * TZ-NX-DOCSTUDIO-S8-1 — public read-only hydration for studio render.
+   *
+   * Reuses resolveSourceIds (organization/counterparty/quotation/order lookups
+   * plus the order→quotation→counterparty and quotation→counterparty cascade)
+   * so NX Document Studio preview/PDF resolve `{{counterparty.*}}` tokens from
+   * `doc.context` without duplicating ~200 lines of hydration logic. Unlike
+   * build() this performs NO validation side effects and NO draft-KP alias
+   * merging — it is a pure data-bag builder.
+   */
+  async buildSubstitutionBag(
+    dto: Partial<BuildDocumentDto>,
+  ): Promise<Record<string, unknown>> {
+    return this.resolveSourceIds(dto);
   }
 
   /**

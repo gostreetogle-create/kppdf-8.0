@@ -98,6 +98,77 @@ describe('StudioOutputService (Wave 9–10)', () => {
     expect(result.html).toContain('Live');
   });
 
+  it('preview substitutes counterparty tokens from doc.context via the hydration bag', async () => {
+    const cpId = new Types.ObjectId().toString();
+    const doc = studioDoc({ context: { counterpartyId: cpId } });
+    const studioService = {
+      findById: jest.fn().mockResolvedValue(doc),
+      update: jest.fn(),
+    };
+    const blockService = {
+      findAllByStudioDocument: jest.fn().mockResolvedValue([
+        {
+          _id: new Types.ObjectId().toString(),
+          type: 'text',
+          order: 0,
+          content: '<p>Müşteri: {{counterparty.shortName}}</p>',
+          isActive: true,
+          showLine: false,
+          layout: { page: 1, x: 0.1, y: 0.1, width: 0.8, zIndex: 1, rotation: 0 },
+        },
+      ]),
+    };
+    const templateService = {
+      ensureBlankA4Sentinel: jest.fn(),
+      buildSubstitutionBag: jest.fn().mockResolvedValue({
+        organization: { _id: ORG_ID.toString() },
+        counterparty: { name: 'Acme Ltd', shortName: 'Acme' },
+      }),
+    };
+    const service = createOutputService({ studioService, blockService, templateService });
+
+    const result = await service.preview(DOC_ID, { organizationId: ORG_ID.toString() });
+
+    expect(templateService.buildSubstitutionBag).toHaveBeenCalledWith(
+      expect.objectContaining({ counterpartyId: cpId, organizationId: ORG_ID.toString() }),
+    );
+    expect(result.html).toContain('Acme');
+    expect(result.html).not.toContain('{{counterparty');
+  });
+
+  it('preview renders raw token as empty when context has no counterpartyId', async () => {
+    const doc = studioDoc({ context: {} });
+    const studioService = {
+      findById: jest.fn().mockResolvedValue(doc),
+      update: jest.fn(),
+    };
+    const blockService = {
+      findAllByStudioDocument: jest.fn().mockResolvedValue([
+        {
+          _id: new Types.ObjectId().toString(),
+          type: 'text',
+          order: 0,
+          content: '<p>Müşteri: {{counterparty.shortName}}</p>',
+          isActive: true,
+          showLine: false,
+          layout: { page: 1, x: 0.1, y: 0.1, width: 0.8, zIndex: 1, rotation: 0 },
+        },
+      ]),
+    };
+    const templateService = {
+      ensureBlankA4Sentinel: jest.fn(),
+      buildSubstitutionBag: jest.fn().mockResolvedValue({
+        organization: { _id: ORG_ID.toString() },
+      }),
+    };
+    const service = createOutputService({ studioService, blockService, templateService });
+
+    const result = await service.preview(DOC_ID, { organizationId: ORG_ID.toString() });
+
+    expect(result.html).not.toContain('Acme');
+    expect(result.html).not.toContain('{{counterparty');
+  });
+
   it('finalize bakes snapshot, freezes, archives, then marks final', async () => {
     const doc = studioDoc({ revision: 5 });
     const frozenDoc = { ...doc, revision: 6, status: 'frozen' };

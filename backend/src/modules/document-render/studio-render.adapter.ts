@@ -19,6 +19,13 @@ export interface StudioDocumentAggregate {
   blocks: TemplateBlockDocument[];
   buildDto?: Partial<BuildDocumentDto>;
   dataSets?: Record<string, unknown>[];
+  /**
+   * TZ-NX-DOCSTUDIO-S8-1 — pre-hydrated substitution bag
+   * (organization/counterparty/quotation/order…) from the caller.
+   * When present it is passed straight through to DocumentRenderService;
+   * when absent the adapter falls back to the legacy stub behaviour.
+   */
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -45,8 +52,15 @@ export function studioAggregateToRenderInput(
 
   const data: Record<string, unknown> = {};
   const dto = aggregate.buildDto ?? {};
-  if (dto.organizationId) data.organization = { _id: dto.organizationId };
-  if (dto.counterpartyId) data.counterparty = { name: '' };
+  if (aggregate.data) {
+    // TZ-NX-DOCSTUDIO-S8-1 — hydrated bag from buildSubstitutionBag takes
+    // precedence over the buildDto stubs.
+    for (const [k, v] of Object.entries(aggregate.data)) {
+      data[k] = v;
+    }
+  }
+  if (dto.organizationId && !data.organization) data.organization = { _id: dto.organizationId };
+  if (dto.counterpartyId && !data.counterparty) data.counterparty = { name: '' };
 
   return {
     template,

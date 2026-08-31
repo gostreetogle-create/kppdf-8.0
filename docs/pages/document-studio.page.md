@@ -95,19 +95,18 @@ flowchart LR
   D --> E[Preview/PDF render]
   B --> E
   E --> F{Backend data bag}
-  F -->|S8 TODO| G[Подставленное имя]
-  F -->|сейчас| H[Пусто или только _id org]
+  F -->|S8-1 DONE| G[Подставленное значение из БД]
 ```
 
-**Шаги оператора (когда S8 закрыт):**
+**Шаги оператора:**
 
 1. В **Данные** выбрать **Клиент** (Counterparty) — сохраняется в `studio_documents.context.counterpartyId`.
 2. В текстовом блоке через **Поле ERP** вставить, например, `{{counterparty.name}}`.
 3. Переключить **Просмотр** (или PDF) — сервер подставляет значение из БД.
 
-**Сейчас (gap S8-1):** `StudioOutputService` передаёт в рендер только `organizationId`; `studio-render.adapter.ts` не грузит counterparty/order/quotation из `doc.context`. Токены **не заполняются** в preview/PDF, хотя UI вставки и панель «Данные» уже есть.
+**S8-1 DONE (2026-08-31):** `StudioOutputService.renderStudioDocument` перед рендером читает `doc.context` (counterpartyId/quotationId/orderId/contractId/contactPersonId/siteId) и строит substitution bag через `DocumentTemplateService.buildSubstitutionBag` (reuse cascade: order→quotation→counterparty и т.д.). Bag прокидывается в рендер через `StudioDocumentAggregate.data` (приоритет над buildDto-stub'ами). Каскад КП/заказ→клиент работает как в legacy. В **Редакторе** токен по-прежнему виден сырым — это норма.
 
-**Исполнитель (наша фирма):** берётся из `document.organizationId` пользователя; в панели «Данные» показывается read-only имя (`issuerOrgName`). Токены `{{organization.*}}` — тот же gap до S8-1.
+**Исполнитель (наша фирма):** берётся из `document.organizationId` пользователя; в панели «Данные» показывается read-only имя (`issuerOrgName`). Токены `{{organization.*}}` подставляются из того же bag.
 
 **Продукт / каталог:** в picker есть группа «Каталог», но автоподстановка **не** зависит от выбора изделия на странице — нужен явный контекст или dataSet (S8-3).
 
