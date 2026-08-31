@@ -161,6 +161,7 @@ export interface AuthenticatedUserLike {
   id: string;
   role: string;
   permissions?: string[] | null;
+  rolePermissions?: string[] | null;
   /** TZ-AUTH-306: single hidden owner marker (server-hydrated, not JWT claim). */
   isOwner?: boolean;
 }

@@ -139,6 +139,46 @@ describe('PermissionsGuard (TZ-255 ladder)', () => {
     });
   });
 
+  describe('Step 3 — role permissions + user overrides (TZ-AUTH-RBAC-ROLE-PERMS)', () => {
+    it('allows a manager role permission even when user overrides contain a different key', () => {
+      const guard = makeGuard(['material:write']);
+      const ctx = makeContext({
+        user: user({
+          role: 'manager',
+          permissions: ['product:read'],
+          rolePermissions: ['material:write'],
+        }),
+      });
+      expect(guard.canActivate(ctx)).toBe(true);
+    });
+
+    it('allows an extra user override when the role has no matching permission', () => {
+      const guard = makeGuard(['product:write']);
+      const ctx = makeContext({
+        user: user({
+          role: 'manager',
+          permissions: ['product:write'],
+          rolePermissions: [],
+        }),
+      });
+      expect(guard.canActivate(ctx)).toBe(true);
+    });
+
+    it('does not treat a lower user permission as a denial of a role permission', () => {
+      const guard = makeGuard(['material:write']);
+      const ctx = makeContext({
+        user: user({
+          role: 'manager',
+          permissions: ['material:read'],
+          rolePermissions: ['material:write'],
+        }),
+      });
+      // The canonical contract is a union of user overrides and role perms;
+      // there is no deny-list syntax in the RBAC catalog.
+      expect(guard.canActivate(ctx)).toBe(true);
+    });
+  });
+
   describe('Step 3 — admin role shortcut (TZ-254 effectivePermissions alignment)', () => {
     it('allows admin user with NO permissions (role.name === "admin")', () => {
       // Mirror TZ-251's admin-class OR-wildcard decision: a freshly-seeded

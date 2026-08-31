@@ -54,15 +54,20 @@ class FakeUserService {
     } as never;
   }
   async findByUsername(_username: string) {
+    void _username;
     return null;
   }
   async findById(_id: string) {
+    void _id;
     return null;
   }
   async verifyPassword(_user: never, _plain: string) {
+    void _user;
+    void _plain;
     return false;
   }
   async incrementRefreshVersion(_id: string) {
+    void _id;
     return;
   }
 }
@@ -388,6 +393,7 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       const rolesMock = {
         findByName: jest.fn().mockResolvedValue({
           name: 'manager',
+          permissions: ['product:write'],
           pages: ['products', 'materials'],
         }),
       };
@@ -401,7 +407,7 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
 
       const me = await svc.getMe('u-me');
       expect(me.pages).toEqual(['products', 'materials']);
-      expect(me.permissions).toEqual(['product:read']);
+      expect(me.permissions).toEqual(['product:read', 'product:write']);
       expect(me).not.toHaveProperty('passwordHash');
       expect(me).not.toHaveProperty('refreshTokenVersion');
     });
@@ -485,6 +491,7 @@ describe('AuthService (TZ-249 §2.2-2.4)', () => {
       const me = await svc.getMe('u-owner');
       expect(me.isOwner).toBe(true);
       expect(me.pages).toEqual(['admin-users', 'admin-roles', 'products']);
+      expect(me.permissions).toContain('user:admin');
     });
 
     it('reports isOwner: false and strips the owner-only admin-roles page for non-owners', async () => {

@@ -27,7 +27,7 @@ import {
  *      fail explicitly rather than crash on `.role`.
  *
  *   3. Compute `effectivePermissions(req.user, { name: req.user.role,
- *      permissions: req.user.permissions })` via TZ-254 helper. The
+ *      permissions: req.user.rolePermissions })` via TZ-254 helper. The
  *      union promotion in effectivePermissions handles BOTH:
  *        - role.name === 'admin' → all 29 catalog keys (admin shortcut)
  *        - permissions.includes('*') → all 29 catalog keys (wildcard)
@@ -88,22 +88,18 @@ export class PermissionsGuard implements CanActivate {
 
     // Step 3: compute effective permissions via TZ-254 algorithm.
     const userPerms = user.permissions ?? [];
+    const rolePerms = user.rolePermissions ?? [];
     const effective = effectivePermissions(
       { permissions: userPerms },
       // Build a structurally-compatible role source — req.user.role is
       // already the canonical role name string. effectivePermissions will
       // short-circuit to all-keys promotion when name === 'admin' OR the
       // permissions include '*'.
-      { name: user.role, permissions: userPerms },
+      { name: user.role, permissions: rolePerms },
     );
 
-    // Step 4: every required key must be present (AND semantics).
-    // Note: the decorator-level semantics are "any of these keys",
-    // but the user spec asked for the strongest gate (AND semantics
-    // across the decorator args would be unnecessary here because
-    // any single key is sufficient for read access). We honor the
-    // canonical pattern: require ANY required key (logical OR),
-    // matching how role decorators work in NestJS best-practice.
+    // Step 4: one required key is sufficient (OR semantics), matching the
+    // decorator contract. RolesGuard remains a separate AND-composed guard.
     const hasAny = required.some((k) => effective.has(k));
     if (!hasAny) {
       throw new ForbiddenException(

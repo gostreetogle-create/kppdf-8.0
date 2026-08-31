@@ -14,6 +14,7 @@ import { LoginSoftlockService } from '../../common/login-softlock/login-softlock
 import { AuthResponse, AccessTokenResponse, AuthUserPayload } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { effectivePermissions } from '../../common/contracts/rbac-contract';
 
 /**
  * Single-source-of-truth generic login error.
@@ -193,7 +194,7 @@ export class AuthService {
   async getMe(userId: string): Promise<AuthUserPayload> {
     const user = await this.findActiveUserOrThrow(userId);
     const role = await this.roles.findByName(user.role);
-    return this.toAuthUser(user, role?.pages ?? []);
+    return this.toAuthUser(user, role?.pages ?? [], role);
   }
 
   async logout(userId: string): Promise<void> {
@@ -233,7 +234,7 @@ export class AuthService {
     return {
       access,
       refresh,
-      user: this.toAuthUser(user, role?.pages ?? []),
+      user: this.toAuthUser(user, role?.pages ?? [], role),
     };
   }
 
@@ -275,7 +276,11 @@ export class AuthService {
     );
   }
 
-  private toAuthUser(user: UserDocument, pages: string[] = []): AuthUserPayload {
+  private toAuthUser(
+    user: UserDocument,
+    pages: string[] = [],
+    roleDoc?: { name: string; permissions?: string[] | null } | null,
+  ): AuthUserPayload {
     const isOwner = user.isOwner === true;
     // TZ-AUTH-306 — owner-only pages are stripped for everyone but the
     // owner, so the role editor surface is hidden from ordinary admins via
@@ -289,7 +294,7 @@ export class AuthService {
       email: user.email ?? '',
       displayName: user.displayName,
       role: user.role,
-      permissions: user.permissions ?? [],
+      permissions: Array.from(effectivePermissions(user, roleDoc)),
       // TZ-ACCESS-301: page ACL delivered via /auth/me.
       pages: visiblePages,
       // TZ-92.1: optional fields preserved from UserDocument. Null is the

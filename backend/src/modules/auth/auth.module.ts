@@ -37,6 +37,6 @@ import { LoginSoftlockService } from '../../common/login-softlock/login-softlock
     // (isLocked / recordFailure / reset) stays identical.
     LoginSoftlockService,
   ],
-  exports: [AuthService, JwtModule, PassportModule],
+  exports: [AuthService, JwtModule, PassportModule, JwtStrategy],
 })
 export class AuthModule {}
