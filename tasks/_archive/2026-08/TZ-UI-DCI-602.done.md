@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-08-31
 closed_by: claude
-commit: pending (executor closeout)
+commit: `066b7ef8` (pushed to origin/main)
 
 ## Delivered
 

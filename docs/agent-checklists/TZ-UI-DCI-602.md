@@ -67,7 +67,7 @@
 
 ```
 outcome: DONE
-commit: pending (executor closeout)
+commit: `066b7ef8` (pushed to origin/main)
 gates: tsc PASS; paper-and-ink 332/332 PASS; changed-file eslint PASS; kit DOM PASS; nx build PASS; full app lint pre-existing FAIL disclosed
 archive: tasks/_archive/2026-08/TZ-UI-DCI-602.done.md; lock .mimocode/locks/TZ-UI-DCI-602-focus-segmented.lock
 known_limits: browser console had expected local /api/auth/refresh 500 without backend; existing Angular/jsdom/build warnings remain.
@@ -80,6 +80,6 @@ known_limits: browser console had expected local /api/auth/refresh 500 without b
 
 ## Closeout
 
-- [x] archive + lock + progress/status synchronization pending wave closeout
+- [x] archive + lock + progress/status synchronization complete in the DCI wave closeout
 - [x] Status = DONE
 - closed_at: `2026-08-31`
