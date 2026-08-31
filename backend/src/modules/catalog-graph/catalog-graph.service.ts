@@ -29,6 +29,7 @@ type LeanParent = {
 type EntityPhotoFields = {
   name?: string;
   unit?: string;
+  composition?: LeanLine[];
   photoIds?: Types.ObjectId[];
   mainPhotoId?: Types.ObjectId;
 };
@@ -346,12 +347,47 @@ export class CatalogGraphService {
         nextVisited,
         photoCache,
       );
+      if (childKind === 'material' && childRaw?.composition?.length) {
+        childNode.children = await this.buildPartMaterialChildren(childRaw, photoCache);
+      }
       childNode.quantity = child.quantity;
       childNode.unit = child.unit;
       childNode.lineType = child.lineType;
       node.children.push(childNode);
     }
     return node;
+  }
+
+  /**
+   * Adds the display-only BOM of a part material. Its children are raw
+   * material leaves; deliberately do not recurse so this cannot alter the
+   * cycle/depth semantics used by composition writes.
+   */
+  private async buildPartMaterialChildren(
+    material: EntityPhotoFields,
+    photoCache: Map<string, string | undefined>,
+  ): Promise<TreeNode[]> {
+    const children: TreeNode[] = [];
+    for (const line of material.composition ?? []) {
+      if (line.lineType !== 'material') continue;
+      const child = await this.lookupMaterial(String(line.refId));
+      const childPhotoUrl = await this.resolvePhotoUrl(
+        child as unknown as Record<string, unknown> | null,
+        photoCache,
+      );
+      const childNode: TreeNode = {
+        _id: String(line.refId),
+        name: child?.name?.trim() || String(line.refId),
+        kind: 'material',
+        lineType: 'material',
+        quantity: line.quantity,
+        unit: line.unit,
+        children: [],
+      };
+      if (childPhotoUrl) childNode.photoUrl = childPhotoUrl;
+      children.push(childNode);
+    }
+    return children;
   }
 
   /** Prefer mainPhotoId, else first photoIds entry; omit field when no storageUrl. */
@@ -409,9 +445,19 @@ export class CatalogGraphService {
   }
 
   private async lookupMaterial(id: string): Promise<EntityPhotoFields | null> {
-    const row = await this.materialModel.findById(id).select('name unit photoIds mainPhotoId').lean().exec();
+    const row = await this.materialModel
+      .findById(id)
+      .select('name unit composition photoIds mainPhotoId')
+      .lean()
+      .exec();
     return row
-      ? { name: row.name, unit: row.unit, photoIds: row.photoIds, mainPhotoId: row.mainPhotoId }
+      ? {
+          name: row.name,
+          unit: row.unit,
+          composition: row.composition as unknown as LeanLine[] | undefined,
+          photoIds: row.photoIds,
+          mainPhotoId: row.mainPhotoId,
+        }
       : null;
   }
 }

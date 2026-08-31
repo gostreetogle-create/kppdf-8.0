@@ -6,13 +6,13 @@
 Status: **IN_PROGRESS**
 agent_id: `buffy-gpt-5.6-luna`
 started_at: `2026-08-31T20:49:43+03:00`
-**RESUME:** сейчас открыт пункт 2 — TZ-BACKEND-CATALOG-PART-BOM-IN-TREE
+**RESUME:** сейчас открыт пункт 3 — QUEUE-LIVE + `_NOW` + archive prompt
 
 ## Волна
 
 - [x] 0. Master-чеклист создан и claim зафиксирован
-- [x] 1. `TZ-BACKEND-VALIDATION-NESTED-I18N` — archived and committed as `1e209c74`
-- [ ] 2. `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE`
+- [x] 1. `TZ-BACKEND-VALIDATION-NESTED-I18N` — archived, commit `1e209c74`, docs sync `61e21823` pushed
+- [x] 2. `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE` — code/gates/archive готовы; commit pending
 - [ ] 3. QUEUE-LIVE + `_NOW` + Status=DONE + отчёт PO
 
 ## 1. TZ-BACKEND-VALIDATION-NESTED-I18N
@@ -20,16 +20,16 @@ started_at: `2026-08-31T20:49:43+03:00`
 - [x] Claim: checklist TZ заполнен, собственный active marker создан
 - [x] Code: nested ValidationPipe exceptionFactory flatten + humanize RU
 - [x] Gates: tsc PASS; focused 10 PASS; full Jest 119 suites / 1114 tests PASS; target eslint PASS; full lint baseline 45 errors / 200 warnings
-- [x] Archive: `.done.md` создан
-- [x] Commit: точечно создан как `1e209c74`; push выполняется после docs SHA sync
+- [x] Archive: `.done.md` создан; active marker очищен
+- [x] Commit: `1e209c74` + docs sync `61e21823` pushed
 
 ## 2. TZ-BACKEND-CATALOG-PART-BOM-IN-TREE
 
-- [ ] Claim: checklist TZ заполнен, собственный active marker создан
-- [ ] Code: Product/Module tree показывает BOM Детали одним уровнем
-- [ ] Gates: backend tsc, focused tests, full Jest, touched-file eslint
-- [ ] Archive: `.done.md` создан, собственный active marker очищен
-- [ ] Commit: точечно создан и pushed, чужой frontend WIP исключён
+- [x] Claim: checklist TZ заполнен, собственный active marker создан
+- [x] Code: Product tree показывает BOM Детали одним уровнем; traversal semantics untouched
+- [x] Gates: tsc PASS; focused 14 PASS; full Jest 119 suites / 1115 tests PASS; target eslint PASS; full lint baseline 45 errors / 200 warnings
+- [x] Archive: `.done.md` создан; active marker будет очищен перед commit
+- [ ] Commit: точечно создать и push, затем записать SHA
 
 ## Conflict
 

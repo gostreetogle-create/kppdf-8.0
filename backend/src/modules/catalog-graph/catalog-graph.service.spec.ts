@@ -274,6 +274,85 @@ describe('CatalogGraphService (TZ-CATALOG-310)', () => {
   });
 });
 
+describe('CatalogGraphService (TZ-BACKEND-CATALOG-PART-BOM-IN-TREE)', () => {
+  it('shows one raw-material BOM level under a part material in a product tree', async () => {
+    const { service, productModel, materialModel } = buildService();
+    const productId = id();
+    const partId = id();
+    const rawId = id();
+
+    setFindById(
+      productModel,
+      new Map([
+        [
+          productId,
+          {
+            name: 'Product with part',
+            composition: [
+              {
+                lineType: 'material',
+                refId: new Types.ObjectId(partId),
+                quantity: 2,
+                unit: 'шт',
+              },
+            ],
+          },
+        ],
+      ]),
+    );
+    setFindById(
+      materialModel,
+      new Map([
+        [
+          partId,
+          {
+            name: 'Part material',
+            materialKind: 'part',
+            composition: [
+              {
+                lineType: 'material',
+                refId: new Types.ObjectId(rawId),
+                quantity: 3,
+                unit: 'кг',
+              },
+            ],
+          },
+        ],
+        [rawId, { name: 'Raw material', materialKind: 'raw' }],
+      ]),
+    );
+
+    const tree = await service.getTree('product', productId);
+    const partNode = tree.children[0];
+    expect(partNode).toMatchObject({
+      _id: partId,
+      name: 'Part material',
+      lineType: 'material',
+      quantity: 2,
+      unit: 'шт',
+    });
+    expect(partNode?.children).toHaveLength(1);
+    expect(partNode?.children[0]).toMatchObject({
+      _id: rawId,
+      name: 'Raw material',
+      lineType: 'material',
+      quantity: 3,
+      unit: 'кг',
+      children: [],
+    });
+
+    const materialTree = await service.getTree('material', partId);
+    expect(materialTree.children).toHaveLength(1);
+    expect(materialTree.children[0]).toMatchObject({
+      _id: rawId,
+      name: 'Raw material',
+      quantity: 3,
+      unit: 'кг',
+      children: [],
+    });
+  });
+});
+
 describe('CatalogGraphService (TZ-UX-311 photoUrl)', () => {
   it('attaches photoUrl from mainPhotoId / first photoIds; omits when none', async () => {
     const { service, productModel, moduleModel, materialModel, photoModel } = buildService();
