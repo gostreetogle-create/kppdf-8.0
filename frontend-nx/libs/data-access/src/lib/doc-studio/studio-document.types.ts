@@ -2,6 +2,14 @@ export type StudioDocumentStatus = 'draft' | 'published' | 'archived' | string;
 export type StudioDocumentOrientation = 'portrait' | 'landscape';
 export type StudioDocumentPageSize = 'A4' | 'A3' | string;
 
+export type StudioDataSetSourceType = 'manual' | 'quotation-items' | 'order-items' | string;
+
+export interface StudioDataSetPayload {
+  readonly source: { readonly type: StudioDataSetSourceType };
+  readonly rows: readonly unknown[];
+  readonly [key: string]: unknown;
+}
+
 export interface StudioDocument {
   readonly _id: string;
   readonly name: string;
@@ -15,6 +23,7 @@ export interface StudioDocument {
   readonly manualPageCount?: number;
   readonly context?: Record<string, unknown>;
   readonly docTypeId?: string;
+  readonly dataSets?: readonly StudioDataSetPayload[];
 }
 
 export interface CreateStudioDocumentPayload {

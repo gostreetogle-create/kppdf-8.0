@@ -70,7 +70,10 @@ function layerDisplayName(block: StudioBlock): string {
             <pi-studio-table-properties
               [block]="selected"
               [disabled]="!!selected.locked"
+              [quotationId]="quotationId"
+              [orderId]="orderId"
               (settingsChange)="tableSettingsChange.emit($event)"
+              (sourceChange)="tableSourceChange.emit($event)"
               (saveTemplate)="saveTableTemplate.emit()"
             />
           </div>
@@ -310,7 +313,10 @@ export class StudioPropertiesPanelComponent {
   @Output() readonly imageAsBackground = new EventEmitter<void>();
   @Output() readonly imageClearBackground = new EventEmitter<void>();
   @Output() readonly deleteLayer = new EventEmitter<void>();
+  @Input() quotationId = '';
+  @Input() orderId = '';
   @Output() readonly tableSettingsChange = new EventEmitter<Record<string, unknown>>();
+  @Output() readonly tableSourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items'>();
   @Output() readonly saveTableTemplate = new EventEmitter<void>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
   @Output() readonly saveTextBlock = new EventEmitter<void>();

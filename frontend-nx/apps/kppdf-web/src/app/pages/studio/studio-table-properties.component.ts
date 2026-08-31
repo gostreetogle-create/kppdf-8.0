@@ -207,6 +207,27 @@ import {
         }
       </div>
 
+      <label class="table-props__field" data-test="studio-table-source-field">
+        <span class="table-props__label">Источник строк</span>
+        <select
+          class="table-props__select"
+          [ngModel]="rowSource()"
+          (ngModelChange)="onRowSourceChange($event)"
+          [disabled]="disabled"
+          data-test="studio-table-source-select"
+        >
+          <option value="manual">Вручную</option>
+          <option value="quotation-items">Из КП</option>
+          <option value="order-items">Из заказа</option>
+        </select>
+        @if (rowSource() === 'quotation-items' && !quotationId) {
+          <span class="table-props__hint">Выберите КП в панели Данные</span>
+        }
+        @if (rowSource() === 'order-items' && !orderId) {
+          <span class="table-props__hint">Выберите заказ в панели Данные</span>
+        }
+      </label>
+
       <label class="table-props__toggle">
         <input
           type="checkbox"
@@ -370,7 +391,10 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   @Input({ required: true }) block!: StudioBlock;
   @Input() disabled = false;
+  @Input() quotationId = '';
+  @Input() orderId = '';
   @Output() readonly settingsChange = new EventEmitter<Record<string, unknown>>();
+  @Output() readonly sourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items'>();
   @Output() readonly saveTemplate = new EventEmitter<void>();
   @Output() readonly templatesLoaded = new EventEmitter<readonly TableTemplate[]>();
 
@@ -382,6 +406,16 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   protected readonly chevronDown = ChevronDown;
 
   protected readonly columns = studioTableColumns;
+
+  protected rowSource(): 'manual' | 'quotation-items' | 'order-items' {
+    const source = (this.block.settings?.['dataSource'] as { type?: unknown } | undefined)?.type
+      ?? this.block.settings?.['tableDataSource'];
+    return source === 'quotation-items' || source === 'order-items' ? source : 'manual';
+  }
+
+  protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items'): void {
+    this.sourceChange.emit(source);
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {

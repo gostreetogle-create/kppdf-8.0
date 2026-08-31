@@ -7,12 +7,14 @@ import {
   silentGet,
   silentPatch,
   silentPost,
+  silentWrap,
   type SilentResult,
 } from '@kppdf/util-http';
 import type {
   CreateStudioDocumentPayload,
   StudioDocument,
   UpdateStudioDocumentPayload,
+  StudioDataSetPayload,
 } from './studio-document.types';
 
 @Injectable({ providedIn: 'root' })
@@ -34,6 +36,17 @@ export class PiStudioDocumentsService {
 
   update(id: string, payload: UpdateStudioDocumentPayload): Observable<SilentResult<StudioDocument>> {
     return silentPatch<StudioDocument>(this.http, `${this.baseUrl}/studio-documents/${id}`, payload);
+  }
+
+  putDataSet(
+    documentId: string,
+    key: string,
+    payload: { expectedRevision: number; dataSet: StudioDataSetPayload },
+  ): Observable<SilentResult<StudioDocument>> {
+    return silentWrap(this.http.put<StudioDocument>(
+      `${this.baseUrl}/studio-documents/${documentId}/data-sets/${encodeURIComponent(key)}`,
+      payload,
+    ));
   }
 
   remove(id: string): Observable<SilentResult<void>> {

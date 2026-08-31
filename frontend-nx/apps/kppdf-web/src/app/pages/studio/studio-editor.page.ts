@@ -282,6 +282,8 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
             @case ('properties') {
               <pi-studio-properties-panel
                 [block]="propertiesBlock()"
+                [quotationId]="quotationId()"
+                [orderId]="orderId()"
                 (styleChange)="patchBlockStyle($event)"
                 (contentChange)="patchBlockContent($event)"
                 (titleChange)="patchBlockTitle($event)"
@@ -289,6 +291,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (imageClearBackground)="clearImageBackground()"
                 (deleteLayer)="deleteLayerById(propertiesBlock()?._id)"
                 (tableSettingsChange)="patchTableSettings($event)"
+                (tableSourceChange)="onTableSourceChange($event)"
                 (saveTableTemplate)="openSaveTableTemplateDialog()"
                 (applyLibraryText)="applyLibraryText($event)"
                 (saveTextBlock)="openSaveTextBlockDialog()"
@@ -1126,6 +1129,28 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const block = this.activeTableBlock();
     if (!block) return;
     this.patchTableSettingsForBlock(block._id, { tableTemplateSampleRows: rows });
+  }
+
+  onTableSourceChange(source: 'manual' | 'quotation-items' | 'order-items'): void {
+    const block = this.activeTableBlock();
+    const doc = this.document();
+    if (!block || !doc) return;
+    const dataSet = { source: { type: source }, rows: [] };
+    this.blocks.update((blocks) => blocks.map((item) => item._id === block._id
+      ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: source } } }
+      : item));
+    void firstValueFrom(this.documents.putDataSet(doc._id, `table-${block._id}`, {
+      expectedRevision: doc.revision ?? 1,
+      dataSet,
+    })).then((result) => {
+      if (result.ok) {
+        this.document.set(result.data);
+        this.toast.success(source === 'manual' ? 'Источник строк: вручную' : `Источник строк: ${source === 'quotation-items' ? 'КП' : 'заказ'}`);
+        this.refreshPreviewIfActive();
+      } else {
+        this.conflict();
+      }
+    });
   }
 
   patchTableSettings(patch: Record<string, unknown>): void {
