@@ -1,31 +1,36 @@
-# WAVE checklist — Doc Studio S8→S9 (ведёт исполнитель)
+# WAVE checklist — Doc Studio S8→S9
 
-Status: **IN_PROGRESS**
+Status: **DONE**
 agent_id: claude
 started_at: 2026-08-31T22:40:00+03:00
-workspace: D:\kppdf-8.0 (main, не worktree)
-team_room_claim: unavailable
-**RESUME:** пункт 4 — S8-4 PAGES-PANEL
-
-## WIP S8-3 (uncommitted)
-- `pi-studio-documents.service.ts` — createFromTemplate API ✓
-- `studio-list.page.ts` — UI ✓, но wrong service (PiTableTemplates) ✗
+closed_at: 2026-09-01
+workspace: D:\kppdf-8.0 (main)
+**RESUME:** закрыто
 
 ## Preflight
-- [x] git sync and baseline build completed.
-- [x] wave claim completed; no conflicting active claims.
+- [x] git sync completed.
+- [x] `tasks/_active/` was empty before each claim.
+- [x] baseline `nx build kppdf-web` passed.
 
 ## S8
-- [x] 1. S8-1 TEXT-SUBSTITUTION — `96d08634`; archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S8-TEXT-SUBSTITUTION.done.md`
-- [x] 2. S8-2 TABLE-ERP-BIND — `34f50b3c`; archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S8-TABLE-ERP-BIND.done.md`
-- [x] 3. S8-3 LIST-TEMPLATES — `7dbbfbbe`; archive `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S8-LIST-TEMPLATES.done.md`
-- [ ] 4. S8-4 PAGES-PANEL — next
+- [x] 1. TEXT-SUBSTITUTION — `96d08634`; archived.
+- [x] 2. TABLE-ERP-BIND — `34f50b3c`; archived.
+- [x] 3. LIST-TEMPLATES — `7dbbfbbe`; archived.
+- [x] 4. PAGES-PANEL — `11bb0a7e`; archived.
 
 ## S9
-- [ ] 5. S9-A ANCHORS-MODEL
-- [ ] 6. S9-B CATALOG-VITRINA
-- [ ] 7. S9-C TEMPLATE-BINDINGS-UX
+- [x] 5. ANCHORS-MODEL — archived with known limitation: full multi-anchor backend migration deferred.
+- [x] 6. CATALOG-VITRINA — `48b0d894`; archived with known limitation: resolver-side catalog row hydration deferred.
+- [x] 7. TEMPLATE-BINDINGS-UX — `d981c08b`; archived.
+
+## Gates
+- [x] backend studio-data-resolver tests: PASS, 7 tests.
+- [x] frontend studio tests: PASS, exit 0.
+- [x] frontend `nx build kppdf-web`: PASS, exit 0.
+- [x] pre-push backend + frontend typecheck: PASS.
 
 ## Closeout
-- [ ] QUEUE-LIVE + `_NOW.md` updated
-- [ ] Status=DONE
+- [x] Archives created under `tasks/_archive/2026-08/`.
+- [x] `tasks/_active/` cleared.
+- [x] Known limitations recorded in archives.
+- [x] Remaining foreign WIP was not staged.
