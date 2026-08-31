@@ -28,6 +28,7 @@
 | PiButton | `ButtonComponent` (`shared/ui/button/button.component.ts`) | Любая кнопка/действие в canonical UI | Свой `<button>` с ручными классами вместо компонента |
 | ErrorBanner | `ErrorBannerComponent` (`shared/ui/error-banner/error-banner.component.ts`) | Баннер ошибки (`role="alert"`), string \| `{message, canRetry?}` \| null | Успех/предупреждение (Toast), ошибка валидации поля |
 | **StatusBanner** | `PiStatusBannerComponent` (`shared/ui/status-banner/`) | Постоянный lifecycle-акцент записи (`role="status"`): черновик, в производстве, отменён | Ошибка загрузки (ErrorBanner), краткая обратная связь (Toast), модальное действие (Dialog) |
+| **FlowDiagram** | `PiFlowDiagramComponent` (`@kppdf/ui`) | Короткая схема связей между этапами процесса; orthogonal SVG routes | ERP-таблица, редактирование строк, длинный список |
 | Skeleton | `PiSkeletonComponent` (`shared/ui/skeleton/pi-skeleton.component.ts`) | Placeholder загрузки контента | Пустые состояния (EmptyState), ошибки |
 | Toast | `PiToastService` (`shared/ui/toast/pi-toast.service.ts`) | Краткое уведомление success/error/warning (Sonner-style) | Долгие сообщения, confirm-диалоги (AlertDialog) |
 | FormField | `FormFieldComponent` (`shared/ui/form-field/form-field.component.ts`) | Обёртка label+error+hint для form-контролов | Standalone без Input/Select/Checkbox |

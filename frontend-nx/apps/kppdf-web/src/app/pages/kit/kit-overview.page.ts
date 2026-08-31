@@ -1,17 +1,28 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
+import {
+  PiFlowDiagramComponent,
+  type PiFlowEdge,
+  type PiFlowNode,
+} from '@kppdf/ui';
 
 /**
  * Kit overview — entry point для Paper & Ink UI Kit.
  *
  * Показывает карту разделов и статус каждого примитива.
+ *
+ * PiFlowDiagram
+ *   Назначение: компактно показать отношения между этапами процесса.
+ *   Anti-use: не замена ERP-таблице и не место для редактирования строк.
+ *   Keyboard: каждый узел — обычная кнопка с `pi-focus-ring`.
+ *   Статус: canonical kit primitive (ResizeObserver + reduced-motion fallback).
  */
 @Component({
   selector: 'app-kit-overview',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, PiStatusBannerComponent],
+  imports: [RouterLink, PiStatusBannerComponent, PiFlowDiagramComponent],
   template: `
     <div class="pi-page-frame">
       <h1 class="font-display text-3xl font-bold tracking-[-0.02em] mb-2">Paper & Ink · UI Kit</h1>
@@ -75,6 +86,20 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
         </div>
       </div>
 
+      <section class="mt-section" aria-labelledby="flow-diagram-heading">
+        <div class="flex items-baseline gap-form-field">
+          <span class="eyebrow">01</span>
+          <h2 id="flow-diagram-heading" class="font-title-sm text-ink m-0">Поток заказа</h2>
+        </div>
+        <p class="text-xs text-muted-foreground mt-form-row mb-form-row">
+          Паспорт: для коротких связей между этапами. Для строк, сумм и редактирования используйте
+          таблицу, а не схему.
+        </p>
+        <div class="hairline rounded-sm p-4" data-test="kit-flow-diagram">
+          <app-pi-flow-diagram [nodes]="flowNodes" [edges]="flowEdges" />
+        </div>
+      </section>
+
       <section class="mt-section" aria-labelledby="status-banner-heading">
         <div class="flex items-baseline gap-form-field">
           <span class="eyebrow">07</span>
@@ -127,4 +152,17 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
     </div>
   `,
 })
-export class KitOverviewPage {}
+export class KitOverviewPage {
+  protected readonly flowNodes: readonly PiFlowNode[] = [
+    { id: 'order', label: 'Заказ', status: 'ok' },
+    { id: 'supply', label: 'Снабжение', status: 'active' },
+    { id: 'workshop', label: 'Цех', status: 'idle' },
+    { id: 'shipping', label: 'Отгрузка', status: 'idle' },
+  ];
+
+  protected readonly flowEdges: readonly PiFlowEdge[] = [
+    { from: 'order', to: 'supply' },
+    { from: 'supply', to: 'workshop' },
+    { from: 'workshop', to: 'shipping' },
+  ];
+}
