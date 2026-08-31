@@ -219,6 +219,10 @@ import {
           <option value="manual">Вручную</option>
           <option value="quotation-items">Из КП</option>
           <option value="order-items">Из заказа</option>
+          <option value="catalog-products">Изделия</option>
+          <option value="catalog-modules">Модули</option>
+          <option value="catalog-parts">Детали</option>
+          <option value="catalog-materials">Материалы</option>
         </select>
         @if (rowSource() === 'quotation-items' && !quotationId) {
           <span class="table-props__hint">Выберите КП в панели Данные</span>
@@ -394,7 +398,7 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
   @Input() quotationId = '';
   @Input() orderId = '';
   @Output() readonly settingsChange = new EventEmitter<Record<string, unknown>>();
-  @Output() readonly sourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items'>();
+  @Output() readonly sourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'>();
   @Output() readonly saveTemplate = new EventEmitter<void>();
   @Output() readonly templatesLoaded = new EventEmitter<readonly TableTemplate[]>();
 
@@ -407,13 +411,13 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected readonly columns = studioTableColumns;
 
-  protected rowSource(): 'manual' | 'quotation-items' | 'order-items' {
+  protected rowSource(): string {
     const source = (this.block.settings?.['dataSource'] as { type?: unknown } | undefined)?.type
       ?? this.block.settings?.['tableDataSource'];
     return source === 'quotation-items' || source === 'order-items' ? source : 'manual';
   }
 
-  protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items'): void {
+  protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {
     this.sourceChange.emit(source);
   }
 

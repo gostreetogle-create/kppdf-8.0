@@ -316,7 +316,7 @@ export class StudioPropertiesPanelComponent {
   @Input() quotationId = '';
   @Input() orderId = '';
   @Output() readonly tableSettingsChange = new EventEmitter<Record<string, unknown>>();
-  @Output() readonly tableSourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items'>();
+  @Output() readonly tableSourceChange = new EventEmitter<'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'>();
   @Output() readonly saveTableTemplate = new EventEmitter<void>();
   @Output() readonly applyLibraryText = new EventEmitter<TextBlock>();
   @Output() readonly saveTextBlock = new EventEmitter<void>();

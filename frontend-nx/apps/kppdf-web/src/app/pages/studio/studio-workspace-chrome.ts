@@ -1,10 +1,11 @@
-import { Database, FileText, Layers, LayoutTemplate, Settings2 } from 'lucide-angular';
+import { Database, FileText, Layers, LayoutGrid, LayoutTemplate, Settings2 } from 'lucide-angular';
 import type { StudioWsRailItem } from './studio-workspace-shell.component';
 
-export type StudioWorkspaceSection = 'elements' | 'layers' | 'data' | 'template' | 'properties';
+export type StudioWorkspaceSection = 'elements' | 'layers' | 'data' | 'template' | 'properties' | 'showcase';
 
 export const STUDIO_RAIL_ITEMS: readonly StudioWsRailItem[] = [
   { id: 'elements', title: 'Элементы', short: 'El', icon: FileText },
+  { id: 'showcase', title: 'Витрина', short: 'Vi', icon: LayoutGrid },
   { id: 'layers', title: 'Слои', short: 'Ly', icon: Layers },
   { id: 'data', title: 'Данные', short: 'Dt', icon: Database },
   { id: 'template', title: 'Шаблон', short: 'Tp', icon: LayoutTemplate },

@@ -20,6 +20,7 @@ import {
   Database,
   FileText,
   Layers,
+  LayoutGrid,
   LayoutTemplate,
   LucideAngularModule,
   Settings2,
@@ -53,6 +54,7 @@ import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
+import { StudioShowcasePanelComponent, type StudioShowcaseKind } from './studio-showcase-panel.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
@@ -102,6 +104,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     StudioWorkspaceShellComponent,
     StudioBlocksCanvasComponent,
     StudioDataPanelComponent,
+    StudioShowcasePanelComponent,
     StudioElementsPanelComponent,
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
@@ -240,6 +243,12 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (imageFile)="addImageToActiveLayer($event)"
               />
             }
+            @case ('showcase') {
+              <pi-studio-showcase-panel
+                [selected]="catalogSelections()"
+                (selectionChange)="onCatalogSelectionChange($event)"
+              />
+            }
             @case ('data') {
               <pi-studio-data-panel
                 [issuerOrgName]="issuerOrgName()"
@@ -313,6 +322,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
             (layoutChanged)="changeLayout($event.id, $event.layout)"
             (layoutCommit)="onLayoutCommit()"
             (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
+            (textDoubleClick)="openLayerProperties($event)"
             (tableRowsChange)="patchTableRows($event)"
             (tableDisabledRowsChange)="patchTableDisabledRows($event)"
           />
@@ -432,6 +442,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly orders = signal<Order[]>([]);
   readonly contextSaving = signal(false);
   readonly contextSaveError = signal<string | null>(null);
+  readonly catalogSelections = signal<{ products: readonly string[]; modules: readonly string[]; parts: readonly string[]; materials: readonly string[] }>({ products: [], modules: [], parts: [], materials: [] });
   readonly blocks = signal<readonly StudioBlock[]>([]);
   readonly selectedId = signal<string | null>(null);
   readonly activeLayerId = signal<string | null>(null);
@@ -501,6 +512,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     }
     if (section === 'elements') return 'Элементы';
     if (section === 'data') return 'Данные';
+    if (section === 'showcase') return 'Витрина';
     if (section === 'template') return 'Шаблон';
     return studioPanelTitle(section);
   });
@@ -527,6 +539,15 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         if (r.ok) {
           rememberStudioDocument(r.data._id);
           this.document.set(r.data);
+          const selections = r.data.context?.['catalogSelections'];
+          if (selections && typeof selections === 'object') {
+            this.catalogSelections.set({
+              products: Array.isArray((selections as Record<string, unknown>)['products']) ? (selections as Record<string, unknown>)['products'] as string[] : [],
+              modules: Array.isArray((selections as Record<string, unknown>)['modules']) ? (selections as Record<string, unknown>)['modules'] as string[] : [],
+              parts: Array.isArray((selections as Record<string, unknown>)['parts']) ? (selections as Record<string, unknown>)['parts'] as string[] : [],
+              materials: Array.isArray((selections as Record<string, unknown>)['materials']) ? (selections as Record<string, unknown>)['materials'] as string[] : [],
+            });
+          }
           this.loadIssuerOrg(r.data.organizationId);
           void firstValueFrom(this.blocksService.list(id)).then((b) => {
             if (b.ok) {
@@ -1131,7 +1152,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.patchTableSettingsForBlock(block._id, { tableTemplateSampleRows: rows });
   }
 
-  onTableSourceChange(source: 'manual' | 'quotation-items' | 'order-items'): void {
+  onTableSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {
     const block = this.activeTableBlock();
     const doc = this.document();
     if (!block || !doc) return;
@@ -1262,6 +1283,14 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         this.toast.success(`Текст «${value.name}» сохранён в библиотеку`);
       }
     });
+  }
+
+  onCatalogSelectionChange(change: { kind: StudioShowcaseKind; ids: readonly string[] }): void {
+    const doc = this.document();
+    if (!doc) return;
+    const next = { ...this.catalogSelections(), [change.kind]: change.ids };
+    this.catalogSelections.set(next);
+    this.patchDocumentContext({ ...(doc.context ?? {}), catalogSelections: next });
   }
 
   onCounterpartyChange(counterpartyId: string): void {
