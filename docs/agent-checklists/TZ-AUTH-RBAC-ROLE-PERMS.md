@@ -52,7 +52,7 @@
 
 ```text
 outcome: DONE with repository-lint baseline limitation documented
-commit: pending closeout commit
+commit: b3607871
 gates: tsc PASS; Jest PASS (119 suites / 1112 tests); target lint PASS; full lint FAIL on 45 unrelated errors
 archive: tasks/_archive/2026-08/TZ-AUTH-RBAC-ROLE-PERMS.done.md
 ```

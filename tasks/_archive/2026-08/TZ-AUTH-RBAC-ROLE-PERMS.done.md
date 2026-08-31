@@ -4,6 +4,7 @@
 **completed_at:** `2026-08-31T20:18:10+03:00`
 **layer:** backend auth/RBAC
 **archive_status:** DONE
+**commit:** `b3607871`
 
 ## Outcome
 
