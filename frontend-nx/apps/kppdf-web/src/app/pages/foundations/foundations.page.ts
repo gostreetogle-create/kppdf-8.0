@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { PiPageHeaderComponent } from '@kppdf/ui/page';
 import { PiSectionComponent } from '@kppdf/ui/page';
 import { PiDemoComponent } from '@kppdf/ui/page';
@@ -19,6 +19,12 @@ import { CardComponent } from '@kppdf/ui/card';
  *   Anti-use: не для успеха/предупреждений (Toast), не для валидации полей.
  *   Keyboard: кнопка «Повторить» доступна с клавиатуры.
  *   Статус: canonical (см. shared/ui/error-banner).
+ *
+ * Tri-state segmented
+ *   Назначение: компактный взаимоисключающий выбор состояния.
+ *   Anti-use: не для навигации и не для длинного списка с поиском.
+ *   Keyboard: обычные кнопки — Tab, Enter/Space; активный пункт = bg + border + ink.
+ *   Статус: canonical utility `pi-segmented` + `pi-segmented-item`.
  */
 @Component({
   selector: 'app-foundations-page',
@@ -135,8 +141,32 @@ import { CardComponent } from '@kppdf/ui/card';
       </app-pi-demo>
     </app-pi-section>
 
-    <!-- ───── Section V. Pi-* Utilities (TZ-95) ───── -->
-    <app-pi-section title="Pi-* Utilities" hint="TZ-93/95 · 2 architectural primitives" eyebrow="V">
+    <!-- ───── Section V. Segmented control (TZ-UI-DCI-602) ───── -->
+    <app-pi-section
+      title="Segmented control"
+      hint="tri-state · background + border + ink"
+      eyebrow="V"
+    >
+      <div class="pi-segmented" role="group" aria-label="Фильтр состояния" data-test="kit-segmented">
+        @for (option of segmentedOptions; track option.value) {
+          <button
+            type="button"
+            class="pi-segmented-item pi-focus-ring"
+            [attr.aria-pressed]="segmentedValue() === option.value"
+            (click)="segmentedValue.set(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <p class="text-xs text-muted-foreground mt-form-row">
+        Активный сегмент всегда показывает фон, золотую границу и читаемый текст ink — в светлой и
+        тёмной теме.
+      </p>
+    </app-pi-section>
+
+    <!-- ───── Section VI. Pi-* Utilities (TZ-95) ───── -->
+    <app-pi-section title="Pi-* Utilities" hint="TZ-93/95 · 2 architectural primitives" eyebrow="VI">
       <p class="text-sm text-muted-foreground max-w-prose mb-stack-lg">
         Architectural primitives adopted from
         <code class="font-mono text-[11px]">stitch_professional_desktop_crm_refinement</code>. See
@@ -253,4 +283,11 @@ export class FoundationsPage {
   ];
 
   protected readonly spacing = [4, 8, 12, 16, 24, 32, 48, 64];
+
+  protected readonly segmentedOptions = [
+    { value: 'all', label: 'Все' },
+    { value: 'active', label: 'Активные' },
+    { value: 'archived', label: 'Архив' },
+  ] as const;
+  protected readonly segmentedValue = signal<(typeof this.segmentedOptions)[number]['value']>('all');
 }

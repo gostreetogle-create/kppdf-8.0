@@ -598,6 +598,20 @@
     background-size: var(--pi-bg-elevated-size);
     background-blend-mode: var(--pi-bg-elevated-blend);
   }
+
+  /* Keep selected-state rules in the utilities layer so they win over the
+     base `@utility pi-segmented-item` declarations in both themes. */
+  .pi-segmented-item:hover {
+    color: var(--color-ink);
+  }
+  .pi-segmented-item[aria-pressed='true'] {
+    background-color: color-mix(in oklch, var(--color-gold) 18%, var(--color-paper-2));
+    border-color: color-mix(in oklch, var(--color-gold-deep) 70%, var(--color-rule));
+    color: var(--color-ink);
+  }
+  .pi-segmented-item[aria-pressed='true']:hover {
+    background-color: color-mix(in oklch, var(--color-gold) 24%, var(--color-paper-2));
+  }
 }
 
 @utility eyebrow {
@@ -811,6 +825,44 @@
   border-color: var(--color-rule-strong);
   border-radius: var(--radius-sm);
   font-size: 14px;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+/* Segmented controls keep the track, idle option, and selected option
+   visually distinct. The selected state is intentionally tri-state:
+   background tint + gold-ish border + readable ink text. */
+@utility pi-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background-color: var(--color-paper-2);
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--color-rule);
+  border-radius: var(--radius-sm);
+}
+
+@utility pi-segmented-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  padding-inline: var(--space-control-x);
+  padding-block: var(--space-control-y);
+  background-color: transparent;
+  color: var(--color-muted-foreground);
+  border-style: solid;
+  border-width: 1px;
+  border-color: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
   transition:
     background-color 150ms ease,
     color 150ms ease,

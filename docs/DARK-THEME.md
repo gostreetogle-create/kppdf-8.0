@@ -75,6 +75,8 @@ Dark — только через `--color-*-override` в `@variant dark`.
 | active | soft gold tint + gold-ish border | **`ink`** (readable on light + dark) |
 | active on solid gold fill (lock) | `gold` | **`paper`** |
 
+**Tri-state rule:** active = background tint + border + ink text simultaneously; selected segmented/chip states must not rely on text color alone.
+
 ## Elevated panels
 
 Мраморный эксперимент снят: панели — чистый tonal lift `paper-2` через `--pi-bg-elevated` / `.pi-marble` (класс оставлен как alias, текстуры нет).

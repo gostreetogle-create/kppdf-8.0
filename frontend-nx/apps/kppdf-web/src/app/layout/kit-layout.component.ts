@@ -86,7 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
             >
               <lucide-angular [img]="menuIcon" [size]="14" aria-hidden="true" />
             </button>
-            <a routerLink="/kit/overview" class="flex items-center gap-2 min-w-0">
+            <a routerLink="/kit/overview" class="flex items-center gap-2 min-w-0 rounded-sm pi-focus-ring">
               <span class="block w-[10px] h-[10px] bg-ink shrink-0" aria-hidden="true"></span>
               <span class="font-display font-bold tracking-tight truncate">
                 Paper &amp; Ink · UI Kit v0.1
@@ -98,7 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
               href="https://example.com/docs"
               target="_blank"
               rel="noopener noreferrer"
-              class="eyebrow hidden sm:flex items-center gap-1 hover:text-ink transition-colors"
+              class="eyebrow hidden sm:flex items-center gap-1 hover:text-ink transition-colors rounded-sm pi-focus-ring"
             >
               Документация
               <lucide-angular [img]="arrowUpRightIcon" [size]="11" aria-hidden="true" />
@@ -149,7 +149,7 @@ const NAV_GROUPS: NavGroup[] = [
                         routerLinkActive="bg-sunrise-warm text-on-gold"
                         [routerLinkActiveOptions]="{ exact: link.path === '/kit/overview' }"
                         class="block px-2 py-1.5 text-sm
-                               hover:bg-paper-2 transition-colors rounded-sm"
+                               hover:bg-paper-2 transition-colors rounded-sm pi-focus-ring"
                       >
                         {{ link.label }}
                       </a>

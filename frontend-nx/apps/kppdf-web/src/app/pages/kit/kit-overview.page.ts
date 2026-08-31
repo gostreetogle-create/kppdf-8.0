@@ -23,7 +23,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <a
           routerLink="/kit/foundations"
-          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline"
+          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline pi-focus-ring"
         >
           <span class="eyebrow mb-1 block">02</span>
           <h2 class="font-title-sm text-ink mb-1">Основы</h2>
@@ -33,7 +33,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 
         <a
           routerLink="/kit/forms"
-          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline"
+          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline pi-focus-ring"
         >
           <span class="eyebrow mb-1 block">04</span>
           <h2 class="font-title-sm text-ink mb-1">Формы и таблицы</h2>
@@ -46,7 +46,7 @@ import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 
         <a
           routerLink="/kit/overlays"
-          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline"
+          class="hairline rounded-sm p-4 hover:bg-paper-2 transition-colors no-underline pi-focus-ring"
         >
           <span class="eyebrow mb-1 block">05</span>
           <h2 class="font-title-sm text-ink mb-1">Оверлеи</h2>

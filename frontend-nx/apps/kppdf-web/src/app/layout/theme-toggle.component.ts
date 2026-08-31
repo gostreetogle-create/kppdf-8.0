@@ -21,7 +21,7 @@ import { ThemeService } from '@kppdf/ui/theme';
     <button
       type="button"
       class="pi-theme-toggle inline-flex items-center justify-center
-             w-8 h-8 hairline rounded-sm
+             w-8 h-8 hairline rounded-sm pi-focus-ring
              hover:bg-paper-2 transition-colors"
       [attr.aria-label]="ariaLabel()"
       [attr.aria-pressed]="theme.isDark()"
