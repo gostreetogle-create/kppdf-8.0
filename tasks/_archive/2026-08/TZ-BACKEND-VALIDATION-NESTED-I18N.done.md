@@ -6,7 +6,7 @@ ARCHIVE_MARKER
 **closed_at:** `2026-08-31T21:06:00+03:00`
 **layer:** backend validation/error handling
 **outcome:** DONE
-**commit:** pending validation closeout commit
+**commit:** `1e209c74`
 
 ## Outcome
 

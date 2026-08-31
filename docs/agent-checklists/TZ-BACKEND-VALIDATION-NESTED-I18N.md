@@ -48,7 +48,7 @@
 
 ```text
 outcome: DONE; nested validation errors flatten to full RU property paths
-commit: pending validation closeout commit
+commit: 1e209c74
  gates: tsc PASS; focused PASS (10); full Jest PASS (119 suites / 1114 tests); target eslint PASS; full eslint baseline FAIL (45 errors / 200 warnings outside scope)
 archive: tasks/_archive/2026-08/TZ-BACKEND-VALIDATION-NESTED-I18N.done.md
 ```

@@ -11,7 +11,7 @@ started_at: `2026-08-31T20:49:43+03:00`
 ## Волна
 
 - [x] 0. Master-чеклист создан и claim зафиксирован
-- [x] 1. `TZ-BACKEND-VALIDATION-NESTED-I18N` — archived; commit/push pending closeout SHA
+- [x] 1. `TZ-BACKEND-VALIDATION-NESTED-I18N` — archived and committed as `1e209c74`
 - [ ] 2. `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE`
 - [ ] 3. QUEUE-LIVE + `_NOW` + Status=DONE + отчёт PO
 
@@ -21,7 +21,7 @@ started_at: `2026-08-31T20:49:43+03:00`
 - [x] Code: nested ValidationPipe exceptionFactory flatten + humanize RU
 - [x] Gates: tsc PASS; focused 10 PASS; full Jest 119 suites / 1114 tests PASS; target eslint PASS; full lint baseline 45 errors / 200 warnings
 - [x] Archive: `.done.md` создан
-- [ ] Commit: точечно создан и pushed, SHA будет записан после commit
+- [x] Commit: точечно создан как `1e209c74`; push выполняется после docs SHA sync
 
 ## 2. TZ-BACKEND-CATALOG-PART-BOM-IN-TREE
 
