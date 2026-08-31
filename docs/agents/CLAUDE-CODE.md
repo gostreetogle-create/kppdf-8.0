@@ -3,6 +3,7 @@
 > Не читать в начале каждой сессии. Контракт исполнителя — корневой
 > `CLAUDE.md` → `GEMINI.md`. Сюда — только CLI/MCP гигиена.
 > Cloudcoda onboarding: `docs/agents/CLOUDCODA.md`.
+> Совместная работа Cursor / Claude / Freebuff (Zcode-слот): `docs/agents/MULTI-AGENT-WORKFLOW.md`.
 > Источник отбора: vc.ru «50 фишек Claude Code» (2026) + peer MCP;
 > в репо **не** копировать все 50.
 

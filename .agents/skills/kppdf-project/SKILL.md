@@ -75,6 +75,7 @@ Cursor: не читай `GEMINI.md` как свой DoD и не вызывай `
 | План без кода | `writing-plans` |
 | Текстовый review чужого diff | `requesting-code-review` / `receiving-code-review` (без патчей) |
 | Карта внешних skills (Pocock и др.) | `docs/agents/SKILLS-MAP.md` — **не** ставить mattpocock plugin |
+| Волна Cursor + Claude + Freebuff (Zcode-слот) | `docs/agents/MULTI-AGENT-WORKFLOW.md` + `multi-agent-production-safety` + `adaptive-effort-routing` |
 
 ### Исполнитель (Gemini / Claude Code / локальные)
 

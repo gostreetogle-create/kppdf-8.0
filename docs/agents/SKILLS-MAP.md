@@ -7,6 +7,10 @@
 
 Вход: skill `kppdf-context-preflight`. SoT = `docs/` + `.agents/skills/`. Не `.ai/`, не симлинки. Cursor = TZ only; Executor = код + FIC. `.claude/rules` не используем — `CLAUDE.md` → `GEMINI.md` + skills. Аудит: `docs/audits/2026-08-24-agent-skills-ai-folder-audit.md`.
 
+## Навык ≠ длинный промпт
+
+В `description` skill обязательны **когда молчать** (не применять), не только «когда включать». Согласие на skill ≠ право в prod/wipe/секреты. Если у проекта уже есть канон на ту же тему — skill уступает SoT (`docs/`, `GEMINI.md`), не дублирует. Не грузить пачку skills сразу: 1 основной + ≤2 вспомогательных.
+
 ## Что уже есть у нас
 
 | Pocock | У нас |
@@ -23,6 +27,7 @@
 | implement | Freebuff / Gemini / Claude CLI по `GEMINI.md` |
 | peer Claude | MCP `claude_code` из Cursor: архитектура, идеи, review; **не** grind |
 | web article | MCP Perplexity (выжимка) → выводы Cursor; конфиг `.cursor/mcp.json` |
+| Codex+Claude+Zcode multi-agent kit | `docs/agents/MULTI-AGENT-WORKFLOW.md` + skills `multi-agent-production-safety`, `adaptive-effort-routing` (источник: `data/multi-agent-production-workflow-v1/`) |
 
 ## Запрещено копировать
 
