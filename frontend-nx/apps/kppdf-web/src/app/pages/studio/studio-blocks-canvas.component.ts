@@ -75,6 +75,7 @@ import {
               [style.font-family]="block.style?.fontFamily ?? 'Times New Roman'"
               [style.line-height]="textLineHeight(block)"
               (click)="selectBlock($event, block)"
+              (dblclick)="openTextBlock($event, block)"
               (pointerdown)="startDrag($event, block)"
             >
               <div class="studio-block__text-body" [innerHTML]="textHtml(block)"></div>
@@ -414,6 +415,7 @@ export class StudioBlocksCanvasComponent {
   /** Fired after drag/resize ends so the editor can persist layout immediately. */
   @Output() layoutCommit = new EventEmitter<void>();
   @Output() contentChanged = new EventEmitter<{ id: string; content: string }>();
+  @Output() textDoubleClick = new EventEmitter<string>();
   @Output() tableRowsChange = new EventEmitter<string[][]>();
   @Output() tableDisabledRowsChange = new EventEmitter<number[]>();
 
@@ -502,6 +504,13 @@ export class StudioBlocksCanvasComponent {
   textHtml(block: StudioBlock): SafeHtml {
     const raw = block.content?.trim() || block.title?.trim() || 'Текст';
     return this.sanitizer.bypassSecurityTrustHtml(raw);
+  }
+
+  openTextBlock(event: MouseEvent, block: StudioBlock): void {
+    if (this.readOnly || block.type !== 'text' || block.locked) return;
+    event.stopPropagation();
+    this.selected.emit(block._id);
+    this.textDoubleClick.emit(block._id);
   }
 
   selectBlock(event: MouseEvent, block: StudioBlock): void {
