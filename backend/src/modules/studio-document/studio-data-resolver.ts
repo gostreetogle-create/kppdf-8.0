@@ -41,6 +41,7 @@ type DataSetEntry = {
   key?: string;
   source?: { type?: string };
   rows?: unknown;
+  disabledRowIndices?: unknown;
 };
 
 const COLUMN_ALIASES: Record<string, string[]> = {
@@ -113,6 +114,7 @@ export function storedRows(entry: DataSetEntry): string[][] {
 export function renderStudioTableHtml(
   columns: StudioTableColumn[],
   rows: string[][],
+  disabledRowIndices: number[] = [],
 ): string {
   if (columns.length === 0) {
     return '<p class="pi-empty-state">Нет описанных колонок.</p>';
@@ -127,7 +129,9 @@ export function renderStudioTableHtml(
   const body =
     rows.length > 0
       ? rows
-          .map((row) => {
+          .map((row, rowIndex) => {
+            if (disabledRowIndices.includes(rowIndex)) return '';
+
             const cells = columns
               .map((_, idx) => {
                 const value = row[idx] ?? '';
@@ -138,9 +142,11 @@ export function renderStudioTableHtml(
           })
           .join('')
       : `<tr>${columns.map(() => '<td></td>').join('')}</tr>`;
+  const totalColumns = columns.filter((column) => column.type === 'sum' || ['sum', 'total'].includes(normalizeKey(column.key))).length;
+  const footer = totalColumns > 0 ? `<tfoot><tr>${columns.map((column, index) => index === columns.length - 1 ? `<td>${escapeHtmlValue(String(rows.reduce((sum, row, rowIndex) => disabledRowIndices.includes(rowIndex) ? sum : sum + (Number(row[index]) || 0), 0)))}</td>` : '<td></td>').join('')}</tr></tfoot>` : '';
   return (
     `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
-    `<thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`
+    `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>${footer}</table>`
   );
 }
 
@@ -221,7 +227,8 @@ export function injectTableContent(
     const entry = byKey.get(key);
     const columns = tableColumnsFromBlock(block);
     const rows = entry ? storedRows(entry) : [];
-    const html = renderStudioTableHtml(columns, rows);
+    const disabled = entry && Array.isArray(entry.disabledRowIndices) ? entry.disabledRowIndices.filter((value): value is number => typeof value === 'number') : [];
+    const html = renderStudioTableHtml(columns, rows, disabled);
     const plain =
       typeof (block as { toObject?: () => Record<string, unknown> }).toObject ===
       'function'

@@ -38,6 +38,16 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(html).toContain('99');
   });
 
+  it('renders sum footer and ignores disabled rows', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'name', label: 'Name' }, { key: 'sum', label: 'Total', type: 'sum' }],
+      [['A', '10'], ['B', '20'], ['C', '30']],
+      [1],
+    );
+    expect(html).toContain('<tfoot>');
+    expect(html).toContain('<td>40</td>');
+  });
+
   it('injects resolved rows into table block content', () => {
     const blockId = new Types.ObjectId();
     const block = {
