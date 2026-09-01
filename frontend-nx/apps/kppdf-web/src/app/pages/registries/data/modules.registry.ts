@@ -23,6 +23,7 @@ export function createModulesRegistryDefinition(
   return {
     key: 'modules',
     title: 'Модули',
+    category: 'Каталог',
     description:
       'Переиспользуемые модули каталога (GET /modules). Backend отдаёт полный список без пагинации — страницы в UI нарезаются на клиенте.',
     source: 'api',

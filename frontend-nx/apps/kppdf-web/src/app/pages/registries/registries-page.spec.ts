@@ -16,12 +16,14 @@ function testRegistry(
   description: string,
   source: 'api' | 'demo',
   recordCount?: number,
+  category?: string,
 ): RegistryDefinition<RegistryRow> {
   return defineRegistry<TestRow>({
     key,
     title,
     description,
     source,
+    category,
     rowId: (row) => row.id,
     recordCount: recordCount === undefined ? undefined : () => recordCount,
     columns: [{ key: 'name', header: 'Название', format: (r) => r.name }],
@@ -124,6 +126,29 @@ describe('RegistriesPage — master table (TZ-NX-REGISTRIES-MASTER-TABLE-UX)', (
     expect(el.querySelector('[data-test="table-row-departments"]').textContent).toContain('1 запись');
     expect(el.querySelector('[data-test="table-row-pairs"]').textContent).toContain('2 записи');
     expect(el.querySelector('[data-test="table-row-unknown-count"]').textContent).toContain('Неизвестно');
+  });
+
+  it('groups master rows by category into a labelled section per group, in catalog order (TZ-NX-REGISTRIES-CATEGORY-GROUPS)', () => {
+    setup([
+      testRegistry('materials', 'Материалы', 'd', 'api', undefined, 'Каталог'),
+      testRegistry('supply-requests', 'Заявки снабжения', 'd', 'api', undefined, 'Склад'),
+      testRegistry('units', 'Единицы измерения', 'd', 'api', undefined, 'Каталог'),
+      testRegistry('departments', 'Отделы', 'd', 'demo'),
+    ]);
+
+    const el = fixture.nativeElement;
+    const labels = Array.from(el.querySelectorAll('[data-test="registries-category-label"]')).map(
+      (n: Element) => n.textContent?.trim(),
+    );
+    expect(labels).toEqual(['Каталог', 'Склад', 'Реестры']);
+
+    const tables = el.querySelectorAll('[data-test="registries-master-table"]');
+    expect(tables.length).toBe(3);
+
+    const catalogGroup = el.querySelectorAll('[data-test="registries-category-group"]')[0];
+    expect(catalogGroup.querySelector('[data-test="table-row-materials"]')).toBeTruthy();
+    expect(catalogGroup.querySelector('[data-test="table-row-units"]')).toBeTruthy();
+    expect(catalogGroup.querySelector('[data-test="table-row-supply-requests"]')).toBeNull();
   });
 
   it('shows an empty state instead of a blank page when the catalog is empty', () => {

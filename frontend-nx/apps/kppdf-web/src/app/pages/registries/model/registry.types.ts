@@ -155,6 +155,13 @@ export interface RegistryDefinition<TRow = RegistryRow> {
   readonly key: string;
   readonly title: string;
   readonly description?: string;
+  /**
+   * TZ-NX-REGISTRIES-CATEGORY-GROUPS — group label for the `/registries`
+   * master table (e.g. «Каталог», «Документы»). Registries without one
+   * fall into a single trailing «Реестры» group so the page never drops a
+   * row.
+   */
+  readonly category?: string;
   /** Required so the master table can never show an ambiguous/guessed source badge. */
   readonly source: RegistrySource;
   readonly rowId: (row: TRow) => string;
@@ -220,4 +227,9 @@ export interface RegistryMasterRow {
   readonly source: RegistrySource;
   /** `null` when the registry does not expose `recordCount`. */
   readonly recordCount: number | null;
+  /** Resolved group label — see `RegistryDefinition.category`. */
+  readonly category: string;
 }
+
+/** Fallback group label when a registry declares no `category` (TZ-NX-REGISTRIES-CATEGORY-GROUPS). */
+export const REGISTRY_DEFAULT_CATEGORY = 'Реестры';

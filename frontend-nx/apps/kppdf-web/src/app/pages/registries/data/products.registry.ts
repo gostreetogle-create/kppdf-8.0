@@ -41,6 +41,7 @@ export function createProductsRegistryDefinition(
   return {
     key: 'products',
     title: 'Изделия',
+    category: 'Каталог',
     description:
       'Изделия каталога (GET /products). Комплекс — производное Product с product-line в составе; отдельной коллекции Complex и реестра «Комплексы» нет.',
     source: 'api',

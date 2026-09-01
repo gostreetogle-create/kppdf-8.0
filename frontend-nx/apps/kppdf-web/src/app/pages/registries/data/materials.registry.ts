@@ -129,6 +129,7 @@ export function createMaterialsRegistryDefinition(
   return {
     key: 'materials',
     title: 'Материалы',
+    category: 'Каталог',
     description:
       'Сырьё и листовые материалы каталога (GET /materials, materialKind=raw). Деталь — тот же Material с другим kind, см. реестр «Детали».',
     source: 'api',

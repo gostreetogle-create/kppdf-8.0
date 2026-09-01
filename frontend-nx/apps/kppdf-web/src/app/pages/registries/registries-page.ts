@@ -16,7 +16,19 @@ import { BadgeComponent } from '@kppdf/ui/badge';
 import { TableComponent, type ColumnDef } from '@kppdf/ui/table';
 import { REGISTRIES_CATALOG, provideRegistriesCatalog } from './data/registries.catalog';
 import { RegistryDetailPanelComponent } from './registry-detail-panel.component';
-import type { RegistryDefinition, RegistryMasterRow, RegistryRow, RegistrySort } from './model/registry.types';
+import {
+  REGISTRY_DEFAULT_CATEGORY,
+  type RegistryDefinition,
+  type RegistryMasterRow,
+  type RegistryRow,
+  type RegistrySort,
+} from './model/registry.types';
+
+/** One `/registries` master-table group — TZ-NX-REGISTRIES-CATEGORY-GROUPS. */
+interface RegistryCategoryGroup {
+  readonly category: string;
+  readonly rows: RegistryMasterRow[];
+}
 
 /**
  * TZ-NX-REGISTRIES-MASTER-TABLE-UX — `/registries` master table +
@@ -77,19 +89,26 @@ import type { RegistryDefinition, RegistryMasterRow, RegistryRow, RegistrySort }
       }
     </ng-template>
 
-    @if (masterRows().length > 0) {
-      <app-pi-table
-        [data]="masterRows()"
-        [columns]="masterColumns"
-        [cellTemplates]="masterCellTemplates"
-        [localSort]="false"
-        [expandedRow]="panelTplBinding"
-        [expandedRowWhen]="expandedRowWhenFn()"
-        [expandedRowLabel]="expandedRowLabelFn()"
-        (rowClick)="onMasterRowClick($event)"
-        ariaLabel="Реестры"
-        data-test="registries-master-table"
-      />
+    @if (groupedRows().length > 0) {
+      <div class="flex flex-col gap-8">
+        @for (group of groupedRows(); track group.category) {
+          <div data-test="registries-category-group">
+            <h2 class="eyebrow mb-2 px-1" data-test="registries-category-label">{{ group.category }}</h2>
+            <app-pi-table
+              [data]="group.rows"
+              [columns]="masterColumns"
+              [cellTemplates]="masterCellTemplates"
+              [localSort]="false"
+              [expandedRow]="panelTplBinding"
+              [expandedRowWhen]="expandedRowWhenFn()"
+              [expandedRowLabel]="expandedRowLabelFn()"
+              (rowClick)="onMasterRowClick($event)"
+              [ariaLabel]="'Реестры: ' + group.category"
+              data-test="registries-master-table"
+            />
+          </div>
+        }
+      </div>
     } @else {
       <div
         class="max-w-sm p-6 pi-dashed-panel flex flex-col items-center gap-1 text-center"
@@ -125,8 +144,23 @@ export class RegistriesPage implements OnInit {
       description: def.description,
       source: def.source,
       recordCount: def.recordCount ? def.recordCount() : null,
+      category: def.category ?? REGISTRY_DEFAULT_CATEGORY,
     })),
   );
+
+  /**
+   * TZ-NX-REGISTRIES-CATEGORY-GROUPS — rows grouped by `category`, group
+   * order following each category's first appearance in the catalog.
+   */
+  protected readonly groupedRows = computed<RegistryCategoryGroup[]>(() => {
+    const groups = new Map<string, RegistryMasterRow[]>();
+    for (const row of this.masterRows()) {
+      const rows = groups.get(row.category);
+      if (rows) rows.push(row);
+      else groups.set(row.category, [row]);
+    }
+    return Array.from(groups, ([category, rows]) => ({ category, rows }));
+  });
 
   protected readonly masterColumns: ColumnDef<RegistryMasterRow>[] = [
     { key: 'title', label: 'Реестр' },

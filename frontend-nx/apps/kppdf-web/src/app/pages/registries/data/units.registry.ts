@@ -18,7 +18,7 @@ export interface UnitsRegistryDeps { readonly unitsService: PiUnitsService; read
 export function createUnitsRegistryDefinition(deps: UnitsRegistryDeps): RegistryDefinition<UnitRow> {
   const unitsService = deps.unitsService;
   return {
-    key: 'units', title: 'Единицы измерения',
+    key: 'units', title: 'Единицы измерения', category: 'Каталог',
     description: 'Справочник единиц измерения (GET /units, PATCH /units/:key, DELETE /units/:key).',
     source: 'api', rowId: (row) => row.key, emptyMessage: 'Единицы измерения не найдены.',
     columns: [

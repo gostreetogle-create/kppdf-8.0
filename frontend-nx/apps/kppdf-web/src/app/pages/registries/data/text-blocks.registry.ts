@@ -4,7 +4,7 @@ import { buildTextBlockActions, buildTextBlockCreateAction, type DocStudioDialog
 
 export function createTextBlocksRegistry(deps: DocStudioDialogDeps ): RegistryDefinition<RegistryRow> {
   const service = deps.textBlocks;
-  return defineRegistry({ key: 'text-blocks', title: 'Тексты', description: 'Переиспользуемые текстовые блоки.', source: 'api', paginationMode: 'client', rowId: (row) => row._id, columns: [
+  return defineRegistry({ key: 'text-blocks', title: 'Тексты', category: 'Документы', description: 'Переиспользуемые текстовые блоки.', source: 'api', paginationMode: 'client', rowId: (row) => row._id, columns: [
     { key: 'name', header: 'Название', format: (row) => row.name },
     { key: 'slug', header: 'Slug', format: (row) => row.slug },
     { key: 'tags', header: 'Теги', format: (row) => row.tags.join(', ') || '—' },

@@ -41,6 +41,7 @@ export function createDetailsRegistryDefinition(
   return {
     key: 'details',
     title: 'Детали',
+    category: 'Каталог',
     description:
       'Детали, метизы и покупные позиции — те же Material, что и сырьё. API `GET /materials` принимает один `materialKind` за запрос; по умолчанию показываются только `part`, остальные виды — через фильтр.',
     source: 'api',
