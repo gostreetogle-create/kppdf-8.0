@@ -11,11 +11,14 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
   template: `
     <div data-test="studio-data-panel">
       <p class="heading">Данные</p>
-      @if (selectedAnchors().length > 0) {
+      @if (selectedAnchors().length > 0 || catalogChips().length > 0) {
         <div class="selected" data-test="studio-selected-anchors">
           <dt class="label">Выбрано</dt>
           @for (anchor of selectedAnchors(); track anchor.key) {
             <dd class="chip"><strong>{{ anchor.label }}</strong><span>{{ anchor.name }}</span></dd>
+          }
+          @for (chip of catalogChips(); track chip.key) {
+            <dd class="chip" data-test="studio-catalog-chip"><strong>{{ chip.count }} {{ chip.label }}</strong><button type="button" class="chip-remove" (click)="catalogRemove.emit(chip.key)" [attr.aria-label]="'Убрать ' + chip.label">×</button></dd>
           }
         </div>
       }
@@ -40,6 +43,42 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
                 <app-pi-select-option [value]="cp._id">
                   {{ cp.shortName || cp.name }}
                 </app-pi-select-option>
+              }
+            </app-pi-select>
+          </app-pi-form-field>
+        </div>
+        <div>
+          <app-pi-form-field label="Плательщик" htmlFor="studio-payer-select">
+            <app-pi-select
+              id="studio-payer-select"
+              size="sm"
+              ariaLabel="Плательщик"
+              placeholder="— не выбран —"
+              [disabled]="contextSaving()"
+              [value]="payerId() || null"
+              (valueChange)="payerChange.emit($event ?? '')"
+              data-test="studio-payer-select"
+            >
+              @for (cp of counterparties(); track cp._id) {
+                <app-pi-select-option [value]="cp._id">{{ cp.shortName || cp.name }}</app-pi-select-option>
+              }
+            </app-pi-select>
+          </app-pi-form-field>
+        </div>
+        <div>
+          <app-pi-form-field label="Поставщик" htmlFor="studio-supplier-select">
+            <app-pi-select
+              id="studio-supplier-select"
+              size="sm"
+              ariaLabel="Поставщик"
+              placeholder="— не выбран —"
+              [disabled]="contextSaving()"
+              [value]="supplierId() || null"
+              (valueChange)="supplierChange.emit($event ?? '')"
+              data-test="studio-supplier-select"
+            >
+              @for (cp of counterparties(); track cp._id) {
+                <app-pi-select-option [value]="cp._id">{{ cp.shortName || cp.name }}</app-pi-select-option>
               }
             </app-pi-select>
           </app-pi-form-field>
@@ -110,6 +149,7 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
       .selected { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
       .chip { display: flex; gap: 6px; align-items: baseline; margin: 0; padding: 5px 7px; border: 1px solid var(--color-rule); background: var(--color-paper-2); font-size: 11px; }
       .chip strong { color: var(--color-muted-foreground-strong); }
+      .chip-remove { margin-left: auto; border: 0; background: transparent; color: var(--color-muted-foreground); cursor: pointer; font-size: 14px; line-height: 1; }
       .error {
         margin: 8px 0 0;
         font-size: 12px;
@@ -123,14 +163,20 @@ export class StudioDataPanelComponent {
   readonly counterpartyId = input('');
   readonly quotationId = input('');
   readonly orderId = input('');
+  readonly payerId = input('');
+  readonly supplierId = input('');
   readonly counterparties = input<Counterparty[]>([]);
   readonly quotations = input<Quotation[]>([]);
   readonly orders = input<Order[]>([]);
   readonly contextSaving = input(false);
   readonly contextSaveError = input<string | null>(null);
   readonly selectedAnchors = input<readonly { key: string; label: string; name: string }[]>([]);
+  readonly catalogChips = input<readonly { key: string; label: string; count: number }[]>([]);
 
   readonly counterpartyChange = output<string>();
   readonly quotationChange = output<string>();
   readonly orderChange = output<string>();
+  readonly payerChange = output<string>();
+  readonly supplierChange = output<string>();
+  readonly catalogRemove = output<string>();
 }

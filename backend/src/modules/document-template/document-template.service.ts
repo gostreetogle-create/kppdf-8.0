@@ -1609,6 +1609,9 @@ export class DocumentTemplateService {
           const cp = await this.counterpartyModel.findById(entityId).lean().exec();
           if (cp) bag.counterparty = cp;
         }
+      } else if ((anchorKey === 'payer' || anchorKey === 'supplier') && entityType === 'counterparty') {
+        const cp = await this.counterpartyModel.findById(entityId).lean().exec();
+        if (cp) bag.anchor = { ...(bag.anchor as Record<string, unknown> ?? {}), [anchorKey]: cp };
       } else if (anchorKey === 'issuer' && entityType === 'organization') {
         if (!bag.organization) {
           const org = await this.orgModel.findById(entityId).lean().exec();

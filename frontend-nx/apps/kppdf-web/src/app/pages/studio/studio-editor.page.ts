@@ -253,15 +253,21 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               <pi-studio-data-panel
                 [issuerOrgName]="issuerOrgName()"
                 [counterpartyId]="counterpartyId()"
+                [payerId]="payerId()"
+                [supplierId]="supplierId()"
                 [quotationId]="quotationId()"
                 [orderId]="orderId()"
                 [counterparties]="counterparties()"
                 [quotations]="quotations()"
                 [orders]="orders()"
                 [selectedAnchors]="selectedAnchorLabels()"
+                [catalogChips]="catalogChipLabels()"
                 [contextSaving]="contextSaving()"
                 [contextSaveError]="contextSaveError()"
                 (counterpartyChange)="onCounterpartyChange($event)"
+                (payerChange)="onAnchorChange('payer', $event)"
+                (supplierChange)="onAnchorChange('supplier', $event)"
+                (catalogRemove)="removeCatalogChip($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (orderChange)="onOrderChange($event)"
               />
@@ -468,6 +474,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   readonly propertiesBlock = computed(() => this.selectedBlock() ?? this.activeLayerBlock());
 
+  readonly catalogChipLabels = computed(() => {
+    const selections = this.catalogSelections();
+    return (['products', 'modules', 'parts', 'materials'] as const)
+      .filter((key) => selections[key].length > 0)
+      .map((key) => ({ key, label: ({ products: 'изделия', modules: 'модули', parts: 'детали', materials: 'материалы' } as const)[key], count: selections[key].length }));
+  });
+
   readonly selectedAnchorLabels = computed(() => {
     const context = this.document()?.context ?? {};
     const anchors = (context['anchors'] as Record<string, unknown> | undefined) ?? {};
@@ -492,6 +505,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const raw = this.document()?.context?.['counterpartyId'];
     return typeof raw === 'string' ? raw : '';
   });
+  readonly payerId = computed(() => this.anchorId('payer'));
+  readonly supplierId = computed(() => this.anchorId('supplier'));
+
+  private anchorId(key: string): string {
+    const anchors = this.document()?.context?.['anchors'];
+    const value = anchors && typeof anchors === 'object' ? (anchors as Record<string, unknown>)[key] : undefined;
+    return value && typeof value === 'object' && typeof (value as Record<string, unknown>)['entityId'] === 'string'
+      ? String((value as Record<string, unknown>)['entityId'])
+      : '';
+  }
+
   readonly quotationId = computed(() => {
     const raw = this.document()?.context?.['quotationId'];
     return typeof raw === 'string' ? raw : '';
@@ -1314,6 +1338,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
+  removeCatalogChip(kind: string): void {
+    if (!['products', 'modules', 'parts', 'materials'].includes(kind)) return;
+    this.onCatalogSelectionChange({ kind: kind as StudioShowcaseKind, ids: [] });
+  }
+
   onCatalogSelectionChange(change: { kind: StudioShowcaseKind; ids: readonly string[] }): void {
     const doc = this.document();
     if (!doc) return;
@@ -1349,8 +1378,24 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.patchDocumentContext(nextContext);
   }
 
+  onAnchorChange(anchorKey: 'payer' | 'supplier', entityId: string): void {
+    const doc = this.document();
+    if (!doc) return;
+    const context = { ...(doc.context ?? {}) };
+    const anchors = { ...((context['anchors'] as Record<string, unknown> | undefined) ?? {}) };
+    if (entityId) anchors[anchorKey] = { entityType: 'counterparty', entityId };
+    else delete anchors[anchorKey];
+    context['anchors'] = anchors;
+    this.patchDocumentContext(context);
+  }
+
   onQuotationChange(quotationId: string): void {
     this.patchContextField('quotationId', quotationId);
+    if (!quotationId) return;
+    const quotation = this.quotations().find((item) => item._id === quotationId) as (Quotation & { counterpartyId?: string }) | undefined;
+    const doc = this.document();
+    if (!doc || this.counterpartyId() || !quotation?.counterpartyId) return;
+    this.onCounterpartyChange(quotation.counterpartyId);
   }
 
   onOrderChange(orderId: string): void {
