@@ -47,6 +47,13 @@ const FONT_SIZE_OPTIONS = [6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32] as const;
 
 const FONT_FAMILY_OPTIONS = ['Times New Roman', 'Arial', 'Calibri'] as const;
 
+const FORMULA_OPTIONS = [
+  { id: '', label: '— без формулы —', token: '' },
+  { id: 'column-sum', label: 'Сумма столбца', token: '{{table.subtotal}}' },
+  { id: 'vat', label: 'НДС', token: '{{table.vat}}' },
+  { id: 'grand-with-vat', label: 'Итого с НДС', token: '{{table.grand}}' },
+] as const;
+
 const ALIGN_OPTIONS: readonly {
   value: StudioBlockAlign;
   label: string;
@@ -156,6 +163,35 @@ const ALIGN_OPTIONS: readonly {
           <lucide-angular [img]="bracesIcon" [size]="14" aria-hidden="true" />
           Поле ERP
         </app-pi-button>
+        <label class="text-props__field text-props__field--compact">
+          <span class="text-props__label">Формула</span>
+          <select
+            class="text-props__select"
+            [ngModel]="selectedFormulaId()"
+            (ngModelChange)="onFormulaPick($event)"
+            [disabled]="disabled"
+            data-test="studio-text-formula-select"
+          >
+            @for (opt of formulaOptions; track opt.id) {
+              <option [value]="opt.id">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="text-props__field text-props__field--compact">
+          <span class="text-props__label">Формула</span>
+          <select
+            class="text-props__select"
+            [ngModel]="formulaPick()"
+            (ngModelChange)="insertFormulaToken($event)"
+            [disabled]="disabled"
+            data-test="studio-text-formula-select"
+          >
+            <option value="">— из реестра —</option>
+            <option [value]="formulaTokens.subtotal">Сумма столбца</option>
+            <option [value]="formulaTokens.vat">НДС</option>
+            <option [value]="formulaTokens.grand">Итого с НДС</option>
+          </select>
+        </label>
         <div class="text-props__row-2">
           <label class="text-props__field text-props__field--compact">
             <span class="text-props__label">Размер, pt</span>
@@ -288,6 +324,9 @@ export class StudioTextPropertiesComponent implements OnChanges {
   protected readonly bracesIcon = Braces;
   protected readonly alignOptions = ALIGN_OPTIONS;
   protected readonly saveIcon = Save;
+  protected readonly formulaOptions = FORMULA_OPTIONS;
+
+  protected readonly selectedFormulaId = signal('');
 
   protected readonly content = signal('');
   protected readonly filterCategoryId = signal('');
@@ -296,6 +335,12 @@ export class StudioTextPropertiesComponent implements OnChanges {
   protected readonly textBlocks = signal<readonly TextBlock[]>([]);
   protected readonly loadingTexts = signal(false);
   protected readonly libraryHint = signal<string | null>(null);
+  protected readonly formulaPick = signal('');
+  protected readonly formulaTokens = {
+    subtotal: '{{table.subtotal}}',
+    vat: '{{table.vat}}',
+    grand: '{{table.grand}}',
+  } as const;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['block']) {
@@ -348,6 +393,17 @@ export class StudioTextPropertiesComponent implements OnChanges {
     this.patchStyle({ lineHeight: clamped });
   }
 
+  protected onFormulaPick(id: string): void {
+    this.selectedFormulaId.set(id);
+    const opt = FORMULA_OPTIONS.find((item) => item.id === id);
+    if (!opt?.token) return;
+    this.richText()?.saveSelection();
+    requestAnimationFrame(() => {
+      this.richText()?.insertContent(opt.token);
+      this.toast.success(`Вставлено ${opt.token}`);
+    });
+  }
+
   protected openDataFieldPicker(): void {
     this.richText()?.saveSelection();
     void firstValueFrom(this.registrySources.list()).then((result) => {
@@ -373,6 +429,15 @@ export class StudioTextPropertiesComponent implements OnChanges {
           this.toast.success(`Вставлено ${token}`);
         });
       });
+    });
+  }
+
+  protected insertFormulaToken(token: string): void {
+    this.formulaPick.set('');
+    if (!token) return;
+    requestAnimationFrame(() => {
+      this.richText()?.insertContent(token);
+      this.toast.success(`Вставлено ${token}`);
     });
   }
 
