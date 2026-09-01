@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Product, ProductDocument } from '../product/product.schema';
 import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
 import { Material, MaterialDocument } from '../material/material.schema';
+import { Organization, OrganizationDocument } from '../organization/organization.schema';
 import type { QuotationItem } from '../quotation/quotation.schema';
 import { QuotationService } from '../quotation/quotation.service';
 import type { OrderItem } from '../order/order.schema';
@@ -115,6 +116,7 @@ export function renderStudioTableHtml(
   columns: StudioTableColumn[],
   rows: string[][],
   disabledRowIndices: number[] = [],
+  vatPercent = 20,
 ): string {
   if (columns.length === 0) {
     return '<p class="pi-empty-state">Нет описанных колонок.</p>';
@@ -147,7 +149,7 @@ export function renderStudioTableHtml(
     ? rows.reduce((sum, row, rowIndex) => disabledRowIndices.includes(rowIndex) ? sum : sum + (Number(row[totalColumnIndex]) || 0), 0)
     : 0;
   const showVat = columns.some((column) => ['vat', 'nds', 'ндс'].includes(normalizeKey(column.key))) || columns.some((column) => column.type === 'vat');
-  const footer = totalColumnIndex >= 0 ? `<tfoot><tr class="pi-table-subtotal"><td colspan="${Math.max(1, columns.length - 1)}">Итого</td><td>${escapeHtmlValue(String(total))}</td></tr>${showVat ? `<tr class="pi-table-vat"><td colspan="${Math.max(1, columns.length - 1)}">НДС (20%)</td><td>${escapeHtmlValue(String(total * 0.2))}</td></tr>` : ''}</tfoot>` : '';
+  const footer = totalColumnIndex >= 0 ? `<tfoot><tr class="pi-table-subtotal"><td colspan="${Math.max(1, columns.length - 1)}">Итого</td><td>${escapeHtmlValue(String(total))}</td></tr>${showVat ? `<tr class="pi-table-vat"><td colspan="${Math.max(1, columns.length - 1)}">НДС (${vatPercent}%)</td><td>${escapeHtmlValue(String(total * vatPercent / 100))}</td></tr>` : ''}</tfoot>` : '';
   return (
     `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
     `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>${footer}</table>`
@@ -218,6 +220,7 @@ export function ensureTableDataSetsFromBlocks(
 export function injectTableContent(
   blocks: TemplateBlockDocument[],
   dataSets: DataSetEntry[],
+  vatPercent = 20,
 ): TemplateBlockDocument[] {
   const byKey = new Map(
     dataSets
@@ -232,7 +235,7 @@ export function injectTableContent(
     const columns = tableColumnsFromBlock(block);
     const rows = entry ? storedRows(entry) : [];
     const disabled = entry && Array.isArray(entry.disabledRowIndices) ? entry.disabledRowIndices.filter((value): value is number => typeof value === 'number') : [];
-    const html = renderStudioTableHtml(columns, rows, disabled);
+    const html = renderStudioTableHtml(columns, rows, disabled, vatPercent);
     const plain =
       typeof (block as { toObject?: () => Record<string, unknown> }).toObject ===
       'function'
@@ -253,7 +256,15 @@ export class StudioDataResolverService {
     @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
     @InjectModel(ProductModule.name) private readonly moduleModel: Model<ProductModuleDocument>,
     @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
+    @InjectModel(Organization.name) private readonly orgModel: Model<OrganizationDocument>,
   ) {}
+
+  async resolveOrganizationVatRate(organizationId: string): Promise<number> {
+    if (!Types.ObjectId.isValid(organizationId)) return 20;
+    const org = await this.orgModel.findById(organizationId).select('vatRate').lean().exec();
+    const rate = org?.vatRate;
+    return typeof rate === 'number' && rate >= 0 ? rate : 20;
+  }
 
   async resolveDataSets(
     doc: StudioDocumentDocument,

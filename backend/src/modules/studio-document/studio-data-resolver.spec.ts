@@ -48,6 +48,17 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(html).toContain('200');
   });
 
+  it('uses organization vat rate percent in footer (S22)', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'name', label: 'Name' }, { key: 'sum', label: 'Sum', type: 'sum' }, { key: 'vat', label: 'VAT', type: 'vat' }],
+      [['A', '1000', '']],
+      [],
+      22,
+    );
+    expect(html).toContain('НДС (22%)');
+    expect(html).toContain('220');
+  });
+
   it('renders sum footer and ignores disabled rows', () => {
     const html = renderStudioTableHtml(
       [{ key: 'name', label: 'Name' }, { key: 'sum', label: 'Total', type: 'sum' }],
@@ -145,6 +156,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     const moduleModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     const materialModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+    const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
     return {
       service: new StudioDataResolverService(
         quotationService as never,
@@ -152,6 +164,7 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
         productModel as never,
         moduleModel as never,
         materialModel as never,
+        orgModel as never,
       ),
       quotationService,
     };
@@ -185,7 +198,8 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     const { service } = createResolver();
     const product = new Types.ObjectId();
     const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
-    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
+    const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never, orgModel as never);
     const resolved = await resolver.resolveDataSets({ organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never, [tableBlock], true);
     expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200']] });
   });

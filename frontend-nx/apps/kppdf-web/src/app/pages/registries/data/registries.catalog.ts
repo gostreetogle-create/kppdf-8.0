@@ -30,6 +30,8 @@ import { createUnitsDialogHost } from './units-dialog-host';
 import { createDocStudioDialogDeps, type DocStudioDialogDeps } from './doc-studio-registry-actions';
 import { createTextBlocksRegistry } from './text-blocks.registry';
 import { createTableTemplatesRegistry } from './table-templates.registry';
+import { createVatRateRegistry } from './vat-rate.registry';
+import { createFormulasRegistry } from './formulas.registry';
 
 export function buildMaterialRegistryDeps(
   materialsService: PiMaterialsService,
@@ -95,6 +97,8 @@ export function buildRegistriesCatalogDefault(
     createProductsRegistry(productDeps),
     createSupplyRequestsRegistry(supplyRequestsService, registryDialog ?? undefined),
     createOrganizationsRegistry(organizationsService, registryDialog ?? undefined),
+    createVatRateRegistry(organizationsService),
+    createFormulasRegistry(),
     createProductPassportsRegistry(productPassportsService, registryDialog ?? undefined),
     ...(studio ? [createTextBlocksRegistry(studio), createTableTemplatesRegistry(studio)] : []).map((definition) => definition as RegistryDefinition<RegistryRow>),
   ];
