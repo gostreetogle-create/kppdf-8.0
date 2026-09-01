@@ -516,6 +516,15 @@ export class PiRichTextEditorComponent implements AfterViewInit, OnDestroy {
     this.isUpdatingFromOutside = false;
   }
 
+  /** Session-scoped undo/redo commands for the document studio. */
+  undo(): void {
+    this.editor?.chain().focus().undo().run();
+  }
+
+  redo(): void {
+    this.editor?.chain().focus().redo().run();
+  }
+
   /** Mirror toolbar state for parent-driven chrome. */
   getActiveStates(): ActiveStates {
     return this.activeStates();

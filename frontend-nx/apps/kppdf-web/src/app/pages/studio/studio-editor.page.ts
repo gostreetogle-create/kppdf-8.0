@@ -465,6 +465,15 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private layoutSavePromise: Promise<void> | null = null;
   private layoutsDirty = false;
   private resizeObserver?: ResizeObserver;
+  private readonly onStudioKeydown = (event: KeyboardEvent): void => {
+    if (!(event.ctrlKey || event.metaKey) || (event.key !== 'z' && event.key !== 'y')) return;
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest('[contenteditable="true"]')) return;
+    const editor = target.closest('pi-rich-text-editor') as { undo?: () => void; redo?: () => void } | null;
+    if (!editor) return;
+    event.preventDefault();
+    if (event.key === 'z') editor.undo?.(); else editor.redo?.();
+  };
 
   readonly document = signal<StudioDocument | null>(null);
   readonly issuerOrgName = signal('');
@@ -733,6 +742,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    document.addEventListener('keydown', this.onStudioKeydown);
     const el = this.sheetHostRef()?.nativeElement;
     if (el && this.resizeObserver) {
       this.resizeObserver.observe(el);
@@ -741,6 +751,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('keydown', this.onStudioKeydown);
     this.shellTools.clear(STUDIO_TOOL_OWNER);
     this.resizeObserver?.disconnect();
     if (this.timer) clearTimeout(this.timer);
