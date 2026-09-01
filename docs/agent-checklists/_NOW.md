@@ -1,19 +1,22 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-09-01T22:42:00+03:00
+updated_at: 2026-09-01T23:05:00+03:00
 
 ## ACTIVE / LIVE
 
-**NEXT:** очередь пуста; S10 POLISH закрыта, деплой только по явной команде PO.
+Queue empty. S11 Doc Studio finish completed.
 
 ## DONE this slice
 
-- S10 data-panel polish: `87329b37`.
-- S10 operator docs sync: committed with wave closeout.
-- S8/S9/S10 archives: `tasks/_archive/2026-08/` and `tasks/_archive/2026-09/`.
+- S11 SELECT-LABELS — `34554cc3`
+- S11 STAGE-ZOOM — `dc75a7f4`
+- S11 PAGES-RAIL — `32e81469`
+- S11 CONFLICT-DIALOG — `99ca0b95`
+- S11 TABLE-CANVAS-LIVE — `f1621277`
+- S11 OPERATOR-DOCS — pending closeout commit
 
 ## PARK
 
-- Existing Angular/JSDOM CSS warnings remain non-blocking.
-- Ctrl+Z/conflict merge, Fit/100% zoom, and per-page background/margins remain parked.
-- Existing unrelated working-tree files remain untouched.
+- Ctrl+Z / three-way conflict merge
+- Per-page background and margins
+- Existing Angular/JSDOM CSS warnings

@@ -1,12 +1,11 @@
 # QUEUE-LIVE
 
-> **LIVE:** S10 polish · docs-sync in progress
+> **LIVE:** S11 chain · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S11-START.md`
 
 | # | TZ | Статус |
 |---|-----|--------|
-| S8-1…4 | Doc Studio S8 | **DONE** (`96d08634`…`11bb0a7e`) |
-| S9-FINISH A/B/C | anchors + catalog resolver + bindings | **DONE** (`58d7b795`…`30b3eede`) |
-| **S10** | data-panel polish → docs sync | **DONE** (`87329b37`, docs-sync pending closeout) |
+| S8–S11 | Doc Studio core + S9 + polish + S11 finish | **DONE** (HEAD `f1621277`) |
+| **S11** | 6 TZ: select → zoom → pages → conflict → canvas table → docs | **DONE** |
 
 ## Закрыто (сессия 2026-08-30…31)
 

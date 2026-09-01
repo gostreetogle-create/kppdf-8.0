@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S10 **DONE**. S8/S9 закрыты, S10 завершила polish панели «Данные» и синхронизацию операторской документации.
+**Статус волны:** S2–S11 **DONE**. S8/S9 закрыты, S10 завершила polish панели «Данные», S11 завершила select labels, zoom, pages rail, conflict UX и live table canvas.
 
 ---
 
@@ -67,7 +67,7 @@
 
 - Белый лист A4 в рамке; все **видимые** слои текущей страницы composited по z-index.
 - **Активный слой** — единственный с drag/resize и редактированием ячеек/текста.
-- Нижний угол stage: заглушки Fit / 100% / метка страницы (ещё не wired).
+- Нижний угол stage: Fit / 100% / метка страницы; Fit использует viewport, 100% — логический A4.
 
 ### 1.5 Status-bar (низ)
 
@@ -235,7 +235,7 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 | # | Gap | Влияние на оператора | Статус |
 |---|-----|----------------------|--------|
 | 1 | Ctrl+Z и conflict merge UI | Нет визуального слияния параллельных правок | PARK / ADR |
-| 2 | Fit/100% zoom toolbar | Масштаб пока не вынесен в рабочий toolbar | PARK / micro-TZ |
+| 2 | Ctrl+Z и conflict merge UI | Полноценного визуального слияния параллельных правок нет | PARK / ADR |
 | 3 | Per-page background/margins panel | Общие параметры страницы, не отдельные поля каждой страницы | PARK / limitation S8-4 |
 
 ## 7.1 S8–S10 — работает
