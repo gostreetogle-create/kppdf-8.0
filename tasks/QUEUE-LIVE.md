@@ -1,21 +1,22 @@
 # QUEUE-LIVE
 
-> **LIVE:** S14 · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S14-START.md`
+> **LIVE:** S16 chain **DONE** — готово предложить деплой
 
 | # | TZ | Статус |
 |---|-----|--------|
-| S8–S14 DONE | Doc Studio | **DONE** (HEAD `2546bf88`) |
-| **S14** | 6 TZ: list → finalize → typo → conflict | **READY** |
+| S8–S19B | Doc Studio chain | **DONE** |
+| S20-PRE | PiQuotations CRUD | **DONE** `a35042f4` |
+| S20→S26 | resume chain | **DONE** (see WAVE-DOCSTUDIO-S16-CHAIN.md SHAs) |
 
-## Закрыто (сессия 2026-08-30…31)
+## Закрыто (сессия 2026-09-02)
 
 | TZ | Archive |
 |----|---------|
-| S6 / S7 / A1–A6 | `_archive/2026-08/` |
-| `TZ-AUTH-RBAC-ROLE-PERMS` | `_archive/2026-08/TZ-AUTH-RBAC-ROLE-PERMS.done.md` |
-| `TZ-UI-DCI-602` | `_archive/2026-08/TZ-UI-DCI-602.done.md` (`066b7ef8`) |
-| `TZ-UI-DCI-601` | `_archive/2026-08/TZ-UI-DCI-601.done.md` (`ab357b78`) |
-| `TZ-BACKEND-VALIDATION-NESTED-I18N` | `_archive/2026-08/TZ-BACKEND-VALIDATION-NESTED-I18N.done.md` (`1e209c74`) |
-| `TZ-BACKEND-CATALOG-PART-BOM-IN-TREE` | `_archive/2026-08/TZ-BACKEND-CATALOG-PART-BOM-IN-TREE.done.md` (`15ee4da9`) |
+| S20 KP-QUOTATION-LIFECYCLE | `_archive/2026-09/TZ-NX-DOCSTUDIO-S20-KP-QUOTATION-LIFECYCLE.done.md` |
+| S22 REGISTRIES-VAT-RATE | `_archive/2026-09/TZ-NX-REGISTRIES-VAT-RATE.done.md` |
+| S21 TABLE-AGGREGATE-TOKENS | `_archive/2026-09/TZ-NX-DOCSTUDIO-S21-TABLE-AGGREGATE-TOKENS.done.md` |
+| S23 FORMULA-REGISTRY | `_archive/2026-09/TZ-NX-DOCSTUDIO-S23-FORMULA-REGISTRY.done.md` |
+| S24 FORMULA-TEXT-BINDING | `_archive/2026-09/TZ-NX-DOCSTUDIO-S24-FORMULA-TEXT-BINDING.done.md` |
+| S26 OPERATOR-DOCS-V3 | `_archive/2026-09/TZ-NX-DOCSTUDIO-S26-OPERATOR-DOCS-V3.done.md` |
 
-**Правило:** ≤2 Freebuff; разные conflict keys. Не два агента на `kppdf-web/src/**`.
+**Правило:** ≤2 Freebuff; разные conflict keys.

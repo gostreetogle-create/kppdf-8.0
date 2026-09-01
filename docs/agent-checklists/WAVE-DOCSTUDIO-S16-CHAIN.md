@@ -1,8 +1,7 @@
 # WAVE — Doc Studio S16→S26 (continuous chain)
 
-Status: **READY @ S20** · S17–S19B + S20-PRE DONE
+Status: **DONE** · chain S20–S26 closed
 
-> После push — сразу следующая TZ. STOP: все [x] ИЛИ hard blocker.  
 > Resume: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S16-CHAIN-RESUME.md`
 
 ## Preflight
@@ -20,19 +19,15 @@ Status: **READY @ S20** · S17–S19B + S20-PRE DONE
 | 5 | [x] S19 STUDIO-DELETE | `.done.md` | `d67385f5` |
 | 5b | [x] S19B TEMPLATE-PICKER-DELETE | `.done.md` | `e7553a5b` |
 | 6a | [x] **S20-PRE** PI-QUOTATIONS-CRUD | `.done.md` | `a35042f4` |
-| 6 | [ ] S20 KP-QUOTATION-LIFECYCLE | claim in `_active/` | |
-| 7 | [ ] S22 REGISTRY-VAT-RATE | | |
-| 8 | [ ] S21 TABLE-AGGREGATE-TOKENS | | |
-| 9 | [ ] S23 FORMULA-REGISTRY | | |
-| 10 | [ ] S24 FORMULA-TEXT-BINDING | | |
-| 11 | [ ] S26 OPERATOR-DOCS-V3 | | |
-
-## Blocker note
-
-~~`PiQuotationsService` lacked create/update.~~ Resolved in S20-PRE.
+| 6 | [x] S20 KP-QUOTATION-LIFECYCLE | `.done.md` | _pending push_ |
+| 7 | [x] S22 REGISTRY-VAT-RATE | `.done.md` | _pending push_ |
+| 8 | [x] S21 TABLE-AGGREGATE-TOKENS | `.done.md` | _pending push_ |
+| 9 | [x] S23 FORMULA-REGISTRY | `.done.md` | _pending push_ |
+| 10 | [x] S24 FORMULA-TEXT-BINDING | `.done.md` | _pending push_ |
+| 11 | [x] S26 OPERATOR-DOCS-V3 | `.done.md` | _pending push_ |
 
 ## Closeout
 
-- [ ] all [x] · _active/ пуст · QUEUE/_NOW
+- [x] all [x] · _active/ пуст · QUEUE/_NOW updated
 
 SoT: `docs/architecture/nx-doc-studio-roadmap-v2.md`

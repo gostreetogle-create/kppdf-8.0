@@ -11,7 +11,21 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S15 **DONE**. Дорожная карта v2: [`../architecture/nx-doc-studio-roadmap-v2.md`](../architecture/nx-doc-studio-roadmap-v2.md) · **NEXT:** S16.
+**Статус волны:** S2–S26 **DONE** (chain S16–S26). Дорожная карта v2: [`../architecture/nx-doc-studio-roadmap-v2.md`](../architecture/nx-doc-studio-roadmap-v2.md).
+
+### КП lifecycle (S20)
+
+- Новый документ типа **КП** → при первом link создаётся `Quotation` в статусе **черновик**.
+- Панель **Данные** → селект **Статус КП** (черновик / на проверке / принято).
+- Раздел **`/proposals`** → действие **«В студии»** (по `studioDocumentId` или `quotationId` в query).
+- **Сохранить** / **Сохранить как…** / удаление — без регрессии (S18–S19).
+
+### Формулы и НДС (S21–S24)
+
+- Токены таблицы: `{{table.subtotal}}`, `{{table.vat}}`, `{{table.grand}}` — picker «Поле ERP» → группа **Таблица**.
+- Ставка НДС — реестр **`/registries/vat-rate`** (поле `Organization.vatRate`, default 20%).
+- Реестр **Формулы** (`/registries/formulas`) — первая версия.
+- Свойства текста → dropdown **Формула** для вставки токена.
 
 ### Целевая IA (S16–S17)
 
