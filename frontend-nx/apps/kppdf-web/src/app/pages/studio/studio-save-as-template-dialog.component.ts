@@ -11,7 +11,6 @@ export interface StudioSaveAsTemplateDialogData {
 
 export interface StudioSaveAsTemplateResult {
   readonly name: string;
-  readonly keepDataBindings: boolean;
 }
 
 @Component({
@@ -25,10 +24,6 @@ export interface StudioSaveAsTemplateResult {
         <app-pi-form-field label="Название шаблона" htmlFor="template-name" [required]="true">
           <app-pi-input id="template-name" formControlName="name" data-test="studio-template-name-input" />
         </app-pi-form-field>
-        <label class="flex items-center gap-2 text-sm">
-          <input type="checkbox" formControlName="keepDataBindings" data-test="studio-template-keep-bindings" />
-          Сохранить привязки к данным
-        </label>
       </form>
       <div footer class="flex gap-3 justify-end">
         <app-pi-button
@@ -54,7 +49,7 @@ export class StudioSaveAsTemplateDialogComponent {
 
   protected readonly form = this.fb.group({
     name: this.fb.control(this.data.defaultName, [Validators.required, Validators.maxLength(256)]),
-    keepDataBindings: this.fb.control(false),
+
   });
 
   protected submit(): void {
@@ -63,6 +58,6 @@ export class StudioSaveAsTemplateDialogComponent {
       return;
     }
     const v = this.form.getRawValue();
-    this.ref.close({ name: v.name.trim(), keepDataBindings: v.keepDataBindings });
+    this.ref.close({ name: v.name.trim() });
   }
 }

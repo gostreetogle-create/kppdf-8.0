@@ -160,6 +160,8 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
           >
             Редактор
           </button>
+          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save" (click)="saveDocument()">Сохранить</button>
+          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save-as" [disabled]="templateSaving()" (click)="openSaveAsTemplateDialog()">Сохранить как…</button>
           <button
             type="button"
             class="kp-ws-ribbon-btn"
@@ -672,6 +674,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   onSection(id: string): void {
     onStudioSectionClick(id as StudioWorkspaceSection, this.activeSection, this.panelCollapsed);
+  }
+
+  saveDocument(): void {
+    this.toast.success('Сохранено');
   }
 
   openDocumentList(): void {
@@ -1470,7 +1476,6 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       void firstValueFrom(
         this.documents.saveAsTemplate(doc._id, {
           name: value.name,
-          keepDataBindings: value.keepDataBindings,
         }),
       ).then((r) => {
         this.templateSaving.set(false);
