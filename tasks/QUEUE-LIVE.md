@@ -1,11 +1,11 @@
 # QUEUE-LIVE
 
-> **LIVE:** S13 chain · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S13-START.md`
+> **LIVE:** S14 · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S14-START.md`
 
 | # | TZ | Статус |
 |---|-----|--------|
-| S8–S13 DONE | Doc Studio | **DONE** (HEAD `25e649a5`) |
-| **S13** | 6 TZ: typography → vitrina → undo | **READY** |
+| S8–S14 DONE | Doc Studio | **DONE** (HEAD `2546bf88`) |
+| **S14** | 6 TZ: list → finalize → typo → conflict | **READY** |
 
 ## Закрыто (сессия 2026-08-30…31)
 
