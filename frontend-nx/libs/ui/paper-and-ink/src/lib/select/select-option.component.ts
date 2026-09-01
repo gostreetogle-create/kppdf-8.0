@@ -61,6 +61,11 @@ export class SelectOptionComponent {
 
   readonly isSelected = computed(() => this.select?.value() === this.value());
 
+  /** Plain text projected into the option, used by the parent trigger fallback. */
+  hostText(): string {
+    return (this.hostEl.nativeElement.textContent ?? '').replace(/\s+/g, ' ').trim();
+  }
+
   readonly computedClass = computed(() => {
     const isOn = this.isSelected();
     const disabled = this.disabled();

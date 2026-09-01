@@ -48,8 +48,9 @@ describe('SelectComponent', () => {
     return Array.from(fixture.nativeElement.querySelectorAll('button[role="option"]'));
   }
 
-  it('renders closed by default', () => {
-    expect(listbox()).toBeNull();
+  it('renders the listbox in the DOM but hidden by default', () => {
+    expect(listbox()).toBeTruthy();
+    expect(listbox()!.hidden).toBe(true);
   });
 
   it('opens on trigger click', () => {
@@ -64,13 +65,30 @@ describe('SelectComponent', () => {
     expect(listbox()).toBeTruthy();
     trigger().click();
     fixture.detectChanges();
-    expect(listbox()).toBeNull();
+    expect(listbox()!.hidden).toBe(true);
   });
 
   it('shows aria-expanded on trigger when open', () => {
     trigger().click();
     fixture.detectChanges();
     expect(trigger().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('shows the selected option label in the trigger', () => {
+    fixture.componentInstance.form.controls.role.setValue('admin');
+    fixture.detectChanges();
+    expect(trigger().textContent).toContain('Admin');
+    trigger().click();
+    fixture.detectChanges();
+    options()[1].click();
+    fixture.detectChanges();
+    expect(trigger().textContent).toContain('Manager');
+  });
+
+  it('uses the placeholder when no option is selected', () => {
+    host.form.controls.role.setValue(null);
+    fixture.detectChanges();
+    expect(trigger().textContent).toContain('Role');
   });
 
   it('selects an option on click and closes', () => {
@@ -81,7 +99,7 @@ describe('SelectComponent', () => {
     opts[1].click(); // Manager
     fixture.detectChanges();
     expect(host.form.controls.role.value).toBe('manager');
-    expect(listbox()).toBeNull();
+    expect(listbox()!.hidden).toBe(true);
   });
 
   it('closes on Escape', () => {
@@ -91,7 +109,7 @@ describe('SelectComponent', () => {
     const event = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
     listbox()!.parentElement!.dispatchEvent(event);
     fixture.detectChanges();
-    expect(listbox()).toBeNull();
+    expect(listbox()!.hidden).toBe(true);
   });
 
   it('closes on click outside', () => {
@@ -100,7 +118,7 @@ describe('SelectComponent', () => {
     expect(listbox()).toBeTruthy();
     document.body.click();
     fixture.detectChanges();
-    expect(listbox()).toBeNull();
+    expect(listbox()!.hidden).toBe(true);
   });
 
   it('selected option has correct classes (text-on-gold, not text-paper)', () => {

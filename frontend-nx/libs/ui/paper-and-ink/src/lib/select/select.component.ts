@@ -1,7 +1,9 @@
 import {
   AfterViewInit,
+  AfterContentInit,
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   ElementRef,
   HostListener,
@@ -12,6 +14,7 @@ import {
   output,
   signal,
   viewChildren,
+  contentChildren,
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { SelectOptionComponent } from './select-option.component';
@@ -51,38 +54,50 @@ import { SELECT_PARENT, SelectParent } from './select-parent.interface';
       (keydown)="onKeydown($event)"
     >
       <app-pi-select-trigger
+        #trigger
         [size]="size()"
         [ariaLabel]="ariaLabel()"
         [open]="open()"
         (toggle)="toggleOpen()"
       >
         <ng-content select="[selected-label]" />
+        @if (selectedLabel(); as label) {
+          {{ label }}
+        }
       </app-pi-select-trigger>
-      @if (open()) {
-        <div
-          class="bg-paper hairline rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
-          role="listbox"
-          [attr.aria-label]="ariaLabel()"
-        >
-          <ng-content />
-        </div>
-      }
+      <div
+        class="bg-paper hairline rounded-sm overflow-hidden max-h-60 overflow-y-auto p-1"
+        role="listbox"
+        [attr.aria-label]="ariaLabel()"
+        [hidden]="!open()"
+      >
+        <ng-content />
+      </div>
     </div>
   `,
 })
-export class SelectComponent implements AfterViewInit, ControlValueAccessor, SelectParent {
+export class SelectComponent implements AfterViewInit, AfterContentInit, ControlValueAccessor, SelectParent {
   readonly value = model<string | null>(null);
   readonly placeholder = input<string>('Выберите значение');
   readonly disabled = input<boolean>(false);
   readonly size = input<SelectSize>('md');
   readonly ariaLabel = input<string | null>(null);
 
+  readonly selectedLabel = computed(() => {
+    const selected = this.options().find((option) => option.value() === this.value());
+    if (!selected) return this.placeholder();
+    return this.optionLabels.get(selected.value()) ?? selected.hostText();
+  });
+  readonly hasSelectedLabelSlot = signal(false);
+
+  private readonly optionLabels = new Map<string, string>();
+
   readonly valueChange = output<string | null>();
 
   protected readonly open = signal(false);
   private readonly hostEl = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly destroyRef = inject(DestroyRef);
-  readonly options = viewChildren(SelectOptionComponent);
+  readonly options = contentChildren(SelectOptionComponent, { descendants: true });
   private readonly focusedIndex = signal<number>(-1);
 
   // ─── ControlValueAccessor ───
@@ -110,11 +125,31 @@ export class SelectComponent implements AfterViewInit, ControlValueAccessor, Sel
     this.isDisabledFromForm.set(isDisabled);
   }
 
+  ngAfterContentInit(): void {
+    queueMicrotask(() => {
+      this.refreshOptionLabels();
+      this.focusInitial();
+    });
+  }
+
   ngAfterViewInit(): void {
-    queueMicrotask(() => this.focusInitial());
+    queueMicrotask(() => {
+      this.hasSelectedLabelSlot.set(
+        !!this.hostEl.nativeElement.querySelector('[selected-label]'),
+      );
+      this.refreshOptionLabels();
+      this.focusInitial();
+    });
+  }
+
+  private refreshOptionLabels(): void {
+    for (const option of this.options()) {
+      this.optionLabels.set(option.value(), option.hostText());
+    }
   }
 
   protected toggleOpen(): void {
+    this.refreshOptionLabels();
     this.open.update((v) => !v);
     if (this.open()) {
       this.focusInitial();
