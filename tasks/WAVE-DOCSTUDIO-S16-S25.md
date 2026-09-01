@@ -1,0 +1,20 @@
+# WAVE — Doc Studio S16–S26
+
+| # | TZ | Статус |
+|---|-----|--------|
+| 15 | DATA-VITRINA-UNIFIED | **DONE** |
+| 16 | RAIL-IA-SPLIT | READY |
+| 17 | RIBBON-PAGES-PANEL | QUEUED |
+| 18 | SAVE-AS-MENU | QUEUED |
+| 19 | STUDIO-DELETE | QUEUED |
+| 20 | KP-QUOTATION-LIFECYCLE | QUEUED |
+| 21 | TABLE-AGGREGATE-TOKENS | QUEUED |
+| 22 | REGISTRY-VAT-RATE | QUEUED |
+| 23 | FORMULA-REGISTRY | QUEUED |
+| 24 | FORMULA-TEXT-BINDING | QUEUED |
+| 25 | REGISTRIES-CATEGORY-GROUPS | QUEUED |
+| 26 | OPERATOR-DOCS-V3 | QUEUED |
+
+SoT: `docs/architecture/nx-doc-studio-roadmap-v2.md`
+
+**Порядок:** S16→S17→S18→S19 параллельно S22; S20 после S18; S21–S24 после S15+S22; S25 независим; S26 last.
