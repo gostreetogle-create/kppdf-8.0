@@ -98,7 +98,7 @@ export class DocumentRenderService {
     const pageWidth = isLandscape ? '297mm' : '210mm';
     const pageMinHeight = isLandscape ? '210mm' : '297mm';
     const studioCanvas = options?.studioCanvas === true;
-    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas);
+    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas, options?.pageMargins);
     const baseHref = documentPublicOrigin();
     const css = `
       <style>
@@ -262,7 +262,7 @@ export class DocumentRenderService {
     template: DocumentTemplateDocument,
     pages: TemplateBlockDocument[][],
     data: Record<string, unknown>,
-    options?: { backgroundPageIndices?: number[]; studioCanvas?: boolean },
+    options?: { backgroundPageIndices?: number[]; studioCanvas?: boolean; pageMargins?: { top: number; right: number; bottom: number; left: number } },
   ): string {
     const studioCanvas = options?.studioCanvas === true;
     const renderedBodies = pages.map((page, index) => {
@@ -280,7 +280,7 @@ export class DocumentRenderService {
     const orientation = (template as { orientation?: string }).orientation === 'landscape';
     const width = orientation ? '297mm' : '210mm';
     const height = orientation ? '210mm' : '297mm';
-    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas);
+    const contentStyles = this.buildDocumentContentStyles(template, studioCanvas, options?.pageMargins);
     const pageNumberCss = template.pageNumbering
       ? '.kp-page-number{position:absolute;right:20px;bottom:10px;z-index:5;font:11px Arial,sans-serif;color:#666}'
       : '';
@@ -291,8 +291,9 @@ export class DocumentRenderService {
   private buildDocumentContentStyles(
     template: DocumentTemplateDocument,
     studioCanvas = false,
+    pageMargins?: { top: number; right: number; bottom: number; left: number },
   ): string {
-    const margins = (template as { pageMargins?: { top: number; right: number; bottom: number; left: number } }).pageMargins;
+    const margins = pageMargins ?? (template as { pageMargins?: { top: number; right: number; bottom: number; left: number } }).pageMargins;
     const contentPadding = studioCanvas ? '0' : margins ? `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm` : '20px';
     const studioCanvasCss = studioCanvas
       ? `
