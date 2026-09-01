@@ -19,7 +19,7 @@ Status: **READY @ S20** · S17–S19B + S20-PRE DONE
 | 4 | [x] S18 SAVE-AS-MENU | `.done.md` | `33a0fa2a` |
 | 5 | [x] S19 STUDIO-DELETE | `.done.md` | `d67385f5` |
 | 5b | [x] S19B TEMPLATE-PICKER-DELETE | `.done.md` | `e7553a5b` |
-| 6a | [x] **S20-PRE** PI-QUOTATIONS-CRUD | `.done.md` | pending |
+| 6a | [x] **S20-PRE** PI-QUOTATIONS-CRUD | `.done.md` | `a35042f4` |
 | 6 | [ ] S20 KP-QUOTATION-LIFECYCLE | claim in `_active/` | |
 | 7 | [ ] S22 REGISTRY-VAT-RATE | | |
 | 8 | [ ] S21 TABLE-AGGREGATE-TOKENS | | |
