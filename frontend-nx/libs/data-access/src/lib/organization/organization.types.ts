@@ -7,6 +7,7 @@ export interface CreateOrganizationPayload {
   readonly type?: string[];
   readonly isOurCompany?: boolean;
   readonly isActive?: boolean;
+  readonly vatRate?: number;
 }
 
 export type UpdateOrganizationPayload = Partial<CreateOrganizationPayload>;
@@ -20,6 +21,7 @@ export interface Organization {
   readonly type: string[];
   readonly isOurCompany?: boolean;
   readonly isActive?: boolean;
+  readonly vatRate?: number;
 }
 
 export interface OrganizationsListParams {
