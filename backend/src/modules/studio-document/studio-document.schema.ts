@@ -31,6 +31,9 @@ export class StudioDocument {
   @Prop({ default: -1 })
   defaultBackgroundIndex!: number;
 
+  @Prop({ type: [Number], default: [] })
+  backgroundPageIndices!: number[];
+
   @Prop({ default: 0.3 })
   backgroundOpacity!: number;
 

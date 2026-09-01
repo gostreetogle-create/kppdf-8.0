@@ -30,6 +30,7 @@ export interface StudioMultipageInput {
   dataSets: Record<string, unknown>[];
   backgroundImages: string[];
   defaultBackgroundIndex: number;
+  backgroundPageIndices?: number[];
   sheetLayout?: { rowsFirstPage?: number; rowsNextPage?: number };
 }
 
@@ -85,8 +86,12 @@ function backgroundIndexForPage(
   pageNumber: number,
   backgroundImages: string[],
   defaultBackgroundIndex: number,
+  backgroundPageIndices?: number[],
 ): number {
   const pageIdx = pageNumber - 1;
+  const configured = backgroundPageIndices?.[pageIdx];
+  if (typeof configured === 'number' && configured >= 0 && configured < backgroundImages.length) return configured;
+  if (configured === -1) return -1;
   if (pageIdx >= 0 && pageIdx < backgroundImages.length) return pageIdx;
   if (defaultBackgroundIndex >= 0 && defaultBackgroundIndex < backgroundImages.length) {
     return defaultBackgroundIndex;
@@ -173,7 +178,8 @@ export function planStudioMultipage(
     backgroundIndex: backgroundIndexForPage(
       pageNumber,
       input.backgroundImages,
-      input.defaultBackgroundIndex,
+      input.      defaultBackgroundIndex,
+      input.backgroundPageIndices,
     ),
   }));
 }

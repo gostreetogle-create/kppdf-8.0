@@ -138,6 +138,7 @@ export class StudioOutputService {
         orientation: doc.orientation,
         backgroundImage: doc.backgroundImage,
         defaultBackgroundIndex: doc.defaultBackgroundIndex,
+        backgroundPageIndices: doc.backgroundPageIndices,
         backgroundOpacity: doc.backgroundOpacity,
         pageMargins: doc.pageMargins,
         sheetLayout: doc.sheetLayout,
@@ -188,6 +189,7 @@ export class StudioOutputService {
       dataSets,
       backgroundImages: doc.backgroundImage ?? [],
       defaultBackgroundIndex: doc.defaultBackgroundIndex ?? -1,
+      backgroundPageIndices: doc.backgroundPageIndices,
       sheetLayout: doc.sheetLayout,
     });
     const pageBlocks = pagePlan.map((page) => page.blocks);

@@ -36,6 +36,7 @@ export interface StudioDocument {
   readonly pageNumbering?: boolean;
   readonly backgroundImage?: readonly string[];
   readonly defaultBackgroundIndex?: number;
+  readonly backgroundPageIndices?: readonly number[];
   readonly backgroundOpacity?: number;
   readonly pageMargins?: StudioPageMargins;
   readonly sheetLayout?: StudioSheetLayout;
@@ -65,6 +66,7 @@ export interface UpdateStudioDocumentPayload {
   readonly pageNumbering?: boolean;
   readonly backgroundImage?: readonly string[];
   readonly defaultBackgroundIndex?: number;
+  readonly backgroundPageIndices?: readonly number[];
   readonly backgroundOpacity?: number;
   readonly pageMargins?: StudioPageMargins;
   readonly sheetLayout?: StudioSheetLayout;

@@ -558,7 +558,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   readonly pageNumbering = computed(() => this.document()?.pageNumbering === true);
   readonly backgroundImages = computed(() => this.document()?.backgroundImage ?? []);
-  readonly backgroundIndex = computed(() => this.document()?.defaultBackgroundIndex ?? -1);
+  readonly backgroundIndex = computed(() => this.document()?.backgroundPageIndices?.[this.currentPage() - 1] ?? this.document()?.defaultBackgroundIndex ?? -1);
   readonly backgroundOpacity = computed(() => this.document()?.backgroundOpacity ?? 0.3);
 
   readonly pageCount = computed(() => {
@@ -757,7 +757,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   setBackgroundIndex(index: number): void {
     const doc = this.document();
     if (!doc) return;
-    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, defaultBackgroundIndex: index })).then((r) => {
+    const indices = [...(doc.backgroundPageIndices ?? [])];
+    while (indices.length < this.pageCount()) indices.push(doc.defaultBackgroundIndex ?? -1);
+    indices[this.currentPage() - 1] = index;
+    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundPageIndices: indices })).then((r) => {
       if (r.ok) this.document.set(r.data); else this.conflict();
     });
   }

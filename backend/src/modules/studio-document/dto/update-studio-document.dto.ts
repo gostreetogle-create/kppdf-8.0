@@ -61,6 +61,12 @@ export class UpdateStudioDocumentDto {
   @IsNumber()
   defaultBackgroundIndex?: number;
 
+  @ApiPropertyOptional({ type: [Number] })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  backgroundPageIndices?: number[];
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()

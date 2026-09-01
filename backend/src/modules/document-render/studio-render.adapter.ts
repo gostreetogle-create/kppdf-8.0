@@ -9,6 +9,7 @@ export interface StudioDocumentRenderSlice {
   orientation?: 'portrait' | 'landscape';
   backgroundImage?: string[];
   defaultBackgroundIndex?: number;
+  backgroundPageIndices?: number[];
   backgroundOpacity?: number;
   pageMargins?: { top: number; right: number; bottom: number; left: number };
   sheetLayout?: { rowsFirstPage: number; rowsNextPage: number };
@@ -48,6 +49,7 @@ export function studioAggregateToRenderInput(
     orientation: doc.orientation ?? 'portrait',
     backgroundImage: doc.backgroundImage ?? [],
     defaultBackgroundIndex: doc.defaultBackgroundIndex ?? -1,
+    backgroundPageIndices: doc.backgroundPageIndices,
     backgroundOpacity: doc.backgroundOpacity ?? 0.3,
     pageMargins: doc.pageMargins,
     sheetLayout: doc.sheetLayout,
