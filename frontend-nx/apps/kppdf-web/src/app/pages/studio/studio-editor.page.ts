@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Database,
+  FileStack,
   FileText,
   Layers,
   LayoutGrid,
@@ -54,7 +55,7 @@ import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
-import { StudioShowcasePanelComponent, type StudioShowcaseKind } from './studio-showcase-panel.component';
+import type { StudioShowcaseKind } from './studio-showcase-panel.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
@@ -104,7 +105,6 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     StudioWorkspaceShellComponent,
     StudioBlocksCanvasComponent,
     StudioDataPanelComponent,
-    StudioShowcasePanelComponent,
     StudioElementsPanelComponent,
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
@@ -129,6 +129,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
         [statusText]="statusText()"
         [pageLabel]="currentPage() + ' / ' + pageCount()"
         [sheetHost]="false"
+        [panelWide]="activeSection() === 'data'"
         [zoomMode]="zoomMode()"
         (fitZoom)="setZoomMode('fit')"
         (actualZoom)="setZoomMode('100')"
@@ -264,11 +265,8 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (imageFile)="addImageToActiveLayer($event)"
               />
             }
-            @case ('showcase') {
-              <pi-studio-showcase-panel
-                [selected]="catalogSelections()"
-                (selectionChange)="onCatalogSelectionChange($event)"
-              />
+            @case ('pages') {
+              <div data-test="studio-pages-panel-stub" class="studio-pages-panel-stub">Страницы — управление в S17</div>
             }
             @case ('data') {
               <pi-studio-data-panel
@@ -289,6 +287,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (payerChange)="onAnchorChange('payer', $event)"
                 (supplierChange)="onAnchorChange('supplier', $event)"
                 (catalogRemove)="removeCatalogChip($event)"
+                (catalogSelectionChange)="onCatalogSelectionChange($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (orderChange)="onOrderChange($event)"
               />
@@ -486,7 +485,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly blocks = signal<readonly StudioBlock[]>([]);
   readonly selectedId = signal<string | null>(null);
   readonly activeLayerId = signal<string | null>(null);
-  readonly activeSection = signal<StudioWorkspaceSection | null>('layers');
+  readonly activeSection = signal<StudioWorkspaceSection | null>('data');
   readonly panelCollapsed = signal(false);
   readonly viewMode = signal<'editor' | 'preview'>('editor');
   readonly previewHtml = signal<string | null>(null);
@@ -595,8 +594,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       return `Свойства: «${name}»`;
     }
     if (section === 'elements') return 'Элементы';
+    if (section === 'pages') return 'Страницы';
     if (section === 'data') return 'Данные';
-    if (section === 'showcase') return 'Витрина';
     if (section === 'template') return 'Шаблон';
     return studioPanelTitle(section);
   });
@@ -644,7 +643,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               this.pickDefaultLayer(
                 normalized.filter((b) => (b.layout?.page ?? 1) === this.currentPage()),
               );
-              this.activeSection.set('layers');
+              this.activeSection.set('data');
               this.panelCollapsed.set(false);
             }
           });
@@ -688,54 +687,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       const section = this.activeSection();
       const collapsed = this.panelCollapsed();
       this.shellTools.setTools(STUDIO_TOOL_OWNER, {
-        left: [
-          {
-            id: 'elements',
-            side: 'left',
-            ariaLabel: 'Элементы',
-            title: 'Элементы',
-            icon: FileText,
-            active: !collapsed && section === 'elements',
-            onClick: () => this.onSection('elements'),
-          },
-          {
-            id: 'data',
-            side: 'left',
-            ariaLabel: 'Данные',
-            title: 'Данные',
-            icon: Database,
-            active: !collapsed && section === 'data',
-            onClick: () => this.onSection('data'),
-          },
-          {
-            id: 'template',
-            side: 'left',
-            ariaLabel: 'Шаблон',
-            title: 'Шаблон',
-            icon: LayoutTemplate,
-            active: !collapsed && section === 'template',
-            onClick: () => this.onSection('template'),
-          },
-          {
-            id: 'layers',
-            side: 'left',
-            ariaLabel: 'Слои',
-            title: 'Слои',
-            icon: Layers,
-            active: !collapsed && section === 'layers',
-            onClick: () => this.onSection('layers'),
-          },
-        ],
+        left: [{
+          id: 'data', side: 'left', ariaLabel: 'Данные', title: 'Данные', icon: Database,
+          active: !collapsed && section === 'data', onClick: () => this.onSection('data'),
+        }],
         right: [
-          {
-            id: 'properties',
-            side: 'right',
-            ariaLabel: 'Свойства',
-            title: 'Свойства',
-            icon: Settings2,
-            active: !collapsed && section === 'properties',
-            onClick: () => this.onSection('properties'),
-          },
+          { id: 'elements', side: 'right', ariaLabel: 'Элементы', title: 'Элементы', icon: FileText, active: !collapsed && section === 'elements', onClick: () => this.onSection('elements') },
+          { id: 'layers', side: 'right', ariaLabel: 'Слои', title: 'Слои', icon: Layers, active: !collapsed && section === 'layers', onClick: () => this.onSection('layers') },
+          { id: 'pages', side: 'right', ariaLabel: 'Страницы', title: 'Страницы', icon: FileStack, active: !collapsed && section === 'pages', onClick: () => this.onSection('pages') },
+          { id: 'properties', side: 'right', ariaLabel: 'Свойства', title: 'Свойства', icon: Settings2, active: !collapsed && section === 'properties', onClick: () => this.onSection('properties') },
+          { id: 'template', side: 'right', ariaLabel: 'Шаблон', title: 'Шаблон', icon: LayoutTemplate, active: !collapsed && section === 'template', onClick: () => this.onSection('template') },
         ],
       });
     });
@@ -1306,7 +1267,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  private applyLiveRowsFromDataSet(doc: StudioDocument, blockId: string, dataSet: { rows: unknown[] }): void {
+  private applyLiveRowsFromDataSet(doc: StudioDocument, blockId: string, dataSet: { rows?: readonly unknown[] }): void {
     const rows = Array.isArray(dataSet.rows) ? dataSet.rows : [];
     this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
       ? { ...item, settings: { ...(item.settings ?? {}), liveRows: rows } }
@@ -1436,13 +1397,29 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.catalogSelections.set(next);
     this.patchDocumentContext({ ...(doc.context ?? {}), catalogSelections: next });
     const matchingSource = `catalog-${change.kind}` as 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials';
-    for (const block of this.blocks().filter((item) => item.type === 'table')) {
-      const source = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+    const tables = this.blocks().filter((item) => item.type === 'table');
+    const soleTable = tables.length === 1 ? tables[0] : null;
+    for (const block of tables) {
+      const configuredSource = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      const source = configuredSource && configuredSource !== 'manual'
+        ? configuredSource
+        : soleTable?._id === block._id ? matchingSource : configuredSource;
       if (source !== matchingSource) continue;
+      if (source === matchingSource && configuredSource !== matchingSource) {
+        this.blocks.update((blocks) => blocks.map((item) => item._id === block._id
+          ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: matchingSource } } }
+          : item));
+      }
       void firstValueFrom(this.documents.putDataSet(doc._id, `table-${block._id}`, {
         expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
         dataSet: { source: { type: source }, rows: [], catalogSelectionCount: change.ids.length },
-      })).then((result) => { if (result.ok) this.document.set(result.data); else this.conflict(); });
+      })).then((result) => {
+        if (result.ok) {
+          this.document.set(result.data);
+          this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === `table-${block._id}`) ?? { rows: [] });
+          this.refreshPreviewIfActive();
+        } else this.conflict();
+      });
     }
   }
 

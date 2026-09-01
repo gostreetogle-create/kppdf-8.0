@@ -1,15 +1,15 @@
-import { Database, FileText, Layers, LayoutGrid, LayoutTemplate, Settings2 } from 'lucide-angular';
+import { Database, FileStack, FileText, Layers, LayoutTemplate, Settings2 } from 'lucide-angular';
 import type { StudioWsRailItem } from './studio-workspace-shell.component';
 
-export type StudioWorkspaceSection = 'elements' | 'layers' | 'data' | 'template' | 'properties' | 'showcase';
+export type StudioWorkspaceSection = 'elements' | 'layers' | 'pages' | 'data' | 'template' | 'properties';
 
 export const STUDIO_RAIL_ITEMS: readonly StudioWsRailItem[] = [
-  { id: 'elements', title: 'Элементы', short: 'El', icon: FileText },
-  { id: 'showcase', title: 'Витрина', short: 'Vi', icon: LayoutGrid },
-  { id: 'layers', title: 'Слои', short: 'Ly', icon: Layers },
   { id: 'data', title: 'Данные', short: 'Dt', icon: Database },
-  { id: 'template', title: 'Шаблон', short: 'Tp', icon: LayoutTemplate },
+  { id: 'elements', title: 'Элементы', short: 'El', icon: FileText },
+  { id: 'layers', title: 'Слои', short: 'Ly', icon: Layers },
+  { id: 'pages', title: 'Страницы', short: 'Pg', icon: FileStack },
   { id: 'properties', title: 'Свойства', short: 'Pr', icon: Settings2 },
+  { id: 'template', title: 'Шаблон', short: 'Tp', icon: LayoutTemplate },
 ] as const;
 
 export function studioPanelTitle(section: string | null): string {
@@ -17,7 +17,7 @@ export function studioPanelTitle(section: string | null): string {
 }
 
 export function studioPanelSide(section: string | null): 'left' | 'right' {
-  return section === 'properties' ? 'right' : 'left';
+  return section === 'data' ? 'left' : 'right';
 }
 
 export function onStudioSectionClick(
