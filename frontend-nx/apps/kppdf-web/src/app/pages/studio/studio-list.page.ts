@@ -7,7 +7,7 @@ import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiDocumentTemplatesService, PiStudioDocumentsService, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
 import { pickResumeStudioDocument, rememberStudioDocument } from './studio-session';
-import { StudioTemplatePickerDialogComponent } from './studio-template-picker-dialog.component';
+import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 
 @Component({
   selector: 'pi-studio-list-page',
@@ -95,28 +95,49 @@ export class StudioListPage implements OnInit {
     });
   }
   createFromTemplate(): void {
-    void firstValueFrom(this.documentTemplates.list()).then((result) => {
-      if (!result.ok || result.data.length === 0) {
-        this.toast.error('Нет доступных шаблонов документов');
-        return;
-      }
-      const templates = result.data.filter((item) => item.isActive !== false);
+    void this.loadActiveTemplates().then((templates) => {
+      if (templates === null) return;
       if (templates.length === 0) {
         this.toast.error('Нет активных шаблонов документов');
         return;
       }
-      const ref = this.dialog.open<DocumentTemplate | undefined>(StudioTemplatePickerDialogComponent, {
-        data: { templates },
-      });
-      // Template picker owns selection only; deletion is handled from the list in S19.
+      this.openTemplatePicker(templates);
+    });
+  }
 
-      onDialogCloseOnce(ref, this.injector, (template) => {
-        if (!template) return;
-        void firstValueFrom(this.service.createFromTemplate(template._id)).then((created) => {
-          if (!created.ok) { this.toast.error(String(created.error)); return; }
-          rememberStudioDocument(created.data._id);
-          void this.router.navigate(['/studio', created.data._id]);
-        });
+  private loadActiveTemplates(): Promise<readonly DocumentTemplate[] | null> {
+    return firstValueFrom(this.documentTemplates.list()).then((result) => {
+      if (!result.ok) {
+        this.toast.error(String(result.error));
+        return null;
+      }
+      if (result.data.length === 0) {
+        this.toast.error('Нет доступных шаблонов документов');
+        return null;
+      }
+      return result.data.filter((item) => item.isActive !== false);
+    });
+  }
+
+  private openTemplatePicker(templates: readonly DocumentTemplate[]): void {
+    const ref = this.dialog.open<DocumentTemplate | undefined, StudioTemplatePickerDialogData>(
+      StudioTemplatePickerDialogComponent,
+      {
+        data: {
+          templates,
+          onDeleted: () => {
+            void this.loadActiveTemplates();
+          },
+        },
+      },
+    );
+
+    onDialogCloseOnce(ref, this.injector, (template) => {
+      if (!template) return;
+      void firstValueFrom(this.service.createFromTemplate(template._id)).then((created) => {
+        if (!created.ok) { this.toast.error(String(created.error)); return; }
+        rememberStudioDocument(created.data._id);
+        void this.router.navigate(['/studio', created.data._id]);
       });
     });
   }
