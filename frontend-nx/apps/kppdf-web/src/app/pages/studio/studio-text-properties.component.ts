@@ -113,7 +113,7 @@ const ALIGN_OPTIONS: readonly {
         />
       </label>
 
-      <div class="text-props__typo" data-test="studio-typography-controls">
+      <div class="text-props__typo text-props__typo--floating" data-test="studio-typography-controls">
         <div class="text-props__row-2">
           <label class="text-props__field text-props__field--compact">
             <span class="text-props__label">Шрифт</span>
@@ -243,6 +243,7 @@ const ALIGN_OPTIONS: readonly {
       color: var(--color-muted-foreground);
     }
     .text-props__typo { display: flex; flex-direction: column; gap: 8px; }
+    .text-props__typo--floating { padding: 8px; border: 1px solid var(--color-rule-strong); border-radius: var(--radius-sm); background: var(--color-paper-raised); position: relative; }
     .text-props__row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .text-props__align { display: flex; gap: 4px; }
     .text-props__align-btn {
