@@ -146,7 +146,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
           >
             + Страница
           </button>
-          <div class="page-nav" data-test="studio-page-nav">
+          <div class="page-nav" data-test="studio-page-nav" aria-label="Навигация по страницам">
             <button
               type="button"
               class="page-nav__btn pi-focus-ring"
@@ -169,6 +169,15 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               <lucide-angular [img]="chevronRight" [size]="14" aria-hidden="true" />
             </button>
           </div>
+          <label class="page-numbering-toggle">
+            <input
+              type="checkbox"
+              [checked]="pageNumbering()"
+              data-test="studio-page-numbering"
+              (change)="togglePageNumbering($any($event.target).checked)"
+            />
+            Нумерация
+          </label>
           <button
             type="button"
             class="kp-ws-ribbon-btn"
@@ -535,6 +544,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   readonly panelSide = computed(() => studioPanelSide(this.activeSection()));
 
+  readonly pageNumbering = computed(() => this.document()?.pageNumbering === true);
+
   readonly pageCount = computed(() => {
     const doc = this.document();
     if (!doc) return 1;
@@ -726,6 +737,18 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   openDocumentList(): void {
     void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
+  }
+
+  togglePageNumbering(enabled: boolean): void {
+    const doc = this.document();
+    if (!doc) return;
+    void firstValueFrom(this.documents.update(doc._id, {
+      expectedRevision: doc.revision ?? 1,
+      pageNumbering: enabled,
+    })).then((result) => {
+      if (result.ok) this.document.set(result.data);
+      else this.conflict();
+    });
   }
 
   togglePanel(): void {
