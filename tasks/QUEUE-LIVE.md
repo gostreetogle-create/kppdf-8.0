@@ -1,11 +1,11 @@
 # QUEUE-LIVE
 
-> **LIVE:** очередь свободна после S12 · следующая TZ только по явному PO
+> **LIVE:** S13 chain · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S13-START.md`
 
 | # | TZ | Статус |
 |---|-----|--------|
-| S8–S11 | Doc Studio | **DONE** (HEAD `dcdc74f4`) |
-| **S12** | 6 TZ: page geom + cascade + totals | **DONE** (HEAD `918586cc`) |
+| S8–S13 DONE | Doc Studio | **DONE** (HEAD `25e649a5`) |
+| **S13** | 6 TZ: typography → vitrina → undo | **READY** |
 
 ## Закрыто (сессия 2026-08-30…31)
 

@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S12 **DONE**. S12 добавила фон/прозрачность, поля страницы, sheet layout, каскад заказа в клиента и серверные totals таблиц.
+**Статус волны:** S2–S13 **DONE**. S13 добавила типографику PDF, фото витрины, фон по страницам, строку НДС и локальный Ctrl+Z/Ctrl+Y.
 
 ---
 
@@ -64,6 +64,10 @@
 Повторный клик по активной иконке или клик по листу **сворачивает** панель. Лист A4 **не меняет размер** при open/close (закон [`kp-workspace-geometry.md`](./kp-workspace-geometry.md)).
 
 ### 1.4 Stage (центр)
+
+- Для каждой страницы можно выбрать отдельный фон из списка; «Нет» отключает фон текущей страницы.
+- Для фото в витрине показывается миниатюра первого доступного фото; при ошибке загрузки остаётся безопасный placeholder.
+
 
 - Белый лист A4 в рамке; все **видимые** слои текущей страницы composited по z-index.
 - **Активный слой** — единственный с drag/resize и редактированием ячеек/текста.
@@ -239,14 +243,16 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 | 1 | Ctrl+Z и conflict merge UI | Нет визуального слияния параллельных правок | PARK / ADR |
 | 2 | Ctrl+Z и conflict merge UI | Полноценного визуального слияния параллельных правок нет | PARK / ADR |
 
-## 7.1 S8–S12 — работает
+## 7.1 S8–S13 — работает
 
 - Текстовые ERP-токены резолвятся на Preview/PDF; сохраняется legacy alias `{{counterparty.*}}`.
 - Таблицы поддерживают ручные строки, КП/заказ и четыре catalog source; draft читает live ERP, finalize печёт snapshot.
 - `/studio` поддерживает создание из выбранного DocumentTemplate и дублирование.
 - Панель «Данные» поддерживает anchors client/payer/supplier, русские chips, каскад КП/заказ → client и catalog chips с удалением.
 - Dblclick текстового слоя открывает свойства и фокусирует rich-text редактор; token picker показывает anchor-группы.
-- S8/S9/S10 архивы находятся в `tasks/_archive/2026-08/` и `tasks/_archive/2026-09/`.
+- Стили блока (Arial/Calibri/Times, размер и цвет) применяются в Preview/PDF; таблицы показывают subtotal и НДС 20% с исключением отключённых строк.
+- Ctrl+Z/Ctrl+Y в активном rich-text редакторе работает только в текущей сессии документа; merge конфликтов остаётся PARK.
+- S8/S9/S10/S11/S12/S13 архивы находятся в `tasks/_archive/2026-08/` и `tasks/_archive/2026-09/`.
 
 ---
 
