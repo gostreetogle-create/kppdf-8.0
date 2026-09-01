@@ -1472,6 +1472,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   onOrderChange(orderId: string): void {
     this.patchContextField('orderId', orderId);
+    if (!orderId || this.counterpartyId()) return;
+    const order = this.orders().find((item) => item._id === orderId) as (Order & { counterpartyId?: string }) | undefined;
+    if (order?.counterpartyId) this.onCounterpartyChange(order.counterpartyId);
   }
 
   onDocTypeChange(docTypeId: string): void {
