@@ -61,6 +61,21 @@ describe('studio-multipage.utils (TZ-DOC-STUDIO-1701)', () => {
     expect(plan[1].backgroundIndex).toBe(1);
   });
 
+  it('uses configured first-page row capacity', () => {
+    const blockId = '507f1f77bcf86cd799439011';
+    const rows = Array.from({ length: 8 }, (_, i) => [`Row ${i}`, `${i}`]);
+    const plan = planStudioMultipage({
+      blocks: [tableBlock(blockId, 1, rows)],
+      manualPageCount: 1,
+      dataSets: [{ key: `table-${blockId}`, rows }],
+      backgroundImages: [],
+      defaultBackgroundIndex: -1,
+      sheetLayout: { rowsFirstPage: 5, rowsNextPage: 5 },
+    });
+    expect(plan[0].blocks[0]?.content).toContain('Row 4');
+    expect(plan[0].blocks[0]?.content).not.toContain('Row 5');
+  });
+
   it('splits overflowing table rows across pages', () => {
     const blockId = '507f1f77bcf86cd799439011';
     const manyRows = Array.from({ length: 30 }, (_, i) => [`Row ${i}`, `${i}`]);
