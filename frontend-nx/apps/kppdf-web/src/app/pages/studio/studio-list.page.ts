@@ -44,7 +44,7 @@ import { StudioTemplatePickerDialogComponent } from './studio-template-picker-di
               </button>
               <div class="flex items-center gap-2">
                 <button class="pi-button pi-button-ghost" type="button" data-test="studio-duplicate" (click)="duplicate(document)">Дублировать</button>
-                <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" (click)="remove(document)">×</button>
+                <button class="pi-icon-button pi-focus-ring" type="button" aria-label="Удалить" title="Удалить" data-test="studio-delete" (click)="remove(document)">×</button>
               </div>
             </div>
           }
@@ -108,6 +108,8 @@ export class StudioListPage implements OnInit {
       const ref = this.dialog.open<DocumentTemplate | undefined>(StudioTemplatePickerDialogComponent, {
         data: { templates },
       });
+      // Template picker owns selection only; deletion is handled from the list in S19.
+
       onDialogCloseOnce(ref, this.injector, (template) => {
         if (!template) return;
         void firstValueFrom(this.service.createFromTemplate(template._id)).then((created) => {
@@ -118,6 +120,7 @@ export class StudioListPage implements OnInit {
       });
     });
   }
+
 
   duplicate(document: StudioDocument): void {
     void firstValueFrom(this.service.duplicate(document._id)).then((result) => {
