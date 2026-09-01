@@ -28,4 +28,13 @@ describe('StudioDataPanelComponent', () => {
     expect(el.querySelector('[data-test="studio-quotation-select"]')).toBeTruthy();
     expect(el.querySelector('[data-test="studio-order-select"]')).toBeTruthy();
   });
+
+  it('shows KP status select when showKpStatus=true', () => {
+    fixture.componentRef.setInput('showKpStatus', true);
+    fixture.componentRef.setInput('quotationStatus', 'draft');
+    fixture.detectChanges();
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="studio-quotation-status-select"]')).toBeTruthy();
+    expect(el.textContent).toContain('Черновик');
+  });
 });

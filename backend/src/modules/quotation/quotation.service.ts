@@ -51,7 +51,7 @@ export class QuotationService {
   async create(dto: CreateQuotationDto): Promise<QuotationDocument> {
     const number = dto.number ?? (await this.counter.next('Quotation', 'QTN'));
     const markup = dto.orgMarkupPercent ?? 0;
-    const items: QuotationItem[] = dto.items.map((item) =>
+    const items: QuotationItem[] = (dto.items ?? []).map((item) =>
       this.toQuotationItem(item),
     );
     const subtotal =

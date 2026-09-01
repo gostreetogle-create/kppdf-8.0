@@ -51,7 +51,7 @@ export const appRoutes: Route[] = [
       {
         path: 'proposals',
         children: [
-          { path: '', pathMatch: 'full', redirectTo: 'list' },
+          { path: '', pathMatch: 'full', loadComponent: () => import('./pages/proposals/proposals-list.page').then((m) => m.ProposalsListPage) },
           { path: 'list', loadComponent: () => import('./pages/proposals/proposals-list.page').then((m) => m.ProposalsListPage) },
           { path: 'create', redirectTo: '/studio' },
         ],

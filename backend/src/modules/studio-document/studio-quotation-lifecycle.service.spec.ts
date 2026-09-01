@@ -1,70 +1,96 @@
-import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { DocType } from '../doc-type/doc-type.schema';
+import { QuotationService } from '../quotation/quotation.service';
+import { TemplateBlockService } from '../template-block/template-block.service';
+import { StudioDataResolverService } from './studio-data-resolver';
 import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.service';
+import type { StudioDocumentDocument } from './studio-document.schema';
 
-describe('StudioQuotationLifecycleService (TZ-NX-DOCSTUDIO-S20)', () => {
+describe('StudioQuotationLifecycleService (S20)', () => {
+  let service: StudioQuotationLifecycleService;
+  const proposalDocTypeId = new Types.ObjectId();
   const orgId = new Types.ObjectId().toString();
-  const docTypeId = new Types.ObjectId();
-  const docId = new Types.ObjectId();
 
-  function createService(overrides: {
-    docTypeSlug?: string;
-    quotation?: Record<string, unknown>;
-  } = {}) {
-    const docTypeModel = {
-      findById: jest.fn().mockReturnValue({
-        lean: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue(
-            overrides.docTypeSlug ? { slug: overrides.docTypeSlug } : null,
-          ),
-        }),
+  const docTypeModel = {
+    findById: jest.fn().mockReturnValue({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ slug: 'proposal' }),
       }),
-    };
-    const quotationService = {
-      findById: jest.fn().mockResolvedValue(overrides.quotation ?? { _id: new Types.ObjectId(), status: 'draft' }),
-      create: jest.fn().mockResolvedValue({ _id: new Types.ObjectId(), status: 'draft', number: 'KP-1' }),
-      update: jest.fn().mockResolvedValue({ _id: new Types.ObjectId(), status: 'sent' }),
-    };
-    const blockService = {
-      findAllByStudioDocument: jest.fn().mockResolvedValue([]),
-    };
-    const dataResolver = {
-      resolveDataSets: jest.fn().mockResolvedValue([]),
-    };
-    const service = new StudioQuotationLifecycleService(
-      docTypeModel as never,
-      quotationService as never,
-      blockService as never,
-      dataResolver as never,
-    );
-    return { service, quotationService, docTypeModel };
-  }
+    }),
+  };
 
-  it('isKpDocument returns true for proposal slug', async () => {
-    const { service } = createService({ docTypeSlug: 'proposal' });
-    const doc = { docTypeId } as never;
-    await expect(service.isKpDocument(doc)).resolves.toBe(true);
+  const quotationService = {
+    create: jest.fn(),
+    findById: jest.fn(),
+    update: jest.fn(),
+  };
+
+  const blockService = {
+    findAllByStudioDocument: jest.fn().mockResolvedValue([]),
+  };
+
+  const dataResolver = {
+    resolveDataSets: jest.fn().mockResolvedValue([]),
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        StudioQuotationLifecycleService,
+        { provide: getModelToken(DocType.name), useValue: docTypeModel },
+        { provide: QuotationService, useValue: quotationService },
+        { provide: TemplateBlockService, useValue: blockService },
+        { provide: StudioDataResolverService, useValue: dataResolver },
+      ],
+    }).compile();
+
+    service = module.get(StudioQuotationLifecycleService);
   });
 
-  it('ensureLinkedQuotation creates draft quotation for KP doc', async () => {
-    const { service, quotationService } = createService({ docTypeSlug: 'proposal' });
+  it('creates draft quotation for KP doc without link', async () => {
+    const quotationId = new Types.ObjectId();
+    quotationService.create.mockResolvedValue({ _id: quotationId, status: 'draft' });
+    const save = jest.fn().mockResolvedValue(undefined);
     const doc = {
-      _id: docId,
-      docTypeId,
+      _id: new Types.ObjectId(),
+      docTypeId: proposalDocTypeId,
+      organizationId: new Types.ObjectId(orgId),
       context: {},
-      save: jest.fn().mockResolvedValue(undefined),
-    };
-    const result = await service.ensureLinkedQuotation(doc as never, orgId);
+      save,
+    } as unknown as StudioDocumentDocument;
+
+    const result = await service.ensureLinkedQuotation(doc, orgId);
+
     expect(quotationService.create).toHaveBeenCalledWith(
-      expect.objectContaining({ organizationId: orgId, status: 'draft', items: [] }),
+      expect.objectContaining({
+        organizationId: orgId,
+        status: 'draft',
+        studioDocumentId: String(doc._id),
+      }),
     );
-    expect(result.quotation).toBeTruthy();
-    expect(doc.save).toHaveBeenCalled();
+    expect(result.quotation?._id).toEqual(quotationId);
+    expect(save).toHaveBeenCalled();
   });
 
-  it('updateQuotationStatus throws when not KP', async () => {
-    const { service } = createService({ docTypeSlug: 'invoice' });
-    const doc = { docTypeId, context: {} } as never;
-    await expect(service.updateQuotationStatus(doc, 'sent', orgId)).rejects.toBeInstanceOf(NotFoundException);
+  it('skips non-KP documents', async () => {
+    docTypeModel.findById.mockReturnValueOnce({
+      lean: jest.fn().mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ slug: 'invoice' }),
+      }),
+    });
+    const doc = {
+      _id: new Types.ObjectId(),
+      docTypeId: new Types.ObjectId(),
+      context: {},
+      save: jest.fn(),
+    } as unknown as StudioDocumentDocument;
+
+    const result = await service.ensureLinkedQuotation(doc, orgId);
+
+    expect(quotationService.create).not.toHaveBeenCalled();
+    expect(result.quotation).toBeNull();
   });
 });

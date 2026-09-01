@@ -109,10 +109,10 @@ export class ProposalsListPage implements OnInit {
           doc.linkedQuotationId === quotation._id
           || doc.context?.['quotationId'] === quotation._id,
       )?._id;
-    if (!linked) {
-      this.toast.error('Студийный документ для этого КП не найден');
+    if (linked) {
+      void this.router.navigate(['/studio', linked]);
       return;
     }
-    void this.router.navigate(['/studio', linked]);
+    void this.router.navigate(['/studio'], { queryParams: { quotationId: quotation._id } });
   }
 }

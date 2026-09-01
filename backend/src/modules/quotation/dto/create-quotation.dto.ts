@@ -168,8 +168,9 @@ export class CreateQuotationDto {
   @Type(() => QuotationSheetLayoutDto)
   sheetLayout?: QuotationSheetLayoutDto;
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => QuotationItemDto)
-  items!: QuotationItemDto[];
+  items?: QuotationItemDto[];
 }
