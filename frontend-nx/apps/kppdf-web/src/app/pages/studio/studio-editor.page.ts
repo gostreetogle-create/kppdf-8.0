@@ -450,6 +450,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private readonly shellTools = inject(ShellToolRailService);
   private readonly sheetHostRef = viewChild<ElementRef<HTMLElement>>('sheetHost');
   private timer?: number;
+  private conflictDialogOpen = false;
   private layoutSavePromise: Promise<void> | null = null;
   private layoutsDirty = false;
   private resizeObserver?: ResizeObserver;
@@ -1817,7 +1818,25 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   private conflict(): void {
-    this.toast.error('Документ изменён в другом месте');
+    if (this.conflictDialogOpen) return;
+    this.conflictDialogOpen = true;
+    const id = this.document()?._id;
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Документ изменён в другом месте',
+        description: 'Локальные изменения не были записаны. Перезагрузить актуальную версию документа?',
+        confirmLabel: 'Перезагрузить',
+        cancelLabel: 'Отмена',
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (reload) => {
+      this.conflictDialogOpen = false;
+      if (reload) this.reloadFromServer();
+    });
+  }
+
+  private reloadFromServer(): void {
     const id = this.document()?._id;
     if (id) {
       void firstValueFrom(this.documents.getById(id)).then((r) => {
