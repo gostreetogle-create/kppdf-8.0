@@ -1,19 +1,18 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-09-01T00:00:00Z
+updated_at: 2026-09-01T22:10:00+03:00
 
 ## ACTIVE / LIVE
 
-**ACTIVE:**  
-**NEXT:** очередь Doc Studio S8→S9 закрыта; готово предложить следующую TZ или deploy по явной команде PO.  
+**NEXT:** очередь пуста; S9 FINISH закрыта, деплой только по явной команде PO.
 
 ## DONE this slice
 
-- Doc Studio S8→S9 wave DONE: substitution `96d08634`, table ERP `34f50b3c`, template list `7dbbfbbe`, pages `11bb0a7e`, catalog vitrina `48b0d894`, bindings UX `d981c08b`.
-- Archives: `tasks/_archive/2026-08/TZ-NX-DOCSTUDIO-S8-TEXT-SUBSTITUTION.done.md`, `TZ-NX-DOCSTUDIO-S8-TABLE-ERP-BIND.done.md`, `TZ-NX-DOCSTUDIO-S8-LIST-TEMPLATES.done.md`, `TZ-NX-DOCSTUDIO-S8-PAGES-PANEL.done.md`, `TZ-NX-DOCSTUDIO-S9-ANCHORS-MODEL.done.md`, `TZ-NX-DOCSTUDIO-S9-CATALOG-VITRINA.done.md`, `TZ-NX-DOCSTUDIO-S9-TEMPLATE-BINDINGS-UX.done.md`.
-- Known limitations are recorded in the S9 anchors and vitrina archives.
+- Doc Studio S9 FINISH DONE: anchors `58d7b795`, catalog resolver sync `afb86f58`, bindings finish `pending closeout commit`.
+- S9 FINISH wave checklist: `docs/agent-checklists/WAVE-DOCSTUDIO-S9-FINISH.md`.
+- Archives: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S9A-ANCHORS-FINISH.done.md`, `TZ-NX-DOCSTUDIO-S9B-CATALOG-RESOLVER-SYNC.done.md`, `TZ-NX-DOCSTUDIO-S9C-BINDINGS-FINISH.done.md`.
 
 ## PARK
 
-- Existing table-template Angular `@for` reconciliation warning remains documented in the prior board state.
+- Existing Angular/JSDOM CSS warnings remain non-blocking.
 - Existing unrelated working-tree files remain untouched.

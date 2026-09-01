@@ -744,10 +744,15 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   openLayerProperties(id: string): void {
+    const block = this.blocks().find((item) => item._id === id);
+    if (!block || block.locked || this.viewMode() === 'preview') return;
     this.activeLayerId.set(id);
     this.selectedId.set(id);
     this.activeSection.set('properties');
     this.panelCollapsed.set(false);
+    if (block.type === 'text') {
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-test="studio-block-content"] [contenteditable="true"]')?.focus());
+    }
   }
 
   addLayer(): void {
