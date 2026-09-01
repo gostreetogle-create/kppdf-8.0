@@ -1565,7 +1565,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         if (r.ok) {
           this.document.set(r.data.studioDocument);
           this.refreshPreviewIfActive();
-          this.toast.success('Документ в архиве');
+          const generatedName = typeof r.data.generatedDocument['name'] === 'string' ? r.data.generatedDocument['name'] : doc.name;
+          this.toast.success(`Документ «${generatedName}» отправлен в архив`);
         } else {
           this.toast.error(extractErrorMessage(r.error));
         }
