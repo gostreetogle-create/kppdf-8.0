@@ -1,6 +1,6 @@
 # WAVE — Doc Studio S16→S26 (continuous chain)
 
-Status: **PAUSED @ S20** (valid blocker) · S17–S19 DONE
+Status: **READY @ S20** · S17–S19B + S20-PRE DONE
 
 > После push — сразу следующая TZ. STOP: все [x] ИЛИ hard blocker.  
 > Resume: `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S16-CHAIN-RESUME.md`
@@ -18,8 +18,8 @@ Status: **PAUSED @ S20** (valid blocker) · S17–S19 DONE
 | 3 | [x] S17A TABLE-COLUMN-LOCK | `.done.md` | `2c36444f` |
 | 4 | [x] S18 SAVE-AS-MENU | `.done.md` | `33a0fa2a` |
 | 5 | [x] S19 STUDIO-DELETE | `.done.md` | `d67385f5` |
-| 5b | [x] S19B TEMPLATE-PICKER-DELETE | `.done.md` | pending |
-| 6a | [ ] **S20-PRE** PI-QUOTATIONS-CRUD | | ← **unblocks S20** |
+| 5b | [x] S19B TEMPLATE-PICKER-DELETE | `.done.md` | `e7553a5b` |
+| 6a | [x] **S20-PRE** PI-QUOTATIONS-CRUD | `.done.md` | pending |
 | 6 | [ ] S20 KP-QUOTATION-LIFECYCLE | claim in `_active/` | |
 | 7 | [ ] S22 REGISTRY-VAT-RATE | | |
 | 8 | [ ] S21 TABLE-AGGREGATE-TOKENS | | |
@@ -29,7 +29,7 @@ Status: **PAUSED @ S20** (valid blocker) · S17–S19 DONE
 
 ## Blocker note
 
-`PiQuotationsService` lacked create/update. Backend OK → add thin client (S20-PRE), then resume S20.
+~~`PiQuotationsService` lacked create/update.~~ Resolved in S20-PRE.
 
 ## Closeout
 

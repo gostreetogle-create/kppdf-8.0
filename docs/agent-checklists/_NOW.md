@@ -1,20 +1,22 @@
-﻿# NOW - активная очередь агента
+﻿# NOW
 
-updated_at: 2026-09-01T20:30:00Z
+updated_at: 2026-09-02T00:30:00+03:00
 
 ## ACTIVE / LIVE
 
-**NEXT:** S17 `RIBBON-PAGES-PANEL` · `tasks/TZ-NX-DOCSTUDIO-S17-RIBBON-PAGES-PANEL.md`
+**READY:** S20 (`TZ-NX-DOCSTUDIO-S20-KP-QUOTATION-LIFECYCLE`) — blocker cleared.  
+**RESUME:** `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S16-CHAIN-RESUME.md`
+
+Order: S20 → S22…S26
+
+Claim: `tasks/_active/TZ-NX-DOCSTUDIO-S20-KP-QUOTATION-LIFECYCLE.md`
 
 ## DONE this slice
 
-- S25 DONE: `/registries` master table grouped by category (`tasks/_archive/2026-09/TZ-NX-REGISTRIES-CATEGORY-GROUPS.done.md`).
-- S16 DONE: split left Data rail and right layout rail IA (`64bdfd55`).
-- S15 DONE: unified Data + catalog vitrina, live catalog table binding.
-- S14 DONE: `b5e36701`…`a7d7bb5d`
+- S19B `e7553a5b` · S20-PRE pending push
+- S17 `426a4e67` · S17A `2c36444f` · S18 `33a0fa2a` · S19 `d67385f5`
+- S16 `64bdfd55` · S25 `522e6a78` · S15 · S14
 
-## QUEUED
+## PARK
 
-- S17–S26 · `tasks/WAVE-DOCSTUDIO-S16-S25.md` · `docs/architecture/nx-doc-studio-roadmap-v2.md`
-
-- Формулы · template variables · three-way merge
+- Three-way merge
