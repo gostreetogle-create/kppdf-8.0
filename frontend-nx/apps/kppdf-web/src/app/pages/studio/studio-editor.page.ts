@@ -1881,7 +1881,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const ref = this.dialog.open<boolean>(AlertDialogComponent, {
       data: {
         title: 'Документ изменён в другом месте',
-        description: 'Локальные изменения не были записаны. Перезагрузить актуальную версию документа?',
+        description: 'Локальные изменения не были записаны: документ или его слои уже изменились в другой вкладке. Перезагрузка заменит текущий экран актуальной серверной версией.',
         confirmLabel: 'Перезагрузить',
         cancelLabel: 'Отмена',
       },
