@@ -38,6 +38,16 @@ describe('studio-data-resolver utils (TZ-DOC-STUDIO-1601)', () => {
     expect(html).toContain('99');
   });
 
+  it('renders subtotal and VAT footer for sum columns', () => {
+    const html = renderStudioTableHtml(
+      [{ key: 'name', label: 'Наименование' }, { key: 'sum', label: 'Сумма', type: 'sum' }, { key: 'vat', label: 'НДС', type: 'vat' }],
+      [['A', '1000', '']],
+    );
+    expect(html).toContain('Итого');
+    expect(html).toContain('НДС (20%)');
+    expect(html).toContain('200');
+  });
+
   it('renders sum footer and ignores disabled rows', () => {
     const html = renderStudioTableHtml(
       [{ key: 'name', label: 'Name' }, { key: 'sum', label: 'Total', type: 'sum' }],

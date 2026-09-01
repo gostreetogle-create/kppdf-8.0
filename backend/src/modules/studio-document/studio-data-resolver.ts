@@ -142,8 +142,12 @@ export function renderStudioTableHtml(
           })
           .join('')
       : `<tr>${columns.map(() => '<td></td>').join('')}</tr>`;
-  const totalColumns = columns.filter((column) => column.type === 'sum' || ['sum', 'total'].includes(normalizeKey(column.key))).length;
-  const footer = totalColumns > 0 ? `<tfoot><tr>${columns.map((column, index) => index === columns.length - 1 ? `<td>${escapeHtmlValue(String(rows.reduce((sum, row, rowIndex) => disabledRowIndices.includes(rowIndex) ? sum : sum + (Number(row[index]) || 0), 0)))}</td>` : '<td></td>').join('')}</tr></tfoot>` : '';
+  const totalColumnIndex = columns.findIndex((column) => column.type === 'sum' || ['sum', 'total'].includes(normalizeKey(column.key)));
+  const total = totalColumnIndex >= 0
+    ? rows.reduce((sum, row, rowIndex) => disabledRowIndices.includes(rowIndex) ? sum : sum + (Number(row[totalColumnIndex]) || 0), 0)
+    : 0;
+  const showVat = columns.some((column) => ['vat', 'nds', 'ндс'].includes(normalizeKey(column.key))) || columns.some((column) => column.type === 'vat');
+  const footer = totalColumnIndex >= 0 ? `<tfoot><tr class="pi-table-subtotal"><td colspan="${Math.max(1, columns.length - 1)}">Итого</td><td>${escapeHtmlValue(String(total))}</td></tr>${showVat ? `<tr class="pi-table-vat"><td colspan="${Math.max(1, columns.length - 1)}">НДС (20%)</td><td>${escapeHtmlValue(String(total * 0.2))}</td></tr>` : ''}</tfoot>` : '';
   return (
     `<table class="pi-table pi-table-preview" cellspacing="0" cellpadding="6" style="border-collapse:collapse;table-layout:fixed;width:100%">` +
     `<thead><tr>${head}</tr></thead><tbody>${body}</tbody>${footer}</table>`
