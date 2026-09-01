@@ -107,6 +107,7 @@ import {
       }
 
 
+      @if (columnsEditable()) {
       <div class="table-props__column-editor" data-test="studio-table-column-editor">
         <div class="table-props__column-editor-head">
           <span class="table-props__label">Структура колонок</span>
@@ -114,7 +115,7 @@ import {
             type="button"
             variant="outline"
             size="sm"
-            [disabled]="disabled"
+            [disabled]="disabled || !columnsEditable()"
             data-test="studio-table-add-column"
             (click)="addColumn()"
           >
@@ -128,7 +129,7 @@ import {
               type="text"
               [ngModel]="col.key"
               (ngModelChange)="updateColumnField(i, 'key', $event)"
-              [disabled]="disabled"
+              [disabled]="disabled || !columnsEditable()"
               placeholder="key"
               [attr.data-test]="'studio-table-col-key-' + i"
             />
@@ -137,7 +138,7 @@ import {
               type="text"
               [ngModel]="col.label"
               (ngModelChange)="updateColumnField(i, 'label', $event)"
-              [disabled]="disabled"
+              [disabled]="disabled || !columnsEditable()"
               placeholder="Заголовок"
               [attr.data-test]="'studio-table-col-label-' + i"
             />
@@ -145,7 +146,7 @@ import {
               class="table-props__select table-props__col-select"
               [ngModel]="col.type"
               (ngModelChange)="updateColumnField(i, 'type', $event)"
-              [disabled]="disabled"
+              [disabled]="disabled || !columnsEditable()"
               [attr.data-test]="'studio-table-col-type-' + i"
             >
               @for (t of columnTypes; track t) {
@@ -159,14 +160,14 @@ import {
               max="100"
               [ngModel]="col.width"
               (ngModelChange)="updateColumnField(i, 'width', $event)"
-              [disabled]="disabled"
+              [disabled]="disabled || !columnsEditable()"
               [attr.data-test]="'studio-table-col-width-' + i"
             />
             <select
               class="table-props__select table-props__col-select"
               [ngModel]="col.align"
               (ngModelChange)="updateColumnField(i, 'align', $event)"
-              [disabled]="disabled"
+              [disabled]="disabled || !columnsEditable()"
               [attr.data-test]="'studio-table-col-align-' + i"
             >
               @for (a of columnAligns; track a) {
@@ -177,7 +178,7 @@ import {
               <button
                 type="button"
                 class="table-props__icon-btn pi-focus-ring"
-                [disabled]="disabled || i === 0"
+                [disabled]="disabled || !columnsEditable() || i === 0"
                 aria-label="Выше"
                 (click)="moveColumn(i, -1)"
               >
@@ -186,7 +187,7 @@ import {
               <button
                 type="button"
                 class="table-props__icon-btn pi-focus-ring"
-                [disabled]="disabled || i === columns(block).length - 1"
+                [disabled]="disabled || !columnsEditable() || i === columns(block).length - 1"
                 aria-label="Ниже"
                 (click)="moveColumn(i, 1)"
               >
@@ -195,7 +196,7 @@ import {
               <button
                 type="button"
                 class="table-props__icon-btn table-props__icon-btn--danger pi-focus-ring"
-                [disabled]="disabled || columns(block).length <= 1"
+                [disabled]="disabled || !columnsEditable() || columns(block).length <= 1"
                 aria-label="Удалить колонку"
                 (click)="removeColumn(i)"
                 [attr.data-test]="'studio-table-col-remove-' + i"
@@ -206,6 +207,12 @@ import {
           </div>
         }
       </div>
+      } @else {
+        <div class="table-props__locked-summary" data-test="studio-table-columns-locked">
+          <span class="table-props__label">Структура колонок</span>
+          <p>Колонки заданы видом или источником строк и доступны только для чтения.</p>
+        </div>
+      }
 
       <label class="table-props__field" data-test="studio-table-source-field">
         <span class="table-props__label">Источник строк</span>
@@ -381,6 +388,9 @@ import {
     .table-props__icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .table-props__icon-btn--danger { color: var(--color-destructive); }
 
+    .table-props__locked-summary { padding: 8px; border: 1px solid var(--color-rule); background: var(--color-paper-2); }
+    .table-props__locked-summary p { margin: 4px 0 0; font-size: 11px; color: var(--color-muted-foreground); }
+
     .table-props__hint {
       margin: 0;
       font-size: 11px;
@@ -411,10 +421,16 @@ export class StudioTablePropertiesComponent implements OnInit, OnChanges {
 
   protected readonly columns = studioTableColumns;
 
+  protected columnsEditable(): boolean {
+    const source = this.rowSource();
+    const templateId = studioTableTemplateId(this.block);
+    return source === 'manual' && !templateId && this.block.settings?.['customColumns'] !== false;
+  }
+
   protected rowSource(): string {
     const source = (this.block.settings?.['dataSource'] as { type?: unknown } | undefined)?.type
       ?? this.block.settings?.['tableDataSource'];
-    return source === 'quotation-items' || source === 'order-items' ? source : 'manual';
+    return typeof source === 'string' && source !== 'manual' ? source : 'manual';
   }
 
   protected onRowSourceChange(source: 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials'): void {
