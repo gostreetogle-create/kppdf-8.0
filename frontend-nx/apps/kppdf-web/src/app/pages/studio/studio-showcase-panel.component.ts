@@ -17,14 +17,14 @@ export type StudioShowcaseKind = 'products' | 'modules' | 'parts' | 'materials';
     </nav>
     <input class="search" type="search" placeholder="Поиск" [value]="search()" (input)="search.set($any($event.target).value)" data-test="studio-showcase-search" />
     <div class="items">
-      @if (activeKind() === 'products') { @for (item of filteredProducts(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected().products.includes(item._id)" (change)="toggle('products', item._id, $event)" /><span>{{ item.name }}</span><small>{{ item.sku || '—' }}</small></label> } }
-      @if (activeKind() === 'modules') { @for (item of filteredModules(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected().modules.includes(item._id)" (change)="toggle('modules', item._id, $event)" /><span>{{ item.name }}</span><small>{{ item.article }}</small></label> } }
-      @if (activeKind() === 'parts' || activeKind() === 'materials') { @for (item of filteredMaterials(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected()[activeKind()].includes(item._id)" (change)="toggle(activeKind(), item._id, $event)" /><span>{{ item.name }}</span><small>{{ item.article || item.sku || '—' }}</small></label> } }
+      @if (activeKind() === 'products') { @for (item of filteredProducts(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected().products.includes(item._id)" (change)="toggle('products', item._id, $event)" /><span class="item__identity">@if (photoUrl(undefined); as url) { <img class="item__photo" [src]="url" alt="" data-test="studio-showcase-photo" (error)="onPhotoError($event)" /> } @else { <span class="item__placeholder" aria-hidden="true">▧</span> }<span>{{ item.name }}</span></span><small>{{ item.sku || '—' }}</small></label> } }
+      @if (activeKind() === 'modules') { @for (item of filteredModules(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected().modules.includes(item._id)" (change)="toggle('modules', item._id, $event)" /><span class="item__identity">@if (photoUrl(undefined); as url) { <img class="item__photo" [src]="url" alt="" data-test="studio-showcase-photo" (error)="onPhotoError($event)" /> } @else { <span class="item__placeholder" aria-hidden="true">▧</span> }<span>{{ item.name }}</span></span><small>{{ item.article || '—' }}</small></label> } }
+      @if (activeKind() === 'parts' || activeKind() === 'materials') { @for (item of filteredMaterials(); track item._id) { <label class="item"><input type="checkbox" [checked]="selected()[activeKind()].includes(item._id)" (change)="toggle(activeKind(), item._id, $event)" /><span class="item__identity">@if (photoUrl(item.photoIds ?? (item.mainPhotoId ? [item.mainPhotoId] : undefined)); as url) { <img class="item__photo" [src]="url" alt="" data-test="studio-showcase-photo" (error)="onPhotoError($event)" /> } @else { <span class="item__placeholder" aria-hidden="true">▧</span> }<span>{{ item.name }}</span></span><small>{{ item.article || item.sku || '—' }}</small></label> } }
       @if (loading()) { <p>Загрузка…</p> }
       @if (!loading() && visibleCount() === 0) { <p class="empty">Ничего не найдено.</p> }
     </div>
   </section>`,
-  styles: [`:host{display:block}.showcase{display:flex;flex-direction:column;gap:10px}.showcase h2{margin:12px 0 0;font-size:16px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.tabs button{padding:6px;border:1px solid var(--color-rule);background:var(--color-paper-2);color:var(--color-ink);cursor:pointer;font-size:11px}.tabs button.active{border-color:var(--color-gold-deep);background:var(--color-paper-raised)}.search{padding:7px;border:1px solid var(--color-rule-strong);background:var(--color-paper-2);color:var(--color-ink)}.items{display:flex;flex-direction:column;gap:4px;max-height:360px;overflow:auto}.item{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:center;padding:6px;border-bottom:1px solid var(--color-rule);font-size:12px}.item small{color:var(--color-muted-foreground)}.empty{font-size:12px;color:var(--color-muted-foreground)}`],
+  styles: [`:host{display:block}.showcase{display:flex;flex-direction:column;gap:10px}.showcase h2{margin:12px 0 0;font-size:16px}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px}.tabs button{padding:6px;border:1px solid var(--color-rule);background:var(--color-paper-2);color:var(--color-ink);cursor:pointer;font-size:11px}.tabs button.active{border-color:var(--color-gold-deep);background:var(--color-paper-raised)}.search{padding:7px;border:1px solid var(--color-rule-strong);background:var(--color-paper-2);color:var(--color-ink)}.items{display:flex;flex-direction:column;gap:4px;max-height:360px;overflow:auto}.item{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:center;padding:6px;border-bottom:1px solid var(--color-rule);font-size:12px}.item__identity{display:inline-flex;align-items:center;gap:6px;min-width:0}.item__photo,.item__placeholder{width:32px;height:32px;flex:0 0 32px;object-fit:cover;border:1px solid var(--color-rule);background:var(--color-paper-2)}.item__placeholder{display:inline-flex;align-items:center;justify-content:center;color:var(--color-muted-foreground);font-size:16px}.item small{color:var(--color-muted-foreground)}.empty{font-size:12px;color:var(--color-muted-foreground)}`],
 })
 export class StudioShowcasePanelComponent implements OnInit {
   private readonly productsApi = inject(PiProductsService);
@@ -63,6 +63,17 @@ export class StudioShowcasePanelComponent implements OnInit {
   visibleCount = () => this.activeKind() === 'products' ? this.filteredProducts().length : this.activeKind() === 'modules' ? this.filteredModules().length : this.filteredMaterials().length;
 
   private matches(...values: (string | undefined)[]): boolean { const query = this.search().trim().toLocaleLowerCase(); return !query || values.some((value) => value?.toLocaleLowerCase().includes(query)); }
+  photoUrl(photoIds: readonly (string | Record<string, unknown>)[] | undefined): string | null {
+    const first = photoIds?.[0];
+    if (!first) return null;
+    if (typeof first === 'string') return first;
+    const value = first['storageUrl'] ?? first['url'] ?? first['thumbnailUrl'];
+    return typeof value === 'string' && value.trim() ? value : null;
+  }
+  onPhotoError(event: Event): void {
+    const image = event.target as HTMLImageElement;
+    image.style.display = 'none';
+  }
   toggle(kind: StudioShowcaseKind, id: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     const ids = [...this.selected()[kind]];
