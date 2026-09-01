@@ -43,6 +43,19 @@ const CONTACT_SECTION_HEAD: Record<string, { title: string; hint: string }> = {
 
 const CONTACT_SOURCE_ORDER = ['organization', 'counterparty', 'payer', 'supplier'] as const;
 
+const TABLE_AGGREGATE_FIELDS: readonly RegistryDataField[] = [
+  { key: 'subtotal', label: 'Итого (subtotal)', type: 'currency' },
+  { key: 'vat', label: 'НДС', type: 'currency' },
+  { key: 'grand', label: 'Итого с НДС', type: 'currency' },
+];
+
+const TABLE_SOURCE: RegistryDataSource = {
+  key: 'table',
+  label: 'Таблица',
+  group: 'work',
+  fields: TABLE_AGGREGATE_FIELDS,
+};
+
 /**
  * Диалог двухшагового выбора постановочного поля (Stitch / Paper & Ink).
  */
@@ -475,6 +488,12 @@ export class StudioDataFieldPickerDialogComponent {
         sources: map.get(g)!,
       });
     }
+    result.push({
+      key: 'table',
+      label: 'Таблица',
+      hint: 'Итоги первой таблицы на листе (preview/PDF)',
+      sources: [TABLE_SOURCE],
+    });
     return result;
   });
 

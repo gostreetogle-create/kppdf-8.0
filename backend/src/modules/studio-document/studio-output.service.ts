@@ -23,6 +23,7 @@ import {
   injectTableContent,
   StudioDataResolverService,
 } from './studio-data-resolver';
+import { applyTableAggregateTokensToBlocks } from './studio-table-tokens';
 
 type OutputUser = Pick<AuthenticatedUser, 'organizationId'> & { id?: string };
 
@@ -131,6 +132,9 @@ export class StudioOutputService {
     const doc = await this.studioService.findById(id, user?.organizationId);
     const blocks = await this.blockService.findAllByStudioDocument(id);
     const dataSets = await this.dataResolver.resolveDataSets(doc, blocks, true);
+    const vatPercent = await this.dataResolver.resolveOrganizationVatRate(String(doc.organizationId));
+    const tableBlocks = injectTableContent(blocks, dataSets as never, vatPercent);
+    const renderedBlocks = applyTableAggregateTokensToBlocks(tableBlocks, dataSets, vatPercent);
     const aggregate: StudioDocumentAggregate = {
       document: {
         name: doc.name,
@@ -145,7 +149,7 @@ export class StudioOutputService {
         pageNumbering: doc.pageNumbering,
         manualPageCount: doc.manualPageCount,
       },
-      blocks,
+      blocks: renderedBlocks,
       buildDto: {
         organizationId: String(doc.organizationId),
       },
