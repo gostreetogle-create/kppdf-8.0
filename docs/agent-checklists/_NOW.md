@@ -1,18 +1,19 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-09-01T22:10:00+03:00
+updated_at: 2026-09-01T22:42:00+03:00
 
 ## ACTIVE / LIVE
 
-**NEXT:** очередь пуста; S9 FINISH закрыта, деплой только по явной команде PO.
+**NEXT:** очередь пуста; S10 POLISH закрыта, деплой только по явной команде PO.
 
 ## DONE this slice
 
-- Doc Studio S9 FINISH DONE: anchors `58d7b795`, catalog resolver sync `afb86f58`, bindings finish `pending closeout commit`.
-- S9 FINISH wave checklist: `docs/agent-checklists/WAVE-DOCSTUDIO-S9-FINISH.md`.
-- Archives: `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S9A-ANCHORS-FINISH.done.md`, `TZ-NX-DOCSTUDIO-S9B-CATALOG-RESOLVER-SYNC.done.md`, `TZ-NX-DOCSTUDIO-S9C-BINDINGS-FINISH.done.md`.
+- S10 data-panel polish: `87329b37`.
+- S10 operator docs sync: committed with wave closeout.
+- S8/S9/S10 archives: `tasks/_archive/2026-08/` and `tasks/_archive/2026-09/`.
 
 ## PARK
 
 - Existing Angular/JSDOM CSS warnings remain non-blocking.
+- Ctrl+Z/conflict merge, Fit/100% zoom, and per-page background/margins remain parked.
 - Existing unrelated working-tree files remain untouched.

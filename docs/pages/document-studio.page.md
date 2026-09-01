@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S8 **DONE**. S9 FINISH выполняется последовательно: anchors → catalog resolver sync → bindings UX. S8 — архивная волна: [`../../tasks/WAVE-DOCSTUDIO-S8.md`](../../tasks/WAVE-DOCSTUDIO-S8.md).
+**Статус волны:** S2–S10 **DONE**. S8/S9 закрыты, S10 завершила polish панели «Данные» и синхронизацию операторской документации.
 
 ---
 
@@ -108,7 +108,9 @@ flowchart LR
 
 **Исполнитель (наша фирма):** берётся из `document.organizationId` пользователя; в панели «Данные» показывается read-only имя (`issuerOrgName`). Токены `{{organization.*}}` подставляются из того же bag.
 
-**Продукт / каталог:** в picker есть группа «Каталог», но автоподстановка **не** зависит от выбора изделия на странице — нужен явный контекст или dataSet (S8-3).### 2.3
+**Продукт / каталог:** выбор витрины сохраняется в `context.catalogSelections`; catalog dataSets live-resolve на Preview/PDF.
+
+### 2.3
 
 Свойства таблицы поддерживают источник строк: **Вручную**, **Из КП** (`quotation-items`) и **Из заказа** (`order-items`). Выбор сохраняется через `PUT /studio-documents/:id/data-sets/table-<blockId>` с revision gate; при отсутствии выбранного КП/заказа показывается подсказка в свойствах.
  Цепочка для таблицы из КП/заказа
@@ -139,7 +141,7 @@ flowchart LR
 | Заказ | `orderId` | Строки таблиц с source `order-items` |
 | Исполнитель | (из JWT org) | `{{organization.*}}`, scope ERP |
 
-Выбор КП **не** подставляет клиента автоматически в NX (в legacy builder — cascade при render). Successor: S8-1 cascade из order/quotation.
+Выбор КП/заказа в NX заполняет клиента автоматически, если клиент ещё пуст; legacy builder сохраняет собственный cascade при render.
 
 ---
 
@@ -157,7 +159,7 @@ flowchart LR
 
 ### 3.3 Данные
 
-PATCH документа `{ context: { counterpartyId, quotationId, orderId } }` с revision gate. Списки КП/заказов/контрагентов — live API при открытии редактора.
+PATCH документа `{ context: { counterpartyId, quotationId, orderId, anchors, catalogSelections } }` с revision gate. Панель содержит селекты Клиент, Плательщик и Поставщик, показывает выбранные якоря и catalog chips с количеством и удалением. Выбор КП/заказа заполняет клиента, если он пуст; удаление chip снимает позиции витрины и синхронизирует таблицы. Списки КП/заказов/контрагентов — live API при открытии редактора.
 
 ### 3.4 Шаблон
 
@@ -228,18 +230,22 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId } }`
 
 ---
 
-## 7. Не сделано / известные дыры (→ S8)
+## 7. Не сделано / PARK
 
-| # | Gap | Влияние на оператора | TZ |
-|---|-----|----------------------|-----|
-| 1 | Текстовые токены не резолвятся в preview/PDF | Видит `{{counterparty.name}}` в просмотре | `TZ-NX-DOCSTUDIO-S8-TEXT-SUBSTITUTION` |
-| 2 | Нет привязки таблицы к КП/заказу | Таблица только ручная | `TZ-NX-DOCSTUDIO-S8-TABLE-ERP-BIND` |
-| 3 | Список: нет «Из шаблона», дублировать | Только пустой документ | `TZ-NX-DOCSTUDIO-S8-LIST-TEMPLATES` |
-| 4 | Панель «Страницы» (фон, поля, перенос строк) | Только +Страница и ориентация в ribbon | `TZ-NX-DOCSTUDIO-S8-PAGES-PANEL` |
-| 5 | `catalog-products` dataSet | Нельзя набрать таблицу из каталога | backend D3 + TZ successor |
-| 6 | Ctrl+Z, conflict merge UI | ADR: вне MVP | PARK |
-| 7 | Fit/100% zoom toolbar | Заглушки | micro-TZ |
-| 8 | RBAC role permissions (uncommitted) | Права роли vs пользователя | `TZ-AUTH-RBAC-ROLE-PERMS` |
+| # | Gap | Влияние на оператора | Статус |
+|---|-----|----------------------|--------|
+| 1 | Ctrl+Z и conflict merge UI | Нет визуального слияния параллельных правок | PARK / ADR |
+| 2 | Fit/100% zoom toolbar | Масштаб пока не вынесен в рабочий toolbar | PARK / micro-TZ |
+| 3 | Per-page background/margins panel | Общие параметры страницы, не отдельные поля каждой страницы | PARK / limitation S8-4 |
+
+## 7.1 S8–S10 — работает
+
+- Текстовые ERP-токены резолвятся на Preview/PDF; сохраняется legacy alias `{{counterparty.*}}`.
+- Таблицы поддерживают ручные строки, КП/заказ и четыре catalog source; draft читает live ERP, finalize печёт snapshot.
+- `/studio` поддерживает создание из выбранного DocumentTemplate и дублирование.
+- Панель «Данные» поддерживает anchors client/payer/supplier, русские chips, каскад КП/заказ → client и catalog chips с удалением.
+- Dblclick текстового слоя открывает свойства и фокусирует rich-text редактор; token picker показывает anchor-группы.
+- S8/S9/S10 архивы находятся в `tasks/_archive/2026-08/` и `tasks/_archive/2026-09/`.
 
 ---
 
