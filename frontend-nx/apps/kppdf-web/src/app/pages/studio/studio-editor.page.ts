@@ -1251,6 +1251,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     })).then((result) => {
       if (result.ok) {
         this.document.set(result.data);
+        this.applyLiveRowsFromDataSet(result.data, block._id, dataSet);
         const sourceLabel = source === 'manual' ? 'вручную' : source === 'quotation-items' ? 'КП' : source === 'order-items' ? 'заказ' : 'витрина';
         this.toast.success(`Источник строк: ${sourceLabel}`);
         this.refreshPreviewIfActive();
@@ -1258,6 +1259,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         this.conflict();
       }
     });
+  }
+
+  private applyLiveRowsFromDataSet(doc: StudioDocument, blockId: string, dataSet: { rows: unknown[] }): void {
+    const rows = Array.isArray(dataSet.rows) ? dataSet.rows : [];
+    this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
+      ? { ...item, settings: { ...(item.settings ?? {}), liveRows: rows } }
+      : item));
   }
 
   patchTableSettings(patch: Record<string, unknown>): void {
