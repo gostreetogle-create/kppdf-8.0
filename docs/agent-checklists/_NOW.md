@@ -1,22 +1,16 @@
 ﻿# NOW - активная очередь агента
 
-updated_at: 2026-09-01T23:05:00+03:00
+updated_at: 2026-09-01T23:45:00+03:00
 
 ## ACTIVE / LIVE
 
-Queue empty. S11 Doc Studio finish completed.
+Очередь свободна после завершения Doc Studio S12.
 
 ## DONE this slice
 
-- S11 SELECT-LABELS — `34554cc3`
-- S11 STAGE-ZOOM — `dc75a7f4`
-- S11 PAGES-RAIL — `32e81469`
-- S11 CONFLICT-DIALOG — `99ca0b95`
-- S11 TABLE-CANVAS-LIVE — `f1621277`
-- S11 OPERATOR-DOCS — pending closeout commit
+- S12 DONE: `cc2f2df5`…`918586cc`; archives `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S12-*.done.md`
+- S11 DONE: `34554cc3`…`dcdc74f4`; archives `tasks/_archive/2026-09/TZ-NX-DOCSTUDIO-S11-*.done.md`
 
 ## PARK
 
-- Ctrl+Z / three-way conflict merge
-- Per-page background and margins
-- Existing Angular/JSDOM CSS warnings
+- Ctrl+Z / three-way merge (ADR, не S12)

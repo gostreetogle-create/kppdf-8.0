@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S11 **DONE**. S8/S9 закрыты, S10 завершила polish панели «Данные», S11 завершила select labels, zoom, pages rail, conflict UX и live table canvas.
+**Статус волны:** S2–S12 **DONE**. S12 добавила фон/прозрачность, поля страницы, sheet layout, каскад заказа в клиента и серверные totals таблиц.
 
 ---
 
@@ -126,7 +126,7 @@ flowchart LR
 
 **Backend готов:** `StudioDataResolverService` читает `quotation-items` / `order-items` по `context` (с org-scope check).
 
-**NX gap S8-2:** нет UI «Источник строк: КП / заказ / вручную» и нет вызова `putDataSet` (в legacy — `document-studio-editor.facade.ts` + `studio-panel-table.component.ts`). Пока таблица только **ручные** строки на листе + sampleRows в settings блока.
+Источник строк таблицы поддерживается в NX: `putDataSet` сохраняет `manual`/КП/заказ/catalog с revision gate; live rows резолвятся на Preview/PDF.
 
 ### 2.4 Якоря и связь «Данные» ↔ подстановка
 
@@ -158,6 +158,8 @@ flowchart LR
 Список блоков текущей страницы: drag reorder → PATCH z-index; lock; глаз → `isActive`; удаление; переход в Свойства.
 
 ### 3.3 Данные
+
+S12: выбор заказа заполняет клиента из `order.counterpartyId`, только если клиент ещё не выбран. Выбранные фоновые изображения и прозрачность сохраняются через revision-gated PATCH документа.
 
 PATCH документа `{ context: { counterpartyId, quotationId, orderId, anchors, catalogSelections } }` с revision gate. Панель содержит селекты Клиент, Плательщик и Поставщик, показывает выбранные якоря и catalog chips с количеством и удалением. Выбор КП/заказа заполняет клиента, если он пуст; удаление chip снимает позиции витрины и синхронизирует таблицы. Списки КП/заказов/контрагентов — live API при открытии редактора.
 
@@ -236,9 +238,8 @@ PATCH документа `{ context: { counterpartyId, quotationId, orderId, anc
 |---|-----|----------------------|--------|
 | 1 | Ctrl+Z и conflict merge UI | Нет визуального слияния параллельных правок | PARK / ADR |
 | 2 | Ctrl+Z и conflict merge UI | Полноценного визуального слияния параллельных правок нет | PARK / ADR |
-| 3 | Per-page background/margins panel | Общие параметры страницы, не отдельные поля каждой страницы | PARK / limitation S8-4 |
 
-## 7.1 S8–S10 — работает
+## 7.1 S8–S12 — работает
 
 - Текстовые ERP-токены резолвятся на Preview/PDF; сохраняется legacy alias `{{counterparty.*}}`.
 - Таблицы поддерживают ручные строки, КП/заказ и четыре catalog source; draft читает live ERP, finalize печёт snapshot.

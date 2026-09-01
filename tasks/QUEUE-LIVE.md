@@ -1,11 +1,11 @@
 # QUEUE-LIVE
 
-> **LIVE:** S11 chain · `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S11-START.md`
+> **LIVE:** очередь свободна после S12 · следующая TZ только по явному PO
 
 | # | TZ | Статус |
 |---|-----|--------|
-| S8–S11 | Doc Studio core + S9 + polish + S11 finish | **DONE** (HEAD `f1621277`) |
-| **S11** | 6 TZ: select → zoom → pages → conflict → canvas table → docs | **DONE** |
+| S8–S11 | Doc Studio | **DONE** (HEAD `dcdc74f4`) |
+| **S12** | 6 TZ: page geom + cascade + totals | **DONE** (HEAD `918586cc`) |
 
 ## Закрыто (сессия 2026-08-30…31)
 
