@@ -19,12 +19,12 @@ Status: **DONE** · chain S20–S26 closed
 | 5 | [x] S19 STUDIO-DELETE | `.done.md` | `d67385f5` |
 | 5b | [x] S19B TEMPLATE-PICKER-DELETE | `.done.md` | `e7553a5b` |
 | 6a | [x] **S20-PRE** PI-QUOTATIONS-CRUD | `.done.md` | `a35042f4` |
-| 6 | [x] S20 KP-QUOTATION-LIFECYCLE | `.done.md` | _pending push_ |
-| 7 | [x] S22 REGISTRY-VAT-RATE | `.done.md` | _pending push_ |
-| 8 | [x] S21 TABLE-AGGREGATE-TOKENS | `.done.md` | _pending push_ |
-| 9 | [x] S23 FORMULA-REGISTRY | `.done.md` | _pending push_ |
-| 10 | [x] S24 FORMULA-TEXT-BINDING | `.done.md` | _pending push_ |
-| 11 | [x] S26 OPERATOR-DOCS-V3 | `.done.md` | _pending push_ |
+| 6 | [x] S20 KP-QUOTATION-LIFECYCLE | `.done.md` | `4351e225` |
+| 7 | [x] S22 REGISTRY-VAT-RATE | `.done.md` | `59bcf499` |
+| 8 | [x] S21 TABLE-AGGREGATE-TOKENS | `.done.md` | `49be793a` |
+| 9 | [x] S23 FORMULA-REGISTRY | `.done.md` | `fb62adf2` |
+| 10 | [x] S24 FORMULA-TEXT-BINDING | `.done.md` | `04f6ab5c` |
+| 11 | [x] S26 OPERATOR-DOCS-V3 | `.done.md` | `2bfe0041` |
 
 ## Closeout
 
