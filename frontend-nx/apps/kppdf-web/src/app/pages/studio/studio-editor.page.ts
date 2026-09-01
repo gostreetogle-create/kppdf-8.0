@@ -55,6 +55,7 @@ import { TableTemplateFormDialogComponent } from '../../doc-studio/dialogs/table
 import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-block-form-dialog.component';
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
+import { StudioPagesPanelComponent } from './studio-pages-panel.component';
 import type { StudioShowcaseKind } from './studio-showcase-panel.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
@@ -105,6 +106,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
     StudioWorkspaceShellComponent,
     StudioBlocksCanvasComponent,
     StudioDataPanelComponent,
+    StudioPagesPanelComponent,
     StudioElementsPanelComponent,
     StudioLayersPanelComponent,
     StudioPropertiesPanelComponent,
@@ -138,64 +140,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
         (sheetClick)="onSheetClick()"
       >
         <div kpWsRibbonExtra class="studio-ribbon-extra">
-          <span class="ribbon-label">Студия документов</span>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-add-page"
-            (click)="addPage()"
-          >
-            + Страница
-          </button>
-          <div class="page-nav" data-test="studio-page-nav" aria-label="Навигация по страницам">
-            <button
-              type="button"
-              class="page-nav__btn pi-focus-ring"
-              data-test="studio-page-prev"
-              [disabled]="currentPage() <= 1"
-              aria-label="Предыдущая страница"
-              (click)="prevPage()"
-            >
-              <lucide-angular [img]="chevronLeft" [size]="14" aria-hidden="true" />
-            </button>
-            <span class="page-nav__label">Стр. {{ currentPage() }} / {{ pageCount() }}</span>
-            <button
-              type="button"
-              class="page-nav__btn pi-focus-ring"
-              data-test="studio-page-next"
-              [disabled]="currentPage() >= pageCount()"
-              aria-label="Следующая страница"
-              (click)="nextPage()"
-            >
-              <lucide-angular [img]="chevronRight" [size]="14" aria-hidden="true" />
-            </button>
-          </div>
-          <label class="page-numbering-toggle">
-            <input
-              type="checkbox"
-              [checked]="pageNumbering()"
-              data-test="studio-page-numbering"
-              (change)="togglePageNumbering($any($event.target).checked)"
-            />
-            Нумерация
-          </label>
-          <label class="page-geometry-control">Фон
-            <select [value]="backgroundIndex()" data-test="studio-background-select" (change)="setBackgroundIndex(+$any($event.target).value)">
-              <option value="-1">Нет</option>
-              @for (url of backgroundImages(); track $index) { <option [value]="$index">Фон {{ $index + 1 }}</option> }
-            </select>
-          </label>
-          <label class="page-geometry-control">Прозрачность
-            <input type="range" min="0" max="1" step="0.05" [value]="backgroundOpacity()" (input)="setBackgroundOpacity(+$any($event.target).value)" />
-          </label>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-toggle-orientation"
-            (click)="toggleOrientation()"
-          >
-            {{ doc.orientation === 'landscape' ? 'Альбомная' : 'Книжная' }}
-          </button>
+          <span class="ribbon-label">{{ doc.name }}</span>
         </div>
 
         <div kpWsRibbonActions class="studio-ribbon-actions">
@@ -223,15 +168,6 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
             (click)="setViewMode('preview')"
           >
             Просмотр
-          </button>
-          <button
-            type="button"
-            class="kp-ws-ribbon-btn"
-            data-test="studio-save-as-template"
-            [disabled]="templateSaving()"
-            (click)="openSaveAsTemplateDialog()"
-          >
-            {{ templateSaving() ? 'Сохранение…' : 'Шаблон' }}
           </button>
           <button
             type="button"
@@ -266,7 +202,23 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
               />
             }
             @case ('pages') {
-              <div data-test="studio-pages-panel-stub" class="studio-pages-panel-stub">Страницы — управление в S17</div>
+              <pi-studio-pages-panel
+                [pageCount]="pageCount()"
+                [currentPage]="currentPage()"
+                [pageNumbering]="pageNumbering()"
+                [backgroundImages]="backgroundImages()"
+                [backgroundIndex]="backgroundIndex()"
+                [backgroundOpacity]="backgroundOpacity()"
+                [orientation]="doc.orientation === 'landscape' ? 'landscape' : 'portrait'"
+                (pageChange)="goToPage($event)"
+                (addPage)="addPage()"
+                (previousPage)="prevPage()"
+                (nextPage)="nextPage()"
+                (pageNumberingChange)="togglePageNumbering($event)"
+                (backgroundChange)="setBackgroundIndex($event)"
+                (backgroundOpacityChange)="setBackgroundOpacity($event)"
+                (orientationChange)="setOrientation($event)"
+              />
             }
             @case ('data') {
               <pi-studio-data-panel
@@ -726,6 +678,14 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
   }
 
+  setOrientation(orientation: 'portrait' | 'landscape'): void {
+    const doc = this.document();
+    if (!doc || doc.orientation === orientation) return;
+    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, orientation })).then((result) => {
+      if (result.ok) this.document.set(result.data); else this.conflict();
+    });
+  }
+
   setBackgroundIndex(index: number): void {
     const doc = this.document();
     if (!doc) return;
@@ -1164,6 +1124,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     } else {
       this.toast.error(extractErrorMessage(uploadRes.error));
     }
+  }
+
+  goToPage(page: number): void {
+    if (!Number.isInteger(page) || page < 1 || page > this.pageCount()) return;
+    this.currentPage.set(page);
+    this.syncActiveLayerForPage();
   }
 
   private syncActiveLayerForPage(): void {
