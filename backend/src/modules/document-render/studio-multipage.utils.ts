@@ -30,6 +30,7 @@ export interface StudioMultipageInput {
   dataSets: Record<string, unknown>[];
   backgroundImages: string[];
   defaultBackgroundIndex: number;
+  sheetLayout?: { rowsFirstPage?: number; rowsNextPage?: number };
 }
 
 export function buildStudioTableHtml(
@@ -131,7 +132,10 @@ export function planStudioMultipage(
     while (rowOffset < rows.length || segment === 0) {
       const pageNumber = startPage + segment;
       const isFirstSegment = segment === 0;
-      const capacity = estimateRowCapacity(block.layout?.height, isFirstSegment);
+      const configured = isFirstSegment ? input.sheetLayout?.rowsFirstPage : input.sheetLayout?.rowsNextPage;
+      const capacity = configured && configured > 0
+        ? Math.min(200, Math.max(1, Math.floor(configured)))
+        : estimateRowCapacity(block.layout?.height, isFirstSegment);
       const slice = rows.slice(rowOffset, rowOffset + capacity);
       const html = renderStudioTableHtml(columns, slice);
 

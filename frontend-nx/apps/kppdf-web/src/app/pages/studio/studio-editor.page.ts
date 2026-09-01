@@ -178,6 +178,15 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
             />
             Нумерация
           </label>
+          <label class="page-geometry-control">Фон
+            <select [value]="backgroundIndex()" data-test="studio-background-select" (change)="setBackgroundIndex(+$any($event.target).value)">
+              <option value="-1">Нет</option>
+              @for (url of backgroundImages(); track $index) { <option [value]="$index">Фон {{ $index + 1 }}</option> }
+            </select>
+          </label>
+          <label class="page-geometry-control">Прозрачность
+            <input type="range" min="0" max="1" step="0.05" [value]="backgroundOpacity()" (input)="setBackgroundOpacity(+$any($event.target).value)" />
+          </label>
           <button
             type="button"
             class="kp-ws-ribbon-btn"
@@ -420,6 +429,8 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
       text-align: center;
       line-height: 1;
     }
+    .page-geometry-control { display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--color-muted-foreground); }
+    .page-geometry-control select { max-width:90px; }
     .studio-canvas-host {
       position: relative; width: 100%; height: 100%; min-height: 0;
       background: #fff;
@@ -546,6 +557,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly panelSide = computed(() => studioPanelSide(this.activeSection()));
 
   readonly pageNumbering = computed(() => this.document()?.pageNumbering === true);
+  readonly backgroundImages = computed(() => this.document()?.backgroundImage ?? []);
+  readonly backgroundIndex = computed(() => this.document()?.defaultBackgroundIndex ?? -1);
+  readonly backgroundOpacity = computed(() => this.document()?.backgroundOpacity ?? 0.3);
 
   readonly pageCount = computed(() => {
     const doc = this.document();
@@ -738,6 +752,23 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   openDocumentList(): void {
     void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
+  }
+
+  setBackgroundIndex(index: number): void {
+    const doc = this.document();
+    if (!doc) return;
+    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, defaultBackgroundIndex: index })).then((r) => {
+      if (r.ok) this.document.set(r.data); else this.conflict();
+    });
+  }
+
+  setBackgroundOpacity(opacity: number): void {
+    const doc = this.document();
+    if (!doc || !Number.isFinite(opacity)) return;
+    const value = Math.min(1, Math.max(0, opacity));
+    void firstValueFrom(this.documents.update(doc._id, { expectedRevision: doc.revision ?? 1, backgroundOpacity: value })).then((r) => {
+      if (r.ok) this.document.set(r.data); else this.conflict();
+    });
   }
 
   togglePageNumbering(enabled: boolean): void {

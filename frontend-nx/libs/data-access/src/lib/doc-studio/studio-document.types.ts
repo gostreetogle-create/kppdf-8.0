@@ -2,6 +2,18 @@ export type StudioDocumentStatus = 'draft' | 'published' | 'archived' | string;
 export type StudioDocumentOrientation = 'portrait' | 'landscape';
 export type StudioDocumentPageSize = 'A4' | 'A3' | string;
 
+export interface StudioPageMargins {
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+  readonly left: number;
+}
+
+export interface StudioSheetLayout {
+  readonly rowsFirstPage: number;
+  readonly rowsNextPage: number;
+}
+
 export type StudioDataSetSourceType = 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials' | string;
 
 export interface StudioDataSetPayload {
@@ -22,6 +34,11 @@ export interface StudioDocument {
   readonly organizationId?: string;
   readonly manualPageCount?: number;
   readonly pageNumbering?: boolean;
+  readonly backgroundImage?: readonly string[];
+  readonly defaultBackgroundIndex?: number;
+  readonly backgroundOpacity?: number;
+  readonly pageMargins?: StudioPageMargins;
+  readonly sheetLayout?: StudioSheetLayout;
   readonly context?: Record<string, unknown>;
   readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;
@@ -46,6 +63,11 @@ export interface UpdateStudioDocumentPayload {
   readonly status?: StudioDocumentStatus;
   readonly manualPageCount?: number;
   readonly pageNumbering?: boolean;
+  readonly backgroundImage?: readonly string[];
+  readonly defaultBackgroundIndex?: number;
+  readonly backgroundOpacity?: number;
+  readonly pageMargins?: StudioPageMargins;
+  readonly sheetLayout?: StudioSheetLayout;
   readonly context?: Record<string, unknown>;
   readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;

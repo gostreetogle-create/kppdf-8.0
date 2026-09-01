@@ -34,6 +34,26 @@ export class StudioDocument {
   @Prop({ default: 0.3 })
   backgroundOpacity!: number;
 
+  @Prop({
+    type: {
+      top: { type: Number, min: 0, max: 50, default: 0 },
+      right: { type: Number, min: 0, max: 50, default: 0 },
+      bottom: { type: Number, min: 0, max: 50, default: 0 },
+      left: { type: Number, min: 0, max: 50, default: 0 },
+    },
+    default: { top: 0, right: 0, bottom: 0, left: 0 },
+  })
+  pageMargins!: { top: number; right: number; bottom: number; left: number };
+
+  @Prop({
+    type: {
+      rowsFirstPage: { type: Number, min: 0, max: 200, default: 0 },
+      rowsNextPage: { type: Number, min: 0, max: 200, default: 0 },
+    },
+    default: { rowsFirstPage: 0, rowsNextPage: 0 },
+  })
+  sheetLayout!: { rowsFirstPage: number; rowsNextPage: number };
+
   @Prop({ default: false })
   pageNumbering!: boolean;
 

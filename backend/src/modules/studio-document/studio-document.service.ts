@@ -164,6 +164,8 @@ export class StudioDocumentService {
       backgroundImage: dto.backgroundImage ?? [],
       defaultBackgroundIndex: dto.defaultBackgroundIndex ?? -1,
       backgroundOpacity: dto.backgroundOpacity ?? 0.3,
+      pageMargins: dto.pageMargins ?? { top: 0, right: 0, bottom: 0, left: 0 },
+      sheetLayout: dto.sheetLayout ?? { rowsFirstPage: 0, rowsNextPage: 0 },
       pageNumbering: dto.pageNumbering ?? false,
       manualPageCount: dto.manualPageCount ?? 1,
       context: dto.context ?? {},
@@ -235,6 +237,8 @@ export class StudioDocumentService {
       doc.defaultBackgroundIndex = dto.defaultBackgroundIndex;
     }
     if (dto.backgroundOpacity !== undefined) doc.backgroundOpacity = dto.backgroundOpacity;
+    if (dto.pageMargins !== undefined) doc.pageMargins = dto.pageMargins;
+    if (dto.sheetLayout !== undefined) doc.sheetLayout = dto.sheetLayout;
     if (dto.pageNumbering !== undefined) doc.pageNumbering = dto.pageNumbering;
     if (dto.manualPageCount !== undefined) doc.manualPageCount = dto.manualPageCount;
     if (dto.context !== undefined) doc.context = dto.context;

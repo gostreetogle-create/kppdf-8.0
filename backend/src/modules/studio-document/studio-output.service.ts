@@ -139,6 +139,8 @@ export class StudioOutputService {
         backgroundImage: doc.backgroundImage,
         defaultBackgroundIndex: doc.defaultBackgroundIndex,
         backgroundOpacity: doc.backgroundOpacity,
+        pageMargins: doc.pageMargins,
+        sheetLayout: doc.sheetLayout,
         pageNumbering: doc.pageNumbering,
         manualPageCount: doc.manualPageCount,
       },
@@ -186,6 +188,7 @@ export class StudioOutputService {
       dataSets,
       backgroundImages: doc.backgroundImage ?? [],
       defaultBackgroundIndex: doc.defaultBackgroundIndex ?? -1,
+      sheetLayout: doc.sheetLayout,
     });
     const pageBlocks = pagePlan.map((page) => page.blocks);
     const backgroundPageIndices = pagePlan.map((page) =>

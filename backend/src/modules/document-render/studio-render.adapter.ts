@@ -10,6 +10,8 @@ export interface StudioDocumentRenderSlice {
   backgroundImage?: string[];
   defaultBackgroundIndex?: number;
   backgroundOpacity?: number;
+  pageMargins?: { top: number; right: number; bottom: number; left: number };
+  sheetLayout?: { rowsFirstPage: number; rowsNextPage: number };
   pageNumbering?: boolean;
   manualPageCount?: number;
 }
@@ -47,8 +49,10 @@ export function studioAggregateToRenderInput(
     backgroundImage: doc.backgroundImage ?? [],
     defaultBackgroundIndex: doc.defaultBackgroundIndex ?? -1,
     backgroundOpacity: doc.backgroundOpacity ?? 0.3,
+    pageMargins: doc.pageMargins,
+    sheetLayout: doc.sheetLayout,
     pageNumbering: doc.pageNumbering ?? false,
-  } as DocumentTemplateDocument;
+  } as unknown as DocumentTemplateDocument;
 
   const data: Record<string, unknown> = {};
   const dto = aggregate.buildDto ?? {};

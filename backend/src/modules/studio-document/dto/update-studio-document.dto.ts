@@ -72,6 +72,16 @@ export class UpdateStudioDocumentDto {
   @IsBoolean()
   pageNumbering?: boolean;
 
+  @ApiPropertyOptional({ type: 'object' })
+  @IsOptional()
+  @IsObject()
+  pageMargins?: { top: number; right: number; bottom: number; left: number };
+
+  @ApiPropertyOptional({ type: 'object' })
+  @IsOptional()
+  @IsObject()
+  sheetLayout?: { rowsFirstPage: number; rowsNextPage: number };
+
   @ApiPropertyOptional({ minimum: 1 })
   @IsOptional()
   @IsNumber()

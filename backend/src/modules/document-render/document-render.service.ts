@@ -21,6 +21,7 @@ export interface RenderHtmlOptions {
   backgroundPageIndex?: number;
   /** NX Document Studio — fraction layout matches editor canvas (no content padding). */
   studioCanvas?: boolean;
+  pageMargins?: { top: number; right: number; bottom: number; left: number };
 }
 
 function isStudioPassportImageBlock(block: TemplateBlockDocument): boolean {
@@ -291,7 +292,8 @@ export class DocumentRenderService {
     template: DocumentTemplateDocument,
     studioCanvas = false,
   ): string {
-    const contentPadding = studioCanvas ? '0' : '20px';
+    const margins = (template as { pageMargins?: { top: number; right: number; bottom: number; left: number } }).pageMargins;
+    const contentPadding = studioCanvas ? '0' : margins ? `${margins.top}mm ${margins.right}mm ${margins.bottom}mm ${margins.left}mm` : '20px';
     const studioCanvasCss = studioCanvas
       ? `
         .doc-body--studio { position: relative; width: 100%; height: 100%; overflow: hidden; }
