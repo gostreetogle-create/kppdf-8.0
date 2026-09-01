@@ -171,9 +171,10 @@ export class StudioOutputService {
           buildDto[key] = val.trim();
         }
       }
-      aggregate["data"] = await this.templateService.buildSubstitutionBag(
-        buildDto as Parameters<typeof this.templateService.buildSubstitutionBag>[0],
-      );
+      aggregate["data"] = await this.templateService.buildSubstitutionBag({
+        ...buildDto,
+        anchors: (ctx['anchors'] as Record<string, unknown> | undefined) ?? {},
+      });
     } catch {
       // hydration is best-effort: render proceeds with the stub bag
     }

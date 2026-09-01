@@ -11,6 +11,14 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
   template: `
     <div data-test="studio-data-panel">
       <p class="heading">Данные</p>
+      @if (selectedAnchors().length > 0) {
+        <div class="selected" data-test="studio-selected-anchors">
+          <dt class="label">Выбрано</dt>
+          @for (anchor of selectedAnchors(); track anchor.key) {
+            <dd class="chip"><strong>{{ anchor.label }}</strong><span>{{ anchor.name }}</span></dd>
+          }
+        </div>
+      }
       <dl class="fields">
         <div>
           <dt class="label">Исполнитель</dt>
@@ -99,6 +107,9 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
         margin: 2px 0 0;
         color: var(--color-ink);
       }
+      .selected { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; }
+      .chip { display: flex; gap: 6px; align-items: baseline; margin: 0; padding: 5px 7px; border: 1px solid var(--color-rule); background: var(--color-paper-2); font-size: 11px; }
+      .chip strong { color: var(--color-muted-foreground-strong); }
       .error {
         margin: 8px 0 0;
         font-size: 12px;
@@ -117,6 +128,7 @@ export class StudioDataPanelComponent {
   readonly orders = input<Order[]>([]);
   readonly contextSaving = input(false);
   readonly contextSaveError = input<string | null>(null);
+  readonly selectedAnchors = input<readonly { key: string; label: string; name: string }[]>([]);
 
   readonly counterpartyChange = output<string>();
   readonly quotationChange = output<string>();

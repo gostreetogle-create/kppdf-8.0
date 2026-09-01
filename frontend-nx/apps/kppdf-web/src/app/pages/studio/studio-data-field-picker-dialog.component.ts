@@ -31,9 +31,17 @@ const CONTACT_SECTION_HEAD: Record<string, { title: string; hint: string }> = {
     title: 'Клиент (получатель)',
     hint: 'Покупатель КП — выбирается в панели Клиент',
   },
+  payer: {
+    title: 'Плательщик',
+    hint: 'Отдельный плательщик документа',
+  },
+  supplier: {
+    title: 'Поставщик',
+    hint: 'Поставщик документа',
+  },
 };
 
-const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
+const CONTACT_SOURCE_ORDER = ['organization', 'counterparty', 'payer', 'supplier'] as const;
 
 /**
  * Диалог двухшагового выбора постановочного поля (Stitch / Paper & Ink).
@@ -439,7 +447,7 @@ export class StudioDataFieldPickerDialogComponent {
 
     const contacts = map.get('contacts') ?? [];
     for (const key of CONTACT_SOURCE_ORDER) {
-      const src = contacts.find((s) => s.key === key);
+      const src = contacts.find((s) => s.key === key) ?? (key === 'payer' || key === 'supplier' ? contacts.find((s) => s.key === 'counterparty') : undefined);
       if (!src) continue;
       const section = CONTACT_SECTION_HEAD[key];
       result.push({
@@ -513,7 +521,8 @@ export class StudioDataFieldPickerDialogComponent {
   }
 
   protected token(source: string, key: string): string {
-    return `{{${source}.${key}}}`;
+    const anchorSource = ['payer', 'supplier'].includes(source) ? `anchor.${source}` : source;
+    return `{{${anchorSource}.${key}}}`;
   }
 
   protected fieldDisplayLabel(src: RegistryDataSource, field: RegistryDataField): string {

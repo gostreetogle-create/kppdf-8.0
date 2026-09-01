@@ -1594,9 +1594,36 @@ export class DocumentTemplateService {
    * merging — it is a pure data-bag builder.
    */
   async buildSubstitutionBag(
-    dto: Partial<BuildDocumentDto>,
+    dto: Partial<BuildDocumentDto> & { anchors?: Record<string, unknown> },
   ): Promise<Record<string, unknown>> {
-    return this.resolveSourceIds(dto);
+    const bag = await this.resolveSourceIds(dto);
+    const anchors = dto.anchors ?? {};
+    const anchorEntries = Object.entries(anchors);
+    for (const [anchorKey, raw] of anchorEntries) {
+      if (!raw || typeof raw !== 'object') continue;
+      const entityId = (raw as { entityId?: unknown }).entityId;
+      const entityType = (raw as { entityType?: unknown }).entityType;
+      if (typeof entityId !== 'string' || !Types.ObjectId.isValid(entityId)) continue;
+      if (anchorKey === 'client' && entityType === 'counterparty') {
+        if (!bag.counterparty) {
+          const cp = await this.counterpartyModel.findById(entityId).lean().exec();
+          if (cp) bag.counterparty = cp;
+        }
+      } else if (anchorKey === 'issuer' && entityType === 'organization') {
+        if (!bag.organization) {
+          const org = await this.orgModel.findById(entityId).lean().exec();
+          if (org) bag.organization = this.organizationRenderData(org);
+        }
+      }
+      const source = anchorKey === 'client' ? bag.counterparty : anchorKey === 'issuer' ? bag.organization : undefined;
+      if (source) {
+        bag.anchor = { ...(bag.anchor as Record<string, unknown> ?? {}), [anchorKey]: source };
+      }
+    }
+    if (bag.counterparty && !(bag.anchor as Record<string, unknown> | undefined)?.['client']) {
+      bag.anchor = { ...(bag.anchor as Record<string, unknown> ?? {}), client: bag.counterparty };
+    }
+    return bag;
   }
 
   /**

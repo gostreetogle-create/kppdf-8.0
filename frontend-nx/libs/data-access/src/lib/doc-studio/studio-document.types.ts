@@ -2,7 +2,7 @@ export type StudioDocumentStatus = 'draft' | 'published' | 'archived' | string;
 export type StudioDocumentOrientation = 'portrait' | 'landscape';
 export type StudioDocumentPageSize = 'A4' | 'A3' | string;
 
-export type StudioDataSetSourceType = 'manual' | 'quotation-items' | 'order-items' | string;
+export type StudioDataSetSourceType = 'manual' | 'quotation-items' | 'order-items' | 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials' | string;
 
 export interface StudioDataSetPayload {
   readonly source: { readonly type: StudioDataSetSourceType };
@@ -22,6 +22,7 @@ export interface StudioDocument {
   readonly organizationId?: string;
   readonly manualPageCount?: number;
   readonly context?: Record<string, unknown>;
+  readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;
   readonly dataSets?: readonly StudioDataSetPayload[];
 }
@@ -44,6 +45,7 @@ export interface UpdateStudioDocumentPayload {
   readonly status?: StudioDocumentStatus;
   readonly manualPageCount?: number;
   readonly context?: Record<string, unknown>;
+  readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;
 }
 

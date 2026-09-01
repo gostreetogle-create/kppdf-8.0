@@ -1,6 +1,7 @@
 # Реестр data anchors — Документ-студия
 
-> **Status:** Wave 0 design · **MVP UI deferred** (2026-08-29 audit)  
+> **Status:** S9 FINISH A in progress; anchors dual-read/write and anchor token bag implemented (2026-09-01)  
+> **Executor wave:** `tasks/PROMPT-FREEBUFF-DOCSTUDIO-S8-S9-MASTER.md`  
 > **ADR:** [`document-studio.md`](./document-studio.md)  
 > **Registry API:** `GET /api/registry/data-sources` — [`registry.service.ts`](../../backend/src/modules/registry/registry.service.ts)
 
@@ -20,7 +21,7 @@
 | `issuer` | Исполнитель / наша фирма | `organization` | multi | `StudioDocument.organizationId` |
 | `client` | Клиент / покупатель | `counterparty` | multi | `context.counterpartyId` |
 | `supplier` | Поставщик | `organization` \| `counterparty` | multi | manual |
-| `payer` | Плательщик | `counterparty` | multi | manual (successor) |
+| `payer` | Плательщик | `counterparty` | multi | manual (S9-A) |
 
 Legacy map: `organization` → `issuer`; `counterparty` → `client`.
 
@@ -45,7 +46,10 @@ Legacy map: `organization` → `issuer`; `counterparty` → `client`.
 | `manual` | user cells | editable |
 | `quotation-items` | `Quotation.items` | live-read → snapshot on freeze |
 | `order-items` | `Order` line items | live-read → snapshot on freeze |
-| `catalog-products` | Product list query | live-read (successor Wave 8) |
+| `catalog-products` | `context.catalogSelections.products` | live-read (S9-B) |
+| `catalog-modules` | `context.catalogSelections.modules` | live-read (S9-B) |
+| `catalog-parts` | `context.catalogSelections.parts` (Material kind=part) | live-read (S9-B) |
+| `catalog-materials` | `context.catalogSelections.materials` | live-read (S9-B) |
 
 ## Binding in blocks
 

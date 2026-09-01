@@ -11,7 +11,7 @@
 
 `pageKey`: `doc-studio` · ADR: [`../architecture/document-studio.md`](../architecture/document-studio.md) · карта переноса: [`../architecture/nx-doc-studio.md`](../architecture/nx-doc-studio.md)
 
-**Статус волны:** S2–S7 **DONE** (commit `a7b54868`, 2026-08-30). S8 — очередь на доделку: [`../../tasks/WAVE-DOCSTUDIO-S8.md`](../../tasks/WAVE-DOCSTUDIO-S8.md).
+**Статус волны:** S2–S8 **DONE**. S9 FINISH выполняется последовательно: anchors → catalog resolver sync → bindings UX. S8 — архивная волна: [`../../tasks/WAVE-DOCSTUDIO-S8.md`](../../tasks/WAVE-DOCSTUDIO-S8.md).
 
 ---
 
@@ -126,7 +126,11 @@ flowchart LR
 
 **NX gap S8-2:** нет UI «Источник строк: КП / заказ / вручную» и нет вызова `putDataSet` (в legacy — `document-studio-editor.facade.ts` + `studio-panel-table.component.ts`). Пока таблица только **ручные** строки на листе + sampleRows в settings блока.
 
-### 2.4 Связь «Данные» ↔ подстановка
+### 2.4 Якоря и связь «Данные» ↔ подстановка
+
+Контекст поддерживает `anchors.client|payer|supplier` в форме `{ entityType, entityId }`. Legacy `counterpartyId` и `anchors.client.entityId` читаются совместно; выбор клиента записывает оба поля, а Preview/PDF принимает токены `{{anchor.client.*}}` с legacy-алиасом `{{counterparty.*}}`. В панели «Данные» выбранные якоря показываются чипами с русскими ролями.
+
+
 
 | Поле в «Данные» | Поле в `context` | Влияет на |
 |-----------------|------------------|-----------|

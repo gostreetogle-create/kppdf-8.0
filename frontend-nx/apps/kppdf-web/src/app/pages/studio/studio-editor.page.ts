@@ -258,6 +258,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 [counterparties]="counterparties()"
                 [quotations]="quotations()"
                 [orders]="orders()"
+                [selectedAnchors]="selectedAnchorLabels()"
                 [contextSaving]="contextSaving()"
                 [contextSaveError]="contextSaveError()"
                 (counterpartyChange)="onCounterpartyChange($event)"
@@ -466,6 +467,26 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   });
 
   readonly propertiesBlock = computed(() => this.selectedBlock() ?? this.activeLayerBlock());
+
+  readonly selectedAnchorLabels = computed(() => {
+    const context = this.document()?.context ?? {};
+    const anchors = (context['anchors'] as Record<string, unknown> | undefined) ?? {};
+    const labels: Record<string, string> = { client: 'Клиент', payer: 'Плательщик', supplier: 'Поставщик' };
+    const result: { key: string; label: string; name: string }[] = [];
+    for (const key of Object.keys(labels)) {
+      const item = anchors[key] as Record<string, unknown> | undefined;
+      const id = typeof item?.['entityId'] === 'string' ? item['entityId'] as string : key === 'client' ? this.counterpartyId() : '';
+      if (!id) continue;
+      const cp = this.counterparties().find((candidate) => candidate._id === id);
+      const name = cp?.shortName || cp?.name || id;
+      result.push({ key, label: labels[key], name });
+    }
+    if (result.length === 0 && this.counterpartyId()) {
+      const cp = this.counterparties().find((candidate) => candidate._id === this.counterpartyId());
+      result.push({ key: 'client', label: 'Клиент', name: cp?.shortName || cp?.name || this.counterpartyId() });
+    }
+    return result;
+  });
 
   readonly counterpartyId = computed(() => {
     const raw = this.document()?.context?.['counterpartyId'];
@@ -1297,8 +1318,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const doc = this.document();
     if (!doc) return;
     const nextContext = { ...(doc.context ?? {}) };
-    if (counterpartyId) nextContext['counterpartyId'] = counterpartyId;
-    else delete nextContext['counterpartyId'];
+    if (counterpartyId) {
+      nextContext['counterpartyId'] = counterpartyId;
+      const anchors = { ...((nextContext['anchors'] as Record<string, unknown> | undefined) ?? {}) };
+      if (!anchors['client']) anchors['client'] = { entityType: 'counterparty', entityId: counterpartyId };
+      nextContext['anchors'] = anchors;
+    } else {
+      delete nextContext['counterpartyId'];
+      const anchors = { ...((nextContext['anchors'] as Record<string, unknown> | undefined) ?? {}) };
+      delete anchors['client'];
+      nextContext['anchors'] = anchors;
+    }
     this.patchDocumentContext(nextContext);
   }
 
