@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, Injector, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Injector, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
@@ -25,10 +25,18 @@ import { StudioTemplatePickerDialogComponent } from './studio-template-picker-di
       </div>
       @if (status() === 'loading') { <div class="text-sm text-muted-foreground">Загрузка…</div> }
       @if (status() === 'error') { <app-pi-status-banner tone="destructive" [message]="error()" actionLabel="Повторить" (action)="load()" /> }
-      @if (status() === 'success' && documents().length === 0) { <div class="pi-dashed-panel p-8 text-center">Документов пока нет.</div> }
-      @if (status() === 'success' && documents().length > 0) {
+      @if (status() === 'success') {
+        <div class="flex items-center gap-2 mb-3">
+          <input class="pi-input flex-1" type="search" placeholder="Поиск по названию" aria-label="Поиск документов" data-test="studio-list-search" [value]="search()" (input)="search.set($any($event.target).value)" />
+          <select class="pi-input" aria-label="Фильтр по статусу" data-test="studio-list-status" [value]="statusFilter()" (change)="statusFilter.set($any($event.target).value)">
+            <option value="all">Все статусы</option><option value="draft">Черновики</option><option value="frozen">Замороженные</option><option value="final">В архиве</option>
+          </select>
+        </div>
+      }
+      @if (status() === 'success' && filteredDocuments().length === 0) { <div class="pi-dashed-panel p-8 text-center">Документов не найдено.</div> }
+      @if (status() === 'success' && filteredDocuments().length > 0) {
         <div class="pi-table-surface hairline rounded-sm overflow-hidden bg-paper-raised">
-          @for (document of documents(); track document._id) {
+          @for (document of filteredDocuments(); track document._id) {
             <div class="flex items-center justify-between gap-4 px-4 py-3 hairline-bottom" data-test="studio-row">
               <button class="text-left pi-focus-ring" type="button" (click)="open(document)">
                 <div class="font-medium">{{ document.name }}</div>
@@ -56,6 +64,16 @@ export class StudioListPage implements OnInit {
   readonly documents = signal<readonly StudioDocument[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить документы.');
+  readonly search = signal('');
+  readonly statusFilter = signal<'all' | 'draft' | 'frozen' | 'final'>('all');
+  readonly filteredDocuments = computed(() => {
+    const query = this.search().trim().toLocaleLowerCase();
+    const filter = this.statusFilter();
+    return this.documents().filter((document) =>
+      (!query || document.name.toLocaleLowerCase().includes(query)) &&
+      (filter === 'all' || document.status === filter),
+    );
+  });
 
   ngOnInit(): void { this.load(); }
   load(): void {
