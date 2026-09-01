@@ -78,11 +78,23 @@
           </div>
         </div>
         <div class="kp-ws-viewport__toolbar">
-          <button type="button" class="kp-ws-ribbon-btn" disabled aria-disabled="true">
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-zoom-fit"
+            [class.kp-ws-ribbon-btn--active]="zoomMode() === 'fit'"
+            (click)="fitZoom.emit()"
+          >
             <lucide-angular [img]="maximizeIcon" [size]="10" aria-hidden="true" />
             Fit
           </button>
-          <button type="button" class="kp-ws-ribbon-btn" disabled aria-disabled="true">100%</button>
+          <button
+            type="button"
+            class="kp-ws-ribbon-btn"
+            data-test="studio-zoom-100"
+            [class.kp-ws-ribbon-btn--active]="zoomMode() === '100'"
+            (click)="actualZoom.emit()"
+          >100%</button>
           <button type="button" class="kp-ws-ribbon-btn">{{ pageLabel() }}</button>
         </div>
       </main>

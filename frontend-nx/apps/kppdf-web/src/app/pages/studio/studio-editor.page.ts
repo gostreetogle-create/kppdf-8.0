@@ -129,6 +129,9 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
         [statusText]="statusText()"
         [pageLabel]="currentPage() + ' / ' + pageCount()"
         [sheetHost]="false"
+        [zoomMode]="zoomMode()"
+        (fitZoom)="setZoomMode('fit')"
+        (actualZoom)="setZoomMode('100')"
         (sectionChange)="onSection($event)"
         (panelToggle)="togglePanel()"
         (sheetClick)="onSheetClick()"
@@ -461,6 +464,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly previewError = signal<string | null>(null);
   readonly currentPage = signal(1);
   readonly sheetSize = signal({ width: 800, height: 566 });
+  readonly zoomMode = signal<'fit' | '100'>('fit');
   readonly templateSaving = signal(false);
   readonly docTypes = signal<DocType[]>([]);
   readonly docTypeSaving = signal(false);
@@ -726,6 +730,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   togglePanel(): void {
     this.panelCollapsed.update((v) => !v);
+  }
+
+  setZoomMode(mode: 'fit' | '100'): void {
+    this.zoomMode.set(mode);
+    this.syncSheetSize();
   }
 
   setViewMode(mode: 'editor' | 'preview'): void {
@@ -1714,10 +1723,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const el = this.sheetHostRef()?.nativeElement;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    this.sheetSize.set({
-      width: Math.max(1, Math.round(rect.width)),
-      height: Math.max(1, Math.round(rect.height)),
-    });
+    const fitWidth = Math.max(1, Math.round(rect.width));
+    const fitHeight = Math.max(1, Math.round(rect.height));
+    if (this.zoomMode() === '100') {
+      this.sheetSize.set({ width: 794, height: 1123 });
+    } else {
+      this.sheetSize.set({ width: fitWidth, height: fitHeight });
+    }
   }
 
   private nextZIndex(): number {

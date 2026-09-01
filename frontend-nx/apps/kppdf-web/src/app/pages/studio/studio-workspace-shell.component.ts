@@ -36,6 +36,10 @@ export class StudioWorkspaceShellComponent {
   readonly sheetHost = input(false);
   readonly showDesktopRail = input(true);
   readonly pageLabel = input('1 / 1');
+  readonly zoomMode = input<'fit' | '100'>('fit');
+
+  readonly fitZoom = output<void>();
+  readonly actualZoom = output<void>();
 
   readonly sectionChange = output<string>();
   readonly panelToggle = output<void>();
