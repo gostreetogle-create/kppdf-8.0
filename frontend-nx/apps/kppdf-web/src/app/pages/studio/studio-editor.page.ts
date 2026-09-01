@@ -1177,7 +1177,9 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const block = this.activeTableBlock();
     const doc = this.document();
     if (!block || !doc) return;
-    const dataSet = { source: { type: source }, rows: [] };
+    const catalogKey = source.startsWith('catalog-') ? source.slice('catalog-'.length) : '';
+    const selectedCount = catalogKey ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length : 0;
+    const dataSet = { source: { type: source }, rows: [], catalogSelectionCount: selectedCount };
     this.blocks.update((blocks) => blocks.map((item) => item._id === block._id
       ? { ...item, settings: { ...(item.settings ?? {}), dataSource: { type: source } } }
       : item));
@@ -1187,7 +1189,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     })).then((result) => {
       if (result.ok) {
         this.document.set(result.data);
-        this.toast.success(source === 'manual' ? 'Источник строк: вручную' : `Источник строк: ${source === 'quotation-items' ? 'КП' : 'заказ'}`);
+        const sourceLabel = source === 'manual' ? 'вручную' : source === 'quotation-items' ? 'КП' : source === 'order-items' ? 'заказ' : 'витрина';
+        this.toast.success(`Источник строк: ${sourceLabel}`);
         this.refreshPreviewIfActive();
       } else {
         this.conflict();
@@ -1312,6 +1315,15 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const next = { ...this.catalogSelections(), [change.kind]: change.ids };
     this.catalogSelections.set(next);
     this.patchDocumentContext({ ...(doc.context ?? {}), catalogSelections: next });
+    const matchingSource = `catalog-${change.kind}` as 'catalog-products' | 'catalog-modules' | 'catalog-parts' | 'catalog-materials';
+    for (const block of this.blocks().filter((item) => item.type === 'table')) {
+      const source = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      if (source !== matchingSource) continue;
+      void firstValueFrom(this.documents.putDataSet(doc._id, `table-${block._id}`, {
+        expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
+        dataSet: { source: { type: source }, rows: [], catalogSelectionCount: change.ids.length },
+      })).then((result) => { if (result.ok) this.document.set(result.data); else this.conflict(); });
+    }
   }
 
   onCounterpartyChange(counterpartyId: string): void {

@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Product, ProductSchema } from '../product/product.schema';
+import { ProductModule as ProductModuleEntity, ProductModuleSchema } from '../product-module/product-module.schema';
+import { Material, MaterialSchema } from '../material/material.schema';
 import {
   Organization,
   OrganizationSchema,
@@ -29,6 +32,9 @@ import { StudioDataResolverService } from './studio-data-resolver';
     MongooseModule.forFeature([
       { name: StudioDocument.name, schema: StudioDocumentSchema },
       { name: Organization.name, schema: OrganizationSchema },
+      { name: Product.name, schema: ProductSchema },
+      { name: ProductModuleEntity.name, schema: ProductModuleSchema },
+      { name: Material.name, schema: MaterialSchema },
     ]),
     TemplateBlockModule,
     DocumentTemplateModule,

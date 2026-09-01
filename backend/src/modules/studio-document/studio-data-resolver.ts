@@ -1,4 +1,9 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+import { Product, ProductDocument } from '../product/product.schema';
+import { ProductModule, ProductModuleDocument } from '../product-module/product-module.schema';
+import { Material, MaterialDocument } from '../material/material.schema';
 import type { QuotationItem } from '../quotation/quotation.schema';
 import { QuotationService } from '../quotation/quotation.service';
 import type { OrderItem } from '../order/order.schema';
@@ -10,7 +15,11 @@ import { escapeHtmlValue } from '../document-render/document-render.utils';
 export type DataSetSourceType =
   | 'manual'
   | 'quotation-items'
-  | 'order-items';
+  | 'order-items'
+  | 'catalog-products'
+  | 'catalog-modules'
+  | 'catalog-parts'
+  | 'catalog-materials';
 
 export type StudioTableColumn = {
   key: string;
@@ -52,7 +61,7 @@ function refId(value: unknown): string {
 
 function sourceType(entry: DataSetEntry): DataSetSourceType {
   const raw = entry.source?.type;
-  if (raw === 'quotation-items' || raw === 'order-items') return raw;
+  if (raw === 'quotation-items' || raw === 'order-items' || raw === 'catalog-products' || raw === 'catalog-modules' || raw === 'catalog-parts' || raw === 'catalog-materials') return raw;
   return 'manual';
 }
 
@@ -230,6 +239,9 @@ export class StudioDataResolverService {
   constructor(
     private readonly quotationService: QuotationService,
     private readonly orderService: OrderService,
+    @InjectModel(Product.name) private readonly productModel: Model<ProductDocument>,
+    @InjectModel(ProductModule.name) private readonly moduleModel: Model<ProductModuleDocument>,
+    @InjectModel(Material.name) private readonly materialModel: Model<MaterialDocument>,
   ) {}
 
   async resolveDataSets(
@@ -348,6 +360,33 @@ export class StudioDataResolverService {
         );
       }
       return mapLineItemsToRows((order.items ?? []) as OrderItem[], columns);
+    }
+
+    if (type.startsWith('catalog-')) {
+      const kind = type.slice('catalog-'.length);
+      const selections = (context['catalogSelections'] as Record<string, unknown> | undefined) ?? {};
+      const rawIds = selections[kind];
+      if (!Array.isArray(rawIds)) return [];
+      const ids = rawIds.filter((id): id is string => typeof id === 'string' && Types.ObjectId.isValid(id)).map((id) => new Types.ObjectId(id));
+      if (ids.length === 0) return [];
+      const filter: Record<string, unknown> = { _id: { $in: ids }, deletedAt: null };
+      if (kind === 'parts') filter.materialKind = 'part';
+      if (kind === 'materials') filter.materialKind = { $ne: 'part' };
+      const scopeFilter = { ...filter, $or: [{ organizationId: new Types.ObjectId(organizationId) }, { organizationId: null }, { organizationId: { $exists: false } }] };
+      const docs: Array<Record<string, unknown>> = kind === 'products'
+        ? await this.productModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>
+        : kind === 'modules'
+          ? await this.moduleModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>
+          : await this.materialModel.find(scopeFilter).lean().exec() as unknown as Array<Record<string, unknown>>;
+      const byId = new Map(docs.map((doc) => [String(doc._id), doc]));
+      return ids.filter((id) => byId.has(String(id))).map((id) => {
+        const item = byId.get(String(id)) as Record<string, unknown>;
+        const name = String(item['name'] ?? item['sku'] ?? item['article'] ?? '');
+        const sku = String(item['sku'] ?? item['article'] ?? '');
+        const unit = String(item['unit'] ?? 'шт');
+        const price = Number(item['listPrice'] ?? item['basePrice'] ?? item['pricePerUnit'] ?? 0);
+        return mapLineItemsToRows([{ productName: name, productSku: sku, unit, quantity: 1, unitPrice: price, total: price }], columns)[0] ?? [];
+      });
     }
 
     return null;

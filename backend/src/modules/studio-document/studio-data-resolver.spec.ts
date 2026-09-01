@@ -122,10 +122,16 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
       }),
     };
     const orderService = { findById: jest.fn() };
+    const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+    const moduleModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
+    const materialModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([]) }) };
     return {
       service: new StudioDataResolverService(
         quotationService as never,
         orderService as never,
+        productModel as never,
+        moduleModel as never,
+        materialModel as never,
       ),
       quotationService,
     };
@@ -153,6 +159,15 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
     expect(resolved[0]).toMatchObject({
       rows: [['Кресло', '3', '200']],
     });
+  });
+
+  it('resolves selected catalog products into rows', async () => {
+    const { service } = createResolver();
+    const product = new Types.ObjectId();
+    const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
+    const resolver = new StudioDataResolverService({ findById: jest.fn() } as never, { findById: jest.fn() } as never, productModel as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
+    const resolved = await resolver.resolveDataSets({ organizationId: orgId, context: { catalogSelections: { products: [product.toString()] } }, dataSets: [{ key: `table-${blockId}`, source: { type: 'catalog-products' }, rows: [] }] } as never, [tableBlock], true);
+    expect(resolved[0]).toMatchObject({ rows: [['Стол', '1', '1200']] });
   });
 
   it('bakeSnapshot converts ERP source to manual with rows', async () => {
