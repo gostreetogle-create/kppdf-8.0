@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
-import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
+import type { Counterparty, Order, Quotation, QuotationStatus } from '@kppdf/data-access';
 
 @Component({
   selector: 'pi-studio-data-panel',
@@ -101,6 +101,25 @@ import type { Counterparty, Order, Quotation } from '@kppdf/data-access';
             </app-pi-select>
           </app-pi-form-field>
         </div>
+        @if (showKpStatus()) {
+          <div>
+            <app-pi-form-field label="Статус КП" htmlFor="studio-quotation-status-select">
+              <app-pi-select
+                id="studio-quotation-status-select"
+                size="sm"
+                ariaLabel="Статус КП"
+                [disabled]="contextSaving()"
+                [value]="quotationStatus() || 'draft'"
+                (valueChange)="onQuotationStatusSelect($event)"
+                data-test="studio-quotation-status-select"
+              >
+                <app-pi-select-option value="draft">Черновик</app-pi-select-option>
+                <app-pi-select-option value="sent">На проверке</app-pi-select-option>
+                <app-pi-select-option value="accepted">Принято</app-pi-select-option>
+              </app-pi-select>
+            </app-pi-form-field>
+          </div>
+        }
         <div>
           <app-pi-form-field label="Заказ" htmlFor="studio-order-select">
             <app-pi-select
@@ -172,11 +191,19 @@ export class StudioDataPanelComponent {
   readonly contextSaveError = input<string | null>(null);
   readonly selectedAnchors = input<readonly { key: string; label: string; name: string }[]>([]);
   readonly catalogChips = input<readonly { key: string; label: string; count: number }[]>([]);
+  readonly showKpStatus = input(false);
+  readonly quotationStatus = input<QuotationStatus | ''>('');
 
   readonly counterpartyChange = output<string>();
   readonly quotationChange = output<string>();
+  readonly quotationStatusChange = output<QuotationStatus>();
   readonly orderChange = output<string>();
   readonly payerChange = output<string>();
   readonly supplierChange = output<string>();
   readonly catalogRemove = output<string>();
+
+  protected onQuotationStatusSelect(value: string | null): void {
+    const status = (value ?? 'draft') as QuotationStatus;
+    this.quotationStatusChange.emit(status);
+  }
 }

@@ -101,4 +101,31 @@ export class PiStudioDocumentsService {
   downloadPdf(id: string): Observable<Blob> {
     return this.http.post(`${this.baseUrl}/studio-documents/${id}/pdf`, {}, { responseType: 'blob' });
   }
+
+  ensureQuotation(id: string): Observable<SilentResult<{ studioDocument: StudioDocument; quotation: unknown }>> {
+    return silentPost<{ studioDocument: StudioDocument; quotation: unknown }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/ensure-quotation`,
+      {},
+    );
+  }
+
+  syncQuotation(id: string): Observable<SilentResult<{ studioDocument: StudioDocument; quotation: unknown }>> {
+    return silentPost<{ studioDocument: StudioDocument; quotation: unknown }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/sync-quotation`,
+      {},
+    );
+  }
+
+  updateQuotationStatus(
+    id: string,
+    status: string,
+  ): Observable<SilentResult<{ studioDocument: StudioDocument; quotation: unknown }>> {
+    return silentPatch<{ studioDocument: StudioDocument; quotation: unknown }>(
+      this.http,
+      `${this.baseUrl}/studio-documents/${id}/quotation-status`,
+      { status },
+    );
+  }
 }

@@ -19,8 +19,10 @@ import { DocumentRenderModule } from '../document-render/document-render.module'
 import { GeneratedDocumentModule } from '../generated-document/generated-document.module';
 import { QuotationModule } from '../quotation/quotation.module';
 import { OrderModule } from '../order/order.module';
+import { DocType, DocTypeSchema } from '../doc-type/doc-type.schema';
 import { StudioOutputService } from './studio-output.service';
 import { StudioDataResolverService } from './studio-data-resolver';
+import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.service';
 
 /**
  * TZ-DOC-STUDIO-201b — StudioDocument module (persistence + org scope + revision API).
@@ -35,6 +37,7 @@ import { StudioDataResolverService } from './studio-data-resolver';
       { name: Product.name, schema: ProductSchema },
       { name: ProductModuleEntity.name, schema: ProductModuleSchema },
       { name: Material.name, schema: MaterialSchema },
+      { name: DocType.name, schema: DocTypeSchema },
     ]),
     TemplateBlockModule,
     DocumentTemplateModule,
@@ -44,7 +47,7 @@ import { StudioDataResolverService } from './studio-data-resolver';
     OrderModule,
   ],
   controllers: [StudioDocumentController],
-  providers: [StudioDocumentService, StudioOutputService, StudioDataResolverService],
+  providers: [StudioDocumentService, StudioOutputService, StudioDataResolverService, StudioQuotationLifecycleService],
   exports: [StudioDocumentService, MongooseModule],
 })
 export class StudioDocumentModule {}

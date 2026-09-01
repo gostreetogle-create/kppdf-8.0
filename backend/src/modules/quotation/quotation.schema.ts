@@ -310,6 +310,10 @@ export class Quotation {
   /** Заказ, из которого выросла заглушка (обратная связь к `Order.quotationId`). */
   @Prop({ type: Types.ObjectId, ref: 'Order', index: true, sparse: true })
   sourceOrderId?: Types.ObjectId;
+
+  /** Linked studio document for KP lifecycle (TZ-NX-DOCSTUDIO-S20). */
+  @Prop({ type: Types.ObjectId, ref: 'StudioDocument', index: true, sparse: true })
+  studioDocumentId?: Types.ObjectId;
 }
 
 export const QuotationSchema = SchemaFactory.createForClass(Quotation);

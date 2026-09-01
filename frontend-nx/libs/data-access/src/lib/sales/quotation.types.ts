@@ -24,5 +24,7 @@ export type UpdateQuotationPayload = Partial<CreateQuotationPayload>;
 export interface Quotation {
   readonly _id: string;
   readonly number: string;
+  readonly status?: QuotationStatus;
+  readonly studioDocumentId?: string;
   readonly counterpartyId?: string | { readonly _id: string; readonly name?: string };
 }

@@ -43,6 +43,7 @@ export interface StudioDocument {
   readonly context?: Record<string, unknown>;
   readonly dataAnchors?: readonly Record<string, unknown>[];
   readonly docTypeId?: string;
+  readonly linkedQuotationId?: string;
   readonly dataSets?: readonly StudioDataSetPayload[];
 }
 

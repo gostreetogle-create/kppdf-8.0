@@ -34,6 +34,8 @@ import { UpdateStudioBlockLayoutsDto } from './dto/update-studio-block-layouts.d
 import { ReorderStudioBlocksDto } from './dto/reorder-studio-blocks.dto';
 import { TemplateBlockService } from '../template-block/template-block.service';
 import { StudioOutputService } from './studio-output.service';
+import { StudioQuotationLifecycleService } from './studio-quotation-lifecycle.service';
+import { UpdateStudioQuotationStatusDto } from './dto/update-studio-quotation-status.dto';
 
 /**
  * TZ-DOC-STUDIO-201b — REST surface for StudioDocument (org-scoped, revision gate).
@@ -48,6 +50,7 @@ export class StudioDocumentController {
     private readonly service: StudioDocumentService,
     private readonly blockService: TemplateBlockService,
     private readonly output: StudioOutputService,
+    private readonly quotationLifecycle: StudioQuotationLifecycleService,
   ) {}
 
   @Get()
@@ -233,6 +236,45 @@ export class StudioDocumentController {
   @ApiOperation({ summary: 'Render studio document preview HTML (Wave 9)' })
   preview(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.output.preview(id, user);
+  }
+
+  @Post(':id/ensure-quotation')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'ensure-quotation', entityType: 'StudioDocument', idParam: 'id' })
+  @ApiOperation({ summary: 'Ensure linked draft Quotation for KP studio document (S20)' })
+  async ensureQuotation(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    const doc = await this.service.findById(id, user.organizationId);
+    const result = await this.quotationLifecycle.ensureLinkedQuotation(doc, user.organizationId!);
+    return { studioDocument: result.doc, quotation: result.quotation };
+  }
+
+  @Post(':id/sync-quotation')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'sync-quotation', entityType: 'StudioDocument', idParam: 'id' })
+  @ApiOperation({ summary: 'Sync Quotation items from studio data resolver (S20)' })
+  async syncQuotation(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    const doc = await this.service.findById(id, user.organizationId);
+    const quotation = await this.quotationLifecycle.syncQuotationItems(doc, user.organizationId!);
+    return { studioDocument: doc, quotation };
+  }
+
+  @Patch(':id/quotation-status')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'update-quotation-status', entityType: 'StudioDocument', idParam: 'id' })
+  @ApiOperation({ summary: 'Update linked Quotation status from studio (S20)' })
+  async updateQuotationStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateStudioQuotationStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const doc = await this.service.findById(id, user.organizationId);
+    const quotation = await this.quotationLifecycle.updateQuotationStatus(
+      doc,
+      dto.status,
+      user.organizationId!,
+    );
+    const refreshed = await this.service.findById(id, user.organizationId);
+    return { studioDocument: refreshed, quotation };
   }
 
   @Post(':id/finalize')

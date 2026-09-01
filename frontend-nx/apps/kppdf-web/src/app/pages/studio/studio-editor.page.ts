@@ -39,6 +39,7 @@ import {
   type DocType,
   type Order,
   type Quotation,
+  type QuotationStatus,
   type StudioBlock,
   type StudioBlockLayout,
   type StudioBlockStyle,
@@ -237,12 +238,14 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 [catalogChips]="catalogChipLabels()"
                 [contextSaving]="contextSaving()"
                 [contextSaveError]="contextSaveError()"
+                [showKpStatus]="isKpDoc()"
+                [quotationStatus]="linkedQuotationStatus()"
                 (counterpartyChange)="onCounterpartyChange($event)"
                 (payerChange)="onAnchorChange('payer', $event)"
                 (supplierChange)="onAnchorChange('supplier', $event)"
                 (catalogRemove)="removeCatalogChip($event)"
-                (catalogSelectionChange)="onCatalogSelectionChange($event)"
                 (quotationChange)="onQuotationChange($event)"
+                (quotationStatusChange)="onQuotationStatusChange($event)"
                 (orderChange)="onOrderChange($event)"
               />
             }
@@ -515,6 +518,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const raw = this.document()?.docTypeId;
     return typeof raw === 'string' ? raw : '';
   });
+  readonly isKpDoc = computed(() => {
+    const id = this.docTypeId();
+    if (!id) return false;
+    const docType = this.docTypes().find((item) => item._id === id);
+    return docType?.slug === 'proposal' || docType?.name === 'КП';
+  });
+  readonly linkedQuotationStatus = signal<QuotationStatus>('draft');
 
   readonly panelSide = computed(() => studioPanelSide(this.activeSection()));
 
@@ -576,6 +586,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         if (r.ok) {
           rememberStudioDocument(r.data._id);
           this.document.set(r.data);
+          this.refreshLinkedQuotationStatus(r.data);
           const selections = r.data.context?.['catalogSelections'];
           if (selections && typeof selections === 'object') {
             this.catalogSelections.set({
@@ -601,6 +612,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               this.panelCollapsed.set(false);
             }
           });
+          const routeQuotationId = this.route.snapshot.queryParamMap.get('quotationId');
+          if (routeQuotationId && !this.quotationId()) {
+            this.onQuotationChange(routeQuotationId);
+          }
         }
       });
     }
@@ -636,6 +651,12 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     if (typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.syncSheetSize());
     }
+
+    effect(() => {
+      const doc = this.document();
+      if (!doc || !this.isKpDoc() || this.quotationId()) return;
+      this.ensureLinkedQuotation(doc._id);
+    });
 
     effect(() => {
       const section = this.activeSection();
@@ -1453,9 +1474,76 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       this.docTypeSaving.set(false);
       if (r.ok) {
         this.document.set(r.data);
+        const docType = this.docTypes().find((item) => item._id === docTypeId);
+        if (docType?.slug === 'proposal' || docType?.name === 'КП') {
+          void this.ensureLinkedQuotation(r.data._id);
+        }
       } else {
         this.conflict();
       }
+    });
+  }
+
+  onQuotationStatusChange(status: QuotationStatus): void {
+    const doc = this.document();
+    if (!doc || !this.isKpDoc()) return;
+    this.contextSaving.set(true);
+    this.contextSaveError.set(null);
+    void firstValueFrom(this.documents.updateQuotationStatus(doc._id, status)).then((r) => {
+      this.contextSaving.set(false);
+      if (r.ok) {
+        this.document.set(r.data.studioDocument);
+        this.linkedQuotationStatus.set(status);
+        this.toast.success('Статус КП обновлён');
+        this.refreshPreviewIfActive();
+        void this.reloadQuotations();
+      } else {
+        this.contextSaveError.set(extractErrorMessage(r.error));
+        this.toast.error(extractErrorMessage(r.error));
+      }
+    });
+  }
+
+  private ensureLinkedQuotation(documentId: string): void {
+    void firstValueFrom(this.documents.ensureQuotation(documentId)).then((r) => {
+      if (!r.ok) {
+        this.toast.error(extractErrorMessage(r.error));
+        return;
+      }
+      this.document.set(r.data.studioDocument);
+      const quotation = r.data.quotation as Quotation | null;
+      if (quotation?.status) this.linkedQuotationStatus.set(quotation.status);
+      void this.reloadQuotations();
+    });
+  }
+
+  private syncKpQuotationItems(): void {
+    const doc = this.document();
+    if (!doc || !this.isKpDoc() || !this.quotationId()) return;
+    void firstValueFrom(this.documents.syncQuotation(doc._id)).then((result) => {
+      if (result.ok) {
+        const quotation = result.data.quotation as Quotation | null;
+        if (quotation?.status) this.linkedQuotationStatus.set(quotation.status);
+        void this.reloadQuotations();
+      }
+    });
+  }
+
+  private refreshLinkedQuotationStatus(doc: StudioDocument): void {
+    const linkedId = doc.linkedQuotationId
+      ?? (typeof doc.context?.['quotationId'] === 'string' ? doc.context['quotationId'] : '');
+    if (!linkedId) {
+      this.linkedQuotationStatus.set('draft');
+      return;
+    }
+    void firstValueFrom(this.quotationsApi.getById(linkedId)).then((r) => {
+      if (r.ok && r.data.status) this.linkedQuotationStatus.set(r.data.status);
+    });
+  }
+
+  private reloadQuotations(): void {
+    void firstValueFrom(this.quotationsApi.list()).then((res) => {
+      if (res.ok) this.quotations.set(res.data ?? []);
     });
   }
 
@@ -1585,6 +1673,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.document.set(r.data);
         this.refreshPreviewIfActive();
+        this.syncKpQuotationItems();
       } else {
         this.contextSaveError.set(extractErrorMessage(r.error));
         this.conflict();

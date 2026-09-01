@@ -159,6 +159,7 @@ export class CreateQuotationDto {
   terms?: QuotationTermDto[];
 
   @IsOptional() @IsObjectId() templateId?: string;
+  @IsOptional() @IsObjectId() studioDocumentId?: string;
   @IsOptional() designSnapshot?: Record<string, unknown>;
   @IsOptional() templateSnapshot?: Record<string, unknown>;
 

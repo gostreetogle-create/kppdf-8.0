@@ -93,6 +93,9 @@ export class QuotationService {
       templateId: dto.templateId
         ? new Types.ObjectId(dto.templateId)
         : undefined,
+      studioDocumentId: dto.studioDocumentId
+        ? new Types.ObjectId(dto.studioDocumentId)
+        : undefined,
       designSnapshot: dto.designSnapshot,
       templateSnapshot: dto.templateSnapshot,
       sheetLayout: this.mapSheetLayout(dto.sheetLayout),

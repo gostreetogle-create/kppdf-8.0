@@ -16,6 +16,9 @@ export class StudioDocument {
   @Prop({ type: Types.ObjectId, ref: 'DocType', index: true })
   docTypeId?: Types.ObjectId;
 
+  @Prop({ type: Types.ObjectId, ref: 'Quotation', index: true })
+  linkedQuotationId?: Types.ObjectId;
+
   @Prop({ type: Types.ObjectId, ref: 'DocumentTemplate', index: true })
   sourceTemplateId?: Types.ObjectId;
 

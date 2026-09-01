@@ -48,6 +48,14 @@ export const appRoutes: Route[] = [
         path: 'studio',
         children: STUDIO_ROUTES,
       },
+      {
+        path: 'proposals',
+        children: [
+          { path: '', pathMatch: 'full', redirectTo: 'list' },
+          { path: 'list', loadComponent: () => import('./pages/proposals/proposals-list.page').then((m) => m.ProposalsListPage) },
+          { path: 'create', redirectTo: '/studio' },
+        ],
+      },
     ],
   },
   { path: 'kit',
