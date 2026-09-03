@@ -1,7 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { PiQuotationsService, PiStudioDocumentsService, type Quotation, type StudioDocument } from '@kppdf/data-access';
+import {
+  PiOrganizationsService,
+  PiQuotationsService,
+  PiStudioDocumentsService,
+  type Quotation,
+  type QuotationFamilyResponse,
+  type StudioDocument,
+} from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { BadgeComponent } from '@kppdf/ui/badge';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
@@ -54,21 +61,51 @@ const STATUS_LABELS: Record<string, string> = {
                 </div>
                 <div class="text-xs text-muted-foreground">{{ statusLabel(row.status) }}</div>
               </div>
-              <div class="flex items-center gap-2">
-                @if (row.status === 'accepted') {
-                  <button
-                    class="pi-button pi-button-primary"
-                    type="button"
-                    data-test="proposal-convert-order"
-                    (click)="convertToOrder(row)"
-                    [disabled]="convertingId() === row._id"
-                  >
-                    {{ convertingId() === row._id ? 'Преобразование…' : 'В заказ' }}
+              <div class="flex flex-col items-end gap-1">
+                <div class="flex items-center gap-2">
+                  @if (row.status === 'accepted') {
+                    <button
+                      class="pi-button pi-button-primary"
+                      type="button"
+                      data-test="proposal-convert-order"
+                      (click)="convertToOrder(row)"
+                      [disabled]="convertingId() === row._id"
+                    >
+                      {{ convertingId() === row._id ? 'Преобразование…' : 'В заказ' }}
+                    </button>
+                  }
+                  <button class="pi-button pi-button-secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
+                    В студии
                   </button>
-                }
-                <button class="pi-button pi-button-secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
-                  В студии
+                </div>
+                <button
+                  type="button"
+                  class="text-xs underline underline-offset-2 hover:text-ink disabled:opacity-40"
+                  data-test="proposal-family-expand"
+                  (click)="toggleFamily(row)"
+                >
+                  {{ expandedFamilyId() === row._id ? 'Скрыть семью' : 'Семья' }}
                 </button>
+                @if (expandedFamilyId() === row._id) {
+                  <div class="flex flex-col items-end gap-1 max-w-[18rem] text-xs" data-test="proposal-family-list">
+                    @if (familyLoadingId() === row._id) {
+                      <span class="text-muted-foreground">Загрузка…</span>
+                    } @else if (familyError()) {
+                      <app-pi-status-banner tone="destructive" [message]="familyError()" actionLabel="Повторить" (action)="reloadFamily(row)" />
+                    } @else if (familyByRow()[row._id]; as family) {
+                      @for (member of family.variants; track member.id) {
+                        <div class="flex items-center justify-end gap-2" data-test="proposal-family-member">
+                          <span class="font-medium">{{ orgNameOf(member.organizationId) }}</span>
+                          <span class="text-muted-foreground">
+                            {{ member.number }} · {{ member.orgMarkupPercent ?? 0 }}% · {{ statusLabel(member.status) }}
+                          </span>
+                        </div>
+                      } @empty {
+                        <span class="text-muted-foreground">Нет вариантов фирм</span>
+                      }
+                    }
+                  </div>
+                }
               </div>
             </div>
           }
@@ -80,6 +117,7 @@ const STATUS_LABELS: Record<string, string> = {
 export class ProposalsListPage implements OnInit {
   private readonly quotationsApi = inject(PiQuotationsService);
   private readonly studioApi = inject(PiStudioDocumentsService);
+  private readonly organizationsApi = inject(PiOrganizationsService);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
 
@@ -88,6 +126,15 @@ export class ProposalsListPage implements OnInit {
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить КП.');
   readonly convertingId = signal<string | null>(null);
+
+  /** KP family expand (S43) — one open panel at a time, per-row cache. */
+  readonly expandedFamilyId = signal<string | null>(null);
+  readonly familyByRow = signal<Record<string, QuotationFamilyResponse>>({});
+  readonly familyLoadingId = signal<string | null>(null);
+  readonly familyError = signal('');
+  readonly orgNames = signal<Record<string, string>>({});
+  private orgsLoaded = false;
+
   readonly filtered = computed(() =>
     this.rows().filter(
       (row) => row.status !== 'cancelled' && (row.familyRole ?? 'solo') !== 'variant',
@@ -117,6 +164,61 @@ export class ProposalsListPage implements OnInit {
 
   statusLabel(status?: string): string {
     return status ? (STATUS_LABELS[status] ?? status) : '—';
+  }
+
+  /** S43 — org display name for a family variant (lazy-loaded once). */
+  orgNameOf(organizationId: string): string {
+    return this.orgNames()[organizationId] ?? organizationId;
+  }
+
+  async toggleFamily(row: Quotation): Promise<void> {
+    if (this.expandedFamilyId() === row._id) {
+      this.expandedFamilyId.set(null);
+      this.familyLoadingId.set(null);
+      return;
+    }
+    this.expandedFamilyId.set(row._id);
+    if (this.familyByRow()[row._id]) return; // cached — no refetch
+    await this.loadFamily(row);
+  }
+
+  reloadFamily(row: Quotation): void {
+    void this.loadFamily(row);
+  }
+
+  private async loadFamily(row: Quotation): Promise<void> {
+    this.familyLoadingId.set(row._id);
+    this.familyError.set('');
+    await this.ensureOrganizations();
+    // Stale guard — the expand panel may have been closed during the fetch.
+    if (this.expandedFamilyId() !== row._id) {
+      this.familyLoadingId.set(null);
+      return;
+    }
+    const result = await firstValueFrom(this.quotationsApi.getFamily(row._id));
+    if (this.expandedFamilyId() !== row._id) {
+      this.familyLoadingId.set(null);
+      return; // closed while loading — ignore stale result
+    }
+    this.familyLoadingId.set(null);
+    if (!result.ok) {
+      this.familyError.set(extractErrorMessage(result.error));
+      return;
+    }
+    const family = result.data;
+    this.familyByRow.update((all) => ({ ...all, [row._id]: family }));
+  }
+
+  private async ensureOrganizations(): Promise<void> {
+    if (this.orgsLoaded) return;
+    this.orgsLoaded = true;
+    const result = await firstValueFrom(this.organizationsApi.list({ limit: 100 }));
+    if (!result.ok || !result.data) return;
+    const byId: Record<string, string> = {};
+    for (const org of result.data.items) {
+      byId[org._id] = org.shortName ?? org.name;
+    }
+    this.orgNames.set(byId);
   }
 
   createInStudio(): void {
