@@ -63,6 +63,10 @@ import { StudioElementsPanelComponent } from './studio-elements-panel.component'
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
 import {
+  StudioRenameDocumentDialogComponent,
+  type StudioRenameDocumentResult,
+} from './studio-rename-document-dialog.component';
+import {
   StudioSaveAsTemplateDialogComponent,
   type StudioSaveAsTemplateResult,
 } from './studio-save-as-template-dialog.component';
@@ -152,7 +156,15 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
         (sheetClick)="onSheetClick()"
       >
         <div kpWsRibbonExtra class="studio-ribbon-extra">
-          <span class="ribbon-label">{{ doc.name }}</span>
+          <button
+            type="button"
+            class="ribbon-label ribbon-label--rename"
+            data-test="studio-rename"
+            title="Переименовать"
+            (click)="openRenameDialog()"
+          >
+            {{ doc.name }}
+          </button>
         </div>
 
         <div kpWsRibbonActions class="studio-ribbon-actions">
@@ -376,6 +388,18 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
       text-transform: uppercase;
       color: var(--color-muted-foreground);
       line-height: 1;
+    }
+    .ribbon-label--rename {
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      font: inherit;
+    }
+    .ribbon-label--rename:hover {
+      color: var(--color-foreground);
+      text-decoration: underline;
     }
     .page-nav {
       display: inline-flex;
@@ -1629,6 +1653,33 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private reloadQuotations(): void {
     void firstValueFrom(this.quotationsApi.list()).then((res) => {
       if (res.ok) this.quotations.set(res.data ?? []);
+    });
+  }
+
+  openRenameDialog(): void {
+    const doc = this.document();
+    if (!doc) return;
+    const ref = this.dialog.open<StudioRenameDocumentResult | undefined>(StudioRenameDocumentDialogComponent, {
+      data: { currentName: doc.name },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (value) => {
+      if (!value || !value.name.trim()) return;
+      const current = this.document();
+      if (!current) return;
+      void firstValueFrom(
+        this.documents.update(current._id, {
+          expectedRevision: current.revision ?? 1,
+          name: value.name.trim(),
+        }),
+      ).then((r) => {
+        if (r.ok) {
+          this.document.set(r.data);
+          this.toast.success('Документ переименован');
+        } else {
+          this.conflict();
+        }
+      });
     });
   }
 
