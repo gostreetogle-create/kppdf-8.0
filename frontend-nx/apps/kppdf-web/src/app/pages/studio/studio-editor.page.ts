@@ -57,7 +57,7 @@ import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-bloc
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
 import { StudioPagesPanelComponent } from './studio-pages-panel.component';
-import type { StudioShowcaseKind } from './studio-showcase-panel.component';
+import type { StudioShowcaseKind } from './studio-data-vitrina.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
 import { StudioPropertiesPanelComponent } from './studio-properties-panel.component';
@@ -236,6 +236,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 [orders]="orders()"
                 [selectedAnchors]="selectedAnchorLabels()"
                 [catalogChips]="catalogChipLabels()"
+                [catalogSelections]="catalogSelections()"
                 [contextSaving]="contextSaving()"
                 [contextSaveError]="contextSaveError()"
                 [showKpStatus]="isKpDoc()"
@@ -244,6 +245,7 @@ const STUDIO_TOOL_OWNER = 'studio-editor';
                 (payerChange)="onAnchorChange('payer', $event)"
                 (supplierChange)="onAnchorChange('supplier', $event)"
                 (catalogRemove)="removeCatalogChip($event)"
+                (catalogChange)="onCatalogSelectionChange($event)"
                 (quotationChange)="onQuotationChange($event)"
                 (quotationStatusChange)="onQuotationStatusChange($event)"
                 (orderChange)="onOrderChange($event)"

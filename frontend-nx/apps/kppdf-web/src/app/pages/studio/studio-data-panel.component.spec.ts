@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
 
 describe('StudioDataPanelComponent', () => {
@@ -7,6 +9,7 @@ describe('StudioDataPanelComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [StudioDataPanelComponent],
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     fixture = TestBed.createComponent(StudioDataPanelComponent);
     fixture.componentRef.setInput('issuerOrgName', 'OOO Test');
@@ -36,5 +39,12 @@ describe('StudioDataPanelComponent', () => {
     const el = fixture.nativeElement as HTMLElement;
     expect(el.querySelector('[data-test="studio-quotation-status-select"]')).toBeTruthy();
     expect(el.textContent).toContain('Черновик');
+  });
+
+  it('renders catalog vitrina segment + grid inside data panel', () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('[data-test="studio-data-vitrina"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="studio-data-vitrina-tab-products"]')).toBeTruthy();
+    expect(el.querySelector('[data-test="studio-data-vitrina-grid"]')).toBeTruthy();
   });
 });

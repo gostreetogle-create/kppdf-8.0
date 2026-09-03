@@ -2,15 +2,17 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { FormFieldComponent } from '@kppdf/ui/form-field';
 import { SelectComponent, SelectOptionComponent } from '@kppdf/ui/select';
 import type { Counterparty, Order, Quotation, QuotationStatus } from '@kppdf/data-access';
+import { StudioDataVitrinaComponent, type StudioCatalogSelections, type StudioShowcaseKind } from './studio-data-vitrina.component';
 
 @Component({
   selector: 'pi-studio-data-panel',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormFieldComponent, SelectComponent, SelectOptionComponent],
+  imports: [FormFieldComponent, SelectComponent, SelectOptionComponent, StudioDataVitrinaComponent],
   template: `
     <div data-test="studio-data-panel">
       <p class="heading">Данные</p>
+      <pi-studio-data-vitrina [selected]="catalogSelections()" (catalogChange)="catalogChange.emit($event)" />
       @if (selectedAnchors().length > 0 || catalogChips().length > 0) {
         <div class="selected" data-test="studio-selected-anchors">
           <dt class="label">Выбрано</dt>
@@ -191,6 +193,7 @@ export class StudioDataPanelComponent {
   readonly contextSaveError = input<string | null>(null);
   readonly selectedAnchors = input<readonly { key: string; label: string; name: string }[]>([]);
   readonly catalogChips = input<readonly { key: string; label: string; count: number }[]>([]);
+  readonly catalogSelections = input<StudioCatalogSelections>({ products: [], modules: [], parts: [], materials: [] });
   readonly showKpStatus = input(false);
   readonly quotationStatus = input<QuotationStatus | ''>('');
 
@@ -201,6 +204,7 @@ export class StudioDataPanelComponent {
   readonly payerChange = output<string>();
   readonly supplierChange = output<string>();
   readonly catalogRemove = output<string>();
+  readonly catalogChange = output<{ kind: StudioShowcaseKind; ids: readonly string[] }>();
 
   protected onQuotationStatusSelect(value: string | null): void {
     const status = (value ?? 'draft') as QuotationStatus;
