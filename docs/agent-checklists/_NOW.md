@@ -1,17 +1,17 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T07:15:00+03:00
+updated_at: 2026-09-03T07:20:00+03:00
 
 ## ACTIVE / LIVE
 
-**READY:** S32 (`TZ-NX-SALES-S32-SITES-ENSURE`)  
+**READY:** S33 (`TZ-NX-SALES-S33-PI-ORDERS-CRUD`)  
 **RESUME:** `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
 
-Order: S32 → S39
+Order: S33 → S39 · current S33
 
 ## DONE this slice
 
-- S30 `e7c824e7` · S31 `2a7d4a58`
+- S30 `e7c824e7` · S31 `2a7d4a58` · S32 archived (SHA pending handoff)
 - Doc Studio S15–S26
 
 ## PARK
