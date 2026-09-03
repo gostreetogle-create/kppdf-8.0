@@ -100,6 +100,16 @@ import { studioTextBlockSlug } from './studio-text-helpers';
 
 const STUDIO_TOOL_OWNER = 'studio-editor';
 
+/** Mirrors backend LIVE_HYDRATABLE_SOURCE_TYPES (studio-document.service.ts). */
+const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
+  'quotation-items',
+  'order-items',
+  'catalog-products',
+  'catalog-modules',
+  'catalog-parts',
+  'catalog-materials',
+]);
+
 @Component({
   selector: 'pi-studio-editor-page',
   standalone: true,
@@ -612,6 +622,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
               );
               this.activeSection.set('data');
               this.panelCollapsed.set(false);
+              this.refreshLiveDataSetsOnLoad(normalized);
             }
           });
           const routeQuotationId = this.route.snapshot.queryParamMap.get('quotationId');
@@ -1252,7 +1263,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     })).then((result) => {
       if (result.ok) {
         this.document.set(result.data);
-        this.applyLiveRowsFromDataSet(result.data, block._id, dataSet);
+        const key = `table-${block._id}`;
+        this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
         const sourceLabel = source === 'manual' ? 'вручную' : source === 'quotation-items' ? 'КП' : source === 'order-items' ? 'заказ' : 'витрина';
         this.toast.success(`Источник строк: ${sourceLabel}`);
         this.refreshPreviewIfActive();
@@ -1267,6 +1279,36 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.blocks.update((blocks) => blocks.map((item) => item._id === blockId
       ? { ...item, settings: { ...(item.settings ?? {}), liveRows: rows } }
       : item));
+  }
+
+  /**
+   * On document open, GET does not hydrate live rows (only putDataSet does per
+   * hydrateLiveDataSetRows on the backend) — re-put each ERP/catalog-source table's
+   * existing dataSet entry to pull fresh rows into the response and apply them.
+   */
+  private refreshLiveDataSetsOnLoad(blocks: readonly StudioBlock[]): void {
+    const doc = this.document();
+    if (!doc) return;
+    const tables = blocks.filter((item) => item.type === 'table');
+    for (const block of tables) {
+      const sourceType = (block.settings?.['dataSource'] as { type?: string } | undefined)?.type;
+      if (!sourceType || !STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES.has(sourceType)) continue;
+      const key = `table-${block._id}`;
+      const existing = doc.dataSets?.find((entry) => entry['key'] === key);
+      const catalogKey = sourceType.startsWith('catalog-') ? sourceType.slice('catalog-'.length) : '';
+      const catalogSelectionCount = catalogKey
+        ? this.catalogSelections()[catalogKey as 'products' | 'modules' | 'parts' | 'materials'].length
+        : (existing?.['catalogSelectionCount'] as number | undefined) ?? 0;
+      const dataSet = { source: { type: sourceType }, rows: existing?.rows ?? [], catalogSelectionCount };
+      void firstValueFrom(this.documents.putDataSet(doc._id, key, {
+        expectedRevision: this.document()?.revision ?? doc.revision ?? 1,
+        dataSet,
+      })).then((result) => {
+        if (!result.ok) return;
+        this.document.set(result.data);
+        this.applyLiveRowsFromDataSet(result.data, block._id, result.data.dataSets?.find((entry) => entry['key'] === key) ?? dataSet);
+      });
+    }
   }
 
   patchTableSettings(patch: Record<string, unknown>): void {
