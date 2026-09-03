@@ -177,21 +177,6 @@ const ALIGN_OPTIONS: readonly {
             }
           </select>
         </label>
-        <label class="text-props__field text-props__field--compact">
-          <span class="text-props__label">Формула</span>
-          <select
-            class="text-props__select"
-            [ngModel]="formulaPick()"
-            (ngModelChange)="insertFormulaToken($event)"
-            [disabled]="disabled"
-            data-test="studio-text-formula-select"
-          >
-            <option value="">— из реестра —</option>
-            <option [value]="formulaTokens.subtotal">Сумма столбца</option>
-            <option [value]="formulaTokens.vat">НДС</option>
-            <option [value]="formulaTokens.grand">Итого с НДС</option>
-          </select>
-        </label>
         <div class="text-props__row-2">
           <label class="text-props__field text-props__field--compact">
             <span class="text-props__label">Размер, pt</span>
@@ -335,12 +320,6 @@ export class StudioTextPropertiesComponent implements OnChanges {
   protected readonly textBlocks = signal<readonly TextBlock[]>([]);
   protected readonly loadingTexts = signal(false);
   protected readonly libraryHint = signal<string | null>(null);
-  protected readonly formulaPick = signal('');
-  protected readonly formulaTokens = {
-    subtotal: '{{table.subtotal}}',
-    vat: '{{table.vat}}',
-    grand: '{{table.grand}}',
-  } as const;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['block']) {
@@ -429,15 +408,6 @@ export class StudioTextPropertiesComponent implements OnChanges {
           this.toast.success(`Вставлено ${token}`);
         });
       });
-    });
-  }
-
-  protected insertFormulaToken(token: string): void {
-    this.formulaPick.set('');
-    if (!token) return;
-    requestAnimationFrame(() => {
-      this.richText()?.insertContent(token);
-      this.toast.success(`Вставлено ${token}`);
     });
   }
 
