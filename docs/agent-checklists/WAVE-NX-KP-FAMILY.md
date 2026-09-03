@@ -20,7 +20,7 @@ Status: **READY @ S40** · Sales canon S30–S39 DONE (`28acaff7`)
 | # | TZ | Archive | Commit |
 |---|-----|---------|--------|
 | 1 | [x] S40 FAMILY-TYPES | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S40-TYPES.done.md` | |
-| 2 | [ ] S41 FAMILY-API-CLIENT | | |
+| 2 | [x] S41 FAMILY-API-CLIENT | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S41-API-CLIENT.done.md` | |
 | 3 | [ ] S42 LIST-HIDE-VARIANTS | | |
 | 4 | [ ] S43 FAMILY-EXPAND | | |
 | 5 | [ ] S44 ATTACH-ORGS | | |

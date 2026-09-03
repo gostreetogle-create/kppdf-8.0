@@ -60,4 +60,56 @@ describe('PiQuotationsService (TZ-NX-SALES-PI-QUOTATIONS-CRUD)', () => {
     expect(req.request.body).toBeNull();
     req.flush({ orderId: '507f1f77bcf86cd799439099' });
   });
+
+  describe('KP family (TZ-NX-KP-FAMILY-S41-API-CLIENT)', () => {
+    const id = '507f1f77bcf86cd799439013';
+    const family = {
+      master: {
+        id,
+        number: 'KP-001',
+        organizationId: '507f1f77bcf86cd799439021',
+        familyRole: 'master',
+        familyVersion: 1,
+        total: 1000,
+        status: 'draft',
+      },
+      variants: [],
+      familyVersion: 1,
+    };
+
+    it('getFamily() GETs /quotations/:id/family', (done) => {
+      service.getFamily(id).subscribe((result) => {
+        expect(result).toEqual({ ok: true, data: family });
+        done();
+      });
+      const req = httpMock.expectOne(`${baseUrl}/quotations/${id}/family`);
+      expect(req.request.method).toBe('GET');
+      req.flush(family);
+    });
+
+    it('attachOrganizations() POSTs the attach payload to …/family/attach-organizations', (done) => {
+      const payload = {
+        items: [{ organizationId: '507f1f77bcf86cd799439022', orgMarkupPercent: 8 }],
+      };
+      service.attachOrganizations(id, payload).subscribe((result) => {
+        expect(result).toEqual({ ok: true, data: family });
+        done();
+      });
+      const req = httpMock.expectOne(`${baseUrl}/quotations/${id}/family/attach-organizations`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(payload);
+      req.flush(family);
+    });
+
+    it('syncFromMaster() POSTs to …/family/sync-from-master and returns the updated family', (done) => {
+      service.syncFromMaster(id).subscribe((result) => {
+        expect(result).toEqual({ ok: true, data: { ...family, familyVersion: 2 } });
+        done();
+      });
+      const req = httpMock.expectOne(`${baseUrl}/quotations/${id}/family/sync-from-master`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toBeNull();
+      req.flush({ ...family, familyVersion: 2 });
+    });
+  });
 });
