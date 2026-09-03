@@ -60,6 +60,7 @@ export const appRoutes: Route[] = [
         path: 'orders',
         children: [
           { path: '', pathMatch: 'full', loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage) },
+          { path: 'create', loadComponent: () => import('./pages/orders/order-create.page').then((m) => m.OrderCreatePage) },
           { path: ':id', loadComponent: () => import('./pages/orders/order-detail.page').then((m) => m.OrderDetailPage) },
         ],
       },

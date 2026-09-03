@@ -26,6 +26,10 @@ The list has explicit loading, retryable API-error, and empty states. Since S35 
 - **Оплата:** checkbox `Оплачен` → `PATCH /orders/:id { isPaid }` via `PiOrdersService.update()`. The toggle is optimistic with an explicit revert: on failure a toast appears and the checkbox is re-asserted to the old fact (`isPaid` не врёт). Payment never touches lifecycle status.
 - **КП:** with `quotationId` the card shows the quotation number + `КП в студии` button navigating to `/studio?quotationId=` (proposals pattern, no stub creation). Direct order → plain `Без КП` text, **no** `Создать черновик КП` CTA and no `stub-proposal` call anywhere in the NX page.
 
+## NX order create (S36)
+
+`/orders/create` (`order-create.page.ts`) creates a **direct order without a quotation**. CTA `Создать заказ` on the list opens it. Fields: Заказчик (required, from `PiCounterpartiesService.list`), lines with изделие + qty (≥1 line; no unitPrice — strip-commerce), optional Наша фирма (`PiOrganizationsService`), checkbox `Оплачен`. Before POST the page calls `PiSitesService.ensureDefault(counterpartyId)` → `siteId`; on its failure a banner shows and the order is **not** created. Payload: `create({ counterpartyId, siteId, items, organizationId?, isPaid?, status: 'draft' })` — no `quotationId`, no `stub-proposal`. Success → `/orders/:id`.
+
 ## Order lifecycle hub expand (HUB-302 + HUB-303 + HUB-304)
 
 Read-only expand на списке `/orders`:

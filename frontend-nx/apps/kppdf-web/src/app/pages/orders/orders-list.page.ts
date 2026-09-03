@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiOrdersService, type Order } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
@@ -13,9 +13,14 @@ import { orderStatusLabel } from './order-status';
   imports: [PiStatusBannerComponent, RouterLink],
   template: `
     <main class="px-panel-inset py-6" data-test="orders-list">
-      <div class="mb-6">
-        <div class="eyebrow">Сделки</div>
-        <h1 class="font-display text-2xl m-0">Заказы</h1>
+      <div class="flex items-center justify-between gap-4 mb-6">
+        <div>
+          <div class="eyebrow">Сделки</div>
+          <h1 class="font-display text-2xl m-0">Заказы</h1>
+        </div>
+        <button class="pi-button pi-button-primary" type="button" data-test="orders-create" (click)="create()">
+          Создать заказ
+        </button>
       </div>
 
       @if (status() === 'loading') {
@@ -74,6 +79,7 @@ import { orderStatusLabel } from './order-status';
 })
 export class OrdersListPage implements OnInit {
   private readonly ordersApi = inject(PiOrdersService);
+  private readonly router = inject(Router);
 
   readonly rows = signal<readonly Order[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
@@ -97,4 +103,8 @@ export class OrdersListPage implements OnInit {
   }
 
   protected readonly statusLabel = orderStatusLabel;
+
+  create(): void {
+    void this.router.navigate(['/orders/create']);
+  }
 }

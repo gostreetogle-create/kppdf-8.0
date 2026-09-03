@@ -37,6 +37,7 @@ describe('collectPageRoutePaths', () => {
     expect(paths.has('/kit/overview')).toBe(true);
     expect(paths.has('/studio')).toBe(true);
     expect(paths.has('/orders')).toBe(true);
+    expect(paths.has('/orders/create')).toBe(true);
     expect(paths.has('/orders/:id')).toBe(true);
     expect(paths.has('/products')).toBe(false);
   });
