@@ -57,6 +57,10 @@ import { TextBlockFormDialogComponent } from '../../doc-studio/dialogs/text-bloc
 import { StudioBlocksCanvasComponent } from './studio-blocks-canvas.component';
 import { StudioDataPanelComponent } from './studio-data-panel.component';
 import { StudioPagesPanelComponent } from './studio-pages-panel.component';
+import {
+  StudioUnsavedChangesDialogComponent,
+  type StudioUnsavedChangesChoice,
+} from './studio-unsaved-changes-dialog.component';
 import type { StudioShowcaseKind } from './studio-data-vitrina.component';
 import { StudioElementsPanelComponent } from './studio-elements-panel.component';
 import { StudioLayersPanelComponent } from './studio-layers-panel.component';
@@ -475,7 +479,13 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private conflictDialogOpen = false;
   private layoutSavePromise: Promise<boolean> | null = null;
   private layoutsDirty = false;
+  private readonly pendingBlockPatches = signal(0);
   private resizeObserver?: ResizeObserver;
+  private readonly onStudioBeforeUnload = (event: BeforeUnloadEvent): void => {
+    if (!this.isStudioDirty()) return;
+    event.preventDefault();
+    event.returnValue = '';
+  };
   private readonly onStudioKeydown = (event: KeyboardEvent): void => {
     if (!(event.ctrlKey || event.metaKey) || (event.key !== 'z' && event.key !== 'y')) return;
     const target = event.target as HTMLElement | null;
@@ -741,6 +751,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     document.addEventListener('keydown', this.onStudioKeydown);
+    window.addEventListener('beforeunload', this.onStudioBeforeUnload);
     const el = this.sheetHostRef()?.nativeElement;
     if (el && this.resizeObserver) {
       this.resizeObserver.observe(el);
@@ -750,6 +761,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     document.removeEventListener('keydown', this.onStudioKeydown);
+    window.removeEventListener('beforeunload', this.onStudioBeforeUnload);
     this.shellTools.clear(STUDIO_TOOL_OWNER);
     this.resizeObserver?.disconnect();
     if (this.timer) clearTimeout(this.timer);
@@ -759,24 +771,52 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     onStudioSectionClick(id as StudioWorkspaceSection, this.activeSection, this.panelCollapsed);
   }
 
-  async saveDocument(): Promise<void> {
-    if (this.saving()) return;
+  async saveDocument(): Promise<boolean> {
+    if (this.saving()) return false;
     this.saving.set(true);
     try {
       const layoutsOk = await this.flushLayouts();
-      if (!layoutsOk) return;
+      if (!layoutsOk) return false;
       if (this.isKpDoc() && this.quotationId()) {
         const syncOk = await this.syncKpQuotationItems();
-        if (!syncOk) return;
+        if (!syncOk) return false;
       }
       this.toast.success('Сохранено');
+      return true;
     } finally {
       this.saving.set(false);
     }
   }
 
+  /** Layout debounce pending, save in-flight, or an optimistic block edit not yet confirmed by the server. */
+  isStudioDirty(): boolean {
+    return this.layoutsDirty || this.saving() || this.pendingBlockPatches() > 0;
+  }
+
+  /** Resolves true when it's safe to navigate away (clean, or user chose Leave/Save-and-leave). */
+  async confirmLeave(): Promise<boolean> {
+    if (!this.isStudioDirty()) return true;
+    const choice = await new Promise<StudioUnsavedChangesChoice | undefined>((resolve) => {
+      const ref = this.dialog.open<StudioUnsavedChangesChoice>(StudioUnsavedChangesDialogComponent, {
+        dismissOnEscape: false,
+        dismissOnBackdropClick: false,
+        parentDestroyRef: this.destroyRef,
+      });
+      onDialogCloseOnce(ref, this.injector, resolve);
+    });
+    if (choice === 'leave') return true;
+    if (choice === 'save-and-leave') return this.saveDocument();
+    return false;
+  }
+
+  canDeactivate(): Promise<boolean> {
+    return this.confirmLeave();
+  }
+
   openDocumentList(): void {
-    void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
+    void this.confirmLeave().then((ok) => {
+      if (ok) void this.router.navigate(['/studio'], { queryParams: { list: '1' } });
+    });
   }
 
   setOrientation(orientation: 'portrait' | 'landscape'): void {
@@ -1272,14 +1312,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.blocks.update((b) =>
       b.map((x) => (x._id === block._id ? { ...x, style: nextStyle } : x)),
     );
-    void firstValueFrom(this.blocksService.update(block._id, { style: patch })).then((r) => {
-      if (r.ok) {
-        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
-        this.refreshPreviewIfActive();
-      } else {
-        this.conflict();
-      }
-    });
+    this.pendingBlockPatches.update((n) => n + 1);
+    void firstValueFrom(this.blocksService.update(block._id, { style: patch }))
+      .then((r) => {
+        if (r.ok) {
+          this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+          this.refreshPreviewIfActive();
+        } else {
+          this.conflict();
+        }
+      })
+      .finally(() => this.pendingBlockPatches.update((n) => n - 1));
   }
 
   patchBlockContent(content: string): void {
@@ -1295,14 +1338,17 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
 
   private applyBlockContent(blockId: string, content: string): void {
     this.blocks.update((b) => b.map((x) => (x._id === blockId ? { ...x, content } : x)));
-    void firstValueFrom(this.blocksService.update(blockId, { content })).then((r) => {
-      if (r.ok) {
-        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
-        this.refreshPreviewIfActive();
-      } else {
-        this.conflict();
-      }
-    });
+    this.pendingBlockPatches.update((n) => n + 1);
+    void firstValueFrom(this.blocksService.update(blockId, { content }))
+      .then((r) => {
+        if (r.ok) {
+          this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+          this.refreshPreviewIfActive();
+        } else {
+          this.conflict();
+        }
+      })
+      .finally(() => this.pendingBlockPatches.update((n) => n - 1));
   }
 
   patchTableRows(rows: string[][]): void {
@@ -1837,13 +1883,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const block = this.propertiesBlock();
     if (!block || block._id !== this.activeLayerId()) return;
     this.blocks.update((b) => b.map((x) => (x._id === block._id ? { ...x, title } : x)));
-    void firstValueFrom(this.blocksService.update(block._id, { title })).then((r) => {
-      if (r.ok) {
-        this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
-      } else {
-        this.conflict();
-      }
-    });
+    this.pendingBlockPatches.update((n) => n + 1);
+    void firstValueFrom(this.blocksService.update(block._id, { title }))
+      .then((r) => {
+        if (r.ok) {
+          this.blocks.update((b) => b.map((x) => (x._id === r.data._id ? r.data : x)));
+        } else {
+          this.conflict();
+        }
+      })
+      .finally(() => this.pendingBlockPatches.update((n) => n - 1));
   }
 
   deleteLayerById(id: string | null | undefined): void {
