@@ -57,7 +57,7 @@ interface Harness {
   suppliers: () => unknown[];
   suppliersLoading: () => boolean;
   suppliersError: () => string | null;
-  openCreateSupplier: () => void;
+  openCreateSupplier: () => Promise<void>;
   supplierItems: () => { id: string; label: string }[];
 }
 
@@ -681,7 +681,7 @@ describe('MaterialFormDialogComponent (TZ-MATERIALS-301)', () => {
 
   it('openCreateSupplier opens OrganizationFullEditorDialog (TZ-UI-PLUS-602)', async () => {
     const { comp, dialogOpen } = await setup(null);
-    comp.openCreateSupplier();
+    await comp.openCreateSupplier();
     expect(dialogOpen).toHaveBeenCalledWith(
       OrganizationFullEditorDialogComponent,
       expect.objectContaining({ data: null, width: 'lg' }),

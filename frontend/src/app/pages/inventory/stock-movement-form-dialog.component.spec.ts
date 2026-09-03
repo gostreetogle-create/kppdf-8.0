@@ -10,7 +10,7 @@ import { API_BASE_URL } from '../../core/api.tokens';
 import type { Material } from '../../shared/services/materials.service';
 
 type Harness = StockMovementFormDialogComponent & {
-  openCreateMaterial(): void;
+  openCreateMaterial(): Promise<void>;
   form: { controls: { materialId: { value: string; setValue(v: string): void } } };
   materials(): { _id: string; name: string; unit?: string }[];
   qtyLabel(): string;
@@ -56,9 +56,9 @@ describe('StockMovementFormDialogComponent (TZ-QA-445B)', () => {
     expect(add.classList.contains('pi-select-add-btn')).toBe(true);
   });
 
-  it('openCreateMaterial opens MaterialFormDialog (shared catalog write-path)', () => {
+  it('openCreateMaterial opens MaterialFormDialog (shared catalog write-path)', async () => {
     const comp = fixture.componentInstance as unknown as Harness;
-    comp.openCreateMaterial();
+    await comp.openCreateMaterial();
     expect(dialogOpen).toHaveBeenCalledWith(
       MaterialFormDialogComponent,
       expect.objectContaining({ data: null, width: 'lg' }),

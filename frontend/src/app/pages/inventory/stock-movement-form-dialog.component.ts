@@ -23,7 +23,6 @@ import { PiToastService } from '../../shared/ui/toast';
 import { extractErrorMessage } from '../../core/silent-http';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 import { API_BASE_URL } from '../../core/api.tokens';
-import { MaterialFormDialogComponent } from '../materials/material-form-dialog.component';
 import type { Material } from '../../shared/services/materials.service';
 import { Warehouse } from './warehouses.service';
 import {
@@ -239,16 +238,18 @@ export class StockMovementFormDialogComponent {
   });
 
   private readonly materialIdValue = toSignal(
-    this.form.controls.materialId.valueChanges.pipe(
-      startWith(this.form.controls.materialId.value),
-    ),
+    this.form.controls.materialId.valueChanges.pipe(startWith(this.form.controls.materialId.value)),
     { initialValue: this.form.controls.materialId.value },
   );
 
   protected readonly selectedMaterialUnit = computed(() => {
     const id = this.materialIdValue();
     if (!id) return '';
-    return this.materials().find((m) => m._id === id)?.unit?.trim() ?? '';
+    return (
+      this.materials()
+        .find((m) => m._id === id)
+        ?.unit?.trim() ?? ''
+    );
   });
 
   protected readonly qtyLabel = computed(() => {
@@ -276,24 +277,28 @@ export class StockMovementFormDialogComponent {
   }
 
   /** TZ-QA-445B — inline material create via shared MaterialFormDialog. */
-  protected openCreateMaterial(): void {
-    const ref = this.dialog.open<Material | null>(MaterialFormDialogComponent, {
-      data: null,
-      width: 'lg',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce<Material | null>(ref, this.injector, (saved) => {
-      const option: MaterialOption = {
-        _id: saved._id,
-        name: saved.name,
-        unit: saved.unit,
-      };
-      this.createdMaterials.update((list) =>
-        list.some((m) => m._id === option._id) ? list : [...list, option],
-      );
-      this.form.controls.materialId.setValue(saved._id);
-      this.materialsRes.reload();
-    });
+  protected openCreateMaterial(): Promise<void> {
+    return import('../materials/material-form-dialog.component').then(
+      ({ MaterialFormDialogComponent }) => {
+        const ref = this.dialog.open<Material | null>(MaterialFormDialogComponent, {
+          data: null,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce<Material | null>(ref, this.injector, (saved) => {
+          const option: MaterialOption = {
+            _id: saved._id,
+            name: saved.name,
+            unit: saved.unit,
+          };
+          this.createdMaterials.update((list) =>
+            list.some((m) => m._id === option._id) ? list : [...list, option],
+          );
+          this.form.controls.materialId.setValue(saved._id);
+          this.materialsRes.reload();
+        });
+      },
+    );
   }
 
   protected onSubmit(): void {

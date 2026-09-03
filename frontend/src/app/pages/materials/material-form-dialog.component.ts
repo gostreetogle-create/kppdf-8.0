@@ -54,7 +54,6 @@ import {
 } from '../../shared/services/pi-dictionary-labels.service';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { OrganizationFullEditorDialogComponent } from '../organizations/organization-full-editor-dialog.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 
 type Result = Material | null | undefined;
@@ -752,19 +751,23 @@ export class MaterialFormDialogComponent implements OnDestroy {
     this.form.controls.supplierId.markAsDirty();
   }
 
-  protected openCreateSupplier(): void {
-    const ref = this.dialog.open<Organization | null>(OrganizationFullEditorDialogComponent, {
-      data: null,
-      width: 'lg',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce<Organization | null>(ref, this.injector, (org) => {
-      if (!org.type?.includes('supplier') || org.isActive === false) return;
-      this.suppliers.update((list) =>
-        list.some((s) => s._id === org._id) ? list : [...list, org],
-      );
-      this.onSupplierChange(org._id);
-    });
+  protected openCreateSupplier(): Promise<void> {
+    return import('../organizations/organization-full-editor-dialog.component').then(
+      ({ OrganizationFullEditorDialogComponent }) => {
+        const ref = this.dialog.open<Organization | null>(OrganizationFullEditorDialogComponent, {
+          data: null,
+          width: 'lg',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce<Organization | null>(ref, this.injector, (org) => {
+          if (!org.type?.includes('supplier') || org.isActive === false) return;
+          this.suppliers.update((list) =>
+            list.some((s) => s._id === org._id) ? list : [...list, org],
+          );
+          this.onSupplierChange(org._id);
+        });
+      },
+    );
   }
 
   private loadCategories(): void {

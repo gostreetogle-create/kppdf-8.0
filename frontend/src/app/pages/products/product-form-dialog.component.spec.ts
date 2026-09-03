@@ -156,7 +156,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
     errorMessage: () => string | null;
     isEdit: () => boolean;
     editProductId: () => string | null;
-    openCreateCategory: () => void;
+    openCreateCategory: () => Promise<void>;
     categoryItems: () => { id: string; label: string }[];
     categories: () => { _id: string; name: string; type: string }[];
   } {
@@ -179,7 +179,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
       errorMessage: () => string | null;
       isEdit: () => boolean;
       editProductId: () => string | null;
-      openCreateCategory: () => void;
+      openCreateCategory: () => Promise<void>;
       categoryItems: () => { id: string; label: string }[];
       categories: () => { _id: string; name: string; type: string }[];
     };
@@ -595,7 +595,7 @@ describe('ProductFormDialogComponent (TZ-PRODUCTS-302)', () => {
 
   it('openCreateCategory opens CategoryFormDialog (TZ-UI-PLUS-602)', async () => {
     await setup(null);
-    instance().openCreateCategory();
+    await instance().openCreateCategory();
     expect(dialogOpen).toHaveBeenCalledWith(
       CategoryFormDialogComponent,
       expect.objectContaining({ data: null, width: 'md' }),

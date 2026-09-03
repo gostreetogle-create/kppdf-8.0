@@ -54,7 +54,6 @@ import { PiPhotoDropzoneComponent } from '../../shared/ui/photo';
 import { focusDialogField, isSaveAndContinueKey } from '../../shared/util/dialog-save-and-continue';
 import { colSpanClass, controlMaxClass } from '../../shared/ui/quick-create/field-capacity';
 import { PiDialogService } from '../../shared/ui/dialog/pi-dialog.service';
-import { CategoryFormDialogComponent } from '../dictionaries/category-form-dialog.component';
 import { onDialogCloseOnce } from '../../shared/util/on-dialog-close-once';
 
 type Result = Product | null | undefined;
@@ -805,19 +804,23 @@ export class ProductFormDialogComponent implements OnDestroy {
     this.form.controls.categoryId.markAsDirty();
   }
 
-  protected openCreateCategory(): void {
-    const ref = this.dialog.open<Category | null>(CategoryFormDialogComponent, {
-      data: null,
-      width: 'md',
-      parentDestroyRef: this.destroyRef,
-    });
-    onDialogCloseOnce<Category | null>(ref, this.injector, (category) => {
-      if (category.type !== 'product' || category.isActive === false) return;
-      this.categories.update((list) =>
-        list.some((c) => c._id === category._id) ? list : [...list, category],
-      );
-      this.onCategoryChange(category._id);
-    });
+  protected openCreateCategory(): Promise<void> {
+    return import('../dictionaries/category-form-dialog.component').then(
+      ({ CategoryFormDialogComponent }) => {
+        const ref = this.dialog.open<Category | null>(CategoryFormDialogComponent, {
+          data: null,
+          width: 'md',
+          parentDestroyRef: this.destroyRef,
+        });
+        onDialogCloseOnce<Category | null>(ref, this.injector, (category) => {
+          if (category.type !== 'product' || category.isActive === false) return;
+          this.categories.update((list) =>
+            list.some((c) => c._id === category._id) ? list : [...list, category],
+          );
+          this.onCategoryChange(category._id);
+        });
+      },
+    );
   }
 
   // ─── RAL dropdown handlers ───
