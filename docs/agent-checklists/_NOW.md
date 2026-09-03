@@ -1,6 +1,6 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T07:32:00+03:00
+updated_at: 2026-09-03T07:35:00+03:00
 
 ## ACTIVE / LIVE
 
@@ -11,7 +11,7 @@ Order: S34 → S39 · current S34
 
 ## DONE this slice
 
-- S30 `e7c824e7` · S31 `2a7d4a58` · S32 `28d8950a` · S33 archived (SHA pending handoff)
+- S30 `e7c824e7` · S31 `2a7d4a58` · S32 `28d8950a` · S33 `b0caff70`
 - Doc Studio S15–S26
 
 ## PARK
