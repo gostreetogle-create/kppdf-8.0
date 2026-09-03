@@ -7,6 +7,8 @@ export interface ModuleDimensions {
   unit?: string;
 }
 
+export type ModuleRef = string | Record<string, unknown>;
+
 export interface ProductModule {
   _id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface ProductModule {
   dimensions?: ModuleDimensions;
   weight?: number;
   sortOrder?: number;
+  photoIds?: ModuleRef[];
   deletedAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
