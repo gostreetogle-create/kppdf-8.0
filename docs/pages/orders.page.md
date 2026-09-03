@@ -13,6 +13,12 @@
 
 - `q` — deep-link поиска по номеру заказа (используется из production cockpit).
 
+## NX orders list (S34)
+
+`frontend-nx` exposes the authenticated `/orders` route as a thin, read-only journal backed by `PiOrdersService.list()` and `GET /api/orders`. The list renders the order number, Russian lifecycle status, payment fact (`Оплачен` / `Не оплачен`), and `Без КП` for direct orders without `quotationId`.
+
+The list has explicit loading, retryable API-error, and empty states. S34 intentionally does not add a detail link; `/orders/:id` is owned by S35. The page does not add create/edit actions or lifecycle writes.
+
 ## Order lifecycle hub expand (HUB-302 + HUB-303 + HUB-304)
 
 Read-only expand на списке `/orders`:

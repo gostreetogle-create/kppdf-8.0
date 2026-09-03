@@ -56,6 +56,10 @@ export const appRoutes: Route[] = [
           { path: 'create', redirectTo: '/studio' },
         ],
       },
+      {
+        path: 'orders',
+        loadComponent: () => import('./pages/orders/orders-list.page').then((m) => m.OrdersListPage),
+      },
     ],
   },
   { path: 'kit',
