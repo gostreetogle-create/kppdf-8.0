@@ -23,4 +23,4 @@ closed_by: Cursor (docs; Freebuff looped before S48)
 | S45 | `6b77407f` |
 | S46 | `3c74ecd2` |
 | S47 | `2cdf013e` |
-| S48 | (docs closeout commit) |
+| S48 | `4abb7d5c` |

@@ -27,7 +27,7 @@ Status: **DONE** · closed 2026-09-03 · S48 Cursor docs (Freebuff looped on S48
 | 6 | [x] S45 SYNC-FROM-MASTER | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S45-SYNC.done.md` | `6b77407f` |
 | 7 | [x] S46 VARIANT-OPEN-STUDIO | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S46-VARIANT-STUDIO.done.md` | `3c74ecd2` |
 | 8 | [x] S47 CONVERT-MASTER-ONLY-UX | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S47-CONVERT-GUARD-UX.done.md` | `2cdf013e` |
-| 9 | [x] S48 OPERATOR-DOCS | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S48-OPERATOR-DOCS.done.md` | (this closeout) |
+| 9 | [x] S48 OPERATOR-DOCS | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S48-OPERATOR-DOCS.done.md` | `4abb7d5c` |
 
 ## Closeout
 
