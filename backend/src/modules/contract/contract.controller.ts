@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,10 +7,14 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
+  UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiConsumes } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { ContractService } from './contract.service';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -78,6 +83,40 @@ export class ContractController {
   @ApiResponse({ status: 404, description: 'Contract not found' })
   update(@Param('id') id: string, @Body() dto: UpdateContractDto) {
     return this.service.update(id, dto);
+  }
+
+  @Put(':id/attachment')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'attach_file', entityType: 'Contract', idParam: 'id' })
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Attach a contract file' })
+  @ApiResponse({ status: 200, description: 'Contract file attached' })
+  @ApiResponse({ status: 400, description: 'File is missing or empty' })
+  @ApiResponse({ status: 404, description: 'Contract not found' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+    }),
+  )
+  attachFile(
+    @Param('id') id: string,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    if (!file || file.size <= 0) {
+      throw new BadRequestException('File is required and must not be empty (multipart field: file)');
+    }
+    return this.service.attachFile(id, file);
+  }
+
+  @Delete(':id/attachment')
+  @Roles('admin', 'manager')
+  @AuditAction({ action: 'remove_attachment', entityType: 'Contract', idParam: 'id' })
+  @ApiOperation({ summary: 'Remove the attached contract file' })
+  @ApiResponse({ status: 200, description: 'Contract file removed' })
+  @ApiResponse({ status: 404, description: 'Contract or attachment not found' })
+  removeAttachment(@Param('id') id: string) {
+    return this.service.removeAttachment(id);
   }
 
   @Post(':id/sign')

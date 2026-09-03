@@ -1,5 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { promises as fs } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { extname, join, resolve } from 'node:path';
 import { Model, Types } from 'mongoose';
 import {
   Contract,
@@ -13,6 +16,11 @@ import { CounterService } from '../counter/counter.service';
 import { OrderService } from '../order/order.service';
 import { SessionRunner } from '../../common/db/session-runner';
 import { SiteService } from '../site/site.service';
+import { PhotosService } from '../photos/photos.service';
+
+function contractUploadDir(): string {
+  return resolve(process.env.UPLOAD_DIR ?? './uploads', 'contracts');
+}
 
 @Injectable()
 export class ContractService {
@@ -23,6 +31,7 @@ export class ContractService {
     private readonly orderService: OrderService,
     private readonly sessionRunner: SessionRunner,
     private readonly sites: SiteService,
+    private readonly photos: PhotosService,
   ) {}
 
   private resolveAttachmentState(
@@ -133,9 +142,86 @@ export class ContractService {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException(`Contract ${id} not found`);
     }
-    const doc = await this.model.findById(id).exec();
+    const doc = await this.model
+      .findOne({ _id: new Types.ObjectId(id), deletedAt: null })
+      .exec();
     if (!doc) throw new NotFoundException(`Contract ${id} not found`);
     return doc;
+  }
+
+  async attachFile(
+    id: string,
+    file: Express.Multer.File,
+  ): Promise<ContractDocument> {
+    if (!file || !file.buffer || file.size <= 0) {
+      throw new BadRequestException('File is required and must not be empty');
+    }
+
+    const doc = await this.findByIdRaw(id);
+    const previousFileId = doc.attachmentFileId;
+    const directory = contractUploadDir();
+    await fs.mkdir(directory, { recursive: true });
+
+    const storedFilename = `${randomUUID()}${extname(file.originalname ?? '')}`;
+    const storageUrl = `/uploads/contracts/${storedFilename}`;
+    const fullPath = join(directory, storedFilename);
+    await fs.writeFile(fullPath, file.buffer);
+
+    let photoId: string | undefined;
+    try {
+      const photo = await this.photos.create({
+        storageUrl,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        sizeBytes: file.size,
+        variant: 'original',
+        alt: `Contract ${doc.number}`,
+      });
+      photoId = photo._id.toString();
+      doc.contractStatus = 'file_attached';
+      doc.attachmentFileId = photoId;
+      doc.attachmentUrl = storageUrl;
+      await doc.save();
+    } catch (error) {
+      if (photoId) {
+        await this.discardAttachmentPhoto(photoId);
+      } else {
+        await this.unlinkAttachmentFile(fullPath);
+      }
+      throw error;
+    }
+
+    if (previousFileId && previousFileId !== photoId) {
+      await this.discardAttachmentPhoto(previousFileId);
+    }
+    return doc;
+  }
+
+  async removeAttachment(id: string): Promise<ContractDocument> {
+    const doc = await this.findByIdRaw(id);
+    const previousFileId = doc.attachmentFileId;
+    doc.contractStatus = 'none';
+    doc.attachmentFileId = undefined;
+    doc.attachmentUrl = undefined;
+    await doc.save();
+    if (previousFileId) await this.discardAttachmentPhoto(previousFileId);
+    return doc;
+  }
+
+  private async discardAttachmentPhoto(photoId: string): Promise<void> {
+    try {
+      await this.photos.remove(photoId);
+    } catch {
+      // Attachment cleanup is best-effort after the Contract write succeeds.
+    }
+  }
+
+  private async unlinkAttachmentFile(filePath: string): Promise<void> {
+    try {
+      await fs.unlink(filePath);
+    } catch {
+      // Best-effort rollback of a file written before the DB metadata.
+    }
   }
 
   async update(id: string, dto: UpdateContractDto): Promise<ContractDocument> {

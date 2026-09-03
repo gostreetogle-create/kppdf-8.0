@@ -1,6 +1,6 @@
 # WAVE — Backend Contract file (parallel Freebuff #2)
 
-Status: **READY @ C3** · parallel to KP Family S40–S48
+Status: **READY @ C4** · parallel to KP Family S40–S48
 
 > **Conflict ban:** `frontend-nx/**`, `quotation/**`, `proposals-list*`
 > Resume: `tasks/PROMPT-FREEBUFF-CONTRACT-FILE-RESUME.md`
@@ -21,7 +21,7 @@ Status: **READY @ C3** · parallel to KP Family S40–S48
 |---|-----|---------|--------|
 | 1 | [x] C1 SCHEMA | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C1-SCHEMA.done.md` | |
 | 2 | [x] C2 WRITE-PATH | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C2-WRITE-PATH.done.md` | |
-| 3 | [ ] C3 ATTACH-FILE | | |
+| 3 | [x] C3 ATTACH-FILE | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C3-ATTACH-FILE.done.md` | pending SHA |
 | 4 | [ ] C4 SPECS | | |
 | 5 | [ ] C5 DOCS | | |
 
