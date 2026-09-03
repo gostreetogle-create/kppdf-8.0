@@ -25,12 +25,20 @@
 - Пустой журнал говорит «В журнале пока нет КП» и даёт явную кнопку «Создать КП», ведущую в `/proposals/create`; при поиске без результатов показывается «По вашему запросу КП не найдено».
 - «Копировать» вызывает duplicate API и открывает новый draft в студии Создать КП.
 
-## Семья (313)
+## Семья (313 + NX S40–S48)
 
-- Expand «Семья» → `GET /quotations/:id/family`; варианты по Organization.
-- «Несколько фирм» → attach dialog: org + % + колонка **оценка** (UI preview, не BE total).
-- Клик variant → отдельный `ProposalVariantDialogComponent` (read-only; строки и цены не редактируются).
-- «Синхронизировать» (master) → confirm → `POST …/sync-from-master`.
+Канон: один состав (master) раскатывается на наши `Organization`. BE: SALES-303. NX UI: WAVE-NX-KP-FAMILY.
+
+| Действие | Где | API |
+|----------|-----|-----|
+| Список без вариантов | плоский журнал | variants скрыты (`familyRole === 'variant'`) |
+| Expand | CTA «Семья» | `GET /quotations/:id/family` |
+| Несколько фирм | solo/master | `POST …/family/attach-organizations` |
+| Синхронизировать | master + есть variants, confirm | `POST …/family/sync-from-master` |
+| Вариант в студии | строка variant | `studioDocumentId` или `?quotationId=<variantId>` |
+| В заказ | только accepted master/solo | `POST …/convert-to-order`; variant → нет CTA (BE 400) |
+
+Organization ≠ Counterparty. Markup % — поле UI, не живой пересчёт totals на FE.
 
 ## Не здесь
 

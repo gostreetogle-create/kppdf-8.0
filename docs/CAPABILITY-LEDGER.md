@@ -40,7 +40,7 @@
 | Sales: NX orders list/create/detail + payment | included | S30–S39: журнал `/orders`, прямой заказ без КП (ensure-default site), карточка с оплатой `isPaid`, convert accepted КП → заказ; заглушка-КП `removed` из UX (MASTER-CORE), endpoint deprecated. |
 | Warehouse: warehouses, stock, movements | included | READY TO USE*; ACL/автосписание — HARDENING / absent. |
 | Warehouse: auto-issue on work complete | absent | После ручного приход/расход; не блокирует READY склада. |
-| Deals / quotations (КП) studio | available | WAVE KP на main; shame-polish / smoke у PO; не начинать параллельный create-path. |
+| Deals / quotations (КП) studio | available | WAVE KP на main; NX семья S40–S48 DONE (attach/sync/studio/convert guard). Shame-polish / smoke у PO; не начинать параллельный create-path. |
 | Orders (shop floor order card) | available | Зависит от sales→shop canon; не дублировать дерево состава. |
 | Documents: templates / builder / archive | available | Builder MVP; create-parity и превью — смотри DOC-* / SECTION-READINESS. |
 | Documents: PDF print from quotation | available | Puppeteer/Chrome path; 503 fallback — ок; live smoke зависит от host. |
