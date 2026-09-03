@@ -6,8 +6,14 @@ import { Types } from 'mongoose';
 import { ContractService } from './contract.service';
 
 function makeModel(doc: Record<string, unknown> | null) {
+  const findByIdQuery = {
+    populate: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue(doc),
+  };
   return {
+    create: jest.fn().mockImplementation((payload: unknown) => Promise.resolve(payload)),
     findOne: jest.fn().mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) }),
+    findById: jest.fn().mockReturnValue(findByIdQuery),
   };
 }
 
@@ -51,7 +57,7 @@ describe('ContractService attachment write-path', () => {
     };
     const service = new ContractService(
       model as never,
-      {} as never,
+      { next: jest.fn().mockResolvedValue('CTR-001') } as never,
       {} as never,
       {} as never,
       {} as never,
@@ -59,6 +65,76 @@ describe('ContractService attachment write-path', () => {
     );
     return { model, photos, service };
   }
+
+  it('defaults a new contract to attachment status none', async () => {
+    const { model, service } = makeService(null);
+
+    await service.create({
+      organizationId: new Types.ObjectId().toString(),
+      customerId: new Types.ObjectId().toString(),
+      items: [],
+    });
+
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({ contractStatus: 'none' }),
+    );
+  });
+
+  it('accepts a URL-backed file_attached contract and rejects an unreferenced one', async () => {
+    const base = {
+      organizationId: new Types.ObjectId().toString(),
+      customerId: new Types.ObjectId().toString(),
+      items: [],
+    };
+    const { model, service } = makeService(null);
+
+    await service.create({
+      ...base,
+      contractStatus: 'file_attached',
+      attachmentUrl: '/uploads/contracts/signed.pdf',
+    });
+    expect(model.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contractStatus: 'file_attached',
+        attachmentUrl: '/uploads/contracts/signed.pdf',
+      }),
+    );
+
+    await expect(
+      service.create({ ...base, contractStatus: 'file_attached' }),
+    ).rejects.toThrow('requires attachmentFileId or attachmentUrl');
+  });
+
+  it('patches attachment state without changing the lifecycle status', async () => {
+    const doc = makeDoc({ status: 'active' });
+    const { service } = makeService(doc);
+
+    await service.update(String(doc._id), {
+      contractStatus: 'file_attached',
+      attachmentUrl: '/uploads/contracts/patched.pdf',
+    });
+
+    expect(doc.status).toBe('active');
+    expect(doc.contractStatus).toBe('file_attached');
+    expect(doc.attachmentUrl).toBe('/uploads/contracts/patched.pdf');
+  });
+
+  it('clears both attachment references when patched to none', async () => {
+    const doc = makeDoc({
+      status: 'signed',
+      contractStatus: 'file_attached',
+      attachmentFileId: new Types.ObjectId().toString(),
+      attachmentUrl: '/uploads/contracts/signed.pdf',
+    });
+    const { service } = makeService(doc);
+
+    await service.update(String(doc._id), { contractStatus: 'none' });
+
+    expect(doc.status).toBe('signed');
+    expect(doc.contractStatus).toBe('none');
+    expect(doc.attachmentFileId).toBeUndefined();
+    expect(doc.attachmentUrl).toBeUndefined();
+  });
 
   it('stores a Photo reference and sets file_attached without changing lifecycle status', async () => {
     const doc = makeDoc();
