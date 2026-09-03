@@ -171,7 +171,7 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
           >
             Редактор
           </button>
-          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save" (click)="saveDocument()">Сохранить</button>
+          <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save" [disabled]="saving()" (click)="saveDocument()">Сохранить</button>
           <button type="button" class="kp-ws-ribbon-btn" data-test="studio-save-as" [disabled]="templateSaving()" (click)="openSaveAsTemplateDialog()">Сохранить как…</button>
           <button
             type="button"
@@ -430,7 +430,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private readonly sheetHostRef = viewChild<ElementRef<HTMLElement>>('sheetHost');
   private timer?: number;
   private conflictDialogOpen = false;
-  private layoutSavePromise: Promise<void> | null = null;
+  private layoutSavePromise: Promise<boolean> | null = null;
   private layoutsDirty = false;
   private resizeObserver?: ResizeObserver;
   private readonly onStudioKeydown = (event: KeyboardEvent): void => {
@@ -464,6 +464,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   readonly sheetSize = signal({ width: 800, height: 566 });
   readonly zoomMode = signal<'fit' | '100'>('fit');
   readonly templateSaving = signal(false);
+  readonly saving = signal(false);
   readonly docTypes = signal<DocType[]>([]);
   readonly docTypeSaving = signal(false);
   readonly pdfLoading = signal(false);
@@ -710,8 +711,20 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     onStudioSectionClick(id as StudioWorkspaceSection, this.activeSection, this.panelCollapsed);
   }
 
-  saveDocument(): void {
-    this.toast.success('Сохранено');
+  async saveDocument(): Promise<void> {
+    if (this.saving()) return;
+    this.saving.set(true);
+    try {
+      const layoutsOk = await this.flushLayouts();
+      if (!layoutsOk) return;
+      if (this.isKpDoc() && this.quotationId()) {
+        const syncOk = await this.syncKpQuotationItems();
+        if (!syncOk) return;
+      }
+      this.toast.success('Сохранено');
+    } finally {
+      this.saving.set(false);
+    }
   }
 
   openDocumentList(): void {
@@ -1561,15 +1574,18 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  private syncKpQuotationItems(): void {
+  private syncKpQuotationItems(): Promise<boolean> {
     const doc = this.document();
-    if (!doc || !this.isKpDoc() || !this.quotationId()) return;
-    void firstValueFrom(this.documents.syncQuotation(doc._id)).then((result) => {
+    if (!doc || !this.isKpDoc() || !this.quotationId()) return Promise.resolve(true);
+    return firstValueFrom(this.documents.syncQuotation(doc._id)).then((result) => {
       if (result.ok) {
         const quotation = result.data.quotation as Quotation | null;
         if (quotation?.status) this.linkedQuotationStatus.set(quotation.status);
         void this.reloadQuotations();
+        return true;
       }
+      this.toast.error(extractErrorMessage(result.error));
+      return false;
     });
   }
 
@@ -1717,7 +1733,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.document.set(r.data);
         this.refreshPreviewIfActive();
-        this.syncKpQuotationItems();
+        void this.syncKpQuotationItems();
       } else {
         this.contextSaveError.set(extractErrorMessage(r.error));
         this.conflict();
@@ -1910,8 +1926,8 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     }, 400);
   }
 
-  /** Persist pending layout debounce before preview/server output. */
-  private flushLayouts(): Promise<void> {
+  /** Persist pending layout debounce before preview/server output. Resolves false on save failure (conflict dialog already shown). */
+  private flushLayouts(): Promise<boolean> {
     if (this.timer) {
       clearTimeout(this.timer);
       this.timer = undefined;
@@ -1920,7 +1936,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       return this.layoutSavePromise;
     }
     if (!this.layoutsDirty) {
-      return Promise.resolve();
+      return Promise.resolve(true);
     }
     this.layoutSavePromise = this.saveLayouts();
     const pending = this.layoutSavePromise;
@@ -1929,16 +1945,16 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     });
   }
 
-  private saveLayouts(): Promise<void> {
+  private saveLayouts(): Promise<boolean> {
     const d = this.document();
-    if (!d) return Promise.resolve();
+    if (!d) return Promise.resolve(true);
     const updates = this.blocks()
       .filter((b): b is StudioBlock & { layout: StudioBlockLayout } => Boolean(b.layout))
       .map((b) => ({
         blockId: b._id,
         layout: normalizeStudioBlockLayout(b.layout),
       }));
-    if (updates.length === 0) return Promise.resolve();
+    if (updates.length === 0) return Promise.resolve(true);
     return firstValueFrom(
       this.blocksService.updateLayouts(d._id, { expectedRevision: d.revision ?? 1, updates }),
     ).then((r) => {
@@ -1949,9 +1965,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
         );
         this.blocks.set(normalized);
         this.document.update((x) => (x ? { ...x, revision: (x.revision ?? 1) + 1 } : x));
-      } else {
-        this.conflict();
+        return true;
       }
+      this.conflict();
+      return false;
     });
   }
 
