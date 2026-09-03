@@ -7,7 +7,7 @@
   display: flex;
   gap: 8px;
   align-items: flex-start;
-  padding: 10px 12px;
+  padding: var(--space-control-y-md) var(--space-control-x);
   background: transparent;
   border: 1px solid var(--color-rule);
   border-radius: 2px;
@@ -173,7 +173,7 @@
 .block-renderer__binding {
   background: var(--color-gold-soft);
   color: var(--color-gold);
-  padding: 1px 6px;
+  padding: calc(var(--space-1) / 4) calc(var(--space-3) / 2);
   border-radius: 2px;
   font-size: 10px;
   font-family: ui-monospace, monospace;
@@ -190,8 +190,8 @@
 
 /* TZ-104.7 NIT #2: preamble spacing */
 .block-renderer__content--preamble {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
   border-bottom: 1px dashed var(--color-rule);
 }
 
@@ -211,7 +211,7 @@
   font-style: italic;
   text-align: center;
   border-top: 1px solid var(--color-rule);
-  padding-top: 8px;
+  padding-top: var(--space-2);
   width: 100%;
 }
 
@@ -229,7 +229,7 @@
 }
 .block-renderer__table-wrap {
   overflow-x: auto;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 .block-renderer__table {
   width: 100%;
@@ -237,7 +237,7 @@
   font-size: 12px;
 }
 .block-renderer__table th {
-  padding: 6px 8px;
+  padding: calc(var(--space-3) / 2) var(--space-2);
   text-align: left;
   font-size: 10px;
   font-weight: 700;
@@ -249,7 +249,7 @@
   white-space: nowrap;
 }
 .block-renderer__table td {
-  padding: 5px 8px;
+  padding: calc(var(--space-1) * 1.25) var(--space-2);
   border-bottom: 1px solid var(--color-rule);
   color: var(--color-ink);
   word-break: break-word;
@@ -261,7 +261,7 @@
   text-align: center;
   font-style: italic;
   color: var(--color-muted-foreground-strong);
-  padding: 12px 8px;
+  padding: var(--space-3) var(--space-2);
 }
 
 /* ═══ Drag Handle — TZ-211 ═══ */
@@ -322,7 +322,7 @@
   /* height:auto — рамка растёт с контентом; min-height из layout (см. template) */
   height: auto;
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-control-y-md) var(--space-control-x);
   /* Overflow visible keeps resize handles clickable; after auto-fit the box
      matches content so spill below the gold frame should not happen. */
   overflow: visible;
@@ -467,7 +467,7 @@
 
 /* ═══ Snap indicator ═══ */
 .block-renderer--overlay.is-snapping .block-renderer__image-wrap--overlay {
-  outline-color: #4fc3f7;
+  outline-color: var(--color-info);
   outline-width: 2px;
   outline-style: solid;
   outline-offset: 2px;
@@ -644,7 +644,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
+  padding: calc(var(--space-3) / 2) var(--space-2);
   background: var(--color-paper);
   border: 1px solid var(--color-gold);
   border-radius: 3px;
@@ -676,7 +676,7 @@
 
 .block-renderer__size-editor-field input {
   width: 56px;
-  padding: 3px 5px;
+  padding: calc(var(--space-3) / 4) calc(var(--space-1) * 1.25);
   font-size: 12px;
   font-family: ui-monospace, monospace;
   color: var(--color-ink);
@@ -686,7 +686,7 @@
 }
 
 .block-renderer__size-editor-apply {
-  padding: 3px 8px;
+  padding: calc(var(--space-3) / 4) var(--space-2);
   font-size: 11px;
   font-weight: 600;
   color: var(--color-paper);
