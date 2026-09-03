@@ -1,0 +1,48 @@
+# WAVE — NX Sales canon S30→S39 (continuous chain)
+
+Status: **IN PROGRESS @ S31** · S30 DONE · Doc Studio S16–S26 DONE
+
+> Resume: `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
+> Roadmap: `docs/architecture/nx-sales-canon-roadmap.md`
+
+### Preflight Check Output
+- **Context read:** `docs/PO-CANON.md`, `docs/CONTEXT.md`, `docs/TZ-AUTHORING.md`, `docs/TZ-NX-BUILD-INTEGRITY.md`, `docs/architecture/MASTER-CORE.md`, `docs/FEATURE-INTEGRATION-CHECKLIST.md` §A, `docs/pages/orders.page.md`, `docs/pages/proposals.page.md`, `backend/src/modules/order/order.schema.ts`, `backend/src/modules/order/order.service.ts`, `backend/src/common/seed/currencies.seed.ts`, `frontend-nx/apps/kppdf-web/src/app/app.routes.ts`, `frontend-nx/libs/data-access/src/lib/sales/pi-orders.service.ts`
+- **Key Constraints:** Mode A wrote TZ; Freebuff executor sequential; implicit `nx build kppdf-web` for FE TZ; no auto-reserve / statusOverride / KP family
+- **Planned Deliverable:** S30→S39 claim→code→gates→archive→push; NX `/orders` + paid + no stub KP
+- **Validation Path:** FIC §A on S34; Integrity slot; gates per TZ; `nx build kppdf-web` last on FE TZ
+
+## Preflight
+
+- [x] baseline: `cd frontend-nx && pnpm exec nx build kppdf-web` PASS (exit 0; existing Angular budget warnings only)
+
+## Chain
+
+| # | TZ | Archive | Commit |
+|---|-----|---------|--------|
+| 1 | [x] S30 CURRENCY-RUB | `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` | pending SHA; pushed after archive |
+| 2 | [ ] S31 ORDER-PAID | | |
+| 3 | [ ] S32 SITES-ENSURE | | |
+| 4 | [ ] S33 PI-ORDERS-CRUD | | |
+| 5 | [ ] S34 ORDERS-LIST | | |
+| 6 | [ ] S35 ORDER-DETAIL | | |
+| 7 | [ ] S36 ORDER-CREATE | | |
+| 8 | [ ] S37 QUOTATION-CONVERT | | |
+| 9 | [ ] S38 STUB-KP-HIDE | | |
+| 10 | [ ] S39 OPERATOR-DOCS | | |
+
+## Closeout
+
+- [ ] all [x] · `_active/` пуст · QUEUE/_NOW updated
+
+### S30 evidence
+
+- Archive marker: `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md`
+- Focused test/typecheck/lint: PASS
+- S31 is the next unchecked chain row.
+
+## Запреты волны
+
+- Не семья КП / не авто-резерв склада / не `statusOverride` / не Invoice
+- Не deploy / wipe
+- Не два TZ параллельно на `kppdf-web/src/**`
+- Не завершать turn после одной TZ

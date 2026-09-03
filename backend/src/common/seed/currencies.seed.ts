@@ -21,10 +21,10 @@ interface SeedCurrency {
 }
 
 const DEFAULT_CURRENCIES: readonly SeedCurrency[] = [
-  { key: 'RUB', label: 'Российский рубль',  code: '643', symbol: '₽',  rate: 1.0,  isBase: true,  locale: 'ru-RU', precision: 2, sortOrder: 10 },
-  { key: 'USD', label: 'Доллар США',         code: '840', symbol: '$',  rate: 90.50, isBase: false, locale: 'en-US', precision: 2, sortOrder: 20 },
-  { key: 'EUR', label: 'Евро',               code: '978', symbol: '€',  rate: 98.30, isBase: false, locale: 'de-DE', precision: 2, sortOrder: 30 },
+  { key: 'RUB', label: 'Российский рубль', code: '643', symbol: '₽', rate: 1.0, isBase: true, locale: 'ru-RU', precision: 2, sortOrder: 10 },
 ] as const;
+
+const LEGACY_CURRENCY_KEYS = ['USD', 'EUR'] as const;
 
 @Injectable()
 export class CurrenciesSeed implements OnApplicationBootstrap {
@@ -36,6 +36,13 @@ export class CurrenciesSeed implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
+    await this.currencyModel
+      .updateMany(
+        { key: { $in: LEGACY_CURRENCY_KEYS }, isActive: true },
+        { $set: { isActive: false } },
+      )
+      .exec();
+
     for (const c of DEFAULT_CURRENCIES) {
       try {
         const exists = await this.currencyModel.findOne({ key: c.key }).exec();
