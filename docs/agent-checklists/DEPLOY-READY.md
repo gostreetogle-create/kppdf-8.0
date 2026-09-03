@@ -7,15 +7,17 @@
 > Prod до этой выкладки: deployed `4d55d0ea` 2026-08-27 (warm). Prior deployed `78de2801` 2026-08-26.
 
 ```yaml
-status: INVALID
-deploy_sha_target: fd416e40ff02b8fb3b37ebf44bb2734986c546a8
-deployed_sha: 4d55d0ea
-prepared_at: 2026-08-27T22:10:00+03:00
-prepared_by: cursor-architect
-deployed_at: 2026-08-27T19:25:00+03:00
-deployed_by: buffy-executor
-evidence: docs/agent-checklists/PRE-DEPLOY-2026-08-27.md
-why_invalid: deployed 4d55d0ea 2026-08-27 warm (WIPE=false)
+status: READY
+deploy_sha_target: 99a040e4d08b0aa3d0639b2474ef3067beeb1f3c
+prepared_at: 2026-09-03T21:55:00+03:00
+prepared_by: claude-executor
+evidence: docs/agent-checklists/PRE-DEPLOY-2026-09-03.md
+debt:
+  - "BE: no-explicit-any warnings (197, pre-existing)"
+  - "FE: no-implements-oninit-in-pages warnings (17, pre-existing)"
+  - "architecture: 15x fe-page-cross-component (pre-existing, unchanged; see PRE-DEPLOY)"
+desktop_zip: accept-stale (no installer zip in frontend/downloads/; web warm only)
+mixed_commit: no
 ```
 
 ## Для агента деплоя

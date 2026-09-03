@@ -1,14 +1,14 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T21:30:00+03:00
+updated_at: 2026-09-03T22:00:00+03:00
 
 ## ACTIVE / LIVE
 
-Слоты **свободны**. Очередь пуста (READY TZ нет). Корневые spent TZ/prompts убраны в `_archive/2026-09/{sources-spent,prompts-spent,waves-spent}/`.
+Слоты **свободны**. Очередь пуста (READY TZ нет). `DEPLOY-READY.md` = **READY** на `99a040e4` (см. `PRE-DEPLOY-2026-09-03.md`). Корневые spent TZ/prompts убраны в `_archive/2026-09/{sources-spent,prompts-spent,waves-spent}/`.
 
 ## NEXT (готово к выдаче)
 
-Пусто. Готово предложить деплой / ждать новую TZ-очередь от PO.
+Пусто. Можно: «сделай деплой по документации» (warm, без wipe) / ждать новую TZ-очередь от PO.
 
 ## DONE
 

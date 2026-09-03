@@ -1,7 +1,7 @@
 # Deploy — KPPDF 8.0 (Synology VM)
 
 > **Одна точка входа для деплоя.** Секреты не в git: `CREDENTIALS.md` + `config.env`.  
-> **Последний успешный warm deploy:** 2026-08-11 · код `c8ebdeb6` · prod `https://kppdf-crm.ru`.
+> **Последний успешный warm deploy:** 2026-08-27 · код `4d55d0ea` · prod `https://kppdf-crm.ru`.
 
 ---
 
