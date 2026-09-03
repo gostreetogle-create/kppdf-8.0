@@ -1,27 +1,25 @@
-# TZ inventory — 2026-09-03
+# TZ inventory — 2026-09-03 cleanup
+
+## READY (1)
+
+| TZ | Путь |
+|----|------|
+| UI-tokens slice-3 | `tasks/_ready/TZ-FRONTEND-QA-LINT-UI-TOKENS-SLICE-3.md` |
 
 ## LIVE
 
-| Волна | Осталось | Prompt |
-|-------|----------|--------|
-| NX KP Family | S44–S48 (S40–S43 DONE) | `PROMPT-FREEBUFF-KP-FAMILY-RESUME.md` |
+_пусто_ · `_active/` только `.gitkeep`
 
-## READY (slot #2 free)
+## Где лежит сделанное
 
-| Волна | TZ | Prompt |
-|-------|-----|--------|
-| QA Gates | Q1–Q4b | `PROMPT-FREEBUFF-QA-GATES-START.md` |
+| Что | Куда |
+|-----|------|
+| `.done.md` | `tasks/_archive/2026-09/*.done.md` (+ август) |
+| Исходники spent TZ | `tasks/_archive/2026-09/sources-spent/` · `…/2026-08/sources-spent/` |
+| Spent промпты | `tasks/_archive/2026-09/prompts-spent/` |
+| Spent WAVE (копии в tasks/) | `tasks/_archive/2026-09/waves-spent/` |
+| Живые WAVE/чеклисты | `docs/agent-checklists/WAVE-*.md` |
 
-| ID | Файл |
-|----|------|
-| Q1 | `TZ-BACKEND-QA-OUTPUT-VAT-MOCK.md` |
-| Q2 | `TZ-BACKEND-QA-STUDIO-QUOTATION-ORG-GUARD.md` |
-| Q3 | `TZ-FRONTEND-QA-APP-LAYOUT-FLAKY.md` |
-| Q4a | `TZ-BACKEND-QA-LINT-UNUSED-IMPORTS.md` |
-| Q4b | `TZ-FRONTEND-QA-LINT-RAW-UI-SLICE-1.md` |
+## PARK / backlog
 
-Wave: `docs/agent-checklists/WAVE-QA-GATES-2026-09.md`
-
-## DONE (recent)
-
-Sales S30–S39 · Doc Studio S15–S26 · **Contract C1–C5** · KP Family S40–S43
+`tasks/_backlog/` — не LIVE. Не выдавать пачкой.

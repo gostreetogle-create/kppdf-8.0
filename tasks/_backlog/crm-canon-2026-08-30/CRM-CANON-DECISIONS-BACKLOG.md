@@ -10,7 +10,7 @@
 - [ ] `Counterparty.roles[]` (`client`/`supplier`…) вместо двух разных контрагентов на одну фирму — если/когда встретится реальный дуал-кейс.
 - [x] `Contract.contractStatus: none|file_attached|generated` — редкий необязательный атрибут сделки, не блокирует переход Заказа в производство. **DONE:** C1 schema + C2 write path + C3 multipart PUT/DELETE + C4 focused specs + C5 docs (`WAVE-BACKEND-CONTRACT-FILE`). Файл-вложение — MVP; генерация из шаблона по данным КП — позже.
 - [x] `Order.quotationId` optional + `isPaid`/`paidAt` + без UX заглушки КП — **DONE** волна `WAVE-NX-SALES-CANON` (S31/S36/S38).
-- [ ] Семья КП (packageTag/master-variant, раскатка одного состава на несколько юрлиц) — приоритетная фича первого релиза. **TZ выданы:** `WAVE-NX-KP-FAMILY` S40–S48 (BE уже SALES-303; волна = NX UI).
+- [x] Семья КП (packageTag/master-variant, раскатка одного состава на несколько юрлиц) — **DONE** NX WAVE-NX-KP-FAMILY S40–S48 (`4abb7d5c` closeout).
 - [ ] Убрать/не реализовывать: гостевой просмотр КП без логина, CRM-таймлайн взаимодействий (Interaction) — вне канона.
 
 ## Склад / Производство
