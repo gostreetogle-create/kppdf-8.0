@@ -1,7 +1,7 @@
 TASK: TZ-FRONTEND-QA-LINT-RAW-UI-SLICE-1
 OWNER: freebuff
 CLOSED_AT: 2026-09-03T14:05:00Z
-COMMIT: pending Q4b commit
+COMMIT: fb1fced5
 PROTECTED_FILES:
   frontend/src/app/pages/doc-constructor/tables/table-template-dialog.component.ts
   frontend/src/app/pages/doc-constructor/texts/text-block-editor.component.ts

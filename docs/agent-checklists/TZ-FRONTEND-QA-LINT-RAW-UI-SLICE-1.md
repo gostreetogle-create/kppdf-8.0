@@ -86,4 +86,4 @@ Root `progress.md` and `STATUS.md` are redirect-only journals; live status is ma
 - [x] Wave and `_NOW.md` synchronized.
 - [x] Status = DONE.
 - closed_at: 2026-09-03T14:05:00Z
-- commit_sha: pending Q4b commit
+- commit_sha: fb1fced5

@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-09-03T14:05:00Z
 closed_by: freebuff
-head_sha: pending Q4b commit
+head_sha: fb1fced5
 lock_file: CREATED
 verification:
   - acceptance criteria: PASS
