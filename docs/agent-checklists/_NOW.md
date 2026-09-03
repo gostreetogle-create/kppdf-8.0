@@ -1,18 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-02T01:00:00+03:00
+updated_at: 2026-09-03T07:15:00+03:00
 
 ## ACTIVE / LIVE
 
-**QUEUE EMPTY** — S16→S26 chain closed.
+**READY:** S32 (`TZ-NX-SALES-S32-SITES-ENSURE`)  
+**RESUME:** `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
+
+Order: S32 → S39
 
 ## DONE this slice
 
-- S20→S26 — see `docs/agent-checklists/WAVE-DOCSTUDIO-S16-CHAIN.md`
-- S19B `e7553a5b` · S20-PRE `a35042f4`
-- S17 `426a4e67` · S17A `2c36444f` · S18 `33a0fa2a` · S19 `d67385f5`
-- S16 `64bdfd55` · S25 `522e6a78` · S15 · S14
+- S30 `e7c824e7` · S31 `2a7d4a58`
+- Doc Studio S15–S26
 
 ## PARK
 
+- Семья КП, авто-резерв склада, statusOverride, договор-файл
 - Three-way merge
