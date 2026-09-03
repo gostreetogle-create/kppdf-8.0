@@ -169,7 +169,9 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     expect(source).toContain('data-test="app-chrome-rail-right"');
     expect(source).toContain('app-chrome-rail-left');
     expect(source).toContain('app-chrome-rail-right');
-    expect(source).toContain('width: 64px');
+    // Rail width is tokenized: component consumes the spacing token, and the
+    // token itself resolves to the intended 64px (jsdom cannot compute var()).
+    expect(source).toContain('width: var(--spacing-16)');
     expect(source).toContain('left: 0');
     expect(source).toContain('right: 0');
     expect(source).not.toContain('position: fixed');
@@ -180,6 +182,12 @@ describe('AppLayoutComponent (TZ-UX-317 / TZ-UX-321-FIX / TZ-UX-322 / TZ-UX-324 
     expect(source).not.toContain('right: 14px');
     expect(source).toContain('@media (min-width: 1024px)');
     expect(source).toContain('display: flex');
+
+    const tokenSource = require('fs').readFileSync(
+      require('path').join(__dirname, '../../styles.css'),
+      'utf8',
+    );
+    expect(tokenSource).toMatch(/--spacing-16:\s*64px/);
   });
 
   it('TZ-UX-322: setTools renders chrome-tool buttons under history; clear removes them', () => {
