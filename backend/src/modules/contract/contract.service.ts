@@ -1,7 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Contract, ContractDocument, ContractItem } from './contract.schema';
+import {
+  Contract,
+  ContractAttachmentStatus,
+  ContractDocument,
+  ContractItem,
+} from './contract.schema';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { UpdateContractDto } from './dto/update-contract.dto';
 import { CounterService } from '../counter/counter.service';
@@ -20,6 +25,35 @@ export class ContractService {
     private readonly sites: SiteService,
   ) {}
 
+  private resolveAttachmentState(
+    contractStatus: CreateContractDto['contractStatus'] | undefined,
+    attachmentFileId?: string,
+    attachmentUrl?: string,
+    fallback: ContractAttachmentStatus = 'none',
+  ): {
+    contractStatus: ContractAttachmentStatus;
+    attachmentFileId?: string;
+    attachmentUrl?: string;
+  } {
+    const fileId = attachmentFileId?.trim() || undefined;
+    const url = attachmentUrl?.trim() || undefined;
+    const hasReference = Boolean(fileId || url);
+    const nextStatus = contractStatus ?? (hasReference ? 'file_attached' : fallback);
+
+    if (nextStatus === 'file_attached' && !hasReference) {
+      throw new BadRequestException(
+        'contractStatus=file_attached requires attachmentFileId or attachmentUrl',
+      );
+    }
+    if (nextStatus === 'none') return { contractStatus: 'none' };
+
+    return {
+      contractStatus: nextStatus,
+      ...(fileId ? { attachmentFileId: fileId } : {}),
+      ...(url ? { attachmentUrl: url } : {}),
+    };
+  }
+
   async create(dto: CreateContractDto): Promise<ContractDocument> {
     const number = dto.number ?? (await this.counter.next('Contract', 'CTR'));
     const items: ContractItem[] = dto.items.map((i) => ({
@@ -31,6 +65,11 @@ export class ContractService {
       total: (i.quantity ?? 0) * (i.unitPrice ?? 0),
     }));
     const totalAmount = items.reduce((s, i) => s + i.total, 0);
+    const attachment = this.resolveAttachmentState(
+      dto.contractStatus,
+      dto.attachmentFileId,
+      dto.attachmentUrl,
+    );
     return this.model.create({
       number,
       title: dto.title,
@@ -38,6 +77,7 @@ export class ContractService {
       organizationId: new Types.ObjectId(dto.organizationId),
       customerId: new Types.ObjectId(dto.customerId),
       status: dto.status ?? 'draft',
+      ...attachment,
       items,
       notes: dto.notes,
       totalAmount,
@@ -105,6 +145,21 @@ export class ContractService {
     if (dto.status !== undefined) doc.status = dto.status;
     if (dto.expiresAt !== undefined) doc.expiresAt = new Date(dto.expiresAt);
     if (dto.packageTag !== undefined) doc.packageTag = dto.packageTag;
+    if (
+      dto.contractStatus !== undefined
+      || dto.attachmentFileId !== undefined
+      || dto.attachmentUrl !== undefined
+    ) {
+      const attachment = this.resolveAttachmentState(
+        dto.contractStatus,
+        dto.attachmentFileId,
+        dto.attachmentUrl,
+        doc.contractStatus ?? 'none',
+      );
+      doc.contractStatus = attachment.contractStatus;
+      doc.attachmentFileId = attachment.attachmentFileId;
+      doc.attachmentUrl = attachment.attachmentUrl;
+    }
     if (dto.items !== undefined) {
       doc.items = dto.items.map((i) => ({
         productId: new Types.ObjectId(i.productId),

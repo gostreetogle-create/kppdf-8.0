@@ -1,7 +1,39 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsIn,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  Validate,
+  ValidateNested,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+} from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
+
+interface ContractAttachmentReferenceDto {
+  attachmentFileId?: string;
+  attachmentUrl?: string;
+}
+
+@ValidatorConstraint({ name: 'contractAttachmentReference', async: false })
+class ContractAttachmentReferenceConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments): boolean {
+    if (value !== 'file_attached') return true;
+    const dto = args.object as ContractAttachmentReferenceDto;
+    return Boolean(dto.attachmentFileId?.trim() || dto.attachmentUrl?.trim());
+  }
+
+  defaultMessage(): string {
+    return 'contractStatus=file_attached requires attachmentFileId or attachmentUrl';
+  }
+}
 
 export class ContractItemDto {
   @ApiProperty({ description: 'ID продукта' })
@@ -47,6 +79,28 @@ export class CreateContractDto {
   @IsOptional()
   @IsIn(['draft', 'sent', 'signed', 'active', 'completed', 'cancelled', 'expired'])
   status?: 'draft' | 'sent' | 'signed' | 'active' | 'completed' | 'cancelled' | 'expired';
+
+  @ApiPropertyOptional({
+    enum: ['none', 'file_attached', 'generated'],
+    description: 'Состояние файла договора; отдельно от lifecycle status',
+    default: 'none',
+  })
+  @IsOptional()
+  @IsIn(['none', 'file_attached', 'generated'])
+  @Validate(ContractAttachmentReferenceConstraint)
+  contractStatus?: 'none' | 'file_attached' | 'generated';
+
+  @ApiPropertyOptional({ description: 'Идентификатор файла вложения' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  attachmentFileId?: string;
+
+  @ApiPropertyOptional({ description: 'URL файла вложения' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  attachmentUrl?: string;
 
   @ApiPropertyOptional({ description: 'Заметки' })
   @IsOptional() @IsString() notes?: string;
