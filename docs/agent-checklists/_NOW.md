@@ -1,21 +1,20 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T14:05:00+03:00
+updated_at: 2026-09-03T18:25:00+03:00
 
 ## ACTIVE / LIVE
 
-**Freebuff:** QA Gates — **Q1–Q4b DONE**. Wave closeout complete; legacy frontend lint successor slices remain parked by Q4b limitation. No active QA task.
-Claude на эту волну **не** сажать.
+**Freebuff (KP Family #1):** S44 DONE (`frontend-nx` `/proposals` attach-orgs). Сейчас — **S45 SYNC-FROM-MASTER** (следующий [ ] в волне), затем S46→S48 последовательно.
 
-**KP Family #1:** если жив — S44+; иначе resume отдельно.
+**QA Gates:** Q1–Q4b DONE; legacy frontend lint successor slices remain parked by Q4b limitation. Claude на QA-волну не сажать.
 
 ## NEXT
 
-После QA closeout → проверить KP Family / новую волну. Не выдавать второй claim на те же keys.
+S45 → S46 → S47 → S48 → closeout волны (wave [x], `_active` пуст, QUEUE/_NOW sync). Не выдавать второй claim на `kppdf-web/src/**`.
 
 ## DONE
 
-- Sales S30–S39 · Contract C1–C5 · KP Family S40–S43 · QA Q1–Q4b
+- Sales S30–S39 · Contract C1–C5 · KP Family S40–S44 · QA Q1–Q4b
 
 ## PARK
 

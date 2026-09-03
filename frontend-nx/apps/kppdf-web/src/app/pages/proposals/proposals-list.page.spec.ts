@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import {
   PiOrganizationsService,
@@ -11,8 +11,10 @@ import {
   type QuotationFamilyResponse,
   type StudioDocument,
 } from '@kppdf/data-access';
+import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
+import { ProposalAttachOrgsDialogComponent, type AttachOrgsResult } from './proposal-attach-orgs.dialog';
 import { ProposalsListPage } from './proposals-list.page';
 
 describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
@@ -391,5 +393,240 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
     // No panel, no crash — the stale result was ignored (still one request).
     expect(fixture.nativeElement.querySelector('[data-test="proposal-family-list"]')).toBeFalsy();
     expect(quotationsApi.getFamily).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: {
+    list: jest.Mock;
+    convertToOrder: jest.Mock;
+    getFamily: jest.Mock;
+    attachOrganizations: jest.Mock;
+  };
+  let studioApi: { list: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
+  let toast: { error: jest.Mock; success: jest.Mock };
+  let dialogRef: DialogRef<AttachOrgsResult>;
+
+  const masterRow: Quotation = {
+    _id: 'q-master',
+    number: 'KP-010',
+    status: 'sent',
+    familyRole: 'master',
+    familyVersion: 2,
+  };
+  const soloRow: Quotation = { _id: 'q-solo', number: 'KP-012', status: 'draft' };
+  const rows: Quotation[] = [masterRow, soloRow];
+
+  const orgs = {
+    ok: true,
+    data: {
+      items: [
+        { _id: 'org-master', name: 'ООО Альфа', shortName: 'Альфа', inn: 'x', type: [] },
+        { _id: 'org-beta', name: 'ООО Бета', shortName: 'Бета', inn: 'y', type: [] },
+      ],
+      total: 2,
+      page: 1,
+      limit: 100,
+    },
+  };
+
+  const familyResponse: QuotationFamilyResponse = {
+    master: {
+      id: 'q-master',
+      number: 'KP-010',
+      organizationId: 'org-master',
+      familyRole: 'master',
+      familyVersion: 2,
+      total: 1000,
+      status: 'sent',
+    },
+    variants: [
+      {
+        id: 'q-var-b',
+        number: 'KP-011',
+        organizationId: 'org-beta',
+        familyRole: 'variant',
+        familyVersion: 2,
+        orgMarkupPercent: 8,
+        total: 1080,
+        status: 'draft',
+      },
+    ],
+    familyVersion: 2,
+  };
+
+  const familyAfterAttach: QuotationFamilyResponse = {
+    master: familyResponse.master,
+    variants: [
+      ...familyResponse.variants,
+      {
+        id: 'q-var-gamma',
+        number: 'KP-013',
+        organizationId: 'org-gamma',
+        familyRole: 'variant',
+        familyVersion: 3,
+        orgMarkupPercent: 5,
+        total: 1050,
+        status: 'draft',
+      },
+    ],
+    familyVersion: 3,
+  };
+
+  async function setup(preloadFamily = false): Promise<void> {
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: rows })),
+      convertToOrder: jest.fn(),
+      getFamily: jest.fn(),
+      attachOrganizations: jest.fn(),
+    };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
+    toast = { error: jest.fn(), success: jest.fn() };
+    const closedSignal = signal<AttachOrgsResult | undefined>(undefined);
+    dialogRef = {
+      closed: closedSignal,
+      close: (value?: AttachOrgsResult) => closedSignal.set(value),
+    } as unknown as DialogRef<AttachOrgsResult>;
+    const dialog = { open: jest.fn().mockReturnValue(dialogRef) };
+
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+        { provide: PiDialogService, useValue: dialog },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    if (preloadFamily) {
+      fixture.componentInstance.familyByRow.set({ 'q-master': familyResponse });
+    }
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function attachButtonOf(number: string): HTMLButtonElement {
+    const rowsEl = fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]');
+    const row = Array.from(rowsEl).find((r) => ((r as HTMLElement).textContent ?? '').includes(number));
+    const button = row?.querySelector('[data-test="proposal-attach-orgs"]') as HTMLButtonElement | null;
+    if (!button) throw new Error(`attach button not found for ${number}`);
+    return button;
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('offers «Несколько фирм» on master and solo rows', async () => {
+    await setup();
+
+    expect(attachButtonOf('KP-010')).toBeTruthy();
+    expect(attachButtonOf('KP-012')).toBeTruthy();
+    // Variant rows are hidden from the flat list entirely (S42).
+    const variantButtons = fixture.nativeElement.querySelectorAll('[data-test="proposal-attach-orgs"]');
+    expect(variantButtons.length).toBe(2);
+  });
+
+  it('opens the attach dialog with organizations loaded and existing variants excluded', async () => {
+    await setup(true);
+
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    attachButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(organizationsApi.list).toHaveBeenCalledWith({ limit: 100 });
+    expect(dialog.open).toHaveBeenCalledWith(
+      ProposalAttachOrgsDialogComponent,
+      expect.objectContaining({
+        width: 'md',
+        data: expect.objectContaining({
+          quotation: masterRow,
+          organizations: orgs.data.items,
+          existingVariantOrgIds: new Set(['org-beta']),
+        }),
+      }),
+    );
+  });
+
+  it('POSTs the attach payload on confirm, updates the family cache and toasts success', async () => {
+    await setup(true);
+    quotationsApi.attachOrganizations.mockReturnValue(of({ ok: true, data: familyAfterAttach }));
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+
+    attachButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(dialog.open).toHaveBeenCalled();
+
+    const ref = dialog.open.mock.results[0].value as DialogRef<AttachOrgsResult>;
+    ref.close({ items: [{ organizationId: 'org-gamma', orgMarkupPercent: 5 }] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    // Effects fire after the signal write; the POST result resolves in a follow-up microtask.
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.attachOrganizations).toHaveBeenCalledWith('q-master', {
+      items: [{ organizationId: 'org-gamma', orgMarkupPercent: 5 }],
+    });
+    expect(toast.success).toHaveBeenCalledWith('Варианты добавлены');
+    const cached = fixture.componentInstance.familyByRow()['q-master'];
+    expect(cached.variants.some((v) => v.organizationId === 'org-gamma')).toBe(true);
+  });
+
+  it('does not POST when the dialog is cancelled', async () => {
+    await setup();
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+
+    attachButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const ref = dialog.open.mock.results[0].value as DialogRef<AttachOrgsResult>;
+    ref.close(undefined);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.attachOrganizations).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast and keeps the list unchanged when attach fails', async () => {
+    await setup(true);
+    quotationsApi.attachOrganizations.mockReturnValue(
+      of({
+        ok: false,
+        error: new HttpErrorResponse({ status: 400, error: { message: 'Quotation must be master or solo' } }),
+      }),
+    );
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+
+    attachButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const ref = dialog.open.mock.results[0].value as DialogRef<AttachOrgsResult>;
+    ref.close({ items: [{ organizationId: 'org-gamma' }] });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    // Effects fire after the signal write; the POST result resolves in a follow-up microtask.
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.attachOrganizations).toHaveBeenCalledWith('q-master', {
+      items: [{ organizationId: 'org-gamma' }],
+    });
+    expect(toast.error).toHaveBeenCalledWith('Не удалось добавить фирмы', expect.anything());
+    // Cache untouched — the old family (org-beta only) is still shown.
+    const cached = fixture.componentInstance.familyByRow()['q-master'];
+    expect(cached).toEqual(familyResponse);
   });
 });

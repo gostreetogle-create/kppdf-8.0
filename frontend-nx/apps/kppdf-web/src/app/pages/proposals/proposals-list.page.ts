@@ -1,18 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injector, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   PiOrganizationsService,
   PiQuotationsService,
   PiStudioDocumentsService,
+  type AttachOrganizationsPayload,
+  type Organization,
   type Quotation,
   type QuotationFamilyResponse,
   type StudioDocument,
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { BadgeComponent } from '@kppdf/ui/badge';
+import { PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
+import { onDialogCloseOnce } from '../on-dialog-close-once';
+import {
+  ProposalAttachOrgsDialogComponent,
+  type AttachOrgsDialogData,
+  type AttachOrgsItemPayload,
+  type AttachOrgsResult,
+} from './proposal-attach-orgs.dialog';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Черновик',
@@ -77,6 +87,14 @@ const STATUS_LABELS: Record<string, string> = {
                   <button class="pi-button pi-button-secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
                     В студии
                   </button>
+                  <button
+                    class="pi-button pi-button-secondary"
+                    type="button"
+                    data-test="proposal-attach-orgs"
+                    (click)="openAttachOrgs(row)"
+                  >
+                    Несколько фирм
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -118,8 +136,13 @@ export class ProposalsListPage implements OnInit {
   private readonly quotationsApi = inject(PiQuotationsService);
   private readonly studioApi = inject(PiStudioDocumentsService);
   private readonly organizationsApi = inject(PiOrganizationsService);
+  private readonly dialog = inject(PiDialogService);
+  private readonly injector = inject(Injector);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
   private readonly toast = inject(PiToastService);
+
+  private readonly orgRows = signal<readonly Organization[]>([]);
 
   readonly rows = signal<readonly Quotation[]>([]);
   readonly studioDocs = signal<readonly StudioDocument[]>([]);
@@ -186,39 +209,84 @@ export class ProposalsListPage implements OnInit {
     void this.loadFamily(row);
   }
 
-  private async loadFamily(row: Quotation): Promise<void> {
+  private async loadFamily(row: Quotation): Promise<QuotationFamilyResponse | null> {
     this.familyLoadingId.set(row._id);
     this.familyError.set('');
     await this.ensureOrganizations();
     // Stale guard — the expand panel may have been closed during the fetch.
     if (this.expandedFamilyId() !== row._id) {
       this.familyLoadingId.set(null);
-      return;
+      return null;
     }
     const result = await firstValueFrom(this.quotationsApi.getFamily(row._id));
     if (this.expandedFamilyId() !== row._id) {
       this.familyLoadingId.set(null);
-      return; // closed while loading — ignore stale result
+      return null; // closed while loading — ignore stale result
     }
     this.familyLoadingId.set(null);
     if (!result.ok) {
       this.familyError.set(extractErrorMessage(result.error));
-      return;
+      return null;
     }
     const family = result.data;
     this.familyByRow.update((all) => ({ ...all, [row._id]: family }));
+    return family;
   }
 
   private async ensureOrganizations(): Promise<void> {
-    if (this.orgsLoaded) return;
+    if (this.orgsLoaded && this.orgRows().length > 0) return;
     this.orgsLoaded = true;
     const result = await firstValueFrom(this.organizationsApi.list({ limit: 100 }));
     if (!result.ok || !result.data) return;
+    const items = result.data.items ?? [];
+    this.orgRows.set(items);
     const byId: Record<string, string> = {};
-    for (const org of result.data.items) {
+    for (const org of items) {
       byId[org._id] = org.shortName ?? org.name;
     }
     this.orgNames.set(byId);
+  }
+
+  /** S44 — «Несколько фирм»: attach orgs as new variants, then refresh the expand panel. */
+  openAttachOrgs(row: Quotation): void {
+    void this.ensureOrganizations().then(() => {
+      const family = this.familyByRow()[row._id];
+      const existing = new Set((family?.variants ?? []).map((v) => v.organizationId));
+      const data: AttachOrgsDialogData = {
+        quotation: row,
+        organizations: this.orgRows(),
+        existingVariantOrgIds: existing,
+      };
+      const dialogRef = this.dialog.open<AttachOrgsResult>(ProposalAttachOrgsDialogComponent, {
+        data,
+        width: 'md',
+        ariaLabel: 'Несколько фирм — добавить варианты КП',
+        parentDestroyRef: this.destroyRef,
+      });
+      onDialogCloseOnce(dialogRef, this.injector, (result) => {
+        if (!result || result.items.length === 0) return; // cancel — no POST
+        void this.attachOrganizations(row, result.items);
+      });
+    });
+  }
+
+  private async attachOrganizations(
+    row: Quotation,
+    items: readonly AttachOrgsItemPayload[],
+  ): Promise<void> {
+    const payload: AttachOrganizationsPayload = { items };
+    const result = await firstValueFrom(this.quotationsApi.attachOrganizations(row._id, payload));
+    if (!result.ok) {
+      this.toast.error('Не удалось добавить фирмы', {
+        description: extractErrorMessage(result.error),
+      });
+      return;
+    }
+    this.familyByRow.update((all) => ({ ...all, [row._id]: result.data }));
+    this.toast.success('Варианты добавлены');
+    if (this.expandedFamilyId() === row._id) {
+      await this.loadFamily(row);
+    }
   }
 
   createInStudio(): void {
