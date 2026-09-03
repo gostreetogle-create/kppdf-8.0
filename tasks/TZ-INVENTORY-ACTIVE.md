@@ -1,18 +1,27 @@
-# TZ inventory — tasks/ folder (2026-09-02)
+# TZ inventory — 2026-09-03
 
-> Spec-файлы `tasks/TZ-*.md` **остаются** после archive (это норма проекта).  
-> Признак DONE = `tasks/_archive/**/<ID>.done.md` + commit на main.
+## LIVE
 
-## Осталось выполнить (0)
+| Волна | Осталось | Prompt |
+|-------|----------|--------|
+| NX KP Family | S44–S48 (S40–S43 DONE) | `PROMPT-FREEBUFF-KP-FAMILY-RESUME.md` |
 
-**Doc Studio S16→S26 chain — CLOSED** (`5b2d8aa5`). См. `docs/agent-checklists/WAVE-DOCSTUDIO-S16-CHAIN.md`.
+## READY (slot #2 free)
 
-## DONE (сессия 2026-09-02)
+| Волна | TZ | Prompt |
+|-------|-----|--------|
+| QA Gates | Q1–Q4b | `PROMPT-FREEBUFF-QA-GATES-START.md` |
 
-S19B, S20-PRE, S20, S22, S21, S23, S24, S26 — archives в `tasks/_archive/2026-09/`.
+| ID | Файл |
+|----|------|
+| Q1 | `TZ-BACKEND-QA-OUTPUT-VAT-MOCK.md` |
+| Q2 | `TZ-BACKEND-QA-STUDIO-QUOTATION-ORG-GUARD.md` |
+| Q3 | `TZ-FRONTEND-QA-APP-LAYOUT-FLAKY.md` |
+| Q4a | `TZ-BACKEND-QA-LINT-UNUSED-IMPORTS.md` |
+| Q4b | `TZ-FRONTEND-QA-LINT-RAW-UI-SLICE-1.md` |
 
-Ранее: S7–S19, S25, S8–S14, backend TZ — `tasks/_archive/2026-08/` и `2026-09/`.
+Wave: `docs/agent-checklists/WAVE-QA-GATES-2026-09.md`
 
-## Hygiene (опционально PO)
+## DONE (recent)
 
-Перенести done specs в `tasks/_archive/specs-dup-root/` — отдельная уборка, не блокирует код.
+Sales S30–S39 · Doc Studio S15–S26 · **Contract C1–C5** · KP Family S40–S43

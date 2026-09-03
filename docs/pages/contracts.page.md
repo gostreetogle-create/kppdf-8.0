@@ -22,9 +22,27 @@
 | Метод | Endpoint | Назначение |
 |-------|----------|-----------|
 | GET | `/api/contracts` | Список (flat array) |
-| DELETE | `/api/contracts/:id` | Удаление (soft delete) |
+| PUT | `/api/contracts/:id/attachment` | Прикрепить один файл договора (multipart `file`) |
+| DELETE | `/api/contracts/:id/attachment` | Снять файл договора и очистить attachment state |
+| DELETE | `/api/contracts/:id` | Удаление договора (soft delete) |
 
 Ответ GET: `Contract[]` (flat array, НЕ пагинированный envelope)
+
+### Contract attachment state
+
+`Contract.status` — lifecycle договора (`draft` → `signed` → `active` и т.д.). Не путать его с отдельным `contractStatus`, который описывает наличие юридического файла:
+
+| `contractStatus` | Смысл | Файловая ссылка |
+|------------------|-------|-----------------|
+| `none` | Файл не прикреплён | `attachmentFileId` / `attachmentUrl` отсутствуют |
+| `file_attached` | Прикреплён оператором | `attachmentFileId` указывает на `Photo`, `attachmentUrl` — `/uploads/contracts/...` |
+| `generated` | Зарезервировано для будущей генерации из шаблона | Может быть без файла; генерация из КП пока не реализуется |
+
+`PUT /api/contracts/:id/attachment` принимает multipart-поле `file` (admin/manager), сохраняет файл через `Photo`-метаданные и переводит только `contractStatus` в `file_attached`; lifecycle `status` не меняется. Пустой файл даёт `400`, отсутствующий или soft-deleted договор — `404`. Повторная загрузка заменяет прежнюю ссылку.
+
+`DELETE /api/contracts/:id/attachment` (admin/manager) очищает `attachmentFileId` и `attachmentUrl`, переводит `contractStatus` в `none` и best-effort удаляет прежний `Photo`. Это не удаляет и не меняет сам Contract lifecycle.
+
+**NX UI `/contracts`:** successor / PARK; текущая вертикаль — backend API и legacy реестр.
 
 ## Dialogs
 
