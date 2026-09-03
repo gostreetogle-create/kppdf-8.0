@@ -838,3 +838,128 @@ describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', ()
     expect(cached).toEqual(masterFamily);
   });
 });
+
+describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-STUDIO)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: { list: jest.Mock; getFamily: jest.Mock };
+  let studioApi: { list: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
+  let toast: { error: jest.Mock; success: jest.Mock };
+  let router: { navigate: jest.Mock };
+
+  const masterRow: Quotation = { _id: 'q-master', number: 'KP-010', status: 'sent', familyRole: 'master', familyVersion: 2 };
+  const rows: Quotation[] = [masterRow];
+
+  const orgs = {
+    ok: true,
+    data: {
+      items: [{ _id: 'org-master', name: 'ООО Альфа', shortName: 'Альфа', inn: 'x', type: [] }],
+      total: 1,
+      page: 1,
+      limit: 100,
+    },
+  };
+
+  const masterFamily: QuotationFamilyResponse = {
+    master: {
+      id: 'q-master',
+      number: 'KP-010',
+      organizationId: 'org-master',
+      familyRole: 'master',
+      familyVersion: 2,
+      total: 1000,
+      status: 'sent',
+    },
+    variants: [
+      {
+        id: 'q-var-b',
+        number: 'KP-011',
+        organizationId: 'org-master',
+        familyRole: 'variant',
+        familyVersion: 2,
+        orgMarkupPercent: 5,
+        total: 1050,
+        status: 'draft',
+      },
+    ],
+    familyVersion: 2,
+  };
+
+  async function setup(linkedStudioDocs: readonly { _id: string; linkedQuotationId: string }[] = []): Promise<void> {
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: rows })),
+      getFamily: jest.fn().mockReturnValue(of({ ok: true, data: masterFamily })),
+    };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: linkedStudioDocs })) };
+    organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
+    toast = { error: jest.fn(), success: jest.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+      ],
+    }).compileComponents();
+
+    router = { navigate: jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true) };
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  async function expandMaster(): Promise<void> {
+    const row = Array.from(fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]')).find((r) =>
+      ((r as HTMLElement).textContent ?? '').includes('KP-010'),
+    );
+    const expand = row?.querySelector('[data-test="proposal-family-expand"]') as HTMLButtonElement | null;
+    if (!expand) throw new Error('expand button not found');
+    expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function memberStudioButton(): HTMLButtonElement {
+    const button = fixture.nativeElement.querySelector('[data-test="proposal-member-open-studio"]') as HTMLButtonElement | null;
+    if (!button) throw new Error('variant studio button not found');
+    return button;
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('shows «В студии» on variant rows inside the family panel', async () => {
+    await setup();
+    await expandMaster();
+
+    expect(memberStudioButton().textContent).toContain('В студии');
+  });
+
+  it('opens the studio for the variant id (not the master) when no linked studio doc exists', async () => {
+    await setup();
+    await expandMaster();
+
+    memberStudioButton().click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/studio'], { queryParams: { quotationId: 'q-var-b' } });
+    expect(router.navigate).not.toHaveBeenCalledWith(['/studio', expect.anything()]);
+  });
+
+  it('navigates to the linked studio document when the variant already has one', async () => {
+    await setup([{ _id: 'doc-var-b', linkedQuotationId: 'q-var-b' }]);
+    await expandMaster();
+
+    memberStudioButton().click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(router.navigate).toHaveBeenCalledWith(['/studio', 'doc-var-b']);
+  });
+});

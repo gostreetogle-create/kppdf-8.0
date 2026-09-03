@@ -8,6 +8,7 @@ import {
   type AttachOrganizationsPayload,
   type Organization,
   type Quotation,
+  type QuotationFamilyMemberSummary,
   type QuotationFamilyResponse,
   type StudioDocument,
 } from '@kppdf/data-access';
@@ -117,6 +118,14 @@ const STATUS_LABELS: Record<string, string> = {
                           <span class="text-muted-foreground">
                             {{ member.number }} · {{ member.orgMarkupPercent ?? 0 }}% · {{ statusLabel(member.status) }}
                           </span>
+                          <button
+                            type="button"
+                            class="text-xs underline underline-offset-2 hover:text-ink"
+                            data-test="proposal-member-open-studio"
+                            (click)="openVariantInStudio(member)"
+                          >
+                            В студии
+                          </button>
                         </div>
                       } @empty {
                         <span class="text-muted-foreground">Нет вариантов фирм</span>
@@ -332,17 +341,26 @@ export class ProposalsListPage implements OnInit {
   }
 
   openInStudio(quotation: Quotation): void {
-    const linked = quotation.studioDocumentId
+    this.openQuotationInStudio(quotation._id, quotation.studioDocumentId);
+  }
+
+  /** S46 — variant rows in the family panel open the studio for their own quotation id. */
+  openVariantInStudio(member: QuotationFamilyMemberSummary): void {
+    this.openQuotationInStudio(member.id);
+  }
+
+  private openQuotationInStudio(quotationId: string, studioDocumentId?: string): void {
+    const linked = studioDocumentId
       ?? this.studioDocs().find(
         (doc) =>
-          doc.linkedQuotationId === quotation._id
-          || doc.context?.['quotationId'] === quotation._id,
+          doc.linkedQuotationId === quotationId
+          || doc.context?.['quotationId'] === quotationId,
       )?._id;
     if (linked) {
       void this.router.navigate(['/studio', linked]);
       return;
     }
-    void this.router.navigate(['/studio'], { queryParams: { quotationId: quotation._id } });
+    void this.router.navigate(['/studio'], { queryParams: { quotationId } });
   }
 
   async convertToOrder(quotation: Quotation): Promise<void> {

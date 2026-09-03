@@ -25,7 +25,7 @@ Status: **READY @ S40** · Sales canon S30–S39 DONE (`28acaff7`)
 | 4 | [x] S43 FAMILY-EXPAND | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S43-EXPAND.done.md` | |
 | 5 | [x] S44 ATTACH-ORGS | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S44-ATTACH-ORGS.done.md` | |
 | 6 | [x] S45 SYNC-FROM-MASTER | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S45-SYNC.done.md` | |
-| 7 | [ ] S46 VARIANT-OPEN-STUDIO | | |
+| 7 | [x] S46 VARIANT-OPEN-STUDIO | `tasks/_archive/2026-09/TZ-NX-KP-FAMILY-S46-VARIANT-STUDIO.done.md` | |
 | 8 | [ ] S47 CONVERT-MASTER-ONLY-UX | | |
 | 9 | [ ] S48 OPERATOR-DOCS | | |
 
