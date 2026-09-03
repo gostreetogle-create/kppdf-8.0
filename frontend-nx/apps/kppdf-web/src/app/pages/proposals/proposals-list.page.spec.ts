@@ -11,7 +11,7 @@ import {
   type QuotationFamilyResponse,
   type StudioDocument,
 } from '@kppdf/data-access';
-import { PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
+import { AlertDialogComponent, PiDialogService, type DialogRef } from '@kppdf/ui/dialog';
 import { PiToastService } from '@kppdf/ui/toast';
 import type { SilentResult } from '@kppdf/util-http';
 import { ProposalAttachOrgsDialogComponent, type AttachOrgsResult } from './proposal-attach-orgs.dialog';
@@ -628,5 +628,213 @@ describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
     // Cache untouched — the old family (org-beta only) is still shown.
     const cached = fixture.componentInstance.familyByRow()['q-master'];
     expect(cached).toEqual(familyResponse);
+  });
+});
+
+describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: { list: jest.Mock; getFamily: jest.Mock; syncFromMaster: jest.Mock };
+  let studioApi: { list: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
+  let toast: { error: jest.Mock; success: jest.Mock };
+
+  const masterRow: Quotation = { _id: 'q-master', number: 'KP-010', status: 'sent', familyRole: 'master', familyVersion: 2 };
+  const soloRow: Quotation = { _id: 'q-solo', number: 'KP-012', status: 'draft' };
+  const rows: Quotation[] = [masterRow, soloRow];
+
+  const orgs = {
+    ok: true,
+    data: {
+      items: [{ _id: 'org-master', name: 'ООО Альфа', shortName: 'Альфа', inn: 'x', type: [] }],
+      total: 1,
+      page: 1,
+      limit: 100,
+    },
+  };
+
+  const masterFamily: QuotationFamilyResponse = {
+    master: {
+      id: 'q-master',
+      number: 'KP-010',
+      organizationId: 'org-master',
+      familyRole: 'master',
+      familyVersion: 2,
+      total: 1000,
+      status: 'sent',
+    },
+    variants: [
+      {
+        id: 'q-var-b',
+        number: 'KP-011',
+        organizationId: 'org-master',
+        familyRole: 'variant',
+        familyVersion: 2,
+        orgMarkupPercent: 5,
+        total: 1050,
+        status: 'draft',
+      },
+    ],
+    familyVersion: 2,
+  };
+  const familyAfterSync: QuotationFamilyResponse = {
+    ...masterFamily,
+    master: { ...masterFamily.master, familyVersion: 3 },
+    familyVersion: 3,
+  };
+  const soloFamily: QuotationFamilyResponse = {
+    master: { id: 'q-solo', number: 'KP-012', organizationId: 'org-master', familyRole: 'solo', familyVersion: 1, total: 500, status: 'draft' },
+    variants: [],
+    familyVersion: 1,
+  };
+
+  async function setup(): Promise<void> {
+    quotationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: rows })),
+      getFamily: jest.fn().mockImplementation((id: string) =>
+        of({ ok: true, data: id === 'q-solo' ? soloFamily : masterFamily }),
+      ),
+      syncFromMaster: jest.fn(),
+    };
+    studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
+    toast = { error: jest.fn(), success: jest.fn() };
+
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+        { provide: PiDialogService, useValue: { open: jest.fn() } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  function familyControlsOf(number: string): { expand: HTMLButtonElement; sync: HTMLButtonElement | null } {
+    const rowsEl = fixture.nativeElement.querySelectorAll('[data-test="proposal-row"]');
+    const row = Array.from(rowsEl).find((r) => ((r as HTMLElement).textContent ?? '').includes(number));
+    if (!row) throw new Error(`row not found for ${number}`);
+    const expand = row.querySelector('[data-test="proposal-family-expand"]') as HTMLButtonElement | null;
+    const sync = row.querySelector('[data-test="proposal-family-sync"]') as HTMLButtonElement | null;
+    if (!expand) throw new Error(`expand button not found for ${number}`);
+    return { expand, sync };
+  }
+
+  function syncButtonOf(number: string): HTMLButtonElement {
+    const sync = familyControlsOf(number).sync;
+    if (!sync) throw new Error(`sync button not found for ${number}`);
+    return sync;
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('offers «Синхронизировать» only inside an expanded master family with variants', async () => {
+    await setup();
+
+    // Master family with one variant → sync action appears after expand.
+    expect(familyControlsOf('KP-010').sync).toBeNull();
+    familyControlsOf('KP-010').expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(familyControlsOf('KP-010').sync).toBeTruthy();
+
+    // Solo without family → no sync action.
+    expect(familyControlsOf('KP-012').sync).toBeNull();
+    familyControlsOf('KP-012').expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(familyControlsOf('KP-012').sync).toBeNull();
+  });
+
+  it('confirms via AlertDialog and POSTs syncFromMaster only when confirmed', async () => {
+    await setup();
+    quotationsApi.syncFromMaster.mockReturnValue(of({ ok: true, data: familyAfterSync }));
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    const closedSignal = signal<boolean | undefined>(undefined);
+    const ref = { closed: closedSignal, close: (v?: boolean) => closedSignal.set(v) } as unknown as DialogRef<boolean>;
+    dialog.open.mockReturnValue(ref);
+
+    familyControlsOf('KP-010').expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    syncButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(dialog.open).toHaveBeenCalledWith(AlertDialogComponent, expect.objectContaining({ data: expect.any(Object) }));
+
+    ref.close(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.syncFromMaster).toHaveBeenCalledWith('q-master');
+    expect(toast.success).toHaveBeenCalledWith('Состав синхронизирован');
+    const cached = fixture.componentInstance.familyByRow()['q-master'];
+    expect(cached.familyVersion).toBe(3);
+  });
+
+  it('does not POST when the sync confirm is cancelled', async () => {
+    await setup();
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    const closedSignal = signal<boolean | undefined>(undefined);
+    const ref = { closed: closedSignal, close: (v?: boolean) => closedSignal.set(v) } as unknown as DialogRef<boolean>;
+    dialog.open.mockReturnValue(ref);
+
+    familyControlsOf('KP-010').expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    syncButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    ref.close(false);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(quotationsApi.syncFromMaster).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast and keeps the family cache unchanged when sync fails', async () => {
+    await setup();
+    quotationsApi.syncFromMaster.mockReturnValue(
+      of({
+        ok: false,
+        error: new HttpErrorResponse({ status: 400, error: { message: 'Quotation must be master' } }),
+      }),
+    );
+    const dialog = TestBed.inject(PiDialogService) as unknown as { open: jest.Mock };
+    const closedSignal = signal<boolean | undefined>(undefined);
+    const ref = { closed: closedSignal, close: (v?: boolean) => closedSignal.set(v) } as unknown as DialogRef<boolean>;
+    dialog.open.mockReturnValue(ref);
+
+    familyControlsOf('KP-010').expand.click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    syncButtonOf('KP-010').click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    ref.close(true);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalledWith('Не удалось синхронизировать состав', expect.anything());
+    const cached = fixture.componentInstance.familyByRow()['q-master'];
+    expect(cached).toEqual(masterFamily);
   });
 });

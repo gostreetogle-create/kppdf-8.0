@@ -13,7 +13,7 @@ import {
 } from '@kppdf/data-access';
 import { extractErrorMessage } from '@kppdf/util-http';
 import { BadgeComponent } from '@kppdf/ui/badge';
-import { PiDialogService } from '@kppdf/ui/dialog';
+import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
@@ -120,6 +120,16 @@ const STATUS_LABELS: Record<string, string> = {
                         </div>
                       } @empty {
                         <span class="text-muted-foreground">Нет вариантов фирм</span>
+                      }
+                      @if (family.variants.length > 0 && family.master.familyRole === 'master') {
+                        <button
+                          type="button"
+                          class="text-xs underline underline-offset-2 hover:text-ink"
+                          data-test="proposal-family-sync"
+                          (click)="confirmSyncFromMaster(row)"
+                        >
+                          Синхронизировать состав с мастером
+                        </button>
                       }
                     }
                   </div>
@@ -287,6 +297,34 @@ export class ProposalsListPage implements OnInit {
     if (this.expandedFamilyId() === row._id) {
       await this.loadFamily(row);
     }
+  }
+
+  /** S45 — «Синхронизировать»: rewrite variant composition from master after explicit confirm. */
+  confirmSyncFromMaster(row: Quotation): void {
+    const ref = this.dialog.open<boolean>(AlertDialogComponent, {
+      data: {
+        title: 'Синхронизировать состав?',
+        description: `Состав вариантов КП «${row.number}» будет перезаписан составом мастера.`,
+        confirmLabel: 'Синхронизировать',
+        cancelLabel: 'Отмена',
+      },
+      parentDestroyRef: this.destroyRef,
+    });
+    onDialogCloseOnce(ref, this.injector, (confirmed) => {
+      if (confirmed) void this.syncFamilyFromMaster(row);
+    });
+  }
+
+  private async syncFamilyFromMaster(row: Quotation): Promise<void> {
+    const result = await firstValueFrom(this.quotationsApi.syncFromMaster(row._id));
+    if (!result.ok) {
+      this.toast.error('Не удалось синхронизировать состав', {
+        description: extractErrorMessage(result.error),
+      });
+      return;
+    }
+    this.familyByRow.update((all) => ({ ...all, [row._id]: result.data }));
+    this.toast.success('Состав синхронизирован');
   }
 
   createInStudio(): void {
