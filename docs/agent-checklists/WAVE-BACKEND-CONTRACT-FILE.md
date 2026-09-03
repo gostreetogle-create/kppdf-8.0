@@ -23,7 +23,7 @@ Status: **DONE** · closed 2026-09-03 · C5 closeout finished after Freebuff loo
 | 2 | [x] C2 WRITE-PATH | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C2-WRITE-PATH.done.md` | `52f6cac9` |
 | 3 | [x] C3 ATTACH-FILE | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C3-ATTACH-FILE.done.md` | `fd79f955` |
 | 4 | [x] C4 SPECS | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C4-SPECS.done.md` | `1033fdd2` |
-| 5 | [x] C5 DOCS | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C5-DOCS.done.md` | (this closeout commit) |
+| 5 | [x] C5 DOCS | `tasks/_archive/2026-09/TZ-BACKEND-CONTRACT-C5-DOCS.done.md` | `d21d5c6f` |
 
 ## Closeout
 

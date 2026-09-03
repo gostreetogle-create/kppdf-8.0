@@ -30,4 +30,4 @@ prior_claim: claude @ 2026-09-03T10:18:00+03:00
 | C2 | `52f6cac9` |
 | C3 | `fd79f955` |
 | C4 | `1033fdd2` |
-| C5 | (docs closeout commit) |
+| C5 | `d21d5c6f` |
