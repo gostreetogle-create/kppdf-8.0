@@ -167,11 +167,20 @@ flowchart LR
 | Поле в «Данные» | Поле в `context` | Влияет на |
 |-----------------|------------------|-----------|
 | Клиент | `counterpartyId` | Токены `{{counterparty.*}}` (после S8-1) |
-| КП | `quotationId` | Строки таблиц с source `quotation-items` |
-| Заказ | `orderId` | Строки таблиц с source `order-items` |
+| Плательщик | `anchors.payer` | Токены `{{anchor.payer.*}}` |
+| Поставщик | `anchors.supplier` | Токены `{{anchor.supplier.*}}` |
+| КП | `quotationId` | Токены `{{quotation.*}}`; строки таблиц с source `quotation-items` |
+| Заказ | `orderId` | Токены `{{order.*}}` (S40); строки таблиц с source `order-items` |
 | Исполнитель | (из JWT org) | `{{organization.*}}`, scope ERP |
 
 Выбор КП/заказа в NX заполняет клиента автоматически, если клиент ещё пуст; legacy builder сохраняет собственный cascade при render.
+
+**S40 (2026-09-03):** в диалоге «Постановочные данные» источники без привязки ID в
+«Данные» (`invoice`, `product`, `material`, `work-type`) показаны disabled с
+подсказкой вместо вставки токена, который на Preview всегда резолвится в пустую
+строку. Секции «Плательщик»/«Поставщик» вставляют `{{anchor.payer.*}}` /
+`{{anchor.supplier.*}}`, а не `{{counterparty.*}}` — раньше обе секции ошибочно
+переиспользовали ключ `counterparty`.
 
 ---
 
