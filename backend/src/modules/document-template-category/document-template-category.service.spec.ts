@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { DocumentTemplateCategoryService } from './document-template-category.service';
-import { DocumentTemplateCategory } from './document-template-category.schema';
 
 const ORG_A = new Types.ObjectId().toString();
 const ORG_B = new Types.ObjectId().toString();

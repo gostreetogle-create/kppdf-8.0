@@ -1,5 +1,4 @@
 import {
-  ArgumentMetadata,
   BadRequestException,
   Injectable,
   Param,
@@ -21,7 +20,7 @@ import { Types } from 'mongoose';
  */
 @Injectable()
 export class IsObjectIdPipe implements PipeTransform<string, Types.ObjectId> {
-  transform(value: string, _meta: ArgumentMetadata): Types.ObjectId {
+  transform(value: string): Types.ObjectId {
     if (value === undefined || value === null || value === '') {
       throw new BadRequestException('ObjectId is required');
     }
@@ -40,7 +39,7 @@ export class IsObjectIdPipe implements PipeTransform<string, Types.ObjectId> {
  */
 @Injectable()
 export class IsOptionalObjectIdPipe implements PipeTransform<string | null | undefined, Types.ObjectId | null> {
-  transform(value: string | null | undefined, _meta: ArgumentMetadata): Types.ObjectId | null {
+  transform(value: string | null | undefined): Types.ObjectId | null {
     if (value === undefined || value === null || value === '') {
       return null;
     }

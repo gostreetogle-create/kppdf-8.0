@@ -195,7 +195,6 @@ describe('StudioDataResolverService (TZ-DOC-STUDIO-1601)', () => {
   });
 
   it('resolves selected catalog products into rows', async () => {
-    const { service } = createResolver();
     const product = new Types.ObjectId();
     const productModel = { find: jest.fn().mockReturnValue({ lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue([{ _id: product, name: 'Стол', sku: 'P-1', unit: 'шт', listPrice: 1200 }]) }) };
     const orgModel = { findById: jest.fn().mockReturnValue({ select: jest.fn().mockReturnThis(), lean: jest.fn().mockReturnThis(), exec: jest.fn().mockResolvedValue({ vatRate: 20 }) }) };

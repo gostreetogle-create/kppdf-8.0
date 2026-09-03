@@ -9,7 +9,6 @@ import {
 } from '../../modules/attribute-definition/attribute-definition.schema';
 import {
   EntityAttributeValue,
-  EntityAttributeValueDocument,
 } from '../../modules/entity-attribute-value/entity-attribute-value.schema';
 
 /**

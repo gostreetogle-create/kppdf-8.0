@@ -66,7 +66,7 @@ describe('ImportTodoService (TZD-29)', () => {
   });
 
   it('list with status=open filter → items + total', async () => {
-    const { service, countDocuments } = buildService({
+    const { service } = buildService({
       find: jest.fn().mockResolvedValue([
         {
           _id: '507f1f77bcf86cd799439033',

@@ -116,7 +116,6 @@ class FakeFormProfileModel {
     (
       filter: Record<string, unknown>,
       update: { $set?: Record<string, unknown> },
-      _opts?: unknown,
     ) => {
       const organizationId = filter.organizationId as Types.ObjectId;
       const entity = filter.entity as string;

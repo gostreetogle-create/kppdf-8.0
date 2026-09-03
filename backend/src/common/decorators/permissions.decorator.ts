@@ -1,5 +1,5 @@
 import { SetMetadata } from '@nestjs/common';
-import { type PermissionKey, PERMISSION_WILDCARD } from '../contracts/rbac-contract';
+import { PERMISSION_WILDCARD } from '../contracts/rbac-contract';
 import { PERMISSIONS } from '../seed/permissions.constants';
 
 /**

@@ -1,4 +1,4 @@
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsDateString, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 import { ToObjectId } from '../../../common/decorators/to-object-id.decorator';
 

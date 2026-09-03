@@ -1,4 +1,4 @@
-import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor, NotFoundException } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, map } from 'rxjs';
 import { REQUIRE_ORG_SCOPE } from '../decorators/require-org-scope.decorator';

@@ -1,5 +1,5 @@
-import type { Model } from 'mongoose';
-import { Material, type MaterialDocument } from '../../modules/material/material.schema';
+import mongoose, { type Model } from 'mongoose';
+import { Material, MaterialSchema, type MaterialDocument } from '../../modules/material/material.schema';
 
 export interface TZCatalog301MigrationResult {
   matchedCount: number;
@@ -35,12 +35,10 @@ export async function runTZCatalog301MaterialFieldsMigration(
 
 /** Self-invocation guard for manual ts-node operation. */
 if (require.main === module) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const mongoose = require('mongoose');
   (async () => {
     await mongoose.connect(process.env.MONGO_URI ?? 'mongodb://localhost:27017/kppdf');
     try {
-      const materialModel = mongoose.model(Material.name, require('../../modules/material/material.schema').MaterialSchema);
+      const materialModel = mongoose.model(Material.name, MaterialSchema) as unknown as Model<MaterialDocument>;
       await runTZCatalog301MaterialFieldsMigration(materialModel);
     } finally {
       await mongoose.disconnect();

@@ -388,7 +388,7 @@ describe('MutationJournalService (TZD-13)', () => {
 
   it('proposeBatch 50 items → 50 ids, no SoT writes (TZD-18)', async () => {
     const { service, materials, create } = buildService({
-      create: jest.fn().mockImplementation((_payload: any) =>
+      create: jest.fn().mockImplementation(() =>
         Promise.resolve({
           _id: '507f1f77bcf86cd799439100',
           status: 'proposed',
@@ -430,7 +430,7 @@ describe('MutationJournalService (TZD-13)', () => {
       save: jest.fn(),
     };
     const { service, create } = buildService({
-      create: jest.fn().mockImplementation((_payload: any) =>
+      create: jest.fn().mockImplementation(() =>
         Promise.resolve({
           _id: '507f1f77bcf86cd799439100',
           status: 'proposed',
@@ -466,7 +466,7 @@ describe('MutationJournalService (TZD-13)', () => {
 
   it('proposeBatch idempotencyKey returns existing proposals on retry (TZD-18)', async () => {
     const { service, create } = buildService({
-      create: jest.fn().mockImplementation((_payload: any) =>
+      create: jest.fn().mockImplementation(() =>
         Promise.resolve({
           _id: '507f1f77bcf86cd799439200',
           status: 'proposed',

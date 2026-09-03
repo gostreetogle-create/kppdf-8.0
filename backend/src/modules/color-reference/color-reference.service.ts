@@ -13,7 +13,6 @@ import { UpdateColorReferenceDto } from './dto/update-color-reference.dto';
 import {
   ColorReference,
   ColorReferenceDocument,
-  SYSTEM_DEFAULT_COLOR_SLUG,
 } from './color-reference.schema';
 
 export interface ColorReferenceListQuery {

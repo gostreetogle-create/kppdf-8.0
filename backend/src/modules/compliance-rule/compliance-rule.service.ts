@@ -64,8 +64,7 @@ export class ComplianceRuleService {
       const tgtVal = target ? this.resolve(target, rule.field) : undefined;
       const value = srcVal !== undefined ? srcVal : tgtVal;
       const expected = rule.expectedValue;
-      const expectedMax = rule.expectedValueMax;
-      const violation = this.checkViolation(rule.operator, value, expected, expectedMax, rule.tolerance);
+      const violation = this.checkViolation(rule.operator, value, expected);
       if (violation) {
         const msg = `${rule.name}: ${rule.field} ${rule.operator} ${expected ?? ''} (got ${value ?? 'undefined'})`;
         violations.push({
@@ -100,8 +99,6 @@ export class ComplianceRuleService {
     op: string,
     value: unknown,
     expected?: string,
-    expectedMax?: string,
-    tolerance = 0,
   ): boolean {
     const num = (x: unknown): number | null => {
       if (x === null || x === undefined) return null;

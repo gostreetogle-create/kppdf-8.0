@@ -114,7 +114,7 @@ class FakeModel {
   }
 
   findById = jest.fn((id: string) => ({
-    select: jest.fn((_fields: unknown) => ({
+    select: jest.fn(() => ({
       exec: jest.fn(async () => {
         const doc = this.store.get(String(id));
         if (!doc) return null;

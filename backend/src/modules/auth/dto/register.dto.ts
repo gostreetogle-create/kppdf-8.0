@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -9,7 +9,6 @@ import {
   IsString,
   Length,
   Matches,
-  ValidateNested,
 } from 'class-validator';
 
 export class RegisterDto {

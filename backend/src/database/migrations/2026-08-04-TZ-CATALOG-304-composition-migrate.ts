@@ -1,7 +1,6 @@
-import type { Model } from 'mongoose';
-import { Types } from 'mongoose';
-import { Product, type ProductDocument } from '../../modules/product/product.schema';
-import { ProductModule, type ProductModuleDocument } from '../../modules/product-module/product-module.schema';
+import mongoose, { Types, type Model } from 'mongoose';
+import { Product, ProductSchema, type ProductDocument } from '../../modules/product/product.schema';
+import { ProductModule, ProductModuleSchema, type ProductModuleDocument } from '../../modules/product-module/product-module.schema';
 
 export interface TZCatalog304MigrationOptions { dryRun?: boolean; }
 
@@ -99,13 +98,12 @@ export async function runTZCatalog304CompositionMigration(
 }
 
 if (require.main === module) {
-  const mongoose = require('mongoose') as typeof import('mongoose');
   const dryRun = process.argv.includes('--dry-run');
   (async () => {
     await mongoose.connect(process.env.MONGO_URI ?? 'mongodb://localhost:27017/kppdf');
     try {
-      const productModel = mongoose.model(Product.name, require('../../modules/product/product.schema').ProductSchema) as Model<ProductDocument>;
-      const moduleModel = mongoose.model(ProductModule.name, require('../../modules/product-module/product-module.schema').ProductModuleSchema) as Model<ProductModuleDocument>;
+      const productModel = mongoose.model(Product.name, ProductSchema) as unknown as Model<ProductDocument>;
+      const moduleModel = mongoose.model(ProductModule.name, ProductModuleSchema) as unknown as Model<ProductModuleDocument>;
       await runTZCatalog304CompositionMigration(productModel, moduleModel, { dryRun });
     } finally {
       await mongoose.disconnect();

@@ -5,7 +5,6 @@ import {
   Get,
   Param,
   Put,
-  Post,
 } from '@nestjs/common';
 import { EntityAttributeValueService } from './entity-attribute-value.service';
 import { EavService } from '../../common/eav/eav.service';

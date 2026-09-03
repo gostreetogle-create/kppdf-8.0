@@ -1,4 +1,4 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 interface ThrottlerRequest {
@@ -61,7 +61,7 @@ export class ThrottlerBehindAuthGuard extends ThrottlerGuard {
    *
    * Strict string match: `'true'`, `'yes'`, `'0'` etc. do NOT opt-out.
    */
-  protected async shouldSkip(_context: ExecutionContext): Promise<boolean> {
+  protected async shouldSkip(): Promise<boolean> {
     if (process.env.NODE_ENV === 'production') return false;
     if (process.env.DISABLE_THROTTLE === '1') return true;
     return false;

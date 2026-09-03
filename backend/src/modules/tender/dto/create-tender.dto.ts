@@ -1,4 +1,4 @@
-import { IsArray, IsDateString, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { IsObjectId } from '../../../common/decorators/is-object-id.decorator';
 
 export class CreateTenderDto {

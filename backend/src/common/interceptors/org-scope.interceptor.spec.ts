@@ -17,12 +17,6 @@ import {
   OrgScopeInterceptorFor,
 } from './org-scope.interceptor';
 
-interface MockDoc {
-  _id?: string;
-  organizationId?: string | null;
-  name?: string;
-}
-
 const callHandler = <T>(value: T) => ({ handle: () => of(value) });
 
 describe('OrgScopeGuardInterceptor', () => {

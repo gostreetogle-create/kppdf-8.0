@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { ColorReferenceService } from './color-reference.service';
-import { ColorReference } from './color-reference.schema';
 
 const ORG_A = new Types.ObjectId().toString();
 const ORG_B = new Types.ObjectId().toString();

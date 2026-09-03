@@ -1,6 +1,5 @@
 import {
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import type { AuthenticatedUser } from '../../common/decorators/current-user.decorator';

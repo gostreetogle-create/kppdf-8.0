@@ -1,19 +1,21 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T10:35:00+03:00
+updated_at: 2026-09-03T12:30:00+03:00
 
 ## ACTIVE / LIVE
 
-**Freebuff #1:** KP Family — next **S44** (`PROMPT-FREEBUFF-KP-FAMILY-RESUME.md`)
+**Freebuff:** QA Gates — Q1–Q4a DONE; сейчас **Q4b** (`TZ-FRONTEND-QA-LINT-RAW-UI-SLICE-1` will be claimed after Q4a commit).
+Claude на эту волну **не** сажать.
+
+**KP Family #1:** если жив — S44+; иначе resume отдельно.
 
 ## NEXT
 
-**QA Gates** (audit 2026-09-03): `WAVE-QA-GATES-2026-09.md` · `PROMPT-FREEBUFF-QA-GATES-START.md`  
-Можно в слот **#2** (Contract волна закрыта): Q1→Q4b, без `kppdf-web`.
+После QA closeout → проверить KP Family / новую волну. Не выдавать второй claim на те же keys.
 
 ## DONE
 
-- Sales S30–S39 · KP Family S40–S43 · **Contract C1–C5** (`1033fdd2` + C5 docs closeout)
+- Sales S30–S39 · Contract C1–C5 · KP Family S40–S43 · QA Q1–Q4a
 
 ## PARK
 

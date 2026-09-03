@@ -8,7 +8,6 @@ import {
 function tableBlock(
   id: string,
   page: number,
-  rows: string[][],
 ): TemplateBlockDocument {
   return {
     _id: new Types.ObjectId(id),
@@ -65,7 +64,7 @@ describe('studio-multipage.utils (TZ-DOC-STUDIO-1701)', () => {
     const blockId = '507f1f77bcf86cd799439011';
     const rows = Array.from({ length: 8 }, (_, i) => [`Row ${i}`, `${i}`]);
     const plan = planStudioMultipage({
-      blocks: [tableBlock(blockId, 1, rows)],
+      blocks: [tableBlock(blockId, 1)],
       manualPageCount: 1,
       dataSets: [{ key: `table-${blockId}`, rows }],
       backgroundImages: [],
@@ -80,7 +79,7 @@ describe('studio-multipage.utils (TZ-DOC-STUDIO-1701)', () => {
     const blockId = '507f1f77bcf86cd799439011';
     const manyRows = Array.from({ length: 30 }, (_, i) => [`Row ${i}`, `${i}`]);
     const plan = planStudioMultipage({
-      blocks: [tableBlock(blockId, 1, manyRows)],
+      blocks: [tableBlock(blockId, 1)],
       manualPageCount: 1,
       dataSets: [
         {

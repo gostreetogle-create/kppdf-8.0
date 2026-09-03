@@ -1,4 +1,4 @@
-import { IsDateString, IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsIn, IsOptional, IsString } from 'class-validator';
 
 export class GenerateFinancialReportDto {
   @IsIn(['monthly', 'quarterly', 'yearly', 'custom'])

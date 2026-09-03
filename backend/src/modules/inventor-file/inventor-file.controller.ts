@@ -13,7 +13,6 @@ import {
 import { Roles } from '../../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { promises as fs } from 'fs';
 import { InventorFileService } from './inventor-file.service';
 import { CreateInventorFileDto } from './dto/create-inventor-file.dto';
 import { AuditAction } from '../../common/decorators/audit-action.decorator';
