@@ -45,6 +45,15 @@ describe('UpdateOrderDto ValidationPipe (TZ-OPS-315 regression)', () => {
     }
   });
 
+  it('ACCEPTS payment fields without requiring a quotation', async () => {
+    const dto = await transformUpdate({
+      isPaid: true,
+      paidAt: '2026-09-01T10:00:00.000Z',
+    });
+    expect(dto.isPaid).toBe(true);
+    expect(dto.paidAt).toBe('2026-09-01T10:00:00.000Z');
+  });
+
   it('REJECTS PATCH status shipped (ship endpoint only)', async () => {
     await expect(transformUpdate({ status: 'shipped' })).rejects.toBeInstanceOf(
       BadRequestException,

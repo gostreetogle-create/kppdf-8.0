@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { OmitType, PartialType } from '@nestjs/mapped-types';
-import { IsIn, IsOptional } from 'class-validator';
+import { IsBoolean, IsDateString, IsIn, IsOptional } from 'class-validator';
 import { CreateOrderDto } from './create-order.dto';
 
 /**
@@ -27,4 +27,12 @@ export class UpdateOrderDto extends PartialType(
       'Отгрузка — через действие «Отгрузить»; отмена — «Отменить заказ». Через PATCH допустимы только draft/confirmed/in_production/ready.',
   })
   status?: 'draft' | 'confirmed' | 'in_production' | 'ready';
+
+  @ApiPropertyOptional({ description: 'Заказ оплачен' })
+  @IsOptional() @IsBoolean()
+  isPaid?: boolean;
+
+  @ApiPropertyOptional({ description: 'Дата оплаты (ISO)' })
+  @IsOptional() @IsDateString()
+  paidAt?: string;
 }

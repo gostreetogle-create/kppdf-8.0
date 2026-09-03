@@ -44,6 +44,7 @@ export interface OrderActor {
 }
 
 const PLAN_UPDATE_KEYS = new Set(['plannedDate', 'priority', 'materialsSource', 'number']);
+const PAYMENT_UPDATE_KEYS = new Set(['isPaid', 'paidAt']);
 const PLAN_EDITABLE_FROZEN = new Set(['in_production', 'ready']);
 const HARD_FROZEN = new Set(['shipped', 'delivered', 'cancelled']);
 /** TZ-OPS-315 — статусы, в которых заказ МОЖЕТ быть создан (всегда через workflow). */
@@ -221,6 +222,32 @@ export class OrderService {
     await doc.save();
   }
 
+  private resolvePaymentState(
+    dto: Pick<CreateOrderDto, 'isPaid' | 'paidAt'>,
+    existing?: Pick<Order, 'isPaid' | 'paidAt'>,
+  ): { isPaid: boolean; paidAt: Date | null } {
+    let isPaid = existing?.isPaid ?? false;
+    let paidAt = existing?.paidAt ?? null;
+
+    if (dto.isPaid !== undefined) {
+      isPaid = dto.isPaid;
+      if (!isPaid) return { isPaid: false, paidAt: null };
+    }
+
+    if (dto.paidAt !== undefined) {
+      const parsed = new Date(dto.paidAt);
+      if (Number.isNaN(parsed.getTime())) {
+        throw new BadRequestException('Дата оплаты должна быть корректной датой ISO');
+      }
+      isPaid = true;
+      paidAt = parsed;
+    } else if (dto.isPaid === true && !paidAt) {
+      paidAt = new Date();
+    }
+
+    return isPaid ? { isPaid: true, paidAt } : { isPaid: false, paidAt: null };
+  }
+
   private mapItems(
     dtoItems: CreateOrderDto['items'],
     previousItems: OrderItem[] = [],
@@ -272,6 +299,7 @@ export class OrderService {
     const number = dto.number ?? (await this.counter.next('Order', 'ORD'));
     const items = this.mapItems(dto.items);
     const total = items.reduce((s, i) => s + i.total, 0);
+    const payment = this.resolvePaymentState(dto);
 
     // TZ-ORDERS-307: default org = isOurCompany; existing orders without org get this on create.
     let organizationId: Types.ObjectId | undefined;
@@ -296,6 +324,8 @@ export class OrderService {
       plannedDate: dto.plannedDate ? new Date(dto.plannedDate) : undefined,
       status: dto.status ?? 'draft',
       total,
+      isPaid: payment.isPaid,
+      paidAt: payment.paidAt,
       notes: dto.notes,
       materialsSource: dto.materialsSource ?? 'own',
       source: dto.source ?? 'manual',
@@ -803,7 +833,10 @@ export class OrderService {
     }
     if (HARD_FROZEN.has(doc.status)) {
       const blocked = definedKeys.some(
-        (key) => key !== 'status' && key !== 'materialsSource',
+        (key) =>
+          key !== 'status' &&
+          key !== 'materialsSource' &&
+          !PAYMENT_UPDATE_KEYS.has(key),
       );
       if (blocked) {
         const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
@@ -811,7 +844,10 @@ export class OrderService {
       }
     } else if (PLAN_EDITABLE_FROZEN.has(doc.status)) {
       const blocked = definedKeys.some(
-        (key) => key !== 'status' && !PLAN_UPDATE_KEYS.has(key),
+        (key) =>
+          key !== 'status' &&
+          !PLAN_UPDATE_KEYS.has(key) &&
+          !PAYMENT_UPDATE_KEYS.has(key),
       );
       if (blocked) {
         const label = ORDER_STATUS_RU[doc.status] ?? doc.status;
@@ -838,6 +874,11 @@ export class OrderService {
     if (dto.notes !== undefined) doc.notes = dto.notes;
     if (dto.materialsSource !== undefined) doc.materialsSource = dto.materialsSource;
     if (dto.status !== undefined) doc.status = dto.status;
+    if (dto.isPaid !== undefined || dto.paidAt !== undefined) {
+      const payment = this.resolvePaymentState(dto, doc);
+      doc.isPaid = payment.isPaid;
+      doc.paidAt = payment.paidAt;
+    }
     if (dto.plannedDate !== undefined) doc.plannedDate = new Date(dto.plannedDate);
     if (dto.deliveryAddress !== undefined) doc.deliveryAddress = dto.deliveryAddress;
     if (dto.priority !== undefined) doc.priority = dto.priority;

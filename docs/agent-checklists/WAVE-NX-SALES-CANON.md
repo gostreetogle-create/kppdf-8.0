@@ -1,6 +1,6 @@
 # WAVE — NX Sales canon S30→S39 (continuous chain)
 
-Status: **IN PROGRESS @ S31** · S30 DONE · Doc Studio S16–S26 DONE
+Status: **IN PROGRESS @ S32** · S30–S31 DONE · Doc Studio S16–S26 DONE
 
 > Resume: `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
 > Roadmap: `docs/architecture/nx-sales-canon-roadmap.md`
@@ -19,8 +19,8 @@ Status: **IN PROGRESS @ S31** · S30 DONE · Doc Studio S16–S26 DONE
 
 | # | TZ | Archive | Commit |
 |---|-----|---------|--------|
-| 1 | [x] S30 CURRENCY-RUB | `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` | pending SHA; pushed after archive |
-| 2 | [ ] S31 ORDER-PAID | | |
+| 1 | [x] S30 CURRENCY-RUB | `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` | `e7c824e7` |
+| 2 | [x] S31 ORDER-PAID | `tasks/_archive/2026-09/TZ-NX-SALES-S31-ORDER-PAID.done.md` | pending SHA; pushed after archive |
 | 3 | [ ] S32 SITES-ENSURE | | |
 | 4 | [ ] S33 PI-ORDERS-CRUD | | |
 | 5 | [ ] S34 ORDERS-LIST | | |
@@ -34,11 +34,11 @@ Status: **IN PROGRESS @ S31** · S30 DONE · Doc Studio S16–S26 DONE
 
 - [ ] all [x] · `_active/` пуст · QUEUE/_NOW updated
 
-### S30 evidence
+### Completed evidence
 
-- Archive marker: `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md`
-- Focused test/typecheck/lint: PASS
-- S31 is the next unchecked chain row.
+- S30 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S30-CURRENCY-RUB.done.md` · commit `e7c824e7`
+- S31 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S31-ORDER-PAID.done.md` · focused tests/typecheck/lint PASS
+- S32 is the next unchecked chain row.
 
 ## Запреты волны
 

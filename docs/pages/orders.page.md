@@ -39,6 +39,7 @@ Read-only expand на списке `/orders`:
 | Поле | Этот экран | Другие экраны | Смысл |
 |------|------------|---------------|-------|
 | `Order.status` | список / форма freeze | Комбайн колонки; цех «Все активные» | `draft` ≠ работа цеха. Цех active = confirmed/in_production/ready (TZ-PRODUCTION-337). |
+| `Order.isPaid` / `Order.paidAt` | список / карточка заказа | менеджерская отметка оплаты | Факт оплаты хранится на Заказе, КП не требуется; `isPaid=false` очищает `paidAt`; отметка оплаты не меняет lifecycle status. |
 | `items.readyForWork` | список «X из Y», hub Готовность | не Комбайн | **Не** `OrderItem.status`. |
 
 ### Визуальная иерархия expand
@@ -64,7 +65,7 @@ Read-only expand на списке `/orders`:
 | ---------- | ---------------------------------- | ------------------------------------------------------------ |
 | GET        | `/api/orders`                      | Список (flat array)                                          |
 | GET        | `/api/orders/:id`                  | Карточка (populate counterparty/site/items.ownerUserId)      |
-| POST/PATCH | `/api/orders`                      | Create/update — `counterpartyId` + `siteId` обязательны      |
+| POST/PATCH | `/api/orders`                      | Create/update — `counterpartyId` + `siteId` обязательны; payment `isPaid`/`paidAt` живёт на Order |
 | GET        | `/api/sites?counterpartyId=`       | Объекты заказчика                                            |
 | POST       | `/api/sites/ensure-default`        | Если объектов нет — «Объект по умолчанию» (как convert)      |
 | POST       | `/api/counterparties/quick`        | Quick-create: name+phone+address → counterparty+site         |

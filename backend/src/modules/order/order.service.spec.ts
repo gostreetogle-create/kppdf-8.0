@@ -40,6 +40,8 @@ function orderDoc(overrides: Record<string, unknown> = {}) {
     date: new Date(),
     status: 'draft',
     total: 0,
+    isPaid: false,
+    paidAt: null as Date | null,
     items: [] as MockOrderItem[],
     notes: undefined,
     priority: 'normal',
@@ -310,6 +312,31 @@ describe('OrderService — TZ-ORDERS-301', () => {
       expect(result.status).toBe('draft');
     });
 
+    it('creates an unpaid direct order with a null paidAt and no quotationId (S31)', async () => {
+      const { service } = createService();
+
+      const result = await service.create(validCreateDto() as never);
+
+      expect(result.quotationId).toBeUndefined();
+      expect(result.isPaid).toBe(false);
+      expect(result.paidAt).toBeNull();
+      expect(result.status).toBe('draft');
+    });
+
+    it('marks a created order paid and assigns paidAt when omitted (S31)', async () => {
+      const { service } = createService();
+      const before = Date.now();
+
+      const result = await service.create(
+        validCreateDto({ isPaid: true }) as never,
+      );
+
+      expect(result.isPaid).toBe(true);
+      expect(result.paidAt).toBeInstanceOf(Date);
+      expect(result.paidAt!.getTime()).toBeGreaterThanOrEqual(before);
+      expect(result.paidAt!.getTime()).toBeLessThanOrEqual(Date.now());
+    });
+
     it('TZ-COMBINE-402: create assigns lineId + boardLane prep + status pending', async () => {
       const { service } = createService();
 
@@ -546,6 +573,47 @@ describe('OrderService — TZ-ORDERS-301', () => {
 
       await service.update(doc._id.toString(), { number: 'ORD-0099' } as never);
       expect(doc.number).toBe('ORD-0099');
+    });
+
+    it('marks an existing order paid without changing its lifecycle status (S31)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({ status: 'confirmed', isPaid: false, paidAt: null });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { isPaid: true } as never);
+
+      expect(doc.isPaid).toBe(true);
+      expect(doc.paidAt).toBeInstanceOf(Date);
+      expect(doc.status).toBe('confirmed');
+    });
+
+    it('preserves an existing paidAt when isPaid is repeated true (S31)', async () => {
+      const { service, model } = createService();
+      const paidAt = new Date('2026-09-01T10:00:00.000Z');
+      const doc = orderDoc({ status: 'ready', isPaid: true, paidAt });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { isPaid: true } as never);
+
+      expect(doc.isPaid).toBe(true);
+      expect(doc.paidAt).toBe(paidAt);
+      expect(doc.status).toBe('ready');
+    });
+
+    it('clears paidAt when an existing order is marked unpaid (S31)', async () => {
+      const { service, model } = createService();
+      const doc = orderDoc({
+        status: 'in_production',
+        isPaid: true,
+        paidAt: new Date('2026-09-01T10:00:00.000Z'),
+      });
+      model.findById.mockReturnValue(mockQuery(doc));
+
+      await service.update(doc._id.toString(), { isPaid: false } as never);
+
+      expect(doc.isPaid).toBe(false);
+      expect(doc.paidAt).toBeNull();
+      expect(doc.status).toBe('in_production');
     });
   });
 

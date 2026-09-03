@@ -67,6 +67,7 @@ Write lane: `PATCH /orders/:id/lines/:lineId/lane` (TZ-COMBINE-403). **Не** п
 | `OrderItem.status` | дериват `boardLane` (403); legacy `PATCH .../items/:i/status` | «X из Y» | Не перегружать prep/design. Не `readyForWork`. |
 | `OrderItem.lineId` | create/backfill (402) | lane API | Стабильный ключ; delete линии только в `prep` |
 | `items.readyForWork` | `/orders/:id` | список «X из Y» hub | Не колонка Комбайна |
+| `Order.isPaid` / `Order.paidAt` | `/orders`, `/orders/:id` | менеджерский payment toggle и список | Факт оплаты принадлежит заказу, `paidAt` — момент оплаты; КП не требуется; оплата не меняет `Order.status`; false очищает timestamp |
 | `Reservation.orderId` | reserve | reservations | **строка = `Order.number`** |
 | `SupplyTask.orderId` | снабжение | `/supply` | ObjectId |
 | `Shipment.status` | `ship()` → `scheduled`; `dispatch()` → `in_transit`; `delivered`; **`cancelShipment()` → `cancelled`** (433) | `/shipping`, desk tray | Отмена только до dispatch; отменённые в tray не считаются активной отгрузкой |

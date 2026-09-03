@@ -77,6 +77,14 @@ export class CreateOrderDto {
   })
   status?: 'draft' | 'confirmed';
 
+  @ApiPropertyOptional({ description: 'Заказ оплачен' })
+  @IsOptional() @IsBoolean()
+  isPaid?: boolean;
+
+  @ApiPropertyOptional({ description: 'Дата оплаты (ISO)' })
+  @IsOptional() @IsDateString()
+  paidAt?: string;
+
   @ApiPropertyOptional({ description: 'Заметки к заказу' })
   @IsOptional() @IsString() notes?: string;
 

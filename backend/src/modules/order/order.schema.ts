@@ -185,6 +185,13 @@ export class Order {
   @Prop({ required: true, default: 0 })
   total!: number;
 
+  /** S31: payment fact belongs to the order, independently of quotationId. */
+  @Prop({ default: false, index: true })
+  isPaid!: boolean;
+
+  @Prop({ type: Date, default: null })
+  paidAt?: Date | null;
+
   @Prop()
   notes?: string;
 
