@@ -7,7 +7,7 @@
 
 | # | TZ | Priority | Status | Notes |
 |---|-----|----------|--------|-------|
-| Q1 | `TZ-BACKEND-QA-OUTPUT-VAT-MOCK` | P0 | DONE | 6 red tests fixed (mock + finalize), full BE suite 126/126 green |
+| Q1 | `TZ-BACKEND-QA-OUTPUT-VAT-MOCK` | P0 | DONE | 6 red tests fixed (mock + finalize), full BE suite 126/126 green · `cc57266d` |
 | Q2 | `TZ-BACKEND-QA-STUDIO-QUOTATION-ORG-GUARD` | P1 | READY | multi-org invariant |
 | Q3 | `TZ-FRONTEND-QA-APP-LAYOUT-FLAKY` | P1 | READY | order-dependent fails |
 | Q4a | `TZ-BACKEND-QA-LINT-UNUSED-IMPORTS` | P1 | READY | ~45 unused imports |
