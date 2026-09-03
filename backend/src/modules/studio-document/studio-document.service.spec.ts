@@ -78,6 +78,10 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
     createForStudioDocument: jest.fn(),
     updateLayoutsForStudioDocument: jest.fn(),
     reorderForStudioDocument: jest.fn(),
+    findAllByStudioDocument: jest.fn().mockResolvedValue([]),
+  };
+  const dataResolver = {
+    resolveDataSets: jest.fn().mockResolvedValue([]),
   };
   return {
     service: new StudioDocumentService(
@@ -85,6 +89,7 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
       orgModel as never,
       templateService as never,
       blockService as never,
+      dataResolver as never,
     ),
     model: model as {
       create: jest.Mock;
@@ -95,6 +100,7 @@ function createService(fallbackOrgId: Types.ObjectId | null = null) {
     orgModel,
     templateService,
     blockService,
+    dataResolver,
   };
 }
 
@@ -339,6 +345,87 @@ describe('StudioDocumentService (TZ-DOC-STUDIO-201b)', () => {
         }),
       });
       expect(doc.save).not.toHaveBeenCalled();
+    });
+
+    it('hydrates live rows in the response for catalog-products source', async () => {
+      const { service, model, blockService, dataResolver } = createService();
+      const doc = studioDoc({ revision: 1, dataSets: [] });
+      model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+      const blocks = [{ _id: new Types.ObjectId(), type: 'table' }];
+      blockService.findAllByStudioDocument.mockResolvedValue(blocks);
+      dataResolver.resolveDataSets.mockResolvedValue([
+        {
+          key: 'table-1',
+          source: { type: 'catalog-products' },
+          rows: [
+            ['Product A', '1', '100'],
+            ['Product B', '1', '200'],
+          ],
+        },
+      ]);
+
+      const result = await service.putDataSet(
+        DOC_ID,
+        'table-1',
+        {
+          expectedRevision: 1,
+          dataSet: { source: { type: 'catalog-products' }, rows: [] },
+        },
+        ORG_A,
+      );
+
+      expect(blockService.findAllByStudioDocument).toHaveBeenCalledWith(DOC_ID);
+      expect(dataResolver.resolveDataSets).toHaveBeenCalledWith(doc, blocks, true);
+      expect(result.dataSets).toEqual([
+        {
+          key: 'table-1',
+          source: { type: 'catalog-products' },
+          rows: [
+            ['Product A', '1', '100'],
+            ['Product B', '1', '200'],
+          ],
+        },
+      ]);
+    });
+
+    it('hydrates to empty rows when catalog selection is empty', async () => {
+      const { service, model, blockService, dataResolver } = createService();
+      const doc = studioDoc({ revision: 1, dataSets: [] });
+      model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+      blockService.findAllByStudioDocument.mockResolvedValue([]);
+      dataResolver.resolveDataSets.mockResolvedValue([
+        { key: 'table-1', source: { type: 'catalog-products' }, rows: [] },
+      ]);
+
+      const result = await service.putDataSet(
+        DOC_ID,
+        'table-1',
+        {
+          expectedRevision: 1,
+          dataSet: { source: { type: 'catalog-products' }, rows: [] },
+        },
+        ORG_A,
+      );
+
+      expect(result.dataSets).toEqual([
+        { key: 'table-1', source: { type: 'catalog-products' }, rows: [] },
+      ]);
+    });
+
+    it('does not hydrate manual sources (no resolver call)', async () => {
+      const { service, model, blockService, dataResolver } = createService();
+      const doc = studioDoc({ revision: 1, dataSets: [] });
+      model.findById.mockReturnValue({ exec: jest.fn().mockResolvedValue(doc) });
+
+      await service.putDataSet(
+        DOC_ID,
+        'items',
+        { expectedRevision: 1, dataSet: { source: { type: 'manual' }, rows: [['x']] } },
+        ORG_A,
+      );
+
+      expect(blockService.findAllByStudioDocument).not.toHaveBeenCalled();
+      expect(dataResolver.resolveDataSets).not.toHaveBeenCalled();
     });
   });
 
