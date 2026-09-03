@@ -62,6 +62,7 @@ function createOutputService(deps: {
       }
       return [{ key: `table-${BLOCK_ID.toString()}`, rows: [['Live', '2', '20']] }];
     }),
+    resolveOrganizationVatRate: jest.fn().mockResolvedValue(20),
     bakeSnapshot: jest.fn().mockResolvedValue([
       {
         key: `table-${BLOCK_ID.toString()}`,
@@ -175,6 +176,7 @@ describe('StudioOutputService (Wave 9–10)', () => {
     const finalDoc = { ...frozenDoc, revision: 7, status: 'final' };
     const dataResolver = {
       resolveDataSets: jest.fn().mockResolvedValue([]),
+      resolveOrganizationVatRate: jest.fn().mockResolvedValue(20),
       bakeSnapshot: jest.fn().mockResolvedValue([
         {
           key: `table-${BLOCK_ID.toString()}`,
