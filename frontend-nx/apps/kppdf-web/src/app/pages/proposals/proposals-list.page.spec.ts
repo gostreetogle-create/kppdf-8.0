@@ -4,6 +4,7 @@ import { provideRouter, Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import {
+  PiDocTypesService,
   PiOrganizationsService,
   PiQuotationsService,
   PiStudioDocumentsService,
@@ -21,6 +22,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -34,6 +36,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
   async function setup(): Promise<void> {
     quotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: quotations })), convertToOrder: jest.fn(), getFamily: jest.fn() };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
@@ -44,6 +47,7 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
       ],
@@ -104,10 +108,97 @@ describe('ProposalsListPage (TZ-NX-SALES-S37-QUOTATION-CONVERT)', () => {
   });
 });
 
+describe('ProposalsListPage — create in studio (TZ-NX-DOCSTUDIO-S33-CREATE-KP-PATH)', () => {
+  let fixture: ComponentFixture<ProposalsListPage>;
+  let quotationsApi: { list: jest.Mock };
+  let studioApi: { list: jest.Mock; create: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
+  let organizationsApi: { list: jest.Mock };
+  let toast: { error: jest.Mock };
+  let router: { navigate: jest.Mock };
+
+  async function setup(): Promise<void> {
+    quotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] })) };
+    studioApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)),
+      create: jest.fn(),
+    };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
+    organizationsApi = {
+      list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
+    };
+    toast = { error: jest.fn() };
+    await TestBed.configureTestingModule({
+      imports: [ProposalsListPage],
+      providers: [
+        provideRouter([]),
+        { provide: PiQuotationsService, useValue: quotationsApi },
+        { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
+        { provide: PiOrganizationsService, useValue: organizationsApi },
+        { provide: PiToastService, useValue: toast },
+      ],
+    }).compileComponents();
+
+    router = { navigate: jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true) };
+    fixture = TestBed.createComponent(ProposalsListPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('creates a studio document pre-set to the КП doc type and navigates straight to it', async () => {
+    await setup();
+    studioApi.create.mockReturnValue(of({ ok: true, data: { _id: 'doc-1', name: 'КП', status: 'draft', docTypeId: 'dt-kp' } }));
+
+    (fixture.nativeElement.querySelector('[data-test="proposals-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(studioApi.create).toHaveBeenCalledWith(expect.objectContaining({ docTypeId: 'dt-kp' }));
+    expect(router.navigate).toHaveBeenCalledWith(['/studio', 'doc-1']);
+  });
+
+  it('falls back to the plain studio list when the КП doc type is missing', async () => {
+    await setup();
+    docTypesApi.list.mockReturnValue(of({ ok: true, data: [] }));
+
+    (fixture.nativeElement.querySelector('[data-test="proposals-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(studioApi.create).not.toHaveBeenCalled();
+    expect(router.navigate).toHaveBeenCalledWith(['/studio']);
+  });
+
+  it('toasts an error and stays on the list when creation fails', async () => {
+    await setup();
+    studioApi.create.mockReturnValue(
+      of({ ok: false, error: new HttpErrorResponse({ status: 400, error: { message: 'boom' } }) }),
+    );
+
+    (fixture.nativeElement.querySelector('[data-test="proposals-create"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(toast.error).toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+});
+
 describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VARIANTS)', () => {
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock };
 
@@ -120,6 +211,7 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
   async function setup(): Promise<void> {
     quotationsApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: familyRows })), convertToOrder: jest.fn(), getFamily: jest.fn() };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
@@ -130,6 +222,7 @@ describe('ProposalsListPage — KP family list (TZ-NX-KP-FAMILY-S42-LIST-HIDE-VA
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
       ],
@@ -175,6 +268,7 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock; getFamily: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock };
 
@@ -220,6 +314,7 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
       getFamily: jest.fn().mockReturnValue(of({ ok: true, data: familyResponse })),
     };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
       list: jest.fn().mockReturnValue(
         of({
@@ -243,6 +338,7 @@ describe('ProposalsListPage — family expand (TZ-NX-KP-FAMILY-S43-EXPAND)', () 
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
       ],
@@ -405,6 +501,7 @@ describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
     attachOrganizations: jest.Mock;
   };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
   let dialogRef: DialogRef<AttachOrgsResult>;
@@ -483,6 +580,7 @@ describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
       attachOrganizations: jest.fn(),
     };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
     toast = { error: jest.fn(), success: jest.fn() };
     const closedSignal = signal<AttachOrgsResult | undefined>(undefined);
@@ -498,6 +596,7 @@ describe('ProposalsListPage — attach orgs (TZ-NX-KP-FAMILY-S44-ATTACH-ORGS)', 
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: dialog },
@@ -635,6 +734,7 @@ describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', ()
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; getFamily: jest.Mock; syncFromMaster: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
 
@@ -696,6 +796,7 @@ describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', ()
       syncFromMaster: jest.fn(),
     };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
     toast = { error: jest.fn(), success: jest.fn() };
 
@@ -705,6 +806,7 @@ describe('ProposalsListPage — sync from master (TZ-NX-KP-FAMILY-S45-SYNC)', ()
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
         { provide: PiDialogService, useValue: { open: jest.fn() } },
@@ -843,6 +945,7 @@ describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-S
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; getFamily: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock; success: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -891,6 +994,7 @@ describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-S
       getFamily: jest.fn().mockReturnValue(of({ ok: true, data: masterFamily })),
     };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: linkedStudioDocs })) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = { list: jest.fn().mockReturnValue(of(orgs)) };
     toast = { error: jest.fn(), success: jest.fn() };
 
@@ -900,6 +1004,7 @@ describe('ProposalsListPage — variant in studio (TZ-NX-KP-FAMILY-S46-VARIANT-S
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
       ],
@@ -968,6 +1073,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
   let fixture: ComponentFixture<ProposalsListPage>;
   let quotationsApi: { list: jest.Mock; convertToOrder: jest.Mock };
   let studioApi: { list: jest.Mock };
+  let docTypesApi: { list: jest.Mock };
   let organizationsApi: { list: jest.Mock };
   let toast: { error: jest.Mock };
   let router: { navigate: jest.Mock };
@@ -984,6 +1090,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
       convertToOrder: jest.fn(),
     };
     studioApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [] } satisfies SilentResult<StudioDocument[]>)) };
+    docTypesApi = { list: jest.fn().mockReturnValue(of({ ok: true, data: [{ _id: 'dt-kp', name: 'КП', slug: 'proposal' }] })) };
     organizationsApi = {
       list: jest.fn().mockReturnValue(of({ ok: true, data: { items: [], total: 0, page: 1, limit: 100 } })),
     };
@@ -995,6 +1102,7 @@ describe('ProposalsListPage — convert guard (TZ-NX-KP-FAMILY-S47-CONVERT-GUARD
         provideRouter([]),
         { provide: PiQuotationsService, useValue: quotationsApi },
         { provide: PiStudioDocumentsService, useValue: studioApi },
+        { provide: PiDocTypesService, useValue: docTypesApi },
         { provide: PiOrganizationsService, useValue: organizationsApi },
         { provide: PiToastService, useValue: toast },
       ],

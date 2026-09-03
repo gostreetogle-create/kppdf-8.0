@@ -51,6 +51,7 @@ export interface CreateStudioDocumentPayload {
   readonly name: string;
   readonly orientation?: StudioDocumentOrientation;
   readonly pageSize?: StudioDocumentPageSize;
+  readonly docTypeId?: string;
 }
 
 /**
