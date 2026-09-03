@@ -3,6 +3,8 @@ import type { StudioWsRailItem } from './studio-workspace-shell.component';
 
 export type StudioWorkspaceSection = 'elements' | 'layers' | 'pages' | 'data' | 'template' | 'properties';
 
+// studio-editor.page.ts renders its own rail (showDesktopRail=false, railItems=[]);
+// this list only backs studioPanelTitle() below for the panel header text.
 export const STUDIO_RAIL_ITEMS: readonly StudioWsRailItem[] = [
   { id: 'data', title: 'Данные', short: 'Dt', icon: Database },
   { id: 'elements', title: 'Элементы', short: 'El', icon: FileText },

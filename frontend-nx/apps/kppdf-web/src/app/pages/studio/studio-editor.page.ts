@@ -22,7 +22,6 @@ import {
   FileStack,
   FileText,
   Layers,
-  LayoutGrid,
   LayoutTemplate,
   LucideAngularModule,
   Settings2,
@@ -133,6 +132,8 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (document(); as doc) {
+      <!-- Desktop rail is off (showDesktopRail=false below); railItems stays [] on purpose.
+           Section titles still come from STUDIO_RAIL_ITEMS via studioPanelTitle(). -->
       <pi-studio-workspace-shell
         class="studio-editor-shell"
         data-test="studio-shell"
