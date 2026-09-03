@@ -95,6 +95,7 @@ import {
   studioStaggerImageLayout,
   zIndexFromLayerOrder,
 } from './studio-layout';
+import { isKpDocType } from './studio-kp-doc-type';
 import { rememberStudioDocument } from './studio-session';
 import {
   STUDIO_DEFAULT_TABLE_COLUMNS,
@@ -581,7 +582,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     const id = this.docTypeId();
     if (!id) return false;
     const docType = this.docTypes().find((item) => item._id === id);
-    return docType?.slug === 'proposal' || docType?.name === 'КП';
+    return isKpDocType(docType);
   });
   readonly linkedQuotationStatus = signal<QuotationStatus>('draft');
 
@@ -1581,7 +1582,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
       if (r.ok) {
         this.document.set(r.data);
         const docType = this.docTypes().find((item) => item._id === docTypeId);
-        if (docType?.slug === 'proposal' || docType?.name === 'КП') {
+        if (isKpDocType(docType)) {
           void this.ensureLinkedQuotation(r.data._id);
         }
       } else {

@@ -5,7 +5,8 @@ import { PiDialogService, AlertDialogComponent } from '@kppdf/ui/dialog';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
 import { PiToastService } from '@kppdf/ui/toast';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
-import { PiDocumentTemplatesService, PiStudioDocumentsService, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
+import { PiDocTypesService, PiDocumentTemplatesService, PiStudioDocumentsService, type DocumentTemplate, type StudioDocument } from '@kppdf/data-access';
+import { findKpDocType } from './studio-kp-doc-type';
 import { pickResumeStudioDocument, rememberStudioDocument } from './studio-session';
 import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogData } from './studio-template-picker-dialog.component';
 
@@ -20,6 +21,7 @@ import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogDat
         <div><div class="eyebrow">Документы</div><h1 class="font-display text-2xl m-0">Студия документов</h1></div>
         <div class="flex items-center gap-2">
           <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-from-template" (click)="createFromTemplate()">Из шаблона</button>
+          <button class="pi-button pi-button-secondary" type="button" data-test="studio-create-kp" (click)="createKp()">Новое КП</button>
           <button class="pi-button pi-button-primary" type="button" data-test="studio-create" (click)="create()">Создать документ</button>
         </div>
       </div>
@@ -56,6 +58,7 @@ import { StudioTemplatePickerDialogComponent, type StudioTemplatePickerDialogDat
 export class StudioListPage implements OnInit {
   private readonly service = inject(PiStudioDocumentsService);
   private readonly documentTemplates = inject(PiDocumentTemplatesService);
+  private readonly docTypesApi = inject(PiDocTypesService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(PiDialogService);
@@ -153,10 +156,27 @@ export class StudioListPage implements OnInit {
   }
 
   create(): void {
+    this.createDocument();
+  }
+
+  /** «Новое КП» — pre-selects the КП doc type so Шаблон/Данные and the quotation link are ready without an extra step. */
+  createKp(): void {
+    void firstValueFrom(this.docTypesApi.list()).then((result) => {
+      const kpDocType = result.ok ? findKpDocType(result.data) : undefined;
+      if (!kpDocType) {
+        this.toast.error('Тип документа «КП» не найден');
+        return;
+      }
+      this.createDocument(kpDocType._id);
+    });
+  }
+
+  private createDocument(docTypeId?: string): void {
+    const prefix = docTypeId ? 'КП' : 'Документ';
     const date = new Date().toLocaleDateString('ru-RU');
-    const sameDay = this.documents().filter((d) => d.name.startsWith(`Документ ${date}`)).length;
-    const name = sameDay === 0 ? `Документ ${date}` : `Документ ${date} (${sameDay + 1})`;
-    void firstValueFrom(this.service.create({ name, orientation: 'portrait', pageSize: 'A4' })).then((result) => {
+    const sameDay = this.documents().filter((d) => d.name.startsWith(`${prefix} ${date}`)).length;
+    const name = sameDay === 0 ? `${prefix} ${date}` : `${prefix} ${date} (${sameDay + 1})`;
+    void firstValueFrom(this.service.create({ name, orientation: 'portrait', pageSize: 'A4', docTypeId })).then((result) => {
       if (result.ok) {
         rememberStudioDocument(result.data._id);
         void this.router.navigate(['/studio', result.data._id]);

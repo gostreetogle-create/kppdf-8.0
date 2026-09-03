@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, Injec
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
+  PiDocTypesService,
   PiOrganizationsService,
   PiQuotationsService,
   PiStudioDocumentsService,
@@ -18,6 +19,8 @@ import { AlertDialogComponent, PiDialogService } from '@kppdf/ui/dialog';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
 import { onDialogCloseOnce } from '../on-dialog-close-once';
+import { findKpDocType } from '../studio/studio-kp-doc-type';
+import { rememberStudioDocument } from '../studio/studio-session';
 import {
   ProposalAttachOrgsDialogComponent,
   type AttachOrgsDialogData,
@@ -154,6 +157,7 @@ const STATUS_LABELS: Record<string, string> = {
 export class ProposalsListPage implements OnInit {
   private readonly quotationsApi = inject(PiQuotationsService);
   private readonly studioApi = inject(PiStudioDocumentsService);
+  private readonly docTypesApi = inject(PiDocTypesService);
   private readonly organizationsApi = inject(PiOrganizationsService);
   private readonly dialog = inject(PiDialogService);
   private readonly injector = inject(Injector);
@@ -336,8 +340,26 @@ export class ProposalsListPage implements OnInit {
     this.toast.success('Состав синхронизирован');
   }
 
+  /** «Создать в студии» — same КП path as studio-list's «Новое КП»: pre-selects the КП doc type up front. */
   createInStudio(): void {
-    void this.router.navigate(['/studio']);
+    void firstValueFrom(this.docTypesApi.list()).then((result) => {
+      const kpDocType = result.ok ? findKpDocType(result.data) : undefined;
+      if (!kpDocType) {
+        void this.router.navigate(['/studio']);
+        return;
+      }
+      const name = `КП ${new Date().toLocaleDateString('ru-RU')}`;
+      void firstValueFrom(
+        this.studioApi.create({ name, orientation: 'portrait', pageSize: 'A4', docTypeId: kpDocType._id }),
+      ).then((created) => {
+        if (!created.ok) {
+          this.toast.error('Не удалось создать документ', { description: extractErrorMessage(created.error) });
+          return;
+        }
+        rememberStudioDocument(created.data._id);
+        void this.router.navigate(['/studio', created.data._id]);
+      });
+    });
   }
 
   openInStudio(quotation: Quotation): void {
