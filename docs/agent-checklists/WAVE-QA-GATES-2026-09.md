@@ -9,7 +9,7 @@
 |---|-----|----------|--------|-------|
 | Q1 | `TZ-BACKEND-QA-OUTPUT-VAT-MOCK` | P0 | DONE | 6 red tests fixed (mock + finalize), full BE suite 126/126 green · `cc57266d` |
 | Q2 | `TZ-BACKEND-QA-STUDIO-QUOTATION-ORG-GUARD` | P1 | DONE | assertQuotationOrg in ensure+sync, +5 tests, 126/126 BE suites · `46e7a530` |
-| Q3 | `TZ-FRONTEND-QA-APP-LAYOUT-FLAKY` | P1 | DONE | stale 321-FIX width assert fixed, FE suite 196/196 green |
+| Q3 | `TZ-FRONTEND-QA-APP-LAYOUT-FLAKY` | P1 | DONE | stale 321-FIX width assert fixed, FE suite 196/196 green · `7b4e1013` |
 | Q4a | `TZ-BACKEND-QA-LINT-UNUSED-IMPORTS` | P1 | READY | ~45 unused imports |
 | Q4b | `TZ-FRONTEND-QA-LINT-RAW-UI-SLICE-1` | P2 | READY | ≤15 files; not full 200 |
 
