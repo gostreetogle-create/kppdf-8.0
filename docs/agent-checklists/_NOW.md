@@ -1,12 +1,15 @@
 ﻿# NOW
 
-updated_at: 2026-09-03T23:45:00+03:00
+updated_at: 2026-09-03T23:40:00+03:00
 
 ## ACTIVE / LIVE
 
-Слоты свободны. Подготовлен pack **Doc Studio FINISH S27–S37** (не claimed).  
-Индекс: `tasks/_ready/docstudio-finish/INDEX.md`.  
-Завтра: PO просит промпт → Cursor даёт `PROMPT-01` … по цепочке.
+**ORCH ON.** Параллель волны A:
+- Claude bg `45afa7d9` → S27 worktree `claude/docstudio-s27`
+- Claude bg `6046410c` → S28 worktree `claude/docstudio-s28`
+
+Board: `docs/agent-checklists/ORCH-DOCSTUDIO-FINISH.md`  
+Cursor = integrator (не product code). После merge обоих → S29 sequential.
 
 ## NEXT
 
