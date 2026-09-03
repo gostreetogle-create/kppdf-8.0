@@ -13,6 +13,7 @@
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DomSanitizer, type SafeHtml } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   ChevronLeft,
@@ -306,22 +307,37 @@ const STUDIO_LIVE_HYDRATABLE_SOURCE_TYPES = new Set([
         </div>
 
         <div kpWsSheet class="studio-canvas-host" #sheetHost>
-          <pi-studio-blocks-canvas
-            [blocks]="pageBlocks()"
-            [selectedId]="viewMode() === 'preview' ? null : selectedId()"
-            [activeLayerId]="activeLayerId()"
-            [currentPage]="currentPage()"
-            [sheetWidth]="sheetSize().width"
-            [sheetHeight]="sheetSize().height"
-            [readOnly]="viewMode() === 'preview'"
-            (selected)="onSelect($event)"
-            (layoutChanged)="changeLayout($event.id, $event.layout)"
-            (layoutCommit)="onLayoutCommit()"
-            (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
-            (textDoubleClick)="openLayerProperties($event)"
-            (tableRowsChange)="patchTableRows($event)"
-            (tableDisabledRowsChange)="patchTableDisabledRows($event)"
-          />
+          @if (viewMode() === 'preview') {
+            @if (previewLoading()) {
+              <p class="preview-state" data-test="studio-preview-loading">Формирование просмотра…</p>
+            } @else if (previewError(); as err) {
+              <p class="preview-state preview-state--error" data-test="studio-preview-error">{{ err }}</p>
+            } @else if (previewSafeHtml(); as html) {
+              <iframe
+                class="studio-preview-frame"
+                data-test="studio-preview-frame"
+                sandbox="allow-same-origin"
+                [srcdoc]="html"
+              ></iframe>
+            }
+          } @else {
+            <pi-studio-blocks-canvas
+              [blocks]="pageBlocks()"
+              [selectedId]="selectedId()"
+              [activeLayerId]="activeLayerId()"
+              [currentPage]="currentPage()"
+              [sheetWidth]="sheetSize().width"
+              [sheetHeight]="sheetSize().height"
+              [readOnly]="false"
+              (selected)="onSelect($event)"
+              (layoutChanged)="changeLayout($event.id, $event.layout)"
+              (layoutCommit)="onLayoutCommit()"
+              (contentChanged)="patchBlockContentFromCanvas($event.id, $event.content)"
+              (textDoubleClick)="openLayerProperties($event)"
+              (tableRowsChange)="patchTableRows($event)"
+              (tableDisabledRowsChange)="patchTableDisabledRows($event)"
+            />
+          }
         </div>
       </pi-studio-workspace-shell>
     } @else {
@@ -427,6 +443,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   private readonly injector = inject(Injector);
   private readonly destroyRef = inject(DestroyRef);
   private readonly shellTools = inject(ShellToolRailService);
+  private readonly sanitizer = inject(DomSanitizer);
   private readonly sheetHostRef = viewChild<ElementRef<HTMLElement>>('sheetHost');
   private timer?: number;
   private conflictDialogOpen = false;
@@ -476,6 +493,11 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   });
 
   readonly propertiesBlock = computed(() => this.selectedBlock() ?? this.activeLayerBlock());
+
+  readonly previewSafeHtml = computed<SafeHtml | null>(() => {
+    const html = this.previewHtml();
+    return html ? this.sanitizer.bypassSecurityTrustHtml(html) : null;
+  });
 
   readonly catalogChipLabels = computed(() => {
     const selections = this.catalogSelections();
@@ -794,7 +816,10 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
     this.viewMode.set('preview');
     this.panelCollapsed.set(true);
     this.selectedId.set(null);
+    this.previewLoading.set(true);
+    this.previewError.set(null);
     await this.flushLayouts();
+    this.fetchPreview();
   }
 
   onLayoutCommit(): void {
@@ -1752,7 +1777,7 @@ export class StudioEditorPage implements AfterViewInit, OnDestroy {
   }
 
   private refreshPreviewIfActive(): void {
-    /* Preview is client-side canvas; no server HTML refresh needed. */
+    if (this.viewMode() === 'preview') this.fetchPreview();
   }
 
   patchBlockTitle(title: string): void {
