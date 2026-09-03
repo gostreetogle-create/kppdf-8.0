@@ -1,6 +1,6 @@
 # WAVE — NX Sales canon S30→S39 (continuous chain)
 
-Status: **IN PROGRESS @ S39** · S30–S38 DONE · Doc Studio S16–S26 DONE
+Status: **DONE** · S30–S39 DONE · Doc Studio S16–S26 DONE
 
 > Resume: `tasks/PROMPT-FREEBUFF-SALES-CANON-RESUME.md`
 > Roadmap: `docs/architecture/nx-sales-canon-roadmap.md`
@@ -27,12 +27,12 @@ Status: **IN PROGRESS @ S39** · S30–S38 DONE · Doc Studio S16–S26 DONE
 | 6 | [x] S35 ORDER-DETAIL | `tasks/_archive/2026-09/TZ-NX-SALES-S35-ORDER-DETAIL.done.md` | `508cf33d` |
 | 7 | [x] S36 ORDER-CREATE | `tasks/_archive/2026-09/TZ-NX-SALES-S36-ORDER-CREATE.done.md` | `b48ef6b3` |
 | 8 | [x] S37 QUOTATION-CONVERT | `tasks/_archive/2026-09/TZ-NX-SALES-S37-QUOTATION-CONVERT.done.md` | `8065eeeb` |
-| 9 | [x] S38 STUB-KP-HIDE | `tasks/_archive/2026-09/TZ-NX-SALES-S38-STUB-KP-HIDE.done.md` | _push_ |
-| 10 | [ ] S39 OPERATOR-DOCS | | |
+| 9 | [x] S38 STUB-KP-HIDE | `tasks/_archive/2026-09/TZ-NX-SALES-S38-STUB-KP-HIDE.done.md` | `a6d768ea` |
+| 10 | [x] S39 OPERATOR-DOCS | `tasks/_archive/2026-09/TZ-NX-SALES-S39-OPERATOR-DOCS.done.md` | _push_ |
 
 ## Closeout
 
-- [ ] all [x] · `_active/` пуст · QUEUE/_NOW updated
+- [x] all [x] · `_active/` пуст · QUEUE/_NOW updated
 
 ### Completed evidence
 
@@ -44,8 +44,9 @@ Status: **IN PROGRESS @ S39** · S30–S38 DONE · Doc Studio S16–S26 DONE
 - S35 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S35-ORDER-DETAIL.done.md` · commit `508cf33d`.
 - S36 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S36-ORDER-CREATE.done.md` · commit `b48ef6b3`.
 - S37 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S37-QUOTATION-CONVERT.done.md` · commit `8065eeeb`.
-- S38 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S38-STUB-KP-HIDE.done.md` · commit pushed (see chain row).
-- S39 is the next unchecked chain row.
+- S38 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S38-STUB-KP-HIDE.done.md` · commit `a6d768ea`.
+- S39 archive: `tasks/_archive/2026-09/TZ-NX-SALES-S39-OPERATOR-DOCS.done.md` · commit pushed (see chain row).
+- Wave closeout complete: all 10 chain rows [x].
 
 ## Запреты волны
 

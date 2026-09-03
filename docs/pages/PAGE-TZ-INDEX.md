@@ -82,8 +82,8 @@ Review inbox: [`CATALOG-WAVE1-REVIEW.md`](../agent-checklists/CATALOG-WAVE1-REVI
 | `/` , `/desk` | **manager-desk.page.md** | **401…424 DONE**; **425…430 DONE** tray workspace + ship-without-doc; **TZ-DESK-440 DONE** honest primary CTA (нет «подключится позже»); audit `2026-08-25-ux-hygiene-sweep.md` |
 | `/` , `/dashboard` | **dashboard.page.md** | **NAV-303 DONE** Обзор KPI (**не дом** после DESK-401); **TZ-DASHBOARD-401 DONE**; **UX-331** brand → стол; Канбан на `/design/combine`; **TZ-UI-414 READY** helper 11px |
 | `/contracts` | contracts.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row |
-| `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC, empty yellow row; **SWEEP-401** readyForWork ≠ item.status |
-| `/proposals` | **proposals.page.md** | **FORMS-316 READY** discount number; **SALES-301**; **303** family API; **313 DONE** family expand; **SALES-310 DONE** TOC; **TZ-SALES-350** shame RU statuses (WAVE-KP-SHAME-POLISH) |
+| `/orders` | orders.page.md | **SALES-310 DONE** — dark Deals TOC; **WAVE-NX-SALES-CANON S30–S39 DONE** NX list/detail/create + оплата + без заглушки; **SWEEP-401** readyForWork ≠ item.status |
+| `/proposals` | **proposals.page.md** | **FORMS-316 READY**; **SALES-313 DONE** family; **NX S20** «В студии»; **S37 DONE** convert accepted → заказ |
 | `/proposals/demo-workspace` | **kp-workspace-geometry.md** · **kp-workspace.page.md** | **Wave 0 DONE** geometry; SoT page doc |
 | `/proposals/workspace` | **kp-workspace.page.md** · **kp-workspace-rail-ia.md** | **WAVE-KP-SINGLE-WORKSPACE DONE** (400–409); **WAVE-KP-RAIL-BIND** TZ-KP-IA-510/511 + TZ-KP-BIND-512 (Money/Deadlines rail; registry labels; 510 docs DONE); **TZ-UX-440 READY** catalog review dirty = RU, не `productName`; **TZ-KP-443 DONE** orientation from template (toggle убран с КП; Lucide в builder inspector) |
 | `/proposals/create` | **proposals-create.page.md** (historical) | **= workspace с 408** (тот же компонент); IA 510–512 rails+bind; legacy-канон до cutover; см. banner в page doc; **TZ-KP-443 DONE** orientation from template |

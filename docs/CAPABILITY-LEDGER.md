@@ -37,6 +37,7 @@
 | Catalog: modules | available | Карточки/состав частично; не плодить второй BOM UI. |
 | Dictionaries (units, colors, categories, form profiles S/M/L) | included | Справочники READY*; form profiles — канон быстрого create. |
 | Counterparties / clients | included | Канон имени: Counterparty ≠ Organization. |
+| Sales: NX orders list/create/detail + payment | included | S30–S39: журнал `/orders`, прямой заказ без КП (ensure-default site), карточка с оплатой `isPaid`, convert accepted КП → заказ; заглушка-КП `removed` из UX (MASTER-CORE), endpoint deprecated. |
 | Warehouse: warehouses, stock, movements | included | READY TO USE*; ACL/автосписание — HARDENING / absent. |
 | Warehouse: auto-issue on work complete | absent | После ручного приход/расход; не блокирует READY склада. |
 | Deals / quotations (КП) studio | available | WAVE KP на main; shame-polish / smoke у PO; не начинать параллельный create-path. |
