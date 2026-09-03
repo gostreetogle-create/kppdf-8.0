@@ -37,10 +37,11 @@ PO: «выполнено» → следующий. **Не** параллелит
 | 09 | S35 | `PROMPT-09-S35.md` | ORPHAN PURGE |
 | 10 | S38 | `PROMPT-12-S38.md` | UNSAVED GUARD |
 | 11 | S39 | `PROMPT-13-S39.md` | CREATE DOCTYPE |
-| 12 | S36 | `PROMPT-10-S36.md` | DOCS TRUTH |
-| 13 | S37 | `PROMPT-11-S37.md` | OPERATOR SMOKE |
+| 12 | S40 | `PROMPT-14-S40.md` | FLEX DATA BINDINGS |
+| 13 | S36 | `PROMPT-10-S36.md` | DOCS TRUTH |
+| 14 | S37 | `PROMPT-11-S37.md` | OPERATOR SMOKE |
 
-> Порядок C: orphans → guard → doctype → docs → **smoke последним** (после всех фич).
+> Порядок C: orphans → guard → doctype → **flex bindings** → docs → **smoke последним**.
 
 ## Следующий к выдаче
 

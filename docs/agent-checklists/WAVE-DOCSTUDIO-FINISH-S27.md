@@ -32,12 +32,13 @@ Audit: `docs/audits/2026-09-03-docstudio-honesty-audit.md`
 | 09 | [ ] S35 ORPHAN-PURGE | |
 | 10 | [ ] S38 UNSAVED-GUARD | уход без потери |
 | 11 | [ ] S39 CREATE-DOCTYPE | тип при создании |
-| 12 | [ ] S36 DOCS-TRUTH | |
-| 13 | [ ] S37 OPERATOR-SMOKE | **последний** |
+| 12 | [ ] S40 FLEX-DATA-BINDINGS | order tokens + anchor picker + honest sources |
+| 13 | [ ] S36 DOCS-TRUTH | |
+| 14 | [ ] S37 OPERATOR-SMOKE | **последний** (включает flex tokens) |
 
 ## Closeout
 
-- [ ] все 13 archived  
+- [ ] все 14 archived  
 - [ ] `_active/` пуст  
 - [ ] operator-bar выполнен  
 - [ ] roadmap FINISH DONE  

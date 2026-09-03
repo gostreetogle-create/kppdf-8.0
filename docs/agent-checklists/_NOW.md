@@ -12,8 +12,8 @@ updated_at: 2026-09-03T23:45:00+03:00
 
 1. A: S27→S30  
 2. B: S31→S34  
-3. C: S35 → S38 → S39 → S36 → S37 smoke  
-Operator bar: `docs/architecture/nx-doc-studio-operator-bar.md`
+3. C: S35 → S38 → S39 → **S40 flex** → S36 → S37 smoke  
+Operator bar + flexible binding: `docs/architecture/nx-doc-studio-operator-bar.md`
 
 ## DONE
 

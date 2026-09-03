@@ -2,7 +2,7 @@
 
 | Slot | Волна | Статус |
 |------|-------|--------|
-| **#1** | Doc Studio FINISH S27–S39 | **READY** — `tasks/_ready/docstudio-finish/` (13 TZ, operator-bar) |
+| **#1** | Doc Studio FINISH S27–S40 | **READY** — `tasks/_ready/docstudio-finish/` (14 TZ; flex bindings S40) |
 | **#2** | — | **free** |
 
 ## NEXT (по команде PO)

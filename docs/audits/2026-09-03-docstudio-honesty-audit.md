@@ -31,12 +31,13 @@ Editor = толстый orchestrator (ok для ERP), панели в отдел
 ## Operator bar (обязательство Cursor)
 
 См. `docs/architecture/nx-doc-studio-operator-bar.md`.  
-Добавлено после самопроверки «создать любой документ»:
 
 | # | Дыра | TZ |
 |---|------|-----|
-| 12 | Нет guard ухода / «К списку» | S38 |
-| 13 | Create без обязательного DocType (не только КП) | S39 |
+| 12 | Нет guard ухода | S38 |
+| 13 | Create без DocType | S39 |
+| 14 | Гибкость токенов: нет `order` в registry; payer→неверный token; мёртвые sources в picker | **S40** |
 
-Итого pack: **S27–S39** (13 TZ). Smoke S37 — **после** S38/S39.
+Итого pack: **S27–S40** (14 TZ). Smoke S37 — после S40.
+
 
