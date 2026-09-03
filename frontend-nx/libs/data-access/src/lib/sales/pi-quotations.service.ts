@@ -24,4 +24,9 @@ export class PiQuotationsService {
   update(id: string, payload: UpdateQuotationPayload): Observable<SilentResult<Quotation>> {
     return silentPatch<Quotation>(this.http, `${this.baseUrl}/quotations/${id}`, payload);
   }
+
+  /** Convert an accepted quotation into an order (S37) — backend guards `status === 'accepted'`. */
+  convertToOrder(id: string): Observable<SilentResult<{ orderId: string }>> {
+    return silentPost<{ orderId: string }>(this.http, `${this.baseUrl}/quotations/${id}/convert-to-order`, undefined);
+  }
 }

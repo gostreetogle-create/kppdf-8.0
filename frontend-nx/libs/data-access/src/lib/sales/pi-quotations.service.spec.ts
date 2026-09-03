@@ -49,4 +49,15 @@ describe('PiQuotationsService (TZ-NX-SALES-PI-QUOTATIONS-CRUD)', () => {
     expect(req.request.body).toEqual(payload);
     req.flush({ _id: '507f1f77bcf86cd799439013', number: 'KP-001' });
   });
+
+  it('convertToOrder() POSTs /quotations/:id/convert-to-order and returns the orderId', (done) => {
+    service.convertToOrder('507f1f77bcf86cd799439013').subscribe((result) => {
+      expect(result).toEqual({ ok: true, data: { orderId: '507f1f77bcf86cd799439099' } });
+      done();
+    });
+    const req = httpMock.expectOne(`${baseUrl}/quotations/507f1f77bcf86cd799439013/convert-to-order`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toBeNull();
+    req.flush({ orderId: '507f1f77bcf86cd799439099' });
+  });
 });

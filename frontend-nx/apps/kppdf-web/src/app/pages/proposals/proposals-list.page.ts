@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PiQuotationsService, PiStudioDocumentsService, type Quotation, type StudioDocument } from '@kppdf/data-access';
+import { extractErrorMessage } from '@kppdf/util-http';
 import { PiStatusBannerComponent } from '@kppdf/ui/status-banner';
 import { PiToastService } from '@kppdf/ui/toast';
 
@@ -48,6 +49,17 @@ const STATUS_LABELS: Record<string, string> = {
                 <div class="text-xs text-muted-foreground">{{ statusLabel(row.status) }}</div>
               </div>
               <div class="flex items-center gap-2">
+                @if (row.status === 'accepted') {
+                  <button
+                    class="pi-button pi-button-primary"
+                    type="button"
+                    data-test="proposal-convert-order"
+                    (click)="convertToOrder(row)"
+                    [disabled]="convertingId() === row._id"
+                  >
+                    {{ convertingId() === row._id ? 'Преобразование…' : 'В заказ' }}
+                  </button>
+                }
                 <button class="pi-button pi-button-secondary" type="button" data-test="proposal-open-studio" (click)="openInStudio(row)">
                   В студии
                 </button>
@@ -69,6 +81,7 @@ export class ProposalsListPage implements OnInit {
   readonly studioDocs = signal<readonly StudioDocument[]>([]);
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly error = signal('Не удалось загрузить КП.');
+  readonly convertingId = signal<string | null>(null);
   readonly filtered = computed(() =>
     this.rows().filter((row) => row.status !== 'cancelled'),
   );
@@ -114,5 +127,20 @@ export class ProposalsListPage implements OnInit {
       return;
     }
     void this.router.navigate(['/studio'], { queryParams: { quotationId: quotation._id } });
+  }
+
+  async convertToOrder(quotation: Quotation): Promise<void> {
+    if (quotation.status !== 'accepted' || this.convertingId() !== null) return;
+    this.convertingId.set(quotation._id);
+    const result = await firstValueFrom(this.quotationsApi.convertToOrder(quotation._id));
+    this.convertingId.set(null);
+    if (!result.ok) {
+      this.toast.error('Не удалось преобразовать КП в заказ', {
+        description: extractErrorMessage(result.error),
+      });
+      return;
+    }
+    const orderId = result.data?.orderId;
+    if (orderId) void this.router.navigate(['/orders', orderId]);
   }
 }
