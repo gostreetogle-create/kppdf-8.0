@@ -73,9 +73,11 @@ export class OrderController {
   @Roles('admin', 'manager')
   @AuditAction({ action: 'stub_proposal', entityType: 'Order' })
   @ApiOperation({
-    summary: 'Создать черновик КП (заглушку) для прямого заказа',
+    summary: 'Создать черновик КП (заглушку) для прямого заказа — DEPRECATED',
     description:
-      'Идемпотентно: если у заказа уже есть КП, возвращает его с created=false. ' +
+      'DEPRECATED: не вызывать из UI — канон MASTER-CORE: заглушка КП не создаётся, ' +
+      'прямой заказ живёт без КП. Endpoint остаётся только для совместимости со старыми ' +
+      'клиентами. Идемпотентно: если у заказа уже есть КП, возвращает его с created=false. ' +
       'Организацию берём из JWT → «наша фирма» → единственная (TZ-PARTY-301).',
   })
   @ApiResponse({ status: 201, description: 'КП-заглушка создана или уже существовала' })

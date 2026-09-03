@@ -207,7 +207,7 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
     expect(fixture.componentInstance['lineRoots']().length).toBe(0);
   });
 
-  describe('stub КП (TZ-ORDERS-306)', () => {
+  describe('КП без заглушки (S38 — MASTER-CORE)', () => {
     async function render() {
       const fixture = TestBed.createComponent(OrderDetailPage);
       fixture.detectChanges();
@@ -216,27 +216,18 @@ describe('OrderDetailPage (TZ-ORDERS-302)', () => {
       return fixture;
     }
 
-    it('states plainly that a direct order has no КП and offers to create a draft', async () => {
+    it('states plainly that a direct order has no КП and never offers a stub action', async () => {
       const fixture = await render();
 
       expect(fixture.componentInstance['proposalLine']()).toBe('Нет — прямой заказ');
-      expect(
-        fixture.nativeElement.querySelector('[data-test="order-create-stub-proposal"]'),
-      ).toBeTruthy();
-    });
-
-    it('creates the stub and shows the КП number afterwards', async () => {
-      const fixture = await render();
-      fixture.componentInstance['createStubProposal']();
-      fixture.detectChanges();
-
-      expect(createStubProposal).toHaveBeenCalledWith('ord-1');
-      expect(fixture.componentInstance['proposalId']()).toBe('qtn-1');
-      expect(fixture.componentInstance['proposalLine']()).toContain('QTN-0007');
-      expect(fixture.componentInstance['proposalLine']()).toContain('заглушка');
+      expect(fixture.nativeElement.textContent).toContain('КП не обязателен');
       expect(
         fixture.nativeElement.querySelector('[data-test="order-create-stub-proposal"]'),
       ).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('[data-test="order-no-stub-proposal"]'),
+      ).toBeTruthy();
+      expect(createStubProposal).not.toHaveBeenCalled();
     });
 
     it('offers no create action when the order already has a КП', async () => {

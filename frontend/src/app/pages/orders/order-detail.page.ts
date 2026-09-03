@@ -131,15 +131,9 @@ type PopulatedOwner =
                   Открыть КП
                 </a>
               } @else {
-                <button
-                  type="button"
-                  class="text-xs underline underline-offset-2 hover:text-ink disabled:opacity-40"
-                  [disabled]="proposalBusy()"
-                  (click)="createStubProposal()"
-                  data-test="order-create-stub-proposal"
-                >
-                  {{ proposalBusy() ? 'Создаём…' : 'Создать черновик КП' }}
-                </button>
+                <span class="text-xs text-muted-foreground" data-test="order-no-stub-proposal">
+                  КП не обязателен. Нужен бланк — создайте КП в студии документов.
+                </span>
               }
             </span>
           </app-pi-fact-card>
@@ -287,9 +281,7 @@ export class OrderDetailPage {
     return this.siteLabel(o.siteId);
   });
 
-  /** TZ-ORDERS-306: прямой заказ живёт без КП, и это нормальное состояние. */
-  protected readonly proposalBusy = signal(false);
-
+  /** MASTER-CORE (S38): прямой заказ живёт без КП; заглушка из UI не создаётся. */
   protected readonly proposalId = computed(() => this.refId(this.proposalRef()));
 
   protected readonly proposalLine = computed(() => {
@@ -448,31 +440,6 @@ export class OrderDetailPage {
         } else {
           this.toast?.error('Не удалось сохранить источник материалов');
         }
-      });
-  }
-
-  /**
-   * TZ-ORDERS-306 — черновик КП для прямого заказа. Backend идемпотентен, но
-   * кнопка всё равно блокируется на время запроса: два клика подряд — это не
-   * два КП, а один и тот же.
-   */
-  protected createStubProposal(): void {
-    const current = this.order();
-    if (!current || this.proposalBusy()) return;
-    this.proposalBusy.set(true);
-    this.orders
-      .createStubProposal(current._id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((res) => {
-        this.proposalBusy.set(false);
-        if (!res.ok) {
-          this.toast?.error(extractErrorMessage(res.error));
-          return;
-        }
-        this.toast?.success(
-          res.data.created ? 'Черновик КП создан' : 'У заказа уже есть КП — открыт существующий',
-        );
-        this.order.set({ ...current, quotationId: res.data.quotation ?? res.data.quotationId });
       });
   }
 
