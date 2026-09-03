@@ -11,6 +11,15 @@ import type { StudioDocumentDocument } from './studio-document.schema';
 
 const KP_DOC_TYPE_SLUG = 'proposal';
 
+function quotationOrgRefId(value: unknown): string {
+  // QuotationService.findById populates organizationId, so the field can be
+  // either a raw ObjectId or a populated Organization document.
+  if (value && typeof value === 'object' && '_id' in value) {
+    return String((value as { _id: unknown })._id);
+  }
+  return value == null ? '' : String(value);
+}
+
 @Injectable()
 export class StudioQuotationLifecycleService {
   constructor(
@@ -37,6 +46,7 @@ export class StudioQuotationLifecycleService {
 
     if (doc.linkedQuotationId) {
       const quotation = await this.quotationService.findById(doc.linkedQuotationId.toString());
+      this.assertQuotationOrg(quotation, organizationId);
       return { doc, quotation };
     }
 
@@ -66,6 +76,8 @@ export class StudioQuotationLifecycleService {
     if (!doc.linkedQuotationId) return null;
 
     const quotationId = doc.linkedQuotationId.toString();
+    const quotation = await this.quotationService.findById(quotationId);
+    this.assertQuotationOrg(quotation, organizationId);
     const blocks = await this.blockService.findAllByStudioDocument(doc._id.toString());
     const resolved = await this.dataResolver.resolveDataSets(doc, blocks, true);
     const items = this.extractItemsFromDataSets(resolved, doc.context ?? {});
@@ -99,6 +111,16 @@ export class StudioQuotationLifecycleService {
     }
     await this.syncQuotationItems(doc, organizationId);
     return this.quotationService.update(quotation._id.toString(), { status });
+  }
+
+  private assertQuotationOrg(
+    quotation: QuotationDocument,
+    organizationId: string,
+  ): void {
+    if (quotationOrgRefId(quotation.organizationId) !== organizationId) {
+      // «Не палим существование чужого ресурса» — same pattern as OrgScopeGuard.
+      throw new NotFoundException('Quotation not found');
+    }
   }
 
   private extractItemsFromDataSets(
