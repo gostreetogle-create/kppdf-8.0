@@ -334,8 +334,12 @@ const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
     }
 
     .rail__chip--active {
-      border-color: color-mix(in oklch, var(--color-accent, #c9a227) 70%, var(--color-rule));
-      background: color-mix(in oklch, var(--color-accent, #c9a227) 18%, transparent);
+      border-color: color-mix(
+        in oklch,
+        var(--color-accent, var(--color-gold-deep)) 70%,
+        var(--color-rule)
+      );
+      background: color-mix(in oklch, var(--color-accent, var(--color-gold-deep)) 18%, transparent);
     }
 
     .rail__filters {
@@ -405,7 +409,7 @@ const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
     .rail__in-kp {
       flex: 1 1 100%;
       font-size: 0.6875rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       letter-spacing: 0.02em;
     }
 
@@ -423,13 +427,13 @@ const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
     .rail__state {
       margin: auto 0;
       padding: 2rem 0;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.875rem;
       text-align: center;
     }
 
     .rail__state--error {
-      color: var(--color-destructive, #b42318);
+      color: var(--color-destructive);
     }
 
     .sr-only {
@@ -437,7 +441,7 @@ const PAGE_SIZE = PI_DEFAULT_PAGE_SIZE;
       width: 1px;
       height: 1px;
       padding: 0;
-      margin: -1px;
+      margin: calc(var(--space-1) * -1);
       overflow: hidden;
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;

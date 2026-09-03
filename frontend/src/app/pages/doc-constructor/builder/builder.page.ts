@@ -284,7 +284,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         width: 100%;
         height: 100%;
         border: none;
-        background: #fff;
+        background: var(--color-paper);
       }
 
       .builder-build-preview-loading {
@@ -306,7 +306,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
       }
 
       .builder-subtitle {
-        padding: 4px 0 8px;
+        padding: var(--space-1) 0 var(--space-2);
       }
 
       .status-chip {
@@ -317,7 +317,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        padding: 2px 8px;
+        padding: var(--space-1) var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
       }
@@ -342,7 +342,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
       .empty-state {
         text-align: center;
         color: var(--color-muted);
-        padding: 32px 16px;
+        padding: var(--space-8) var(--space-4);
         font-size: 13px;
         margin: 0;
       }
@@ -356,7 +356,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 6px 12px;
+        padding: calc(var(--space-2) - var(--space-1) / 2) var(--space-3);
         border-bottom: 1px solid var(--color-rule);
         background: var(--pi-bg-elevated);
         background-size: var(--pi-bg-elevated-size);
@@ -374,7 +374,7 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         display: inline-flex;
         align-items: center;
         height: 28px;
-        padding: 0 8px;
+        padding: 0 var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
         background: var(--color-paper);
@@ -392,12 +392,12 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 2px 8px;
+        padding: var(--space-1) var(--space-2);
         font-size: 10px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--color-gold, #a16207);
+        color: var(--color-gold, var(--color-sunrise-warm));
         background: color-mix(in oklch, var(--color-sunrise-soft) 35%, transparent);
         border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 30%, transparent);
         border-radius: 2px;
@@ -418,14 +418,14 @@ import type { TextBlock } from '../../../shared/services/pi-text-blocks.service'
         background: var(--color-paper-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
-        padding: 1px;
+        padding: var(--space-1);
       }
 
       .builder-view-toggle__btn {
         display: inline-flex;
         align-items: center;
         gap: 4px;
-        padding: 3px 10px;
+        padding: var(--space-1) calc(var(--space-2) + var(--space-1) / 2);
         font-size: 11px;
         font-weight: 500;
         font-family: var(--font-mono);

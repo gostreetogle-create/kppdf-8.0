@@ -700,7 +700,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         line-height: 1.5;
       }
       .manager-desk__view-link {
-        color: var(--color-sunrise-warm, #9b6b1e);
+        color: var(--color-sunrise-warm);
         font-size: 0.88rem;
         text-decoration: underline;
         text-underline-offset: 2px;
@@ -742,7 +742,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         cursor: pointer;
       }
       .manager-desk__more:hover {
-        background: var(--color-paper-2, #f2f0ea);
+        background: var(--color-paper-2);
       }
       .manager-desk__customer-sep {
         display: flex;
@@ -778,7 +778,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         align-self: stretch;
         border: 1px solid var(--pi-rule-strong);
         background: transparent;
-        color: var(--pi-danger, #a33);
+        color: var(--pi-danger, var(--color-destructive));
         padding: 0 0.75rem;
         cursor: pointer;
       }
@@ -803,7 +803,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       }
       .manager-desk__order-row:hover,
       .manager-desk__order-row--expanded {
-        background: var(--color-sunrise-soft, #fff6df);
+        background: var(--color-sunrise-soft, var(--color-gold-soft));
       }
       .manager-desk__order-row--expanded {
         border-bottom: 0;
@@ -813,7 +813,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         width: 1.2rem;
         align-items: center;
         justify-content: center;
-        color: var(--color-sunrise-warm, #9b6b1e);
+        color: var(--color-sunrise-warm);
         font-size: 0.9rem;
       }
       .manager-desk__order-number {
@@ -831,7 +831,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
       /* TZ-DESK-424: badge, not a colored traffic light — one accent color
          for every status, letter-spacing + hairline outline instead of hue. */
       .manager-desk__status {
-        color: var(--color-sunrise-warm, #9b6b1e);
+        color: var(--color-sunrise-warm);
         font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: 0.02em;
@@ -915,7 +915,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         white-space: nowrap;
       }
       .manager-desk__close:hover {
-        background: var(--color-paper-2, #f2f0ea);
+        background: var(--color-paper-2);
       }
       .manager-desk__flyout-copy {
         margin: 0;
@@ -947,7 +947,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         gap: 0.5rem;
       }
       .manager-desk__note-anchor {
-        color: var(--color-sunrise-warm, #9b6b1e);
+        color: var(--color-sunrise-warm);
         font-size: 0.7rem;
         font-weight: 600;
         letter-spacing: 0.04em;
@@ -983,7 +983,7 @@ type DeskChromeTool = PiChromeToolItem & { disabled?: boolean };
         border: 0;
         padding: 0;
         background: transparent;
-        color: var(--color-destructive, #b3261e);
+        color: var(--color-destructive);
         font: inherit;
         font-size: 0.72rem;
         cursor: pointer;

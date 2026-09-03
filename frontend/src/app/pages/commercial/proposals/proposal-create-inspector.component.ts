@@ -564,12 +564,12 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
       gap: 0.5rem;
       padding: 0.55rem;
       border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+      background: color-mix(in oklch, var(--color-paper) 90%, transparent);
     }
 
     .inspector__markup-hint {
       margin: -0.35rem 0 0;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.7rem;
     }
     .inspector__section,
@@ -581,7 +581,7 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
       gap: 0.75rem;
       padding: 0.75rem;
       border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+      background: color-mix(in oklch, var(--color-paper) 90%, transparent);
     }
     .inspector__section > label,
     .inspector__sheet label {
@@ -595,7 +595,7 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
       width: 5rem;
       padding: 0.25rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
     }
     .inspector__sheet .inspector__checkbox {
       justify-content: flex-start;
@@ -616,7 +616,7 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.7rem;
     }
     .inspector__section-heading h3 {
@@ -624,12 +624,12 @@ export type ProposalCreateInspectorMode = 'params' | 'money' | 'deadlines';
       color: var(--color-ink);
     }
     .inspector__section-heading p {
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.7rem;
     }
     .inspector__table-target-hint {
       margin: -0.35rem 0 0;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.7rem;
     }
     .inspector__columns {

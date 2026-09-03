@@ -1024,7 +1024,7 @@ type ColumnWidths = Record<string, number>;
       gap: 0.35rem;
       padding: 0.25rem 0;
       flex: 0 0 auto;
-      background: var(--color-paper-raised, #f8f8f8);
+      background: var(--color-paper-raised);
       border-radius: 2px;
     }
 
@@ -1040,7 +1040,7 @@ type ColumnWidths = Record<string, number>;
 
     .editor__font-label {
       font-size: 0.68rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       white-space: nowrap;
     }
 
@@ -1055,7 +1055,7 @@ type ColumnWidths = Record<string, number>;
       gap: 0.2rem;
       padding: 0.2rem 0.45rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       color: var(--color-ink);
       font-size: 0.68rem;
       cursor: pointer;
@@ -1072,7 +1072,7 @@ type ColumnWidths = Record<string, number>;
 
     .editor__toolbar-btn--active {
       border-color: var(--color-ink);
-      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper, #fff));
+      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper));
     }
 
     .editor__toolbar-btn:disabled {
@@ -1081,7 +1081,7 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__font-icon {
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       flex: 0 0 auto;
     }
 
@@ -1096,7 +1096,7 @@ type ColumnWidths = Record<string, number>;
       left: 0;
       margin-top: 0.15rem;
       min-width: 13rem;
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       border: 1px solid var(--color-rule);
       box-shadow: var(--shadow-raised, 0 4px 12px oklch(0.2 0.02 260 / 0.1));
       z-index: 10;
@@ -1158,7 +1158,7 @@ type ColumnWidths = Record<string, number>;
       gap: 0.15rem;
       padding: 0.1rem 0.35rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       color: var(--color-ink);
       font-size: 0.62rem;
       cursor: pointer;
@@ -1219,7 +1219,7 @@ type ColumnWidths = Record<string, number>;
       min-height: 0;
       overflow: auto;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
     }
 
     .editor__table {
@@ -1276,7 +1276,7 @@ type ColumnWidths = Record<string, number>;
       left: 0;
       margin-top: 0.1rem;
       min-width: 9rem;
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       border: 1px solid var(--color-rule);
       box-shadow: var(--shadow-raised, 0 4px 12px oklch(0.2 0.02 260 / 0.1));
       z-index: 10;
@@ -1332,7 +1332,7 @@ type ColumnWidths = Record<string, number>;
       position: sticky;
       top: 0;
       z-index: 1;
-      background: var(--color-paper-raised, var(--color-paper, #fff));
+      background: var(--color-paper-raised, var(--color-paper));
       border-bottom: 1px solid var(--color-rule);
       padding: 0.35rem 0.3rem;
       text-align: left;
@@ -1356,7 +1356,7 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__row--accent {
-      background: color-mix(in oklch, var(--color-ink) 6%, var(--color-paper, #fff));
+      background: color-mix(in oklch, var(--color-ink) 6%, var(--color-paper));
     }
 
     .editor__row--compact td {
@@ -1374,7 +1374,7 @@ type ColumnWidths = Record<string, number>;
     .editor__row-drawer td {
       padding: 0;
       border-bottom: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-muted) 6%, var(--color-paper, #fff));
+      background: color-mix(in oklch, var(--color-muted) 6%, var(--color-paper));
     }
 
     .editor__drawer {
@@ -1413,7 +1413,7 @@ type ColumnWidths = Record<string, number>;
       gap: 0.35rem;
       padding: 0.28rem 0.4rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       color: var(--color-ink);
       font-size: 0.72rem;
       text-align: left;
@@ -1426,8 +1426,12 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__drawer-action--danger {
-      color: var(--color-danger, #b91c1c);
-      border-color: color-mix(in oklch, var(--color-danger, #b91c1c) 35%, var(--color-rule));
+      color: var(--color-danger, var(--color-destructive));
+      border-color: color-mix(
+        in oklch,
+        var(--color-danger, var(--color-destructive)) 35%,
+        var(--color-rule)
+      );
     }
 
     .editor__drawer-action:disabled {
@@ -1465,7 +1469,7 @@ type ColumnWidths = Record<string, number>;
     .editor__seg-btn {
       padding: 0.18rem 0.4rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       color: var(--color-ink);
       font-size: 0.68rem;
       border-radius: 2px;
@@ -1474,7 +1478,7 @@ type ColumnWidths = Record<string, number>;
 
     .editor__seg-btn--on {
       border-color: var(--color-ink);
-      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper, #fff));
+      background: color-mix(in oklch, var(--color-ink) 8%, var(--color-paper));
       font-weight: 600;
     }
 
@@ -1569,7 +1573,7 @@ type ColumnWidths = Record<string, number>;
       flex-direction: column;
       min-width: 12rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       box-shadow: var(--shadow-raised, 0 4px 12px oklch(0.2 0.02 260 / 0.1));
     }
 
@@ -1609,7 +1613,7 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__icon-btn:focus-visible {
-      outline: 2px solid var(--color-accent, #c9a227);
+      outline: 2px solid var(--color-accent, var(--color-gold-deep));
       outline-offset: 1px;
     }
 
@@ -1625,7 +1629,7 @@ type ColumnWidths = Record<string, number>;
       width: 0.35rem;
       height: 0.35rem;
       border-radius: 999px;
-      background: var(--color-accent, #c9a227);
+      background: var(--color-accent, var(--color-gold-deep));
       pointer-events: none;
     }
 
@@ -1645,8 +1649,8 @@ type ColumnWidths = Record<string, number>;
     }
 
     .editor__icon-btn--danger:hover:not(:disabled) {
-      border-color: var(--color-destructive, #b00);
-      color: var(--color-destructive, #b00);
+      border-color: var(--color-destructive);
+      color: var(--color-destructive);
     }
 
     /* ── Cells ── */
@@ -1739,7 +1743,7 @@ type ColumnWidths = Record<string, number>;
       box-sizing: border-box;
       padding: 0 0.3rem;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       color: var(--color-ink);
       font-size: 0.72rem;
       border-radius: 2px;
@@ -1785,7 +1789,7 @@ type ColumnWidths = Record<string, number>;
       width: 1px;
       height: 1px;
       padding: 0;
-      margin: -1px;
+      margin: calc(var(--space-1) * -1);
       overflow: hidden;
       clip: rect(0, 0, 0, 0);
       white-space: nowrap;

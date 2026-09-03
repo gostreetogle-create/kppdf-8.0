@@ -228,7 +228,7 @@ const TERM_VARIABLES = [
     .terms__library,
     .terms__empty,
     .terms__variables {
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
       font-size: 0.7rem;
     }
     .terms__row,
@@ -238,11 +238,11 @@ const TERM_VARIABLES = [
       gap: 0.45rem;
       padding: 0.65rem;
       border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+      background: color-mix(in oklch, var(--color-paper) 90%, transparent);
     }
     .terms__row-head {
       font-size: 0.72rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
     }
     .terms__row-actions {
       display: inline-flex;
@@ -269,7 +269,7 @@ const TERM_VARIABLES = [
     }
     .terms__variable:hover {
       border-color: var(--color-gold-deep);
-      background: var(--color-gold-soft, #f7edc8);
+      background: var(--color-gold-soft);
     }
     .terms__library {
       gap: 0.45rem;

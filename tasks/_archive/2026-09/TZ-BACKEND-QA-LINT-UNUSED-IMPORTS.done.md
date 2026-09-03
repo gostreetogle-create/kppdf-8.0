@@ -4,7 +4,7 @@ ARCHIVE_MARKER
 outcome: DONE
 closed_at: 2026-09-03T09:30:00Z
 closed_by: freebuff
-head_sha: pending Q4a commit
+head_sha: df6d62cd
 verification:
   - acceptance criteria: PASS
   - backend lint: PASS, 0 errors / 197 known warnings
@@ -13,7 +13,7 @@ verification:
   - diff check: PASS
   - checklist: UPDATED
   - progress.md: N/A (file does not exist; live state is wave checklist + _NOW.md)
-  - status synchronization: PENDING wave closeout
+  - status synchronization: PASS after Q4a commit; final wave closeout completed with Q4b
 
 lint_counts:
   audit_baseline: 45 errors / 200 warnings

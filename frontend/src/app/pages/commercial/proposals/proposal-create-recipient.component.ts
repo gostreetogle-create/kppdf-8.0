@@ -181,7 +181,7 @@ export interface ProposalRecipientState {
     label,
     .recipient__card {
       font-size: 0.7rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
     }
     label {
       display: flex;
@@ -195,7 +195,7 @@ export interface ProposalRecipientState {
       gap: 0.4rem;
       padding: 0.75rem;
       border: 1px solid var(--color-rule);
-      background: color-mix(in oklch, var(--color-paper, #fff) 90%, transparent);
+      background: color-mix(in oklch, var(--color-paper) 90%, transparent);
     }
     .recipient__card strong,
     .recipient__quick h4 {

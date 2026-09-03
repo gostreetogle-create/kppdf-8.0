@@ -372,10 +372,10 @@ import {
         );
       }
       .tbe-head {
-        padding: 24px 32px 8px;
+        padding: var(--space-6) var(--space-8) var(--space-2);
       }
       .tbe-title {
-        margin: 8px 0 0;
+        margin: var(--space-2) 0 0;
         font-size: 32px;
         font-weight: 600;
         line-height: 1.2;
@@ -387,7 +387,7 @@ import {
         flex-wrap: wrap;
         align-items: flex-end;
         gap: 24px;
-        padding: 0 32px 24px;
+        padding: 0 var(--space-8) var(--space-6);
       }
       .tbe-meta-name {
         flex: 1 1 280px;
@@ -398,7 +398,7 @@ import {
       }
       .tbe-input {
         width: 100%;
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
         font-size: 16px;
         font-family: inherit;
         color: var(--color-ink);
@@ -428,7 +428,7 @@ import {
         min-width: 220px;
       }
       .tbe-category-select {
-        padding: 12px 16px;
+        padding: var(--space-3) var(--space-4);
         font-size: 14px;
         font-family: inherit;
         color: var(--color-ink);
@@ -464,7 +464,7 @@ import {
       }
       .tbe-col-seg-btn {
         min-width: 40px;
-        padding: 12px 14px;
+        padding: var(--space-3) calc(var(--space-3) + var(--space-1) / 2);
         font-family: ui-monospace, monospace;
         font-size: 10px;
         font-weight: 700;
@@ -491,7 +491,7 @@ import {
         display: flex;
         align-items: center;
         gap: 10px;
-        margin-bottom: 4px;
+        margin-bottom: var(--space-1);
       }
       .tbe-tool lucide-icon {
         display: inline-flex;
@@ -501,13 +501,13 @@ import {
         display: flex;
         align-items: center;
         gap: 8px;
-        margin: 0 32px 16px;
-        padding: 4px 8px;
+        margin: 0 var(--space-8) var(--space-4);
+        padding: var(--space-1) var(--space-2);
         background: var(--color-paper-2);
         flex-wrap: wrap;
       }
       .tbe-toolbar-badge {
-        padding: 6px 12px;
+        padding: calc(var(--space-2) - var(--space-1) / 2) var(--space-3);
         background: var(--color-ink);
         color: var(--color-paper);
         flex-shrink: 0;
@@ -527,7 +527,7 @@ import {
       .tbe-tool {
         min-width: 32px;
         height: 32px;
-        padding: 0 8px;
+        padding: 0 var(--space-2);
         font-size: 12px;
         font-weight: 700;
         background: transparent;
@@ -550,7 +550,7 @@ import {
         gap: 6px;
       }
       .tbe-size-select {
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         font-size: 12px;
         font-family: inherit;
         border: 1px solid var(--color-rule);
@@ -566,7 +566,7 @@ import {
       }
       .tbe-width-input {
         width: 48px;
-        padding: 3px 4px;
+        padding: var(--space-1) var(--space-1);
         font-size: 12px;
         font-family: ui-monospace, monospace;
         text-align: center;
@@ -585,7 +585,7 @@ import {
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 12px 32px;
+        padding: var(--space-3) var(--space-8);
         background: var(--color-paper-2);
       }
       .tbe-data-strip-left {
@@ -604,17 +604,17 @@ import {
         flex: 1;
         display: flex;
         flex-direction: column;
-        padding: 0 32px 32px;
+        padding: 0 var(--space-8) var(--space-8);
         background: var(--color-paper-2);
       }
       .tbe-tabs {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 16px;
+        margin-bottom: var(--space-4);
       }
       .tbe-tab {
-        padding: 8px 20px;
+        padding: var(--space-2) calc(var(--space-4) + var(--space-1));
         background: var(--color-paper);
         border: 1px solid var(--color-rule);
         color: var(--color-ink);
@@ -737,7 +737,7 @@ import {
         align-items: center;
         justify-content: flex-end;
         gap: 16px;
-        padding: 24px 32px;
+        padding: var(--space-6) var(--space-8);
       }
       .tbe-footer-actions {
         display: flex;
@@ -746,7 +746,7 @@ import {
       }
       .tbe-banner {
         flex: 1 1 100%;
-        padding: 8px 12px;
+        padding: var(--space-2) var(--space-3);
         font-size: 13px;
         border-radius: 2px;
       }

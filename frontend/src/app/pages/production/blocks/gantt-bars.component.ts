@@ -889,7 +889,8 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     .gantt-today-pulse {
       width: 3px;
       background: var(--color-destructive, oklch(0.55 0.2 25));
-      outline: 2px solid color-mix(in oklch, var(--color-destructive, oklch(0.55 0.2 25)) 55%, transparent);
+      outline: 2px solid
+        color-mix(in oklch, var(--color-destructive, oklch(0.55 0.2 25)) 55%, transparent);
       outline-offset: 1px;
       animation: gantt-today-pulse 0.7s ease-out 1;
     }
@@ -952,7 +953,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       outline: none;
     }
     .gantt-expand-btn:focus-visible {
-      background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
+      background: color-mix(in oklch, var(--color-paper-2) 80%, transparent);
       color: var(--color-ink, inherit);
     }
     .gantt-label-btn {
@@ -968,7 +969,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       outline: none;
     }
     .gantt-label-btn:focus-visible {
-      background: color-mix(in oklch, var(--color-paper-2, #f4f2ec) 80%, transparent);
+      background: color-mix(in oklch, var(--color-paper-2) 80%, transparent);
     }
     /* truncated-label-peek — hover / cascade expand when text overflows (see docs/ui-rules.md). */
     .gantt-row-label-overlay.gantt-row-h {
@@ -991,7 +992,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
       max-width: 420px;
       padding: 0 0.5rem 0 0.375rem;
       white-space: nowrap;
-      border: 1px solid color-mix(in oklch, #8c7853 40%, transparent);
+      border: 1px solid color-mix(in oklch, var(--color-sunrise-warm) 40%, transparent);
       border-left: 0;
       border-radius: 0 0.375rem 0.375rem 0;
       box-shadow:
@@ -1077,7 +1078,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
     }
     .gantt-order-group-start.gantt-order-group-end {
       box-shadow: inset 0 0 0 2px oklch(0.42 0.05 85);
-      margin-bottom: 4px;
+      margin-bottom: var(--space-1);
     }
     .gantt-order-group-mid,
     .gantt-order-expanded:not(.gantt-order-group-start):not(.gantt-order-group-end) {
@@ -1090,7 +1091,7 @@ function isBarEstimateReadOnly(status: OrderStatus): boolean {
         inset 0 -2px 0 0 oklch(0.42 0.05 85),
         inset 2px 0 0 0 oklch(0.42 0.05 85),
         inset -2px 0 0 0 oklch(0.42 0.05 85);
-      margin-bottom: 4px;
+      margin-bottom: var(--space-1);
     }
     /* Nested product group — milk ladder (hue ~84). */
     .gantt-product-group-start {

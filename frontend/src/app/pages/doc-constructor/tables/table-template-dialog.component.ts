@@ -564,7 +564,7 @@ interface ClientPreviewModel {
 
       /* ─── Settings ─── */
       .ttd-settings {
-        padding: 8px 16px;
+        padding: var(--space-2) var(--space-4);
         border-bottom: 2px solid var(--color-ink);
         display: flex;
         flex-direction: column;
@@ -607,7 +607,7 @@ interface ClientPreviewModel {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 6px 16px;
+        padding: calc(var(--space-2) - var(--space-1) / 2) var(--space-4);
         border-bottom: 1px solid var(--color-rule);
         flex-shrink: 0;
         flex-wrap: wrap;
@@ -621,7 +621,7 @@ interface ClientPreviewModel {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         border: 1px solid var(--color-rule);
         border-radius: 3px;
         background: var(--color-paper-2);
@@ -646,7 +646,7 @@ interface ClientPreviewModel {
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--color-muted);
-        margin-right: 4px;
+        margin-right: var(--space-1);
       }
       .ttd-toolbar-btn {
         display: flex;
@@ -687,7 +687,7 @@ interface ClientPreviewModel {
       }
       .ttd-toolbar-width-input {
         width: 56px;
-        padding: 4px 6px;
+        padding: var(--space-1) calc(var(--space-2) - var(--space-1) / 2);
         font-size: 12px;
         font-family: ui-monospace, monospace;
         text-align: center;
@@ -750,7 +750,7 @@ interface ClientPreviewModel {
       .ttd-ih {
         position: relative;
         min-height: 132px;
-        padding: 14px 8px 16px;
+        padding: calc(var(--space-3) + var(--space-1) / 2) var(--space-2) var(--space-4);
         text-align: left;
         font-size: 10px;
         font-weight: 700;
@@ -779,7 +779,7 @@ interface ClientPreviewModel {
         display: flex;
         align-items: center;
         gap: 4px;
-        margin-bottom: 4px;
+        margin-bottom: var(--space-1);
       }
       .ttd-ih-num {
         font-size: 10px;
@@ -820,26 +820,26 @@ interface ClientPreviewModel {
         gap: 4px;
       }
       .ttd-cell-input--sm {
-        padding: 7px 8px;
+        padding: calc(var(--space-2) - var(--space-1) / 4) var(--space-2);
         font-size: 11px;
         min-height: 28px;
       }
       .ttd-cell-input--sm[type='number'] {
         width: 56px;
         text-align: center;
-        padding: 7px 4px;
+        padding: calc(var(--space-2) - var(--space-1) / 4) var(--space-1);
       }
       .ttd-cell-input--select {
         appearance: none;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 4px center;
-        padding-right: 18px;
+        padding-right: calc(var(--space-4) + var(--space-1) / 2);
       }
 
       /* ─── Data Cells ─── */
       .ttd-interactive-table td {
-        padding: 3px 6px;
+        padding: var(--space-1) calc(var(--space-2) - var(--space-1) / 2);
         font-size: 11px;
         border-bottom: 1px solid var(--color-rule);
         border-right: 1px solid var(--color-rule);
@@ -860,7 +860,7 @@ interface ClientPreviewModel {
       /* ─── Shared cell input ─── */
       .ttd-cell-input {
         width: 100%;
-        padding: 7px 8px;
+        padding: calc(var(--space-2) - var(--space-1) / 4) var(--space-2);
         font-size: 12px;
         min-height: 28px;
         border: 1px solid transparent;
@@ -880,12 +880,12 @@ interface ClientPreviewModel {
 
       /* ─── Empty state ─── */
       .ttd-empty {
-        padding: 24px;
+        padding: var(--space-6);
       }
 
       .ttd-preview-skeleton-row td {
-        padding-top: 8px;
-        padding-bottom: 8px;
+        padding-top: var(--space-2);
+        padding-bottom: var(--space-2);
         background: color-mix(in oklch, var(--color-paper-2) 55%, var(--color-paper));
       }
       .ttd-preview-skeleton {
@@ -930,7 +930,7 @@ interface ClientPreviewModel {
       }
       .ttd-input {
         width: 100%;
-        padding: 5px 8px;
+        padding: calc(var(--space-1) + var(--space-1) / 4) var(--space-2);
         font-size: 13px;
         border: 1px solid var(--color-rule);
         border-radius: 4px;
@@ -948,7 +948,7 @@ interface ClientPreviewModel {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
         background-repeat: no-repeat;
         background-position: right 8px center;
-        padding-right: 28px;
+        padding-right: calc(var(--space-6) + var(--space-1));
       }
       .ttd-link {
         padding: 0;
@@ -975,7 +975,7 @@ interface ClientPreviewModel {
       }
       .ttd-order-input {
         width: 56px;
-        padding: 5px 6px;
+        padding: calc(var(--space-1) + var(--space-1) / 4) calc(var(--space-2) - var(--space-1) / 2);
         text-align: center;
         border: 1px solid var(--color-rule);
         border-radius: 4px;
@@ -988,7 +988,7 @@ interface ClientPreviewModel {
       }
       .ttd-fields-empty {
         margin: 0;
-        padding: 10px 8px;
+        padding: calc(var(--space-2) + var(--space-1) / 2) var(--space-2);
       }
 
       .ttd-column-type-select {

@@ -124,7 +124,7 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
       aspect-ratio: 210 / 297;
       margin: 0 auto;
       border: 1px solid var(--color-rule);
-      background: var(--color-paper, #fff);
+      background: var(--color-paper);
       overflow: hidden;
       box-sizing: border-box;
     }
@@ -159,7 +159,7 @@ export function calculateKpPreviewScale(sheetWidth: number, sheetHeight: number)
       width: 794px;
       height: 1123px;
       border: 0;
-      background: #fff;
+      background: var(--color-paper);
       overflow: hidden;
       pointer-events: none;
       transform-origin: top center;
@@ -206,7 +206,7 @@ export class ProposalCreateTemplateCenterComponent implements AfterViewInit {
    */
   private injectPrintCss(html: string): string {
     const printCss =
-      '<style>@media print{html,body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}.doc-page{page-break-after:always}.doc-page:last-child{page-break-after:auto}}</style>';
+      '<style>@media print{html,body{background:var(--color-paper);print-color-adjust:exact;-webkit-print-color-adjust:exact}.doc-page{page-break-after:always}.doc-page:last-child{page-break-after:auto}}</style>';
     if (html.includes('</head>')) {
       return html.replace('</head>', `${printCss}</head>`);
     }

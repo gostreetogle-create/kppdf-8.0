@@ -88,7 +88,7 @@ import { extractErrorMessage } from '../../../core/silent-http';
     }
     .tpl-picker__heading p {
       font-size: 0.75rem;
-      color: var(--color-muted-foreground, #6b7280);
+      color: var(--color-muted-foreground);
     }
     .tpl-picker__meta {
       display: flex;

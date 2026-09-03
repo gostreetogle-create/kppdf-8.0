@@ -183,8 +183,8 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       }
 
       article {
-        background: var(--color-paper-raised, #ffffff);
-        border: 1px solid var(--color-rule, #e7e3da);
+        background: var(--color-paper-raised);
+        border: 1px solid var(--color-rule);
         border-radius: var(--radius-sm, 2px);
         position: relative;
       }
@@ -204,7 +204,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--color-muted-foreground-strong, #5a554c);
+        color: var(--color-muted-foreground-strong);
       }
       .sc-eyebrow--lg {
         font-size: 11px;
@@ -212,11 +212,11 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       .sc-badge {
         font-size: 11px;
         font-weight: 500;
-        padding: 2px 8px;
-        border: 1px solid var(--color-rule, #e7e3da);
+        padding: var(--space-1) var(--space-2);
+        border: 1px solid var(--color-rule);
         border-radius: 999px;
-        background: var(--color-paper-2, #f3efe6);
-        color: var(--color-ink, #1a1815);
+        background: var(--color-paper-2);
+        color: var(--color-ink);
       }
       .sc-badge--lg {
         font-size: 11px;
@@ -239,7 +239,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 10px 12px;
+        padding: calc(var(--space-2) + var(--space-1) / 2) var(--space-3);
         min-height: 56px;
       }
       .sc-media--sm {
@@ -248,7 +248,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         border-radius: 4px;
         overflow: hidden;
         flex-shrink: 0;
-        background: var(--color-paper-2, #f3efe6);
+        background: var(--color-paper-2);
       }
       .sc-body-sm {
         flex: 1;
@@ -257,7 +257,7 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       .sc-title-sm {
         font-size: 13px;
         font-weight: 600;
-        color: var(--color-ink, #1a1815);
+        color: var(--color-ink);
         margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -265,8 +265,8 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       }
       .sc-desc-sm {
         font-size: 11px;
-        color: var(--color-muted-foreground, #797063);
-        margin: 2px 0 0;
+        color: var(--color-muted-foreground);
+        margin: var(--space-1) 0 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -282,21 +282,14 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         height: 100%;
         display: flex;
         flex-direction: column;
-        padding: 14px 14px 12px;
-        background: var(--color-paper-2, #f3efe6);
-        border-color: color-mix(
-          in oklab,
-          var(--color-rule, #e7e3da) 85%,
-          var(--color-ink, #1a1815)
-        );
+        padding: calc(var(--space-3) + var(--space-1) / 2) calc(var(--space-3) + var(--space-1) / 2)
+          var(--space-3);
+        background: var(--color-paper-2);
+        border-color: color-mix(in oklab, var(--color-rule) 85%, var(--color-ink));
       }
       article.size-md.is-hoverable:hover {
-        background: var(--color-paper, #fafafa);
-        border-color: color-mix(
-          in oklab,
-          var(--color-rule, #e7e3da) 60%,
-          var(--color-ink, #1a1815)
-        );
+        background: var(--color-paper);
+        border-color: color-mix(in oklab, var(--color-rule) 60%, var(--color-ink));
       }
       .sc-head-md {
         display: flex;
@@ -315,8 +308,8 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       .sc-title-md {
         font-size: 16px;
         font-weight: 600;
-        color: var(--color-ink, #1a1815);
-        margin: 6px 0 0;
+        color: var(--color-ink);
+        margin: calc(var(--space-2) - var(--space-1) / 2) 0 0;
         min-width: 0;
         line-height: 1.3;
         min-height: calc(1.3em * 2);
@@ -327,30 +320,26 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         flex-shrink: 0;
       }
       .sc-media--md {
-        margin: 10px 0 0;
+        margin: calc(var(--space-2) + var(--space-1) / 2) 0 0;
         aspect-ratio: 16 / 9;
         flex: 0 0 auto;
         border-radius: 4px;
         overflow: hidden;
-        background: color-mix(
-          in oklab,
-          var(--color-paper, #fafafa) 70%,
-          var(--color-paper-2, #f3efe6)
-        );
-        border: 1px solid var(--color-rule, #e7e3da);
+        background: color-mix(in oklab, var(--color-paper) 70%, var(--color-paper-2));
+        border: 1px solid var(--color-rule);
         flex-shrink: 0;
       }
       .sc-media--md.sc-media--empty {
         background: linear-gradient(
           135deg,
-          color-mix(in oklab, var(--color-paper-2, #f3efe6) 80%, var(--color-rule, #e7e3da)),
-          var(--color-paper, #fafafa)
+          color-mix(in oklab, var(--color-paper-2) 80%, var(--color-rule)),
+          var(--color-paper)
         );
       }
       .sc-desc-md {
         font-size: 13px;
-        color: var(--color-muted-foreground, #797063);
-        margin: 8px 0 0;
+        color: var(--color-muted-foreground);
+        margin: var(--space-2) 0 0;
         min-width: 0;
         line-height: 1.4;
         min-height: calc(1.4em * 2);
@@ -369,16 +358,16 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
       }
       .sc-footer-md {
         margin-top: auto;
-        padding-top: 12px;
+        padding-top: var(--space-3);
         display: flex;
         gap: 8px;
         flex-shrink: 0;
-        border-top: 1px solid color-mix(in oklab, var(--color-rule, #e7e3da) 80%, transparent);
+        border-top: 1px solid color-mix(in oklab, var(--color-rule) 80%, transparent);
       }
 
       /* lg */
       article.size-lg {
-        padding: 24px;
+        padding: var(--space-6);
       }
       .sc-head-lg {
         display: flex;
@@ -397,21 +386,22 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         font-size: 28px;
         font-weight: 600;
         letter-spacing: -0.01em;
-        color: var(--color-ink, #1a1815);
-        margin: 6px 0 14px;
+        color: var(--color-ink);
+        margin: calc(var(--space-2) - var(--space-1) / 2) 0
+          calc(var(--space-3) + var(--space-1) / 2);
         line-height: 1.15;
       }
       .sc-media--lg {
-        margin: 12px 0;
+        margin: var(--space-3) 0;
         aspect-ratio: 16 / 9;
         border-radius: 6px;
         overflow: hidden;
-        background: var(--color-paper-2, #f3efe6);
+        background: var(--color-paper-2);
       }
       .sc-desc-lg {
         font-size: 15px;
-        color: var(--color-ink, #1a1815);
-        margin: 0 0 16px;
+        color: var(--color-ink);
+        margin: 0 0 var(--space-4);
         max-width: 60ch;
         line-height: 1.5;
       }
@@ -420,19 +410,19 @@ export type ShowcaseCardSize = 'sm' | 'md' | 'lg';
         gap: 16px;
       }
       .sc-related {
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid var(--color-rule, #e7e3da);
+        margin-top: var(--space-4);
+        padding-top: var(--space-4);
+        border-top: 1px solid var(--color-rule);
       }
       .sc-footer-lg {
-        margin-top: 20px;
+        margin-top: calc(var(--space-4) + var(--space-1));
         display: flex;
         gap: 10px;
         justify-content: flex-end;
       }
 
       .sc-arrow {
-        color: var(--color-ink, #1a1815);
+        color: var(--color-ink);
         transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
       }
       article.is-hoverable:hover .sc-arrow {

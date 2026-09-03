@@ -163,14 +163,14 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
         display: flex;
         align-items: flex-start;
         gap: 8px;
-        padding: 16px;
+        padding: var(--space-4);
         background: var(--color-paper-2);
         border: 1px solid var(--color-rule);
         border-radius: 2px;
       }
       .dfpd-hint-icon {
         flex-shrink: 0;
-        margin-top: 2px;
+        margin-top: var(--space-1);
         color: var(--color-sunrise-warm);
         font-size: 16px;
         line-height: 1;
@@ -183,8 +183,8 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
       }
       .dfpd-hint-token {
         display: inline-block;
-        margin-left: 2px;
-        padding: 1px 6px;
+        margin-left: var(--space-1);
+        padding: var(--space-1) calc(var(--space-2) - var(--space-1) / 2);
         font-family: ui-monospace, monospace;
         font-size: 10px;
         font-weight: 700;
@@ -208,7 +208,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
 
       .dfpd-step-label {
         display: block;
-        margin-bottom: 12px;
+        margin-bottom: var(--space-3);
         font-family: ui-monospace, monospace;
         font-size: 10px;
         font-weight: 700;
@@ -218,10 +218,10 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
       }
 
       .dfpd-group {
-        margin-bottom: 12px;
+        margin-bottom: var(--space-3);
       }
       .dfpd-group-head {
-        padding: 4px 8px;
+        padding: var(--space-1) var(--space-2);
         background: var(--color-paper-2);
         border: 1px solid var(--color-rule);
         border-bottom: none;
@@ -234,7 +234,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
       }
       .dfpd-group-hint {
         margin: 0;
-        padding: 8px 8px 6px;
+        padding: var(--space-2) var(--space-2) calc(var(--space-2) - var(--space-1) / 2);
         font-size: 11px;
         line-height: 1.35;
         color: var(--color-muted-foreground-strong);
@@ -249,7 +249,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
         justify-content: space-between;
         gap: 12px;
         width: 100%;
-        padding: 8px 16px;
+        padding: var(--space-2) var(--space-4);
         background: var(--color-paper);
         border: none;
         border-bottom: 1px solid var(--color-rule);
@@ -298,7 +298,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
       @media (min-width: 768px) {
         .dfpd-fields-panel {
           border-left: 1px solid var(--color-rule);
-          padding-left: 24px;
+          padding-left: var(--space-6);
         }
       }
 
@@ -307,7 +307,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
-        margin-bottom: 12px;
+        margin-bottom: var(--space-3);
       }
       .dfpd-back {
         padding: 0;
@@ -346,7 +346,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
         flex-direction: column;
         gap: 4px;
         width: 100%;
-        padding: 8px 12px;
+        padding: var(--space-2) var(--space-3);
         text-align: left;
         background: var(--color-paper);
         border: 1px solid var(--color-rule);
@@ -394,7 +394,7 @@ const CONTACT_SOURCE_ORDER = ['organization', 'counterparty'] as const;
         justify-content: center;
         gap: 8px;
         min-height: 240px;
-        padding: 24px;
+        padding: var(--space-6);
         text-align: center;
         border: 1px dashed var(--color-rule);
         border-radius: 2px;
